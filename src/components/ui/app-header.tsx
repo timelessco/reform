@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { useCustomizeSidebar } from '@/hooks/use-customize-sidebar';
 
 import { togglePreview } from '@/services/form.service';
 import useFormState from '@/hooks/use-form-state';
@@ -15,9 +16,10 @@ import { useSearch } from '@tanstack/react-router';
 export function AppHeader() {
     const form = useFormState();
     const { demo } = useSearch({ from: '/' })
+    const { toggle } = useCustomizeSidebar();
 
     return (
-        <header className="flex h-12 w-full items-center justify-between border-b bg-background px-4 text-sm font-medium">
+        <header className="flex h-12 w-full items-center justify-between border-b bg-background px-4 text-sm font-medium shrink-0">
             {/* Left Section: Logo & Title */}
             <div className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
                 <Flower2 className="h-5 w-5" />
@@ -26,8 +28,7 @@ export function AppHeader() {
 
             {/* Right Section: Actions */}
             <div className="flex items-center gap-1">
-
-                {/* Icons */}
+                {/* ... existing buttons ... */}
                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
                     <History className="h-4 w-4" />
                 </Button>
@@ -40,7 +41,12 @@ export function AppHeader() {
                     <Link to="/" search={{ demo: !demo }}>Demo</Link>
                 </Button>
                 {/* Text Actions */}
-                <Button variant="ghost" size="sm" className="h-8 text-muted-foreground font-normal hover:text-foreground">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-muted-foreground font-normal hover:text-foreground"
+                    onClick={() => toggle()}
+                >
                     Customize
                 </Button>
                 <Button variant="ghost" size="sm" className="h-8 text-blue-600 font-normal hover:text-blue-700 hover:bg-blue-50">

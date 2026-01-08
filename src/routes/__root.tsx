@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { AppHeader } from '../components/ui/app-header'
+import { CustomizeSidebar } from '../components/ui/customize-sidebar'
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import appCss from '../styles.css?url'
 interface MyRouterContext {
@@ -44,9 +45,14 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="flex flex-col h-screen overflow-hidden">
         <AppHeader />
-        {children}
+        <div className="flex flex-1 overflow-hidden">
+          <main className="flex-1 overflow-auto relative bg-background">
+            {children}
+          </main>
+          <CustomizeSidebar />
+        </div>
         <TanStackDevtools
           config={{
             position: 'bottom-right',
