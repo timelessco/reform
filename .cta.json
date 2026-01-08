@@ -1,0 +1,30 @@
+{
+  "projectName": "2026-01-08-platjs",
+  "mode": "file-router",
+  "typescript": true,
+  "tailwind": true,
+  "packageManager": "pnpm",
+  "addOnOptions": {
+    "drizzle": {
+      "database": "postgresql"
+    }
+  },
+  "git": true,
+  "version": 1,
+  "framework": "react-cra",
+  "chosenAddOns": [
+    "biome",
+    "nitro",
+    "start",
+    "sentry",
+    "compiler",
+    "db",
+    "drizzle",
+    "form",
+    "oRPC",
+    "shadcn",
+    "t3env",
+    "table",
+    "tanstack-query"
+  ]
+}
