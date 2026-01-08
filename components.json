@@ -19,6 +19,7 @@
     "hooks": "@/hooks"
   },
   "registries": {
-    "@plate": "https://platejs.org/r/{name}.json"
+    "@plate": "https://platejs.org/r/{name}.json",
+    "@reui": "https://reui.io/r/{name}.json"
   }
 }

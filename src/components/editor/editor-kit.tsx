@@ -23,6 +23,7 @@ import { ExitBreakKit } from '@/components/editor/plugins/exit-break-kit';
 import { FixedToolbarKit } from '@/components/editor/plugins/fixed-toolbar-kit';
 import { FloatingToolbarKit } from '@/components/editor/plugins/floating-toolbar-kit';
 import { FontKit } from '@/components/editor/plugins/font-kit';
+import { FormBlocksKit } from '@/components/editor/plugins/form-blocks-kit';
 import { LineHeightKit } from '@/components/editor/plugins/line-height-kit';
 import { LinkKit } from '@/components/editor/plugins/link-kit';
 import { ListKit } from '@/components/editor/plugins/list-kit';
@@ -37,53 +38,54 @@ import { TocKit } from '@/components/editor/plugins/toc-kit';
 import { ToggleKit } from '@/components/editor/plugins/toggle-kit';
 
 export const EditorKit = [
- 
-  // Elements
-  ...BasicBlocksKit,
-  ...CodeBlockKit,
-  ...TableKit,
-  ...ToggleKit,
-  ...TocKit,
-  ...MediaKit,
-  ...CalloutKit,
-  ...ColumnKit,
-  ...MathKit,
-  ...DateKit,
-  ...LinkKit,
-  ...MentionKit,
 
-  // Marks
-  ...BasicMarksKit,
-  ...FontKit,
+    // Elements
+    ...BasicBlocksKit,
+    ...CodeBlockKit,
+    ...TableKit,
+    ...ToggleKit,
+    ...TocKit,
+    ...MediaKit,
+    ...CalloutKit,
+    ...ColumnKit,
+    ...MathKit,
+    ...FormBlocksKit,
+    ...DateKit,
+    ...LinkKit,
+    ...MentionKit,
 
-  // Block Style
-  ...ListKit,
-  ...AlignKit,
-  ...LineHeightKit,
+    // Marks
+    ...BasicMarksKit,
+    ...FontKit,
 
-  // Collaboration
-  ...DiscussionKit,
-  ...CommentKit,
-  ...SuggestionKit,
+    // Block Style
+    ...ListKit,
+    ...AlignKit,
+    ...LineHeightKit,
 
-  // Editing
-  ...SlashKit,
-  ...AutoformatKit,
-  ...CursorOverlayKit,
-  ...BlockMenuKit,
-  ...DndKit,
-  ...EmojiKit,
-  ...ExitBreakKit,
-  TrailingBlockPlugin,
+    // Collaboration
+    ...DiscussionKit,
+    ...CommentKit,
+    ...SuggestionKit,
 
-  // Parsers
-  ...DocxKit,
-  ...MarkdownKit,
+    // Editing
+    ...SlashKit,
+    ...AutoformatKit,
+    ...CursorOverlayKit,
+    ...BlockMenuKit,
+    ...DndKit,
+    ...EmojiKit,
+    ...ExitBreakKit,
+    TrailingBlockPlugin,
 
-  // UI
-  ...BlockPlaceholderKit,
-  // ...FixedToolbarKit,
-  ...FloatingToolbarKit,
+    // Parsers
+    ...DocxKit,
+    ...MarkdownKit,
+
+    // UI
+    ...BlockPlaceholderKit,
+    // ...FixedToolbarKit,
+    ...FloatingToolbarKit,
 ];
 
 export type MyEditor = TPlateEditor<Value, (typeof EditorKit)[number]>;

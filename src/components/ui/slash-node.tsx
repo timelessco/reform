@@ -21,7 +21,8 @@ import {
   RadicalIcon,
   Square,
   Table,
-  TableOfContentsIcon
+  TableOfContentsIcon,
+  TextCursorInputIcon,
 } from 'lucide-react';
 import { type TComboboxInputElement, KEYS } from 'platejs';
 import { PlateElement } from 'platejs/react';
@@ -190,6 +191,22 @@ const groups: Group[] = [
       ...item,
       onSelect: (editor, value) => {
         insertInlineElement(editor, value);
+      },
+    })),
+  },
+  {
+    group: 'Form blocks',
+    items: [
+      {
+        icon: <TextCursorInputIcon />,
+        keywords: ['form', 'input', 'text', 'field', 'question'],
+        label: 'Text Input',
+        value: 'formInput',
+      },
+    ].map((item) => ({
+      ...item,
+      onSelect: (editor, value) => {
+        insertBlock(editor, value, { upsert: true });
       },
     })),
   },

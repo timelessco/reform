@@ -4,7 +4,11 @@ import * as React from 'react';
 
 import { DndPlugin, useDraggable, useDropLine } from '@platejs/dnd';
 import { expandListItemsWithChildren } from '@platejs/list';
-import { BlockSelectionPlugin } from '@platejs/selection/react';
+import {
+  BLOCK_CONTEXT_MENU_ID,
+  BlockMenuPlugin,
+  BlockSelectionPlugin,
+} from '@platejs/selection/react';
 import { GripVertical } from 'lucide-react';
 import { type TElement, getPluginByType, isType, KEYS } from 'platejs';
 import {
@@ -241,8 +245,15 @@ const DragHandle = React.memo(function DragHandle({
         <div
           className="flex size-full items-center justify-center"
           onClick={(e) => {
-            e.preventDefault();
-            editor.getApi(BlockSelectionPlugin).blockSelection.focus();
+            // e.preventDefault();
+            // e.stopPropagation();
+
+            const api = editor.getApi(BlockMenuPlugin);
+
+            api.blockMenu.show(BLOCK_CONTEXT_MENU_ID, {
+              x: e.clientX,
+              y: e.clientY,
+            });
           }}
           onMouseDown={(e) => {
             resetPreview();
@@ -328,7 +339,7 @@ const DragHandle = React.memo(function DragHandle({
           <GripVertical className="text-muted-foreground" />
         </div>
       </TooltipTrigger>
-      <TooltipContent>Drag to move</TooltipContent>
+      <TooltipContent>Drag to move, Click to open menu</TooltipContent>
     </Tooltip>
   );
 });

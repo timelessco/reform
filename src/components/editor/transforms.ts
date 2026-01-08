@@ -67,6 +67,34 @@ const insertBlockMap: Record<
     editor.getTransforms(TablePlugin).insert.table({}, { select: true }),
   [KEYS.toc]: (editor) => insertToc(editor, { select: true }),
   [KEYS.video]: (editor) => insertVideoPlaceholder(editor, { select: true }),
+  // Form blocks - inserts label (with focus) and input with placeholders
+  formInput: (editor) => {
+    const block = editor.api.block();
+    if (!block) return;
+    
+    const [, path] = block;
+    const labelPath = PathApi.next(path);
+    
+    editor.tf.insertNodes(
+      [
+        {
+          type: 'formLabel',
+          required: true,
+          placeholder: 'Type a question',
+          children: [{ text: '' }],
+        },
+        {
+          type: 'formInput',
+          placeholder: 'Enter your answer',
+          children: [{ text: '' }],
+        },
+      ] as any,
+      { at: labelPath }
+    );
+    
+    // Focus cursor at start of label block
+    editor.tf.select({ path: [...labelPath, 0], offset: 0 });
+  },
 };
 
 const insertInlineMap: Record<
