@@ -40,6 +40,7 @@ export const EditorDocSchema = z.object({
 
   // UI State & Settings
   isMS: z.boolean().default(false), // Multi-step form flag
+  isPreview: z.boolean().default(false), // Preview mode flag
   settings: SettingsSchema.default({
     defaultRequiredValidation: true,
     numericInput: false,

@@ -308,6 +308,9 @@ importers:
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      katex:
+        specifier: ^0.16.27
+        version: 0.16.27
       lodash:
         specifier: ^4.17.21
         version: 4.17.21

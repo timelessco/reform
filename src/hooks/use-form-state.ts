@@ -22,6 +22,7 @@ export const DEFAULT_FORM_STATE: Omit<EditorDoc, "id" | "updatedAt"> = {
   formName: "draft",
   schemaName: "draftFormSchema",
   isMS: false,
+  isPreview: false,
   content: defaultContent,
   settings: {
     defaultRequiredValidation: true,
@@ -40,7 +41,7 @@ export const DEFAULT_FORM_STATE: Omit<EditorDoc, "id" | "updatedAt"> = {
   cover: undefined,
 };
 
-export type FormState = Omit<EditorDoc, "id" | "updatedAt">;
+export type FormState = EditorDoc;
 
 /**
  * useFormState - A hook to access the current form builder state.
@@ -49,16 +50,18 @@ export type FormState = Omit<EditorDoc, "id" | "updatedAt">;
  */
 const useFormState = createIsomorphicFn()
   .server((): FormState => {
-    return DEFAULT_FORM_STATE as FormState;
+    return { ...DEFAULT_FORM_STATE, id: "main-document", updatedAt: Date.now() } as FormState;
   })
   .client((): FormState => {
     // Note: This fetches the first available form document. 
     // In a multi-persistent-form app, you'd add a .where() clause.
     const { data } = useLiveQuery((q) =>
       q.from({ doc: editorDocCollection }).select(({ doc }) => ({
+        id: doc.id,
         formName: doc.formName,
         schemaName: doc.schemaName,
         isMS: doc.isMS,
+        isPreview: doc.isPreview,
         content: doc.content,
         settings: doc.settings,
         lastAddedStepIndex: doc.lastAddedStepIndex,
@@ -66,10 +69,11 @@ const useFormState = createIsomorphicFn()
         title: doc.title,
         icon: doc.icon,
         cover: doc.cover,
+        updatedAt: doc.updatedAt,
       }))
     );
 
-    return (data?.[0] as FormState) || (DEFAULT_FORM_STATE as FormState);
+    return (data?.[0] as FormState) || ({ ...DEFAULT_FORM_STATE, id: "main-document", updatedAt: Date.now() } as FormState);
   });
 
 export default useFormState;

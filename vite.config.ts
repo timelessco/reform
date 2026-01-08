@@ -22,6 +22,9 @@ const config = defineConfig({
       },
     }),
   ],
+  ssr: {
+    noExternal: [/^@platejs\//, 'katex', 'react-tweet'],
+  },
 })
 
 export default config

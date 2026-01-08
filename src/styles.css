@@ -4,6 +4,9 @@
 
 @import 'tw-animate-css';
 
+/* Import katex css here to avoid SSR ESM error from JS imports
+@import 'katex/dist/katex.min.css'; */
+
 @custom-variant dark (&:is(.dark *));
 
 body {
