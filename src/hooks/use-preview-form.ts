@@ -8,6 +8,7 @@ import { useMemo } from 'react';
 import { toast } from 'sonner';
 import { revalidateLogic, useAppForm } from '@/components/ui/tanstack-form';
 import type { PlateFormField } from '@/lib/transform-plate-to-form';
+import { generateZodSchemaFromFields, generateDefaultValuesFromFields } from '@/lib/generate-preview-schema';
 import type { AppForm } from './use-form-builder';
 
 interface UsePreviewFormOptions {
@@ -26,18 +27,23 @@ export function usePreviewForm({ fields, formName = 'previewForm' }: UsePreviewF
   form: AppForm;
   formName: string;
 } {
-  // Generate default values from fields
+  // Generate Zod schema from field validation properties
+  const validationSchema = useMemo(() => {
+    return generateZodSchemaFromFields(fields);
+  }, [fields]);
+
+  // Generate default values from fields (uses defaultValue if specified)
   const defaultValues = useMemo(() => {
-    const defaults: Record<string, unknown> = {};
-    for (const field of fields) {
-      defaults[field.name] = '';
-    }
-    return defaults;
+    return generateDefaultValuesFromFields(fields);
   }, [fields]);
 
   const form = useAppForm({
     defaultValues,
     validationLogic: revalidateLogic(),
+    validators: {
+      onDynamic: validationSchema,
+      onDynamicAsyncDebounceMs: 300,
+    },
     onSubmit: async ({ value }) => {
       try {
         // Log form values for debugging
@@ -74,3 +80,4 @@ export function usePreviewForm({ fields, formName = 'previewForm' }: UsePreviewF
 
   return { form: form as unknown as AppForm, formName };
 }
+

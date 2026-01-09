@@ -58,6 +58,8 @@ export default function EditorApp() {
 
   // Track if editor has been initialized (prevent re-init on savedDocs change)
   const initializedRef = useRef(false);
+  // Track if header state has been initialized from DB (prevents saving empty values)
+  const headerInitializedRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
 
   // Create editor with delayed initialization
@@ -98,6 +100,10 @@ export default function EditorApp() {
         icon: docData.icon || null,
         cover: docData.cover || null,
       });
+      headerInitializedRef.current = true;
+    } else {
+      // No existing doc, header can be saved as empty (new document)
+      headerInitializedRef.current = true;
     }
 
     setIsReady(true);
@@ -111,6 +117,38 @@ export default function EditorApp() {
 
   // Track if document has been created
   const docExistsRef = useRef(false);
+
+  // Refs to track latest values for flush-on-unmount
+  const latestValueRef = useRef<Value | null>(null);
+  const latestHeaderRef = useRef(headerState);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    latestValueRef.current = currentValue;
+  }, [currentValue]);
+
+  useEffect(() => {
+    latestHeaderRef.current = headerState;
+  }, [headerState]);
+
+  // Flush pending changes on unmount (prevents data loss when switching modes)
+  useEffect(() => {
+    return () => {
+      // Only save if initialized and document exists
+      if (!headerInitializedRef.current) return;
+      if (!docExistsRef.current) return;
+
+      console.log('Flushing pending changes on unmount');
+      updateDoc(DOCUMENT_ID, (draft: any) => {
+        if (latestValueRef.current) {
+          draft.content = latestValueRef.current;
+        }
+        draft.title = latestHeaderRef.current.title;
+        draft.icon = latestHeaderRef.current.icon || undefined;
+        draft.cover = latestHeaderRef.current.cover || undefined;
+      });
+    };
+  }, []); // Empty deps - only runs on unmount
 
   // Set docExistsRef when we first load
   useEffect(() => {
@@ -131,13 +169,16 @@ export default function EditorApp() {
       updateDoc(DOCUMENT_ID, (draft: any) => {
         if (debouncedValue) draft.content = debouncedValue;
 
-        // Always update header fields if we are ready
-        draft.title = debouncedHeader.title;
-        draft.icon = debouncedHeader.icon || undefined;
-        draft.cover = debouncedHeader.cover || undefined;
+        // Only update header fields if they've been initialized from DB
+        // This prevents saving empty values that would overwrite existing data
+        if (headerInitializedRef.current) {
+          draft.title = debouncedHeader.title;
+          draft.icon = debouncedHeader.icon || undefined;
+          draft.cover = debouncedHeader.cover || undefined;
+        }
       });
-    } else if (debouncedValue) {
-      // Only insert if we have content
+    } else if (debouncedValue && headerInitializedRef.current) {
+      // Only insert if we have content AND header has been initialized
       editorDocCollection.insert({
         id: DOCUMENT_ID,
         content: debouncedValue,

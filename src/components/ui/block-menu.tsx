@@ -16,7 +16,7 @@ import {
     Trash2,
 } from 'lucide-react';
 import { KEYS } from 'platejs';
-import { useEditorPlugin, usePluginOption } from 'platejs/react';
+import { useEditorPlugin, usePluginOption, useEditorSelector } from 'platejs/react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -59,14 +59,15 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
     const [showTurnInto, setShowTurnInto] = React.useState(false);
 
     // Get the selected node info
-    const selectedNodes = React.useMemo(() => {
+    // Get the selected node info reactive to editor state changes
+    const selectedNodes = useEditorSelector((editor) => {
         if (!isOpen) return [];
         try {
             return editor.getApi(BlockSelectionPlugin).blockSelection.getNodes();
         } catch {
             return [];
         }
-    }, [isOpen, editor]);
+    }, [isOpen]);
 
     const firstNode = selectedNodes[0]?.[0] as {
         type?: string;
@@ -99,7 +100,38 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
             }
         }
         return null;
-    }, [nodeType, firstNode, firstPath, editor]);
+    }, [nodeType, firstNode, firstPath, editor, selectedNodes]);
+
+    // Get input node (for formLabel, look at next sibling)
+    const inputNode = React.useMemo(() => {
+        if (nodeType === 'formInput') return firstNode;
+        if (nodeType === 'formLabel' && firstPath) {
+            // Look at next sibling for input
+            const nextPath = [...firstPath];
+            nextPath[nextPath.length - 1] += 1;
+            try {
+                const next = editor.api.node(nextPath);
+                if (next && next[0]?.type === 'formInput') {
+                    return next[0] as typeof firstNode;
+                }
+            } catch {
+                // No next sibling
+            }
+        }
+        return null;
+    }, [nodeType, firstNode, firstPath, editor, selectedNodes]);
+
+    // Helper to get the input path
+    const getInputPath = React.useCallback(() => {
+        if (!firstPath) return null;
+        if (nodeType === 'formInput') return firstPath;
+        if (nodeType === 'formLabel') {
+            const inputPath = [...firstPath];
+            inputPath[inputPath.length - 1] += 1;
+            return inputPath;
+        }
+        return null;
+    }, [nodeType, firstPath]);
 
     // Reset state when menu opens/closes
     React.useEffect(() => {
@@ -125,12 +157,9 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
     };
 
     const handleToggleMinLength = () => {
-        if (!firstNode || !firstPath) return;
-        const inputPath = nodeType === 'formInput' ? firstPath : [...firstPath];
-        if (nodeType === 'formLabel') {
-            inputPath[inputPath.length - 1] += 1;
-        }
-        const hasMinLength = firstNode.minLength !== undefined;
+        const inputPath = getInputPath();
+        if (!inputPath) return;
+        const hasMinLength = inputNode?.minLength !== undefined;
         if (hasMinLength) {
             editor.tf.unsetNodes(['minLength'], { at: inputPath });
         } else {
@@ -138,13 +167,16 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const handleUpdateMinLength = (value: number) => {
+        const inputPath = getInputPath();
+        if (!inputPath) return;
+        editor.tf.setNodes({ minLength: value }, { at: inputPath });
+    };
+
     const handleToggleMaxLength = () => {
-        if (!firstNode || !firstPath) return;
-        const inputPath = nodeType === 'formInput' ? firstPath : [...firstPath];
-        if (nodeType === 'formLabel') {
-            inputPath[inputPath.length - 1] += 1;
-        }
-        const hasMaxLength = firstNode.maxLength !== undefined;
+        const inputPath = getInputPath();
+        if (!inputPath) return;
+        const hasMaxLength = inputNode?.maxLength !== undefined;
         if (hasMaxLength) {
             editor.tf.unsetNodes(['maxLength'], { at: inputPath });
         } else {
@@ -152,18 +184,27 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const handleUpdateMaxLength = (value: number) => {
+        const inputPath = getInputPath();
+        if (!inputPath) return;
+        editor.tf.setNodes({ maxLength: value }, { at: inputPath });
+    };
+
     const handleToggleDefaultValue = () => {
-        if (!firstNode || !firstPath) return;
-        const inputPath = nodeType === 'formInput' ? firstPath : [...firstPath];
-        if (nodeType === 'formLabel') {
-            inputPath[inputPath.length - 1] += 1;
-        }
-        const hasDefault = firstNode.defaultValue !== undefined;
+        const inputPath = getInputPath();
+        if (!inputPath) return;
+        const hasDefault = inputNode?.defaultValue !== undefined;
         if (hasDefault) {
             editor.tf.unsetNodes(['defaultValue'], { at: inputPath });
         } else {
             editor.tf.setNodes({ defaultValue: '' }, { at: inputPath });
         }
+    };
+
+    const handleUpdateDefaultValue = (value: string) => {
+        const inputPath = getInputPath();
+        if (!inputPath) return;
+        editor.tf.setNodes({ defaultValue: value }, { at: inputPath });
     };
 
     const handleUpdateFieldName = () => {
@@ -210,9 +251,12 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 
     // Get current node properties
     const isRequired = Boolean(labelNode?.required);
-    const hasMinLength = firstNode?.minLength !== undefined;
-    const hasMaxLength = firstNode?.maxLength !== undefined;
-    const hasDefaultValue = firstNode?.defaultValue !== undefined;
+    const hasMinLength = inputNode?.minLength !== undefined;
+    const hasMaxLength = inputNode?.maxLength !== undefined;
+    const hasDefaultValue = inputNode?.defaultValue !== undefined;
+    const currentMinLength = inputNode?.minLength;
+    const currentMaxLength = inputNode?.maxLength;
+    const currentDefaultValue = inputNode?.defaultValue;
 
     return (
         <>
@@ -298,21 +342,61 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                                         checked={isRequired}
                                         onCheckedChange={handleToggleRequired}
                                     />
-                                    <ToggleOption
-                                        label="Default answer"
-                                        checked={hasDefaultValue}
-                                        onCheckedChange={handleToggleDefaultValue}
-                                    />
-                                    <ToggleOption
-                                        label="Min characters"
-                                        checked={hasMinLength}
-                                        onCheckedChange={handleToggleMinLength}
-                                    />
-                                    <ToggleOption
-                                        label="Max characters"
-                                        checked={hasMaxLength}
-                                        onCheckedChange={handleToggleMaxLength}
-                                    />
+
+                                    {/* Default Value Option */}
+                                    <div className="space-y-2">
+                                        <ToggleOption
+                                            label="Default answer"
+                                            checked={hasDefaultValue}
+                                            onCheckedChange={handleToggleDefaultValue}
+                                        />
+                                        {hasDefaultValue && (
+                                            <Input
+                                                value={currentDefaultValue || ''}
+                                                onChange={(e) => handleUpdateDefaultValue(e.target.value)}
+                                                placeholder="Enter default value"
+                                                className="h-8 text-sm"
+                                            />
+                                        )}
+                                    </div>
+
+                                    {/* Min Characters Option */}
+                                    <div className="space-y-2">
+                                        <ToggleOption
+                                            label="Min characters"
+                                            checked={hasMinLength}
+                                            onCheckedChange={handleToggleMinLength}
+                                        />
+                                        {hasMinLength && (
+                                            <Input
+                                                type="number"
+                                                min={1}
+                                                value={currentMinLength || 1}
+                                                onChange={(e) => handleUpdateMinLength(Number(e.target.value))}
+                                                placeholder="Min"
+                                                className="h-8 text-sm"
+                                            />
+                                        )}
+                                    </div>
+
+                                    {/* Max Characters Option */}
+                                    <div className="space-y-2">
+                                        <ToggleOption
+                                            label="Max characters"
+                                            checked={hasMaxLength}
+                                            onCheckedChange={handleToggleMaxLength}
+                                        />
+                                        {hasMaxLength && (
+                                            <Input
+                                                type="number"
+                                                min={1}
+                                                value={currentMaxLength || 100}
+                                                onChange={(e) => handleUpdateMaxLength(Number(e.target.value))}
+                                                placeholder="Max"
+                                                className="h-8 text-sm"
+                                            />
+                                        )}
+                                    </div>
                                 </div>
                             )}
 

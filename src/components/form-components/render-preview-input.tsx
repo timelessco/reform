@@ -15,41 +15,73 @@ interface RenderPreviewInputProps {
 }
 
 /**
+ * Extracts error message from Zod/TanStack Form error object
+ */
+function extractErrorMessage(error: unknown): string {
+    if (!error) return 'Invalid value';
+
+    // Handle array of errors
+    if (Array.isArray(error)) {
+        return extractErrorMessage(error[0]);
+    }
+
+    // Handle object with message property
+    if (typeof error === 'object' && error !== null) {
+        if ('message' in error && typeof error.message === 'string') {
+            return error.message;
+        }
+    }
+
+    // Handle string error
+    if (typeof error === 'string') {
+        return error;
+    }
+
+    return 'Invalid value';
+}
+
+/**
  * Renders a single input field in the preview form.
  * This is a simplified version that only handles Input fields.
  */
 export function RenderPreviewInput({ field, form }: RenderPreviewInputProps) {
     return (
         <form.AppField name={field.name}>
-            {(f) => (
-                <div className="space-y-2">
-                    <Label htmlFor={field.name}>
-                        {field.label}
-                        {field.required && (
-                            <span className="text-destructive ml-0.5">*</span>
+            {(f) => {
+                const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
+                const errorMessage = hasErrors
+                    ? extractErrorMessage(f.state.meta.errors[0])
+                    : '';
+
+                return (
+                    <div className="space-y-2">
+                        <Label htmlFor={field.name}>
+                            {field.label}
+                            {field.required && (
+                                <span className="text-destructive ml-0.5">*</span>
+                            )}
+                        </Label>
+                        <Input
+                            id={field.name}
+                            name={field.name}
+                            placeholder={field.placeholder}
+                            value={(f.state.value as string | undefined) ?? ''}
+                            onChange={(e) => f.handleChange(e.target.value)}
+                            onBlur={f.handleBlur}
+                            minLength={field.minLength}
+                            maxLength={field.maxLength}
+                            aria-invalid={hasErrors}
+                            className={hasErrors ? 'border-destructive' : ''}
+                        />
+                        {hasErrors && (
+                            <p className="text-sm text-destructive">
+                                {errorMessage}
+                            </p>
                         )}
-                    </Label>
-                    <Input
-                        id={field.name}
-                        name={field.name}
-                        placeholder={field.placeholder}
-                        value={(f.state.value as string | undefined) ?? ''}
-                        onChange={(e) => f.handleChange(e.target.value)}
-                        onBlur={f.handleBlur}
-                        aria-invalid={!!f.state.meta.errors.length && f.state.meta.isTouched}
-                        className={
-                            !!f.state.meta.errors.length && f.state.meta.isTouched
-                                ? 'border-destructive'
-                                : ''
-                        }
-                    />
-                    {f.state.meta.errors.length > 0 && f.state.meta.isTouched && (
-                        <p className="text-sm text-destructive">
-                            {String((f.state.meta.errors[0] as unknown as { message?: string })?.message ?? f.state.meta.errors[0] ?? 'Invalid value')}
-                        </p>
-                    )}
-                </div>
-            )}
+                    </div>
+                );
+            }}
         </form.AppField>
     );
 }
+

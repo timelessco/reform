@@ -22,6 +22,9 @@ export type PlateFormField = {
   label?: string;
   placeholder?: string;
   required?: boolean;
+  minLength?: number;
+  maxLength?: number;
+  defaultValue?: string;
 };
 
 /**
@@ -92,6 +95,9 @@ export function transformPlateStateToFormElements(value: Value): TransformedElem
         // Check if next node is a formInput
         const nextNode = value[i + 1];
         let placeholder = '';
+        let minLength: number | undefined;
+        let maxLength: number | undefined;
+        let defaultValue: string | undefined;
         
         if (nextNode && nextNode.type === 'formInput') {
           placeholder = (nextNode.placeholder as string) || '';
@@ -100,6 +106,11 @@ export function transformPlateStateToFormElements(value: Value): TransformedElem
           if (inputText && !placeholder) {
             placeholder = inputText;
           }
+          // Extract validation properties from formInput node
+          minLength = nextNode.minLength as number | undefined;
+          maxLength = nextNode.maxLength as number | undefined;
+          defaultValue = nextNode.defaultValue as string | undefined;
+          
           i++; // Skip the formInput in the next iteration
         }
         
@@ -113,6 +124,9 @@ export function transformPlateStateToFormElements(value: Value): TransformedElem
           label: labelText || 'Untitled Field',
           placeholder: placeholder || undefined,
           required: isRequired,
+          minLength,
+          maxLength,
+          defaultValue,
         });
         fieldIndex++;
         break;
