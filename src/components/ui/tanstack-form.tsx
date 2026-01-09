@@ -26,7 +26,7 @@ import {
 	InputGroupInput,
 } from "@/components/ui/input-group";
 import { Spinner } from "@/components/ui/spinner";
-import { cn } from "@/utils/utils";
+import { cn } from "@/lib/utils";
 
 const {
 	fieldContext,
@@ -109,37 +109,37 @@ const useFieldContext = () => {
 };
 
 function Field({
-  children,
-  ...props
+	children,
+	...props
 }: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) {
-  const { errors, formItemId, formDescriptionId, formMessageId, handleBlur, store } =
-    useFieldContext();
-  const isTouched = useStore(store, (state) => state.meta.isTouched);
-  const hasVisibleErrors = !!errors.length && isTouched;
+	const { errors, formItemId, formDescriptionId, formMessageId, handleBlur, store } =
+		useFieldContext();
+	const isTouched = useStore(store, (state) => state.meta.isTouched);
+	const hasVisibleErrors = !!errors.length && isTouched;
 
-  return (
-    <DefaultField
-      data-invalid={hasVisibleErrors}
-      id={formItemId}
-      onBlur={handleBlur}
-      aria-describedby={
-        !hasVisibleErrors
-          ? `${formDescriptionId}`
-          : `${formDescriptionId} ${formMessageId}`
-      }
-      aria-invalid={hasVisibleErrors}
-      {...props}
-    >
-      {children}
-    </DefaultField>
-  );
+	return (
+		<DefaultField
+			data-invalid={hasVisibleErrors}
+			id={formItemId}
+			onBlur={handleBlur}
+			aria-describedby={
+				!hasVisibleErrors
+					? `${formDescriptionId}`
+					: `${formDescriptionId} ${formMessageId}`
+			}
+			aria-invalid={hasVisibleErrors}
+			{...props}
+		>
+			{children}
+		</DefaultField>
+	);
 }
 
 function FieldError({ className, ...props }: React.ComponentProps<"p">) {
-  const { errors, formMessageId , store } = useFieldContext();
-  const isTouched = useStore(store, (state) => state.meta.isTouched);
-  const body = errors.length ? String(errors.at(0)?.message ?? "") : "";
-  if (!body || !isTouched) return null;
+	const { errors, formMessageId, store } = useFieldContext();
+	const isTouched = useStore(store, (state) => state.meta.isTouched);
+	const body = errors.length ? String(errors.at(0)?.message ?? "") : "";
+	if (!body || !isTouched) return null;
 	return (
 		<DefaultFieldError
 			data-slot="form-message"

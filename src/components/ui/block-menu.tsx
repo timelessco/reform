@@ -7,28 +7,43 @@ import {
     BlockSelectionPlugin,
 } from '@platejs/selection/react';
 import {
-    ChevronsRight,
+    ChevronRight,
     Copy,
-    Indent,
-    Outdent,
-    RefreshCcw,
+    EyeOff,
+    GripVertical,
+    Pencil,
+    Plus,
     Trash2,
 } from 'lucide-react';
 import { KEYS } from 'platejs';
 import { useEditorPlugin, usePluginOption } from 'platejs/react';
 
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-    CommandShortcut,
-} from '@/components/ui/command';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverAnchor } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 
-type BlockMenuState = 'main' | 'turnInto' | 'align' | 'indent' | 'color';
+type BlockFieldType = 'formInput' | 'static' | 'unknown';
+
+// Get field type category for the menu
+function getFieldType(nodeType: string | undefined): BlockFieldType {
+    if (!nodeType) return 'unknown';
+    if (nodeType === 'formLabel' || nodeType === 'formInput') return 'formInput';
+    if (['h1', 'h2', 'h3', 'p', 'blockquote', 'hr'].includes(nodeType)) return 'static';
+    return 'unknown';
+}
+
+// Get label text from node
+function extractLabelText(node: { children?: Array<{ text?: string }> }): string {
+    if (!node.children) return 'Untitled';
+    return node.children
+        .map((child) => child.text || '')
+        .join('')
+        .trim() || 'Untitled';
+}
 
 export function BlockMenu({ children }: { children: React.ReactNode }) {
     const { api, editor } = useEditorPlugin(BlockMenuPlugin);
@@ -39,14 +54,144 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
     const position = usePluginOption(BlockMenuPlugin, 'position');
     const { x, y } = position ?? { x: 0, y: 0 };
 
-    const [menuState, setMenuState] = React.useState<BlockMenuState>('main');
+    const [isEditingName, setIsEditingName] = React.useState(false);
+    const [fieldName, setFieldName] = React.useState('');
+    const [showTurnInto, setShowTurnInto] = React.useState(false);
 
-    // Reset menu state when closed
-    React.useEffect(() => {
-        if (!isOpen) {
-            setMenuState('main');
+    // Get the selected node info
+    const selectedNodes = React.useMemo(() => {
+        if (!isOpen) return [];
+        try {
+            return editor.getApi(BlockSelectionPlugin).blockSelection.getNodes();
+        } catch {
+            return [];
         }
-    }, [isOpen]);
+    }, [isOpen, editor]);
+
+    const firstNode = selectedNodes[0]?.[0] as {
+        type?: string;
+        required?: boolean;
+        placeholder?: string;
+        minLength?: number;
+        maxLength?: number;
+        defaultValue?: string;
+        children?: Array<{ text?: string }>;
+    } | undefined;
+    const firstPath = selectedNodes[0]?.[1];
+
+    const nodeType = firstNode?.type;
+    const fieldType = getFieldType(nodeType);
+
+    // Get label node (for formInput, look at previous sibling)
+    const labelNode = React.useMemo(() => {
+        if (nodeType === 'formLabel') return firstNode;
+        if (nodeType === 'formInput' && firstPath) {
+            // Look at previous sibling for label
+            const prevPath = [...firstPath];
+            prevPath[prevPath.length - 1] -= 1;
+            try {
+                const prev = editor.api.node(prevPath);
+                if (prev && prev[0]?.type === 'formLabel') {
+                    return prev[0] as typeof firstNode;
+                }
+            } catch {
+                // No previous sibling
+            }
+        }
+        return null;
+    }, [nodeType, firstNode, firstPath, editor]);
+
+    // Reset state when menu opens/closes
+    React.useEffect(() => {
+        if (isOpen) {
+            const label = labelNode ? extractLabelText(labelNode) :
+                firstNode ? extractLabelText(firstNode) : 'Untitled';
+            setFieldName(label);
+            setIsEditingName(false);
+            setShowTurnInto(false);
+        }
+    }, [isOpen, labelNode, firstNode]);
+
+    // Handlers for form input options
+    const handleToggleRequired = () => {
+        if (!labelNode || !firstPath) return;
+        // Find the label path
+        const labelPath = nodeType === 'formLabel' ? firstPath : [...firstPath];
+        if (nodeType === 'formInput') {
+            labelPath[labelPath.length - 1] -= 1;
+        }
+        const currentRequired = Boolean(labelNode.required);
+        editor.tf.setNodes({ required: !currentRequired }, { at: labelPath });
+    };
+
+    const handleToggleMinLength = () => {
+        if (!firstNode || !firstPath) return;
+        const inputPath = nodeType === 'formInput' ? firstPath : [...firstPath];
+        if (nodeType === 'formLabel') {
+            inputPath[inputPath.length - 1] += 1;
+        }
+        const hasMinLength = firstNode.minLength !== undefined;
+        if (hasMinLength) {
+            editor.tf.unsetNodes(['minLength'], { at: inputPath });
+        } else {
+            editor.tf.setNodes({ minLength: 1 }, { at: inputPath });
+        }
+    };
+
+    const handleToggleMaxLength = () => {
+        if (!firstNode || !firstPath) return;
+        const inputPath = nodeType === 'formInput' ? firstPath : [...firstPath];
+        if (nodeType === 'formLabel') {
+            inputPath[inputPath.length - 1] += 1;
+        }
+        const hasMaxLength = firstNode.maxLength !== undefined;
+        if (hasMaxLength) {
+            editor.tf.unsetNodes(['maxLength'], { at: inputPath });
+        } else {
+            editor.tf.setNodes({ maxLength: 100 }, { at: inputPath });
+        }
+    };
+
+    const handleToggleDefaultValue = () => {
+        if (!firstNode || !firstPath) return;
+        const inputPath = nodeType === 'formInput' ? firstPath : [...firstPath];
+        if (nodeType === 'formLabel') {
+            inputPath[inputPath.length - 1] += 1;
+        }
+        const hasDefault = firstNode.defaultValue !== undefined;
+        if (hasDefault) {
+            editor.tf.unsetNodes(['defaultValue'], { at: inputPath });
+        } else {
+            editor.tf.setNodes({ defaultValue: '' }, { at: inputPath });
+        }
+    };
+
+    const handleUpdateFieldName = () => {
+        if (!labelNode || !firstPath || !fieldName.trim()) return;
+        const labelPath = nodeType === 'formLabel' ? firstPath : [...firstPath];
+        if (nodeType === 'formInput') {
+            labelPath[labelPath.length - 1] -= 1;
+        }
+        // Update the text content of the label
+        editor.tf.insertNodes(
+            { text: fieldName.trim() },
+            { at: [...labelPath, 0], select: false }
+        );
+        editor.tf.removeNodes({ at: [...labelPath, 1] });
+        setIsEditingName(false);
+    };
+
+    // Common actions
+    const handleDelete = () => {
+        editor.getTransforms(BlockSelectionPlugin).blockSelection.removeNodes();
+        editor.tf.focus();
+        api.blockMenu.hide();
+    };
+
+    const handleDuplicate = () => {
+        editor.getTransforms(BlockSelectionPlugin).blockSelection.duplicate();
+        api.blockMenu.hide();
+    };
 
     const handleTurnInto = (type: string) => {
         editor
@@ -63,26 +208,16 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
         api.blockMenu.hide();
     };
 
-    const handleIndent = () => {
-        editor
-            .getTransforms(BlockSelectionPlugin)
-            .blockSelection.setIndent(1);
-        api.blockMenu.hide();
-    };
-
-    const handleOutdent = () => {
-        editor
-            .getTransforms(BlockSelectionPlugin)
-            .blockSelection.setIndent(-1);
-        api.blockMenu.hide();
-    };
+    // Get current node properties
+    const isRequired = Boolean(labelNode?.required);
+    const hasMinLength = firstNode?.minLength !== undefined;
+    const hasMaxLength = firstNode?.maxLength !== undefined;
+    const hasDefaultValue = firstNode?.defaultValue !== undefined;
 
     return (
         <>
             <div
                 onContextMenu={(event) => {
-                    // Standard Context Menu Trigger
-                    // We prevent default to show our custom menu
                     event.preventDefault();
                     api.blockMenu.show(BLOCK_CONTEXT_MENU_ID, {
                         x: event.clientX,
@@ -104,77 +239,163 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                         pointerEvents: 'none',
                     }}
                 />
-                <PopoverContent className="p-0 w-64" align="start">
-                    <Command>
-                        <CommandInput placeholder="Search actions..." autoFocus />
-                        <CommandList>
-                            <CommandEmpty>No results found.</CommandEmpty>
+                <PopoverContent className="p-0 w-72" align="start" sideOffset={5}>
+                    {showTurnInto ? (
+                        /* Turn Into Submenu */
+                        <div className="p-2">
+                            <button
+                                onClick={() => setShowTurnInto(false)}
+                                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-2 px-2"
+                            >
+                                ← Back
+                            </button>
+                            <div className="space-y-1">
+                                <MenuItem onClick={() => handleTurnInto(KEYS.p)}>Paragraph</MenuItem>
+                                <MenuItem onClick={() => handleTurnInto(KEYS.h1)}>Heading 1</MenuItem>
+                                <MenuItem onClick={() => handleTurnInto(KEYS.h2)}>Heading 2</MenuItem>
+                                <MenuItem onClick={() => handleTurnInto(KEYS.h3)}>Heading 3</MenuItem>
+                                <MenuItem onClick={() => handleTurnInto(KEYS.blockquote)}>Blockquote</MenuItem>
+                            </div>
+                        </div>
+                    ) : (
+                        /* Main Menu */
+                        <div>
+                            {/* Field Name Header */}
+                            <div className="flex items-center gap-2 p-3 border-b">
+                                <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                {isEditingName ? (
+                                    <Input
+                                        value={fieldName}
+                                        onChange={(e) => setFieldName(e.target.value)}
+                                        onBlur={handleUpdateFieldName}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleUpdateFieldName();
+                                            if (e.key === 'Escape') setIsEditingName(false);
+                                        }}
+                                        className="h-7 text-sm flex-1"
+                                        autoFocus
+                                    />
+                                ) : (
+                                    <span className="text-sm font-medium flex-1 truncate">
+                                        {fieldName}
+                                    </span>
+                                )}
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 flex-shrink-0"
+                                    onClick={() => setIsEditingName(!isEditingName)}
+                                >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                            </div>
 
-                            {menuState === 'main' && (
-                                <>
-                                    <CommandGroup heading="Actions">
-                                        <CommandItem
-                                            onSelect={() => {
-                                                editor
-                                                    .getTransforms(BlockSelectionPlugin)
-                                                    .blockSelection.removeNodes();
-                                                editor.tf.focus();
-                                                api.blockMenu.hide();
-                                            }}
-                                        >
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            Delete
-                                            <CommandShortcut>Del</CommandShortcut>
-                                        </CommandItem>
-                                        <CommandItem
-                                            onSelect={() => {
-                                                editor
-                                                    .getTransforms(BlockSelectionPlugin)
-                                                    .blockSelection.duplicate();
-                                                api.blockMenu.hide();
-                                            }}
-                                        >
-                                            <Copy className="mr-2 h-4 w-4" />
-                                            Duplicate
-                                            <CommandShortcut>⌘D</CommandShortcut>
-                                        </CommandItem>
-                                    </CommandGroup>
-                                    <CommandGroup heading="Transform">
-                                        <CommandItem onSelect={() => setMenuState('turnInto')}>
-                                            <RefreshCcw className="mr-2 h-4 w-4" />
-                                            Turn into
-                                            <ChevronsRight className="ml-auto h-4 w-4 text-muted-foreground" />
-                                        </CommandItem>
-                                        <CommandItem onSelect={() => handleIndent()}>
-                                            <Indent className="mr-2 h-4 w-4" />
-                                            Indent
-                                        </CommandItem>
-                                        <CommandItem onSelect={() => handleOutdent()}>
-                                            <Outdent className="mr-2 h-4 w-4" />
-                                            Outdent
-                                        </CommandItem>
-                                    </CommandGroup>
-                                </>
+                            {/* Field-Specific Options */}
+                            {fieldType === 'formInput' && (
+                                <div className="p-3 space-y-3 border-b">
+                                    <ToggleOption
+                                        label="Required"
+                                        checked={isRequired}
+                                        onCheckedChange={handleToggleRequired}
+                                    />
+                                    <ToggleOption
+                                        label="Default answer"
+                                        checked={hasDefaultValue}
+                                        onCheckedChange={handleToggleDefaultValue}
+                                    />
+                                    <ToggleOption
+                                        label="Min characters"
+                                        checked={hasMinLength}
+                                        onCheckedChange={handleToggleMinLength}
+                                    />
+                                    <ToggleOption
+                                        label="Max characters"
+                                        checked={hasMaxLength}
+                                        onCheckedChange={handleToggleMaxLength}
+                                    />
+                                </div>
                             )}
 
-                            {menuState === 'turnInto' && (
-                                <CommandGroup heading="Turn into">
-                                    <CommandItem onSelect={() => setMenuState('main')}>
-                                        <div className="flex items-center text-muted-foreground">
-                                            ← Back
-                                        </div>
-                                    </CommandItem>
-                                    <CommandItem onSelect={() => handleTurnInto(KEYS.p)}>Paragraph</CommandItem>
-                                    <CommandItem onSelect={() => handleTurnInto(KEYS.h1)}>Heading 1</CommandItem>
-                                    <CommandItem onSelect={() => handleTurnInto(KEYS.h2)}>Heading 2</CommandItem>
-                                    <CommandItem onSelect={() => handleTurnInto(KEYS.h3)}>Heading 3</CommandItem>
-                                    <CommandItem onSelect={() => handleTurnInto(KEYS.blockquote)}>Blockquote</CommandItem>
-                                </CommandGroup>
-                            )}
-                        </CommandList>
-                    </Command>
+                            {/* Common Actions */}
+                            <div className="p-2 space-y-1">
+                                <MenuItem onClick={handleDelete}>
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete
+                                    <span className="ml-auto text-xs text-muted-foreground">Del</span>
+                                </MenuItem>
+                                <MenuItem onClick={handleDuplicate}>
+                                    <Copy className="h-4 w-4 mr-2" />
+                                    Duplicate
+                                    <span className="ml-auto text-xs text-muted-foreground">⌘D</span>
+                                </MenuItem>
+                                <MenuItem onClick={() => api.blockMenu.hide()}>
+                                    <EyeOff className="h-4 w-4 mr-2" />
+                                    Hide
+                                    <span className="ml-auto text-xs text-muted-foreground">⌘⌥H</span>
+                                </MenuItem>
+                                <MenuItem onClick={() => api.blockMenu.hide()}>
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add conditional logic
+                                    <span className="ml-auto text-xs text-muted-foreground">⌘⌥L</span>
+                                </MenuItem>
+
+                                <Separator className="my-2" />
+
+                                <MenuItem onClick={() => setShowTurnInto(true)}>
+                                    <span className="mr-2">↺</span>
+                                    Turn into
+                                    <ChevronRight className="h-4 w-4 ml-auto" />
+                                </MenuItem>
+                            </div>
+                        </div>
+                    )}
                 </PopoverContent>
             </Popover>
         </>
+    );
+}
+
+// Reusable Toggle Option component
+function ToggleOption({
+    label,
+    checked,
+    onCheckedChange,
+}: {
+    label: string;
+    checked: boolean;
+    onCheckedChange: () => void;
+}) {
+    return (
+        <div className="flex items-center justify-between">
+            <Label className="text-sm font-normal">{label}</Label>
+            <Switch
+                checked={checked}
+                onCheckedChange={onCheckedChange}
+                className="scale-90"
+            />
+        </div>
+    );
+}
+
+// Reusable Menu Item component
+function MenuItem({
+    children,
+    onClick,
+    className,
+}: {
+    children: React.ReactNode;
+    onClick: () => void;
+    className?: string;
+}) {
+    return (
+        <button
+            onClick={onClick}
+            className={cn(
+                "flex items-center w-full px-2 py-1.5 text-sm rounded-md hover:bg-muted transition-colors",
+                className
+            )}
+        >
+            {children}
+        </button>
     );
 }

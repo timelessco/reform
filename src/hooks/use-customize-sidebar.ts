@@ -22,7 +22,11 @@ const store = {
 };
 
 export function useCustomizeSidebar() {
-  const isSidebarOpen = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const isSidebarOpen = useSyncExternalStore(
+    store.subscribe, 
+    store.getSnapshot,
+    () => false // getServerSnapshot - returns false on server
+  );
   
   return {
     isOpen: isSidebarOpen,
