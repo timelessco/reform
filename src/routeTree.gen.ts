@@ -9,10 +9,24 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiSplatRouteImport } from './routes/api.$'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
+import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedFormBuilderIndexRouteImport } from './routes/_authenticated/form-builder/index'
 import { Route as ApiRpcSplatRouteImport } from './routes/api.rpc.$'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
+import { Route as AuthenticatedSettingsMyAccountRouteImport } from './routes/_authenticated/settings/my-account'
+import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_authenticated/settings/billing'
+import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings/api-keys'
 
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -23,44 +37,169 @@ const ApiSplatRoute = ApiSplatRouteImport.update({
   path: '/api/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSettingsRouteRoute =
+  AuthenticatedSettingsRouteRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSettingsIndexRoute =
+  AuthenticatedSettingsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
+const AuthenticatedFormBuilderIndexRoute =
+  AuthenticatedFormBuilderIndexRouteImport.update({
+    id: '/form-builder/',
+    path: '/form-builder/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
   id: '/api/rpc/$',
   path: '/api/rpc/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedSettingsNotificationsRoute =
+  AuthenticatedSettingsNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
+const AuthenticatedSettingsMyAccountRoute =
+  AuthenticatedSettingsMyAccountRouteImport.update({
+    id: '/my-account',
+    path: '/my-account',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
+const AuthenticatedSettingsBillingRoute =
+  AuthenticatedSettingsBillingRouteImport.update({
+    id: '/billing',
+    path: '/billing',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
+const AuthenticatedSettingsApiKeysRoute =
+  AuthenticatedSettingsApiKeysRouteImport.update({
+    id: '/api-keys',
+    path: '/api-keys',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/$': typeof ApiSplatRoute
+  '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
+  '/settings/billing': typeof AuthenticatedSettingsBillingRoute
+  '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
+  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/form-builder': typeof AuthenticatedFormBuilderIndexRoute
+  '/settings/': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/$': typeof ApiSplatRoute
+  '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
+  '/settings/billing': typeof AuthenticatedSettingsBillingRoute
+  '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
+  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/form-builder': typeof AuthenticatedFormBuilderIndexRoute
+  '/settings': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/api/$': typeof ApiSplatRoute
+  '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
+  '/_authenticated/settings/billing': typeof AuthenticatedSettingsBillingRoute
+  '/_authenticated/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
+  '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
+  '/_authenticated/form-builder/': typeof AuthenticatedFormBuilderIndexRoute
+  '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/$' | '/api/rpc/$'
+  fullPaths:
+    | '/'
+    | '/settings'
+    | '/dashboard'
+    | '/api/$'
+    | '/settings/api-keys'
+    | '/settings/billing'
+    | '/settings/my-account'
+    | '/settings/notifications'
+    | '/api/auth/$'
+    | '/api/rpc/$'
+    | '/form-builder'
+    | '/settings/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/$' | '/api/rpc/$'
-  id: '__root__' | '/' | '/api/$' | '/api/rpc/$'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/api/$'
+    | '/settings/api-keys'
+    | '/settings/billing'
+    | '/settings/my-account'
+    | '/settings/notifications'
+    | '/api/auth/$'
+    | '/api/rpc/$'
+    | '/form-builder'
+    | '/settings'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/_authenticated/settings'
+    | '/_authenticated/dashboard'
+    | '/api/$'
+    | '/_authenticated/settings/api-keys'
+    | '/_authenticated/settings/billing'
+    | '/_authenticated/settings/my-account'
+    | '/_authenticated/settings/notifications'
+    | '/api/auth/$'
+    | '/api/rpc/$'
+    | '/_authenticated/form-builder/'
+    | '/_authenticated/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   ApiSplatRoute: typeof ApiSplatRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -75,6 +214,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings/': {
+      id: '/_authenticated/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
+    '/_authenticated/form-builder/': {
+      id: '/_authenticated/form-builder/'
+      path: '/form-builder'
+      fullPath: '/form-builder'
+      preLoaderRoute: typeof AuthenticatedFormBuilderIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/rpc/$': {
       id: '/api/rpc/$'
       path: '/api/rpc/$'
@@ -82,12 +249,87 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRpcSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/settings/notifications': {
+      id: '/_authenticated/settings/notifications'
+      path: '/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
+    '/_authenticated/settings/my-account': {
+      id: '/_authenticated/settings/my-account'
+      path: '/my-account'
+      fullPath: '/settings/my-account'
+      preLoaderRoute: typeof AuthenticatedSettingsMyAccountRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
+    '/_authenticated/settings/billing': {
+      id: '/_authenticated/settings/billing'
+      path: '/billing'
+      fullPath: '/settings/billing'
+      preLoaderRoute: typeof AuthenticatedSettingsBillingRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
+    '/_authenticated/settings/api-keys': {
+      id: '/_authenticated/settings/api-keys'
+      path: '/api-keys'
+      fullPath: '/settings/api-keys'
+      preLoaderRoute: typeof AuthenticatedSettingsApiKeysRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
   }
 }
 
+interface AuthenticatedSettingsRouteRouteChildren {
+  AuthenticatedSettingsApiKeysRoute: typeof AuthenticatedSettingsApiKeysRoute
+  AuthenticatedSettingsBillingRoute: typeof AuthenticatedSettingsBillingRoute
+  AuthenticatedSettingsMyAccountRoute: typeof AuthenticatedSettingsMyAccountRoute
+  AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
+  AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
+}
+
+const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteChildren =
+  {
+    AuthenticatedSettingsApiKeysRoute: AuthenticatedSettingsApiKeysRoute,
+    AuthenticatedSettingsBillingRoute: AuthenticatedSettingsBillingRoute,
+    AuthenticatedSettingsMyAccountRoute: AuthenticatedSettingsMyAccountRoute,
+    AuthenticatedSettingsNotificationsRoute:
+      AuthenticatedSettingsNotificationsRoute,
+    AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+  }
+
+const AuthenticatedSettingsRouteRouteWithChildren =
+  AuthenticatedSettingsRouteRoute._addFileChildren(
+    AuthenticatedSettingsRouteRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedFormBuilderIndexRoute: typeof AuthenticatedFormBuilderIndexRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedFormBuilderIndexRoute: AuthenticatedFormBuilderIndexRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ApiSplatRoute: ApiSplatRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
 }
 export const routeTree = rootRouteImport

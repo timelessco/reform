@@ -6,12 +6,14 @@ import {
   Scripts,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { AppHeader } from '../components/ui/app-header'
-import { CustomizeSidebar } from '../components/ui/customize-sidebar'
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import appCss from '../styles.css?url'
+import { sessionMiddleware } from '../middleware/auth'
+import type { Session } from '../lib/auth'
+
 interface MyRouterContext {
   queryClient: QueryClient
+  session: Session | null
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
@@ -37,6 +39,9 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   }),
 
   shellComponent: RootDocument,
+  server: {
+    middleware: [sessionMiddleware],
+  },
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
@@ -45,14 +50,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body className="flex flex-col h-screen overflow-hidden">
-        <AppHeader />
-        <div className="flex flex-1 overflow-hidden">
-          <main className="flex-1 overflow-auto relative bg-background">
-            {children}
-          </main>
-          <CustomizeSidebar />
-        </div>
+      <body className="min-h-screen bg-background text-foreground antialiased font-sans">
+        {children}
         <TanStackDevtools
           config={{
             position: 'bottom-right',
