@@ -23,6 +23,7 @@ import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes
 import { Route as AuthenticatedSettingsMyAccountRouteImport } from './routes/_authenticated/settings/my-account'
 import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_authenticated/settings/billing'
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings/api-keys'
+import { Route as AuthenticatedFormBuilderFormIdRouteImport } from './routes/_authenticated/form-builder/$formId'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -100,6 +101,12 @@ const AuthenticatedSettingsApiKeysRoute =
     path: '/api-keys',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedFormBuilderFormIdRoute =
+  AuthenticatedFormBuilderFormIdRouteImport.update({
+    id: '/form-builder/$formId',
+    path: '/form-builder/$formId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/$': typeof ApiSplatRoute
+  '/form-builder/$formId': typeof AuthenticatedFormBuilderFormIdRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
@@ -121,6 +129,7 @@ export interface FileRoutesByTo {
   '/verify-email': typeof VerifyEmailRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/$': typeof ApiSplatRoute
+  '/form-builder/$formId': typeof AuthenticatedFormBuilderFormIdRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
@@ -138,6 +147,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/api/$': typeof ApiSplatRoute
+  '/_authenticated/form-builder/$formId': typeof AuthenticatedFormBuilderFormIdRoute
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/_authenticated/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/dashboard'
     | '/api/$'
+    | '/form-builder/$formId'
     | '/settings/api-keys'
     | '/settings/billing'
     | '/settings/my-account'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/dashboard'
     | '/api/$'
+    | '/form-builder/$formId'
     | '/settings/api-keys'
     | '/settings/billing'
     | '/settings/my-account'
@@ -185,6 +197,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/dashboard'
     | '/api/$'
+    | '/_authenticated/form-builder/$formId'
     | '/_authenticated/settings/api-keys'
     | '/_authenticated/settings/billing'
     | '/_authenticated/settings/my-account'
@@ -304,6 +317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsApiKeysRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/form-builder/$formId': {
+      id: '/_authenticated/form-builder/$formId'
+      path: '/form-builder/$formId'
+      fullPath: '/form-builder/$formId'
+      preLoaderRoute: typeof AuthenticatedFormBuilderFormIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -333,12 +353,14 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedFormBuilderFormIdRoute: typeof AuthenticatedFormBuilderFormIdRoute
   AuthenticatedFormBuilderIndexRoute: typeof AuthenticatedFormBuilderIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedFormBuilderFormIdRoute: AuthenticatedFormBuilderFormIdRoute,
   AuthenticatedFormBuilderIndexRoute: AuthenticatedFormBuilderIndexRoute,
 }
 

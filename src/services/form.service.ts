@@ -1,5 +1,6 @@
 import type { Value } from "platejs";
-import { editorDocCollection } from "@/db-collections";
+import { type EditorDoc, editorDocCollection } from "@/db-collections";
+import { DEFAULT_FORM_STATE } from "@/hooks/use-form-state";
 
 /**
  * Toggles the preview mode for a specific document.
@@ -54,4 +55,50 @@ export async function updateDoc(id: string, updater: (draft: any) => void) {
 		updater(draft);
 		draft.updatedAt = Date.now();
 	});
+}
+
+/**
+ * Creates a new form with default values and returns the new document.
+ */
+export async function createForm(title = "Untitled"): Promise<EditorDoc> {
+	const id = crypto.randomUUID();
+	const newForm: EditorDoc = {
+		...DEFAULT_FORM_STATE,
+		id,
+		title,
+		updatedAt: Date.now(),
+	};
+
+	await editorDocCollection.insert(newForm);
+	return newForm;
+}
+
+/**
+ * Deletes a form by ID.
+ */
+export async function deleteForm(id: string): Promise<void> {
+	await editorDocCollection.delete(id);
+}
+
+/**
+ * Duplicates a form by ID and returns the new document.
+ * The new form's title will be "{original title} copy"
+ */
+export async function duplicateForm(
+	sourceForm: EditorDoc,
+): Promise<EditorDoc> {
+	const id = crypto.randomUUID();
+	const title = sourceForm.title
+		? `${sourceForm.title} copy`
+		: "Untitled copy";
+
+	const newForm: EditorDoc = {
+		...sourceForm,
+		id,
+		title,
+		updatedAt: Date.now(),
+	};
+
+	await editorDocCollection.insert(newForm);
+	return newForm;
 }

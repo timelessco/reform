@@ -1,4 +1,4 @@
-import { useLiveQuery } from "@tanstack/react-db";
+import { eq, useLiveQuery } from "@tanstack/react-db";
 import { createIsomorphicFn } from "@tanstack/react-start";
 import { normalizeNodeId } from "platejs";
 import { type EditorDoc, editorDocCollection } from "@/db-collections";
@@ -85,3 +85,40 @@ const useFormState = createIsomorphicFn()
 	});
 
 export default useFormState;
+
+/**
+ * useFormStateById - A hook to access a specific form by ID.
+ * Uses TanStack DB live query to stay in sync with the persistent store.
+ */
+export function useFormStateById(formId?: string): FormState {
+	const { data } = useLiveQuery((q) => {
+		let query = q.from({ doc: editorDocCollection });
+		if (formId) {
+			query = query.where(({ doc }) => eq(doc.id, formId));
+		}
+		return query.select(({ doc }) => ({
+			id: doc.id,
+			formName: doc.formName,
+			schemaName: doc.schemaName,
+			isMS: doc.isMS,
+			isPreview: doc.isPreview,
+			content: doc.content,
+			settings: doc.settings,
+			lastAddedStepIndex: doc.lastAddedStepIndex,
+			generatedCommandUrl: doc.generatedCommandUrl,
+			title: doc.title,
+			icon: doc.icon,
+			cover: doc.cover,
+			updatedAt: doc.updatedAt,
+		}));
+	});
+
+	return (
+		(data?.[0] as FormState) ||
+		({
+			...DEFAULT_FORM_STATE,
+			id: formId || "new-form",
+			updatedAt: Date.now(),
+		} as FormState)
+	);
+}

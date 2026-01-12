@@ -1,8 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useLiveQuery } from "@tanstack/react-db";
+import { useState } from "react";
+import { formatDistanceToNow } from "date-fns";
 import {
+	ChevronLeft,
+	ChevronRight,
 	FileText,
 	HelpCircle,
 	LayoutGrid,
+	Loader2,
 	MoreHorizontal,
 	Plus,
 	Search,
@@ -16,6 +22,20 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { type EditorDoc, editorDocCollection } from "@/db-collections";
+import { createForm, deleteForm, duplicateForm } from "@/services/form.service";
+
+const FORMS_PER_PAGE = 10;
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
 	component: DashboardPage,
@@ -23,15 +43,81 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
 	const navigate = useNavigate();
+	const [isCreating, setIsCreating] = useState(false);
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [formToDelete, setFormToDelete] = useState<{
+		id: string;
+		title: string;
+	} | null>(null);
+	const [currentPage, setCurrentPage] = useState(1);
 
-	const forms = [
-		{
-			id: "main-document",
-			title: "Untitled",
-			status: "Draft",
-			edited: "Edited 2m ago",
-		},
-	];
+	// Query all forms from localStorage collection (full data for duplication)
+	const { data: forms = [] } = useLiveQuery((q) =>
+		q.from({ doc: editorDocCollection }).select(({ doc }) => ({
+			id: doc.id,
+			title: doc.title,
+			updatedAt: doc.updatedAt,
+			content: doc.content,
+			settings: doc.settings,
+			formName: doc.formName,
+			schemaName: doc.schemaName,
+			isMS: doc.isMS,
+			isPreview: doc.isPreview,
+			icon: doc.icon,
+			cover: doc.cover,
+		})),
+	);
+
+	// Sort by updatedAt descending (most recent first)
+	const sortedForms = [...forms].sort((a, b) => b.updatedAt - a.updatedAt);
+
+	// Pagination
+	const totalPages = Math.ceil(sortedForms.length / FORMS_PER_PAGE);
+	const startIndex = (currentPage - 1) * FORMS_PER_PAGE;
+	const paginatedForms = sortedForms.slice(
+		startIndex,
+		startIndex + FORMS_PER_PAGE,
+	);
+
+	const handleCreateForm = async () => {
+		setIsCreating(true);
+		try {
+			const newForm = await createForm("Untitled");
+			navigate({
+				to: "/form-builder/$formId",
+				params: { formId: newForm.id },
+			});
+		} catch (error) {
+			console.error("Failed to create form:", error);
+		} finally {
+			setIsCreating(false);
+		}
+	};
+
+	const handleDeleteClick = (form: { id: string; title: string }) => {
+		setFormToDelete(form);
+		setDeleteDialogOpen(true);
+	};
+
+	const handleConfirmDelete = async () => {
+		if (formToDelete) {
+			await deleteForm(formToDelete.id);
+			setDeleteDialogOpen(false);
+			setFormToDelete(null);
+		}
+	};
+
+	const handleDuplicate = async (form: EditorDoc) => {
+		try {
+			await duplicateForm(form);
+		} catch (error) {
+			console.error("Failed to duplicate form:", error);
+		}
+	};
+
+	const formatLastEdited = (timestamp: number) => {
+		return `Edited ${formatDistanceToNow(timestamp)} ago`;
+	};
 
 	return (
 		<div className="flex-1 flex flex-col min-h-screen bg-background">
@@ -84,9 +170,14 @@ function DashboardPage() {
 						<Button
 							size="sm"
 							className="h-9 gap-2 bg-blue-600 hover:bg-blue-700"
-							onClick={() => navigate({ to: "/form-builder" })}
+							onClick={handleCreateForm}
+							disabled={isCreating}
 						>
-							<Plus className="h-4 w-4" />
+							{isCreating ? (
+								<Loader2 className="h-4 w-4 animate-spin" />
+							) : (
+								<Plus className="h-4 w-4" />
+							)}
 							New form
 						</Button>
 					</div>
@@ -95,11 +186,16 @@ function DashboardPage() {
 				{/* Forms List */}
 				<div className="space-y-4 pt-4">
 					<div className="grid grid-cols-1 gap-1">
-						{forms.map((form) => (
+						{paginatedForms.map((form) => (
 							<div
 								key={form.id}
 								className="group flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer"
-								onClick={() => navigate({ to: "/form-builder" })}
+								onClick={() =>
+									navigate({
+										to: "/form-builder/$formId",
+										params: { formId: form.id },
+									})
+								}
 							>
 								<div className="flex items-center gap-4">
 									<div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
@@ -107,16 +203,18 @@ function DashboardPage() {
 									</div>
 									<div className="flex flex-col">
 										<div className="flex items-center gap-2">
-											<span className="font-medium">{form.title}</span>
+											<span className="font-medium">
+												{form.title || "Untitled"}
+											</span>
 											<Badge
 												variant="secondary"
 												className="text-[10px] h-4 px-1.5 font-normal bg-muted text-muted-foreground"
 											>
-												{form.status}
+												Draft
 											</Badge>
 										</div>
 										<span className="text-xs text-muted-foreground">
-											{form.edited}
+											{formatLastEdited(form.updatedAt)}
 										</span>
 									</div>
 								</div>
@@ -136,8 +234,24 @@ function DashboardPage() {
 									</DropdownMenuTrigger>
 									<DropdownMenuContent align="end">
 										<DropdownMenuItem>Rename</DropdownMenuItem>
-										<DropdownMenuItem>Duplicate</DropdownMenuItem>
-										<DropdownMenuItem className="text-destructive">
+										<DropdownMenuItem
+											onClick={(e) => {
+												e.stopPropagation();
+												handleDuplicate(form as EditorDoc);
+											}}
+										>
+											Duplicate
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											className="text-destructive"
+											onClick={(e) => {
+												e.stopPropagation();
+												handleDeleteClick({
+													id: form.id,
+													title: form.title || "Untitled",
+												});
+											}}
+										>
 											Delete
 										</DropdownMenuItem>
 									</DropdownMenuContent>
@@ -146,7 +260,55 @@ function DashboardPage() {
 						))}
 					</div>
 
-					{forms.length === 0 && (
+					{/* Pagination */}
+					{totalPages > 1 && (
+						<div className="flex items-center justify-between pt-4 border-t">
+							<p className="text-sm text-muted-foreground">
+								Showing {startIndex + 1}-
+								{Math.min(startIndex + FORMS_PER_PAGE, sortedForms.length)} of{" "}
+								{sortedForms.length} forms
+							</p>
+							<div className="flex items-center gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+									disabled={currentPage === 1}
+								>
+									<ChevronLeft className="h-4 w-4" />
+									Previous
+								</Button>
+								<div className="flex items-center gap-1">
+									{Array.from({ length: totalPages }, (_, i) => i + 1).map(
+										(page) => (
+											<Button
+												key={page}
+												variant={currentPage === page ? "default" : "ghost"}
+												size="sm"
+												className="h-8 w-8 p-0"
+												onClick={() => setCurrentPage(page)}
+											>
+												{page}
+											</Button>
+										),
+									)}
+								</div>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() =>
+										setCurrentPage((p) => Math.min(totalPages, p + 1))
+									}
+									disabled={currentPage === totalPages}
+								>
+									Next
+									<ChevronRight className="h-4 w-4" />
+								</Button>
+							</div>
+						</div>
+					)}
+
+					{sortedForms.length === 0 && (
 						<div className="flex flex-col items-center justify-center py-20 text-center space-y-4 border-2 border-dashed rounded-2xl bg-muted/20">
 							<div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
 								<FileText className="h-6 w-6 text-muted-foreground" />
@@ -160,8 +322,10 @@ function DashboardPage() {
 							</div>
 							<Button
 								size="sm"
-								onClick={() => navigate({ to: "/form-builder" })}
+								onClick={handleCreateForm}
+								disabled={isCreating}
 							>
+								{isCreating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
 								Create my first form
 							</Button>
 						</div>
@@ -179,6 +343,28 @@ function DashboardPage() {
 					<HelpCircle className="h-5 w-5 text-muted-foreground" />
 				</Button>
 			</div>
+
+			{/* Delete Confirmation Dialog */}
+			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete form</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to delete "{formToDelete?.title}"? This
+							action cannot be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleConfirmDelete}
+							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+						>
+							Delete
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

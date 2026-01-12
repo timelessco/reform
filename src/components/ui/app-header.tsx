@@ -24,13 +24,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { useCustomizeSidebar } from "@/hooks/use-customize-sidebar";
-import useFormState from "@/hooks/use-form-state";
+import { useFormStateById } from "@/hooks/use-form-state";
 import { auth, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { togglePreview } from "@/services/form.service";
 
-export function AppHeader() {
-	const form = useFormState();
+interface AppHeaderProps {
+	formId?: string;
+}
+
+export function AppHeader({ formId }: AppHeaderProps) {
+	const form = useFormStateById(formId);
 	const { pathname } = useLocation();
 	const isFormBuilder = pathname.startsWith("/form-builder");
 	const { data: sessionData } = useSession();
@@ -321,7 +325,7 @@ export function AppHeader() {
 							asChild
 							disabled={!!isUnverified}
 						>
-							<Link to={isUnverified ? "/verify-email" : "/form-builder"}>
+							<Link to={isUnverified ? "/verify-email" : "/dashboard"}>
 								{isUnverified ? "Verify Email" : "Create Form"}
 							</Link>
 						</Button>

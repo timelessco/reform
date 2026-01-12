@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { eq, useLiveQuery } from "@tanstack/react-db";
 import { normalizeNodeId, type Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
@@ -5,11 +6,14 @@ import { useEffect, useRef, useState } from "react";
 import { EditorKit } from "@/components/editor/editor-kit";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { FormHeader } from "@/components/ui/form-header";
+import { Button } from "@/components/ui/button";
 import { editorDocCollection } from "@/db-collections";
 import { useDebounce } from "@/hooks/use-debounce";
 import { updateDoc } from "@/services/form.service";
 
-const DOCUMENT_ID = "main-document";
+interface EditorAppProps {
+	formId: string;
+}
 
 // Default content when no saved document exists
 const defaultValue = normalizeNodeId([
@@ -45,12 +49,12 @@ const defaultValue = normalizeNodeId([
 	},
 ]);
 
-export default function EditorApp() {
+export default function EditorApp({ formId }: EditorAppProps) {
 	// Query saved document (but don't use it reactively for editor value)
 	const { data: savedDocs } = useLiveQuery((q) =>
 		q
 			.from({ doc: editorDocCollection })
-			.where(({ doc }) => eq(doc.id, DOCUMENT_ID)),
+			.where(({ doc }) => eq(doc.id, formId)),
 	);
 
 	// Track if editor has been initialized (prevent re-init on savedDocs change)
@@ -136,7 +140,7 @@ export default function EditorApp() {
 			if (!docExistsRef.current) return;
 
 			console.log("Flushing pending changes on unmount");
-			updateDoc(DOCUMENT_ID, (draft: any) => {
+			updateDoc(formId, (draft: any) => {
 				if (latestValueRef.current) {
 					draft.content = latestValueRef.current;
 				}
@@ -145,7 +149,7 @@ export default function EditorApp() {
 				draft.cover = latestHeaderRef.current.cover || undefined;
 			});
 		};
-	}, []); // Empty deps - only runs on unmount
+	}, [formId]); // Re-run when formId changes to capture correct ID in cleanup
 
 	// Set docExistsRef when we first load
 	useEffect(() => {
@@ -163,7 +167,7 @@ export default function EditorApp() {
 
 		// Combine save logic using Service
 		if (docExistsRef.current) {
-			updateDoc(DOCUMENT_ID, (draft: any) => {
+			updateDoc(formId, (draft: any) => {
 				if (debouncedValue) draft.content = debouncedValue;
 
 				// Only update header fields if they've been initialized from DB
@@ -177,7 +181,7 @@ export default function EditorApp() {
 		} else if (debouncedValue && headerInitializedRef.current) {
 			// Only insert if we have content AND header has been initialized
 			editorDocCollection.insert({
-				id: DOCUMENT_ID,
+				id: formId,
 				content: debouncedValue,
 				title: debouncedHeader.title,
 				icon: debouncedHeader.icon || undefined,
@@ -190,12 +194,29 @@ export default function EditorApp() {
 			});
 			docExistsRef.current = true;
 		}
-	}, [debouncedValue, debouncedHeader, isReady]);
+	}, [debouncedValue, debouncedHeader, isReady, formId]);
 
 	if (!isReady) {
 		return (
 			<div className="h-screen w-full flex items-center justify-center">
 				Loading editor...
+			</div>
+		);
+	}
+
+	// Form not found - show error after loading is complete
+	if (savedDocs !== undefined && savedDocs.length === 0 && !docExistsRef.current) {
+		return (
+			<div className="h-screen w-full flex items-center justify-center">
+				<div className="text-center">
+					<h2 className="text-lg font-medium mb-2">Form Not Found</h2>
+					<p className="text-sm text-muted-foreground mb-4">
+						This form does not exist or has been deleted.
+					</p>
+					<Link to="/dashboard">
+						<Button>Back to Dashboard</Button>
+					</Link>
+				</div>
 			</div>
 		);
 	}

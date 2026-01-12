@@ -2,6 +2,7 @@ import { defineRelations } from "drizzle-orm";
 import {
 	boolean,
 	integer,
+	jsonb,
 	pgTable,
 	serial,
 	text,
@@ -98,11 +99,28 @@ export const apikey = pgTable("apikey", {
 	metadata: text("metadata"),
 });
 
+// Forms table for storing form builder documents
+export const forms = pgTable("forms", {
+	id: text("id").primaryKey(), // UUID generated client-side for offline support
+	userId: text("user_id").notNull(),
+	title: text("title").notNull().default("Untitled"),
+	formName: text("form_name").notNull().default("draft"),
+	schemaName: text("schema_name").notNull().default("draftFormSchema"),
+	content: jsonb("content").notNull().default([]),
+	settings: jsonb("settings").notNull().default({}),
+	icon: text("icon"),
+	cover: text("cover"),
+	isMultiStep: boolean("is_multi_step").notNull().default(false),
+	status: text("status").notNull().default("draft"), // 'draft' | 'published' | 'archived'
+	createdAt: timestamp("created_at").notNull().defaultNow(),
+	updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Drizzle v2 Relations using defineRelations
 export const relations = defineRelations(
-	{ user, session, account, verification, todos, twoFactor, apikey },
+	{ user, session, account, verification, todos, twoFactor, apikey, forms },
 	(r) => ({
-		// User has many sessions and accounts
+		// User has many sessions, accounts, and forms
 		user: {
 			sessions: r.many.session({
 				from: r.user.id,
@@ -119,6 +137,10 @@ export const relations = defineRelations(
 			apikeys: r.many.apikey({
 				from: r.user.id,
 				to: r.apikey.userId,
+			}),
+			forms: r.many.forms({
+				from: r.user.id,
+				to: r.forms.userId,
 			}),
 		},
 		// Session belongs to one user
@@ -146,6 +168,13 @@ export const relations = defineRelations(
 		apikey: {
 			user: r.one.user({
 				from: r.apikey.userId,
+				to: r.user.id,
+			}),
+		},
+		// Form belongs to one user
+		forms: {
+			user: r.one.user({
+				from: r.forms.userId,
 				to: r.user.id,
 			}),
 		},
