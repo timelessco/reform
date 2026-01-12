@@ -8,9 +8,15 @@ export const Route = createFileRoute('/')({
   beforeLoad: async () => {
     const session = await getSession();
     if (session?.data) {
-      throw redirect({
-        to: '/dashboard',
-      });
+      if (session.data.user.emailVerified) {
+        throw redirect({
+          to: '/dashboard',
+        });
+      } else {
+        throw redirect({
+          to: '/verify-email',
+        });
+      }
     }
   },
   component: LandingPage,

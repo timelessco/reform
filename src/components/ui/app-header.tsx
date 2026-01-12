@@ -40,7 +40,9 @@ export function AppHeader() {
     const form = useFormState();
     const { pathname } = useLocation();
     const isFormBuilder = pathname.startsWith('/form-builder');
-    const { data: session } = useSession();
+    const { data: sessionData } = useSession();
+    const session = sessionData;
+    const isUnverified = session && !session.user.emailVerified;
 
     // Get search params for the current route
     const search: any = useSearch({ strict: false });
@@ -160,6 +162,11 @@ export function AppHeader() {
                                     <DropdownMenuItem>
                                         <User className="mr-2 h-4 w-4" />
                                         Profile
+                                        {isUnverified && (
+                                            <Badge variant="destructive" className="ml-auto text-[10px] h-4 px-1">
+                                                Unverified
+                                            </Badge>
+                                        )}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem asChild>
                                         <Link to="/settings/my-account" className="flex items-center gap-2">
@@ -226,6 +233,11 @@ export function AppHeader() {
                                     <DropdownMenuItem>
                                         <User className="mr-2 h-4 w-4" />
                                         Profile
+                                        {isUnverified && (
+                                            <Badge variant="destructive" className="ml-auto text-[10px] h-4 px-1">
+                                                Unverified
+                                            </Badge>
+                                        )}
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
@@ -241,8 +253,15 @@ export function AppHeader() {
                                 </Button>
                             </AuthDialog>
                         )}
-                        <Button size="sm" className="h-8 px-4 bg-blue-600 hover:bg-blue-700 ml-2" asChild>
-                            <Link to="/form-builder">Create Form</Link>
+                        <Button
+                            size="sm"
+                            className="h-8 px-4 bg-blue-600 hover:bg-blue-700 ml-2"
+                            asChild
+                            disabled={!!isUnverified}
+                        >
+                            <Link to={isUnverified ? "/verify-email" : "/form-builder"}>
+                                {isUnverified ? "Verify Email" : "Create Form"}
+                            </Link>
                         </Button>
                     </>
                 )}
