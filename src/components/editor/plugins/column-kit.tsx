@@ -1,4 +1,4 @@
-'use client';
+
 
 import { ColumnItemPlugin, ColumnPlugin } from '@platejs/layout/react';
 

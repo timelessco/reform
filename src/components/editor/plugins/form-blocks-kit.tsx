@@ -1,4 +1,4 @@
-'use client';
+
 
 import { PathApi } from 'platejs';
 import { createPlatePlugin } from 'platejs/react';

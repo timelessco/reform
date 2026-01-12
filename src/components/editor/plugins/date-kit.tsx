@@ -1,4 +1,4 @@
-'use client';
+
 
 import { DatePlugin } from '@platejs/date/react';
 

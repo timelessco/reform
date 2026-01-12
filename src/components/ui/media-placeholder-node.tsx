@@ -1,4 +1,4 @@
-'use client';
+
 
 import * as React from 'react';
 
@@ -244,9 +244,8 @@ function formatBytes(
 
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
 
-  return `${(bytes / 1024 ** i).toFixed(decimals)} ${
-    sizeType === 'accurate'
+  return `${(bytes / 1024 ** i).toFixed(decimals)} ${sizeType === 'accurate'
       ? (accurateSizes[i] ?? 'Bytest')
       : (sizes[i] ?? 'Bytes')
-  }`;
+    }`;
 }

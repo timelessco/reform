@@ -1,4 +1,4 @@
-'use client';
+
 
 import { TogglePlugin } from '@platejs/toggle/react';
 

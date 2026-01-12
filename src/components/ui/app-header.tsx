@@ -10,7 +10,8 @@ import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { useCustomizeSidebar } from '@/hooks/use-customize-sidebar';
 import { AuthDialog } from '@/components/auth';
-import { useSession, signOut } from '@/lib/auth-client';
+import { useSession, auth } from '@/lib/auth-client';
+import { useMutation } from '@tanstack/react-query';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -49,14 +50,18 @@ export function AppHeader() {
     const demo = search.demo;
     const { toggle } = useCustomizeSidebar();
 
-    const handleSignOut = async () => {
-        try {
-            await signOut();
+    const signOutMutation = useMutation(auth.signOut.mutationOptions({
+        onSuccess: () => {
             toast.success('Signed out successfully');
-        } catch (error) {
+        },
+        onError: (error: any) => {
             toast.error('Failed to sign out');
             console.error(error);
         }
+    }));
+
+    const handleSignOut = async () => {
+        signOutMutation.mutate({});
     };
 
     const getInitials = (name: string) => {

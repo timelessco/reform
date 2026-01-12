@@ -1,4 +1,4 @@
-'use client';
+
 
 /**
  * Simplified input field renderer for form preview.

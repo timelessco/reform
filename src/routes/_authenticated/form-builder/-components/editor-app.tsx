@@ -1,17 +1,16 @@
-'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { Toaster } from 'sonner';
-import { useLiveQuery, eq } from '@tanstack/react-db';
+
 import { FormHeader } from '@/components/ui/form-header';
+import { eq, useLiveQuery } from '@tanstack/react-db';
+import { useEffect, useRef, useState } from 'react';
 
 import { EditorKit } from '@/components/editor/editor-kit';
 import { Editor, EditorContainer } from '@/components/ui/editor';
-import { Plate, usePlateEditor } from 'platejs/react';
-import { normalizeNodeId, type Value } from 'platejs';
 import { editorDocCollection } from '@/db-collections';
 import { useDebounce } from '@/hooks/use-debounce';
 import { updateDoc } from '@/services/form.service';
+import { normalizeNodeId, type Value } from 'platejs';
+import { Plate, usePlateEditor } from 'platejs/react';
 
 const DOCUMENT_ID = 'main-document';
 
@@ -220,7 +219,6 @@ export default function EditorApp() {
           <Editor />
         </EditorContainer>
       </Plate>
-      <Toaster />
     </div>
   )
 }

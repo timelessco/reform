@@ -1,4 +1,4 @@
-'use client';
+
 /* eslint-disable react-hooks/refs -- Ref usage for color picker component refs */
 
 import React from 'react';
@@ -220,13 +220,13 @@ function ColorCustom({
     () =>
       customColor
         ? [
-            ...customColors,
-            {
-              isBrightColor: false,
-              name: '',
-              value: customColor,
-            },
-          ]
+          ...customColors,
+          {
+            isBrightColor: false,
+            name: '',
+            value: customColor,
+          },
+        ]
         : customColors,
     [customColor, customColors]
   );

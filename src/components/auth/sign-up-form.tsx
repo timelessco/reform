@@ -12,7 +12,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { useAppForm, revalidateLogic } from "@/components/ui/tanstack-form";
-import { auth, authClient } from "@/lib/auth-client";
+import { auth } from "@/lib/auth-client";
 import { Loader2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 
@@ -52,30 +52,19 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
     onSuccess: async (_, variables) => {
       setEmail(variables.email);
       // Send OTP for email verification
-      try {
-        await authClient.emailOtp.sendVerificationOtp({
-          email: variables.email,
-          type: "email-verification",
-        });
-        toast.success("Account created! Please verify your email.");
-        setStep("otp");
-      } catch (error) {
-        toast.error("Failed to send verification code");
-      }
+      sendOtpMutation.mutate({
+        email: variables.email,
+        type: "email-verification",
+      });
+      toast.success("Account created! Please verify your email.");
+      setStep("otp");
     },
     onError: (error: any) => {
       toast.error(error.message || "Sign up failed");
     }
   }));
 
-  const verifyEmailMutation = useMutation({
-    mutationFn: async (variables: { email: string, otp: string }) => {
-      const { error } = await authClient.emailOtp.verifyEmail({
-        email: variables.email,
-        otp: variables.otp,
-      });
-      if (error) throw error;
-    },
+  const verifyEmailMutation = useMutation(auth.emailOtp.verifyEmail.mutationOptions({
     onSuccess: () => {
       toast.success("Email verified successfully!");
       onSuccess?.();
@@ -83,23 +72,16 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
     onError: (error: any) => {
       toast.error(error.message || "Verification failed");
     }
-  });
+  }));
 
-  const sendOtpMutation = useMutation({
-    mutationFn: async (variables: { email: string }) => {
-      const { error } = await authClient.emailOtp.sendVerificationOtp({
-        email: variables.email,
-        type: "email-verification",
-      });
-      if (error) throw error;
-    },
+  const sendOtpMutation = useMutation(auth.emailOtp.sendVerificationOtp.mutationOptions({
     onSuccess: () => {
       toast.success("OTP resent to your email");
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to resend OTP");
+      toast.error(error.message || "Failed to send OTP");
     }
-  });
+  }));
 
   const signUpForm = useAppForm({
     defaultValues: {
@@ -134,21 +116,25 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
     },
   });
 
-  const handleGoogleSignIn = async () => {
-    try {
-      await authClient.signIn.social({
-        provider: "google",
-      });
-    } catch (error) {
-      toast.error("Failed to sign in with Google");
-      console.error(error);
+  const socialSignInMutation = useMutation(auth.signIn.social.mutationOptions({
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to sign in with Google");
     }
+  }));
+
+  const handleGoogleSignIn = async () => {
+    socialSignInMutation.mutate({
+      provider: "google",
+    });
   };
 
-  const isPending = signUpMutation.isPending || verifyEmailMutation.isPending || sendOtpMutation.isPending;
+  const isPending = signUpMutation.isPending || verifyEmailMutation.isPending || sendOtpMutation.isPending || socialSignInMutation.isPending;
 
   const handleResendOtp = async () => {
-    sendOtpMutation.mutate({ email });
+    sendOtpMutation.mutate({
+      email,
+      type: "email-verification",
+    });
   };
 
   if (step === "otp") {

@@ -1,4 +1,4 @@
-'use client';
+
 
 /**
  * FormPreviewFromPlate - Renders a functional form preview from Plate editor content.

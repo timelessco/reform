@@ -1,4 +1,4 @@
-'use client';
+
 
 import type { TComment } from '@/components/ui/comment';
 

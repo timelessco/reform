@@ -1,14 +1,14 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { AppHeader } from '@/components/ui/app-header';
 import { Button } from '@/components/ui/button';
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '@/components/ui/input-otp';
-import { authClient, getSession } from '@/lib/auth-client';
-import { useMutation } from '@tanstack/react-query';
-import { Loader2, Mail, ArrowLeft, LogOut } from 'lucide-react';
-import { toast } from 'sonner';
-import { useAppForm, revalidateLogic } from '@/components/ui/tanstack-form';
-import * as z from 'zod';
-import { AppHeader } from '@/components/ui/app-header';
+import { revalidateLogic, useAppForm } from '@/components/ui/tanstack-form';
+import { auth, getSession, useSession } from '@/lib/auth-client';
 import { authMiddleware } from '@/middleware/auth';
+import { useMutation } from '@tanstack/react-query';
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { ArrowLeft, Loader2, LogOut, Mail } from 'lucide-react';
+import { toast } from 'sonner';
+import * as z from 'zod';
 
 const otpSchema = z.object({
     otp: z.string().length(6, 'OTP must be 6 digits'),
@@ -37,20 +37,10 @@ export const Route = createFileRoute('/verify-email')({
 
 function VerifyEmailPage() {
     const navigate = useNavigate();
-    const { data: session } = authClient.useSession();
+    const { data: session } = useSession();
     const email = session?.user.email || '';
 
-    const verifyEmailMutation = useMutation({
-        mutationFn: async (variables: { email: string; otp: string }) => {
-            const { error } = await authClient.emailOtp.verifyEmail({
-                email: variables.email,
-                otp: variables.otp,
-            });
-            if (error) {
-                toast.error(error.message || 'Verification failed');
-                throw error;
-            }
-        },
+    const verifyEmailMutation = useMutation(auth.emailOtp.verifyEmail.mutationOptions({
         onSuccess: () => {
             toast.success('Email verified successfully!');
             navigate({ to: '/dashboard' });
@@ -58,23 +48,16 @@ function VerifyEmailPage() {
         onError: (error: any) => {
             toast.error(error.message || 'Verification failed');
         },
-    });
+    }));
 
-    const sendOtpMutation = useMutation({
-        mutationFn: async (variables: { email: string }) => {
-            const { error } = await authClient.emailOtp.sendVerificationOtp({
-                email: variables.email,
-                type: 'email-verification',
-            });
-            if (error) throw error;
-        },
+    const sendOtpMutation = useMutation(auth.emailOtp.sendVerificationOtp.mutationOptions({
         onSuccess: () => {
             toast.success('Verification code resent to your email');
         },
         onError: (error: any) => {
             toast.error(error.message || 'Failed to resend code');
         },
-    });
+    }));
 
     const otpForm = useAppForm({
         defaultValues: {
@@ -90,16 +73,24 @@ function VerifyEmailPage() {
         },
     });
 
+    const signOutMutation = useMutation(auth.signOut.mutationOptions({
+        onSuccess: () => {
+            navigate({ to: '/' });
+        }
+    }));
+
     const handleResend = () => {
-        sendOtpMutation.mutate({ email });
+        sendOtpMutation.mutate({
+            email,
+            type: 'email-verification',
+        });
     };
 
     const handleSignOut = async () => {
-        await authClient.signOut();
-        navigate({ to: '/' });
+        signOutMutation.mutate({});
     };
 
-    const isPending = verifyEmailMutation.isPending || sendOtpMutation.isPending;
+    const isPending = verifyEmailMutation.isPending || sendOtpMutation.isPending || signOutMutation.isPending;
 
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">

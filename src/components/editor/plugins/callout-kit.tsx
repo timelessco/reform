@@ -1,4 +1,4 @@
-'use client';
+
 
 import { CalloutPlugin } from '@platejs/callout/react';
 

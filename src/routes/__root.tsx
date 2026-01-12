@@ -10,6 +10,7 @@ import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import appCss from '../styles.css?url'
 import { sessionMiddleware } from '../middleware/auth'
 import type { Session } from '../lib/auth'
+import { Toaster } from "@/components/ui/sonner"
 
 interface MyRouterContext {
   queryClient: QueryClient
@@ -52,6 +53,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased font-sans">
         {children}
+        <Toaster richColors />
         <TanStackDevtools
           config={{
             position: 'bottom-right',

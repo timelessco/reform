@@ -1,27 +1,34 @@
 "use client"
 
-import * as React from "react"
 import {
-    Home,
-    Search,
-    Users,
-    Globe,
-    Settings,
-    Sparkles,
-    LayoutTemplate,
     Bell,
+    BookOpen,
+    ChevronRight,
+    FileText,
+    Gift,
+    Globe,
+    HelpCircle,
+    Home,
+    LayoutTemplate,
+    LogOut,
     Map,
     MessageSquare,
-    Gift,
-    LogOut,
-    Trash2,
-    FileText,
-    HelpCircle,
-    BookOpen,
     Plus,
-    ChevronRight,
+    Search,
+    Settings,
+    Sparkles,
+    Trash2,
+    Users,
 } from "lucide-react"
+import * as React from "react"
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
     Sidebar,
     SidebarContent,
@@ -35,15 +42,9 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from "@/components/ui/sidebar"
-import { useSession, signOut } from "@/lib/auth-client"
-import { Link, useLocation } from "@tanstack/react-router"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { auth, useSession } from "@/lib/auth-client"
+import { useMutation } from "@tanstack/react-query"
+import { Link, useLocation, useRouter } from "@tanstack/react-router"
 
 const data = {
     navMain: [
@@ -145,8 +146,15 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { data: sessionData } = useSession()
     const location = useLocation()
+    const router = useRouter()
     const user = sessionData?.user
     const { isMobile } = useSidebar()
+
+    const signOutMutation = useMutation(auth.signOut.mutationOptions({
+        onSuccess: () => {
+            router.navigate({ to: "/" })
+        }
+    }))
 
     return (
         <Sidebar variant="sidebar" collapsible="icon" className="border-r bg-muted/30" {...props}>
@@ -196,7 +204,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                    onClick={() => signOut({ fetchOptions: { onSuccess: () => { window.location.href = "/" } } })}
+                                    onClick={() => signOutMutation.mutate({})}
                                     className="text-destructive"
                                 >
                                     <LogOut className="h-4 w-4 mr-2" />

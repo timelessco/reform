@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { auth, authClient, useSession } from '@/lib/auth-client'
+import { auth, useSession } from '@/lib/auth-client'
 import { createFileRoute } from '@tanstack/react-router'
 import { Globe, Key, Trash2, Loader2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
@@ -63,11 +63,8 @@ function MyAccountPage() {
 
     const setup2faMutation = useMutation({
         mutationFn: async (variables: { password: string }) => {
-            // getTotpUri starts with 'get', so it's a query in better-auth-react-query.
-            // We fetch it manually here to treat it as an action.
-            const { data, error } = await authClient.twoFactor.getTotpUri(variables)
-            if (error) throw error
-            return data
+            const options = auth.twoFactor.getTotpUri.queryOptions(variables);
+            return options.queryFn();
         },
         onSuccess: (res) => {
             setTotpUri(res.totpURI)
@@ -131,6 +128,12 @@ function MyAccountPage() {
         }
     }))
 
+    const socialSignInMutation = useMutation(auth.signIn.social.mutationOptions({
+        onError: (error: any) => {
+            toast.error(error.message || "Failed to connect account")
+        }
+    }))
+
     const handleUpdateProfile = async () => {
         updateProfileMutation.mutate({
             name: `${firstName} ${lastName}`.trim(),
@@ -163,6 +166,12 @@ function MyAccountPage() {
     const handleDeleteAccount = async () => {
         if (!window.confirm("Are you absolutely sure? This action cannot be undone.")) return
         deleteAccountMutation.mutate({})
+    }
+
+    const handleGoogleSignIn = async () => {
+        socialSignInMutation.mutate({
+            provider: 'google'
+        })
     }
 
     const qrCodeUrl = totpUri ? `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(totpUri)}` : ""
@@ -376,7 +385,7 @@ function MyAccountPage() {
                                     variant="ghost"
                                     size="sm"
                                     className="text-blue-600 font-normal hover:bg-blue-50"
-                                    onClick={() => authClient.signIn.social({ provider: 'google' })}
+                                    onClick={handleGoogleSignIn}
                                 >
                                     Connect
                                 </Button>

@@ -1,4 +1,4 @@
-'use client';
+
 
 import { useSyncExternalStore } from 'react';
 

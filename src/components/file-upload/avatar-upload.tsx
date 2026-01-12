@@ -1,4 +1,4 @@
-'use client';
+
 
 import { formatBytes, useFileUpload, type FileWithPreview } from '@/hooks/use-file-upload';
 import { Alert, AlertContent, AlertDescription, AlertIcon, AlertTitle } from '@/components/ui/alert';
