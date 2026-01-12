@@ -1,24 +1,21 @@
+import { useAIChatEditor } from "@platejs/ai/react";
+import { usePlateEditor } from "platejs/react";
+import * as React from "react";
 
+import { BaseEditorKit } from "@/components/editor/editor-base-kit";
 
-import * as React from 'react';
-
-import { useAIChatEditor } from '@platejs/ai/react';
-import { usePlateEditor } from 'platejs/react';
-
-import { BaseEditorKit } from '@/components/editor/editor-base-kit';
-
-import { EditorStatic } from './editor-static';
+import { EditorStatic } from "./editor-static";
 
 export const AIChatEditor = React.memo(function AIChatEditor({
-  content,
+	content,
 }: {
-  content: string;
+	content: string;
 }) {
-  const aiEditor = usePlateEditor({
-    plugins: BaseEditorKit,
-  });
+	const aiEditor = usePlateEditor({
+		plugins: BaseEditorKit,
+	});
 
-  useAIChatEditor(aiEditor, content);
+	useAIChatEditor(aiEditor, content);
 
-  return <EditorStatic variant="aiChat" editor={aiEditor} />;
+	return <EditorStatic variant="aiChat" editor={aiEditor} />;
 });

@@ -112,8 +112,14 @@ function Field({
 	children,
 	...props
 }: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) {
-	const { errors, formItemId, formDescriptionId, formMessageId, handleBlur, store } =
-		useFieldContext();
+	const {
+		errors,
+		formItemId,
+		formDescriptionId,
+		formMessageId,
+		handleBlur,
+		store,
+	} = useFieldContext();
 	const isTouched = useStore(store, (state) => state.meta.isTouched);
 	const hasVisibleErrors = !!errors.length && isTouched;
 
