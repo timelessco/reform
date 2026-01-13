@@ -126,8 +126,8 @@ function RenderPreviewElement({
 		}
 	}
 
-	// Input fields
-	if (element.fieldType === "Input") {
+	// Form fields (Input, Textarea, Button)
+	if (element.fieldType === "Input" || element.fieldType === "Textarea" || element.fieldType === "Button") {
 		return <RenderPreviewInput field={element as PlateFormField} form={form} />;
 	}
 

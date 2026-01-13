@@ -25,6 +25,21 @@ export type PlateFormField = {
 	minLength?: number;
 	maxLength?: number;
 	defaultValue?: string;
+} | {
+	id: string;
+	name: string;
+	fieldType: "Textarea";
+	label?: string;
+	placeholder?: string;
+	required?: boolean;
+	minLength?: number;
+	maxLength?: number;
+	defaultValue?: string;
+} | {
+	id: string;
+	name: string;
+	fieldType: "Button";
+	buttonText?: string;
 };
 
 /**
@@ -37,12 +52,12 @@ export type PlateStaticElement =
 	| { id: string; fieldType: "Separator"; static: true; name: string }
 	| { id: string; fieldType: "EmptyBlock"; static: true; name: string }
 	| {
-			id: string;
-			fieldType: "FieldDescription";
-			content: string;
-			static: true;
-			name: string;
-	  };
+		id: string;
+		fieldType: "FieldDescription";
+		content: string;
+		static: true;
+		name: string;
+	};
 
 /**
  * Combined type for all preview elements
@@ -78,6 +93,7 @@ function slugify(str: string): string {
  *
  * Supports:
  * - formLabel + formInput pairs -> Input fields
+ * - formLabel + formTextarea pairs -> Textarea fields
  * - h1, h2, h3 -> Static headings
  * - hr -> Separator
  * - p, blockquote -> Description text
@@ -97,21 +113,23 @@ export function transformPlateStateToFormElements(
 		const nodeType = node.type as string;
 
 		switch (nodeType) {
-			// Form input field (label + input pair)
+			// Form input field (label + input/textarea pair)
 			case "formLabel": {
 				const labelText = extractTextContent(
 					node.children as Array<{ text?: string }>,
 				);
 				const isRequired = Boolean(node.required);
 
-				// Check if next node is a formInput
+				// Check if next node is a formInput or formTextarea
 				const nextNode = value[i + 1];
 				let placeholder = "";
 				let minLength: number | undefined;
 				let maxLength: number | undefined;
 				let defaultValue: string | undefined;
+				let fieldType: "Input" | "Textarea" = "Input";
 
-				if (nextNode && nextNode.type === "formInput") {
+				if (nextNode && (nextNode.type === "formInput" || nextNode.type === "formTextarea")) {
+					fieldType = nextNode.type === "formTextarea" ? "Textarea" : "Input";
 					placeholder = (nextNode.placeholder as string) || "";
 					// Get text from input if any for placeholder
 					const inputText = extractTextContent(
@@ -120,12 +138,12 @@ export function transformPlateStateToFormElements(
 					if (inputText && !placeholder) {
 						placeholder = inputText;
 					}
-					// Extract validation properties from formInput node
+					// Extract validation properties from formInput/formTextarea node
 					minLength = nextNode.minLength as number | undefined;
 					maxLength = nextNode.maxLength as number | undefined;
 					defaultValue = nextNode.defaultValue as string | undefined;
 
-					i++; // Skip the formInput in the next iteration
+					i++; // Skip the formInput/formTextarea in the next iteration
 				}
 
 				const baseName = slugify(labelText);
@@ -134,7 +152,7 @@ export function transformPlateStateToFormElements(
 				elements.push({
 					id: name,
 					name,
-					fieldType: "Input",
+					fieldType,
 					label: labelText || "Untitled Field",
 					placeholder: placeholder || undefined,
 					required: isRequired,
@@ -233,9 +251,24 @@ export function transformPlateStateToFormElements(
 				break;
 			}
 
-			// Skip formInput if standalone (already handled with formLabel)
+			// Skip formInput/formTextarea if standalone (already handled with formLabel)
 			case "formInput":
+			case "formTextarea":
 				break;
+
+		// Button field
+		case "formButton": {
+			const btnText = node.buttonText as string | undefined;
+			const name = `button_${fieldIndex}`;
+			elements.push({
+id: name,
+name,
+fieldType: "Button",
+buttonText: btnText || "Submit",
+});
+			fieldIndex++;
+			break;
+		}
 
 			default:
 				// Skip unsupported node types

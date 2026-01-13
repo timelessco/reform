@@ -92,6 +92,34 @@ const insertBlockMap: Record<
 		// Focus cursor at start of label block
 		editor.tf.select({ path: [...labelPath, 0], offset: 0 });
 	},
+	// Form textarea - inserts label (with focus) and textarea with placeholders
+	formTextarea: (editor) => {
+		const block = editor.api.block();
+		if (!block) return;
+
+		const [, path] = block;
+		const labelPath = PathApi.next(path);
+
+		editor.tf.insertNodes(
+			[
+				{
+					type: "formLabel",
+					required: false,
+					placeholder: "Type a question",
+					children: [{ text: "" }],
+				},
+				{
+					type: "formTextarea",
+					placeholder: "Enter your detailed answer",
+					children: [{ text: "" }],
+				},
+			] as any,
+			{ at: labelPath },
+		);
+
+		// Focus cursor at start of label block
+		editor.tf.select({ path: [...labelPath, 0], offset: 0 });
+	},
 };
 
 const insertInlineMap: Record<

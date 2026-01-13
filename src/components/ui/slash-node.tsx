@@ -1,4 +1,5 @@
 import {
+	AlignLeftIcon,
 	CalendarIcon,
 	ChevronRightIcon,
 	Code2,
@@ -9,6 +10,7 @@ import {
 	LightbulbIcon,
 	ListIcon,
 	ListOrdered,
+	MousePointerClick,
 	PenToolIcon,
 	PilcrowIcon,
 	Quote,
@@ -198,6 +200,18 @@ const groups: Group[] = [
 				keywords: ["form", "input", "text", "field", "question"],
 				label: "Text Input",
 				value: "formInput",
+			},
+			{
+				icon: <AlignLeftIcon />,
+				keywords: ["form", "textarea", "multiline", "long", "paragraph", "description"],
+				label: "Text Area",
+				value: "formTextarea",
+			},
+			{
+				icon: <MousePointerClick />,
+				keywords: ["form", "button", "submit", "action", "cta"],
+				label: "Button",
+				value: "formButton",
 			},
 		].map((item) => ({
 			...item,

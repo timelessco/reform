@@ -16,6 +16,7 @@ import { KEYS } from "platejs";
 import {
 	useEditorPlugin,
 	useEditorSelector,
+	useHotkeys,
 	usePluginOption,
 } from "platejs/react";
 import * as React from "react";
@@ -32,12 +33,14 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
-type BlockFieldType = "formInput" | "static" | "unknown";
+type BlockFieldType = "formInput" | "formButton" | "static" | "unknown";
 
 // Get field type category for the menu
 function getFieldType(nodeType: string | undefined): BlockFieldType {
 	if (!nodeType) return "unknown";
-	if (nodeType === "formLabel" || nodeType === "formInput") return "formInput";
+	if (["formLabel", "formInput", "formTextarea"].includes(nodeType))
+		return "formInput";
+	if (nodeType === "formButton") return "formButton";
 	if (["h1", "h2", "h3", "p", "blockquote", "hr"].includes(nodeType))
 		return "static";
 	return "unknown";
@@ -68,6 +71,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 	const [isEditingName, setIsEditingName] = React.useState(false);
 	const [fieldName, setFieldName] = React.useState("");
 	const [showTurnInto, setShowTurnInto] = React.useState(false);
+	const [buttonText, setButtonText] = React.useState("");
 
 	// Get the selected node info
 	// Get the selected node info reactive to editor state changes
@@ -91,6 +95,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 				minLength?: number;
 				maxLength?: number;
 				defaultValue?: string;
+				buttonText?: string;
 				children?: Array<{ text?: string }>;
 		  }
 		| undefined;
@@ -99,10 +104,10 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 	const nodeType = firstNode?.type;
 	const fieldType = getFieldType(nodeType);
 
-	// Get label node (for formInput, look at previous sibling)
+	// Get label node (for formInput/formTextarea, look at previous sibling)
 	const labelNode = React.useMemo(() => {
 		if (nodeType === "formLabel") return firstNode;
-		if (nodeType === "formInput" && firstPath) {
+		if (["formInput", "formTextarea"].includes(nodeType ?? "") && firstPath) {
 			// Look at previous sibling for label
 			const prevPath = [...firstPath];
 			prevPath[prevPath.length - 1] -= 1;
@@ -120,14 +125,18 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 
 	// Get input node (for formLabel, look at next sibling)
 	const inputNode = React.useMemo(() => {
-		if (nodeType === "formInput") return firstNode;
+		if (["formInput", "formTextarea"].includes(nodeType ?? ""))
+			return firstNode;
 		if (nodeType === "formLabel" && firstPath) {
-			// Look at next sibling for input
+			// Look at next sibling for input or textarea
 			const nextPath = [...firstPath];
 			nextPath[nextPath.length - 1] += 1;
 			try {
 				const next = editor.api.node(nextPath);
-				if (next && next[0]?.type === "formInput") {
+				if (
+					next &&
+					["formInput", "formTextarea"].includes(next[0]?.type as string)
+				) {
 					return next[0] as typeof firstNode;
 				}
 			} catch {
@@ -140,7 +149,8 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 	// Helper to get the input path
 	const getInputPath = React.useCallback(() => {
 		if (!firstPath) return null;
-		if (nodeType === "formInput") return firstPath;
+		if (["formInput", "formTextarea"].includes(nodeType ?? ""))
+			return firstPath;
 		if (nodeType === "formLabel") {
 			const inputPath = [...firstPath];
 			inputPath[inputPath.length - 1] += 1;
@@ -160,15 +170,19 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 			setFieldName(label);
 			setIsEditingName(false);
 			setShowTurnInto(false);
+			// Initialize button text for formButton nodes
+			if (nodeType === "formButton") {
+				setButtonText((firstNode?.buttonText as string) || "Submit");
+			}
 		}
-	}, [isOpen, labelNode, firstNode]);
+	}, [isOpen, labelNode, firstNode, nodeType]);
 
 	// Handlers for form input options
 	const handleToggleRequired = () => {
 		if (!labelNode || !firstPath) return;
 		// Find the label path
 		const labelPath = nodeType === "formLabel" ? firstPath : [...firstPath];
-		if (nodeType === "formInput") {
+		if (["formInput", "formTextarea"].includes(nodeType ?? "")) {
 			labelPath[labelPath.length - 1] -= 1;
 		}
 		const currentRequired = Boolean(labelNode.required);
@@ -226,10 +240,17 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 		editor.tf.setNodes({ defaultValue: value }, { at: inputPath });
 	};
 
+	// Button-specific handlers
+	const handleUpdateButtonText = (value: string) => {
+		if (!firstPath || nodeType !== "formButton") return;
+		setButtonText(value);
+		editor.tf.setNodes({ buttonText: value }, { at: firstPath });
+	};
+
 	const handleUpdateFieldName = () => {
 		if (!labelNode || !firstPath || !fieldName.trim()) return;
 		const labelPath = nodeType === "formLabel" ? firstPath : [...firstPath];
-		if (nodeType === "formInput") {
+		if (["formInput", "formTextarea"].includes(nodeType ?? "")) {
 			labelPath[labelPath.length - 1] -= 1;
 		}
 		// Update the text content of the label
@@ -242,16 +263,16 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 	};
 
 	// Common actions
-	const handleDelete = () => {
+	const handleDelete = React.useCallback(() => {
 		editor.getTransforms(BlockSelectionPlugin).blockSelection.removeNodes();
 		editor.tf.focus();
 		api.blockMenu.hide();
-	};
+	}, [editor, api.blockMenu]);
 
-	const handleDuplicate = () => {
+	const handleDuplicate = React.useCallback(() => {
 		editor.getTransforms(BlockSelectionPlugin).blockSelection.duplicate();
 		api.blockMenu.hide();
-	};
+	}, [editor, api.blockMenu]);
 
 	const handleTurnInto = (type: string) => {
 		editor
@@ -267,6 +288,39 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 			});
 		api.blockMenu.hide();
 	};
+
+	// Keyboard shortcuts
+	// Delete: Del or Backspace
+	useHotkeys(
+		"delete, backspace",
+		handleDelete,
+		{ enabled: isOpen && !isEditingName, preventDefault: true },
+		[isOpen, isEditingName, handleDelete],
+	);
+
+	// Duplicate: Cmd+D
+	useHotkeys(
+		"mod+d",
+		handleDuplicate,
+		{ enabled: isOpen && !isEditingName, preventDefault: true },
+		[isOpen, isEditingName, handleDuplicate],
+	);
+
+	// Hide: Cmd+Opt+H
+	useHotkeys(
+		"mod+alt+h",
+		() => api.blockMenu.hide(),
+		{ enabled: isOpen && !isEditingName, preventDefault: true },
+		[isOpen, isEditingName, api.blockMenu],
+	);
+
+	// Add conditional logic: Cmd+Opt+L
+	useHotkeys(
+		"mod+alt+l",
+		() => api.blockMenu.hide(),
+		{ enabled: isOpen && !isEditingName, preventDefault: true },
+		[isOpen, isEditingName, api.blockMenu],
+	);
 
 	// Get current node properties
 	const isRequired = Boolean(labelNode?.required);
@@ -338,7 +392,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 						<div>
 							{/* Field Name Header */}
 							<div className="flex items-center gap-2 p-3 border-b">
-								<GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+								<GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
 								{isEditingName ? (
 									<Input
 										value={fieldName}
@@ -359,7 +413,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 								<Button
 									variant="ghost"
 									size="icon"
-									className="h-7 w-7 flex-shrink-0"
+									className="h-7 w-7 shrink-0"
 									onClick={() => setIsEditingName(!isEditingName)}
 								>
 									<Pencil className="h-3.5 w-3.5" />
@@ -434,6 +488,21 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 												className="h-8 text-sm"
 											/>
 										)}
+									</div>
+								</div>
+							)}
+
+							{/* Button-Specific Options */}
+							{fieldType === "formButton" && (
+								<div className="p-3 space-y-3 border-b">
+									<div className="space-y-2">
+										<Label className="text-sm font-normal">Button Name</Label>
+										<Input
+											value={buttonText}
+											onChange={(e) => handleUpdateButtonText(e.target.value)}
+											placeholder="Enter button name"
+											className="h-8 text-sm"
+										/>
 									</div>
 								</div>
 							)}
