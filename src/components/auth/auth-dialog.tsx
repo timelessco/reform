@@ -1,4 +1,4 @@
-"use client";
+
 
 import * as React from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";

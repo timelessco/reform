@@ -1,4 +1,3 @@
-import { ImageIcon, Smile, Upload, X } from "lucide-react";
 import AvatarUpload from "@/components/file-upload/avatar-upload";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +10,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { cn } from "@/lib/utils";
+import { ImageIcon, Smile, Upload, X } from "lucide-react";
 
 // Inline CoverUpload component using the hook
 function CoverUpload({

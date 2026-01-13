@@ -28,12 +28,14 @@ import { useFormStateById } from "@/hooks/use-form-state";
 import { auth, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { togglePreview } from "@/services/form.service";
+import { SidebarTrigger, useSidebar } from "./sidebar";
 
 interface AppHeaderProps {
 	formId?: string;
 }
 
 export function AppHeader({ formId }: AppHeaderProps) {
+	const { state } = useSidebar();
 	const form = useFormStateById(formId);
 	const { pathname } = useLocation();
 	const isFormBuilder = pathname.startsWith("/form-builder");
@@ -74,6 +76,11 @@ export function AppHeader({ formId }: AppHeaderProps) {
 	return (
 		<header className="flex h-12 w-full items-center justify-between border-b bg-background px-4 text-sm font-medium shrink-0">
 			{/* Left Section: Breadcrumbs */}
+			{state === "collapsed" && (
+				<div className="absolute top-2 left-2 z-50">
+					<SidebarTrigger />
+				</div>
+			)}
 			<div className="flex items-center gap-4">
 				{isFormBuilder ? (
 					<Breadcrumb>

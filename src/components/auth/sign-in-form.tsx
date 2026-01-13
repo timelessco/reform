@@ -1,4 +1,4 @@
-"use client";
+
 
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
@@ -328,33 +328,30 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 				<Button
 					variant="outline"
 					onClick={() => setSignInMethod("email")}
-					className={`flex-1 py-1.5 px-3 text-sm rounded-md transition-colors ${
-						signInMethod === "email"
+					className={`flex-1 py-1.5 px-3 text-sm rounded-md transition-colors ${signInMethod === "email"
 							? "bg-background shadow-sm"
 							: "text-muted-foreground hover:text-foreground"
-					}`}
+						}`}
 				>
 					Email
 				</Button>
 				<Button
 					variant="outline"
 					onClick={() => setSignInMethod("username")}
-					className={`flex-1 py-1.5 px-3 text-sm rounded-md transition-colors ${
-						signInMethod === "username"
+					className={`flex-1 py-1.5 px-3 text-sm rounded-md transition-colors ${signInMethod === "username"
 							? "bg-background shadow-sm"
 							: "text-muted-foreground hover:text-foreground"
-					}`}
+						}`}
 				>
 					Username
 				</Button>
 				<Button
 					variant="outline"
 					onClick={() => setSignInMethod("otp")}
-					className={`flex-1 py-1.5 px-3 text-sm rounded-md transition-colors ${
-						signInMethod === "otp"
+					className={`flex-1 py-1.5 px-3 text-sm rounded-md transition-colors ${signInMethod === "otp"
 							? "bg-background shadow-sm"
 							: "text-muted-foreground hover:text-foreground"
-					}`}
+						}`}
 				>
 					OTP
 				</Button>

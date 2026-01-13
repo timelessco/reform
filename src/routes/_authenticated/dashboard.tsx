@@ -5,23 +5,25 @@ import { formatDistanceToNow } from "date-fns";
 import {
 	ChevronLeft,
 	ChevronRight,
+	Copy,
 	FileText,
 	HelpCircle,
 	LayoutGrid,
 	Loader2,
-	MoreHorizontal,
+	Pencil,
 	Plus,
 	Search,
 	Settings,
+	Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -219,43 +221,63 @@ function DashboardPage() {
 									</div>
 								</div>
 
-								<DropdownMenu>
-									<DropdownMenuTrigger
-										asChild
-										onClick={(e) => e.stopPropagation()}
-									>
-										<Button
-											variant="ghost"
-											size="icon"
-											className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-										>
-											<MoreHorizontal className="h-4 w-4" />
-										</Button>
-									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end">
-										<DropdownMenuItem>Rename</DropdownMenuItem>
-										<DropdownMenuItem
-											onClick={(e) => {
-												e.stopPropagation();
-												handleDuplicate(form as EditorDoc);
-											}}
-										>
-											Duplicate
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											className="text-destructive"
-											onClick={(e) => {
-												e.stopPropagation();
-												handleDeleteClick({
-													id: form.id,
-													title: form.title || "Untitled",
-												});
-											}}
-										>
-											Delete
-										</DropdownMenuItem>
-									</DropdownMenuContent>
-								</DropdownMenu>
+								<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+									<TooltipProvider>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-8 w-8"
+													onClick={(e) => {
+														e.stopPropagation();
+														// Rename logic to be implemented
+													}}
+												>
+													<Pencil className="h-4 w-4 text-muted-foreground" />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>Rename</TooltipContent>
+										</Tooltip>
+
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-8 w-8"
+													onClick={(e) => {
+														e.stopPropagation();
+														handleDuplicate(form as EditorDoc);
+													}}
+												>
+													<Copy className="h-4 w-4 text-muted-foreground" />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>Duplicate</TooltipContent>
+										</Tooltip>
+
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-8 w-8 hover:bg-destructive/80  hover:text-destructive"
+													onClick={(e) => {
+														e.stopPropagation();
+														handleDeleteClick({
+															id: form.id,
+															title: form.title || "Untitled",
+														});
+													}}
+												>
+													<Trash2 className="h-4 w-4 text-muted-foreground hover:text-white" />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>Delete</TooltipContent>
+										</Tooltip>
+									</TooltipProvider>
+								</div>
 							</div>
 						))}
 					</div>
@@ -358,7 +380,7 @@ function DashboardPage() {
 						<AlertDialogCancel>Cancel</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleConfirmDelete}
-							className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+							className="bg-destructive text-white hover:bg-destructive/90"
 						>
 							Delete
 						</AlertDialogAction>

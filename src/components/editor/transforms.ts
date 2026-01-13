@@ -1,4 +1,4 @@
-"use client";
+
 
 import { insertCallout } from "@platejs/callout";
 import { insertCodeBlock, toggleCodeBlock } from "@platejs/code-block";
