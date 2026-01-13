@@ -24,6 +24,8 @@ const config = defineConfig({
 	],
 	ssr: {
 		noExternal: [/^@platejs\//, "katex", "react-tweet"],
+		// Dexie is browser-only (IndexedDB), externalize for SSR
+		external: ["dexie", "tanstack-dexie-db-collection"],
 	},
 });
 

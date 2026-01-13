@@ -29,7 +29,7 @@ import { useWorkspaceById } from "@/hooks/use-workspace-init";
 import { auth, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { togglePreview } from "@/services/form.service";
-import { SidebarTrigger, useSidebar } from "./sidebar";
+import { SidebarTrigger, useSidebarSafe } from "./sidebar";
 
 interface AppHeaderProps {
 	formId?: string;
@@ -37,13 +37,13 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
-	const { state } = useSidebar();
+	const sidebarContext = useSidebarSafe();
+	const state = sidebarContext?.state;
 	const form = useFormStateById(formId);
 	const workspace = useWorkspaceById(workspaceId || "");
 	const { pathname } = useLocation();
 	const isFormBuilder =
-		pathname.startsWith("/form-builder") ||
-		pathname.includes("/form-builder/");
+		pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
 	const { data: sessionData } = useSession();
 	const session = sessionData;
 	const isUnverified = session && !session.user.emailVerified;
@@ -101,10 +101,7 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 							<BreadcrumbItem>
 								<BreadcrumbLink asChild>
 									{workspaceId ? (
-										<Link
-											to="/workspace/$workspaceId"
-											params={{ workspaceId }}
-										>
+										<Link to="/workspace/$workspaceId" params={{ workspaceId }}>
 											{workspace?.name || "Workspace"}
 										</Link>
 									) : (

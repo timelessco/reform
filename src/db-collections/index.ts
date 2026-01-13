@@ -110,11 +110,30 @@ export type SavedFormTemplate = z.infer<typeof SavedFormTemplateSchema>;
 // Create collection based on environment
 // Server: use localStorage options (has built-in memory fallback for SSR)
 // Client: use Dexie/IndexedDB for persistence (better capacity than localStorage)
-import { dexieCollectionOptions } from "tanstack-dexie-db-collection";
 
-function createEditorDocCollection() {
+// NOTE: We use dynamic import() for dexie to avoid loading it during SSR.
+// Dexie requires IndexedDB which is browser-only.
+
+// Helper to load dexie collection options (client-only)
+async function loadDexieOptions() {
+	const { dexieCollectionOptions } = await import("tanstack-dexie-db-collection");
+	return dexieCollectionOptions;
+}
+
+// Cached dexie options (loaded once on client)
+let dexieOptionsPromise: ReturnType<typeof loadDexieOptions> | null = null;
+
+function getDexieOptions() {
+	if (!dexieOptionsPromise) {
+		dexieOptionsPromise = loadDexieOptions();
+	}
+	return dexieOptionsPromise;
+}
+
+// Create collections - uses localStorage for SSR, dexie for client
+async function createEditorDocCollectionAsync() {
 	if (typeof window !== "undefined") {
-		// Client-side: use Dexie for IndexedDB persistence
+		const dexieCollectionOptions = await getDexieOptions();
 		return createCollection(
 			dexieCollectionOptions({
 				id: "editor-documents",
@@ -125,7 +144,6 @@ function createEditorDocCollection() {
 			}),
 		);
 	}
-	// Server-side: use localStorage options (has in-memory fallback for SSR)
 	return createCollection(
 		localStorageCollectionOptions({
 			storageKey: "editor-documents-ssr",
@@ -135,11 +153,9 @@ function createEditorDocCollection() {
 	);
 }
 
-export const editorDocCollection = createEditorDocCollection();
-
-function createWorkspaceCollection() {
+async function createWorkspaceCollectionAsync() {
 	if (typeof window !== "undefined") {
-		// Client-side: use Dexie for IndexedDB persistence
+		const dexieCollectionOptions = await getDexieOptions();
 		return createCollection(
 			dexieCollectionOptions({
 				id: "workspaces",
@@ -150,7 +166,6 @@ function createWorkspaceCollection() {
 			}),
 		);
 	}
-	// Server-side: use localStorage options (has in-memory fallback for SSR)
 	return createCollection(
 		localStorageCollectionOptions({
 			storageKey: "workspaces-ssr",
@@ -160,4 +175,7 @@ function createWorkspaceCollection() {
 	);
 }
 
-export const workspaceCollection = createWorkspaceCollection();
+// Use top-level await to initialize collections
+// This is supported by Vite and modern bundlers
+export const editorDocCollection = await createEditorDocCollectionAsync();
+export const workspaceCollection = await createWorkspaceCollectionAsync();

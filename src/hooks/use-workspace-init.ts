@@ -1,11 +1,22 @@
-import { useEffect, useState } from "react";
-import { useLiveQuery } from "@tanstack/react-db";
 import { type Workspace, workspaceCollection } from "@/db-collections";
 import {
-	createWorkspace,
 	getDefaultWorkspace,
-	migrateOrphanForms,
+	migrateOrphanForms
 } from "@/services/workspace.service";
+import { useEffect, useState, useSyncExternalStore } from "react";
+
+// Empty subscribe function for server
+const emptySubscribe = () => () => { };
+const getServerSnapshot = () => false;
+const getClientSnapshot = () => true;
+
+/**
+ * Hook to detect if we're on the client (after hydration).
+ * Returns false during SSR and initial render, true after hydration.
+ */
+function useIsClient() {
+	return useSyncExternalStore(emptySubscribe, getClientSnapshot, getServerSnapshot);
+}
 
 interface UseWorkspaceInitResult {
 	defaultWorkspace: Workspace | null;
@@ -16,22 +27,18 @@ interface UseWorkspaceInitResult {
 /**
  * Hook to initialize workspaces and migrate orphan forms.
  * This should be called at the app level to ensure workspaces are set up.
+ * SSR-safe: returns loading state during SSR.
  */
 export function useWorkspaceInit(): UseWorkspaceInitResult {
+	const isClient = useIsClient();
 	const [isInitializing, setIsInitializing] = useState(true);
 	const [defaultWorkspace, setDefaultWorkspace] = useState<Workspace | null>(null);
+	const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
 
-	// Query workspaces to reactively update when they change
-	const { data: workspaces = [] } = useLiveQuery((q) =>
-		q.from({ workspace: workspaceCollection }).select(({ workspace }) => ({
-			id: workspace.id,
-			name: workspace.name,
-			createdAt: workspace.createdAt,
-			updatedAt: workspace.updatedAt,
-		})),
-	);
-
+	// Initialize workspaces on client only
 	useEffect(() => {
+		if (!isClient) return;
+
 		async function initializeWorkspaces() {
 			try {
 				// Get or create the default workspace
@@ -51,7 +58,52 @@ export function useWorkspaceInit(): UseWorkspaceInitResult {
 		}
 
 		initializeWorkspaces();
-	}, []);
+	}, [isClient]);
+
+	// Subscribe to workspace changes on client only
+	useEffect(() => {
+		if (!isClient) return;
+
+		let subscription: { unsubscribe: () => void } | undefined;
+
+		async function subscribeToWorkspaces() {
+			try {
+				const collection = workspaceCollection;
+				
+				// Get initial state
+				const initialWorkspaces = await collection.toArrayWhenReady();
+				const mapped = initialWorkspaces.map((w) => ({
+					id: w.id,
+					name: w.name,
+					createdAt: w.createdAt,
+					updatedAt: w.updatedAt,
+				}));
+				setWorkspaces(mapped);
+				
+				// Subscribe to changes
+				subscription = collection.subscribeChanges((_changes) => {
+					// Re-fetch all workspaces when changes occur
+					collection.toArrayWhenReady().then((items) => {
+						const mappedItems = items.map((w) => ({
+							id: w.id,
+							name: w.name,
+							createdAt: w.createdAt,
+							updatedAt: w.updatedAt,
+						}));
+						setWorkspaces(mappedItems);
+					});
+				}, { includeInitialState: false });
+			} catch (error) {
+				console.error("Failed to subscribe to workspaces:", error);
+			}
+		}
+
+		subscribeToWorkspaces();
+
+		return () => {
+			subscription?.unsubscribe();
+		};
+	}, [isClient]);
 
 	// Update default workspace when workspaces change
 	useEffect(() => {
@@ -64,40 +116,72 @@ export function useWorkspaceInit(): UseWorkspaceInitResult {
 
 	return {
 		defaultWorkspace,
-		isInitializing,
-		isReady: !isInitializing && defaultWorkspace !== null,
+		isInitializing: !isClient || isInitializing,
+		isReady: isClient && !isInitializing && defaultWorkspace !== null,
 	};
 }
 
 /**
  * Hook to get all workspaces sorted by creation date.
+ * SSR-safe: returns empty array during SSR.
  */
-export function useWorkspaces() {
-	const { data: workspaces = [] } = useLiveQuery((q) =>
-		q.from({ workspace: workspaceCollection }).select(({ workspace }) => ({
-			id: workspace.id,
-			name: workspace.name,
-			createdAt: workspace.createdAt,
-			updatedAt: workspace.updatedAt,
-		})),
-	);
+export function useWorkspaces(): Workspace[] {
+	const isClient = useIsClient();
+	const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
 
-	// Sort by createdAt (oldest first)
-	return [...workspaces].sort((a, b) => a.createdAt - b.createdAt);
+	useEffect(() => {
+		if (!isClient) return;
+
+		let subscription: { unsubscribe: () => void } | undefined;
+
+		async function subscribeToWorkspaces() {
+			try {
+				const collection = workspaceCollection;
+				
+				// Get initial state
+				const initialWorkspaces = await collection.toArrayWhenReady();
+				const mapped = initialWorkspaces.map((w) => ({
+					id: w.id,
+					name: w.name,
+					createdAt: w.createdAt,
+					updatedAt: w.updatedAt,
+				}));
+				// Sort by createdAt (oldest first)
+				setWorkspaces(mapped.sort((a, b) => a.createdAt - b.createdAt));
+				
+				// Subscribe to changes
+				subscription = collection.subscribeChanges((_changes) => {
+					// Re-fetch all workspaces when changes occur
+					collection.toArrayWhenReady().then((items) => {
+						const mappedItems = items.map((w) => ({
+							id: w.id,
+							name: w.name,
+							createdAt: w.createdAt,
+							updatedAt: w.updatedAt,
+						}));
+						setWorkspaces(mappedItems.sort((a, b) => a.createdAt - b.createdAt));
+					});
+				}, { includeInitialState: false });
+			} catch (error) {
+				console.error("Failed to subscribe to workspaces:", error);
+			}
+		}
+
+		subscribeToWorkspaces();
+
+		return () => {
+			subscription?.unsubscribe();
+		};
+	}, [isClient]);
+
+	return workspaces;
 }
 
 /**
  * Hook to get a specific workspace by ID.
+ * SSR-safe: returns null during SSR.
  */
-export function useWorkspaceById(workspaceId: string) {
-	const { data: workspaces = [] } = useLiveQuery((q) =>
-		q.from({ workspace: workspaceCollection }).select(({ workspace }) => ({
-			id: workspace.id,
-			name: workspace.name,
-			createdAt: workspace.createdAt,
-			updatedAt: workspace.updatedAt,
-		})),
-	);
-
+export function useWorkspaceById(workspaceId: string): Workspace | null {
+	const workspaces = useWorkspaces();
 	return workspaces.find((w) => w.id === workspaceId) || null;
 }

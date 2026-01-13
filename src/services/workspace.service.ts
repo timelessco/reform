@@ -39,7 +39,7 @@ export async function updateWorkspace(
  */
 export async function deleteWorkspace(id: string): Promise<void> {
 	// First, delete all forms in this workspace
-	const forms = await editorDocCollection.getAll();
+	const forms = await editorDocCollection.toArrayWhenReady();
 	const formsInWorkspace = forms.filter((form) => form.workspaceId === id);
 
 	for (const form of formsInWorkspace) {
@@ -54,7 +54,7 @@ export async function deleteWorkspace(id: string): Promise<void> {
  * Gets all workspaces sorted by creation date (oldest first).
  */
 export async function getAllWorkspaces(): Promise<Workspace[]> {
-	const workspaces = await workspaceCollection.getAll();
+	const workspaces = await workspaceCollection.toArrayWhenReady();
 	return workspaces.sort((a, b) => a.createdAt - b.createdAt);
 }
 
@@ -86,7 +86,7 @@ export async function getDefaultWorkspace(): Promise<Workspace> {
  * Migrates orphan forms (without workspaceId) to a target workspace.
  */
 export async function migrateOrphanForms(targetWorkspaceId: string): Promise<number> {
-	const forms = await editorDocCollection.getAll();
+	const forms = await editorDocCollection.toArrayWhenReady();
 	const orphanForms = forms.filter(
 		(form) => !form.workspaceId || form.workspaceId === "",
 	);

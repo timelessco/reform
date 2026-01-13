@@ -38,6 +38,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { draftFormSchema } from "@/lib/draftFormSchema";
 import { cn } from "@/lib/utils";
+import { Button } from "./ui/button";
 
 export function DraftForm() {
 	const draftForm = useAppForm({
@@ -545,7 +546,6 @@ export function DraftForm() {
 								variant="outline"
 								onClick={() => draftForm.reset()}
 								className="rounded-lg"
-								variant="outline"
 								size="sm"
 							/>
 						)}
