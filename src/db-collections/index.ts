@@ -5,6 +5,19 @@ import {
 import { z } from "zod";
 
 // ============================================================================
+// Workspace Schema
+// ============================================================================
+
+export const WorkspaceSchema = z.object({
+	id: z.string(),
+	name: z.string().default("My workspace"),
+	createdAt: z.number(),
+	updatedAt: z.number(),
+});
+
+export type Workspace = z.infer<typeof WorkspaceSchema>;
+
+// ============================================================================
 // Form Builder Settings Schema
 // ============================================================================
 
@@ -38,6 +51,7 @@ export type FormBuilderSettings = z.infer<typeof SettingsSchema>;
 export const EditorDocSchema = z.object({
 	// Identifiers
 	id: z.string(),
+	workspaceId: z.string(), // Foreign key to Workspace
 	formName: z.string().default("draft"),
 	schemaName: z.string().default("draftFormSchema"),
 
@@ -93,10 +107,57 @@ export type SavedFormTemplate = z.infer<typeof SavedFormTemplateSchema>;
 // Collections
 // ============================================================================
 
-export const editorDocCollection = createCollection(
-	localStorageCollectionOptions({
-		storageKey: "editor-documents",
-		getKey: (doc) => doc.id,
-		schema: EditorDocSchema,
-	}),
-);
+// Create collection based on environment
+// Server: use localStorage options (has built-in memory fallback for SSR)
+// Client: use Dexie/IndexedDB for persistence (better capacity than localStorage)
+import { dexieCollectionOptions } from "tanstack-dexie-db-collection";
+
+function createEditorDocCollection() {
+	if (typeof window !== "undefined") {
+		// Client-side: use Dexie for IndexedDB persistence
+		return createCollection(
+			dexieCollectionOptions({
+				id: "editor-documents",
+				schema: EditorDocSchema,
+				getKey: (doc: EditorDoc) => doc.id,
+				dbName: "better-forms-db",
+				tableName: "forms",
+			}),
+		);
+	}
+	// Server-side: use localStorage options (has in-memory fallback for SSR)
+	return createCollection(
+		localStorageCollectionOptions({
+			storageKey: "editor-documents-ssr",
+			schema: EditorDocSchema,
+			getKey: (doc: EditorDoc) => doc.id,
+		}),
+	);
+}
+
+export const editorDocCollection = createEditorDocCollection();
+
+function createWorkspaceCollection() {
+	if (typeof window !== "undefined") {
+		// Client-side: use Dexie for IndexedDB persistence
+		return createCollection(
+			dexieCollectionOptions({
+				id: "workspaces",
+				schema: WorkspaceSchema,
+				getKey: (workspace: Workspace) => workspace.id,
+				dbName: "better-forms-db",
+				tableName: "workspaces",
+			}),
+		);
+	}
+	// Server-side: use localStorage options (has in-memory fallback for SSR)
+	return createCollection(
+		localStorageCollectionOptions({
+			storageKey: "workspaces-ssr",
+			schema: WorkspaceSchema,
+			getKey: (workspace: Workspace) => workspace.id,
+		}),
+	);
+}
+
+export const workspaceCollection = createWorkspaceCollection();

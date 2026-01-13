@@ -1,5 +1,4 @@
-
-
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	Collapsible,
@@ -10,8 +9,29 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
 	Sidebar,
 	SidebarContent,
@@ -28,11 +48,11 @@ import {
 	SidebarMenuSubButton,
 	SidebarMenuSubItem,
 	SidebarTrigger,
-	useSidebar
+	useSidebar,
 } from "@/components/ui/sidebar";
-import { editorDocCollection } from "@/db-collections";
+import { editorDocCollection, type Workspace } from "@/db-collections";
 import { auth, useSession } from "@/lib/auth-client";
-import { useLiveQuery } from "@tanstack/react-db";
+import { eq, useLiveQuery } from "@tanstack/react-db";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useLocation, useRouter } from "@tanstack/react-router";
 import {
@@ -49,6 +69,7 @@ import {
 	Map,
 	MessageSquare,
 	MoreHorizontal,
+	Pencil,
 	Plus,
 	Search,
 	Settings,
@@ -58,6 +79,12 @@ import {
 } from "lucide-react";
 import type * as React from "react";
 import { createForm } from "@/services/form.service";
+import {
+	createWorkspace,
+	deleteWorkspace,
+	updateWorkspace,
+} from "@/services/workspace.service";
+import { useWorkspaces } from "@/hooks/use-workspace-init";
 
 const data = {
 	navMain: [
@@ -91,13 +118,6 @@ const data = {
 			url: "#",
 			icon: Sparkles,
 			className: "text-purple-500",
-		},
-	],
-	workspaces: [
-		{
-			name: "My workspace",
-			url: "#",
-			emoji: "📄",
 		},
 	],
 	products: [
@@ -163,16 +183,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const user = sessionData?.user;
 	const { isMobile } = useSidebar();
 
-	// Query forms for the sidebar (sorted by recent)
-	const { data: forms = [] } = useLiveQuery((q) =>
-		q.from({ doc: editorDocCollection }).select(({ doc }) => ({
-			id: doc.id,
-			title: doc.title,
-			updatedAt: doc.updatedAt,
-		})),
-	);
+	// Get workspaces
+	const workspaces = useWorkspaces();
 
-	const sortedForms = [...forms].sort((a, b) => b.updatedAt - a.updatedAt);
+	// State for dialogs
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(
+		null,
+	);
+	const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+	const [workspaceToRename, setWorkspaceToRename] = useState<Workspace | null>(
+		null,
+	);
+	const [newWorkspaceName, setNewWorkspaceName] = useState("");
 
 	const signOutMutation = useMutation(
 		auth.signOut.mutationOptions({
@@ -182,230 +205,390 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		}),
 	);
 
-	return (
-		<Sidebar
-			variant="sidebar"
-			collapsible="offcanvas"
-			className="bg-muted/30"
-			{...props}
-		>
-			<SidebarHeader className="flex-row items-center justify-between p-0">
-				<div className="group-data-[collapsible=icon]:hidden w-full">
-					<SidebarMenu>
-						<SidebarMenuItem>
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<SidebarMenuButton
-										size="lg"
-										className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-									>
-										<Avatar className="h-8 w-8 rounded-lg">
-											<AvatarImage
-												src={user?.image || ""}
-												alt={user?.name || ""}
-											/>
-											<AvatarFallback className="rounded-lg">
-												{user?.name?.charAt(0) || "U"}
-											</AvatarFallback>
-										</Avatar>
-										<div className="grid flex-1 text-left text-sm leading-tight">
-											<span className="truncate font-semibold">
-												{user?.name || "User"}
-											</span>
-										</div>
-										<ChevronRight className="ml-auto h-4 w-4 rotate-90" />
-									</SidebarMenuButton>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent
-									className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-									align="start"
-									side={isMobile ? "bottom" : "right"}
-									sideOffset={4}
-								>
-									<DropdownMenuItem asChild>
-										<Link to="/dashboard" className="flex items-center gap-2">
-											<Home className="h-4 w-4" />
-											<span>Home</span>
-										</Link>
-									</DropdownMenuItem>
-									<DropdownMenuItem>
-										<Users className="h-4 w-4 mr-2" />
-										<span>Members</span>
-									</DropdownMenuItem>
-									<DropdownMenuItem>
-										<Globe className="h-4 w-4 mr-2" />
-										<span>Domains</span>
-									</DropdownMenuItem>
-									<DropdownMenuItem asChild>
-										<Link
-											to="/settings/my-account"
-											className="flex items-center gap-2"
-										>
-											<Settings className="h-4 w-4" />
-											<span>Settings</span>
-										</Link>
-									</DropdownMenuItem>
-									<DropdownMenuItem
-										onClick={() => signOutMutation.mutate({})}
-										className="text-destructive"
-									>
-										<LogOut className="h-4 w-4 mr-2" />
-										<span>Log out</span>
-									</DropdownMenuItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</SidebarMenuItem>
-					</SidebarMenu>
-				</div>
-				<SidebarTrigger />
-			</SidebarHeader>
-			<SidebarContent className="group-data-[collapsible=icon]:hidden">
-				<SidebarGroup>
-					<SidebarMenu>
-						{data.navMain.map((item) => (
-							<SidebarMenuItem key={item.title}>
-								<SidebarMenuButton
-									asChild
-									isActive={location.pathname === item.url}
-									tooltip={item.title}
-									className={item.className}
-								>
-									<Link to={item.url}>
-										<item.icon />
-										<span>{item.title}</span>
-									</Link>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
-						))}
-					</SidebarMenu>
-				</SidebarGroup>
+	const handleCreateWorkspace = async () => {
+		try {
+			const newWorkspace = await createWorkspace("New workspace");
+			router.navigate({
+				to: "/workspace/$workspaceId",
+				params: { workspaceId: newWorkspace.id },
+			});
+		} catch (error) {
+			console.error("Failed to create workspace:", error);
+		}
+	};
 
-				<SidebarGroup>
-					<SidebarGroupLabel>Workspaces</SidebarGroupLabel>
-					<SidebarGroupAction title="Add Workspace">
-						<Plus />
-						<span className="sr-only">Add Workspace</span>
-					</SidebarGroupAction>
-					<SidebarMenu>
-						<Collapsible defaultOpen className="group/collapsible">
+	const handleDeleteWorkspace = async () => {
+		if (!workspaceToDelete) return;
+		try {
+			await deleteWorkspace(workspaceToDelete.id);
+			setDeleteDialogOpen(false);
+			setWorkspaceToDelete(null);
+			// Navigate to dashboard if we deleted the current workspace
+			router.navigate({ to: "/dashboard" });
+		} catch (error) {
+			console.error("Failed to delete workspace:", error);
+		}
+	};
+
+	const handleRenameWorkspace = async () => {
+		if (!workspaceToRename || !newWorkspaceName.trim()) return;
+		try {
+			await updateWorkspace(workspaceToRename.id, {
+				name: newWorkspaceName.trim(),
+			});
+			setRenameDialogOpen(false);
+			setWorkspaceToRename(null);
+			setNewWorkspaceName("");
+		} catch (error) {
+			console.error("Failed to rename workspace:", error);
+		}
+	};
+
+	const openRenameDialog = (workspace: Workspace) => {
+		setWorkspaceToRename(workspace);
+		setNewWorkspaceName(workspace.name);
+		setRenameDialogOpen(true);
+	};
+
+	const openDeleteDialog = (workspace: Workspace) => {
+		setWorkspaceToDelete(workspace);
+		setDeleteDialogOpen(true);
+	};
+
+	return (
+		<>
+			<Sidebar
+				variant="sidebar"
+				collapsible="offcanvas"
+				className="bg-muted/30"
+				{...props}
+			>
+				<SidebarHeader className="flex-row items-center justify-between p-0">
+					<div className="group-data-[collapsible=icon]:hidden w-full">
+						<SidebarMenu>
 							<SidebarMenuItem>
-								<CollapsibleTrigger asChild>
-									<SidebarMenuButton tooltip="My workspace">
-										<ChevronRight className="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-										<span className="truncate">My workspace</span>
-									</SidebarMenuButton>
-								</CollapsibleTrigger>
 								<DropdownMenu>
 									<DropdownMenuTrigger asChild>
-										<SidebarMenuAction showOnHover className="mr-6">
-											<MoreHorizontal />
-											<span className="sr-only">More</span>
-										</SidebarMenuAction>
+										<SidebarMenuButton
+											size="lg"
+											className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+										>
+											<Avatar className="h-8 w-8 rounded-lg">
+												<AvatarImage
+													src={user?.image || ""}
+													alt={user?.name || ""}
+												/>
+												<AvatarFallback className="rounded-lg">
+													{user?.name?.charAt(0) || "U"}
+												</AvatarFallback>
+											</Avatar>
+											<div className="grid flex-1 text-left text-sm leading-tight">
+												<span className="truncate font-semibold">
+													{user?.name || "User"}
+												</span>
+											</div>
+											<ChevronRight className="ml-auto h-4 w-4 rotate-90" />
+										</SidebarMenuButton>
 									</DropdownMenuTrigger>
 									<DropdownMenuContent
-										className="w-48"
+										className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+										align="start"
 										side={isMobile ? "bottom" : "right"}
-										align={isMobile ? "end" : "start"}
+										sideOffset={4}
 									>
-										<DropdownMenuItem>
-											<FileText className="mr-2 h-4 w-4 text-muted-foreground" />
-											<span>Rename</span>
+										<DropdownMenuItem asChild>
+											<Link to="/dashboard" className="flex items-center gap-2">
+												<Home className="h-4 w-4" />
+												<span>Home</span>
+											</Link>
 										</DropdownMenuItem>
 										<DropdownMenuItem>
-											<Users className="mr-2 h-4 w-4 text-muted-foreground" />
+											<Users className="h-4 w-4 mr-2" />
 											<span>Members</span>
+										</DropdownMenuItem>
+										<DropdownMenuItem>
+											<Globe className="h-4 w-4 mr-2" />
+											<span>Domains</span>
+										</DropdownMenuItem>
+										<DropdownMenuItem asChild>
+											<Link
+												to="/settings/my-account"
+												className="flex items-center gap-2"
+											>
+												<Settings className="h-4 w-4" />
+												<span>Settings</span>
+											</Link>
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() => signOutMutation.mutate({})}
+											className="text-destructive"
+										>
+											<LogOut className="h-4 w-4 mr-2" />
+											<span>Log out</span>
 										</DropdownMenuItem>
 									</DropdownMenuContent>
 								</DropdownMenu>
-								<SidebarMenuAction
-									showOnHover
-									onClick={async (e) => {
-										e.preventDefault(); // Prevent toggling the collapsible if caught
-										e.stopPropagation();
-										try {
-											const newForm = await createForm("Untitled");
-											router.navigate({
-												to: "/form-builder/$formId",
-												params: { formId: newForm.id },
-											});
-										} catch (error) {
-											console.error("Failed to create form:", error);
-										}
-									}}
-								>
-									<Plus />
-									<span className="sr-only">Add Form</span>
-								</SidebarMenuAction>
-								<CollapsibleContent>
-									<SidebarMenuSub>
-										{sortedForms.map((form) => (
-											<SidebarMenuSubItem key={form.id}>
-												<SidebarMenuSubButton asChild>
-													<Link
-														to="/form-builder/$formId"
-														params={{ formId: form.id }}
-													>
-														<span>{form.title || "Untitled"}</span>
-													</Link>
-												</SidebarMenuSubButton>
-											</SidebarMenuSubItem>
-										))}
-										{sortedForms.length === 0 && (
-											<SidebarMenuSubItem>
-												<span className="text-muted-foreground text-xs px-2 py-1">
-													No forms yet
-												</span>
-											</SidebarMenuSubItem>
-										)}
-									</SidebarMenuSub>
-								</CollapsibleContent>
 							</SidebarMenuItem>
-						</Collapsible>
-					</SidebarMenu>
-				</SidebarGroup>
+						</SidebarMenu>
+					</div>
+					<SidebarTrigger />
+				</SidebarHeader>
+				<SidebarContent className="group-data-[collapsible=icon]:hidden">
+					<SidebarGroup>
+						<SidebarMenu>
+							{data.navMain.map((item) => (
+								<SidebarMenuItem key={item.title}>
+									<SidebarMenuButton
+										asChild
+										isActive={location.pathname === item.url}
+										tooltip={item.title}
+										className={item.className}
+									>
+										<Link to={item.url}>
+											<item.icon />
+											<span>{item.title}</span>
+										</Link>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+							))}
+						</SidebarMenu>
+					</SidebarGroup>
 
-				<SidebarGroup>
-					<SidebarGroupLabel>Product</SidebarGroupLabel>
-					<SidebarMenu>
-						{data.products.map((item) => (
-							<SidebarMenuItem key={item.title}>
-								<SidebarMenuButton asChild tooltip={item.title}>
-									<Link to={item.url}>
-										<item.icon />
-										<span>{item.title}</span>
-									</Link>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
-						))}
-					</SidebarMenu>
-				</SidebarGroup>
+					<SidebarGroup>
+						<SidebarGroupLabel>Workspaces</SidebarGroupLabel>
+						<SidebarGroupAction
+							title="Add Workspace"
+							onClick={handleCreateWorkspace}
+						>
+							<Plus />
+							<span className="sr-only">Add Workspace</span>
+						</SidebarGroupAction>
+						<SidebarMenu>
+							{workspaces.map((workspace) => (
+								<WorkspaceItem
+									key={workspace.id}
+									workspace={workspace}
+									isMobile={isMobile}
+									onRename={() => openRenameDialog(workspace)}
+									onDelete={() => openDeleteDialog(workspace)}
+								/>
+							))}
+							{workspaces.length === 0 && (
+								<SidebarMenuItem>
+									<span className="text-muted-foreground text-xs px-2 py-1">
+										No workspaces yet
+									</span>
+								</SidebarMenuItem>
+							)}
+						</SidebarMenu>
+					</SidebarGroup>
 
-				<SidebarGroup>
-					<SidebarGroupLabel>Help</SidebarGroupLabel>
+					<SidebarGroup>
+						<SidebarGroupLabel>Product</SidebarGroupLabel>
+						<SidebarMenu>
+							{data.products.map((item) => (
+								<SidebarMenuItem key={item.title}>
+									<SidebarMenuButton asChild tooltip={item.title}>
+										<Link to={item.url}>
+											<item.icon />
+											<span>{item.title}</span>
+										</Link>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+							))}
+						</SidebarMenu>
+					</SidebarGroup>
+
+					<SidebarGroup>
+						<SidebarGroupLabel>Help</SidebarGroupLabel>
+						<SidebarMenu>
+							{data.help.map((item) => (
+								<SidebarMenuItem key={item.title}>
+									<SidebarMenuButton asChild tooltip={item.title}>
+										<Link to={item.url}>
+											<item.icon />
+											<span>{item.title}</span>
+										</Link>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+							))}
+						</SidebarMenu>
+					</SidebarGroup>
+				</SidebarContent>
+				<SidebarFooter className="group-data-[collapsible=icon]:hidden">
 					<SidebarMenu>
-						{data.help.map((item) => (
-							<SidebarMenuItem key={item.title}>
-								<SidebarMenuButton asChild tooltip={item.title}>
-									<Link to={item.url}>
-										<item.icon />
-										<span>{item.title}</span>
-									</Link>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
-						))}
+						<SidebarMenuItem>
+							<SidebarMenuButton tooltip="Quick help">
+								<HelpCircle className="h-4 w-4" />
+								<span>Support</span>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
 					</SidebarMenu>
-				</SidebarGroup>
-			</SidebarContent>
-			<SidebarFooter className="group-data-[collapsible=icon]:hidden">
-				<SidebarMenu>
-					<SidebarMenuItem>
-						<SidebarMenuButton tooltip="Quick help">
-							<HelpCircle className="h-4 w-4" />
-							<span>Support</span>
-						</SidebarMenuButton>
-					</SidebarMenuItem>
-				</SidebarMenu>
-			</SidebarFooter>
-		</Sidebar>
+				</SidebarFooter>
+			</Sidebar>
+
+			{/* Delete Workspace Confirmation Dialog */}
+			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete workspace</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to delete "{workspaceToDelete?.name}"? This
+							will also delete all forms in this workspace. This action cannot
+							be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={handleDeleteWorkspace}
+							className="bg-destructive text-white hover:bg-destructive/90"
+						>
+							Delete
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			{/* Rename Workspace Dialog */}
+			<Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Rename workspace</DialogTitle>
+						<DialogDescription>
+							Enter a new name for this workspace.
+						</DialogDescription>
+					</DialogHeader>
+					<Input
+						value={newWorkspaceName}
+						onChange={(e) => setNewWorkspaceName(e.target.value)}
+						placeholder="Workspace name"
+						onKeyDown={(e) => {
+							if (e.key === "Enter") {
+								handleRenameWorkspace();
+							}
+						}}
+					/>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setRenameDialogOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button onClick={handleRenameWorkspace}>Save</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		</>
+	);
+}
+
+// Workspace item component with forms
+function WorkspaceItem({
+	workspace,
+	isMobile,
+	onRename,
+	onDelete,
+}: {
+	workspace: Workspace;
+	isMobile: boolean;
+	onRename: () => void;
+	onDelete: () => void;
+}) {
+	const router = useRouter();
+
+	// Query forms for this workspace
+	const { data: forms = [] } = useLiveQuery((q) =>
+		q
+			.from({ doc: editorDocCollection })
+			.where(({ doc }) => eq(doc.workspaceId, workspace.id))
+			.select(({ doc }) => ({
+				id: doc.id,
+				title: doc.title,
+				updatedAt: doc.updatedAt,
+			})),
+	);
+
+	const sortedForms = [...forms].sort((a, b) => b.updatedAt - a.updatedAt);
+
+	const handleCreateForm = async (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		try {
+			const newForm = await createForm(workspace.id, "Untitled");
+			router.navigate({
+				to: "/workspace/$workspaceId/form-builder/$formId",
+				params: { workspaceId: workspace.id, formId: newForm.id },
+			});
+		} catch (error) {
+			console.error("Failed to create form:", error);
+		}
+	};
+
+	return (
+		<Collapsible defaultOpen className="group/collapsible">
+			<SidebarMenuItem>
+				<CollapsibleTrigger asChild>
+					<SidebarMenuButton tooltip={workspace.name}>
+						<ChevronRight className="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+						<span className="truncate">{workspace.name}</span>
+					</SidebarMenuButton>
+				</CollapsibleTrigger>
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<SidebarMenuAction showOnHover className="mr-6">
+							<MoreHorizontal />
+							<span className="sr-only">More</span>
+						</SidebarMenuAction>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent
+						className="w-48"
+						side={isMobile ? "bottom" : "right"}
+						align={isMobile ? "end" : "start"}
+					>
+						<DropdownMenuItem onClick={onRename}>
+							<Pencil className="mr-2 h-4 w-4 text-muted-foreground" />
+							<span>Rename</span>
+						</DropdownMenuItem>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem
+							onClick={onDelete}
+							className="text-destructive focus:text-destructive"
+						>
+							<Trash2 className="mr-2 h-4 w-4" />
+							<span>Delete</span>
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+				<SidebarMenuAction showOnHover onClick={handleCreateForm}>
+					<Plus />
+					<span className="sr-only">Add Form</span>
+				</SidebarMenuAction>
+				<CollapsibleContent>
+					<SidebarMenuSub>
+						{sortedForms.map((form) => (
+							<SidebarMenuSubItem key={form.id}>
+								<SidebarMenuSubButton asChild>
+									<Link
+										to="/workspace/$workspaceId/form-builder/$formId"
+										params={{ workspaceId: workspace.id, formId: form.id }}
+									>
+										<span>{form.title || "Untitled"}</span>
+									</Link>
+								</SidebarMenuSubButton>
+							</SidebarMenuSubItem>
+						))}
+						{sortedForms.length === 0 && (
+							<SidebarMenuSubItem>
+								<span className="text-muted-foreground text-xs px-2 py-1">
+									No forms yet
+								</span>
+							</SidebarMenuSubItem>
+						)}
+					</SidebarMenuSub>
+				</CollapsibleContent>
+			</SidebarMenuItem>
+		</Collapsible>
 	);
 }

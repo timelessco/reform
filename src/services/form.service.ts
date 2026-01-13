@@ -60,11 +60,15 @@ export async function updateDoc(id: string, updater: (draft: any) => void) {
 /**
  * Creates a new form with default values and returns the new document.
  */
-export async function createForm(title = "Untitled"): Promise<EditorDoc> {
+export async function createForm(
+	workspaceId: string,
+	title = "Untitled",
+): Promise<EditorDoc> {
 	const id = crypto.randomUUID();
 	const newForm: EditorDoc = {
 		...DEFAULT_FORM_STATE,
 		id,
+		workspaceId,
 		title,
 		updatedAt: Date.now(),
 	};
@@ -101,4 +105,17 @@ export async function duplicateForm(
 
 	await editorDocCollection.insert(newForm);
 	return newForm;
+}
+
+/**
+ * Moves a form to a different workspace.
+ */
+export async function moveFormToWorkspace(
+	formId: string,
+	targetWorkspaceId: string,
+): Promise<void> {
+	await editorDocCollection.update(formId, (draft) => {
+		draft.workspaceId = targetWorkspaceId;
+		draft.updatedAt = Date.now();
+	});
 }

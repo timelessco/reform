@@ -234,8 +234,8 @@ importers:
         specifier: ^1.0.8
         version: 1.0.14(@tanstack/query-core@5.90.16)(typescript@5.9.3)
       '@tanstack/react-db':
-        specifier: ^0.1.1
-        version: 0.1.62(react@19.2.3)(typescript@5.9.3)
+        specifier: ^0.1.63
+        version: 0.1.63(react@19.2.3)(typescript@5.9.3)
       '@tanstack/react-devtools':
         specifier: ^0.7.0
         version: 0.7.11(@types/react-dom@19.2.3(@types/react@19.2.8))(@types/react@19.2.8)(csstype@3.2.3)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(solid-js@1.9.10)
@@ -392,6 +392,9 @@ importers:
       tailwindcss:
         specifier: ^4.0.6
         version: 4.1.18
+      tanstack-dexie-db-collection:
+        specifier: ^0.1.4
+        version: 0.1.4(dexie@4.2.1)(typescript@5.9.3)
       tw-animate-css:
         specifier: ^1.3.6
         version: 1.4.0
@@ -3182,8 +3185,18 @@ packages:
     peerDependencies:
       typescript: '>=4.7'
 
+  '@tanstack/db-ivm@0.1.15':
+    resolution: {integrity: sha512-4z5xpGWd/Gk0QRVfQ9qW8lVlZpqRFQtqvQPb++RUJNkED3n95H1Wwy1S0oW1YkGbrMc11mMcy0PRxQdAjro8vQ==}
+    peerDependencies:
+      typescript: '>=4.7'
+
   '@tanstack/db@0.5.18':
     resolution: {integrity: sha512-lEXMfuKBMsCcN63Rmm/nJdk583uQcZ4rkDwzVz3Xe6yI/+MjnwRonlM9e236IPVf2iADxpGwUulEXOMJ8bpnPA==}
+    peerDependencies:
+      typescript: '>=4.7'
+
+  '@tanstack/db@0.5.19':
+    resolution: {integrity: sha512-46MlvGEZs1mDx4zEM/my0953U0uE9FDWUozEl0Jc2neJX3s7Gi8SxDtoBcc2tNnS5Qettitmt0/py9y0FlY6+Q==}
     peerDependencies:
       typescript: '>=4.7'
 
@@ -3256,8 +3269,8 @@ packages:
   '@tanstack/query-devtools@5.92.0':
     resolution: {integrity: sha512-N8D27KH1vEpVacvZgJL27xC6yPFUy0Zkezn5gnB3L3gRCxlDeSuiya7fKge8Y91uMTnC8aSxBQhcK6ocY7alpQ==}
 
-  '@tanstack/react-db@0.1.62':
-    resolution: {integrity: sha512-9fCEIIum3glKoRRdClMXsLoc5JDzMQaRL9HwHod1k9dWD6NbhSjshNX0oT1cQ9hsJtDtbDPmWSF+/pteyNMLyA==}
+  '@tanstack/react-db@0.1.63':
+    resolution: {integrity: sha512-vAY8Wl6fwb6kmM+wZzkwLwYbM70v6ZVYPG2nV+2RTaqTCDjN4UPGYVWjQLPU1a3Op+//2HJaxB+vp6XSFFRASg==}
     peerDependencies:
       react: '>=16.8.0'
 
@@ -4157,6 +4170,9 @@ packages:
 
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
+
+  dexie@4.2.1:
+    resolution: {integrity: sha512-Ckej0NS6jxQ4Po3OrSQBFddayRhTCic2DoCAG5zacOfOVB9P2Q5Xc5uL/nVa7ZVs+HdMnvUPzLFCB/JwpB6Csg==}
 
   diff-match-patch-ts@0.6.0:
     resolution: {integrity: sha512-U0uPIJ+wJqgaBoVw2MFSFpGIk7q3mJJ+/sehbxDZFv4Gx6a1GOmrsSLmxVDDrGtRL4Q9de084aa5lVpCHn+eUw==}
@@ -5787,6 +5803,12 @@ packages:
 
   tailwindcss@4.1.18:
     resolution: {integrity: sha512-4+Z+0yiYyEtUVCScyfHCxOYP06L5Ne+JiHhY2IjR2KWMIWhJOYZKLSGZaP5HkZ8+bY0cxfzwDE5uOmzFXyIwxw==}
+
+  tanstack-dexie-db-collection@0.1.4:
+    resolution: {integrity: sha512-f8K6A/vP3q0abj1BIovPGMqJD8IwRnQy/eW1BIRlzWaES0NwRmj90sRU9CqEnwNW+t+X3e9NJ/dTkDygcePsQw==}
+    peerDependencies:
+      dexie: '>=4.2.0'
+      typescript: '>=4.7'
 
   tapable@2.3.0:
     resolution: {integrity: sha512-g9ljZiwki/LfxmQADO3dEY1CbpmXT5Hm2fJ+QaGKwSXUylMybePR7/67YW7jOrrvjEgL1Fmz5kzyAjWVWLlucg==}
@@ -9152,10 +9174,23 @@ snapshots:
       sorted-btree: 1.8.1
       typescript: 5.9.3
 
+  '@tanstack/db-ivm@0.1.15(typescript@5.9.3)':
+    dependencies:
+      fractional-indexing: 3.2.0
+      sorted-btree: 1.8.1
+      typescript: 5.9.3
+
   '@tanstack/db@0.5.18(typescript@5.9.3)':
     dependencies:
       '@standard-schema/spec': 1.1.0
       '@tanstack/db-ivm': 0.1.14(typescript@5.9.3)
+      '@tanstack/pacer-lite': 0.2.1
+      typescript: 5.9.3
+
+  '@tanstack/db@0.5.19(typescript@5.9.3)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      '@tanstack/db-ivm': 0.1.15(typescript@5.9.3)
       '@tanstack/pacer-lite': 0.2.1
       typescript: 5.9.3
 
@@ -9247,9 +9282,9 @@ snapshots:
 
   '@tanstack/query-devtools@5.92.0': {}
 
-  '@tanstack/react-db@0.1.62(react@19.2.3)(typescript@5.9.3)':
+  '@tanstack/react-db@0.1.63(react@19.2.3)(typescript@5.9.3)':
     dependencies:
-      '@tanstack/db': 0.5.18(typescript@5.9.3)
+      '@tanstack/db': 0.5.19(typescript@5.9.3)
       react: 19.2.3
       use-sync-external-store: 1.6.0(react@19.2.3)
     transitivePeerDependencies:
@@ -10255,6 +10290,8 @@ snapshots:
   devlop@1.1.0:
     dependencies:
       dequal: 2.0.3
+
+  dexie@4.2.1: {}
 
   diff-match-patch-ts@0.6.0: {}
 
@@ -12189,6 +12226,16 @@ snapshots:
       tailwindcss: 4.1.18
 
   tailwindcss@4.1.18: {}
+
+  tanstack-dexie-db-collection@0.1.4(dexie@4.2.1)(typescript@5.9.3):
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      '@tanstack/db': 0.5.19(typescript@5.9.3)
+      debug: 4.4.3
+      dexie: 4.2.1
+      typescript: 5.9.3
+    transitivePeerDependencies:
+      - supports-color
 
   tapable@2.3.0: {}
 

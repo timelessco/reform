@@ -15,7 +15,7 @@ const defaultContent = normalizeNodeId([
 	},
 ]);
 
-export const DEFAULT_FORM_STATE: Omit<EditorDoc, "id" | "updatedAt"> = {
+export const DEFAULT_FORM_STATE: Omit<EditorDoc, "id" | "workspaceId" | "updatedAt"> = {
 	formName: "draft",
 	schemaName: "draftFormSchema",
 	isMS: false,
@@ -50,6 +50,7 @@ const useFormState = createIsomorphicFn()
 		return {
 			...DEFAULT_FORM_STATE,
 			id: "main-document",
+			workspaceId: "",
 			updatedAt: Date.now(),
 		} as FormState;
 	})
@@ -59,6 +60,7 @@ const useFormState = createIsomorphicFn()
 		const { data } = useLiveQuery((q) =>
 			q.from({ doc: editorDocCollection }).select(({ doc }) => ({
 				id: doc.id,
+				workspaceId: doc.workspaceId,
 				formName: doc.formName,
 				schemaName: doc.schemaName,
 				isMS: doc.isMS,
@@ -79,6 +81,7 @@ const useFormState = createIsomorphicFn()
 			({
 				...DEFAULT_FORM_STATE,
 				id: "main-document",
+				workspaceId: "",
 				updatedAt: Date.now(),
 			} as FormState)
 		);
@@ -98,6 +101,7 @@ export function useFormStateById(formId?: string): FormState {
 		}
 		return query.select(({ doc }) => ({
 			id: doc.id,
+			workspaceId: doc.workspaceId,
 			formName: doc.formName,
 			schemaName: doc.schemaName,
 			isMS: doc.isMS,
@@ -118,6 +122,7 @@ export function useFormStateById(formId?: string): FormState {
 		({
 			...DEFAULT_FORM_STATE,
 			id: formId || "new-form",
+			workspaceId: "",
 			updatedAt: Date.now(),
 		} as FormState)
 	);

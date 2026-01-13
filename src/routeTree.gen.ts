@@ -24,6 +24,9 @@ import { Route as AuthenticatedSettingsMyAccountRouteImport } from './routes/_au
 import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_authenticated/settings/billing'
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings/api-keys'
 import { Route as AuthenticatedFormBuilderFormIdRouteImport } from './routes/_authenticated/form-builder/$formId'
+import { Route as AuthenticatedWorkspaceWorkspaceIdRouteRouteImport } from './routes/_authenticated/workspace/$workspaceId/route'
+import { Route as AuthenticatedWorkspaceWorkspaceIdIndexRouteImport } from './routes/_authenticated/workspace/$workspaceId/index'
+import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -107,6 +110,24 @@ const AuthenticatedFormBuilderFormIdRoute =
     path: '/form-builder/$formId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedWorkspaceWorkspaceIdRouteRoute =
+  AuthenticatedWorkspaceWorkspaceIdRouteRouteImport.update({
+    id: '/workspace/$workspaceId',
+    path: '/workspace/$workspaceId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedWorkspaceWorkspaceIdIndexRoute =
+  AuthenticatedWorkspaceWorkspaceIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedWorkspaceWorkspaceIdRouteRoute,
+  } as any)
+const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRoute =
+  AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteImport.update({
+    id: '/form-builder/$formId',
+    path: '/form-builder/$formId',
+    getParentRoute: () => AuthenticatedWorkspaceWorkspaceIdRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -114,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/$': typeof ApiSplatRoute
+  '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
   '/form-builder/$formId': typeof AuthenticatedFormBuilderFormIdRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
@@ -123,6 +145,8 @@ export interface FileRoutesByFullPath {
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/form-builder': typeof AuthenticatedFormBuilderIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/workspace/$workspaceId/': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
+  '/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -138,6 +162,8 @@ export interface FileRoutesByTo {
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/form-builder': typeof AuthenticatedFormBuilderIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
+  '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
+  '/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -147,6 +173,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/api/$': typeof ApiSplatRoute
+  '/_authenticated/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
   '/_authenticated/form-builder/$formId': typeof AuthenticatedFormBuilderFormIdRoute
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/billing': typeof AuthenticatedSettingsBillingRoute
@@ -156,6 +183,8 @@ export interface FileRoutesById {
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/_authenticated/form-builder/': typeof AuthenticatedFormBuilderIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/_authenticated/workspace/$workspaceId/': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
+  '/_authenticated/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -165,6 +194,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/dashboard'
     | '/api/$'
+    | '/workspace/$workspaceId'
     | '/form-builder/$formId'
     | '/settings/api-keys'
     | '/settings/billing'
@@ -174,6 +204,8 @@ export interface FileRouteTypes {
     | '/api/rpc/$'
     | '/form-builder'
     | '/settings/'
+    | '/workspace/$workspaceId/'
+    | '/workspace/$workspaceId/form-builder/$formId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -189,6 +221,8 @@ export interface FileRouteTypes {
     | '/api/rpc/$'
     | '/form-builder'
     | '/settings'
+    | '/workspace/$workspaceId'
+    | '/workspace/$workspaceId/form-builder/$formId'
   id:
     | '__root__'
     | '/'
@@ -197,6 +231,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/dashboard'
     | '/api/$'
+    | '/_authenticated/workspace/$workspaceId'
     | '/_authenticated/form-builder/$formId'
     | '/_authenticated/settings/api-keys'
     | '/_authenticated/settings/billing'
@@ -206,6 +241,8 @@ export interface FileRouteTypes {
     | '/api/rpc/$'
     | '/_authenticated/form-builder/'
     | '/_authenticated/settings/'
+    | '/_authenticated/workspace/$workspaceId/'
+    | '/_authenticated/workspace/$workspaceId/form-builder/$formId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -324,6 +361,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFormBuilderFormIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/workspace/$workspaceId': {
+      id: '/_authenticated/workspace/$workspaceId'
+      path: '/workspace/$workspaceId'
+      fullPath: '/workspace/$workspaceId'
+      preLoaderRoute: typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/workspace/$workspaceId/': {
+      id: '/_authenticated/workspace/$workspaceId/'
+      path: '/'
+      fullPath: '/workspace/$workspaceId/'
+      preLoaderRoute: typeof AuthenticatedWorkspaceWorkspaceIdIndexRouteImport
+      parentRoute: typeof AuthenticatedWorkspaceWorkspaceIdRouteRoute
+    }
+    '/_authenticated/workspace/$workspaceId/form-builder/$formId': {
+      id: '/_authenticated/workspace/$workspaceId/form-builder/$formId'
+      path: '/form-builder/$formId'
+      fullPath: '/workspace/$workspaceId/form-builder/$formId'
+      preLoaderRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteImport
+      parentRoute: typeof AuthenticatedWorkspaceWorkspaceIdRouteRoute
+    }
   }
 }
 
@@ -350,9 +408,28 @@ const AuthenticatedSettingsRouteRouteWithChildren =
     AuthenticatedSettingsRouteRouteChildren,
   )
 
+interface AuthenticatedWorkspaceWorkspaceIdRouteRouteChildren {
+  AuthenticatedWorkspaceWorkspaceIdIndexRoute: typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
+  AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRoute
+}
+
+const AuthenticatedWorkspaceWorkspaceIdRouteRouteChildren: AuthenticatedWorkspaceWorkspaceIdRouteRouteChildren =
+  {
+    AuthenticatedWorkspaceWorkspaceIdIndexRoute:
+      AuthenticatedWorkspaceWorkspaceIdIndexRoute,
+    AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRoute:
+      AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRoute,
+  }
+
+const AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren =
+  AuthenticatedWorkspaceWorkspaceIdRouteRoute._addFileChildren(
+    AuthenticatedWorkspaceWorkspaceIdRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedWorkspaceWorkspaceIdRouteRoute: typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
   AuthenticatedFormBuilderFormIdRoute: typeof AuthenticatedFormBuilderFormIdRoute
   AuthenticatedFormBuilderIndexRoute: typeof AuthenticatedFormBuilderIndexRoute
 }
@@ -360,6 +437,8 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedWorkspaceWorkspaceIdRouteRoute:
+    AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren,
   AuthenticatedFormBuilderFormIdRoute: AuthenticatedFormBuilderFormIdRoute,
   AuthenticatedFormBuilderIndexRoute: AuthenticatedFormBuilderIndexRoute,
 }
