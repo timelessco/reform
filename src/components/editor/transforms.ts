@@ -1,5 +1,3 @@
-
-
 import { insertCallout } from "@platejs/callout";
 import { insertCodeBlock, toggleCodeBlock } from "@platejs/code-block";
 import { insertDate } from "@platejs/date";
@@ -64,7 +62,6 @@ const insertBlockMap: Record<
 		editor.getTransforms(TablePlugin).insert.table({}, { select: true }),
 	[KEYS.toc]: (editor) => insertToc(editor, { select: true }),
 	[KEYS.video]: (editor) => insertVideoPlaceholder(editor, { select: true }),
-	// Form blocks - inserts label (with focus) and input with placeholders
 	formInput: (editor) => {
 		const block = editor.api.block();
 		if (!block) return;
@@ -73,26 +70,26 @@ const insertBlockMap: Record<
 		const labelPath = PathApi.next(path);
 
 		editor.tf.insertNodes(
-			[
-				{
-					type: "formLabel",
-					required: true,
-					placeholder: "Type a question",
-					children: [{ text: "" }],
-				},
-				{
-					type: "formInput",
-					placeholder: "Enter your answer",
-					children: [{ text: "" }],
-				},
-			] as any,
+			{
+				type: "formLabel",
+				required: true,
+				placeholder: "Type a question",
+				children: [{ text: "" }],
+			} as any,
 			{ at: labelPath },
 		);
 
-		// Focus cursor at start of label block
+		editor.tf.insertNodes(
+			{
+				type: "formInput",
+				placeholder: "Enter your answer",
+				children: [{ text: "" }],
+			} as any,
+			{ at: PathApi.next(labelPath) },
+		);
+
 		editor.tf.select({ path: [...labelPath, 0], offset: 0 });
 	},
-	// Form textarea - inserts label (with focus) and textarea with placeholders
 	formTextarea: (editor) => {
 		const block = editor.api.block();
 		if (!block) return;
@@ -101,23 +98,24 @@ const insertBlockMap: Record<
 		const labelPath = PathApi.next(path);
 
 		editor.tf.insertNodes(
-			[
-				{
-					type: "formLabel",
-					required: false,
-					placeholder: "Type a question",
-					children: [{ text: "" }],
-				},
-				{
-					type: "formTextarea",
-					placeholder: "Enter your detailed answer",
-					children: [{ text: "" }],
-				},
-			] as any,
+			{
+				type: "formLabel",
+				required: false,
+				placeholder: "Type a question",
+				children: [{ text: "" }],
+			} as any,
 			{ at: labelPath },
 		);
 
-		// Focus cursor at start of label block
+		editor.tf.insertNodes(
+			{
+				type: "formTextarea",
+				placeholder: "Enter your detailed answer",
+				children: [{ text: "" }],
+			} as any,
+			{ at: PathApi.next(labelPath) },
+		);
+
 		editor.tf.select({ path: [...labelPath, 0], offset: 0 });
 	},
 };
@@ -151,7 +149,6 @@ export const insertBlock = (
 		const [currentNode, path] = block;
 		const isCurrentBlockEmpty = editor.api.isEmpty(currentNode);
 		const currentBlockType = getBlockType(currentNode);
-
 		const isSameBlockType = type === currentBlockType;
 
 		if (upsert && isCurrentBlockEmpty && isSameBlockType) {

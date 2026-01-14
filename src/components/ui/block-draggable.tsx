@@ -5,7 +5,7 @@ import {
 	BlockMenuPlugin,
 	BlockSelectionPlugin,
 } from "@platejs/selection/react";
-import { GripVertical } from "lucide-react";
+import { GripVertical, Plus, Trash2 } from "lucide-react";
 import { getPluginByType, isType, KEYS, type TElement } from "platejs";
 import {
 	MemoizedChildren,
@@ -136,32 +136,76 @@ function Draggable(props: PlateElementProps) {
 					<div
 						className={cn(
 							"slate-blockToolbarWrapper",
-							"flex h-[1.5em]",
+							"flex items-center gap-0.5 pointer-events-auto",
 							isInColumn && "h-4",
 						)}
+						style={{ marginTop: `${dragButtonTop}px` }}
 					>
-						<div
-							className={cn(
-								"slate-blockToolbar relative w-4.5",
-								"pointer-events-auto mr-1 flex items-center",
-								isInColumn && "mr-1.5",
-							)}
+						{/* Delete Button */}
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+									onClick={(e) => {
+										e.preventDefault();
+										e.stopPropagation();
+										// Delete the current block
+										editor.tf.removeNodes({ at: path });
+									}}
+									data-plate-prevent-deselect
+								>
+									<Trash2 className="h-4 w-4 text-muted-foreground" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Delete block</TooltipContent>
+						</Tooltip>
+
+						{/* Plus Button */}
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									className="h-6 w-6 p-0"
+									onClick={(e) => {
+										e.preventDefault();
+										e.stopPropagation();
+										// Insert a new paragraph block after the current block
+										const nextPath = [...path];
+										nextPath[nextPath.length - 1] += 1;
+										editor.tf.insertNodes(
+											{
+												type: KEYS.p,
+												children: [{ text: "" }],
+											},
+											{ at: nextPath, select: true }
+										);
+									}}
+									data-plate-prevent-deselect
+								>
+									<Plus className="h-4 w-4 text-muted-foreground" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Add block below</TooltipContent>
+						</Tooltip>
+
+						{/* Drag Handle */}
+						<Button
+							ref={handleRef}
+							variant="ghost"
+							size="icon"
+							className="h-6 w-6 p-0"
+							data-plate-prevent-deselect
 						>
-							<Button
-								ref={handleRef}
-								variant="ghost"
-								className="-left-0 absolute h-6 w-full p-0"
-								style={{ top: `${dragButtonTop + 3}px` }}
-								data-plate-prevent-deselect
-							>
-								<DragHandle
-									isDragging={isDragging}
-									previewRef={previewRef}
-									resetPreview={resetPreview}
-									setPreviewTop={setPreviewTop}
-								/>
-							</Button>
-						</div>
+							<DragHandle
+								isDragging={isDragging}
+								previewRef={previewRef}
+								resetPreview={resetPreview}
+								setPreviewTop={setPreviewTop}
+							/>
+						</Button>
 					</div>
 				</Gutter>
 			)}
@@ -207,12 +251,13 @@ function Gutter({
 			{...props}
 			className={cn(
 				"slate-gutterLeft",
-				"-translate-x-full absolute top-0 z-50 flex h-full cursor-text hover:opacity-100 sm:opacity-0",
+				"-translate-x-full absolute top-0 z-50 flex h-full cursor-text hover:opacity-100",
+				!selected && "sm:opacity-0",
 				getPluginByType(editor, element.type)?.node.isContainer
 					? "group-hover/container:opacity-100"
 					: "group-hover:opacity-100",
 				isSelectionAreaVisible && "hidden",
-				!selected && "opacity-0",
+				selected && "opacity-100",
 				className,
 			)}
 			contentEditable={false}

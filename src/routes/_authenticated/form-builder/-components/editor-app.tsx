@@ -240,7 +240,7 @@ export default function EditorApp({ formId }: EditorAppProps) {
 			>
 				<EditorContainer
 					variant="default"
-					className="px-14 max-w-[900px] mx-auto border-none shadow-none"
+					className="px-14 max-w-8/12 mx-auto border-none shadow-none"
 				>
 					<Editor />
 				</EditorContainer>

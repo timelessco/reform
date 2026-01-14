@@ -91,6 +91,7 @@
     "@sentry/tanstackstart-react": "^10.22.0",
     "@t3-oss/env-core": "^0.13.8",
     "@tailwindcss/vite": "^4.0.6",
+    "@tanstack/electric-db-collection": "^0.2.23",
     "@tanstack/match-sorter-utils": "^8.19.4",
     "@tanstack/query-db-collection": "^1.0.8",
     "@tanstack/react-db": "^0.1.63",

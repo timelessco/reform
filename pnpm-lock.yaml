@@ -227,6 +227,9 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.0.6
         version: 4.1.18(vite@7.3.1(@types/node@22.19.5)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0))
+      '@tanstack/electric-db-collection':
+        specifier: ^0.2.23
+        version: 0.2.23(typescript@5.9.3)
       '@tanstack/match-sorter-utils':
         specifier: ^8.19.4
         version: 8.19.4
@@ -817,6 +820,9 @@ packages:
     peerDependencies:
       effect: ^3.17.7
 
+  '@electric-sql/client@1.4.0':
+    resolution: {integrity: sha512-JTJxm3r5KXhpSEJ+C89gWbGzIH+UnPlzD92iNdtkXYx2gkoJcgd2h0YfaBF2Tu1k3yVG/pje/6CeFlHI9JrsCQ==}
+
   '@emnapi/core@1.8.1':
     resolution: {integrity: sha512-AvT9QFpxK0Zd8J0jopedNm+w/2fIzvtPKPjqyw9jwvBaReTTqPBk9Hixaz7KbjimP+QNz605/XnjFcDAL2pqBg==}
 
@@ -1205,6 +1211,9 @@ packages:
 
   '@juggle/resize-observer@3.4.0':
     resolution: {integrity: sha512-dfLbk+PwWvFzSxwk3n5ySL0hfBog779o8h68wK/7/APo/7cgyWp5jcXockbxdk5kFRkbeXWm4Fbi9FrdN381sA==}
+
+  '@microsoft/fetch-event-source@2.0.1':
+    resolution: {integrity: sha512-W6CLUJ2eBMw3Rec70qrsEW0jOm/3twwJv21mrmj2yORiaVmVYGS4sSS5yUwvQc1ZlDLYGPnClVWmUUMagKNsfA==}
 
   '@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.3':
     resolution: {integrity: sha512-QZHtlVgbAdy2zAqNA9Gu1UpIuI8Xvsd1v8ic6B2pZmeFnFcMWiPLfWXh7TVw4eGEZ/C9TH281KwhVoeQUKbyjw==}
@@ -3237,6 +3246,9 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       solid-js: '>=1.9.7'
+
+  '@tanstack/electric-db-collection@0.2.23':
+    resolution: {integrity: sha512-QZ5Q2AySut0knjQXgefY4G5LRQKVn9Y4OaoG28RHAvjIwIumjMi+yWhutcyZ8hLU9xxGuRCQkZp4p0dgKH9NQA==}
 
   '@tanstack/form-core@1.27.7':
     resolution: {integrity: sha512-nvogpyE98fhb0NDw1Bf2YaCH+L7ZIUgEpqO9TkHucDn6zg3ni521boUpv0i8HKIrmmFwDYjWZoCnrgY4HYWTkw==}
@@ -6839,6 +6851,12 @@ snapshots:
       msgpackr: 1.11.8
       multipasta: 0.2.7
 
+  '@electric-sql/client@1.4.0':
+    dependencies:
+      '@microsoft/fetch-event-source': 2.0.1
+    optionalDependencies:
+      '@rollup/rollup-darwin-arm64': 4.55.1
+
   '@emnapi/core@1.8.1':
     dependencies:
       '@emnapi/wasi-threads': 1.1.0
@@ -7073,6 +7091,8 @@ snapshots:
       jsbi: 4.3.2
 
   '@juggle/resize-observer@3.4.0': {}
+
+  '@microsoft/fetch-event-source@2.0.1': {}
 
   '@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.3':
     optional: true
@@ -9254,6 +9274,17 @@ snapshots:
       - bufferutil
       - csstype
       - utf-8-validate
+
+  '@tanstack/electric-db-collection@0.2.23(typescript@5.9.3)':
+    dependencies:
+      '@electric-sql/client': 1.4.0
+      '@standard-schema/spec': 1.1.0
+      '@tanstack/db': 0.5.19(typescript@5.9.3)
+      '@tanstack/store': 0.8.0
+      debug: 4.4.3
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
 
   '@tanstack/form-core@1.27.7':
     dependencies:

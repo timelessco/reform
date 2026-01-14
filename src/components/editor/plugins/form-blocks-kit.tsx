@@ -1,204 +1,121 @@
-import { PathApi } from "platejs";
+import { type Path, PathApi, type TElement } from "platejs";
 import type { PlateEditor } from "platejs/react";
 import { createPlatePlugin } from "platejs/react";
+import { FormButtonElement } from "@/components/ui/form-button-node";
 import { FormInputElement } from "@/components/ui/form-input-node";
 import { FormLabelElement } from "@/components/ui/form-label-node";
-import { FormButtonElement } from "@/components/ui/form-button-node";
 import { FormTextareaElement } from "@/components/ui/form-textarea-node";
 
-// Helper: Move to next sibling block
-function moveToNextBlock(editor: PlateEditor, currentPath: number[]): boolean {
-	const nextPath = PathApi.next(currentPath);
-	const nextNode = editor.api.node(nextPath);
-	if (nextNode) {
-		editor.tf.select({ path: [...nextPath, 0], offset: 0 });
+const FORM_FIELD_TYPES = [
+	"formInput",
+	"formTextarea",
+	"formButton",
+	"formLabel",
+];
+
+function moveToPath(editor: PlateEditor, path: Path): boolean {
+	const node = editor.api.node(path);
+	if (node) {
+		editor.tf.select({ path: [...path, 0], offset: 0 });
 		return true;
 	}
 	return false;
 }
 
-// Helper: Move to previous sibling block
-function moveToPreviousBlock(editor: PlateEditor, currentPath: number[]): boolean {
-	const prevPath = PathApi.previous(currentPath);
-	if (prevPath) {
-		const prevNode = editor.api.node(prevPath);
-		if (prevNode) {
-			editor.tf.select({ path: [...prevPath, 0], offset: 0 });
-			return true;
-		}
-	}
-	return false;
-}
+function handleFormBlockKeyDown(
+	editor: PlateEditor,
+	event: React.KeyboardEvent,
+): void {
+	// Prevent double-handling when multiple form plugins process same event
+	if ((event as any).__formBlockHandled) return;
 
-// Helper: Delete empty block
-function deleteEmptyBlock(editor: PlateEditor, block: [any, number[]]): boolean {
+	const block = editor.api.block();
+	if (!block || !FORM_FIELD_TYPES.includes(block[0].type)) return;
+
+	// Mark as handled before any action
+	(event as any).__formBlockHandled = true;
+
 	const [node, path] = block;
-	if (editor.api.isEmpty(node)) {
-		editor.tf.removeNodes({ at: path });
-		return true;
+
+	// Tab → move to next sibling block
+	if (event.key === "Tab" && !event.shiftKey) {
+		event.preventDefault();
+		event.stopPropagation();
+		const nextPath = PathApi.next(path);
+		moveToPath(editor, nextPath);
+		return;
 	}
-	return false;
+
+	// Shift+Tab → move to previous sibling block
+	if (event.key === "Tab" && event.shiftKey) {
+		event.preventDefault();
+		event.stopPropagation();
+		const prevPath = PathApi.previous(path);
+		if (prevPath) {
+			moveToPath(editor, prevPath);
+		}
+		return;
+	}
+
+	// Enter → create new empty paragraph after current block
+	if (event.key === "Enter" && !event.shiftKey) {
+		event.preventDefault();
+		event.stopPropagation();
+		const nextPath = PathApi.next(path);
+		editor.tf.insertNodes(
+			{ type: "p", children: [{ text: "" }] } as TElement,
+			{ at: nextPath },
+		);
+		moveToPath(editor, nextPath);
+		return;
+	}
+
+	// Shift+Enter → insert newline in current block
+	if (event.key === "Enter" && event.shiftKey) {
+		event.preventDefault();
+		event.stopPropagation();
+		editor.tf.insertNodes({ text: "\n" });
+		return;
+	}
+
+	// Backspace on empty → delete current block
+	if (event.key === "Backspace" && editor.api.isEmpty(node)) {
+		event.preventDefault();
+		event.stopPropagation();
+		editor.tf.removeNodes({ at: path });
+		return;
+	}
 }
 
-// Form Label Plugin - editable label block with optional required indicator
-// Tab: Move to next block | Shift+Tab: Move to previous block
-// Enter: Move to next block | Backspace (empty): Delete block
 export const FormLabelPlugin = createPlatePlugin({
 	key: "formLabel",
-	node: {
-		isElement: true,
-		component: FormLabelElement,
-	},
+	node: { isElement: true, component: FormLabelElement },
 	handlers: {
-		onKeyDown: ({ editor, event }) => {
-			const block = editor.api.block();
-			if (!block || block[0].type !== "formLabel") return;
-
-			const [node, path] = block;
-
-			// Tab: Move to next block
-			if (event.key === "Tab" && !event.shiftKey) {
-				event.preventDefault();
-				event.stopPropagation();
-				moveToNextBlock(editor, path);
-				return;
-			}
-
-			// Shift+Tab: Move to previous block
-			if (event.key === "Tab" && event.shiftKey) {
-				event.preventDefault();
-				event.stopPropagation();
-				moveToPreviousBlock(editor, path);
-				return;
-			}
-
-			// Enter: Move to next block instead of creating new line
-			if (event.key === "Enter" && !event.shiftKey) {
-				event.preventDefault();
-				event.stopPropagation();
-				moveToNextBlock(editor, path);
-				return;
-			}
-
-			// Backspace on empty block: Delete the block
-			if (event.key === "Backspace" && editor.api.isEmpty(node)) {
-				event.preventDefault();
-				event.stopPropagation();
-				deleteEmptyBlock(editor, block);
-				return;
-			}
-		},
+		onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
 	},
 });
 
-// Form Input Plugin - editable input placeholder block
-// Tab: Move to next block | Shift+Tab: Move to previous block
-// Enter: Move to next block | Backspace (empty): Delete block
 export const FormInputPlugin = createPlatePlugin({
 	key: "formInput",
-	node: {
-		isElement: true,
-		component: FormInputElement,
-	},
+	node: { isElement: true, component: FormInputElement },
 	handlers: {
-		onKeyDown: ({ editor, event }) => {
-			const block = editor.api.block();
-			if (!block || block[0].type !== "formInput") return;
-
-			const [node, path] = block;
-
-			// Tab: Move to next block
-			if (event.key === "Tab" && !event.shiftKey) {
-				event.preventDefault();
-				event.stopPropagation();
-				moveToNextBlock(editor, path);
-				return;
-			}
-
-			// Shift+Tab: Move to previous block
-			if (event.key === "Tab" && event.shiftKey) {
-				event.preventDefault();
-				event.stopPropagation();
-				moveToPreviousBlock(editor, path);
-				return;
-			}
-
-			// Enter: Move to next block instead of creating new line
-			if (event.key === "Enter" && !event.shiftKey) {
-				event.preventDefault();
-				event.stopPropagation();
-				moveToNextBlock(editor, path);
-				return;
-			}
-
-			// Backspace on empty block: Delete the block
-			if (event.key === "Backspace" && editor.api.isEmpty(node)) {
-				event.preventDefault();
-				event.stopPropagation();
-				deleteEmptyBlock(editor, block);
-				return;
-			}
-		},
+		onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
 	},
 });
 
-// Form Button Plugin - standalone button element
 export const FormButtonPlugin = createPlatePlugin({
 	key: "formButton",
-	node: {
-		isElement: true,
-		component: FormButtonElement,
+	node: { isElement: true, component: FormButtonElement },
+	handlers: {
+		onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
 	},
 });
 
-// Form Textarea Plugin - multi-line editable textarea placeholder block
-// Tab: Move to next block | Shift+Tab: Move to previous block
-// Enter: Move to next block | Backspace (empty): Delete block
 export const FormTextareaPlugin = createPlatePlugin({
 	key: "formTextarea",
-	node: {
-		isElement: true,
-		component: FormTextareaElement,
-	},
+	node: { isElement: true, component: FormTextareaElement },
 	handlers: {
-		onKeyDown: ({ editor, event }) => {
-			const block = editor.api.block();
-			if (!block || block[0].type !== "formTextarea") return;
-
-			const [node, path] = block;
-
-			// Tab: Move to next block
-			if (event.key === "Tab" && !event.shiftKey) {
-				event.preventDefault();
-				event.stopPropagation();
-				moveToNextBlock(editor, path);
-				return;
-			}
-
-			// Shift+Tab: Move to previous block
-			if (event.key === "Tab" && event.shiftKey) {
-				event.preventDefault();
-				event.stopPropagation();
-				moveToPreviousBlock(editor, path);
-				return;
-			}
-
-			// Enter: Move to next block instead of creating new line
-			if (event.key === "Enter" && !event.shiftKey) {
-				event.preventDefault();
-				event.stopPropagation();
-				moveToNextBlock(editor, path);
-				return;
-			}
-
-			// Backspace on empty block: Delete the block
-			if (event.key === "Backspace" && editor.api.isEmpty(node)) {
-				event.preventDefault();
-				event.stopPropagation();
-				deleteEmptyBlock(editor, block);
-				return;
-			}
-		},
+		onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
 	},
 });
 

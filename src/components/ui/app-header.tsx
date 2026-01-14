@@ -248,20 +248,6 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 								</Button>
 							</AuthDialog>
 						)}
-						<Button
-							variant={form.isPreview ? "secondary" : "ghost"}
-							size="sm"
-							className={cn(
-								"h-8 font-normal transition-colors",
-								form.isPreview
-									? "text-blue-600 bg-blue-50 hover:bg-blue-100"
-									: "text-muted-foreground hover:text-foreground",
-							)}
-							onClick={() => togglePreview(form.id, form.isPreview)}
-						>
-							{form.isPreview ? "Editing" : "Preview"}
-						</Button>
-
 						{/* Primary Action */}
 						<Button
 							size="sm"
