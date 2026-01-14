@@ -78,6 +78,7 @@ function Draggable(props: PlateElementProps) {
 	const { isAboutToDrag, isDragging, nodeRef, previewRef, handleRef } =
 		useDraggable({
 			element,
+			preview: { disable: true },
 			onDropHandler: (_, { dragItem }) => {
 				const id = (dragItem as { id: string[] | string }).id;
 
@@ -399,10 +400,11 @@ const DropLine = React.memo(function DropLine({
 			{...props}
 			className={cn(
 				"slate-dropLine",
-				"absolute inset-x-0 h-0.5 opacity-100 transition-opacity",
-				"bg-brand/50",
-				dropLine === "top" && "-top-px",
-				dropLine === "bottom" && "-bottom-px",
+				"absolute inset-x-0 h-1 opacity-100",
+				"bg-brand rounded-full",
+				"animate-[drop-line-pulse_1s_ease-in-out_infinite]",
+				dropLine === "top" && "-top-0.5",
+				dropLine === "bottom" && "-bottom-0.5",
 				className,
 			)}
 		/>
