@@ -15,7 +15,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiSplatRouteImport } from './routes/api.$'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
-import { Route as ApiContactsIndexRouteImport } from './routes/api/contacts/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedFormBuilderIndexRouteImport } from './routes/_authenticated/form-builder/index'
 import { Route as ApiRpcSplatRouteImport } from './routes/api.rpc.$'
@@ -59,11 +58,6 @@ const AuthenticatedSettingsRouteRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ApiContactsIndexRoute = ApiContactsIndexRouteImport.update({
-  id: '/api/contacts/',
-  path: '/api/contacts/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedSettingsIndexRoute =
   AuthenticatedSettingsIndexRouteImport.update({
     id: '/',
@@ -151,7 +145,6 @@ export interface FileRoutesByFullPath {
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/form-builder': typeof AuthenticatedFormBuilderIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/api/contacts': typeof ApiContactsIndexRoute
   '/workspace/$workspaceId/': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
   '/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRoute
 }
@@ -169,7 +162,6 @@ export interface FileRoutesByTo {
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/form-builder': typeof AuthenticatedFormBuilderIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
-  '/api/contacts': typeof ApiContactsIndexRoute
   '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
   '/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRoute
 }
@@ -191,7 +183,6 @@ export interface FileRoutesById {
   '/api/rpc/$': typeof ApiRpcSplatRoute
   '/_authenticated/form-builder/': typeof AuthenticatedFormBuilderIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/api/contacts/': typeof ApiContactsIndexRoute
   '/_authenticated/workspace/$workspaceId/': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRoute
 }
@@ -213,7 +204,6 @@ export interface FileRouteTypes {
     | '/api/rpc/$'
     | '/form-builder'
     | '/settings/'
-    | '/api/contacts'
     | '/workspace/$workspaceId/'
     | '/workspace/$workspaceId/form-builder/$formId'
   fileRoutesByTo: FileRoutesByTo
@@ -231,7 +221,6 @@ export interface FileRouteTypes {
     | '/api/rpc/$'
     | '/form-builder'
     | '/settings'
-    | '/api/contacts'
     | '/workspace/$workspaceId'
     | '/workspace/$workspaceId/form-builder/$formId'
   id:
@@ -252,7 +241,6 @@ export interface FileRouteTypes {
     | '/api/rpc/$'
     | '/_authenticated/form-builder/'
     | '/_authenticated/settings/'
-    | '/api/contacts/'
     | '/_authenticated/workspace/$workspaceId/'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId'
   fileRoutesById: FileRoutesById
@@ -264,7 +252,6 @@ export interface RootRouteChildren {
   ApiSplatRoute: typeof ApiSplatRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
-  ApiContactsIndexRoute: typeof ApiContactsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -310,13 +297,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/api/contacts/': {
-      id: '/api/contacts/'
-      path: '/api/contacts'
-      fullPath: '/api/contacts'
-      preLoaderRoute: typeof ApiContactsIndexRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/settings/': {
       id: '/_authenticated/settings/'
@@ -473,7 +453,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSplatRoute: ApiSplatRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
-  ApiContactsIndexRoute: ApiContactsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
