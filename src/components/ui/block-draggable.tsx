@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-const UNDRAGGABLE_KEYS = [KEYS.column, KEYS.tr, KEYS.td];
+const UNDRAGGABLE_KEYS = [KEYS.column, KEYS.tr, KEYS.td, "formHeader"];
 
 export const BlockDraggable: RenderNodeWrapper = (props) => {
 	const { editor, element, path } = props;
@@ -180,7 +180,7 @@ function Draggable(props: PlateElementProps) {
 												type: KEYS.p,
 												children: [{ text: "" }],
 											},
-											{ at: nextPath, select: true }
+											{ at: nextPath, select: true },
 										);
 									}}
 									data-plate-prevent-deselect

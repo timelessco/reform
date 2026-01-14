@@ -1,16 +1,11 @@
 import type { Value } from "platejs";
-/**
- * FormPreviewFromPlate - Renders a functional form preview from Plate editor content.
- *
- * This component transforms Plate.js editor state into an interactive form
- * with TanStack Form integration for validation and submission.
- */
 import { useState } from "react";
 import { RenderPreviewInput } from "@/components/form-components/render-preview-input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { usePreviewForm } from "@/hooks/use-preview-form";
 import {
+	extractFormHeader,
 	getEditableFields,
 	type PlateFormField,
 	type TransformedElement,
@@ -127,7 +122,11 @@ function RenderPreviewElement({
 	}
 
 	// Form fields (Input, Textarea, Button)
-	if (element.fieldType === "Input" || element.fieldType === "Textarea" || element.fieldType === "Button") {
+	if (
+		element.fieldType === "Input" ||
+		element.fieldType === "Textarea" ||
+		element.fieldType === "Button"
+	) {
 		return <RenderPreviewInput field={element as PlateFormField} form={form} />;
 	}
 
@@ -168,7 +167,7 @@ function PreviewFormHeader({
 			// Render as solid color background
 			return (
 				<div
-					className="w-full h-[200px] mb-4 rounded-lg"
+					className="w-full h-[200px] sm:h-[300px]"
 					style={{ backgroundColor: cover }}
 				/>
 			);
@@ -177,7 +176,7 @@ function PreviewFormHeader({
 		if (isValidUrl(cover) && !imageError) {
 			// Render as image
 			return (
-				<div className="w-full h-[200px] mb-4 rounded-lg overflow-hidden bg-muted">
+				<div className="w-full h-[200px] sm:h-[300px] overflow-hidden bg-muted">
 					<img
 						src={cover}
 						alt="Form cover"
@@ -207,9 +206,15 @@ function PreviewFormHeader({
 		// Handle emoji
 		if (isEmoji(icon)) {
 			return (
-				<span className="text-5xl" role="img" aria-label="Form icon">
-					{icon}
-				</span>
+				<div className={hasCover ? "-mt-[40px] relative z-10" : ""}>
+					<span
+						className="text-6xl sm:text-7xl block bg-background rounded-full leading-none p-2 w-fit h-fit"
+						role="img"
+						aria-label="Form icon"
+					>
+						{icon}
+					</span>
+				</div>
 			);
 		}
 
@@ -217,11 +222,11 @@ function PreviewFormHeader({
 		if (isValidUrl(icon) && !iconError) {
 			return (
 				<div className={hasCover ? "-mt-[40px] relative z-10" : ""}>
-					<div className="w-[80px] h-[80px] rounded-full overflow-hidden shadow-sm bg-background">
+					<div className="w-[80px] h-[80px] rounded-full overflow-hidden shadow-sm bg-background p-1">
 						<img
 							src={icon}
 							alt="Form icon"
-							className="w-full h-full object-cover"
+							className="w-full h-full object-cover rounded-full"
 							onError={() => setIconError(true)}
 						/>
 					</div>
@@ -233,18 +238,18 @@ function PreviewFormHeader({
 	};
 
 	return (
-		<div className="mb-8">
-			{/* Cover (image or solid color) */}
+		<div className="mb-8 w-full">
 			{hasCover && renderCover()}
 
-			{/* Icon and Title */}
-			<div className="flex flex-col">
-				{hasIcon && renderIcon()}
-				{hasTitle && (
-					<h1 className={`text-3xl font-bold ${hasIcon ? "mt-4" : ""}`}>
-						{title}
-					</h1>
-				)}
+			<div className="max-w-2xl mx-auto px-4 sm:px-0 relative">
+				<div className="flex flex-col">
+					{hasIcon && renderIcon()}
+					{hasTitle && (
+						<h1 className={`text-3xl font-bold ${hasIcon ? "mt-4" : "mt-8"}`}>
+							{title}
+						</h1>
+					)}
+				</div>
 			</div>
 		</div>
 	);
@@ -255,14 +260,18 @@ function PreviewFormHeader({
  */
 export function FormPreviewFromPlate({
 	content,
-	title,
-	icon,
-	cover,
+	title: legacyTitle,
+	icon: legacyIcon,
+	cover: legacyCover,
 }: FormPreviewFromPlateProps) {
-	// Transform Plate nodes into form elements
+	const headerFromContent = extractFormHeader(content);
+
+	const title = headerFromContent?.title || legacyTitle;
+	const icon = headerFromContent?.icon || legacyIcon;
+	const cover = headerFromContent?.cover || legacyCover;
+
 	const elements = transformPlateStateToFormElements(content);
 
-	// Get only editable fields for TanStack Form
 	const editableFields = getEditableFields(elements);
 
 	// Create TanStack Form instance
@@ -304,42 +313,44 @@ export function FormPreviewFromPlate({
 	const hasEditableFields = editableFields.length > 0;
 
 	return (
-		<div className="w-full max-w-2xl mx-auto">
+		<div className="w-full">
 			{/* Header Section */}
 			<PreviewFormHeader title={title} icon={icon} cover={cover} />
 
 			{/* Form */}
-			<form.AppForm>
-				<form.Form id={formName} noValidate className="space-y-4">
-					{elements.map((element) => (
-						<div key={element.id} className="w-full">
-							<RenderPreviewElement element={element} form={form} />
-						</div>
-					))}
+			<div className="max-w-2xl mx-auto px-4 sm:px-0">
+				<form.AppForm>
+					<form.Form id={formName} noValidate className="space-y-4">
+						{elements.map((element) => (
+							<div key={element.id} className="w-full">
+								<RenderPreviewElement element={element} form={form} />
+							</div>
+						))}
 
-					{/* Submit Button - only show if there are editable fields */}
-					{hasEditableFields && (
-						<div className="flex items-center justify-end w-full pt-4 gap-3">
-							<Button
-								type="button"
-								onClick={() => form.reset()}
-								className="rounded-lg"
-								variant="outline"
-								size="sm"
-							>
-								Reset
-							</Button>
-							<Button type="submit" className="rounded-lg" size="sm">
-								{form.baseStore?.state?.isSubmitting
-									? "Submitting..."
-									: form.baseStore?.state?.isSubmitted
-										? "Submitted"
-										: "Submit"}
-							</Button>
-						</div>
-					)}
-				</form.Form>
-			</form.AppForm>
+						{/* Submit Button - only show if there are editable fields */}
+						{hasEditableFields && (
+							<div className="flex items-center justify-end w-full pt-4 gap-3">
+								<Button
+									type="button"
+									onClick={() => form.reset()}
+									className="rounded-lg"
+									variant="outline"
+									size="sm"
+								>
+									Reset
+								</Button>
+								<Button type="submit" className="rounded-lg" size="sm">
+									{form.baseStore?.state?.isSubmitting
+										? "Submitting..."
+										: form.baseStore?.state?.isSubmitted
+											? "Submitted"
+											: "Submit"}
+								</Button>
+							</div>
+						)}
+					</form.Form>
+				</form.AppForm>
+			</div>
 		</div>
 	);
 }

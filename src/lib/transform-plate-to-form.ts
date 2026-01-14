@@ -1,50 +1,56 @@
-/**
- * Transform Plate.js editor state into form elements for preview rendering.
- *
- * This utility converts the Plate node structure into a FormElement-compatible format
- * for use with preview components and TanStack Form.
- */
 import type { Value } from "platejs";
 import type { FormElement, StaticFormElement } from "@/types/form-types";
 
-/**
- * Extended type that includes both form fields and static elements
- */
 export type PreviewElement = FormElement | StaticFormElement;
 
-/**
- * Form input field (editable)
- */
-export type PlateFormField = {
-	id: string;
-	name: string;
-	fieldType: "Input";
-	label?: string;
-	placeholder?: string;
-	required?: boolean;
-	minLength?: number;
-	maxLength?: number;
-	defaultValue?: string;
-} | {
-	id: string;
-	name: string;
-	fieldType: "Textarea";
-	label?: string;
-	placeholder?: string;
-	required?: boolean;
-	minLength?: number;
-	maxLength?: number;
-	defaultValue?: string;
-} | {
-	id: string;
-	name: string;
-	fieldType: "Button";
-	buttonText?: string;
+export type FormHeaderData = {
+	title: string;
+	icon: string | null;
+	cover: string | null;
 };
 
-/**
- * Static elements (non-editable content)
- */
+export function extractFormHeader(value: Value): FormHeaderData | null {
+	if (value.length > 0 && value[0].type === "formHeader") {
+		const node = value[0];
+		return {
+			title: (node.title as string) || "",
+			icon: (node.icon as string | null) || null,
+			cover: (node.cover as string | null) || null,
+		};
+	}
+	return null;
+}
+
+export type PlateFormField =
+	| {
+			id: string;
+			name: string;
+			fieldType: "Input";
+			label?: string;
+			placeholder?: string;
+			required?: boolean;
+			minLength?: number;
+			maxLength?: number;
+			defaultValue?: string;
+	  }
+	| {
+			id: string;
+			name: string;
+			fieldType: "Textarea";
+			label?: string;
+			placeholder?: string;
+			required?: boolean;
+			minLength?: number;
+			maxLength?: number;
+			defaultValue?: string;
+	  }
+	| {
+			id: string;
+			name: string;
+			fieldType: "Button";
+			buttonText?: string;
+	  };
+
 export type PlateStaticElement =
 	| { id: string; fieldType: "H1"; content: string; static: true; name: string }
 	| { id: string; fieldType: "H2"; content: string; static: true; name: string }
@@ -52,12 +58,12 @@ export type PlateStaticElement =
 	| { id: string; fieldType: "Separator"; static: true; name: string }
 	| { id: string; fieldType: "EmptyBlock"; static: true; name: string }
 	| {
-		id: string;
-		fieldType: "FieldDescription";
-		content: string;
-		static: true;
-		name: string;
-	};
+			id: string;
+			fieldType: "FieldDescription";
+			content: string;
+			static: true;
+			name: string;
+	  };
 
 /**
  * Combined type for all preview elements
@@ -113,7 +119,9 @@ export function transformPlateStateToFormElements(
 		const nodeType = node.type as string;
 
 		switch (nodeType) {
-			// Form input field (label + input/textarea pair)
+			case "formHeader":
+				break;
+
 			case "formLabel": {
 				const labelText = extractTextContent(
 					node.children as Array<{ text?: string }>,
@@ -128,7 +136,10 @@ export function transformPlateStateToFormElements(
 				let defaultValue: string | undefined;
 				let fieldType: "Input" | "Textarea" = "Input";
 
-				if (nextNode && (nextNode.type === "formInput" || nextNode.type === "formTextarea")) {
+				if (
+					nextNode &&
+					(nextNode.type === "formInput" || nextNode.type === "formTextarea")
+				) {
 					fieldType = nextNode.type === "formTextarea" ? "Textarea" : "Input";
 					placeholder = (nextNode.placeholder as string) || "";
 					// Get text from input if any for placeholder
@@ -256,19 +267,19 @@ export function transformPlateStateToFormElements(
 			case "formTextarea":
 				break;
 
-		// Button field
-		case "formButton": {
-			const btnText = node.buttonText as string | undefined;
-			const name = `button_${fieldIndex}`;
-			elements.push({
-id: name,
-name,
-fieldType: "Button",
-buttonText: btnText || "Submit",
-});
-			fieldIndex++;
-			break;
-		}
+			// Button field
+			case "formButton": {
+				const btnText = node.buttonText as string | undefined;
+				const name = `button_${fieldIndex}`;
+				elements.push({
+					id: name,
+					name,
+					fieldType: "Button",
+					buttonText: btnText || "Submit",
+				});
+				fieldIndex++;
+				break;
+			}
 
 			default:
 				// Skip unsupported node types

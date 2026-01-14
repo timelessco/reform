@@ -8,14 +8,32 @@ import viteTsConfigPaths from "vite-tsconfig-paths";
 
 const config = defineConfig({
 	plugins: [
-		devtools(),
+		devtools({
+			editor: {
+				name: 'Cursor',
+				open: async (path, lineNumber, columnNumber) => {
+					const { exec } = await import('node:child_process')
+					exec(
+						// or windsurf/cursor/webstorm/cursor/cursor
+						`cursor -g "${(path).replaceAll('$', '\\$')}${lineNumber ? `:${lineNumber}` : ''}${columnNumber ? `:${columnNumber}` : ''}"`,
+					)
+				},
+			}
+		}),
 		nitro({}),
 		// this is the plugin that enables path aliases
 		viteTsConfigPaths({
 			projects: ["./tsconfig.json"],
 		}),
 		tailwindcss(),
-		tanstackStart(),
+		tanstackStart({
+			spa: {
+				enabled: true,
+			},
+			prerender: {
+				enabled: false,
+			}
+		}),
 		viteReact({
 			babel: {
 				plugins: ["babel-plugin-react-compiler"],

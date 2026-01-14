@@ -17,4 +17,6 @@ export const addTodo = os
 		const newTodo = { id: todos.length + 1, name: input.name };
 		todos.push(newTodo);
 		return newTodo;
-	});
+	})
+
+

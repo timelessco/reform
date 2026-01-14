@@ -102,7 +102,7 @@ export function FormHeader({
 		<div className="group relative w-full flex flex-col mb-4">
 			{/* Cover Image Area */}
 			{hasCover && (
-				<div className="relative w-full h-[200px] group/cover bg-muted/20">
+				<div className="relative w-full h-[120px] sm:h-[200px] group/cover bg-muted/20">
 					{coverUrl && !coverUrl.startsWith("#") ? (
 						<img
 							src={coverUrl}
@@ -216,22 +216,22 @@ export function FormHeader({
 			{/* Main Content Area */}
 			<div
 				className={cn(
-					"relative px-14 max-w-[900px] mx-auto w-full flex flex-col",
+					"relative px-4 sm:px-14 max-w-[900px] mx-auto w-full flex flex-col",
 				)}
 			>
 				{/* Alignment Wrapper checking Editor padding */}
-				<div className="w-full px-16 sm:px-[max(64px,calc(50%-350px))]">
+				<div className="w-full  sm:px-[max(10px,calc(50%-350px))]">
 					{/* Logo Element */}
 					{hasLogo && (
 						<div
 							className={cn(
 								"relative z-10 mb-4",
-								hasCover ? "-mt-[40px]" : "mt-8",
+								hasCover ? "-mt-[30px] sm:-mt-[40px]" : "mt-6 sm:mt-8",
 							)}
 						>
 							<Dialog>
 								<DialogTrigger asChild>
-									<div className="w-[80px] h-[80px] rounded-full overflow-hidden shadow-sm bg-background cursor-pointer hover:ring-2 hover:ring-muted-foreground/20 transition-all group/logo">
+									<div className="w-[60px] h-[60px] sm:w-[80px] sm:h-[80px] rounded-full overflow-hidden shadow-sm bg-background cursor-pointer hover:ring-2 hover:ring-muted-foreground/20 transition-all group/logo">
 										{logoUrl && logoUrl !== "default-icon" ? (
 											<img
 												src={logoUrl}
@@ -241,8 +241,7 @@ export function FormHeader({
 										) : (
 											<div className="w-full h-full bg-black flex items-center justify-center text-white">
 												<svg
-													width="40"
-													height="40"
+													className="w-6 h-6 sm:w-10 sm:h-10"
 													viewBox="0 0 24 24"
 													fill="none"
 													stroke="currentColor"
@@ -307,7 +306,7 @@ export function FormHeader({
 					<div
 						className={cn(
 							"flex gap-1 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200",
-							!hasCover && !hasLogo && "mt-12",
+							!hasCover && !hasLogo && "mt-8 sm:mt-12",
 							hasCover && !hasLogo && "mt-4",
 							!hasCover && hasLogo && "mt-0",
 						)}
@@ -343,7 +342,7 @@ export function FormHeader({
 							placeholder="Form title"
 							value={title}
 							onChange={(e) => onTitleChange(e.target.value)}
-							className="w-full text-4xl font-bold border-none outline-none bg-transparent placeholder:text-muted-foreground/50 py-2 h-auto"
+							className="w-full text-2xl sm:text-4xl font-bold border-none outline-none bg-transparent placeholder:text-muted-foreground/50 py-1 sm:py-2 h-auto"
 						/>
 					</div>
 				</div>
