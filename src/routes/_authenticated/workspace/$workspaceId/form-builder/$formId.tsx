@@ -8,9 +8,10 @@ import { CustomizeSidebar } from "@/components/ui/customize-sidebar";
 import { editorDocCollection } from "@/db-collections";
 import { AppHeader } from "@/components/ui/app-header";
 import { Button } from "@/components/ui/button";
+import { getFormById, getFormbyIdQueryOption } from "@/lib/fn/forms";
 
 const EditorApp = lazy(
-	() => import("@/routes/_authenticated/form-builder/-components/editor-app"),
+	() => import("@/routes/_authenticated/workspace/$workspaceId/form-builder/-components/editor-app"),
 );
 
 export const Route = createFileRoute(
@@ -20,11 +21,43 @@ export const Route = createFileRoute(
 		demo: z.boolean().optional(),
 	}),
 	component: RouteComponent,
-	ssr: false,
+	beforeLoad : async ({params , context}) => {
+		const { formId } = params;
+		try {
+			const result =await context.queryClient.ensureQueryData(getFormbyIdQueryOption(formId));
+			console.log(result  , 'result')
+			return {
+				initialContent: result.form.content as any[]
+			};
+		} catch (error) {
+			// If form doesn't exist, return empty content
+			return {
+				initialContent: []
+			};
+		}
+	},
+	loader: async ({ params  , context }) => {
+		const { formId } = params;
+		try {
+			const result =await context.queryClient.ensureQueryData(getFormbyIdQueryOption(formId));
+			console.log(result  , 'result')
+			return {
+				initialContent: result.form.content as any[]
+			};
+		} catch (error) {
+			// If form doesn't exist, return empty content
+			return {
+				initialContent: []
+			};
+		}
+	},
+
 });
 
 function RouteComponent() {
 	const { workspaceId, formId } = Route.useParams();
+	const loaderData = Route.useLoaderData();
+	const { initialContent } = loaderData || { initialContent: [] as any[] };
 	const { demo } = Route.useSearch();
 
 	return (
@@ -42,7 +75,7 @@ function RouteComponent() {
 						{demo ? (
 							<PreviewMode formId={formId} workspaceId={workspaceId} />
 						) : (
-							<EditorApp formId={formId} />
+							<EditorApp formId={formId} workspaceId={workspaceId} defaultValue={initialContent} />
 						)}
 					</Suspense>
 				</main>
@@ -61,10 +94,11 @@ function PreviewMode({
 			.from({ doc: editorDocCollection })
 			.where(({ doc }) => eq(doc.id, formId)),
 	);
-
 	const doc = savedDocs?.[0];
 	const content = (doc?.content as Value) || [];
-
+	console.log(savedDocs , 'data')
+	// Only show "Form Not Found" after we've confirmed the form doesn't exist
+	// If savedDocs is undefined, we're still loading/syncing
 	if (savedDocs !== undefined && savedDocs.length === 0) {
 		return (
 			<div className="h-screen w-full flex items-center justify-center">
@@ -97,8 +131,8 @@ function PreviewMode({
 			<FormPreviewFromPlate
 				content={content}
 				title={doc.title}
-				icon={doc.icon}
-				cover={doc.cover}
+				icon={doc.icon ?? undefined}
+				cover={doc.cover ?? undefined}
 			/>
 		</div>
 	);

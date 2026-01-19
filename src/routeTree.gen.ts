@@ -10,20 +10,20 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
+import { Route as CreateRouteImport } from './routes/create'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiElectricRouteImport } from './routes/api/electric'
 import { Route as ApiSplatRouteImport } from './routes/api.$'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
-import { Route as AuthenticatedFormBuilderIndexRouteImport } from './routes/_authenticated/form-builder/index'
 import { Route as ApiRpcSplatRouteImport } from './routes/api.rpc.$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsMyAccountRouteImport } from './routes/_authenticated/settings/my-account'
 import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_authenticated/settings/billing'
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings/api-keys'
-import { Route as AuthenticatedFormBuilderFormIdRouteImport } from './routes/_authenticated/form-builder/$formId'
 import { Route as AuthenticatedWorkspaceWorkspaceIdRouteRouteImport } from './routes/_authenticated/workspace/$workspaceId/route'
 import { Route as AuthenticatedWorkspaceWorkspaceIdIndexRouteImport } from './routes/_authenticated/workspace/$workspaceId/index'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId'
@@ -33,6 +33,11 @@ const VerifyEmailRoute = VerifyEmailRouteImport.update({
   path: '/verify-email',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreateRoute = CreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -40,6 +45,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiElectricRoute = ApiElectricRouteImport.update({
+  id: '/api/electric',
+  path: '/api/electric',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSplatRoute = ApiSplatRouteImport.update({
@@ -63,12 +73,6 @@ const AuthenticatedSettingsIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any)
-const AuthenticatedFormBuilderIndexRoute =
-  AuthenticatedFormBuilderIndexRouteImport.update({
-    id: '/form-builder/',
-    path: '/form-builder/',
-    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const ApiRpcSplatRoute = ApiRpcSplatRouteImport.update({
   id: '/api/rpc/$',
@@ -104,12 +108,6 @@ const AuthenticatedSettingsApiKeysRoute =
     path: '/api-keys',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
-const AuthenticatedFormBuilderFormIdRoute =
-  AuthenticatedFormBuilderFormIdRouteImport.update({
-    id: '/form-builder/$formId',
-    path: '/form-builder/$formId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedWorkspaceWorkspaceIdRouteRoute =
   AuthenticatedWorkspaceWorkspaceIdRouteRouteImport.update({
     id: '/workspace/$workspaceId',
@@ -131,36 +129,36 @@ const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/create': typeof CreateRoute
   '/verify-email': typeof VerifyEmailRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/$': typeof ApiSplatRoute
+  '/api/electric': typeof ApiElectricRoute
   '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
-  '/form-builder/$formId': typeof AuthenticatedFormBuilderFormIdRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
-  '/form-builder': typeof AuthenticatedFormBuilderIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/workspace/$workspaceId/': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
   '/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/create': typeof CreateRoute
   '/verify-email': typeof VerifyEmailRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/$': typeof ApiSplatRoute
-  '/form-builder/$formId': typeof AuthenticatedFormBuilderFormIdRoute
+  '/api/electric': typeof ApiElectricRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
-  '/form-builder': typeof AuthenticatedFormBuilderIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
   '/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRoute
@@ -169,19 +167,19 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/create': typeof CreateRoute
   '/verify-email': typeof VerifyEmailRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/api/$': typeof ApiSplatRoute
+  '/api/electric': typeof ApiElectricRoute
   '/_authenticated/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
-  '/_authenticated/form-builder/$formId': typeof AuthenticatedFormBuilderFormIdRoute
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/_authenticated/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
-  '/_authenticated/form-builder/': typeof AuthenticatedFormBuilderIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/workspace/$workspaceId/': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRoute
@@ -190,36 +188,36 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/create'
     | '/verify-email'
     | '/settings'
     | '/dashboard'
     | '/api/$'
+    | '/api/electric'
     | '/workspace/$workspaceId'
-    | '/form-builder/$formId'
     | '/settings/api-keys'
     | '/settings/billing'
     | '/settings/my-account'
     | '/settings/notifications'
     | '/api/auth/$'
     | '/api/rpc/$'
-    | '/form-builder'
     | '/settings/'
     | '/workspace/$workspaceId/'
     | '/workspace/$workspaceId/form-builder/$formId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/create'
     | '/verify-email'
     | '/dashboard'
     | '/api/$'
-    | '/form-builder/$formId'
+    | '/api/electric'
     | '/settings/api-keys'
     | '/settings/billing'
     | '/settings/my-account'
     | '/settings/notifications'
     | '/api/auth/$'
     | '/api/rpc/$'
-    | '/form-builder'
     | '/settings'
     | '/workspace/$workspaceId'
     | '/workspace/$workspaceId/form-builder/$formId'
@@ -227,19 +225,19 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/create'
     | '/verify-email'
     | '/_authenticated/settings'
     | '/_authenticated/dashboard'
     | '/api/$'
+    | '/api/electric'
     | '/_authenticated/workspace/$workspaceId'
-    | '/_authenticated/form-builder/$formId'
     | '/_authenticated/settings/api-keys'
     | '/_authenticated/settings/billing'
     | '/_authenticated/settings/my-account'
     | '/_authenticated/settings/notifications'
     | '/api/auth/$'
     | '/api/rpc/$'
-    | '/_authenticated/form-builder/'
     | '/_authenticated/settings/'
     | '/_authenticated/workspace/$workspaceId/'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId'
@@ -248,8 +246,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  CreateRoute: typeof CreateRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   ApiSplatRoute: typeof ApiSplatRoute
+  ApiElectricRoute: typeof ApiElectricRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiRpcSplatRoute: typeof ApiRpcSplatRoute
 }
@@ -261,6 +261,13 @@ declare module '@tanstack/react-router' {
       path: '/verify-email'
       fullPath: '/verify-email'
       preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create': {
+      id: '/create'
+      path: '/create'
+      fullPath: '/create'
+      preLoaderRoute: typeof CreateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -275,6 +282,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/electric': {
+      id: '/api/electric'
+      path: '/api/electric'
+      fullPath: '/api/electric'
+      preLoaderRoute: typeof ApiElectricRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/$': {
@@ -304,13 +318,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/'
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
-    }
-    '/_authenticated/form-builder/': {
-      id: '/_authenticated/form-builder/'
-      path: '/form-builder'
-      fullPath: '/form-builder'
-      preLoaderRoute: typeof AuthenticatedFormBuilderIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/rpc/$': {
       id: '/api/rpc/$'
@@ -353,13 +360,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/api-keys'
       preLoaderRoute: typeof AuthenticatedSettingsApiKeysRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
-    }
-    '/_authenticated/form-builder/$formId': {
-      id: '/_authenticated/form-builder/$formId'
-      path: '/form-builder/$formId'
-      fullPath: '/form-builder/$formId'
-      preLoaderRoute: typeof AuthenticatedFormBuilderFormIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/workspace/$workspaceId': {
       id: '/_authenticated/workspace/$workspaceId'
@@ -430,8 +430,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedWorkspaceWorkspaceIdRouteRoute: typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
-  AuthenticatedFormBuilderFormIdRoute: typeof AuthenticatedFormBuilderFormIdRoute
-  AuthenticatedFormBuilderIndexRoute: typeof AuthenticatedFormBuilderIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -439,8 +437,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedWorkspaceWorkspaceIdRouteRoute:
     AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren,
-  AuthenticatedFormBuilderFormIdRoute: AuthenticatedFormBuilderFormIdRoute,
-  AuthenticatedFormBuilderIndexRoute: AuthenticatedFormBuilderIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -449,8 +445,10 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  CreateRoute: CreateRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   ApiSplatRoute: ApiSplatRoute,
+  ApiElectricRoute: ApiElectricRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiRpcSplatRoute: ApiRpcSplatRoute,
 }

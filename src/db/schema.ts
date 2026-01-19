@@ -8,6 +8,7 @@ import {
 	text,
 	timestamp,
 } from "drizzle-orm/pg-core";
+import { createSelectSchema } from "drizzle-zod";
 
 export const todos = pgTable("todos", {
 	id: serial().primaryKey(),
@@ -99,10 +100,20 @@ export const apikey = pgTable("apikey", {
 	metadata: text("metadata"),
 });
 
+// Workspaces table for organizing forms
+export const workspaces = pgTable("workspaces", {
+	id: text("id").primaryKey(),
+	userId: text("user_id").notNull(),
+	name: text("name").notNull().default("My workspace"),
+	createdAt: timestamp("created_at").notNull().defaultNow(),
+	updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Forms table for storing form builder documents
 export const forms = pgTable("forms", {
-	id: text("id").primaryKey(), // UUID generated client-side for offline support
+	id: text("id").primaryKey(), // UUID generated client-side
 	userId: text("user_id").notNull(),
+	workspaceId: text("workspace_id").notNull(),
 	title: text("title").notNull().default("Untitled"),
 	formName: text("form_name").notNull().default("draft"),
 	schemaName: text("schema_name").notNull().default("draftFormSchema"),
@@ -118,9 +129,19 @@ export const forms = pgTable("forms", {
 
 // Drizzle v2 Relations using defineRelations
 export const relations = defineRelations(
-	{ user, session, account, verification, todos, twoFactor, apikey, forms },
+	{
+		user,
+		session,
+		account,
+		verification,
+		todos,
+		twoFactor,
+		apikey,
+		forms,
+		workspaces,
+	},
 	(r) => ({
-		// User has many sessions, accounts, and forms
+		// User has many sessions, accounts, workspaces, and forms
 		user: {
 			sessions: r.many.session({
 				from: r.user.id,
@@ -137,6 +158,10 @@ export const relations = defineRelations(
 			apikeys: r.many.apikey({
 				from: r.user.id,
 				to: r.apikey.userId,
+			}),
+			workspaces: r.many.workspaces({
+				from: r.user.id,
+				to: r.workspaces.userId,
 			}),
 			forms: r.many.forms({
 				from: r.user.id,
@@ -171,12 +196,34 @@ export const relations = defineRelations(
 				to: r.user.id,
 			}),
 		},
-		// Form belongs to one user
+		// Workspace belongs to one user and has many forms
+		workspaces: {
+			user: r.one.user({
+				from: r.workspaces.userId,
+				to: r.user.id,
+			}),
+			forms: r.many.forms({
+				from: r.workspaces.id,
+				to: r.forms.workspaceId,
+			}),
+		},
+		// Form belongs to one user and one workspace
 		forms: {
 			user: r.one.user({
 				from: r.forms.userId,
 				to: r.user.id,
 			}),
+			workspace: r.one.workspaces({
+				from: r.forms.workspaceId,
+				to: r.workspaces.id,
+			}),
 		},
 	}),
 );
+
+// ============================================================================
+// Zod Schema Exports (Single Source of Truth)
+// ============================================================================
+
+export const WorkspaceZod = createSelectSchema(workspaces);
+export const FormZod = createSelectSchema(forms);

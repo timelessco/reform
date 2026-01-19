@@ -8,13 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import { editorDocCollection } from "@/db-collections";
-import { updateDoc } from "@/services/form.service";
+import { updateDoc, updateHeader } from "@/services/form.service";
 
 interface EditorAppProps {
 	formId: string;
+	workspaceId? : string;
+	defaultValue?  : ReturnType<typeof normalizeNodeId>;
 }
 
-const defaultValue = normalizeNodeId([
+const DEFAULT_EDITOR_VALUE = normalizeNodeId([
 	createFormHeaderNode() as unknown as TElement,
 	{
 		children: [{ text: "Start building your form..." }],
@@ -22,11 +24,11 @@ const defaultValue = normalizeNodeId([
 	},
 ]);
 
-export default function EditorApp({ formId }: EditorAppProps) {
+export default function EditorApp({ formId , workspaceId , defaultValue }: EditorAppProps) {
 	const { data: savedDocs } = useLiveQuery((q) =>
 		q.from({ doc: editorDocCollection }).where(({ doc }) => eq(doc.id, formId)),
 	);
-
+	console.log(savedDocs , 'Checking')
 	const initializedRef = useRef(false);
 	const [isReady, setIsReady] = useState(false);
 	const skipSaveRef = useRef(false);
@@ -40,11 +42,12 @@ export default function EditorApp({ formId }: EditorAppProps) {
 	useEffect(() => {
 		if (initializedRef.current) return;
 		if (savedDocs === undefined) return;
+		if (savedDocs.length === 0) return; // Wait for form data to be available
 
 		initializedRef.current = true;
 
 		const docData = savedDocs?.[0];
-		let initialContent: Value | undefined;
+		let initialContent: Value;
 
 		if (docData?.content && Array.isArray(docData.content)) {
 			if (
@@ -64,12 +67,11 @@ export default function EditorApp({ formId }: EditorAppProps) {
 				];
 			}
 		} else {
-			initialContent = defaultValue;
+			initialContent = defaultValue ?? DEFAULT_EDITOR_VALUE;
 		}
 
 		lastSavedContentRef.current = initialContent;
 		skipSaveRef.current = true;
-
 		editor.tf.init({
 			value: initialContent,
 			autoSelect: "end",
@@ -93,14 +95,31 @@ export default function EditorApp({ formId }: EditorAppProps) {
 
 			lastSavedContentRef.current = value;
 
-			updateDoc(formId, (draft: any) => {
-				draft.content = value;
-			});
+			// Check if the first element is a formHeader
+			if (value.length > 0 && value[0]?.type === 'formHeader') {
+				const headerNode = value[0] as any;
+				const now = new Date().toISOString()
+				updateHeader(formId, {
+					title: headerNode.title,
+					icon: headerNode.icon,
+					cover: headerNode.cover,
+					workspaceId : workspaceId,
+					createdAt : now,
+				});
+			} else {
+				// Update the full content
+				updateDoc(formId, (draft) => {
+					draft.workspaceId = workspaceId,
+					draft.createdAt = now,
+					draft.content = value;
+				});
+			}
 		},
-		[formId],
+		[formId, workspaceId],
 	);
 
-	const isPreview = savedDocs?.[0]?.isPreview ?? false;
+	// Preview mode is handled by route search params, not stored in DB
+	const isPreview = false;
 
 	if (!isReady) {
 		return (
@@ -110,6 +129,8 @@ export default function EditorApp({ formId }: EditorAppProps) {
 		);
 	}
 
+	// Only show "Form Not Found" after we've confirmed the form doesn't exist
+	// If savedDocs is undefined, we're still loading/syncing
 	if (savedDocs !== undefined && savedDocs.length === 0) {
 		return (
 			<div className="h-screen w-full flex items-center justify-center">

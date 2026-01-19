@@ -1,6 +1,38 @@
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { type EditorDoc } from "@/db-collections";
+import {
+	createForm,
+	deleteForm,
+	duplicateForm,
+	moveFormToWorkspace,
+	getFormsByWorkspace,
+} from "@/lib/fn/forms";
+import { getWorkspaceById, getWorkspaces } from "@/lib/fn/workspaces";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { eq, useLiveQuery } from "@tanstack/react-db";
-import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import {
 	ChevronLeft,
@@ -17,38 +49,7 @@ import {
 	Settings,
 	Trash2,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-	type EditorDoc,
-	editorDocCollection,
-	workspaceCollection,
-} from "@/db-collections";
-import { createForm, deleteForm, duplicateForm, moveFormToWorkspace } from "@/services/form.service";
-import { useWorkspaces } from "@/hooks/use-workspace-init";
+import { useState } from "react";
 
 const FORMS_PER_PAGE = 10;
 
@@ -61,6 +62,7 @@ export const Route = createFileRoute(
 
 function WorkspaceDashboard() {
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const { workspaceId } = Route.useParams();
 	const [isCreating, setIsCreating] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -70,43 +72,41 @@ function WorkspaceDashboard() {
 	} | null>(null);
 	const [currentPage, setCurrentPage] = useState(1);
 
-	const workspaces = useWorkspaces();
 
 	// Query workspace details
-	const { data: workspaceData } = useLiveQuery((q) =>
-		q
-			.from({ workspace: workspaceCollection })
-			.where(({ workspace }) => eq(workspace.id, workspaceId))
-			.select(({ workspace }) => ({
-				id: workspace.id,
-				name: workspace.name,
-			})),
-	);
-	const workspace = workspaceData?.[0];
+	const { data: workspaceData, isLoading: isLoadingWorkspace } = useQuery({
+		queryKey: ["workspace", workspaceId],
+		queryFn: async () => {
+			const result = await getWorkspaceById({ data: { id: workspaceId } });
+			return result;
+		},
+	});
+
+	const workspace = workspaceData?.workspace;
+
+	// Query all workspaces for move form dropdown
+	const { data: workspacesData } = useQuery({
+		queryKey: ["workspaces"],
+		queryFn: () => getWorkspaces(),
+	});
+
+	const workspaces = workspacesData?.workspaces || [];
 
 	// Query forms for this workspace
-	const { data: forms = [] } = useLiveQuery((q) =>
-		q
-			.from({ doc: editorDocCollection })
-			.where(({ doc }) => eq(doc.workspaceId, workspaceId))
-			.select(({ doc }) => ({
-				id: doc.id,
-				workspaceId: doc.workspaceId,
-				title: doc.title,
-				updatedAt: doc.updatedAt,
-				content: doc.content,
-				settings: doc.settings,
-				formName: doc.formName,
-				schemaName: doc.schemaName,
-				isMS: doc.isMS,
-				isPreview: doc.isPreview,
-				icon: doc.icon,
-				cover: doc.cover,
-			})),
-	);
+	const { data: formsData } = useQuery({
+		queryKey: ["forms", workspaceId],
+		queryFn: async (): Promise<{ forms: any[] }> => {
+			const result = await getFormsByWorkspace({ data: { workspaceId } });
+			return result as { forms: any[] };
+		},
+	});
+
+	const forms = formsData?.forms ?? [];
 
 	// Sort by updatedAt descending (most recent first)
-	const sortedForms = [...forms].sort((a, b) => b.updatedAt - a.updatedAt);
+	const sortedForms = [...forms].sort((a, b) =>
+		new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+	);
 
 	// Pagination
 	const totalPages = Math.ceil(sortedForms.length / FORMS_PER_PAGE);
@@ -119,10 +119,19 @@ function WorkspaceDashboard() {
 	const handleCreateForm = async () => {
 		setIsCreating(true);
 		try {
-			const newForm = await createForm(workspaceId, "Untitled");
+			const response = await createForm({
+				data: {
+					id: crypto.randomUUID(),
+					workspaceId,
+					title: "Untitled",
+				},
+			}) as { form: { id: string } };
+			// Invalidate queries to refresh the lists
+			await queryClient.invalidateQueries({ queryKey: ["forms", workspaceId] });
+			await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
 			navigate({
 				to: "/workspace/$workspaceId/form-builder/$formId",
-				params: { workspaceId, formId: newForm.id },
+				params: { workspaceId, formId: response.form.id },
 			});
 		} catch (error) {
 			console.error("Failed to create form:", error);
@@ -138,7 +147,10 @@ function WorkspaceDashboard() {
 
 	const handleConfirmDelete = async () => {
 		if (formToDelete) {
-			await deleteForm(formToDelete.id);
+			await deleteForm({ data: { id: formToDelete.id } });
+			// Invalidate queries to refresh the lists
+			await queryClient.invalidateQueries({ queryKey: ["forms", workspaceId] });
+			await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
 			setDeleteDialogOpen(false);
 			setFormToDelete(null);
 		}
@@ -146,7 +158,10 @@ function WorkspaceDashboard() {
 
 	const handleDuplicate = async (form: EditorDoc) => {
 		try {
-			await duplicateForm(form);
+			await duplicateForm({ data: { id: form.id } });
+			// Invalidate queries to refresh the lists
+			await queryClient.invalidateQueries({ queryKey: ["forms", workspaceId] });
+			await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
 		} catch (error) {
 			console.error("Failed to duplicate form:", error);
 		}
@@ -154,15 +169,31 @@ function WorkspaceDashboard() {
 
 	const handleMoveForm = async (formId: string, targetWorkspaceId: string) => {
 		try {
-			await moveFormToWorkspace(formId, targetWorkspaceId);
+			await moveFormToWorkspace({
+				data: { formId, targetWorkspaceId },
+			});
+			// Invalidate forms query for both source and target workspaces
+			await queryClient.invalidateQueries({ queryKey: ["forms", workspaceId] });
+			await queryClient.invalidateQueries({ queryKey: ["forms", targetWorkspaceId] });
 		} catch (error) {
 			console.error("Failed to move form:", error);
 		}
 	};
 
-	const formatLastEdited = (timestamp: number) => {
-		return `Edited ${formatDistanceToNow(timestamp)} ago`;
+	const formatLastEdited = (timestamp: string) => {
+		return `Edited ${formatDistanceToNow(new Date(timestamp))} ago`;
 	};
+
+	if (isLoadingWorkspace) {
+		return (
+			<div className="flex-1 flex items-center justify-center min-h-screen">
+				<div className="flex flex-col items-center gap-4">
+					<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+					<p className="text-sm text-muted-foreground">Loading workspace...</p>
+				</div>
+			</div>
+		);
+	}
 
 	if (!workspace) {
 		return (

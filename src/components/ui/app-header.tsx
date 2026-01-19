@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useSearch } from "@tanstack/react-router";
 import { Flower2, History, LogOut, Settings, User } from "lucide-react";
 import { toast } from "sonner";
@@ -24,12 +24,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { useCustomizeSidebar } from "@/hooks/use-customize-sidebar";
-import { useFormStateById } from "@/hooks/use-form-state";
-import { useWorkspaceById } from "@/hooks/use-workspace-init";
+import { getWorkspaceById } from "@/lib/fn/workspaces";
 import { auth, useSession } from "@/lib/auth-client";
-import { cn } from "@/lib/utils";
-import { togglePreview } from "@/services/form.service";
 import { SidebarTrigger, useSidebarSafe } from "./sidebar";
+import { eq, useLiveQuery } from "@tanstack/react-db";
+import { editorDocCollection } from "@/db-collections";
 
 interface AppHeaderProps {
 	formId?: string;
@@ -39,14 +38,24 @@ interface AppHeaderProps {
 export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 	const sidebarContext = useSidebarSafe();
 	const state = sidebarContext?.state;
-	const form = useFormStateById(formId);
-	const workspace = useWorkspaceById(workspaceId || "");
 	const { pathname } = useLocation();
 	const isFormBuilder =
 		pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
 	const { data: sessionData } = useSession();
 	const session = sessionData;
 	const isUnverified = session && !session.user.emailVerified;
+	const { data: savedDocs } = useLiveQuery((q) =>
+		q.from({ doc: editorDocCollection }).where(({ doc }) => eq(doc.id, formId)),
+	)
+	// Query workspace data if workspaceId is provided
+	const workspaceQuery = useQuery({
+		queryKey: ["workspace", workspaceId],
+		queryFn: () => getWorkspaceById({ data: { id: workspaceId! } }),
+		enabled: !!workspaceId,
+	});
+
+	const workspace = workspaceQuery.data?.workspace;
+
 
 	// Get search params for the current route
 	const search: any = useSearch({ strict: false });
@@ -112,7 +121,7 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 							<BreadcrumbSeparator />
 							<BreadcrumbItem>
 								<BreadcrumbPage className="flex items-center gap-2">
-									{form.title || "Untitled"}
+									{savedDocs[0]?.title || "Untitled"}
 								</BreadcrumbPage>
 							</BreadcrumbItem>
 						</BreadcrumbList>

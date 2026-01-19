@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { useWorkspaceInit } from "@/hooks/use-workspace-init";
+import { getWorkspaces, createWorkspace } from "@/lib/fn/workspaces";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
 	component: DashboardPage,
@@ -10,17 +11,48 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
 	const navigate = useNavigate();
-	const { defaultWorkspace, isReady } = useWorkspaceInit();
+	const queryClient = useQueryClient();
+
+	// Query workspaces from server
+	const { data: workspacesResponse, isLoading } = useQuery({
+		queryKey: ["workspaces"],
+		queryFn: () => getWorkspaces(),
+	});
+
+	const workspaces = workspacesResponse?.workspaces || [];
+	const defaultWorkspace = workspaces.length > 0 ? workspaces[0] : null;
 
 	useEffect(() => {
-		if (isReady && defaultWorkspace) {
-			navigate({
-				to: "/workspace/$workspaceId",
-				params: { workspaceId: defaultWorkspace.id },
-				replace: true,
-			});
-		}
-	}, [isReady, defaultWorkspace, navigate]);
+		const initializeWorkspace = async () => {
+			if (isLoading) return;
+
+			if (defaultWorkspace) {
+				// Navigate to existing workspace
+				navigate({
+					to: "/workspace/$workspaceId",
+					params: { workspaceId: defaultWorkspace.id },
+					replace: true,
+				});
+			} else {
+				// Create default workspace if none exists
+				try {
+					const response = await createWorkspace({
+						data: { name: "My workspace" },
+					});
+					await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+					navigate({
+						to: "/workspace/$workspaceId",
+						params: { workspaceId: response.workspace.id },
+						replace: true,
+					});
+				} catch (error) {
+					console.error("Failed to create default workspace:", error);
+				}
+			}
+		};
+
+		initializeWorkspace();
+	}, [isLoading, defaultWorkspace, navigate, queryClient]);
 
 	return (
 		<div className="flex-1 flex items-center justify-center min-h-screen">

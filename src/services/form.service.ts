@@ -1,24 +1,35 @@
 import type { Value } from "platejs";
-import { type EditorDoc, editorDocCollection } from "@/db-collections";
-import { DEFAULT_FORM_STATE } from "@/hooks/use-form-state";
+import { type Form, formCollection } from "@/db-collections";
+import { createFormHeaderNode } from "@/components/ui/form-header-node";
 
-/**
- * Toggles the preview mode for a specific document.
- */
-export async function togglePreview(id: string, currentIsPreview: boolean) {
-	return editorDocCollection.update(id, (draft) => {
-		draft.isPreview = !currentIsPreview;
-		draft.updatedAt = Date.now();
-	});
-}
+const DEFAULT_FORM_CONTENT = [
+	createFormHeaderNode({ title: "Untitled", icon: null, cover: null }),
+	{
+		children: [{ text: "Start building your form..." }],
+		type: "p",
+	},
+];
+
+const DEFAULT_FORM_SETTINGS = {
+	defaultRequiredValidation: true,
+	numericInput: false,
+	focusOnError: true,
+	validationMethod: "onDynamic" as const,
+	asyncValidation: 500,
+	activeTab: "builder" as const,
+	preferredSchema: "zod" as const,
+	preferredFramework: "react" as const,
+	preferredPackageManager: "pnpm" as const,
+	isCodeSidebarOpen: false,
+};
 
 /**
  * Updates the form content (Plate editor value).
  */
 export async function updateContent(id: string, content: Value) {
-	return editorDocCollection.update(id, (draft) => {
+	return formCollection.update(id, (draft) => {
 		draft.content = content;
-		draft.updatedAt = Date.now();
+		draft.updatedAt = new Date().toISOString();
 	});
 }
 
@@ -27,33 +38,42 @@ export async function updateContent(id: string, content: Value) {
  */
 export async function updateHeader(
 	id: string,
-	header: { title?: string; icon?: string; cover?: string },
+	header: { title?: string; icon?: string; cover?: string , workspaceId : string ,createdAt : string},
 ) {
-	return editorDocCollection.update(id, (draft) => {
+	return formCollection.update(id, (draft) => {
 		if (header.title !== undefined) draft.title = header.title;
 		if (header.icon !== undefined) draft.icon = header.icon;
 		if (header.cover !== undefined) draft.cover = header.cover;
-		draft.updatedAt = Date.now();
+		if(header.workspaceId !== undefined) draft.workspaceId = header.workspaceId;
+		if(header.createdAt !== undefined) draft.createdAt = header.createdAt;
+		draft.updatedAt = new Date().toISOString();
 	});
 }
 
 /**
  * Updates general form settings.
  */
-export async function updateSettings(id: string, settings: any) {
-	return editorDocCollection.update(id, (draft) => {
+export async function updateSettings(
+	id: string,
+	settings: Partial<typeof DEFAULT_FORM_SETTINGS>,
+) {
+	return formCollection.update(id, (draft) => {
 		draft.settings = { ...draft.settings, ...settings };
-		draft.updatedAt = Date.now();
+		draft.updatedAt = new Date().toISOString();
 	});
 }
 
 /**
  * Generic update for when we need to batch multiple changes.
  */
-export async function updateDoc(id: string, updater: (draft: any) => void) {
-	return editorDocCollection.update(id, (draft) => {
+export async function updateDoc(
+	id: string,
+	updater: (draft: any) => void,
+) {
+	return formCollection.update(id, (draft) => {
+		console.log(draft , 'draft')
 		updater(draft);
-		draft.updatedAt = Date.now();
+		draft.updatedAt = new Date().toISOString();
 	});
 }
 
@@ -63,17 +83,26 @@ export async function updateDoc(id: string, updater: (draft: any) => void) {
 export async function createForm(
 	workspaceId: string,
 	title = "Untitled",
-): Promise<EditorDoc> {
+): Promise<Form> {
 	const id = crypto.randomUUID();
-	const newForm: EditorDoc = {
-		...DEFAULT_FORM_STATE,
+	const now = new Date().toISOString();
+	const newForm: Form = {
 		id,
 		workspaceId,
 		title,
-		updatedAt: Date.now(),
+		formName: "draft",
+		schemaName: "draftFormSchema",
+		content: DEFAULT_FORM_CONTENT,
+		settings: DEFAULT_FORM_SETTINGS,
+		icon: null,
+		cover: null,
+		isMultiStep: false,
+		status: "draft",
+		createdAt: now,
+		updatedAt: now,
 	};
 
-	await editorDocCollection.insert(newForm);
+	await formCollection.insert(newForm);
 	return newForm;
 }
 
@@ -81,29 +110,29 @@ export async function createForm(
  * Deletes a form by ID.
  */
 export async function deleteForm(id: string): Promise<void> {
-	await editorDocCollection.delete(id);
+	await formCollection.delete(id);
 }
 
 /**
  * Duplicates a form by ID and returns the new document.
  * The new form's title will be "{original title} copy"
  */
-export async function duplicateForm(
-	sourceForm: EditorDoc,
-): Promise<EditorDoc> {
+export async function duplicateForm(sourceForm: Form): Promise<Form> {
 	const id = crypto.randomUUID();
+	const now = new Date().toISOString();
 	const title = sourceForm.title
 		? `${sourceForm.title} copy`
 		: "Untitled copy";
 
-	const newForm: EditorDoc = {
+	const newForm: Form = {
 		...sourceForm,
 		id,
 		title,
-		updatedAt: Date.now(),
+		createdAt: now,
+		updatedAt: now,
 	};
 
-	await editorDocCollection.insert(newForm);
+	await formCollection.insert(newForm);
 	return newForm;
 }
 
@@ -114,8 +143,8 @@ export async function moveFormToWorkspace(
 	formId: string,
 	targetWorkspaceId: string,
 ): Promise<void> {
-	await editorDocCollection.update(formId, (draft) => {
+	await formCollection.update(formId, (draft) => {
 		draft.workspaceId = targetWorkspaceId;
-		draft.updatedAt = Date.now();
+		draft.updatedAt = new Date().toISOString();
 	});
 }

@@ -1,17 +1,3 @@
-import { useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -22,6 +8,13 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
 	Dialog,
 	DialogContent,
@@ -30,8 +23,14 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
 	Sidebar,
 	SidebarContent,
@@ -50,10 +49,18 @@ import {
 	SidebarTrigger,
 	useSidebar,
 } from "@/components/ui/sidebar";
-import { editorDocCollection, type Workspace } from "@/db-collections";
+import { type Workspace } from "@/db-collections";
 import { auth, useSession } from "@/lib/auth-client";
+import { createForm } from "@/lib/fn/forms";
 import { eq, useLiveQuery } from "@tanstack/react-db";
-import { useMutation } from "@tanstack/react-query";
+import { editorDocCollection } from "@/db-collections";
+import {
+	createWorkspace,
+	deleteWorkspace,
+	getWorkspacesWithForms,
+	updateWorkspace,
+} from "@/lib/fn/workspaces";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation, useRouter } from "@tanstack/react-router";
 import {
 	Bell,
@@ -78,13 +85,7 @@ import {
 	Users,
 } from "lucide-react";
 import type * as React from "react";
-import { createForm } from "@/services/form.service";
-import {
-	createWorkspace,
-	deleteWorkspace,
-	updateWorkspace,
-} from "@/services/workspace.service";
-import { useWorkspaces } from "@/hooks/use-workspace-init";
+import { useState } from "react";
 
 const data = {
 	navMain: [
@@ -180,11 +181,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const { data: sessionData } = useSession();
 	const location = useLocation();
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const user = sessionData?.user;
 	const { isMobile } = useSidebar();
+	// Query workspaces with forms from server
+	const { data: workspacesResponse } = useQuery({
+		queryKey: ["workspaces"],
+		queryFn: () => getWorkspacesWithForms(),
+	});
 
-	// Get workspaces
-	const workspaces = useWorkspaces();
+	const workspaces = workspacesResponse?.workspaces || [];
 
 	// State for dialogs
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -207,10 +213,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 	const handleCreateWorkspace = async () => {
 		try {
-			const newWorkspace = await createWorkspace("New workspace");
+			const response = await createWorkspace({
+				data : {
+					name : 'New WorkSpace'
+				}
+			});
+			await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
 			router.navigate({
 				to: "/workspace/$workspaceId",
-				params: { workspaceId: newWorkspace.id },
+				params: { workspaceId: response.workspace.id },
 			});
 		} catch (error) {
 			console.error("Failed to create workspace:", error);
@@ -220,7 +231,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const handleDeleteWorkspace = async () => {
 		if (!workspaceToDelete) return;
 		try {
-			await deleteWorkspace(workspaceToDelete.id);
+			await deleteWorkspace({
+				data: { id: workspaceToDelete.id },
+			});
+			await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
 			setDeleteDialogOpen(false);
 			setWorkspaceToDelete(null);
 			// Navigate to dashboard if we deleted the current workspace
@@ -233,9 +247,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const handleRenameWorkspace = async () => {
 		if (!workspaceToRename || !newWorkspaceName.trim()) return;
 		try {
-			await updateWorkspace(workspaceToRename.id, {
-				name: newWorkspaceName.trim(),
+			await updateWorkspace({
+				data: {
+					id: workspaceToRename.id,
+					name: newWorkspaceName.trim(),
+				},
 			});
+			await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
 			setRenameDialogOpen(false);
 			setWorkspaceToRename(null);
 			setNewWorkspaceName("");
@@ -368,6 +386,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 								<WorkspaceItem
 									key={workspace.id}
 									workspace={workspace}
+									forms={workspace.forms || []}
 									isMobile={isMobile}
 									onRename={() => openRenameDialog(workspace)}
 									onDelete={() => openDeleteDialog(workspace)}
@@ -484,42 +503,67 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	);
 }
 
+// Form item component that uses live query for real-time title updates
+function FormItem({ formId, workspaceId }: { formId: string; workspaceId: string }) {
+	const { data: formData } = useLiveQuery((q) =>
+		q
+			.from({ doc: editorDocCollection })
+			.where(({ doc }) => eq(doc.id, formId))
+			.select(({ doc }) => ({ title: doc.title }))
+	);
+
+	const title = formData?.[0]?.title || "Untitled";
+
+	return (
+		<SidebarMenuSubItem>
+			<SidebarMenuSubButton asChild>
+				<Link
+					to="/workspace/$workspaceId/form-builder/$formId"
+					params={{ workspaceId, formId }}
+				>
+					<span>{title}</span>
+				</Link>
+			</SidebarMenuSubButton>
+		</SidebarMenuSubItem>
+	);
+}
+
 // Workspace item component with forms
 function WorkspaceItem({
 	workspace,
+	forms,
 	isMobile,
 	onRename,
 	onDelete,
 }: {
 	workspace: Workspace;
+	forms: any[];
 	isMobile: boolean;
 	onRename: () => void;
 	onDelete: () => void;
 }) {
 	const router = useRouter();
-
-	// Query forms for this workspace
-	const { data: forms = [] } = useLiveQuery((q) =>
-		q
-			.from({ doc: editorDocCollection })
-			.where(({ doc }) => eq(doc.workspaceId, workspace.id))
-			.select(({ doc }) => ({
-				id: doc.id,
-				title: doc.title,
-				updatedAt: doc.updatedAt,
-			})),
+	const queryClient = useQueryClient();
+	
+	const sortedForms = [...forms].sort(
+		(a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
 	);
-
-	const sortedForms = [...forms].sort((a, b) => b.updatedAt - a.updatedAt);
 
 	const handleCreateForm = async (e: React.MouseEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
 		try {
-			const newForm = await createForm(workspace.id, "Untitled");
+			const response = await createForm({
+				data: {
+					id: crypto.randomUUID(),
+					workspaceId: workspace.id,
+					title: "Untitled",
+				},
+			}) as { form: { id: string } };
+			await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
 			router.navigate({
 				to: "/workspace/$workspaceId/form-builder/$formId",
-				params: { workspaceId: workspace.id, formId: newForm.id },
+				params: { workspaceId: workspace.id, formId: response.form.id },
 			});
 		} catch (error) {
 			console.error("Failed to create form:", error);
@@ -529,55 +573,58 @@ function WorkspaceItem({
 	return (
 		<Collapsible defaultOpen className="group/collapsible">
 			<SidebarMenuItem>
-				<CollapsibleTrigger asChild>
-					<SidebarMenuButton tooltip={workspace.name}>
-						<ChevronRight className="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-						<span className="truncate">{workspace.name}</span>
-					</SidebarMenuButton>
-				</CollapsibleTrigger>
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<SidebarMenuAction showOnHover className="mr-6">
-							<MoreHorizontal />
-							<span className="sr-only">More</span>
-						</SidebarMenuAction>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent
-						className="w-48"
-						side={isMobile ? "bottom" : "right"}
-						align={isMobile ? "end" : "start"}
-					>
-						<DropdownMenuItem onClick={onRename}>
-							<Pencil className="mr-2 h-4 w-4 text-muted-foreground" />
-							<span>Rename</span>
-						</DropdownMenuItem>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem
-							onClick={onDelete}
-							className="text-destructive focus:text-destructive"
+				<div className="flex items-center">
+					<CollapsibleTrigger asChild>
+						<SidebarMenuButton tooltip={workspace.name} className="flex-1">
+							<ChevronRight className="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+							<Link
+								to="/workspace/$workspaceId"
+								params={{ workspaceId: workspace.id }}
+								className="flex-1 truncate hover:text-foreground"
+							>
+								<span className="truncate">{workspace.name}</span>
+							</Link>
+						</SidebarMenuButton>
+					</CollapsibleTrigger>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<SidebarMenuAction showOnHover>
+								<MoreHorizontal />
+								<span className="sr-only">More</span>
+							</SidebarMenuAction>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent
+							className="w-48"
+							side={isMobile ? "bottom" : "right"}
+							align={isMobile ? "end" : "start"}
 						>
-							<Trash2 className="mr-2 h-4 w-4" />
-							<span>Delete</span>
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-				<SidebarMenuAction showOnHover onClick={handleCreateForm}>
-					<Plus />
-					<span className="sr-only">Add Form</span>
-				</SidebarMenuAction>
+							<DropdownMenuItem onClick={onRename}>
+								<Pencil className="mr-2 h-4 w-4 text-muted-foreground" />
+								<span>Rename</span>
+							</DropdownMenuItem>
+							<DropdownMenuSeparator />
+							<DropdownMenuItem
+								onClick={onDelete}
+								className="text-destructive focus:text-destructive"
+							>
+								<Trash2 className="mr-2 h-4 w-4" />
+								<span>Delete</span>
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+					<SidebarMenuAction showOnHover onClick={handleCreateForm}>
+						<Plus />
+						<span className="sr-only">Add Form</span>
+					</SidebarMenuAction>
+				</div>
 				<CollapsibleContent>
 					<SidebarMenuSub>
 						{sortedForms.map((form) => (
-							<SidebarMenuSubItem key={form.id}>
-								<SidebarMenuSubButton asChild>
-									<Link
-										to="/workspace/$workspaceId/form-builder/$formId"
-										params={{ workspaceId: workspace.id, formId: form.id }}
-									>
-										<span>{form.title || "Untitled"}</span>
-									</Link>
-								</SidebarMenuSubButton>
-							</SidebarMenuSubItem>
+							<FormItem
+								key={form.id}
+								formId={form.id}
+								workspaceId={workspace.id}
+							/>
 						))}
 						{sortedForms.length === 0 && (
 							<SidebarMenuSubItem>

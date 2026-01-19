@@ -1,18 +1,21 @@
-import {
-	createCollection,
-	localStorageCollectionOptions,
-} from "@tanstack/react-db";
+import { WorkspaceZod } from "@/db/schema";
+import { createForm, deleteForm, updateForm } from "@/lib/fn/forms";
+import { electricCollectionOptions } from "@tanstack/electric-db-collection";
+import { createCollection } from "@tanstack/react-db";
 import { z } from "zod";
 
+// Helper to transform timestamp strings from Electric
+const timestampField = z
+	.string()
+	.transform((val) => new Date(val).toISOString());
+
 // ============================================================================
-// Workspace Schema
+// Workspace Schema (extends DB schema with timestamp transforms)
 // ============================================================================
 
-export const WorkspaceSchema = z.object({
-	id: z.string(),
-	name: z.string().default("My workspace"),
-	createdAt: z.number(),
-	updatedAt: z.number(),
+export const WorkspaceSchema = WorkspaceZod.extend({
+	createdAt: timestampField,
+	updatedAt: timestampField,
 });
 
 export type Workspace = z.infer<typeof WorkspaceSchema>;
@@ -45,137 +48,108 @@ export const SettingsSchema = z.object({
 export type FormBuilderSettings = z.infer<typeof SettingsSchema>;
 
 // ============================================================================
-// Main Form Builder Schema (EditorDoc)
+// Form Schema
+// NOTE: This schema matches the server's expected input types.
+// The server injects userId from auth context, so it's optional here.
+// This mirrors the structure in src/db/schema.ts for local-first operations.
 // ============================================================================
 
-export const EditorDocSchema = z.object({
-	// Identifiers
-	id: z.string(),
-	workspaceId: z.string(), // Foreign key to Workspace
+export const FormSchema = z.object({
+	id: z.string().uuid(),
+	userId: z.string().optional(), // Injected by server
+	workspaceId: z.string().uuid(),
+	title: z.string().default("Untitled"),
 	formName: z.string().default("draft"),
 	schemaName: z.string().default("draftFormSchema"),
+	content: z.array(z.any()).default([]),
+	settings:  z.object({
+		defaultRequiredValidation: z.boolean().default(true),
+		numericInput: z.boolean().default(false),
+		focusOnError: z.boolean().default(true),
+		validationMethod: z
+			.enum(["onChange", "onBlur", "onDynamic"])
+			.default("onDynamic"),
+		asyncValidation: z.number().min(0).max(10000).default(500),
+		activeTab: z
+			.enum(["builder", "template", "settings", "generate"])
+			.default("builder"),
+		preferredSchema: z.enum(["zod", "valibot", "arktype"]).default("zod"),
+		preferredFramework: z
+			.enum(["react", "vue", "angular", "solid"])
+			.default("react"),
+		preferredPackageManager: z
+			.enum(["pnpm", "npm", "yarn", "bun"])
+			.default("pnpm"),
+		isCodeSidebarOpen: z.boolean().default(false),
+	}).optional(),
+	icon: z.string().nullable().optional(),
+	cover: z.string().nullable().optional(),
+	isMultiStep: z.boolean().default(false),
+	status: z.enum(["draft", "published", "archived"]).default("draft"),
+	createdAt: timestampField,
+	updatedAt: timestampField,
+});
 
-	// Plate Editor Content
-	// This represents the form elements. Each element in the editor (Input, Checkbox, etc.)
-	// is a node in this array.
-	content: z.array(z.any()),
+export type Form = z.infer<typeof FormSchema>;
 
-	// UI State & Settings
-	isMS: z.boolean().default(false), // Multi-step form flag
-	isPreview: z.boolean().default(false), // Preview mode flag
-	settings: SettingsSchema.default({
-		defaultRequiredValidation: true,
-		numericInput: false,
-		focusOnError: true,
-		validationMethod: "onDynamic",
-		asyncValidation: 500,
-		activeTab: "builder",
-		preferredSchema: "zod",
-		preferredFramework: "react",
-		preferredPackageManager: "pnpm",
-		isCodeSidebarOpen: false,
+// Legacy type alias for backward compatibility
+export type EditorDoc = Form;
+export const EditorDocSchema = FormSchema;
+
+// ============================================================================
+// Electric URL Helper
+// ============================================================================
+
+const getElectricUrl = () => {
+	if (typeof window !== "undefined") {
+		return `${window.location.origin}/api/electric`;
+	}
+	// Fallback for SSR (shouldn't be used since collections are client-only)
+	return process.env.VITE_APP_URL
+		? `${process.env.VITE_APP_URL}/api/electric`
+		: "http://localhost:3000/api/electric";
+};
+
+// ============================================================================
+// Collections with ElectricSQL sync
+// ============================================================================
+
+// Type for server function responses
+type ServerTxResult = { txid: number };
+
+export const formCollection = createCollection(
+	electricCollectionOptions({
+		id: "forms",
+		schema: FormSchema,
+		shapeOptions: {
+			url: getElectricUrl(),
+			params: { table: "forms" },
+		},
+		getKey: (item) => item.id,
+
+		onInsert: async ({ transaction }) => {
+			const newItem = transaction.mutations[0].modified;
+			const result = (await createForm({ data: newItem })) as ServerTxResult;
+			return { txid: result.txid };
+		},
+
+		onUpdate: async ({ transaction }) => {
+			const { original, changes } = transaction.mutations[0];
+			const result =await updateForm({
+				data: { ...changes, id: original.id },
+			})
+			return { txid: result.txid };
+		},
+
+		onDelete: async ({ transaction }) => {
+			const deletedItem = transaction.mutations[0].original;
+			const result = (await deleteForm({
+				data: { id: deletedItem.id },
+			})) as ServerTxResult;
+			return { txid: result.txid };
+		},
 	}),
-	lastAddedStepIndex: z.number().optional(),
-	generatedCommandUrl: z.string().optional(),
+);
 
-	// Notion-style Header
-	title: z.string().optional(),
-	icon: z.string().optional(), // URL or emoji char
-	cover: z.string().optional(), // URL
-
-	// Metadata
-	updatedAt: z.number(),
-});
-
-export type EditorDoc = z.infer<typeof EditorDocSchema>;
-
-// ============================================================================
-// Saved Form Templates Schema
-// ============================================================================
-
-export const SavedFormTemplateSchema = z.object({
-	id: z.string(),
-	name: z.string(),
-	data: EditorDocSchema,
-	createdAt: z.string(),
-	generatedCommandUrl: z.string().optional(),
-});
-
-export type SavedFormTemplate = z.infer<typeof SavedFormTemplateSchema>;
-
-// ============================================================================
-// Collections
-// ============================================================================
-
-// Create collection based on environment
-// Server: use localStorage options (has built-in memory fallback for SSR)
-// Client: use Dexie/IndexedDB for persistence (better capacity than localStorage)
-
-// NOTE: We use dynamic import() for dexie to avoid loading it during SSR.
-// Dexie requires IndexedDB which is browser-only.
-
-// Helper to load dexie collection options (client-only)
-async function loadDexieOptions() {
-	const { dexieCollectionOptions } = await import("tanstack-dexie-db-collection");
-	return dexieCollectionOptions;
-}
-
-// Cached dexie options (loaded once on client)
-let dexieOptionsPromise: ReturnType<typeof loadDexieOptions> | null = null;
-
-function getDexieOptions() {
-	if (!dexieOptionsPromise) {
-		dexieOptionsPromise = loadDexieOptions();
-	}
-	return dexieOptionsPromise;
-}
-
-// Create collections - uses localStorage for SSR, dexie for client
-async function createEditorDocCollectionAsync() {
-	if (typeof window !== "undefined") {
-		const dexieCollectionOptions = await getDexieOptions();
-		return createCollection(
-			dexieCollectionOptions({
-				id: "editor-documents",
-				schema: EditorDocSchema,
-				getKey: (doc: EditorDoc) => doc.id,
-				dbName: "better-forms-db",
-				tableName: "forms",
-			}),
-		);
-	}
-	return createCollection(
-		localStorageCollectionOptions({
-			storageKey: "editor-documents-ssr",
-			schema: EditorDocSchema,
-			getKey: (doc: EditorDoc) => doc.id,
-		}),
-	);
-}
-
-async function createWorkspaceCollectionAsync() {
-	if (typeof window !== "undefined") {
-		const dexieCollectionOptions = await getDexieOptions();
-		return createCollection(
-			dexieCollectionOptions({
-				id: "workspaces",
-				schema: WorkspaceSchema,
-				getKey: (workspace: Workspace) => workspace.id,
-				dbName: "better-forms-db",
-				tableName: "workspaces",
-			}),
-		);
-	}
-	return createCollection(
-		localStorageCollectionOptions({
-			storageKey: "workspaces-ssr",
-			schema: WorkspaceSchema,
-			getKey: (workspace: Workspace) => workspace.id,
-		}),
-	);
-}
-
-// Use top-level await to initialize collections
-// This is supported by Vite and modern bundlers
-export const editorDocCollection = await createEditorDocCollectionAsync();
-export const workspaceCollection = await createWorkspaceCollectionAsync();
+// Legacy export alias for backward compatibility
+export const editorDocCollection = formCollection;

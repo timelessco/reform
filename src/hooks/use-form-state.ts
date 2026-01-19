@@ -1,7 +1,7 @@
 import { eq, useLiveQuery } from "@tanstack/react-db";
 import { createIsomorphicFn } from "@tanstack/react-start";
 import { normalizeNodeId } from "platejs";
-import { type EditorDoc, editorDocCollection } from "@/db-collections";
+import { type Form, formCollection } from "@/db-collections";
 
 // Standard default content for a new form
 const defaultContent = normalizeNodeId([
@@ -15,11 +15,10 @@ const defaultContent = normalizeNodeId([
 	},
 ]);
 
-export const DEFAULT_FORM_STATE: Omit<EditorDoc, "id" | "workspaceId" | "updatedAt"> = {
+export const DEFAULT_FORM_STATE: Omit<Form, "id" | "workspaceId" | "createdAt" | "updatedAt"> = {
 	formName: "draft",
 	schemaName: "draftFormSchema",
-	isMS: false,
-	isPreview: false,
+	isMultiStep: false,
 	content: defaultContent,
 	settings: {
 		defaultRequiredValidation: true,
@@ -34,11 +33,12 @@ export const DEFAULT_FORM_STATE: Omit<EditorDoc, "id" | "workspaceId" | "updated
 		isCodeSidebarOpen: false,
 	},
 	title: "",
-	icon: undefined,
-	cover: undefined,
+	icon: null,
+	cover: null,
+	status: "draft",
 };
 
-export type FormState = EditorDoc;
+export type FormState = Form;
 
 /**
  * useFormState - A hook to access the current form builder state.
@@ -47,42 +47,45 @@ export type FormState = EditorDoc;
  */
 const useFormState = createIsomorphicFn()
 	.server((): FormState => {
+		const now = new Date().toISOString();
 		return {
 			...DEFAULT_FORM_STATE,
 			id: "main-document",
 			workspaceId: "",
-			updatedAt: Date.now(),
+			createdAt: now,
+			updatedAt: now,
 		} as FormState;
 	})
 	.client((): FormState => {
 		// Note: This fetches the first available form document.
 		// In a multi-persistent-form app, you'd add a .where() clause.
 		const { data } = useLiveQuery((q) =>
-			q.from({ doc: editorDocCollection }).select(({ doc }) => ({
+			q.from({ doc: formCollection }).select(({ doc }) => ({
 				id: doc.id,
 				workspaceId: doc.workspaceId,
 				formName: doc.formName,
 				schemaName: doc.schemaName,
-				isMS: doc.isMS,
-				isPreview: doc.isPreview,
+				isMultiStep: doc.isMultiStep,
 				content: doc.content,
 				settings: doc.settings,
-				lastAddedStepIndex: doc.lastAddedStepIndex,
-				generatedCommandUrl: doc.generatedCommandUrl,
 				title: doc.title,
 				icon: doc.icon,
 				cover: doc.cover,
+				status: doc.status,
+				createdAt: doc.createdAt,
 				updatedAt: doc.updatedAt,
 			})),
 		);
 
+		const now = new Date().toISOString();
 		return (
 			(data?.[0] as FormState) ||
 			({
 				...DEFAULT_FORM_STATE,
 				id: "main-document",
 				workspaceId: "",
-				updatedAt: Date.now(),
+				createdAt: now,
+				updatedAt: now,
 			} as FormState)
 		);
 	});
@@ -95,7 +98,7 @@ export default useFormState;
  */
 export function useFormStateById(formId?: string): FormState {
 	const { data } = useLiveQuery((q) => {
-		let query = q.from({ doc: editorDocCollection });
+		let query = q.from({ doc: formCollection });
 		if (formId) {
 			query = query.where(({ doc }) => eq(doc.id, formId));
 		}
@@ -104,26 +107,27 @@ export function useFormStateById(formId?: string): FormState {
 			workspaceId: doc.workspaceId,
 			formName: doc.formName,
 			schemaName: doc.schemaName,
-			isMS: doc.isMS,
-			isPreview: doc.isPreview,
+			isMultiStep: doc.isMultiStep,
 			content: doc.content,
 			settings: doc.settings,
-			lastAddedStepIndex: doc.lastAddedStepIndex,
-			generatedCommandUrl: doc.generatedCommandUrl,
 			title: doc.title,
 			icon: doc.icon,
 			cover: doc.cover,
+			status: doc.status,
+			createdAt: doc.createdAt,
 			updatedAt: doc.updatedAt,
 		}));
 	});
 
+	const now = new Date().toISOString();
 	return (
 		(data?.[0] as FormState) ||
 		({
 			...DEFAULT_FORM_STATE,
 			id: formId || "new-form",
 			workspaceId: "",
-			updatedAt: Date.now(),
+			createdAt: now,
+			updatedAt: now,
 		} as FormState)
 	);
 }
