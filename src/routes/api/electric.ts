@@ -68,13 +68,24 @@ export const Route = createFileRoute("/api/electric")({
 				}
 
 				// Proxy to Electric server
-				const electricUrl = process.env.ELECTRIC_URL || "http://localhost:4000";
+				const electricUrl = process.env.ELECTRIC_URL || "https://api.electric-sql.cloud";
 				const upstreamUrl = new URL("/v1/shape", electricUrl);
 
-				// Forward all query params from the client, except 'table' (we'll set it)
+				// Add ElectricSQL Cloud credentials as query parameters
+				const sourceId = process.env.ELECTRIC_SQL_CLOUD_SOURCE_ID;
+				const sourceSecret = process.env.ELECTRIC_SQL_CLOUD_SOURCE_SECRET;
+
+				if (sourceId && sourceSecret) {
+					upstreamUrl.searchParams.set("source_id", sourceId);
+					upstreamUrl.searchParams.set("source_secret", sourceSecret);
+				}
+
+				// Forward specific query params from the client (following ElectricSQL pattern)
+				const allowedParams = ["live", "table", "handle", "offset", "cursor"];
 				for (const [key, value] of url.searchParams.entries()) {
-					if (key === "table") continue;
-					upstreamUrl.searchParams.set(key, value);
+					if (allowedParams.includes(key)) {
+						upstreamUrl.searchParams.set(key, value);
+					}
 				}
 
 				// Set the table and WHERE clause
@@ -85,7 +96,8 @@ export const Route = createFileRoute("/api/electric")({
 					userId,
 					table,
 					where: whereSql,
-					url: upstreamUrl.toString(),
+					sourceId: sourceId ? `${sourceId.substring(0, 8)}...` : "not set",
+					url: upstreamUrl.toString().replace(sourceSecret || '', '[REDACTED]'),
 				});
 
 				try {
@@ -93,8 +105,10 @@ export const Route = createFileRoute("/api/electric")({
 						method: "GET",
 					});
 
-					// Copy headers from upstream, with modifications
+					// Remove problematic headers that could break decoding
 					const headers = new Headers(upstream.headers);
+					headers.delete("content-encoding");
+					headers.delete("content-length");
 
 					// Remove any upstream CORS headers to avoid conflicts
 					headers.delete("access-control-allow-origin");
