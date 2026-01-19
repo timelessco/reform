@@ -238,7 +238,7 @@ type DropElementOptions = {
 	/**
 	 * Whether the form is a multi-step form or not
 	 */
-	isMS?: boolean;
+	isMultiStep?: boolean;
 	stepIndex?: number;
 };
 export type DropElement = (options: DropElementOptions) => void;

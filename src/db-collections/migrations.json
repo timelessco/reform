@@ -1,0 +1,40 @@
+[
+  {
+    "hash": "20260108063735_free_karma",
+    "sql": [
+      "CREATE TABLE \"todos\" (\n\t\"id\" serial PRIMARY KEY NOT NULL,\n\t\"title\" text NOT NULL,\n\t\"created_at\" timestamp DEFAULT now()\n);"
+    ]
+  },
+  {
+    "hash": "20260109102511_puzzling_rumiko_fujikawa",
+    "sql": [
+      "CREATE TABLE \"account\" (\n\t\"id\" text PRIMARY KEY,\n\t\"user_id\" text NOT NULL,\n\t\"account_id\" text NOT NULL,\n\t\"provider_id\" text NOT NULL,\n\t\"access_token\" text,\n\t\"refresh_token\" text,\n\t\"access_token_expires_at\" timestamp,\n\t\"refresh_token_expires_at\" timestamp,\n\t\"scope\" text,\n\t\"id_token\" text,\n\t\"password\" text,\n\t\"created_at\" timestamp DEFAULT now() NOT NULL,\n\t\"updated_at\" timestamp DEFAULT now() NOT NULL\n);",
+      "CREATE TABLE \"session\" (\n\t\"id\" text PRIMARY KEY,\n\t\"user_id\" text NOT NULL,\n\t\"token\" text NOT NULL UNIQUE,\n\t\"expires_at\" timestamp NOT NULL,\n\t\"ip_address\" text,\n\t\"user_agent\" text,\n\t\"created_at\" timestamp DEFAULT now() NOT NULL,\n\t\"updated_at\" timestamp DEFAULT now() NOT NULL\n);",
+      "CREATE TABLE \"user\" (\n\t\"id\" text PRIMARY KEY,\n\t\"name\" text NOT NULL,\n\t\"email\" text NOT NULL UNIQUE,\n\t\"email_verified\" boolean DEFAULT false NOT NULL,\n\t\"image\" text,\n\t\"created_at\" timestamp DEFAULT now() NOT NULL,\n\t\"updated_at\" timestamp DEFAULT now() NOT NULL,\n\t\"username\" text UNIQUE,\n\t\"display_username\" text\n);",
+      "CREATE TABLE \"verification\" (\n\t\"id\" text PRIMARY KEY,\n\t\"identifier\" text NOT NULL,\n\t\"value\" text NOT NULL,\n\t\"expires_at\" timestamp NOT NULL,\n\t\"created_at\" timestamp DEFAULT now() NOT NULL,\n\t\"updated_at\" timestamp DEFAULT now() NOT NULL\n);"
+    ]
+  },
+  {
+    "hash": "20260113054207_bored_chronomancer",
+    "sql": [
+      "CREATE TABLE \"apikey\" (\n\t\"id\" text PRIMARY KEY,\n\t\"name\" text,\n\t\"start\" text,\n\t\"prefix\" text,\n\t\"key\" text NOT NULL,\n\t\"user_id\" text NOT NULL,\n\t\"refill_interval\" integer,\n\t\"refill_amount\" integer,\n\t\"last_refill_at\" timestamp,\n\t\"enabled\" boolean DEFAULT true,\n\t\"rate_limit_enabled\" boolean DEFAULT true,\n\t\"rate_limit_time_window\" integer DEFAULT 86400000,\n\t\"rate_limit_max\" integer DEFAULT 10,\n\t\"request_count\" integer DEFAULT 0,\n\t\"remaining\" integer,\n\t\"last_request\" timestamp,\n\t\"expires_at\" timestamp,\n\t\"created_at\" timestamp NOT NULL,\n\t\"updated_at\" timestamp NOT NULL,\n\t\"permissions\" text,\n\t\"metadata\" text\n);",
+      "CREATE TABLE \"forms\" (\n\t\"id\" text PRIMARY KEY,\n\t\"user_id\" text NOT NULL,\n\t\"title\" text DEFAULT 'Untitled' NOT NULL,\n\t\"form_name\" text DEFAULT 'draft' NOT NULL,\n\t\"schema_name\" text DEFAULT 'draftFormSchema' NOT NULL,\n\t\"content\" jsonb DEFAULT '[]' NOT NULL,\n\t\"settings\" jsonb DEFAULT '{}' NOT NULL,\n\t\"icon\" text,\n\t\"cover\" text,\n\t\"is_multi_step\" boolean DEFAULT false NOT NULL,\n\t\"status\" text DEFAULT 'draft' NOT NULL,\n\t\"created_at\" timestamp DEFAULT now() NOT NULL,\n\t\"updated_at\" timestamp DEFAULT now() NOT NULL\n);",
+      "CREATE TABLE \"two_factor\" (\n\t\"id\" text PRIMARY KEY,\n\t\"secret\" text NOT NULL,\n\t\"backup_codes\" text NOT NULL,\n\t\"user_id\" text NOT NULL\n);",
+      "ALTER TABLE \"user\" ADD COLUMN \"two_factor_enabled\" boolean DEFAULT false;"
+    ]
+  },
+  {
+    "hash": "20260119054252_solid_the_watchers",
+    "sql": [
+      "CREATE TABLE \"workspaces\" (\n\t\"id\" text PRIMARY KEY,\n\t\"user_id\" text NOT NULL,\n\t\"name\" text DEFAULT 'My workspace' NOT NULL,\n\t\"created_at\" timestamp DEFAULT now() NOT NULL,\n\t\"updated_at\" timestamp DEFAULT now() NOT NULL\n);",
+      "ALTER TABLE \"forms\" ADD COLUMN \"workspace_id\" text NOT NULL;"
+    ]
+  },
+  {
+    "hash": "20260119063453_purple_jane_foster",
+    "sql": [
+      "ALTER TABLE \"forms\" ALTER COLUMN \"user_id\" DROP NOT NULL;",
+      "ALTER TABLE \"workspaces\" ALTER COLUMN \"user_id\" DROP NOT NULL;"
+    ]
+  }
+]

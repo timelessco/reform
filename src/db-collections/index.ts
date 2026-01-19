@@ -1,8 +1,20 @@
+import { workspaces } from "@/db/schema";
+import { PGlite } from '@electric-sql/pglite';
 import {
 	createCollection,
 	localStorageCollectionOptions,
 } from "@tanstack/react-db";
+import { drizzle } from 'drizzle-orm/pglite';
+import { forms } from "drizzle/schema";
 import { z } from "zod";
+import { waitForMigrations } from "@/lib/pglite";
+
+
+const pglite = new PGlite()
+const db = drizzle({
+	connection: pglite,
+})
+
 
 // ============================================================================
 // Workspace Schema
@@ -114,33 +126,34 @@ export type SavedFormTemplate = z.infer<typeof SavedFormTemplateSchema>;
 // NOTE: We use dynamic import() for dexie to avoid loading it during SSR.
 // Dexie requires IndexedDB which is browser-only.
 
-// Helper to load dexie collection options (client-only)
-async function loadDexieOptions() {
-	const { dexieCollectionOptions } = await import("tanstack-dexie-db-collection");
-	return dexieCollectionOptions;
+// Helper to load pglite collection options (client-only)
+async function pgLiteOptions() {
+	const { drizzleCollectionOptions } = await import("tanstack-db-pglite");
+	return drizzleCollectionOptions;
 }
+// Cached pglite options (loaded once on client)
+let pgLiteOptionsPromise: ReturnType<typeof pgLiteOptions> | null = null;
 
-// Cached dexie options (loaded once on client)
-let dexieOptionsPromise: ReturnType<typeof loadDexieOptions> | null = null;
-
-function getDexieOptions() {
-	if (!dexieOptionsPromise) {
-		dexieOptionsPromise = loadDexieOptions();
+function getPgLiteOptions() {
+	if (!pgLiteOptionsPromise) {
+		pgLiteOptionsPromise = pgLiteOptions();
 	}
-	return dexieOptionsPromise;
+	return pgLiteOptionsPromise;
 }
 
-// Create collections - uses localStorage for SSR, dexie for client
+// Create collections - uses localStorage for SSR, pglite for client
 async function createEditorDocCollectionAsync() {
 	if (typeof window !== "undefined") {
-		const dexieCollectionOptions = await getDexieOptions();
+		const pgLiteCollectionOptions = await getPgLiteOptions();
 		return createCollection(
-			dexieCollectionOptions({
-				id: "editor-documents",
-				schema: EditorDocSchema,
-				getKey: (doc: EditorDoc) => doc.id,
-				dbName: "better-forms-db",
-				tableName: "forms",
+			pgLiteCollectionOptions({
+				db: db,
+				table: forms,
+				primaryColumn: forms.id,
+				prepare: async () => {
+					// Prepare your database before starting the collection (e.g., run migrations)
+					// await waitForMigrations()
+				},
 			}),
 		);
 	}
@@ -155,14 +168,16 @@ async function createEditorDocCollectionAsync() {
 
 async function createWorkspaceCollectionAsync() {
 	if (typeof window !== "undefined") {
-		const dexieCollectionOptions = await getDexieOptions();
+		const pgLiteCollectionOptions = await getPgLiteOptions();
 		return createCollection(
-			dexieCollectionOptions({
-				id: "workspaces",
-				schema: WorkspaceSchema,
-				getKey: (workspace: Workspace) => workspace.id,
-				dbName: "better-forms-db",
-				tableName: "workspaces",
+			pgLiteCollectionOptions({
+				db: db,
+				table: workspaces,
+				primaryColumn: workspaces.id,
+				prepare: async () => {
+					// Prepare your database before starting the collection (e.g., run migrations)
+					await waitForMigrations()
+				},
 			}),
 		);
 	}

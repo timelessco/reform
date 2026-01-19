@@ -7,18 +7,23 @@ import { defineConfig } from "vite";
 import viteTsConfigPaths from "vite-tsconfig-paths";
 
 const config = defineConfig({
+	resolve: {
+		alias: {
+			"tanstack-db-pglite": "tanstack-db-pglite/dist/index.js",
+		},
+	},
 	plugins: [
 		devtools({
 			editor: {
-				name: 'Cursor',
+				name: "Cursor",
 				open: async (path, lineNumber, columnNumber) => {
-					const { exec } = await import('node:child_process')
+					const { exec } = await import("node:child_process");
 					exec(
 						// or windsurf/cursor/webstorm/cursor/cursor
-						`cursor -g "${(path).replaceAll('$', '\\$')}${lineNumber ? `:${lineNumber}` : ''}${columnNumber ? `:${columnNumber}` : ''}"`,
-					)
+						`cursor -g "${(path).replaceAll("$", "\\$")}${lineNumber ? `:${lineNumber}` : ""}${columnNumber ? `:${columnNumber}` : ""}"`,
+					);
 				},
-			}
+			},
 		}),
 		nitro({}),
 		// this is the plugin that enables path aliases
@@ -27,6 +32,10 @@ const config = defineConfig({
 		}),
 		tailwindcss(),
 		tanstackStart({
+			client: {},
+			spa: {
+				enabled: true,
+			},
 		}),
 		viteReact({
 			babel: {
@@ -36,8 +45,8 @@ const config = defineConfig({
 	],
 	ssr: {
 		noExternal: [/^@platejs\//, "katex", "react-tweet"],
-		// Dexie is browser-only (IndexedDB), externalize for SSR
-		external: ["dexie", "tanstack-dexie-db-collection"],
+		// Browser-only packages (IndexedDB), externalize for SSR
+		external: ["dexie", "tanstack-dexie-db-collection", "tanstack-db-pglite"],
 	},
 });
 
