@@ -1,35 +1,40 @@
+import {
+	bulkInsertForms,
+	createForm,
+	deleteForm,
+	getForm,
+	listForms,
+	removeForms,
+	syncForms,
+	updateForm,
+} from "./forms";
 import { addTodo, listTodos } from "./todos";
 import {
 	createWorkspace,
-	updateWorkspace,
 	deleteWorkspace,
 	getOrCreateDefaultWorkspace,
 	listWorkspaces,
+	removeWorkspaces,
+	syncWorkspaces,
+	updateWorkspace,
 } from "./workspaces";
-import {
-	createForm,
-	updateForm,
-	deleteForm,
-	bulkInsertForms,
-	listForms,
-	getForm,
-} from "./forms";
 
 export default {
-	// Todos
 	listTodos,
 	addTodo,
-	// Workspaces
 	createWorkspace,
 	updateWorkspace,
 	deleteWorkspace,
 	getOrCreateDefaultWorkspace,
 	listWorkspaces,
-	// Forms
+	syncWorkspaces,
+	removeWorkspaces,
 	createForm,
 	updateForm,
 	deleteForm,
 	bulkInsertForms,
 	listForms,
 	getForm,
+	syncForms,
+	removeForms,
 };

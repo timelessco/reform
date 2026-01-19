@@ -1,6 +1,7 @@
+import { ne } from "drizzle-orm";
+import { forms, workspaces } from "@/db/schema";
+import { clearLocalDb, getLocalDb } from "@/lib/pglite";
 import { client } from "@/orpc/client";
-import { getLocalDb, clearLocalDb } from "@/lib/pglite";
-import { workspaces, forms } from "@/db/schema";
 
 interface MigrationResult {
 	migratedWorkspaces: number;
@@ -8,20 +9,14 @@ interface MigrationResult {
 	defaultWorkspaceId: string;
 }
 
-/**
- * Get all local workspaces from PGlite (excluding draft workspaces)
- */
 async function getLocalWorkspaces() {
 	const db = await getLocalDb();
-	return db.select().from(workspaces).where(({ id }) => id !== "draft");
+	return db.select().from(workspaces).where(ne(workspaces.id, "draft"));
 }
 
-/**
- * Get all local forms from PGlite (excluding draft forms)
- */
 async function getLocalForms() {
 	const db = await getLocalDb();
-	return db.select().from(forms).where(({ id }) => id !== "draft-form");
+	return db.select().from(forms).where(ne(forms.id, "draft-form"));
 }
 
 /**
@@ -139,23 +134,19 @@ export async function migrateLocalDataToServer(): Promise<MigrationResult> {
 	};
 }
 
-/**
- * Check if migration is needed (has local data excluding draft forms)
- */
 export async function checkMigrationNeeded(): Promise<boolean> {
 	try {
 		const db = await getLocalDb();
-		const localForms = await db.select().from(forms).where(({ id }) => id !== "draft-form");
+		const localForms = await db
+			.select()
+			.from(forms)
+			.where(ne(forms.id, "draft-form"));
 		return localForms.length > 0;
 	} catch {
-		// If PGlite isn't available or has an error, no migration needed
 		return false;
 	}
 }
 
-/**
- * Check if user has any data on the server
- */
 export async function hasServerData(): Promise<boolean> {
 	try {
 		const serverWorkspaces = await client.listWorkspaces({});

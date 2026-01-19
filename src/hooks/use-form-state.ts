@@ -15,11 +15,14 @@ const defaultContent = normalizeNodeId([
 	},
 ]);
 
-export const DEFAULT_FORM_STATE: Omit<EditorDoc, "id" | "workspaceId" | "updatedAt"> = {
+export const DEFAULT_FORM_STATE: Omit<
+	EditorDoc,
+	"id" | "workspaceId" | "updatedAt"
+> = {
 	formName: "draft",
 	schemaName: "draftFormSchema",
-	isMS: false,
-	isPreview: false,
+	isMultiStep: false,
+	status: "draft",
 	content: defaultContent,
 	settings: {
 		defaultRequiredValidation: true,
@@ -36,6 +39,8 @@ export const DEFAULT_FORM_STATE: Omit<EditorDoc, "id" | "workspaceId" | "updated
 	title: "",
 	icon: undefined,
 	cover: undefined,
+	userId: undefined,
+	createdAt: undefined,
 };
 
 export type FormState = EditorDoc;
@@ -51,7 +56,7 @@ const useFormState = createIsomorphicFn()
 			...DEFAULT_FORM_STATE,
 			id: "main-document",
 			workspaceId: "",
-			updatedAt: Date.now(),
+			updatedAt: new Date(),
 		} as FormState;
 	})
 	.client((): FormState => {
@@ -63,15 +68,15 @@ const useFormState = createIsomorphicFn()
 				workspaceId: doc.workspaceId,
 				formName: doc.formName,
 				schemaName: doc.schemaName,
-				isMS: doc.isMS,
-				isPreview: doc.isPreview,
+				isMultiStep: doc.isMultiStep,
+				status: doc.status,
 				content: doc.content,
 				settings: doc.settings,
-				lastAddedStepIndex: doc.lastAddedStepIndex,
-				generatedCommandUrl: doc.generatedCommandUrl,
 				title: doc.title,
 				icon: doc.icon,
 				cover: doc.cover,
+				userId: doc.userId,
+				createdAt: doc.createdAt,
 				updatedAt: doc.updatedAt,
 			})),
 		);
@@ -82,7 +87,7 @@ const useFormState = createIsomorphicFn()
 				...DEFAULT_FORM_STATE,
 				id: "main-document",
 				workspaceId: "",
-				updatedAt: Date.now(),
+				updatedAt: new Date(),
 			} as FormState)
 		);
 	});
@@ -104,15 +109,15 @@ export function useFormStateById(formId?: string): FormState {
 			workspaceId: doc.workspaceId,
 			formName: doc.formName,
 			schemaName: doc.schemaName,
-			isMS: doc.isMS,
-			isPreview: doc.isPreview,
+			isMultiStep: doc.isMultiStep,
+			status: doc.status,
 			content: doc.content,
 			settings: doc.settings,
-			lastAddedStepIndex: doc.lastAddedStepIndex,
-			generatedCommandUrl: doc.generatedCommandUrl,
 			title: doc.title,
 			icon: doc.icon,
 			cover: doc.cover,
+			userId: doc.userId,
+			createdAt: doc.createdAt,
 			updatedAt: doc.updatedAt,
 		}));
 	});
@@ -123,7 +128,7 @@ export function useFormStateById(formId?: string): FormState {
 			...DEFAULT_FORM_STATE,
 			id: formId || "new-form",
 			workspaceId: "",
-			updatedAt: Date.now(),
+			updatedAt: new Date(),
 		} as FormState)
 	);
 }

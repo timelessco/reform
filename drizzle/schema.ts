@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, boolean, jsonb, integer, primaryKey, unique } from "drizzle-orm/pg-core"
+import { pgTable, text, serial, timestamp, boolean, jsonb, integer, unique } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 
@@ -45,7 +45,8 @@ export const apikey = pgTable("apikey", {
 
 export const forms = pgTable("forms", {
 	id: text().primaryKey(),
-	userId: text("user_id").notNull(),
+	userId: text("user_id"),
+	workspaceId: text("workspace_id").notNull(),
 	title: text().default("Untitled").notNull(),
 	formName: text("form_name").default("draft").notNull(),
 	schemaName: text("schema_name").default("draftFormSchema").notNull(),
@@ -103,6 +104,14 @@ export const verification = pgTable("verification", {
 	identifier: text().notNull(),
 	value: text().notNull(),
 	expiresAt: timestamp("expires_at").notNull(),
+	createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+	updatedAt: timestamp("updated_at").default(sql`now()`).notNull(),
+});
+
+export const workspaces = pgTable("workspaces", {
+	id: text().primaryKey(),
+	userId: text("user_id"),
+	name: text().default("My workspace").notNull(),
 	createdAt: timestamp("created_at").default(sql`now()`).notNull(),
 	updatedAt: timestamp("updated_at").default(sql`now()`).notNull(),
 });

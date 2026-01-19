@@ -1,8 +1,8 @@
 import { os } from "@orpc/server";
-import { eq, and, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import * as z from "zod";
 import { db } from "@/db";
-import { workspaces, forms } from "@/db/schema";
+import { forms, workspaces } from "@/db/schema";
 
 // Create workspace
 export const createWorkspace = os
@@ -126,13 +126,82 @@ export const getOrCreateDefaultWorkspace = os
 	});
 
 // List workspaces for current user
-export const listWorkspaces = os.input(z.object({})).handler(async ({ context }) => {
-	const userId = (context as { userId?: string }).userId;
-	if (!userId) throw new Error("Unauthorized");
+export const listWorkspaces = os
+	.input(z.object({}))
+	.handler(async ({ context }) => {
+		const userId = (context as { userId?: string }).userId;
+		if (!userId) throw new Error("Unauthorized");
 
-	return db
-		.select()
-		.from(workspaces)
-		.where(eq(workspaces.userId, userId))
-		.orderBy(workspaces.createdAt);
-});
+		return db
+			.select()
+			.from(workspaces)
+			.where(eq(workspaces.userId, userId))
+			.orderBy(workspaces.createdAt);
+	});
+
+export const syncWorkspaces = os
+	.input(
+		z.array(
+			z.object({
+				id: z.string(),
+				updatedAt: z.coerce.date(),
+			}),
+		),
+	)
+	.handler(async ({ input, context }) => {
+		const userId = (context as { userId?: string }).userId;
+		if (!userId) throw new Error("Unauthorized");
+
+		const localState = input;
+
+		const serverWorkspaces = await db
+			.select()
+			.from(workspaces)
+			.where(eq(workspaces.userId, userId));
+
+		const changes: Array<
+			| { type: "insert"; value: (typeof serverWorkspaces)[0] }
+			| { type: "update"; value: (typeof serverWorkspaces)[0] }
+			| { type: "delete"; value: string }
+		> = [];
+
+		const localMap = new Map(localState.map((l) => [l.id, l.updatedAt]));
+
+		for (const serverWs of serverWorkspaces) {
+			const localUpdatedAt = localMap.get(serverWs.id);
+
+			if (!localUpdatedAt) {
+				changes.push({ type: "insert", value: serverWs });
+			} else if (serverWs.updatedAt && serverWs.updatedAt > localUpdatedAt) {
+				changes.push({ type: "update", value: serverWs });
+			}
+		}
+
+		const serverIds = new Set(serverWorkspaces.map((w) => w.id));
+		for (const local of localState) {
+			if (!serverIds.has(local.id)) {
+				changes.push({ type: "delete", value: local.id });
+			}
+		}
+
+		return changes;
+	});
+
+export const removeWorkspaces = os
+	.input(z.array(z.object({ id: z.string() })))
+	.handler(async ({ input, context }) => {
+		const userId = (context as { userId?: string }).userId;
+		if (!userId) throw new Error("Unauthorized");
+
+		for (const { id } of input) {
+			await db
+				.delete(forms)
+				.where(and(eq(forms.workspaceId, id), eq(forms.userId, userId)));
+
+			await db
+				.delete(workspaces)
+				.where(and(eq(workspaces.id, id), eq(workspaces.userId, userId)));
+		}
+
+		return { success: true };
+	});

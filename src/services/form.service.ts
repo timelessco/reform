@@ -2,64 +2,46 @@ import type { Value } from "platejs";
 import { type EditorDoc, editorDocCollection } from "@/db-collections";
 import { DEFAULT_FORM_STATE } from "@/hooks/use-form-state";
 
-/**
- * Toggles the preview mode for a specific document.
- */
 export async function togglePreview(id: string, currentIsPreview: boolean) {
-	return editorDocCollection.update(id, (draft) => {
+	return editorDocCollection.update(id, (draft: any) => {
 		draft.isPreview = !currentIsPreview;
-		draft.updatedAt = Date.now();
+		draft.updatedAt = new Date();
 	});
 }
 
-/**
- * Updates the form content (Plate editor value).
- */
 export async function updateContent(id: string, content: Value) {
-	return editorDocCollection.update(id, (draft) => {
+	return editorDocCollection.update(id, (draft: any) => {
 		draft.content = content;
-		draft.updatedAt = Date.now();
+		draft.updatedAt = new Date();
 	});
 }
 
-/**
- * Updates the form header fields (title, icon, cover).
- */
 export async function updateHeader(
 	id: string,
 	header: { title?: string; icon?: string; cover?: string },
 ) {
-	return editorDocCollection.update(id, (draft) => {
+	return editorDocCollection.update(id, (draft: any) => {
 		if (header.title !== undefined) draft.title = header.title;
 		if (header.icon !== undefined) draft.icon = header.icon;
 		if (header.cover !== undefined) draft.cover = header.cover;
-		draft.updatedAt = Date.now();
+		draft.updatedAt = new Date();
 	});
 }
 
-/**
- * Updates general form settings.
- */
 export async function updateSettings(id: string, settings: any) {
-	return editorDocCollection.update(id, (draft) => {
+	return editorDocCollection.update(id, (draft: any) => {
 		draft.settings = { ...draft.settings, ...settings };
-		draft.updatedAt = Date.now();
+		draft.updatedAt = new Date();
 	});
 }
 
-/**
- * Generic update for when we need to batch multiple changes.
- */
 export async function updateDoc(id: string, updater: (draft: any) => void) {
-	return editorDocCollection.update(id, (draft) => {
+	return editorDocCollection.update(id, (draft: any) => {
 		updater(draft);
-		draft.updatedAt = Date.now();
+		draft.updatedAt = new Date();
 	});
 }
 
-/**
- * Creates a new form with default values and returns the new document.
- */
 export async function createForm(
 	workspaceId: string,
 	title = "Untitled",
@@ -70,52 +52,38 @@ export async function createForm(
 		id,
 		workspaceId,
 		title,
-		updatedAt: Date.now(),
+		updatedAt: new Date(),
 	};
 
-	await editorDocCollection.insert(newForm);
+	await editorDocCollection.insert(newForm as any);
 	return newForm;
 }
 
-/**
- * Deletes a form by ID.
- */
 export async function deleteForm(id: string): Promise<void> {
 	await editorDocCollection.delete(id);
 }
 
-/**
- * Duplicates a form by ID and returns the new document.
- * The new form's title will be "{original title} copy"
- */
-export async function duplicateForm(
-	sourceForm: EditorDoc,
-): Promise<EditorDoc> {
+export async function duplicateForm(sourceForm: EditorDoc): Promise<EditorDoc> {
 	const id = crypto.randomUUID();
-	const title = sourceForm.title
-		? `${sourceForm.title} copy`
-		: "Untitled copy";
+	const title = sourceForm.title ? `${sourceForm.title} copy` : "Untitled copy";
 
 	const newForm: EditorDoc = {
 		...sourceForm,
 		id,
 		title,
-		updatedAt: Date.now(),
+		updatedAt: new Date(),
 	};
 
-	await editorDocCollection.insert(newForm);
+	await editorDocCollection.insert(newForm as any);
 	return newForm;
 }
 
-/**
- * Moves a form to a different workspace.
- */
 export async function moveFormToWorkspace(
 	formId: string,
 	targetWorkspaceId: string,
 ): Promise<void> {
-	await editorDocCollection.update(formId, (draft) => {
+	await editorDocCollection.update(formId, (draft: any) => {
 		draft.workspaceId = targetWorkspaceId;
-		draft.updatedAt = Date.now();
+		draft.updatedAt = new Date();
 	});
 }

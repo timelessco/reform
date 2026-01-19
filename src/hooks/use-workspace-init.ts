@@ -1,12 +1,12 @@
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { type Workspace, workspaceCollection } from "@/db-collections";
 import {
 	getDefaultWorkspace,
-	migrateOrphanForms
+	migrateOrphanForms,
 } from "@/services/workspace.service";
-import { useEffect, useState, useSyncExternalStore } from "react";
 
 // Empty subscribe function for server
-const emptySubscribe = () => () => { };
+const emptySubscribe = () => () => {};
 const getServerSnapshot = () => false;
 const getClientSnapshot = () => true;
 
@@ -15,7 +15,11 @@ const getClientSnapshot = () => true;
  * Returns false during SSR and initial render, true after hydration.
  */
 function useIsClient() {
-	return useSyncExternalStore(emptySubscribe, getClientSnapshot, getServerSnapshot);
+	return useSyncExternalStore(
+		emptySubscribe,
+		getClientSnapshot,
+		getServerSnapshot,
+	);
 }
 
 interface UseWorkspaceInitResult {
@@ -32,7 +36,9 @@ interface UseWorkspaceInitResult {
 export function useWorkspaceInit(): UseWorkspaceInitResult {
 	const isClient = useIsClient();
 	const [isInitializing, setIsInitializing] = useState(true);
-	const [defaultWorkspace, setDefaultWorkspace] = useState<Workspace | null>(null);
+	const [defaultWorkspace, setDefaultWorkspace] = useState<Workspace | null>(
+		null,
+	);
 	const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
 
 	// Initialize workspaces on client only
@@ -48,7 +54,9 @@ export function useWorkspaceInit(): UseWorkspaceInitResult {
 				// Migrate any orphan forms (forms without workspaceId)
 				const migratedCount = await migrateOrphanForms(workspace.id);
 				if (migratedCount > 0) {
-					console.log(`Migrated ${migratedCount} orphan forms to workspace "${workspace.name}"`);
+					console.log(
+						`Migrated ${migratedCount} orphan forms to workspace "${workspace.name}"`,
+					);
 				}
 			} catch (error) {
 				console.error("Failed to initialize workspaces:", error);
@@ -69,7 +77,7 @@ export function useWorkspaceInit(): UseWorkspaceInitResult {
 		async function subscribeToWorkspaces() {
 			try {
 				const collection = workspaceCollection;
-				
+
 				// Get initial state
 				const initialWorkspaces = await collection.toArrayWhenReady();
 				const mapped = initialWorkspaces.map((w) => ({
@@ -79,20 +87,23 @@ export function useWorkspaceInit(): UseWorkspaceInitResult {
 					updatedAt: w.updatedAt,
 				}));
 				setWorkspaces(mapped);
-				
+
 				// Subscribe to changes
-				subscription = collection.subscribeChanges((_changes) => {
-					// Re-fetch all workspaces when changes occur
-					collection.toArrayWhenReady().then((items) => {
-						const mappedItems = items.map((w) => ({
-							id: w.id,
-							name: w.name,
-							createdAt: w.createdAt,
-							updatedAt: w.updatedAt,
-						}));
-						setWorkspaces(mappedItems);
-					});
-				}, { includeInitialState: false });
+				subscription = collection.subscribeChanges(
+					(_changes) => {
+						// Re-fetch all workspaces when changes occur
+						collection.toArrayWhenReady().then((items) => {
+							const mappedItems = items.map((w) => ({
+								id: w.id,
+								name: w.name,
+								createdAt: w.createdAt,
+								updatedAt: w.updatedAt,
+							}));
+							setWorkspaces(mappedItems);
+						});
+					},
+					{ includeInitialState: false },
+				);
 			} catch (error) {
 				console.error("Failed to subscribe to workspaces:", error);
 			}
@@ -109,7 +120,10 @@ export function useWorkspaceInit(): UseWorkspaceInitResult {
 	useEffect(() => {
 		if (workspaces.length > 0 && !isInitializing) {
 			// Sort by createdAt and get the first one
-			const sorted = [...workspaces].sort((a, b) => a.createdAt - b.createdAt);
+			const sorted = [...workspaces].sort(
+				(a, b) =>
+					new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+			);
 			setDefaultWorkspace(sorted[0]);
 		}
 	}, [workspaces, isInitializing]);
@@ -137,7 +151,7 @@ export function useWorkspaces(): Workspace[] {
 		async function subscribeToWorkspaces() {
 			try {
 				const collection = workspaceCollection;
-				
+
 				// Get initial state
 				const initialWorkspaces = await collection.toArrayWhenReady();
 				const mapped = initialWorkspaces.map((w) => ({
@@ -147,21 +161,35 @@ export function useWorkspaces(): Workspace[] {
 					updatedAt: w.updatedAt,
 				}));
 				// Sort by createdAt (oldest first)
-				setWorkspaces(mapped.sort((a, b) => a.createdAt - b.createdAt));
-				
+				setWorkspaces(
+					mapped.sort(
+						(a, b) =>
+							new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+					),
+				);
+
 				// Subscribe to changes
-				subscription = collection.subscribeChanges((_changes) => {
-					// Re-fetch all workspaces when changes occur
-					collection.toArrayWhenReady().then((items) => {
-						const mappedItems = items.map((w) => ({
-							id: w.id,
-							name: w.name,
-							createdAt: w.createdAt,
-							updatedAt: w.updatedAt,
-						}));
-						setWorkspaces(mappedItems.sort((a, b) => a.createdAt - b.createdAt));
-					});
-				}, { includeInitialState: false });
+				subscription = collection.subscribeChanges(
+					(_changes) => {
+						// Re-fetch all workspaces when changes occur
+						collection.toArrayWhenReady().then((items) => {
+							const mappedItems = items.map((w) => ({
+								id: w.id,
+								name: w.name,
+								createdAt: w.createdAt,
+								updatedAt: w.updatedAt,
+							}));
+							setWorkspaces(
+								mappedItems.sort(
+									(a, b) =>
+										new Date(a.createdAt).getTime() -
+										new Date(b.createdAt).getTime(),
+								),
+							);
+						});
+					},
+					{ includeInitialState: false },
+				);
 			} catch (error) {
 				console.error("Failed to subscribe to workspaces:", error);
 			}

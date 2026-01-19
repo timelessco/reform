@@ -1,5 +1,5 @@
 import { os } from "@orpc/server";
-import { eq, and, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import * as z from "zod";
 import { db } from "@/db";
 import { forms, workspaces } from "@/db/schema";
@@ -19,45 +19,52 @@ const FormInputSchema = z.object({
 });
 
 // Create form
-export const createForm = os.input(FormInputSchema).handler(async ({ input, context }) => {
-	const userId = (context as { userId?: string }).userId;
-	if (!userId) throw new Error("Unauthorized");
+export const createForm = os
+	.input(FormInputSchema)
+	.handler(async ({ input, context }) => {
+		const userId = (context as { userId?: string }).userId;
+		if (!userId) throw new Error("Unauthorized");
 
-	// Verify workspace belongs to user
-	const workspace = await db
-		.select()
-		.from(workspaces)
-		.where(and(eq(workspaces.id, input.workspaceId), eq(workspaces.userId, userId)))
-		.limit(1);
+		// Verify workspace belongs to user
+		const workspace = await db
+			.select()
+			.from(workspaces)
+			.where(
+				and(
+					eq(workspaces.id, input.workspaceId),
+					eq(workspaces.userId, userId),
+				),
+			)
+			.limit(1);
 
-	if (workspace.length === 0) {
-		throw new Error("Workspace not found");
-	}
+		if (workspace.length === 0) {
+			throw new Error("Workspace not found");
+		}
 
-	const [form] = await db
-		.insert(forms)
-		.values({
-			id: input.id,
-			userId,
-			workspaceId: input.workspaceId,
-			title: input.title || "Untitled",
-			formName: input.formName || "draft",
-			schemaName: input.schemaName || "draftFormSchema",
-			content: input.content || [],
-			settings: input.settings || {},
-			icon: input.icon,
-			cover: input.cover,
-			isMultiStep: input.isMultiStep || false,
-		})
-		.returning();
+		const [form] = await db
+			.insert(forms)
+			.values({
+				id: input.id,
+				userId,
+				workspaceId: input.workspaceId,
+				title: input.title || "Untitled",
+				formName: input.formName || "draft",
+				schemaName: input.schemaName || "draftFormSchema",
+				content: input.content || [],
+				settings: input.settings || {},
+				icon: input.icon,
+				cover: input.cover,
+				isMultiStep: input.isMultiStep || false,
+			})
+			.returning();
 
-	const result = await db.execute(
-		sql`SELECT pg_current_xact_id()::text::bigint as txid`,
-	);
-	const txid = Number(result.rows[0]?.txid ?? 0);
+		const result = await db.execute(
+			sql`SELECT pg_current_xact_id()::text::bigint as txid`,
+		);
+		const txid = Number(result.rows[0]?.txid ?? 0);
 
-	return { form, txid };
-});
+		return { form, txid };
+	});
 
 // Update form
 export const updateForm = os
@@ -69,13 +76,16 @@ export const updateForm = os
 		const updateData: Record<string, any> = { updatedAt: new Date() };
 		if (input.title !== undefined) updateData.title = input.title;
 		if (input.formName !== undefined) updateData.formName = input.formName;
-		if (input.schemaName !== undefined) updateData.schemaName = input.schemaName;
+		if (input.schemaName !== undefined)
+			updateData.schemaName = input.schemaName;
 		if (input.content !== undefined) updateData.content = input.content;
 		if (input.settings !== undefined) updateData.settings = input.settings;
 		if (input.icon !== undefined) updateData.icon = input.icon;
 		if (input.cover !== undefined) updateData.cover = input.cover;
-		if (input.isMultiStep !== undefined) updateData.isMultiStep = input.isMultiStep;
-		if (input.workspaceId !== undefined) updateData.workspaceId = input.workspaceId;
+		if (input.isMultiStep !== undefined)
+			updateData.isMultiStep = input.isMultiStep;
+		if (input.workspaceId !== undefined)
+			updateData.workspaceId = input.workspaceId;
 
 		const [form] = await db
 			.update(forms)
@@ -98,7 +108,9 @@ export const deleteForm = os
 		const userId = (context as { userId?: string }).userId;
 		if (!userId) throw new Error("Unauthorized");
 
-		await db.delete(forms).where(and(eq(forms.id, input.id), eq(forms.userId, userId)));
+		await db
+			.delete(forms)
+			.where(and(eq(forms.id, input.id), eq(forms.userId, userId)));
 
 		const result3 = await db.execute(
 			sql`SELECT pg_current_xact_id()::text::bigint as txid`,
@@ -124,7 +136,12 @@ export const bulkInsertForms = os
 		const workspace = await db
 			.select()
 			.from(workspaces)
-			.where(and(eq(workspaces.id, input.workspaceId), eq(workspaces.userId, userId)))
+			.where(
+				and(
+					eq(workspaces.id, input.workspaceId),
+					eq(workspaces.userId, userId),
+				),
+			)
 			.limit(1);
 
 		if (workspace.length === 0) {
@@ -175,7 +192,12 @@ export const listForms = os
 			query = db
 				.select()
 				.from(forms)
-				.where(and(eq(forms.userId, userId), eq(forms.workspaceId, input.workspaceId)));
+				.where(
+					and(
+						eq(forms.userId, userId),
+						eq(forms.workspaceId, input.workspaceId),
+					),
+				);
 		}
 
 		return query.orderBy(forms.updatedAt);
@@ -199,4 +221,70 @@ export const getForm = os
 		}
 
 		return form;
+	});
+
+export const syncForms = os
+	.input(
+		z.array(
+			z.object({
+				id: z.string(),
+				updatedAt: z.coerce.date(),
+			}),
+		),
+	)
+	.handler(async ({ input, context }) => {
+		const userId = (context as { userId?: string }).userId;
+		if (!userId) throw new Error("Unauthorized");
+
+		const localState = input;
+
+		const serverForms = await db
+			.select()
+			.from(forms)
+			.where(eq(forms.userId, userId));
+
+		const changes: Array<
+			| { type: "insert"; value: (typeof serverForms)[0] }
+			| { type: "update"; value: (typeof serverForms)[0] }
+			| { type: "delete"; value: string }
+		> = [];
+
+		const localMap = new Map(localState.map((l) => [l.id, l.updatedAt]));
+
+		for (const serverForm of serverForms) {
+			const localUpdatedAt = localMap.get(serverForm.id);
+
+			if (!localUpdatedAt) {
+				changes.push({ type: "insert", value: serverForm });
+			} else if (
+				serverForm.updatedAt &&
+				serverForm.updatedAt > localUpdatedAt
+			) {
+				changes.push({ type: "update", value: serverForm });
+			}
+		}
+
+		const serverIds = new Set(serverForms.map((f) => f.id));
+		for (const local of localState) {
+			if (!serverIds.has(local.id)) {
+				changes.push({ type: "delete", value: local.id });
+			}
+		}
+
+		return changes;
+	});
+
+export const removeForms = os
+	.input(z.array(z.object({ id: z.string() })))
+	.handler(async ({ input, context }) => {
+		const userId = (context as { userId?: string }).userId;
+		if (!userId) throw new Error("Unauthorized");
+
+		for (const { id } of input) {
+			await db
+				.delete(forms)
+				.where(and(eq(forms.id, id), eq(forms.userId, userId)));
+		}
+
+		return { success: true };
 	});
