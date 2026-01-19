@@ -41,6 +41,7 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 	const { pathname } = useLocation();
 	const isFormBuilder =
 		pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
+	const isCreateRoute = pathname === "/create";
 	const { data: sessionData } = useSession();
 	const session = sessionData;
 	const isUnverified = session && !session.user.emailVerified;
@@ -332,16 +333,18 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 								</Button>
 							</AuthDialog>
 						)}
-						<Button
-							size="sm"
-							className="h-8 px-4 bg-blue-600 hover:bg-blue-700 ml-2"
-							asChild
-							disabled={!!isUnverified}
-						>
-							<Link to={isUnverified ? "/verify-email" : "/dashboard"}>
-								{isUnverified ? "Verify Email" : "Create Form"}
-							</Link>
-						</Button>
+						{!isCreateRoute && (
+							<Button
+								size="sm"
+								className="h-8 px-4 bg-blue-600 hover:bg-blue-700 ml-2"
+								asChild
+								disabled={!!isUnverified}
+							>
+								<Link to={isUnverified ? "/verify-email" : "/dashboard"}>
+									{isUnverified ? "Verify Email" : "Create Form"}
+								</Link>
+							</Button>
+						)}
 					</>
 				)}
 			</div>

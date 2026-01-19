@@ -18,6 +18,9 @@ export const Route = createFileRoute("/")({
 				});
 			}
 		}
+		return {
+			user : session.data?.user
+		}
 	},
 	component: LandingPage,
 });
@@ -50,7 +53,7 @@ function LandingPage() {
 							className="h-12 px-8 text-base font-medium group"
 							asChild
 						>
-							<Link to="/form-builder">
+							<Link to="/create">
 								Create a free form
 								<ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
 							</Link>

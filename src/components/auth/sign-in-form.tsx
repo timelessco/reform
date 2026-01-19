@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/input-otp";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { auth } from "@/lib/auth-client";
+import { syncLocalDataToCloud } from "@/lib/sync";
 
 const signInEmailSchema = z.object({
 	email: z.string().email("Please enter a valid email address"),
@@ -49,8 +50,17 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 	const router = useRouter();
 	const signInMutation = useMutation(
 		auth.signIn.email.mutationOptions({
-			onSuccess: () => {
+			onSuccess: async () => {
 				toast.success("Signed in successfully!");
+				try {
+					await syncLocalDataToCloud();
+					toast.success("Local data synced successfully!");
+				} catch (error) {
+					console.error("Failed to sync local data:", error);
+					toast.error("Signed in but failed to sync local data");
+				}
+				// Navigate to dashboard after successful sync
+				router.navigate({ to: "/dashboard", replace: true });
 				onSuccess?.();
 			},
 			onError: (error) => {
@@ -66,8 +76,17 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 	);
 	const signInUsernameMutation = useMutation(
 		auth.signIn.username.mutationOptions({
-			onSuccess: () => {
+			onSuccess: async () => {
 				toast.success("Signed in successfully!");
+				try {
+					await syncLocalDataToCloud();
+					toast.success("Local data synced successfully!");
+				} catch (error) {
+					console.error("Failed to sync local data:", error);
+					toast.error("Signed in but failed to sync local data");
+				}
+				// Navigate to dashboard after successful sync
+				router.navigate({ to: "/dashboard", replace: true });
 				onSuccess?.();
 			},
 			onError: (error) => {
@@ -96,8 +115,17 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 
 	const verifyOtpMutation = useMutation(
 		auth.signIn.emailOtp.mutationOptions({
-			onSuccess: () => {
+			onSuccess: async () => {
 				toast.success("Signed in successfully!");
+				try {
+					await syncLocalDataToCloud();
+					toast.success("Local data synced successfully!");
+				} catch (error) {
+					console.error("Failed to sync local data:", error);
+					toast.error("Signed in but failed to sync local data");
+				}
+				// Navigate to dashboard after successful sync
+				router.navigate({ to: "/dashboard", replace: true });
 				onSuccess?.();
 			},
 			onError: (error) => {
@@ -108,6 +136,18 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 
 	const socialSignInMutation = useMutation(
 		auth.signIn.social.mutationOptions({
+			onSuccess: async () => {
+				toast.success("Signed in successfully!");
+				try {
+					await syncLocalDataToCloud();
+					toast.success("Local data synced successfully!");
+				} catch (error) {
+					console.error("Failed to sync local data:", error);
+					toast.error("Signed in but failed to sync local data");
+				}
+				// Navigate to dashboard after successful sync
+				router.navigate({ to: "/dashboard", replace: true });
+			},
 			onError: (error) => {
 				if (error.code === "EMAIL_NOT_VERIFIED") {
 					router.navigate({
@@ -130,7 +170,6 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 			signInMutation.mutate({
 				email: value.email,
 				password: value.password,
-				callbackURL: "/dashboard",
 			});
 		},
 	});
@@ -149,7 +188,6 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 			signInUsernameMutation.mutate({
 				username: value.username,
 				password: value.password,
-				callbackURL: "/dashboard",
 			});
 		},
 	});
@@ -199,7 +237,6 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 	const handleGoogleSignIn = async () => {
 		socialSignInMutation.mutate({
 			provider: "google",
-			callbackURL: "/dashboard",
 		});
 	};
 

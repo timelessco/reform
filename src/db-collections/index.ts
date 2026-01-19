@@ -1,7 +1,7 @@
 import { WorkspaceZod } from "@/db/schema";
 import { createForm, deleteForm, updateForm } from "@/lib/fn/forms";
 import { electricCollectionOptions } from "@tanstack/electric-db-collection";
-import { createCollection } from "@tanstack/react-db";
+import { createCollection, localStorageCollectionOptions } from "@tanstack/react-db";
 import { z } from "zod";
 
 // Helper to transform timestamp strings from Electric
@@ -150,6 +150,14 @@ export const formCollection = createCollection(
 		},
 	}),
 );
+
+export const localFormCollection = createCollection(localStorageCollectionOptions({
+	id: 'draft-form',
+    storageKey: 'draft-form',
+	schema  : FormSchema,
+    getKey: (item) => item.id,
+}
+))
 
 // Legacy export alias for backward compatibility
 export const editorDocCollection = formCollection;
