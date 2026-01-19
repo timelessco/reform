@@ -22,6 +22,10 @@ export const auth = betterAuth({
 			clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
 		},
 	},
+	trustedOrigins: [
+		"https://*.vercel.app",
+		"https://*.vercel-preview.app",
+	],
 	plugins: [
 		username(),
 		emailOTP({
