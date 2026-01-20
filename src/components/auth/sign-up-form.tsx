@@ -160,7 +160,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 					</p>
 				</div>
 
-				<otpForm.AppForm>
+				<otpForm.AppForm key="otp-signup">
 					<otpForm.Form className="space-y-4">
 						<otpForm.AppField name="otp">
 							{(field) => (
@@ -264,7 +264,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 				</div>
 			</div>
 
-			<signUpForm.AppForm>
+			<signUpForm.AppForm key="main-signup">
 				<signUpForm.Form className="space-y-4">
 					<signUpForm.AppField name="name">
 						{(field) => (

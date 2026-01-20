@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/input-otp";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { auth } from "@/lib/auth-client";
+import { syncLocalDataToCloud } from "@/lib/sync";
 
 const signInEmailSchema = z.object({
 	email: z.string().email("Please enter a valid email address"),
@@ -49,12 +50,20 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 	const router = useRouter();
 	const signInMutation = useMutation(
 		auth.signIn.email.mutationOptions({
-			onSuccess: () => {
+			onSuccess: async () => {
 				toast.success("Signed in successfully!");
+				try {
+					await syncLocalDataToCloud();
+					toast.success("Local data synced successfully!");
+				} catch (error) {
+					console.error("Failed to sync local data:", error);
+					toast.error("Signed in but failed to sync local data");
+				}
+				// Navigate to dashboard after successful sync
+				router.navigate({ to: "/dashboard", replace: true });
 				onSuccess?.();
 			},
 			onError: (error) => {
-				console.log(error);
 				if (error.code === "EMAIL_NOT_VERIFIED") {
 					router.navigate({
 						to: "/verify-email",
@@ -66,8 +75,17 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 	);
 	const signInUsernameMutation = useMutation(
 		auth.signIn.username.mutationOptions({
-			onSuccess: () => {
+			onSuccess: async () => {
 				toast.success("Signed in successfully!");
+				try {
+					await syncLocalDataToCloud();
+					toast.success("Local data synced successfully!");
+				} catch (error) {
+					console.error("Failed to sync local data:", error);
+					toast.error("Signed in but failed to sync local data");
+				}
+				// Navigate to dashboard after successful sync
+				router.navigate({ to: "/dashboard", replace: true });
 				onSuccess?.();
 			},
 			onError: (error) => {
@@ -96,8 +114,17 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 
 	const verifyOtpMutation = useMutation(
 		auth.signIn.emailOtp.mutationOptions({
-			onSuccess: () => {
+			onSuccess: async () => {
 				toast.success("Signed in successfully!");
+				try {
+					await syncLocalDataToCloud();
+					toast.success("Local data synced successfully!");
+				} catch (error) {
+					console.error("Failed to sync local data:", error);
+					toast.error("Signed in but failed to sync local data");
+				}
+				// Navigate to dashboard after successful sync
+				router.navigate({ to: "/dashboard", replace: true });
 				onSuccess?.();
 			},
 			onError: (error) => {
@@ -108,6 +135,18 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 
 	const socialSignInMutation = useMutation(
 		auth.signIn.social.mutationOptions({
+			onSuccess: async () => {
+				toast.success("Signed in successfully!");
+				try {
+					await syncLocalDataToCloud();
+					toast.success("Local data synced successfully!");
+				} catch (error) {
+					console.error("Failed to sync local data:", error);
+					toast.error("Signed in but failed to sync local data");
+				}
+				// Navigate to dashboard after successful sync
+				router.navigate({ to: "/dashboard", replace: true });
+			},
 			onError: (error) => {
 				if (error.code === "EMAIL_NOT_VERIFIED") {
 					router.navigate({
@@ -130,7 +169,6 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 			signInMutation.mutate({
 				email: value.email,
 				password: value.password,
-				callbackURL: "/dashboard",
 			});
 		},
 	});
@@ -149,7 +187,6 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 			signInUsernameMutation.mutate({
 				username: value.username,
 				password: value.password,
-				callbackURL: "/dashboard",
 			});
 		},
 	});
@@ -199,7 +236,6 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 	const handleGoogleSignIn = async () => {
 		socialSignInMutation.mutate({
 			provider: "google",
-			callbackURL: "/dashboard",
 		});
 	};
 
@@ -213,7 +249,7 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 					</p>
 				</div>
 
-				<otpVerifyForm.AppForm>
+				<otpVerifyForm.AppForm key="otp-verify">
 					<otpVerifyForm.Form className="space-y-4">
 						<otpVerifyForm.AppField name="otp">
 							{(field) => (
@@ -329,8 +365,8 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 					variant="outline"
 					onClick={() => setSignInMethod("email")}
 					className={`flex-1 py-1.5 px-3 text-sm rounded-md transition-colors ${signInMethod === "email"
-							? "bg-background shadow-sm"
-							: "text-muted-foreground hover:text-foreground"
+						? "bg-background shadow-sm"
+						: "text-muted-foreground hover:text-foreground"
 						}`}
 				>
 					Email
@@ -339,8 +375,8 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 					variant="outline"
 					onClick={() => setSignInMethod("username")}
 					className={`flex-1 py-1.5 px-3 text-sm rounded-md transition-colors ${signInMethod === "username"
-							? "bg-background shadow-sm"
-							: "text-muted-foreground hover:text-foreground"
+						? "bg-background shadow-sm"
+						: "text-muted-foreground hover:text-foreground"
 						}`}
 				>
 					Username
@@ -349,8 +385,8 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 					variant="outline"
 					onClick={() => setSignInMethod("otp")}
 					className={`flex-1 py-1.5 px-3 text-sm rounded-md transition-colors ${signInMethod === "otp"
-							? "bg-background shadow-sm"
-							: "text-muted-foreground hover:text-foreground"
+						? "bg-background shadow-sm"
+						: "text-muted-foreground hover:text-foreground"
 						}`}
 				>
 					OTP
@@ -358,7 +394,7 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 			</div>
 
 			{signInMethod === "email" && (
-				<emailForm.AppForm>
+				<emailForm.AppForm key="email-signin">
 					<emailForm.Form className="space-y-4">
 						<emailForm.AppField name="email">
 							{(field) => (
@@ -421,7 +457,7 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 			)}
 
 			{signInMethod === "username" && (
-				<usernameForm.AppForm>
+				<usernameForm.AppForm key="username-signin">
 					<usernameForm.Form className="space-y-4">
 						<usernameForm.AppField name="username">
 							{(field) => (
@@ -483,7 +519,7 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 			)}
 
 			{signInMethod === "otp" && (
-				<otpRequestForm.AppForm>
+				<otpRequestForm.AppForm key="otp-request">
 					<otpRequestForm.Form className="space-y-4">
 						<otpRequestForm.AppField name="email">
 							{(field) => (

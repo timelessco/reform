@@ -32,3 +32,23 @@ export const sessionMiddleware = createMiddleware().server(async ({ next }) => {
 		},
 	});
 });
+
+
+export const guestMiddleware = createMiddleware().server(async ({ next }) => {
+	const headers = getRequestHeaders();
+	const session = await auth.api.getSession({ headers });
+
+	if (session) {
+		if (session.user.emailVerified) {
+			throw redirect({ to: "/dashboard" });
+		} else {
+			throw redirect({ to: "/verify-email" });
+		}
+	}
+
+	return await next({
+		context: {
+			session: null,
+		},
+	});
+});

@@ -1,7 +1,7 @@
 
 
 import * as React from "react";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SignInForm } from "./sign-in-form";
 import { SignUpForm } from "./sign-up-form";
 
@@ -30,6 +30,12 @@ export function AuthDialog({
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>{children}</DialogTrigger>
 			<DialogContent className="sm:max-w-[425px] p-6">
+				<DialogHeader>
+					<DialogTitle className="sr-only">Authentication</DialogTitle>
+					<DialogDescription className="sr-only">
+						Sign in or sign up to your account
+					</DialogDescription>
+				</DialogHeader>
 				{mode === "sign-in" ? (
 					<SignInForm
 						onSuccess={handleSuccess}

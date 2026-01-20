@@ -1,4 +1,4 @@
-import { eq, useLiveQuery } from "@tanstack/react-db";
+import { useForm } from "@/hooks/use-live-hooks";
 import { Link } from "@tanstack/react-router";
 import { normalizeNodeId, type TElement, type Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
@@ -7,14 +7,15 @@ import { EditorKit } from "@/components/editor/editor-kit";
 import { Button } from "@/components/ui/button";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
-import { editorDocCollection } from "@/db-collections";
-import { updateDoc } from "@/services/form.service";
+import { editorDocCollection, updateDoc, updateHeader } from "@/db-collections";
 
 interface EditorAppProps {
 	formId: string;
+	workspaceId?: string;
+	defaultValue?: ReturnType<typeof normalizeNodeId>;
 }
 
-const defaultValue = normalizeNodeId([
+const DEFAULT_EDITOR_VALUE = normalizeNodeId([
 	createFormHeaderNode() as unknown as TElement,
 	{
 		children: [{ text: "Start building your form..." }],
@@ -22,11 +23,8 @@ const defaultValue = normalizeNodeId([
 	},
 ]);
 
-export default function EditorApp({ formId }: EditorAppProps) {
-	const { data: savedDocs } = useLiveQuery((q) =>
-		q.from({ doc: editorDocCollection }).where(({ doc }) => eq(doc.id, formId)),
-	);
-
+export default function EditorApp({ formId, workspaceId, defaultValue }: EditorAppProps) {
+	const savedDocs = useForm(formId);
 	const initializedRef = useRef(false);
 	const [isReady, setIsReady] = useState(false);
 	const skipSaveRef = useRef(false);
@@ -40,11 +38,12 @@ export default function EditorApp({ formId }: EditorAppProps) {
 	useEffect(() => {
 		if (initializedRef.current) return;
 		if (savedDocs === undefined) return;
+		if (savedDocs.length === 0) return; // Wait for form data to be available
 
 		initializedRef.current = true;
 
 		const docData = savedDocs?.[0];
-		let initialContent: Value | undefined;
+		let initialContent: Value;
 
 		if (docData?.content && Array.isArray(docData.content)) {
 			if (
@@ -64,12 +63,11 @@ export default function EditorApp({ formId }: EditorAppProps) {
 				];
 			}
 		} else {
-			initialContent = defaultValue;
+			initialContent = defaultValue ?? DEFAULT_EDITOR_VALUE;
 		}
 
 		lastSavedContentRef.current = initialContent;
 		skipSaveRef.current = true;
-
 		editor.tf.init({
 			value: initialContent,
 			autoSelect: "end",
@@ -92,15 +90,34 @@ export default function EditorApp({ formId }: EditorAppProps) {
 			if (contentStr === lastSavedStr) return;
 
 			lastSavedContentRef.current = value;
+			const now = new Date().toISOString()
 
-			updateDoc(formId, (draft: any) => {
-				draft.content = value;
+			// Always update the full content when it changes
+			updateDoc(formId, (draft) => {
+				draft.workspaceId = workspaceId,
+					draft.createdAt = now,
+					draft.updatedAt = now,
+					draft.content = value;
 			});
+
+			// Optionally update header metadata if the first element is a formHeader
+			if (value.length > 0 && value[0]?.type === 'formHeader') {
+				const headerNode = value[0] as any;
+				updateHeader(formId, {
+					title: headerNode.title,
+					icon: headerNode.icon,
+					cover: headerNode.cover,
+					workspaceId: String(workspaceId),
+					createdAt: now,
+					updatedAt: now,
+				});
+			}
 		},
-		[formId],
+		[formId, workspaceId],
 	);
 
-	const isPreview = savedDocs?.[0]?.isPreview ?? false;
+	// Preview mode is handled by route search params, not stored in DB
+	const isPreview = false;
 
 	if (!isReady) {
 		return (
@@ -110,6 +127,8 @@ export default function EditorApp({ formId }: EditorAppProps) {
 		);
 	}
 
+	// Only show "Form Not Found" after we've confirmed the form doesn't exist
+	// If savedDocs is undefined, we're still loading/syncing
 	if (savedDocs !== undefined && savedDocs.length === 0) {
 		return (
 			<div className="h-screen w-full flex items-center justify-center">

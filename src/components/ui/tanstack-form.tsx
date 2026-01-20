@@ -89,21 +89,26 @@ function FieldSet({
 
 const useFieldContext = () => {
 	const { id } = React.useContext(FormItemContext);
-	const { name, store, ...fieldContext } = _useFieldContext();
+	const fieldContext = _useFieldContext();
 
-	const errors = useStore(store, (state) => state.meta.errors);
+	// Always call useStore with the potentially undefined store to keep hook order stable
+	// useStore usually handles undefined/null store by not subscribing
+	const fieldState = useStore(fieldContext?.store as any, (state: any) => ({
+		errors: state?.meta?.errors ?? [],
+		isTouched: state?.meta?.isTouched ?? false,
+	}));
+
 	if (!fieldContext) {
 		throw new Error("useFieldContext should be used within <FormItem>");
 	}
 
 	return {
 		id,
-		name,
 		formItemId: `${id}-form-item`,
 		formDescriptionId: `${id}-form-item-description`,
 		formMessageId: `${id}-form-item-message`,
-		errors,
-		store,
+		errors: fieldState.errors,
+		isTouched: fieldState.isTouched,
 		...fieldContext,
 	};
 };
@@ -114,13 +119,12 @@ function Field({
 }: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) {
 	const {
 		errors,
+		isTouched,
 		formItemId,
 		formDescriptionId,
 		formMessageId,
 		handleBlur,
-		store,
 	} = useFieldContext();
-	const isTouched = useStore(store, (state) => state.meta.isTouched);
 	const hasVisibleErrors = !!errors.length && isTouched;
 
 	return (
@@ -142,8 +146,7 @@ function Field({
 }
 
 function FieldError({ className, ...props }: React.ComponentProps<"p">) {
-	const { errors, formMessageId, store } = useFieldContext();
-	const isTouched = useStore(store, (state) => state.meta.isTouched);
+	const { errors, isTouched, formMessageId } = useFieldContext();
 	const body = errors.length ? String(errors.at(0)?.message ?? "") : "";
 	if (!body || !isTouched) return null;
 	return (

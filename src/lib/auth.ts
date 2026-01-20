@@ -4,6 +4,7 @@ import { apiKey, emailOTP, twoFactor, username } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { logger } from "@/lib/utils";
 
 export const auth = betterAuth({
 	appName: "Better Forms",
@@ -22,13 +23,17 @@ export const auth = betterAuth({
 			clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
 		},
 	},
+	trustedOrigins: [
+		"https://*.vercel.app",
+		"https://*.vercel-preview.app",
+	],
 	plugins: [
 		username(),
 		emailOTP({
 			async sendVerificationOTP({ email, otp, type }) {
 				// For development, log to console
 				// In production, replace with your email service (e.g., Resend, SendGrid, etc.)
-				console.log(`[Auth] Sending OTP to ${email}: ${otp} (type: ${type})`);
+				logger(`[Auth] Sending OTP to ${email}: ${otp} (type: ${type})`);
 
 				// Example with Resend (uncomment and configure):
 				// import { Resend } from 'resend';

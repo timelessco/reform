@@ -60,7 +60,6 @@ export function CustomizeSidebar() {
 		validationLogic: revalidateLogic(),
 		validators: { onDynamic: customizeFormSchema },
 		onSubmit: async ({ value }) => {
-			console.log(value);
 		},
 	});
 

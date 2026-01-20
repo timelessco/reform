@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "28a6c81c-8f82-47e7-8f4d-7e403a9ff515",
+  "id": "6ec53edf-0181-4734-a177-3e83b3e769a6",
   "prevIds": [
-    "deb78f5a-8b72-4c5d-bedb-38eb492271b2"
+    "00000000-0000-0000-0000-000000000000"
   ],
   "ddl": [
     {
@@ -38,7 +38,7 @@
     },
     {
       "isRlsEnabled": false,
-      "name": "two_factor",
+      "name": "twoFactor",
       "entityType": "tables",
       "schema": "public"
     },
@@ -51,6 +51,12 @@
     {
       "isRlsEnabled": false,
       "name": "verification",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "workspaces",
       "entityType": "tables",
       "schema": "public"
     },
@@ -75,7 +81,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "user_id",
+      "name": "userId",
       "entityType": "columns",
       "schema": "public",
       "table": "account"
@@ -88,7 +94,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "account_id",
+      "name": "accountId",
       "entityType": "columns",
       "schema": "public",
       "table": "account"
@@ -101,7 +107,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "provider_id",
+      "name": "providerId",
       "entityType": "columns",
       "schema": "public",
       "table": "account"
@@ -114,7 +120,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "access_token",
+      "name": "accessToken",
       "entityType": "columns",
       "schema": "public",
       "table": "account"
@@ -127,7 +133,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "refresh_token",
+      "name": "refreshToken",
       "entityType": "columns",
       "schema": "public",
       "table": "account"
@@ -140,7 +146,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "access_token_expires_at",
+      "name": "accessTokenExpiresAt",
       "entityType": "columns",
       "schema": "public",
       "table": "account"
@@ -153,7 +159,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "refresh_token_expires_at",
+      "name": "refreshTokenExpiresAt",
       "entityType": "columns",
       "schema": "public",
       "table": "account"
@@ -179,7 +185,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "id_token",
+      "name": "idToken",
       "entityType": "columns",
       "schema": "public",
       "table": "account"
@@ -205,7 +211,7 @@
       "default": "now()",
       "generated": null,
       "identity": null,
-      "name": "created_at",
+      "name": "createdAt",
       "entityType": "columns",
       "schema": "public",
       "table": "account"
@@ -218,7 +224,7 @@
       "default": "now()",
       "generated": null,
       "identity": null,
-      "name": "updated_at",
+      "name": "updatedAt",
       "entityType": "columns",
       "schema": "public",
       "table": "account"
@@ -296,7 +302,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "user_id",
+      "name": "userId",
       "entityType": "columns",
       "schema": "public",
       "table": "apikey"
@@ -309,7 +315,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "refill_interval",
+      "name": "refillInterval",
       "entityType": "columns",
       "schema": "public",
       "table": "apikey"
@@ -322,7 +328,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "refill_amount",
+      "name": "refillAmount",
       "entityType": "columns",
       "schema": "public",
       "table": "apikey"
@@ -335,7 +341,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "last_refill_at",
+      "name": "lastRefillAt",
       "entityType": "columns",
       "schema": "public",
       "table": "apikey"
@@ -361,7 +367,7 @@
       "default": "true",
       "generated": null,
       "identity": null,
-      "name": "rate_limit_enabled",
+      "name": "rateLimitEnabled",
       "entityType": "columns",
       "schema": "public",
       "table": "apikey"
@@ -374,7 +380,7 @@
       "default": "86400000",
       "generated": null,
       "identity": null,
-      "name": "rate_limit_time_window",
+      "name": "rateLimitTimeWindow",
       "entityType": "columns",
       "schema": "public",
       "table": "apikey"
@@ -387,7 +393,7 @@
       "default": "10",
       "generated": null,
       "identity": null,
-      "name": "rate_limit_max",
+      "name": "rateLimitMax",
       "entityType": "columns",
       "schema": "public",
       "table": "apikey"
@@ -400,7 +406,7 @@
       "default": "0",
       "generated": null,
       "identity": null,
-      "name": "request_count",
+      "name": "requestCount",
       "entityType": "columns",
       "schema": "public",
       "table": "apikey"
@@ -426,7 +432,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "last_request",
+      "name": "lastRequest",
       "entityType": "columns",
       "schema": "public",
       "table": "apikey"
@@ -439,7 +445,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "expires_at",
+      "name": "expiresAt",
       "entityType": "columns",
       "schema": "public",
       "table": "apikey"
@@ -452,7 +458,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "created_at",
+      "name": "createdAt",
       "entityType": "columns",
       "schema": "public",
       "table": "apikey"
@@ -465,7 +471,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "updated_at",
+      "name": "updatedAt",
       "entityType": "columns",
       "schema": "public",
       "table": "apikey"
@@ -517,7 +523,20 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "user_id",
+      "name": "userId",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "forms"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "workspaceId",
       "entityType": "columns",
       "schema": "public",
       "table": "forms"
@@ -543,7 +562,7 @@
       "default": "'draft'",
       "generated": null,
       "identity": null,
-      "name": "form_name",
+      "name": "formName",
       "entityType": "columns",
       "schema": "public",
       "table": "forms"
@@ -556,7 +575,7 @@
       "default": "'draftFormSchema'",
       "generated": null,
       "identity": null,
-      "name": "schema_name",
+      "name": "schemaName",
       "entityType": "columns",
       "schema": "public",
       "table": "forms"
@@ -621,7 +640,7 @@
       "default": "false",
       "generated": null,
       "identity": null,
-      "name": "is_multi_step",
+      "name": "isMultiStep",
       "entityType": "columns",
       "schema": "public",
       "table": "forms"
@@ -647,7 +666,7 @@
       "default": "now()",
       "generated": null,
       "identity": null,
-      "name": "created_at",
+      "name": "createdAt",
       "entityType": "columns",
       "schema": "public",
       "table": "forms"
@@ -660,7 +679,7 @@
       "default": "now()",
       "generated": null,
       "identity": null,
-      "name": "updated_at",
+      "name": "updatedAt",
       "entityType": "columns",
       "schema": "public",
       "table": "forms"
@@ -686,7 +705,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "user_id",
+      "name": "userId",
       "entityType": "columns",
       "schema": "public",
       "table": "session"
@@ -712,7 +731,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "expires_at",
+      "name": "expiresAt",
       "entityType": "columns",
       "schema": "public",
       "table": "session"
@@ -725,7 +744,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "ip_address",
+      "name": "ipAddress",
       "entityType": "columns",
       "schema": "public",
       "table": "session"
@@ -738,7 +757,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "user_agent",
+      "name": "userAgent",
       "entityType": "columns",
       "schema": "public",
       "table": "session"
@@ -751,7 +770,7 @@
       "default": "now()",
       "generated": null,
       "identity": null,
-      "name": "created_at",
+      "name": "createdAt",
       "entityType": "columns",
       "schema": "public",
       "table": "session"
@@ -764,7 +783,7 @@
       "default": "now()",
       "generated": null,
       "identity": null,
-      "name": "updated_at",
+      "name": "updatedAt",
       "entityType": "columns",
       "schema": "public",
       "table": "session"
@@ -803,7 +822,7 @@
       "default": "now()",
       "generated": null,
       "identity": null,
-      "name": "created_at",
+      "name": "createdAt",
       "entityType": "columns",
       "schema": "public",
       "table": "todos"
@@ -819,7 +838,7 @@
       "name": "id",
       "entityType": "columns",
       "schema": "public",
-      "table": "two_factor"
+      "table": "twoFactor"
     },
     {
       "type": "text",
@@ -832,7 +851,7 @@
       "name": "secret",
       "entityType": "columns",
       "schema": "public",
-      "table": "two_factor"
+      "table": "twoFactor"
     },
     {
       "type": "text",
@@ -842,10 +861,10 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "backup_codes",
+      "name": "backupCodes",
       "entityType": "columns",
       "schema": "public",
-      "table": "two_factor"
+      "table": "twoFactor"
     },
     {
       "type": "text",
@@ -855,10 +874,10 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "user_id",
+      "name": "userId",
       "entityType": "columns",
       "schema": "public",
-      "table": "two_factor"
+      "table": "twoFactor"
     },
     {
       "type": "text",
@@ -907,7 +926,7 @@
       "default": "false",
       "generated": null,
       "identity": null,
-      "name": "email_verified",
+      "name": "emailVerified",
       "entityType": "columns",
       "schema": "public",
       "table": "user"
@@ -933,7 +952,7 @@
       "default": "now()",
       "generated": null,
       "identity": null,
-      "name": "created_at",
+      "name": "createdAt",
       "entityType": "columns",
       "schema": "public",
       "table": "user"
@@ -946,7 +965,7 @@
       "default": "now()",
       "generated": null,
       "identity": null,
-      "name": "updated_at",
+      "name": "updatedAt",
       "entityType": "columns",
       "schema": "public",
       "table": "user"
@@ -972,7 +991,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "display_username",
+      "name": "displayUsername",
       "entityType": "columns",
       "schema": "public",
       "table": "user"
@@ -985,7 +1004,7 @@
       "default": "false",
       "generated": null,
       "identity": null,
-      "name": "two_factor_enabled",
+      "name": "twoFactorEnabled",
       "entityType": "columns",
       "schema": "public",
       "table": "user"
@@ -1037,7 +1056,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "expires_at",
+      "name": "expiresAt",
       "entityType": "columns",
       "schema": "public",
       "table": "verification"
@@ -1050,7 +1069,7 @@
       "default": "now()",
       "generated": null,
       "identity": null,
-      "name": "created_at",
+      "name": "createdAt",
       "entityType": "columns",
       "schema": "public",
       "table": "verification"
@@ -1063,10 +1082,75 @@
       "default": "now()",
       "generated": null,
       "identity": null,
-      "name": "updated_at",
+      "name": "updatedAt",
       "entityType": "columns",
       "schema": "public",
       "table": "verification"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "workspaces"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "userId",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "workspaces"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'My workspace'",
+      "generated": null,
+      "identity": null,
+      "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "workspaces"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "createdAt",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "workspaces"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updatedAt",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "workspaces"
     },
     {
       "columns": [
@@ -1123,9 +1207,9 @@
         "id"
       ],
       "nameExplicit": false,
-      "name": "two_factor_pkey",
+      "name": "twoFactor_pkey",
       "schema": "public",
-      "table": "two_factor",
+      "table": "twoFactor",
       "entityType": "pks"
     },
     {
@@ -1146,6 +1230,16 @@
       "name": "verification_pkey",
       "schema": "public",
       "table": "verification",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "workspaces_pkey",
+      "schema": "public",
+      "table": "workspaces",
       "entityType": "pks"
     },
     {

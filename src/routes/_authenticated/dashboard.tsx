@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
-import { useWorkspaceInit } from "@/hooks/use-workspace-init";
+import { createWorkspaceLocal } from "@/db-collections";
+import { useWorkspaces } from "@/hooks/use-live-hooks";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
 	component: DashboardPage,
@@ -10,17 +11,45 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
 	const navigate = useNavigate();
-	const { defaultWorkspace, isReady } = useWorkspaceInit();
+	const hasInitialized = useRef(false);
+
+	// Use live query for real-time sync
+	const workspaces = useWorkspaces();
+
+	// Collection data starts as undefined, then becomes an array
+	const isLoading = workspaces === undefined;
+	const defaultWorkspace = workspaces && workspaces.length > 0 ? workspaces[0] : null;
 
 	useEffect(() => {
-		if (isReady && defaultWorkspace) {
-			navigate({
-				to: "/workspace/$workspaceId",
-				params: { workspaceId: defaultWorkspace.id },
-				replace: true,
-			});
-		}
-	}, [isReady, defaultWorkspace, navigate]);
+		const initializeWorkspace = async () => {
+			if (isLoading || hasInitialized.current) return;
+
+			if (defaultWorkspace) {
+				hasInitialized.current = true;
+				// Navigate to existing workspace
+				navigate({
+					to: "/workspace/$workspaceId",
+					params: { workspaceId: defaultWorkspace.id },
+					replace: true,
+				});
+			} else if (workspaces && workspaces.length === 0) {
+				hasInitialized.current = true;
+				// Create default workspace if none exists
+				try {
+					const newWorkspace = await createWorkspaceLocal("My workspace");
+					navigate({
+						to: "/workspace/$workspaceId",
+						params: { workspaceId: newWorkspace.id },
+						replace: true,
+					});
+				} catch (error) {
+					console.error("Failed to create default workspace:", error);
+				}
+			}
+		};
+
+		initializeWorkspace();
+	}, [isLoading, defaultWorkspace, workspaces, navigate]);
 
 	return (
 		<div className="flex-1 flex items-center justify-center min-h-screen">

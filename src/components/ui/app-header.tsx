@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
-import { Link, useLocation, useSearch } from "@tanstack/react-router";
-import { Flower2, History, LogOut, Settings, User } from "lucide-react";
+import { Link, useLocation, useSearch, useNavigate } from "@tanstack/react-router";
+import { Flower2, History, LayoutGrid, LogOut, Search, Settings, User } from "lucide-react";
 import { toast } from "sonner";
 import { AuthDialog } from "@/components/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,34 +24,55 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { useCustomizeSidebar } from "@/hooks/use-customize-sidebar";
-import { useFormStateById } from "@/hooks/use-form-state";
-import { useWorkspaceById } from "@/hooks/use-workspace-init";
 import { auth, useSession } from "@/lib/auth-client";
-import { cn } from "@/lib/utils";
-import { togglePreview } from "@/services/form.service";
 import { SidebarTrigger, useSidebarSafe } from "./sidebar";
+import { useForm, useWorkspace } from "@/hooks/use-live-hooks";
+import { updateFormStatus } from "@/db-collections";
+import { useCommandPalette } from "@/hooks/use-command-palette";
+import { ClientOnly } from "@/components/client-only";
 
 interface AppHeaderProps {
 	formId?: string;
 	workspaceId?: string;
 }
 
+// Client-only component for displaying form title from local DB
+function FormTitleDisplay({ formId }: { formId: string }) {
+	const savedDocs = useForm(formId);
+	return <>{savedDocs?.[0]?.title || "Untitled"}</>;
+}
+
+// Client-only component for displaying workspace name from local DB
+function WorkspaceNameDisplay({ workspaceId }: { workspaceId: string }) {
+	const workspace = useWorkspace(workspaceId);
+	return <>{workspace?.name || "Workspace"}</>;
+}
+
 export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 	const sidebarContext = useSidebarSafe();
 	const state = sidebarContext?.state;
-	const form = useFormStateById(formId);
-	const workspace = useWorkspaceById(workspaceId || "");
 	const { pathname } = useLocation();
+	const isWorkspaceDashboard =
+		pathname.startsWith("/workspace/") && !pathname.includes("/form-builder/");
 	const isFormBuilder =
 		pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
+	const isCreateRoute = pathname === "/create";
 	const { data: sessionData } = useSession();
 	const session = sessionData;
+	const navigate = useNavigate();
 	const isUnverified = session && !session.user.emailVerified;
+
 
 	// Get search params for the current route
 	const search: any = useSearch({ strict: false });
 	const demo = search.demo;
 	const { toggle } = useCustomizeSidebar();
+	const { setIsOpen: setIsPaletteOpen } = useCommandPalette();
+
+	// Get current form metadata for publishing
+	const savedDocs = useForm(formId);
+	const currentForm = savedDocs?.[0];
+	const isPublished = currentForm?.status === "published";
 
 	const signOutMutation = useMutation(
 		auth.signOut.mutationOptions({
@@ -67,6 +88,23 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 
 	const handleSignOut = async () => {
 		signOutMutation.mutate({});
+	};
+
+	const handlePublish = async () => {
+		if (formId && workspaceId) {
+			try {
+				await updateFormStatus(formId, "published");
+				toast.success("Form published successfully");
+				// Redirect to the share page
+				navigate({
+					to: "/workspace/$workspaceId/form-builder/$formId/share",
+					params: { workspaceId, formId },
+				});
+			} catch (error) {
+				toast.error("Failed to publish form");
+				console.error(error);
+			}
+		}
 	};
 
 	const getInitials = (name: string) => {
@@ -87,40 +125,65 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 				</div>
 			)}
 			<div className="flex items-center gap-4">
-				{isFormBuilder ? (
+				{isFormBuilder || isWorkspaceDashboard ? (
 					<Breadcrumb>
 						<BreadcrumbList>
 							<BreadcrumbItem>
 								<BreadcrumbLink asChild>
 									<Link to="/dashboard" className="flex items-center gap-1">
-										<span className="text-muted-foreground">*</span>
+										<LayoutGrid className="h-4 w-4 text-muted-foreground/60" />
 									</Link>
 								</BreadcrumbLink>
 							</BreadcrumbItem>
 							<BreadcrumbSeparator />
 							<BreadcrumbItem>
-								<BreadcrumbLink asChild>
-									{workspaceId ? (
-										<Link to="/workspace/$workspaceId" params={{ workspaceId }}>
-											{workspace?.name || "Workspace"}
-										</Link>
-									) : (
-										<Link to="/dashboard">My workspace</Link>
-									)}
-								</BreadcrumbLink>
+								{isFormBuilder ? (
+									<BreadcrumbLink asChild>
+										{workspaceId ? (
+											<Link
+												to="/workspace/$workspaceId"
+												params={{ workspaceId }}
+											>
+												<ClientOnly fallback="Workspace">
+													<WorkspaceNameDisplay workspaceId={workspaceId} />
+												</ClientOnly>
+											</Link>
+										) : (
+											<Link to="/dashboard">My workspace</Link>
+										)}
+									</BreadcrumbLink>
+								) : (
+									<BreadcrumbPage>
+										<ClientOnly fallback="Workspace">
+											<WorkspaceNameDisplay
+												workspaceId={workspaceId || ""}
+											/>
+										</ClientOnly>
+									</BreadcrumbPage>
+								)}
 							</BreadcrumbItem>
-							<BreadcrumbSeparator />
-							<BreadcrumbItem>
-								<BreadcrumbPage className="flex items-center gap-2">
-									{form.title || "Untitled"}
-								</BreadcrumbPage>
-							</BreadcrumbItem>
+							{isFormBuilder && (
+								<>
+									<BreadcrumbSeparator />
+									<BreadcrumbItem>
+										<BreadcrumbPage className="flex items-center gap-2">
+											{formId ? (
+												<ClientOnly fallback="Loading...">
+													<FormTitleDisplay formId={formId} />
+												</ClientOnly>
+											) : (
+												"Untitled"
+											)}
+										</BreadcrumbPage>
+									</BreadcrumbItem>
+								</>
+							)}
 						</BreadcrumbList>
 					</Breadcrumb>
 				) : (
 					<Link to="/" className="flex items-center gap-2">
-						<Flower2 className="h-5 w-5" />
-						<span className="text-foreground">Better Forms</span>
+						<Flower2 className="h-5 w-5 text-blue-600" />
+						<span className="text-foreground font-bold tracking-tight">Better Forms</span>
 					</Link>
 				)}
 			</div>
@@ -130,10 +193,25 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 				{isFormBuilder && (
 					<Badge
 						variant="secondary"
-						className="text-[10px] h-5 px-1.5 font-normal bg-muted text-muted-foreground mr-2"
+						className={`text-[10px] h-5 px-1.5 font-normal ${isPublished
+							? "bg-green-100 text-green-700"
+							: "bg-muted text-muted-foreground"
+							} mr-2`}
 					>
-						Draft
+						{isPublished ? "Published" : "Draft"}
 					</Badge>
+				)}
+
+				{(isFormBuilder || isWorkspaceDashboard) && (
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-8 gap-2 text-muted-foreground hover:text-foreground hover:bg-muted font-normal transition-colors"
+						onClick={() => setIsPaletteOpen(true)}
+					>
+						<Search className="h-4 w-4" />
+						<span className="hidden sm:inline">Search</span>
+					</Button>
 				)}
 
 				{isFormBuilder ? (
@@ -251,9 +329,14 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 						{/* Primary Action */}
 						<Button
 							size="sm"
-							className="h-8 px-4 bg-blue-600 hover:bg-blue-700 ml-2"
+							className={`h-8 px-4 ${isPublished
+								? "bg-green-600 hover:bg-green-700"
+								: "bg-blue-600 hover:bg-blue-700"
+								} ml-2 text-white`}
+							onClick={handlePublish}
+							disabled={isPublished}
 						>
-							Publish
+							{isPublished ? "Published" : "Publish"}
 						</Button>
 					</>
 				) : (
@@ -323,16 +406,18 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 								</Button>
 							</AuthDialog>
 						)}
-						<Button
-							size="sm"
-							className="h-8 px-4 bg-blue-600 hover:bg-blue-700 ml-2"
-							asChild
-							disabled={!!isUnverified}
-						>
-							<Link to={isUnverified ? "/verify-email" : "/dashboard"}>
-								{isUnverified ? "Verify Email" : "Create Form"}
-							</Link>
-						</Button>
+						{!isCreateRoute && (
+							<Button
+								size="sm"
+								className="h-8 px-4 bg-blue-600 hover:bg-blue-700 ml-2"
+								asChild
+								disabled={!!isUnverified}
+							>
+								<Link to={isUnverified ? "/verify-email" : "/dashboard"}>
+									{isUnverified ? "Verify Email" : "Create Form"}
+								</Link>
+							</Button>
+						)}
 					</>
 				)}
 			</div>
