@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
-import { getWorkspaces, createWorkspace } from "@/lib/fn/workspaces";
+import { createWorkspaceLocal } from "@/db-collections";
+import { useWorkspaces } from "@/hooks/use-live-hooks";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
 	component: DashboardPage,
@@ -11,38 +11,35 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
 	const navigate = useNavigate();
-	const queryClient = useQueryClient();
+	const hasInitialized = useRef(false);
 
-	// Query workspaces from server
-	const { data: workspacesResponse, isLoading } = useQuery({
-		queryKey: ["workspaces"],
-		queryFn: () => getWorkspaces(),
-	});
+	// Use live query for real-time sync
+	const workspaces = useWorkspaces();
 
-	const workspaces = workspacesResponse?.workspaces || [];
-	const defaultWorkspace = workspaces.length > 0 ? workspaces[0] : null;
+	// Collection data starts as undefined, then becomes an array
+	const isLoading = workspaces === undefined;
+	const defaultWorkspace = workspaces && workspaces.length > 0 ? workspaces[0] : null;
 
 	useEffect(() => {
 		const initializeWorkspace = async () => {
-			if (isLoading) return;
+			if (isLoading || hasInitialized.current) return;
 
 			if (defaultWorkspace) {
+				hasInitialized.current = true;
 				// Navigate to existing workspace
 				navigate({
 					to: "/workspace/$workspaceId",
 					params: { workspaceId: defaultWorkspace.id },
 					replace: true,
 				});
-			} else {
+			} else if (workspaces && workspaces.length === 0) {
+				hasInitialized.current = true;
 				// Create default workspace if none exists
 				try {
-					const response = await createWorkspace({
-						data: { name: "My workspace" },
-					});
-					await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+					const newWorkspace = await createWorkspaceLocal("My workspace");
 					navigate({
 						to: "/workspace/$workspaceId",
-						params: { workspaceId: response.workspace.id },
+						params: { workspaceId: newWorkspace.id },
 						replace: true,
 					});
 				} catch (error) {
@@ -52,7 +49,7 @@ function DashboardPage() {
 		};
 
 		initializeWorkspace();
-	}, [isLoading, defaultWorkspace, navigate, queryClient]);
+	}, [isLoading, defaultWorkspace, workspaces, navigate]);
 
 	return (
 		<div className="flex-1 flex items-center justify-center min-h-screen">

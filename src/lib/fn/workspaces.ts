@@ -29,23 +29,25 @@ export const createWorkspace = createServerFn({ method: "POST" })
 .middleware([authMiddleware])
 	.inputValidator(
 		workspaceSchema.pick({ name: true }).extend({
+			id: z.string().uuid().optional(),
 			name: workspaceSchema.shape.name.optional().default("My workspace"),
 		}),
 	)
-	.handler(async ({ data }) => {
-		const user = await authUser();
+	.handler(async ({ data, context }) => {
 		const now = new Date();
 
 		const [workspace] = await db
 			.insert(workspaces)
 			.values({
-				id:  crypto.randomUUID(),
-				userId: user.id,
+				id: data.id ?? crypto.randomUUID(),
+				userId: context.user.id,
 				name: data.name,
 				createdAt: now,
 				updatedAt: now,
 			})
 			.returning();
+
+		const txid = await getTxId();
 
 		return {
 			workspace: {
@@ -53,6 +55,7 @@ export const createWorkspace = createServerFn({ method: "POST" })
 				createdAt: workspace.createdAt.toISOString(),
 				updatedAt: workspace.updatedAt.toISOString(),
 			},
+			txid,
 		};
 	});
 

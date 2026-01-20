@@ -1,3 +1,4 @@
+import { ClientOnly } from "@/components/client-only";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -15,6 +16,15 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+	CommandDialog,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+	CommandSeparator,
+} from "@/components/ui/command";
 import {
 	Dialog,
 	DialogContent,
@@ -49,19 +59,17 @@ import {
 	SidebarTrigger,
 	useSidebar,
 } from "@/components/ui/sidebar";
-import { type Workspace } from "@/db-collections";
-import { auth, useSession } from "@/lib/auth-client";
-import { createForm } from "@/lib/fn/forms";
-import { eq, useLiveQuery } from "@tanstack/react-db";
-import { editorDocCollection } from "@/db-collections";
-import { ClientOnly } from "@/components/client-only";
 import {
-	createWorkspace,
-	deleteWorkspace,
-	getWorkspacesWithForms,
-	updateWorkspace,
-} from "@/lib/fn/workspaces";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+	type Workspace,
+	createFormLocal,
+	createWorkspaceLocal,
+	deleteWorkspaceLocal,
+	updateWorkspaceName
+} from "@/db-collections";
+import { useCommandPalette } from "@/hooks/use-command-palette";
+import { useForm, useForms, useWorkspaces } from "@/hooks/use-live-hooks";
+import { auth, useSession } from "@/lib/auth-client";
+import { useMutation } from "@tanstack/react-query";
 import { Link, useLocation, useRouter } from "@tanstack/react-router";
 import {
 	Bell,
@@ -86,8 +94,7 @@ import {
 	Users,
 } from "lucide-react";
 import type * as React from "react";
-import { useState } from "react";
-import { logger } from "@/lib/utils";
+import { useEffect, useMemo, useState } from "react";
 
 
 const data = {
@@ -184,26 +191,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const { data: sessionData } = useSession();
 	const location = useLocation();
 	const router = useRouter();
-	const queryClient = useQueryClient();
 	const user = sessionData?.user;
 	const { isMobile } = useSidebar();
-	const { data: workspacesResponse } = useQuery({
-		queryKey: ["workspaces"],
-		queryFn: () => getWorkspacesWithForms(),
-	});
 
-	const workspaces = workspacesResponse?.workspaces || [];
+	// State for command palette
+	const { isOpen: isPaletteOpen, setIsOpen: setIsPaletteOpen, toggle: togglePalette } = useCommandPalette();
 
-	// State for dialogs
-	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(
-		null,
-	);
-	const [renameDialogOpen, setRenameDialogOpen] = useState(false);
-	const [workspaceToRename, setWorkspaceToRename] = useState<Workspace | null>(
-		null,
-	);
-	const [newWorkspaceName, setNewWorkspaceName] = useState("");
+	useEffect(() => {
+		const down = (e: KeyboardEvent) => {
+			if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+				e.preventDefault();
+				togglePalette();
+			}
+		};
+		document.addEventListener("keydown", down);
+		return () => document.removeEventListener("keydown", down);
+	}, [togglePalette]);
 
 	const signOutMutation = useMutation(
 		auth.signOut.mutationOptions({
@@ -215,64 +218,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 	const handleCreateWorkspace = async () => {
 		try {
-			const response = await createWorkspace({
-				data: {
-					name: 'New WorkSpace'
-				}
-			});
-			await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+			const workspace = await createWorkspaceLocal("New Workspace");
 			router.navigate({
 				to: "/workspace/$workspaceId",
-				params: { workspaceId: response.workspace.id },
+				params: { workspaceId: workspace.id },
 			});
 		} catch (error) {
 			console.error("Failed to create workspace:", error);
 		}
-	};
-
-	const handleDeleteWorkspace = async () => {
-		if (!workspaceToDelete) return;
-		try {
-			await deleteWorkspace({
-				data: { id: workspaceToDelete.id },
-			});
-			await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
-			setDeleteDialogOpen(false);
-			setWorkspaceToDelete(null);
-			// Navigate to dashboard if we deleted the current workspace
-			router.navigate({ to: "/dashboard" });
-		} catch (error) {
-			console.error("Failed to delete workspace:", error);
-		}
-	};
-
-	const handleRenameWorkspace = async () => {
-		if (!workspaceToRename || !newWorkspaceName.trim()) return;
-		try {
-			await updateWorkspace({
-				data: {
-					id: workspaceToRename.id,
-					name: newWorkspaceName.trim(),
-				},
-			});
-			await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
-			setRenameDialogOpen(false);
-			setWorkspaceToRename(null);
-			setNewWorkspaceName("");
-		} catch (error) {
-			console.error("Failed to rename workspace:", error);
-		}
-	};
-
-	const openRenameDialog = (workspace: Workspace) => {
-		setWorkspaceToRename(workspace);
-		setNewWorkspaceName(workspace.name);
-		setRenameDialogOpen(true);
-	};
-
-	const openDeleteDialog = (workspace: Workspace) => {
-		setWorkspaceToDelete(workspace);
-		setDeleteDialogOpen(true);
 	};
 
 	return (
@@ -363,6 +316,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 										isActive={location.pathname === item.url}
 										tooltip={item.title}
 										className={item.className}
+										onClick={(e) => {
+											if (item.title === "Search") {
+												e.preventDefault();
+												setIsPaletteOpen(true);
+											}
+										}}
 									>
 										<Link to={item.url}>
 											<item.icon />
@@ -374,34 +333,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						</SidebarMenu>
 					</SidebarGroup>
 
-					<SidebarGroup>
-						<SidebarGroupLabel>Workspaces</SidebarGroupLabel>
-						<SidebarGroupAction
-							title="Add Workspace"
-							onClick={handleCreateWorkspace}
-						>
-							<Plus />
-							<span className="sr-only">Add Workspace</span>
-						</SidebarGroupAction>
-						<SidebarMenu>
-							{workspaces.map((workspace) => (
-								<WorkspaceItem
-									key={workspace.id}
-									workspace={workspace}
-									isMobile={isMobile}
-									onRename={() => openRenameDialog(workspace)}
-									onDelete={() => openDeleteDialog(workspace)}
-								/>
-							))}
-							{workspaces.length === 0 && (
+					<ClientOnly fallback={
+						<SidebarGroup>
+							<SidebarGroupLabel>Workspaces</SidebarGroupLabel>
+							<SidebarMenu>
 								<SidebarMenuItem>
 									<span className="text-muted-foreground text-xs px-2 py-1">
-										No workspaces yet
+										Loading...
 									</span>
 								</SidebarMenuItem>
-							)}
-						</SidebarMenu>
-					</SidebarGroup>
+							</SidebarMenu>
+						</SidebarGroup>
+					}>
+						<SidebarWorkspaces />
+					</ClientOnly>
 
 					<SidebarGroup>
 						<SidebarGroupLabel>Product</SidebarGroupLabel>
@@ -447,24 +392,246 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				</SidebarFooter>
 			</Sidebar>
 
+			{/* Command Palette */}
+			<CommandDialog open={isPaletteOpen} onOpenChange={setIsPaletteOpen}>
+				<CommandInput placeholder="Search for forms and help articles" />
+				<CommandList>
+					<CommandEmpty>No results found.</CommandEmpty>
+					<CommandGroup heading="Actions">
+						<CommandItem onSelect={() => {
+							// TODO: Trigger new form creation from global search
+							setIsPaletteOpen(false);
+						}}>
+							<Plus className="mr-2 h-4 w-4" />
+							<span>New form</span>
+						</CommandItem>
+						<CommandItem onSelect={() => {
+							handleCreateWorkspace();
+							setIsPaletteOpen(false);
+						}}>
+							<LayoutTemplate className="mr-2 h-4 w-4" />
+							<span>New workspace</span>
+						</CommandItem>
+					</CommandGroup>
+					<CommandSeparator />
+					<CommandGroup heading="Navigation">
+						<CommandItem onSelect={() => {
+							router.navigate({ to: "/dashboard" });
+							setIsPaletteOpen(false);
+						}}>
+							<Home className="mr-2 h-4 w-4" />
+							<span>Go to home</span>
+						</CommandItem>
+						<CommandItem onSelect={() => {
+							// TODO: Navigate to templates
+							setIsPaletteOpen(false);
+						}}>
+							<LayoutTemplate className="mr-2 h-4 w-4" />
+							<span>Go to templates</span>
+						</CommandItem>
+						<CommandItem onSelect={() => {
+							router.navigate({ to: "/settings/my-account" });
+							setIsPaletteOpen(false);
+						}}>
+							<Settings className="mr-2 h-4 w-4" />
+							<span>Go to settings</span>
+						</CommandItem>
+						<CommandItem onSelect={() => {
+							// TODO: Navigate to help
+							setIsPaletteOpen(false);
+						}}>
+							<HelpCircle className="mr-2 h-4 w-4" />
+							<span>Go to help center</span>
+						</CommandItem>
+					</CommandGroup>
+				</CommandList>
+			</CommandDialog>
+		</>
+	);
+}
+
+// Client-only component that fetches form title from local DB
+function FormTitleFromLocalDB({ formId }: { formId: string }) {
+	const formData = useForm(formId);
+	return <>{formData?.[0]?.title || "Untitled"}</>;
+}
+
+// Form item component that uses live query for real-time title updates
+function FormItem({ formId, workspaceId }: { formId: string; workspaceId: string }) {
+	return (
+		<SidebarMenuSubItem>
+			<SidebarMenuSubButton asChild>
+				<Link
+					to="/workspace/$workspaceId/form-builder/$formId"
+					params={{ workspaceId, formId }}
+				>
+					<span>
+						<ClientOnly fallback="Loading...">
+							<FormTitleFromLocalDB formId={formId} />
+						</ClientOnly>
+					</span>
+				</Link>
+			</SidebarMenuSubButton>
+		</SidebarMenuSubItem>
+	);
+}
+
+// Type for workspace with forms from server
+type WorkspaceWithForms = Workspace & {
+	forms: Array<{ id: string; title: string; updatedAt: string; workspaceId: string }>;
+};
+
+// Client-only component for workspaces section (uses useLiveQuery which doesn't support SSR)
+function SidebarWorkspaces() {
+	const router = useRouter();
+	const { isMobile } = useSidebar();
+
+	// Use live queries for real-time sync
+	const workspacesData = useWorkspaces();
+	const formsData = useForms();
+
+	// Combine workspaces with their forms
+	const workspaces = useMemo(() => {
+		const formsByWorkspace = (formsData || []).reduce(
+			(acc, form) => {
+				if (!acc[form.workspaceId]) acc[form.workspaceId] = [];
+				acc[form.workspaceId].push(form);
+				return acc;
+			},
+			{} as Record<string, typeof formsData>,
+		);
+
+		return (workspacesData || []).map((ws) => ({
+			...ws,
+			forms: formsByWorkspace[ws.id] || [],
+		}));
+	}, [workspacesData, formsData]);
+
+	// State for dialogs
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [workspaceToDelete, setWorkspaceToDelete] = useState<WorkspaceWithForms | null>(null);
+	const [deleteConfirmName, setDeleteConfirmName] = useState("");
+	const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+	const [workspaceToRename, setWorkspaceToRename] = useState<Workspace | null>(null);
+	const [newWorkspaceName, setNewWorkspaceName] = useState("");
+
+	const handleCreateWorkspace = async () => {
+		try {
+			const workspace = await createWorkspaceLocal("New Workspace");
+			router.navigate({
+				to: "/workspace/$workspaceId",
+				params: { workspaceId: workspace.id },
+			});
+		} catch (error) {
+			console.error("Failed to create workspace:", error);
+		}
+	};
+
+	const handleDeleteWorkspace = async () => {
+		if (!workspaceToDelete || deleteConfirmName !== workspaceToDelete.name) return;
+		try {
+			await deleteWorkspaceLocal(workspaceToDelete.id);
+			setDeleteDialogOpen(false);
+			setWorkspaceToDelete(null);
+			setDeleteConfirmName("");
+			router.navigate({ to: "/dashboard" });
+		} catch (error) {
+			console.error("Failed to delete workspace:", error);
+		}
+	};
+
+	const handleRenameWorkspace = async () => {
+		if (!workspaceToRename || !newWorkspaceName.trim()) return;
+		try {
+			await updateWorkspaceName(workspaceToRename.id, newWorkspaceName.trim());
+			setRenameDialogOpen(false);
+			setWorkspaceToRename(null);
+			setNewWorkspaceName("");
+		} catch (error) {
+			console.error("Failed to rename workspace:", error);
+		}
+	};
+
+	const openRenameDialog = (workspace: Workspace) => {
+		setWorkspaceToRename(workspace);
+		setNewWorkspaceName(workspace.name);
+		setRenameDialogOpen(true);
+	};
+
+	const openDeleteDialog = (workspace: WorkspaceWithForms) => {
+		setWorkspaceToDelete(workspace);
+		setDeleteConfirmName("");
+		setDeleteDialogOpen(true);
+	};
+
+	return (
+		<>
+			<SidebarGroup>
+				<SidebarGroupLabel>Workspaces</SidebarGroupLabel>
+				<SidebarGroupAction
+					title="Add Workspace"
+					onClick={handleCreateWorkspace}
+				>
+					<Plus />
+					<span className="sr-only">Add Workspace</span>
+				</SidebarGroupAction>
+				<SidebarMenu>
+					{workspaces.map((workspace) => (
+						<WorkspaceItem
+							key={workspace.id}
+							workspace={workspace}
+							isMobile={isMobile}
+							onRename={() => openRenameDialog(workspace)}
+							onDelete={() => openDeleteDialog(workspace)}
+						/>
+					))}
+					{workspaces.length === 0 && (
+						<SidebarMenuItem>
+							<span className="text-muted-foreground text-xs px-2 py-1">
+								No workspaces yet
+							</span>
+						</SidebarMenuItem>
+					)}
+				</SidebarMenu>
+			</SidebarGroup>
+
 			{/* Delete Workspace Confirmation Dialog */}
-			<AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+			<AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
+				setDeleteDialogOpen(open);
+				if (!open) setDeleteConfirmName("");
+			}}>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete workspace</AlertDialogTitle>
-						<AlertDialogDescription>
-							Are you sure you want to delete "{workspaceToDelete?.name}"? This
-							will also delete all forms in this workspace. This action cannot
-							be undone.
+						<AlertDialogDescription asChild>
+							<div className="space-y-4">
+								<p>
+									This will permanently delete <strong>"{workspaceToDelete?.name}"</strong> and{" "}
+									<strong>{workspaceToDelete?.forms?.length || 0} form{(workspaceToDelete?.forms?.length || 0) !== 1 ? "s" : ""}</strong> within it.
+									This action cannot be undone.
+								</p>
+								<div className="space-y-2">
+									<p className="text-sm">
+										Type <strong>{workspaceToDelete?.name}</strong> to confirm:
+									</p>
+									<Input
+										value={deleteConfirmName}
+										onChange={(e) => setDeleteConfirmName(e.target.value)}
+										placeholder="Type workspace name to confirm"
+										className="mt-2"
+									/>
+								</div>
+							</div>
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<AlertDialogCancel>Cancel</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={handleDeleteWorkspace}
-							className="bg-destructive text-white hover:bg-destructive/90"
+							disabled={deleteConfirmName !== workspaceToDelete?.name}
+							className="bg-destructive text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed"
 						>
-							Delete
+							Delete workspace
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
@@ -504,43 +671,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	);
 }
 
-// Client-only component that fetches form title from local DB
-function FormTitleFromLocalDB({ formId }: { formId: string }) {
-	const { data: formData } = useLiveQuery((q) =>
-		q
-			.from({ doc: editorDocCollection })
-			.where(({ doc }) => eq(doc.id, formId))
-			.select(({ doc }) => ({ title: doc.title }))
-	);
-
-	return <>{formData?.[0]?.title || "Untitled"}</>;
-}
-
-// Form item component that uses live query for real-time title updates
-function FormItem({ formId, workspaceId }: { formId: string; workspaceId: string }) {
-	return (
-		<SidebarMenuSubItem>
-			<SidebarMenuSubButton asChild>
-				<Link
-					to="/workspace/$workspaceId/form-builder/$formId"
-					params={{ workspaceId, formId }}
-				>
-					<span>
-						<ClientOnly fallback="Loading...">
-							<FormTitleFromLocalDB formId={formId} />
-						</ClientOnly>
-					</span>
-				</Link>
-			</SidebarMenuSubButton>
-		</SidebarMenuSubItem>
-	);
-}
-
-// Type for workspace with forms from server
-type WorkspaceWithForms = Workspace & {
-	forms: Array<{ id: string; title: string; updatedAt: string; workspaceId: string }>;
-};
-
 // Workspace item component with forms
 function WorkspaceItem({
 	workspace,
@@ -554,24 +684,16 @@ function WorkspaceItem({
 	onDelete: () => void;
 }) {
 	const router = useRouter();
-	const queryClient = useQueryClient();
-	// Use forms list from server - each FormItem will use useLiveQuery for real-time sync of individual form details
+	// Use forms list from live query - real-time sync
 	const forms = workspace.forms || [];
 	const handleCreateForm = async (e: React.MouseEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
 		try {
-			const response = await createForm({
-				data: {
-					id: crypto.randomUUID(),
-					workspaceId: workspace.id,
-					title: "Untitled",
-				},
-			}) as { form: { id: string } };
-			await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+			const newForm = await createFormLocal(workspace.id, "Untitled");
 			router.navigate({
 				to: "/workspace/$workspaceId/form-builder/$formId",
-				params: { workspaceId: workspace.id, formId: response.form.id },
+				params: { workspaceId: workspace.id, formId: newForm.id },
 			});
 		} catch (error) {
 			console.error("Failed to create form:", error);
@@ -583,7 +705,7 @@ function WorkspaceItem({
 			<SidebarMenuItem>
 				<div className="flex items-center">
 					<CollapsibleTrigger asChild>
-						<SidebarMenuButton tooltip={workspace.name} className="flex-1">
+						<SidebarMenuButton tooltip={workspace.name} className="flex-1 pr-14">
 							<ChevronRight className="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
 							<Link
 								to="/workspace/$workspaceId"
@@ -620,7 +742,7 @@ function WorkspaceItem({
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
-					<SidebarMenuAction showOnHover onClick={handleCreateForm}>
+					<SidebarMenuAction showOnHover onClick={handleCreateForm} className="right-7">
 						<Plus />
 						<span className="sr-only">Add Form</span>
 					</SidebarMenuAction>

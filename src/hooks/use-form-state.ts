@@ -1,7 +1,7 @@
-import { eq, useLiveQuery } from "@tanstack/react-db";
+import { useForm, useForms } from "./use-live-hooks";
 import { createIsomorphicFn } from "@tanstack/react-start";
 import { normalizeNodeId } from "platejs";
-import { type Form, formCollection } from "@/db-collections";
+import { type Form } from "@/db-collections";
 
 // Standard default content for a new form
 const defaultContent = normalizeNodeId([
@@ -59,23 +59,7 @@ const useFormState = createIsomorphicFn()
 	.client((): FormState => {
 		// Note: This fetches the first available form document.
 		// In a multi-persistent-form app, you'd add a .where() clause.
-		const { data } = useLiveQuery((q) =>
-			q.from({ doc: formCollection }).select(({ doc }) => ({
-				id: doc.id,
-				workspaceId: doc.workspaceId,
-				formName: doc.formName,
-				schemaName: doc.schemaName,
-				isMultiStep: doc.isMultiStep,
-				content: doc.content,
-				settings: doc.settings,
-				title: doc.title,
-				icon: doc.icon,
-				cover: doc.cover,
-				status: doc.status,
-				createdAt: doc.createdAt,
-				updatedAt: doc.updatedAt,
-			})),
-		);
+		const data = useForms();
 
 		const now = new Date().toISOString();
 		return (
@@ -97,27 +81,7 @@ export default useFormState;
  * Uses TanStack DB live query to stay in sync with the persistent store.
  */
 export function useFormStateById(formId?: string): FormState {
-	const { data } = useLiveQuery((q) => {
-		let query = q.from({ doc: formCollection });
-		if (formId) {
-			query = query.where(({ doc }) => eq(doc.id, formId));
-		}
-		return query.select(({ doc }) => ({
-			id: doc.id,
-			workspaceId: doc.workspaceId,
-			formName: doc.formName,
-			schemaName: doc.schemaName,
-			isMultiStep: doc.isMultiStep,
-			content: doc.content,
-			settings: doc.settings,
-			title: doc.title,
-			icon: doc.icon,
-			cover: doc.cover,
-			status: doc.status,
-			createdAt: doc.createdAt,
-			updatedAt: doc.updatedAt,
-		}));
-	});
+	const data = useForm(formId);
 
 	const now = new Date().toISOString();
 	return (

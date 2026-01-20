@@ -167,7 +167,7 @@ function VerifyEmailPage() {
 									</div>
 								)}
 							</div>
-							<otpForm.AppForm>
+							<otpForm.AppForm key="otp-verify-email">
 								<otpForm.Form className="space-y-6">
 									<otpForm.AppField name="otp">
 										{(field) => (

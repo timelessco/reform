@@ -55,13 +55,13 @@ export const Route = createFileRoute("/api/electric")({
 							const workspaceIds = userWorkspaces
 								.map((ws) => `'${ws.id}'`)
 								.join(", ");
-							whereSql = `"workspace_id" IN (${workspaceIds})`;
+							whereSql = `"workspaceId" IN (${workspaceIds})`;
 						}
 						break;
 
 					case "workspaces":
 						// Filter workspaces by userId
-						whereSql = `"user_id" = '${userId}'`;
+						whereSql = `"userId" = '${userId}'`;
 						break;
 
 					default:

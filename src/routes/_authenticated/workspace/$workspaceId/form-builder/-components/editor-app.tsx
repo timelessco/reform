@@ -1,4 +1,4 @@
-import { eq, useLiveQuery } from "@tanstack/react-db";
+import { useForm } from "@/hooks/use-live-hooks";
 import { Link } from "@tanstack/react-router";
 import { normalizeNodeId, type TElement, type Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
@@ -7,13 +7,12 @@ import { EditorKit } from "@/components/editor/editor-kit";
 import { Button } from "@/components/ui/button";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
-import { editorDocCollection } from "@/db-collections";
-import { updateDoc, updateHeader } from "@/services/form.service";
+import { editorDocCollection, updateDoc, updateHeader } from "@/db-collections";
 
 interface EditorAppProps {
 	formId: string;
-	workspaceId? : string;
-	defaultValue?  : ReturnType<typeof normalizeNodeId>;
+	workspaceId?: string;
+	defaultValue?: ReturnType<typeof normalizeNodeId>;
 }
 
 const DEFAULT_EDITOR_VALUE = normalizeNodeId([
@@ -24,10 +23,8 @@ const DEFAULT_EDITOR_VALUE = normalizeNodeId([
 	},
 ]);
 
-export default function EditorApp({ formId , workspaceId , defaultValue }: EditorAppProps) {
-	const { data: savedDocs } = useLiveQuery((q) =>
-		q.from({ doc: editorDocCollection }).where(({ doc }) => eq(doc.id, formId)),
-	);
+export default function EditorApp({ formId, workspaceId, defaultValue }: EditorAppProps) {
+	const savedDocs = useForm(formId);
 	const initializedRef = useRef(false);
 	const [isReady, setIsReady] = useState(false);
 	const skipSaveRef = useRef(false);
@@ -98,8 +95,9 @@ export default function EditorApp({ formId , workspaceId , defaultValue }: Edito
 			// Always update the full content when it changes
 			updateDoc(formId, (draft) => {
 				draft.workspaceId = workspaceId,
-				draft.createdAt = now,
-				draft.content = value;
+					draft.createdAt = now,
+					draft.updatedAt = now,
+					draft.content = value;
 			});
 
 			// Optionally update header metadata if the first element is a formHeader
@@ -109,8 +107,9 @@ export default function EditorApp({ formId , workspaceId , defaultValue }: Edito
 					title: headerNode.title,
 					icon: headerNode.icon,
 					cover: headerNode.cover,
-					workspaceId : String(workspaceId),
-					createdAt : now,
+					workspaceId: String(workspaceId),
+					createdAt: now,
+					updatedAt: now,
 				});
 			}
 		},

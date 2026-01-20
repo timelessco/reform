@@ -8,9 +8,27 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { cn } from "@/lib/utils";
-import { ImageIcon, Smile, Upload, X } from "lucide-react";
+import {
+	ImageIcon,
+	Loader2,
+	MoreHorizontal,
+	Pencil,
+	Plus,
+	Smile,
+	Trash2,
+	Upload,
+	X,
+} from "lucide-react";
 
 // Inline CoverUpload component using the hook
 function CoverUpload({
@@ -345,6 +363,97 @@ export function FormHeader({
 							className="w-full text-2xl sm:text-4xl font-bold border-none outline-none bg-transparent placeholder:text-muted-foreground/50 py-1 sm:py-2 h-auto"
 						/>
 					</div>
+				</div>
+			</div>
+		</div>
+	);
+}
+export interface WorkspaceHeaderProps {
+	name: string;
+	onRename: () => void;
+	onDelete: () => void;
+	onNewWorkspace: () => void;
+	onNewForm: () => void;
+	isCreatingWorkspace?: boolean;
+	isCreatingForm?: boolean;
+}
+
+export function WorkspaceHeader({
+	name,
+	onRename,
+	onDelete,
+	onNewWorkspace,
+	onNewForm,
+	isCreatingWorkspace,
+	isCreatingForm,
+}: WorkspaceHeaderProps) {
+	return (
+		<div className="flex items-center justify-between mb-12">
+			<div className="flex items-center gap-2">
+				<h1 className="text-4xl font-bold tracking-tight">{name}</h1>
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+						>
+							<MoreHorizontal className="h-5 w-5" />
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="start">
+						<DropdownMenuItem onClick={onRename}>
+							<Pencil className="mr-2 h-4 w-4 text-muted-foreground" />
+							<span>Rename workspace</span>
+						</DropdownMenuItem>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem
+							onClick={onDelete}
+							className="text-destructive focus:text-destructive"
+						>
+							<Trash2 className="mr-2 h-4 w-4" />
+							<span>Delete workspace</span>
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+			</div>
+			<div className="flex items-center gap-4">
+				<div className="flex -space-x-2">
+					<Avatar className="w-8 h-8 border-2 border-background">
+						<AvatarImage src="" />
+						<AvatarFallback className="text-[10px] bg-blue-100 text-blue-600 font-semibold">
+							VB
+						</AvatarFallback>
+					</Avatar>
+				</div>
+				<div className="flex items-center gap-2">
+					<Button
+						variant="outline"
+						size="sm"
+						className="h-9 gap-2 border-muted-foreground/20 text-muted-foreground hover:text-foreground hover:bg-muted font-medium"
+						onClick={onNewWorkspace}
+						disabled={isCreatingWorkspace}
+					>
+						{isCreatingWorkspace ? (
+							<Loader2 className="h-4 w-4 animate-spin" />
+						) : (
+							<Plus className="h-4 w-4" />
+						)}
+						New workspace
+					</Button>
+					<Button
+						size="sm"
+						className="h-9 gap-2 bg-blue-600 hover:bg-blue-700 font-medium px-4"
+						onClick={onNewForm}
+						disabled={isCreatingForm}
+					>
+						{isCreatingForm ? (
+							<Loader2 className="h-4 w-4 animate-spin" />
+						) : (
+							<Plus className="h-4 w-4" />
+						)}
+						New form
+					</Button>
 				</div>
 			</div>
 		</div>

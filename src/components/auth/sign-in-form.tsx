@@ -249,7 +249,7 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 					</p>
 				</div>
 
-				<otpVerifyForm.AppForm>
+				<otpVerifyForm.AppForm key="otp-verify">
 					<otpVerifyForm.Form className="space-y-4">
 						<otpVerifyForm.AppField name="otp">
 							{(field) => (
@@ -365,8 +365,8 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 					variant="outline"
 					onClick={() => setSignInMethod("email")}
 					className={`flex-1 py-1.5 px-3 text-sm rounded-md transition-colors ${signInMethod === "email"
-							? "bg-background shadow-sm"
-							: "text-muted-foreground hover:text-foreground"
+						? "bg-background shadow-sm"
+						: "text-muted-foreground hover:text-foreground"
 						}`}
 				>
 					Email
@@ -375,8 +375,8 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 					variant="outline"
 					onClick={() => setSignInMethod("username")}
 					className={`flex-1 py-1.5 px-3 text-sm rounded-md transition-colors ${signInMethod === "username"
-							? "bg-background shadow-sm"
-							: "text-muted-foreground hover:text-foreground"
+						? "bg-background shadow-sm"
+						: "text-muted-foreground hover:text-foreground"
 						}`}
 				>
 					Username
@@ -385,8 +385,8 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 					variant="outline"
 					onClick={() => setSignInMethod("otp")}
 					className={`flex-1 py-1.5 px-3 text-sm rounded-md transition-colors ${signInMethod === "otp"
-							? "bg-background shadow-sm"
-							: "text-muted-foreground hover:text-foreground"
+						? "bg-background shadow-sm"
+						: "text-muted-foreground hover:text-foreground"
 						}`}
 				>
 					OTP
@@ -394,7 +394,7 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 			</div>
 
 			{signInMethod === "email" && (
-				<emailForm.AppForm>
+				<emailForm.AppForm key="email-signin">
 					<emailForm.Form className="space-y-4">
 						<emailForm.AppField name="email">
 							{(field) => (
@@ -457,7 +457,7 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 			)}
 
 			{signInMethod === "username" && (
-				<usernameForm.AppForm>
+				<usernameForm.AppForm key="username-signin">
 					<usernameForm.Form className="space-y-4">
 						<usernameForm.AppField name="username">
 							{(field) => (
@@ -519,7 +519,7 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 			)}
 
 			{signInMethod === "otp" && (
-				<otpRequestForm.AppForm>
+				<otpRequestForm.AppForm key="otp-request">
 					<otpRequestForm.Form className="space-y-4">
 						<otpRequestForm.AppField name="email">
 							{(field) => (

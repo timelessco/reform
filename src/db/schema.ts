@@ -13,118 +13,128 @@ import { createSelectSchema } from "drizzle-zod";
 export const todos = pgTable("todos", {
 	id: serial().primaryKey(),
 	title: text().notNull(),
-	createdAt: timestamp("created_at").defaultNow(),
+	createdAt: timestamp().defaultNow(),
 });
 
 // Better Auth Tables
 
 export const user = pgTable("user", {
-	id: text("id").primaryKey(),
-	name: text("name").notNull(),
-	email: text("email").notNull().unique(),
-	emailVerified: boolean("email_verified").notNull().default(false),
-	image: text("image"),
-	createdAt: timestamp("created_at").notNull().defaultNow(),
-	updatedAt: timestamp("updated_at").notNull().defaultNow(),
+	id: text().primaryKey(),
+	name: text().notNull(),
+	email: text().notNull().unique(),
+	emailVerified: boolean().notNull().default(false),
+	image: text(),
+	createdAt: timestamp().notNull().defaultNow(),
+	updatedAt: timestamp().notNull().defaultNow(),
 	// Username plugin fields
-	username: text("username").unique(),
-	displayUsername: text("display_username"),
+	username: text().unique(),
+	displayUsername: text(),
 	// Two-factor plugin fields
-	twoFactorEnabled: boolean("two_factor_enabled").default(false),
+	twoFactorEnabled: boolean().default(false),
 });
 
 export const session = pgTable("session", {
-	id: text("id").primaryKey(),
-	userId: text("user_id").notNull(),
-	token: text("token").notNull().unique(),
-	expiresAt: timestamp("expires_at").notNull(),
-	ipAddress: text("ip_address"),
-	userAgent: text("user_agent"),
-	createdAt: timestamp("created_at").notNull().defaultNow(),
-	updatedAt: timestamp("updated_at").notNull().defaultNow(),
+	id: text().primaryKey(),
+	userId: text().notNull(),
+	token: text().notNull().unique(),
+	expiresAt: timestamp().notNull(),
+	ipAddress: text(),
+	userAgent: text(),
+	createdAt: timestamp().notNull().defaultNow(),
+	updatedAt: timestamp().notNull().defaultNow(),
 });
 
 export const account = pgTable("account", {
-	id: text("id").primaryKey(),
-	userId: text("user_id").notNull(),
-	accountId: text("account_id").notNull(),
-	providerId: text("provider_id").notNull(),
-	accessToken: text("access_token"),
-	refreshToken: text("refresh_token"),
-	accessTokenExpiresAt: timestamp("access_token_expires_at"),
-	refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
-	scope: text("scope"),
-	idToken: text("id_token"),
-	password: text("password"),
-	createdAt: timestamp("created_at").notNull().defaultNow(),
-	updatedAt: timestamp("updated_at").notNull().defaultNow(),
+	id: text().primaryKey(),
+	userId: text().notNull(),
+	accountId: text().notNull(),
+	providerId: text().notNull(),
+	accessToken: text(),
+	refreshToken: text(),
+	accessTokenExpiresAt: timestamp(),
+	refreshTokenExpiresAt: timestamp(),
+	scope: text(),
+	idToken: text(),
+	password: text(),
+	createdAt: timestamp().notNull().defaultNow(),
+	updatedAt: timestamp().notNull().defaultNow(),
 });
 
 export const verification = pgTable("verification", {
-	id: text("id").primaryKey(),
-	identifier: text("identifier").notNull(),
-	value: text("value").notNull(),
-	expiresAt: timestamp("expires_at").notNull(),
-	createdAt: timestamp("created_at").notNull().defaultNow(),
-	updatedAt: timestamp("updated_at").notNull().defaultNow(),
+	id: text().primaryKey(),
+	identifier: text().notNull(),
+	value: text().notNull(),
+	expiresAt: timestamp().notNull(),
+	createdAt: timestamp().notNull().defaultNow(),
+	updatedAt: timestamp().notNull().defaultNow(),
 });
 
-export const twoFactor = pgTable("two_factor", {
-	id: text("id").primaryKey(),
-	secret: text("secret").notNull(),
-	backupCodes: text("backup_codes").notNull(),
-	userId: text("user_id").notNull(),
+export const twoFactor = pgTable("twoFactor", {
+	id: text().primaryKey(),
+	secret: text().notNull(),
+	backupCodes: text().notNull(),
+	userId: text().notNull(),
 });
 
 export const apikey = pgTable("apikey", {
-	id: text("id").primaryKey(),
-	name: text("name"),
-	start: text("start"),
-	prefix: text("prefix"),
-	key: text("key").notNull(),
-	userId: text("user_id").notNull(),
-	refillInterval: integer("refill_interval"),
-	refillAmount: integer("refill_amount"),
-	lastRefillAt: timestamp("last_refill_at"),
-	enabled: boolean("enabled").default(true),
-	rateLimitEnabled: boolean("rate_limit_enabled").default(true),
-	rateLimitTimeWindow: integer("rate_limit_time_window").default(86400000),
-	rateLimitMax: integer("rate_limit_max").default(10),
-	requestCount: integer("request_count").default(0),
-	remaining: integer("remaining"),
-	lastRequest: timestamp("last_request"),
-	expiresAt: timestamp("expires_at"),
-	createdAt: timestamp("created_at").notNull(),
-	updatedAt: timestamp("updated_at").notNull(),
-	permissions: text("permissions"),
-	metadata: text("metadata"),
+	id: text().primaryKey(),
+	name: text(),
+	start: text(),
+	prefix: text(),
+	key: text().notNull(),
+	userId: text().notNull(),
+	refillInterval: integer(),
+	refillAmount: integer(),
+	lastRefillAt: timestamp(),
+	enabled: boolean().default(true),
+	rateLimitEnabled: boolean().default(true),
+	rateLimitTimeWindow: integer().default(86400000),
+	rateLimitMax: integer().default(10),
+	requestCount: integer().default(0),
+	remaining: integer(),
+	lastRequest: timestamp(),
+	expiresAt: timestamp(),
+	createdAt: timestamp().notNull(),
+	updatedAt: timestamp().notNull(),
+	permissions: text(),
+	metadata: text(),
 });
 
 // Workspaces table for organizing forms
 export const workspaces = pgTable("workspaces", {
-	id: text("id").primaryKey(),
-	userId: text("user_id").notNull(),
-	name: text("name").notNull().default("My workspace"),
-	createdAt: timestamp("created_at").notNull().defaultNow(),
-	updatedAt: timestamp("updated_at").notNull().defaultNow(),
+	id: text().primaryKey(),
+	userId: text().notNull(),
+	name: text().notNull().default("My workspace"),
+	createdAt: timestamp().notNull().defaultNow(),
+	updatedAt: timestamp().notNull().defaultNow(),
 });
 
 // Forms table for storing form builder documents
 export const forms = pgTable("forms", {
-	id: text("id").primaryKey(), // UUID generated client-side
-	userId: text("user_id").notNull(),
-	workspaceId: text("workspace_id").notNull(),
-	title: text("title").notNull().default("Untitled"),
-	formName: text("form_name").notNull().default("draft"),
-	schemaName: text("schema_name").notNull().default("draftFormSchema"),
-	content: jsonb("content").notNull().default([]),
-	settings: jsonb("settings").notNull().default({}),
-	icon: text("icon"),
-	cover: text("cover"),
-	isMultiStep: boolean("is_multi_step").notNull().default(false),
-	status: text("status").notNull().default("draft"), // 'draft' | 'published' | 'archived'
-	createdAt: timestamp("created_at").notNull().defaultNow(),
-	updatedAt: timestamp("updated_at").notNull().defaultNow(),
+	id: text().primaryKey(), // UUID generated client-side
+	userId: text().notNull(),
+	workspaceId: text().notNull(),
+	title: text().notNull().default("Untitled"),
+	formName: text().notNull().default("draft"),
+	schemaName: text().notNull().default("draftFormSchema"),
+	content: jsonb().notNull().default([]),
+	settings: jsonb().notNull().default({}),
+	icon: text(),
+	cover: text(),
+	isMultiStep: boolean().notNull().default(false),
+	status: text().notNull().default("draft"), // 'draft' | 'published' | 'archived'
+	createdAt: timestamp().notNull().defaultNow(),
+	updatedAt: timestamp().notNull().defaultNow(),
+});
+
+// Submissions table for storing form responses
+export const submissions = pgTable("submissions", {
+	id: text().primaryKey(),
+	formId: text().notNull(),
+	data: jsonb().notNull().default({}),
+	isCompleted: boolean().notNull().default(true),
+	createdAt: timestamp().notNull().defaultNow(),
+	updatedAt: timestamp().notNull().defaultNow(),
 });
 
 // Drizzle v2 Relations using defineRelations
@@ -139,6 +149,7 @@ export const relations = defineRelations(
 		apikey,
 		forms,
 		workspaces,
+		submissions,
 	},
 	(r) => ({
 		// User has many sessions, accounts, workspaces, and forms
@@ -217,6 +228,17 @@ export const relations = defineRelations(
 				from: r.forms.workspaceId,
 				to: r.workspaces.id,
 			}),
+			submissions: r.many.submissions({
+				from: r.forms.id,
+				to: r.submissions.formId,
+			}),
+		},
+		// Submission belongs to one form
+		submissions: {
+			form: r.one.forms({
+				from: r.submissions.formId,
+				to: r.forms.id,
+			}),
 		},
 	}),
 );
@@ -227,3 +249,4 @@ export const relations = defineRelations(
 
 export const WorkspaceZod = createSelectSchema(workspaces);
 export const FormZod = createSelectSchema(forms);
+export const SubmissionZod = createSelectSchema(submissions);

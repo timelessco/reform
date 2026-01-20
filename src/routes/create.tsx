@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { eq, useLiveQuery } from "@tanstack/react-db";
+import { useLocalForm } from "@/hooks/use-live-hooks";
 import { ClientOnly } from "@/components/client-only";
 import { normalizeNodeId, type TElement, type Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
@@ -22,32 +22,30 @@ const defaultValue = normalizeNodeId([
 ]);
 
 export const Route = createFileRoute('/create')({
-  component: RouteComponent,
+	component: RouteComponent,
 })
 
 function RouteComponent() {
-  return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <AppHeader />
-      <div className="flex-1 overflow-auto relative bg-background">
-        <ClientOnly
-          fallback={
-            <div className="h-full w-full flex items-center justify-center">
-              Loading editor...
-            </div>
-          }
-        >
-          <LocalEditorApp />
-        </ClientOnly>
-      </div>
-    </div>
-  );
+	return (
+		<div className="flex flex-col h-screen overflow-hidden">
+			<AppHeader />
+			<div className="flex-1 overflow-auto relative bg-background">
+				<ClientOnly
+					fallback={
+						<div className="h-full w-full flex items-center justify-center">
+							Loading editor...
+						</div>
+					}
+				>
+					<LocalEditorApp />
+				</ClientOnly>
+			</div>
+		</div>
+	);
 }
 
 function LocalEditorApp() {
-	const { data: savedDocs } = useLiveQuery((q) =>
-		q.from({ doc: localFormCollection }).where(({ doc }) => eq(doc.id, LOCAL_FORM_ID)),
-	);
+	const savedDocs = useLocalForm(LOCAL_FORM_ID);
 
 	const initializedRef = useRef(false);
 	const [isReady, setIsReady] = useState(false);
