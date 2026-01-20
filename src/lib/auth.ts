@@ -1,14 +1,27 @@
+import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
+import { Polar } from "@polar-sh/sdk";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { apiKey, emailOTP, twoFactor, username } from "better-auth/plugins";
+import {
+	apiKey,
+	emailOTP,
+	organization,
+	twoFactor,
+	username,
+} from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { logger } from "@/lib/utils";
 
+const polarClient = new Polar({
+	accessToken: process.env.POLAR_ACCESS_TOKEN!,
+	server: process.env.NODE_ENV === "production" ? "production" : "sandbox",
+});
+
 export const auth = betterAuth({
 	appName: "Better Forms",
-	// experimental: { joins: true },
 	database: drizzleAdapter(db, {
 		provider: "pg",
 		schema,
@@ -17,43 +30,123 @@ export const auth = betterAuth({
 		enabled: true,
 		requireEmailVerification: true,
 	},
+	databaseHooks: {
+		user: {
+			create: {
+				after: async (user) => {
+					// Auto-create a personal organization for new users
+					const orgName = user.name
+						? `${user.name}'s Organization`
+						: "My Organization";
+					const orgSlug = `org-${user.id.slice(0, 8)}`;
+
+					try {
+						// Create organization
+						await db
+							.insert(schema.organization)
+							.values({
+								id: crypto.randomUUID(),
+								name: orgName,
+								slug: orgSlug,
+								createdAt: new Date(),
+							})
+							.returning()
+							.then(async ([org]) => {
+								// Add user as owner/admin of the organization
+								await db.insert(schema.member).values({
+									id: crypto.randomUUID(),
+									userId: user.id,
+									organizationId: org.id,
+									role: "owner",
+									createdAt: new Date(),
+								});
+								logger(
+									`[Auth] Created organization "${orgName}" for user ${user.email}`,
+								);
+							});
+					} catch (error) {
+						logger(
+							`[Auth] Failed to create organization for user ${user.email}:`,
+							error,
+						);
+					}
+				},
+			},
+		},
+		session: {
+			create: {
+				before: async (session) => {
+					const [membership] = await db
+						.select()
+						.from(schema.member)
+						.where(eq(schema.member.userId, session.userId))
+						.limit(1);
+
+					if (membership) {
+						return {
+							data: {
+								...session,
+								activeOrganizationId: membership.organizationId,
+							},
+						};
+					}
+					return { data: session };
+				},
+			},
+		},
+	},
 	socialProviders: {
 		google: {
 			clientId: process.env.GOOGLE_CLIENT_ID as string,
 			clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
 		},
 	},
-	trustedOrigins: [
-		"https://*.vercel.app",
-		"https://*.vercel-preview.app",
-	],
+	trustedOrigins: ["https://*.vercel.app", "https://*.vercel-preview-app"],
 	plugins: [
 		username(),
 		emailOTP({
 			async sendVerificationOTP({ email, otp, type }) {
-				// For development, log to console
-				// In production, replace with your email service (e.g., Resend, SendGrid, etc.)
 				logger(`[Auth] Sending OTP to ${email}: ${otp} (type: ${type})`);
-
-				// Example with Resend (uncomment and configure):
-				// import { Resend } from 'resend';
-				// const resend = new Resend(process.env.RESEND_API_KEY);
-				// await resend.emails.send({
-				//   from: 'noreply@yourdomain.com',
-				//   to: email,
-				//   subject: type === 'sign-in' ? 'Sign In OTP' :
-				//            type === 'email-verification' ? 'Verify Your Email' :
-				//            'Reset Your Password',
-				//   text: `Your verification code is: ${otp}`,
-				// });
 			},
 			otpLength: 6,
-			expiresIn: 300, // 5 minutes
+			expiresIn: 300,
 			sendVerificationOnSignUp: true,
 		}),
 		twoFactor(),
 		apiKey(),
-		tanstackStartCookies(), // Must be last plugin
+		organization({
+			async sendInvitationEmail(data) {
+				logger(
+					`[Org] Invitation sent to ${data.email} for org "${data.organization.name}" by ${data.inviter.user.name}`,
+				);
+			},
+		}),
+		polar({
+			client: polarClient,
+			createCustomerOnSignUp: true,
+			use: [
+				checkout({
+					products: [
+						{ productId: "prod_free", slug: "free" },
+						{
+							productId: "0be62924-d418-4dcc-8c8c-2b4929f76695",
+							slug: "Pro-(Yearly)", // Custom slug for easy reference in Checkout URL, e.g. /checkout/Pro-(Yearly)
+						},
+						{
+							productId: "3662224a-d998-4a73-bf82-4957198d53ea",
+							slug: "Pro", // Custom slug for easy reference in Checkout URL, e.g. /checkout/Pro
+						},
+					],
+					successUrl: "/settings/billing?checkout_id={CHECKOUT_ID}",
+					authenticatedUsersOnly: true,
+				}),
+				portal(),
+				webhooks({
+					secret: process.env.POLAR_WEBHOOK_SECRET!,
+				}),
+			],
+		}),
+		tanstackStartCookies(),
 	],
 });
 

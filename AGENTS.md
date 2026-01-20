@@ -4,6 +4,12 @@
 **Commit:** 4931da9 chore: remove electic binding
 **Branch:** main
 
+## Plan Mode
+
+- Make the plan extremely concise. Sacrifice grammar for the sake of concision.
+- At the end of each plan, give me a list of unresolved questions to answer, if any.
+
+
 ## OVERVIEW
 
 Form builder with Local-First architecture. TanStack Start (React 19 + Nitro SSR), Plate.js rich text editor, Drizzle/PostgreSQL, Better Auth (OTP/2FA), ORPC type-safe RPC.

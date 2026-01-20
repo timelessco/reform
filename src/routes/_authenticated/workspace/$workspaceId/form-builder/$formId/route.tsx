@@ -3,6 +3,20 @@ import { getFormbyIdQueryOption } from "@/lib/fn/forms";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
+import { useForm, useWorkspace } from "@/hooks/use-live-hooks";
+import { ClientOnly } from "@/components/client-only";
+
+// Client-only component for displaying form title from local DB
+function FormTitleDisplay({ formId }: { formId: string }) {
+    const savedDocs = useForm(formId);
+    return <>{savedDocs?.[0]?.title || "Untitled Form"}</>;
+}
+
+// Client-only component for displaying workspace name from local DB
+function WorkspaceNameDisplay({ workspaceId }: { workspaceId: string }) {
+    const workspace = useWorkspace(workspaceId);
+    return <>{workspace?.name || "Workspace"}</>;
+}
 
 export const Route = createFileRoute(
     "/_authenticated/workspace/$workspaceId/form-builder/$formId",
@@ -58,9 +72,28 @@ function FormLayout() {
             <AppHeader formId={formId} workspaceId={workspaceId} />
 
             <div className="flex flex-col flex-1 overflow-hidden">
+                {/* Form Builder Navigation & Title */}
+                <div className="px-12 pt-12 pb-2 space-y-6">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Link to="/dashboard" className="hover:text-foreground">Timeless</Link>
+                        <span>›</span>
+                        <Link to="/workspace/$workspaceId" params={{ workspaceId }} className="hover:text-foreground">
+                            <ClientOnly fallback="Workspace">
+                                <WorkspaceNameDisplay workspaceId={workspaceId} />
+                            </ClientOnly>
+                        </Link>
+                        <span>›</span>
+                        <span className="text-foreground font-medium">
+                            <ClientOnly fallback="Form">
+                                <FormTitleDisplay formId={formId} />
+                            </ClientOnly>
+                        </span>
+                    </div>
+                </div>
+
                 {/* Tab Navigation */}
-                <div className="flex items-center px-6 border-b shrink-0 bg-background">
-                    <nav className="flex items-center gap-6">
+                <div className="flex items-center px-12 border-b shrink-0 bg-background">
+                    <nav className="flex items-center gap-8">
                         {tabs.map((tab) => (
                             <Link
                                 key={tab.name}

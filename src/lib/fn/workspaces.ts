@@ -1,34 +1,39 @@
-import { db } from "@/db";
-import { workspaces, forms } from "@/db/schema";
 import { createMiddleware, createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { z } from "zod";
+import { db } from "@/db";
+import { forms, member, workspaces } from "@/db/schema";
 import { auth } from "../auth";
 import { authUser, authWorkspace, getTxId } from "./helpers";
 
 const workspaceSchema = z.object({
 	id: z.string().uuid(),
+	organizationId: z.string().uuid(),
 	name: z.string().max(100),
 	createdAt: z.string().optional(),
 	updatedAt: z.string().optional(),
 });
-const authMiddleware = createMiddleware({type : 'function'}).server(async ({ next }) => {
-	const headers = getRequestHeaders();
-	const session = await auth.api.getSession({ headers });
-	if (!session?.user) {
-		throw new Error("Unauthorized");
-	}
-	return await next({
-		context: {
-			user : session.user,
-		},
-	});
-});
+
+const authMiddleware = createMiddleware({ type: "function" }).server(
+	async ({ next }) => {
+		const headers = getRequestHeaders();
+		const session = await auth.api.getSession({ headers });
+		if (!session?.user) {
+			throw new Error("Unauthorized");
+		}
+		return await next({
+			context: {
+				user: session.user,
+			},
+		});
+	},
+);
+
 export const createWorkspace = createServerFn({ method: "POST" })
-.middleware([authMiddleware])
+	.middleware([authMiddleware])
 	.inputValidator(
-		workspaceSchema.pick({ name: true }).extend({
+		workspaceSchema.pick({ organizationId: true, name: true }).extend({
 			id: z.string().uuid().optional(),
 			name: workspaceSchema.shape.name.optional().default("My workspace"),
 		}),
@@ -40,7 +45,8 @@ export const createWorkspace = createServerFn({ method: "POST" })
 			.insert(workspaces)
 			.values({
 				id: data.id ?? crypto.randomUUID(),
-				userId: context.user.id,
+				organizationId: data.organizationId,
+				createdByUserId: context.user.id,
 				name: data.name,
 				createdAt: now,
 				updatedAt: now,
@@ -60,7 +66,7 @@ export const createWorkspace = createServerFn({ method: "POST" })
 	});
 
 export const updateWorkspace = createServerFn({ method: "POST" })
-.middleware([authMiddleware])
+	.middleware([authMiddleware])
 	.inputValidator(
 		workspaceSchema.pick({ id: true, name: true }).partial({ name: true }),
 	)
@@ -90,7 +96,7 @@ export const updateWorkspace = createServerFn({ method: "POST" })
 	});
 
 export const deleteWorkspace = createServerFn({ method: "POST" })
-.middleware([authMiddleware])
+	.middleware([authMiddleware])
 	.inputValidator(workspaceSchema.pick({ id: true }))
 	.handler(async ({ data }) => {
 		await authWorkspace(data.id);
@@ -113,7 +119,7 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
 	});
 
 export const getWorkspaceById = createServerFn({ method: "GET" })
-.middleware([authMiddleware])
+	.middleware([authMiddleware])
 	.inputValidator(z.object({ id: z.string().uuid() }))
 	.handler(async ({ data }) => {
 		await authWorkspace(data.id);
@@ -137,14 +143,26 @@ export const getWorkspaceById = createServerFn({ method: "GET" })
 	});
 
 export const getWorkspaces = createServerFn({ method: "GET" })
-.middleware([authMiddleware])
+	.middleware([authMiddleware])
 	.handler(async () => {
 		const user = await authUser();
+
+		// Get organizations the user is a member of
+		const userMemberships = await db
+			.select({ organizationId: member.organizationId })
+			.from(member)
+			.where(eq(member.userId, user.id));
+
+		if (userMemberships.length === 0) {
+			return { workspaces: [] };
+		}
+
+		const orgIds = userMemberships.map((m) => m.organizationId);
 
 		const workspaceList = await db
 			.select()
 			.from(workspaces)
-			.where(eq(workspaces.userId, user.id))
+			.where(inArray(workspaces.organizationId, orgIds))
 			.orderBy(workspaces.createdAt);
 
 		return {
@@ -157,18 +175,31 @@ export const getWorkspaces = createServerFn({ method: "GET" })
 	});
 
 export const getWorkspacesWithForms = createServerFn({ method: "GET" })
-.middleware([authMiddleware])
+	.middleware([authMiddleware])
 	.handler(async () => {
 		const user = await authUser();
 
-		// Get workspaces for the user
+		// Get organizations the user is a member of
+		const userMemberships = await db
+			.select({ organizationId: member.organizationId })
+			.from(member)
+			.where(eq(member.userId, user.id));
+
+		if (userMemberships.length === 0) {
+			return { workspaces: [] };
+		}
+
+		const orgIds = userMemberships.map((m) => m.organizationId);
+
+		// Get workspaces for the user's organizations
 		const workspaceList = await db
 			.select()
 			.from(workspaces)
-			.where(eq(workspaces.userId, user.id))
+			.where(inArray(workspaces.organizationId, orgIds))
 			.orderBy(workspaces.createdAt);
 
 		// Get all forms for the user's workspaces
+		const workspaceIds = workspaceList.map((ws) => ws.id);
 		const formsList = await db
 			.select({
 				id: forms.id,
@@ -177,20 +208,23 @@ export const getWorkspacesWithForms = createServerFn({ method: "GET" })
 				workspaceId: forms.workspaceId,
 			})
 			.from(forms)
-			.where(eq(forms.userId, user.id))
+			.where(inArray(forms.workspaceId, workspaceIds))
 			.orderBy(forms.updatedAt);
 
 		// Group forms by workspaceId
-		const formsByWorkspace = formsList.reduce((acc, form) => {
-			if (!acc[form.workspaceId]) {
-				acc[form.workspaceId] = [];
-			}
-			acc[form.workspaceId].push({
-				...form,
-				updatedAt: form.updatedAt.toISOString(),
-			});
-			return acc;
-		}, {} as Record<string, any[]>);
+		const formsByWorkspace = formsList.reduce(
+			(acc, form) => {
+				if (!acc[form.workspaceId]) {
+					acc[form.workspaceId] = [];
+				}
+				acc[form.workspaceId].push({
+					...form,
+					updatedAt: form.updatedAt.toISOString(),
+				});
+				return acc;
+			},
+			{} as Record<string, any[]>,
+		);
 
 		return {
 			workspaces: workspaceList.map((workspace) => ({

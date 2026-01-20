@@ -38,7 +38,7 @@ export type FormBuilderSettings = z.infer<typeof SettingsSchema>;
 
 export const FormSchema = z.object({
     id: z.string().uuid(),
-    userId: z.string().optional(), // Injected by server
+    createdByUserId: z.string().optional(), // Injected by server
     workspaceId: z.string().uuid(),
     title: z.string().default("Untitled"),
     formName: z.string().default("draft"),

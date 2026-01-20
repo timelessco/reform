@@ -18,6 +18,8 @@ import type { AppForm } from "./use-form-builder";
 interface UsePreviewFormOptions {
 	fields: PlateFormField[];
 	formName?: string;
+	/** Optional custom submit handler - if provided, replaces default toast behavior */
+	onSubmit?: (values: Record<string, any>) => Promise<void>;
 }
 
 /**
@@ -30,6 +32,7 @@ interface UsePreviewFormOptions {
 export function usePreviewForm({
 	fields,
 	formName = "previewForm",
+	onSubmit: customOnSubmit,
 }: UsePreviewFormOptions): {
 	form: AppForm;
 	formName: string;
@@ -56,9 +59,14 @@ export function usePreviewForm({
 				// Log form values for debugging
 				logger("Form submitted with values:", value);
 
-				// Simulate async submission
-				await new Promise((resolve) => setTimeout(resolve, 500));
-				toast.success("Form submitted successfully!");
+				// Use custom handler if provided, otherwise default behavior
+				if (customOnSubmit) {
+					await customOnSubmit(value);
+				} else {
+					// Default: simulate async submission
+					await new Promise((resolve) => setTimeout(resolve, 500));
+					toast.success("Form submitted successfully!");
+				}
 			} catch (_error) {
 				toast.error("Failed to submit form. Please try again.");
 			}

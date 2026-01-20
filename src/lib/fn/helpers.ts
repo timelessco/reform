@@ -20,7 +20,7 @@ export const authWorkspace = async (workspaceId: string) => {
 	const workspace = await db
 		.select({ id: workspaces.id })
 		.from(workspaces)
-		.where(and(eq(workspaces.id, workspaceId), eq(workspaces.userId, user.id)))
+		.where(and(eq(workspaces.id, workspaceId), eq(workspaces.createdByUserId, user.id)))
 		.limit(1);
 
 	if (workspace.length === 0) {
@@ -34,7 +34,7 @@ export const authForm = async (formId: string) => {
 	const form = await db
 		.select({ id: forms.id })
 		.from(forms)
-		.where(and(eq(forms.id, formId), eq(forms.userId, user.id)))
+		.where(and(eq(forms.id, formId), eq(forms.createdByUserId, user.id)))
 		.limit(1);
 
 	if (form.length === 0) {

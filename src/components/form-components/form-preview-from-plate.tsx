@@ -21,6 +21,8 @@ interface FormPreviewFromPlateProps {
 	icon?: string;
 	/** Optional cover image URL or hex color code */
 	cover?: string;
+	/** Optional custom submit handler */
+	onSubmit?: (values: Record<string, any>) => Promise<void>;
 }
 
 /**
@@ -263,6 +265,7 @@ export function FormPreviewFromPlate({
 	title: legacyTitle,
 	icon: legacyIcon,
 	cover: legacyCover,
+	onSubmit,
 }: FormPreviewFromPlateProps) {
 	const headerFromContent = extractFormHeader(content);
 
@@ -275,7 +278,7 @@ export function FormPreviewFromPlate({
 	const editableFields = getEditableFields(elements);
 
 	// Create TanStack Form instance
-	const { form, formName } = usePreviewForm({ fields: editableFields });
+	const { form, formName } = usePreviewForm({ fields: editableFields, onSubmit });
 
 	// Show placeholder if no elements found
 	if (elements.length === 0) {
