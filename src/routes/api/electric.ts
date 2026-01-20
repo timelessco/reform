@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { workspaces } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/utils";
 
 // Proxy-auth pattern based on ElectricSQL example
 // Ref: https://github.com/electric-sql/electric/blob/main/examples/proxy-auth/app/shape-proxy/route.ts
@@ -92,7 +93,7 @@ export const Route = createFileRoute("/api/electric")({
 				upstreamUrl.searchParams.set("table", table);
 				upstreamUrl.searchParams.set("where", whereSql);
 
-				console.log("electric-proxy", {
+				logger("electric-proxy", {
 					userId,
 					table,
 					where: whereSql,

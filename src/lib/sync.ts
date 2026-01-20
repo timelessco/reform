@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { forms, workspaces } from "@/db/schema";
 import { authUser } from "@/lib/fn/helpers";
+import { logger } from "@/lib/utils";
 
 /**
  * Server function to sync forms to the cloud
@@ -11,10 +12,10 @@ export const syncFormsToCloud = createServerFn({ method: "POST" })
 	.inputValidator((forms: any[]) => forms)
 	.handler(async ({ data: localForms }) => {
 		try {
-			console.log("Starting server-side form sync...");
+			logger("Starting server-side form sync...");
 
 			if (!localForms || localForms.length === 0) {
-				console.log("No forms to sync");
+				logger("No forms to sync");
 				return { success: true };
 			}
 
@@ -35,7 +36,7 @@ export const syncFormsToCloud = createServerFn({ method: "POST" })
 			// Create default workspace if no workspaces exist on server
 			let defaultWorkspaceId: string;
 			if (serverWorkspaces.length === 0) {
-				console.log("Creating default workspace on server...");
+				logger("Creating default workspace on server...");
 				const now = new Date();
 				const [newWorkspace] = await db
 					.insert(workspaces)
@@ -48,7 +49,7 @@ export const syncFormsToCloud = createServerFn({ method: "POST" })
 					})
 					.returning();
 				defaultWorkspaceId = newWorkspace.id;
-				console.log("Created default workspace:", defaultWorkspaceId);
+				logger("Created default workspace:", defaultWorkspaceId);
 			} else {
 				defaultWorkspaceId = serverWorkspaces[0].id;
 			}
@@ -70,7 +71,7 @@ export const syncFormsToCloud = createServerFn({ method: "POST" })
 				try {
 					// Skip if form already exists on server
 					if (existingFormIds.has(localForm.id)) {
-						console.log(`Form "${localForm.title || "Untitled"}" already exists on server, skipping`);
+						logger(`Form "${localForm.title || "Untitled"}" already exists on server, skipping`);
 						continue;
 					}
 
@@ -97,14 +98,14 @@ export const syncFormsToCloud = createServerFn({ method: "POST" })
 					});
 
 					syncedForms.push(localForm.id);
-					console.log(`Synced form "${localForm.title || "Untitled"}" to workspace ${serverWorkspaceId}`);
+					logger(`Synced form "${localForm.title || "Untitled"}" to workspace ${serverWorkspaceId}`);
 				} catch (error) {
 					console.error(`Failed to sync form "${localForm.title || "Untitled"}":`, error);
 					// Continue with other forms
 				}
 			}
 
-			console.log(`Successfully synced ${syncedForms.length} forms to cloud`);
+			logger(`Successfully synced ${syncedForms.length} forms to cloud`);
 			return {
 				success: true,
 				syncedForms,
@@ -121,17 +122,17 @@ export const syncFormsToCloud = createServerFn({ method: "POST" })
  */
 export async function syncLocalDataToCloud(): Promise<void> {
 	try {
-		console.log("Starting local data sync to cloud...");
+		logger("Starting local data sync to cloud...");
 
 		// Import formCollection here to avoid server-side imports
 		const { formCollection } = await import("@/db-collections");
 
 		// Get all local forms
 		const localForms = await formCollection.toArrayWhenReady();
-		console.log(`Found ${localForms.length} local forms to sync`);
+		logger(`Found ${localForms.length} local forms to sync`);
 
 		if (localForms.length === 0) {
-			console.log("No local data to sync");
+			logger("No local data to sync");
 			return;
 		}
 
@@ -139,7 +140,7 @@ export async function syncLocalDataToCloud(): Promise<void> {
 		const result = await syncFormsToCloud({ data: localForms });
 
 		if (result.success) {
-			console.log("Server sync completed, clearing local data...");
+			logger("Server sync completed, clearing local data...");
 
 			// Clear local data after successful server sync
 			for (const localForm of localForms) {
@@ -150,7 +151,7 @@ export async function syncLocalDataToCloud(): Promise<void> {
 				}
 			}
 
-			console.log("Local data sync completed successfully!");
+			logger("Local data sync completed successfully!");
 		}
 	} catch (error) {
 		console.error("Failed to sync local data to cloud:", error);

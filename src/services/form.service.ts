@@ -1,6 +1,7 @@
 import type { Value } from "platejs";
 import { type Form, formCollection } from "@/db-collections";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
+import { logger } from "@/lib/utils";
 
 const DEFAULT_FORM_CONTENT = [
 	createFormHeaderNode({ title: "Untitled", icon: null, cover: null }),
@@ -71,7 +72,7 @@ export async function updateDoc(
 	updater: (draft: any) => void,
 ) {
 	return formCollection.update(id, (draft) => {
-		console.log(draft , 'draft')
+		logger(draft, 'draft')
 		updater(draft);
 		draft.updatedAt = new Date().toISOString();
 	});

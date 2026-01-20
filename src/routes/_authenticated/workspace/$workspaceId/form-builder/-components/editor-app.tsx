@@ -28,7 +28,6 @@ export default function EditorApp({ formId , workspaceId , defaultValue }: Edito
 	const { data: savedDocs } = useLiveQuery((q) =>
 		q.from({ doc: editorDocCollection }).where(({ doc }) => eq(doc.id, formId)),
 	);
-	console.log(savedDocs , 'Checking')
 	const initializedRef = useRef(false);
 	const [isReady, setIsReady] = useState(false);
 	const skipSaveRef = useRef(false);
@@ -94,24 +93,24 @@ export default function EditorApp({ formId , workspaceId , defaultValue }: Edito
 			if (contentStr === lastSavedStr) return;
 
 			lastSavedContentRef.current = value;
+			const now = new Date().toISOString()
 
-			// Check if the first element is a formHeader
+			// Always update the full content when it changes
+			updateDoc(formId, (draft) => {
+				draft.workspaceId = workspaceId,
+				draft.createdAt = now,
+				draft.content = value;
+			});
+
+			// Optionally update header metadata if the first element is a formHeader
 			if (value.length > 0 && value[0]?.type === 'formHeader') {
 				const headerNode = value[0] as any;
-				const now = new Date().toISOString()
 				updateHeader(formId, {
 					title: headerNode.title,
 					icon: headerNode.icon,
 					cover: headerNode.cover,
-					workspaceId : workspaceId,
+					workspaceId : String(workspaceId),
 					createdAt : now,
-				});
-			} else {
-				// Update the full content
-				updateDoc(formId, (draft) => {
-					draft.workspaceId = workspaceId,
-					draft.createdAt = now,
-					draft.content = value;
 				});
 			}
 		},

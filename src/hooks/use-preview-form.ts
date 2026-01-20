@@ -11,6 +11,7 @@ import {
 	generateDefaultValuesFromFields,
 	generateZodSchemaFromFields,
 } from "@/lib/generate-preview-schema";
+import { logger } from "@/lib/utils";
 import type { PlateFormField } from "@/lib/transform-plate-to-form";
 import type { AppForm } from "./use-form-builder";
 
@@ -53,7 +54,7 @@ export function usePreviewForm({
 		onSubmit: async ({ value }) => {
 			try {
 				// Log form values for debugging
-				console.log("Form submitted with values:", value);
+				logger("Form submitted with values:", value);
 
 				// Simulate async submission
 				await new Promise((resolve) => setTimeout(resolve, 500));

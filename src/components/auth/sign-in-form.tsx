@@ -64,7 +64,6 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 				onSuccess?.();
 			},
 			onError: (error) => {
-				console.log(error);
 				if (error.code === "EMAIL_NOT_VERIFIED") {
 					router.navigate({
 						to: "/verify-email",

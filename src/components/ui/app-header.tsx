@@ -29,10 +29,19 @@ import { auth, useSession } from "@/lib/auth-client";
 import { SidebarTrigger, useSidebarSafe } from "./sidebar";
 import { eq, useLiveQuery } from "@tanstack/react-db";
 import { editorDocCollection } from "@/db-collections";
+import { ClientOnly } from "@/components/client-only";
 
 interface AppHeaderProps {
 	formId?: string;
 	workspaceId?: string;
+}
+
+// Client-only component for displaying form title from local DB
+function FormTitleDisplay({ formId }: { formId: string }) {
+	const { data: savedDocs } = useLiveQuery((q) =>
+		q.from({ doc: editorDocCollection }).where(({ doc }) => eq(doc.id, formId)),
+	);
+	return <>{savedDocs[0]?.title || "Untitled"}</>;
 }
 
 export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
@@ -45,9 +54,6 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 	const { data: sessionData } = useSession();
 	const session = sessionData;
 	const isUnverified = session && !session.user.emailVerified;
-	const { data: savedDocs } = useLiveQuery((q) =>
-		q.from({ doc: editorDocCollection }).where(({ doc }) => eq(doc.id, formId)),
-	)
 	// Query workspace data if workspaceId is provided
 	const workspaceQuery = useQuery({
 		queryKey: ["workspace", workspaceId],
@@ -122,7 +128,13 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 							<BreadcrumbSeparator />
 							<BreadcrumbItem>
 								<BreadcrumbPage className="flex items-center gap-2">
-									{savedDocs[0]?.title || "Untitled"}
+									{formId ? (
+										<ClientOnly fallback="Loading...">
+											<FormTitleDisplay formId={formId} />
+										</ClientOnly>
+									) : (
+										"Untitled"
+									)}
 								</BreadcrumbPage>
 							</BreadcrumbItem>
 						</BreadcrumbList>

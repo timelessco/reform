@@ -54,6 +54,7 @@ import { auth, useSession } from "@/lib/auth-client";
 import { createForm } from "@/lib/fn/forms";
 import { eq, useLiveQuery } from "@tanstack/react-db";
 import { editorDocCollection } from "@/db-collections";
+import { ClientOnly } from "@/components/client-only";
 import {
 	createWorkspace,
 	deleteWorkspace,
@@ -86,6 +87,8 @@ import {
 } from "lucide-react";
 import type * as React from "react";
 import { useState } from "react";
+import { logger } from "@/lib/utils";
+
 
 const data = {
 	navMain: [
@@ -184,7 +187,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const queryClient = useQueryClient();
 	const user = sessionData?.user;
 	const { isMobile } = useSidebar();
-	// Query workspaces with forms from server
 	const { data: workspacesResponse } = useQuery({
 		queryKey: ["workspaces"],
 		queryFn: () => getWorkspacesWithForms(),
@@ -214,8 +216,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const handleCreateWorkspace = async () => {
 		try {
 			const response = await createWorkspace({
-				data : {
-					name : 'New WorkSpace'
+				data: {
+					name: 'New WorkSpace'
 				}
 			});
 			await queryClient.invalidateQueries({ queryKey: ["workspaces"] });
@@ -386,7 +388,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 								<WorkspaceItem
 									key={workspace.id}
 									workspace={workspace}
-									forms={workspace.forms || []}
 									isMobile={isMobile}
 									onRename={() => openRenameDialog(workspace)}
 									onDelete={() => openDeleteDialog(workspace)}
@@ -503,8 +504,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	);
 }
 
-// Form item component that uses live query for real-time title updates
-function FormItem({ formId, workspaceId }: { formId: string; workspaceId: string }) {
+// Client-only component that fetches form title from local DB
+function FormTitleFromLocalDB({ formId }: { formId: string }) {
 	const { data: formData } = useLiveQuery((q) =>
 		q
 			.from({ doc: editorDocCollection })
@@ -512,8 +513,11 @@ function FormItem({ formId, workspaceId }: { formId: string; workspaceId: string
 			.select(({ doc }) => ({ title: doc.title }))
 	);
 
-	const title = formData?.[0]?.title || "Untitled";
+	return <>{formData?.[0]?.title || "Untitled"}</>;
+}
 
+// Form item component that uses live query for real-time title updates
+function FormItem({ formId, workspaceId }: { formId: string; workspaceId: string }) {
 	return (
 		<SidebarMenuSubItem>
 			<SidebarMenuSubButton asChild>
@@ -521,34 +525,38 @@ function FormItem({ formId, workspaceId }: { formId: string; workspaceId: string
 					to="/workspace/$workspaceId/form-builder/$formId"
 					params={{ workspaceId, formId }}
 				>
-					<span>{title}</span>
+					<span>
+						<ClientOnly fallback="Loading...">
+							<FormTitleFromLocalDB formId={formId} />
+						</ClientOnly>
+					</span>
 				</Link>
 			</SidebarMenuSubButton>
 		</SidebarMenuSubItem>
 	);
 }
 
+// Type for workspace with forms from server
+type WorkspaceWithForms = Workspace & {
+	forms: Array<{ id: string; title: string; updatedAt: string; workspaceId: string }>;
+};
+
 // Workspace item component with forms
 function WorkspaceItem({
 	workspace,
-	forms,
 	isMobile,
 	onRename,
 	onDelete,
 }: {
-	workspace: Workspace;
-	forms: any[];
+	workspace: WorkspaceWithForms;
 	isMobile: boolean;
 	onRename: () => void;
 	onDelete: () => void;
 }) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	
-	const sortedForms = [...forms].sort(
-		(a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-	);
-
+	// Use forms list from server - each FormItem will use useLiveQuery for real-time sync of individual form details
+	const forms = workspace.forms || [];
 	const handleCreateForm = async (e: React.MouseEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
@@ -619,14 +627,14 @@ function WorkspaceItem({
 				</div>
 				<CollapsibleContent>
 					<SidebarMenuSub>
-						{sortedForms.map((form) => (
+						{forms.map((form) => (
 							<FormItem
 								key={form.id}
 								formId={form.id}
-								workspaceId={workspace.id}
+								workspaceId={form.workspaceId}
 							/>
 						))}
-						{sortedForms.length === 0 && (
+						{forms.length === 0 && (
 							<SidebarMenuSubItem>
 								<span className="text-muted-foreground text-xs px-2 py-1">
 									No forms yet

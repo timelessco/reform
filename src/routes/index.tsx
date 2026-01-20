@@ -1,26 +1,12 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { ArrowRight, Layout, Shield, Sparkles, Zap } from "lucide-react";
 import { AppHeader } from "@/components/ui/app-header";
 import { Button } from "@/components/ui/button";
-import { getSession } from "@/lib/auth-client";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { guestMiddleware } from "@/middleware/auth";
+import { ArrowRight, Layout, Shield, Sparkles, Zap } from "lucide-react";
 
 export const Route = createFileRoute("/")({
-	beforeLoad: async () => {
-		const session = await getSession();
-		if (session?.data) {
-			if (session.data.user.emailVerified) {
-				throw redirect({
-					to: "/dashboard",
-				});
-			} else {
-				throw redirect({
-					to: "/verify-email",
-				});
-			}
-		}
-		return {
-			user : session.data?.user
-		}
+	server: {
+		middleware: [guestMiddleware],
 	},
 	component: LandingPage,
 });

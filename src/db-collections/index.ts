@@ -1,5 +1,6 @@
 import { WorkspaceZod } from "@/db/schema";
 import { createForm, deleteForm, updateForm } from "@/lib/fn/forms";
+import { logger } from "@/lib/utils";
 import { electricCollectionOptions } from "@tanstack/electric-db-collection";
 import { createCollection, localStorageCollectionOptions } from "@tanstack/react-db";
 import { z } from "zod";
@@ -135,9 +136,11 @@ export const formCollection = createCollection(
 
 		onUpdate: async ({ transaction }) => {
 			const { original, changes } = transaction.mutations[0];
+			logger('changes' , changes.content)
 			const result =await updateForm({
 				data: { ...changes, id: original.id },
 			})
+			logger('results' , result)
 			return { txid: result.txid };
 		},
 

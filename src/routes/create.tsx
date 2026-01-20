@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Suspense } from 'react';
 import { eq, useLiveQuery } from "@tanstack/react-db";
+import { ClientOnly } from "@/components/client-only";
 import { normalizeNodeId, type TElement, type Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -30,7 +30,7 @@ function RouteComponent() {
     <div className="flex flex-col h-screen overflow-hidden">
       <AppHeader />
       <div className="flex-1 overflow-auto relative bg-background">
-        <Suspense
+        <ClientOnly
           fallback={
             <div className="h-full w-full flex items-center justify-center">
               Loading editor...
@@ -38,7 +38,7 @@ function RouteComponent() {
           }
         >
           <LocalEditorApp />
-        </Suspense>
+        </ClientOnly>
       </div>
     </div>
   );

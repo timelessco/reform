@@ -1,14 +1,16 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
-import { z } from "zod";
-import { eq, useLiveQuery } from "@tanstack/react-db";
-import type { Value } from "platejs";
+import { ClientOnly } from "@/components/client-only";
 import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
-import { CustomizeSidebar } from "@/components/ui/customize-sidebar";
-import { editorDocCollection } from "@/db-collections";
 import { AppHeader } from "@/components/ui/app-header";
 import { Button } from "@/components/ui/button";
-import { getFormById, getFormbyIdQueryOption } from "@/lib/fn/forms";
+import { CustomizeSidebar } from "@/components/ui/customize-sidebar";
+import { editorDocCollection } from "@/db-collections";
+import { getFormbyIdQueryOption } from "@/lib/fn/forms";
+import { logger } from "@/lib/utils";
+import { eq, useLiveQuery } from "@tanstack/react-db";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import type { Value } from "platejs";
+import { lazy } from "react";
+import { z } from "zod";
 
 const EditorApp = lazy(
 	() => import("@/routes/_authenticated/workspace/$workspaceId/form-builder/-components/editor-app"),
@@ -20,38 +22,26 @@ export const Route = createFileRoute(
 	validateSearch: z.object({
 		demo: z.boolean().optional(),
 	}),
+	loader: async ({ params, context }) => {
+		const { formId } = params;
+		try {
+			const result = await context.queryClient.ensureQueryData({
+				...getFormbyIdQueryOption(formId),
+				revalidateIfStale: true,
+			});
+			return {
+				initialContent: result.form.content as any[]
+			};
+		} catch (error) {
+			// If form doesn't exist, return empty content
+			return {
+				initialContent: []
+			};
+		}
+	},
+	staleTime : 0,
 	component: RouteComponent,
-	beforeLoad : async ({params , context}) => {
-		const { formId } = params;
-		try {
-			const result =await context.queryClient.ensureQueryData(getFormbyIdQueryOption(formId));
-			console.log(result  , 'result')
-			return {
-				initialContent: result.form.content as any[]
-			};
-		} catch (error) {
-			// If form doesn't exist, return empty content
-			return {
-				initialContent: []
-			};
-		}
-	},
-	loader: async ({ params  , context }) => {
-		const { formId } = params;
-		try {
-			const result =await context.queryClient.ensureQueryData(getFormbyIdQueryOption(formId));
-			console.log(result  , 'result')
-			return {
-				initialContent: result.form.content as any[]
-			};
-		} catch (error) {
-			// If form doesn't exist, return empty content
-			return {
-				initialContent: []
-			};
-		}
-	},
-
+	ssr : false,
 });
 
 function RouteComponent() {
@@ -65,7 +55,7 @@ function RouteComponent() {
 			<AppHeader formId={formId} workspaceId={workspaceId} />
 			<div className="flex flex-1 overflow-hidden">
 				<main className="flex-1 overflow-auto relative bg-background">
-					<Suspense
+					<ClientOnly
 						fallback={
 							<div className="h-full w-full flex items-center justify-center">
 								Loading...
@@ -77,7 +67,7 @@ function RouteComponent() {
 						) : (
 							<EditorApp formId={formId} workspaceId={workspaceId} defaultValue={initialContent} />
 						)}
-					</Suspense>
+					</ClientOnly>
 				</main>
 				<CustomizeSidebar />
 			</div>
@@ -96,7 +86,7 @@ function PreviewMode({
 	);
 	const doc = savedDocs?.[0];
 	const content = (doc?.content as Value) || [];
-	console.log(savedDocs , 'data')
+	logger(savedDocs, 'data')
 	// Only show "Form Not Found" after we've confirmed the form doesn't exist
 	// If savedDocs is undefined, we're still loading/syncing
 	if (savedDocs !== undefined && savedDocs.length === 0) {
