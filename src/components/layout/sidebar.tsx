@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useRouter } from "@tanstack/react-router";
 import {
 	Bell,
@@ -6,7 +6,6 @@ import {
 	ChevronRight,
 	FileText,
 	Gift,
-	Globe,
 	HelpCircle,
 	Home,
 	LayoutTemplate,
@@ -93,7 +92,7 @@ import {
 } from "@/db-collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useForm, useForms, useWorkspaces } from "@/hooks/use-live-hooks";
-import { authClient } from "@/lib/auth-client";
+import { auth, useSession } from "@/lib/auth-client";
 import { OrganizationSwitcher } from "../org/org-switcher";
 
 const data = {
@@ -114,11 +113,6 @@ const data = {
 			icon: Users,
 		},
 		{
-			title: "Domains",
-			url: "#",
-			icon: Globe,
-		},
-		{
 			title: "Settings",
 			url: "#",
 			icon: Settings,
@@ -128,6 +122,11 @@ const data = {
 			url: "/settings/billing",
 			icon: Sparkles,
 			className: "text-purple-500",
+		},
+		{
+			title: "Invitations",
+			url: "/accept-invite",
+			icon: Bell,
 		},
 	],
 	products: [
@@ -195,7 +194,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		setIsOpen: setIsPaletteOpen,
 	} = useCommandPalette();
 
-	const { data: activeOrg } = authClient.useActiveOrganization();
+	const { data: activeOrg } = useQuery(
+		auth.organization.getFullOrganization.queryOptions(),
+	);
+
+	const { data: invitations } = useQuery(
+		auth.organization.listInvitations.queryOptions(),
+	);
+	const pendingCount = invitations?.length ?? 0;
 
 	useEffect(() => {
 		const down = (e: KeyboardEvent) => {
@@ -208,15 +214,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		return () => document.removeEventListener("keydown", down);
 	}, [togglePalette]);
 
-	const signOutMutation = useMutation({
-		mutationFn: async () => {
-			const { error } = await authClient.signOut();
-			if (error) throw error;
-		},
-		onSuccess: () => {
-			router.navigate({ to: "/" });
-		},
-	});
+	const { data: session } = useSession();
+
+	const signOutMutation = useMutation(
+		auth.signOut.mutationOptions({
+			onSuccess: () => {
+				router.navigate({ to: "/" });
+			},
+		}),
+	);
 
 	const handleCreateWorkspace = async () => {
 		if (!activeOrg) return;
@@ -236,21 +242,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 	const navMain = useMemo(() => {
 		return data.navMain.map((item) => {
-			if (item.title === "Members" && activeOrg) {
+			if (item.title === "Members") {
 				return {
 					...item,
-					url: `/org/${activeOrg.slug}/settings/members`,
+					url: "/settings/members",
 				};
 			}
-			if (item.title === "Settings" && activeOrg) {
+			if (item.title === "Settings") {
 				return {
 					...item,
-					url: `/org/${activeOrg.slug}/settings/general`,
+					url: "/settings",
 				};
 			}
 			return item;
 		});
-	}, [activeOrg]);
+	}, []);
 
 	return (
 		<>
@@ -287,6 +293,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 										<Link to={item.url}>
 											<item.icon />
 											<span>{item.title}</span>
+											{item.title === "Invitations" && pendingCount > 0 && (
+												<span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+													{pendingCount}
+												</span>
+											)}
 										</Link>
 									</SidebarMenuButton>
 								</SidebarMenuItem>
@@ -352,21 +363,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 								<DropdownMenuTrigger asChild>
 									<SidebarMenuButton tooltip="User Settings">
 										<Avatar className="h-4 w-4 rounded-full">
-											<AvatarImage
-												src={authClient.useSession().data?.user?.image || ""}
-											/>
+											<AvatarImage src={session?.user?.image || ""} />
 											<AvatarFallback>
-												{authClient.useSession().data?.user?.name?.charAt(0)}
+												{session?.user?.name?.charAt(0)}
 											</AvatarFallback>
 										</Avatar>
-										<span>{authClient.useSession().data?.user?.name}</span>
+										<span>{session?.user?.name}</span>
 									</SidebarMenuButton>
 								</DropdownMenuTrigger>
 								<DropdownMenuContent side="right" align="end" className="w-48">
 									<DropdownMenuItem asChild>
 										<Link to="/settings/my-account">My Account</Link>
 									</DropdownMenuItem>
-									<DropdownMenuItem onClick={() => signOutMutation.mutate()}>
+									<DropdownMenuItem onClick={() => signOutMutation.mutate({})}>
 										<LogOut className="h-4 w-4 mr-2" />
 										<span>Log out</span>
 									</DropdownMenuItem>

@@ -6,7 +6,7 @@ import {
 	deleteWorkspace,
 	updateWorkspace,
 } from "@/lib/fn/workspaces";
-import { getElectricUrl, type ServerTxResult, timestampField } from "./shared";
+import { electricFetchClient, getElectricUrl, type ServerTxResult, timestampField } from "./shared";
 
 export const WorkspaceSchema = z.object({
 	id: z.string().uuid(),
@@ -26,6 +26,7 @@ export const workspaceCollection = createCollection(
 		shapeOptions: {
 			url: getElectricUrl(),
 			params: { table: "workspaces" },
+			fetchClient: electricFetchClient,
 		},
 		getKey: (item) => item.id,
 

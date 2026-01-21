@@ -1,3 +1,6 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
+import { ChevronDown, Home, LogOut, Settings, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	DropdownMenu,
@@ -12,17 +15,7 @@ import {
 	SidebarMenuItem,
 	useSidebar,
 } from "@/components/ui/sidebar";
-import { authClient, useSession } from "@/lib/auth-client";
-import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "@tanstack/react-router";
-import {
-	ChevronDown,
-	Globe,
-	Home,
-	LogOut,
-	Settings,
-	Users,
-} from "lucide-react";
+import { auth, useSession } from "@/lib/auth-client";
 
 export function OrganizationSwitcher() {
 	const { isMobile } = useSidebar();
@@ -30,19 +23,30 @@ export function OrganizationSwitcher() {
 	const { data: session } = useSession();
 	const user = session?.user;
 
-	const { data: activeOrg } = useQuery({
-		queryKey: ["activeOrganization"],
-		queryFn: async () => {
-			// @ts-expect-error
-			const { data, error } = await authClient.organization.getActive();
-			if (error) return null;
-			return data;
-		},
-	});
+	const { data: activeOrg } = useQuery(
+		auth.organization.getFullOrganization.queryOptions(),
+	);
 
-	const handleLogout = async () => {
-		await authClient.signOut();
-		router.navigate({ to: "/" });
+	const { data: orgs } = useQuery(auth.organization.list.queryOptions());
+
+	const setActiveOrgMutation = useMutation(
+		auth.organization.setActive.mutationOptions({
+			onSuccess: () => {
+				router.invalidate();
+			},
+		}),
+	);
+
+	const signOutMutation = useMutation(
+		auth.signOut.mutationOptions({
+			onSuccess: () => {
+				router.navigate({ to: "/" });
+			},
+		}),
+	);
+
+	const handleLogout = () => {
+		signOutMutation.mutate({});
 	};
 
 	const getInitials = (name?: string | null) => {
@@ -84,6 +88,30 @@ export function OrganizationSwitcher() {
 						side={isMobile ? "bottom" : "right"}
 						sideOffset={4}
 					>
+						<DropdownMenuSeparator />
+						<div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+							Organizations
+						</div>
+						{orgs?.map((org) => (
+							<DropdownMenuItem
+								key={org.id}
+								onClick={() =>
+									setActiveOrgMutation.mutate({ organizationId: org.id })
+								}
+								className="gap-2.5 py-2"
+							>
+								<Avatar className="h-4 w-4 rounded-full">
+									<AvatarFallback className="text-[8px]">
+										{getInitials(org.name)}
+									</AvatarFallback>
+								</Avatar>
+								<span className="flex-1 truncate">{org.name}</span>
+								{org.id === activeOrg?.id && (
+									<div className="h-2 w-2 rounded-full bg-primary" />
+								)}
+							</DropdownMenuItem>
+						))}
+						<DropdownMenuSeparator />
 						<DropdownMenuItem
 							onClick={() => router.navigate({ to: "/dashboard" })}
 							className="gap-2.5 py-2"
@@ -94,8 +122,7 @@ export function OrganizationSwitcher() {
 						<DropdownMenuItem
 							onClick={() =>
 								router.navigate({
-									to: "/org/$orgSlug/settings/members",
-									params: { orgSlug: activeOrg?.slug || "" },
+									to: "/settings/members",
 								})
 							}
 							className="gap-2.5 py-2"
@@ -106,22 +133,7 @@ export function OrganizationSwitcher() {
 						<DropdownMenuItem
 							onClick={() =>
 								router.navigate({
-									// @ts-expect-error
-									to: "/org/$orgSlug/settings/domains",
-									// @ts-expect-error
-									params: { orgSlug: activeOrg?.slug || "" },
-								})
-							}
-							className="gap-2.5 py-2"
-						>
-							<Globe className="h-4 w-4" />
-							<span>Domains</span>
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							onClick={() =>
-								router.navigate({
-									to: "/org/$orgSlug/settings/general",
-									params: { orgSlug: activeOrg?.slug || "" },
+									to: "/settings",
 								})
 							}
 							className="gap-2.5 py-2"
@@ -130,10 +142,7 @@ export function OrganizationSwitcher() {
 							<span>Settings</span>
 						</DropdownMenuItem>
 						<DropdownMenuSeparator />
-						<DropdownMenuItem
-							onClick={handleLogout}
-							className="gap-2.5 py-2"
-						>
+						<DropdownMenuItem onClick={handleLogout} className="gap-2.5 py-2">
 							<LogOut className="h-4 w-4" />
 							<span>Log out</span>
 						</DropdownMenuItem>

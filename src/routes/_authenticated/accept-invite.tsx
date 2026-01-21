@@ -9,7 +9,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { authClient } from "@/lib/auth-client";
+import { auth, authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_authenticated/accept-invite")({
 	validateSearch: (search: Record<string, unknown>) => {
@@ -24,12 +24,12 @@ function AcceptInvitePage() {
 	const { invitationId } = Route.useSearch();
 	const router = useRouter();
 
+	// getInvitation requires specific structure - use manual query
 	const { data: invitation, isLoading } = useQuery({
 		queryKey: ["invitation", invitationId],
 		queryFn: async () => {
-			// @ts-expect-error
 			const { data, error } = await authClient.organization.getInvitation({
-				id: invitationId,
+				query: { id: invitationId },
 			});
 			if (error) throw error;
 			return data;
@@ -37,38 +37,26 @@ function AcceptInvitePage() {
 		enabled: !!invitationId,
 	});
 
-	const acceptMutation = useMutation({
-		mutationFn: async () => {
-			// @ts-expect-error
-			const { data, error } = await authClient.organization.acceptInvitation({
-				invitationId,
-			});
-			if (error) throw error;
-			return data;
-		},
-		onSuccess: () => {
-			toast.success("Invitation accepted successfully");
-			router.navigate({ to: "/dashboard" });
-		},
-		onError: (error: any) => {
-			toast.error(error.message || "Failed to accept invitation");
-		},
-	});
+	const acceptMutation = useMutation(
+		auth.organization.acceptInvitation.mutationOptions({
+			onSuccess: () => {
+				toast.success("Invitation accepted successfully");
+				router.navigate({ to: "/dashboard" });
+			},
+			onError: (error: any) => {
+				toast.error(error.message || "Failed to accept invitation");
+			},
+		}),
+	);
 
-	const rejectMutation = useMutation({
-		mutationFn: async () => {
-			// @ts-expect-error
-			const { data, error } = await authClient.organization.rejectInvitation({
-				invitationId,
-			});
-			if (error) throw error;
-			return data;
-		},
-		onSuccess: () => {
-			toast.success("Invitation rejected");
-			router.navigate({ to: "/dashboard" });
-		},
-	});
+	const rejectMutation = useMutation(
+		auth.organization.rejectInvitation.mutationOptions({
+			onSuccess: () => {
+				toast.success("Invitation rejected");
+				router.navigate({ to: "/dashboard" });
+			},
+		}),
+	);
 
 	if (isLoading) {
 		return (
@@ -105,20 +93,20 @@ function AcceptInvitePage() {
 					<CardTitle>Organization Invitation</CardTitle>
 					<CardDescription>
 						You have been invited to join{" "}
-						<strong>{invitation.organization.name}</strong> as a{" "}
+						<strong>{(invitation as any).organization?.name ?? "this organization"}</strong> as a{" "}
 						<strong>{invitation.role}</strong>.
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="flex flex-col gap-4">
 					<Button
-						onClick={() => acceptMutation.mutate()}
+						onClick={() => acceptMutation.mutate({ invitationId })}
 						disabled={acceptMutation.isPending || rejectMutation.isPending}
 					>
 						{acceptMutation.isPending ? "Accepting..." : "Accept Invitation"}
 					</Button>
 					<Button
 						variant="outline"
-						onClick={() => rejectMutation.mutate()}
+						onClick={() => rejectMutation.mutate({ invitationId })}
 						disabled={acceptMutation.isPending || rejectMutation.isPending}
 					>
 						{rejectMutation.isPending ? "Rejecting..." : "Reject"}

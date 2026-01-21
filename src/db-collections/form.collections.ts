@@ -3,7 +3,7 @@ import { logger } from "@/lib/utils";
 import { electricCollectionOptions } from "@tanstack/electric-db-collection";
 import { createCollection, localStorageCollectionOptions } from "@tanstack/react-db";
 import { z } from "zod";
-import { type ServerTxResult, getElectricUrl, timestampField } from "./shared";
+import { type ServerTxResult, electricFetchClient, getElectricUrl, timestampField } from "./shared";
 
 // ============================================================================
 // Form Builder Settings Schema
@@ -107,6 +107,7 @@ export const formCollection = createCollection(
         shapeOptions: {
             url: getElectricUrl(),
             params: { table: "forms" },
+            fetchClient: electricFetchClient,
         },
         getKey: (item) => item.id,
 

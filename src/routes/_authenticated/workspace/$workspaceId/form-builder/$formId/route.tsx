@@ -72,24 +72,7 @@ function FormLayout() {
             <AppHeader formId={formId} workspaceId={workspaceId} />
 
             <div className="flex flex-col flex-1 overflow-hidden">
-                {/* Form Builder Navigation & Title */}
-                <div className="px-12 pt-12 pb-2 space-y-6">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Link to="/dashboard" className="hover:text-foreground">Timeless</Link>
-                        <span>›</span>
-                        <Link to="/workspace/$workspaceId" params={{ workspaceId }} className="hover:text-foreground">
-                            <ClientOnly fallback="Workspace">
-                                <WorkspaceNameDisplay workspaceId={workspaceId} />
-                            </ClientOnly>
-                        </Link>
-                        <span>›</span>
-                        <span className="text-foreground font-medium">
-                            <ClientOnly fallback="Form">
-                                <FormTitleDisplay formId={formId} />
-                            </ClientOnly>
-                        </span>
-                    </div>
-                </div>
+
 
                 {/* Tab Navigation */}
                 <div className="flex items-center px-12 border-b shrink-0 bg-background">

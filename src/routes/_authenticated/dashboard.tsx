@@ -1,9 +1,10 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import { createWorkspaceLocal } from "@/db-collections";
 import { useWorkspaces } from "@/hooks/use-live-hooks";
-import { authClient, useSession } from "@/lib/auth-client";
+import { auth, useSession } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
 	component: DashboardPage,
@@ -12,14 +13,19 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const hasInitialized = useRef(false);
 
 	// Get current session/user
 	const { data: session } = useSession();
 
 	// Get active organization and list of user's organizations
-	const { data: activeOrg, isPending: isOrgLoading } = authClient.useActiveOrganization();
-	const { data: orgsData, isPending: isOrgsListLoading } = authClient.useListOrganizations();
+	const { data: activeOrg, isPending: isOrgLoading } = useQuery(
+		auth.organization.getFullOrganization.queryOptions(),
+	);
+	const { data: orgsData, isPending: isOrgsListLoading } = useQuery(
+		auth.organization.list.queryOptions(),
+	);
 
 	// Use live query for real-time sync
 	const workspaces = useWorkspaces();
@@ -28,31 +34,47 @@ function DashboardPage() {
 	const isLoading = workspaces === undefined || isOrgLoading || isOrgsListLoading;
 	const defaultWorkspace = workspaces && workspaces.length > 0 ? workspaces[0] : null;
 
+	const setActiveMutation = useMutation(
+		auth.organization.setActive.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries({
+					queryKey: auth.organization.getFullOrganization.queryKey(),
+				});
+			},
+		}),
+	);
+
+	const createOrgMutation = useMutation(
+		auth.organization.create.mutationOptions({
+			onSuccess: (data) => {
+				if (data) {
+					setActiveMutation.mutate({ organizationId: data.id });
+				}
+			},
+			onError: (error) => {
+				console.error("Failed to create organization:", error);
+			},
+		}),
+	);
+
 	useEffect(() => {
 		const initializeWorkspace = async () => {
 			if (isLoading || hasInitialized.current || !session?.user) return;
 
 			// If user has organizations but no active one, set the first one as active
 			if (!activeOrg && orgsData && orgsData.length > 0) {
-				await authClient.organization.setActive({ organizationId: orgsData[0].id });
+				setActiveMutation.mutate({ organizationId: orgsData[0].id });
 				return; // Will re-run effect after activeOrg updates
 			}
 
 			// If user has no organizations at all, create one for them
 			if (!activeOrg && orgsData && orgsData.length === 0) {
 				hasInitialized.current = true;
-				try {
-					const orgName = session.user.name ? `${session.user.name}'s Organization` : "My Organization";
-					const newOrg = await authClient.organization.create({
-						name: orgName,
-						slug: `org-${session.user.id.slice(0, 8)}-${Date.now()}`,
-					});
-					if (newOrg.data) {
-						await authClient.organization.setActive({ organizationId: newOrg.data.id });
-					}
-				} catch (error) {
-					console.error("Failed to create organization:", error);
-				}
+				const orgName = session.user.name ? `${session.user.name}'s Organization` : "My Organization";
+				createOrgMutation.mutate({
+					name: orgName,
+					slug: `org-${session.user.id.slice(0, 8)}-${Date.now()}`,
+				});
 				return;
 			}
 
@@ -83,7 +105,7 @@ function DashboardPage() {
 		};
 
 		initializeWorkspace();
-	}, [isLoading, defaultWorkspace, workspaces, navigate, activeOrg, orgsData, session]);
+	}, [isLoading, defaultWorkspace, workspaces, navigate, activeOrg, orgsData, session, setActiveMutation, createOrgMutation]);
 
 	return (
 		<div className="flex-1 flex items-center justify-center min-h-screen">

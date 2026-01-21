@@ -16,7 +16,7 @@ const serializeForm = (form: typeof forms.$inferSelect) => ({
 });
 
 export const createForm = createServerFn({ method: "POST" })
-.middleware([authMiddleware])
+	.middleware([authMiddleware])
 	.inputValidator(z.object({
 		id: z.string().uuid(),
 		workspaceId: z.string().uuid(),
@@ -30,7 +30,7 @@ export const createForm = createServerFn({ method: "POST" })
 		isMultiStep: z.boolean().optional(),
 		status: z.enum(["draft", "published", "archived"]).optional(),
 	}))
-	.handler(async ({ data , context}) => {
+	.handler(async ({ data, context }) => {
 		const now = new Date();
 
 		const [form] = await db
@@ -212,9 +212,9 @@ export const getFormById = createServerFn({ method: "GET" })
 	});
 
 
-export const getFormbyIdQueryOption  = (formId : string) =>
+export const getFormbyIdQueryOption = (formId: string) =>
 	queryOptions({
-		queryKey: ["forms",formId],
-		queryFn: ({ signal }) => getFormById({data : { id : formId },signal }),
+		queryKey: ["forms", formId],
+		queryFn: ({ signal }) => getFormById({ data: { id: formId }, signal }),
 		staleTime: 1000 * 60 * 10, // 10 minutes
 	});

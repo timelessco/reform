@@ -22,14 +22,11 @@ import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authen
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsMyAccountRouteImport } from './routes/_authenticated/settings/my-account'
+import { Route as AuthenticatedSettingsMembersRouteImport } from './routes/_authenticated/settings/members'
 import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_authenticated/settings/billing'
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings/api-keys'
-import { Route as AuthenticatedOrgCreateRouteImport } from './routes/_authenticated/org/create'
 import { Route as AuthenticatedWorkspaceWorkspaceIdRouteRouteImport } from './routes/_authenticated/workspace/$workspaceId/route'
 import { Route as AuthenticatedWorkspaceWorkspaceIdIndexRouteImport } from './routes/_authenticated/workspace/$workspaceId/index'
-import { Route as AuthenticatedOrgOrgSlugSettingsRouteRouteImport } from './routes/_authenticated/org/$orgSlug/settings/route'
-import { Route as AuthenticatedOrgOrgSlugSettingsMembersRouteImport } from './routes/_authenticated/org/$orgSlug/settings/members'
-import { Route as AuthenticatedOrgOrgSlugSettingsGeneralRouteImport } from './routes/_authenticated/org/$orgSlug/settings/general'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/route'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIndexRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/index'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSubmissionsRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/submissions'
@@ -107,6 +104,12 @@ const AuthenticatedSettingsMyAccountRoute =
     path: '/my-account',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedSettingsMembersRoute =
+  AuthenticatedSettingsMembersRouteImport.update({
+    id: '/members',
+    path: '/members',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
 const AuthenticatedSettingsBillingRoute =
   AuthenticatedSettingsBillingRouteImport.update({
     id: '/billing',
@@ -119,11 +122,6 @@ const AuthenticatedSettingsApiKeysRoute =
     path: '/api-keys',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
-const AuthenticatedOrgCreateRoute = AuthenticatedOrgCreateRouteImport.update({
-  id: '/org/create',
-  path: '/org/create',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedWorkspaceWorkspaceIdRouteRoute =
   AuthenticatedWorkspaceWorkspaceIdRouteRouteImport.update({
     id: '/workspace/$workspaceId',
@@ -135,24 +133,6 @@ const AuthenticatedWorkspaceWorkspaceIdIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedWorkspaceWorkspaceIdRouteRoute,
-  } as any)
-const AuthenticatedOrgOrgSlugSettingsRouteRoute =
-  AuthenticatedOrgOrgSlugSettingsRouteRouteImport.update({
-    id: '/org/$orgSlug/settings',
-    path: '/org/$orgSlug/settings',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedOrgOrgSlugSettingsMembersRoute =
-  AuthenticatedOrgOrgSlugSettingsMembersRouteImport.update({
-    id: '/members',
-    path: '/members',
-    getParentRoute: () => AuthenticatedOrgOrgSlugSettingsRouteRoute,
-  } as any)
-const AuthenticatedOrgOrgSlugSettingsGeneralRoute =
-  AuthenticatedOrgOrgSlugSettingsGeneralRouteImport.update({
-    id: '/general',
-    path: '/general',
-    getParentRoute: () => AuthenticatedOrgOrgSlugSettingsRouteRoute,
   } as any)
 const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRoute =
   AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteImport.update({
@@ -217,18 +197,15 @@ export interface FileRoutesByFullPath {
   '/api/electric': typeof ApiElectricRoute
   '/forms/$formId': typeof FormsFormIdRoute
   '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
-  '/org/create': typeof AuthenticatedOrgCreateRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
+  '/settings/members': typeof AuthenticatedSettingsMembersRoute
   '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/org/$orgSlug/settings': typeof AuthenticatedOrgOrgSlugSettingsRouteRouteWithChildren
   '/workspace/$workspaceId/': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
   '/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
-  '/org/$orgSlug/settings/general': typeof AuthenticatedOrgOrgSlugSettingsGeneralRoute
-  '/org/$orgSlug/settings/members': typeof AuthenticatedOrgOrgSlugSettingsMembersRoute
   '/workspace/$workspaceId/form-builder/$formId/insights': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdInsightsRoute
   '/workspace/$workspaceId/form-builder/$formId/integrations': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRoute
   '/workspace/$workspaceId/form-builder/$formId/settings': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
@@ -244,17 +221,14 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/electric': typeof ApiElectricRoute
   '/forms/$formId': typeof FormsFormIdRoute
-  '/org/create': typeof AuthenticatedOrgCreateRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
+  '/settings/members': typeof AuthenticatedSettingsMembersRoute
   '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
-  '/org/$orgSlug/settings': typeof AuthenticatedOrgOrgSlugSettingsRouteRouteWithChildren
   '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
-  '/org/$orgSlug/settings/general': typeof AuthenticatedOrgOrgSlugSettingsGeneralRoute
-  '/org/$orgSlug/settings/members': typeof AuthenticatedOrgOrgSlugSettingsMembersRoute
   '/workspace/$workspaceId/form-builder/$formId/insights': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdInsightsRoute
   '/workspace/$workspaceId/form-builder/$formId/integrations': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRoute
   '/workspace/$workspaceId/form-builder/$formId/settings': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
@@ -274,18 +248,15 @@ export interface FileRoutesById {
   '/api/electric': typeof ApiElectricRoute
   '/forms/$formId': typeof FormsFormIdRoute
   '/_authenticated/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
-  '/_authenticated/org/create': typeof AuthenticatedOrgCreateRoute
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/billing': typeof AuthenticatedSettingsBillingRoute
+  '/_authenticated/settings/members': typeof AuthenticatedSettingsMembersRoute
   '/_authenticated/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
-  '/_authenticated/org/$orgSlug/settings': typeof AuthenticatedOrgOrgSlugSettingsRouteRouteWithChildren
   '/_authenticated/workspace/$workspaceId/': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
-  '/_authenticated/org/$orgSlug/settings/general': typeof AuthenticatedOrgOrgSlugSettingsGeneralRoute
-  '/_authenticated/org/$orgSlug/settings/members': typeof AuthenticatedOrgOrgSlugSettingsMembersRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId/insights': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdInsightsRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId/integrations': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId/settings': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
@@ -305,18 +276,15 @@ export interface FileRouteTypes {
     | '/api/electric'
     | '/forms/$formId'
     | '/workspace/$workspaceId'
-    | '/org/create'
     | '/settings/api-keys'
     | '/settings/billing'
+    | '/settings/members'
     | '/settings/my-account'
     | '/settings/notifications'
     | '/api/auth/$'
     | '/settings/'
-    | '/org/$orgSlug/settings'
     | '/workspace/$workspaceId/'
     | '/workspace/$workspaceId/form-builder/$formId'
-    | '/org/$orgSlug/settings/general'
-    | '/org/$orgSlug/settings/members'
     | '/workspace/$workspaceId/form-builder/$formId/insights'
     | '/workspace/$workspaceId/form-builder/$formId/integrations'
     | '/workspace/$workspaceId/form-builder/$formId/settings'
@@ -332,17 +300,14 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/api/electric'
     | '/forms/$formId'
-    | '/org/create'
     | '/settings/api-keys'
     | '/settings/billing'
+    | '/settings/members'
     | '/settings/my-account'
     | '/settings/notifications'
     | '/api/auth/$'
     | '/settings'
-    | '/org/$orgSlug/settings'
     | '/workspace/$workspaceId'
-    | '/org/$orgSlug/settings/general'
-    | '/org/$orgSlug/settings/members'
     | '/workspace/$workspaceId/form-builder/$formId/insights'
     | '/workspace/$workspaceId/form-builder/$formId/integrations'
     | '/workspace/$workspaceId/form-builder/$formId/settings'
@@ -361,18 +326,15 @@ export interface FileRouteTypes {
     | '/api/electric'
     | '/forms/$formId'
     | '/_authenticated/workspace/$workspaceId'
-    | '/_authenticated/org/create'
     | '/_authenticated/settings/api-keys'
     | '/_authenticated/settings/billing'
+    | '/_authenticated/settings/members'
     | '/_authenticated/settings/my-account'
     | '/_authenticated/settings/notifications'
     | '/api/auth/$'
     | '/_authenticated/settings/'
-    | '/_authenticated/org/$orgSlug/settings'
     | '/_authenticated/workspace/$workspaceId/'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId'
-    | '/_authenticated/org/$orgSlug/settings/general'
-    | '/_authenticated/org/$orgSlug/settings/members'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId/insights'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId/integrations'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId/settings'
@@ -484,6 +446,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsMyAccountRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/settings/members': {
+      id: '/_authenticated/settings/members'
+      path: '/members'
+      fullPath: '/settings/members'
+      preLoaderRoute: typeof AuthenticatedSettingsMembersRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
     '/_authenticated/settings/billing': {
       id: '/_authenticated/settings/billing'
       path: '/billing'
@@ -498,13 +467,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsApiKeysRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
-    '/_authenticated/org/create': {
-      id: '/_authenticated/org/create'
-      path: '/org/create'
-      fullPath: '/org/create'
-      preLoaderRoute: typeof AuthenticatedOrgCreateRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/workspace/$workspaceId': {
       id: '/_authenticated/workspace/$workspaceId'
       path: '/workspace/$workspaceId'
@@ -518,27 +480,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/workspace/$workspaceId/'
       preLoaderRoute: typeof AuthenticatedWorkspaceWorkspaceIdIndexRouteImport
       parentRoute: typeof AuthenticatedWorkspaceWorkspaceIdRouteRoute
-    }
-    '/_authenticated/org/$orgSlug/settings': {
-      id: '/_authenticated/org/$orgSlug/settings'
-      path: '/org/$orgSlug/settings'
-      fullPath: '/org/$orgSlug/settings'
-      preLoaderRoute: typeof AuthenticatedOrgOrgSlugSettingsRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/org/$orgSlug/settings/members': {
-      id: '/_authenticated/org/$orgSlug/settings/members'
-      path: '/members'
-      fullPath: '/org/$orgSlug/settings/members'
-      preLoaderRoute: typeof AuthenticatedOrgOrgSlugSettingsMembersRouteImport
-      parentRoute: typeof AuthenticatedOrgOrgSlugSettingsRouteRoute
-    }
-    '/_authenticated/org/$orgSlug/settings/general': {
-      id: '/_authenticated/org/$orgSlug/settings/general'
-      path: '/general'
-      fullPath: '/org/$orgSlug/settings/general'
-      preLoaderRoute: typeof AuthenticatedOrgOrgSlugSettingsGeneralRouteImport
-      parentRoute: typeof AuthenticatedOrgOrgSlugSettingsRouteRoute
     }
     '/_authenticated/workspace/$workspaceId/form-builder/$formId': {
       id: '/_authenticated/workspace/$workspaceId/form-builder/$formId'
@@ -595,6 +536,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsApiKeysRoute: typeof AuthenticatedSettingsApiKeysRoute
   AuthenticatedSettingsBillingRoute: typeof AuthenticatedSettingsBillingRoute
+  AuthenticatedSettingsMembersRoute: typeof AuthenticatedSettingsMembersRoute
   AuthenticatedSettingsMyAccountRoute: typeof AuthenticatedSettingsMyAccountRoute
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
@@ -604,6 +546,7 @@ const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteCh
   {
     AuthenticatedSettingsApiKeysRoute: AuthenticatedSettingsApiKeysRoute,
     AuthenticatedSettingsBillingRoute: AuthenticatedSettingsBillingRoute,
+    AuthenticatedSettingsMembersRoute: AuthenticatedSettingsMembersRoute,
     AuthenticatedSettingsMyAccountRoute: AuthenticatedSettingsMyAccountRoute,
     AuthenticatedSettingsNotificationsRoute:
       AuthenticatedSettingsNotificationsRoute,
@@ -663,31 +606,11 @@ const AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren =
     AuthenticatedWorkspaceWorkspaceIdRouteRouteChildren,
   )
 
-interface AuthenticatedOrgOrgSlugSettingsRouteRouteChildren {
-  AuthenticatedOrgOrgSlugSettingsGeneralRoute: typeof AuthenticatedOrgOrgSlugSettingsGeneralRoute
-  AuthenticatedOrgOrgSlugSettingsMembersRoute: typeof AuthenticatedOrgOrgSlugSettingsMembersRoute
-}
-
-const AuthenticatedOrgOrgSlugSettingsRouteRouteChildren: AuthenticatedOrgOrgSlugSettingsRouteRouteChildren =
-  {
-    AuthenticatedOrgOrgSlugSettingsGeneralRoute:
-      AuthenticatedOrgOrgSlugSettingsGeneralRoute,
-    AuthenticatedOrgOrgSlugSettingsMembersRoute:
-      AuthenticatedOrgOrgSlugSettingsMembersRoute,
-  }
-
-const AuthenticatedOrgOrgSlugSettingsRouteRouteWithChildren =
-  AuthenticatedOrgOrgSlugSettingsRouteRoute._addFileChildren(
-    AuthenticatedOrgOrgSlugSettingsRouteRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedAcceptInviteRoute: typeof AuthenticatedAcceptInviteRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedWorkspaceWorkspaceIdRouteRoute: typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
-  AuthenticatedOrgCreateRoute: typeof AuthenticatedOrgCreateRoute
-  AuthenticatedOrgOrgSlugSettingsRouteRoute: typeof AuthenticatedOrgOrgSlugSettingsRouteRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -696,9 +619,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedWorkspaceWorkspaceIdRouteRoute:
     AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren,
-  AuthenticatedOrgCreateRoute: AuthenticatedOrgCreateRoute,
-  AuthenticatedOrgOrgSlugSettingsRouteRoute:
-    AuthenticatedOrgOrgSlugSettingsRouteRouteWithChildren,
 }
 
 const AuthenticatedRouteRouteWithChildren =

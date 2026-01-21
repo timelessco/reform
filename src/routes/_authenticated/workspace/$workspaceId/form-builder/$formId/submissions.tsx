@@ -62,7 +62,6 @@ function SubmissionsPage() {
     // 2. Fetch Submissions
     const { data: submissions = [] } = useLiveQuery((q) => {
         let query = q.from({ s: submissionCollection }).where(({ s }) => eq(s.formId, formId));
-
         if (activeTab === "completed") {
             query = query.where(({ s }) => eq(s.isCompleted, true));
         } else if (activeTab === "partial") {

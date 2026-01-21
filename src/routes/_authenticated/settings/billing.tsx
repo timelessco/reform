@@ -9,33 +9,27 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { authClient } from "@/lib/auth-client";
+import { auth, authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_authenticated/settings/billing")({
 	component: BillingPage,
 });
 
 function BillingPage() {
-	const { data: customerState, isLoading } = useQuery({
-		queryKey: ["customerState"],
-		queryFn: async () => {
-			// @ts-expect-error
-			const { data, error } = await authClient.customer.state();
-			if (error) throw error;
-			return data;
-		},
-	});
+	const { data: customerState, isLoading } = useQuery(
+		auth.customer.state.queryOptions(),
+	);
 
-	const { data: activeOrg } = authClient.useActiveOrganization();
+	const { data: activeOrg } = useQuery(
+		auth.organization.getFullOrganization.queryOptions(),
+	);
 
 	const handleUpgrade = async (planSlug: string) => {
 		if (!activeOrg) {
 			toast.error("Please select an organization first");
 			return;
 		}
-
 		try {
-			// @ts-expect-error
 			const { data, error } = await authClient.checkout({
 				slug: planSlug,
 				referenceId: activeOrg.id,
@@ -51,40 +45,49 @@ function BillingPage() {
 		}
 	};
 
-	const openPortal = async () => {
-		try {
-			// @ts-expect-error
-			const { data, error } = await authClient.customer.portal();
-			if (error) throw error;
-			if (data?.url) {
-				window.location.href = data.url;
-			}
-		} catch (error: any) {
-			toast.error(error.message || "Failed to open billing portal");
-		}
+	const {
+		data: portalData,
+		refetch: openPortal,
+		isFetching: isOpeningPortal,
+	} = useQuery({
+		...auth.customer.portal.queryOptions(),
+		enabled: false, // Only fetch when triggered
+	});
+
+	// Handle portal redirect when data is fetched
+	if (portalData?.url && !isOpeningPortal) {
+		window.location.href = portalData.url;
+	}
+
+	const handleOpenPortal = () => {
+		openPortal();
 	};
+
+	const activeSubscription = customerState?.activeSubscriptions?.[0];
+
+	const isFreePlan = !activeSubscription;
+	const isProPlan =
+		activeSubscription?.productId === "3662224a-d998-4a73-bf82-4957198d53ea" ||
+		activeSubscription?.productId === "0be62924-d418-4dcc-8c8c-2b4929f76695";
+	const isBusinessPlan = false; // Add your business product ID when ready
 
 	if (isLoading) {
 		return <div className="p-8">Loading billing information...</div>;
 	}
-
-	const activeSubscription = customerState?.subscriptions?.find(
-		(s: any) => s.status === "active",
-	);
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4 md:p-8">
 			<div className="flex items-center justify-between">
 				<h1 className="text-2xl font-bold tracking-tight">Billing</h1>
 				{activeSubscription && (
-					<Button variant="outline" onClick={openPortal}>
+					<Button variant="outline" onClick={handleOpenPortal}>
 						Manage Billing
 					</Button>
 				)}
 			</div>
 
 			<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-				<Card className={!activeSubscription ? "border-primary" : ""}>
+				<Card className={isFreePlan ? "border-primary" : ""}>
 					<CardHeader>
 						<CardTitle>Free</CardTitle>
 						<CardDescription>Perfect for personal projects.</CardDescription>
@@ -98,19 +101,15 @@ function BillingPage() {
 						</ul>
 						<Button
 							className="w-full"
-							variant={!activeSubscription ? "outline" : "ghost"}
-							disabled={!activeSubscription}
+							variant={isFreePlan ? "outline" : "ghost"}
+							disabled={isFreePlan}
 						>
-							{!activeSubscription ? "Current Plan" : "Downgrade"}
+							{isFreePlan ? "Current Plan" : "Downgrade"}
 						</Button>
 					</CardContent>
 				</Card>
 
-				<Card
-					className={
-						activeSubscription?.plan?.slug === "pro" ? "border-primary" : ""
-					}
-				>
+				<Card className={isProPlan ? "border-primary" : ""}>
 					<CardHeader>
 						<CardTitle>Pro</CardTitle>
 						<CardDescription>For growing teams.</CardDescription>
@@ -124,28 +123,16 @@ function BillingPage() {
 						</ul>
 						<Button
 							className="w-full"
-							variant={
-								activeSubscription?.plan?.slug === "pro"
-									? "outline"
-									: ("primary" as any)
-							}
-							onClick={() => handleUpgrade("pro")}
-							disabled={activeSubscription?.plan?.slug === "pro"}
+							variant={isProPlan ? "outline" : "default"}
+							onClick={() => handleUpgrade("Pro")}
+							disabled={isProPlan}
 						>
-							{activeSubscription?.plan?.slug === "pro"
-								? "Current Plan"
-								: "Upgrade to Pro"}
+							{isProPlan ? "Current Plan" : "Upgrade to Pro"}
 						</Button>
 					</CardContent>
 				</Card>
 
-				<Card
-					className={
-						activeSubscription?.plan?.slug === "business"
-							? "border-primary"
-							: ""
-					}
-				>
+				<Card className={isBusinessPlan ? "border-primary" : ""}>
 					<CardHeader>
 						<CardTitle>Business</CardTitle>
 						<CardDescription>Enterprise-grade features.</CardDescription>
@@ -159,17 +146,11 @@ function BillingPage() {
 						</ul>
 						<Button
 							className="w-full"
-							variant={
-								activeSubscription?.plan?.slug === "business"
-									? "outline"
-									: ("primary" as any)
-							}
-							onClick={() => handleUpgrade("business")}
-							disabled={activeSubscription?.plan?.slug === "business"}
+							variant={isBusinessPlan ? "outline" : "default"}
+							onClick={() => handleUpgrade("Pro-(Yearly)")}
+							disabled={isBusinessPlan}
 						>
-							{activeSubscription?.plan?.slug === "business"
-								? "Current Plan"
-								: "Upgrade to Business"}
+							{isBusinessPlan ? "Current Plan" : "Upgrade to Business"}
 						</Button>
 					</CardContent>
 				</Card>

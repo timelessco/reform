@@ -29,25 +29,26 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 		requireEmailVerification: true,
+		autoSignIn: true,
+	},
+	emailVerification: {
+		autoSignInAfterVerification: true,
+		afterEmailVerification: async () => {
+			logger("[Auth] Email verified");
+		},
 	},
 	databaseHooks: {
 		user: {
 			create: {
 				after: async (user) => {
-					// Auto-create a personal organization for new users
-					const orgName = user.name
-						? `${user.name}'s Organization`
-						: "My Organization";
-					const orgSlug = `org-${user.id.slice(0, 8)}`;
-
 					try {
 						// Create organization
 						await db
 							.insert(schema.organization)
 							.values({
 								id: crypto.randomUUID(),
-								name: orgName,
-								slug: orgSlug,
+								name: user.name,
+								slug: user.id,
 								createdAt: new Date(),
 							})
 							.returning()
@@ -61,7 +62,7 @@ export const auth = betterAuth({
 									createdAt: new Date(),
 								});
 								logger(
-									`[Auth] Created organization "${orgName}" for user ${user.email}`,
+									`[Auth] Created organization "${user.name}" for user ${user.email}`,
 								);
 							});
 					} catch (error) {
@@ -127,17 +128,22 @@ export const auth = betterAuth({
 			use: [
 				checkout({
 					products: [
-						{ productId: "prod_free", slug: "free" },
+						{
+							productId: "398f06f7-a6f6-4f65-80b6-62e38bd2825c",
+							slug: "free",
+						},
 						{
 							productId: "0be62924-d418-4dcc-8c8c-2b4929f76695",
-							slug: "Pro-(Yearly)", // Custom slug for easy reference in Checkout URL, e.g. /checkout/Pro-(Yearly)
+							slug: "Pro-(Yearly)",
 						},
 						{
 							productId: "3662224a-d998-4a73-bf82-4957198d53ea",
-							slug: "Pro", // Custom slug for easy reference in Checkout URL, e.g. /checkout/Pro
+							slug: "Pro",
 						},
 					],
-					successUrl: "/settings/billing?checkout_id={CHECKOUT_ID}",
+					successUrl:
+						(process.env.APP_URL || "http://localhost:3000") +
+						"/settings/billing?checkout_id={CHECKOUT_ID}",
 					authenticatedUsersOnly: true,
 				}),
 				portal(),

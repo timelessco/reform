@@ -16,7 +16,6 @@ export const authClient = createAuthClient({
 		twoFactorClient(),
 		apiKeyClient(),
 		organizationClient(),
-		// @ts-expect-error - Type incompatibility with better-auth 1.4.16
 		polarClient(),
 	],
 });

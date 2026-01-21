@@ -1,6 +1,5 @@
-
-
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
@@ -47,6 +46,8 @@ interface SignUpFormProps {
 export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 	const [step, setStep] = React.useState<"form" | "otp">("form");
 	const [email, setEmail] = React.useState("");
+	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 
 	const signUpMutation = useMutation(
 		auth.signUp.email.mutationOptions({
@@ -70,7 +71,11 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 		auth.emailOtp.verifyEmail.mutationOptions({
 			onSuccess: () => {
 				toast.success("Email verified successfully!");
+				queryClient.invalidateQueries({
+					queryKey: auth.getSession.queryKey(),
+				});
 				onSuccess?.();
+				navigate({ to: "/dashboard" });
 			},
 			onError: (error) => {
 				toast.error(error.message || "Verification failed");
