@@ -57,6 +57,25 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
 		[editor],
 	);
 
+	const selectedNodes = editor
+		.getApi(BlockSelectionPlugin)
+		.blockSelection.getNodes();
+	const hasFormLabel = selectedNodes.some(([node]) => node.type === "formLabel");
+	const isRequired = selectedNodes.some(
+		([node]) => node.type === "formLabel" && node.required,
+	);
+
+	const handleRequiredToggle = React.useCallback(() => {
+		editor
+			.getApi(BlockSelectionPlugin)
+			.blockSelection.getNodes()
+			.forEach(([node, path]) => {
+				if (node.type === "formLabel") {
+					editor.tf.setNodes({ required: !node.required }, { at: path });
+				}
+			});
+	}, [editor]);
+
 	if (isTouch) {
 		return children;
 	}
@@ -113,6 +132,11 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
 						>
 							Ask AI
 						</ContextMenuItem>
+						{hasFormLabel && (
+							<ContextMenuItem onClick={handleRequiredToggle}>
+								{isRequired ? "Unmark Required" : "Mark Required"}
+							</ContextMenuItem>
+						)}
 						<ContextMenuItem
 							onClick={() => {
 								editor

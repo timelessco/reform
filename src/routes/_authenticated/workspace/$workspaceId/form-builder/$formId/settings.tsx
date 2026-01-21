@@ -1,10 +1,6 @@
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-    revalidateLogic,
-    useAppForm
-} from "@/components/ui/tanstack-form";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
     Select,
     SelectContent,
@@ -12,11 +8,15 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { createFileRoute } from "@tanstack/react-router";
-import { useForm as useLiveForm } from "@/hooks/use-live-hooks";
-import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import {
+    revalidateLogic,
+    useAppForm
+} from "@/components/ui/tanstack-form";
 import { updateSettings } from "@/db-collections/form.collections";
+import { useForm as useLiveForm } from "@/hooks/use-live-hooks";
+import { createFileRoute } from "@tanstack/react-router";
+import { toast } from "sonner";
 
 export const Route = createFileRoute(
     "/_authenticated/workspace/$workspaceId/form-builder/$formId/settings",

@@ -7,14 +7,18 @@ import {
     TableHeader,
     TableRow
 } from "@/components/ui/table";
-import { submissionCollection } from "@/db-collections/submission.collections";
 import { useForm } from "@/hooks/use-live-hooks";
 import { cn } from "@/lib/utils";
 import {
     getEditableFields,
     transformPlateStateToFormElements,
 } from "@/lib/transform-plate-to-form";
-import { eq, useLiveQuery } from "@tanstack/react-db";
+import {
+    getSubmissionsByFormIdQueryOption,
+    deleteSubmission,
+    type SerializedSubmission,
+} from "@/lib/fn/submissions";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
     createColumnHelper,
@@ -51,6 +55,7 @@ export const Route = createFileRoute(
 
 function SubmissionsPage() {
     const { formId } = Route.useParams();
+    const queryClient = useQueryClient();
     const [activeTab, setActiveTab] = useState<"all" | "completed" | "partial">("all");
     const [sorting, setSorting] = useState([]);
     const [globalFilter, setGlobalFilter] = useState("");
@@ -59,17 +64,22 @@ function SubmissionsPage() {
     const savedDocs = useForm(formId);
     const doc = savedDocs?.[0];
 
-    // 2. Fetch Submissions
-    const { data: submissions = [] } = useLiveQuery((q) => {
-        let query = q.from({ s: submissionCollection }).where(({ s }) => eq(s.formId, formId));
-        if (activeTab === "completed") {
-            query = query.where(({ s }) => eq(s.isCompleted, true));
-        } else if (activeTab === "partial") {
-            query = query.where(({ s }) => eq(s.isCompleted, false));
-        }
+    // 2. Fetch Submissions via server function
+    const { data } = useQuery(getSubmissionsByFormIdQueryOption(formId));
 
-        return query;
-    });
+    // Client-side filter based on activeTab
+    const allSubmissions: SerializedSubmission[] = data?.submissions ?? [];
+    const submissions = useMemo(() => {
+        if (activeTab === "completed") return allSubmissions.filter((s: SerializedSubmission) => s.isCompleted);
+        if (activeTab === "partial") return allSubmissions.filter((s: SerializedSubmission) => !s.isCompleted);
+        return allSubmissions;
+    }, [allSubmissions, activeTab]);
+
+    // Delete handler
+    const handleDelete = async (submissionId: string) => {
+        await deleteSubmission({ data: { id: submissionId, formId } });
+        queryClient.invalidateQueries({ queryKey: ["submissions", formId] });
+    };
 
     // 3. Derive Columns from Form Content using the same transform as form preview
     const columns = useMemo(() => {
@@ -92,7 +102,12 @@ function SubmissionsPage() {
                             <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground">
                                 <Maximize className="h-3.5 w-3.5" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                onClick={() => handleDelete(info.row.original.id)}
+                            >
                                 <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                         </div>
@@ -193,7 +208,7 @@ function SubmissionsPage() {
                                 activeTab === "all" ? "text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
-                            All <span className="ml-1 text-[11px] px-1.5 py-0.5 bg-muted rounded-full font-normal">{submissions.length}</span>
+                            All <span className="ml-1 text-[11px] px-1.5 py-0.5 bg-muted rounded-full font-normal">{allSubmissions.length}</span>
                             {activeTab === "all" && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground" />}
                         </button>
                         <button
@@ -203,7 +218,7 @@ function SubmissionsPage() {
                                 activeTab === "completed" ? "text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
-                            Completed <span className="ml-1 text-[11px] px-1.5 py-0.5 bg-muted rounded-full font-normal">{submissions.filter(s => s.isCompleted).length}</span>
+                            Completed <span className="ml-1 text-[11px] px-1.5 py-0.5 bg-muted rounded-full font-normal">{allSubmissions.filter((s: SerializedSubmission) => s.isCompleted).length}</span>
                             {activeTab === "completed" && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground" />}
                         </button>
                         <button
@@ -213,7 +228,7 @@ function SubmissionsPage() {
                                 activeTab === "partial" ? "text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
-                            Partial <span className="ml-1 text-[11px] px-1.5 py-0.5 bg-muted rounded-full font-normal">{submissions.filter(s => !s.isCompleted).length}</span>
+                            Partial <span className="ml-1 text-[11px] px-1.5 py-0.5 bg-muted rounded-full font-normal">{allSubmissions.filter((s: SerializedSubmission) => !s.isCompleted).length}</span>
                             {activeTab === "partial" && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground" />}
                         </button>
                     </div>
@@ -305,7 +320,7 @@ function SubmissionsPage() {
                 {/* Pagination */}
                 <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/10">
                     <div className="text-xs text-muted-foreground">
-                        Showing {table.getRowModel().rows.length} of {submissions.length} results
+                        Showing {table.getRowModel().rows.length} of {allSubmissions.length} results
                     </div>
                     <div className="flex items-center gap-2">
                         <Button

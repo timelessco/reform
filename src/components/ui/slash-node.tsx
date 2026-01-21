@@ -4,6 +4,7 @@ import {
 	ChevronRightIcon,
 	Code2,
 	Columns3Icon,
+	FileIcon,
 	Heading1Icon,
 	Heading2Icon,
 	Heading3Icon,
@@ -15,6 +16,7 @@ import {
 	PilcrowIcon,
 	Quote,
 	RadicalIcon,
+	SmileIcon,
 	Square,
 	Table,
 	TableOfContentsIcon,
@@ -189,6 +191,28 @@ const groups: Group[] = [
 			...item,
 			onSelect: (editor, value) => {
 				insertInlineElement(editor, value);
+			},
+		})),
+	},
+	{
+		group: "Layout blocks",
+		items: [
+			{
+				icon: <FileIcon />,
+				keywords: ["page"],
+				label: "New page",
+				value: "pageBreak",
+			},
+			{
+				icon: <SmileIcon />,
+				keywords: ["thankyou"],
+				label: "'Thank you' page",
+				value: "pageBreakThankYou",
+			},
+		].map((item) => ({
+			...item,
+			onSelect: (editor, value) => {
+				insertBlock(editor, value, { upsert: true });
 			},
 		})),
 	},

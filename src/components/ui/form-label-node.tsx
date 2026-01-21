@@ -9,9 +9,16 @@ export function FormLabelElement({
 	children,
 	...props
 }: PlateElementProps) {
-	const isRequired = props.element.required as boolean | undefined;
-	const placeholder = props.element.placeholder as string | undefined;
-	const isEmpty = props.editor.api.isEmpty(props.element);
+	const { editor, element, path } = props;
+	const isRequired = element.required as boolean | undefined;
+	const placeholder = element.placeholder as string | undefined;
+	const isEmpty = editor.api.isEmpty(element);
+
+	const toggleRequired = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		editor.tf.setNodes({ required: !isRequired }, { at: path });
+	};
 
 	return (
 		<PlateElement
@@ -21,7 +28,7 @@ export function FormLabelElement({
 			)}
 			{...props}
 		>
-			<span className="flex items-center gap-0.5">
+			<span className="flex items-center gap-1">
 				{isEmpty && placeholder && (
 					<span className="absolute text-muted-foreground/60 pointer-events-none select-none">
 						{placeholder}
@@ -29,7 +36,17 @@ export function FormLabelElement({
 				)}
 				{children}
 				{isRequired && (
-					<span className="text-destructive ml-0.5 select-none">*</span>
+					<button
+						type="button"
+						onClick={toggleRequired}
+						className={cn(
+							"flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded-full bg-muted text-[10px] text-muted-foreground hover:bg-muted-foreground hover:text-muted transition-colors",
+							"ml-0.5",
+						)}
+						contentEditable={false}
+					>
+						*
+					</button>
 				)}
 			</span>
 		</PlateElement>

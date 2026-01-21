@@ -82,7 +82,7 @@ const insertBlockMap: Record<
 		editor.tf.insertNodes(
 			{
 				type: "formInput",
-				placeholder: "Enter your answer",
+				placeholder: "Type Placeholder text",
 				children: [{ text: "" }],
 			} as any,
 			{ at: PathApi.next(labelPath) },
@@ -110,13 +110,52 @@ const insertBlockMap: Record<
 		editor.tf.insertNodes(
 			{
 				type: "formTextarea",
-				placeholder: "Enter your detailed answer",
+				placeholder: "Type a placeholder",
 				children: [{ text: "" }],
 			} as any,
 			{ at: PathApi.next(labelPath) },
 		);
 
 		editor.tf.select({ path: [...labelPath, 0], offset: 0 });
+	},
+	pageBreak: (editor) => {
+		const block = editor.api.block();
+		if (!block) return;
+
+		const [, path] = block;
+		const nextPath = PathApi.next(path);
+
+		editor.tf.insertNodes(
+			{
+				type: "pageBreak",
+				isThankYouPage: false,
+				children: [{ text: "" }],
+			} as any,
+			{ at: nextPath, select: true },
+		);
+	},
+	pageBreakThankYou: (editor) => {
+		const block = editor.api.block();
+		if (!block) return;
+
+		const [, path] = block;
+		const nextPath = PathApi.next(path);
+
+		// Remove isThankYouPage from all existing pageBreak elements
+		for (const [, nodePath] of editor.api.nodes({
+			match: { type: "pageBreak" },
+		})) {
+			editor.tf.setNodes({ isThankYouPage: false }, { at: nodePath });
+		}
+
+		editor.tf.insertNodes(
+			{
+				type: "pageBreak",
+				isThankYouPage: true,
+				children: [{ text: "" }],
+			} as any,
+			{ at: nextPath, select: true },
+		);
 	},
 };
 
