@@ -1,3 +1,4 @@
+import { queryOptions } from "@tanstack/react-query";
 import { createMiddleware, createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { eq, inArray } from "drizzle-orm";
@@ -234,4 +235,11 @@ export const getWorkspacesWithForms = createServerFn({ method: "GET" })
 				forms: formsByWorkspace[workspace.id] || [],
 			})),
 		};
+	});
+
+export const getWorkspacesWithFormsQueryOptions = () =>
+	queryOptions({
+		queryKey: ["workspaces-with-forms"],
+		queryFn: () => getWorkspacesWithForms(),
+		staleTime: 1000 * 60 * 5, // 5 minutes
 	});

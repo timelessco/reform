@@ -29,7 +29,6 @@ export const workspaceCollection = createCollection(
 			fetchClient: electricFetchClient,
 		},
 		getKey: (item) => item.id,
-
 		onInsert: async ({ transaction }) => {
 			const newItem = transaction.mutations[0].modified;
 			const result = (await createWorkspace({

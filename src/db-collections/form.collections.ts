@@ -110,7 +110,8 @@ export const formCollection = createCollection(
             fetchClient: electricFetchClient,
         },
         getKey: (item) => item.id,
-
+        startSync: true,
+        syncMode: 'eager',
         onInsert: async ({ transaction }) => {
             const newItem = transaction.mutations[0].modified;
             const result = (await createForm({ data: newItem })) as ServerTxResult;

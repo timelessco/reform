@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/input-otp";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { auth } from "@/lib/auth-client";
+import { syncLocalDataToCloud } from "@/lib/sync";
+import { formCollection, workspaceCollection } from "@/db-collections";
 
 const signUpSchema = z.object({
 	username: z
@@ -69,11 +71,27 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 
 	const verifyEmailMutation = useMutation(
 		auth.emailOtp.verifyEmail.mutationOptions({
-			onSuccess: () => {
+			onSuccess: async () => {
 				toast.success("Email verified successfully!");
-				queryClient.invalidateQueries({
+				await queryClient.invalidateQueries({
 					queryKey: auth.getSession.queryKey(),
 				});
+				// Sync any local forms to cloud for the new user
+				try {
+					const syncResult = await syncLocalDataToCloud();
+
+					// Wait for Electric to sync the workspace txid before navigating
+					// Use workspaceTxid specifically since dashboard queries workspaces first
+					if (syncResult?.workspaceTxid) {
+						const { workspaceCollection } = await import("@/db-collections");
+						// Wait for Electric to see the workspace transaction (with timeout)
+						await workspaceCollection.utils.awaitTxId(syncResult.workspaceTxid, 1000);
+						await formCollection.utils.awaitTxId(syncResult.syncedForms, 1000);
+					}
+				} catch (error) {
+					console.error("Failed to sync local data:", error);
+					// Continue with navigation even if sync fails
+				}
 				onSuccess?.();
 				navigate({ to: "/dashboard" });
 			},
@@ -170,7 +188,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 						<otpForm.AppField name="otp">
 							{(field) => (
 								<field.FieldSet className="w-full flex flex-col items-center">
-									<field.Field>
+									<field.Field className="flex flex-col items-center justify-center *:w-auto">
 										<InputOTP
 											maxLength={6}
 											value={(field.state.value as string) ?? ""}

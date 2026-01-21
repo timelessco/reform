@@ -9,6 +9,7 @@ import { Editor, EditorContainer } from "@/components/ui/editor";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import { localFormCollection } from "@/db-collections";
 import { AppHeader } from "@/components/ui/app-header";
+import { guestMiddleware } from "@/middleware/auth";
 
 const LOCAL_FORM_ID = '550e8400-e29b-41d4-a716-446655440000'; // Valid UUID for local draft
 const LOCAL_WORKSPACE_ID = '550e8400-e29b-41d4-a716-446655440001'; // Valid UUID for local workspace
@@ -22,6 +23,9 @@ const defaultValue = normalizeNodeId([
 ]);
 
 export const Route = createFileRoute('/create')({
+	server: {
+		middleware: [guestMiddleware],
+	},
 	component: RouteComponent,
 })
 

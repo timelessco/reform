@@ -93,6 +93,7 @@ import {
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useForm, useForms, useWorkspaces } from "@/hooks/use-live-hooks";
 import { auth, useSession } from "@/lib/auth-client";
+import { usePrefetchedData } from "@/routes/_authenticated/route";
 import { OrganizationSwitcher } from "../org/org-switcher";
 
 const data = {
@@ -305,22 +306,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						</SidebarMenu>
 					</SidebarGroup>
 
-					<ClientOnly
-						fallback={
-							<SidebarGroup>
-								<SidebarGroupLabel>Workspaces</SidebarGroupLabel>
-								<SidebarMenu>
-									<SidebarMenuItem>
-										<span className="text-muted-foreground text-xs px-2 py-1">
-											Loading...
-										</span>
-									</SidebarMenuItem>
-								</SidebarMenu>
-							</SidebarGroup>
-						}
-					>
-						<SidebarWorkspaces activeOrgId={activeOrg?.id} />
-					</ClientOnly>
+					<SidebarWorkspaces activeOrgId={activeOrg?.id} />
 
 					<SidebarGroup>
 						<SidebarGroupLabel>Product</SidebarGroupLabel>
@@ -501,35 +487,53 @@ type WorkspaceWithForms = {
 	}>;
 };
 
-// Client-only component for workspaces section (uses useLiveQuery which doesn't support SSR)
+// Workspaces section - uses prefetched data initially, then live queries take over
 function SidebarWorkspaces({ activeOrgId }: { activeOrgId?: string }) {
 	const router = useRouter();
 	const { isMobile } = useSidebar();
+
+	// Get prefetched data from route loader
+	const prefetchedData = usePrefetchedData();
 
 	// Use live queries for real-time sync
 	const workspacesData = useWorkspaces();
 	const formsData = useForms();
 
+	// Determine if Electric has synced
+	const isElectricReady = workspacesData !== undefined && formsData !== undefined;
+
 	// Combine workspaces with their forms, filtered by active organization
 	const workspaces = useMemo(() => {
 		if (!activeOrgId) return [];
 
-		const formsByWorkspace = (formsData || []).reduce(
-			(acc, form) => {
-				if (!acc[form.workspaceId]) acc[form.workspaceId] = [];
-				acc[form.workspaceId].push(form);
-				return acc;
-			},
-			{} as Record<string, typeof formsData>,
-		);
+		// Use live data if Electric is ready
+		if (isElectricReady) {
+			const formsByWorkspace = (formsData || []).reduce(
+				(acc, form) => {
+					if (!acc[form.workspaceId]) acc[form.workspaceId] = [];
+					acc[form.workspaceId].push(form);
+					return acc;
+				},
+				{} as Record<string, typeof formsData>,
+			);
 
-		return (workspacesData || [])
-			.filter((ws) => ws.organizationId === activeOrgId)
-			.map((ws) => ({
-				...ws,
-				forms: formsByWorkspace[ws.id] || [],
-			}));
-	}, [workspacesData, formsData, activeOrgId]);
+			return (workspacesData || [])
+				.filter((ws) => ws.organizationId === activeOrgId)
+				.map((ws) => ({
+					...ws,
+					forms: formsByWorkspace[ws.id] || [],
+				}));
+		}
+
+		// Fallback to prefetched data while Electric syncs
+		if (prefetchedData?.workspaces) {
+			return prefetchedData.workspaces.filter(
+				(ws) => ws.organizationId === activeOrgId,
+			);
+		}
+
+		return [];
+	}, [workspacesData, formsData, activeOrgId, isElectricReady, prefetchedData]);
 
 	// State for dialogs
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

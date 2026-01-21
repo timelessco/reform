@@ -42,29 +42,42 @@ export const auth = betterAuth({
 			create: {
 				after: async (user) => {
 					try {
+						const now = new Date();
+						const orgId = crypto.randomUUID();
+
 						// Create organization
-						await db
+						const [org] = await db
 							.insert(schema.organization)
 							.values({
-								id: crypto.randomUUID(),
+								id: orgId,
 								name: user.name,
 								slug: user.id,
-								createdAt: new Date(),
+								createdAt: now,
 							})
-							.returning()
-							.then(async ([org]) => {
-								// Add user as owner/admin of the organization
-								await db.insert(schema.member).values({
-									id: crypto.randomUUID(),
-									userId: user.id,
-									organizationId: org.id,
-									role: "owner",
-									createdAt: new Date(),
-								});
-								logger(
-									`[Auth] Created organization "${user.name}" for user ${user.email}`,
-								);
-							});
+							.returning();
+
+						// Add user as owner/admin of the organization
+						await db.insert(schema.member).values({
+							id: crypto.randomUUID(),
+							userId: user.id,
+							organizationId: org.id,
+							role: "owner",
+							createdAt: now,
+						});
+
+						// Create default workspace for the organization
+						await db.insert(schema.workspaces).values({
+							id: crypto.randomUUID(),
+							organizationId: org.id,
+							createdByUserId: user.id,
+							name: "My workspace",
+							createdAt: now,
+							updatedAt: now,
+						});
+
+						logger(
+							`[Auth] Created organization "${user.name}" with default workspace for user ${user.email}`,
+						);
 					} catch (error) {
 						logger(
 							`[Auth] Failed to create organization for user ${user.email}:`,

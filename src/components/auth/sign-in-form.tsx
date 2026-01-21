@@ -254,7 +254,7 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 						<otpVerifyForm.AppField name="otp">
 							{(field) => (
 								<field.FieldSet className="w-full flex flex-col items-center">
-									<field.Field>
+									<field.Field className="flex flex-col items-center justify-center *:w-auto">
 										<InputOTP
 											maxLength={6}
 											value={(field.state.value as string) ?? ""}
