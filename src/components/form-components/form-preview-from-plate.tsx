@@ -8,6 +8,7 @@ import {
 	extractFormHeader,
 	getEditableFields,
 	type PlateFormField,
+	splitElementsIntoSteps,
 	type TransformedElement,
 	transformPlateStateToFormElements,
 } from "@/lib/transform-plate-to-form";
@@ -21,6 +22,8 @@ interface FormPreviewFromPlateProps {
 	icon?: string;
 	/** Optional cover image URL or hex color code */
 	cover?: string;
+	/** Optional custom submit handler */
+	onSubmit?: (values: Record<string, any>) => Promise<void>;
 }
 
 /**
@@ -256,13 +259,93 @@ function PreviewFormHeader({
 }
 
 /**
+ * Renders custom thank you content after form submission
+ */
+function RenderThankYouContent({
+	elements,
+	form,
+	onReset,
+}: {
+	elements: TransformedElement[];
+	form: ReturnType<typeof usePreviewForm>["form"];
+	onReset?: () => void;
+}) {
+	return (
+		<div className="space-y-4">
+			{elements.map((element) => (
+				<div key={element.id} className="w-full">
+					<RenderPreviewElement element={element} form={form} />
+				</div>
+			))}
+			{onReset && (
+				<div className="flex justify-center pt-4">
+					<Button
+						type="button"
+						onClick={onReset}
+						variant="outline"
+						size="sm"
+						className="rounded-lg"
+					>
+						Submit another response
+					</Button>
+				</div>
+			)}
+		</div>
+	);
+}
+
+/**
+ * Default thank you message when no custom content is provided
+ */
+function DefaultThankYou({ onReset }: { onReset?: () => void }) {
+	return (
+		<div className="flex flex-col items-center justify-center py-12 text-center">
+			<div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="32"
+					height="32"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="2"
+					strokeLinecap="round"
+					strokeLinejoin="round"
+					className="text-green-600"
+				>
+					<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+					<polyline points="22 4 12 14.01 9 11.01" />
+				</svg>
+			</div>
+			<h2 className="text-2xl font-bold mb-2">Thank you!</h2>
+			<p className="text-muted-foreground mb-6">
+				Your response has been submitted successfully.
+			</p>
+			{onReset && (
+				<Button
+					type="button"
+					onClick={onReset}
+					variant="outline"
+					size="sm"
+					className="rounded-lg"
+				>
+					Submit another response
+				</Button>
+			)}
+		</div>
+	);
+}
+
+/**
  * Renders Plate editor content as a functional form preview.
+ * Supports multi-step forms with page breaks as step dividers.
  */
 export function FormPreviewFromPlate({
 	content,
 	title: legacyTitle,
 	icon: legacyIcon,
 	cover: legacyCover,
+	onSubmit,
 }: FormPreviewFromPlateProps) {
 	const headerFromContent = extractFormHeader(content);
 
@@ -272,13 +355,44 @@ export function FormPreviewFromPlate({
 
 	const elements = transformPlateStateToFormElements(content);
 
-	const editableFields = getEditableFields(elements);
+	// Split elements into steps based on page breaks
+	const { steps, thankYouContent } = splitElementsIntoSteps(elements);
+
+	// Get all editable fields across all steps for form initialization
+	const allStepElements = steps.flat();
+	const editableFields = getEditableFields(allStepElements);
+
+	// Step navigation state
+	const [currentStep, setCurrentStep] = useState(0);
+	const [isSubmitted, setIsSubmitted] = useState(false);
+
+	const isMultiStep = steps.length > 1;
+	const isLastStep = currentStep === steps.length - 1;
+	const currentStepElements = steps[currentStep] || [];
+
+	// Handle form submission
+	const handleSubmit = async (values: Record<string, any>) => {
+		if (onSubmit) {
+			await onSubmit(values);
+		}
+		setIsSubmitted(true);
+	};
 
 	// Create TanStack Form instance
-	const { form, formName } = usePreviewForm({ fields: editableFields });
+	const { form, formName } = usePreviewForm({
+		fields: editableFields,
+		onSubmit: handleSubmit,
+	});
+
+	// Handle reset
+	const handleReset = () => {
+		form.reset();
+		setCurrentStep(0);
+		setIsSubmitted(false);
+	};
 
 	// Show placeholder if no elements found
-	if (elements.length === 0) {
+	if (steps.length === 0 || allStepElements.length === 0) {
 		return (
 			<div className="flex flex-col items-center justify-center min-h-[300px] text-center p-8">
 				<div className="text-muted-foreground mb-4">
@@ -309,8 +423,29 @@ export function FormPreviewFromPlate({
 		);
 	}
 
-	// Check if there are any editable fields for the submit button
-	const hasEditableFields = editableFields.length > 0;
+	// Show thank you content after submission
+	if (isSubmitted) {
+		return (
+			<div className="w-full">
+				<PreviewFormHeader title={title} icon={icon} cover={cover} />
+				<div className="max-w-2xl mx-auto px-4 sm:px-0">
+					{thankYouContent && thankYouContent.length > 0 ? (
+						<RenderThankYouContent
+							elements={thankYouContent}
+							form={form}
+							onReset={handleReset}
+						/>
+					) : (
+						<DefaultThankYou onReset={handleReset} />
+					)}
+				</div>
+			</div>
+		);
+	}
+
+	// Check if current step has editable fields
+	const currentStepEditableFields = getEditableFields(currentStepElements);
+	const hasEditableFields = currentStepEditableFields.length > 0;
 
 	return (
 		<div className="w-full">
@@ -321,33 +456,65 @@ export function FormPreviewFromPlate({
 			<div className="max-w-2xl mx-auto px-4 sm:px-0">
 				<form.AppForm>
 					<form.Form id={formName} noValidate className="space-y-4">
-						{elements.map((element) => (
+						{/* Current step elements */}
+						{currentStepElements.map((element) => (
 							<div key={element.id} className="w-full">
 								<RenderPreviewElement element={element} form={form} />
 							</div>
 						))}
 
-						{/* Submit Button - only show if there are editable fields */}
-						{hasEditableFields && (
-							<div className="flex items-center justify-end w-full pt-4 gap-3">
-								<Button
-									type="button"
-									onClick={() => form.reset()}
-									className="rounded-lg"
-									variant="outline"
-									size="sm"
-								>
-									Reset
-								</Button>
-								<Button type="submit" className="rounded-lg" size="sm">
-									{form.baseStore?.state?.isSubmitting
-										? "Submitting..."
-										: form.baseStore?.state?.isSubmitted
-											? "Submitted"
-											: "Submit"}
-								</Button>
+						{/* Navigation buttons */}
+						<div className="flex items-center justify-between w-full pt-4">
+							{/* Previous button - only show in multi-step forms */}
+							<div>
+								{isMultiStep && currentStep > 0 && (
+									<Button
+										type="button"
+										onClick={() => setCurrentStep((s) => s - 1)}
+										variant="outline"
+										size="sm"
+										className="rounded-lg"
+									>
+										Previous
+									</Button>
+								)}
 							</div>
-						)}
+
+							{/* Next/Submit buttons */}
+							<div className="flex gap-3">
+								{isMultiStep && !isLastStep ? (
+									// Next button for non-final steps
+									<Button
+										type="button"
+										onClick={() => setCurrentStep((s) => s + 1)}
+										size="sm"
+										className="rounded-lg"
+									>
+										Next
+									</Button>
+								) : (
+									// Submit button for final step (or single-step forms)
+									hasEditableFields && (
+										<>
+											<Button
+												type="button"
+												onClick={handleReset}
+												variant="outline"
+												size="sm"
+												className="rounded-lg"
+											>
+												Reset
+											</Button>
+											<Button type="submit" size="sm" className="rounded-lg">
+												{form.baseStore?.state?.isSubmitting
+													? "Submitting..."
+													: "Submit"}
+											</Button>
+										</>
+									)
+								)}
+							</div>
+						</div>
 					</form.Form>
 				</form.AppForm>
 			</div>

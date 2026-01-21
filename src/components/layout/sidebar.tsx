@@ -1,3 +1,28 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Link, useLocation, useRouter } from "@tanstack/react-router";
+import {
+	Bell,
+	BookOpen,
+	ChevronRight,
+	FileText,
+	Gift,
+	HelpCircle,
+	Home,
+	LayoutTemplate,
+	LogOut,
+	Map,
+	MessageSquare,
+	MoreHorizontal,
+	Pencil,
+	Plus,
+	Search,
+	Settings,
+	Sparkles,
+	Trash2,
+	Users,
+} from "lucide-react";
+import type * as React from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ClientOnly } from "@/components/client-only";
 import {
 	AlertDialog,
@@ -60,42 +85,16 @@ import {
 	useSidebar,
 } from "@/components/ui/sidebar";
 import {
-	type Workspace,
 	createFormLocal,
 	createWorkspaceLocal,
 	deleteWorkspaceLocal,
-	updateWorkspaceName
+	updateWorkspaceName,
 } from "@/db-collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useForm, useForms, useWorkspaces } from "@/hooks/use-live-hooks";
 import { auth, useSession } from "@/lib/auth-client";
-import { useMutation } from "@tanstack/react-query";
-import { Link, useLocation, useRouter } from "@tanstack/react-router";
-import {
-	Bell,
-	BookOpen,
-	ChevronRight,
-	FileText,
-	Gift,
-	Globe,
-	HelpCircle,
-	Home,
-	LayoutTemplate,
-	LogOut,
-	Map,
-	MessageSquare,
-	MoreHorizontal,
-	Pencil,
-	Plus,
-	Search,
-	Settings,
-	Sparkles,
-	Trash2,
-	Users,
-} from "lucide-react";
-import type * as React from "react";
-import { useEffect, useMemo, useState } from "react";
-
+import { usePrefetchedData } from "@/routes/_authenticated/route";
+import { OrganizationSwitcher } from "../org/org-switcher";
 
 const data = {
 	navMain: [
@@ -115,20 +114,20 @@ const data = {
 			icon: Users,
 		},
 		{
-			title: "Domains",
-			url: "#",
-			icon: Globe,
-		},
-		{
 			title: "Settings",
 			url: "#",
 			icon: Settings,
 		},
 		{
 			title: "Upgrade plan",
-			url: "#",
+			url: "/settings/billing",
 			icon: Sparkles,
 			className: "text-purple-500",
+		},
+		{
+			title: "Invitations",
+			url: "/accept-invite",
+			icon: Bell,
 		},
 	],
 	products: [
@@ -188,14 +187,22 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-	const { data: sessionData } = useSession();
 	const location = useLocation();
 	const router = useRouter();
-	const user = sessionData?.user;
-	const { isMobile } = useSidebar();
+	const {
+		toggle: togglePalette,
+		isOpen: isPaletteOpen,
+		setIsOpen: setIsPaletteOpen,
+	} = useCommandPalette();
 
-	// State for command palette
-	const { isOpen: isPaletteOpen, setIsOpen: setIsPaletteOpen, toggle: togglePalette } = useCommandPalette();
+	const { data: activeOrg } = useQuery(
+		auth.organization.getFullOrganization.queryOptions(),
+	);
+
+	const { data: invitations } = useQuery(
+		auth.organization.listInvitations.queryOptions(),
+	);
+	const pendingCount = invitations?.length ?? 0;
 
 	useEffect(() => {
 		const down = (e: KeyboardEvent) => {
@@ -208,6 +215,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 		return () => document.removeEventListener("keydown", down);
 	}, [togglePalette]);
 
+	const { data: session } = useSession();
+
 	const signOutMutation = useMutation(
 		auth.signOut.mutationOptions({
 			onSuccess: () => {
@@ -217,8 +226,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	);
 
 	const handleCreateWorkspace = async () => {
+		if (!activeOrg) return;
 		try {
-			const workspace = await createWorkspaceLocal("New Workspace");
+			const workspace = await createWorkspaceLocal(
+				activeOrg.id,
+				"New Workspace",
+			);
 			router.navigate({
 				to: "/workspace/$workspaceId",
 				params: { workspaceId: workspace.id },
@@ -227,6 +240,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			console.error("Failed to create workspace:", error);
 		}
 	};
+
+	const navMain = useMemo(() => {
+		return data.navMain.map((item) => {
+			if (item.title === "Members") {
+				return {
+					...item,
+					url: "/settings/members",
+				};
+			}
+			if (item.title === "Settings") {
+				return {
+					...item,
+					url: "/settings",
+				};
+			}
+			return item;
+		});
+	}, []);
 
 	return (
 		<>
@@ -238,78 +269,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 			>
 				<SidebarHeader className="flex-row items-center justify-between p-0">
 					<div className="group-data-[collapsible=icon]:hidden w-full">
-						<SidebarMenu>
-							<SidebarMenuItem>
-								<DropdownMenu>
-									<DropdownMenuTrigger asChild>
-										<SidebarMenuButton
-											size="lg"
-											className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-										>
-											<Avatar className="h-8 w-8 rounded-lg">
-												<AvatarImage
-													src={user?.image || ""}
-													alt={user?.name || ""}
-												/>
-												<AvatarFallback className="rounded-lg">
-													{user?.name?.charAt(0) || "U"}
-												</AvatarFallback>
-											</Avatar>
-											<div className="grid flex-1 text-left text-sm leading-tight">
-												<span className="truncate font-semibold">
-													{user?.name || "User"}
-												</span>
-											</div>
-											<ChevronRight className="ml-auto h-4 w-4 rotate-90" />
-										</SidebarMenuButton>
-									</DropdownMenuTrigger>
-									<DropdownMenuContent
-										className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-										align="start"
-										side={isMobile ? "bottom" : "right"}
-										sideOffset={4}
-									>
-										<DropdownMenuItem asChild>
-											<Link to="/dashboard" className="flex items-center gap-2">
-												<Home className="h-4 w-4" />
-												<span>Home</span>
-											</Link>
-										</DropdownMenuItem>
-										<DropdownMenuItem>
-											<Users className="h-4 w-4 mr-2" />
-											<span>Members</span>
-										</DropdownMenuItem>
-										<DropdownMenuItem>
-											<Globe className="h-4 w-4 mr-2" />
-											<span>Domains</span>
-										</DropdownMenuItem>
-										<DropdownMenuItem asChild>
-											<Link
-												to="/settings/my-account"
-												className="flex items-center gap-2"
-											>
-												<Settings className="h-4 w-4" />
-												<span>Settings</span>
-											</Link>
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											onClick={() => signOutMutation.mutate({})}
-											className="text-destructive"
-										>
-											<LogOut className="h-4 w-4 mr-2" />
-											<span>Log out</span>
-										</DropdownMenuItem>
-									</DropdownMenuContent>
-								</DropdownMenu>
-							</SidebarMenuItem>
-						</SidebarMenu>
+						<OrganizationSwitcher />
 					</div>
 					<SidebarTrigger />
 				</SidebarHeader>
 				<SidebarContent className="group-data-[collapsible=icon]:hidden">
 					<SidebarGroup>
 						<SidebarMenu>
-							{data.navMain.map((item) => (
+							{navMain.map((item) => (
 								<SidebarMenuItem key={item.title}>
 									<SidebarMenuButton
 										asChild
@@ -319,13 +286,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 										onClick={(e) => {
 											if (item.title === "Search") {
 												e.preventDefault();
-												setIsPaletteOpen(true);
+												togglePalette();
 											}
 										}}
 									>
+										{/* @ts-ignore */}
 										<Link to={item.url}>
 											<item.icon />
 											<span>{item.title}</span>
+											{item.title === "Invitations" && pendingCount > 0 && (
+												<span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+													{pendingCount}
+												</span>
+											)}
 										</Link>
 									</SidebarMenuButton>
 								</SidebarMenuItem>
@@ -333,20 +306,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 						</SidebarMenu>
 					</SidebarGroup>
 
-					<ClientOnly fallback={
-						<SidebarGroup>
-							<SidebarGroupLabel>Workspaces</SidebarGroupLabel>
-							<SidebarMenu>
-								<SidebarMenuItem>
-									<span className="text-muted-foreground text-xs px-2 py-1">
-										Loading...
-									</span>
-								</SidebarMenuItem>
-							</SidebarMenu>
-						</SidebarGroup>
-					}>
-						<SidebarWorkspaces />
-					</ClientOnly>
+					<SidebarWorkspaces activeOrgId={activeOrg?.id} />
 
 					<SidebarGroup>
 						<SidebarGroupLabel>Product</SidebarGroupLabel>
@@ -354,6 +314,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 							{data.products.map((item) => (
 								<SidebarMenuItem key={item.title}>
 									<SidebarMenuButton asChild tooltip={item.title}>
+										{/* @ts-ignore */}
 										<Link to={item.url}>
 											<item.icon />
 											<span>{item.title}</span>
@@ -370,6 +331,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 							{data.help.map((item) => (
 								<SidebarMenuItem key={item.title}>
 									<SidebarMenuButton asChild tooltip={item.title}>
+										{/* @ts-ignore */}
 										<Link to={item.url}>
 											<item.icon />
 											<span>{item.title}</span>
@@ -383,10 +345,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				<SidebarFooter className="group-data-[collapsible=icon]:hidden">
 					<SidebarMenu>
 						<SidebarMenuItem>
-							<SidebarMenuButton tooltip="Quick help">
-								<HelpCircle className="h-4 w-4" />
-								<span>Support</span>
-							</SidebarMenuButton>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<SidebarMenuButton tooltip="User Settings">
+										<Avatar className="h-4 w-4 rounded-full">
+											<AvatarImage src={session?.user?.image || ""} />
+											<AvatarFallback>
+												{session?.user?.name?.charAt(0)}
+											</AvatarFallback>
+										</Avatar>
+										<span>{session?.user?.name}</span>
+									</SidebarMenuButton>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent side="right" align="end" className="w-48">
+									<DropdownMenuItem asChild>
+										<Link to="/settings/my-account">My Account</Link>
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={() => signOutMutation.mutate({})}>
+										<LogOut className="h-4 w-4 mr-2" />
+										<span>Log out</span>
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
 						</SidebarMenuItem>
 					</SidebarMenu>
 				</SidebarFooter>
@@ -398,48 +378,57 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 				<CommandList>
 					<CommandEmpty>No results found.</CommandEmpty>
 					<CommandGroup heading="Actions">
-						<CommandItem onSelect={() => {
-							// TODO: Trigger new form creation from global search
-							setIsPaletteOpen(false);
-						}}>
+						<CommandItem
+							onSelect={() => {
+								setIsPaletteOpen(false);
+							}}
+						>
 							<Plus className="mr-2 h-4 w-4" />
 							<span>New form</span>
 						</CommandItem>
-						<CommandItem onSelect={() => {
-							handleCreateWorkspace();
-							setIsPaletteOpen(false);
-						}}>
+						<CommandItem
+							onSelect={() => {
+								handleCreateWorkspace();
+								setIsPaletteOpen(false);
+							}}
+						>
 							<LayoutTemplate className="mr-2 h-4 w-4" />
 							<span>New workspace</span>
 						</CommandItem>
 					</CommandGroup>
 					<CommandSeparator />
 					<CommandGroup heading="Navigation">
-						<CommandItem onSelect={() => {
-							router.navigate({ to: "/dashboard" });
-							setIsPaletteOpen(false);
-						}}>
+						<CommandItem
+							onSelect={() => {
+								router.navigate({ to: "/dashboard" });
+								setIsPaletteOpen(false);
+							}}
+						>
 							<Home className="mr-2 h-4 w-4" />
 							<span>Go to home</span>
 						</CommandItem>
-						<CommandItem onSelect={() => {
-							// TODO: Navigate to templates
-							setIsPaletteOpen(false);
-						}}>
+						<CommandItem
+							onSelect={() => {
+								setIsPaletteOpen(false);
+							}}
+						>
 							<LayoutTemplate className="mr-2 h-4 w-4" />
 							<span>Go to templates</span>
 						</CommandItem>
-						<CommandItem onSelect={() => {
-							router.navigate({ to: "/settings/my-account" });
-							setIsPaletteOpen(false);
-						}}>
+						<CommandItem
+							onSelect={() => {
+								router.navigate({ to: "/settings/my-account" });
+								setIsPaletteOpen(false);
+							}}
+						>
 							<Settings className="mr-2 h-4 w-4" />
 							<span>Go to settings</span>
 						</CommandItem>
-						<CommandItem onSelect={() => {
-							// TODO: Navigate to help
-							setIsPaletteOpen(false);
-						}}>
+						<CommandItem
+							onSelect={() => {
+								setIsPaletteOpen(false);
+							}}
+						>
 							<HelpCircle className="mr-2 h-4 w-4" />
 							<span>Go to help center</span>
 						</CommandItem>
@@ -457,7 +446,13 @@ function FormTitleFromLocalDB({ formId }: { formId: string }) {
 }
 
 // Form item component that uses live query for real-time title updates
-function FormItem({ formId, workspaceId }: { formId: string; workspaceId: string }) {
+function FormItem({
+	formId,
+	workspaceId,
+}: {
+	formId: string;
+	workspaceId: string;
+}) {
 	return (
 		<SidebarMenuSubItem>
 			<SidebarMenuSubButton asChild>
@@ -477,47 +472,85 @@ function FormItem({ formId, workspaceId }: { formId: string; workspaceId: string
 }
 
 // Type for workspace with forms from server
-type WorkspaceWithForms = Workspace & {
-	forms: Array<{ id: string; title: string; updatedAt: string; workspaceId: string }>;
+type WorkspaceWithForms = {
+	id: string;
+	organizationId: string;
+	createdByUserId: string;
+	name: string;
+	createdAt: string;
+	updatedAt: string;
+	forms: Array<{
+		id: string;
+		title: string;
+		updatedAt: string;
+		workspaceId: string;
+	}>;
 };
 
-// Client-only component for workspaces section (uses useLiveQuery which doesn't support SSR)
-function SidebarWorkspaces() {
+// Workspaces section - uses prefetched data initially, then live queries take over
+function SidebarWorkspaces({ activeOrgId }: { activeOrgId?: string }) {
 	const router = useRouter();
 	const { isMobile } = useSidebar();
+
+	// Get prefetched data from route loader
+	const prefetchedData = usePrefetchedData();
 
 	// Use live queries for real-time sync
 	const workspacesData = useWorkspaces();
 	const formsData = useForms();
 
-	// Combine workspaces with their forms
-	const workspaces = useMemo(() => {
-		const formsByWorkspace = (formsData || []).reduce(
-			(acc, form) => {
-				if (!acc[form.workspaceId]) acc[form.workspaceId] = [];
-				acc[form.workspaceId].push(form);
-				return acc;
-			},
-			{} as Record<string, typeof formsData>,
-		);
+	// Determine if Electric has synced
+	const isElectricReady = workspacesData !== undefined && formsData !== undefined;
 
-		return (workspacesData || []).map((ws) => ({
-			...ws,
-			forms: formsByWorkspace[ws.id] || [],
-		}));
-	}, [workspacesData, formsData]);
+	// Combine workspaces with their forms, filtered by active organization
+	const workspaces = useMemo(() => {
+		if (!activeOrgId) return [];
+
+		// Use live data if Electric is ready
+		if (isElectricReady) {
+			const formsByWorkspace = (formsData || []).reduce(
+				(acc, form) => {
+					if (!acc[form.workspaceId]) acc[form.workspaceId] = [];
+					acc[form.workspaceId].push(form);
+					return acc;
+				},
+				{} as Record<string, typeof formsData>,
+			);
+
+			return (workspacesData || [])
+				.filter((ws) => ws.organizationId === activeOrgId)
+				.map((ws) => ({
+					...ws,
+					forms: formsByWorkspace[ws.id] || [],
+				}));
+		}
+
+		// Fallback to prefetched data while Electric syncs
+		if (prefetchedData?.workspaces) {
+			return prefetchedData.workspaces.filter(
+				(ws) => ws.organizationId === activeOrgId,
+			);
+		}
+
+		return [];
+	}, [workspacesData, formsData, activeOrgId, isElectricReady, prefetchedData]);
 
 	// State for dialogs
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const [workspaceToDelete, setWorkspaceToDelete] = useState<WorkspaceWithForms | null>(null);
+	const [workspaceToDelete, setWorkspaceToDelete] =
+		useState<WorkspaceWithForms | null>(null);
 	const [deleteConfirmName, setDeleteConfirmName] = useState("");
 	const [renameDialogOpen, setRenameDialogOpen] = useState(false);
-	const [workspaceToRename, setWorkspaceToRename] = useState<Workspace | null>(null);
+	const [workspaceToRename, setWorkspaceToRename] = useState<any | null>(null);
 	const [newWorkspaceName, setNewWorkspaceName] = useState("");
 
 	const handleCreateWorkspace = async () => {
+		if (!activeOrgId) return;
 		try {
-			const workspace = await createWorkspaceLocal("New Workspace");
+			const workspace = await createWorkspaceLocal(
+				activeOrgId,
+				"New Workspace",
+			);
 			router.navigate({
 				to: "/workspace/$workspaceId",
 				params: { workspaceId: workspace.id },
@@ -528,7 +561,8 @@ function SidebarWorkspaces() {
 	};
 
 	const handleDeleteWorkspace = async () => {
-		if (!workspaceToDelete || deleteConfirmName !== workspaceToDelete.name) return;
+		if (!workspaceToDelete || deleteConfirmName !== workspaceToDelete.name)
+			return;
 		try {
 			await deleteWorkspaceLocal(workspaceToDelete.id);
 			setDeleteDialogOpen(false);
@@ -552,7 +586,7 @@ function SidebarWorkspaces() {
 		}
 	};
 
-	const openRenameDialog = (workspace: Workspace) => {
+	const openRenameDialog = (workspace: any) => {
 		setWorkspaceToRename(workspace);
 		setNewWorkspaceName(workspace.name);
 		setRenameDialogOpen(true);
@@ -582,7 +616,7 @@ function SidebarWorkspaces() {
 							workspace={workspace}
 							isMobile={isMobile}
 							onRename={() => openRenameDialog(workspace)}
-							onDelete={() => openDeleteDialog(workspace)}
+							onDelete={() => openDeleteDialog(workspace as any)}
 						/>
 					))}
 					{workspaces.length === 0 && (
@@ -596,19 +630,26 @@ function SidebarWorkspaces() {
 			</SidebarGroup>
 
 			{/* Delete Workspace Confirmation Dialog */}
-			<AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
-				setDeleteDialogOpen(open);
-				if (!open) setDeleteConfirmName("");
-			}}>
+			<AlertDialog
+				open={deleteDialogOpen}
+				onOpenChange={(open) => {
+					setDeleteDialogOpen(open);
+					if (!open) setDeleteConfirmName("");
+				}}
+			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete workspace</AlertDialogTitle>
 						<AlertDialogDescription asChild>
 							<div className="space-y-4">
 								<p>
-									This will permanently delete <strong>"{workspaceToDelete?.name}"</strong> and{" "}
-									<strong>{workspaceToDelete?.forms?.length || 0} form{(workspaceToDelete?.forms?.length || 0) !== 1 ? "s" : ""}</strong> within it.
-									This action cannot be undone.
+									This will permanently delete{" "}
+									<strong>"{workspaceToDelete?.name}"</strong> and{" "}
+									<strong>
+										{workspaceToDelete?.forms?.length || 0} form
+										{(workspaceToDelete?.forms?.length || 0) !== 1 ? "s" : ""}
+									</strong>{" "}
+									within it. This action cannot be undone.
 								</p>
 								<div className="space-y-2">
 									<p className="text-sm">
@@ -705,7 +746,10 @@ function WorkspaceItem({
 			<SidebarMenuItem>
 				<div className="flex items-center">
 					<CollapsibleTrigger asChild>
-						<SidebarMenuButton tooltip={workspace.name} className="flex-1 pr-14">
+						<SidebarMenuButton
+							tooltip={workspace.name}
+							className="flex-1 pr-14"
+						>
 							<ChevronRight className="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
 							<Link
 								to="/workspace/$workspaceId"
@@ -742,7 +786,11 @@ function WorkspaceItem({
 							</DropdownMenuItem>
 						</DropdownMenuContent>
 					</DropdownMenu>
-					<SidebarMenuAction showOnHover onClick={handleCreateForm} className="right-7">
+					<SidebarMenuAction
+						showOnHover
+						onClick={handleCreateForm}
+						className="right-7"
+					>
 						<Plus />
 						<span className="sr-only">Add Form</span>
 					</SidebarMenuAction>

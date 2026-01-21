@@ -116,9 +116,13 @@ function WorkspaceDashboard() {
 	};
 
 	const handleCreateWorkspace = async () => {
+		if (!workspace?.organizationId) {
+			console.error("Failed to create workspace: No organization ID available");
+			return;
+		}
 		setIsCreatingWorkspace(true);
 		try {
-			const newWs = await createWorkspaceLocal("New Workspace");
+			const newWs = await createWorkspaceLocal(workspace.organizationId, "New Workspace");
 			navigate({
 				to: "/workspace/$workspaceId",
 				params: { workspaceId: newWs.id },
@@ -129,6 +133,7 @@ function WorkspaceDashboard() {
 			setIsCreatingWorkspace(false);
 		}
 	};
+
 
 	const handleDeleteWorkspace = async () => {
 		if (workspace && deleteConfirmName === workspace.name) {

@@ -1,6 +1,5 @@
-
-
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
@@ -15,6 +14,8 @@ import {
 } from "@/components/ui/input-otp";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { auth } from "@/lib/auth-client";
+import { syncLocalDataToCloud } from "@/lib/sync";
+import { formCollection, workspaceCollection } from "@/db-collections";
 
 const signUpSchema = z.object({
 	username: z
@@ -47,6 +48,8 @@ interface SignUpFormProps {
 export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 	const [step, setStep] = React.useState<"form" | "otp">("form");
 	const [email, setEmail] = React.useState("");
+	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 
 	const signUpMutation = useMutation(
 		auth.signUp.email.mutationOptions({
@@ -68,9 +71,29 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 
 	const verifyEmailMutation = useMutation(
 		auth.emailOtp.verifyEmail.mutationOptions({
-			onSuccess: () => {
+			onSuccess: async () => {
 				toast.success("Email verified successfully!");
+				await queryClient.invalidateQueries({
+					queryKey: auth.getSession.queryKey(),
+				});
+				// Sync any local forms to cloud for the new user
+				try {
+					const syncResult = await syncLocalDataToCloud();
+
+					// Wait for Electric to sync the workspace txid before navigating
+					// Use workspaceTxid specifically since dashboard queries workspaces first
+					if (syncResult?.workspaceTxid) {
+						const { workspaceCollection } = await import("@/db-collections");
+						// Wait for Electric to see the workspace transaction (with timeout)
+						await workspaceCollection.utils.awaitTxId(syncResult.workspaceTxid, 1000);
+						await formCollection.utils.awaitTxId(syncResult.syncedForms, 1000);
+					}
+				} catch (error) {
+					console.error("Failed to sync local data:", error);
+					// Continue with navigation even if sync fails
+				}
 				onSuccess?.();
+				navigate({ to: "/dashboard" });
 			},
 			onError: (error) => {
 				toast.error(error.message || "Verification failed");
@@ -165,7 +188,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 						<otpForm.AppField name="otp">
 							{(field) => (
 								<field.FieldSet className="w-full flex flex-col items-center">
-									<field.Field>
+									<field.Field className="flex flex-col items-center justify-center *:w-auto">
 										<InputOTP
 											maxLength={6}
 											value={(field.state.value as string) ?? ""}

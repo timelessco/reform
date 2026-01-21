@@ -9,8 +9,8 @@ type OMIT_BETTER_AUTH_CLIENT_KEYS =
 	| `use${Capitalize<string>}` // Match React hooks like useSession, not username
 	| "fetchOptions";
 
-// Match any method starting with 'get' or 'list'
-export type QueryMethod = `get${string}` | `list${string}`;
+// Match any method starting with 'get' or 'list', plus specific read-only methods from plugins
+export type QueryMethod = `get${string}` | `list${string}` | 'state' | 'portal';
 
 // Extract data type from better-auth's generic functions
 // Constrain the options arg to throw: false to resolve the conditional return type
@@ -19,8 +19,8 @@ export type InferBetterAuthData<TFn> = TFn extends (
 	options?: { throw?: false },
 ) => Promise<infer R>
 	? R extends { data: infer D }
-		? NonNullable<D>
-		: R
+	? NonNullable<D>
+	: R
 	: never;
 
 export type InferBetterAuthError<TFn> = TFn extends (
@@ -28,8 +28,8 @@ export type InferBetterAuthError<TFn> = TFn extends (
 	options?: { throw?: true },
 ) => Promise<infer R>
 	? R extends { error: infer E }
-		? NonNullable<E>
-		: R
+	? NonNullable<E>
+	: R
 	: never;
 
 export interface InferQueryOptions<
@@ -59,34 +59,34 @@ export type TransformFunction<
 	TError = InferBetterAuthError<TFn>,
 > = Path extends [...any[], QueryMethod]
 	? {
-			queryOptions: TParams extends undefined
-				? () => InferQueryOptions<TFn, Path>
-				: TParams extends HasRequiredKeys<TParams>
-					? (
-							input: TParams,
-							options?: Omit<
-								QueryOptions<TData, TError, TData, Path>,
-								"queryKey" | "queryFn"
-							>,
-						) => InferQueryOptions<TFn, Path>
-					: (
-							input?: TParams,
-							options?: Omit<
-								QueryOptions<TData, TError, TData, Path>,
-								"queryKey" | "queryFn"
-							>,
-						) => InferQueryOptions<TFn, Path>;
-			queryKey: TParams extends undefined
-				? () => Path
-				: TParams extends HasRequiredKeys<TParams>
-					? (input: TParams) => [...Path, TParams]
-					: (input?: TParams) => [...Path, TParams];
-		}
+		queryOptions: TParams extends undefined
+		? () => InferQueryOptions<TFn, Path>
+		: TParams extends HasRequiredKeys<TParams>
+		? (
+			input: TParams,
+			options?: Omit<
+				QueryOptions<TData, TError, TData, Path>,
+				"queryKey" | "queryFn"
+			>,
+		) => InferQueryOptions<TFn, Path>
+		: (
+			input?: TParams,
+			options?: Omit<
+				QueryOptions<TData, TError, TData, Path>,
+				"queryKey" | "queryFn"
+			>,
+		) => InferQueryOptions<TFn, Path>;
+		queryKey: TParams extends undefined
+		? () => Path
+		: TParams extends HasRequiredKeys<TParams>
+		? (input: TParams) => [...Path, TParams]
+		: (input?: TParams) => [...Path, TParams];
+	}
 	: {
-			mutationOptions: (
-				options?: Omit<MutationOptions<TData, TError, TParams>, "mutationFn">,
-			) => InferMutationOptions<TFn, TData, TError, TParams>;
-		};
+		mutationOptions: (
+			options?: Omit<MutationOptions<TData, TError, TParams>, "mutationFn">,
+		) => InferMutationOptions<TFn, TData, TError, TParams>;
+	};
 
 // Built-in keys that exist on all functions - we want to ignore these
 type BuiltinFunctionKeys = keyof ((...args: any[]) => any);
@@ -98,16 +98,16 @@ type HasExtraKeys<T> = Exclude<keyof T, BuiltinFunctionKeys> extends never
 
 export type AuthClientToQuery<T, Path extends string[] = []> = {
 	[K in keyof T as K extends OMIT_BETTER_AUTH_CLIENT_KEYS
-		? never
-		: K]: T[K] extends (...args: any[]) => any
-		? // Check if this callable also has extra properties (intersection from plugins)
-			HasExtraKeys<T[K]> extends true
-			? TransformFunction<T[K], [...Path, K & string]> &
-					AuthClientToQuery<T[K], [...Path, K & string]>
-			: TransformFunction<T[K], [...Path, K & string]>
-		: T[K] extends object
-			? AuthClientToQuery<T[K], [...Path, K & string]>
-			: never;
+	? never
+	: K]: T[K] extends (...args: any[]) => any
+	? // Check if this callable also has extra properties (intersection from plugins)
+	HasExtraKeys<T[K]> extends true
+	? TransformFunction<T[K], [...Path, K & string]> &
+	AuthClientToQuery<T[K], [...Path, K & string]>
+	: TransformFunction<T[K], [...Path, K & string]>
+	: T[K] extends object
+	? AuthClientToQuery<T[K], [...Path, K & string]>
+	: never;
 };
 
 /**
@@ -123,7 +123,7 @@ export function createAuthQueryClient<TClient extends Record<string, any>>(
 	client: TClient,
 	path: string[] = [],
 ): AuthClientToQuery<TClient> {
-	return new Proxy(() => {}, {
+	return new Proxy(() => { }, {
 		get(_, key: string) {
 			const newPath = [...path, key];
 			const getTarget = () => path.reduce((acc, k) => acc?.[k], client as any);

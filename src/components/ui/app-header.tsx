@@ -60,7 +60,6 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 	const { data: sessionData } = useSession();
 	const session = sessionData;
 	const navigate = useNavigate();
-	const isUnverified = session && !session.user.emailVerified;
 
 
 	// Get search params for the current route
@@ -287,14 +286,6 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 											<User className="mr-2 h-4 w-4" />
 											Profile
 										</Link>
-										{isUnverified && (
-											<Badge
-												variant="destructive"
-												className="ml-auto text-[10px] h-4 px-1"
-											>
-												Unverified
-											</Badge>
-										)}
 									</DropdownMenuItem>
 									<DropdownMenuItem asChild>
 										<Link
@@ -374,14 +365,6 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 											<div className="flex items-center gap-2">
 												<User className="mr-2 h-4 w-4" />
 												Profile
-												{isUnverified && (
-													<Badge
-														variant="destructive"
-														className="ml-auto text-[10px] h-4 px-1"
-													>
-														Unverified
-													</Badge>
-												)}
 											</div>
 										</DropdownMenuItem>
 									</Link>
@@ -411,10 +394,9 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 								size="sm"
 								className="h-8 px-4 bg-blue-600 hover:bg-blue-700 ml-2"
 								asChild
-								disabled={!!isUnverified}
 							>
-								<Link to={isUnverified ? "/verify-email" : "/dashboard"}>
-									{isUnverified ? "Verify Email" : "Create Form"}
+								<Link to={!session ? "/create" : "/dashboard"}>
+									Create Form
 								</Link>
 							</Button>
 						)}

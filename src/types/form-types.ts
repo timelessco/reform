@@ -147,6 +147,19 @@ type Divider = {
 	static: true;
 } & SeparatorProps;
 
+type PageBreak = {
+	fieldType: "PageBreak";
+	/**
+	 * the name is used as a key to identify the field
+	 */
+	name: string;
+	/**
+	 * Whether this page break marks the thank you page
+	 */
+	isThankYouPage: boolean;
+	static: true;
+};
+
 type Description = {
 	fieldType: "FieldDescription";
 	/**
@@ -189,7 +202,7 @@ type FormFieldElement =
  * StaticFormElement is a type that represents a static form element
  * that is not editable by the user
  */
-export type StaticFormElement = H1 | H2 | H3 | Divider | Description | Legend;
+export type StaticFormElement = H1 | H2 | H3 | Divider | PageBreak | Description | Legend;
 
 export type FormElement =
 	| (FormFieldElement & { id: string })

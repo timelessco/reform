@@ -5,12 +5,14 @@ import { FormButtonElement } from "@/components/ui/form-button-node";
 import { FormInputElement } from "@/components/ui/form-input-node";
 import { FormLabelElement } from "@/components/ui/form-label-node";
 import { FormTextareaElement } from "@/components/ui/form-textarea-node";
+import { PageBreakElement } from "@/components/ui/page-break-node";
 
 const FORM_FIELD_TYPES = [
 	"formInput",
 	"formTextarea",
 	"formButton",
 	"formLabel",
+	"pageBreak",
 ];
 
 function moveToPath(editor: PlateEditor, path: Path): boolean {
@@ -119,9 +121,18 @@ export const FormTextareaPlugin = createPlatePlugin({
 	},
 });
 
+export const PageBreakPlugin = createPlatePlugin({
+	key: "pageBreak",
+	node: { isElement: true, isVoid: true, component: PageBreakElement },
+	handlers: {
+		onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+	},
+});
+
 export const FormBlocksKit = [
 	FormLabelPlugin,
 	FormInputPlugin,
 	FormButtonPlugin,
 	FormTextareaPlugin,
+	PageBreakPlugin,
 ];

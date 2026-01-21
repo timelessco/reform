@@ -1,12 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { auth } from "@/lib/auth";
+import { eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { workspaces } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { member, workspaces } from "@/db/schema";
+import { auth } from "@/lib/auth";
 import { logger } from "@/lib/utils";
-
-// Proxy-auth pattern based on ElectricSQL example
-// Ref: https://github.com/electric-sql/electric/blob/main/examples/proxy-auth/app/shape-proxy/route.ts
 
 const json = (data: unknown, status = 200) =>
 	new Response(JSON.stringify(data), {
@@ -18,7 +15,6 @@ export const Route = createFileRoute("/api/electric")({
 	server: {
 		handlers: {
 			GET: async ({ request }: { request: Request }) => {
-				// Authenticate via BetterAuth cookies
 				const session = await auth.api.getSession({ headers: request.headers });
 
 				if (!session?.user?.id) {
@@ -28,51 +24,122 @@ export const Route = createFileRoute("/api/electric")({
 				const userId = session.user.id;
 				const url = new URL(request.url);
 
-				// Required: which table to stream
 				const table = url.searchParams.get("table")?.trim();
-				const allowedTables = ["workspaces", "forms"];
+				const allowedTables = ["workspaces", "forms", "submissions"];
 
 				if (!table || !allowedTables.includes(table)) {
 					return json({ error: "Invalid or missing table." }, 400);
 				}
 
-				// Build WHERE SQL to filter by user access
 				let whereSql: string;
 
 				switch (table) {
-					case "forms":
-						// Get all workspaces owned by this user
-						const userWorkspaces = await db
-							.select({ id: workspaces.id })
-							.from(workspaces)
-							.where(eq(workspaces.userId, userId));
+					case "forms": {
+						// Get all workspaces owned by the user's organizations
+						const userMemberships = await db
+							.select({ organizationId: member.organizationId })
+							.from(member)
+							.where(eq(member.userId, userId));
 
-						// If user has no workspaces, return empty result set
-						if (userWorkspaces.length === 0) {
+						if (userMemberships.length === 0) {
 							whereSql = `1 = 0`;
 						} else {
-							// Build IN clause with all workspace IDs
-							const workspaceIds = userWorkspaces
-								.map((ws) => `'${ws.id}'`)
-								.join(", ");
-							whereSql = `"workspaceId" IN (${workspaceIds})`;
+							const workspaceList = await db
+								.select({ id: workspaces.id })
+								.from(workspaces)
+								.where(
+									inArray(
+										workspaces.organizationId,
+										userMemberships.map((m) => m.organizationId),
+									),
+								);
+
+							if (workspaceList.length === 0) {
+								whereSql = `1 = 0`;
+							} else {
+								const workspaceIds = workspaceList
+									.map((ws) => `'${ws.id}'`)
+									.join(", ");
+								whereSql = `"workspaceId" IN (${workspaceIds})`;
+							}
 						}
 						break;
+					}
 
-					case "workspaces":
-						// Filter workspaces by userId
-						whereSql = `"userId" = '${userId}'`;
+					case "workspaces": {
+						// Get organizations the user is a member of
+						const userMemberships = await db
+							.select({ organizationId: member.organizationId })
+							.from(member)
+							.where(eq(member.userId, userId));
+
+						if (userMemberships.length === 0) {
+							whereSql = `1 = 0`;
+						} else {
+							const orgIds = userMemberships.map(
+								(m) => `'${m.organizationId}'`,
+							);
+							whereSql = `"organizationId" IN (${orgIds})`;
+						}
 						break;
+					}
+
+					case "submissions": {
+						// Get all forms the user has access to via their organizations
+						const userMemberships = await db
+							.select({ organizationId: member.organizationId })
+							.from(member)
+							.where(eq(member.userId, userId));
+
+						if (userMemberships.length === 0) {
+							whereSql = `1 = 0`;
+						} else {
+							const workspaceList = await db
+								.select({ id: workspaces.id })
+								.from(workspaces)
+								.where(
+									inArray(
+										workspaces.organizationId,
+										userMemberships.map((m) => m.organizationId),
+									),
+								);
+
+							if (workspaceList.length === 0) {
+								whereSql = `1 = 0`;
+							} else {
+								// Import forms table
+								const { forms } = await import("@/db/schema");
+								const formList = await db
+									.select({ id: forms.id })
+									.from(forms)
+									.where(
+										inArray(
+											forms.workspaceId,
+											workspaceList.map((ws) => ws.id),
+										),
+									);
+
+								if (formList.length === 0) {
+									whereSql = `1 = 0`;
+								} else {
+									const formIds = formList
+										.map((f) => `'${f.id}'`)
+										.join(", ");
+									whereSql = `"formId" IN (${formIds})`;
+								}
+							}
+						}
+						break;
+					}
 
 					default:
 						throw new Error("Invalid table");
 				}
 
-				// Proxy to Electric server
-				const electricUrl = process.env.ELECTRIC_URL || "https://api.electric-sql.cloud";
+				const electricUrl =
+					process.env.ELECTRIC_URL || "https://api.electric-sql.cloud";
 				const upstreamUrl = new URL("/v1/shape", electricUrl);
 
-				// Add ElectricSQL Cloud credentials as query parameters
 				const sourceId = process.env.ELECTRIC_SQL_CLOUD_SOURCE_ID;
 				const sourceSecret = process.env.ELECTRIC_SQL_CLOUD_SOURCE_SECRET;
 
@@ -81,7 +148,6 @@ export const Route = createFileRoute("/api/electric")({
 					upstreamUrl.searchParams.set("source_secret", sourceSecret);
 				}
 
-				// Forward specific query params from the client (following ElectricSQL pattern)
 				const allowedParams = ["live", "table", "handle", "offset", "cursor"];
 				for (const [key, value] of url.searchParams.entries()) {
 					if (allowedParams.includes(key)) {
@@ -89,7 +155,6 @@ export const Route = createFileRoute("/api/electric")({
 					}
 				}
 
-				// Set the table and WHERE clause
 				upstreamUrl.searchParams.set("table", table);
 				upstreamUrl.searchParams.set("where", whereSql);
 
@@ -98,7 +163,7 @@ export const Route = createFileRoute("/api/electric")({
 					table,
 					where: whereSql,
 					sourceId: sourceId ? `${sourceId.substring(0, 8)}...` : "not set",
-					url: upstreamUrl.toString().replace(sourceSecret || '', '[REDACTED]'),
+					url: upstreamUrl.toString().replace(sourceSecret || "", "[REDACTED]"),
 				});
 
 				try {
@@ -106,19 +171,13 @@ export const Route = createFileRoute("/api/electric")({
 						method: "GET",
 					});
 
-					// Remove problematic headers that could break decoding
 					const headers = new Headers(upstream.headers);
 					headers.delete("content-encoding");
 					headers.delete("content-length");
-
-					// Remove any upstream CORS headers to avoid conflicts
 					headers.delete("access-control-allow-origin");
 					headers.delete("access-control-allow-credentials");
-
-					// Ensure caches vary by Cookie since auth is cookie-based
 					headers.set("Vary", "Cookie");
 
-					// Return the streaming response
 					return new Response(upstream.body, {
 						status: upstream.status,
 						headers,

@@ -23,3 +23,14 @@ export const getElectricUrl = () => {
 
 // Type for server function responses
 export type ServerTxResult = { txid: number };
+
+// ============================================================================
+// Electric Fetch Client with Credentials
+// ============================================================================
+
+/**
+ * Custom fetch client that includes credentials (cookies) with requests.
+ * Required for Electric sync to work with cookie-based authentication.
+ */
+export const electricFetchClient: typeof fetch = (url, init) =>
+    fetch(url, { ...init, credentials: 'include' });

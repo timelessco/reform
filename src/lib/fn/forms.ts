@@ -16,7 +16,7 @@ const serializeForm = (form: typeof forms.$inferSelect) => ({
 });
 
 export const createForm = createServerFn({ method: "POST" })
-.middleware([authMiddleware])
+	.middleware([authMiddleware])
 	.inputValidator(z.object({
 		id: z.string().uuid(),
 		workspaceId: z.string().uuid(),
@@ -30,14 +30,14 @@ export const createForm = createServerFn({ method: "POST" })
 		isMultiStep: z.boolean().optional(),
 		status: z.enum(["draft", "published", "archived"]).optional(),
 	}))
-	.handler(async ({ data , context}) => {
+	.handler(async ({ data, context }) => {
 		const now = new Date();
 
 		const [form] = await db
 			.insert(forms)
 			.values({
 				id: data.id,
-				userId: context.session.user.id,
+				createdByUserId: context.session.user.id,
 				workspaceId: data.workspaceId,
 				title: data.title ?? "Untitled",
 				formName: data.formName ?? "draft",
@@ -59,6 +59,7 @@ export const createForm = createServerFn({ method: "POST" })
 	});
 
 export const updateForm = createServerFn({ method: "POST" })
+	.middleware([authMiddleware])
 	.inputValidator(z.object({
 		id: z.string().uuid(),
 		workspaceId: z.string().uuid().optional(),
@@ -148,7 +149,7 @@ export const duplicateForm = createServerFn({ method: "POST" })
 			.insert(forms)
 			.values({
 				id: newId,
-				userId: user.id,
+				createdByUserId: user.id,
 				workspaceId: originalForm.workspaceId,
 				title,
 				formName: originalForm.formName,
@@ -211,9 +212,9 @@ export const getFormById = createServerFn({ method: "GET" })
 	});
 
 
-export const getFormbyIdQueryOption  = (formId : string) =>
+export const getFormbyIdQueryOption = (formId: string) =>
 	queryOptions({
-		queryKey: ["forms",formId],
-		queryFn: ({ signal }) => getFormById({data : { id : formId },signal }),
+		queryKey: ["forms", formId],
+		queryFn: ({ signal }) => getFormById({ data: { id: formId }, signal }),
 		staleTime: 1000 * 60 * 10, // 10 minutes
 	});

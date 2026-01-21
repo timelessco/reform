@@ -63,6 +63,13 @@ export type PlateStaticElement =
 			content: string;
 			static: true;
 			name: string;
+	  }
+	| {
+			id: string;
+			fieldType: "PageBreak";
+			isThankYouPage: boolean;
+			static: true;
+			name: string;
 	  };
 
 /**
@@ -235,6 +242,19 @@ export function transformPlateStateToFormElements(
 				break;
 			}
 
+			// Page break -> PageBreak
+			case "pageBreak": {
+				const isThankYouPage = Boolean(node.isThankYouPage);
+				elements.push({
+					id: `page_${elements.length}`,
+					name: `page_${elements.length}`,
+					fieldType: "PageBreak",
+					isThankYouPage,
+					static: true,
+				});
+				break;
+			}
+
 			// Paragraphs/blockquotes -> Description or EmptyBlock
 			case "p":
 			case "blockquote": {
@@ -319,4 +339,71 @@ export function generateDefaultValues(
 	}
 
 	return defaults;
+}
+
+/**
+ * Result of splitting elements into steps
+ */
+export type StepSplitResult = {
+	/** Array of steps, each containing elements for that step */
+	steps: TransformedElement[][];
+	/** Content to show after form submission (from thank you page break) */
+	thankYouContent: TransformedElement[] | null;
+};
+
+/**
+ * Splits transformed elements into steps based on PageBreak elements.
+ * - Regular PageBreak = step divider
+ * - PageBreak with isThankYouPage = marks content after it as thank you content
+ *
+ * @param elements - Array of transformed elements
+ * @returns Object with steps array and optional thankYouContent
+ */
+export function splitElementsIntoSteps(
+	elements: TransformedElement[],
+): StepSplitResult {
+	const steps: TransformedElement[][] = [];
+	let currentStep: TransformedElement[] = [];
+	let thankYouContent: TransformedElement[] | null = null;
+	let isCollectingThankYou = false;
+
+	for (const element of elements) {
+		// Check if this is a PageBreak
+		if ("static" in element && element.fieldType === "PageBreak") {
+			// Save current step if it has content
+			if (currentStep.length > 0) {
+				steps.push(currentStep);
+				currentStep = [];
+			}
+
+			// If this is a thank you page break, start collecting thank you content
+			if (element.isThankYouPage) {
+				isCollectingThankYou = true;
+			}
+			// Don't add the PageBreak element itself to any step
+			continue;
+		}
+
+		// Add element to appropriate collection
+		if (isCollectingThankYou) {
+			if (!thankYouContent) {
+				thankYouContent = [];
+			}
+			thankYouContent.push(element);
+		} else {
+			currentStep.push(element);
+		}
+	}
+
+	// Don't forget the last step (if not collecting thank you content)
+	if (currentStep.length > 0 && !isCollectingThankYou) {
+		steps.push(currentStep);
+	}
+
+	// If no steps were created but we have content, it's a single step
+	if (steps.length === 0 && currentStep.length > 0) {
+		steps.push(currentStep);
+	}
+
+	return { steps, thankYouContent };
 }

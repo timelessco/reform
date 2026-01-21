@@ -48,6 +48,12 @@ function SettingsLayout() {
 							Notifications
 						</Link>
 						<Link
+							to="/settings/members"
+							className="pb-3 text-sm font-medium border-b-2 border-transparent transition-colors hover:text-foreground/80 [&.active]:border-foreground [&.active]:text-foreground"
+						>
+							Members
+						</Link>
+						<Link
 							to="/settings/api-keys"
 							className="pb-3 text-sm font-medium border-b-2 border-transparent transition-colors hover:text-foreground/80 [&.active]:border-foreground [&.active]:text-foreground"
 						>

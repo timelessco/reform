@@ -1,6 +1,8 @@
+import { polarClient } from "@polar-sh/better-auth";
 import {
 	apiKeyClient,
 	emailOTPClient,
+	organizationClient,
 	twoFactorClient,
 	usernameClient,
 } from "better-auth/client/plugins";
@@ -13,6 +15,8 @@ export const authClient = createAuthClient({
 		emailOTPClient(),
 		twoFactorClient(),
 		apiKeyClient(),
+		organizationClient(),
+		polarClient(),
 	],
 });
 export const auth = createAuthQueryClient(authClient);
