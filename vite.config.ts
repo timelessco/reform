@@ -20,7 +20,11 @@ const config = defineConfig({
 				},
 			}
 		}),
-		nitro({}),
+		nitro({
+			rollupConfig: {
+				external: [/\.node$/],
+			},
+		}),
 		// this is the plugin that enables path aliases
 		viteTsConfigPaths({
 			projects: ["./tsconfig.json"],
@@ -37,7 +41,7 @@ const config = defineConfig({
 	ssr: {
 		noExternal: [/^@platejs\//, "katex", "react-tweet"],
 		// Dexie is browser-only (IndexedDB), externalize for SSR
-		external: ["dexie", "tanstack-dexie-db-collection"],
+		external: ["dexie", "tanstack-dexie-db-collection", "fsevents"],
 	},
 });
 
