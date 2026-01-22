@@ -9,12 +9,12 @@ export function PreviewMode({
     formId,
     workspaceId,
 }: { formId: string; workspaceId: string }) {
-    const savedDocs = useForm(formId);
+    const { data: savedDocs, isLoading } = useForm(formId);
     const doc = savedDocs?.[0];
     const content = (doc?.content as Value) || [];
     logger(savedDocs, 'data')
 
-    if (savedDocs !== undefined && savedDocs.length === 0) {
+    if (!isLoading && savedDocs !== undefined && savedDocs.length === 0) {
         return (
             <div className="h-full w-full flex items-center justify-center">
                 <div className="text-center">
@@ -33,7 +33,7 @@ export function PreviewMode({
         );
     }
 
-    if (!doc) {
+    if (isLoading || !doc) {
         return (
             <div className="h-full w-full flex items-center justify-center">
                 Loading...

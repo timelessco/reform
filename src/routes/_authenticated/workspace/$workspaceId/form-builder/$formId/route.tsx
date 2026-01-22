@@ -8,13 +8,13 @@ import { ClientOnly } from "@/components/client-only";
 
 // Client-only component for displaying form title from local DB
 function FormTitleDisplay({ formId }: { formId: string }) {
-    const savedDocs = useForm(formId);
+    const { data: savedDocs } = useForm(formId);
     return <>{savedDocs?.[0]?.title || "Untitled Form"}</>;
 }
 
 // Client-only component for displaying workspace name from local DB
 function WorkspaceNameDisplay({ workspaceId }: { workspaceId: string }) {
-    const workspace = useWorkspace(workspaceId);
+    const { data: workspace } = useWorkspace(workspaceId);
     return <>{workspace?.name || "Workspace"}</>;
 }
 

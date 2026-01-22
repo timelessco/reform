@@ -1,5 +1,6 @@
 import { AppHeader } from "@/components/ui/app-header";
 import { Button } from "@/components/ui/button";
+import { useSession } from "@/lib/auth-client";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { guestMiddleware } from "@/middleware/auth";
 import { ArrowRight, Layout, Shield, Sparkles, Zap } from "lucide-react";
@@ -12,6 +13,9 @@ export const Route = createFileRoute("/")({
 });
 
 function LandingPage() {
+	const { data: session } = useSession();
+	const isLoggedIn = !!session?.user;
+
 	return (
 		<div className="flex flex-col min-h-screen bg-background">
 			<AppHeader />
@@ -39,8 +43,8 @@ function LandingPage() {
 							className="h-12 px-8 text-base font-medium group"
 							asChild
 						>
-							<Link to="/create">
-								Create a free form
+							<Link to={isLoggedIn ? "/dashboard" : "/create"}>
+								{isLoggedIn ? "Go to Dashboard" : "Create a free form"}
 								<ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
 							</Link>
 						</Button>

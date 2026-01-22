@@ -17,10 +17,13 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useForms, useWorkspaces } from "@/hooks/use-live-hooks";
 import { auth, useSession } from "@/lib/auth-client";
 import { createForm, duplicateForm, updateForm } from "@/lib/fn/forms";
 import { getWorkspacesWithFormsQueryOptions } from "@/lib/fn/workspaces";
+import { syncLocalDataToCloud } from "@/lib/sync";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -34,6 +37,7 @@ import {
 	Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const FORMS_PER_PAGE = 10;
 
@@ -80,7 +84,7 @@ function DashboardPage() {
 	// Get current session/user
 	const { data: session } = useSession();
 
-	// Use queries to stay reactive to cache invalidations
+	// Use queries for org data (stays with TanStack Query)
 	const { data: activeOrg, isPending: isOrgLoading } = useQuery({
 		...auth.organization.getFullOrganization.queryOptions(),
 		initialData: initialActiveOrg,
@@ -89,22 +93,29 @@ function DashboardPage() {
 		...auth.organization.list.queryOptions(),
 		initialData: initialOrgsData,
 	});
-	const { data: workspacesData, isPending: isWorkspacesLoading } = useQuery({
-		...getWorkspacesWithFormsQueryOptions(),
-		initialData: initialWorkspacesData,
-	});
 
-	const isLoading = isWorkspacesLoading || isOrgLoading || isOrgsListLoading;
+	// Live queries for real-time sync
+	const { data: liveWorkspaces, isReady: wsReady } = useWorkspaces();
+	const { data: liveForms, isReady: formsReady } = useForms();
 
-	// Filter workspaces by active organization
-	const orgWorkspaces = (workspacesData?.workspaces ?? [])
-		.filter(ws => ws.organizationId === activeOrg?.id);
+	const isLiveReady = wsReady && formsReady;
+	const isLoading = isOrgLoading || isOrgsListLoading;
 
-	// Flatten forms from workspaces and sort by recently edited
-	const orgForms = orgWorkspaces
-		.flatMap(ws => (ws.forms ?? []).map(f => ({ ...f, workspaceId: ws.id, status: f.status ?? "draft" })))
-		.filter(form => form.status !== "archived")
-		.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+	// Hybrid approach: use live data when ready, fallback to loader data
+	const orgWorkspaces = isLiveReady
+		? (liveWorkspaces ?? []).filter(ws => ws.organizationId === activeOrg?.id)
+		: (initialWorkspacesData?.workspaces ?? []).filter(ws => ws.organizationId === activeOrg?.id);
+
+	// Forms: use live forms when ready, otherwise flatten from loader workspaces data
+	const orgForms = isLiveReady
+		? (liveForms ?? [])
+			.filter(form => orgWorkspaces.some(ws => ws.id === form.workspaceId))
+			.filter(form => form.status !== "archived")
+			.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+		: orgWorkspaces
+			.flatMap(ws => ((ws as any).forms ?? []).map((f: any) => ({ ...f, workspaceId: ws.id, status: f.status ?? "draft" })))
+			.filter((form: any) => form.status !== "archived")
+			.sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
 	// Create workspace name lookup
 	const workspaceNameMap = new Map(orgWorkspaces.map(ws => [ws.id, ws.name]));
@@ -131,6 +142,30 @@ function DashboardPage() {
 			setActiveMutation.mutate({ organizationId: orgsData[0].id });
 		}
 	}, [isLoading, activeOrg, orgsData, session, setActiveMutation]);
+
+	// Handle sync after social login redirect
+	useEffect(() => {
+		const shouldSync = sessionStorage.getItem("shouldSyncAfterSocialLogin");
+		if (shouldSync === "true" && session?.user && !isLoading) {
+			// Clear the flag immediately to prevent multiple syncs
+			sessionStorage.removeItem("shouldSyncAfterSocialLogin");
+			
+			// Wait a bit for session to be fully established and queries to be ready
+			const syncTimeout = setTimeout(async () => {
+				try {
+					await syncLocalDataToCloud();
+					toast.success("Local data synced successfully!");
+					// Invalidate queries to refresh data after sync
+					await queryClient.invalidateQueries({ queryKey: ["workspaces-with-forms"] });
+				} catch (error) {
+					console.error("Failed to sync local data:", error);
+					toast.error("Signed in but failed to sync local data");
+				}
+			}, 1000); // Delay to ensure session is fully established
+
+			return () => clearTimeout(syncTimeout);
+		}
+	}, [session?.user, isLoading, queryClient]);
 
 	const handleCreateForm = async () => {
 		if (orgWorkspaces.length === 0) return;
@@ -230,13 +265,8 @@ function DashboardPage() {
 							<div
 								key={form.id}
 								className="group flex flex-col p-2 -mx-2 rounded-xl hover:bg-muted/30 transition-all duration-200 cursor-pointer"
-								onClick={() =>
-									navigate({
-										to: "/workspace/$workspaceId/form-builder/$formId",
-										params: { workspaceId: form.workspaceId, formId: form.id },
-									})
-								}
 							>
+								<Link to={'/workspace/$workspaceId/form-builder/$formId'} params={{formId : form.id , workspaceId : form.workspaceId}} preload={'viewport'} >
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-3">
 										<div className="flex flex-col">
@@ -271,6 +301,7 @@ function DashboardPage() {
 														size="icon"
 														className="h-8 w-8 rounded-full hover:bg-muted"
 														onClick={(e) => {
+															e.preventDefault();
 															e.stopPropagation();
 															handleDuplicate(form.id);
 														}}
@@ -288,6 +319,7 @@ function DashboardPage() {
 														size="icon"
 														className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive"
 														onClick={(e) => {
+															e.preventDefault();
 															e.stopPropagation();
 															handleDeleteClick({
 																id: form.id,
@@ -303,6 +335,7 @@ function DashboardPage() {
 										</TooltipProvider>
 									</div>
 								</div>
+								</Link>
 							</div>
 						))}
 					</div>

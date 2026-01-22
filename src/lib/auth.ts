@@ -13,6 +13,7 @@ import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { sendOrgInvitationEmail, sendOTPEmail } from "@/lib/email";
 import { logger } from "@/lib/utils";
 
 const polarClient = new Polar({
@@ -120,7 +121,8 @@ export const auth = betterAuth({
 		username(),
 		emailOTP({
 			async sendVerificationOTP({ email, otp, type }) {
-				logger(`[Auth] Sending OTP to ${email}: ${otp} (type: ${type})`);
+				logger(`[Auth] Sending OTP to ${email} (type: ${type})`);
+				void sendOTPEmail(email, otp, type);
 			},
 			otpLength: 6,
 			expiresIn: 300,
@@ -132,6 +134,11 @@ export const auth = betterAuth({
 			async sendInvitationEmail(data) {
 				logger(
 					`[Org] Invitation sent to ${data.email} for org "${data.organization.name}" by ${data.inviter.user.name}`,
+				);
+				void sendOrgInvitationEmail(
+					data.email,
+					data.organization.name,
+					data.inviter.user.name,
 				);
 			},
 		}),

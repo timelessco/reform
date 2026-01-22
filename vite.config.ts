@@ -27,6 +27,9 @@ const config = defineConfig({
 		}),
 		tailwindcss(),
 		tanstackStart({
+			prerender : {
+				enabled : true,
+			}
 		}),
 		viteReact({
 			babel: {

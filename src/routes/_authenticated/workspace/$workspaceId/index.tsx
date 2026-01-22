@@ -74,10 +74,11 @@ function WorkspaceDashboard() {
 	const [currentPage, setCurrentPage] = useState(1);
 
 	// Use live query for workspace data
-	const workspace = useWorkspace(workspaceId);
+	const { data: workspace, isLoading: workspaceLoading } = useWorkspace(workspaceId);
 
 	// Use live query for forms data
-	const forms = useFormsForWorkspace(workspaceId) ?? [];
+	const { data: formsData, isLoading: formsLoading } = useFormsForWorkspace(workspaceId);
+	const forms = formsData ?? [];
 
 	// Sort by updatedAt descending (most recent first)
 	const sortedForms = [...forms].sort((a, b) =>

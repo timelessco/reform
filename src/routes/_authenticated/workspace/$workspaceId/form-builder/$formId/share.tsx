@@ -16,7 +16,7 @@ export const Route = createFileRoute(
 
 function SharePage() {
     const { formId } = Route.useParams();
-    const savedDocs = useForm(formId);
+    const { data: savedDocs } = useForm(formId);
     const doc = savedDocs?.[0];
     const [isPublishing, setIsPublishing] = useState(false);
 

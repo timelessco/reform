@@ -34,22 +34,14 @@ function RouteComponent() {
 		<div className="flex flex-col h-screen overflow-hidden">
 			<AppHeader />
 			<div className="flex-1 overflow-auto relative bg-background">
-				<ClientOnly
-					fallback={
-						<div className="h-full w-full flex items-center justify-center">
-							Loading editor...
-						</div>
-					}
-				>
 					<LocalEditorApp />
-				</ClientOnly>
 			</div>
 		</div>
 	);
 }
 
 function LocalEditorApp() {
-	const savedDocs = useLocalForm(LOCAL_FORM_ID);
+	const { data: savedDocs } = useLocalForm(LOCAL_FORM_ID);
 
 	const initializedRef = useRef(false);
 	const [isReady, setIsReady] = useState(false);

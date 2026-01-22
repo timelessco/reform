@@ -40,7 +40,7 @@ export function FormLabelElement({
 						type="button"
 						onClick={toggleRequired}
 						className={cn(
-							"flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded-full bg-muted text-[10px] text-muted-foreground hover:bg-muted-foreground hover:text-muted transition-colors",
+							"flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded-full bg-muted text-xs text-red-500 leading-none  hover:bg-muted-foreground hover:text-muted transition-colors",
 							"ml-0.5",
 						)}
 						contentEditable={false}

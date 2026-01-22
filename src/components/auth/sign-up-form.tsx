@@ -15,7 +15,7 @@ import {
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { auth } from "@/lib/auth-client";
 import { syncLocalDataToCloud } from "@/lib/sync";
-import { formCollection, workspaceCollection } from "@/db-collections";
+import { formCollection } from "@/db-collections";
 
 const signUpSchema = z.object({
 	username: z
@@ -147,7 +147,13 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 
 	const socialSignInMutation = useMutation(
 		auth.signIn.social.mutationOptions({
+			onSuccess: () => {
+				// Set flag to sync on dashboard after redirect
+				sessionStorage.setItem("shouldSyncAfterSocialLogin", "true");
+				toast.success("Signed in successfully!");
+			},
 			onError: (error) => {
+				sessionStorage.removeItem("shouldSyncAfterSocialLogin");
 				toast.error(error.message || "Failed to sign in with Google");
 			},
 		}),
@@ -174,7 +180,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 
 	if (step === "otp") {
 		return (
-			<div className="space-y-6">
+			<div className="flex flex-col items-center space-y-6">
 				<div className="space-y-2 text-center">
 					<h2 className="text-2xl font-bold">Verify your email</h2>
 					<p className="text-muted-foreground text-sm">
@@ -184,7 +190,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 				</div>
 
 				<otpForm.AppForm key="otp-signup">
-					<otpForm.Form className="space-y-4">
+					<otpForm.Form className="flex flex-col items-center space-y-4 w-full">
 						<otpForm.AppField name="otp">
 							{(field) => (
 								<field.FieldSet className="w-full flex flex-col items-center">

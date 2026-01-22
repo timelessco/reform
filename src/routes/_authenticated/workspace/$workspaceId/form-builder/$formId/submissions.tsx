@@ -61,7 +61,7 @@ function SubmissionsPage() {
     const [globalFilter, setGlobalFilter] = useState("");
 
     // 1. Fetch Form Structure (to derive columns)
-    const savedDocs = useForm(formId);
+    const { data: savedDocs } = useForm(formId);
     const doc = savedDocs?.[0];
 
     // 2. Fetch Submissions via server function

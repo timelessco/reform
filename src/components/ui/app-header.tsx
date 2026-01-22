@@ -1,7 +1,3 @@
-import { useMutation } from "@tanstack/react-query";
-import { Link, useLocation, useSearch, useNavigate } from "@tanstack/react-router";
-import { Flower2, History, LayoutGrid, LogOut, Search, Settings, User } from "lucide-react";
-import { toast } from "sonner";
 import { AuthDialog } from "@/components/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -23,13 +19,17 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
-import { useCustomizeSidebar } from "@/hooks/use-customize-sidebar";
-import { auth, useSession } from "@/lib/auth-client";
-import { SidebarTrigger, useSidebarSafe } from "./sidebar";
-import { useForm, useWorkspace } from "@/hooks/use-live-hooks";
 import { updateFormStatus } from "@/db-collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
-import { ClientOnly } from "@/components/client-only";
+import { useCustomizeSidebar } from "@/hooks/use-customize-sidebar";
+import { useForm, useWorkspace } from "@/hooks/use-live-hooks";
+import { auth, useSession } from "@/lib/auth-client";
+import { useMutation } from "@tanstack/react-query";
+import { Link, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
+import { Flower2, History, LayoutGrid, LogOut, Search, Settings, User } from "lucide-react";
+import { toast } from "sonner";
+import { SidebarTrigger, useSidebarSafe } from "./sidebar";
+import { cn } from "@/lib/utils";
 
 interface AppHeaderProps {
 	formId?: string;
@@ -38,13 +38,13 @@ interface AppHeaderProps {
 
 // Client-only component for displaying form title from local DB
 function FormTitleDisplay({ formId }: { formId: string }) {
-	const savedDocs = useForm(formId);
+	const { data: savedDocs } = useForm(formId);
 	return <>{savedDocs?.[0]?.title || "Untitled"}</>;
 }
 
 // Client-only component for displaying workspace name from local DB
 function WorkspaceNameDisplay({ workspaceId }: { workspaceId: string }) {
-	const workspace = useWorkspace(workspaceId);
+	const { data: workspace } = useWorkspace(workspaceId);
 	return <>{workspace?.name || "Workspace"}</>;
 }
 
@@ -69,7 +69,7 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 	const { setIsOpen: setIsPaletteOpen } = useCommandPalette();
 
 	// Get current form metadata for publishing
-	const savedDocs = useForm(formId);
+	const { data: savedDocs } = useForm(formId);
 	const currentForm = savedDocs?.[0];
 	const isPublished = currentForm?.status === "published";
 
@@ -77,6 +77,7 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 		auth.signOut.mutationOptions({
 			onSuccess: () => {
 				toast.success("Signed out successfully");
+				navigate({ to: "/" });
 			},
 			onError: (error) => {
 				toast.error("Failed to sign out");
@@ -143,9 +144,7 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 												to="/workspace/$workspaceId"
 												params={{ workspaceId }}
 											>
-												<ClientOnly fallback="Workspace">
 													<WorkspaceNameDisplay workspaceId={workspaceId} />
-												</ClientOnly>
 											</Link>
 										) : (
 											<Link to="/dashboard">My workspace</Link>
@@ -153,11 +152,9 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 									</BreadcrumbLink>
 								) : (
 									<BreadcrumbPage>
-										<ClientOnly fallback="Workspace">
 											<WorkspaceNameDisplay
 												workspaceId={workspaceId || ""}
 											/>
-										</ClientOnly>
 									</BreadcrumbPage>
 								)}
 							</BreadcrumbItem>
@@ -167,9 +164,7 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 									<BreadcrumbItem>
 										<BreadcrumbPage className="flex items-center gap-2">
 											{formId ? (
-												<ClientOnly fallback="Loading...">
 													<FormTitleDisplay formId={formId} />
-												</ClientOnly>
 											) : (
 												"Untitled"
 											)}
@@ -180,7 +175,7 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 						</BreadcrumbList>
 					</Breadcrumb>
 				) : (
-					<Link to="/" className="flex items-center gap-2">
+					<Link to="/" className={cn("flex items-center gap-1" , state === "collapsed" ? 'p-7' : 'pl-0')}>
 						<Flower2 className="h-5 w-5 text-blue-600" />
 						<span className="text-foreground font-bold tracking-tight">Better Forms</span>
 					</Link>
@@ -389,13 +384,13 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 								</Button>
 							</AuthDialog>
 						)}
-						{!isCreateRoute && (
+						{!isCreateRoute && !session && (
 							<Button
 								size="sm"
 								className="h-8 px-4 bg-blue-600 hover:bg-blue-700 ml-2"
 								asChild
 							>
-								<Link to={!session ? "/create" : "/dashboard"}>
+								<Link to={"/create"}>
 									Create Form
 								</Link>
 							</Button>

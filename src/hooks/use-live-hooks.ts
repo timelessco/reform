@@ -10,7 +10,7 @@ import {
  * Custom hook for real-time workspaces sync.
  */
 export const useWorkspaces = () => {
-	const { data: workspacesData } = useLiveQuery((q) =>
+	return useLiveQuery((q) =>
 		q.from({ ws: workspaceCollection }).select(({ ws }) => ({
 			id: ws.id,
 			organizationId: ws.organizationId,
@@ -20,14 +20,13 @@ export const useWorkspaces = () => {
 			updatedAt: ws.updatedAt,
 		})),
 	);
-	return workspacesData;
 };
 
 /**
  * Custom hook for real-time workspace sync by ID.
  */
 export const useWorkspace = (workspaceId?: string) => {
-	const { data: workspaceData } = useLiveQuery((q) => {
+	const result = useLiveQuery((q) => {
 		let query = q.from({ ws: workspaceCollection });
 		if (workspaceId) {
 			query = query.where(({ ws }) => eq(ws.id, workspaceId));
@@ -41,14 +40,14 @@ export const useWorkspace = (workspaceId?: string) => {
 			updatedAt: ws.updatedAt,
 		}));
 	});
-	return workspaceData?.[0];
+	return { ...result, data: result.data?.[0] };
 };
 
 /**
  * Custom hook for real-time forms sync filtered by workspace ID.
  */
 export const useFormsForWorkspace = (workspaceId?: string) => {
-	const { data: formsData } = useLiveQuery((q) => {
+	return useLiveQuery((q) => {
 		let query = q.from({ form: formCollection });
 		if (workspaceId) {
 			query = query.where(({ form }) => eq(form.workspaceId, workspaceId));
@@ -66,14 +65,13 @@ export const useFormsForWorkspace = (workspaceId?: string) => {
 			updatedAt: form.updatedAt,
 		}));
 	});
-	return formsData;
 };
 
 /**
  * Custom hook for real-time forms sync.
  */
 export const useForms = () => {
-	const { data: formsData } = useLiveQuery((q) =>
+	return useLiveQuery((q) =>
 		q
 			.from({ form: formCollection })
 			.where(({ form }) =>
@@ -87,33 +85,30 @@ export const useForms = () => {
 				updatedAt: form.updatedAt,
 			})),
 	);
-	return formsData;
 };
 
 /**
  * Custom hook for real-time form sync by ID.
  */
 export const useForm = (formId?: string) => {
-	const { data: savedDocs } = useLiveQuery((q) => {
+	return useLiveQuery((q) => {
 		let query = q.from({ doc: editorDocCollection });
 		if (formId) {
 			query = query.where(({ doc }) => eq(doc.id, formId));
 		}
 		return query;
 	});
-	return savedDocs;
 };
 
 /**
  * Custom hook for real-time local form draft sync by ID.
  */
 export const useLocalForm = (formId?: string) => {
-	const { data: savedDocs } = useLiveQuery((q) => {
+	return useLiveQuery((q) => {
 		let query = q.from({ doc: localFormCollection });
 		if (formId) {
 			query = query.where(({ doc }) => eq(doc.id, formId));
 		}
 		return query;
 	});
-	return savedDocs;
 };

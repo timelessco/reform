@@ -135,19 +135,15 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 
 	const socialSignInMutation = useMutation(
 		auth.signIn.social.mutationOptions({
-			onSuccess: async () => {
+			onSuccess: () => {
+				// Set flag to sync on dashboard after redirect
+				sessionStorage.setItem("shouldSyncAfterSocialLogin", "true");
 				toast.success("Signed in successfully!");
-				try {
-					await syncLocalDataToCloud();
-					toast.success("Local data synced successfully!");
-				} catch (error) {
-					console.error("Failed to sync local data:", error);
-					toast.error("Signed in but failed to sync local data");
-				}
-				// Navigate to dashboard after successful sync
+				// Navigate to dashboard - sync will happen there
 				router.navigate({ to: "/dashboard", replace: true });
 			},
 			onError: (error) => {
+				sessionStorage.removeItem("shouldSyncAfterSocialLogin");
 				if (error.code === "EMAIL_NOT_VERIFIED") {
 					router.navigate({
 						to: "/verify-email",

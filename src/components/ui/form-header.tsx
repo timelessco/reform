@@ -17,6 +17,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useFileUpload } from "@/hooks/use-file-upload";
+import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import {
 	ImageIcon,
@@ -387,6 +388,19 @@ export function WorkspaceHeader({
 	isCreatingWorkspace,
 	isCreatingForm,
 }: WorkspaceHeaderProps) {
+	const { data: session } = useSession();
+	const user = session?.user;
+
+	const getInitials = (name?: string | null) => {
+		if (!name) return "U";
+		return name
+			.split(" ")
+			.map((n) => n[0])
+			.join("")
+			.toUpperCase()
+			.slice(0, 2);
+	};
+
 	return (
 		<div className="flex items-center justify-between mb-12">
 			<div className="flex items-center gap-2">
@@ -420,9 +434,9 @@ export function WorkspaceHeader({
 			<div className="flex items-center gap-4">
 				<div className="flex -space-x-2">
 					<Avatar className="w-8 h-8 border-2 border-background">
-						<AvatarImage src="" />
+						<AvatarImage src={user?.image || undefined} alt={user?.name || "User"} />
 						<AvatarFallback className="text-[10px] bg-blue-100 text-blue-600 font-semibold">
-							VB
+							{getInitials(user?.name)}
 						</AvatarFallback>
 					</Avatar>
 				</div>

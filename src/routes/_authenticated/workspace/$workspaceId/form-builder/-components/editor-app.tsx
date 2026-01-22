@@ -1,13 +1,13 @@
+import { EditorKit } from "@/components/editor/editor-kit";
+import { Button } from "@/components/ui/button";
+import { Editor, EditorContainer } from "@/components/ui/editor";
+import { createFormHeaderNode } from "@/components/ui/form-header-node";
+import { updateDoc, updateHeader } from "@/db-collections";
 import { useForm } from "@/hooks/use-live-hooks";
 import { Link } from "@tanstack/react-router";
 import { normalizeNodeId, type TElement, type Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { EditorKit } from "@/components/editor/editor-kit";
-import { Button } from "@/components/ui/button";
-import { Editor, EditorContainer } from "@/components/ui/editor";
-import { createFormHeaderNode } from "@/components/ui/form-header-node";
-import { editorDocCollection, updateDoc, updateHeader } from "@/db-collections";
 
 interface EditorAppProps {
 	formId: string;
@@ -24,7 +24,7 @@ const DEFAULT_EDITOR_VALUE = normalizeNodeId([
 ]);
 
 export default function EditorApp({ formId, workspaceId, defaultValue }: EditorAppProps) {
-	const savedDocs = useForm(formId);
+	const { data: savedDocs } = useForm(formId);
 	const initializedRef = useRef(false);
 	const [isReady, setIsReady] = useState(false);
 	const skipSaveRef = useRef(false);
@@ -34,7 +34,6 @@ export default function EditorApp({ formId, workspaceId, defaultValue }: EditorA
 	});
 
 	const lastSavedContentRef = useRef<Value | null>(null);
-
 	useEffect(() => {
 		if (initializedRef.current) return;
 		if (savedDocs === undefined) return;

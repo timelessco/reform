@@ -117,7 +117,6 @@ export const formCollection = createCollection(
             const result = (await createForm({ data: newItem })) as ServerTxResult;
             return { txid: result.txid };
         },
-
         onUpdate: async ({ transaction }) => {
             const { original, changes } = transaction.mutations[0];
             logger("changes", changes.content);

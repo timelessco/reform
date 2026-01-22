@@ -1,29 +1,3 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link, useLocation, useRouter } from "@tanstack/react-router";
-import {
-	Bell,
-	BookOpen,
-	ChevronRight,
-	FileText,
-	Gift,
-	HelpCircle,
-	Home,
-	LayoutTemplate,
-	LogOut,
-	Map,
-	MessageSquare,
-	MoreHorizontal,
-	Pencil,
-	Plus,
-	Search,
-	Settings,
-	Sparkles,
-	Trash2,
-	Users,
-} from "lucide-react";
-import type * as React from "react";
-import { useEffect, useMemo, useState } from "react";
-import { ClientOnly } from "@/components/client-only";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -74,13 +48,14 @@ import {
 	SidebarGroupAction,
 	SidebarGroupLabel,
 	SidebarHeader,
+	SidebarInset,
 	SidebarMenu,
 	SidebarMenuAction,
 	SidebarMenuButton,
 	SidebarMenuItem,
 	SidebarMenuSub,
-	SidebarMenuSubButton,
 	SidebarMenuSubItem,
+	SidebarProvider,
 	SidebarTrigger,
 	useSidebar,
 } from "@/components/ui/sidebar";
@@ -93,10 +68,59 @@ import {
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useForm, useForms, useWorkspaces } from "@/hooks/use-live-hooks";
 import { auth, useSession } from "@/lib/auth-client";
-import { usePrefetchedData } from "@/routes/_authenticated/route";
-import { OrganizationSwitcher } from "../org/org-switcher";
+import { OrganizationSwitcher } from "@/components/org/org-switcher";
+import { authMiddleware } from "@/middleware/auth";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, Outlet, useLocation, useRouter } from "@tanstack/react-router";
+import {
+	Bell,
+	BookOpen,
+	ChevronRight,
+	FileText,
+	Gift,
+	HelpCircle,
+	Home,
+	LayoutTemplate,
+	LogOut,
+	Map,
+	MessageSquare,
+	MoreHorizontal,
+	Pencil,
+	Plus,
+	Search,
+	Settings,
+	Sparkles,
+	Trash2,
+	Users,
+} from "lucide-react";
+import type * as React from "react";
+import { useEffect, useMemo, useState } from "react";
 
-const data = {
+// Route configuration
+export const Route = createFileRoute("/_authenticated")({
+	server: {
+		middleware: [authMiddleware],
+	},
+	component: AuthLayout,
+	pendingComponent: () => <div>loading.....</div>,
+	ssr : 'data-only'
+});
+
+function AuthLayout() {
+	return (
+		<SidebarProvider defaultOpen={true}>
+			<div className="flex min-h-screen w-full">
+				<AppSidebar />
+				<SidebarInset className="flex flex-col flex-1 min-h-screen">
+					<Outlet />
+				</SidebarInset>
+			</div>
+		</SidebarProvider>
+	);
+}
+
+// Sidebar navigation data
+const sidebarData = {
 	navMain: [
 		{
 			title: "Home",
@@ -186,7 +210,7 @@ const data = {
 	],
 };
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	const location = useLocation();
 	const router = useRouter();
 	const {
@@ -242,7 +266,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 	};
 
 	const navMain = useMemo(() => {
-		return data.navMain.map((item) => {
+		return sidebarData.navMain.map((item) => {
 			if (item.title === "Members") {
 				return {
 					...item,
@@ -311,7 +335,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					<SidebarGroup>
 						<SidebarGroupLabel>Product</SidebarGroupLabel>
 						<SidebarMenu>
-							{data.products.map((item) => (
+							{sidebarData.products.map((item) => (
 								<SidebarMenuItem key={item.title}>
 									<SidebarMenuButton asChild tooltip={item.title}>
 										{/* @ts-ignore */}
@@ -328,7 +352,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					<SidebarGroup>
 						<SidebarGroupLabel>Help</SidebarGroupLabel>
 						<SidebarMenu>
-							{data.help.map((item) => (
+							{sidebarData.help.map((item) => (
 								<SidebarMenuItem key={item.title}>
 									<SidebarMenuButton asChild tooltip={item.title}>
 										{/* @ts-ignore */}
@@ -441,7 +465,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
 // Client-only component that fetches form title from local DB
 function FormTitleFromLocalDB({ formId }: { formId: string }) {
-	const formData = useForm(formId);
+	const { data: formData } = useForm(formId);
 	return <>{formData?.[0]?.title || "Untitled"}</>;
 }
 
@@ -455,18 +479,15 @@ function FormItem({
 }) {
 	return (
 		<SidebarMenuSubItem>
-			<SidebarMenuSubButton asChild>
-				<Link
-					to="/workspace/$workspaceId/form-builder/$formId"
-					params={{ workspaceId, formId }}
-				>
-					<span>
-						<ClientOnly fallback="Loading...">
-							<FormTitleFromLocalDB formId={formId} />
-						</ClientOnly>
-					</span>
-				</Link>
-			</SidebarMenuSubButton>
+			<Link
+				to="/workspace/$workspaceId/form-builder/$formId"
+				params={{ workspaceId, formId }}
+				className="flex h-7 min-w-0 items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0 text-sm"
+			>
+				<span>
+					<FormTitleFromLocalDB formId={formId} />
+				</span>
+			</Link>
 		</SidebarMenuSubItem>
 	);
 }
@@ -487,61 +508,50 @@ type WorkspaceWithForms = {
 	}>;
 };
 
-// Workspaces section - uses prefetched data initially, then live queries take over
+// Workspaces section - uses live queries for real-time sync
 function SidebarWorkspaces({ activeOrgId }: { activeOrgId?: string }) {
 	const router = useRouter();
 	const { isMobile } = useSidebar();
 
-	// Get prefetched data from route loader
-	const prefetchedData = usePrefetchedData();
-
 	// Use live queries for real-time sync
-	const workspacesData = useWorkspaces();
-	const formsData = useForms();
+	const { data: workspacesData, isLoading: workspacesLoading } = useWorkspaces();
+	const { data: formsData, isLoading: formsLoading } = useForms();
 
 	// Determine if Electric has synced
-	const isElectricReady = workspacesData !== undefined && formsData !== undefined;
+	const isLoading = workspacesLoading || formsLoading;
+	const isElectricReady = !isLoading && workspacesData !== undefined && formsData !== undefined;
 
 	// Combine workspaces with their forms, filtered by active organization
 	const workspaces = useMemo(() => {
-		if (!activeOrgId) return [];
+		if (!activeOrgId || !isElectricReady) return [];
 
-		// Use live data if Electric is ready
-		if (isElectricReady) {
-			const formsByWorkspace = (formsData || []).reduce(
-				(acc, form) => {
-					if (!acc[form.workspaceId]) acc[form.workspaceId] = [];
-					acc[form.workspaceId].push(form);
-					return acc;
-				},
-				{} as Record<string, typeof formsData>,
-			);
+		const formsByWorkspace = (formsData || []).reduce(
+			(acc, form) => {
+				if (!acc[form.workspaceId]) acc[form.workspaceId] = [];
+				acc[form.workspaceId].push(form);
+				return acc;
+			},
+			{} as Record<string, typeof formsData>,
+		);
 
-			return (workspacesData || [])
-				.filter((ws) => ws.organizationId === activeOrgId)
-				.map((ws) => ({
-					...ws,
-					forms: formsByWorkspace[ws.id] || [],
-				}));
-		}
-
-		// Fallback to prefetched data while Electric syncs
-		if (prefetchedData?.workspaces) {
-			return prefetchedData.workspaces.filter(
-				(ws) => ws.organizationId === activeOrgId,
-			);
-		}
-
-		return [];
-	}, [workspacesData, formsData, activeOrgId, isElectricReady, prefetchedData]);
-
+		return (workspacesData || [])
+			.filter((ws) => ws.organizationId === activeOrgId)
+			.map((ws) => ({
+				...ws,
+				// Sort forms by recently edited (most recent first)
+				forms: (formsByWorkspace[ws.id] || []).sort(
+					(a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+				),
+			}));
+	}, [workspacesData, formsData, activeOrgId, isElectricReady]);
+	console.log(workspaces , 'workspaces')
 	// State for dialogs
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [workspaceToDelete, setWorkspaceToDelete] =
 		useState<WorkspaceWithForms | null>(null);
 	const [deleteConfirmName, setDeleteConfirmName] = useState("");
 	const [renameDialogOpen, setRenameDialogOpen] = useState(false);
-	const [workspaceToRename, setWorkspaceToRename] = useState<any | null>(null);
+	const [workspaceToRename, setWorkspaceToRename] = useState<WorkspaceWithForms | null>(null);
 	const [newWorkspaceName, setNewWorkspaceName] = useState("");
 
 	const handleCreateWorkspace = async () => {
@@ -586,7 +596,7 @@ function SidebarWorkspaces({ activeOrgId }: { activeOrgId?: string }) {
 		}
 	};
 
-	const openRenameDialog = (workspace: any) => {
+	const openRenameDialog = (workspace: WorkspaceWithForms) => {
 		setWorkspaceToRename(workspace);
 		setNewWorkspaceName(workspace.name);
 		setRenameDialogOpen(true);
@@ -610,21 +620,36 @@ function SidebarWorkspaces({ activeOrgId }: { activeOrgId?: string }) {
 					<span className="sr-only">Add Workspace</span>
 				</SidebarGroupAction>
 				<SidebarMenu>
-					{workspaces.map((workspace) => (
-						<WorkspaceItem
-							key={workspace.id}
-							workspace={workspace}
-							isMobile={isMobile}
-							onRename={() => openRenameDialog(workspace)}
-							onDelete={() => openDeleteDialog(workspace as any)}
-						/>
-					))}
-					{workspaces.length === 0 && (
-						<SidebarMenuItem>
-							<span className="text-muted-foreground text-xs px-2 py-1">
-								No workspaces yet
-							</span>
-						</SidebarMenuItem>
+					{isLoading ? (
+						<>
+							{[1, 2].map((i) => (
+								<SidebarMenuItem key={i}>
+									<div className="flex items-center gap-2 px-2 py-1.5">
+										<div className="h-4 w-4 rounded bg-sidebar-accent animate-pulse" />
+										<div className="h-4 flex-1 rounded bg-sidebar-accent animate-pulse" />
+									</div>
+								</SidebarMenuItem>
+							))}
+						</>
+					) : (
+						<>
+							{workspaces.map((workspace) => (
+								<WorkspaceItem
+									key={workspace.id}
+									workspace={workspace}
+									isMobile={isMobile}
+									onRename={() => openRenameDialog(workspace)}
+									onDelete={() => openDeleteDialog(workspace)}
+								/>
+							))}
+							{workspaces.length === 0 && (
+								<SidebarMenuItem>
+									<span className="text-muted-foreground text-xs px-2 py-1">
+										No workspaces yet
+									</span>
+								</SidebarMenuItem>
+							)}
+						</>
 					)}
 				</SidebarMenu>
 			</SidebarGroup>

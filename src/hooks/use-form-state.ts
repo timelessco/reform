@@ -59,7 +59,7 @@ const useFormState = createIsomorphicFn()
 	.client((): FormState => {
 		// Note: This fetches the first available form document.
 		// In a multi-persistent-form app, you'd add a .where() clause.
-		const data = useForms();
+		const { data } = useForms();
 
 		const now = new Date().toISOString();
 		return (
@@ -81,7 +81,7 @@ export default useFormState;
  * Uses TanStack DB live query to stay in sync with the persistent store.
  */
 export function useFormStateById(formId?: string): FormState {
-	const data = useForm(formId);
+	const { data } = useForm(formId);
 
 	const now = new Date().toISOString();
 	return (
