@@ -1,8 +1,8 @@
-import { db } from "@/db";
-import { forms, submissions } from "@/db/schema";
 import { createServerFn } from "@tanstack/react-start";
-import { eq, and } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+import { forms, submissions } from "@/db/schema";
+import { db } from "@/lib/db";
 
 /**
  * Public server functions - NO authentication required

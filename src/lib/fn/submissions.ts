@@ -1,9 +1,9 @@
-import { createServerFn } from "@tanstack/react-start";
 import { queryOptions } from "@tanstack/react-query";
+import { createServerFn } from "@tanstack/react-start";
+import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { eq, desc } from "drizzle-orm";
-import { db } from "@/db";
 import { submissions } from "@/db/schema";
+import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
 import { authForm } from "./helpers";
 

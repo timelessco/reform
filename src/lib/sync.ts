@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { eq, inArray } from "drizzle-orm";
-import { db } from "@/db";
 import { forms, member, organization, workspaces } from "@/db/schema";
+import { db } from "@/lib/db";
 import { authUser, getTxId } from "@/lib/fn/helpers";
 import { logger } from "@/lib/utils";
 
@@ -129,9 +129,14 @@ export const syncFormsToCloud = createServerFn({ method: "POST" })
 					txids.push(txid);
 
 					syncedForms.push(newFormId);
-					logger(`Synced form "${localForm.title || "Untitled"}" as ${newFormId} to workspace ${serverWorkspaceId} (txid: ${txid})`);
+					logger(
+						`Synced form "${localForm.title || "Untitled"}" as ${newFormId} to workspace ${serverWorkspaceId} (txid: ${txid})`,
+					);
 				} catch (error) {
-					console.error(`Failed to sync form "${localForm.title || "Untitled"}":`, error);
+					console.error(
+						`Failed to sync form "${localForm.title || "Untitled"}":`,
+						error,
+					);
 					// Continue with other forms
 				}
 			}

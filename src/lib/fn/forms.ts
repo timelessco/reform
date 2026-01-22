@@ -1,11 +1,11 @@
-import { db } from "@/db";
-import { forms } from "@/db/schema";
-import { authMiddleware } from "@/middleware/auth";
+import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { forms } from "@/db/schema";
+import { db } from "@/lib/db";
+import { authMiddleware } from "@/middleware/auth";
 import { authForm, authUser, getTxId } from "./helpers";
-import { queryOptions } from "@tanstack/react-query";
 
 const serializeForm = (form: typeof forms.$inferSelect) => ({
 	...form,
@@ -17,19 +17,21 @@ const serializeForm = (form: typeof forms.$inferSelect) => ({
 
 export const createForm = createServerFn({ method: "POST" })
 	.middleware([authMiddleware])
-	.inputValidator(z.object({
-		id: z.string().uuid(),
-		workspaceId: z.string().uuid(),
-		title: z.string().optional(),
-		formName: z.string().optional(),
-		schemaName: z.string().optional(),
-		content: z.array(z.any()).optional(),
-		settings: z.any().optional(),
-		icon: z.string().nullable().optional(),
-		cover: z.string().nullable().optional(),
-		isMultiStep: z.boolean().optional(),
-		status: z.enum(["draft", "published", "archived"]).optional(),
-	}))
+	.inputValidator(
+		z.object({
+			id: z.string().uuid(),
+			workspaceId: z.string().uuid(),
+			title: z.string().optional(),
+			formName: z.string().optional(),
+			schemaName: z.string().optional(),
+			content: z.array(z.any()).optional(),
+			settings: z.any().optional(),
+			icon: z.string().nullable().optional(),
+			cover: z.string().nullable().optional(),
+			isMultiStep: z.boolean().optional(),
+			status: z.enum(["draft", "published", "archived"]).optional(),
+		}),
+	)
 	.handler(async ({ data, context }) => {
 		const now = new Date();
 
@@ -60,19 +62,21 @@ export const createForm = createServerFn({ method: "POST" })
 
 export const updateForm = createServerFn({ method: "POST" })
 	.middleware([authMiddleware])
-	.inputValidator(z.object({
-		id: z.string().uuid(),
-		workspaceId: z.string().uuid().optional(),
-		title: z.string().optional(),
-		formName: z.string().optional(),
-		schemaName: z.string().optional(),
-		content: z.array(z.any()).optional(),
-		settings: z.any().optional(),
-		icon: z.string().nullable().optional(),
-		cover: z.string().nullable().optional(),
-		isMultiStep: z.boolean().optional(),
-		status: z.enum(["draft", "published", "archived"]).optional(),
-	}))
+	.inputValidator(
+		z.object({
+			id: z.string().uuid(),
+			workspaceId: z.string().uuid().optional(),
+			title: z.string().optional(),
+			formName: z.string().optional(),
+			schemaName: z.string().optional(),
+			content: z.array(z.any()).optional(),
+			settings: z.any().optional(),
+			icon: z.string().nullable().optional(),
+			cover: z.string().nullable().optional(),
+			isMultiStep: z.boolean().optional(),
+			status: z.enum(["draft", "published", "archived"]).optional(),
+		}),
+	)
 	.handler(async ({ data }) => {
 		const { id, ...updateData } = data;
 		await authForm(id);
@@ -172,10 +176,12 @@ export const duplicateForm = createServerFn({ method: "POST" })
 
 export const moveFormToWorkspace = createServerFn({ method: "POST" })
 	.middleware([authMiddleware])
-	.inputValidator(z.object({
-		formId: z.string().uuid(),
-		targetWorkspaceId: z.string().uuid(),
-	}))
+	.inputValidator(
+		z.object({
+			formId: z.string().uuid(),
+			targetWorkspaceId: z.string().uuid(),
+		}),
+	)
 	.handler(async ({ data }) => {
 		await authForm(data.formId);
 
@@ -199,10 +205,7 @@ export const getFormById = createServerFn({ method: "GET" })
 	.handler(async ({ data }) => {
 		await authForm(data.id);
 
-		const [form] = await db
-			.select()
-			.from(forms)
-			.where(eq(forms.id, data.id));
+		const [form] = await db.select().from(forms).where(eq(forms.id, data.id));
 
 		if (!form) {
 			throw new Error("Form not found");
@@ -210,7 +213,6 @@ export const getFormById = createServerFn({ method: "GET" })
 
 		return { form: serializeForm(form) };
 	});
-
 
 export const getFormbyIdQueryOption = (formId: string) =>
 	queryOptions({

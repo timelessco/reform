@@ -1,9 +1,8 @@
 import { getRequestHeaders } from "@tanstack/react-start/server";
-import { sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
+import { forms, workspaces } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { db } from "@/db";
-import { workspaces, forms } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { db } from "@/lib/db";
 
 export const authUser = async () => {
 	const headers = getRequestHeaders();
@@ -20,7 +19,12 @@ export const authWorkspace = async (workspaceId: string) => {
 	const workspace = await db
 		.select({ id: workspaces.id })
 		.from(workspaces)
-		.where(and(eq(workspaces.id, workspaceId), eq(workspaces.createdByUserId, user.id)))
+		.where(
+			and(
+				eq(workspaces.id, workspaceId),
+				eq(workspaces.createdByUserId, user.id),
+			),
+		)
 		.limit(1);
 
 	if (workspace.length === 0) {

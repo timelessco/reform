@@ -11,8 +11,8 @@ import {
 } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { eq } from "drizzle-orm";
-import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { db } from "@/lib/db";
 import { sendOrgInvitationEmail, sendOTPEmail } from "@/lib/email";
 import { logger } from "@/lib/utils";
 
@@ -144,7 +144,7 @@ export const auth = betterAuth({
 		}),
 		polar({
 			client: polarClient,
-			createCustomerOnSignUp: true,
+			createCustomerOnSignUp: false,
 			use: [
 				checkout({
 					products: [

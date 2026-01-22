@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { eq, inArray } from "drizzle-orm";
-import { db } from "@/db";
 import { member, workspaces } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { logger } from "@/lib/utils";
 
 const json = (data: unknown, status = 200) =>
@@ -122,9 +122,7 @@ export const Route = createFileRoute("/api/electric")({
 								if (formList.length === 0) {
 									whereSql = `1 = 0`;
 								} else {
-									const formIds = formList
-										.map((f) => `'${f.id}'`)
-										.join(", ");
+									const formIds = formList.map((f) => `'${f.id}'`).join(", ");
 									whereSql = `"formId" IN (${formIds})`;
 								}
 							}

@@ -1,8 +1,2 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-
-import * as schema from "./schema";
-
-export const db = drizzle(process.env.DATABASE_URL!, {
-	schema,
-	relations: schema.relations,
-});
+// Re-export from lib/db for backwards compatibility
+export { db, getDb } from "@/lib/db";

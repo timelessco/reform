@@ -148,7 +148,6 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 	const socialSignInMutation = useMutation(
 		auth.signIn.social.mutationOptions({
 			onSuccess: () => {
-				// Set flag to sync on dashboard after redirect
 				sessionStorage.setItem("shouldSyncAfterSocialLogin", "true");
 				toast.success("Signed in successfully!");
 			},

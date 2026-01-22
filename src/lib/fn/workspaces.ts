@@ -3,8 +3,8 @@ import { createMiddleware, createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "@/db";
 import { forms, member, workspaces } from "@/db/schema";
+import { db } from "@/lib/db";
 import { auth } from "../auth";
 import { authUser, authWorkspace, getTxId } from "./helpers";
 

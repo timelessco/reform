@@ -11,7 +11,6 @@ import {
 	LightbulbIcon,
 	ListIcon,
 	ListOrdered,
-	MousePointerClick,
 	PenToolIcon,
 	PilcrowIcon,
 	Quote,
@@ -230,12 +229,6 @@ const groups: Group[] = [
 				keywords: ["form", "textarea", "multiline", "long", "paragraph", "description"],
 				label: "Text Area",
 				value: "formTextarea",
-			},
-			{
-				icon: <MousePointerClick />,
-				keywords: ["form", "button", "submit", "action", "cta"],
-				label: "Button",
-				value: "formButton",
 			},
 		].map((item) => ({
 			...item,
