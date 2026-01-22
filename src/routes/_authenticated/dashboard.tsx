@@ -1,3 +1,18 @@
+import { useMutation } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { formatDistanceToNow } from "date-fns";
+import {
+	ChevronLeft,
+	ChevronRight,
+	Copy,
+	FileText,
+	HelpCircle,
+	Loader2,
+	Plus,
+	Trash2,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -22,22 +37,6 @@ import { auth, useSession } from "@/lib/auth-client";
 import { createForm, duplicateForm, updateForm } from "@/lib/fn/forms";
 import { getWorkspacesWithFormsQueryOptions } from "@/lib/fn/workspaces";
 import { syncLocalDataToCloud } from "@/lib/sync";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { formatDistanceToNow } from "date-fns";
-import {
-	ChevronLeft,
-	ChevronRight,
-	Copy,
-	FileText,
-	HelpCircle,
-	Loader2,
-	Plus,
-	Trash2,
-} from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 
 const FORMS_PER_PAGE = 10;
 
@@ -70,9 +69,11 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
 	const navigate = useNavigate();
-	const queryClient = useQueryClient();
-	const { activeOrg: initialActiveOrg, orgsData: initialOrgsData, workspacesData: initialWorkspacesData } = Route.useLoaderData();
-
+	const {
+		activeOrg,
+		orgsData,
+		workspacesData: initialWorkspacesData,
+	} = Route.useLoaderData();
 	const [isCreating, setIsCreating] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [formToDelete, setFormToDelete] = useState<{
@@ -84,88 +85,91 @@ function DashboardPage() {
 	// Get current session/user
 	const { data: session } = useSession();
 
-	// Use queries for org data (stays with TanStack Query)
-	const { data: activeOrg, isPending: isOrgLoading } = useQuery({
-		...auth.organization.getFullOrganization.queryOptions(),
-		initialData: initialActiveOrg,
-	});
-	const { data: orgsData, isPending: isOrgsListLoading } = useQuery({
-		...auth.organization.list.queryOptions(),
-		initialData: initialOrgsData,
-	});
-
 	// Live queries for real-time sync
 	const { data: liveWorkspaces, isReady: wsReady } = useWorkspaces();
 	const { data: liveForms, isReady: formsReady } = useForms();
 
 	const isLiveReady = wsReady && formsReady;
-	const isLoading = isOrgLoading || isOrgsListLoading;
-
 	// Hybrid approach: use live data when ready, fallback to loader data
 	const orgWorkspaces = isLiveReady
-		? (liveWorkspaces ?? []).filter(ws => ws.organizationId === activeOrg?.id)
-		: (initialWorkspacesData?.workspaces ?? []).filter(ws => ws.organizationId === activeOrg?.id);
-
+		? (liveWorkspaces ?? []).filter((ws) => ws.organizationId === activeOrg?.id)
+		: (initialWorkspacesData?.workspaces ?? []).filter(
+				(ws) => ws.organizationId === activeOrg?.id,
+			);
 	// Forms: use live forms when ready, otherwise flatten from loader workspaces data
 	const orgForms = isLiveReady
 		? (liveForms ?? [])
-			.filter(form => orgWorkspaces.some(ws => ws.id === form.workspaceId))
-			.filter(form => form.status !== "archived")
-			.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+				.filter((form) =>
+					orgWorkspaces.some((ws) => ws.id === form.workspaceId),
+				)
+				.filter((form) => form.status !== "archived")
+				.sort(
+					(a, b) =>
+						new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+				)
 		: orgWorkspaces
-			.flatMap(ws => ((ws as any).forms ?? []).map((f: any) => ({ ...f, workspaceId: ws.id, status: f.status ?? "draft" })))
-			.filter((form: any) => form.status !== "archived")
-			.sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-
+				.flatMap((ws) =>
+					((ws as any).forms ?? []).map((f: any) => ({
+						...f,
+						workspaceId: ws.id,
+						status: f.status ?? "draft",
+					})),
+				)
+				.filter((form: any) => form.status !== "archived")
+				.sort(
+					(a: any, b: any) =>
+						new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+				);
 	// Create workspace name lookup
-	const workspaceNameMap = new Map(orgWorkspaces.map(ws => [ws.id, ws.name]));
+	const workspaceNameMap = new Map(orgWorkspaces.map((ws) => [ws.id, ws.name]));
 
 	// Pagination
 	const totalPages = Math.ceil(orgForms.length / FORMS_PER_PAGE);
 	const startIndex = (currentPage - 1) * FORMS_PER_PAGE;
-	const paginatedForms = orgForms.slice(startIndex, startIndex + FORMS_PER_PAGE);
+	const paginatedForms = orgForms.slice(
+		startIndex,
+		startIndex + FORMS_PER_PAGE,
+	);
 
 	const setActiveMutation = useMutation(
 		auth.organization.setActive.mutationOptions({
 			onSuccess: () => {
-				queryClient.invalidateQueries({
-					queryKey: auth.organization.getFullOrganization.queryKey(),
-				});
+				// Refetch route data to get updated active org
+				navigate({ to: "/dashboard", replace: true });
 			},
 		}),
 	);
 
 	// Set active organization if user has orgs but none is active
 	useEffect(() => {
-		if (isLoading || !session?.user) return;
+		if (!session?.user) return;
 		if (!activeOrg && orgsData && orgsData.length > 0) {
 			setActiveMutation.mutate({ organizationId: orgsData[0].id });
 		}
-	}, [isLoading, activeOrg, orgsData, session, setActiveMutation]);
+	}, [activeOrg, orgsData, session, setActiveMutation]);
 
 	// Handle sync after social login redirect
 	useEffect(() => {
-		const shouldSync = sessionStorage.getItem("shouldSyncAfterSocialLogin");
-		if (shouldSync === "true" && session?.user && !isLoading) {
-			// Clear the flag immediately to prevent multiple syncs
-			sessionStorage.removeItem("shouldSyncAfterSocialLogin");
-			
-			// Wait a bit for session to be fully established and queries to be ready
-			const syncTimeout = setTimeout(async () => {
+		const syncData = async () => {
+			const shouldSync = sessionStorage.getItem("shouldSyncAfterSocialLogin");
+			console.log(shouldSync, session?.user);
+			if (shouldSync === "true" && session?.user) {
+				// Clear the flag immediately to prevent multiple syncs
+				sessionStorage.removeItem("shouldSyncAfterSocialLogin");
+
+				// Wait a bit for session to be fully established and queries to be ready
 				try {
 					await syncLocalDataToCloud();
 					toast.success("Local data synced successfully!");
-					// Invalidate queries to refresh data after sync
-					await queryClient.invalidateQueries({ queryKey: ["workspaces-with-forms"] });
+					// Live queries will automatically pick up the synced data
 				} catch (error) {
 					console.error("Failed to sync local data:", error);
 					toast.error("Signed in but failed to sync local data");
 				}
-			}, 1000); // Delay to ensure session is fully established
-
-			return () => clearTimeout(syncTimeout);
-		}
-	}, [session?.user, isLoading, queryClient]);
+			}
+		};
+		syncData();
+	}, [session]);
 
 	const handleCreateForm = async () => {
 		if (orgWorkspaces.length === 0) return;
@@ -173,14 +177,14 @@ function DashboardPage() {
 		setIsCreating(true);
 		try {
 			const defaultWorkspace = orgWorkspaces[0];
-			const response = await createForm({
+			const response = (await createForm({
 				data: {
 					id: crypto.randomUUID(),
 					workspaceId: defaultWorkspace.id,
 					title: "Untitled",
 				},
-			}) as { form: { id: string } };
-			await queryClient.invalidateQueries({ queryKey: ["workspaces-with-forms"] });
+			})) as { form: { id: string } };
+			// Live queries will automatically pick up the new form
 			navigate({
 				to: "/workspace/$workspaceId/form-builder/$formId",
 				params: { workspaceId: defaultWorkspace.id, formId: response.form.id },
@@ -201,7 +205,7 @@ function DashboardPage() {
 		if (formToDelete) {
 			try {
 				await updateForm({ data: { id: formToDelete.id, status: "archived" } });
-				await queryClient.invalidateQueries({ queryKey: ["workspaces-with-forms"] });
+				// Live queries will automatically pick up the archived form
 				setDeleteDialogOpen(false);
 				setFormToDelete(null);
 			} catch (error) {
@@ -213,7 +217,7 @@ function DashboardPage() {
 	const handleDuplicate = async (formId: string) => {
 		try {
 			await duplicateForm({ data: { id: formId } });
-			await queryClient.invalidateQueries({ queryKey: ["workspaces-with-forms"] });
+			// Live queries will automatically pick up the duplicated form
 		} catch (error) {
 			console.error("Failed to duplicate form:", error);
 		}
@@ -222,17 +226,6 @@ function DashboardPage() {
 	const formatLastEdited = (timestamp: string) => {
 		return `Edited ${formatDistanceToNow(new Date(timestamp))} ago`;
 	};
-
-	if (isLoading) {
-		return (
-			<div className="flex-1 flex items-center justify-center min-h-screen">
-				<div className="flex flex-col items-center gap-4">
-					<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-					<p className="text-sm text-muted-foreground">Loading...</p>
-				</div>
-			</div>
-		);
-	}
 
 	return (
 		<div className="flex-1 flex flex-col min-h-screen bg-background text-foreground">
@@ -245,10 +238,15 @@ function DashboardPage() {
 					<div>
 						<h1 className="text-2xl font-bold">All Forms</h1>
 						<p className="text-sm text-muted-foreground mt-1">
-							{orgForms.length} form{orgForms.length !== 1 ? "s" : ""} across {orgWorkspaces.length} workspace{orgWorkspaces.length !== 1 ? "s" : ""}
+							{orgForms.length} form{orgForms.length !== 1 ? "s" : ""} across{" "}
+							{orgWorkspaces.length} workspace
+							{orgWorkspaces.length !== 1 ? "s" : ""}
 						</p>
 					</div>
-					<Button onClick={handleCreateForm} disabled={isCreating || orgWorkspaces.length === 0}>
+					<Button
+						onClick={handleCreateForm}
+						disabled={isCreating || orgWorkspaces.length === 0}
+					>
 						{isCreating ? (
 							<Loader2 className="h-4 w-4 animate-spin mr-2" />
 						) : (
@@ -266,75 +264,85 @@ function DashboardPage() {
 								key={form.id}
 								className="group flex flex-col p-2 -mx-2 rounded-xl hover:bg-muted/30 transition-all duration-200 cursor-pointer"
 							>
-								<Link to={'/workspace/$workspaceId/form-builder/$formId'} params={{formId : form.id , workspaceId : form.workspaceId}} preload={'viewport'} >
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-3">
-										<div className="flex flex-col">
-											<div className="flex items-center gap-2">
-												<span className="text-lg font-semibold group-hover:text-blue-600 transition-colors">
-													{form.title || "Untitled"}
-												</span>
-												<Badge
-													variant="secondary"
-													className={`text-[10px] h-4 px-1.5 font-normal ${form.status === "published"
-														? "bg-green-100 text-green-700"
-														: "bg-muted/80 text-muted-foreground"
+								<Link
+									to={"/workspace/$workspaceId/form-builder/$formId"}
+									params={{ formId: form.id, workspaceId: form.workspaceId }}
+									preload={"viewport"}
+								>
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-3">
+											<div className="flex flex-col">
+												<div className="flex items-center gap-2">
+													<span className="text-lg font-semibold group-hover:text-blue-600 transition-colors">
+														{form.title || "Untitled"}
+													</span>
+													<Badge
+														variant="secondary"
+														className={`text-[10px] h-4 px-1.5 font-normal ${
+															form.status === "published"
+																? "bg-green-100 text-green-700"
+																: "bg-muted/80 text-muted-foreground"
 														} rounded-full`}
-												>
-													{form.status === "published" ? "Published" : "Draft"}
-												</Badge>
-											</div>
-											<div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 font-medium">
-												<span>{workspaceNameMap.get(form.workspaceId) || "Unknown workspace"}</span>
-												<span className="w-0.5 h-0.5 rounded-full bg-muted-foreground/30"></span>
-												<span>{formatLastEdited(form.updatedAt)}</span>
+													>
+														{form.status === "published"
+															? "Published"
+															: "Draft"}
+													</Badge>
+												</div>
+												<div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 font-medium">
+													<span>
+														{workspaceNameMap.get(form.workspaceId) ||
+															"Unknown workspace"}
+													</span>
+													<span className="w-0.5 h-0.5 rounded-full bg-muted-foreground/30"></span>
+													<span>{formatLastEdited(form.updatedAt)}</span>
+												</div>
 											</div>
 										</div>
-									</div>
 
-									<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-										<TooltipProvider>
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														variant="ghost"
-														size="icon"
-														className="h-8 w-8 rounded-full hover:bg-muted"
-														onClick={(e) => {
-															e.preventDefault();
-															e.stopPropagation();
-															handleDuplicate(form.id);
-														}}
-													>
-														<Copy className="h-4 w-4 text-muted-foreground" />
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>Duplicate</TooltipContent>
-											</Tooltip>
+										<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+											<TooltipProvider>
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<Button
+															variant="ghost"
+															size="icon"
+															className="h-8 w-8 rounded-full hover:bg-muted"
+															onClick={(e) => {
+																e.preventDefault();
+																e.stopPropagation();
+																handleDuplicate(form.id);
+															}}
+														>
+															<Copy className="h-4 w-4 text-muted-foreground" />
+														</Button>
+													</TooltipTrigger>
+													<TooltipContent>Duplicate</TooltipContent>
+												</Tooltip>
 
-											<Tooltip>
-												<TooltipTrigger asChild>
-													<Button
-														variant="ghost"
-														size="icon"
-														className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive"
-														onClick={(e) => {
-															e.preventDefault();
-															e.stopPropagation();
-															handleDeleteClick({
-																id: form.id,
-																title: form.title || "Untitled",
-															});
-														}}
-													>
-														<Trash2 className="h-4 w-4 text-muted-foreground" />
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>Delete</TooltipContent>
-											</Tooltip>
-										</TooltipProvider>
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<Button
+															variant="ghost"
+															size="icon"
+															className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive"
+															onClick={(e) => {
+																e.preventDefault();
+																e.stopPropagation();
+																handleDeleteClick({
+																	id: form.id,
+																	title: form.title || "Untitled",
+																});
+															}}
+														>
+															<Trash2 className="h-4 w-4 text-muted-foreground" />
+														</Button>
+													</TooltipTrigger>
+													<TooltipContent>Delete</TooltipContent>
+												</Tooltip>
+											</TooltipProvider>
+										</div>
 									</div>
-								</div>
 								</Link>
 							</div>
 						))}
@@ -404,7 +412,9 @@ function DashboardPage() {
 								onClick={handleCreateForm}
 								disabled={isCreating || orgWorkspaces.length === 0}
 							>
-								{isCreating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+								{isCreating && (
+									<Loader2 className="h-4 w-4 animate-spin mr-2" />
+								)}
 								Create my first form
 							</Button>
 						</div>

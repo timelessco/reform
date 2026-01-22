@@ -55,11 +55,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 		auth.signUp.email.mutationOptions({
 			onSuccess: async (_, variables) => {
 				setEmail(variables.email);
-				// Send OTP for email verification
-				sendOtpMutation.mutate({
-					email: variables.email,
-					type: "email-verification",
-				});
+				// OTP is sent automatically by Better Auth (sendVerificationOnSignUp: true)
 				toast.success("Account created! Please verify your email.");
 				setStep("otp");
 			},
@@ -149,7 +145,6 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 		auth.signIn.social.mutationOptions({
 			onSuccess: () => {
 				sessionStorage.setItem("shouldSyncAfterSocialLogin", "true");
-				toast.success("Signed in successfully!");
 			},
 			onError: (error) => {
 				sessionStorage.removeItem("shouldSyncAfterSocialLogin");
@@ -193,28 +188,31 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 						<otpForm.AppField name="otp">
 							{(field) => (
 								<field.FieldSet className="w-full flex flex-col items-center">
-									<field.Field className="flex flex-col items-center justify-center *:w-auto">
-										<InputOTP
-											maxLength={6}
-											value={(field.state.value as string) ?? ""}
-											onChange={field.handleChange}
-											aria-invalid={
-												!!field.state.meta.errors.length &&
-												field.state.meta.isTouched
-											}
-										>
-											<InputOTPGroup>
-												<InputOTPSlot index={0} />
-												<InputOTPSlot index={1} />
-												<InputOTPSlot index={2} />
-											</InputOTPGroup>
-											<InputOTPSeparator />
-											<InputOTPGroup>
-												<InputOTPSlot index={3} />
-												<InputOTPSlot index={4} />
-												<InputOTPSlot index={5} />
-											</InputOTPGroup>
-										</InputOTP>
+									<field.Field className="flex flex-col items-center justify-center w-full">
+										<div className="flex justify-center items-center w-full">
+											<InputOTP
+												maxLength={6}
+												value={(field.state.value as string) ?? ""}
+												onChange={field.handleChange}
+												aria-invalid={
+													!!field.state.meta.errors.length &&
+													field.state.meta.isTouched
+												}
+												className="mx-auto"
+											>
+												<InputOTPGroup>
+													<InputOTPSlot index={0} />
+													<InputOTPSlot index={1} />
+													<InputOTPSlot index={2} />
+												</InputOTPGroup>
+												<InputOTPSeparator />
+												<InputOTPGroup>
+													<InputOTPSlot index={3} />
+													<InputOTPSlot index={4} />
+													<InputOTPSlot index={5} />
+												</InputOTPGroup>
+											</InputOTP>
+										</div>
 									</field.Field>
 									<field.FieldError />
 								</field.FieldSet>

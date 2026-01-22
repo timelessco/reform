@@ -139,8 +139,6 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 				// Set flag to sync on dashboard after redirect
 				sessionStorage.setItem("shouldSyncAfterSocialLogin", "true");
 				toast.success("Signed in successfully!");
-				// Navigate to dashboard - sync will happen there
-				router.navigate({ to: "/dashboard", replace: true });
 			},
 			onError: (error) => {
 				sessionStorage.removeItem("shouldSyncAfterSocialLogin");
