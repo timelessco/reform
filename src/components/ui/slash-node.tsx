@@ -140,29 +140,23 @@ const groups: Group[] = [
 	{
 		group: "Advanced blocks",
 		items: [
-			{
-				icon: <TableOfContentsIcon />,
-				keywords: ["toc"],
-				label: "Table of contents",
-				value: KEYS.toc,
-			},
+			// {
+			// 	icon: <TableOfContentsIcon />,
+			// 	keywords: ["toc"],
+			// 	label: "Table of contents",
+			// 	value: KEYS.toc,
+			// },
 			{
 				icon: <Columns3Icon />,
 				label: "3 columns",
 				value: "action_three_columns",
 			},
-			{
-				focusEditor: false,
-				icon: <RadicalIcon />,
-				label: "Equation",
-				value: KEYS.equation,
-			},
-			{
-				icon: <PenToolIcon />,
-				keywords: ["excalidraw"],
-				label: "Excalidraw",
-				value: KEYS.excalidraw,
-			},
+			// {
+			// 	focusEditor: false,
+			// 	icon: <RadicalIcon />,
+			// 	label: "Equation",
+			// 	value: KEYS.equation,
+			// },
 		].map((item) => ({
 			...item,
 			onSelect: (editor, value) => {
@@ -180,12 +174,7 @@ const groups: Group[] = [
 				label: "Date",
 				value: KEYS.date,
 			},
-			{
-				focusEditor: false,
-				icon: <RadicalIcon />,
-				label: "Inline Equation",
-				value: KEYS.inlineEquation,
-			},
+			// ``	
 		].map((item) => ({
 			...item,
 			onSelect: (editor, value) => {

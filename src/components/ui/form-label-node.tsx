@@ -23,18 +23,18 @@ export function FormLabelElement({
 	return (
 		<PlateElement
 			className={cn(
-				"m-0 px-0 py-1 text-sm font-medium text-foreground relative",
+				"m-0 px-0 py-1 text-sm font-medium text-foreground relative cursor-text caret-current",
 				className,
 			)}
 			{...props}
 		>
-			<span className="flex items-center gap-1">
+			<div className="flex items-center gap-1">
 				{isEmpty && placeholder && (
 					<span className="absolute text-muted-foreground/60 pointer-events-none select-none">
 						{placeholder}
 					</span>
 				)}
-				{children}
+				<span className="flex-1 min-w-px">{children}</span>
 				{isRequired && (
 					<button
 						type="button"
@@ -48,7 +48,7 @@ export function FormLabelElement({
 						*
 					</button>
 				)}
-			</span>
+			</div>
 		</PlateElement>
 	);
 }

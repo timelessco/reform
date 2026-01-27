@@ -119,28 +119,128 @@ const insertBlockMap: Record<
 		editor.tf.select({ path: [...labelPath, 0], offset: 0 });
 	},
 	pageBreak: (editor) => {
-		const block = editor.api.block();
-		if (!block) return;
+		// Find existing Submit button and convert it to Next
+		const children = editor.children as TElement[];
+		const submitIndex = children.findIndex(
+			(n) => n.type === "formButton" && n.buttonRole === "submit",
+		);
 
-		const [, path] = block;
-		const nextPath = PathApi.next(path);
+		if (submitIndex === -1) {
+			// No Submit button found - shouldn't happen with normalization, but handle gracefully
+			const block = editor.api.block();
+			if (!block) return;
+			const [, path] = block;
+			const nextPath = PathApi.next(path);
 
+			editor.tf.insertNodes(
+				{
+					type: "formButton",
+					buttonRole: "next",
+					children: [{ text: "Next" }],
+				} as any,
+				{ at: nextPath },
+			);
+
+			const pageBreakPath = PathApi.next(nextPath);
+			editor.tf.insertNodes(
+				{
+					type: "pageBreak",
+					isThankYouPage: false,
+					children: [{ text: "" }],
+				} as any,
+				{ at: pageBreakPath },
+			);
+
+			// Insert empty paragraph for content (focus here)
+			const paragraphPath = PathApi.next(pageBreakPath);
+			editor.tf.insertNodes(
+				{
+					type: "p",
+					children: [{ text: "" }],
+				} as any,
+				{ at: paragraphPath, select: true },
+			);
+
+			const prevButtonPath = PathApi.next(paragraphPath);
+			editor.tf.insertNodes(
+				{
+					type: "formButton",
+					buttonRole: "previous",
+					children: [{ text: "Previous" }],
+				} as any,
+				{ at: prevButtonPath },
+			);
+
+			const newSubmitPath = PathApi.next(prevButtonPath);
+			editor.tf.insertNodes(
+				{
+					type: "formButton",
+					buttonRole: "submit",
+					children: [{ text: "Submit" }],
+				} as any,
+				{ at: newSubmitPath },
+			);
+			return;
+		}
+
+		// Convert existing Submit button to Next
+		const submitPath: Path = [submitIndex];
+		const submitBtn = children[submitIndex];
+		const currentText = (submitBtn.children?.[0] as any)?.text;
+
+		// Update role
+		editor.tf.setNodes({ buttonRole: "next" } as any, { at: submitPath });
+
+		// Update text if it's the default "Submit"
+		if (currentText === "Submit") {
+			editor.tf.removeNodes({ at: [...submitPath, 0] });
+			editor.tf.insertNodes({ text: "Next" } as any, { at: [...submitPath, 0] });
+		}
+
+		// Insert pageBreak after the converted Next button
+		const pageBreakPath = PathApi.next(submitPath);
 		editor.tf.insertNodes(
 			{
 				type: "pageBreak",
 				isThankYouPage: false,
 				children: [{ text: "" }],
 			} as any,
-			{ at: nextPath, select: true },
+			{ at: pageBreakPath },
+		);
+
+		// Insert empty paragraph for content (focus here)
+		const paragraphPath = PathApi.next(pageBreakPath);
+		editor.tf.insertNodes(
+			{
+				type: "p",
+				children: [{ text: "" }],
+			} as any,
+			{ at: paragraphPath, select: true },
+		);
+
+		// Insert "Previous" button after paragraph
+		const prevButtonPath = PathApi.next(paragraphPath);
+		editor.tf.insertNodes(
+			{
+				type: "formButton",
+				buttonRole: "previous",
+				children: [{ text: "Previous" }],
+			} as any,
+			{ at: prevButtonPath },
+		);
+
+		// Insert new Submit button at the end (no select - focus stays on paragraph)
+		const newSubmitPath = PathApi.next(prevButtonPath);
+		editor.tf.insertNodes(
+			{
+				type: "formButton",
+				buttonRole: "submit",
+				children: [{ text: "Submit" }],
+			} as any,
+			{ at: newSubmitPath },
 		);
 	},
 	pageBreakThankYou: (editor) => {
-		const block = editor.api.block();
-		if (!block) return;
-
-		const [, path] = block;
-		const nextPath = PathApi.next(path);
-
 		// Remove isThankYouPage from all existing pageBreak elements
 		for (const [, nodePath] of editor.api.nodes({
 			match: { type: "pageBreak" },
@@ -148,14 +248,53 @@ const insertBlockMap: Record<
 			editor.tf.setNodes({ isThankYouPage: false }, { at: nodePath });
 		}
 
+		// Find existing Submit button - it should exist due to normalization
+		const children = editor.children as TElement[];
+		const submitIndex = children.findIndex(
+			(n) => n.type === "formButton" && n.buttonRole === "submit",
+		);
+
+		if (submitIndex === -1) {
+			// No Submit button - add one and then the thank-you pageBreak
+			const block = editor.api.block();
+			if (!block) return;
+			const [, path] = block;
+			const nextPath = PathApi.next(path);
+
+			editor.tf.insertNodes(
+				{
+					type: "formButton",
+					buttonRole: "submit",
+					children: [{ text: "Submit" }],
+				} as any,
+				{ at: nextPath },
+			);
+
+			const pageBreakPath = PathApi.next(nextPath);
+			editor.tf.insertNodes(
+				{
+					type: "pageBreak",
+					isThankYouPage: true,
+					children: [{ text: "" }],
+				} as any,
+				{ at: pageBreakPath, select: true },
+			);
+			return;
+		}
+
+		// Insert thank you pageBreak after the existing Submit button
+		const submitPath: Path = [submitIndex];
+		const pageBreakPath = PathApi.next(submitPath);
 		editor.tf.insertNodes(
 			{
 				type: "pageBreak",
 				isThankYouPage: true,
 				children: [{ text: "" }],
 			} as any,
-			{ at: nextPath, select: true },
+			{ at: pageBreakPath, select: true },
 		);
+
+		// No buttons after thank you pageBreak - user can add content there
 	},
 };
 

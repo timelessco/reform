@@ -44,6 +44,7 @@ export function PageBreakElement(props: PlateElementProps) {
 
 		let count = 2; // Page 1 is before first pageBreak, so this starts at 2
 		for (const [, nodePath] of editor.api.nodes({
+			at: [],
 			match: { type: "pageBreak" },
 		})) {
 			// Count pageBreaks that come before current element
@@ -91,21 +92,23 @@ export function PageBreakElement(props: PlateElementProps) {
 					<span className="font-medium">Page {pageNumber}</span>
 
 					{/* Thank you page toggle */}
-					<div className="flex items-center gap-2">
-						<Label
-							htmlFor={`thank-you-toggle-${element.id || pageNumber}`}
-							className="text-xs text-muted-foreground cursor-pointer"
-						>
-							'Thank you' page
-						</Label>
-						<Switch
-							id={`thank-you-toggle-${element.id || pageNumber}`}
-							checked={isThankYouPage}
-							onCheckedChange={handleThankYouToggle}
-							disabled={readOnly}
-							onMouseDown={(e) => e.stopPropagation()}
-						/>
-					</div>
+					{!((element.hasFormFields as boolean) ?? false) && (
+						<div className="flex items-center gap-2">
+							<Label
+								htmlFor={`thank-you-toggle-${element.id || pageNumber}`}
+								className="text-xs text-muted-foreground cursor-pointer"
+							>
+								'Thank you' page
+							</Label>
+							<Switch
+								id={`thank-you-toggle-${element.id || pageNumber}`}
+								checked={isThankYouPage}
+								onCheckedChange={handleThankYouToggle}
+								disabled={readOnly}
+								onMouseDown={(e) => e.stopPropagation()}
+							/>
+						</div>
+					)}
 				</div>
 
 				{/* Right dashed line */}

@@ -19,6 +19,11 @@ export function generateZodSchemaFromFields(
 	const schemaShape: Record<string, ZodType> = {};
 
 	for (const field of fields) {
+		// Skip Button fields - they don't have validation
+		if (field.fieldType === "Button") {
+			continue;
+		}
+
 		let schema: z.ZodString = z.string();
 
 		// Apply minLength constraint
@@ -65,6 +70,10 @@ export function generateDefaultValuesFromFields(
 	const defaults: Record<string, unknown> = {};
 
 	for (const field of fields) {
+		// Skip Button fields - they don't have form values
+		if (field.fieldType === "Button") {
+			continue;
+		}
 		defaults[field.name] = field.defaultValue ?? "";
 	}
 

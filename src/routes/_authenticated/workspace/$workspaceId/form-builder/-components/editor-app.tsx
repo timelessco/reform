@@ -1,6 +1,7 @@
 import { EditorKit } from "@/components/editor/editor-kit";
 import { Button } from "@/components/ui/button";
 import { Editor, EditorContainer } from "@/components/ui/editor";
+import { createFormButtonNode } from "@/components/ui/form-button-node";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import { updateDoc, updateHeader } from "@/db-collections";
 import { useForm } from "@/hooks/use-live-hooks";
@@ -18,9 +19,10 @@ interface EditorAppProps {
 const DEFAULT_EDITOR_VALUE = normalizeNodeId([
 	createFormHeaderNode() as unknown as TElement,
 	{
-		children: [{ text: "Start building your form..." }],
+		children: [{ text: "" }],
 		type: "p",
 	},
+	createFormButtonNode("submit") as unknown as TElement,
 ]);
 
 export default function EditorApp({ formId, workspaceId, defaultValue }: EditorAppProps) {
@@ -59,6 +61,26 @@ export default function EditorApp({ formId, workspaceId, defaultValue }: EditorA
 						cover: docData.cover || null,
 					}) as unknown as TElement,
 					...(docData.content as Value),
+				];
+			}
+
+			// Migration: ensure Submit button exists for existing forms
+			const hasSubmitButton = initialContent.some(
+				(node: TElement) =>
+					node.type === "formButton" && node.buttonRole === "submit"
+			);
+			if (!hasSubmitButton) {
+				// Find the position to insert Submit (before thank-you pageBreak if exists, otherwise at end)
+				const thankYouIndex = initialContent.findIndex(
+					(node: TElement) =>
+						node.type === "pageBreak" && node.isThankYouPage === true
+				);
+				const insertIndex =
+					thankYouIndex !== -1 ? thankYouIndex : initialContent.length;
+				initialContent = [
+					...initialContent.slice(0, insertIndex),
+					createFormButtonNode("submit") as unknown as TElement,
+					...initialContent.slice(insertIndex),
 				];
 			}
 		} else {

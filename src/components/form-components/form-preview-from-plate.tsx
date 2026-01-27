@@ -1,8 +1,22 @@
 import type { Value } from "platejs";
 import { useState } from "react";
+import { ChevronRightIcon } from "lucide-react";
 import { RenderPreviewInput } from "@/components/form-components/render-preview-input";
 import { Button } from "@/components/ui/button";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import { usePreviewForm } from "@/hooks/use-preview-form";
 import {
 	extractFormHeader,
@@ -83,14 +97,59 @@ function DefaultIcon() {
 }
 
 /**
+ * Navigation handlers for buttons
+ */
+export type NavigationHandlers = {
+	onNext?: () => void;
+	onPrevious?: () => void;
+	onSubmit?: () => void;
+	isSubmitting?: boolean;
+};
+
+/**
+ * Toggle renderer component with its own open/closed state
+ */
+function ToggleRenderer({
+	title,
+	children,
+	form,
+}: {
+	title: string;
+	children: TransformedElement[];
+	form: ReturnType<typeof usePreviewForm>["form"];
+}) {
+	const [isOpen, setIsOpen] = useState(false);
+
+	return (
+		<Collapsible open={isOpen} onOpenChange={setIsOpen} className="my-2">
+			<CollapsibleTrigger className="flex items-center gap-2 w-full text-left hover:bg-muted/50 rounded-md p-2 -ml-2 transition-colors">
+				<ChevronRightIcon
+					className={`h-4 w-4 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`}
+				/>
+				<span className="font-medium">{title}</span>
+			</CollapsibleTrigger>
+			<CollapsibleContent className="pl-6 space-y-2">
+				{children.map((child) => (
+					<RenderPreviewElement key={child.id} element={child} form={form} />
+				))}
+			</CollapsibleContent>
+		</Collapsible>
+	);
+}
+
+/**
  * Renders a single preview element (static or input)
  */
 function RenderPreviewElement({
 	element,
 	form,
+	navigation,
+	grouped = false,
 }: {
 	element: TransformedElement;
 	form: ReturnType<typeof usePreviewForm>["form"];
+	navigation?: NavigationHandlers;
+	grouped?: boolean;
 }) {
 	// Static elements
 	if ("static" in element && element.static) {
@@ -119,6 +178,80 @@ function RenderPreviewElement({
 						{element.content}
 					</p>
 				);
+			case "UnorderedList":
+				return (
+					<ul className="my-2 ml-6 space-y-1 [list-style-type:disc]">
+						{element.items.map((item, idx) => (
+							<li key={`${element.id}-${idx}`} className="text-sm pl-1">
+								{item}
+							</li>
+						))}
+					</ul>
+				);
+			case "OrderedList":
+				return (
+					<ol className="my-2 ml-6 space-y-1 [list-style-type:decimal]">
+						{element.items.map((item, idx) => (
+							<li key={`${element.id}-${idx}`} className="text-sm pl-1">
+								{item}
+							</li>
+						))}
+					</ol>
+				);
+			case "Toggle":
+				return (
+					<ToggleRenderer
+						title={element.title}
+						children={element.children}
+						form={form}
+					/>
+				);
+			case "Table":
+				return (
+					<div className="my-4 border rounded-md overflow-hidden">
+						<Table>
+							{element.rows.some((row) => row.isHeader) && (
+								<TableHeader>
+									{element.rows
+										.filter((row) => row.isHeader)
+										.map((row, rowIdx) => (
+											<TableRow key={`${element.id}-header-${rowIdx}`}>
+												{row.cells.map((cell, cellIdx) => (
+													<TableHead key={`${element.id}-header-${rowIdx}-${cellIdx}`}>
+														{cell}
+													</TableHead>
+												))}
+											</TableRow>
+										))}
+								</TableHeader>
+							)}
+							<TableBody>
+								{element.rows
+									.filter((row) => !row.isHeader)
+									.map((row, rowIdx) => (
+										<TableRow key={`${element.id}-row-${rowIdx}`}>
+											{row.cells.map((cell, cellIdx) => (
+												<TableCell key={`${element.id}-row-${rowIdx}-${cellIdx}`}>
+													{cell}
+												</TableCell>
+											))}
+										</TableRow>
+									))}
+							</TableBody>
+						</Table>
+					</div>
+				);
+			case "Callout":
+				return (
+					<div className="my-4 bg-muted rounded-lg p-4 flex gap-3 items-start">
+						{element.emoji && (
+							<span className="text-xl shrink-0" role="img" aria-hidden="true">
+								{element.emoji}
+							</span>
+						)}
+						<p className="text-sm">{element.content}</p>
+					</div>
+				);
 			default:
 				return null;
 		}
@@ -130,10 +263,45 @@ function RenderPreviewElement({
 		element.fieldType === "Textarea" ||
 		element.fieldType === "Button"
 	) {
-		return <RenderPreviewInput field={element as PlateFormField} form={form} />;
+		return <RenderPreviewInput field={element as PlateFormField} form={form} navigation={navigation} grouped={grouped} />;
 	}
 
 	return null;
+}
+
+/**
+ * Groups elements for rendering, combining adjacent buttons into groups
+ */
+function groupElementsForRendering(elements: TransformedElement[]): Array<TransformedElement | { type: 'buttonGroup'; buttons: TransformedElement[] }> {
+	const result: Array<TransformedElement | { type: 'buttonGroup'; buttons: TransformedElement[] }> = [];
+	let i = 0;
+
+	while (i < elements.length) {
+		const element = elements[i];
+
+		// Check if this is a button
+		if (element.fieldType === 'Button') {
+			const buttons: TransformedElement[] = [element];
+
+			// Collect consecutive buttons
+			while (i + 1 < elements.length && elements[i + 1].fieldType === 'Button') {
+				i++;
+				buttons.push(elements[i]);
+			}
+
+			// If multiple buttons, group them; otherwise keep single
+			if (buttons.length > 1) {
+				result.push({ type: 'buttonGroup', buttons });
+			} else {
+				result.push(element);
+			}
+		} else {
+			result.push(element);
+		}
+		i++;
+	}
+
+	return result;
 }
 
 /**
@@ -456,65 +624,65 @@ export function FormPreviewFromPlate({
 			<div className="max-w-2xl mx-auto px-4 sm:px-0">
 				<form.AppForm>
 					<form.Form id={formName} noValidate className="space-y-4">
-						{/* Current step elements */}
-						{currentStepElements.map((element) => (
-							<div key={element.id} className="w-full">
-								<RenderPreviewElement element={element} form={form} />
-							</div>
-						))}
+						{/* Current step elements with navigation handlers */}
+						{groupElementsForRendering(currentStepElements).map((item, index) => {
+							const navigation = {
+								onNext: isMultiStep && !isLastStep ? () => setCurrentStep((s) => s + 1) : undefined,
+								onPrevious: isMultiStep && currentStep > 0 ? () => setCurrentStep((s) => s - 1) : undefined,
+								onSubmit: isLastStep || !isMultiStep ? () => {} : undefined,
+								isSubmitting: form.baseStore?.state?.isSubmitting,
+							};
 
-						{/* Navigation buttons */}
-						<div className="flex items-center justify-between w-full pt-4">
-							{/* Previous button - only show in multi-step forms */}
-							<div>
-								{isMultiStep && currentStep > 0 && (
-									<Button
-										type="button"
-										onClick={() => setCurrentStep((s) => s - 1)}
-										variant="outline"
-										size="sm"
-										className="rounded-lg"
-									>
-										Previous
-									</Button>
-								)}
-							</div>
+							// Handle button groups (Previous + Next/Submit on same line)
+							if ('type' in item && item.type === 'buttonGroup') {
+								const prevButton = item.buttons.find((b) => {
+									// Button elements have buttonRole property
+									const btn = b as PlateFormField & { buttonRole?: string };
+									return btn.buttonRole === 'previous';
+								});
+								const actionButton = item.buttons.find((b) => {
+									const btn = b as PlateFormField & { buttonRole?: string };
+									const role = btn.buttonRole;
+									return role === 'next' || role === 'submit';
+								});
 
-							{/* Next/Submit buttons */}
-							<div className="flex gap-3">
-								{isMultiStep && !isLastStep ? (
-									// Next button for non-final steps
-									<Button
-										type="button"
-										onClick={() => setCurrentStep((s) => s + 1)}
-										size="sm"
-										className="rounded-lg"
-									>
-										Next
-									</Button>
-								) : (
-									// Submit button for final step (or single-step forms)
-									hasEditableFields && (
-										<>
-											<Button
-												type="button"
-												onClick={handleReset}
-												variant="outline"
-												size="sm"
-												className="rounded-lg"
-											>
-												Reset
-											</Button>
-											<Button type="submit" size="sm" className="rounded-lg">
-												{form.baseStore?.state?.isSubmitting
-													? "Submitting..."
-													: "Submit"}
-											</Button>
-										</>
-									)
-								)}
+								return (
+									<div key={`button-group-${index}`} className="flex justify-between items-center w-full">
+										{prevButton ? (
+											<RenderPreviewElement element={prevButton} form={form} navigation={navigation} grouped />
+										) : (
+											<div /> // Spacer for justify-between
+										)}
+										{actionButton && (
+											<RenderPreviewElement element={actionButton} form={form} navigation={navigation} grouped />
+										)}
+									</div>
+								);
+							}
+
+							// Regular element
+							const element = item as TransformedElement;
+							return (
+								<div key={element.id} className="w-full">
+									<RenderPreviewElement element={element} form={form} navigation={navigation} />
+								</div>
+							);
+						})}
+
+						{/* Fallback navigation if no buttons in content - only show reset on last step with editable fields */}
+						{isLastStep && hasEditableFields && (
+							<div className="flex items-center justify-end w-full pt-4">
+								<Button
+									type="button"
+									onClick={handleReset}
+									variant="outline"
+									size="sm"
+									className="rounded-lg"
+								>
+									Reset
+								</Button>
 							</div>
-						</div>
+						)}
 					</form.Form>
 				</form.AppForm>
 			</div>

@@ -21,9 +21,6 @@ const config = defineConfig({
 			}
 		}),
 		nitro({
-			rollupConfig: {
-				external: [/\.node$/],
-			},
 		}),
 		// this is the plugin that enables path aliases
 		viteTsConfigPaths({

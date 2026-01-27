@@ -89,15 +89,15 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 
 	const firstNode = selectedNodes[0]?.[0] as
 		| {
-				type?: string;
-				required?: boolean;
-				placeholder?: string;
-				minLength?: number;
-				maxLength?: number;
-				defaultValue?: string;
-				buttonText?: string;
-				children?: Array<{ text?: string }>;
-		  }
+			type?: string;
+			required?: boolean;
+			placeholder?: string;
+			minLength?: number;
+			maxLength?: number;
+			defaultValue?: string;
+			buttonText?: string;
+			children?: Array<{ text?: string }>;
+		}
 		| undefined;
 	const firstPath = selectedNodes[0]?.[1];
 
@@ -106,7 +106,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 
 	// Get label node (for formInput/formTextarea, look at previous sibling)
 	const labelNode = React.useMemo(() => {
-		if (nodeType === "formLabel") return firstNode;
+		if (nodeType === "formLabel" || nodeType === "formButton") return firstNode;
 		if (["formInput", "formTextarea"].includes(nodeType ?? "") && firstPath) {
 			// Look at previous sibling for label
 			const prevPath = [...firstPath];
@@ -244,12 +244,24 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 	const handleUpdateButtonText = (value: string) => {
 		if (!firstPath || nodeType !== "formButton") return;
 		setButtonText(value);
+
+		// Update children to sync with the renderer in form-button-node.tsx
+		editor.tf.insertNodes(
+			{ text: value },
+			{ at: [...firstPath, 0], select: false },
+		);
+		editor.tf.removeNodes({ at: [...firstPath, 1] });
+
+		// Also keep buttonText property for backward compatibility
 		editor.tf.setNodes({ buttonText: value }, { at: firstPath });
 	};
 
 	const handleUpdateFieldName = () => {
 		if (!labelNode || !firstPath || !fieldName.trim()) return;
-		const labelPath = nodeType === "formLabel" ? firstPath : [...firstPath];
+		const labelPath =
+			nodeType === "formLabel" || nodeType === "formButton"
+				? firstPath
+				: [...firstPath];
 		if (["formInput", "formTextarea"].includes(nodeType ?? "")) {
 			labelPath[labelPath.length - 1] -= 1;
 		}

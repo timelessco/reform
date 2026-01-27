@@ -146,11 +146,9 @@ export const Route = createFileRoute("/api/electric")({
 					upstreamUrl.searchParams.set("source_secret", sourceSecret);
 				}
 
-				const allowedParams = ["live", "table", "handle", "offset", "cursor"];
+				// Forward all query parameters (including cache busters)
 				for (const [key, value] of url.searchParams.entries()) {
-					if (allowedParams.includes(key)) {
-						upstreamUrl.searchParams.set(key, value);
-					}
+					upstreamUrl.searchParams.set(key, value);
 				}
 
 				upstreamUrl.searchParams.set("table", table);
@@ -167,6 +165,7 @@ export const Route = createFileRoute("/api/electric")({
 				try {
 					const upstream = await fetch(upstreamUrl.toString(), {
 						method: "GET",
+						cache: "no-store",
 					});
 
 					const headers = new Headers(upstream.headers);
@@ -174,6 +173,12 @@ export const Route = createFileRoute("/api/electric")({
 					headers.delete("content-length");
 					headers.delete("access-control-allow-origin");
 					headers.delete("access-control-allow-credentials");
+					headers.delete("cache-control"); // Remove upstream cache control
+
+					// Force no-cache
+					headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+					headers.set("Pragma", "no-cache");
+					headers.set("Expires", "0");
 					headers.set("Vary", "Cookie");
 
 					return new Response(upstream.body, {

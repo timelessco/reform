@@ -5,7 +5,7 @@ import {
 	BlockMenuPlugin,
 	BlockSelectionPlugin,
 } from "@platejs/selection/react";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
+import { GripVertical, Plus, Settings, Trash2 } from "lucide-react";
 import { getPluginByType, isType, KEYS, type TElement } from "platejs";
 import {
 	MemoizedChildren,
@@ -32,39 +32,115 @@ const UNDRAGGABLE_KEYS = [KEYS.column, KEYS.tr, KEYS.td, "formHeader"];
 export const BlockDraggable: RenderNodeWrapper = (props) => {
 	const { editor, element, path } = props;
 
-	const enabled = React.useMemo(() => {
-		if (editor.dom.readOnly) return false;
-
-		if (path.length === 1 && !isType(editor, element, UNDRAGGABLE_KEYS)) {
-			return true;
+	const { isHidden, enabled } = React.useMemo(() => {
+		if (editor.dom.readOnly) {
+			return { isAfterButton: false, isHidden: false, enabled: false };
 		}
-		if (path.length === 3 && !isType(editor, element, UNDRAGGABLE_KEYS)) {
+
+		// Check if block is strictly after a form button in the same page section
+		// Logic: Find nearest preceding button. If no PageBreak exists between that button and this block, it's invalid.
+		let isAfterButton = false;
+		let isHidden = false;
+
+		const children = editor.children as TElement[];
+		const currentIndex = path[0];
+
+		// Find nearest preceding button (Strictly "Action" buttons: Next or Submit)
+		// We ignore "Previous" buttons because they are allowed to be followed by a Next/Submit button.
+		let nearestButtonIndex = -1;
+		for (let i = currentIndex - 1; i >= 0; i--) {
+			const node = children[i];
+			if (node.type === 'formButton') {
+				const role = (node as any).buttonRole;
+				// If role is previous, we don't count it as a "terminator".
+				// (We assume the structure [Previous] [Next] is valid, so [Next] is not "after" a terminator)
+				if (role === 'previous') continue;
+
+				nearestButtonIndex = i;
+				break;
+			}
+		}
+
+		if (nearestButtonIndex !== -1) {
+			// Found a preceding button. Check for intervening page breaks.
+			const hasPageBreak = children
+				.slice(nearestButtonIndex + 1, currentIndex)
+				.some((n) => n.type === 'pageBreak');
+
+			if (!hasPageBreak) {
+				// No page break between button and this block.
+				// This block is "orphaned" after the button.
+				isAfterButton = true;
+				const node = element;
+				const isThankYou =
+					node.type === "pageBreak" && node.isThankYouPage === true;
+
+				// Special case: PageBreak itself is valid immediately after button
+				if (node.type === "pageBreak") {
+					isHidden = false;
+					isAfterButton = false; // PageBreak allows starting new section
+				} else if (!isThankYou) {
+					isHidden = true;
+				}
+			}
+		}
+
+		if (isHidden) {
+			return { isAfterButton: true, isHidden: true, enabled: false };
+		}
+
+		let enabled = false;
+		if (path.length === 1 && !isType(editor, element, UNDRAGGABLE_KEYS)) {
+			enabled = true;
+		} else if (
+			path.length === 3 &&
+			!isType(editor, element, UNDRAGGABLE_KEYS)
+		) {
 			const block = editor.api.some({
 				at: path,
 				match: {
 					type: editor.getType(KEYS.column),
 				},
 			});
-
-			if (block) {
-				return true;
-			}
-		}
-		if (path.length === 4 && !isType(editor, element, UNDRAGGABLE_KEYS)) {
+			if (block) enabled = true;
+		} else if (
+			path.length === 4 &&
+			!isType(editor, element, UNDRAGGABLE_KEYS)
+		) {
 			const block = editor.api.some({
 				at: path,
 				match: {
 					type: editor.getType(KEYS.table),
 				},
 			});
-
-			if (block) {
-				return true;
-			}
+			if (block) enabled = true;
 		}
 
-		return false;
+		// If strictly after button (even if thank you), we might want to disable dragging?
+		// For now, allow regular logic for ThankYou page, but the earlier check handled the hidden ones.
+		if (isAfterButton && !isHidden) {
+			// It is a Thank You page. Allow dragging?
+			// User: "no single way to do that [add after button]".
+			// Moving Thank You page might be allowed.
+			// Let's keep 'enabled' as calculated derived from structure.
+		}
+
+		return { isAfterButton, isHidden, enabled };
 	}, [editor, element, path]);
+
+	if (isHidden) {
+		// Use height:0 to keep it in DOM for normalization but invisible to user
+		// opacity:0 and pointer-events:none ensures no interaction
+		// We avoid display:none to prevent potential selection issues if cursor is forced there
+		return (props) => (
+			<div
+				className="opacity-0 pointer-events-none h-0 overflow-hidden"
+				aria-hidden="true"
+			>
+				{props.children}
+			</div>
+		);
+	}
 
 	if (!enabled) return;
 
@@ -74,6 +150,17 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
 function Draggable(props: PlateElementProps) {
 	const { children, editor, element, path } = props;
 	const blockSelectionApi = editor.getApi(BlockSelectionPlugin).blockSelection;
+
+	const isFormButton = element.type === "formButton";
+
+	const buttonLayoutClass = React.useMemo(() => {
+		if (isFormButton) {
+			const role = (element as any).buttonRole;
+			if (role === 'previous') return "float-left clear-none";
+			return "float-right clear-none"; // next/submit
+		}
+		return "clear-both";
+	}, [isFormButton, element]);
 
 	const { isAboutToDrag, isDragging, nodeRef, previewRef, handleRef } =
 		useDraggable({
@@ -122,6 +209,7 @@ function Draggable(props: PlateElementProps) {
 		<div
 			className={cn(
 				"relative",
+				buttonLayoutClass,
 				isDragging && "opacity-50",
 				getPluginByType(editor, element.type)?.node.isContainer
 					? "group/container"
@@ -142,59 +230,64 @@ function Draggable(props: PlateElementProps) {
 						)}
 						style={{ marginTop: `${dragButtonTop}px` }}
 					>
-						{/* Delete Button */}
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
-									onClick={(e) => {
-										e.preventDefault();
-										e.stopPropagation();
-										// Delete the current block
-										editor.tf.removeNodes({ at: path });
-									}}
-									data-plate-prevent-deselect
-								>
-									<Trash2 className="h-4 w-4 text-muted-foreground" />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>Delete block</TooltipContent>
-						</Tooltip>
+						{/* Delete Button - hidden for form buttons */}
+						{!isFormButton && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+										onClick={(e) => {
+											e.preventDefault();
+											e.stopPropagation();
+											// Delete the current block
+											editor.tf.removeNodes({ at: path });
+										}}
+										data-plate-prevent-deselect
+									>
+										<Trash2 className="h-4 w-4 text-muted-foreground" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>Delete block</TooltipContent>
+							</Tooltip>
+						)}
 
-						{/* Plus Button */}
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="h-6 w-6 p-0"
-									onClick={(e) => {
-										e.preventDefault();
-										e.stopPropagation();
-										// Insert a new paragraph block after the current block
-										const nextPath = [...path];
-										nextPath[nextPath.length - 1] += 1;
-										editor.tf.insertNodes(
-											{
-												type: KEYS.p,
-												children: [{ text: "" }],
-											},
-											{ at: nextPath, select: true },
-										);
-									}}
-									data-plate-prevent-deselect
-								>
-									<Plus className="h-4 w-4 text-muted-foreground" />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>Add block below</TooltipContent>
-						</Tooltip>
 
-						{/* Drag Handle */}
+						{/* Plus Button - Add after (hidden for form buttons) */}
+						{!isFormButton && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-6 w-6 p-0"
+										onClick={(e) => {
+											e.preventDefault();
+											e.stopPropagation();
+											// Insert a new paragraph block after the current block
+											const nextPath = [...path];
+											nextPath[nextPath.length - 1] += 1;
+											editor.tf.insertNodes(
+												{
+													type: KEYS.p,
+													children: [{ text: "" }],
+												},
+												{ at: nextPath, select: true },
+											);
+										}}
+										data-plate-prevent-deselect
+									>
+										<Plus className="h-4 w-4 text-muted-foreground" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>Add block below</TooltipContent>
+							</Tooltip>
+						)}
+
+						{/* Drag Handle or Settings Gear */}
 						<Button
-							ref={handleRef}
+							ref={isFormButton ? null : handleRef}
 							variant="ghost"
 							size="icon"
 							className="h-6 w-6 p-0"
@@ -205,6 +298,7 @@ function Draggable(props: PlateElementProps) {
 								previewRef={previewRef}
 								resetPreview={resetPreview}
 								setPreviewTop={setPreviewTop}
+								isFormButton={isFormButton}
 							/>
 						</Button>
 					</div>
@@ -213,7 +307,7 @@ function Draggable(props: PlateElementProps) {
 
 			<div
 				ref={previewRef}
-				className={cn("-left-0 absolute hidden w-full")}
+				className={cn("left-0 absolute hidden w-full")}
 				style={{ top: `${-previewTop}px` }}
 				contentEditable={false}
 			/>
@@ -273,11 +367,13 @@ const DragHandle = React.memo(function DragHandle({
 	previewRef,
 	resetPreview,
 	setPreviewTop,
+	isFormButton,
 }: {
 	isDragging: boolean;
 	previewRef: React.RefObject<HTMLDivElement | null>;
 	resetPreview: () => void;
 	setPreviewTop: (top: number) => void;
+	isFormButton?: boolean;
 }) {
 	const editor = useEditorRef();
 	const element = useElement();
@@ -299,6 +395,7 @@ const DragHandle = React.memo(function DragHandle({
 						});
 					}}
 					onMouseDown={(e) => {
+						if (isFormButton) return;
 						resetPreview();
 
 						if ((e.button !== 0 && e.button !== 2) || e.shiftKey) return;
@@ -379,10 +476,16 @@ const DragHandle = React.memo(function DragHandle({
 					data-plate-prevent-deselect
 					role="button"
 				>
-					<GripVertical className="text-muted-foreground" />
+					{isFormButton ? (
+						<Settings className="text-muted-foreground" />
+					) : (
+						<GripVertical className="text-muted-foreground" />
+					)}
 				</div>
 			</TooltipTrigger>
-			<TooltipContent>Drag to move, Click to open menu</TooltipContent>
+			<TooltipContent>
+				{isFormButton ? "Click for settings" : "Drag to move, Click to open menu"}
+			</TooltipContent>
 		</Tooltip>
 	);
 });
@@ -490,11 +593,13 @@ const createDragPreviewElements = (
 
 			const domNodeRect = domNode.parentElement?.getBoundingClientRect();
 
-			const distance = domNodeRect.top - lastDomNodeRect.bottom;
+			if (domNodeRect && lastDomNodeRect) {
+				const distance = domNodeRect.top - lastDomNodeRect.bottom;
 
-			// Check if the two elements are adjacent (touching each other)
-			if (distance > 15) {
-				wrapper.style.marginTop = `${distance}px`;
+				// Check if the two elements are adjacent (touching each other)
+				if (distance > 15) {
+					wrapper.style.marginTop = `${distance}px`;
+				}
 			}
 		}
 

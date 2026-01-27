@@ -544,7 +544,6 @@ function SidebarWorkspaces({ activeOrgId }: { activeOrgId?: string }) {
 				),
 			}));
 	}, [workspacesData, formsData, activeOrgId, isElectricReady]);
-	console.log(workspaces , 'workspaces')
 	// State for dialogs
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [workspaceToDelete, setWorkspaceToDelete] =

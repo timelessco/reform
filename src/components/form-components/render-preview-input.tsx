@@ -1,7 +1,9 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import type { NavigationHandlers } from "@/components/form-components/form-preview-from-plate";
 import type { AppForm } from "@/hooks/use-form-builder";
 /**
  * Simplified input field renderer for form preview.
@@ -12,6 +14,9 @@ import type { PlateFormField } from "@/lib/transform-plate-to-form";
 interface RenderPreviewInputProps {
 	field: PlateFormField;
 	form: AppForm;
+	navigation?: NavigationHandlers;
+	/** When true, renders button without wrapper div (for button groups) */
+	grouped?: boolean;
 }
 
 /**
@@ -44,14 +49,60 @@ function extractErrorMessage(error: unknown): string {
  * Renders a single field in the preview form.
  * Supports Input, Textarea, and Button field types.
  */
-export function RenderPreviewInput({ field, form }: RenderPreviewInputProps) {
+export function RenderPreviewInput({ field, form, navigation, grouped = false }: RenderPreviewInputProps) {
 	// Handle Button field type
 	if (field.fieldType === "Button") {
-		return (
-			<Button type="submit" className="inline-flex">
-				{field.buttonText || "Submit"}
+		const buttonRole = field.buttonRole || "submit";
+		const buttonText = field.buttonText || (
+			buttonRole === "next" ? "Next" : buttonRole === "previous" ? "Previous" : "Submit"
+		);
+
+		// Previous button - secondary style
+		if (buttonRole === "previous") {
+			const button = (
+				<Button
+					type="button"
+					variant="outline"
+					onClick={navigation?.onPrevious}
+					className="inline-flex items-center gap-2"
+				>
+					<ChevronLeft className="h-4 w-4" />
+					{buttonText}
+				</Button>
+			);
+			// When grouped, parent handles layout; otherwise wrap with justify-start
+			return grouped ? button : <div className="flex justify-start">{button}</div>;
+		}
+
+		// Next button - primary style, moves to next step
+		if (buttonRole === "next") {
+			const button = (
+				<Button
+					type="button"
+					onClick={navigation?.onNext}
+					className="inline-flex items-center gap-2"
+				>
+					{buttonText}
+					<ChevronRight className="h-4 w-4" />
+				</Button>
+			);
+			// When grouped, parent handles layout; otherwise wrap with justify-end
+			return grouped ? button : <div className="flex justify-end">{button}</div>;
+		}
+
+		// Submit button - primary style, submits form
+		const submitButton = (
+			<Button
+				type="submit"
+				className="inline-flex items-center gap-2"
+				disabled={navigation?.isSubmitting}
+			>
+				{navigation?.isSubmitting ? "Submitting..." : buttonText}
+				<ChevronRight className="h-4 w-4" />
 			</Button>
 		);
+		// When grouped, parent handles layout; otherwise wrap with justify-end
+		return grouped ? submitButton : <div className="flex justify-end">{submitButton}</div>;
 	}
 
 	// Handle Textarea field type

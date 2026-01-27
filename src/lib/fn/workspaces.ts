@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createMiddleware, createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
-import { eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, not } from "drizzle-orm";
 import { z } from "zod";
 import { forms, member, workspaces } from "@/db/schema";
 import { db } from "@/lib/db";
@@ -209,8 +209,8 @@ export const getWorkspacesWithForms = createServerFn({ method: "GET" })
 				workspaceId: forms.workspaceId,
 			})
 			.from(forms)
-			.where(inArray(forms.workspaceId, workspaceIds))
-			.orderBy(forms.updatedAt);
+			.where(and(inArray(forms.workspaceId, workspaceIds), not(eq(forms.status, "archived"))))
+			.orderBy(desc(forms.updatedAt));
 
 		// Group forms by workspaceId
 		const formsByWorkspace = formsList.reduce(

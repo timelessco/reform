@@ -49,6 +49,7 @@ export type PlateFormField =
 			name: string;
 			fieldType: "Button";
 			buttonText?: string;
+			buttonRole: "next" | "previous" | "submit";
 	  };
 
 export type PlateStaticElement =
@@ -68,6 +69,43 @@ export type PlateStaticElement =
 			id: string;
 			fieldType: "PageBreak";
 			isThankYouPage: boolean;
+			static: true;
+			name: string;
+	  }
+	| {
+			id: string;
+			fieldType: "UnorderedList";
+			items: string[];
+			static: true;
+			name: string;
+	  }
+	| {
+			id: string;
+			fieldType: "OrderedList";
+			items: string[];
+			static: true;
+			name: string;
+	  }
+	| {
+			id: string;
+			fieldType: "Toggle";
+			title: string;
+			children: TransformedElement[];
+			static: true;
+			name: string;
+	  }
+	| {
+			id: string;
+			fieldType: "Table";
+			rows: { cells: string[]; isHeader: boolean }[];
+			static: true;
+			name: string;
+	  }
+	| {
+			id: string;
+			fieldType: "Callout";
+			emoji?: string;
+			content: string;
 			static: true;
 			name: string;
 	  };
@@ -99,6 +137,73 @@ function slugify(str: string): string {
 			.replace(/[^a-z0-9]+/g, "_")
 			.replace(/^_|_$/g, "") || "field"
 	);
+}
+
+/**
+ * Extracts list items from a Plate list node (ul/ol).
+ * Handles nested structure: ul > li > lic > text
+ */
+function extractListItems(node: any): string[] {
+	const items: string[] = [];
+	if (!node.children || !Array.isArray(node.children)) return items;
+
+	for (const li of node.children) {
+		if (li.type === "li" && li.children) {
+			// List item content is typically in a "lic" (list item content) node
+			for (const child of li.children) {
+				if (child.type === "lic" || child.type === "p") {
+					const text = extractTextContent(child.children);
+					if (text) items.push(text);
+				} else if (child.text !== undefined) {
+					// Direct text child
+					const text = child.text?.trim();
+					if (text) items.push(text);
+				}
+			}
+		}
+	}
+	return items;
+}
+
+/**
+ * Extracts table rows from a Plate table node.
+ * Handles structure: table > tr > (th|td) > text
+ */
+function extractTableRows(
+	node: any,
+): { cells: string[]; isHeader: boolean }[] {
+	const rows: { cells: string[]; isHeader: boolean }[] = [];
+	if (!node.children || !Array.isArray(node.children)) return rows;
+
+	for (const tr of node.children) {
+		if (tr.type === "tr" && tr.children) {
+			const cells: string[] = [];
+			let isHeader = false;
+
+			for (const cell of tr.children) {
+				if (cell.type === "th") {
+					isHeader = true;
+				}
+				// Extract text from cell - cells often have p > text structure
+				let cellText = "";
+				if (cell.children) {
+					for (const cellChild of cell.children) {
+						if (cellChild.type === "p" && cellChild.children) {
+							cellText += extractTextContent(cellChild.children);
+						} else if (cellChild.text !== undefined) {
+							cellText += cellChild.text;
+						}
+					}
+				}
+				cells.push(cellText.trim());
+			}
+
+			if (cells.length > 0) {
+				rows.push({ cells, isHeader });
+			}
+		}
+	}
+	return rows;
 }
 
 /**
@@ -289,15 +394,116 @@ export function transformPlateStateToFormElements(
 
 			// Button field
 			case "formButton": {
-				const btnText = node.buttonText as string | undefined;
+				// Get button text from children (editable) or fallback to buttonText property
+				const childText = extractTextContent(
+					node.children as Array<{ text?: string }>,
+				);
+				const btnText = childText || (node.buttonText as string | undefined);
+				const btnRole = (node.buttonRole as "next" | "previous" | "submit") || "submit";
+				const defaultText = btnRole === "next" ? "Next" : btnRole === "previous" ? "Previous" : "Submit";
 				const name = `button_${fieldIndex}`;
 				elements.push({
 					id: name,
 					name,
 					fieldType: "Button",
-					buttonText: btnText || "Submit",
+					buttonText: btnText || defaultText,
+					buttonRole: btnRole,
 				});
 				fieldIndex++;
+				break;
+			}
+
+			// Unordered list
+			case "ul": {
+				const items = extractListItems(node);
+				if (items.length > 0) {
+					elements.push({
+						id: `ul_${elements.length}`,
+						name: `ul_${elements.length}`,
+						fieldType: "UnorderedList",
+						items,
+						static: true,
+					});
+				}
+				break;
+			}
+
+			// Ordered list
+			case "ol": {
+				const items = extractListItems(node);
+				if (items.length > 0) {
+					elements.push({
+						id: `ol_${elements.length}`,
+						name: `ol_${elements.length}`,
+						fieldType: "OrderedList",
+						items,
+						static: true,
+					});
+				}
+				break;
+			}
+
+			// Toggle (collapsible)
+			case "toggle": {
+				// First child is typically the toggle title, rest is content
+				const children = node.children as any[];
+				let title = "";
+				const contentNodes: any[] = [];
+
+				if (children && children.length > 0) {
+					// Extract title from first element
+					if (children[0].children) {
+						title = extractTextContent(children[0].children);
+					} else if (children[0].text) {
+						title = children[0].text;
+					}
+					// Rest are content
+					contentNodes.push(...children.slice(1));
+				}
+
+				// Recursively transform toggle content
+				const toggleContent = transformPlateStateToFormElements(contentNodes as Value);
+
+				elements.push({
+					id: `toggle_${elements.length}`,
+					name: `toggle_${elements.length}`,
+					fieldType: "Toggle",
+					title: title || "Toggle",
+					children: toggleContent,
+					static: true,
+				});
+				break;
+			}
+
+			// Table
+			case "table": {
+				const rows = extractTableRows(node);
+				if (rows.length > 0) {
+					elements.push({
+						id: `table_${elements.length}`,
+						name: `table_${elements.length}`,
+						fieldType: "Table",
+						rows,
+						static: true,
+					});
+				}
+				break;
+			}
+
+			// Callout
+			case "callout": {
+				const content = extractTextContent(
+					node.children as Array<{ text?: string }>,
+				);
+				const emoji = node.emoji as string | undefined;
+				elements.push({
+					id: `callout_${elements.length}`,
+					name: `callout_${elements.length}`,
+					fieldType: "Callout",
+					emoji,
+					content: content || "",
+					static: true,
+				});
 				break;
 			}
 
