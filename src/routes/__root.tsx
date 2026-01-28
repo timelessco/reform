@@ -11,6 +11,8 @@ import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import type { Session } from "../lib/auth";
 import { sessionMiddleware } from "../middleware/auth";
 import appCss from "../styles.css?url";
+import { Agentation } from "agentation";
+
 
 interface MyRouterContext {
 	queryClient: QueryClient;
@@ -66,6 +68,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 						TanStackQueryDevtools,
 					]}
 				/>
+				  {process.env.NODE_ENV === "development" && <Agentation />}
 				<Scripts />
 			</body>
 		</html>

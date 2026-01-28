@@ -670,7 +670,7 @@ export function FormPreviewFromPlate({
 						})}
 
 						{/* Fallback navigation if no buttons in content - only show reset on last step with editable fields */}
-						{isLastStep && hasEditableFields && (
+						{/* {isLastStep && hasEditableFields && (
 							<div className="flex items-center justify-end w-full pt-4">
 								<Button
 									type="button"
@@ -682,7 +682,7 @@ export function FormPreviewFromPlate({
 									Reset
 								</Button>
 							</div>
-						)}
+						)} */}
 					</form.Form>
 				</form.AppForm>
 			</div>

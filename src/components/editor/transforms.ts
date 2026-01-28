@@ -89,6 +89,7 @@ const insertBlockMap: Record<
 		);
 
 		editor.tf.select({ path: [...labelPath, 0], offset: 0 });
+		editor.tf.focus();
 	},
 	formTextarea: (editor) => {
 		const block = editor.api.block();
@@ -117,6 +118,7 @@ const insertBlockMap: Record<
 		);
 
 		editor.tf.select({ path: [...labelPath, 0], offset: 0 });
+		editor.tf.focus();
 	},
 	pageBreak: (editor) => {
 		// Find existing Submit button and convert it to Next
@@ -183,19 +185,22 @@ const insertBlockMap: Record<
 			return;
 		}
 
-		// Convert existing Submit button to Next
+		// Convert existing Submit button to Next (replace entire node for void elements)
 		const submitPath: Path = [submitIndex];
 		const submitBtn = children[submitIndex];
 		const currentText = (submitBtn.children?.[0] as any)?.text;
+		const newText = currentText === "Submit" ? "Next" : currentText;
 
-		// Update role
-		editor.tf.setNodes({ buttonRole: "next" } as any, { at: submitPath });
-
-		// Update text if it's the default "Submit"
-		if (currentText === "Submit") {
-			editor.tf.removeNodes({ at: [...submitPath, 0] });
-			editor.tf.insertNodes({ text: "Next" } as any, { at: [...submitPath, 0] });
-		}
+		// Remove old button and insert new one with updated role/text
+		editor.tf.removeNodes({ at: submitPath });
+		editor.tf.insertNodes(
+			{
+				type: "formButton",
+				buttonRole: "next",
+				children: [{ text: newText }],
+			} as any,
+			{ at: submitPath },
+		);
 
 		// Insert pageBreak after the converted Next button
 		const pageBreakPath = PathApi.next(submitPath);
@@ -277,7 +282,17 @@ const insertBlockMap: Record<
 					isThankYouPage: true,
 					children: [{ text: "" }],
 				} as any,
-				{ at: pageBreakPath, select: true },
+				{ at: pageBreakPath },
+			);
+
+			// Insert empty paragraph for content (focus here)
+			const paragraphPath = PathApi.next(pageBreakPath);
+			editor.tf.insertNodes(
+				{
+					type: "p",
+					children: [{ text: "" }],
+				} as any,
+				{ at: paragraphPath, select: true },
 			);
 			return;
 		}
@@ -291,10 +306,20 @@ const insertBlockMap: Record<
 				isThankYouPage: true,
 				children: [{ text: "" }],
 			} as any,
-			{ at: pageBreakPath, select: true },
+			{ at: pageBreakPath },
 		);
 
-		// No buttons after thank you pageBreak - user can add content there
+		// Insert empty paragraph for content (focus here)
+		const paragraphPath = PathApi.next(pageBreakPath);
+		editor.tf.insertNodes(
+			{
+				type: "p",
+				children: [{ text: "" }],
+			} as any,
+			{ at: paragraphPath, select: true },
+		);
+
+		// No buttons after thank you pageBreak - normalizer will handle cleanup
 	},
 };
 

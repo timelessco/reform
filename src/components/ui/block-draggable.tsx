@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-const UNDRAGGABLE_KEYS = [KEYS.column, KEYS.tr, KEYS.td, "formHeader"];
+const UNDRAGGABLE_KEYS = [KEYS.column, KEYS.tr, KEYS.td, "formHeader", "formButton", "pageBreak"];
 
 export const BlockDraggable: RenderNodeWrapper = (props) => {
 	const { editor, element, path } = props;
@@ -50,6 +50,7 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
 		let nearestButtonIndex = -1;
 		for (let i = currentIndex - 1; i >= 0; i--) {
 			const node = children[i];
+			if (!node) continue;
 			if (node.type === 'formButton') {
 				const role = (node as any).buttonRole;
 				// If role is previous, we don't count it as a "terminator".
@@ -65,7 +66,7 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
 			// Found a preceding button. Check for intervening page breaks.
 			const hasPageBreak = children
 				.slice(nearestButtonIndex + 1, currentIndex)
-				.some((n) => n.type === 'pageBreak');
+				.some((n) => n?.type === 'pageBreak');
 
 			if (!hasPageBreak) {
 				// No page break between button and this block.
@@ -203,8 +204,6 @@ function Draggable(props: PlateElementProps) {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isAboutToDrag, previewRef.current?.classList.remove]);
 
-	const [dragButtonTop, setDragButtonTop] = React.useState(0);
-
 	return (
 		<div
 			className={cn(
@@ -215,10 +214,6 @@ function Draggable(props: PlateElementProps) {
 					? "group/container"
 					: "group",
 			)}
-			onMouseEnter={() => {
-				if (isDragging) return;
-				setDragButtonTop(calcDragButtonTop(editor, element));
-			}}
 		>
 			{!isInTable && (
 				<Gutter>
@@ -228,7 +223,6 @@ function Draggable(props: PlateElementProps) {
 							"flex items-center gap-0.5 pointer-events-auto",
 							isInColumn && "h-4",
 						)}
-						style={{ marginTop: `${dragButtonTop}px` }}
 					>
 						{/* Delete Button - hidden for form buttons */}
 						{!isFormButton && (
@@ -346,7 +340,7 @@ function Gutter({
 			{...props}
 			className={cn(
 				"slate-gutterLeft",
-				"-translate-x-full absolute top-0 z-50 flex h-full cursor-text hover:opacity-100",
+				"-translate-x-full absolute top-0 h-full z-50 flex items-center cursor-text hover:opacity-100",
 				!selected && "sm:opacity-0",
 				getPluginByType(editor, element.type)?.node.isContainer
 					? "group-hover/container:opacity-100"
@@ -662,13 +656,4 @@ const calculatePreviewTop = (
 		currentMarginTop;
 
 	return previewElementsTopDistance;
-};
-
-const calcDragButtonTop = (editor: PlateEditor, element: TElement): number => {
-	const child = editor.api.toDOMNode(element)!;
-
-	const currentMarginTopString = window.getComputedStyle(child).marginTop;
-	const currentMarginTop = Number(currentMarginTopString.replace("px", ""));
-
-	return currentMarginTop;
 };

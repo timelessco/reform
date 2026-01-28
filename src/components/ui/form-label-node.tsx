@@ -30,18 +30,18 @@ export function FormLabelElement({
 		>
 			<div className="flex items-center gap-1">
 				{isEmpty && placeholder && (
-					<span className="absolute text-muted-foreground/60 pointer-events-none select-none">
+					<span className="absolute text-muted-foreground/90 pointer-events-none select-none">
 						{placeholder}
 					</span>
 				)}
-				<span className="flex-1 min-w-px">{children}</span>
+				<span className="min-w-px outline-none">{children}</span>
 				{isRequired && (
 					<button
 						type="button"
 						onClick={toggleRequired}
 						className={cn(
 							"flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded-full bg-muted text-xs text-red-500 leading-none  hover:bg-muted-foreground hover:text-muted transition-colors",
-							"ml-0.5",
+							"ml-2",
 						)}
 						contentEditable={false}
 					>

@@ -1,8 +1,15 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useCallback } from "react";
+import { ChevronLeft, ChevronRight, Settings } from "lucide-react";
 import type { PlateElementProps } from "platejs/react";
-import { PlateElement, useSelected } from "platejs/react";
+import { PlateElement, useEditorRef } from "platejs/react";
+import * as React from "react";
 import { cn } from "@/lib/utils";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export type ButtonRole = "next" | "previous" | "submit";
 
@@ -50,123 +57,113 @@ export function FormButtonElement({
 	children,
 	...props
 }: PlateElementProps) {
-	const { editor, element } = props;
+	const { element } = props;
+	const editor = useEditorRef();
 	const buttonRole = (element.buttonRole as ButtonRole) ?? "submit";
-	const isEmpty = editor.api.isEmpty(element);
 	const placeholder = getPlaceholderForRole(buttonRole);
-	const selected = useSelected();
 
 	const isPrevious = buttonRole === "previous";
+	const [isOpen, setIsOpen] = React.useState(false);
 
-	// Get current button text for the input
+	// Get current button text
 	const currentText = extractTextFromChildren(
 		element.children as Array<{ text?: string }>
 	);
 
-	/**
-	 * Sync button text to all other buttons with the same role on blur
-	 */
-	const syncButtonText = useCallback(
-		(newText: string) => {
-			// Don't sync if empty (let each button keep its placeholder)
-			if (!newText.trim()) return;
+	// Get display text (use placeholder if empty)
+	const displayText = currentText.trim() || placeholder;
 
-			// Find all other buttons with the same role and update their text
-			for (const [node, nodePath] of editor.api.nodes({
-				match: { type: "formButton" },
-			})) {
-				// Skip the current element
-				if (node === element) continue;
-
-				// Only sync buttons with the same role
-				const nodeRole = (node.buttonRole as ButtonRole) ?? "submit";
-				if (nodeRole !== buttonRole) continue;
-
-				// Get the existing text of this button
-				const existingText = extractTextFromChildren(
-					node.children as Array<{ text?: string }>
-				);
-
-				// Only update if text is different
-				if (existingText !== newText) {
-					// Update the text by replacing children
-					editor.tf.removeNodes({ at: [...nodePath, 0] });
-					editor.tf.insertNodes({ text: newText }, { at: [...nodePath, 0] });
-				}
-			}
-		},
-		[editor, element, buttonRole]
-	);
-
-	/**
-	 * Handle label change from the input field
-	 */
-	const handleLabelChange = useCallback(
-		(e: React.ChangeEvent<HTMLInputElement>) => {
-			const newText = e.target.value;
-			const path = editor.api.findPath(element);
-			if (!path) return;
-
-			// Update the current button's text
+	// Handle label change
+	const handleLabelChange = (newLabel: string) => {
+		const path = editor.api.findPath(element);
+		if (path) {
+			// Update the text node inside the button
 			editor.tf.removeNodes({ at: [...path, 0] });
-			editor.tf.insertNodes({ text: newText }, { at: [...path, 0] });
-		},
-		[editor, element]
+			editor.tf.insertNodes({ text: newLabel }, { at: [...path, 0] });
+		}
+	};
+
+	// Gear icon component
+	const GearIcon = (
+		<Popover open={isOpen} onOpenChange={setIsOpen}>
+			<PopoverTrigger asChild>
+				<button
+					type="button"
+					className="p-1.5 rounded hover:bg-muted/80 transition-colors opacity-0 group-hover:opacity-100"
+					onMouseDown={(e) => {
+						e.preventDefault();
+						e.stopPropagation();
+					}}
+					onClick={(e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						setIsOpen(true);
+					}}
+				>
+					<Settings className="h-4 w-4 text-muted-foreground" />
+				</button>
+			</PopoverTrigger>
+			<PopoverContent
+				className="w-64"
+				side={isPrevious ? "right" : "left"}
+				align="start"
+				onMouseDown={(e) => e.stopPropagation()}
+			>
+				<div className="space-y-2">
+					<Label htmlFor="button-label" className="text-sm font-medium">
+						Button label
+					</Label>
+					<Input
+						id="button-label"
+						value={currentText}
+						placeholder={placeholder}
+						onChange={(e) => handleLabelChange(e.target.value)}
+						onMouseDown={(e) => e.stopPropagation()}
+						onClick={(e) => e.stopPropagation()}
+					/>
+				</div>
+			</PopoverContent>
+		</Popover>
 	);
-
-	/**
-	 * Sync text to other buttons when input loses focus
-	 */
-	const handleInputBlur = useCallback(() => {
-		const text = extractTextFromChildren(
-			element.children as Array<{ text?: string }>
-		);
-		syncButtonText(text);
-	}, [element, syncButtonText]);
-
-	/**
-	 * Legacy blur handler for direct button text editing
-	 */
-	const handleBlur = useCallback(() => {
-		const text = extractTextFromChildren(
-			element.children as Array<{ text?: string }>
-		);
-		syncButtonText(text);
-	}, [element, syncButtonText]);
 
 	return (
-		<PlateElement className={cn("m-0 px-0 py-1", className)} {...props}>
-			<div className="inline-flex items-center gap-1 group">
-				{/* Button visual */}
+		<PlateElement
+			className={cn(
+				"m-0 px-0 py-1",
+				// Previous floats left, Next/Submit floats right
+				isPrevious ? "float-left clear-none" : "float-right clear-none",
+				className
+			)}
+			{...props}
+		>
+			{/* Hidden children to maintain Slate structure */}
+			<span className="hidden">{children}</span>
+			{/* Non-editable button visual - onMouseDown prevents cursor placement */}
+			<div
+				className={cn(
+					"inline-flex items-center gap-1 group",
+					isPrevious ? "flex-row" : "flex-row-reverse"
+				)}
+				contentEditable={false}
+				onMouseDown={(e) => {
+					e.preventDefault();
+					e.stopPropagation();
+				}}
+			>
+				{/* Gear icon - position based on button role */}
+				{GearIcon}
+
 				<span
-					onBlur={handleBlur}
 					className={cn(
-						"inline-flex h-9 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium shadow transition-colors",
-						"focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+						"inline-flex h-9 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium shadow transition-colors cursor-default select-none",
 						isPrevious
-							? "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-							: "bg-primary text-primary-foreground hover:bg-primary/90"
+							? "bg-secondary text-secondary-foreground"
+							: "bg-primary text-primary-foreground"
 					)}
 				>
 					{isPrevious && <ChevronLeft className="h-4 w-4" />}
-					<span className="relative">
-						{isEmpty && (
-							<span
-								className={cn(
-									"absolute pointer-events-none select-none whitespace-nowrap",
-									isPrevious
-										? "text-secondary-foreground/50"
-										: "text-primary-foreground/50"
-								)}
-							>
-								{placeholder}
-							</span>
-						)}
-						<span className={cn(isEmpty ? "text-transparent" : "")}>
-							{children}
-						</span>
-					</span>
-					{!isPrevious && <ChevronRight className="h-4 w-4" />}
+					<span>{displayText}</span>
+					{buttonRole === "next" && <ChevronRight className="h-4 w-4" />}
 				</span>
 			</div>
 		</PlateElement>
