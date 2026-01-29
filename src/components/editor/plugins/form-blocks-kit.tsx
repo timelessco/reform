@@ -651,11 +651,12 @@ export const FormButtonPlugin = createPlatePlugin({
 						if (actionButtonIndex === -1) {
 							console.log('Normalize: Inserting Missing Action Button at', pageEndIndex);
 							const role = isLastPage ? 'submit' : 'next';
-							const text = role === 'next' ? 'Next' : 'Submit';
+							const labelText = role === 'next' ? 'Next' : 'Submit';
 							editorRef.tf.insertNodes({
 								type: 'formButton',
 								buttonRole: role,
-								children: [{ text }]
+								label: labelText,
+								children: [{ text: '' }]
 							}, { at: [pageEndIndex] });
 							return;
 						}
@@ -669,20 +670,22 @@ export const FormButtonPlugin = createPlatePlugin({
 
 						if (currentRole !== expectedRole) {
 							console.log('Normalize: Updating Action Button Role', { from: currentRole, to: expectedRole, index: actionButtonIndex });
-							// Check if we should update text (if it matches the OLD default)
+							// Check if we should update label (if it matches the OLD default)
 							const oldDefault = currentRole === 'submit' ? 'Submit' : 'Next';
-							// Re-read button to get fresh children
-							const currentText = (getChildren()[actionButtonIndex]?.children?.[0] as any)?.text;
-							const newText = (currentText === oldDefault)
+							// Re-read button - check label property first, fallback to children for backwards compat
+							const btn = getChildren()[actionButtonIndex];
+							const currentLabel = (btn as any).label ?? (btn?.children?.[0] as any)?.text;
+							const newLabel = (currentLabel === oldDefault)
 								? (expectedRole === 'submit' ? 'Submit' : 'Next')
-								: currentText;
+								: currentLabel;
 
 							// Replace the entire button node (use originalRemoveNodes to bypass override)
 							originalRemoveNodes({ at: [actionButtonIndex] });
 							editorRef.tf.insertNodes({
 								type: 'formButton',
 								buttonRole: expectedRole,
-								children: [{ text: newText }]
+								label: newLabel,
+								children: [{ text: '' }]
 							}, { at: [actionButtonIndex] });
 							return;
 						}
@@ -693,7 +696,8 @@ export const FormButtonPlugin = createPlatePlugin({
 							editorRef.tf.insertNodes({
 								type: 'formButton',
 								buttonRole: 'previous',
-								children: [{ text: 'Previous' }]
+								label: 'Previous',
+								children: [{ text: '' }]
 							}, { at: [actionButtonIndex] });
 							return;
 						}

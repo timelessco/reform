@@ -394,11 +394,11 @@ export function transformPlateStateToFormElements(
 
 			// Button field
 			case "formButton": {
-				// Get button text from children (editable) or fallback to buttonText property
+				// Get button text from label property (new), children (old), or buttonText (legacy)
 				const childText = extractTextContent(
 					node.children as Array<{ text?: string }>,
 				);
-				const btnText = childText || (node.buttonText as string | undefined);
+				const btnText = (node.label as string | undefined) || childText || (node.buttonText as string | undefined);
 				const btnRole = (node.buttonRole as "next" | "previous" | "submit") || "submit";
 				const defaultText = btnRole === "next" ? "Next" : btnRole === "previous" ? "Previous" : "Submit";
 				const name = `button_${fieldIndex}`;

@@ -16,6 +16,7 @@ export type ButtonRole = "next" | "previous" | "submit";
 export interface FormButtonElementData {
 	type: "formButton";
 	buttonRole: ButtonRole;
+	label?: string;
 	children: [{ text: string }];
 }
 
@@ -27,7 +28,8 @@ export function createFormButtonNode(
 	return {
 		type: "formButton",
 		buttonRole: role,
-		children: [{ text: text ?? defaultText }],
+		label: text ?? defaultText,
+		children: [{ text: "" }],
 	};
 }
 
@@ -65,22 +67,36 @@ export function FormButtonElement({
 	const isPrevious = buttonRole === "previous";
 	const [isOpen, setIsOpen] = React.useState(false);
 
-	// Get current button text
-	const currentText = extractTextFromChildren(
+	// Get label from element property (fallback to children for backwards compat)
+	const label = (element.label as string) ?? extractTextFromChildren(
 		element.children as Array<{ text?: string }>
 	);
 
-	// Get display text (use placeholder if empty)
-	const displayText = currentText.trim() || placeholder;
+	// Local state for input - prevents re-render on every keystroke
+	const [inputValue, setInputValue] = React.useState(label);
 
-	// Handle label change
+	// Sync local state when popover opens
+	React.useEffect(() => {
+		if (isOpen) {
+			setInputValue(label);
+		}
+	}, [isOpen, label]);
+
+	// Get display text (use placeholder if empty)
+	const displayText = label.trim() || placeholder;
+
+	// Handle label change - uses setNodes on element property (reactive)
 	const handleLabelChange = (newLabel: string) => {
 		const path = editor.api.findPath(element);
 		if (path) {
-			// Update the text node inside the button
-			editor.tf.removeNodes({ at: [...path, 0] });
-			editor.tf.insertNodes({ text: newLabel }, { at: [...path, 0] });
+			editor.tf.setNodes({ label: newLabel }, { at: path });
 		}
+	};
+
+	// Save and close popover
+	const saveAndClose = () => {
+		handleLabelChange(inputValue);
+		setIsOpen(false);
 	};
 
 	// Gear icon component
@@ -115,9 +131,17 @@ export function FormButtonElement({
 					</Label>
 					<Input
 						id="button-label"
-						value={currentText}
+						value={inputValue}
 						placeholder={placeholder}
-						onChange={(e) => handleLabelChange(e.target.value)}
+						onChange={(e) => setInputValue(e.target.value)}
+						onBlur={() => handleLabelChange(inputValue)}
+						onKeyDown={(e) => {
+							e.stopPropagation();
+							if (e.key === "Enter") {
+								e.preventDefault();
+								saveAndClose();
+							}
+						}}
 						onMouseDown={(e) => e.stopPropagation()}
 						onClick={(e) => e.stopPropagation()}
 					/>
