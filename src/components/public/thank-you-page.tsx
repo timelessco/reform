@@ -6,7 +6,10 @@ interface ThankYouPageProps {
 	onSubmitAnother?: () => void;
 }
 
-export function ThankYouPage({ formTitle, onSubmitAnother }: ThankYouPageProps) {
+export function ThankYouPage({
+	formTitle,
+	onSubmitAnother,
+}: ThankYouPageProps) {
 	return (
 		<div className="min-h-[60vh] flex flex-col items-center justify-center px-4 text-center">
 			<div className="max-w-md mx-auto space-y-6">
@@ -19,9 +22,7 @@ export function ThankYouPage({ formTitle, onSubmitAnother }: ThankYouPageProps) 
 
 				{/* Message */}
 				<div className="space-y-2">
-					<h1 className="text-2xl font-bold tracking-tight">
-						Thank you!
-					</h1>
+					<h1 className="text-2xl font-bold tracking-tight">Thank you!</h1>
 					<p className="text-muted-foreground">
 						Your response has been submitted successfully.
 					</p>
@@ -29,18 +30,12 @@ export function ThankYouPage({ formTitle, onSubmitAnother }: ThankYouPageProps) 
 
 				{/* Form title context */}
 				{formTitle && (
-					<p className="text-sm text-muted-foreground">
-						Form: {formTitle}
-					</p>
+					<p className="text-sm text-muted-foreground">Form: {formTitle}</p>
 				)}
 
 				{/* Submit another button */}
 				{onSubmitAnother && (
-					<Button
-						variant="outline"
-						onClick={onSubmitAnother}
-						className="mt-4"
-					>
+					<Button variant="outline" onClick={onSubmitAnother} className="mt-4">
 						Submit another response
 					</Button>
 				)}

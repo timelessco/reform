@@ -1,4 +1,5 @@
 import { AuthDialog } from "@/components/auth";
+import { VersionHistoryDialog } from "@/components/form-builder/version-history-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -19,17 +20,43 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
-import { updateFormStatus } from "@/db-collections";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useCustomizeSidebar } from "@/hooks/use-customize-sidebar";
+import {
+	useDiscardChanges,
+	useHasUnpublishedChanges,
+	usePublishVersion,
+} from "@/hooks/use-form-versions";
 import { useForm, useWorkspace } from "@/hooks/use-live-hooks";
 import { auth, useSession } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
 import { useMutation } from "@tanstack/react-query";
-import { Link, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
-import { Flower2, History, LayoutGrid, LogOut, Search, Settings, User } from "lucide-react";
+import {
+	Link,
+	useLocation,
+	useNavigate,
+	useSearch,
+} from "@tanstack/react-router";
+import {
+	Database,
+	Flower2,
+	History,
+	LayoutGrid,
+	Loader2,
+	LogOut,
+	Search,
+	Settings,
+	Share,
+	User,
+} from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { SidebarTrigger, useSidebarSafe } from "./sidebar";
-import { cn } from "@/lib/utils";
 
 interface AppHeaderProps {
 	formId?: string;
@@ -61,6 +88,8 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 	const session = sessionData;
 	const navigate = useNavigate();
 
+	// Version history dialog state
+	const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
 
 	// Get search params for the current route
 	const search: any = useSearch({ strict: false });
@@ -72,6 +101,11 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 	const { data: savedDocs } = useForm(formId);
 	const currentForm = savedDocs?.[0];
 	const isPublished = currentForm?.status === "published";
+
+	// Version management hooks
+	const hasUnpublishedChanges = useHasUnpublishedChanges(formId);
+	const publishMutation = usePublishVersion();
+	const discardMutation = useDiscardChanges();
 
 	const signOutMutation = useMutation(
 		auth.signOut.mutationOptions({
@@ -93,8 +127,10 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 	const handlePublish = async () => {
 		if (formId && workspaceId) {
 			try {
-				await updateFormStatus(formId, "published");
-				toast.success("Form published successfully");
+				const result = (await publishMutation.mutateAsync(formId)) as {
+					versionNumber: number;
+				};
+				toast.success(`Form published as version ${result.versionNumber}`);
 				// Redirect to the share page
 				navigate({
 					to: "/workspace/$workspaceId/form-builder/$formId/share",
@@ -102,6 +138,18 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 				});
 			} catch (error) {
 				toast.error("Failed to publish form");
+				console.error(error);
+			}
+		}
+	};
+
+	const handleDiscardChanges = async () => {
+		if (formId) {
+			try {
+				await discardMutation.mutateAsync(formId);
+				toast.info("Changes discarded, reverted to last published version");
+			} catch (error) {
+				toast.error("Failed to discard changes");
 				console.error(error);
 			}
 		}
@@ -131,7 +179,7 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 							<BreadcrumbItem>
 								<BreadcrumbLink asChild>
 									<Link to="/dashboard" className="flex items-center gap-1">
-										<LayoutGrid className="h-4 w-4 text-muted-foreground/60" />
+										<LayoutGrid className="h-4 w-4 pt-5 text-muted-foreground/60" />
 									</Link>
 								</BreadcrumbLink>
 							</BreadcrumbItem>
@@ -144,7 +192,7 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 												to="/workspace/$workspaceId"
 												params={{ workspaceId }}
 											>
-													<WorkspaceNameDisplay workspaceId={workspaceId} />
+												<WorkspaceNameDisplay workspaceId={workspaceId} />
 											</Link>
 										) : (
 											<Link to="/dashboard">My workspace</Link>
@@ -152,9 +200,7 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 									</BreadcrumbLink>
 								) : (
 									<BreadcrumbPage>
-											<WorkspaceNameDisplay
-												workspaceId={workspaceId || ""}
-											/>
+										<WorkspaceNameDisplay workspaceId={workspaceId || ""} />
 									</BreadcrumbPage>
 								)}
 							</BreadcrumbItem>
@@ -164,7 +210,7 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 									<BreadcrumbItem>
 										<BreadcrumbPage className="flex items-center gap-2">
 											{formId ? (
-													<FormTitleDisplay formId={formId} />
+												<FormTitleDisplay formId={formId} />
 											) : (
 												"Untitled"
 											)}
@@ -175,9 +221,17 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 						</BreadcrumbList>
 					</Breadcrumb>
 				) : (
-					<Link to="/" className={cn("flex items-center gap-1" , state === "collapsed" ? 'p-7' : 'pl-0')}>
+					<Link
+						to="/"
+						className={cn(
+							"flex items-center gap-1",
+							state === "collapsed" ? "p-7" : "pl-0",
+						)}
+					>
 						<Flower2 className="h-5 w-5 text-blue-600" />
-						<span className="text-foreground font-bold tracking-tight">Better Forms</span>
+						<span className="text-foreground font-bold tracking-tight">
+							Better Forms
+						</span>
 					</Link>
 				)}
 			</div>
@@ -187,12 +241,20 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 				{isFormBuilder && (
 					<Badge
 						variant="secondary"
-						className={`text-[10px] h-5 px-1.5 font-normal ${isPublished
-							? "bg-green-100 text-green-700"
-							: "bg-muted text-muted-foreground"
-							} mr-2`}
+						className={cn(
+							"text-[10px] h-5 px-1.5 font-normal mr-2",
+							isPublished && !hasUnpublishedChanges
+								? "bg-green-100 text-green-700"
+								: isPublished && hasUnpublishedChanges
+									? "bg-orange-100 text-orange-700"
+									: "bg-muted text-muted-foreground",
+						)}
 					>
-						{isPublished ? "Published" : "Draft"}
+						{isPublished && !hasUnpublishedChanges
+							? "Published"
+							: isPublished && hasUnpublishedChanges
+								? "Has Changes"
+								: "Draft"}
 					</Badge>
 				)}
 
@@ -210,23 +272,116 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 
 				{isFormBuilder ? (
 					<>
-						<Button
-							variant="ghost"
-							size="icon"
-							className="h-8 w-8 text-muted-foreground hover:text-foreground"
-						>
-							<History className="h-4 w-4" />
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon"
-							className="h-8 w-8 text-muted-foreground hover:text-foreground"
-							asChild
-						>
-							<Link to="/settings/my-account">
-								<Settings className="h-4 w-4" />
-							</Link>
-						</Button>
+						{/* Changes indicator - shows when there are unpublished changes */}
+						{hasUnpublishedChanges && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="outline"
+										size="sm"
+										className="h-7 px-2 text-xs text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100 hover:text-orange-700"
+										onClick={handleDiscardChanges}
+										disabled={discardMutation.isPending}
+									>
+										{discardMutation.isPending ? (
+											<Loader2 className="h-3 w-3 animate-spin mr-1" />
+										) : null}
+										Changes
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									<p className="font-medium">Click to discard changes</p>
+									<p className="text-xs text-muted-foreground">
+										Changes are auto-saved, but not published yet
+									</p>
+								</TooltipContent>
+							</Tooltip>
+						)}
+
+						{/* History button - opens version history dialog */}
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									className="h-8 w-8 text-muted-foreground hover:text-foreground relative"
+									onClick={() => setHistoryDialogOpen(true)}
+								>
+									<History className="h-4 w-4" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Version History</TooltipContent>
+						</Tooltip>
+
+						{formId && workspaceId && (
+							<>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											className="h-8 w-8 text-muted-foreground hover:text-foreground"
+											asChild
+										>
+											<Link
+												to="/workspace/$workspaceId/form-builder/$formId/submissions"
+												params={{
+													formId: formId,
+													workspaceId: workspaceId,
+												}}
+											>
+												<Database className="h-4 w-4" />
+											</Link>
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>Submissions</TooltipContent>
+								</Tooltip>
+
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											className="h-8 w-8 text-muted-foreground hover:text-foreground"
+											asChild
+										>
+											<Link
+												to="/workspace/$workspaceId/form-builder/$formId/share"
+												params={{
+													formId: formId,
+													workspaceId: workspaceId,
+												}}
+											>
+												<Share className="h-4 w-4" />
+											</Link>
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>Share</TooltipContent>
+								</Tooltip>
+
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											className="h-8 w-8 text-muted-foreground hover:text-foreground"
+											asChild
+										>
+											<Link
+												to="/workspace/$workspaceId/form-builder/$formId/settings"
+												params={{
+													formId: formId,
+													workspaceId: workspaceId,
+												}}
+											>
+												<Settings className="h-4 w-4" />
+											</Link>
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>Settings</TooltipContent>
+								</Tooltip>
+							</>
+						)}
 
 						<Separator orientation="vertical" className="mx-2 h-4" />
 						<Button
@@ -315,15 +470,24 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 						{/* Primary Action */}
 						<Button
 							size="sm"
-							className={`h-8 px-4 ${isPublished
-								? "bg-green-600 hover:bg-green-700"
-								: "bg-blue-600 hover:bg-blue-700"
-								} ml-2 text-white`}
+							className="h-8 px-4 bg-blue-600 hover:bg-blue-700 ml-2 text-white"
 							onClick={handlePublish}
-							disabled={isPublished}
+							disabled={publishMutation.isPending}
 						>
-							{isPublished ? "Published" : "Publish"}
+							{publishMutation.isPending && (
+								<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+							)}
+							{hasUnpublishedChanges ? "Publish Changes" : "Publish"}
 						</Button>
+
+						{/* Version History Dialog */}
+						{formId && (
+							<VersionHistoryDialog
+								formId={formId}
+								open={historyDialogOpen}
+								onOpenChange={setHistoryDialogOpen}
+							/>
+						)}
 					</>
 				) : (
 					<>
@@ -390,9 +554,7 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 								className="h-8 px-4 bg-blue-600 hover:bg-blue-700 ml-2"
 								asChild
 							>
-								<Link to={"/create"}>
-									Create Form
-								</Link>
+								<Link to={"/create"}>Create Form</Link>
 							</Button>
 						)}
 					</>

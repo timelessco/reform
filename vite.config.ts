@@ -10,25 +10,23 @@ const config = defineConfig({
 	plugins: [
 		devtools({
 			editor: {
-				name: 'Cursor',
+				name: "Cursor",
 				open: async (path, lineNumber, columnNumber) => {
-					const { exec } = await import('node:child_process')
+					const { exec } = await import("node:child_process");
 					exec(
 						// or windsurf/cursor/webstorm/cursor/cursor
-						`cursor -g "${(path).replaceAll('$', '\\$')}${lineNumber ? `:${lineNumber}` : ''}${columnNumber ? `:${columnNumber}` : ''}"`,
-					)
+						`cursor -g "${(path).replaceAll("$", "\\$")}${lineNumber ? `:${lineNumber}` : ""}${columnNumber ? `:${columnNumber}` : ""}"`,
+					);
 				},
-			}
+			},
 		}),
-		nitro({
-		}),
+		nitro({}),
 		// this is the plugin that enables path aliases
 		viteTsConfigPaths({
 			projects: ["./tsconfig.json"],
 		}),
 		tailwindcss(),
-		tanstackStart({
-		}),
+		tanstackStart({}),
 		viteReact({
 			babel: {
 				plugins: ["babel-plugin-react-compiler"],

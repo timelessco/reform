@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { forms, submissions } from "@/db/schema";
+import { forms, formVersions, submissions } from "@/db/schema";
 import { db } from "@/lib/db";
 
 /**
@@ -9,24 +9,26 @@ import { db } from "@/lib/db";
  * Used for public form viewing and submission
  */
 
-const serializePublicForm = (form: typeof forms.$inferSelect) => ({
-	id: form.id,
-	title: form.title,
-	content: form.content as any,
-	icon: form.icon,
-	cover: form.cover,
-	status: form.status,
-});
-
 /**
  * Get a published form by ID (public access)
+ * Returns the published version content, not the draft content
  * Only returns forms with status === "published"
  */
 export const getPublishedFormById = createServerFn({ method: "GET" })
 	.inputValidator(z.object({ id: z.string().uuid() }))
 	.handler(async ({ data }) => {
+		// Get form with its current published version
 		const [form] = await db
-			.select()
+			.select({
+				id: forms.id,
+				status: forms.status,
+				icon: forms.icon,
+				cover: forms.cover,
+				lastPublishedVersionId: forms.lastPublishedVersionId,
+				// Fallback fields for forms without versions (backward compatibility)
+				draftTitle: forms.title,
+				draftContent: forms.content,
+			})
 			.from(forms)
 			.where(and(eq(forms.id, data.id), eq(forms.status, "published")));
 
@@ -34,8 +36,38 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
 			return { form: null, error: "not_found" as const };
 		}
 
+		// If form has a published version, use version content
+		if (form.lastPublishedVersionId) {
+			const [version] = await db
+				.select()
+				.from(formVersions)
+				.where(eq(formVersions.id, form.lastPublishedVersionId));
+
+			if (version) {
+				return {
+					form: {
+						id: form.id,
+						title: version.title,
+						content: version.content as object[],
+						icon: form.icon,
+						cover: form.cover,
+						status: form.status,
+					},
+					error: null,
+				};
+			}
+		}
+
+		// Fallback for forms without versions (backward compatibility)
 		return {
-			form: serializePublicForm(form),
+			form: {
+				id: form.id,
+				title: form.draftTitle,
+				content: form.draftContent as object[],
+				icon: form.icon,
+				cover: form.cover,
+				status: form.status,
+			},
 			error: null,
 		};
 	});

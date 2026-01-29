@@ -25,11 +25,13 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { createForm, duplicateForm } from "@/lib/fn/forms";
 import {
-	createForm,
-	duplicateForm,
-} from "@/lib/fn/forms";
-import { createWorkspaceLocal, deleteWorkspaceLocal, updateWorkspaceName, updateFormStatus } from "@/db-collections";
+	createWorkspaceLocal,
+	deleteWorkspaceLocal,
+	updateWorkspaceName,
+	updateFormStatus,
+} from "@/db-collections";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
@@ -49,12 +51,12 @@ import { WorkspaceHeader } from "@/components/ui/form-header";
 
 const FORMS_PER_PAGE = 10;
 
-export const Route = createFileRoute(
-	"/_authenticated/workspace/$workspaceId/",
-)({
-	component: WorkspaceDashboard,
-	ssr: false,
-});
+export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/")(
+	{
+		component: WorkspaceDashboard,
+		ssr: false,
+	},
+);
 
 function WorkspaceDashboard() {
 	const navigate = useNavigate();
@@ -63,7 +65,8 @@ function WorkspaceDashboard() {
 	const [isCreating, setIsCreating] = useState(false);
 	const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const [workspaceDeleteDialogOpen, setWorkspaceDeleteDialogOpen] = useState(false);
+	const [workspaceDeleteDialogOpen, setWorkspaceDeleteDialogOpen] =
+		useState(false);
 	const [deleteConfirmName, setDeleteConfirmName] = useState("");
 	const [renameDialogOpen, setRenameDialogOpen] = useState(false);
 	const [newWorkspaceName, setNewWorkspaceName] = useState("");
@@ -74,15 +77,17 @@ function WorkspaceDashboard() {
 	const [currentPage, setCurrentPage] = useState(1);
 
 	// Use live query for workspace data
-	const { data: workspace, isLoading: workspaceLoading } = useWorkspace(workspaceId);
+	const { data: workspace, isLoading: workspaceLoading } =
+		useWorkspace(workspaceId);
 
 	// Use live query for forms data
-	const { data: formsData, isLoading: formsLoading } = useFormsForWorkspace(workspaceId);
+	const { data: formsData, isLoading: formsLoading } =
+		useFormsForWorkspace(workspaceId);
 	const forms = formsData ?? [];
 
 	// Sort by updatedAt descending (most recent first)
-	const sortedForms = [...forms].sort((a, b) =>
-		new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+	const sortedForms = [...forms].sort(
+		(a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
 	);
 	// Pagination
 	const totalPages = Math.ceil(sortedForms.length / FORMS_PER_PAGE);
@@ -91,18 +96,18 @@ function WorkspaceDashboard() {
 		startIndex,
 		startIndex + FORMS_PER_PAGE,
 	);
-	console.log(workspace, sortedForms, forms)
+	console.log(workspace, sortedForms, forms);
 
 	const handleCreateForm = async () => {
 		setIsCreating(true);
 		try {
-			const response = await createForm({
+			const response = (await createForm({
 				data: {
 					id: crypto.randomUUID(),
 					workspaceId,
 					title: "Untitled",
 				},
-			}) as { form: { id: string } };
+			})) as { form: { id: string } };
 			// Invalidate queries to refresh the lists (if still using queries elsewhere)
 			await queryClient.invalidateQueries({ queryKey: ["forms", workspaceId] });
 			navigate({
@@ -123,7 +128,10 @@ function WorkspaceDashboard() {
 		}
 		setIsCreatingWorkspace(true);
 		try {
-			const newWs = await createWorkspaceLocal(workspace.organizationId, "New Workspace");
+			const newWs = await createWorkspaceLocal(
+				workspace.organizationId,
+				"New Workspace",
+			);
 			navigate({
 				to: "/workspace/$workspaceId",
 				params: { workspaceId: newWs.id },
@@ -134,7 +142,6 @@ function WorkspaceDashboard() {
 			setIsCreatingWorkspace(false);
 		}
 	};
-
 
 	const handleDeleteWorkspace = async () => {
 		if (workspace && deleteConfirmName === workspace.name) {
@@ -204,7 +211,6 @@ function WorkspaceDashboard() {
 			console.error("Failed to duplicate form:", error);
 		}
 	};
-
 
 	const formatLastEdited = (timestamp: string) => {
 		return `Edited ${formatDistanceToNow(new Date(timestamp))} ago`;
@@ -276,10 +282,11 @@ function WorkspaceDashboard() {
 												</span>
 												<Badge
 													variant="secondary"
-													className={`text-[10px] h-4 px-1.5 font-normal ${form.status === "published"
-														? "bg-green-100 text-green-700"
-														: "bg-muted/80 text-muted-foreground"
-														} rounded-full`}
+													className={`text-[10px] h-4 px-1.5 font-normal ${
+														form.status === "published"
+															? "bg-green-100 text-green-700"
+															: "bg-muted/80 text-muted-foreground"
+													} rounded-full`}
 												>
 													{form.status === "published" ? "Published" : "Draft"}
 												</Badge>
@@ -401,7 +408,9 @@ function WorkspaceDashboard() {
 								onClick={handleCreateForm}
 								disabled={isCreating}
 							>
-								{isCreating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+								{isCreating && (
+									<Loader2 className="h-4 w-4 animate-spin mr-2" />
+								)}
 								Create my first form
 							</Button>
 						</div>
@@ -443,17 +452,21 @@ function WorkspaceDashboard() {
 			</AlertDialog>
 
 			{/* Workspace Delete Confirmation Dialog */}
-			<AlertDialog open={workspaceDeleteDialogOpen} onOpenChange={(open) => {
-				setWorkspaceDeleteDialogOpen(open);
-				if (!open) setDeleteConfirmName("");
-			}}>
+			<AlertDialog
+				open={workspaceDeleteDialogOpen}
+				onOpenChange={(open) => {
+					setWorkspaceDeleteDialogOpen(open);
+					if (!open) setDeleteConfirmName("");
+				}}
+			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
 						<AlertDialogTitle>Delete workspace</AlertDialogTitle>
 						<AlertDialogDescription asChild>
 							<div className="space-y-4">
 								<p>
-									This will permanently delete <strong>"{workspace?.name}"</strong> and all forms within it.
+									This will permanently delete{" "}
+									<strong>"{workspace?.name}"</strong> and all forms within it.
 									This action cannot be undone.
 								</p>
 								<div className="space-y-2">

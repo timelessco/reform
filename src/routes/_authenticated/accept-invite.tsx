@@ -93,8 +93,10 @@ function AcceptInvitePage() {
 					<CardTitle>Organization Invitation</CardTitle>
 					<CardDescription>
 						You have been invited to join{" "}
-						<strong>{(invitation as any).organization?.name ?? "this organization"}</strong> as a{" "}
-						<strong>{invitation.role}</strong>.
+						<strong>
+							{(invitation as any).organization?.name ?? "this organization"}
+						</strong>{" "}
+						as a <strong>{invitation.role}</strong>.
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="flex flex-col gap-4">

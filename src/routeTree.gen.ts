@@ -34,6 +34,7 @@ import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdShareRouteIm
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/settings'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/integrations'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdInsightsRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/insights'
+import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/embed'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
@@ -186,6 +187,13 @@ const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdInsightsRoute =
     getParentRoute: () =>
       AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRoute,
   } as any)
+const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRoute =
+  AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRouteImport.update({
+    id: '/embed',
+    path: '/embed',
+    getParentRoute: () =>
+      AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -206,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/workspace/$workspaceId/': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
   '/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
+  '/workspace/$workspaceId/form-builder/$formId/embed': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRoute
   '/workspace/$workspaceId/form-builder/$formId/insights': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdInsightsRoute
   '/workspace/$workspaceId/form-builder/$formId/integrations': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRoute
   '/workspace/$workspaceId/form-builder/$formId/settings': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
@@ -229,6 +238,7 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
+  '/workspace/$workspaceId/form-builder/$formId/embed': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRoute
   '/workspace/$workspaceId/form-builder/$formId/insights': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdInsightsRoute
   '/workspace/$workspaceId/form-builder/$formId/integrations': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRoute
   '/workspace/$workspaceId/form-builder/$formId/settings': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
@@ -257,6 +267,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/workspace/$workspaceId/': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
+  '/_authenticated/workspace/$workspaceId/form-builder/$formId/embed': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId/insights': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdInsightsRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId/integrations': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId/settings': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
@@ -285,6 +296,7 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/workspace/$workspaceId/'
     | '/workspace/$workspaceId/form-builder/$formId'
+    | '/workspace/$workspaceId/form-builder/$formId/embed'
     | '/workspace/$workspaceId/form-builder/$formId/insights'
     | '/workspace/$workspaceId/form-builder/$formId/integrations'
     | '/workspace/$workspaceId/form-builder/$formId/settings'
@@ -308,6 +320,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/settings'
     | '/workspace/$workspaceId'
+    | '/workspace/$workspaceId/form-builder/$formId/embed'
     | '/workspace/$workspaceId/form-builder/$formId/insights'
     | '/workspace/$workspaceId/form-builder/$formId/integrations'
     | '/workspace/$workspaceId/form-builder/$formId/settings'
@@ -335,6 +348,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/_authenticated/workspace/$workspaceId/'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId'
+    | '/_authenticated/workspace/$workspaceId/form-builder/$formId/embed'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId/insights'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId/integrations'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId/settings'
@@ -530,6 +544,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdInsightsRouteImport
       parentRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRoute
     }
+    '/_authenticated/workspace/$workspaceId/form-builder/$formId/embed': {
+      id: '/_authenticated/workspace/$workspaceId/form-builder/$formId/embed'
+      path: '/embed'
+      fullPath: '/workspace/$workspaceId/form-builder/$formId/embed'
+      preLoaderRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRouteImport
+      parentRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRoute
+    }
   }
 }
 
@@ -559,6 +580,7 @@ const AuthenticatedSettingsRouteRouteWithChildren =
   )
 
 interface AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteChildren {
+  AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRoute
   AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdInsightsRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdInsightsRoute
   AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRoute
   AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
@@ -569,6 +591,8 @@ interface AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteChildren {
 
 const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteChildren: AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteChildren =
   {
+    AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRoute:
+      AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRoute,
     AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdInsightsRoute:
       AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdInsightsRoute,
     AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRoute:

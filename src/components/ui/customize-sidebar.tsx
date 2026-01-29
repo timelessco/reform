@@ -59,17 +59,14 @@ export function CustomizeSidebar() {
 		} as z.input<typeof customizeFormSchema>,
 		validationLogic: revalidateLogic(),
 		validators: { onDynamic: customizeFormSchema },
-		onSubmit: async ({ value }) => {
-		},
+		onSubmit: async ({ value }) => {},
 	});
-
-
 
 	return (
 		<aside
 			className={cn(
 				"bg-background flex flex-col h-full shrink-0 transition-all duration-300 ease-in-out overflow-hidden",
-				isOpen ? "w-[350px] border-l" : "w-0 border-l-0"
+				isOpen ? "w-[350px] border-l" : "w-0 border-l-0",
 			)}
 		>
 			<div className="flex items-center justify-between p-4 border-b">
@@ -94,7 +91,12 @@ export function CustomizeSidebar() {
 							<form.AppField name="theme">
 								{(field) => (
 									<div className="space-y-1.5">
-										<Label htmlFor={field.name} className="text-xs text-muted-foreground">Theme</Label>
+										<Label
+											htmlFor={field.name}
+											className="text-xs text-muted-foreground"
+										>
+											Theme
+										</Label>
 										<Select
 											value={(field.state.value as string) ?? ""}
 											onValueChange={field.handleChange}
@@ -115,7 +117,12 @@ export function CustomizeSidebar() {
 							<form.AppField name="font">
 								{(field) => (
 									<div className="space-y-1.5">
-										<Label htmlFor={field.name} className="text-xs text-muted-foreground">Font</Label>
+										<Label
+											htmlFor={field.name}
+											className="text-xs text-muted-foreground"
+										>
+											Font
+										</Label>
 										<Select
 											value={(field.state.value as string) ?? ""}
 											onValueChange={field.handleChange}
@@ -191,12 +198,16 @@ export function CustomizeSidebar() {
 						<div className="space-y-4">
 							<div className="flex items-center gap-2">
 								<h3 className="text-sm font-medium">Advanced</h3>
-								<div className="bg-pink-100 text-pink-600 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Pro</div>
+								<div className="bg-pink-100 text-pink-600 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">
+									Pro
+								</div>
 							</div>
 							<div className="bg-orange-50 border border-orange-100 rounded-lg p-3 text-xs text-orange-800">
 								You can preview advanced customization, but Tally Pro is
 								required to apply it to the published form.{" "}
-								<a href="#" className="underline font-semibold">Upgrade</a>
+								<a href="#" className="underline font-semibold">
+									Upgrade
+								</a>
 							</div>
 						</div>
 
@@ -209,7 +220,9 @@ export function CustomizeSidebar() {
 								<form.AppField name="pageWidth">
 									{(field) => (
 										<div className="space-y-1.5">
-											<Label className="text-xs text-muted-foreground">Page width</Label>
+											<Label className="text-xs text-muted-foreground">
+												Page width
+											</Label>
 											<Input
 												value={(field.state.value as string) ?? ""}
 												onChange={(e) => field.handleChange(e.target.value)}
@@ -221,7 +234,9 @@ export function CustomizeSidebar() {
 								<form.AppField name="baseFontSize">
 									{(field) => (
 										<div className="space-y-1.5">
-											<Label className="text-xs text-muted-foreground">Base font size</Label>
+											<Label className="text-xs text-muted-foreground">
+												Base font size
+											</Label>
 											<Input
 												value={(field.state.value as string) ?? ""}
 												onChange={(e) => field.handleChange(e.target.value)}
@@ -236,7 +251,14 @@ export function CustomizeSidebar() {
 								<form.AppField name="logoWidth">
 									{(field) => (
 										<div className="space-y-1.5">
-											<div className="flex justify-between items-center"><Label className="text-xs text-muted-foreground">Logo</Label> <span className="text-[10px] text-muted-foreground">Width</span></div>
+											<div className="flex justify-between items-center">
+												<Label className="text-xs text-muted-foreground">
+													Logo
+												</Label>{" "}
+												<span className="text-[10px] text-muted-foreground">
+													Width
+												</span>
+											</div>
 											<Input
 												value={(field.state.value as string) ?? ""}
 												onChange={(e) => field.handleChange(e.target.value)}
@@ -248,7 +270,11 @@ export function CustomizeSidebar() {
 								<form.AppField name="logoHeight">
 									{(field) => (
 										<div className="space-y-1.5">
-											<div className="flex justify-end"><span className="text-[10px] text-muted-foreground">Height</span></div>
+											<div className="flex justify-end">
+												<span className="text-[10px] text-muted-foreground">
+													Height
+												</span>
+											</div>
 											<Input
 												value={(field.state.value as string) ?? ""}
 												onChange={(e) => field.handleChange(e.target.value)}
@@ -260,7 +286,11 @@ export function CustomizeSidebar() {
 								<form.AppField name="logoCornerRadius">
 									{(field) => (
 										<div className="space-y-1.5">
-											<div className="flex justify-end"><span className="text-[10px] text-muted-foreground">Corner radius</span></div>
+											<div className="flex justify-end">
+												<span className="text-[10px] text-muted-foreground">
+													Corner radius
+												</span>
+											</div>
 											<Input
 												value={(field.state.value as string) ?? ""}
 												onChange={(e) => field.handleChange(e.target.value)}
@@ -275,7 +305,14 @@ export function CustomizeSidebar() {
 								<form.AppField name="coverHeight">
 									{(field) => (
 										<div className="space-y-1.5">
-											<div className="flex justify-between items-center"><Label className="text-xs text-muted-foreground">Cover</Label> <span className="text-[10px] text-muted-foreground">Height</span></div>
+											<div className="flex justify-between items-center">
+												<Label className="text-xs text-muted-foreground">
+													Cover
+												</Label>{" "}
+												<span className="text-[10px] text-muted-foreground">
+													Height
+												</span>
+											</div>
 											<Input
 												value={(field.state.value as string) ?? ""}
 												onChange={(e) => field.handleChange(e.target.value)}
@@ -296,7 +333,9 @@ export function CustomizeSidebar() {
 								<form.AppField name="inputWidth">
 									{(field) => (
 										<div className="space-y-1.5">
-											<Label className="text-xs text-muted-foreground">Width</Label>
+											<Label className="text-xs text-muted-foreground">
+												Width
+											</Label>
 											<div className="flex items-center gap-2">
 												<AlignLeft className="w-4 h-4 text-muted-foreground" />
 												<Input
@@ -311,7 +350,9 @@ export function CustomizeSidebar() {
 								<form.AppField name="inputHeight">
 									{(field) => (
 										<div className="space-y-1.5">
-											<Label className="text-xs text-muted-foreground">Height</Label>
+											<Label className="text-xs text-muted-foreground">
+												Height
+											</Label>
 											<Input
 												value={(field.state.value as string) ?? ""}
 												onChange={(e) => field.handleChange(e.target.value)}
@@ -356,7 +397,11 @@ export function CustomizeSidebar() {
 								<form.AppField name="inputBorderWidth">
 									{(field) => (
 										<div className="space-y-1.5">
-											<div className="flex justify-end"><span className="text-[10px] text-muted-foreground">Width</span></div>
+											<div className="flex justify-end">
+												<span className="text-[10px] text-muted-foreground">
+													Width
+												</span>
+											</div>
 											<Input
 												value={(field.state.value as string) ?? ""}
 												onChange={(e) => field.handleChange(e.target.value)}
@@ -368,7 +413,11 @@ export function CustomizeSidebar() {
 								<form.AppField name="inputBorderRadius">
 									{(field) => (
 										<div className="space-y-1.5">
-											<div className="flex justify-end"><span className="text-[10px] text-muted-foreground">Radius</span></div>
+											<div className="flex justify-end">
+												<span className="text-[10px] text-muted-foreground">
+													Radius
+												</span>
+											</div>
 											<Input
 												value={(field.state.value as string) ?? ""}
 												onChange={(e) => field.handleChange(e.target.value)}
@@ -383,7 +432,9 @@ export function CustomizeSidebar() {
 								<form.AppField name="inputMarginBottom">
 									{(field) => (
 										<div className="space-y-1.5">
-											<Label className="text-xs text-muted-foreground">Margin bottom</Label>
+											<Label className="text-xs text-muted-foreground">
+												Margin bottom
+											</Label>
 											<Input
 												value={(field.state.value as string) ?? ""}
 												onChange={(e) => field.handleChange(e.target.value)}
@@ -395,7 +446,9 @@ export function CustomizeSidebar() {
 								<form.AppField name="inputHorizontalPadding">
 									{(field) => (
 										<div className="space-y-1.5">
-											<Label className="text-xs text-muted-foreground">Horizontal padding</Label>
+											<Label className="text-xs text-muted-foreground">
+												Horizontal padding
+											</Label>
 											<Input
 												value={(field.state.value as string) ?? ""}
 												onChange={(e) => field.handleChange(e.target.value)}
@@ -416,7 +469,9 @@ export function CustomizeSidebar() {
 								<form.AppField name="buttonWidth">
 									{(field) => (
 										<div className="space-y-1.5">
-											<Label className="text-xs text-muted-foreground">Width</Label>
+											<Label className="text-xs text-muted-foreground">
+												Width
+											</Label>
 											<div className="flex items-center gap-2">
 												<AlignLeft className="w-4 h-4 text-muted-foreground" />
 												<Input
@@ -431,7 +486,9 @@ export function CustomizeSidebar() {
 								<form.AppField name="buttonHeight">
 									{(field) => (
 										<div className="space-y-1.5">
-											<Label className="text-xs text-muted-foreground">Height</Label>
+											<Label className="text-xs text-muted-foreground">
+												Height
+											</Label>
 											<Input
 												value={(field.state.value as string) ?? ""}
 												onChange={(e) => field.handleChange(e.target.value)}
@@ -446,11 +503,36 @@ export function CustomizeSidebar() {
 								<form.AppField name="buttonAlignment">
 									{(field) => (
 										<div className="space-y-1.5">
-											<Label className="text-xs text-muted-foreground">Alignment</Label>
-											<ToggleGroup type="single" value={(field.state.value as string) ?? ""} onValueChange={(val) => field.handleChange(val as any)} className="justify-start">
-												<ToggleGroupItem value="left" className="h-8 w-8 p-0" aria-label="Left"><AlignLeft className="w-4 h-4" /></ToggleGroupItem>
-												<ToggleGroupItem value="center" className="h-8 w-8 p-0" aria-label="Center"><AlignCenter className="w-4 h-4" /></ToggleGroupItem>
-												<ToggleGroupItem value="right" className="h-8 w-8 p-0" aria-label="Right"><AlignRight className="w-4 h-4" /></ToggleGroupItem>
+											<Label className="text-xs text-muted-foreground">
+												Alignment
+											</Label>
+											<ToggleGroup
+												type="single"
+												value={(field.state.value as string) ?? ""}
+												onValueChange={(val) => field.handleChange(val as any)}
+												className="justify-start"
+											>
+												<ToggleGroupItem
+													value="left"
+													className="h-8 w-8 p-0"
+													aria-label="Left"
+												>
+													<AlignLeft className="w-4 h-4" />
+												</ToggleGroupItem>
+												<ToggleGroupItem
+													value="center"
+													className="h-8 w-8 p-0"
+													aria-label="Center"
+												>
+													<AlignCenter className="w-4 h-4" />
+												</ToggleGroupItem>
+												<ToggleGroupItem
+													value="right"
+													className="h-8 w-8 p-0"
+													aria-label="Right"
+												>
+													<AlignRight className="w-4 h-4" />
+												</ToggleGroupItem>
 											</ToggleGroup>
 										</div>
 									)}
@@ -458,7 +540,11 @@ export function CustomizeSidebar() {
 								<form.AppField name="buttonFontSize">
 									{(field) => (
 										<div className="space-y-1.5">
-											<div className="flex justify-end"><span className="text-[10px] text-muted-foreground">Font size</span></div>
+											<div className="flex justify-end">
+												<span className="text-[10px] text-muted-foreground">
+													Font size
+												</span>
+											</div>
 											<Input
 												value={(field.state.value as string) ?? ""}
 												onChange={(e) => field.handleChange(e.target.value)}
@@ -470,7 +556,11 @@ export function CustomizeSidebar() {
 								<form.AppField name="buttonCornerRadius">
 									{(field) => (
 										<div className="space-y-1.5">
-											<div className="flex justify-end"><span className="text-[10px] text-muted-foreground">Corner radius</span></div>
+											<div className="flex justify-end">
+												<span className="text-[10px] text-muted-foreground">
+													Corner radius
+												</span>
+											</div>
 											<Input
 												value={(field.state.value as string) ?? ""}
 												onChange={(e) => field.handleChange(e.target.value)}
@@ -506,7 +596,9 @@ export function CustomizeSidebar() {
 								<form.AppField name="buttonVerticalMargin">
 									{(field) => (
 										<div className="space-y-1.5">
-											<Label className="text-xs text-muted-foreground">Vertical margin</Label>
+											<Label className="text-xs text-muted-foreground">
+												Vertical margin
+											</Label>
 											<Input
 												value={field.state.value}
 												onChange={(e) => field.handleChange(e.target.value)}
@@ -518,7 +610,9 @@ export function CustomizeSidebar() {
 								<form.AppField name="buttonHorizontalPadding">
 									{(field) => (
 										<div className="space-y-1.5">
-											<Label className="text-xs text-muted-foreground">Horizontal padding</Label>
+											<Label className="text-xs text-muted-foreground">
+												Horizontal padding
+											</Label>
 											<Input
 												value={field.state.value}
 												onChange={(e) => field.handleChange(e.target.value)}
@@ -536,7 +630,9 @@ export function CustomizeSidebar() {
 						<div className="space-y-4">
 							<div className="flex items-center gap-2">
 								<h3 className="text-sm font-medium">Custom CSS</h3>
-								<div className="bg-pink-100 text-pink-600 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Pro</div>
+								<div className="bg-pink-100 text-pink-600 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">
+									Pro
+								</div>
 							</div>
 							<form.AppField name="customCss">
 								{(field) => (

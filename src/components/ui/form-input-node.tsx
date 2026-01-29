@@ -23,9 +23,7 @@ export function FormInputElement({
 			element={element}
 			{...rest}
 		>
-			<span className="flex-1 min-w-px outline-none">
-				{children}
-			</span>
+			<span className="flex-1 min-w-px outline-none">{children}</span>
 		</PlateElement>
 	);
 }

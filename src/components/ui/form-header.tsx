@@ -434,7 +434,10 @@ export function WorkspaceHeader({
 			<div className="flex items-center gap-4">
 				<div className="flex -space-x-2">
 					<Avatar className="w-8 h-8 border-2 border-background">
-						<AvatarImage src={user?.image || undefined} alt={user?.name || "User"} />
+						<AvatarImage
+							src={user?.image || undefined}
+							alt={user?.name || "User"}
+						/>
 						<AvatarFallback className="text-[10px] bg-blue-100 text-blue-600 font-semibold">
 							{getInitials(user?.name)}
 						</AvatarFallback>

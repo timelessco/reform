@@ -58,7 +58,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 				revalidateIfStale: true,
 			}),
 		]);
-		console.log(workspacesData , 'workspaceData')
+		console.log(workspacesData, "workspaceData");
 		return {
 			activeOrg,
 			orgsData,
@@ -88,7 +88,7 @@ function DashboardPage() {
 	// Live queries for real-time sync
 	const { data: liveWorkspaces, isReady: wsReady } = useWorkspaces();
 	const { data: liveForms, isReady: formsReady } = useForms();
-	console.log(liveWorkspaces , wsReady, 'wsReady')
+	console.log(liveWorkspaces, wsReady, "wsReady");
 	const isLiveReady = wsReady && formsReady;
 	// Hybrid approach: use live data when ready, fallback to loader data
 	const orgWorkspaces = isLiveReady

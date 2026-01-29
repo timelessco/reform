@@ -15,7 +15,10 @@ const defaultContent = normalizeNodeId([
 	},
 ]);
 
-export const DEFAULT_FORM_STATE: Omit<Form, "id" | "workspaceId" | "createdAt" | "updatedAt"> = {
+export const DEFAULT_FORM_STATE: Omit<
+	Form,
+	"id" | "workspaceId" | "createdAt" | "updatedAt"
+> = {
 	formName: "draft",
 	schemaName: "draftFormSchema",
 	isMultiStep: false,

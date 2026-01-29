@@ -140,7 +140,8 @@ export const FormBlocksKit = [FormLabelPlugin, FormInputPlugin, FormTextareaPlug
 |-----|----------|
 | Tab | Move to next block |
 | Shift+Tab | Move to previous block |
-| Enter | Move to next block (not create new line) |
+| Enter (empty or middle/end) | Insert new paragraph below |
+| Enter (at start with content) | Insert new paragraph above, push content down |
 | Backspace (empty) | Delete the block |
 
 ### 3. Add to Slash Command Menu
@@ -348,6 +349,7 @@ Note: If "Textarea" already exists in the map (check first!), you may not need c
 | Plugin not rendering | Add component to `FormBlocksKit` array |
 | Tab navigation broken | Check `onKeyDown` handler and node type check |
 | **Tab/Enter skips to wrong block** | **Add `event.stopPropagation()` after `event.preventDefault()` - prevents other handlers from firing** |
+| **Enter at start doesn't create block above** | **Check cursor position with `editor.api.edges(path)` and compare with `selection.anchor.offset`** |
 | Block menu doesn't show options | Update `getFieldType()` AND node lookup functions in `block-menu.tsx` |
 | Field missing in preview | Add case to `transformPlateStateToFormElements()` |
 | **Field not rendering in preview** | **Add fieldType to condition in `RenderPreviewElement` in `form-preview-from-plate.tsx`** |

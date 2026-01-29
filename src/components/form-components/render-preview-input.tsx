@@ -49,13 +49,22 @@ function extractErrorMessage(error: unknown): string {
  * Renders a single field in the preview form.
  * Supports Input, Textarea, and Button field types.
  */
-export function RenderPreviewInput({ field, form, navigation, grouped = false }: RenderPreviewInputProps) {
+export function RenderPreviewInput({
+	field,
+	form,
+	navigation,
+	grouped = false,
+}: RenderPreviewInputProps) {
 	// Handle Button field type
 	if (field.fieldType === "Button") {
 		const buttonRole = field.buttonRole || "submit";
-		const buttonText = field.buttonText || (
-			buttonRole === "next" ? "Next" : buttonRole === "previous" ? "Previous" : "Submit"
-		);
+		const buttonText =
+			field.buttonText ||
+			(buttonRole === "next"
+				? "Next"
+				: buttonRole === "previous"
+					? "Previous"
+					: "Submit");
 
 		// Previous button - secondary style
 		if (buttonRole === "previous") {
@@ -71,7 +80,11 @@ export function RenderPreviewInput({ field, form, navigation, grouped = false }:
 				</Button>
 			);
 			// When grouped, parent handles layout; otherwise wrap with justify-start
-			return grouped ? button : <div className="flex justify-start">{button}</div>;
+			return grouped ? (
+				button
+			) : (
+				<div className="flex justify-start">{button}</div>
+			);
 		}
 
 		// Next button - primary style, moves to next step
@@ -87,7 +100,11 @@ export function RenderPreviewInput({ field, form, navigation, grouped = false }:
 				</Button>
 			);
 			// When grouped, parent handles layout; otherwise wrap with justify-end
-			return grouped ? button : <div className="flex justify-end">{button}</div>;
+			return grouped ? (
+				button
+			) : (
+				<div className="flex justify-end">{button}</div>
+			);
 		}
 
 		// Submit button - primary style, submits form
@@ -102,7 +119,11 @@ export function RenderPreviewInput({ field, form, navigation, grouped = false }:
 			</Button>
 		);
 		// When grouped, parent handles layout; otherwise wrap with justify-end
-		return grouped ? submitButton : <div className="flex justify-end">{submitButton}</div>;
+		return grouped ? (
+			submitButton
+		) : (
+			<div className="flex justify-end">{submitButton}</div>
+		);
 	}
 
 	// Handle Textarea field type
@@ -134,7 +155,9 @@ export function RenderPreviewInput({ field, form, navigation, grouped = false }:
 								minLength={field.minLength}
 								maxLength={field.maxLength}
 								aria-invalid={hasErrors}
-								className={hasErrors ? "border-destructive min-h-24" : "min-h-24"}
+								className={
+									hasErrors ? "border-destructive min-h-24" : "min-h-24"
+								}
 							/>
 							{hasErrors && (
 								<p className="text-sm text-destructive">{errorMessage}</p>

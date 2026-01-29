@@ -81,7 +81,10 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 					if (syncResult?.workspaceTxid) {
 						const { workspaceCollection } = await import("@/db-collections");
 						// Wait for Electric to see the workspace transaction (with timeout)
-						await workspaceCollection.utils.awaitTxId(syncResult.workspaceTxid, 1000);
+						await workspaceCollection.utils.awaitTxId(
+							syncResult.workspaceTxid,
+							1000,
+						);
 						await formCollection.utils.awaitTxId(syncResult.syncedForms, 1000);
 					}
 				} catch (error) {

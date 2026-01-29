@@ -95,7 +95,7 @@ const fieldStateSelector = (state: any) => ({
 
 const useFieldContext = () => {
 	const { id } = React.useContext(FormItemContext);
-	
+
 	// Always call _useFieldContext() unconditionally - it's a hook and must be called
 	// This hook may conditionally call hooks internally, but we must always call it
 	const fieldContext = _useFieldContext();
@@ -103,13 +103,13 @@ const useFieldContext = () => {
 	// Use a ref to maintain a stable store reference across renders
 	// This ensures useStore is always called with a consistent reference type
 	const storeRef = React.useRef<any>(null);
-	
+
 	// Update the ref if we have a store, but always use the ref for useStore
 	// This ensures hook order stability even when fieldContext changes
 	if (fieldContext?.store !== undefined) {
 		storeRef.current = fieldContext.store ?? null;
 	}
-	
+
 	// Always call useStore unconditionally to keep hook order stable
 	// useStore handles undefined/null store by not subscribing
 	const fieldState = useStore(storeRef.current as any, fieldStateSelector);

@@ -209,7 +209,12 @@ export const getWorkspacesWithForms = createServerFn({ method: "GET" })
 				workspaceId: forms.workspaceId,
 			})
 			.from(forms)
-			.where(and(inArray(forms.workspaceId, workspaceIds), not(eq(forms.status, "archived"))))
+			.where(
+				and(
+					inArray(forms.workspaceId, workspaceIds),
+					not(eq(forms.status, "archived")),
+				),
+			)
 			.orderBy(desc(forms.updatedAt));
 
 		// Group forms by workspaceId

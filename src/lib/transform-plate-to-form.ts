@@ -169,9 +169,7 @@ function extractListItems(node: any): string[] {
  * Extracts table rows from a Plate table node.
  * Handles structure: table > tr > (th|td) > text
  */
-function extractTableRows(
-	node: any,
-): { cells: string[]; isHeader: boolean }[] {
+function extractTableRows(node: any): { cells: string[]; isHeader: boolean }[] {
 	const rows: { cells: string[]; isHeader: boolean }[] = [];
 	if (!node.children || !Array.isArray(node.children)) return rows;
 
@@ -398,9 +396,18 @@ export function transformPlateStateToFormElements(
 				const childText = extractTextContent(
 					node.children as Array<{ text?: string }>,
 				);
-				const btnText = (node.label as string | undefined) || childText || (node.buttonText as string | undefined);
-				const btnRole = (node.buttonRole as "next" | "previous" | "submit") || "submit";
-				const defaultText = btnRole === "next" ? "Next" : btnRole === "previous" ? "Previous" : "Submit";
+				const btnText =
+					(node.label as string | undefined) ||
+					childText ||
+					(node.buttonText as string | undefined);
+				const btnRole =
+					(node.buttonRole as "next" | "previous" | "submit") || "submit";
+				const defaultText =
+					btnRole === "next"
+						? "Next"
+						: btnRole === "previous"
+							? "Previous"
+							: "Submit";
 				const name = `button_${fieldIndex}`;
 				elements.push({
 					id: name,
@@ -462,7 +469,9 @@ export function transformPlateStateToFormElements(
 				}
 
 				// Recursively transform toggle content
-				const toggleContent = transformPlateStateToFormElements(contentNodes as Value);
+				const toggleContent = transformPlateStateToFormElements(
+					contentNodes as Value,
+				);
 
 				elements.push({
 					id: `toggle_${elements.length}`,

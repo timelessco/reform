@@ -60,7 +60,9 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
 	const selectedNodes = editor
 		.getApi(BlockSelectionPlugin)
 		.blockSelection.getNodes();
-	const hasFormLabel = selectedNodes.some(([node]) => node.type === "formLabel");
+	const hasFormLabel = selectedNodes.some(
+		([node]) => node.type === "formLabel",
+	);
 	const isRequired = selectedNodes.some(
 		([node]) => node.type === "formLabel" && node.required,
 	);

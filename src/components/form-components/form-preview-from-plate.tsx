@@ -2,6 +2,7 @@ import type { Value } from "platejs";
 import { useState } from "react";
 import { ChevronRightIcon } from "lucide-react";
 import { RenderPreviewInput } from "@/components/form-components/render-preview-input";
+import { StepForm } from "@/components/form-components/step-form";
 import { Button } from "@/components/ui/button";
 import {
 	Collapsible,
@@ -17,10 +18,10 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { StepFormProvider, useStepForm } from "@/contexts/step-form-context";
 import { usePreviewForm } from "@/hooks/use-preview-form";
 import {
 	extractFormHeader,
-	getEditableFields,
 	type PlateFormField,
 	splitElementsIntoSteps,
 	type TransformedElement,
@@ -180,7 +181,7 @@ function RenderPreviewElement({
 				);
 			case "UnorderedList":
 				return (
-					<ul className="my-2 ml-6 space-y-1 [list-style-type:disc]">
+					<ul className="my-2 ml-6 space-y-1 list-disc">
 						{element.items.map((item, idx) => (
 							<li key={`${element.id}-${idx}`} className="text-sm pl-1">
 								{item}
@@ -190,7 +191,7 @@ function RenderPreviewElement({
 				);
 			case "OrderedList":
 				return (
-					<ol className="my-2 ml-6 space-y-1 [list-style-type:decimal]">
+					<ol className="my-2 ml-6 space-y-1 list-decimal">
 						{element.items.map((item, idx) => (
 							<li key={`${element.id}-${idx}`} className="text-sm pl-1">
 								{item}
@@ -217,7 +218,9 @@ function RenderPreviewElement({
 										.map((row, rowIdx) => (
 											<TableRow key={`${element.id}-header-${rowIdx}`}>
 												{row.cells.map((cell, cellIdx) => (
-													<TableHead key={`${element.id}-header-${rowIdx}-${cellIdx}`}>
+													<TableHead
+														key={`${element.id}-header-${rowIdx}-${cellIdx}`}
+													>
 														{cell}
 													</TableHead>
 												))}
@@ -231,7 +234,9 @@ function RenderPreviewElement({
 									.map((row, rowIdx) => (
 										<TableRow key={`${element.id}-row-${rowIdx}`}>
 											{row.cells.map((cell, cellIdx) => (
-												<TableCell key={`${element.id}-row-${rowIdx}-${cellIdx}`}>
+												<TableCell
+													key={`${element.id}-row-${rowIdx}-${cellIdx}`}
+												>
 													{cell}
 												</TableCell>
 											))}
@@ -263,45 +268,17 @@ function RenderPreviewElement({
 		element.fieldType === "Textarea" ||
 		element.fieldType === "Button"
 	) {
-		return <RenderPreviewInput field={element as PlateFormField} form={form} navigation={navigation} grouped={grouped} />;
+		return (
+			<RenderPreviewInput
+				field={element as PlateFormField}
+				form={form}
+				navigation={navigation}
+				grouped={grouped}
+			/>
+		);
 	}
 
 	return null;
-}
-
-/**
- * Groups elements for rendering, combining adjacent buttons into groups
- */
-function groupElementsForRendering(elements: TransformedElement[]): Array<TransformedElement | { type: 'buttonGroup'; buttons: TransformedElement[] }> {
-	const result: Array<TransformedElement | { type: 'buttonGroup'; buttons: TransformedElement[] }> = [];
-	let i = 0;
-
-	while (i < elements.length) {
-		const element = elements[i];
-
-		// Check if this is a button
-		if (element.fieldType === 'Button') {
-			const buttons: TransformedElement[] = [element];
-
-			// Collect consecutive buttons
-			while (i + 1 < elements.length && elements[i + 1].fieldType === 'Button') {
-				i++;
-				buttons.push(elements[i]);
-			}
-
-			// If multiple buttons, group them; otherwise keep single
-			if (buttons.length > 1) {
-				result.push({ type: 'buttonGroup', buttons });
-			} else {
-				result.push(element);
-			}
-		} else {
-			result.push(element);
-		}
-		i++;
-	}
-
-	return result;
 }
 
 /**
@@ -507,6 +484,7 @@ function DefaultThankYou({ onReset }: { onReset?: () => void }) {
 /**
  * Renders Plate editor content as a functional form preview.
  * Supports multi-step forms with page breaks as step dividers.
+ * Uses separate forms per step with StepFormContext for state management.
  */
 export function FormPreviewFromPlate({
 	content,
@@ -526,41 +504,8 @@ export function FormPreviewFromPlate({
 	// Split elements into steps based on page breaks
 	const { steps, thankYouContent } = splitElementsIntoSteps(elements);
 
-	// Get all editable fields across all steps for form initialization
-	const allStepElements = steps.flat();
-	const editableFields = getEditableFields(allStepElements);
-
-	// Step navigation state
-	const [currentStep, setCurrentStep] = useState(0);
-	const [isSubmitted, setIsSubmitted] = useState(false);
-
-	const isMultiStep = steps.length > 1;
-	const isLastStep = currentStep === steps.length - 1;
-	const currentStepElements = steps[currentStep] || [];
-
-	// Handle form submission
-	const handleSubmit = async (values: Record<string, any>) => {
-		if (onSubmit) {
-			await onSubmit(values);
-		}
-		setIsSubmitted(true);
-	};
-
-	// Create TanStack Form instance
-	const { form, formName } = usePreviewForm({
-		fields: editableFields,
-		onSubmit: handleSubmit,
-	});
-
-	// Handle reset
-	const handleReset = () => {
-		form.reset();
-		setCurrentStep(0);
-		setIsSubmitted(false);
-	};
-
 	// Show placeholder if no elements found
-	if (steps.length === 0 || allStepElements.length === 0) {
+	if (steps.length === 0 || steps.flat().length === 0) {
 		return (
 			<div className="flex flex-col items-center justify-center min-h-[300px] text-center p-8">
 				<div className="text-muted-foreground mb-4">
@@ -591,6 +536,44 @@ export function FormPreviewFromPlate({
 		);
 	}
 
+	return (
+		<StepFormProvider
+			totalSteps={steps.length}
+			thankYouContent={thankYouContent}
+			onSubmit={onSubmit}
+		>
+			<FormPreviewContent
+				steps={steps}
+				thankYouContent={thankYouContent}
+				title={title}
+				icon={icon}
+				cover={cover}
+			/>
+		</StepFormProvider>
+	);
+}
+
+/**
+ * Inner content component that uses StepFormContext
+ */
+function FormPreviewContent({
+	steps,
+	thankYouContent,
+	title,
+	icon,
+	cover,
+}: {
+	steps: TransformedElement[][];
+	thankYouContent: TransformedElement[] | null;
+	title?: string;
+	icon?: string;
+	cover?: string;
+}) {
+	const { currentStep, isSubmitted, reset } = useStepForm();
+
+	// Create a dummy form for thank you content rendering (static elements only)
+	const { form } = usePreviewForm({ fields: [] });
+
 	// Show thank you content after submission
 	if (isSubmitted) {
 		return (
@@ -601,90 +584,32 @@ export function FormPreviewFromPlate({
 						<RenderThankYouContent
 							elements={thankYouContent}
 							form={form}
-							onReset={handleReset}
+							onReset={reset}
 						/>
 					) : (
-						<DefaultThankYou onReset={handleReset} />
+						<DefaultThankYou onReset={reset} />
 					)}
 				</div>
 			</div>
 		);
 	}
 
-	// Check if current step has editable fields
-	const currentStepEditableFields = getEditableFields(currentStepElements);
-	const hasEditableFields = currentStepEditableFields.length > 0;
+	const isLastStep = currentStep === steps.length - 1;
+	const currentStepElements = steps[currentStep] || [];
 
 	return (
 		<div className="w-full">
 			{/* Header Section */}
 			<PreviewFormHeader title={title} icon={icon} cover={cover} />
 
-			{/* Form */}
+			{/* Step Form */}
 			<div className="max-w-2xl mx-auto px-4 sm:px-0">
-				<form.AppForm>
-					<form.Form id={formName} noValidate className="space-y-4">
-						{/* Current step elements with navigation handlers */}
-						{groupElementsForRendering(currentStepElements).map((item, index) => {
-							const navigation = {
-								onNext: isMultiStep && !isLastStep ? () => setCurrentStep((s) => s + 1) : undefined,
-								onPrevious: isMultiStep && currentStep > 0 ? () => setCurrentStep((s) => s - 1) : undefined,
-								onSubmit: isLastStep || !isMultiStep ? () => {} : undefined,
-								isSubmitting: form.baseStore?.state?.isSubmitting,
-							};
-
-							// Handle button groups (Previous + Next/Submit on same line)
-							if ('type' in item && item.type === 'buttonGroup') {
-								const prevButton = item.buttons.find((b) => {
-									// Button elements have buttonRole property
-									const btn = b as PlateFormField & { buttonRole?: string };
-									return btn.buttonRole === 'previous';
-								});
-								const actionButton = item.buttons.find((b) => {
-									const btn = b as PlateFormField & { buttonRole?: string };
-									const role = btn.buttonRole;
-									return role === 'next' || role === 'submit';
-								});
-
-								return (
-									<div key={`button-group-${index}`} className="flex justify-between items-center w-full">
-										{prevButton ? (
-											<RenderPreviewElement element={prevButton} form={form} navigation={navigation} grouped />
-										) : (
-											<div /> // Spacer for justify-between
-										)}
-										{actionButton && (
-											<RenderPreviewElement element={actionButton} form={form} navigation={navigation} grouped />
-										)}
-									</div>
-								);
-							}
-
-							// Regular element
-							const element = item as TransformedElement;
-							return (
-								<div key={element.id} className="w-full">
-									<RenderPreviewElement element={element} form={form} navigation={navigation} />
-								</div>
-							);
-						})}
-
-						{/* Fallback navigation if no buttons in content - only show reset on last step with editable fields */}
-						{/* {isLastStep && hasEditableFields && (
-							<div className="flex items-center justify-end w-full pt-4">
-								<Button
-									type="button"
-									onClick={handleReset}
-									variant="outline"
-									size="sm"
-									className="rounded-lg"
-								>
-									Reset
-								</Button>
-							</div>
-						)} */}
-					</form.Form>
-				</form.AppForm>
+				<StepForm
+					key={currentStep}
+					stepIndex={currentStep}
+					elements={currentStepElements}
+					isLastStep={isLastStep}
+				/>
 			</div>
 		</div>
 	);

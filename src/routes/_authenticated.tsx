@@ -71,7 +71,13 @@ import { auth, useSession } from "@/lib/auth-client";
 import { OrganizationSwitcher } from "@/components/org/org-switcher";
 import { authMiddleware } from "@/middleware/auth";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet, useLocation, useRouter } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	Link,
+	Outlet,
+	useLocation,
+	useRouter,
+} from "@tanstack/react-router";
 import {
 	Bell,
 	BookOpen,
@@ -103,7 +109,7 @@ export const Route = createFileRoute("/_authenticated")({
 	},
 	component: AuthLayout,
 	pendingComponent: () => <div>loading.....</div>,
-	ssr : 'data-only'
+	ssr: "data-only",
 });
 
 function AuthLayout() {
@@ -514,12 +520,14 @@ function SidebarWorkspaces({ activeOrgId }: { activeOrgId?: string }) {
 	const { isMobile } = useSidebar();
 
 	// Use live queries for real-time sync
-	const { data: workspacesData, isLoading: workspacesLoading } = useWorkspaces();
+	const { data: workspacesData, isLoading: workspacesLoading } =
+		useWorkspaces();
 	const { data: formsData, isLoading: formsLoading } = useForms();
 
 	// Determine if Electric has synced
 	const isLoading = workspacesLoading || formsLoading;
-	const isElectricReady = !isLoading && workspacesData !== undefined && formsData !== undefined;
+	const isElectricReady =
+		!isLoading && workspacesData !== undefined && formsData !== undefined;
 
 	// Combine workspaces with their forms, filtered by active organization
 	const workspaces = useMemo(() => {
@@ -540,7 +548,8 @@ function SidebarWorkspaces({ activeOrgId }: { activeOrgId?: string }) {
 				...ws,
 				// Sort forms by recently edited (most recent first)
 				forms: (formsByWorkspace[ws.id] || []).sort(
-					(a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+					(a, b) =>
+						new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
 				),
 			}));
 	}, [workspacesData, formsData, activeOrgId, isElectricReady]);
@@ -550,7 +559,8 @@ function SidebarWorkspaces({ activeOrgId }: { activeOrgId?: string }) {
 		useState<WorkspaceWithForms | null>(null);
 	const [deleteConfirmName, setDeleteConfirmName] = useState("");
 	const [renameDialogOpen, setRenameDialogOpen] = useState(false);
-	const [workspaceToRename, setWorkspaceToRename] = useState<WorkspaceWithForms | null>(null);
+	const [workspaceToRename, setWorkspaceToRename] =
+		useState<WorkspaceWithForms | null>(null);
 	const [newWorkspaceName, setNewWorkspaceName] = useState("");
 
 	const handleCreateWorkspace = async () => {

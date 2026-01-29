@@ -24,7 +24,8 @@ export function createFormButtonNode(
 	role: ButtonRole,
 	text?: string,
 ): FormButtonElementData {
-	const defaultText = role === "next" ? "Next" : role === "previous" ? "Previous" : "Submit";
+	const defaultText =
+		role === "next" ? "Next" : role === "previous" ? "Previous" : "Submit";
 	return {
 		type: "formButton",
 		buttonRole: role,
@@ -68,9 +69,9 @@ export function FormButtonElement({
 	const [isOpen, setIsOpen] = React.useState(false);
 
 	// Get label from element property (fallback to children for backwards compat)
-	const label = (element.label as string) ?? extractTextFromChildren(
-		element.children as Array<{ text?: string }>
-	);
+	const label =
+		(element.label as string) ??
+		extractTextFromChildren(element.children as Array<{ text?: string }>);
 
 	// Local state for input - prevents re-render on every keystroke
 	const [inputValue, setInputValue] = React.useState(label);
@@ -156,7 +157,7 @@ export function FormButtonElement({
 				"m-0 px-0 py-1",
 				// Previous floats left, Next/Submit floats right
 				isPrevious ? "float-left clear-none" : "float-right clear-none",
-				className
+				className,
 			)}
 			{...props}
 		>
@@ -166,7 +167,7 @@ export function FormButtonElement({
 			<div
 				className={cn(
 					"inline-flex items-center gap-1 group",
-					isPrevious ? "flex-row" : "flex-row-reverse"
+					isPrevious ? "flex-row" : "flex-row-reverse",
 				)}
 				contentEditable={false}
 				onMouseDown={(e) => {
@@ -182,7 +183,7 @@ export function FormButtonElement({
 						"inline-flex h-9 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium shadow transition-colors cursor-default select-none",
 						isPrevious
 							? "bg-secondary text-secondary-foreground"
-							: "bg-primary text-primary-foreground"
+							: "bg-primary text-primary-foreground",
 					)}
 				>
 					{isPrevious && <ChevronLeft className="h-4 w-4" />}

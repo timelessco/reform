@@ -157,8 +157,24 @@ export const forms = pgTable("forms", {
 	cover: text(),
 	isMultiStep: boolean().notNull().default(false),
 	status: text().notNull().default("draft"), // 'draft' | 'published' | 'archived'
+	// Version history fields
+	lastPublishedVersionId: text(), // FK to formVersions.id
+	publishedContentHash: text(), // Hash for fast change detection
 	createdAt: timestamp().notNull().defaultNow(),
 	updatedAt: timestamp().notNull().defaultNow(),
+});
+
+// Form Versions table for storing published snapshots
+export const formVersions = pgTable("form_versions", {
+	id: text().primaryKey(),
+	formId: text().notNull(),
+	version: integer().notNull(), // v1, v2, v3...
+	content: jsonb().notNull(), // Plate.js JSON snapshot
+	settings: jsonb().notNull(), // Settings snapshot
+	title: text().notNull(),
+	publishedByUserId: text().notNull(),
+	publishedAt: timestamp().notNull().defaultNow(),
+	createdAt: timestamp().notNull().defaultNow(),
 });
 
 // Submissions table for storing form responses
@@ -406,6 +422,7 @@ export const relations = defineRelations(
 		member,
 		invitation,
 		forms,
+		formVersions,
 		workspaces,
 		submissions,
 		formSettings,
@@ -443,6 +460,11 @@ export const relations = defineRelations(
 			createdForms: r.many.forms({
 				from: r.user.id,
 				to: r.forms.createdByUserId,
+			}),
+			// Form versions published by user
+			publishedVersions: r.many.formVersions({
+				from: r.user.id,
+				to: r.formVersions.publishedByUserId,
 			}),
 			// User's memberships in organizations
 			members: r.many.member({
@@ -565,6 +587,26 @@ export const relations = defineRelations(
 				from: r.forms.id,
 				to: r.formDropoffDaily.formId,
 			}),
+			// Version history
+			versions: r.many.formVersions({
+				from: r.forms.id,
+				to: r.formVersions.formId,
+			}),
+			currentPublishedVersion: r.one.formVersions({
+				from: r.forms.lastPublishedVersionId,
+				to: r.formVersions.id,
+			}),
+		},
+		// Form Version belongs to one form and one user (publisher)
+		formVersions: {
+			form: r.one.forms({
+				from: r.formVersions.formId,
+				to: r.forms.id,
+			}),
+			publishedBy: r.one.user({
+				from: r.formVersions.publishedByUserId,
+				to: r.user.id,
+			}),
 		},
 		// Submission belongs to one form
 		submissions: {
@@ -636,6 +678,7 @@ export const relations = defineRelations(
 
 export const WorkspaceZod = createSelectSchema(workspaces);
 export const FormZod = createSelectSchema(forms);
+export const FormVersionZod = createSelectSchema(formVersions);
 export const SubmissionZod = createSelectSchema(submissions);
 export const FormSettingsZod = createSelectSchema(formSettings);
 export const FormShareSettingsZod = createSelectSchema(formShareSettings);

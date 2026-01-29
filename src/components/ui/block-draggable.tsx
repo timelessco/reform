@@ -27,7 +27,14 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-const UNDRAGGABLE_KEYS = [KEYS.column, KEYS.tr, KEYS.td, "formHeader", "formButton", "pageBreak"];
+const UNDRAGGABLE_KEYS = [
+	KEYS.column,
+	KEYS.tr,
+	KEYS.td,
+	"formHeader",
+	"formButton",
+	"pageBreak",
+];
 
 export const BlockDraggable: RenderNodeWrapper = (props) => {
 	const { editor, element, path } = props;
@@ -51,11 +58,11 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
 		for (let i = currentIndex - 1; i >= 0; i--) {
 			const node = children[i];
 			if (!node) continue;
-			if (node.type === 'formButton') {
+			if (node.type === "formButton") {
 				const role = (node as any).buttonRole;
 				// If role is previous, we don't count it as a "terminator".
 				// (We assume the structure [Previous] [Next] is valid, so [Next] is not "after" a terminator)
-				if (role === 'previous') continue;
+				if (role === "previous") continue;
 
 				nearestButtonIndex = i;
 				break;
@@ -66,7 +73,7 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
 			// Found a preceding button. Check for intervening page breaks.
 			const hasPageBreak = children
 				.slice(nearestButtonIndex + 1, currentIndex)
-				.some((n) => n?.type === 'pageBreak');
+				.some((n) => n?.type === "pageBreak");
 
 			if (!hasPageBreak) {
 				// No page break between button and this block.
@@ -157,7 +164,7 @@ function Draggable(props: PlateElementProps) {
 	const buttonLayoutClass = React.useMemo(() => {
 		if (isFormButton) {
 			const role = (element as any).buttonRole;
-			if (role === 'previous') return "float-left clear-none";
+			if (role === "previous") return "float-left clear-none";
 			return "float-right clear-none"; // next/submit
 		}
 		return "clear-both";
@@ -215,7 +222,7 @@ function Draggable(props: PlateElementProps) {
 					: "group",
 			)}
 		>
-			{!isInTable && (
+			{!isInTable && !isFormButton && (
 				<Gutter>
 					<div
 						className={cn(
@@ -246,7 +253,6 @@ function Draggable(props: PlateElementProps) {
 								<TooltipContent>Delete block</TooltipContent>
 							</Tooltip>
 						)}
-
 
 						{/* Plus Button - Add after (hidden for form buttons) */}
 						{!isFormButton && (
@@ -478,7 +484,9 @@ const DragHandle = React.memo(function DragHandle({
 				</div>
 			</TooltipTrigger>
 			<TooltipContent>
-				{isFormButton ? "Click for settings" : "Drag to move, Click to open menu"}
+				{isFormButton
+					? "Click for settings"
+					: "Drag to move, Click to open menu"}
 			</TooltipContent>
 		</Tooltip>
 	);

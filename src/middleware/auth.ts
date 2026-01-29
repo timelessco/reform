@@ -33,7 +33,6 @@ export const sessionMiddleware = createMiddleware().server(async ({ next }) => {
 	});
 });
 
-
 export const guestMiddleware = createMiddleware().server(async ({ next }) => {
 	const headers = getRequestHeaders();
 	const session = await auth.api.getSession({ headers });

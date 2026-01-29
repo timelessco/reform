@@ -176,7 +176,10 @@ export const Route = createFileRoute("/api/electric")({
 					headers.delete("cache-control"); // Remove upstream cache control
 
 					// Force no-cache
-					headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+					headers.set(
+						"Cache-Control",
+						"no-store, no-cache, must-revalidate, proxy-revalidate",
+					);
 					headers.set("Pragma", "no-cache");
 					headers.set("Expires", "0");
 					headers.set("Vary", "Cookie");

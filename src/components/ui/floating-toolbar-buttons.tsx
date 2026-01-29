@@ -2,7 +2,7 @@ import {
 	BoldIcon,
 	ItalicIcon,
 	StrikethroughIcon,
-	UnderlineIcon
+	UnderlineIcon,
 } from "lucide-react";
 import { KEYS } from "platejs";
 import { useEditorReadOnly } from "platejs/react";

@@ -103,7 +103,10 @@ export interface FormShareSettings {
 // ============================================================================
 // Default Settings Values
 // ============================================================================
-export const defaultFormSettings: Omit<FormSettings, "id" | "formId" | "createdAt" | "updatedAt"> = {
+export const defaultFormSettings: Omit<
+	FormSettings,
+	"id" | "formId" | "createdAt" | "updatedAt"
+> = {
 	language: "English",
 	redirectOnCompletion: false,
 	redirectUrl: null,
@@ -130,7 +133,10 @@ export const defaultFormSettings: Omit<FormSettings, "id" | "formId" | "createdA
 	saveAnswersForLater: false,
 };
 
-export const defaultFormShareSettings: Omit<FormShareSettings, "id" | "formId" | "createdAt" | "updatedAt"> = {
+export const defaultFormShareSettings: Omit<
+	FormShareSettings,
+	"id" | "formId" | "createdAt" | "updatedAt"
+> = {
 	isPublic: true,
 	expiresAt: null,
 	customTitle: null,

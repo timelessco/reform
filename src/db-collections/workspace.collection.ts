@@ -6,7 +6,12 @@ import {
 	deleteWorkspace,
 	updateWorkspace,
 } from "@/lib/fn/workspaces";
-import { electricFetchClient, getElectricUrl, type ServerTxResult, timestampField } from "./shared";
+import {
+	electricFetchClient,
+	getElectricUrl,
+	type ServerTxResult,
+	timestampField,
+} from "./shared";
 
 export const WorkspaceSchema = z.object({
 	id: z.string().uuid(),

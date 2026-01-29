@@ -25,11 +25,16 @@ const DEFAULT_EDITOR_VALUE = normalizeNodeId([
 	createFormButtonNode("submit") as unknown as TElement,
 ]);
 
-export default function EditorApp({ formId, workspaceId, defaultValue }: EditorAppProps) {
+export default function EditorApp({
+	formId,
+	workspaceId,
+	defaultValue,
+}: EditorAppProps) {
 	const { data: savedDocs } = useForm(formId);
 	const initializedRef = useRef(false);
 	const [isReady, setIsReady] = useState(false);
 	const skipSaveRef = useRef(false);
+	const lastKnownContentRef = useRef<string | null>(null);
 
 	const editor = usePlateEditor({
 		plugins: EditorKit,
@@ -37,64 +42,81 @@ export default function EditorApp({ formId, workspaceId, defaultValue }: EditorA
 
 	const lastSavedContentRef = useRef<Value | null>(null);
 	useEffect(() => {
-		if (initializedRef.current) return;
 		if (savedDocs === undefined) return;
 		if (savedDocs.length === 0) return; // Wait for form data to be available
 
-		initializedRef.current = true;
-
 		const docData = savedDocs?.[0];
-		let initialContent: Value;
+		const incomingContentStr = JSON.stringify(docData?.content);
 
-		if (docData?.content && Array.isArray(docData.content)) {
-			if (
-				docData.content.length > 0 &&
-				docData.content[0]?.type === "formHeader"
-			) {
-				initialContent = docData.content as Value;
-			} else {
-				// Add formHeader at index 0 with data from doc metadata
-				initialContent = [
-					createFormHeaderNode({
-						title: docData.title || "",
-						icon: docData.icon || null,
-						cover: docData.cover || null,
-					}) as unknown as TElement,
-					...(docData.content as Value),
-				];
-			}
+		// First-time initialization
+		if (!initializedRef.current) {
+			initializedRef.current = true;
+			lastKnownContentRef.current = incomingContentStr;
 
-			// Migration: ensure Submit button exists for existing forms
-			const hasSubmitButton = initialContent.some(
-				(node: TElement) =>
-					node.type === "formButton" && node.buttonRole === "submit"
-			);
-			if (!hasSubmitButton) {
-				// Find the position to insert Submit (before thank-you pageBreak if exists, otherwise at end)
-				const thankYouIndex = initialContent.findIndex(
+			let initialContent: Value;
+
+			if (docData?.content && Array.isArray(docData.content)) {
+				if (
+					docData.content.length > 0 &&
+					docData.content[0]?.type === "formHeader"
+				) {
+					initialContent = docData.content as Value;
+				} else {
+					// Add formHeader at index 0 with data from doc metadata
+					initialContent = [
+						createFormHeaderNode({
+							title: docData.title || "",
+							icon: docData.icon || null,
+							cover: docData.cover || null,
+						}) as unknown as TElement,
+						...(docData.content as Value),
+					];
+				}
+
+				// Migration: ensure Submit button exists for existing forms
+				const hasSubmitButton = initialContent.some(
 					(node: TElement) =>
-						node.type === "pageBreak" && node.isThankYouPage === true
+						node.type === "formButton" && node.buttonRole === "submit",
 				);
-				const insertIndex =
-					thankYouIndex !== -1 ? thankYouIndex : initialContent.length;
-				initialContent = [
-					...initialContent.slice(0, insertIndex),
-					createFormButtonNode("submit") as unknown as TElement,
-					...initialContent.slice(insertIndex),
-				];
+				if (!hasSubmitButton) {
+					// Find the position to insert Submit (before thank-you pageBreak if exists, otherwise at end)
+					const thankYouIndex = initialContent.findIndex(
+						(node: TElement) =>
+							node.type === "pageBreak" && node.isThankYouPage === true,
+					);
+					const insertIndex =
+						thankYouIndex !== -1 ? thankYouIndex : initialContent.length;
+					initialContent = [
+						...initialContent.slice(0, insertIndex),
+						createFormButtonNode("submit") as unknown as TElement,
+						...initialContent.slice(insertIndex),
+					];
+				}
+			} else {
+				initialContent = defaultValue ?? DEFAULT_EDITOR_VALUE;
 			}
-		} else {
-			initialContent = defaultValue ?? DEFAULT_EDITOR_VALUE;
+
+			lastSavedContentRef.current = initialContent;
+			skipSaveRef.current = true;
+			editor.tf.init({
+				value: initialContent,
+				autoSelect: "end",
+			});
+
+			setIsReady(true);
+			return;
 		}
 
-		lastSavedContentRef.current = initialContent;
-		skipSaveRef.current = true;
-		editor.tf.init({
-			value: initialContent,
-			autoSelect: "end",
-		});
-
-		setIsReady(true);
+		// Detect external changes (restore/discard via Electric sync)
+		if (lastKnownContentRef.current !== incomingContentStr) {
+			lastKnownContentRef.current = incomingContentStr;
+			lastSavedContentRef.current = docData.content as Value;
+			skipSaveRef.current = true;
+			editor.tf.init({
+				value: docData.content as Value,
+				autoSelect: "end",
+			});
+		}
 	}, [savedDocs, editor]);
 
 	const handleChange = useCallback(
@@ -111,18 +133,20 @@ export default function EditorApp({ formId, workspaceId, defaultValue }: EditorA
 			if (contentStr === lastSavedStr) return;
 
 			lastSavedContentRef.current = value;
-			const now = new Date().toISOString()
+			// Update lastKnownContentRef so Electric sync won't trigger re-init
+			lastKnownContentRef.current = contentStr;
+			const now = new Date().toISOString();
 
 			// Always update the full content when it changes
 			updateDoc(formId, (draft) => {
-				draft.workspaceId = workspaceId,
-					draft.createdAt = now,
-					draft.updatedAt = now,
-					draft.content = value;
+				(draft.workspaceId = workspaceId),
+					(draft.createdAt = now),
+					(draft.updatedAt = now),
+					(draft.content = value);
 			});
 
 			// Optionally update header metadata if the first element is a formHeader
-			if (value.length > 0 && value[0]?.type === 'formHeader') {
+			if (value.length > 0 && value[0]?.type === "formHeader") {
 				const headerNode = value[0] as any;
 				updateHeader(formId, {
 					title: headerNode.title,

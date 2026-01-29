@@ -13,7 +13,6 @@ import { sessionMiddleware } from "../middleware/auth";
 import appCss from "../styles.css?url";
 import { Agentation } from "agentation";
 
-
 interface MyRouterContext {
 	queryClient: QueryClient;
 	session: Session | null;
@@ -68,7 +67,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 						TanStackQueryDevtools,
 					]}
 				/>
-				  {process.env.NODE_ENV === "development" && <Agentation />}
+				{process.env.NODE_ENV === "development" && <Agentation />}
 				<Scripts />
 			</body>
 		</html>

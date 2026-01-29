@@ -31,9 +31,7 @@ function FormNotFound() {
 					</div>
 				</div>
 				<div className="space-y-2">
-					<h1 className="text-2xl font-bold tracking-tight">
-						Form not found
-					</h1>
+					<h1 className="text-2xl font-bold tracking-tight">Form not found</h1>
 					<p className="text-muted-foreground">
 						This form doesn't exist or is no longer available.
 					</p>

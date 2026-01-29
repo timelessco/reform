@@ -174,7 +174,7 @@ const groups: Group[] = [
 				label: "Date",
 				value: KEYS.date,
 			},
-			// ``	
+			// ``
 		].map((item) => ({
 			...item,
 			onSelect: (editor, value) => {
@@ -215,7 +215,14 @@ const groups: Group[] = [
 			},
 			{
 				icon: <AlignLeftIcon />,
-				keywords: ["form", "textarea", "multiline", "long", "paragraph", "description"],
+				keywords: [
+					"form",
+					"textarea",
+					"multiline",
+					"long",
+					"paragraph",
+					"description",
+				],
 				label: "Text Area",
 				value: "formTextarea",
 			},

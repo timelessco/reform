@@ -8,12 +8,12 @@ import { electricFetchClient, getElectricUrl, timestampField } from "./shared";
 // ============================================================================
 
 export const SubmissionSchema = z.object({
-    id: z.string().uuid(),
-    formId: z.string().uuid(),
-    data: z.record(z.string(), z.any()).default({}),
-    isCompleted: z.boolean().default(true),
-    createdAt: timestampField,
-    updatedAt: timestampField,
+	id: z.string().uuid(),
+	formId: z.string().uuid(),
+	data: z.record(z.string(), z.any()).default({}),
+	isCompleted: z.boolean().default(true),
+	createdAt: timestampField,
+	updatedAt: timestampField,
 });
 
 export type Submission = z.infer<typeof SubmissionSchema>;
@@ -23,14 +23,14 @@ export type Submission = z.infer<typeof SubmissionSchema>;
 // ============================================================================
 
 export const submissionCollection = createCollection(
-    electricCollectionOptions({
-        id: "submissions",
-        schema: SubmissionSchema,
-        shapeOptions: {
-            url: getElectricUrl(),
-            params: { table: "submissions" },
-            fetchClient: electricFetchClient,
-        },
-        getKey: (item) => item.id,
-    }),
+	electricCollectionOptions({
+		id: "submissions",
+		schema: SubmissionSchema,
+		shapeOptions: {
+			url: getElectricUrl(),
+			params: { table: "submissions" },
+			fetchClient: electricFetchClient,
+		},
+		getKey: (item) => item.id,
+	}),
 );

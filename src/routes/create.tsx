@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from "@tanstack/react-router";
 import { useLocalForm } from "@/hooks/use-live-hooks";
 import { ClientOnly } from "@/components/client-only";
 import { normalizeNodeId, type TElement, type Value } from "platejs";
@@ -11,8 +11,8 @@ import { localFormCollection } from "@/db-collections";
 import { AppHeader } from "@/components/ui/app-header";
 import { guestMiddleware } from "@/middleware/auth";
 
-const LOCAL_FORM_ID = '550e8400-e29b-41d4-a716-446655440000'; // Valid UUID for local draft
-const LOCAL_WORKSPACE_ID = '550e8400-e29b-41d4-a716-446655440001'; // Valid UUID for local workspace
+const LOCAL_FORM_ID = "550e8400-e29b-41d4-a716-446655440000"; // Valid UUID for local draft
+const LOCAL_WORKSPACE_ID = "550e8400-e29b-41d4-a716-446655440001"; // Valid UUID for local workspace
 
 const defaultValue = normalizeNodeId([
 	createFormHeaderNode() as unknown as TElement,
@@ -22,19 +22,19 @@ const defaultValue = normalizeNodeId([
 	},
 ]);
 
-export const Route = createFileRoute('/create')({
+export const Route = createFileRoute("/create")({
 	server: {
 		middleware: [guestMiddleware],
 	},
 	component: RouteComponent,
-})
+});
 
 function RouteComponent() {
 	return (
 		<div className="flex flex-col h-screen overflow-hidden">
 			<AppHeader />
 			<div className="flex-1 overflow-auto relative bg-background">
-					<LocalEditorApp />
+				<LocalEditorApp />
 			</div>
 		</div>
 	);
@@ -94,77 +94,74 @@ function LocalEditorApp() {
 		setIsReady(true);
 	}, [savedDocs, editor]);
 
-	const handleChange = useCallback(
-		({ value }: { value: Value }) => {
-			// Skip the initial onChange triggered by editor.tf.init()
-			if (skipSaveRef.current) {
-				skipSaveRef.current = false;
-				return;
+	const handleChange = useCallback(({ value }: { value: Value }) => {
+		// Skip the initial onChange triggered by editor.tf.init()
+		if (skipSaveRef.current) {
+			skipSaveRef.current = false;
+			return;
+		}
+
+		// Only save if content actually changed
+		const contentStr = JSON.stringify(value);
+		const lastSavedStr = JSON.stringify(lastSavedContentRef.current);
+		if (contentStr === lastSavedStr) return;
+
+		lastSavedContentRef.current = value;
+
+		// Check if the first element is a formHeader
+		if (value.length > 0 && value[0]?.type === "formHeader") {
+			const headerNode = value[0] as any;
+			try {
+				localFormCollection.update(LOCAL_FORM_ID, (draft) => {
+					draft.title = headerNode.title || "Draft Form";
+					draft.icon = headerNode.icon || null;
+					draft.cover = headerNode.cover || null;
+					draft.content = value;
+					draft.updatedAt = new Date().toISOString();
+				});
+			} catch {
+				// If update fails (item doesn't exist), create it
+				localFormCollection.insert({
+					id: LOCAL_FORM_ID,
+					workspaceId: LOCAL_WORKSPACE_ID, // Valid UUID for local workspace
+					title: headerNode.title || "Draft Form",
+					formName: "draft",
+					schemaName: "draftFormSchema",
+					content: value,
+					icon: headerNode.icon || null,
+					cover: headerNode.cover || null,
+					isMultiStep: false,
+					status: "draft" as const,
+					createdAt: new Date().toISOString(),
+					updatedAt: new Date().toISOString(),
+				});
 			}
-
-			// Only save if content actually changed
-			const contentStr = JSON.stringify(value);
-			const lastSavedStr = JSON.stringify(lastSavedContentRef.current);
-			if (contentStr === lastSavedStr) return;
-
-			lastSavedContentRef.current = value;
-
-			// Check if the first element is a formHeader
-			if (value.length > 0 && value[0]?.type === 'formHeader') {
-				const headerNode = value[0] as any;
-				try {
-					localFormCollection.update(LOCAL_FORM_ID, (draft) => {
-						draft.title = headerNode.title || "Draft Form";
-						draft.icon = headerNode.icon || null;
-						draft.cover = headerNode.cover || null;
-						draft.content = value;
-						draft.updatedAt = new Date().toISOString();
-					});
-				} catch {
-					// If update fails (item doesn't exist), create it
-					localFormCollection.insert({
-						id: LOCAL_FORM_ID,
-						workspaceId: LOCAL_WORKSPACE_ID, // Valid UUID for local workspace
-						title: headerNode.title || "Draft Form",
-						formName: "draft",
-						schemaName: "draftFormSchema",
-						content: value,
-						icon: headerNode.icon || null,
-						cover: headerNode.cover || null,
-						isMultiStep: false,
-						status: "draft" as const,
-						createdAt: new Date().toISOString(),
-						updatedAt: new Date().toISOString(),
-					});
-				}
-			} else {
-				// Update the full content
-				try {
-					localFormCollection.update(LOCAL_FORM_ID, (draft) => {
-						draft.content = value;
-						draft.updatedAt = new Date().toISOString();
-					});
-				} catch {
-					// If update fails (item doesn't exist), create it
-					localFormCollection.insert({
-						id: LOCAL_FORM_ID,
-						workspaceId: LOCAL_WORKSPACE_ID, // Valid UUID for local workspace
-						title: "Draft Form",
-						formName: "draft",
-						schemaName: "draftFormSchema",
-						content: value,
-						icon: null,
-						cover: null,
-						isMultiStep: false,
-						status: "draft" as const,
-						createdAt: new Date().toISOString(),
-						updatedAt: new Date().toISOString(),
-					});
-				}
+		} else {
+			// Update the full content
+			try {
+				localFormCollection.update(LOCAL_FORM_ID, (draft) => {
+					draft.content = value;
+					draft.updatedAt = new Date().toISOString();
+				});
+			} catch {
+				// If update fails (item doesn't exist), create it
+				localFormCollection.insert({
+					id: LOCAL_FORM_ID,
+					workspaceId: LOCAL_WORKSPACE_ID, // Valid UUID for local workspace
+					title: "Draft Form",
+					formName: "draft",
+					schemaName: "draftFormSchema",
+					content: value,
+					icon: null,
+					cover: null,
+					isMultiStep: false,
+					status: "draft" as const,
+					createdAt: new Date().toISOString(),
+					updatedAt: new Date().toISOString(),
+				});
 			}
-		},
-		[],
-	);
+		}
+	}, []);
 
 	if (!isReady) {
 		return (
