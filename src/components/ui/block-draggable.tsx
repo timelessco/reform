@@ -188,6 +188,9 @@ function Draggable(props: PlateElementProps) {
 	const isInTable = path.length === 4;
 
 	const [previewTop, setPreviewTop] = React.useState(0);
+	// Track previous states to detect transitions
+	const wasDraggingRef = React.useRef(isDragging);
+	const wasAboutToDragRef = React.useRef(isAboutToDrag);
 
 	const resetPreview = () => {
 		if (previewRef.current) {
@@ -196,20 +199,25 @@ function Draggable(props: PlateElementProps) {
 		}
 	};
 
-	// clear up virtual multiple preview when drag end
+	// Reset preview only when transitioning from dragging to not dragging
 	React.useEffect(() => {
-		if (!isDragging) {
+		const justStoppedDragging = !isDragging && wasDraggingRef.current;
+		wasDraggingRef.current = isDragging;
+
+		if (justStoppedDragging) {
 			resetPreview();
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [isDragging, resetPreview]);
+	}, [isDragging]);
 
+	// Show preview only when transitioning to about-to-drag state
 	React.useEffect(() => {
-		if (isAboutToDrag) {
+		const justStartedAboutToDrag = isAboutToDrag && !wasAboutToDragRef.current;
+		wasAboutToDragRef.current = isAboutToDrag;
+
+		if (justStartedAboutToDrag) {
 			previewRef.current?.classList.remove("opacity-0");
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [isAboutToDrag, previewRef.current?.classList.remove]);
+	}, [isAboutToDrag]);
 
 	return (
 		<div
@@ -227,7 +235,7 @@ function Draggable(props: PlateElementProps) {
 					<div
 						className={cn(
 							"slate-blockToolbarWrapper",
-							"flex items-center gap-0.5 pointer-events-auto",
+							"flex items-start gap-0.5 pointer-events-auto",
 							isInColumn && "h-4",
 						)}
 					>
@@ -346,7 +354,7 @@ function Gutter({
 			{...props}
 			className={cn(
 				"slate-gutterLeft",
-				"-translate-x-full absolute top-0 h-full z-50 flex items-center cursor-text hover:opacity-100",
+				"-translate-x-full absolute top-0 h-full z-50 flex items-start pt-[3px] cursor-text hover:opacity-100",
 				!selected && "sm:opacity-0",
 				getPluginByType(editor, element.type)?.node.isContainer
 					? "group-hover/container:opacity-100"

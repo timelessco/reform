@@ -1,10 +1,11 @@
-import { useState, useCallback } from "react";
-import type { Value } from "platejs";
 import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
-import { ThankYouPage } from "./thank-you-page";
 import { createPublicSubmission } from "@/lib/fn/public";
-import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { FileQuestion, Lock } from "lucide-react";
+import type { Value } from "platejs";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { ThankYouPage } from "./thank-you-page";
 
 interface PublicForm {
 	id: string;
@@ -19,6 +20,29 @@ interface PublicFormPageProps {
 	form: PublicForm | null;
 	error: "not_found" | null;
 	formId: string;
+	transparentBackground?: boolean;
+	/** Whether this form is loaded in a popup iframe */
+	isPopup?: boolean;
+	/** Hide the form title */
+	hideTitle?: boolean;
+	/** Align form content to the left */
+	alignLeft?: boolean;
+}
+
+/**
+ * Send a message to the parent window (for popup embeds)
+ */
+function sendToParent(event: string, payload?: Record<string, unknown>): void {
+	if (typeof window === "undefined" || window.parent === window) return;
+
+	try {
+		window.parent.postMessage(
+			JSON.stringify({ event, ...payload }),
+			"*"
+		);
+	} catch (e) {
+		console.error("[BetterForms] Failed to send message to parent:", e);
+	}
 }
 
 function FormNotFound() {
@@ -63,8 +87,88 @@ function FormNotPublished() {
 	);
 }
 
-export function PublicFormPage({ form, error, formId }: PublicFormPageProps) {
+export function PublicFormPage({
+	form,
+	error,
+	formId,
+	transparentBackground,
+	isPopup = false,
+	hideTitle = false,
+	alignLeft = false,
+}: PublicFormPageProps) {
 	const [isSubmitted, setIsSubmitted] = useState(false);
+	const [currentPage, setCurrentPage] = useState(1);
+	const containerRef = useRef<HTMLDivElement>(null);
+
+	// Handle body/html transparency for iframes
+	useEffect(() => {
+		if (transparentBackground || isPopup) {
+			const originalBodyBg = document.body.style.background;
+			const originalHtmlBg = document.documentElement.style.background;
+
+			document.body.style.background = "transparent";
+			document.documentElement.style.background = "transparent";
+
+			return () => {
+				document.body.style.background = originalBodyBg;
+				document.documentElement.style.background = originalHtmlBg;
+			};
+		}
+	}, [transparentBackground, isPopup]);
+
+	// Setup popup mode communication
+	useEffect(() => {
+		if (!isPopup || typeof window === "undefined" || window.parent === window) return;
+
+		// Notify parent that form has loaded
+		sendToParent("BetterForms.FormLoaded", { formId });
+
+		// Track last sent height to avoid redundant messages
+		let lastHeight = 0;
+		let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
+
+		const sendHeight = () => {
+			const container = containerRef.current;
+			if (!container) return;
+
+			// Use the container's scroll height, not document.body
+			const height = container.scrollHeight;
+
+			// Only send if height actually changed (with small tolerance)
+			if (Math.abs(height - lastHeight) > 2) {
+				lastHeight = height;
+				sendToParent("BetterForms.Resize", { height });
+			}
+		};
+
+		// Debounced resize handler
+		const handleResize = () => {
+			if (resizeTimeout) clearTimeout(resizeTimeout);
+			resizeTimeout = setTimeout(sendHeight, 50);
+		};
+
+		// Setup resize observer on the container element
+		const resizeObserver = new ResizeObserver(handleResize);
+
+		if (containerRef.current) {
+			resizeObserver.observe(containerRef.current);
+		}
+
+		// Send initial height after a short delay to let content render
+		setTimeout(sendHeight, 150);
+
+		return () => {
+			resizeObserver.disconnect();
+			if (resizeTimeout) clearTimeout(resizeTimeout);
+		};
+	}, [isPopup, formId]);
+
+	// Notify parent on page changes (multi-step forms)
+	useEffect(() => {
+		if (isPopup && currentPage > 0) {
+			sendToParent("BetterForms.PageView", { formId, page: currentPage });
+		}
+	}, [isPopup, currentPage, formId]);
 
 	const handleSubmit = useCallback(
 		async (values: Record<string, any>) => {
@@ -77,17 +181,30 @@ export function PublicFormPage({ form, error, formId }: PublicFormPageProps) {
 					},
 				});
 				setIsSubmitted(true);
+
+				// Notify parent of submission (for popup embeds)
+				if (isPopup) {
+					sendToParent("BetterForms.FormSubmitted", {
+						formId,
+						payload: {
+							formId,
+							formName: form?.title,
+							data: values,
+						},
+					});
+				}
 			} catch (err) {
 				console.error("Submission error:", err);
 				toast.error("Failed to submit form. Please try again.");
 				throw err; // Re-throw so the form knows it failed
 			}
 		},
-		[formId],
+		[formId, isPopup, form?.title],
 	);
 
 	const handleSubmitAnother = useCallback(() => {
 		setIsSubmitted(false);
+		setCurrentPage(1);
 	}, []);
 
 	// Handle error states
@@ -112,13 +229,23 @@ export function PublicFormPage({ form, error, formId }: PublicFormPageProps) {
 
 	// Render the form
 	return (
-		<div className="min-h-screen py-8 px-4">
+		<div
+			ref={containerRef}
+			className={cn(
+				"py-8 px-4",
+				// Don't use min-h-screen for popup mode - it causes resize loop
+				!isPopup && "min-h-screen",
+				transparentBackground || isPopup ? "bg-transparent" : "bg-white",
+				alignLeft && "text-left",
+			)}
+		>
 			<FormPreviewFromPlate
 				content={form.content as Value}
-				title={form.title}
-				icon={form.icon ?? undefined}
-				cover={form.cover ?? undefined}
+				title={hideTitle ? undefined : form.title}
+				icon={hideTitle ? undefined : form.icon ?? undefined}
+				cover={hideTitle ? undefined : form.cover ?? undefined}
 				onSubmit={handleSubmit}
+				hideTitle={hideTitle}
 			/>
 		</div>
 	);

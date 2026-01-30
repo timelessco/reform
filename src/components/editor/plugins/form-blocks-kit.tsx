@@ -47,9 +47,23 @@ function findNextNonButtonPath(
 		if (node.type === "formButton") {
 			const buttonRole = (node as any).buttonRole || "submit";
 
-			// If it's a submit button, this is the last page - return null to stay in place
+			// If it's a submit button, check if there's a thank you page after it
 			if (buttonRole === "submit") {
-				return null;
+				// Look ahead for a pageBreak with isThankYouPage: true
+				let hasThankYouPage = false;
+				for (let j = i + 1; j < children.length; j++) {
+					const nextNode = children[j];
+					if (nextNode.type === "pageBreak" && (nextNode as any).isThankYouPage) {
+						hasThankYouPage = true;
+						break;
+					}
+				}
+				// If no thank you page, stop navigation here
+				if (!hasThankYouPage) {
+					return null;
+				}
+				// Otherwise continue to find content after the thank you pageBreak
+				continue;
 			}
 
 			// If it's a next/previous button, continue looking for content after page break
@@ -105,6 +119,11 @@ function handleFormBlockKeyDown(
 	editor: PlateEditor,
 	event: React.KeyboardEvent,
 ): void {
+	// [TAB DEBUG] - remove after fix verified
+	if (event.key === "Tab") {
+		console.log("[TAB DEBUG] handleFormBlockKeyDown entry, block:", editor.api.block()?.[0]?.type);
+	}
+
 	// Prevent double-handling when multiple form plugins process same event
 	if ((event as any).__formBlockHandled) return;
 
@@ -122,16 +141,31 @@ function handleFormBlockKeyDown(
 		if (nextPath) {
 			event.preventDefault();
 			event.stopPropagation();
+			event.nativeEvent.stopImmediatePropagation();
 			moveToPath(editor, nextPath);
 		} else {
-			// Block Tab and ArrowDown from leaving the editor or entering buttons
+			// No next block - create new p block before submit button
 			event.preventDefault();
 			event.stopPropagation();
-			// Explicitly maintain current selection to prevent cursor from vanishing
-			const currentSelection = editor.selection;
-			if (currentSelection) {
-				editor.tf.select(currentSelection);
+			event.nativeEvent.stopImmediatePropagation();
+
+			// Find insert position (before first formButton or at end)
+			const children = editor.children as TElement[];
+			let insertIndex = children.length;
+			for (let i = path[0] + 1; i < children.length; i++) {
+				if (children[i].type === "formButton") {
+					insertIndex = i;
+					break;
+				}
 			}
+
+			// Insert new paragraph and move to it
+			const insertPath: Path = [insertIndex];
+			editor.tf.insertNodes(
+				{ type: "p", children: [{ text: "" }] } as TElement,
+				{ at: insertPath }
+			);
+			moveToPath(editor, insertPath);
 		}
 		return;
 	}
@@ -142,6 +176,7 @@ function handleFormBlockKeyDown(
 		if (prevPath) {
 			event.preventDefault();
 			event.stopPropagation();
+			event.nativeEvent.stopImmediatePropagation();
 			moveToPath(editor, prevPath);
 		}
 		return;
@@ -672,14 +707,12 @@ export const FormButtonPlugin = createPlatePlugin({
 						}
 
 						if (isThankYouSection) {
-							// Thank You page: delete all form fields and buttons
-							// Find and remove form fields first (iterate backwards to maintain indices)
-							for (let j = pageEndIndex - 1; j >= pageStartIndex; j--) {
+							// Check if form fields exist in this thank you section
+							let hasFormFields = false;
+							for (let j = pageStartIndex; j < pageEndIndex; j++) {
 								const n = getChildren()[j];
-								if (!n) continue;
-
-								// Delete form fields
 								if (
+									n &&
 									[
 										"formInput",
 										"formTextarea",
@@ -688,28 +721,28 @@ export const FormButtonPlugin = createPlatePlugin({
 										"formCheckbox",
 										"formSelect",
 										"formDatePicker",
+										"formButton",
 									].includes(n.type)
 								) {
-									console.log(
-										"Normalize: Removing form field from Thank You page at",
-										j,
-									);
-									editorRef.tf.removeNodes({ at: [j] });
-									return; // Restart normalization
-								}
-
-								// Delete buttons (use originalRemoveNodes to bypass override)
-								if (n.type === "formButton") {
-									console.log(
-										"Normalize: Removing button from Thank You page at",
-										j,
-									);
-									originalRemoveNodes({ at: [j] });
-									return; // Restart normalization
+									hasFormFields = true;
+									break;
 								}
 							}
 
-							// Done with this section (skip button enforcement)
+							// If form fields exist, convert thank you page to normal page
+							if (hasFormFields && precedingBreakIndex !== -1) {
+								console.log(
+									"Normalize: Converting Thank You page to normal page at",
+									precedingBreakIndex,
+								);
+								editorRef.tf.setNodes(
+									{ isThankYouPage: false },
+									{ at: [precedingBreakIndex] }
+								);
+								return; // Restart normalization (will now process as normal page)
+							}
+
+							// No form fields - this is a valid thank you page, skip button enforcement
 							pageStartIndex = i + 1;
 							continue;
 						}
@@ -892,6 +925,11 @@ function handleGlobalKeyDown(
 	editor: PlateEditor,
 	event: React.KeyboardEvent,
 ): void {
+	// [TAB DEBUG] - remove after fix verified
+	if (event.key === "Tab") {
+		console.log("[TAB DEBUG] handleGlobalKeyDown entry, block:", editor.api.block()?.[0]?.type, "alreadyHandled:", (event as any).__formBlockHandled);
+	}
+
 	// Don't interfere if already handled by form block handlers
 	if ((event as any).__formBlockHandled) return;
 
@@ -906,18 +944,33 @@ function handleGlobalKeyDown(
 		if (nextPath) {
 			event.preventDefault();
 			event.stopPropagation();
+			event.nativeEvent.stopImmediatePropagation();
 			(event as any).__formBlockHandled = true;
 			moveToPath(editor, nextPath);
 		} else {
-			// Block Tab from leaving the editor if at the end of content
+			// No next block - create new p block before submit button
 			event.preventDefault();
 			event.stopPropagation();
+			event.nativeEvent.stopImmediatePropagation();
 			(event as any).__formBlockHandled = true;
-			// Explicitly maintain current selection to prevent cursor from vanishing
-			const currentSelection = editor.selection;
-			if (currentSelection) {
-				editor.tf.select(currentSelection);
+
+			// Find insert position (before first formButton or at end)
+			const children = editor.children as TElement[];
+			let insertIndex = children.length;
+			for (let i = path[0] + 1; i < children.length; i++) {
+				if (children[i].type === "formButton") {
+					insertIndex = i;
+					break;
+				}
 			}
+
+			// Insert new paragraph and move to it
+			const insertPath: Path = [insertIndex];
+			editor.tf.insertNodes(
+				{ type: "p", children: [{ text: "" }] } as TElement,
+				{ at: insertPath }
+			);
+			moveToPath(editor, insertPath);
 		}
 		return;
 	}
@@ -935,6 +988,7 @@ function handleGlobalKeyDown(
 			) {
 				event.preventDefault();
 				event.stopPropagation();
+				event.nativeEvent.stopImmediatePropagation();
 				(event as any).__formBlockHandled = true;
 				moveToPath(editor, prevPath);
 			}
@@ -1066,6 +1120,7 @@ function handleGlobalKeyDown(
 
 const GlobalKeyboardNavigationPlugin = createPlatePlugin({
 	key: "globalKeyboardNavigation",
+	priority: 1000, // High priority to run before IndentPlugin's Tab handler
 	handlers: {
 		onKeyDown: ({ editor, event }) => handleGlobalKeyDown(editor, event),
 	},

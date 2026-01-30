@@ -19,7 +19,7 @@ import { format } from "date-fns";
 import { HelpCircle, Loader2, Lock, X } from "lucide-react";
 import type { Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 interface VersionHistoryDialogProps {
@@ -53,29 +53,24 @@ export function VersionHistoryDialog({
 	onOpenChange,
 }: VersionHistoryDialogProps) {
 	const { data: versionsData } = useFormVersions(formId);
-	const [selectedVersionId, setSelectedVersionId] = useState<string | null>(
-		null,
-	);
+	// Track user's explicit selection (null = use default)
+	const [userSelectedVersionId, setUserSelectedVersionId] = useState<string | null>(null);
+
+	const versions = versionsData?.versions ?? [];
+	// Derive selected version: user selection or first version (no useEffect needed)
+	const selectedVersionId = userSelectedVersionId ?? versions[0]?.id ?? null;
+
 	const { data: versionContent, isLoading: isLoadingContent } =
 		useFormVersionContent(selectedVersionId ?? undefined);
 	const restoreMutation = useRestoreVersion();
 	const { data: sessionData } = useSession();
 	const currentUser = sessionData?.user;
 
-	const versions = versionsData?.versions ?? [];
-
 	// Get the latest version (first in the list since they're ordered by desc version)
 	const latestVersion = versions[0];
 
-	// Set the first version as selected by default when versions load
-	useEffect(() => {
-		if (versions.length > 0 && !selectedVersionId) {
-			setSelectedVersionId(versions[0].id);
-		}
-	}, [versions, selectedVersionId]);
-
 	const handleSelectVersion = (versionId: string) => {
-		setSelectedVersionId(versionId);
+		setUserSelectedVersionId(versionId);
 	};
 
 	const handleRestore = async () => {

@@ -35,6 +35,38 @@ const {
 	useFormContext,
 } = createFormHookContexts();
 
+const Form = React.forwardRef<
+	HTMLFormElement,
+	Omit<React.ComponentPropsWithoutRef<"form">, "onSubmit"> & {
+		children?: React.ReactNode;
+	}
+>(({ children, className, ...props }, ref) => {
+	const form = useFormContext();
+	const handleSubmit = React.useCallback(
+		(e: React.FormEvent<HTMLFormElement>) => {
+			e.preventDefault();
+			e.stopPropagation();
+			form.handleSubmit();
+		},
+		[form],
+	);
+	return (
+		<form
+			ref={ref}
+			onSubmit={handleSubmit}
+			className={cn(
+				"flex flex-col p-2 md:p-5 w-full mx-auto gap-2",
+				className,
+			)}
+			noValidate
+			{...props}
+		>
+			{children}
+		</form>
+	);
+});
+Form.displayName = "Form";
+
 const { useAppForm, withForm, withFieldGroup } = createFormHook({
 	fieldContext,
 	formContext,
@@ -176,35 +208,6 @@ function FieldError({ className, ...props }: React.ComponentProps<"p">) {
 	);
 }
 
-function Form({
-	children,
-	...props
-}: Omit<React.ComponentPropsWithoutRef<"form">, "onSubmit" & "noValidate"> & {
-	children?: React.ReactNode;
-}) {
-	const form = useFormContext();
-	const handleSubmit = React.useCallback(
-		(e: React.FormEvent<HTMLFormElement>) => {
-			e.preventDefault();
-			e.stopPropagation();
-			form.handleSubmit();
-		},
-		[form],
-	);
-	return (
-		<form
-			onSubmit={handleSubmit}
-			className={cn(
-				"flex flex-col p-2 md:p-5 w-full mx-auto gap-2",
-				props.className,
-			)}
-			noValidate
-			{...props}
-		>
-			{children}
-		</form>
-	);
-}
 
 function SubmitButton({
 	label,

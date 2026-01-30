@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStepForm } from "@/contexts/step-form-context";
@@ -32,9 +33,32 @@ export function StepForm({ stepIndex, elements, isLastStep }: StepFormProps) {
 	// Group elements for rendering (combine adjacent buttons)
 	const groupedElements = groupElementsForRendering(elements);
 
+	const formRef = useRef<HTMLFormElement>(null);
+
+	// Auto-focus the first focusable element on mount
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			if (formRef.current) {
+				const focusable = formRef.current.querySelector(
+					'input:not([type="hidden"]), textarea, select, [role="checkbox"]',
+				) as HTMLElement;
+				if (focusable) {
+					focusable.focus();
+				}
+			}
+		}, 300); // Wait for transition to settle
+
+		return () => clearTimeout(timer);
+	}, []);
+
 	return (
 		<form.AppForm>
-			<form.Form id={formName} noValidate className="space-y-4">
+			<form.Form
+				id={formName}
+				ref={formRef}
+				noValidate
+				className="space-y-4 outline-none"
+			>
 				{groupedElements.map((item, index) => {
 					// Handle button groups (Previous + Next/Submit on same line)
 					if ("type" in item && item.type === "buttonGroup") {
@@ -50,8 +74,16 @@ export function StepForm({ stepIndex, elements, isLastStep }: StepFormProps) {
 						return (
 							<div
 								key={`button-group-${index}`}
-								className="flex justify-between items-center w-full"
+								className="flex flex-row-reverse justify-between items-center w-full"
 							>
+								{actionButton && actionButton.fieldType === "Button" && (
+									<RenderStepButton
+										field={actionButton}
+										isSubmitting={isSubmitting}
+										onPrevious={currentStep > 0 ? goToPrevStep : undefined}
+										grouped
+									/>
+								)}
 								{prevButton && prevButton.fieldType === "Button" ? (
 									<RenderStepButton
 										field={prevButton}
@@ -61,14 +93,6 @@ export function StepForm({ stepIndex, elements, isLastStep }: StepFormProps) {
 									/>
 								) : (
 									<div /> // Spacer for justify-between
-								)}
-								{actionButton && actionButton.fieldType === "Button" && (
-									<RenderStepButton
-										field={actionButton}
-										isSubmitting={isSubmitting}
-										onPrevious={currentStep > 0 ? goToPrevStep : undefined}
-										grouped
-									/>
 								)}
 							</div>
 						);

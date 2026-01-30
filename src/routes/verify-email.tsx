@@ -33,16 +33,13 @@ export const Route = createFileRoute("/verify-email")({
 function VerifyEmailPage() {
 	const navigate = useNavigate();
 	const { data: session } = useSession();
-	const [email, setEmail] = React.useState(session?.user.email || "");
-	const [isEditingEmail, setIsEditingEmail] = React.useState(
-		!session?.user.email,
+	// Store editing value only when editing, null when not editing
+	const [editingEmail, setEditingEmail] = React.useState<string | null>(
+		session?.user.email ? null : "",
 	);
-
-	React.useEffect(() => {
-		if (session?.user.email && !email && !isEditingEmail) {
-			setEmail(session.user.email);
-		}
-	}, [session?.user.email, email, isEditingEmail]);
+	// Derive email from editing state or session (no useEffect needed)
+	const isEditingEmail = editingEmail !== null;
+	const email = editingEmail ?? session?.user.email ?? "";
 
 	const verifyEmailMutation = useMutation(
 		auth.emailOtp.verifyEmail.mutationOptions({
@@ -133,17 +130,14 @@ function VerifyEmailPage() {
 												type="email"
 												placeholder="name@example.com"
 												value={email}
-												onChange={(e) => setEmail(e.target.value)}
+												onChange={(e) => setEditingEmail(e.target.value)}
 												className="h-11"
 											/>
 											{session?.user.email && (
 												<Button
 													variant="outline"
 													className="h-11"
-													onClick={() => {
-														setEmail(session.user.email);
-														setIsEditingEmail(false);
-													}}
+													onClick={() => setEditingEmail(null)}
 												>
 													Cancel
 												</Button>
@@ -157,7 +151,7 @@ function VerifyEmailPage() {
 												{email}
 											</span>
 											<Button
-												onClick={() => setIsEditingEmail(true)}
+												onClick={() => setEditingEmail(session?.user.email ?? "")}
 												variant="outline"
 												title="Edit email"
 											>

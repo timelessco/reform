@@ -11,6 +11,7 @@ type StepFormContextValue = {
 	isSubmitted: boolean;
 	goToNextStep: (stepData: Record<string, unknown>) => void;
 	goToPrevStep: () => void;
+	direction: number;
 	submitForm: (finalStepData: Record<string, unknown>) => Promise<void>;
 	reset: () => void;
 };
@@ -42,6 +43,7 @@ export function StepFormProvider({
 	onSubmit,
 }: StepFormProviderProps) {
 	const [currentStep, setCurrentStep] = React.useState(0);
+	const [direction, setDirection] = React.useState(0);
 	const [formData, setFormData] = React.useState<Record<string, unknown>>({});
 	const [isSubmitting, setIsSubmitting] = React.useState(false);
 	const [isSubmitted, setIsSubmitted] = React.useState(false);
@@ -49,12 +51,14 @@ export function StepFormProvider({
 	const goToNextStep = React.useCallback(
 		(stepData: Record<string, unknown>) => {
 			setFormData((prev) => ({ ...prev, ...stepData }));
+			setDirection(1);
 			setCurrentStep((prev) => Math.min(prev + 1, totalSteps - 1));
 		},
 		[totalSteps],
 	);
 
 	const goToPrevStep = React.useCallback(() => {
+		setDirection(-1);
 		setCurrentStep((prev) => Math.max(prev - 1, 0));
 	}, []);
 
@@ -76,6 +80,7 @@ export function StepFormProvider({
 
 	const reset = React.useCallback(() => {
 		setCurrentStep(0);
+		setDirection(0);
 		setFormData({});
 		setIsSubmitting(false);
 		setIsSubmitted(false);
@@ -90,6 +95,7 @@ export function StepFormProvider({
 			isSubmitted,
 			goToNextStep,
 			goToPrevStep,
+			direction,
 			submitForm,
 			reset,
 		}),
@@ -101,6 +107,7 @@ export function StepFormProvider({
 			isSubmitted,
 			goToNextStep,
 			goToPrevStep,
+			direction,
 			submitForm,
 			reset,
 		],

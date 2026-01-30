@@ -76,13 +76,6 @@ export function FormButtonElement({
 	// Local state for input - prevents re-render on every keystroke
 	const [inputValue, setInputValue] = React.useState(label);
 
-	// Sync local state when popover opens
-	React.useEffect(() => {
-		if (isOpen) {
-			setInputValue(label);
-		}
-	}, [isOpen, label]);
-
 	// Get display text (use placeholder if empty)
 	const displayText = label.trim() || placeholder;
 
@@ -102,7 +95,13 @@ export function FormButtonElement({
 
 	// Gear icon component
 	const GearIcon = (
-		<Popover open={isOpen} onOpenChange={setIsOpen}>
+		<Popover
+			open={isOpen}
+			onOpenChange={(open) => {
+				if (open) setInputValue(label); // Initialize input when opening
+				setIsOpen(open);
+			}}
+		>
 			<PopoverTrigger asChild>
 				<button
 					type="button"
@@ -165,22 +164,18 @@ export function FormButtonElement({
 			<span className="hidden">{children}</span>
 			{/* Non-editable button visual - onMouseDown prevents cursor placement */}
 			<div
-				className={cn(
-					"inline-flex items-center gap-1 group",
-					isPrevious ? "flex-row" : "flex-row-reverse",
-				)}
+				className="inline-flex items-center gap-1 group"
 				contentEditable={false}
 				onMouseDown={(e) => {
 					e.preventDefault();
 					e.stopPropagation();
 				}}
 			>
-				{/* Gear icon - position based on button role */}
-				{GearIcon}
-
+				{/* Gear icon on left for Next/Submit (so button touches right edge) */}
+				{!isPrevious && GearIcon}
 				<span
 					className={cn(
-						"inline-flex h-9 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium shadow transition-colors cursor-default select-none",
+						"inline-flex h-9 min-w-[100px] items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium shadow transition-colors cursor-default select-none",
 						isPrevious
 							? "bg-secondary text-secondary-foreground"
 							: "bg-primary text-primary-foreground",
@@ -190,6 +185,8 @@ export function FormButtonElement({
 					<span>{displayText}</span>
 					{buttonRole === "next" && <ChevronRight className="h-4 w-4" />}
 				</span>
+				{/* Gear icon on right for Previous (so button touches left edge) */}
+				{isPrevious && GearIcon}
 			</div>
 		</PlateElement>
 	);

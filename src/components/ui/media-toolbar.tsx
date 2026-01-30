@@ -55,12 +55,17 @@ export function MediaToolbar({
 		selectionCollapsed &&
 		!isImagePreviewOpen;
 	const isEditing = useFloatingMediaValue("isEditing");
+	// Track previous open state to detect close transition
+	const wasOpenRef = React.useRef(open);
 
+	// Reset isEditing only when transitioning from open to closed
 	React.useEffect(() => {
-		if (!open && isEditing) {
+		const justClosed = !open && wasOpenRef.current;
+		wasOpenRef.current = open;
+
+		if (justClosed && isEditing) {
 			FloatingMediaStore.set("isEditing", false);
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [open, isEditing]);
 
 	const element = useElement();

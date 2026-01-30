@@ -42,6 +42,7 @@ export const Route = createFileRoute(
 	validateSearch: z.object({
 		type: z.enum(["standard", "popup", "fullpage"]).optional(),
 		showCode: z.boolean().catch(false).optional(),
+		transparentBackground: z.boolean().catch(false).optional(),
 	}),
 });
 
@@ -75,7 +76,8 @@ function EmbedPage() {
 	const { data: savedDocs } = useForm(formId);
 	const doc = savedDocs?.[0];
 
-	const [embedType, setEmbedType] = useState<EmbedType>("standard");
+	// Derive embedType directly from URL params (no useState needed)
+	const embedType = search.type ?? "standard";
 	const showCode = search.showCode ?? false;
 
 	const [options, setOptions] = useState<EmbedOptions>({
@@ -83,7 +85,7 @@ function EmbedPage() {
 		dynamicHeight: true,
 		hideTitle: false,
 		alignLeft: false,
-		transparentBackground: false,
+		transparentBackground: search.transparentBackground ?? false,
 		trackEvents: false,
 		customDomain: false,
 		branding: true,
@@ -113,15 +115,18 @@ function EmbedPage() {
 
 	const embedCode = useMemo(() => {
 		if (embedType === "standard") {
+			const baseUrl = `${window.location.origin}/widgets/embed.js`;
 			return `<iframe
-  src="${embedUrl}"
+  data-better-forms-src="${embedUrl}"
+  loading="lazy"
   width="100%"
-  height="${options.height}px"
+  height="${options.height}"
   frameborder="0"
   marginheight="0"
   marginwidth="0"
   title="${doc?.title || "Form"}"
-></iframe>`;
+></iframe>
+<script>var d=document,w="${baseUrl}",v=function(){"undefined"!=typeof BetterForms?BetterForms.loadEmbeds():d.querySelectorAll("iframe[data-better-forms-src]:not([src])").forEach((function(e){e.src=e.dataset.betterFormsSrc}))};if("undefined"!=typeof BetterForms)v();else if(d.querySelector('script[src="'+w+'"]')==null){var s=d.createElement("script");s.src=w,s.onload=v,s.onerror=v,d.body.appendChild(s);}</script>`;
 		}
 
 		if (embedType === "popup") {
@@ -162,6 +167,12 @@ function EmbedPage() {
 		value: EmbedOptions[K],
 	) => {
 		setOptions((prev) => ({ ...prev, [key]: value }));
+
+		if (key === "transparentBackground") {
+			navigate({
+				search: (prev) => ({ ...prev, transparentBackground: value as boolean }),
+			});
+		}
 	};
 
 	const toggleCodeView = () => {
@@ -177,55 +188,57 @@ function EmbedPage() {
 	if (!doc) return null;
 
 	return (
-		<div className="fixed inset-0 bg-background z-50 flex flex-col">
-			{/* Main Content */}
-			<div className="flex-1 flex overflow-hidden">
-				{/* Left Sidebar - Options */}
-				<div className="w-[360px] border-r bg-background overflow-y-auto flex flex-col">
-					{/* Sidebar Header */}
-					<div className="flex items-center justify-between px-6 py-5 shrink-0">
-						<h1 className="text-xl font-bold tracking-tight text-foreground">Embed</h1>
-						<Link
-							to="/workspace/$workspaceId/form-builder/$formId/share"
-							params={{ workspaceId, formId }}
-						>
-							<span className="text-sm font-medium text-foreground hover:underline cursor-pointer">Close</span>
-						</Link>
-					</div>
+		<div className="fixed inset-0 bg-background z-50 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
+			{/* Left Sidebar - Options */}
+			<div className="w-full lg:w-[360px] border-b lg:border-r bg-background flex flex-col shrink-0">
+				{/* Sidebar Header */}
+				<div className="flex items-center justify-between px-6 py-5 shrink-0">
+					<h1 className="text-xl font-bold tracking-tight text-foreground">Embed</h1>
+					<Link
+						to="/workspace/$workspaceId/form-builder/$formId/share"
+						params={{ workspaceId, formId }}
+					>
+						<div className="p-1 px-3 rounded-md hover:bg-muted transition-colors cursor-pointer">
+							<span className="text-sm font-medium text-muted-foreground hover:text-foreground">Close</span>
+						</div>
+					</Link>
+				</div>
 
-					<div className="p-6 pt-2 space-y-6">
-						{/* Embed Type Selector */}
-						<div className="space-y-3">
+				<div className="flex-1 px-6 py-2 space-y-8 lg:overflow-y-auto scrollbar-hide">
+					{/* Embed Type & Primary Action */}
+					<div className="space-y-4">
+						<div className="space-y-1.5">
+							<Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">Embed type</Label>
 							<Select
 								value={embedType}
 								onValueChange={(v) => {
-									setEmbedType(v as EmbedType);
-									if (showCode) {
-										navigate({
-											search: (prev) => ({ ...prev, showCode: false }),
-										});
-									}
+									navigate({
+										search: (prev) => ({
+											...prev,
+											type: v as EmbedType,
+											showCode: false,
+										}),
+									});
 								}}
 							>
-								<SelectTrigger className="w-full h-10 bg-white border-muted-foreground/20">
+								<SelectTrigger className="w-full h-10 bg-background border-muted-foreground/20 rounded-lg shadow-sm">
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
-									<SelectItem value="standard">Standard</SelectItem>
-									<SelectItem value="popup">Popup</SelectItem>
-									<SelectItem value="fullpage">Full page</SelectItem>
+									<SelectItem value="standard" className="py-2.5">Standard</SelectItem>
+									<SelectItem value="popup" className="py-2.5">Popup</SelectItem>
+									<SelectItem value="fullpage" className="py-2.5">Full page</SelectItem>
 								</SelectContent>
 							</Select>
 						</div>
 
-						{/* Get Code Button */}
 						<Button
 							onClick={toggleCodeView}
 							className={cn(
-								"w-full h-10 gap-2 rounded-md font-medium transition-colors",
+								"w-full h-11 gap-2 rounded-xl font-bold transition-all active:scale-[0.98]",
 								showCode
-									? "bg-white border border-gray-200 text-foreground hover:bg-gray-50"
-									: "bg-black hover:bg-black/90 text-white"
+									? "bg-white border border-gray-200 text-foreground hover:bg-gray-50 shadow-sm"
+									: "bg-black hover:bg-black/90 text-white shadow-md shadow-black/10"
 							)}
 						>
 							{embedType === "fullpage" ? (
@@ -245,132 +258,117 @@ function EmbedPage() {
 								</>
 							)}
 						</Button>
+					</div>
 
-						{/* Copy Link - Only show if not fullpage (handled in button) and not showing code */}
-						{embedType !== "popup" && embedType !== "fullpage" && !showCode && (
-							<Button
-								variant="ghost"
-								onClick={handleCopyLink}
-								className="w-full h-10 gap-2 text-muted-foreground font-normal hover:bg-muted"
-							>
-								{copiedLink ? (
-									<Check className="h-4 w-4" />
-								) : (
-									<Copy className="h-4 w-4" />
-								)}
-								{copiedLink ? "Copied!" : "Copy embed link"}
-							</Button>
-						)}
+					{/* Options Section - Only show when not showing code */}
+					{!showCode && (
+						<div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+							<div className="flex items-center justify-between pt-2">
+								<h2 className="text-sm font-bold text-foreground">Configuration</h2>
+								<TooltipProvider>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<div className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer transition-colors group">
+												<HelpCircle className="h-3.5 w-3.5 group-hover:scale-110 transition-transform" />
+												<span>Help</span>
+											</div>
+										</TooltipTrigger>
+										<TooltipContent className="bg-black text-white border-none px-3 py-1.5">
+											<p className="text-xs">Customize your form's layout and behavior</p>
+										</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
+							</div>
 
-						{/* Options Section - Hide when showing code */}
-						{!showCode && (
-							<div className="space-y-5 pt-6 border-t border-muted">
-								<div className="flex items-center justify-between">
-									<h2 className="text-lg font-bold text-foreground">Options</h2>
-									<TooltipProvider>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<div className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
-													<HelpCircle className="h-4 w-4" />
-													<span>Help</span>
-												</div>
-											</TooltipTrigger>
-											<TooltipContent>
-												<p>Configure how your form appears when embedded</p>
-											</TooltipContent>
-										</Tooltip>
-									</TooltipProvider>
-								</div>
+							{/* Standard Embed Options */}
+							{embedType === "standard" && (
+								<div className="space-y-6">
+									<div className="space-y-4">
+										<Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">Appearance</Label>
 
-								{/* Standard Embed Options */}
-								{embedType === "standard" && (
-									<div className="space-y-6">
 										{/* Height */}
-										<div className="space-y-3">
-											<Label className="text-sm font-medium">Height</Label>
-											<div className="relative">
+										<div className="space-y-2.5">
+											<div className="flex justify-between items-center">
+												<Label className="text-[13px] font-medium">Height</Label>
+												<span className="text-[11px] font-bold text-muted-foreground uppercase">Pixels</span>
+											</div>
+											<div className="relative group">
 												<Input
 													type="number"
 													value={options.height}
 													onChange={(e) =>
 														updateOption("height", Number(e.target.value))
 													}
-													className="pr-12"
+													className="h-10 bg-muted/30 border-muted-foreground/20 rounded-lg focus-visible:ring-black group-hover:border-muted-foreground/40 transition-colors"
 												/>
-												<span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-													px
-												</span>
 											</div>
 										</div>
 
-										{/* Dynamic Height */}
-										<div className="flex items-center justify-between">
-											<div className="flex items-center gap-2">
-												<Label className="text-sm font-medium">
-													Dynamic height
-												</Label>
-												<TooltipProvider>
-													<Tooltip>
-														<TooltipTrigger asChild>
-															<HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-														</TooltipTrigger>
-														<TooltipContent>
-															<p>
-																Automatically adjust iframe height to fit content
-															</p>
-														</TooltipContent>
-													</Tooltip>
-												</TooltipProvider>
+										{/* Toggles */}
+										<div className="space-y-4 pt-2">
+											{/* Dynamic Height */}
+											<div className="flex items-center justify-between group">
+												<div className="space-y-0.5">
+													<Label className="text-[13px] font-medium cursor-pointer">Dynamic height</Label>
+													<p className="text-[11px] text-muted-foreground">Adjust iframe height to content</p>
+												</div>
+												<Switch
+													checked={options.dynamicHeight}
+													onCheckedChange={(v) => updateOption("dynamicHeight", v)}
+												/>
 											</div>
-											<Switch
-												checked={options.dynamicHeight}
-												onCheckedChange={(v) => updateOption("dynamicHeight", v)}
-											/>
-										</div>
 
-										{/* Hide Form Title */}
-										<div className="flex items-center justify-between">
-											<Label className="text-sm font-medium">
-												Hide form title
-											</Label>
-											<Switch
-												checked={options.hideTitle}
-												onCheckedChange={(v) => updateOption("hideTitle", v)}
-											/>
-										</div>
+											{/* Hide Form Title */}
+											<div className="flex items-center justify-between">
+												<div className="space-y-0.5">
+													<Label className="text-[13px] font-medium cursor-pointer">Hide form title</Label>
+													<p className="text-[11px] text-muted-foreground">Removes the title from preview</p>
+												</div>
+												<Switch
+													checked={options.hideTitle}
+													onCheckedChange={(v) => updateOption("hideTitle", v)}
+												/>
+											</div>
 
-										{/* Align Content Left */}
-										<div className="flex items-center justify-between">
-											<Label className="text-sm font-medium">
-												Align content to the left
-											</Label>
-											<Switch
-												checked={options.alignLeft}
-												onCheckedChange={(v) => updateOption("alignLeft", v)}
-											/>
-										</div>
+											{/* Align Content Left */}
+											<div className="flex items-center justify-between">
+												<div className="space-y-0.5">
+													<Label className="text-[13px] font-medium cursor-pointer">Align left</Label>
+													<p className="text-[11px] text-muted-foreground">Left align the form elements</p>
+												</div>
+												<Switch
+													checked={options.alignLeft}
+													onCheckedChange={(v) => updateOption("alignLeft", v)}
+												/>
+											</div>
 
-										{/* Transparent Background */}
-										<div className="flex items-center justify-between">
-											<Label className="text-sm font-medium">
-												Transparent background
-											</Label>
-											<Switch
-												checked={options.transparentBackground}
-												onCheckedChange={(v) =>
-													updateOption("transparentBackground", v)
-												}
-											/>
+											{/* Transparent Background */}
+											<div className="flex items-center justify-between">
+												<div className="space-y-0.5">
+													<Label className="text-[13px] font-medium cursor-pointer">Transparency</Label>
+													<p className="text-[11px] text-muted-foreground">Makes form background invisible</p>
+												</div>
+												<Switch
+													checked={options.transparentBackground}
+													onCheckedChange={(v) =>
+														updateOption("transparentBackground", v)
+													}
+												/>
+											</div>
 										</div>
 									</div>
-								)}
+								</div>
+							)}
 
-								{/* Popup Embed Options */}
-								{embedType === "popup" && (
-									<div className="space-y-6">
+							{/* Popup Embed Options */}
+							{embedType === "popup" && (
+								<div className="space-y-8">
+									<div className="space-y-4">
+										<Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">Trigger & Position</Label>
+
 										{/* Open Trigger */}
-										<div className="space-y-3">
-											<Label className="text-sm font-medium">Open</Label>
+										<div className="space-y-2.5">
+											<Label className="text-[13px] font-medium">Open when</Label>
 											<Select
 												value={options.popupTrigger}
 												onValueChange={(v) =>
@@ -380,20 +378,20 @@ function EmbedPage() {
 													)
 												}
 											>
-												<SelectTrigger className="w-full">
+												<SelectTrigger className="w-full h-10 bg-muted/30 border-muted-foreground/20 rounded-lg">
 													<SelectValue />
 												</SelectTrigger>
 												<SelectContent>
 													<SelectItem value="button">On button click</SelectItem>
 													<SelectItem value="auto">Automatically</SelectItem>
-													<SelectItem value="scroll">On scroll</SelectItem>
+													<SelectItem value="scroll">After scrolling</SelectItem>
 												</SelectContent>
 											</Select>
 										</div>
 
 										{/* Position */}
-										<div className="space-y-3">
-											<Label className="text-sm font-medium">Position</Label>
+										<div className="space-y-2.5">
+											<Label className="text-[13px] font-medium">Position on screen</Label>
 											<Select
 												value={options.popupPosition}
 												onValueChange={(v) =>
@@ -403,126 +401,103 @@ function EmbedPage() {
 													)
 												}
 											>
-												<SelectTrigger className="w-full">
+												<SelectTrigger className="w-full h-10 bg-muted/30 border-muted-foreground/20 rounded-lg">
 													<SelectValue />
 												</SelectTrigger>
 												<SelectContent>
-													<SelectItem value="bottom-right">
-														Bottom right corner
-													</SelectItem>
-													<SelectItem value="bottom-left">
-														Bottom left corner
-													</SelectItem>
-													<SelectItem value="center">Center</SelectItem>
+													<SelectItem value="bottom-right">Bottom right</SelectItem>
+													<SelectItem value="bottom-left">Bottom left</SelectItem>
+													<SelectItem value="center">Center Modal</SelectItem>
 												</SelectContent>
 											</Select>
 										</div>
 
 										{/* Width */}
-										<div className="space-y-3">
-											<Label className="text-sm font-medium">Width</Label>
-											<div className="relative">
-												<Input
-													type="number"
-													value={options.popupWidth}
-													onChange={(e) =>
-														updateOption("popupWidth", Number(e.target.value))
-													}
-													className="pr-12"
-												/>
-												<span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-													px
-												</span>
+										<div className="space-y-2.5">
+											<div className="flex justify-between items-center">
+												<Label className="text-[13px] font-medium">Popup width</Label>
+												<span className="text-[11px] font-bold text-muted-foreground uppercase">Pixels</span>
 											</div>
-										</div>
-
-										{/* Hide Form Title */}
-										<div className="flex items-center justify-between">
-											<Label className="text-sm font-medium">
-												Hide form title
-											</Label>
-											<Switch
-												checked={options.hideTitle}
-												onCheckedChange={(v) => updateOption("hideTitle", v)}
+											<Input
+												type="number"
+												value={options.popupWidth}
+												onChange={(e) =>
+													updateOption("popupWidth", Number(e.target.value))
+												}
+												className="h-10 bg-muted/30 border-muted-foreground/20 rounded-lg"
 											/>
 										</div>
+									</div>
 
-										{/* Align Content Left */}
-										<div className="flex items-center justify-between">
-											<Label className="text-sm font-medium">
-												Align content to the left
-											</Label>
-											<Switch
-												checked={options.alignLeft}
-												onCheckedChange={(v) => updateOption("alignLeft", v)}
-											/>
-										</div>
+									<div className="space-y-4">
+										<Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">Visuals</Label>
 
-										{/* Dark Overlay */}
-										<div className="flex items-center justify-between">
-											<Label className="text-sm font-medium">Dark overlay</Label>
-											<Switch
-												checked={options.darkOverlay}
-												onCheckedChange={(v) => updateOption("darkOverlay", v)}
-											/>
-										</div>
-
-										{/* Emoji */}
-										<div className="flex items-center justify-between">
-											<Label className="text-sm font-medium">Emoji</Label>
-											<Switch
-												checked={options.emoji}
-												onCheckedChange={(v) => updateOption("emoji", v)}
-											/>
-										</div>
-
-										{options.emoji && (
-											<div className="space-y-3 pl-4 border-l-2 border-muted">
-												<Input
-													value={options.emojiIcon}
-													onChange={(e) =>
-														updateOption("emojiIcon", e.target.value)
-													}
-													className="text-lg"
-												/>
-												<Select
-													value={options.emojiAnimation}
-													onValueChange={(v) =>
-														updateOption(
-															"emojiAnimation",
-															v as typeof options.emojiAnimation,
-														)
-													}
-												>
-													<SelectTrigger className="w-full">
-														<SelectValue />
-													</SelectTrigger>
-													<SelectContent>
-														<SelectItem value="wave">Wave</SelectItem>
-														<SelectItem value="bounce">Bounce</SelectItem>
-														<SelectItem value="pulse">Pulse</SelectItem>
-													</SelectContent>
-												</Select>
-											</div>
-										)}
-
-										{/* Hide on Submit */}
 										<div className="space-y-4">
 											<div className="flex items-center justify-between">
-												<div className="flex items-center gap-2">
-													<Label className="text-sm font-medium">
-														Hide on submit
-													</Label>
-													<TooltipProvider>
-														<Tooltip>
-															<TooltipTrigger asChild>
-																<HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-															</TooltipTrigger>
-															<TooltipContent>
-																<p>Automatically close the popup after form submission</p>
-															</TooltipContent>
-														</Tooltip>
-													</TooltipProvider>
+												<Label className="text-[13px] font-medium cursor-pointer">Dark overlay</Label>
+												<Switch
+													checked={options.darkOverlay}
+													onCheckedChange={(v) => updateOption("darkOverlay", v)}
+												/>
+											</div>
+
+											{/* Emoji Section */}
+											<div className="space-y-3">
+												<div className="flex items-center justify-between">
+													<Label className="text-[13px] font-medium cursor-pointer">Show Emoji icon</Label>
+													<Switch
+														checked={options.emoji}
+														onCheckedChange={(v) => updateOption("emoji", v)}
+													/>
+												</div>
+
+												{options.emoji && (
+													<div className="space-y-3 pl-4 py-3 border-l-2 border-muted bg-muted/20 rounded-r-lg">
+														<div className="space-y-1.5">
+															<Label className="text-[11px] text-muted-foreground font-bold uppercase">Character</Label>
+															<Input
+																value={options.emojiIcon}
+																onChange={(e) =>
+																	updateOption("emojiIcon", e.target.value)
+																}
+																className="h-9 bg-white border-muted-foreground/20 text-lg text-center"
+															/>
+														</div>
+														<div className="space-y-1.5">
+															<Label className="text-[11px] text-muted-foreground font-bold uppercase">Animation</Label>
+															<Select
+																value={options.emojiAnimation}
+																onValueChange={(v) =>
+																	updateOption(
+																		"emojiAnimation",
+																		v as typeof options.emojiAnimation,
+																	)
+																}
+															>
+																<SelectTrigger className="w-full h-8 text-xs bg-white">
+																	<SelectValue />
+																</SelectTrigger>
+																<SelectContent>
+																	<SelectItem value="wave">Wave</SelectItem>
+																	<SelectItem value="bounce">Bounce</SelectItem>
+																	<SelectItem value="pulse">Pulse</SelectItem>
+																</SelectContent>
+															</Select>
+														</div>
+													</div>
+												)}
+											</div>
+										</div>
+									</div>
+
+									<div className="space-y-4">
+										<Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">Behavior</Label>
+
+										<div className="space-y-4">
+											<div className="flex items-center justify-between gap-4">
+												<div className="space-y-0.5">
+													<Label className="text-[13px] font-medium cursor-pointer">Hide on submit</Label>
+													<p className="text-[11px] text-muted-foreground line-clamp-1">Close after success</p>
 												</div>
 												<Switch
 													checked={options.hideOnSubmit}
@@ -531,34 +506,34 @@ function EmbedPage() {
 											</div>
 
 											{options.hideOnSubmit && (
-												<div className="space-y-3 pl-4 border-l-2 border-muted">
-													<div className="relative">
-														<Input
-															type="number"
-															value={options.hideOnSubmitDelay}
-															onChange={(e) =>
-																updateOption("hideOnSubmitDelay", Number(e.target.value))
-															}
-															className="pr-24"
-														/>
-														<span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-															seconds delay
-														</span>
-													</div>
+												<div className="space-y-2.5 pl-4 py-3 border-l-2 border-muted bg-muted/20 rounded-r-lg">
+													<Label className="text-[11px] text-muted-foreground font-bold uppercase">Delay (seconds)</Label>
+													<Input
+														type="number"
+														value={options.hideOnSubmitDelay}
+														step={0.1}
+														onChange={(e) =>
+															updateOption("hideOnSubmitDelay", Number(e.target.value))
+														}
+														className="h-9 bg-white border-muted-foreground/20"
+													/>
 												</div>
 											)}
 										</div>
 									</div>
-								)}
+								</div>
+							)}
 
-								{/* Full Page Options */}
-								{embedType === "fullpage" && (
-									<div className="space-y-6">
-										{/* Transparent Background */}
+							{/* Full Page Options */}
+							{embedType === "fullpage" && (
+								<div className="space-y-6">
+									<div className="space-y-4">
+										<Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">Appearance</Label>
 										<div className="flex items-center justify-between">
-											<Label className="text-sm font-medium">
-												Transparent background
-											</Label>
+											<div className="space-y-0.5">
+												<Label className="text-[13px] font-medium cursor-pointer">Transparent background</Label>
+												<p className="text-[11px] text-muted-foreground">Remove page background color</p>
+											</div>
 											<Switch
 												checked={options.transparentBackground}
 												onCheckedChange={(v) =>
@@ -567,26 +542,22 @@ function EmbedPage() {
 											/>
 										</div>
 									</div>
-								)}
+								</div>
+							)}
 
-								{/* Common Options */}
-								<div className="space-y-6 pt-4 border-t">
+							{/* Pro Features Group */}
+							<div className="space-y-4 pt-6 mt-4 border-t border-muted/60">
+								<Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">Pro Settings</Label>
+
+								<div className="space-y-5">
 									{/* Track Form Events */}
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-2">
-											<Label className="text-sm font-medium">
-												Track form events
+									<div className="flex items-center justify-between group">
+										<div className="space-y-0.5">
+											<Label className="text-[13px] font-medium flex items-center gap-2 cursor-pointer">
+												Analytics tracking
+												<HelpCircle className="h-3 w-3 text-muted-foreground/70 opacity-0 group-hover:opacity-100 transition-opacity" />
 											</Label>
-											<TooltipProvider>
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-													</TooltipTrigger>
-													<TooltipContent>
-														<p>Track form views and submissions with analytics</p>
-													</TooltipContent>
-												</Tooltip>
-											</TooltipProvider>
+											<p className="text-[11px] text-muted-foreground">Record views and submissions</p>
 										</div>
 										<Switch
 											checked={options.trackEvents}
@@ -595,25 +566,18 @@ function EmbedPage() {
 									</div>
 
 									{/* Custom Domain - Pro */}
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-2">
-											<Label className="text-sm font-medium">Custom domain</Label>
-											<Badge
-												variant="secondary"
-												className="text-[10px] h-4 px-1.5 bg-purple-100 text-purple-700"
-											>
-												Pro
-											</Badge>
-											<TooltipProvider>
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-													</TooltipTrigger>
-													<TooltipContent>
-														<p>Use your own domain for the form URL</p>
-													</TooltipContent>
-												</Tooltip>
-											</TooltipProvider>
+									<div className="flex items-center justify-between group opacity-70 cursor-not-allowed">
+										<div className="space-y-0.5">
+											<Label className="text-[13px] font-medium flex items-center gap-2">
+												Custom domain
+												<Badge
+													variant="secondary"
+													className="text-[9px] h-3.5 px-1.5 font-bold bg-purple-50 text-purple-600 border-purple-100 uppercase"
+												>
+													Pro
+												</Badge>
+											</Label>
+											<p className="text-[11px] text-muted-foreground">Use your own domain</p>
 										</div>
 										<Switch
 											checked={options.customDomain}
@@ -623,27 +587,18 @@ function EmbedPage() {
 									</div>
 
 									{/* Branding - Pro */}
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-2">
-											<Label className="text-sm font-medium text-foreground">
+									<div className="flex items-center justify-between group">
+										<div className="space-y-0.5">
+											<Label className="text-[13px] font-medium flex items-center gap-2 cursor-pointer">
 												Better Forms branding
+												<Badge
+													variant="secondary"
+													className="text-[9px] h-3.5 px-1.5 font-bold bg-[#FFF1F2] text-[#E11D48] border-[#FFE4E6] uppercase"
+												>
+													Pro
+												</Badge>
 											</Label>
-											<Badge
-												variant="secondary"
-												className="text-[10px] h-4 px-1.5 bg-[#FDF2F8] text-[#BE185D] border-[#FCE7F3]"
-											>
-												Pro
-											</Badge>
-											<TooltipProvider>
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<HelpCircle className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-													</TooltipTrigger>
-													<TooltipContent>
-														<p>Remove Better Forms branding from your form</p>
-													</TooltipContent>
-												</Tooltip>
-											</TooltipProvider>
+											<p className="text-[11px] text-muted-foreground">Show "Made with Better Forms"</p>
 										</div>
 										<Switch
 											checked={options.branding}
@@ -652,218 +607,218 @@ function EmbedPage() {
 									</div>
 								</div>
 							</div>
-						)}
-					</div>
-				</div>
-
-				{/* Right Side - Preview or Instructions */}
-				<div className={cn("flex-1 overflow-y-auto", showCode ? "bg-[#25282F]" : "bg-[#F9FAFB]")}>
-					{showCode ? (
-						<EmbedInstructions
-							embedType={embedType}
-							options={options}
-							embedCode={embedCode}
-							formId={formId}
-						/>
-					) : (
-						<div className="p-12">
-							<h2 className="text-2xl font-bold text-foreground mb-8">Preview</h2>
-
-							{/* Preview Container */}
-							<div className="relative">
-								{/* Standard & Popup - Show mock website background */}
-								{embedType !== "fullpage" && (
-									<div className="bg-white rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-gray-200/60 overflow-hidden min-h-[600px] flex flex-col">
-										{/* Mock Website Placeholder Rendering */}
-										<div className="flex-1 p-8 space-y-8 relative">
-											{/* Mock Header Bars */}
-											<div className="flex gap-4">
-												<div className="w-32 h-6 bg-gray-100 rounded-sm" />
-												<div className="flex-1" />
-												<div className="w-16 h-3 bg-gray-50 rounded-full mt-1.5" />
-												<div className="w-16 h-3 bg-gray-50 rounded-full mt-1.5" />
-											</div>
-
-											{/* Top Bar */}
-											<div className="w-full h-8 bg-gray-50 rounded-sm" />
-
-											{/* Content Area */}
-											<div className="grid grid-cols-12 gap-8 pt-4">
-												<div className="col-span-4 space-y-4">
-													<div className="w-full h-32 bg-gray-50 rounded-lg" />
-													<div className="w-full h-48 bg-gray-[rgba(249,250,251,0.5)] rounded-lg" />
-												</div>
-												<div className="col-span-8 space-y-6 relative">
-													{/* Mock Content Container - No fixed height, let it grow */}
-													<div className="w-full min-h-[400px] flex flex-col relative">
-														{/* Dark Overlay Preview */}
-														{embedType === "popup" && options.darkOverlay && (
-															<div className="absolute inset-0 bg-black/40 z-0 transition-opacity duration-300 pointer-events-none rounded-xl" />
-														)}
-
-														{/* Floating Popup Form Mock */}
-														{embedType === "popup" && (
-															<div
-																className={cn(
-																	"absolute bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border overflow-hidden flex flex-col transition-all duration-300 z-10",
-																	options.popupPosition === "center"
-																		? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-																		: options.popupPosition === "bottom-left"
-																			? "bottom-6 left-6"
-																			: "bottom-6 right-6",
-																)}
-																style={{ width: options.popupWidth }}
-															>
-																{/* Popup Header */}
-																<div className="flex items-center gap-4 p-6 pb-2 shrink-0">
-																	{options.emoji && (
-																		<div className="relative">
-																			<span className={cn(
-																				"text-3xl inline-block",
-																				options.emojiAnimation === "wave" && "animate-wave",
-																				options.emojiAnimation === "bounce" && "animate-bounce",
-																				options.emojiAnimation === "pulse" && "animate-scale-pulse"
-																			)}>
-																				{options.emojiIcon}
-																			</span>
-																			<style>
-																				{`
-																				@keyframes wave {
-																					0% { transform: rotate(0deg); }
-																					10% { transform: rotate(14deg); }
-																					20% { transform: rotate(-8deg); }
-																					30% { transform: rotate(14deg); }
-																					40% { transform: rotate(-4deg); }
-																					50% { transform: rotate(10deg); }
-																					60% { transform: rotate(0deg); }
-																					100% { transform: rotate(0deg); }
-																				}
-																				@keyframes scale-pulse {
-																					0% { transform: scale(1); }
-																					50% { transform: scale(1.15); }
-																					100% { transform: scale(1); }
-																				}
-																				.animate-wave {
-																					animation: wave 2.5s infinite;
-																					transform-origin: 70% 70%;
-																				}
-																				.animate-scale-pulse {
-																					animation: scale-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-																				}
-																			`}
-																			</style>
-																		</div>
-																	)}
-																	<h3 className="font-extrabold text-xl text-foreground truncate flex-1">
-																		{options.hideTitle ? "" : doc.title}
-																	</h3>
-																	<Button
-																		variant="ghost"
-																		size="icon"
-																		className="h-8 w-8 -mr-2 hover:bg-muted text-muted-foreground/50 rounded-full"
-																	>
-																		<X className="h-4 w-4" />
-																	</Button>
-																</div>
-
-																{/* Popup Content */}
-																<div className="px-6 py-2 overflow-y-auto max-h-[400px]">
-																	<FormPreviewFromPlate
-																		content={doc.content as Value}
-																		title=""
-																		icon={undefined}
-																		cover={undefined}
-																		onSubmit={async () => { }}
-																	/>
-																</div>
-
-																{/* Integrated Branding at Bottom - Full Width Bar */}
-																{options.branding && (
-																	<div className="py-3 flex justify-center bg-[#EBF5FF] border-t mt-4">
-																		<div className="flex items-center gap-1.5 text-[12px] font-semibold text-[#0066CC]">
-																			<span>Made with</span>
-																			<Sparkles className="h-3 w-3 fill-[#0066CC] text-[#0066CC]" />
-																			<span>Better Forms</span>
-																		</div>
-																	</div>
-																)}
-															</div>
-														)}
-
-														{/* Standard Embed Mock - Seamless integration, no card */}
-														{embedType === "standard" && (
-															<div
-																className={cn(
-																	"w-full transition-all duration-300",
-																	options.transparentBackground ? "bg-transparent" : "bg-white",
-																)}
-																style={{
-																	height: options.dynamicHeight ? "auto" : options.height,
-																}}
-															>
-																<FormPreviewFromPlate
-																	content={doc.content as Value}
-																	title={options.hideTitle ? "" : doc.title}
-																	icon={doc.icon ?? undefined}
-																	cover={doc.cover ?? undefined}
-																	onSubmit={async () => { }}
-																/>
-															</div>
-														)}
-													</div>
-
-													{/* Global Branding Pill for Standard Embed - Positioned after form */}
-													{embedType === "standard" && options.branding && (
-														<div className="flex justify-end mt-6">
-															<div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#EBF5FF] border border-[#EBF5FF] rounded-full text-[11px] font-bold text-[#0066CC] hover:scale-105 transition-transform cursor-default">
-																<span>Made with</span>
-																<Sparkles className="h-3.5 w-3.5 fill-[#0066CC] text-[#0066CC]" />
-																<span>Better Forms</span>
-															</div>
-														</div>
-													)}
-
-													<div className="w-full h-24 bg-gray-50/50 rounded-lg mt-8" />
-												</div>
-											</div>
-										</div>
-									</div>
-								)}
-
-								{/* Full Page - Clean direct form display */}
-								{embedType === "fullpage" && (
-									<div
-										className={cn(
-											"min-h-[700px] transition-all duration-300",
-											options.transparentBackground ? "bg-transparent" : "bg-white",
-										)}
-									>
-										<div className="py-20 px-10 max-w-2xl mx-auto">
-											<FormPreviewFromPlate
-												content={doc.content as Value}
-												title={options.hideTitle ? "" : doc.title}
-												icon={doc.icon ?? undefined}
-												cover={doc.cover ?? undefined}
-												onSubmit={async () => { }}
-											/>
-
-											{/* Integrated Branding for Full Page */}
-											{options.branding && (
-												<div className="mt-20 flex justify-center">
-													<div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#EBF5FF] border border-[#EBF5FF] rounded-full text-[11px] font-bold text-[#0066CC] hover:scale-105 transition-transform cursor-default">
-														<span>Made with</span>
-														<Sparkles className="h-3.5 w-3.5 fill-[#0066CC] text-[#0066CC]" />
-														<span>Better Forms</span>
-													</div>
-												</div>
-											)}
-										</div>
-									</div>
-								)}
-							</div>
 						</div>
 					)}
 				</div>
+
+				{/* Sidebar Footer - Always show Copy link if not fullpage. Fullpage handles this in the main button */}
+				{embedType !== "fullpage" && !showCode && (
+					<div className="p-6 pt-2 shrink-0">
+						<Button
+							variant="outline"
+							onClick={handleCopyLink}
+							className="w-full h-10 gap-2 text-muted-foreground font-semibold hover:bg-muted hover:text-foreground border-muted-foreground/10 rounded-lg transition-all"
+						>
+							{copiedLink ? (
+								<Check className="h-4 w-4 text-green-500" />
+							) : (
+								<Copy className="h-3.5 w-3.5" />
+							)}
+							{copiedLink ? "Copied Link!" : "Copy embed link"}
+						</Button>
+					</div>
+				)}
+			</div>
+
+			{/* Right Side - Preview or Instructions */}
+			<div className={cn("flex-1 overflow-y-auto transition-colors duration-500 min-h-[500px] lg:min-h-0", showCode ? "bg-[#1E2025]" : "bg-[#F9FAFB]")}>
+				{showCode ? (
+					<EmbedInstructions
+						embedType={embedType}
+						options={options}
+						embedCode={embedCode}
+						embedUrl={embedUrl}
+						formId={formId}
+						docTitle={doc?.title}
+					/>
+				) : (
+					<div className="relative min-h-full">
+						{/* Standard & Popup - Show mock website background */}
+						{embedType !== "fullpage" && (
+							<div className="flex flex-col min-h-full">
+								{/* Mock Website Container */}
+								<div className="flex-1 bg-white relative p-4 lg:p-0">
+									{/* Mock Website Elements (Based on Ref Image 1) */}
+									<div className="max-w-[1000px] mx-auto pt-4 px-4 lg:px-8 space-y-8">
+										{/* Preview Label */}
+										<div className="flex items-center pt-2">
+											<span className="text-gray-300 font-bold text-[10px] uppercase tracking-widest">Live Preview</span>
+										</div>
+
+										{/* Mock Header Bars - Simplified on Mobile */}
+										<div className="space-y-5">
+											<div className="w-24 h-5 bg-gray-50 border border-gray-100 rounded-sm" />
+											<div className="flex justify-between items-end border-b border-gray-50 pb-4">
+												<div className="flex gap-4 lg:gap-6">
+													<div className="w-10 lg:w-12 h-2.5 bg-gray-50/80 rounded-full" />
+													<div className="w-10 lg:w-12 h-2.5 bg-gray-50/80 rounded-full" />
+													<div className="hidden lg:block w-12 h-2.5 bg-gray-50/80 rounded-full" />
+												</div>
+												<div className="w-16 lg:w-20 h-7 bg-gray-100 border border-gray-200/50 rounded-md shadow-sm" />
+											</div>
+										</div>
+
+										{/* Simple Mock Content Area (Matching Ref 1 Layout) */}
+										<div className="grid grid-cols-12 gap-4 lg:gap-8 pt-4">
+											{/* Mock Sidebar - Hidden on Mobile */}
+											<div className="hidden lg:block col-span-3 space-y-6">
+												<div className="w-full h-7 bg-gray-50/60 rounded-sm" />
+												<div className="space-y-3">
+													<div className="w-full h-2.5 bg-gray-50/80 rounded-full" />
+													<div className="w-4/5 h-2.5 bg-gray-50/80 rounded-full" />
+													<div className="w-2/3 h-2.5 bg-gray-50/80 rounded-full" />
+												</div>
+												<div className="w-full h-32 bg-gray-50/30 border border-dashed border-gray-100 rounded-xl" />
+											</div>
+
+											{/* Main Content Area */}
+											<div className="col-span-12 lg:col-span-9 space-y-10">
+												<div className="space-y-4">
+													<div className="w-3/4 lg:w-1/2 h-8 bg-gray-50/70 rounded-lg" />
+													<div className="space-y-2">
+														<div className="w-full h-2.5 bg-gray-50/80 rounded-full" />
+														<div className="w-full h-2.5 bg-gray-50/80 rounded-full" />
+														<div className="w-3/4 h-2.5 bg-gray-50/80 rounded-full" />
+													</div>
+												</div>
+
+												{/* The Form Itself - Seamlessly integrated per Ref 1 */}
+												<div
+													className={cn(
+														"w-full transition-all duration-500 rounded-2xl",
+														options.transparentBackground ? "bg-transparent" : "bg-white shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-gray-100 p-8",
+													)}
+													style={{
+														height: options.dynamicHeight ? "auto" : options.height,
+													}}
+												>
+													<FormPreviewFromPlate
+														content={doc.content as Value}
+														title={options.hideTitle ? "" : doc.title}
+														icon={doc.icon ?? undefined}
+														cover={doc.cover ?? undefined}
+														onSubmit={async () => { }}
+														hideTitle={options.hideTitle}
+													/>
+												</div>
+
+												{/* Branding after standard form - Right Aligned per design */}
+												{options.branding && (
+													<div className="flex justify-end pt-8">
+														<div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#EBF5FF] rounded-full text-[11px] font-bold text-[#0066CC] hover:scale-105 transition-transform cursor-default shadow-sm border border-blue-50">
+															<span>Made with</span>
+															<Sparkles className="h-3.5 w-3.5 fill-[#0066CC] text-[#0066CC]" />
+															<span>Better Forms</span>
+														</div>
+													</div>
+												)}
+											</div>
+										</div>
+									</div>
+
+									{/* Popup Specific - Full Area Dark Overlay and Popup */}
+									{embedType === "popup" && (
+										<div className="absolute inset-0 flex flex-col pointer-events-none">
+											{/* Full Area Dark Overlay */}
+											{options.darkOverlay && (
+												<div className="absolute inset-0 bg-black/40 z-10 transition-opacity duration-300 pointer-events-auto" />
+											)}
+
+											{/* Floating Popup Form Mock */}
+											<div
+												className={cn(
+													"absolute bg-white rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden flex flex-col transition-all duration-300 z-20 pointer-events-auto",
+													options.popupPosition === "center"
+														? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+														: options.popupPosition === "bottom-left"
+															? "bottom-12 left-12"
+															: "bottom-12 right-12",
+												)}
+												style={{ width: options.popupWidth }}
+											>
+												{/* Close Button Only - Header handled by FormPreviewFromPlate */}
+												<div className="absolute top-4 right-4 z-30 pointer-events-auto">
+													<Button
+														variant="ghost"
+														size="icon"
+														className="h-8 w-8 hover:bg-black/10 text-gray-400 bg-white/50 backdrop-blur-sm rounded-full shadow-sm"
+													>
+														<X className="h-4 w-4" />
+													</Button>
+												</div>
+
+												{/* Popup Content - Using FormPreviewFromPlate with full header data */}
+												<div className="overflow-y-auto max-h-[650px]">
+													<FormPreviewFromPlate
+														content={doc.content as Value}
+														title={options.hideTitle ? "" : doc.title}
+														icon={doc.icon ?? undefined}
+														cover={doc.cover ?? undefined}
+														onSubmit={async () => { }}
+														hideTitle={options.hideTitle}
+													/>
+												</div>
+
+												{/* Popup Branding Support */}
+												{options.branding && (
+													<div className="py-3 flex justify-center bg-[#EBF5FF] border-t shrink-0">
+														<div className="flex items-center gap-1.5 text-[12px] font-semibold text-[#0066CC]">
+															<span>Made with</span>
+															<Sparkles className="h-3 w-3 fill-[#0066CC] text-[#0066CC]" />
+															<span>Better Forms</span>
+														</div>
+													</div>
+												)}
+											</div>
+										</div>
+									)}
+								</div>
+							</div>
+						)}
+
+						{/* Full Page - Clean direct form display */}
+						{embedType === "fullpage" && (
+							<div
+								className={cn(
+									"min-h-full flex flex-col transition-colors duration-300",
+									options.transparentBackground ? "bg-transparent" : "bg-white",
+								)}
+							>
+								<div className="flex-1 w-full max-w-3xl mx-auto py-12 px-8">
+									<FormPreviewFromPlate
+										content={doc.content as Value}
+										title={options.hideTitle ? "" : doc.title}
+										icon={doc.icon ?? undefined}
+										cover={doc.cover ?? undefined}
+										onSubmit={async () => { }}
+										hideTitle={options.hideTitle}
+									/>
+
+									{/* Integrated Branding for Full Page - Right Aligned per Ref 3 */}
+									{options.branding && (
+										<div className="mt-20 flex justify-end pb-12">
+											<div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#EBF5FF] rounded-full text-[11px] font-bold text-[#0066CC] hover:scale-105 transition-transform cursor-default shadow-sm border border-blue-50">
+												<span>Made with</span>
+												<Sparkles className="h-3.5 w-3.5 fill-[#0066CC] text-[#0066CC]" />
+												<span>Better Forms</span>
+											</div>
+										</div>
+									)}
+								</div>
+							</div>
+						)}
+					</div>
+				)}
 			</div>
 		</div>
 	);
@@ -873,12 +828,16 @@ function EmbedInstructions({
 	embedType,
 	options,
 	embedCode,
+	embedUrl,
 	formId,
+	docTitle,
 }: {
 	embedType: EmbedType;
 	options: EmbedOptions;
 	embedCode: string;
+	embedUrl: string;
 	formId: string;
+	docTitle?: string;
 }) {
 	const [sections, setSections] = useState<Record<string, boolean>>({
 		save: false,
@@ -908,28 +867,50 @@ function EmbedInstructions({
 
 	const CodeBlock = ({ code }: { code: string }) => (
 		<div className="relative group mt-3">
-			<pre className="bg-[#1A1D23] border border-gray-800 rounded-lg p-4 overflow-x-auto text-sm font-mono text-gray-300 leading-relaxed">
+			<pre className="bg-[#0D0F12] border border-white/5 rounded-xl p-6 overflow-x-auto text-[13px] font-mono text-gray-300 leading-relaxed scrollbar-hide shadow-2xl">
 				<code>{code}</code>
 			</pre>
 			<CopyButton text={code} />
 		</div>
 	);
 
+	const emojiParams = options.emoji ? `&emoji-text=${encodeURIComponent(options.emojiIcon)}&emoji-animation=${options.emojiAnimation}` : "";
+	const hashUrl = `#form-open=${formId}&align-left=${options.alignLeft ? 1 : 0}&hide-title=${options.hideTitle ? 1 : 0}&overlay=${options.darkOverlay ? 1 : 0}${emojiParams}&auto-close=${options.hideOnSubmit ? options.hideOnSubmitDelay * 1000 : 0}`;
+
 	return (
-		<div className="p-12 max-w-4xl mx-auto">
-			<h2 className="text-2xl font-bold text-white mb-2">
-				Add the {embedType === "popup" ? "popup" : "form"} to your website
-			</h2>
-			<p className="text-gray-400 mb-8 max-w-2xl">
-				{embedType === "popup"
-					? `To open a Better Forms popup, paste the following code snippet in the <head> section of your website.`
-					: "Copy and paste the code below into your website HTML where you want the form to appear."}
-			</p>
+		<div className="p-4 lg:p-12 pb-32 max-w-4xl mx-auto animate-in fade-in duration-500">
+			<div className="space-y-2 mb-10">
+				<h1 className="text-2xl lg:text-3xl font-bold text-white tracking-tight">
+					Add to your website
+				</h1>
+				<p className="text-gray-400 max-w-2xl leading-relaxed">
+					{embedType === "popup"
+						? `Enable the Better Forms popup on your site with a single script and trigger via button attributes or direct JS.`
+						: "Integrate this form seamlessly into your website's layout using the robust HTML snippet below."}
+				</p>
+			</div>
 
 			<div className="space-y-8">
 				{embedType === "standard" ? (
-					<div>
-						<CodeBlock code={embedCode} />
+					<div className="space-y-8">
+						<div>
+							<h3 className="text-white font-semibold mb-3">Embed code</h3>
+							<p className="text-gray-400 text-sm mb-4">
+								Paste this HTML code snippet on the page where you want the embed to appear.
+							</p>
+							<CodeBlock code={embedCode} />
+						</div>
+
+						<div>
+							<h3 className="text-white font-semibold mb-3">Direct link</h3>
+							<p className="text-gray-400 text-sm mb-4">
+								Alternatively, simply paste this embed link in the editor of a no-code tool (Notion, Ghost, Canva, etc). To enable dynamic height, you will also need to include the script tag in the <code className="text-gray-300">&lt;head&gt;</code> section of your website.
+							</p>
+							<div className="bg-[#1A1D23] p-4 rounded-lg border border-gray-800 text-sm break-all font-mono text-blue-400 mb-4">
+								{embedUrl}
+							</div>
+							<CodeBlock code={`<script async src="${window.location.origin}/widgets/embed.js"></script>`} />
+						</div>
 					</div>
 				) : (
 					/* Popup Instructions */
@@ -945,18 +926,24 @@ function EmbedInstructions({
 								Then to <strong className="text-white">open the popup on clicking a button</strong>, you need to add the following <span className="text-white font-mono bg-gray-800 px-1 py-0.5 rounded">data-form-id</span> attributes to an existing button on your page. You can add these attributes to any clickable element - button, div, etc.
 							</p>
 							<div className="bg-[#2D3139] border-l-4 border-blue-500 rounded-r-lg p-4 mb-4">
-								<p className="text-sm text-gray-300">
-									<span className="text-gray-500 font-mono">// Data attributes</span>
+								<p className="text-sm text-gray-300 font-mono">
+									<span className="text-gray-500">// Data attributes</span>
 									<br />
-									<span className="font-mono break-all text-blue-300">
-										data-form-id="{formId}" data-popup-width="{options.popupWidth}" {options.emoji ? `data-emoji="${options.emojiIcon}"` : ""}
+									<span className="break-all text-blue-300">
+										data-form-id="{formId}" data-align-left="{options.alignLeft ? 1 : 0}" data-hide-title="{options.hideTitle ? 1 : 0}" data-overlay="{options.darkOverlay ? 1 : 0}" {options.emoji ? `data-emoji-text="${options.emojiIcon}" data-emoji-animation="${options.emojiAnimation}"` : ""} data-auto-close="{options.hideOnSubmit ? options.hideOnSubmitDelay * 1000 : 0}"
 									</span>
 								</p>
 							</div>
 							<CodeBlock
 								code={`// Example
-<button data-form-id="${formId}" data-popup-width="${options.popupWidth}"${options.emoji ? ` data-emoji="${options.emojiIcon}"` : ""}>
-  Open Form
+<button 
+  data-form-id="${formId}" 
+  data-align-left="${options.alignLeft ? 1 : 0}" 
+  data-hide-title="${options.hideTitle ? 1 : 0}" 
+  data-overlay="${options.darkOverlay ? 1 : 0}"
+  ${options.emoji ? `data-emoji-text="${options.emojiIcon}" data-emoji-animation="${options.emojiAnimation}"\n  ` : ""}data-auto-close="${options.hideOnSubmit ? options.hideOnSubmitDelay * 1000 : 0}"
+>
+  Click me
 </button>`}
 							/>
 						</div>
@@ -965,10 +952,19 @@ function EmbedInstructions({
 							<p className="text-gray-300 mt-8 mb-4">
 								Alternatively, you can <strong className="text-white">open the popup by clicking on a link</strong> with a custom URL hash. Add the URL below to a link on your page to open the popup.
 							</p>
+							<div className="bg-[#2D3139] border-l-4 border-blue-500 rounded-r-lg p-4 mb-4">
+								<p className="text-sm text-gray-300 font-mono">
+									<span className="text-gray-500">// Link href attribute</span>
+									<br />
+									<span className="break-all text-blue-300">
+										{hashUrl}
+									</span>
+								</p>
+							</div>
 							<CodeBlock
 								code={`// Example
-<a href="#form-open=${formId}&popup-width=${options.popupWidth}${options.emoji ? `&emoji=${encodeURIComponent(options.emojiIcon)}` : ""}">
-  Open Popup
+<a href="${hashUrl}">
+  Click me
 </a>`}
 							/>
 						</div>
@@ -977,32 +973,141 @@ function EmbedInstructions({
 
 				{/* Documentation Accordions */}
 				<div className="pt-8 border-t border-gray-800 space-y-2">
+					{/* Query Parameters Accordion */}
 					<div className="border-b border-gray-800">
 						<button
 							onClick={() => toggleSection('save')}
-							className="w-full flex items-center justify-between py-4 text-left text-lg font-semibold text-white hover:text-gray-200"
+							className="w-full flex items-center justify-between py-6 text-left"
 						>
-							Save website page and query parameters
-							<ChevronDown className={cn("w-5 h-5 transition-transform", sections.save && "rotate-180")} />
+							<span className="text-lg font-semibold text-white">Save website page and query parameters</span>
+							<ChevronDown className={cn("w-5 h-5 text-gray-500 transition-transform", sections.save && "rotate-180")} />
 						</button>
 						{sections.save && (
-							<div className="pb-4 text-gray-400">
-								<p>Your form automatically captures URL query parameters and can save them as hidden fields.</p>
+							<div className="pb-8 space-y-6 text-gray-400">
+								<p className="leading-relaxed">
+									Your website's page and all query parameters will be automatically forwarded to the {embedType === "popup" ? "Better Forms popup" : "form"} and could be saved using hidden fields. For example, if your page's URL looks like the one below and you have hidden fields for <code className="text-gray-300">originPage</code>, <code className="text-gray-300">ref</code> and <code className="text-gray-300">email</code>, you will see <code className="text-gray-300">originPage=/register</code>, <code className="text-gray-300">ref=downloads</code> and <code className="text-gray-300">email=alice@example.com</code> in your form submissions.
+								</p>
+								<div className="bg-[#1A1D23] p-4 rounded-lg border border-gray-800 text-sm break-all font-mono">
+									https://company.com/register?ref=downloads&email=alice@example.com
+								</div>
+
+								<p className="leading-relaxed">
+									{embedType === "standard" ? "This is enabled only if you use the HTML snippet or JavaScript." : "If you are opening the popup on button click via data attributes, all data attributes will be automatically forwarded to the popup. The example below sets 2 data attributes which can be used as hidden fields: ref and email."}
+								</p>
+								{embedType === "popup" ? (
+									<>
+										<CodeBlock code={`<button data-form-id="${formId}" data-ref="downloads" data-email="alice@example.com">Click me</button>`} />
+										<p className="leading-relaxed">
+											If you are opening the popup on button click via custom URL hash, all URL parameters will be automatically forwarded to the popup. The example below sets 2 parameters which can be used as hidden fields: <code className="text-gray-300">ref</code> and <code className="text-gray-300">email</code>.
+										</p>
+										<CodeBlock code={`<a href="${hashUrl}&ref=downloads&email=alice@example.com">Click me</a>`} />
+									</>
+								) : null}
 							</div>
 						)}
 					</div>
 
+					{/* JavaScript API Accordion */}
 					<div className="border-b border-gray-800">
 						<button
 							onClick={() => toggleSection('js')}
-							className="w-full flex items-center justify-between py-4 text-left text-lg font-semibold text-white hover:text-gray-200"
+							className="w-full flex items-center justify-between py-6 text-left"
 						>
-							Use JavaScript
-							<ChevronDown className={cn("w-5 h-5 transition-transform", sections.js && "rotate-180")} />
+							<span className="text-lg font-semibold text-white">Use JavaScript</span>
+							<ChevronDown className={cn("w-5 h-5 text-gray-500 transition-transform", sections.js && "rotate-180")} />
 						</button>
 						{sections.js && (
-							<div className="pb-4 text-gray-400">
-								<p>You can use the JavaScript API to open, close, and manipulate the form programmatically.</p>
+							<div className="pb-8 space-y-6 text-gray-400">
+								<p className="leading-relaxed">
+									Take a look at the instructions below and share them with your developers.
+								</p>
+
+								{embedType === "standard" ? (
+									<CodeBlock code={`// Include the Better Forms widget script in the <head> section of your page
+<script src="${window.location.origin}/widgets/embed.js"></script>
+
+// Add the embed in your HTML
+<iframe data-better-forms-src="${embedUrl}" loading="lazy" width="100%" height="${options.height}" frameborder="0" marginheight="0" marginwidth="0" title="${docTitle || "Form"}"></iframe>
+
+// Load all embeds on the page
+BetterForms.loadEmbeds();`} />
+								) : (
+									<>
+										<p className="leading-relaxed">
+											You can open and close popups using JavaScript via the <code className="text-gray-300">window.BetterForms</code> object. It comes in handy when you want to define your own business logic on when to open a certain popup.
+										</p>
+										<CodeBlock code={`// Include the Better Forms widget script in the <head> section of your page
+<script src="${window.location.origin}/widgets/embed.js"></script>
+
+// Open the popup
+BetterForms.openPopup('${formId}', options);
+
+// Close the popup
+BetterForms.closePopup('${formId}');`} />
+									</>
+								)}
+
+								<div className="space-y-4">
+									<h4 className="text-white font-semibold">Available options</h4>
+									<CodeBlock code={`type PopupOptions = {
+  key?: string;
+  layout?: 'default' | 'modal';
+  width?: number;
+  alignLeft?: boolean;
+  hideTitle?: boolean;
+  overlay?: boolean;
+  emoji?: {
+    text: string;
+    animation: 'none' | 'wave' | 'tada' | 'heart-beat' | 'spin' | 'flash' | 'bounce' | 'rubber-band' | 'head-shake';
+  };
+  autoClose?: number; // Close after N ms on submit
+  showOnce?: boolean;
+  doNotShowAfterSubmit?: boolean;
+  customFormUrl?: string; // For custom domains
+  hiddenFields?: {
+    [key: string]: any,
+  };
+  onOpen?: () => void;
+  onClose?: () => void;
+  onPageView?: (page: number) => void;
+  onSubmit?: (payload: any) => void;
+};`} />
+								</div>
+
+								<div className="space-y-4 pt-4">
+									<h4 className="text-white font-semibold italic opacity-80">Examples</h4>
+
+									<div className="space-y-2">
+										<p className="text-sm">1. Open a popup as a centered modal with delay</p>
+										<CodeBlock code={`BetterForms.openPopup('${formId}', {
+  layout: 'modal',
+  width: ${options.popupWidth},
+  autoClose: 5000, // Close after 5 seconds
+});`} />
+									</div>
+
+									<div className="space-y-2">
+										<p className="text-sm">2. Set custom hidden fields</p>
+										<CodeBlock code={`BetterForms.openPopup('${formId}', {
+  hiddenFields: {
+    ref: 'downloads',
+    email: 'alice@example.com'
+  }
+});`} />
+									</div>
+
+									<div className="space-y-2">
+										<p className="text-sm">3. Use callback functions to handle events</p>
+										<CodeBlock code={`BetterForms.openPopup('${formId}', {
+  onOpen: () => {
+    console.log('Popup opened');
+  },
+  onSubmit: (payload) => {
+    console.log('Form submitted', payload);
+  }
+});`} />
+									</div>
+								</div>
 							</div>
 						)}
 					</div>

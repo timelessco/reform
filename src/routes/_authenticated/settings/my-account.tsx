@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Globe, Key, Loader2, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -31,8 +31,9 @@ function MyAccountPage() {
 	const { data: session, isPending: isSessionPending } = useSession();
 	const user = session?.user;
 
-	const [firstName, setFirstName] = useState("");
-	const [lastName, setLastName] = useState("");
+	// Initialize names from user (no useEffect needed since component waits for session)
+	const [firstName, setFirstName] = useState(user?.name?.split(" ")[0] || "");
+	const [lastName, setLastName] = useState(user?.name?.split(" ").slice(1).join(" ") || "");
 
 	// 2FA State
 	const [is2faDialogOpen, setIs2faDialogOpen] = useState(false);
@@ -43,13 +44,6 @@ function MyAccountPage() {
 
 	// Accounts Query
 	const { data: accounts = [] } = useQuery(auth.listAccounts.queryOptions());
-
-	useEffect(() => {
-		if (user) {
-			setFirstName(user.name?.split(" ")[0] || "");
-			setLastName(user.name?.split(" ").slice(1).join(" ") || "");
-		}
-	}, [user]);
 
 	const updateProfileMutation = useMutation(
 		auth.updateUser.mutationOptions({

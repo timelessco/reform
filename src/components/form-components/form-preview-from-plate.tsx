@@ -1,5 +1,6 @@
 import type { Value } from "platejs";
 import { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { ChevronRightIcon } from "lucide-react";
 import { RenderPreviewInput } from "@/components/form-components/render-preview-input";
 import { StepForm } from "@/components/form-components/step-form";
@@ -39,6 +40,8 @@ interface FormPreviewFromPlateProps {
 	cover?: string;
 	/** Optional custom submit handler */
 	onSubmit?: (values: Record<string, any>) => Promise<void>;
+	/** Whether to hide the form title */
+	hideTitle?: boolean;
 }
 
 /**
@@ -289,10 +292,12 @@ function PreviewFormHeader({
 	title,
 	icon,
 	cover,
+	hideTitle,
 }: {
 	title?: string;
 	icon?: string;
 	cover?: string;
+	hideTitle?: boolean;
 }) {
 	const [imageError, setImageError] = useState(false);
 	const [iconError, setIconError] = useState(false);
@@ -301,7 +306,7 @@ function PreviewFormHeader({
 	const hasCover =
 		cover && (isHexColor(cover) || isValidUrl(cover)) && !imageError;
 	const hasIcon = !!icon && !iconError;
-	const hasTitle = title && title.trim().length > 0;
+	const hasTitle = title && title.trim().length > 0 && !hideTitle;
 
 	if (!hasCover && !hasIcon && !hasTitle) {
 		return null;
@@ -345,7 +350,7 @@ function PreviewFormHeader({
 		// Handle 'default-icon' - render hexagon
 		if (icon === "default-icon") {
 			return (
-				<div className={hasCover ? "-mt-[40px] relative z-10" : ""}>
+				<div className={hasCover ? "-mt-[40px] relative z-10 px-3" : ""}>
 					<DefaultIcon />
 				</div>
 			);
@@ -393,7 +398,7 @@ function PreviewFormHeader({
 				<div className="flex flex-col">
 					{hasIcon && renderIcon()}
 					{hasTitle && (
-						<h1 className={`text-3xl font-bold ${hasIcon ? "mt-4" : "mt-8"}`}>
+						<h1 className={`text-3xl font-bold px-3 ${hasIcon ? "mt-4" : "mt-8"}`}>
 							{title}
 						</h1>
 					)}
@@ -492,10 +497,11 @@ export function FormPreviewFromPlate({
 	icon: legacyIcon,
 	cover: legacyCover,
 	onSubmit,
+	hideTitle,
 }: FormPreviewFromPlateProps) {
 	const headerFromContent = extractFormHeader(content);
 
-	const title = headerFromContent?.title || legacyTitle;
+	const title = hideTitle ? "" : (headerFromContent?.title || legacyTitle);
 	const icon = headerFromContent?.icon || legacyIcon;
 	const cover = headerFromContent?.cover || legacyCover;
 
@@ -548,10 +554,31 @@ export function FormPreviewFromPlate({
 				title={title}
 				icon={icon}
 				cover={cover}
+				hideTitle={hideTitle}
 			/>
 		</StepFormProvider>
 	);
 }
+
+/**
+ * Animation variants for form step transitions
+ */
+const stepVariants = {
+	enter: (direction: number) => ({
+		x: direction > 0 ? 20 : -20,
+		opacity: 0,
+	}),
+	center: {
+		zIndex: 1,
+		x: 0,
+		opacity: 1,
+	},
+	exit: (direction: number) => ({
+		zIndex: 0,
+		x: direction < 0 ? 20 : -20,
+		opacity: 0,
+	}),
+};
 
 /**
  * Inner content component that uses StepFormContext
@@ -562,14 +589,16 @@ function FormPreviewContent({
 	title,
 	icon,
 	cover,
+	hideTitle,
 }: {
 	steps: TransformedElement[][];
 	thankYouContent: TransformedElement[] | null;
 	title?: string;
 	icon?: string;
 	cover?: string;
+	hideTitle?: boolean;
 }) {
-	const { currentStep, isSubmitted, reset } = useStepForm();
+	const { currentStep, isSubmitted, direction, reset } = useStepForm();
 
 	// Create a dummy form for thank you content rendering (static elements only)
 	const { form } = usePreviewForm({ fields: [] });
@@ -578,17 +607,28 @@ function FormPreviewContent({
 	if (isSubmitted) {
 		return (
 			<div className="w-full">
-				<PreviewFormHeader title={title} icon={icon} cover={cover} />
+				<PreviewFormHeader
+					title={title}
+					icon={icon}
+					cover={cover}
+					hideTitle={hideTitle}
+				/>
 				<div className="max-w-2xl mx-auto px-4 sm:px-0">
-					{thankYouContent && thankYouContent.length > 0 ? (
-						<RenderThankYouContent
-							elements={thankYouContent}
-							form={form}
-							onReset={reset}
-						/>
-					) : (
-						<DefaultThankYou onReset={reset} />
-					)}
+					<motion.div
+						initial={{ opacity: 0, y: 10 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.3 }}
+					>
+						{thankYouContent && thankYouContent.length > 0 ? (
+							<RenderThankYouContent
+								elements={thankYouContent}
+								form={form}
+								onReset={reset}
+							/>
+						) : (
+							<DefaultThankYou onReset={reset} />
+						)}
+					</motion.div>
 				</div>
 			</div>
 		);
@@ -600,16 +640,37 @@ function FormPreviewContent({
 	return (
 		<div className="w-full">
 			{/* Header Section */}
-			<PreviewFormHeader title={title} icon={icon} cover={cover} />
+			<PreviewFormHeader
+				title={title}
+				icon={icon}
+				cover={cover}
+				hideTitle={hideTitle}
+			/>
 
 			{/* Step Form */}
-			<div className="max-w-2xl mx-auto px-4 sm:px-0">
-				<StepForm
-					key={currentStep}
-					stepIndex={currentStep}
-					elements={currentStepElements}
-					isLastStep={isLastStep}
-				/>
+			<div className="max-w-2xl mx-auto px-4 overflow-hidden">
+				<AnimatePresence mode="wait" custom={direction}>
+					<motion.div
+						key={currentStep}
+						custom={direction}
+						variants={stepVariants}
+						initial="enter"
+						animate="center"
+						exit="exit"
+						transition={{
+							x: { type: "spring", stiffness: 300, damping: 30 },
+							opacity: { duration: 0.2 },
+						}}
+						className="w-full"
+					>
+						<StepForm
+							key={currentStep}
+							stepIndex={currentStep}
+							elements={currentStepElements}
+							isLastStep={isLastStep}
+						/>
+					</motion.div>
+				</AnimatePresence>
 			</div>
 		</div>
 	);

@@ -72,6 +72,8 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 	const [fieldName, setFieldName] = React.useState("");
 	const [showTurnInto, setShowTurnInto] = React.useState(false);
 	const [buttonText, setButtonText] = React.useState("");
+	// Track previous open state to detect open transition
+	const wasOpenRef = React.useRef(false);
 
 	// Get the selected node info
 	// Get the selected node info reactive to editor state changes
@@ -159,9 +161,9 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 		return null;
 	}, [nodeType, firstPath]);
 
-	// Reset state when menu opens/closes
+	// Initialize state only when menu transitions to open (not on every node change)
 	React.useEffect(() => {
-		if (isOpen) {
+		if (isOpen && !wasOpenRef.current) {
 			const label = labelNode
 				? extractLabelText(labelNode)
 				: firstNode
@@ -170,11 +172,11 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 			setFieldName(label);
 			setIsEditingName(false);
 			setShowTurnInto(false);
-			// Initialize button text for formButton nodes
 			if (nodeType === "formButton") {
 				setButtonText((firstNode?.buttonText as string) || "Submit");
 			}
 		}
+		wasOpenRef.current = isOpen;
 	}, [isOpen, labelNode, firstNode, nodeType]);
 
 	// Handlers for form input options
