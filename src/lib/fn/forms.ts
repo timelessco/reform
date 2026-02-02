@@ -15,7 +15,7 @@ const serializeForm = (form: typeof forms.$inferSelect) => ({
 	settings: form.settings as any,
 });
 
-export const createForm = createServerFn({ method: "POST" })
+export const createForm = createServerFn({ method: "GET" })
 	.middleware([authMiddleware])
 	.inputValidator(
 		z.object({
@@ -34,7 +34,6 @@ export const createForm = createServerFn({ method: "POST" })
 	)
 	.handler(async ({ data, context }) => {
 		const now = new Date();
-
 		const [form] = await db
 			.insert(forms)
 			.values({

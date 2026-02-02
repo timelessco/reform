@@ -11,21 +11,21 @@
  * @see https://docs.betterforms.com/embed for full documentation
  */
 
-import type { PopupOptions, PopupInstance, IframeEvent } from "./lib/types";
-import { injectStyles } from "./lib/styles";
+import { createIframe, destroyIframe, updateIframeHeight } from "./lib/iframe";
 import {
 	createOverlay,
 	destroyOverlay,
-	updatePopupHeight,
-	hideLoading,
 	hideEmoji,
+	hideLoading,
+	updatePopupHeight,
 } from "./lib/overlay";
-import { createIframe, updateIframeHeight, destroyIframe } from "./lib/iframe";
+import { injectStyles } from "./lib/styles";
 import {
-	setupClickTriggers,
 	checkHashTrigger,
+	setupClickTriggers,
 	setupHashChangeListener,
 } from "./lib/triggers";
+import type { IframeEvent, PopupInstance, PopupOptions } from "./lib/types";
 
 // Registry of active popup instances
 const activePopups = new Map<string, PopupInstance>();
@@ -159,7 +159,7 @@ function handleMessage(event: MessageEvent): void {
 			// Auto-close if configured
 			if (instance.options.autoClose && instance.options.autoClose > 0) {
 				setTimeout(() => {
-					closePopup(instance!.formId);
+					closePopup(instance?.formId);
 				}, instance.options.autoClose);
 			}
 
@@ -181,7 +181,9 @@ function handleMessage(event: MessageEvent): void {
 			if ("page" in data && data.page > 1) {
 				const overlayEl = instance.overlay;
 				if (overlayEl) {
-					const emojiEl = overlayEl.querySelector(".bf-emoji") as HTMLElement | null;
+					const emojiEl = overlayEl.querySelector(
+						".bf-emoji",
+					) as HTMLElement | null;
 					if (emojiEl) {
 						hideEmoji(emojiEl);
 					}

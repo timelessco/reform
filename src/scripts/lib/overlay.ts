@@ -28,7 +28,7 @@ export interface OverlayElements {
 export function createOverlay(
 	formId: string,
 	options: PopupOptions,
-	onClose: () => void
+	onClose: () => void,
 ): OverlayElements {
 	const isModal = options.layout === "modal" || options.position === "center";
 	const showOverlay = options.overlay !== false || isModal;

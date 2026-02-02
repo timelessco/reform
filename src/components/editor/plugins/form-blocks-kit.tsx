@@ -53,7 +53,10 @@ function findNextNonButtonPath(
 				let hasThankYouPage = false;
 				for (let j = i + 1; j < children.length; j++) {
 					const nextNode = children[j];
-					if (nextNode.type === "pageBreak" && (nextNode as any).isThankYouPage) {
+					if (
+						nextNode.type === "pageBreak" &&
+						(nextNode as any).isThankYouPage
+					) {
 						hasThankYouPage = true;
 						break;
 					}
@@ -121,7 +124,10 @@ function handleFormBlockKeyDown(
 ): void {
 	// [TAB DEBUG] - remove after fix verified
 	if (event.key === "Tab") {
-		console.log("[TAB DEBUG] handleFormBlockKeyDown entry, block:", editor.api.block()?.[0]?.type);
+		console.log(
+			"[TAB DEBUG] handleFormBlockKeyDown entry, block:",
+			editor.api.block()?.[0]?.type,
+		);
 	}
 
 	// Prevent double-handling when multiple form plugins process same event
@@ -163,7 +169,7 @@ function handleFormBlockKeyDown(
 			const insertPath: Path = [insertIndex];
 			editor.tf.insertNodes(
 				{ type: "p", children: [{ text: "" }] } as TElement,
-				{ at: insertPath }
+				{ at: insertPath },
 			);
 			moveToPath(editor, insertPath);
 		}
@@ -355,7 +361,7 @@ export const FormButtonPlugin = createPlatePlugin({
 						// Select the end of the previous block synchronously
 						const prevPath = [i];
 						const edges = editor.api.edges(prevPath);
-						if (edges && edges[1]) {
+						if (edges?.[1]) {
 							(editor as any).__redirectingSelection = true;
 							try {
 								editor.tf.select(edges[1]);
@@ -507,7 +513,7 @@ export const FormButtonPlugin = createPlatePlugin({
 								// Select the end of the previous block
 								const prevPath = [i];
 								const edges = editorRef.api.edges(prevPath);
-								if (edges && edges[1]) {
+								if (edges?.[1]) {
 									return originalSelect(edges[1]);
 								}
 							}
@@ -748,7 +754,7 @@ export const FormButtonPlugin = createPlatePlugin({
 								);
 								editorRef.tf.setNodes(
 									{ isThankYouPage: false },
-									{ at: [precedingBreakIndex] }
+									{ at: [precedingBreakIndex] },
 								);
 								return; // Restart normalization (will now process as normal page)
 							}
@@ -939,7 +945,12 @@ function handleGlobalKeyDown(
 ): void {
 	// [TAB DEBUG] - remove after fix verified
 	if (event.key === "Tab") {
-		console.log("[TAB DEBUG] handleGlobalKeyDown entry, block:", editor.api.block()?.[0]?.type, "alreadyHandled:", (event as any).__formBlockHandled);
+		console.log(
+			"[TAB DEBUG] handleGlobalKeyDown entry, block:",
+			editor.api.block()?.[0]?.type,
+			"alreadyHandled:",
+			(event as any).__formBlockHandled,
+		);
 	}
 
 	// Don't interfere if already handled by form block handlers
@@ -980,7 +991,7 @@ function handleGlobalKeyDown(
 			const insertPath: Path = [insertIndex];
 			editor.tf.insertNodes(
 				{ type: "p", children: [{ text: "" }] } as TElement,
-				{ at: insertPath }
+				{ at: insertPath },
 			);
 			moveToPath(editor, insertPath);
 		}

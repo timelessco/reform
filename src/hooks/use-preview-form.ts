@@ -12,8 +12,8 @@ import {
 	generateDefaultValuesFromFields,
 	generateZodSchemaFromFields,
 } from "@/lib/generate-preview-schema";
-import { logger } from "@/lib/utils";
 import type { PlateFormField } from "@/lib/transform-plate-to-form";
+import { logger } from "@/lib/utils";
 import type { AppForm } from "./use-form-builder";
 
 interface UsePreviewFormOptions {

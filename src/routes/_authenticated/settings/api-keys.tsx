@@ -46,7 +46,10 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from "@/components/ui/empty";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { Input } from "@/components/ui/input";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 import {
 	Table,
 	TableBody,
@@ -56,12 +59,16 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { auth, useSession } from "@/lib/auth-client";
-import { ErrorBoundary } from "@/components/ui/error-boundary";
-import Loader from "@/components/ui/loader";
-import { NotFound } from "@/components/ui/not-found";
 
 export const Route = createFileRoute("/_authenticated/settings/api-keys")({
 	component: APIKeysPage,
+	loader: async ({ context }) => {
+		const apiKeys = await context.queryClient.ensureQueryData({
+			...auth.apiKey.list.queryOptions(),
+			revalidateIfStale: true,
+		});
+		return { apiKeys };
+	},
 	pendingComponent: Loader,
 	errorComponent: ErrorBoundary,
 	notFoundComponent: NotFound,
@@ -70,10 +77,12 @@ export const Route = createFileRoute("/_authenticated/settings/api-keys")({
 function APIKeysPage() {
 	const queryClient = useQueryClient();
 	const { data: session } = useSession();
+	const { apiKeys: initialApiKeys } = Route.useLoaderData();
 
-	const { data: apiKeys = [], isLoading } = useQuery(
-		auth.apiKey.list.queryOptions(),
-	);
+	const { data: apiKeys = [] } = useQuery({
+		...auth.apiKey.list.queryOptions(),
+		initialData: initialApiKeys,
+	});
 
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 	const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -136,14 +145,6 @@ function APIKeysPage() {
 		toast.success("Copied to clipboard");
 		setTimeout(() => setCopied(false), 2000);
 	};
-
-	if (isLoading) {
-		return (
-			<div className="flex items-center justify-center p-12">
-				<Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
-			</div>
-		);
-	}
 
 	return (
 		<div className="space-y-6">

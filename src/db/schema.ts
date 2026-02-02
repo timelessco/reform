@@ -181,6 +181,7 @@ export const formVersions = pgTable("form_versions", {
 export const submissions = pgTable("submissions", {
 	id: text().primaryKey(),
 	formId: text().notNull(),
+	formVersionId: text(), // Links to the form version this submission was created against
 	data: jsonb().notNull().default({}),
 	isCompleted: boolean().notNull().default(true),
 	createdAt: timestamp().notNull().defaultNow(),

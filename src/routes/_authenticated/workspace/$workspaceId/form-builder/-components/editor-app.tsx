@@ -1,3 +1,7 @@
+import { Link } from "@tanstack/react-router";
+import { normalizeNodeId, type TElement, type Value } from "platejs";
+import { Plate, usePlateEditor } from "platejs/react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorKit } from "@/components/editor/editor-kit";
 import { Button } from "@/components/ui/button";
 import { Editor, EditorContainer } from "@/components/ui/editor";
@@ -5,10 +9,6 @@ import { createFormButtonNode } from "@/components/ui/form-button-node";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import { updateDoc, updateHeader } from "@/db-collections";
 import { useForm } from "@/hooks/use-live-hooks";
-import { Link } from "@tanstack/react-router";
-import { normalizeNodeId, type TElement, type Value } from "platejs";
-import { Plate, usePlateEditor } from "platejs/react";
-import { useCallback, useEffect, useRef, useState } from "react";
 
 interface EditorAppProps {
 	formId: string;
@@ -117,7 +117,7 @@ export default function EditorApp({
 				autoSelect: "end",
 			});
 		}
-	}, [savedDocs, editor]);
+	}, [savedDocs, editor, defaultValue]);
 
 	const handleChange = useCallback(
 		({ value }: { value: Value }) => {

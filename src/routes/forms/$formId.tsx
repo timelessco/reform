@@ -1,14 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getPublishedFormById } from "@/lib/fn/public";
+import z from "zod";
 import { PublicFormPage } from "@/components/public/public-form-page";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import z from "zod";
+import { getPublishedFormById } from "@/lib/fn/public";
 
 export const Route = createFileRoute("/forms/$formId")({
 	// SSR loader - fetches form data on the server for SEO
 	loader: async ({ params }) => {
+		// ISOmorpci
 		return getPublishedFormById({ data: { id: params.formId } });
 	},
 	// SEO meta tags
@@ -52,7 +53,8 @@ function PublicFormRoute() {
 	const search = Route.useSearch();
 
 	// Support both transparentBackground and transparent params
-	const isTransparent = search.transparentBackground || search.transparent || false;
+	const isTransparent =
+		search.transparentBackground || search.transparent || false;
 
 	return (
 		<PublicFormPage

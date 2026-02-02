@@ -1,6 +1,5 @@
 import { ChevronLeft, ChevronRight, Settings } from "lucide-react";
-import type { PlateElementProps } from "platejs/react";
-import type { PlateEditor } from "platejs/react";
+import type { PlateEditor, PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorRef } from "platejs/react";
 import * as React from "react";
 import { cn } from "@/lib/utils";
@@ -18,13 +17,14 @@ function hasPageBreaks(editor: PlateEditor): boolean {
 				)),
 	);
 }
+
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 export type ButtonRole = "next" | "previous" | "submit";
 

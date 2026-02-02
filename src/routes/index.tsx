@@ -1,12 +1,12 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowRight, Layout, Shield, Sparkles, Zap } from "lucide-react";
 import { AppHeader } from "@/components/ui/app-header";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { useSession } from "@/lib/auth-client";
-import { createFileRoute, Link } from "@tanstack/react-router";
 import { guestMiddleware } from "@/middleware/auth";
-import { ArrowRight, Layout, Shield, Sparkles, Zap } from "lucide-react";
 
 export const Route = createFileRoute("/")({
 	server: {

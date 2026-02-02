@@ -85,9 +85,12 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
 		}),
 	)
 	.handler(async ({ data }) => {
-		// Verify form exists and is published
+		// Verify form exists and is published, get the current published version ID
 		const [form] = await db
-			.select({ status: forms.status })
+			.select({
+				status: forms.status,
+				lastPublishedVersionId: forms.lastPublishedVersionId,
+			})
 			.from(forms)
 			.where(eq(forms.id, data.formId));
 
@@ -105,6 +108,7 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
 		await db.insert(submissions).values({
 			id,
 			formId: data.formId,
+			formVersionId: form.lastPublishedVersionId, // Link to published version
 			data: data.data,
 			isCompleted: data.isCompleted,
 			createdAt: now,

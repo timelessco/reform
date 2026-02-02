@@ -1,24 +1,3 @@
-import AvatarUpload from "@/components/file-upload/avatar-upload";
-import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useFileUpload } from "@/hooks/use-file-upload";
-import { useSession } from "@/lib/auth-client";
-import { cn } from "@/lib/utils";
 import {
 	ImageIcon,
 	Loader2,
@@ -30,6 +9,27 @@ import {
 	Upload,
 	X,
 } from "lucide-react";
+import AvatarUpload from "@/components/file-upload/avatar-upload";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useFileUpload } from "@/hooks/use-file-upload";
+import { useSession } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
 
 // Inline CoverUpload component using the hook
 function CoverUpload({

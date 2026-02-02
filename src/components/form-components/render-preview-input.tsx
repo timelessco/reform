@@ -1,9 +1,9 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import type { NavigationHandlers } from "@/components/form-components/form-preview-from-plate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { NavigationHandlers } from "@/components/form-components/form-preview-from-plate";
 import type { AppForm } from "@/hooks/use-form-builder";
 /**
  * Simplified input field renderer for form preview.

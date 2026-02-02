@@ -1,5 +1,5 @@
-import { createCollection } from "@tanstack/react-db";
 import { electricCollectionOptions } from "@tanstack/electric-db-collection";
+import { createCollection } from "@tanstack/react-db";
 import { z } from "zod";
 import { electricFetchClient, getElectricUrl, timestampField } from "./shared";
 

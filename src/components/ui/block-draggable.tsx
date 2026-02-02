@@ -162,7 +162,8 @@ function Draggable(props: PlateElementProps) {
 	const isFormButton = element.type === "formButton";
 
 	const gutterPosition = React.useMemo(() => {
-		if (element.gutterPosition) return element.gutterPosition as "center" | "top";
+		if (element.gutterPosition)
+			return element.gutterPosition as "center" | "top";
 
 		const plugin = getPluginByType(editor, element.type);
 		if (plugin?.options?.gutterPosition)
@@ -225,7 +226,7 @@ function Draggable(props: PlateElementProps) {
 		if (justStoppedDragging) {
 			resetPreview();
 		}
-	}, [isDragging]);
+	}, [isDragging, resetPreview]);
 
 	// Show preview only when transitioning to about-to-drag state
 	React.useEffect(() => {
@@ -235,7 +236,7 @@ function Draggable(props: PlateElementProps) {
 		if (justStartedAboutToDrag) {
 			previewRef.current?.classList.remove("opacity-0");
 		}
-	}, [isAboutToDrag]);
+	}, [isAboutToDrag, previewRef.current?.classList.remove]);
 
 	return (
 		<div
@@ -374,7 +375,9 @@ function Gutter({
 			className={cn(
 				"slate-gutterLeft",
 				"-translate-x-full absolute h-full z-50 flex cursor-text hover:opacity-100",
-				gutterPosition === "top" ? "top-0 items-start pt-1.5" : "top-0 items-center",
+				gutterPosition === "top"
+					? "top-0 items-start pt-1.5"
+					: "top-0 items-center",
 				!selected && "sm:opacity-0",
 				getPluginByType(editor, element.type)?.node.isContainer
 					? "group-hover/container:opacity-100"

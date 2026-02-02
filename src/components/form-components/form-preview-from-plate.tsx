@@ -1,7 +1,7 @@
+import { ChevronRightIcon } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import type { Value } from "platejs";
 import { useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { ChevronRightIcon } from "lucide-react";
 import { RenderPreviewInput } from "@/components/form-components/render-preview-input";
 import { StepForm } from "@/components/form-components/step-form";
 import { Button } from "@/components/ui/button";
@@ -398,7 +398,9 @@ function PreviewFormHeader({
 				<div className="flex flex-col">
 					{hasIcon && renderIcon()}
 					{hasTitle && (
-						<h1 className={`text-3xl font-bold px-3 ${hasIcon ? "mt-4" : "mt-8"}`}>
+						<h1
+							className={`text-3xl font-bold px-3 ${hasIcon ? "mt-4" : "mt-8"}`}
+						>
 							{title}
 						</h1>
 					)}
@@ -501,7 +503,7 @@ export function FormPreviewFromPlate({
 }: FormPreviewFromPlateProps) {
 	const headerFromContent = extractFormHeader(content);
 
-	const title = hideTitle ? "" : (headerFromContent?.title || legacyTitle);
+	const title = hideTitle ? "" : headerFromContent?.title || legacyTitle;
 	const icon = headerFromContent?.icon || legacyIcon;
 	const cover = headerFromContent?.cover || legacyCover;
 

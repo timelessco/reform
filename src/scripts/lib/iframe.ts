@@ -14,7 +14,7 @@ export function getBaseUrl(): string {
 	const scripts = document.getElementsByTagName("script");
 	for (let i = scripts.length - 1; i >= 0; i--) {
 		const src = scripts[i].src;
-		if (src && src.includes("/embed/popup.js")) {
+		if (src?.includes("/embed/popup.js")) {
 			// Extract origin from script src
 			try {
 				const url = new URL(src);
@@ -78,7 +78,7 @@ export function buildIframeUrl(formId: string, options: PopupOptions): string {
 export function createIframe(
 	formId: string,
 	options: PopupOptions,
-	container: HTMLElement
+	container: HTMLElement,
 ): HTMLIFrameElement {
 	const iframe = document.createElement("iframe");
 	iframe.className = "bf-iframe";
@@ -103,7 +103,10 @@ export function createIframe(
 /**
  * Update iframe height
  */
-export function updateIframeHeight(iframe: HTMLIFrameElement, height: number): void {
+export function updateIframeHeight(
+	iframe: HTMLIFrameElement,
+	height: number,
+): void {
 	// Add some padding to prevent scrollbars
 	const adjustedHeight = height + 2;
 	iframe.style.height = `${adjustedHeight}px`;

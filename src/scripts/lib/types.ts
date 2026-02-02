@@ -59,7 +59,11 @@ export interface PopupInstance {
 export type IframeEvent =
 	| { event: "BetterForms.FormLoaded"; formId: string }
 	| { event: "BetterForms.Resize"; height: number }
-	| { event: "BetterForms.FormSubmitted"; formId: string; payload: FormSubmitPayload }
+	| {
+			event: "BetterForms.FormSubmitted";
+			formId: string;
+			payload: FormSubmitPayload;
+	  }
 	| { event: "BetterForms.PageView"; formId: string; page: number }
 	| { event: "BetterForms.Close"; formId: string };
 

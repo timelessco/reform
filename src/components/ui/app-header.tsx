@@ -1,3 +1,24 @@
+import { useMutation } from "@tanstack/react-query";
+import {
+	Link,
+	useLocation,
+	useNavigate,
+	useSearch,
+} from "@tanstack/react-router";
+import {
+	Database,
+	Flower2,
+	History,
+	LayoutGrid,
+	Loader2,
+	LogOut,
+	Search,
+	Settings,
+	Share,
+	User,
+} from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { AuthDialog } from "@/components/auth";
 import { VersionHistoryDialog } from "@/components/form-builder/version-history-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -35,27 +56,6 @@ import {
 import { useForm, useWorkspace } from "@/hooks/use-live-hooks";
 import { auth, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
-import { useMutation } from "@tanstack/react-query";
-import {
-	Link,
-	useLocation,
-	useNavigate,
-	useSearch,
-} from "@tanstack/react-router";
-import {
-	Database,
-	Flower2,
-	History,
-	LayoutGrid,
-	Loader2,
-	LogOut,
-	Search,
-	Settings,
-	Share,
-	User,
-} from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
 import { SidebarTrigger, useSidebarSafe } from "./sidebar";
 
 interface AppHeaderProps {

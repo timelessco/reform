@@ -1,7 +1,7 @@
-import { useForm, useForms } from "./use-live-hooks";
 import { createIsomorphicFn } from "@tanstack/react-start";
 import { normalizeNodeId } from "platejs";
-import { type Form } from "@/db-collections";
+import type { Form } from "@/db-collections";
+import { useForm, useForms } from "./use-live-hooks";
 
 // Standard default content for a new form
 const defaultContent = normalizeNodeId([

@@ -1,11 +1,13 @@
+import { format } from "date-fns";
+import { HelpCircle, Loader2, Lock, X } from "lucide-react";
+import type { Value } from "platejs";
+import { Plate, usePlateEditor } from "platejs/react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { EditorKit } from "@/components/editor/editor-kit";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-	Dialog,
-	DialogClose,
-	DialogContent
-} from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent } from "@/components/ui/dialog";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -15,12 +17,6 @@ import {
 } from "@/hooks/use-form-versions";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { HelpCircle, Loader2, Lock, X } from "lucide-react";
-import type { Value } from "platejs";
-import { Plate, usePlateEditor } from "platejs/react";
-import { useState } from "react";
-import { toast } from "sonner";
 
 interface VersionHistoryDialogProps {
 	formId: string;
@@ -54,7 +50,9 @@ export function VersionHistoryDialog({
 }: VersionHistoryDialogProps) {
 	const { data: versionsData } = useFormVersions(formId);
 	// Track user's explicit selection (null = use default)
-	const [userSelectedVersionId, setUserSelectedVersionId] = useState<string | null>(null);
+	const [userSelectedVersionId, setUserSelectedVersionId] = useState<
+		string | null
+	>(null);
 
 	const versions = versionsData?.versions ?? [];
 	// Derive selected version: user selection or first version (no useEffect needed)

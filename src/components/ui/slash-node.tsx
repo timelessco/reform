@@ -11,14 +11,11 @@ import {
 	LightbulbIcon,
 	ListIcon,
 	ListOrdered,
-	PenToolIcon,
 	PilcrowIcon,
 	Quote,
-	RadicalIcon,
 	SmileIcon,
 	Square,
 	Table,
-	TableOfContentsIcon,
 	TextCursorInputIcon,
 } from "lucide-react";
 import { KEYS, type TComboboxInputElement } from "platejs";

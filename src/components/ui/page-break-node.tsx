@@ -1,8 +1,8 @@
 import type { PlateElementProps } from "platejs/react";
 import {
 	PlateElement,
-	useFocused,
 	useEditorRef,
+	useFocused,
 	useReadOnly,
 	useSelected,
 } from "platejs/react";

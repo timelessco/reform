@@ -1,18 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useLocalForm } from "@/hooks/use-live-hooks";
-import { ClientOnly } from "@/components/client-only";
 import { normalizeNodeId, type TElement, type Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorKit } from "@/components/editor/editor-kit";
-import { Editor, EditorContainer } from "@/components/ui/editor";
-import { createFormHeaderNode } from "@/components/ui/form-header-node";
-import { localFormCollection } from "@/db-collections";
 import { AppHeader } from "@/components/ui/app-header";
-import { guestMiddleware } from "@/middleware/auth";
+import { Editor, EditorContainer } from "@/components/ui/editor";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
+import { localFormCollection } from "@/db-collections";
+import { useLocalForm } from "@/hooks/use-live-hooks";
+import { guestMiddleware } from "@/middleware/auth";
 
 const LOCAL_FORM_ID = "550e8400-e29b-41d4-a716-446655440000"; // Valid UUID for local draft
 const LOCAL_WORKSPACE_ID = "550e8400-e29b-41d4-a716-446655440001"; // Valid UUID for local workspace

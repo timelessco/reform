@@ -15,18 +15,25 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
-import Loader from "@/components/ui/loader";
-import { NotFound } from "@/components/ui/not-found";
 import { Input } from "@/components/ui/input";
 import {
 	InputOTP,
 	InputOTPGroup,
 	InputOTPSlot,
 } from "@/components/ui/input-otp";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 import { auth, useSession } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_authenticated/settings/my-account")({
 	component: MyAccountPage,
+	loader: async ({ context }) => {
+		const accounts = await context.queryClient.ensureQueryData({
+			...auth.listAccounts.queryOptions(),
+			revalidateIfStale: true,
+		});
+		return { accounts };
+	},
 	pendingComponent: Loader,
 	errorComponent: ErrorBoundary,
 	notFoundComponent: NotFound,
@@ -36,10 +43,13 @@ function MyAccountPage() {
 	const queryClient = useQueryClient();
 	const { data: session, isPending: isSessionPending } = useSession();
 	const user = session?.user;
+	const { accounts: initialAccounts } = Route.useLoaderData();
 
 	// Initialize names from user (no useEffect needed since component waits for session)
 	const [firstName, setFirstName] = useState(user?.name?.split(" ")[0] || "");
-	const [lastName, setLastName] = useState(user?.name?.split(" ").slice(1).join(" ") || "");
+	const [lastName, setLastName] = useState(
+		user?.name?.split(" ").slice(1).join(" ") || "",
+	);
 
 	// 2FA State
 	const [is2faDialogOpen, setIs2faDialogOpen] = useState(false);
@@ -49,7 +59,10 @@ function MyAccountPage() {
 	const [password, setPassword] = useState("");
 
 	// Accounts Query
-	const { data: accounts = [] } = useQuery(auth.listAccounts.queryOptions());
+	const { data: accounts = [] } = useQuery({
+		...auth.listAccounts.queryOptions(),
+		initialData: initialAccounts,
+	});
 
 	const updateProfileMutation = useMutation(
 		auth.updateUser.mutationOptions({

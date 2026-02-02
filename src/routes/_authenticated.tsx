@@ -1,3 +1,35 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+	createFileRoute,
+	Link,
+	Outlet,
+	useLocation,
+	useRouter,
+} from "@tanstack/react-router";
+import {
+	Bell,
+	BookOpen,
+	ChevronRight,
+	FileText,
+	Gift,
+	HelpCircle,
+	Home,
+	LayoutTemplate,
+	LogOut,
+	Map,
+	MessageSquare,
+	MoreHorizontal,
+	Pencil,
+	Plus,
+	Search,
+	Settings,
+	Sparkles,
+	Trash2,
+	Users,
+} from "lucide-react";
+import type * as React from "react";
+import { useEffect, useMemo, useState } from "react";
+import { OrganizationSwitcher } from "@/components/org/org-switcher";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -39,8 +71,8 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { Input } from "@/components/ui/input";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import {
@@ -71,39 +103,7 @@ import {
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useForm, useForms, useWorkspaces } from "@/hooks/use-live-hooks";
 import { auth, useSession } from "@/lib/auth-client";
-import { OrganizationSwitcher } from "@/components/org/org-switcher";
 import { authMiddleware } from "@/middleware/auth";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-	createFileRoute,
-	Link,
-	Outlet,
-	useLocation,
-	useRouter,
-} from "@tanstack/react-router";
-import {
-	Bell,
-	BookOpen,
-	ChevronRight,
-	FileText,
-	Gift,
-	HelpCircle,
-	Home,
-	LayoutTemplate,
-	LogOut,
-	Map,
-	MessageSquare,
-	MoreHorizontal,
-	Pencil,
-	Plus,
-	Search,
-	Settings,
-	Sparkles,
-	Trash2,
-	Users,
-} from "lucide-react";
-import type * as React from "react";
-import { useEffect, useMemo, useState } from "react";
 
 // Route configuration
 export const Route = createFileRoute("/_authenticated")({
@@ -120,9 +120,9 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthLayout() {
 	return (
 		<SidebarProvider defaultOpen={true}>
-			<div className="flex min-h-screen w-full">
+			<div className="flex min-h-screen w-full overflow-hidden">
 				<AppSidebar />
-				<SidebarInset className="flex flex-col flex-1 min-h-screen">
+				<SidebarInset className="flex flex-col flex-1 min-h-screen min-w-0">
 					<Outlet />
 				</SidebarInset>
 			</div>
@@ -325,7 +325,6 @@ function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 											}
 										}}
 									>
-										{/* @ts-ignore */}
 										<Link to={item.url}>
 											<item.icon />
 											<span>{item.title}</span>
@@ -601,16 +600,14 @@ function SidebarWorkspaces({ activeOrgId }: { activeOrgId?: string }) {
 				</SidebarGroupAction>
 				<SidebarMenu>
 					{isLoading ? (
-						<>
-							{[1, 2].map((i) => (
-								<SidebarMenuItem key={i}>
-									<div className="flex items-center gap-2 px-2 py-1.5">
-										<div className="h-4 w-4 rounded bg-sidebar-accent animate-pulse" />
-										<div className="h-4 flex-1 rounded bg-sidebar-accent animate-pulse" />
-									</div>
-								</SidebarMenuItem>
-							))}
-						</>
+						[1, 2].map((i) => (
+							<SidebarMenuItem key={i}>
+								<div className="flex items-center gap-2 px-2 py-1.5">
+									<div className="h-4 w-4 rounded bg-sidebar-accent animate-pulse" />
+									<div className="h-4 flex-1 rounded bg-sidebar-accent animate-pulse" />
+								</div>
+							</SidebarMenuItem>
+						))
 					) : (
 						<>
 							{workspaces.map((workspace) => (

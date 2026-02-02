@@ -7,8 +7,6 @@ import * as z from "zod";
 import { AppHeader } from "@/components/ui/app-header";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
-import Loader from "@/components/ui/loader";
-import { NotFound } from "@/components/ui/not-found";
 import { Input } from "@/components/ui/input";
 import {
 	InputOTP,
@@ -17,10 +15,12 @@ import {
 	InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { auth, useSession } from "@/lib/auth-client";
 import { authMiddleware } from "@/middleware/auth";
-import { SidebarProvider } from "@/components/ui/sidebar";
 
 const otpSchema = z.object({
 	otp: z.string().length(6, "OTP must be 6 digits"),
@@ -157,7 +157,9 @@ function VerifyEmailPage() {
 												{email}
 											</span>
 											<Button
-												onClick={() => setEditingEmail(session?.user.email ?? "")}
+												onClick={() =>
+													setEditingEmail(session?.user.email ?? "")
+												}
 												variant="outline"
 												title="Edit email"
 											>

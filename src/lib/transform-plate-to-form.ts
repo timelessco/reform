@@ -262,8 +262,11 @@ export function transformPlateStateToFormElements(
 					i++; // Skip the formInput/formTextarea in the next iteration
 				}
 
+				// Use Plate.js element ID as stable field name (doesn't change when fields are reordered)
+				const stableId = (node as { id?: string }).id;
 				const baseName = slugify(labelText);
-				const name = `${baseName}_${fieldIndex}`;
+				// Fallback to position-based name for backward compatibility with old content
+				const name = stableId || `${baseName}_${fieldIndex}`;
 
 				elements.push({
 					id: name,

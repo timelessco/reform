@@ -14,6 +14,7 @@ import { Route as CreateRouteImport } from './routes/create'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FormsFormIdRouteImport } from './routes/forms/$formId'
+import { Route as DemoSplatRouteImport } from './routes/demo.$'
 import { Route as ApiElectricRouteImport } from './routes/api/electric'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAcceptInviteRouteImport } from './routes/_authenticated/accept-invite'
@@ -58,6 +59,11 @@ const IndexRoute = IndexRouteImport.update({
 const FormsFormIdRoute = FormsFormIdRouteImport.update({
   id: '/forms/$formId',
   path: '/forms/$formId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoSplatRoute = DemoSplatRouteImport.update({
+  id: '/demo/$',
+  path: '/demo/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiElectricRoute = ApiElectricRouteImport.update({
@@ -203,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/accept-invite': typeof AuthenticatedAcceptInviteRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/electric': typeof ApiElectricRoute
+  '/demo/$': typeof DemoSplatRoute
   '/forms/$formId': typeof FormsFormIdRoute
   '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -229,6 +236,7 @@ export interface FileRoutesByTo {
   '/accept-invite': typeof AuthenticatedAcceptInviteRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/electric': typeof ApiElectricRoute
+  '/demo/$': typeof DemoSplatRoute
   '/forms/$formId': typeof FormsFormIdRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
@@ -256,6 +264,7 @@ export interface FileRoutesById {
   '/_authenticated/accept-invite': typeof AuthenticatedAcceptInviteRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/api/electric': typeof ApiElectricRoute
+  '/demo/$': typeof DemoSplatRoute
   '/forms/$formId': typeof FormsFormIdRoute
   '/_authenticated/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -285,6 +294,7 @@ export interface FileRouteTypes {
     | '/accept-invite'
     | '/dashboard'
     | '/api/electric'
+    | '/demo/$'
     | '/forms/$formId'
     | '/workspace/$workspaceId'
     | '/settings/api-keys'
@@ -311,6 +321,7 @@ export interface FileRouteTypes {
     | '/accept-invite'
     | '/dashboard'
     | '/api/electric'
+    | '/demo/$'
     | '/forms/$formId'
     | '/settings/api-keys'
     | '/settings/billing'
@@ -337,6 +348,7 @@ export interface FileRouteTypes {
     | '/_authenticated/accept-invite'
     | '/_authenticated/dashboard'
     | '/api/electric'
+    | '/demo/$'
     | '/forms/$formId'
     | '/_authenticated/workspace/$workspaceId'
     | '/_authenticated/settings/api-keys'
@@ -363,6 +375,7 @@ export interface RootRouteChildren {
   CreateRoute: typeof CreateRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   ApiElectricRoute: typeof ApiElectricRoute
+  DemoSplatRoute: typeof DemoSplatRoute
   FormsFormIdRoute: typeof FormsFormIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -402,6 +415,13 @@ declare module '@tanstack/react-router' {
       path: '/forms/$formId'
       fullPath: '/forms/$formId'
       preLoaderRoute: typeof FormsFormIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/$': {
+      id: '/demo/$'
+      path: '/demo/$'
+      fullPath: '/demo/$'
+      preLoaderRoute: typeof DemoSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/electric': {
@@ -655,6 +675,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreateRoute: CreateRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   ApiElectricRoute: ApiElectricRoute,
+  DemoSplatRoute: DemoSplatRoute,
   FormsFormIdRoute: FormsFormIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }

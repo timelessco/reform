@@ -1,10 +1,10 @@
-import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
-import { createPublicSubmission } from "@/lib/fn/public";
-import { cn } from "@/lib/utils";
 import { FileQuestion, Lock } from "lucide-react";
 import type { Value } from "platejs";
 import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
+import { createPublicSubmission } from "@/lib/fn/public";
+import { cn } from "@/lib/utils";
 
 interface PublicForm {
 	id: string;
@@ -35,10 +35,7 @@ function sendToParent(event: string, payload?: Record<string, unknown>): void {
 	if (typeof window === "undefined" || window.parent === window) return;
 
 	try {
-		window.parent.postMessage(
-			JSON.stringify({ event, ...payload }),
-			"*"
-		);
+		window.parent.postMessage(JSON.stringify({ event, ...payload }), "*");
 	} catch (e) {
 		console.error("[BetterForms] Failed to send message to parent:", e);
 	}
@@ -115,7 +112,8 @@ export function PublicFormPage({
 
 	// Setup popup mode communication
 	useEffect(() => {
-		if (!isPopup || typeof window === "undefined" || window.parent === window) return;
+		if (!isPopup || typeof window === "undefined" || window.parent === window)
+			return;
 
 		// Notify parent that form has loaded
 		sendToParent("BetterForms.FormLoaded", { formId });
@@ -216,8 +214,8 @@ export function PublicFormPage({
 			<FormPreviewFromPlate
 				content={form.content as Value}
 				title={hideTitle ? undefined : form.title}
-				icon={hideTitle ? undefined : form.icon ?? undefined}
-				cover={hideTitle ? undefined : form.cover ?? undefined}
+				icon={hideTitle ? undefined : (form.icon ?? undefined)}
+				cover={hideTitle ? undefined : (form.cover ?? undefined)}
 				onSubmit={handleSubmit}
 				hideTitle={hideTitle}
 			/>

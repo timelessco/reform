@@ -1,8 +1,8 @@
 import { revalidateLogic } from "@tanstack/react-form";
-import { X, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, X } from "lucide-react";
 import type * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -12,13 +12,13 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { useCustomizeSidebar } from "@/hooks/use-customize-sidebar";
-import { cn } from "@/lib/utils";
-import { customizeFormSchema } from "@/lib/customize-form-schema";
+import { Separator } from "@/components/ui/separator";
 import { useAppForm } from "@/components/ui/tanstack-form";
-import { ColorPicker } from "@/components/ui/color-picker";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Textarea } from "@/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useCustomizeSidebar } from "@/hooks/use-customize-sidebar";
+import { customizeFormSchema } from "@/lib/customize-form-schema";
+import { cn } from "@/lib/utils";
 
 export function CustomizeSidebar() {
 	const { isOpen, setIsOpen } = useCustomizeSidebar();

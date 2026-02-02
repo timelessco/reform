@@ -1,5 +1,3 @@
-import { AppHeader } from "@/components/ui/app-header";
-import { getFormbyIdQueryOption } from "@/lib/fn/forms";
 import {
 	createFileRoute,
 	Link,
@@ -7,21 +5,22 @@ import {
 	useLocation,
 } from "@tanstack/react-router";
 import { z } from "zod";
-import { cn } from "@/lib/utils";
-import { useForm, useWorkspace } from "@/hooks/use-live-hooks";
-import { ClientOnly } from "@/components/client-only";
+import { AppHeader } from "@/components/ui/app-header";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
+import { useForm, useWorkspace } from "@/hooks/use-live-hooks";
+import { getFormbyIdQueryOption } from "@/lib/fn/forms";
+import { cn } from "@/lib/utils";
 
 // Client-only component for displaying form title from local DB
-function FormTitleDisplay({ formId }: { formId: string }) {
+function _FormTitleDisplay({ formId }: { formId: string }) {
 	const { data: savedDocs } = useForm(formId);
 	return <>{savedDocs?.[0]?.title || "Untitled Form"}</>;
 }
 
 // Client-only component for displaying workspace name from local DB
-function WorkspaceNameDisplay({ workspaceId }: { workspaceId: string }) {
+function _WorkspaceNameDisplay({ workspaceId }: { workspaceId: string }) {
 	const { data: workspace } = useWorkspace(workspaceId);
 	return <>{workspace?.name || "Workspace"}</>;
 }
@@ -42,7 +41,7 @@ export const Route = createFileRoute(
 			return {
 				initialContent: result.form.content as any[],
 			};
-		} catch (error) {
+		} catch (_error) {
 			return {
 				initialContent: [],
 			};
@@ -122,7 +121,7 @@ function FormLayout() {
 				</div>
 
 				{/* Page Content */}
-				<main className="flex-1 overflow-auto relative">
+				<main className="flex-1 min-h-0 min-w-0 overflow-hidden relative">
 					<Outlet />
 				</main>
 			</div>

@@ -13,9 +13,9 @@ import {
 	InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
+import { formCollection } from "@/db-collections";
 import { auth } from "@/lib/auth-client";
 import { syncLocalDataToCloud } from "@/lib/sync";
-import { formCollection } from "@/db-collections";
 
 const signUpSchema = z.object({
 	username: z

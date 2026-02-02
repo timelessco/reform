@@ -1,8 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ErrorBoundary } from "@/components/ui/error-boundary";
-import Loader from "@/components/ui/loader";
-import { NotFound } from "@/components/ui/not-found";
 import { formatDistanceToNow } from "date-fns";
 import {
 	ChevronLeft,
@@ -29,6 +26,9 @@ import {
 import { AppHeader } from "@/components/ui/app-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 import {
 	Tooltip,
 	TooltipContent,
@@ -61,7 +61,6 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 				revalidateIfStale: true,
 			}),
 		]);
-		console.log(workspacesData, "workspaceData");
 		return {
 			activeOrg,
 			orgsData,

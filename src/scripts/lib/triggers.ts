@@ -3,7 +3,7 @@
  * Handles click events on data-form-id elements and URL hash triggers
  */
 
-import type { PopupOptions, EmojiAnimation } from "./types";
+import type { EmojiAnimation, PopupOptions } from "./types";
 
 export type OpenPopupCallback = (formId: string, options: PopupOptions) => void;
 
@@ -21,7 +21,11 @@ function parseDataAttributes(element: HTMLElement): PopupOptions {
 
 	// Position
 	const position = element.dataset.position;
-	if (position === "bottom-right" || position === "bottom-left" || position === "center") {
+	if (
+		position === "bottom-right" ||
+		position === "bottom-left" ||
+		position === "center"
+	) {
 		options.position = position;
 	}
 
@@ -44,7 +48,9 @@ function parseDataAttributes(element: HTMLElement): PopupOptions {
 
 	// Emoji
 	const emojiText = element.dataset.emojiText;
-	const emojiAnimation = element.dataset.emojiAnimation as EmojiAnimation | undefined;
+	const emojiAnimation = element.dataset.emojiAnimation as
+		| EmojiAnimation
+		| undefined;
 	if (emojiText) {
 		options.emoji = {
 			text: emojiText,
@@ -93,7 +99,10 @@ function parseDataAttributes(element: HTMLElement): PopupOptions {
  * Parse options from URL hash parameters
  * Format: #form-open=formId&align-left=1&hide-title=1&overlay=1&emoji-text=👋&emoji-animation=wave&auto-close=5000
  */
-export function parseHashParams(hash: string): { formId: string | null; options: PopupOptions } {
+export function parseHashParams(hash: string): {
+	formId: string | null;
+	options: PopupOptions;
+} {
 	const params = new URLSearchParams(hash.replace(/^#/, ""));
 	const formId = params.get("form-open");
 	const options: PopupOptions = {};
@@ -195,7 +204,7 @@ export function setupClickTriggers(openPopup: OpenPopupCallback): void {
  */
 export function checkHashTrigger(openPopup: OpenPopupCallback): void {
 	const { hash } = window.location;
-	if (hash && hash.includes("form-open=")) {
+	if (hash?.includes("form-open=")) {
 		const { formId, options } = parseHashParams(hash);
 		if (formId) {
 			// Small delay to ensure DOM is ready
@@ -212,7 +221,7 @@ export function checkHashTrigger(openPopup: OpenPopupCallback): void {
 export function setupHashChangeListener(openPopup: OpenPopupCallback): void {
 	window.addEventListener("hashchange", () => {
 		const { hash } = window.location;
-		if (hash && hash.includes("form-open=")) {
+		if (hash?.includes("form-open=")) {
 			const { formId, options } = parseHashParams(hash);
 			if (formId) {
 				openPopup(formId, options);
