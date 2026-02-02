@@ -17,6 +17,8 @@ interface RenderPreviewInputProps {
 	navigation?: NavigationHandlers;
 	/** When true, renders button without wrapper div (for button groups) */
 	grouped?: boolean;
+	/** When true, form has multiple pages/steps - affects button alignment */
+	isMultiPage?: boolean;
 }
 
 /**
@@ -54,6 +56,7 @@ export function RenderPreviewInput({
 	form,
 	navigation,
 	grouped = false,
+	isMultiPage = false,
 }: RenderPreviewInputProps) {
 	// Handle Button field type
 	if (field.fieldType === "Button") {
@@ -118,11 +121,13 @@ export function RenderPreviewInput({
 				<ChevronRight className="h-4 w-4" />
 			</Button>
 		);
-		// When grouped, parent handles layout; otherwise wrap with justify-end
+		// When grouped, parent handles layout; single-page aligns left, multi-page aligns right
 		return grouped ? (
 			submitButton
 		) : (
-			<div className="flex justify-end">{submitButton}</div>
+			<div className={`flex ${isMultiPage ? "justify-end" : "justify-start"}`}>
+				{submitButton}
+			</div>
 		);
 	}
 

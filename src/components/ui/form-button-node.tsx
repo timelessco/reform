@@ -1,8 +1,23 @@
 import { ChevronLeft, ChevronRight, Settings } from "lucide-react";
 import type { PlateElementProps } from "platejs/react";
+import type { PlateEditor } from "platejs/react";
 import { PlateElement, useEditorRef } from "platejs/react";
 import * as React from "react";
 import { cn } from "@/lib/utils";
+
+/**
+ * Checks if the editor contains any pageBreak elements (multi-page form)
+ */
+function hasPageBreaks(editor: PlateEditor): boolean {
+	return editor.children.some(
+		(node) =>
+			(node as { type?: string }).type === "pageBreak" ||
+			(Array.isArray((node as { children?: unknown[] }).children) &&
+				(node as { children: Array<{ type?: string }> }).children.some(
+					(child) => child.type === "pageBreak",
+				)),
+	);
+}
 import {
 	Popover,
 	PopoverContent,
@@ -66,6 +81,9 @@ export function FormButtonElement({
 	const placeholder = getPlaceholderForRole(buttonRole);
 
 	const isPrevious = buttonRole === "previous";
+	const isMultiPage = hasPageBreaks(editor);
+	// Submit button floats left for single-page forms, right for multi-page
+	const isSubmitOnSinglePage = buttonRole === "submit" && !isMultiPage;
 	const [isOpen, setIsOpen] = React.useState(false);
 
 	// Get label from element property (fallback to children for backwards compat)
@@ -154,8 +172,10 @@ export function FormButtonElement({
 		<PlateElement
 			className={cn(
 				"m-0 px-0 py-1",
-				// Previous floats left, Next/Submit floats right
-				isPrevious ? "float-left clear-none" : "float-right clear-none",
+				// Previous floats left, Submit on single-page floats left, otherwise floats right
+				isPrevious || isSubmitOnSinglePage
+					? "float-left clear-none"
+					: "float-right clear-none",
 				className,
 			)}
 			{...props}
@@ -171,8 +191,8 @@ export function FormButtonElement({
 					e.stopPropagation();
 				}}
 			>
-				{/* Gear icon on left for Next/Submit (so button touches right edge) */}
-				{!isPrevious && GearIcon}
+				{/* Gear icon on left when button floats right (so button touches right edge) */}
+				{!(isPrevious || isSubmitOnSinglePage) && GearIcon}
 				<span
 					className={cn(
 						"inline-flex h-9 min-w-[100px] items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium shadow transition-colors cursor-default select-none",
@@ -185,8 +205,8 @@ export function FormButtonElement({
 					<span>{displayText}</span>
 					{buttonRole === "next" && <ChevronRight className="h-4 w-4" />}
 				</span>
-				{/* Gear icon on right for Previous (so button touches left edge) */}
-				{isPrevious && GearIcon}
+				{/* Gear icon on right when button floats left (so button touches left edge) */}
+				{(isPrevious || isSubmitOnSinglePage) && GearIcon}
 			</div>
 		</PlateElement>
 	);

@@ -3,9 +3,8 @@ import { createPublicSubmission } from "@/lib/fn/public";
 import { cn } from "@/lib/utils";
 import { FileQuestion, Lock } from "lucide-react";
 import type { Value } from "platejs";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { ThankYouPage } from "./thank-you-page";
 
 interface PublicForm {
 	id: string;
@@ -96,8 +95,6 @@ export function PublicFormPage({
 	hideTitle = false,
 	alignLeft = false,
 }: PublicFormPageProps) {
-	const [isSubmitted, setIsSubmitted] = useState(false);
-	const [currentPage, setCurrentPage] = useState(1);
 	const containerRef = useRef<HTMLDivElement>(null);
 
 	// Handle body/html transparency for iframes
@@ -163,13 +160,6 @@ export function PublicFormPage({
 		};
 	}, [isPopup, formId]);
 
-	// Notify parent on page changes (multi-step forms)
-	useEffect(() => {
-		if (isPopup && currentPage > 0) {
-			sendToParent("BetterForms.PageView", { formId, page: currentPage });
-		}
-	}, [isPopup, currentPage, formId]);
-
 	const handleSubmit = useCallback(
 		async (values: Record<string, any>) => {
 			try {
@@ -180,7 +170,6 @@ export function PublicFormPage({
 						isCompleted: true,
 					},
 				});
-				setIsSubmitted(true);
 
 				// Notify parent of submission (for popup embeds)
 				if (isPopup) {
@@ -202,11 +191,6 @@ export function PublicFormPage({
 		[formId, isPopup, form?.title],
 	);
 
-	const handleSubmitAnother = useCallback(() => {
-		setIsSubmitted(false);
-		setCurrentPage(1);
-	}, []);
-
 	// Handle error states
 	if (error === "not_found" || !form) {
 		return <FormNotFound />;
@@ -217,17 +201,7 @@ export function PublicFormPage({
 		return <FormNotPublished />;
 	}
 
-	// Show thank you page after successful submission
-	if (isSubmitted) {
-		return (
-			<ThankYouPage
-				formTitle={form.title}
-				onSubmitAnother={handleSubmitAnother}
-			/>
-		);
-	}
-
-	// Render the form
+	// Render the form - FormPreviewFromPlate handles thank you page via StepFormContext
 	return (
 		<div
 			ref={containerRef}

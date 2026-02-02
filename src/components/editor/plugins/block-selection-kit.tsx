@@ -15,7 +15,6 @@ export const BlockSelectionKit = [
 					KEYS.td,
 					"formHeader",
 					"formButton",
-					"pageBreak",
 				]).includes(element.type),
 			onKeyDownSelecting: (editor, e) => {
 				if (isHotkey("mod+j")(e)) {

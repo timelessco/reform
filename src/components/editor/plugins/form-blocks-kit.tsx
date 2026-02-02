@@ -921,7 +921,7 @@ export const PageBreakPlugin = createPlatePlugin({
 	node: {
 		isElement: true,
 		isVoid: true,
-		isSelectable: false,
+		isSelectable: true,
 		component: PageBreakElement,
 	},
 	handlers: {

@@ -194,6 +194,8 @@ function RenderStepButton({
 	onPrevious?: () => void;
 	grouped?: boolean;
 }) {
+	const { totalSteps } = useStepForm();
+	const isSinglePage = totalSteps === 1;
 	const buttonRole = field.buttonRole || "submit";
 	const buttonText =
 		field.buttonText ||
@@ -252,6 +254,8 @@ function RenderStepButton({
 	return grouped ? (
 		submitButton
 	) : (
-		<div className="flex justify-end">{submitButton}</div>
+		<div className={`flex ${isSinglePage ? "justify-start" : "justify-end"}`}>
+			{submitButton}
+		</div>
 	);
 }
