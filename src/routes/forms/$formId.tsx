@@ -44,6 +44,8 @@ export const Route = createFileRoute("/forms/$formId")({
 		alignLeft: z.coerce.boolean().optional().default(false),
 		// Origin page for tracking
 		originPage: z.string().optional(),
+		// Dynamic height for standard iframe embeds
+		dynamicHeight: z.coerce.boolean().optional().default(false),
 	}),
 });
 
@@ -65,6 +67,7 @@ function PublicFormRoute() {
 			isPopup={search.popup}
 			hideTitle={search.hideTitle}
 			alignLeft={search.alignLeft}
+			dynamicHeight={search.dynamicHeight}
 		/>
 	);
 }

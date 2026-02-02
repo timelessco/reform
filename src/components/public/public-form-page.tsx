@@ -26,6 +26,8 @@ interface PublicFormPageProps {
 	hideTitle?: boolean;
 	/** Align form content to the left */
 	alignLeft?: boolean;
+	/** Enable dynamic height communication for standard iframe embeds */
+	dynamicHeight?: boolean;
 }
 
 /**
@@ -91,6 +93,7 @@ export function PublicFormPage({
 	isPopup = false,
 	hideTitle = false,
 	alignLeft = false,
+	dynamicHeight = false,
 }: PublicFormPageProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 
@@ -110,9 +113,13 @@ export function PublicFormPage({
 		}
 	}, [transparentBackground, isPopup]);
 
-	// Setup popup mode communication
+	// Setup height communication for popup embeds and standard embeds with dynamicHeight
 	useEffect(() => {
-		if (!isPopup || typeof window === "undefined" || window.parent === window)
+		if (
+			(!isPopup && !dynamicHeight) ||
+			typeof window === "undefined" ||
+			window.parent === window
+		)
 			return;
 
 		// Notify parent that form has loaded
@@ -156,7 +163,7 @@ export function PublicFormPage({
 			resizeObserver.disconnect();
 			if (resizeTimeout) clearTimeout(resizeTimeout);
 		};
-	}, [isPopup, formId]);
+	}, [isPopup, dynamicHeight, formId]);
 
 	const handleSubmit = useCallback(
 		async (values: Record<string, any>) => {

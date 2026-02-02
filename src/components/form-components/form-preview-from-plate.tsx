@@ -320,7 +320,7 @@ function PreviewFormHeader({
 			// Render as solid color background
 			return (
 				<div
-					className="w-full h-[200px] sm:h-[300px]"
+					className="w-full h-[120px] sm:h-[200px] md:h-[280px]"
 					style={{ backgroundColor: cover }}
 				/>
 			);
@@ -329,7 +329,7 @@ function PreviewFormHeader({
 		if (isValidUrl(cover) && !imageError) {
 			// Render as image
 			return (
-				<div className="w-full h-[200px] sm:h-[300px] overflow-hidden bg-muted">
+				<div className="w-full h-[120px] sm:h-[200px] md:h-[280px] overflow-hidden bg-muted">
 					<img
 						src={cover}
 						alt="Form cover"
@@ -350,7 +350,9 @@ function PreviewFormHeader({
 		// Handle 'default-icon' - render hexagon
 		if (icon === "default-icon") {
 			return (
-				<div className={hasCover ? "-mt-[40px] relative z-10 px-3" : ""}>
+				<div
+					className={hasCover ? "-mt-[28px] sm:-mt-[40px] relative z-10 px-3" : ""}
+				>
 					<DefaultIcon />
 				</div>
 			);
@@ -359,9 +361,11 @@ function PreviewFormHeader({
 		// Handle emoji
 		if (isEmoji(icon)) {
 			return (
-				<div className={hasCover ? "-mt-[40px] relative z-10" : ""}>
+				<div
+					className={hasCover ? "-mt-[28px] sm:-mt-[40px] relative z-10" : ""}
+				>
 					<span
-						className="text-6xl sm:text-7xl block bg-background rounded-full leading-none p-2 w-fit h-fit"
+						className="text-5xl sm:text-6xl md:text-7xl block bg-background rounded-full leading-none p-1.5 sm:p-2 w-fit h-fit"
 						role="img"
 						aria-label="Form icon"
 					>
@@ -374,8 +378,10 @@ function PreviewFormHeader({
 		// Handle image URL
 		if (isValidUrl(icon) && !iconError) {
 			return (
-				<div className={hasCover ? "-mt-[40px] relative z-10" : ""}>
-					<div className="w-[80px] h-[80px] rounded-full overflow-hidden shadow-sm bg-background p-1">
+				<div
+					className={hasCover ? "-mt-[28px] sm:-mt-[40px] relative z-10" : ""}
+				>
+					<div className="w-[56px] h-[56px] sm:w-[72px] sm:h-[72px] md:w-[80px] md:h-[80px] rounded-full overflow-hidden shadow-sm bg-background p-1">
 						<img
 							src={icon}
 							alt="Form icon"
@@ -391,7 +397,7 @@ function PreviewFormHeader({
 	};
 
 	return (
-		<div className="mb-8 w-full">
+		<div className="mb-4 sm:mb-8 w-full">
 			{hasCover && renderCover()}
 
 			<div className="max-w-2xl mx-auto px-4 sm:px-0 relative">
@@ -399,7 +405,7 @@ function PreviewFormHeader({
 					{hasIcon && renderIcon()}
 					{hasTitle && (
 						<h1
-							className={`text-3xl font-bold px-3 ${hasIcon ? "mt-4" : "mt-8"}`}
+							className={`text-2xl sm:text-3xl font-bold px-3 ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
 						>
 							{title}
 						</h1>

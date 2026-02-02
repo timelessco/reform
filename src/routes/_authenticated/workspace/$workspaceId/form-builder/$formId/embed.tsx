@@ -115,6 +115,7 @@ function EmbedPage() {
 		if (options.transparentBackground) params.append("transparent", "true");
 		if (options.alignLeft) params.append("align", "left");
 		if (!options.branding) params.append("branding", "false");
+		if (options.dynamicHeight) params.append("dynamicHeight", "true");
 		const queryString = params.toString();
 		return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 	}, [formId, options]);
@@ -122,6 +123,10 @@ function EmbedPage() {
 	const embedCode = useMemo(() => {
 		if (embedType === "standard") {
 			const baseUrl = `${window.location.origin}/widgets/embed.js`;
+			// PostMessage listener for dynamic height - updates iframe when form sends resize events
+			const dynamicHeightScript = options.dynamicHeight
+				? `window.addEventListener("message",function(e){try{var d=JSON.parse(e.data);if(d.event==="BetterForms.Resize"){var f=document.querySelector('iframe[data-better-forms-src]');if(f&&typeof d.height==="number")f.style.height=d.height+"px"}}catch{}});`
+				: "";
 			return `<iframe
   data-better-forms-src="${embedUrl}"
   loading="lazy"
@@ -132,7 +137,7 @@ function EmbedPage() {
   marginwidth="0"
   title="${doc?.title || "Form"}"
 ></iframe>
-<script>var d=document,w="${baseUrl}",v=function(){"undefined"!=typeof BetterForms?BetterForms.loadEmbeds():d.querySelectorAll("iframe[data-better-forms-src]:not([src])").forEach((function(e){e.src=e.dataset.betterFormsSrc}))};if("undefined"!=typeof BetterForms)v();else if(d.querySelector('script[src="'+w+'"]')==null){var s=d.createElement("script");s.src=w,s.onload=v,s.onerror=v,d.body.appendChild(s);}</script>`;
+<script>${dynamicHeightScript}var d=document,w="${baseUrl}",v=function(){"undefined"!=typeof BetterForms?BetterForms.loadEmbeds():d.querySelectorAll("iframe[data-better-forms-src]:not([src])").forEach((function(e){e.src=e.dataset.betterFormsSrc}))};if("undefined"!=typeof BetterForms)v();else if(d.querySelector('script[src="'+w+'"]')==null){var s=d.createElement("script");s.src=w,s.onload=v,s.onerror=v,d.body.appendChild(s);}</script>`;
 		}
 
 		if (embedType === "popup") {
