@@ -2,6 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 import { Label } from "@/components/ui/label";
 import {
 	Select,
@@ -19,6 +22,9 @@ export const Route = createFileRoute(
 	"/_authenticated/workspace/$workspaceId/form-builder/$formId/settings",
 )({
 	component: SettingsPage,
+	pendingComponent: Loader,
+	errorComponent: ErrorBoundary,
+	notFoundComponent: NotFound,
 });
 
 function SettingsPage() {

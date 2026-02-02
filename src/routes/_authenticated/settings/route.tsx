@@ -1,9 +1,15 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 
 export const Route = createFileRoute("/_authenticated/settings")({
 	component: SettingsLayout,
+	pendingComponent: Loader,
+	errorComponent: ErrorBoundary,
+	notFoundComponent: NotFound,
 });
 
 function SettingsLayout() {

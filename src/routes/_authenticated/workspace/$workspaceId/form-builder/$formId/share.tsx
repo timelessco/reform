@@ -1,5 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 import { Input } from "@/components/ui/input";
 import { updateFormStatus } from "@/db-collections";
 import { useForm } from "@/hooks/use-live-hooks";
@@ -12,6 +15,9 @@ export const Route = createFileRoute(
 	"/_authenticated/workspace/$workspaceId/form-builder/$formId/share",
 )({
 	component: SharePage,
+	pendingComponent: Loader,
+	errorComponent: ErrorBoundary,
+	notFoundComponent: NotFound,
 });
 
 function SharePage() {

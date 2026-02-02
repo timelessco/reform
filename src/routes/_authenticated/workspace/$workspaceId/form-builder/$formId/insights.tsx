@@ -14,11 +14,17 @@ import {
 	Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 
 export const Route = createFileRoute(
 	"/_authenticated/workspace/$workspaceId/form-builder/$formId/insights",
 )({
 	component: InsightsPage,
+	pendingComponent: Loader,
+	errorComponent: ErrorBoundary,
+	notFoundComponent: NotFound,
 });
 
 function InsightsPage() {

@@ -6,6 +6,9 @@ import { toast } from "sonner";
 import * as z from "zod";
 import { AppHeader } from "@/components/ui/app-header";
 import { Button } from "@/components/ui/button";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 import { Input } from "@/components/ui/input";
 import {
 	InputOTP,
@@ -28,6 +31,9 @@ export const Route = createFileRoute("/verify-email")({
 		middleware: [authMiddleware],
 	},
 	component: VerifyEmailPage,
+	pendingComponent: Loader,
+	errorComponent: ErrorBoundary,
+	notFoundComponent: NotFound,
 });
 
 function VerifyEmailPage() {

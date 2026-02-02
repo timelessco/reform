@@ -56,9 +56,15 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { auth, useSession } from "@/lib/auth-client";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 
 export const Route = createFileRoute("/_authenticated/settings/api-keys")({
 	component: APIKeysPage,
+	pendingComponent: Loader,
+	errorComponent: ErrorBoundary,
+	notFoundComponent: NotFound,
 });
 
 function APIKeysPage() {

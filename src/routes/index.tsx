@@ -1,5 +1,8 @@
 import { AppHeader } from "@/components/ui/app-header";
 import { Button } from "@/components/ui/button";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 import { useSession } from "@/lib/auth-client";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { guestMiddleware } from "@/middleware/auth";
@@ -10,6 +13,9 @@ export const Route = createFileRoute("/")({
 		middleware: [guestMiddleware],
 	},
 	component: LandingPage,
+	pendingComponent: Loader,
+	errorComponent: ErrorBoundary,
+	notFoundComponent: NotFound,
 });
 
 function LandingPage() {

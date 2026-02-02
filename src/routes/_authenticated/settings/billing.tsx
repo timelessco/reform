@@ -9,10 +9,16 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 import { auth, authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_authenticated/settings/billing")({
 	component: BillingPage,
+	pendingComponent: Loader,
+	errorComponent: ErrorBoundary,
+	notFoundComponent: NotFound,
 });
 
 function BillingPage() {

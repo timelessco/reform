@@ -10,6 +10,9 @@ import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { useForm, useWorkspace } from "@/hooks/use-live-hooks";
 import { ClientOnly } from "@/components/client-only";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 
 // Client-only component for displaying form title from local DB
 function FormTitleDisplay({ formId }: { formId: string }) {
@@ -48,6 +51,9 @@ export const Route = createFileRoute(
 	staleTime: 0,
 	component: FormLayout,
 	ssr: false,
+	pendingComponent: Loader,
+	errorComponent: ErrorBoundary,
+	notFoundComponent: NotFound,
 });
 
 function FormLayout() {

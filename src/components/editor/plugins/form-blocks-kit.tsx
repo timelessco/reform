@@ -294,6 +294,7 @@ function handleFormBlockKeyDown(
 export const FormLabelPlugin = createPlatePlugin({
 	key: "formLabel",
 	node: { isElement: true, component: FormLabelElement },
+	options: { gutterPosition: "center" },
 	handlers: {
 		onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
 	},
@@ -302,6 +303,7 @@ export const FormLabelPlugin = createPlatePlugin({
 export const FormInputPlugin = createPlatePlugin({
 	key: "formInput",
 	node: { isElement: true, component: FormInputElement },
+	options: { gutterPosition: "center" },
 	handlers: {
 		onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
 	},
@@ -707,7 +709,17 @@ export const FormButtonPlugin = createPlatePlugin({
 						}
 
 						if (isThankYouSection) {
+							// First, remove any buttons from thank you section
+							for (let j = pageEndIndex - 1; j >= pageStartIndex; j--) {
+								const n = getChildren()[j];
+								if (n?.type === "formButton") {
+									originalRemoveNodes({ at: [j] });
+									return; // Restart normalization
+								}
+							}
+
 							// Check if form fields exist in this thank you section
+							// (excluding buttons - they should already be removed above)
 							let hasFormFields = false;
 							for (let j = pageStartIndex; j < pageEndIndex; j++) {
 								const n = getChildren()[j];
@@ -721,7 +733,6 @@ export const FormButtonPlugin = createPlatePlugin({
 										"formCheckbox",
 										"formSelect",
 										"formDatePicker",
-										"formButton",
 									].includes(n.type)
 								) {
 									hasFormFields = true;
@@ -899,6 +910,7 @@ export const FormButtonPlugin = createPlatePlugin({
 export const FormTextareaPlugin = createPlatePlugin({
 	key: "formTextarea",
 	node: { isElement: true, component: FormTextareaElement },
+	options: { gutterPosition: "top" },
 	handlers: {
 		onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
 	},

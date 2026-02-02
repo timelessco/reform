@@ -14,6 +14,9 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 import { Input } from "@/components/ui/input";
 import {
 	InputOTP,
@@ -24,6 +27,9 @@ import { auth, useSession } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_authenticated/settings/my-account")({
 	component: MyAccountPage,
+	pendingComponent: Loader,
+	errorComponent: ErrorBoundary,
+	notFoundComponent: NotFound,
 });
 
 function MyAccountPage() {

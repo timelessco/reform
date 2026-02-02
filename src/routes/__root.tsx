@@ -1,3 +1,6 @@
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { Toaster } from "@/components/ui/sonner";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import {
@@ -6,12 +9,12 @@ import {
 	Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
-import { Toaster } from "@/components/ui/sonner";
+import { Agentation } from "agentation";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import type { Session } from "../lib/auth";
 import { sessionMiddleware } from "../middleware/auth";
 import appCss from "../styles.css?url";
-import { Agentation } from "agentation";
+import { NotFound } from "@/components/ui/not-found";
 
 interface MyRouterContext {
 	queryClient: QueryClient;
@@ -44,6 +47,9 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	server: {
 		middleware: [sessionMiddleware],
 	},
+	pendingComponent: Loader,
+	errorComponent: ErrorBoundary,
+	notFoundComponent: NotFound,
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {

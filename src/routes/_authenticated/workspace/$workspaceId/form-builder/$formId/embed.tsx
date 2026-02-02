@@ -1,6 +1,11 @@
+import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 import {
 	Select,
 	SelectContent,
@@ -9,30 +14,28 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { useForm } from "@/hooks/use-live-hooks";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-	Code,
-	Copy,
-	HelpCircle,
-	X,
-	Check,
-	Sparkles,
-	Eye,
-	ChevronDown,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useState, useMemo } from "react";
-import { toast } from "sonner";
-import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
-import type { Value } from "platejs";
-import { Badge } from "@/components/ui/badge";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useForm } from "@/hooks/use-live-hooks";
+import { cn } from "@/lib/utils";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+	Check,
+	ChevronDown,
+	Code,
+	Copy,
+	Eye,
+	HelpCircle,
+	Sparkles,
+	X,
+} from "lucide-react";
+import type { Value } from "platejs";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import z from "zod";
 
 export const Route = createFileRoute(
@@ -44,6 +47,9 @@ export const Route = createFileRoute(
 		showCode: z.boolean().catch(false).optional(),
 		transparentBackground: z.boolean().catch(false).optional(),
 	}),
+	pendingComponent: Loader,
+	errorComponent: ErrorBoundary,
+	notFoundComponent: NotFound,
 });
 
 type EmbedType = "standard" | "popup" | "fullpage";

@@ -9,6 +9,9 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 import { auth, authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_authenticated/accept-invite")({
@@ -18,6 +21,9 @@ export const Route = createFileRoute("/_authenticated/accept-invite")({
 		};
 	},
 	component: AcceptInvitePage,
+	pendingComponent: Loader,
+	errorComponent: ErrorBoundary,
+	notFoundComponent: NotFound,
 });
 
 function AcceptInvitePage() {

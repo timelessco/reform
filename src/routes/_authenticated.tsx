@@ -40,6 +40,9 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 import {
 	Sidebar,
 	SidebarContent,
@@ -108,7 +111,9 @@ export const Route = createFileRoute("/_authenticated")({
 		middleware: [authMiddleware],
 	},
 	component: AuthLayout,
-	pendingComponent: () => <div>loading.....</div>,
+	pendingComponent: Loader,
+	errorComponent: ErrorBoundary,
+	notFoundComponent: NotFound,
 	ssr: "data-only",
 });
 
@@ -337,40 +342,6 @@ function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 					</SidebarGroup>
 
 					<SidebarWorkspaces activeOrgId={activeOrg?.id} />
-
-					<SidebarGroup>
-						<SidebarGroupLabel>Product</SidebarGroupLabel>
-						<SidebarMenu>
-							{sidebarData.products.map((item) => (
-								<SidebarMenuItem key={item.title}>
-									<SidebarMenuButton asChild tooltip={item.title}>
-										{/* @ts-ignore */}
-										<Link to={item.url}>
-											<item.icon />
-											<span>{item.title}</span>
-										</Link>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
-							))}
-						</SidebarMenu>
-					</SidebarGroup>
-
-					<SidebarGroup>
-						<SidebarGroupLabel>Help</SidebarGroupLabel>
-						<SidebarMenu>
-							{sidebarData.help.map((item) => (
-								<SidebarMenuItem key={item.title}>
-									<SidebarMenuButton asChild tooltip={item.title}>
-										{/* @ts-ignore */}
-										<Link to={item.url}>
-											<item.icon />
-											<span>{item.title}</span>
-										</Link>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
-							))}
-						</SidebarMenu>
-					</SidebarGroup>
 				</SidebarContent>
 				<SidebarFooter className="group-data-[collapsible=icon]:hidden">
 					<SidebarMenu>

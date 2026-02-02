@@ -68,6 +68,25 @@ export function PageBreakElement(props: PlateElementProps) {
 					editor.tf.setNodes({ isThankYouPage: false }, { at: nodePath });
 				}
 			}
+
+			// Remove buttons from the section after this pageBreak
+			// Find the range: from this pageBreak+1 to next pageBreak or end
+			const startIdx = path[0] + 1;
+			let endIdx = editor.children.length;
+			for (let i = startIdx; i < editor.children.length; i++) {
+				const node = editor.children[i] as { type?: string };
+				if (node.type === "pageBreak") {
+					endIdx = i;
+					break;
+				}
+			}
+			// Remove formButtons in range [startIdx, endIdx) in reverse order
+			for (let i = endIdx - 1; i >= startIdx; i--) {
+				const node = editor.children[i] as { type?: string };
+				if (node.type === "formButton") {
+					editor.tf.removeNodes({ at: [i] });
+				}
+			}
 		}
 
 		// Set the current element's isThankYouPage

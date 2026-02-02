@@ -1,6 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getPublishedFormById } from "@/lib/fn/public";
 import { PublicFormPage } from "@/components/public/public-form-page";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 import z from "zod";
 
 export const Route = createFileRoute("/forms/$formId")({
@@ -25,6 +28,9 @@ export const Route = createFileRoute("/forms/$formId")({
 		],
 	}),
 	component: PublicFormRoute,
+	pendingComponent: Loader,
+	errorComponent: ErrorBoundary,
+	notFoundComponent: NotFound,
 	validateSearch: z.object({
 		// Transparent background for iframe embeds
 		transparentBackground: z.boolean().optional().default(false),

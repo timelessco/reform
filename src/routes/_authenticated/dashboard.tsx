@@ -1,5 +1,8 @@
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 import { formatDistanceToNow } from "date-fns";
 import {
 	ChevronLeft,
@@ -65,6 +68,9 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 			workspacesData,
 		};
 	},
+	pendingComponent: Loader,
+	errorComponent: ErrorBoundary,
+	notFoundComponent: NotFound,
 });
 
 function DashboardPage() {

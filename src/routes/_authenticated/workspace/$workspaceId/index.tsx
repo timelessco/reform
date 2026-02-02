@@ -48,6 +48,9 @@ import { useState } from "react";
 import { useFormsForWorkspace, useWorkspace } from "@/hooks/use-live-hooks";
 import { AppHeader } from "@/components/ui/app-header";
 import { WorkspaceHeader } from "@/components/ui/form-header";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 
 const FORMS_PER_PAGE = 10;
 
@@ -55,6 +58,9 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/")(
 	{
 		component: WorkspaceDashboard,
 		ssr: false,
+		pendingComponent: Loader,
+		errorComponent: ErrorBoundary,
+		notFoundComponent: NotFound,
 	},
 );
 

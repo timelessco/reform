@@ -159,19 +159,3 @@ Sentry.startSpan({ name: 'Operation description' }, async () => {
   // Server operation
 });
 ```
-
-## Environment Variables
-
-Required in `.env`:
-```
-DATABASE_URL=postgresql://...
-BETTER_AUTH_SECRET=<openssl rand -base64 32>
-BETTER_AUTH_URL=http://localhost:3000
-```
-
-Optional:
-```
-GOOGLE_CLIENT_ID=...
-GOOGLE_CLIENT_SECRET=...
-VITE_SENTRY_DSN=...
-```

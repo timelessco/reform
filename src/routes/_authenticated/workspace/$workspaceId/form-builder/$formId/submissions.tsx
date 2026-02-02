@@ -46,11 +46,17 @@ import {
 	Trash2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
 
 export const Route = createFileRoute(
 	"/_authenticated/workspace/$workspaceId/form-builder/$formId/submissions",
 )({
 	component: SubmissionsPage,
+	pendingComponent: Loader,
+	errorComponent: ErrorBoundary,
+	notFoundComponent: NotFound,
 });
 
 function SubmissionsPage() {

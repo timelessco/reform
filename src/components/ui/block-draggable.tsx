@@ -161,6 +161,24 @@ function Draggable(props: PlateElementProps) {
 
 	const isFormButton = element.type === "formButton";
 
+	const gutterPosition = React.useMemo(() => {
+		if (element.gutterPosition) return element.gutterPosition as "center" | "top";
+
+		const plugin = getPluginByType(editor, element.type);
+		if (plugin?.options?.gutterPosition)
+			return plugin.options.gutterPosition as "center" | "top";
+
+		if (
+			["formTextarea", KEYS.code_block, KEYS.blockquote, KEYS.table].includes(
+				element.type,
+			)
+		) {
+			return "top";
+		}
+
+		return "center";
+	}, [editor, element]);
+
 	const buttonLayoutClass = React.useMemo(() => {
 		if (isFormButton) {
 			const role = (element as any).buttonRole;
@@ -231,7 +249,7 @@ function Draggable(props: PlateElementProps) {
 			)}
 		>
 			{!isInTable && !isFormButton && (
-				<Gutter>
+				<Gutter gutterPosition={gutterPosition}>
 					<div
 						className={cn(
 							"slate-blockToolbarWrapper",
@@ -339,8 +357,9 @@ function Draggable(props: PlateElementProps) {
 function Gutter({
 	children,
 	className,
+	gutterPosition = "center",
 	...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div"> & { gutterPosition?: "center" | "top" }) {
 	const editor = useEditorRef();
 	const element = useElement();
 	const isSelectionAreaVisible = usePluginOption(
@@ -354,7 +373,8 @@ function Gutter({
 			{...props}
 			className={cn(
 				"slate-gutterLeft",
-				"-translate-x-full absolute top-0 h-full z-50 flex items-start pt-[3px] cursor-text hover:opacity-100",
+				"-translate-x-full absolute h-full z-50 flex cursor-text hover:opacity-100",
+				gutterPosition === "top" ? "top-0 items-start pt-1.5" : "top-0 items-center",
 				!selected && "sm:opacity-0",
 				getPluginByType(editor, element.type)?.node.isContainer
 					? "group-hover/container:opacity-100"
