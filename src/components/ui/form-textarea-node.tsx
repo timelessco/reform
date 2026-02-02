@@ -23,7 +23,7 @@ export function FormTextareaElement({
 			element={element}
 			{...rest}
 		>
-			<span className="flex-1 min-w-px outline-none">{children}</span>
+			<span className="flex-1 min-w-px outline-none text-muted-foreground">{children}</span>
 		</PlateElement>
 	);
 }

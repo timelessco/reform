@@ -251,15 +251,10 @@ export function transformPlateStateToFormElements(
 					(nextNode.type === "formInput" || nextNode.type === "formTextarea")
 				) {
 					fieldType = nextNode.type === "formTextarea" ? "Textarea" : "Input";
-					placeholder = (nextNode.placeholder as string) || "";
-					// Get text from input if any for placeholder
 					const inputText = extractTextContent(
 						nextNode.children as Array<{ text?: string }>,
 					);
-					if (inputText && !placeholder) {
-						placeholder = inputText;
-					}
-					// Extract validation properties from formInput/formTextarea node
+					placeholder = inputText || (nextNode.placeholder as string) || "";
 					minLength = nextNode.minLength as number | undefined;
 					maxLength = nextNode.maxLength as number | undefined;
 					defaultValue = nextNode.defaultValue as string | undefined;

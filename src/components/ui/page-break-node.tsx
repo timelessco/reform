@@ -59,38 +59,44 @@ export function PageBreakElement(props: PlateElementProps) {
 		const path = editor.api.findPath(element);
 		if (!path) return;
 
-		if (checked) {
-			// Remove isThankYouPage from all other pageBreak elements
-			for (const [, nodePath] of editor.api.nodes({
-				match: { type: "pageBreak" },
-			})) {
-				if (nodePath[0] !== path[0]) {
-					editor.tf.setNodes({ isThankYouPage: false }, { at: nodePath });
+		// Wrap all operations to prevent normalization between steps
+		editor.tf.withoutNormalizing(() => {
+			if (checked) {
+				// Remove isThankYouPage from all other pageBreak elements
+				for (const [, nodePath] of editor.api.nodes({
+					match: { type: "pageBreak" },
+				})) {
+					if (nodePath[0] !== path[0]) {
+						editor.tf.setNodes({ isThankYouPage: false }, { at: nodePath });
+					}
 				}
-			}
 
-			// Remove buttons from the section after this pageBreak
-			// Find the range: from this pageBreak+1 to next pageBreak or end
-			const startIdx = path[0] + 1;
-			let endIdx = editor.children.length;
-			for (let i = startIdx; i < editor.children.length; i++) {
-				const node = editor.children[i] as { type?: string };
-				if (node.type === "pageBreak") {
-					endIdx = i;
-					break;
-				}
-			}
-			// Remove formButtons in range [startIdx, endIdx) in reverse order
-			for (let i = endIdx - 1; i >= startIdx; i--) {
-				const node = editor.children[i] as { type?: string };
-				if (node.type === "formButton") {
-					editor.tf.removeNodes({ at: [i] });
-				}
-			}
-		}
+				// FIRST set isThankYouPage so normalization knows this is a thank you section
+				editor.tf.setNodes({ isThankYouPage: true }, { at: path });
 
-		// Set the current element's isThankYouPage
-		editor.tf.setNodes({ isThankYouPage: checked }, { at: path });
+				// THEN remove buttons from the section after this pageBreak
+				// Find the range: from this pageBreak+1 to next pageBreak or end
+				const startIdx = path[0] + 1;
+				let endIdx = editor.children.length;
+				for (let i = startIdx; i < editor.children.length; i++) {
+					const node = editor.children[i] as { type?: string };
+					if (node.type === "pageBreak") {
+						endIdx = i;
+						break;
+					}
+				}
+				// Remove formButtons in range [startIdx, endIdx) in reverse order
+				for (let i = endIdx - 1; i >= startIdx; i--) {
+					const node = editor.children[i] as { type?: string };
+					if (node.type === "formButton") {
+						editor.tf.removeNodes({ at: [i] });
+					}
+				}
+			} else {
+				// Set the current element's isThankYouPage to false
+				editor.tf.setNodes({ isThankYouPage: false }, { at: path });
+			}
+		});
 	};
 
 	// Prevent clicks from placing cursor on this element
