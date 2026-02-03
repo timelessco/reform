@@ -94,6 +94,7 @@ export const FormSchema = z.object({
 	cover: z.string().nullable().optional(),
 	isMultiStep: z.boolean().default(false),
 	status: z.enum(["draft", "published", "archived"]).default("draft"),
+	deletedAt: timestampField.nullable().optional(), // Soft delete timestamp
 	// Version history fields
 	lastPublishedVersionId: z.string().nullable().optional(),
 	publishedContentHash: z.string().nullable().optional(),
@@ -342,4 +343,35 @@ export async function moveFormToWorkspace(
 		draft.workspaceId = targetWorkspaceId;
 		draft.updatedAt = new Date().toISOString();
 	});
+}
+
+/**
+ * Archives a form (moves to trash).
+ * Sets status to 'archived' and records deletedAt timestamp.
+ */
+export async function archiveFormLocal(id: string): Promise<void> {
+	await formCollection.update(id, (draft) => {
+		draft.status = "archived";
+		draft.deletedAt = new Date().toISOString();
+		draft.updatedAt = new Date().toISOString();
+	});
+}
+
+/**
+ * Restores a form from trash.
+ * Sets status back to 'draft' and clears deletedAt.
+ */
+export async function restoreFormLocal(id: string): Promise<void> {
+	await formCollection.update(id, (draft) => {
+		draft.status = "draft";
+		draft.deletedAt = null;
+		draft.updatedAt = new Date().toISOString();
+	});
+}
+
+/**
+ * Permanently deletes a form (cannot be undone).
+ */
+export async function permanentDeleteFormLocal(id: string): Promise<void> {
+	await formCollection.delete(id);
 }

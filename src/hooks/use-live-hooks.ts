@@ -1,6 +1,8 @@
 import { eq, or, useLiveQuery } from "@tanstack/react-db";
+import { useMemo } from "react";
 import {
 	editorDocCollection,
+	favoriteCollection,
 	formCollection,
 	localFormCollection,
 	workspaceCollection,
@@ -111,4 +113,66 @@ export const useLocalForm = (formId?: string) => {
 		}
 		return query;
 	});
+};
+
+/**
+ * Custom hook for real-time favorites sync for current user.
+ */
+export const useFavorites = (userId?: string) => {
+	return useLiveQuery((q) => {
+		let query = q.from({ fav: favoriteCollection });
+		if (userId) {
+			query = query.where(({ fav }) => eq(fav.userId, userId));
+		}
+		return query.select(({ fav }) => ({
+			id: fav.id,
+			userId: fav.userId,
+			formId: fav.formId,
+			createdAt: fav.createdAt,
+		}));
+	});
+};
+
+/**
+ * Check if a specific form is favorited by the user.
+ */
+export const useIsFavorite = (userId?: string, formId?: string) => {
+	const { data: favorites } = useFavorites(userId);
+	return useMemo(() => {
+		if (!userId || !formId || !favorites) return false;
+		return favorites.some((f) => f.formId === formId);
+	}, [favorites, userId, formId]);
+};
+
+/**
+ * Get user's favorite forms with full form data.
+ */
+export const useFavoriteForms = (userId?: string) => {
+	const { data: favorites } = useFavorites(userId);
+	const { data: allForms } = useForms();
+
+	return useMemo(() => {
+		if (!favorites || !allForms) return [];
+		const favoriteIds = new Set(favorites.map((f) => f.formId));
+		return allForms.filter((form) => favoriteIds.has(form.id));
+	}, [favorites, allForms]);
+};
+
+/**
+ * Custom hook for archived (trashed) forms with deletedAt field.
+ */
+export const useArchivedForms = () => {
+	return useLiveQuery((q) =>
+		q
+			.from({ form: formCollection })
+			.where(({ form }) => eq(form.status, "archived"))
+			.select(({ form }) => ({
+				id: form.id,
+				title: form.title,
+				workspaceId: form.workspaceId,
+				status: form.status,
+				updatedAt: form.updatedAt,
+				deletedAt: form.deletedAt,
+			})),
+	);
 };

@@ -1,4 +1,5 @@
-import { ImageIcon, Smile, Upload, X } from "lucide-react";
+import { ImageIcon, Settings, Smile, Upload, X } from "lucide-react";
+import { createFormButtonNode } from "@/components/ui/form-button-node";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorRef } from "platejs/react";
 import AvatarUpload from "@/components/file-upload/avatar-upload";
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFileUpload } from "@/hooks/use-file-upload";
+import { useCustomizeSidebar } from "@/hooks/use-customize-sidebar";
 import { cn } from "@/lib/utils";
 
 export interface FormHeaderElementData {
@@ -94,6 +96,7 @@ function CoverUpload({
 export function FormHeaderElement(props: PlateElementProps) {
 	const { element, children } = props;
 	const editor = useEditorRef();
+	const { toggle: toggleCustomize } = useCustomizeSidebar();
 
 	const title = (element.title as string) || "";
 	const icon = (element.icon as string | null) || null;
@@ -131,7 +134,7 @@ export function FormHeaderElement(props: PlateElementProps) {
 				className="group relative w-full flex flex-col mb-4 select-none"
 			>
 				{hasCover && (
-					<div className="relative w-[100vw] left-[50%] right-[50%] -ml-[50vw] -mr-[50vw] h-[120px] sm:h-[200px] group/cover bg-muted/20">
+					<div className="relative w-screen left-[50%] right-[50%] -ml-[50vw] -mr-[50vw] h-[120px] sm:h-[200px] group/cover bg-muted/20">
 						{cover && !cover.startsWith("#") ? (
 							<img
 								src={cover}
@@ -390,6 +393,16 @@ export function FormHeaderElement(props: PlateElementProps) {
 									Add cover
 								</Button>
 							)}
+							<Button
+								variant="ghost"
+								size="sm"
+								className="text-muted-foreground h-6 px-2 text-xs hover:bg-muted"
+								onClick={toggleCustomize}
+								onMouseDown={(e) => e.preventDefault()}
+							>
+								<Settings className="mr-1.5 h-3.5 w-3.5" />
+								Customize
+							</Button>
 						</div>
 
 						<div className="relative group/title">
@@ -401,13 +414,41 @@ export function FormHeaderElement(props: PlateElementProps) {
 								onKeyDown={(e) => {
 									if (e.key === "Enter") {
 										e.preventDefault();
-										const firstBlockPath = [1];
-										const startPoint = (editor.api as any).edges(
-											firstBlockPath,
-										)?.[0];
-										if (startPoint) {
-											editor.tf.select(startPoint);
-											editor.tf.focus();
+										// Check if onboarding content is present (by type)
+										const secondBlock = editor.children[1] as any;
+										const isOnboarding =
+											secondBlock?.type === "onboardingContent";
+
+										if (isOnboarding) {
+											// Clear to empty state: header + empty paragraph + submit button
+											const currentHeader = editor.children[0];
+											const emptyContent = [
+												currentHeader,
+												{ type: "p", children: [{ text: "" }] },
+												createFormButtonNode("submit"),
+											];
+											editor.tf.init({
+												value: emptyContent as any,
+											});
+											// Move cursor to first paragraph
+											const firstBlockPath = [1];
+											const startPoint = (editor.api as any).edges(
+												firstBlockPath,
+											)?.[0];
+											if (startPoint) {
+												editor.tf.select(startPoint);
+												editor.tf.focus();
+											}
+										} else {
+											// Normal behavior: move focus to first block
+											const firstBlockPath = [1];
+											const startPoint = (editor.api as any).edges(
+												firstBlockPath,
+											)?.[0];
+											if (startPoint) {
+												editor.tf.select(startPoint);
+												editor.tf.focus();
+											}
 										}
 									}
 								}}

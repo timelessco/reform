@@ -1,29 +1,20 @@
-import {
-	createFileRoute,
-	Link,
-	Outlet,
-	useLocation,
-} from "@tanstack/react-router";
-import { z } from "zod";
-import { AppHeader } from "@/components/ui/app-header";
+import { FormActionsMenu } from "@/components/form-builder/form-actions-menu";
+import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { useForm, useWorkspace } from "@/hooks/use-live-hooks";
 import { getFormbyIdQueryOption } from "@/lib/fn/forms";
 import { cn } from "@/lib/utils";
-
-// Client-only component for displaying form title from local DB
-function _FormTitleDisplay({ formId }: { formId: string }) {
-	const { data: savedDocs } = useForm(formId);
-	return <>{savedDocs?.[0]?.title || "Untitled Form"}</>;
-}
-
-// Client-only component for displaying workspace name from local DB
-function _WorkspaceNameDisplay({ workspaceId }: { workspaceId: string }) {
-	const { data: workspace } = useWorkspace(workspaceId);
-	return <>{workspace?.name || "Workspace"}</>;
-}
+import {
+	createFileRoute,
+	Link,
+	Outlet,
+	redirect,
+	useLocation,
+} from "@tanstack/react-router";
+import { Link as LinkIcon, Pencil } from "lucide-react";
+import { z } from "zod";
 
 export const Route = createFileRoute(
 	"/_authenticated/workspace/$workspaceId/form-builder/$formId",
@@ -31,6 +22,58 @@ export const Route = createFileRoute(
 	validateSearch: z.object({
 		demo: z.boolean().optional(),
 	}),
+	// Redirect to appropriate child route based on form status
+	beforeLoad: async ({ context, params, location }) => {
+		// Only redirect if we're at the exact parent route (no child route)
+		const isExactParentRoute = location.pathname === `/workspace/${params.workspaceId}/form-builder/${params.formId}` ||
+			location.pathname === `/workspace/${params.workspaceId}/form-builder/${params.formId}/`;
+
+		if (isExactParentRoute) {
+			console.log('[route.tsx beforeLoad] At parent route, checking form status for redirect...');
+			try {
+				const result = await context.queryClient.ensureQueryData({
+					...getFormbyIdQueryOption(params.formId),
+					revalidateIfStale: true,
+				});
+
+				const status = result?.form?.status;
+				console.log('[route.tsx beforeLoad] Form status:', status);
+
+				if (status === 'published') {
+					throw redirect({
+						to: '/workspace/$workspaceId/form-builder/$formId/share',
+						params: { workspaceId: params.workspaceId, formId: params.formId },
+					});
+				} else {
+					throw redirect({
+						to: '/workspace/$workspaceId/form-builder/$formId/edit',
+						params: { workspaceId: params.workspaceId, formId: params.formId },
+					});
+				}
+			} catch (error: any) {
+				// If it's a redirect (TanStack Router throws redirect objects), rethrow it
+				// Redirect objects have specific properties like 'to', 'href', or are Response instances
+				if (
+					error instanceof Response ||
+					error?.to !== undefined ||
+					error?.href !== undefined ||
+					error?.isRedirect === true ||
+					error?.statusCode === 301 ||
+					error?.statusCode === 302 ||
+					error?.statusCode === 307 ||
+					error?.statusCode === 308
+				) {
+					throw error;
+				}
+				// On error, default to edit route
+				console.error('[route.tsx beforeLoad] Error fetching form, defaulting to edit:', error);
+				throw redirect({
+					to: '/workspace/$workspaceId/form-builder/$formId/edit',
+					params: { workspaceId: params.workspaceId, formId: params.formId },
+				});
+			}
+		}
+	},
 	loader: async ({ params, context }) => {
 		const { formId } = params;
 		try {
@@ -56,62 +99,90 @@ export const Route = createFileRoute(
 });
 
 function FormLayout() {
-	const { workspaceId, formId } = Route.useParams();
 	const { pathname } = useLocation();
+	// Extract formId from pathname to ensure it's always current
+	const formIdFromPath = pathname.split('/form-builder/')[1]?.split('/')[0] || '';
+	const { workspaceId } = Route.useParams();
+	const formId = formIdFromPath || Route.useParams().formId;
+
+	// Get form and workspace data from local Electric DB
+	const { data: formData } = useForm(formId);
+	const { data: workspaceData } = useWorkspace(workspaceId);
+	const form = formData?.[0];
+	const formTitle = form?.title || "Untitled Form";
+	const workspaceName = workspaceData?.name || "Workspace";
+
+	// Hide header on edit route (editor has its own full-screen layout)
+	const isEditRoute = pathname.includes('/form-builder/') && pathname.includes('/edit');
 
 	const tabs = [
-		{
-			name: "Design",
-			href: `/workspace/${workspaceId}/form-builder/${formId}`,
-		},
-		{
-			name: "Submissions",
-			href: `/workspace/${workspaceId}/form-builder/${formId}/submissions`,
-		},
-		{
-			name: "Share",
-			href: `/workspace/${workspaceId}/form-builder/${formId}/share`,
-		},
-		{
-			name: "Integrations",
-			href: `/workspace/${workspaceId}/form-builder/${formId}/integrations`,
-		},
-		{
-			name: "Insights",
-			href: `/workspace/${workspaceId}/form-builder/${formId}/insights`,
-		},
-		{
-			name: "Settings",
-			href: `/workspace/${workspaceId}/form-builder/${formId}/settings`,
-		},
+		{ name: "Summary", href: `/workspace/${workspaceId}/form-builder/${formId}/summary` },
+		{ name: "Submissions", href: `/workspace/${workspaceId}/form-builder/${formId}/submissions` },
+		{ name: "Share", href: `/workspace/${workspaceId}/form-builder/${formId}/share` },
+		{ name: "Integrations", href: `/workspace/${workspaceId}/form-builder/${formId}/integrations` },
+		{ name: "Insights", href: `/workspace/${workspaceId}/form-builder/${formId}/insights` },
+		{ name: "Settings", href: `/workspace/${workspaceId}/form-builder/${formId}/settings` },
 	];
 
 	// Helper to check if a tab is active
 	const isActive = (href: string) => {
 		if (href.endsWith(formId)) {
-			// Exact match for the index route (Design)
 			return pathname === href;
 		}
 		return pathname.startsWith(href);
 	};
 
+	// For edit route, render without header
+	if (isEditRoute) {
+		return (
+			<div className="flex flex-col h-screen overflow-hidden bg-background">
+				<main className="flex-1 min-h-0 min-w-0 overflow-hidden relative">
+					<Outlet key={formId} />
+				</main>
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex flex-col h-screen overflow-hidden bg-background">
-			<AppHeader formId={formId} workspaceId={workspaceId} />
+			{/* Header Section */}
+			<div className="shrink-0 bg-background pt-16">
+				<div className="max-w-5xl mx-auto w-full px-8">
+					<div className="flex items-center justify-between mb-8">
+						<div className="flex items-center gap-3">
+							<h1 className="text-3xl font-bold text-foreground tracking-tight">
+								{formTitle}
+							</h1>
+							<FormActionsMenu form={form} workspaceId={workspaceId} />
+						</div>
 
-			<div className="flex flex-col flex-1 overflow-hidden">
-				{/* Tab Navigation */}
-				<div className="flex items-center px-12 border-b shrink-0 bg-background">
-					<nav className="flex items-center gap-8">
+						<div className="flex items-center gap-3">
+							<button className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+								<LinkIcon className="h-4 w-4" />
+							</button>
+							<Button asChild variant='default'>
+								<Link
+									to="/workspace/$workspaceId/form-builder/$formId/edit"
+									params={{ workspaceId, formId }}
+								>
+									<Pencil className="h-3.5 w-3.5 fill-white/20" />
+									Edit
+								</Link>
+							</Button>
+						</div>
+					</div>
+
+					{/* Tab Navigation */}
+					<nav className="flex items-center gap-6">
 						{tabs.map((tab) => (
 							<Link
 								key={tab.name}
 								to={tab.href as any}
 								className={cn(
-									"py-3 text-sm font-medium transition-colors border-b-2 -mb-[2px]",
+									"pb-3 text-[13px] font-medium transition-all relative",
 									isActive(tab.href)
-										? "border-foreground text-foreground"
-										: "border-transparent text-muted-foreground hover:text-foreground/80",
+										? "text-foreground after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-foreground"
+										: "text-muted-foreground/60 hover:text-foreground/80",
 								)}
 							>
 								{tab.name}
@@ -119,12 +190,14 @@ function FormLayout() {
 						))}
 					</nav>
 				</div>
-
-				{/* Page Content */}
-				<main className="flex-1 min-h-0 min-w-0 overflow-hidden relative">
-					<Outlet />
-				</main>
 			</div>
-		</div>
+
+			{/* Page Content */}
+			<main className="flex-1 min-h-0 min-w-0 overflow-auto relative">
+				<div className="max-w-5xl mx-auto w-full px-8 pb-20">
+					<Outlet key={formId} />
+				</div>
+			</main>
+		</div >
 	);
 }

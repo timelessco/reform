@@ -21,7 +21,6 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AppHeader } from "@/components/ui/app-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -136,7 +135,7 @@ function WorkspaceDashboard() {
 		try {
 			const newWs = await createWorkspaceLocal(
 				workspace.organizationId,
-				"New Workspace",
+				"Collection",
 			);
 			navigate({
 				to: "/workspace/$workspaceId",
@@ -251,8 +250,6 @@ function WorkspaceDashboard() {
 
 	return (
 		<div className="flex-1 flex flex-col min-h-screen bg-background text-foreground">
-			<AppHeader workspaceId={workspaceId} />
-
 			{/* Main Content */}
 			<main className="flex-1 p-6 md:p-12 lg:p-20 max-w-6xl mx-auto w-full">
 				<WorkspaceHeader

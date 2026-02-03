@@ -1,3 +1,8 @@
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
+import { Toaster } from "@/components/ui/sonner";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import {
@@ -7,10 +12,6 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { Agentation } from "agentation";
-import { ErrorBoundary } from "@/components/ui/error-boundary";
-import Loader from "@/components/ui/loader";
-import { NotFound } from "@/components/ui/not-found";
-import { Toaster } from "@/components/ui/sonner";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import type { Session } from "../lib/auth";
 import { sessionMiddleware } from "../middleware/auth";
@@ -59,6 +60,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<HeadContent />
 			</head>
 			<body className="min-h-screen bg-background text-foreground antialiased font-sans">
+			<ThemeProvider defaultTheme="light" storageKey="agentation-theme">
+				
 				{children}
 				<Toaster richColors />
 				<TanStackDevtools
@@ -72,8 +75,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 						},
 						TanStackQueryDevtools,
 					]}
-				/>
+					/>
 				{process.env.NODE_ENV === "development" && <Agentation />}
+				</ThemeProvider>
 				<Scripts />
 			</body>
 		</html>

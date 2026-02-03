@@ -1,110 +1,149 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Layout, Shield, Sparkles, Zap } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { normalizeNodeId, type TElement, type Value } from "platejs";
+import { Plate, usePlateEditor } from "platejs/react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { EditorKit } from "@/components/editor/editor-kit";
 import { AppHeader } from "@/components/ui/app-header";
-import { Button } from "@/components/ui/button";
+import { Editor, EditorContainer } from "@/components/ui/editor";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import { useSession } from "@/lib/auth-client";
+import { createOnboardingContentNode } from "@/components/ui/onboarding-content-node";
+import { localFormCollection } from "@/db-collections";
+import { useLocalForm } from "@/hooks/use-live-hooks";
 import { guestMiddleware } from "@/middleware/auth";
+import { RightSidebar } from "@/components/footer";
+
+const LOCAL_FORM_ID = "550e8400-e29b-41d4-a716-446655440000"; // Valid UUID for local draft
+const LOCAL_WORKSPACE_ID = "550e8400-e29b-41d4-a716-446655440001"; // Valid UUID for local workspace
+
+// Initial state for new forms
+const onboardingValue = normalizeNodeId([
+	createFormHeaderNode({ title: "hello" }) as unknown as TElement,
+	createOnboardingContentNode() as unknown as TElement,
+	{
+		children: [{ text: "" }],
+		type: "p",
+	},
+]);
 
 export const Route = createFileRoute("/")({
 	server: {
 		middleware: [guestMiddleware],
 	},
-	component: LandingPage,
+	component: RouteComponent,
 	pendingComponent: Loader,
 	errorComponent: ErrorBoundary,
 	notFoundComponent: NotFound,
 });
 
-function LandingPage() {
-	const { data: session } = useSession();
-	const isLoggedIn = !!session?.user;
+function RouteComponent() {
+	return (
+		<div className="flex flex-col h-screen overflow-hidden">
+			<AppHeader />
+			<div className="flex-1 overflow-auto relative bg-background">
+				<LocalEditorApp />
+			</div>
+		</div>
+	);
+}
+
+function LocalEditorApp() {
+	const { data: savedDocs } = useLocalForm(LOCAL_FORM_ID);
+
+	const initializedRef = useRef(false);
+	const [isReady, setIsReady] = useState(false);
+	const skipSaveRef = useRef(false);
+
+	const editor = usePlateEditor({
+		plugins: EditorKit,
+	});
+
+	const lastSavedContentRef = useRef<Value | null>(null);
+
+	useEffect(() => {
+		if (initializedRef.current) return;
+		if (savedDocs === undefined) return;
+
+		initializedRef.current = true;
+
+		const docData = savedDocs?.[0];
+		let initialContent: Value;
+
+		if (docData?.content && Array.isArray(docData.content)) {
+			initialContent = docData.content as Value;
+		} else {
+			initialContent = onboardingValue;
+		}
+
+		lastSavedContentRef.current = initialContent;
+		skipSaveRef.current = true;
+
+		editor.tf.init({
+			value: initialContent,
+		});
+
+		setIsReady(true);
+	}, [savedDocs, editor]);
+
+	const handleChange = useCallback(({ value }: { value: Value }) => {
+		// Skip the initial onChange triggered by editor.tf.init()
+		if (skipSaveRef.current) {
+			skipSaveRef.current = false;
+			return;
+		}
+
+		// Only save if content actually changed
+		const contentStr = JSON.stringify(value);
+		const lastSavedStr = JSON.stringify(lastSavedContentRef.current);
+		if (contentStr === lastSavedStr) return;
+
+		lastSavedContentRef.current = value;
+
+		// Persist to local collection
+		const headerNode = value.find((n: any) => n.type === "formHeader") as any;
+		const updateData = {
+			content: value,
+			title: headerNode?.title || "Draft Form",
+			icon: headerNode?.icon || null,
+			cover: headerNode?.cover || null,
+			updatedAt: new Date().toISOString(),
+		};
+
+		try {
+			localFormCollection.update(LOCAL_FORM_ID, (draft) => {
+				Object.assign(draft, updateData);
+			});
+		} catch {
+			localFormCollection.insert({
+				id: LOCAL_FORM_ID,
+				workspaceId: LOCAL_WORKSPACE_ID,
+				formName: "draft",
+				schemaName: "draftFormSchema",
+				isMultiStep: false,
+				status: "draft" as const,
+				createdAt: new Date().toISOString(),
+				...updateData,
+			});
+		}
+	}, []);
+
+	if (!isReady) return <Loader />;
 
 	return (
-		<div className="flex flex-col min-h-screen bg-background">
-			<AppHeader />
-			<div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-12">
-				{/* Hero Section */}
-				<div className="max-w-3xl space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
-					<div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-4">
-						<Sparkles className="w-3.5 h-3.5" />
-						<span>The next generation of forms</span>
-					</div>
-
-					<h1 className="text-5xl md:text-7xl font-bold tracking-tight text-foreground">
-						Beautiful forms, <br />
-						<span className="text-primary">building itself.</span>
-					</h1>
-
-					<p className="text-xl text-muted-foreground max-w-xl mx-auto">
-						Create powerful, interactive forms with a Notion-like editing
-						experience. No complex builders, just type and build.
-					</p>
-
-					<div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-						<Button
-							size="lg"
-							className="h-12 px-8 text-base font-medium group"
-							asChild
-						>
-							<Link to={isLoggedIn ? "/dashboard" : "/create"}>
-								{isLoggedIn ? "Go to Dashboard" : "Create a free form"}
-								<ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
-							</Link>
-						</Button>
-						<Button
-							size="lg"
-							variant="outline"
-							className="h-12 px-8 text-base font-medium"
-						>
-							View examples
-						</Button>
-					</div>
-				</div>
-
-				{/* Features Grid */}
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl w-full pt-12 border-t border-border/50">
-					<div className="flex flex-col items-center text-center space-y-3">
-						<div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-2">
-							<Zap className="w-6 h-6 text-primary" />
-						</div>
-						<h3 className="font-semibold text-lg">Fast Building</h3>
-						<p className="text-sm text-muted-foreground">
-							Type `/` to add elements instantly. The fastest editing experience
-							ever created for forms.
-						</p>
-					</div>
-
-					<div className="flex flex-col items-center text-center space-y-3">
-						<div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-2">
-							<Layout className="w-6 h-6 text-primary" />
-						</div>
-						<h3 className="font-semibold text-lg">Beautiful Design</h3>
-						<p className="text-sm text-muted-foreground">
-							Premium Notion-style aesthetics that make your forms look
-							professional out of the box.
-						</p>
-					</div>
-
-					<div className="flex flex-col items-center text-center space-y-3">
-						<div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-2">
-							<Shield className="w-6 h-6 text-primary" />
-						</div>
-						<h3 className="font-semibold text-lg">Validation Ready</h3>
-						<p className="text-sm text-muted-foreground">
-							Built-in Zod validation to ensure your data is clean and
-							consistent every time.
-						</p>
-					</div>
-				</div>
-
-				{/* Footer */}
-				<footer className="pt-24 pb-8 text-muted-foreground text-sm">
-					<p>&copy; 2026 Better Forms. Built with Plate and TanStack.</p>
-				</footer>
-			</div>
+		<div className="flex h-screen w-full bg-background selection:bg-blue-500/20">
+			   <main className="flex-1 overflow-y-auto">
+			<Plate editor={editor} readOnly={false} onChange={handleChange}>
+				<EditorContainer
+					variant="default"
+					className="px-0 sm:px-0 max-w-full mx-auto border-none shadow-none"
+					>
+					<Editor className="overflow-x-visible" />
+				</EditorContainer>
+			</Plate>					
+			</main>
+			<RightSidebar />
 		</div>
 	);
 }

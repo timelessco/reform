@@ -138,7 +138,7 @@ export const workspaces = pgTable("workspaces", {
 	id: text().primaryKey(),
 	organizationId: text().notNull(),
 	createdByUserId: text().notNull(),
-	name: text().notNull().default("My workspace"),
+	name: text().notNull().default("Collection"),
 	createdAt: timestamp().notNull().defaultNow(),
 	updatedAt: timestamp().notNull().defaultNow(),
 });
@@ -157,6 +157,7 @@ export const forms = pgTable("forms", {
 	cover: text(),
 	isMultiStep: boolean().notNull().default(false),
 	status: text().notNull().default("draft"), // 'draft' | 'published' | 'archived'
+	deletedAt: timestamp(), // Soft delete timestamp for trash feature
 	// Version history fields
 	lastPublishedVersionId: text(), // FK to formVersions.id
 	publishedContentHash: text(), // Hash for fast change detection
@@ -186,6 +187,16 @@ export const submissions = pgTable("submissions", {
 	isCompleted: boolean().notNull().default(true),
 	createdAt: timestamp().notNull().defaultNow(),
 	updatedAt: timestamp().notNull().defaultNow(),
+});
+
+// Form Favorites table for per-user favorites
+export const formFavorites = pgTable("form_favorites", {
+	id: text().primaryKey(), // Format: ${userId}:${formId}
+	userId: text().notNull(),
+	formId: text()
+		.notNull()
+		.references(() => forms.id, { onDelete: "cascade" }),
+	createdAt: timestamp().notNull().defaultNow(),
 });
 
 // ============================================================================
@@ -432,6 +443,7 @@ export const relations = defineRelations(
 		formQuestionProgress,
 		formAnalyticsDaily,
 		formDropoffDaily,
+		formFavorites,
 	},
 	(r) => ({
 		// User has many sessions, accounts, and forms they created
@@ -476,6 +488,11 @@ export const relations = defineRelations(
 			organizationMemberships: r.many.member({
 				from: r.user.id,
 				to: r.member.userId,
+			}),
+			// User's favorited forms
+			favorites: r.many.formFavorites({
+				from: r.user.id,
+				to: r.formFavorites.userId,
 			}),
 		},
 		// Session belongs to one user
@@ -597,6 +614,11 @@ export const relations = defineRelations(
 				from: r.forms.lastPublishedVersionId,
 				to: r.formVersions.id,
 			}),
+			// Users who favorited this form
+			favorites: r.many.formFavorites({
+				from: r.forms.id,
+				to: r.formFavorites.formId,
+			}),
 		},
 		// Form Version belongs to one form and one user (publisher)
 		formVersions: {
@@ -670,6 +692,17 @@ export const relations = defineRelations(
 				to: r.forms.id,
 			}),
 		},
+		// Form Favorites belongs to user and form
+		formFavorites: {
+			user: r.one.user({
+				from: r.formFavorites.userId,
+				to: r.user.id,
+			}),
+			form: r.one.forms({
+				from: r.formFavorites.formId,
+				to: r.forms.id,
+			}),
+		},
 	}),
 );
 
@@ -692,3 +725,6 @@ export const FormDropoffDailyZod = createSelectSchema(formDropoffDaily);
 export const OrganizationZod = createSelectSchema(organization);
 export const MemberZod = createSelectSchema(member);
 export const InvitationZod = createSelectSchema(invitation);
+
+// Form Favorites schema
+export const FormFavoriteZod = createSelectSchema(formFavorites);
