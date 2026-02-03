@@ -164,6 +164,7 @@ function FormLayout() {
 								<Link
 									to="/workspace/$workspaceId/form-builder/$formId/edit"
 									params={{ workspaceId, formId }}
+									search={{ force: true }}
 								>
 									<Pencil className="h-3.5 w-3.5 fill-white/20" />
 									Edit

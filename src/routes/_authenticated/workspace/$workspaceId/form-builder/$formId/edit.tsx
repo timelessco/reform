@@ -1,5 +1,6 @@
 import { createFileRoute, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { z } from "zod";
 import { CustomizeSidebar } from "@/components/ui/customize-sidebar";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
@@ -12,6 +13,10 @@ import { PreviewMode } from "../-components/preview-mode";
 export const Route = createFileRoute(
 	'/_authenticated/workspace/$workspaceId/form-builder/$formId/edit',
 )({
+	validateSearch: z.object({
+		demo: z.boolean().optional(),
+		force: z.boolean().optional(), // When true, skip redirect for published forms
+	}),
 	component: DesignPage,
 	// beforeLoad: async ({ context, params }) => {
 	// 	console.log('[edit.tsx beforeLoad] Starting with params:', params);
@@ -85,9 +90,17 @@ function DesignPage() {
 		localForm: localForm ? { id: localForm.id, title: localForm.title, status: localForm.status } : null,
 	});
 
+	const loaderData = Route.useLoaderData();
+	const initialContent = loaderData?.initialContent || [];
+	const search: any = useSearch({ strict: false });
+	const demo = search.demo;
+	// Check if user explicitly wants to edit (force param from Edit button)
+	const forceEdit = search.force === true;
+
 	// Redirect to share page if form is published (using local Electric data)
+	// BUT skip redirect if user explicitly clicked "Edit" button (force=true)
 	useEffect(() => {
-		if (isReady && localStatus === 'published') {
+		if (isReady && localStatus === 'published' && !forceEdit) {
 			console.log('[edit.tsx DesignPage] Form is published locally, redirecting to share...');
 			navigate({
 				to: '/workspace/$workspaceId/form-builder/$formId/share',
@@ -95,20 +108,15 @@ function DesignPage() {
 				replace: true, // Replace history entry so back button doesn't loop
 			});
 		}
-	}, [isReady, localStatus, formId, workspaceId, navigate]);
-
-	const loaderData = Route.useLoaderData();
-	const initialContent = loaderData?.initialContent || [];
-	const search: any = useSearch({ strict: false });
-	const demo = search.demo;
+	}, [isReady, localStatus, formId, workspaceId, navigate, forceEdit]);
 
 	// Show loader while checking form status
 	if (!isReady) {
 		return <Loader />;
 	}
 
-	// If form is published, show loader while redirecting
-	if (localStatus === 'published') {
+	// If form is published and not forcing edit, show loader while redirecting
+	if (localStatus === 'published' && !forceEdit) {
 		return <Loader />;
 	}
 
