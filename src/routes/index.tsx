@@ -133,15 +133,15 @@ function LocalEditorApp() {
 
 	return (
 		<div className="flex h-screen w-full bg-background selection:bg-blue-500/20">
-			   <main className="flex-1 overflow-y-auto">
-			<Plate editor={editor} readOnly={false} onChange={handleChange}>
-				<EditorContainer
-					variant="default"
-					className="px-0 sm:px-0 max-w-full mx-auto border-none shadow-none"
+			<main className="flex-1 overflow-y-auto">
+				<Plate editor={editor} readOnly={false} onChange={handleChange}>
+					<EditorContainer
+						variant="default"
+						className="px-0 sm:px-0 max-w-full mx-auto border-none shadow-none"
 					>
-					<Editor className="overflow-x-visible" />
-				</EditorContainer>
-			</Plate>					
+						<Editor className="overflow-x-visible" />
+					</EditorContainer>
+				</Plate>
 			</main>
 			<RightSidebar />
 		</div>
