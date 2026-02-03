@@ -43,7 +43,7 @@ function SocialButton({ label, icon }: { label: string; icon: React.ReactNode })
 
 export function RightSidebar() {
   return (
-    <div className="flex w-80 flex-col bg-background p-8 select-none shrink-0 overflow-y-auto">
+    <div className="flex w-80 flex-col bg-background p-8 select-none shrink-0 overflow-y-auto max-h-[calc(100vh-2.5rem)]">
       <div className="mb-12">
         <h2 className="text-xl font-bold mb-6">Got questions?</h2>
         <div className="flex flex-col">
