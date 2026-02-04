@@ -23,7 +23,6 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AppHeader } from "@/components/ui/app-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
@@ -190,7 +189,7 @@ function DashboardPage() {
 			})) as { form: { id: string } };
 			// Live queries will automatically pick up the new form
 			navigate({
-				to: "/workspace/$workspaceId/form-builder/$formId",
+				to: "/workspace/$workspaceId/form-builder/$formId/edit",
 				params: { workspaceId: defaultWorkspace.id, formId: response.form.id },
 			});
 		} catch (error) {
@@ -233,8 +232,6 @@ function DashboardPage() {
 
 	return (
 		<div className="flex-1 flex flex-col min-h-screen bg-background text-foreground">
-			<AppHeader />
-
 			{/* Main Content */}
 			<main className="flex-1 p-6 md:p-12 lg:p-20 max-w-6xl mx-auto w-full">
 				{/* Header */}
@@ -269,9 +266,10 @@ function DashboardPage() {
 								className="group flex flex-col p-2 -mx-2 rounded-xl hover:bg-muted/30 transition-all duration-200 cursor-pointer"
 							>
 								<Link
-									to={"/workspace/$workspaceId/form-builder/$formId"}
-									params={{ formId: form.id, workspaceId: form.workspaceId }}
-									preload={"viewport"}
+									to={"/workspace/$workspaceId/form-builder/$formId/edit"}
+									params={{   workspaceId: form.workspaceId , formId: form.id }}
+									preloadDelay={1000}
+									preload='intent'
 								>
 									<div className="flex items-center justify-between">
 										<div className="flex items-center gap-3">

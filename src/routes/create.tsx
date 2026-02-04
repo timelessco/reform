@@ -9,6 +9,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
+import { createOnboardingContentNode } from "@/components/ui/onboarding-content-node";
 import { localFormCollection } from "@/db-collections";
 import { useLocalForm } from "@/hooks/use-live-hooks";
 import { guestMiddleware } from "@/middleware/auth";
@@ -16,10 +17,12 @@ import { guestMiddleware } from "@/middleware/auth";
 const LOCAL_FORM_ID = "550e8400-e29b-41d4-a716-446655440000"; // Valid UUID for local draft
 const LOCAL_WORKSPACE_ID = "550e8400-e29b-41d4-a716-446655440001"; // Valid UUID for local workspace
 
-const defaultValue = normalizeNodeId([
-	createFormHeaderNode() as unknown as TElement,
+// Initial state for new forms
+const onboardingValue = normalizeNodeId([
+	createFormHeaderNode({ title: "hello" }) as unknown as TElement,
+	createOnboardingContentNode() as unknown as TElement,
 	{
-		children: [{ text: "Start building your form..." }],
+		children: [{ text: "" }],
 		type: "p",
 	},
 ]);
@@ -68,24 +71,9 @@ function LocalEditorApp() {
 		let initialContent: Value;
 
 		if (docData?.content && Array.isArray(docData.content)) {
-			if (
-				docData.content.length > 0 &&
-				docData.content[0]?.type === "formHeader"
-			) {
-				initialContent = docData.content as Value;
-			} else {
-				// Add formHeader at index 0 with data from doc metadata
-				initialContent = [
-					createFormHeaderNode({
-						title: docData.title || "",
-						icon: docData.icon || null,
-						cover: docData.cover || null,
-					}) as unknown as TElement,
-					...(docData.content as Value),
-				];
-			}
+			initialContent = docData.content as Value;
 		} else {
-			initialContent = defaultValue;
+			initialContent = onboardingValue;
 		}
 
 		lastSavedContentRef.current = initialContent;
@@ -93,7 +81,6 @@ function LocalEditorApp() {
 
 		editor.tf.init({
 			value: initialContent,
-			autoSelect: "end",
 		});
 
 		setIsReady(true);
@@ -113,71 +100,38 @@ function LocalEditorApp() {
 
 		lastSavedContentRef.current = value;
 
-		// Check if the first element is a formHeader
-		if (value.length > 0 && value[0]?.type === "formHeader") {
-			const headerNode = value[0] as any;
-			try {
-				localFormCollection.update(LOCAL_FORM_ID, (draft) => {
-					draft.title = headerNode.title || "Draft Form";
-					draft.icon = headerNode.icon || null;
-					draft.cover = headerNode.cover || null;
-					draft.content = value;
-					draft.updatedAt = new Date().toISOString();
-				});
-			} catch {
-				// If update fails (item doesn't exist), create it
-				localFormCollection.insert({
-					id: LOCAL_FORM_ID,
-					workspaceId: LOCAL_WORKSPACE_ID, // Valid UUID for local workspace
-					title: headerNode.title || "Draft Form",
-					formName: "draft",
-					schemaName: "draftFormSchema",
-					content: value,
-					icon: headerNode.icon || null,
-					cover: headerNode.cover || null,
-					isMultiStep: false,
-					status: "draft" as const,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString(),
-				});
-			}
-		} else {
-			// Update the full content
-			try {
-				localFormCollection.update(LOCAL_FORM_ID, (draft) => {
-					draft.content = value;
-					draft.updatedAt = new Date().toISOString();
-				});
-			} catch {
-				// If update fails (item doesn't exist), create it
-				localFormCollection.insert({
-					id: LOCAL_FORM_ID,
-					workspaceId: LOCAL_WORKSPACE_ID, // Valid UUID for local workspace
-					title: "Draft Form",
-					formName: "draft",
-					schemaName: "draftFormSchema",
-					content: value,
-					icon: null,
-					cover: null,
-					isMultiStep: false,
-					status: "draft" as const,
-					createdAt: new Date().toISOString(),
-					updatedAt: new Date().toISOString(),
-				});
-			}
+		// Persist to local collection
+		const headerNode = value.find((n: any) => n.type === "formHeader") as any;
+		const updateData = {
+			content: value,
+			title: headerNode?.title || "Draft Form",
+			icon: headerNode?.icon || null,
+			cover: headerNode?.cover || null,
+			updatedAt: new Date().toISOString(),
+		};
+
+		try {
+			localFormCollection.update(LOCAL_FORM_ID, (draft) => {
+				Object.assign(draft, updateData);
+			});
+		} catch {
+			localFormCollection.insert({
+				id: LOCAL_FORM_ID,
+				workspaceId: LOCAL_WORKSPACE_ID,
+				formName: "draft",
+				schemaName: "draftFormSchema",
+				isMultiStep: false,
+				status: "draft" as const,
+				createdAt: new Date().toISOString(),
+				...updateData,
+			});
 		}
 	}, []);
 
-	if (!isReady) {
-		return (
-			<div className="h-screen w-full flex items-center justify-center">
-				Loading editor...
-			</div>
-		);
-	}
+	if (!isReady) return <Loader />;
 
 	return (
-		<div className="h-screen w-full overflow-y-auto">
+		<div className="h-full w-full overflow-y-auto">
 			<Plate editor={editor} readOnly={false} onChange={handleChange}>
 				<EditorContainer
 					variant="default"

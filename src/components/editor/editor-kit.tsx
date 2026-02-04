@@ -22,6 +22,7 @@ import { FloatingToolbarKit } from "@/components/editor/plugins/floating-toolbar
 import { FontKit } from "@/components/editor/plugins/font-kit";
 import { FormBlocksKit } from "@/components/editor/plugins/form-blocks-kit";
 import { FormHeaderKit } from "@/components/editor/plugins/form-header-kit";
+import { OnboardingKit } from "@/components/editor/plugins/onboarding-kit";
 import { LineHeightKit } from "@/components/editor/plugins/line-height-kit";
 import { LinkKit } from "@/components/editor/plugins/link-kit";
 import { ListKit } from "@/components/editor/plugins/list-kit";
@@ -37,6 +38,7 @@ import { ToggleKit } from "@/components/editor/plugins/toggle-kit";
 
 export const EditorKit = [
 	...FormHeaderKit,
+	...OnboardingKit,
 	...BasicBlocksKit,
 	...CodeBlockKit,
 	...TableKit,

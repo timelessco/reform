@@ -1,9 +1,7 @@
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
+import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/settings")({
 	component: SettingsLayout,
@@ -15,25 +13,6 @@ export const Route = createFileRoute("/_authenticated/settings")({
 function SettingsLayout() {
 	return (
 		<div className="flex-1 flex flex-col min-h-screen bg-background">
-			{/* Settings Header */}
-			<header className="h-12 border-b flex items-center justify-between px-6 shrink-0">
-				<div className="flex items-center gap-2">
-					<span className="text-muted-foreground mr-1">*</span>
-					<span className="text-muted-foreground">/</span>
-					<span className="text-sm font-medium">Settings</span>
-				</div>
-				<div className="flex items-center gap-4">
-					<Button
-						variant="ghost"
-						size="sm"
-						className="h-8 gap-2 text-muted-foreground"
-					>
-						<Search className="h-4 w-4" />
-						<span>Search</span>
-					</Button>
-				</div>
-			</header>
-
 			{/* Main Content */}
 			<main className="flex-1 p-12 max-w-5xl mx-auto w-full space-y-8">
 				<div className="space-y-6">

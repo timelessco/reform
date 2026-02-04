@@ -9,7 +9,19 @@ import {
 import { createAuthClient } from "better-auth/react";
 import { createAuthQueryClient } from "./auth-query";
 
+const getBaseURL = () => {
+	if (typeof window !== "undefined") {
+		return window.location.origin;
+	}
+	const url =
+		process.env.VERCEL_URL ||
+		process.env.BETTER_AUTH_URL ||
+		"http://localhost:3000";
+	return url.startsWith("http") ? url : `https://${url}`;
+};
+
 export const authClient = createAuthClient({
+	baseURL: getBaseURL(),
 	plugins: [
 		usernameClient(),
 		emailOTPClient(),

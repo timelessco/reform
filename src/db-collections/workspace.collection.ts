@@ -66,7 +66,7 @@ export const workspaceCollection = createCollection(
 
 export async function createWorkspaceLocal(
 	organizationId: string,
-	name = "My workspace",
+	name = "Collection",
 ): Promise<Workspace> {
 	const id = crypto.randomUUID();
 	const now = new Date().toISOString();

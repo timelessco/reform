@@ -25,7 +25,7 @@ export const Route = createFileRoute("/api/electric")({
 				const url = new URL(request.url);
 
 				const table = url.searchParams.get("table")?.trim();
-				const allowedTables = ["workspaces", "forms", "submissions"];
+				const allowedTables = ["workspaces", "forms", "submissions", "form_favorites"];
 
 				if (!table || !allowedTables.includes(table)) {
 					return json({ error: "Invalid or missing table." }, 400);
@@ -127,6 +127,12 @@ export const Route = createFileRoute("/api/electric")({
 								}
 							}
 						}
+						break;
+					}
+
+					case "form_favorites": {
+						// Users can only see their own favorites
+						whereSql = `"userId" = '${userId}'`;
 						break;
 					}
 
