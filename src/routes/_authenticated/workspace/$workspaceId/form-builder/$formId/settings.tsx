@@ -28,9 +28,13 @@ export const Route = createFileRoute(
 });
 
 function SettingsPage() {
-  const { formId } = Route.useParams();
-  const savedDocs = useLiveForm(formId);
-  const doc = savedDocs.data?.[0];
+	const { formId } = Route.useParams();
+	return <SettingsContent formId={formId} />;
+}
+
+export function SettingsContent({ formId }: { formId: string }) {
+	const savedDocs = useLiveForm(formId);
+	const doc = savedDocs.data?.[0];
 
   const form = useAppForm({
     defaultValues: doc?.settings || {},
@@ -47,35 +51,34 @@ function SettingsPage() {
 
   if (!doc) return null;
 
-  return (
-    <div className="flex flex-col h-full bg-background overflow-auto pb-24">
-      <div className="max-w-3xl mx-auto w-full p-8 md:p-12 space-y-12">
-        <form.AppForm>
-          <form.Form className="p-0 gap-12">
-            {/* General Section */}
-            <Section title="General">
-              <SettingItem
-                title="Language"
-                description="Choose in what language the respondents will see your form. This applies to the text which is not customized by you, e.g. default buttons, errors, etc."
-              >
-                <form.AppField name="language">
-                  {(field) => (
-                    <Select
-                      value={(field.state.value as string) || "English"}
-                      onValueChange={field.handleChange}
-                    >
-                      <SelectTrigger className="w-[180px] h-9">
-                        <SelectValue placeholder="Select language" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="English">English</SelectItem>
-                        <SelectItem value="Spanish">Spanish</SelectItem>
-                        <SelectItem value="French">French</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                </form.AppField>
-              </SettingItem>
+	return (
+		<div className="space-y-8 pb-20">
+			<form.AppForm>
+				<form.Form className="p-0 gap-8">
+						{/* General Section */}
+						<Section title="General">
+							<SettingItem
+								title="Language"
+								description="Choose in what language the respondents will see your form. This applies to the text which is not customized by you, e.g. default buttons, errors, etc."
+							>
+								<form.AppField name="language">
+									{(field) => (
+										<Select
+											value={(field.state.value as string) || "English"}
+											onValueChange={field.handleChange}
+										>
+											<SelectTrigger className="w-[180px] h-9">
+												<SelectValue placeholder="Select language" />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="English">English</SelectItem>
+												<SelectItem value="Spanish">Spanish</SelectItem>
+												<SelectItem value="French">French</SelectItem>
+											</SelectContent>
+										</Select>
+									)}
+								</form.AppField>
+							</SettingItem>
 
               <SettingItem
                 title="Redirect on completion"
@@ -248,44 +251,41 @@ function SettingsPage() {
                 </form.AppField>
               </SettingItem>
 
-              <SettingItem
-                title="Save answers for later"
-                description="Save answers of non-submitted forms, so respondents can continue from where they left off. The answers are stored in the local browser storage and never leave the respondent's computer."
-              >
-                <form.AppField name="saveAnswersForLater">
-                  {(field) => (
-                    <Switch checked={field.state.value} onCheckedChange={field.handleChange} />
-                  )}
-                </form.AppField>
-              </SettingItem>
-            </Section>
-          </form.Form>
-        </form.AppForm>
-      </div>
+							<SettingItem
+								title="Save answers for later"
+								description="Save answers of non-submitted forms, so respondents can continue from where they left off. The answers are stored in the local browser storage and never leave the respondent's computer."
+							>
+								<form.AppField name="saveAnswersForLater">
+									{(field) => (
+										<Switch
+											checked={field.state.value}
+											onCheckedChange={field.handleChange}
+										/>
+									)}
+								</form.AppField>
+							</SettingItem>
+						</Section>
 
-      {/* Sticky Save Bar */}
-      <div className="fixed bottom-0 left-0 right-0 border-t bg-background/80 backdrop-blur-md p-4 flex items-center justify-center gap-6 z-10">
-        <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-          {([canSubmit, isSubmitting]) => (
-            <Button
-              className="bg-foreground text-background hover:bg-foreground/90 h-9 px-6 rounded-md font-medium transition-all"
-              disabled={!canSubmit || isSubmitting}
-              onClick={() => form.handleSubmit()}
-            >
-              {isSubmitting ? "Saving..." : "Save changes"}
-            </Button>
-          )}
-        </form.Subscribe>
-
-        <Button
-          variant="link"
-          className="text-muted-foreground hover:text-foreground h-auto p-0 text-sm font-normal"
-        >
-          Learn about settings
-        </Button>
-      </div>
-    </div>
-  );
+						{/* Save Button */}
+						<div className="pt-4 border-t">
+							<form.Subscribe
+								selector={(state) => [state.canSubmit, state.isSubmitting]}
+							>
+								{([canSubmit, isSubmitting]) => (
+									<Button
+										className="w-full"
+										disabled={!canSubmit || isSubmitting}
+										onClick={() => form.handleSubmit()}
+									>
+										{isSubmitting ? "Saving..." : "Save changes"}
+									</Button>
+								)}
+							</form.Subscribe>
+						</div>
+					</form.Form>
+				</form.AppForm>
+		</div>
+	);
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

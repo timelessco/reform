@@ -30,6 +30,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { duplicateForm, updateDoc, updateFormStatus } from "@/db-collections";
+import { useNavigate } from "@tanstack/react-router";
+import {
+    Copy,
+    MoreHorizontal,
+    Tag,
+    Trash2
+} from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 interface FormActionsMenuProps {
   form: any;
@@ -89,57 +98,42 @@ export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
     }
   };
 
-  return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full text-muted-foreground/40 hover:text-foreground transition-colors mt-1"
-          >
-            <MoreHorizontal className="h-5 w-5" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56">
-          <DropdownMenuItem
-            onClick={() =>
-              navigate({
-                to: "/workspace/$workspaceId/form-builder/$formId/edit",
-                params: { workspaceId, formId: form.id },
-              })
-            }
-          >
-            <Pencil className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>Edit</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => {
-              setNewTitle(form?.title || "");
-              setIsRenameOpen(true);
-            }}
-          >
-            <Tag className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>Rename</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleCopyLink}>
-            <LinkIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>Copy link to share</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleDuplicate}>
-            <Copy className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>Duplicate</span>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => setIsDeleteOpen(true)}
-            className="text-destructive focus:text-destructive"
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            <span>Delete</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+    return (
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-full text-muted-foreground/40 hover:text-foreground transition-colors mt-1"
+                    >
+                        <MoreHorizontal className="h-5 w-5" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                    <DropdownMenuItem
+                        onClick={() => {
+                            setNewTitle(form?.title || "");
+                            setIsRenameOpen(true);
+                        }}
+                    >
+                        <Tag className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <span>Rename</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleDuplicate}>
+                        <Copy className="mr-2 h-4 w-4 text-muted-foreground" />
+                        <span>Duplicate</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                        onClick={() => setIsDeleteOpen(true)}
+                        className="text-destructive focus:text-destructive"
+                    >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Delete</span>
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
 
       {/* Rename Dialog */}
       <Dialog open={isRenameOpen} onOpenChange={setIsRenameOpen}>

@@ -1,3 +1,23 @@
+import { FormActionsMenu } from "@/components/form-builder/form-actions-menu";
+import { Button } from "@/components/ui/button";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
+import {
+	Sheet,
+	SheetContent,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useForm, useWorkspace } from "@/hooks/use-live-hooks";
+import { getFormbyIdQueryOption } from "@/lib/fn/forms";
+import { cn } from "@/lib/utils";
 import {
 	createFileRoute,
 	Link,
@@ -5,24 +25,10 @@ import {
 	redirect,
 	useLocation,
 } from "@tanstack/react-router";
-import { Link as LinkIcon, Pencil } from "lucide-react";
-import type { Value } from "platejs";
+import { Link as LinkIcon, Pencil, Puzzle, Settings2 } from "lucide-react";
 import { z } from "zod";
-import { FormActionsMenu } from "@/components/form-builder/form-actions-menu";
-import { Button } from "@/components/ui/button";
-import { ErrorBoundary } from "@/components/ui/error-boundary";
-import Loader from "@/components/ui/loader";
-import { NotFound } from "@/components/ui/not-found";
-import { useForm } from "@/hooks/use-live-hooks";
-import { getFormbyIdQueryOption } from "@/lib/fn/forms";
-import { cn } from "@/lib/utils";
-
-type RedirectError = {
-	to?: string;
-	href?: string;
-	isRedirect?: boolean;
-	statusCode?: number;
-};
+import { IntegrationsContent } from "./integrations";
+import { SettingsContent } from "./settings";
 
 export const Route = createFileRoute(
 	"/_authenticated/workspace/$workspaceId/form-builder/$formId",
@@ -136,31 +142,10 @@ function FormLayout() {
 	const isEditRoute =
 		pathname.includes("/form-builder/") && pathname.includes("/edit");
 
-	const tabs: Array<{ name: string; href: string }> = [
-		{
-			name: "Summary",
-			href: `/workspace/${workspaceId}/form-builder/${formId}/summary`,
-		},
-		{
-			name: "Submissions",
-			href: `/workspace/${workspaceId}/form-builder/${formId}/submissions`,
-		},
-		{
-			name: "Share",
-			href: `/workspace/${workspaceId}/form-builder/${formId}/share`,
-		},
-		{
-			name: "Integrations",
-			href: `/workspace/${workspaceId}/form-builder/${formId}/integrations`,
-		},
-		{
-			name: "Insights",
-			href: `/workspace/${workspaceId}/form-builder/${formId}/insights`,
-		},
-		{
-			name: "Settings",
-			href: `/workspace/${workspaceId}/form-builder/${formId}/settings`,
-		},
+	const tabs = [
+		{ name: "Summary", href: `/workspace/${workspaceId}/form-builder/${formId}/summary` },
+		{ name: "Submissions", href: `/workspace/${workspaceId}/form-builder/${formId}/submissions` },
+		{ name: "Share", href: `/workspace/${workspaceId}/form-builder/${formId}/share` },
 	];
 
 	// Helper to check if a tab is active
@@ -216,21 +201,66 @@ function FormLayout() {
 					</div>
 
 					{/* Tab Navigation */}
-					<nav className="flex items-center gap-6">
-						{tabs.map((tab) => (
-							<Link
-								key={tab.name}
-								to={tab.href}
-								className={cn(
-									"pb-3 text-[13px] font-medium transition-all relative",
-									isActive(tab.href)
-										? "text-foreground after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-foreground"
-										: "text-muted-foreground/60 hover:text-foreground/80",
-								)}
-							>
-								{tab.name}
-							</Link>
-						))}
+					<nav className="flex items-center justify-between">
+						<div className="flex items-center gap-6">
+							{tabs.map((tab) => (
+								<Link
+									key={tab.name}
+									to={tab.href as any}
+									className={cn(
+										"pb-3 text-[13px] font-medium transition-all relative",
+										isActive(tab.href)
+											? "text-foreground after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-foreground"
+											: "text-muted-foreground/60 hover:text-foreground/80",
+									)}
+								>
+									{tab.name}
+								</Link>
+							))}
+						</div>
+						<div className="flex items-center gap-1">
+							<Sheet>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<SheetTrigger asChild>
+											<Button variant="ghost" size="icon" className="h-8 w-8">
+												<Puzzle className="h-4 w-4" />
+											</Button>
+										</SheetTrigger>
+									</TooltipTrigger>
+									<TooltipContent>Integrations</TooltipContent>
+								</Tooltip>
+								<SheetContent className="sm:max-w-lg overflow-y-auto">
+									<SheetHeader>
+										<SheetTitle>Integrations</SheetTitle>
+									</SheetHeader>
+									<div className="mt-6">
+										<IntegrationsContent />
+									</div>
+								</SheetContent>
+							</Sheet>
+
+							<Sheet>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<SheetTrigger asChild>
+											<Button variant="ghost" size="icon" className="h-8 w-8">
+												<Settings2 className="h-4 w-4" />
+											</Button>
+										</SheetTrigger>
+									</TooltipTrigger>
+									<TooltipContent>Settings</TooltipContent>
+								</Tooltip>
+								<SheetContent className="sm:max-w-lg overflow-y-auto">
+									<SheetHeader>
+										<SheetTitle>Settings</SheetTitle>
+									</SheetHeader>
+									<div className="mt-6">
+										<SettingsContent formId={formId} />
+									</div>
+								</SheetContent>
+							</Sheet>
+						</div>
 					</nav>
 				</div>
 			</div>

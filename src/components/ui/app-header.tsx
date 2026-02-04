@@ -384,29 +384,8 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
                   <TooltipContent>Share</TooltipContent>
                 </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                      asChild
-                    >
-                      <Link
-                        to="/workspace/$workspaceId/form-builder/$formId/settings"
-                        params={{
-                          formId: formId,
-                          workspaceId: workspaceId,
-                        }}
-                      >
-                        <Settings className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Settings</TooltipContent>
-                </Tooltip>
-              </>
-            )}
+							</>
+						)}
 
             <Separator orientation="vertical" className="mx-2 h-4" />
             <Button
