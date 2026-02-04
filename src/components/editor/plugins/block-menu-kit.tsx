@@ -5,8 +5,8 @@ import { BlockMenu } from "@/components/ui/block-menu";
 import { BlockSelectionKit } from "./block-selection-kit";
 
 export const BlockMenuKit = [
-	...BlockSelectionKit,
-	BlockMenuPlugin.configure({
-		render: { aboveEditable: BlockMenu },
-	}),
+  ...BlockSelectionKit,
+  BlockMenuPlugin.configure({
+    render: { aboveEditable: BlockMenu },
+  }),
 ];

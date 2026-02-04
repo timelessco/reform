@@ -5,19 +5,19 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = "Better Forms <noreply@share.recollect.so>";
 
 export async function sendOTPEmail(email: string, otp: string, type: string) {
-	// type: "sign-in" | "email-verification" | "forget-password"
-	const subject =
-		type === "email-verification"
-			? "Verify your email"
-			: type === "forget-password"
-				? "Reset your password"
-				: "Sign in to Better Forms";
+  // type: "sign-in" | "email-verification" | "forget-password"
+  const subject =
+    type === "email-verification"
+      ? "Verify your email"
+      : type === "forget-password"
+        ? "Reset your password"
+        : "Sign in to Better Forms";
 
-	const { error } = await resend.emails.send({
-		from: FROM_EMAIL,
-		to: email,
-		subject,
-		html: `
+  const { error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: email,
+    subject,
+    html: `
 			<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
 				<h2 style="color: #333;">${subject}</h2>
 				<p style="font-size: 16px; color: #555;">Your verification code is:</p>
@@ -27,23 +27,19 @@ export async function sendOTPEmail(email: string, otp: string, type: string) {
 				<p style="font-size: 12px; color: #999;">If you didn't request this code, you can safely ignore this email.</p>
 			</div>
 		`,
-	});
+  });
 
-	if (error) {
-		logger("[Email] Failed to send OTP:", error);
-	}
+  if (error) {
+    logger("[Email] Failed to send OTP:", error);
+  }
 }
 
-export async function sendOrgInvitationEmail(
-	email: string,
-	orgName: string,
-	inviterName: string,
-) {
-	const { error } = await resend.emails.send({
-		from: FROM_EMAIL,
-		to: email,
-		subject: `You're invited to join ${orgName}`,
-		html: `
+export async function sendOrgInvitationEmail(email: string, orgName: string, inviterName: string) {
+  const { error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: email,
+    subject: `You're invited to join ${orgName}`,
+    html: `
 			<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
 				<h2 style="color: #333;">You're invited!</h2>
 				<p style="font-size: 16px; color: #555;">
@@ -56,9 +52,9 @@ export async function sendOrgInvitationEmail(
 				<p style="font-size: 12px; color: #999;">If you weren't expecting this invitation, you can safely ignore this email.</p>
 			</div>
 		`,
-	});
+  });
 
-	if (error) {
-		logger("[Email] Failed to send invitation:", error);
-	}
+  if (error) {
+    logger("[Email] Failed to send invitation:", error);
+  }
 }

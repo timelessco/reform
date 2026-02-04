@@ -6,6 +6,7 @@ import {
 	useLocation,
 } from "@tanstack/react-router";
 import { Link as LinkIcon, Pencil } from "lucide-react";
+import type { Value } from "platejs";
 import { z } from "zod";
 import { FormActionsMenu } from "@/components/form-builder/form-actions-menu";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,13 @@ import { NotFound } from "@/components/ui/not-found";
 import { useForm } from "@/hooks/use-live-hooks";
 import { getFormbyIdQueryOption } from "@/lib/fn/forms";
 import { cn } from "@/lib/utils";
+
+type RedirectError = {
+	to?: string;
+	href?: string;
+	isRedirect?: boolean;
+	statusCode?: number;
+};
 
 export const Route = createFileRoute(
 	"/_authenticated/workspace/$workspaceId/form-builder/$formId",
@@ -55,18 +63,21 @@ export const Route = createFileRoute(
 						params: { workspaceId: params.workspaceId, formId: params.formId },
 					});
 				}
-			} catch (error: any) {
+			} catch (error: unknown) {
 				// If it's a redirect (TanStack Router throws redirect objects), rethrow it
 				// Redirect objects have specific properties like 'to', 'href', or are Response instances
+				const redirectError = error as RedirectError;
 				if (
 					error instanceof Response ||
-					error?.to !== undefined ||
-					error?.href !== undefined ||
-					error?.isRedirect === true ||
-					error?.statusCode === 301 ||
-					error?.statusCode === 302 ||
-					error?.statusCode === 307 ||
-					error?.statusCode === 308
+					(typeof error === "object" &&
+						error !== null &&
+						(redirectError.to !== undefined ||
+							redirectError.href !== undefined ||
+							redirectError.isRedirect === true ||
+							redirectError.statusCode === 301 ||
+							redirectError.statusCode === 302 ||
+							redirectError.statusCode === 307 ||
+							redirectError.statusCode === 308))
 				) {
 					throw error;
 				}
@@ -89,12 +100,13 @@ export const Route = createFileRoute(
 				...getFormbyIdQueryOption(formId),
 				revalidateIfStale: true,
 			});
+			const initialContent = (result.form.content as Value) ?? ([] as Value);
 			return {
-				initialContent: result.form.content as any[],
+				initialContent,
 			};
-		} catch (_error) {
+		} catch {
 			return {
-				initialContent: [],
+				initialContent: [] as Value,
 			};
 		}
 	},
@@ -124,7 +136,7 @@ function FormLayout() {
 	const isEditRoute =
 		pathname.includes("/form-builder/") && pathname.includes("/edit");
 
-	const tabs = [
+	const tabs: Array<{ name: string; href: string }> = [
 		{
 			name: "Summary",
 			href: `/workspace/${workspaceId}/form-builder/${formId}/summary`,
@@ -208,7 +220,7 @@ function FormLayout() {
 						{tabs.map((tab) => (
 							<Link
 								key={tab.name}
-								to={tab.href as any}
+								to={tab.href}
 								className={cn(
 									"pb-3 text-[13px] font-medium transition-all relative",
 									isActive(tab.href)

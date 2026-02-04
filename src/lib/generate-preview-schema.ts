@@ -14,48 +14,42 @@ import type { PlateFormField } from "./transform-plate-to-form";
  * @returns Zod object schema for form validation
  */
 export function generateZodSchemaFromFields(
-	fields: PlateFormField[],
+  fields: PlateFormField[],
 ): z.ZodObject<Record<string, ZodType>> {
-	const schemaShape: Record<string, ZodType> = {};
+  const schemaShape: Record<string, ZodType> = {};
 
-	for (const field of fields) {
-		// Skip Button fields - they don't have validation
-		if (field.fieldType === "Button") {
-			continue;
-		}
+  for (const field of fields) {
+    // Skip Button fields - they don't have validation
+    if (field.fieldType === "Button") {
+      continue;
+    }
 
-		let schema: z.ZodString = z.string();
+    let schema: z.ZodString = z.string();
 
-		// Apply minLength constraint
-		if (field.minLength !== undefined && field.minLength > 0) {
-			schema = schema.min(
-				field.minLength,
-				`Minimum ${field.minLength} characters required`,
-			);
-		}
+    // Apply minLength constraint
+    if (field.minLength !== undefined && field.minLength > 0) {
+      schema = schema.min(field.minLength, `Minimum ${field.minLength} characters required`);
+    }
 
-		// Apply maxLength constraint
-		if (field.maxLength !== undefined && field.maxLength > 0) {
-			schema = schema.max(
-				field.maxLength,
-				`Maximum ${field.maxLength} characters allowed`,
-			);
-		}
+    // Apply maxLength constraint
+    if (field.maxLength !== undefined && field.maxLength > 0) {
+      schema = schema.max(field.maxLength, `Maximum ${field.maxLength} characters allowed`);
+    }
 
-		// Required fields must have at least 1 character
-		if (field.required) {
-			// Only add min(1) if no minLength is set
-			if (field.minLength === undefined) {
-				schema = schema.min(1, "This field is required");
-			}
-			schemaShape[field.name] = schema;
-		} else {
-			// Optional fields
-			schemaShape[field.name] = schema.optional();
-		}
-	}
+    // Required fields must have at least 1 character
+    if (field.required) {
+      // Only add min(1) if no minLength is set
+      if (field.minLength === undefined) {
+        schema = schema.min(1, "This field is required");
+      }
+      schemaShape[field.name] = schema;
+    } else {
+      // Optional fields
+      schemaShape[field.name] = schema.optional();
+    }
+  }
 
-	return z.object(schemaShape);
+  return z.object(schemaShape);
 }
 
 /**
@@ -64,18 +58,16 @@ export function generateZodSchemaFromFields(
  * @param fields - Array of form fields
  * @returns Object with field names as keys and default values
  */
-export function generateDefaultValuesFromFields(
-	fields: PlateFormField[],
-): Record<string, unknown> {
-	const defaults: Record<string, unknown> = {};
+export function generateDefaultValuesFromFields(fields: PlateFormField[]): Record<string, unknown> {
+  const defaults: Record<string, unknown> = {};
 
-	for (const field of fields) {
-		// Skip Button fields - they don't have form values
-		if (field.fieldType === "Button") {
-			continue;
-		}
-		defaults[field.name] = field.defaultValue ?? "";
-	}
+  for (const field of fields) {
+    // Skip Button fields - they don't have form values
+    if (field.fieldType === "Button") {
+      continue;
+    }
+    defaults[field.name] = field.defaultValue ?? "";
+  }
 
-	return defaults;
+  return defaults;
 }

@@ -8,4 +8,28 @@
   marginwidth="0"
   title="Multi Step Test"
 ></iframe>
-<script>window.addEventListener("message",function(e){try{var d=JSON.parse(e.data);if(d.event==="BetterForms.Resize"){var f=document.querySelector('iframe[data-better-forms-src]');if(f&&typeof d.height==="number")f.style.height=d.height+"px"}}catch{}});var d=document,w="http://localhost:3000/widgets/embed.js",v=function(){"undefined"!=typeof BetterForms?BetterForms.loadEmbeds():d.querySelectorAll("iframe[data-better-forms-src]:not([src])").forEach((function(e){e.src=e.dataset.betterFormsSrc}))};if("undefined"!=typeof BetterForms)v();else if(d.querySelector('script[src="'+w+'"]')==null){var s=d.createElement("script");s.src=w,s.onload=v,s.onerror=v,d.body.appendChild(s);}</script>
+<script>
+  window.addEventListener("message", function (e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.event === "BetterForms.Resize") {
+        var f = document.querySelector("iframe[data-better-forms-src]");
+        if (f && typeof d.height === "number") f.style.height = d.height + "px";
+      }
+    } catch {}
+  });
+  var d = document,
+    w = "http://localhost:3000/widgets/embed.js",
+    v = function () {
+      "undefined" != typeof BetterForms
+        ? BetterForms.loadEmbeds()
+        : d.querySelectorAll("iframe[data-better-forms-src]:not([src])").forEach(function (e) {
+            e.src = e.dataset.betterFormsSrc;
+          });
+    };
+  if ("undefined" != typeof BetterForms) v();
+  else if (d.querySelector('script[src="' + w + '"]') == null) {
+    var s = d.createElement("script");
+    ((s.src = w), (s.onload = v), (s.onerror = v), d.body.appendChild(s));
+  }
+</script>

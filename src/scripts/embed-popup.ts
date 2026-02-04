@@ -13,18 +13,14 @@
 
 import { createIframe, destroyIframe, updateIframeHeight } from "./lib/iframe";
 import {
-	createOverlay,
-	destroyOverlay,
-	hideEmoji,
-	hideLoading,
-	updatePopupHeight,
+  createOverlay,
+  destroyOverlay,
+  hideEmoji,
+  hideLoading,
+  updatePopupHeight,
 } from "./lib/overlay";
 import { injectStyles } from "./lib/styles";
-import {
-	checkHashTrigger,
-	setupClickTriggers,
-	setupHashChangeListener,
-} from "./lib/triggers";
+import { checkHashTrigger, setupClickTriggers, setupHashChangeListener } from "./lib/triggers";
 import type { IframeEvent, PopupInstance, PopupOptions } from "./lib/types";
 
 // Registry of active popup instances
@@ -34,201 +30,199 @@ const activePopups = new Map<string, PopupInstance>();
  * Open a popup for the given form
  */
 function openPopup(formId: string, options: PopupOptions = {}): void {
-	// Don't open if already open
-	if (activePopups.has(formId)) {
-		console.warn(`[BetterForms] Popup for form ${formId} is already open`);
-		return;
-	}
+  // Don't open if already open
+  if (activePopups.has(formId)) {
+    console.warn(`[BetterForms] Popup for form ${formId} is already open`);
+    return;
+  }
 
-	// Create overlay and popup container
-	const elements = createOverlay(formId, options, () => closePopup(formId));
+  // Create overlay and popup container
+  const elements = createOverlay(formId, options, () => closePopup(formId));
 
-	// Create iframe
-	const iframe = createIframe(formId, options, elements.iframeContainer);
+  // Create iframe
+  const iframe = createIframe(formId, options, elements.iframeContainer);
 
-	// Store instance
-	const instance: PopupInstance = {
-		formId,
-		options,
-		container: elements.popup,
-		iframe,
-		overlay: elements.overlay,
-	};
-	activePopups.set(formId, instance);
+  // Store instance
+  const instance: PopupInstance = {
+    formId,
+    options,
+    container: elements.popup,
+    iframe,
+    overlay: elements.overlay,
+  };
+  activePopups.set(formId, instance);
 
-	// Setup iframe load handler
-	iframe.addEventListener("load", () => {
-		hideLoading(elements.loadingEl);
-	});
+  // Setup iframe load handler
+  iframe.addEventListener("load", () => {
+    hideLoading(elements.loadingEl);
+  });
 
-	// Call onOpen callback
-	if (options.onOpen) {
-		try {
-			options.onOpen();
-		} catch (e) {
-			console.error("[BetterForms] onOpen callback error:", e);
-		}
-	}
+  // Call onOpen callback
+  if (options.onOpen) {
+    try {
+      options.onOpen();
+    } catch (e) {
+      console.error("[BetterForms] onOpen callback error:", e);
+    }
+  }
 }
 
 /**
  * Close the popup for the given form
  */
 function closePopup(formId: string): void {
-	const instance = activePopups.get(formId);
-	if (!instance) {
-		return;
-	}
+  const instance = activePopups.get(formId);
+  if (!instance) {
+    return;
+  }
 
-	// Cleanup iframe
-	destroyIframe(instance.iframe);
+  // Cleanup iframe
+  destroyIframe(instance.iframe);
 
-	// Cleanup overlay
-	if (instance.overlay) {
-		destroyOverlay(instance.overlay);
-	}
+  // Cleanup overlay
+  if (instance.overlay) {
+    destroyOverlay(instance.overlay);
+  }
 
-	// Remove from registry
-	activePopups.delete(formId);
+  // Remove from registry
+  activePopups.delete(formId);
 
-	// Call onClose callback
-	if (instance.options.onClose) {
-		try {
-			instance.options.onClose();
-		} catch (e) {
-			console.error("[BetterForms] onClose callback error:", e);
-		}
-	}
+  // Call onClose callback
+  if (instance.options.onClose) {
+    try {
+      instance.options.onClose();
+    } catch (e) {
+      console.error("[BetterForms] onClose callback error:", e);
+    }
+  }
 }
 
 /**
  * Handle postMessage events from iframes
  */
 function handleMessage(event: MessageEvent): void {
-	// Parse message data
-	let data: IframeEvent;
-	try {
-		// Support both string and object messages
-		data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-	} catch {
-		// Not a JSON message, ignore
-		return;
-	}
+  // Parse message data
+  let data: IframeEvent;
+  try {
+    // Support both string and object messages
+    data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+  } catch {
+    // Not a JSON message, ignore
+    return;
+  }
 
-	// Only handle BetterForms events
-	if (!data?.event?.startsWith("BetterForms.")) {
-		return;
-	}
+  // Only handle BetterForms events
+  if (!data?.event?.startsWith("BetterForms.")) {
+    return;
+  }
 
-	// Find the corresponding popup instance by checking iframe source
-	let instance: PopupInstance | undefined;
-	for (const popup of activePopups.values()) {
-		if (popup.iframe.contentWindow === event.source) {
-			instance = popup;
-			break;
-		}
-	}
+  // Find the corresponding popup instance by checking iframe source
+  let instance: PopupInstance | undefined;
+  for (const popup of activePopups.values()) {
+    if (popup.iframe.contentWindow === event.source) {
+      instance = popup;
+      break;
+    }
+  }
 
-	if (!instance) {
-		return;
-	}
+  if (!instance) {
+    return;
+  }
 
-	switch (data.event) {
-		case "BetterForms.FormLoaded":
-			// Form has loaded, hide loading indicator is already handled by iframe load event
-			break;
+  switch (data.event) {
+    case "BetterForms.FormLoaded":
+      // Form has loaded, hide loading indicator is already handled by iframe load event
+      break;
 
-		case "BetterForms.Resize":
-			// Update iframe and popup height
-			if (typeof data.height === "number") {
-				updateIframeHeight(instance.iframe, data.height);
-				updatePopupHeight(instance.container, data.height);
-			}
-			break;
+    case "BetterForms.Resize":
+      // Update iframe and popup height
+      if (typeof data.height === "number") {
+        updateIframeHeight(instance.iframe, data.height);
+        updatePopupHeight(instance.container, data.height);
+      }
+      break;
 
-		case "BetterForms.FormSubmitted":
-			// Handle form submission
-			if (instance.options.onSubmit) {
-				try {
-					instance.options.onSubmit(data.payload);
-				} catch (e) {
-					console.error("[BetterForms] onSubmit callback error:", e);
-				}
-			}
+    case "BetterForms.FormSubmitted":
+      // Handle form submission
+      if (instance.options.onSubmit) {
+        try {
+          instance.options.onSubmit(data.payload);
+        } catch (e) {
+          console.error("[BetterForms] onSubmit callback error:", e);
+        }
+      }
 
-			// Auto-close if configured
-			if (instance.options.autoClose && instance.options.autoClose > 0) {
-				setTimeout(() => {
-					closePopup(instance?.formId);
-				}, instance.options.autoClose);
-			}
+      // Auto-close if configured
+      if (instance.options.autoClose && instance.options.autoClose > 0) {
+        setTimeout(() => {
+          closePopup(instance?.formId);
+        }, instance.options.autoClose);
+      }
 
-			// TODO: Analytics forwarding (future)
-			// Forward to dataLayer/fbq if available
-			break;
+      // TODO: Analytics forwarding (future)
+      // Forward to dataLayer/fbq if available
+      break;
 
-		case "BetterForms.PageView":
-			// Multi-step form page change
-			if (instance.options.onPageView && "page" in data) {
-				try {
-					instance.options.onPageView(data.page);
-				} catch (e) {
-					console.error("[BetterForms] onPageView callback error:", e);
-				}
-			}
+    case "BetterForms.PageView":
+      // Multi-step form page change
+      if (instance.options.onPageView && "page" in data) {
+        try {
+          instance.options.onPageView(data.page);
+        } catch (e) {
+          console.error("[BetterForms] onPageView callback error:", e);
+        }
+      }
 
-			// Hide emoji after first page
-			if ("page" in data && data.page > 1) {
-				const overlayEl = instance.overlay;
-				if (overlayEl) {
-					const emojiEl = overlayEl.querySelector(
-						".bf-emoji",
-					) as HTMLElement | null;
-					if (emojiEl) {
-						hideEmoji(emojiEl);
-					}
-				}
-			}
-			break;
+      // Hide emoji after first page
+      if ("page" in data && data.page > 1) {
+        const overlayEl = instance.overlay;
+        if (overlayEl) {
+          const emojiEl = overlayEl.querySelector(".bf-emoji") as HTMLElement | null;
+          if (emojiEl) {
+            hideEmoji(emojiEl);
+          }
+        }
+      }
+      break;
 
-		case "BetterForms.Close":
-			// Close requested from iframe
-			closePopup(instance.formId);
-			break;
-	}
+    case "BetterForms.Close":
+      // Close requested from iframe
+      closePopup(instance.formId);
+      break;
+  }
 }
 
 /**
  * Initialize the embed script
  */
 function init(): void {
-	// Inject styles
-	injectStyles();
+  // Inject styles
+  injectStyles();
 
-	// Setup click event triggers
-	setupClickTriggers(openPopup);
+  // Setup click event triggers
+  setupClickTriggers(openPopup);
 
-	// Check for hash trigger on page load
-	checkHashTrigger(openPopup);
+  // Check for hash trigger on page load
+  checkHashTrigger(openPopup);
 
-	// Listen for hash changes
-	setupHashChangeListener(openPopup);
+  // Listen for hash changes
+  setupHashChangeListener(openPopup);
 
-	// Setup message listener for iframe communication
-	window.addEventListener("message", handleMessage);
+  // Setup message listener for iframe communication
+  window.addEventListener("message", handleMessage);
 }
 
 // Create global API
 window.BetterForms = {
-	openPopup,
-	closePopup,
+  openPopup,
+  closePopup,
 };
 
 // Initialize when DOM is ready
 if (document.readyState === "loading") {
-	document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded", init);
 } else {
-	init();
+  init();
 }
 
 // Export for potential future module usage

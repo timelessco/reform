@@ -6,6 +6,7 @@ import { EditorKit } from "@/components/editor/editor-kit";
 import { Button } from "@/components/ui/button";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { createFormButtonNode } from "@/components/ui/form-button-node";
+import type { FormHeaderElementData } from "@/components/ui/form-header-node";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import { updateDoc, updateHeader } from "@/db-collections";
 import { useForm } from "@/hooks/use-live-hooks";
@@ -208,15 +209,15 @@ export default function EditorApp({
 
 			// Always update the full content when it changes
 			updateDoc(formId, (draft) => {
-				(draft.workspaceId = workspaceId),
-					(draft.createdAt = now),
-					(draft.updatedAt = now),
-					(draft.content = value);
+				draft.workspaceId = workspaceId;
+				draft.createdAt = now;
+				draft.updatedAt = now;
+				draft.content = value;
 			});
 
 			// Optionally update header metadata if the first element is a formHeader
 			if (value.length > 0 && value[0]?.type === "formHeader") {
-				const headerNode = value[0] as any;
+				const headerNode = value[0] as FormHeaderElementData;
 				updateHeader(formId, {
 					title: headerNode.title,
 					icon: headerNode.icon,

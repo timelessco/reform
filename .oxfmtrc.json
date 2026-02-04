@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "indentStyle": "tab",
+  "quoteStyle": "double",
+  "ignorePatterns": [
+    "**/routeTree.gen.ts",
+    "**/styles.css",
+    "**/node_modules/**",
+    "**/.output/**",
+    "**/dist/**"
+  ]
+}

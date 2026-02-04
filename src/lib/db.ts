@@ -8,19 +8,19 @@ let dbInstance: ReturnType<typeof drizzle> | undefined;
  * This ensures DATABASE_URL is read at runtime rather than build time.
  */
 export function getDb() {
-	if (!dbInstance) {
-		const url = process.env.DATABASE_URL;
-		if (!url) {
-			throw new Error(
-				"DATABASE_URL is not set. Set it in your .env file or environment variables before running the server.",
-			);
-		}
-		dbInstance = drizzle(url, {
-			schema,
-			relations: schema.relations,
-		});
-	}
-	return dbInstance;
+  if (!dbInstance) {
+    const url = process.env.DATABASE_URL;
+    if (!url) {
+      throw new Error(
+        "DATABASE_URL is not set. Set it in your .env file or environment variables before running the server.",
+      );
+    }
+    dbInstance = drizzle(url, {
+      schema,
+      relations: schema.relations,
+    });
+  }
+  return dbInstance;
 }
 
 // Re-export for backwards compatibility

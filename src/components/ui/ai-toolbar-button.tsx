@@ -4,20 +4,18 @@ import type * as React from "react";
 
 import { ToolbarButton } from "./toolbar";
 
-export function AIToolbarButton(
-	props: React.ComponentProps<typeof ToolbarButton>,
-) {
-	const { api } = useEditorPlugin(AIChatPlugin);
+export function AIToolbarButton(props: React.ComponentProps<typeof ToolbarButton>) {
+  const { api } = useEditorPlugin(AIChatPlugin);
 
-	return (
-		<ToolbarButton
-			{...props}
-			onClick={() => {
-				api.aiChat.show();
-			}}
-			onMouseDown={(e) => {
-				e.preventDefault();
-			}}
-		/>
-	);
+  return (
+    <ToolbarButton
+      {...props}
+      onClick={() => {
+        api.aiChat.show();
+      }}
+      onMouseDown={(e) => {
+        e.preventDefault();
+      }}
+    />
+  );
 }

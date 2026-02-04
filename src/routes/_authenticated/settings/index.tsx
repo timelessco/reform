@@ -4,12 +4,12 @@ import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 
 export const Route = createFileRoute("/_authenticated/settings/")({
-	beforeLoad: () => {
-		throw redirect({
-			to: "/settings/my-account",
-		});
-	},
-	pendingComponent: Loader,
-	errorComponent: ErrorBoundary,
-	notFoundComponent: NotFound,
+  beforeLoad: () => {
+    throw redirect({
+      to: "/settings/my-account",
+    });
+  },
+  pendingComponent: Loader,
+  errorComponent: ErrorBoundary,
+  notFoundComponent: NotFound,
 });

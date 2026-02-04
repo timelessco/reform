@@ -9,7 +9,6 @@
 - Make the plan extremely concise. Sacrifice grammar for the sake of concision.
 - At the end of each plan, give me a list of unresolved questions to answer, if any.
 
-
 ## OVERVIEW
 
 Form builder with Local-First architecture. TanStack Start (React 19 + Nitro SSR), Plate.js rich text editor, Drizzle/PostgreSQL, Better Auth (OTP/2FA), ORPC type-safe RPC.
@@ -40,27 +39,27 @@ Form builder with Local-First architecture. TanStack Start (React 19 + Nitro SSR
 
 ## WHERE TO LOOK
 
-| Task | Location | Notes |
-|------|----------|-------|
-| Add UI component | `src/components/ui/` | Shadcn pattern, import from `@/components/ui/*` |
-| Editor plugins | `src/components/editor/plugins/` | Plate.js custom plugins |
-| Form logic hooks | `src/hooks/` | `useForm`, `useEditor` hooks |
-| Auth integration | `src/lib/auth.ts` + `auth-client.ts` | Better Auth server + client |
-| API procedures | `src/orpc/router/` | ORPC procedure definitions |
-| Database schema | `src/db/schema.ts` | Drizzle tables + relations |
-| Local persistence | `src/db-collections/` | IndexedDB via TanStack React DB |
-| Route handlers | `src/routes/` | File-based routes, `.gen.ts` auto-generated |
+| Task              | Location                             | Notes                                           |
+| ----------------- | ------------------------------------ | ----------------------------------------------- |
+| Add UI component  | `src/components/ui/`                 | Shadcn pattern, import from `@/components/ui/*` |
+| Editor plugins    | `src/components/editor/plugins/`     | Plate.js custom plugins                         |
+| Form logic hooks  | `src/hooks/`                         | `useForm`, `useEditor` hooks                    |
+| Auth integration  | `src/lib/auth.ts` + `auth-client.ts` | Better Auth server + client                     |
+| API procedures    | `src/orpc/router/`                   | ORPC procedure definitions                      |
+| Database schema   | `src/db/schema.ts`                   | Drizzle tables + relations                      |
+| Local persistence | `src/db-collections/`                | IndexedDB via TanStack React DB                 |
+| Route handlers    | `src/routes/`                        | File-based routes, `.gen.ts` auto-generated     |
 
 ## CODE MAP
 
-| Symbol | Type | Location | Role |
-|--------|------|----------|------|
-| `router.tsx` | file | `src/` | App bootstrap, TanStack Router instance |
-| `__root.tsx` | file | `src/routes/` | Root layout, HTML shell, providers |
-| `routeTree.gen.ts` | file | `src/` | Auto-generated route hierarchy |
-| `authMiddleware` | func | `src/middleware/` | Session + email verification guard |
-| `editorDocCollection` | obj | `src/db-collections/` | IndexedDB for form drafts |
-| `orpc` | obj | `src/orpc/` | Type-safe RPC client + procedures |
+| Symbol                | Type | Location              | Role                                    |
+| --------------------- | ---- | --------------------- | --------------------------------------- |
+| `router.tsx`          | file | `src/`                | App bootstrap, TanStack Router instance |
+| `__root.tsx`          | file | `src/routes/`         | Root layout, HTML shell, providers      |
+| `routeTree.gen.ts`    | file | `src/`                | Auto-generated route hierarchy          |
+| `authMiddleware`      | func | `src/middleware/`     | Session + email verification guard      |
+| `editorDocCollection` | obj  | `src/db-collections/` | IndexedDB for form drafts               |
+| `orpc`                | obj  | `src/orpc/`           | Type-safe RPC client + procedures       |
 
 ## CONVENTIONS
 

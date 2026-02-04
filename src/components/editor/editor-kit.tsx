@@ -37,54 +37,54 @@ import { TocKit } from "@/components/editor/plugins/toc-kit";
 import { ToggleKit } from "@/components/editor/plugins/toggle-kit";
 
 export const EditorKit = [
-	...FormHeaderKit,
-	...OnboardingKit,
-	...BasicBlocksKit,
-	...CodeBlockKit,
-	...TableKit,
-	...ToggleKit,
-	...TocKit,
-	...MediaKit,
-	...CalloutKit,
-	...ColumnKit,
-	...MathKit,
-	...FormBlocksKit,
-	...DateKit,
-	...LinkKit,
-	...MentionKit,
+  ...FormHeaderKit,
+  ...OnboardingKit,
+  ...BasicBlocksKit,
+  ...CodeBlockKit,
+  ...TableKit,
+  ...ToggleKit,
+  ...TocKit,
+  ...MediaKit,
+  ...CalloutKit,
+  ...ColumnKit,
+  ...MathKit,
+  ...FormBlocksKit,
+  ...DateKit,
+  ...LinkKit,
+  ...MentionKit,
 
-	// Marks
-	...BasicMarksKit,
-	...FontKit,
+  // Marks
+  ...BasicMarksKit,
+  ...FontKit,
 
-	// Block Style
-	...ListKit,
-	...AlignKit,
-	...LineHeightKit,
+  // Block Style
+  ...ListKit,
+  ...AlignKit,
+  ...LineHeightKit,
 
-	// Collaboration
-	...DiscussionKit,
-	...CommentKit,
-	...SuggestionKit,
+  // Collaboration
+  ...DiscussionKit,
+  ...CommentKit,
+  ...SuggestionKit,
 
-	// Editing
-	...SlashKit,
-	...AutoformatKit,
-	...CursorOverlayKit,
-	...BlockMenuKit,
-	...DndKit,
-	...EmojiKit,
-	...ExitBreakKit,
-	TrailingBlockPlugin,
+  // Editing
+  ...SlashKit,
+  ...AutoformatKit,
+  ...CursorOverlayKit,
+  ...BlockMenuKit,
+  ...DndKit,
+  ...EmojiKit,
+  ...ExitBreakKit,
+  TrailingBlockPlugin,
 
-	// Parsers
-	...DocxKit,
-	...MarkdownKit,
+  // Parsers
+  ...DocxKit,
+  ...MarkdownKit,
 
-	// UI
-	...BlockPlaceholderKit,
-	// ...FixedToolbarKit,
-	...FloatingToolbarKit,
+  // UI
+  ...BlockPlaceholderKit,
+  // ...FixedToolbarKit,
+  ...FloatingToolbarKit,
 ];
 
 export type MyEditor = TPlateEditor<Value, (typeof EditorKit)[number]>;

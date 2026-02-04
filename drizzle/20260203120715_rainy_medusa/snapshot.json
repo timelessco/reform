@@ -2,9 +2,7 @@
   "version": "8",
   "dialect": "postgres",
   "id": "1846d8b6-f7b3-44e8-8541-bca8240c2264",
-  "prevIds": [
-    "4086064a-8a51-44ae-bc87-bacd9f03b188"
-  ],
+  "prevIds": ["4086064a-8a51-44ae-bc87-bacd9f03b188"],
   "ddl": [
     {
       "isRlsEnabled": false,
@@ -3540,14 +3538,10 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "formId"
-      ],
+      "columns": ["formId"],
       "schemaTo": "public",
       "tableTo": "forms",
-      "columnsTo": [
-        "id"
-      ],
+      "columnsTo": ["id"],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "form_favorites_formId_forms_id_fkey",
@@ -3556,9 +3550,7 @@
       "table": "form_favorites"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "account_pkey",
       "schema": "public",
@@ -3566,9 +3558,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "apikey_pkey",
       "schema": "public",
@@ -3576,9 +3566,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "form_analytics_daily_pkey",
       "schema": "public",
@@ -3586,9 +3574,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "form_dropoff_daily_pkey",
       "schema": "public",
@@ -3596,9 +3582,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "form_favorites_pkey",
       "schema": "public",
@@ -3606,9 +3590,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "form_question_progress_pkey",
       "schema": "public",
@@ -3616,9 +3598,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "form_settings_pkey",
       "schema": "public",
@@ -3626,9 +3606,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "form_share_settings_pkey",
       "schema": "public",
@@ -3636,9 +3614,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "form_versions_pkey",
       "schema": "public",
@@ -3646,9 +3622,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "form_visits_pkey",
       "schema": "public",
@@ -3656,9 +3630,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "forms_pkey",
       "schema": "public",
@@ -3666,9 +3638,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "invitation_pkey",
       "schema": "public",
@@ -3676,9 +3646,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "member_pkey",
       "schema": "public",
@@ -3686,9 +3654,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "organization_pkey",
       "schema": "public",
@@ -3696,9 +3662,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "session_pkey",
       "schema": "public",
@@ -3706,9 +3670,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "submissions_pkey",
       "schema": "public",
@@ -3716,9 +3678,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "todos_pkey",
       "schema": "public",
@@ -3726,9 +3686,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "twoFactor_pkey",
       "schema": "public",
@@ -3736,9 +3694,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "user_pkey",
       "schema": "public",
@@ -3746,9 +3702,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "verification_pkey",
       "schema": "public",
@@ -3756,9 +3710,7 @@
       "entityType": "pks"
     },
     {
-      "columns": [
-        "id"
-      ],
+      "columns": ["id"],
       "nameExplicit": false,
       "name": "workspaces_pkey",
       "schema": "public",
@@ -3767,9 +3719,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "formId"
-      ],
+      "columns": ["formId"],
       "nullsNotDistinct": false,
       "name": "form_settings_formId_key",
       "schema": "public",
@@ -3778,9 +3728,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "formId"
-      ],
+      "columns": ["formId"],
       "nullsNotDistinct": false,
       "name": "form_share_settings_formId_key",
       "schema": "public",
@@ -3789,9 +3737,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "slug"
-      ],
+      "columns": ["slug"],
       "nullsNotDistinct": false,
       "name": "organization_slug_key",
       "schema": "public",
@@ -3800,9 +3746,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "token"
-      ],
+      "columns": ["token"],
       "nullsNotDistinct": false,
       "name": "session_token_key",
       "schema": "public",
@@ -3811,9 +3755,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "email"
-      ],
+      "columns": ["email"],
       "nullsNotDistinct": false,
       "name": "user_email_key",
       "schema": "public",
@@ -3822,9 +3764,7 @@
     },
     {
       "nameExplicit": false,
-      "columns": [
-        "username"
-      ],
+      "columns": ["username"],
       "nullsNotDistinct": false,
       "name": "user_username_key",
       "schema": "public",

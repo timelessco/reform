@@ -1,4 +1,128 @@
-"use strict";(()=>{function I(){let t=document.getElementsByTagName("script");for(let e=t.length-1;e>=0;e--){let n=t[e].src;if(n?.includes("/embed/popup.js"))try{return new URL(n).origin}catch{}}return window.location.origin}function M(t,e){let n=I(),o=new URLSearchParams;if(o.set("popup","1"),o.set("originPage",window.location.pathname),e.hideTitle&&o.set("hideTitle","1"),e.alignLeft&&o.set("alignLeft","1"),o.set("transparent","1"),e.hiddenFields)for(let[a,l]of Object.entries(e.hiddenFields))o.set(a,l);return new URLSearchParams(window.location.search).forEach((a,l)=>{o.has(l)||o.set(l,a)}),`${n}/forms/${t}?${o.toString()}`}function h(t,e,n){let o=document.createElement("iframe");o.className="bf-iframe",o.setAttribute("title","Better Forms"),o.setAttribute("frameborder","0"),o.setAttribute("allow","fullscreen"),o.setAttribute("data-bf-form-id",t),o.style.height="400px";let i=M(t,e);return o.src=i,n.appendChild(o),o}function y(t,e){let n=e+2;t.style.height=`${n}px`}function x(t){t.remove()}var F='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';function v(t,e,n){let o=e.layout==="modal"||e.position==="center",i=e.overlay!==!1||o,a=e.position||"bottom-right",l=e.width||376,s=document.createElement("div");s.className=`bf-overlay ${i?"":"bf-overlay--no-bg"}`,s.setAttribute("data-bf-form-id",t),i&&s.addEventListener("click",O=>{O.target===s&&n()});let r=document.createElement("div");r.className=`bf-popup bf-popup--${o?"center":a}`,r.style.width=`${l}px`,r.style.maxHeight="600px";let p=document.createElement("button");p.className="bf-close-btn",p.innerHTML=F,p.setAttribute("aria-label","Close form"),p.addEventListener("click",n);let c=document.createElement("div");c.className="bf-iframe-container";let f=document.createElement("div");f.className="bf-loading",f.innerHTML='<div class="bf-loading-spinner"></div>';let d;return e.emoji?.text&&(d=document.createElement("div"),d.className=`bf-emoji ${A(e.emoji.animation)}`,d.textContent=e.emoji.text),r.appendChild(p),r.appendChild(f),r.appendChild(c),d&&r.appendChild(d),s.appendChild(r),i&&(document.body.style.overflow="hidden"),document.body.appendChild(s),{overlay:s,popup:r,iframeContainer:c,closeBtn:p,loadingEl:f,emojiEl:d}}function w(t){document.body.style.overflow="",t.style.opacity="0",t.style.transition="opacity 0.15s ease",setTimeout(()=>{t.remove()},150)}function E(t,e){let n=window.innerHeight-40,o=Math.min(e,n);t.style.maxHeight=`${o}px`}function L(t){t.style.display="none"}function A(t){switch(t){case"wave":return"bf-emoji--wave";case"bounce":return"bf-emoji--bounce";case"pulse":return"bf-emoji--pulse";default:return""}}function j(t){t&&(t.style.display="none")}var B=`
+"use strict";
+(() => {
+  function I() {
+    let t = document.getElementsByTagName("script");
+    for (let e = t.length - 1; e >= 0; e--) {
+      let n = t[e].src;
+      if (n?.includes("/embed/popup.js"))
+        try {
+          return new URL(n).origin;
+        } catch {}
+    }
+    return window.location.origin;
+  }
+  function M(t, e) {
+    let n = I(),
+      o = new URLSearchParams();
+    if (
+      (o.set("popup", "1"),
+      o.set("originPage", window.location.pathname),
+      e.hideTitle && o.set("hideTitle", "1"),
+      e.alignLeft && o.set("alignLeft", "1"),
+      o.set("transparent", "1"),
+      e.hiddenFields)
+    )
+      for (let [a, l] of Object.entries(e.hiddenFields)) o.set(a, l);
+    return (
+      new URLSearchParams(window.location.search).forEach((a, l) => {
+        o.has(l) || o.set(l, a);
+      }),
+      `${n}/forms/${t}?${o.toString()}`
+    );
+  }
+  function h(t, e, n) {
+    let o = document.createElement("iframe");
+    ((o.className = "bf-iframe"),
+      o.setAttribute("title", "Better Forms"),
+      o.setAttribute("frameborder", "0"),
+      o.setAttribute("allow", "fullscreen"),
+      o.setAttribute("data-bf-form-id", t),
+      (o.style.height = "400px"));
+    let i = M(t, e);
+    return ((o.src = i), n.appendChild(o), o);
+  }
+  function y(t, e) {
+    let n = e + 2;
+    t.style.height = `${n}px`;
+  }
+  function x(t) {
+    t.remove();
+  }
+  var F =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+  function v(t, e, n) {
+    let o = e.layout === "modal" || e.position === "center",
+      i = e.overlay !== !1 || o,
+      a = e.position || "bottom-right",
+      l = e.width || 376,
+      s = document.createElement("div");
+    ((s.className = `bf-overlay ${i ? "" : "bf-overlay--no-bg"}`),
+      s.setAttribute("data-bf-form-id", t),
+      i &&
+        s.addEventListener("click", (O) => {
+          O.target === s && n();
+        }));
+    let r = document.createElement("div");
+    ((r.className = `bf-popup bf-popup--${o ? "center" : a}`),
+      (r.style.width = `${l}px`),
+      (r.style.maxHeight = "600px"));
+    let p = document.createElement("button");
+    ((p.className = "bf-close-btn"),
+      (p.innerHTML = F),
+      p.setAttribute("aria-label", "Close form"),
+      p.addEventListener("click", n));
+    let c = document.createElement("div");
+    c.className = "bf-iframe-container";
+    let f = document.createElement("div");
+    ((f.className = "bf-loading"), (f.innerHTML = '<div class="bf-loading-spinner"></div>'));
+    let d;
+    return (
+      e.emoji?.text &&
+        ((d = document.createElement("div")),
+        (d.className = `bf-emoji ${A(e.emoji.animation)}`),
+        (d.textContent = e.emoji.text)),
+      r.appendChild(p),
+      r.appendChild(f),
+      r.appendChild(c),
+      d && r.appendChild(d),
+      s.appendChild(r),
+      i && (document.body.style.overflow = "hidden"),
+      document.body.appendChild(s),
+      { overlay: s, popup: r, iframeContainer: c, closeBtn: p, loadingEl: f, emojiEl: d }
+    );
+  }
+  function w(t) {
+    ((document.body.style.overflow = ""),
+      (t.style.opacity = "0"),
+      (t.style.transition = "opacity 0.15s ease"),
+      setTimeout(() => {
+        t.remove();
+      }, 150));
+  }
+  function E(t, e) {
+    let n = window.innerHeight - 40,
+      o = Math.min(e, n);
+    t.style.maxHeight = `${o}px`;
+  }
+  function L(t) {
+    t.style.display = "none";
+  }
+  function A(t) {
+    switch (t) {
+      case "wave":
+        return "bf-emoji--wave";
+      case "bounce":
+        return "bf-emoji--bounce";
+      case "pulse":
+        return "bf-emoji--pulse";
+      default:
+        return "";
+    }
+  }
+  function j(t) {
+    t && (t.style.display = "none");
+  }
+  var B = `
 /* Keyframe Animations */
 @keyframes bf-wave {
   0%, 100% { transform: rotate(0deg); }
@@ -202,4 +326,210 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-`;function T(){if(document.getElementById("bf-popup-styles"))return;let t=document.createElement("style");t.id="bf-popup-styles",t.textContent=B,document.head.appendChild(t)}function S(t){let e={},n=t.dataset.layout;(n==="modal"||n==="default")&&(e.layout=n);let o=t.dataset.position;(o==="bottom-right"||o==="bottom-left"||o==="center")&&(e.position=o);let i=t.dataset.width;i&&(e.width=parseInt(i,10)),t.dataset.alignLeft==="1"&&(e.alignLeft=!0),t.dataset.hideTitle==="1"&&(e.hideTitle=!0),t.dataset.overlay==="1"&&(e.overlay=!0);let a=t.dataset.emojiText,l=t.dataset.emojiAnimation;a&&(e.emoji={text:a,animation:l||"none"});let s=t.dataset.autoClose;s&&(e.autoClose=parseInt(s,10));let r={};for(let[p,c]of Object.entries(t.dataset))["formId","layout","position","width","alignLeft","hideTitle","overlay","emojiText","emojiAnimation","autoClose"].includes(p)||c!==void 0&&(r[p]=c);return Object.keys(r).length>0&&(e.hiddenFields=r),e}function g(t){let e=new URLSearchParams(t.replace(/^#/,"")),n=e.get("form-open"),o={};e.get("align-left")==="1"&&(o.alignLeft=!0),e.get("hide-title")==="1"&&(o.hideTitle=!0),e.get("overlay")==="1"&&(o.overlay=!0);let i=e.get("width");i&&(o.width=parseInt(i,10));let a=e.get("emoji-text"),l=e.get("emoji-animation");a&&(o.emoji={text:a,animation:l||"none"});let s=e.get("auto-close");s&&(o.autoClose=parseInt(s,10));let r={},p=["form-open","align-left","hide-title","overlay","width","emoji-text","emoji-animation","auto-close"];return e.forEach((c,f)=>{p.includes(f)||(r[f]=c)}),Object.keys(r).length>0&&(o.hiddenFields=r),{formId:n,options:o}}function k(t){document.addEventListener("click",e=>{let n=e.target,o=n.closest("[data-form-id]");if(o){e.preventDefault();let a=o.dataset.formId;if(a){let l=S(o);t(a,l)}return}let i=n.closest("a");if(i?.href?.includes("form-open=")){e.preventDefault();let a=i.href.indexOf("#");if(a!==-1){let l=i.href.substring(a),{formId:s,options:r}=g(l);s&&t(s,r)}}})}function H(t){let{hash:e}=window.location;if(e?.includes("form-open=")){let{formId:n,options:o}=g(e);n&&setTimeout(()=>{t(n,o)},100)}}function C(t){window.addEventListener("hashchange",()=>{let{hash:e}=window.location;if(e?.includes("form-open=")){let{formId:n,options:o}=g(e);n&&t(n,o)}})}var m=new Map;function u(t,e={}){if(m.has(t)){console.warn(`[BetterForms] Popup for form ${t} is already open`);return}let n=v(t,e,()=>b(t)),o=h(t,e,n.iframeContainer),i={formId:t,options:e,container:n.popup,iframe:o,overlay:n.overlay};if(m.set(t,i),o.addEventListener("load",()=>{L(n.loadingEl)}),e.onOpen)try{e.onOpen()}catch(a){console.error("[BetterForms] onOpen callback error:",a)}}function b(t){let e=m.get(t);if(e&&(x(e.iframe),e.overlay&&w(e.overlay),m.delete(t),e.options.onClose))try{e.options.onClose()}catch(n){console.error("[BetterForms] onClose callback error:",n)}}function U(t){let e;try{e=typeof t.data=="string"?JSON.parse(t.data):t.data}catch{return}if(!e?.event?.startsWith("BetterForms."))return;let n;for(let o of m.values())if(o.iframe.contentWindow===t.source){n=o;break}if(n)switch(e.event){case"BetterForms.FormLoaded":break;case"BetterForms.Resize":typeof e.height=="number"&&(y(n.iframe,e.height),E(n.container,e.height));break;case"BetterForms.FormSubmitted":if(n.options.onSubmit)try{n.options.onSubmit(e.payload)}catch(o){console.error("[BetterForms] onSubmit callback error:",o)}n.options.autoClose&&n.options.autoClose>0&&setTimeout(()=>{b(n?.formId)},n.options.autoClose);break;case"BetterForms.PageView":if(n.options.onPageView&&"page"in e)try{n.options.onPageView(e.page)}catch(o){console.error("[BetterForms] onPageView callback error:",o)}if("page"in e&&e.page>1){let o=n.overlay;if(o){let i=o.querySelector(".bf-emoji");i&&j(i)}}break;case"BetterForms.Close":b(n.formId);break}}function P(){T(),k(u),H(u),C(u),window.addEventListener("message",U)}window.BetterForms={openPopup:u,closePopup:b};document.readyState==="loading"?document.addEventListener("DOMContentLoaded",P):P();})();
+`;
+  function T() {
+    if (document.getElementById("bf-popup-styles")) return;
+    let t = document.createElement("style");
+    ((t.id = "bf-popup-styles"), (t.textContent = B), document.head.appendChild(t));
+  }
+  function S(t) {
+    let e = {},
+      n = t.dataset.layout;
+    (n === "modal" || n === "default") && (e.layout = n);
+    let o = t.dataset.position;
+    (o === "bottom-right" || o === "bottom-left" || o === "center") && (e.position = o);
+    let i = t.dataset.width;
+    (i && (e.width = parseInt(i, 10)),
+      t.dataset.alignLeft === "1" && (e.alignLeft = !0),
+      t.dataset.hideTitle === "1" && (e.hideTitle = !0),
+      t.dataset.overlay === "1" && (e.overlay = !0));
+    let a = t.dataset.emojiText,
+      l = t.dataset.emojiAnimation;
+    a && (e.emoji = { text: a, animation: l || "none" });
+    let s = t.dataset.autoClose;
+    s && (e.autoClose = parseInt(s, 10));
+    let r = {};
+    for (let [p, c] of Object.entries(t.dataset))
+      [
+        "formId",
+        "layout",
+        "position",
+        "width",
+        "alignLeft",
+        "hideTitle",
+        "overlay",
+        "emojiText",
+        "emojiAnimation",
+        "autoClose",
+      ].includes(p) ||
+        (c !== void 0 && (r[p] = c));
+    return (Object.keys(r).length > 0 && (e.hiddenFields = r), e);
+  }
+  function g(t) {
+    let e = new URLSearchParams(t.replace(/^#/, "")),
+      n = e.get("form-open"),
+      o = {};
+    (e.get("align-left") === "1" && (o.alignLeft = !0),
+      e.get("hide-title") === "1" && (o.hideTitle = !0),
+      e.get("overlay") === "1" && (o.overlay = !0));
+    let i = e.get("width");
+    i && (o.width = parseInt(i, 10));
+    let a = e.get("emoji-text"),
+      l = e.get("emoji-animation");
+    a && (o.emoji = { text: a, animation: l || "none" });
+    let s = e.get("auto-close");
+    s && (o.autoClose = parseInt(s, 10));
+    let r = {},
+      p = [
+        "form-open",
+        "align-left",
+        "hide-title",
+        "overlay",
+        "width",
+        "emoji-text",
+        "emoji-animation",
+        "auto-close",
+      ];
+    return (
+      e.forEach((c, f) => {
+        p.includes(f) || (r[f] = c);
+      }),
+      Object.keys(r).length > 0 && (o.hiddenFields = r),
+      { formId: n, options: o }
+    );
+  }
+  function k(t) {
+    document.addEventListener("click", (e) => {
+      let n = e.target,
+        o = n.closest("[data-form-id]");
+      if (o) {
+        e.preventDefault();
+        let a = o.dataset.formId;
+        if (a) {
+          let l = S(o);
+          t(a, l);
+        }
+        return;
+      }
+      let i = n.closest("a");
+      if (i?.href?.includes("form-open=")) {
+        e.preventDefault();
+        let a = i.href.indexOf("#");
+        if (a !== -1) {
+          let l = i.href.substring(a),
+            { formId: s, options: r } = g(l);
+          s && t(s, r);
+        }
+      }
+    });
+  }
+  function H(t) {
+    let { hash: e } = window.location;
+    if (e?.includes("form-open=")) {
+      let { formId: n, options: o } = g(e);
+      n &&
+        setTimeout(() => {
+          t(n, o);
+        }, 100);
+    }
+  }
+  function C(t) {
+    window.addEventListener("hashchange", () => {
+      let { hash: e } = window.location;
+      if (e?.includes("form-open=")) {
+        let { formId: n, options: o } = g(e);
+        n && t(n, o);
+      }
+    });
+  }
+  var m = new Map();
+  function u(t, e = {}) {
+    if (m.has(t)) {
+      console.warn(`[BetterForms] Popup for form ${t} is already open`);
+      return;
+    }
+    let n = v(t, e, () => b(t)),
+      o = h(t, e, n.iframeContainer),
+      i = { formId: t, options: e, container: n.popup, iframe: o, overlay: n.overlay };
+    if (
+      (m.set(t, i),
+      o.addEventListener("load", () => {
+        L(n.loadingEl);
+      }),
+      e.onOpen)
+    )
+      try {
+        e.onOpen();
+      } catch (a) {
+        console.error("[BetterForms] onOpen callback error:", a);
+      }
+  }
+  function b(t) {
+    let e = m.get(t);
+    if (e && (x(e.iframe), e.overlay && w(e.overlay), m.delete(t), e.options.onClose))
+      try {
+        e.options.onClose();
+      } catch (n) {
+        console.error("[BetterForms] onClose callback error:", n);
+      }
+  }
+  function U(t) {
+    let e;
+    try {
+      e = typeof t.data == "string" ? JSON.parse(t.data) : t.data;
+    } catch {
+      return;
+    }
+    if (!e?.event?.startsWith("BetterForms.")) return;
+    let n;
+    for (let o of m.values())
+      if (o.iframe.contentWindow === t.source) {
+        n = o;
+        break;
+      }
+    if (n)
+      switch (e.event) {
+        case "BetterForms.FormLoaded":
+          break;
+        case "BetterForms.Resize":
+          typeof e.height == "number" && (y(n.iframe, e.height), E(n.container, e.height));
+          break;
+        case "BetterForms.FormSubmitted":
+          if (n.options.onSubmit)
+            try {
+              n.options.onSubmit(e.payload);
+            } catch (o) {
+              console.error("[BetterForms] onSubmit callback error:", o);
+            }
+          n.options.autoClose &&
+            n.options.autoClose > 0 &&
+            setTimeout(() => {
+              b(n?.formId);
+            }, n.options.autoClose);
+          break;
+        case "BetterForms.PageView":
+          if (n.options.onPageView && "page" in e)
+            try {
+              n.options.onPageView(e.page);
+            } catch (o) {
+              console.error("[BetterForms] onPageView callback error:", o);
+            }
+          if ("page" in e && e.page > 1) {
+            let o = n.overlay;
+            if (o) {
+              let i = o.querySelector(".bf-emoji");
+              i && j(i);
+            }
+          }
+          break;
+        case "BetterForms.Close":
+          b(n.formId);
+          break;
+      }
+  }
+  function P() {
+    (T(), k(u), H(u), C(u), window.addEventListener("message", U));
+  }
+  window.BetterForms = { openPopup: u, closePopup: b };
+  document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", P) : P();
+})();
