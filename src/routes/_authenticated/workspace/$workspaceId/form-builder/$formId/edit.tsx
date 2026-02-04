@@ -1,11 +1,23 @@
 import { createFileRoute, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
+import { format } from "date-fns";
+import { Loader2 } from "lucide-react";
+import type { Value } from "platejs";
 import { useEffect } from "react";
 import { z } from "zod";
+import { VersionHistorySidebar } from "@/components/form-builder/version-history-sidebar";
+import { Button } from "@/components/ui/button";
 import { CustomizeSidebar } from "@/components/ui/customize-sidebar";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import { useFormVersionContent } from "@/hooks/use-form-versions";
 import { useForm } from "@/hooks/use-live-hooks";
+import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
 import { getFormbyIdQueryOption } from "@/lib/fn/forms";
 import EditorApp from "../-components/editor-app";
 import { PreviewMode } from "../-components/preview-mode";
@@ -79,6 +91,18 @@ function DesignPage() {
   const { workspaceId } = params;
   const formId = formIdFromPath || params.formId;
 
+  // Version history sidebar state
+  const {
+    isOpen: isVersionHistoryOpen,
+    selectedVersionId,
+    isViewingVersion,
+    exitVersionView,
+  } = useVersionHistorySidebar();
+
+  // Fetch version content when viewing a version
+  const { data: versionContentData, isLoading: isLoadingVersionContent } =
+    useFormVersionContent(isViewingVersion ? selectedVersionId ?? undefined : undefined);
+
   // Use local Electric data to check form status (more up-to-date than server)
   const { data: localFormData, isReady } = useForm(formId);
   const localForm = localFormData?.[0];
@@ -123,20 +147,72 @@ function DesignPage() {
     return <Loader />;
   }
 
+  // Format date for version banner
+  const formatDateTime = (dateString: string) => {
+    return format(new Date(dateString), "MMM d, h:mm a");
+  };
+
+  const versionContent = versionContentData?.version?.content as Value | undefined;
+
   return (
     <div className="flex flex-1 h-full overflow-hidden">
-      <main className="flex-1 overflow-auto relative bg-background">
-        {demo ? (
-          <PreviewMode formId={formId} workspaceId={workspaceId} />
-        ) : (
-          <EditorApp
-            key={formId}
-            formId={formId}
-            workspaceId={workspaceId}
-            defaultValue={initialContent}
-          />
+      <ResizablePanelGroup direction="horizontal" className="flex-1">
+        {/* Main editor panel */}
+        <ResizablePanel defaultSize={isVersionHistoryOpen ? 75 : 100} minSize={50}>
+          <main className="flex-1 overflow-auto relative bg-background h-full flex flex-col">
+            {/* Version viewing banner */}
+            {isViewingVersion && (
+              <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between shrink-0">
+                <span className="text-sm text-amber-800">
+                  {isLoadingVersionContent ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading version...
+                    </span>
+                  ) : versionContentData?.version?.publishedAt ? (
+                    <>
+                      Viewing version from{" "}
+                      <span className="font-semibold">
+                        {formatDateTime(versionContentData.version.publishedAt)}
+                      </span>
+                    </>
+                  ) : (
+                    "Viewing version..."
+                  )}
+                </span>
+                <Button variant="outline" size="sm" onClick={exitVersionView}>
+                  Return to editing
+                </Button>
+              </div>
+            )}
+
+            <div className="flex-1 overflow-auto">
+              {demo ? (
+                <PreviewMode formId={formId} workspaceId={workspaceId} />
+              ) : (
+                <EditorApp
+                  key={isViewingVersion ? `version-${selectedVersionId}` : formId}
+                  formId={formId}
+                  workspaceId={workspaceId}
+                  defaultValue={initialContent}
+                  versionContent={isViewingVersion ? versionContent : undefined}
+                  readOnly={isViewingVersion}
+                />
+              )}
+            </div>
+          </main>
+        </ResizablePanel>
+
+        {/* Version history sidebar */}
+        {isVersionHistoryOpen && (
+          <>
+            <ResizableHandle />
+            <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
+              <VersionHistorySidebar formId={formId} />
+            </ResizablePanel>
+          </>
         )}
-      </main>
+      </ResizablePanelGroup>
       <CustomizeSidebar />
     </div>
   );

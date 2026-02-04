@@ -2,7 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
 	ChevronDown,
 	Clock,
+	Globe,
 	MousePointer2,
+	Search,
 	User,
 	Users,
 } from "lucide-react";
@@ -15,12 +17,12 @@ import { NotFound } from "@/components/ui/not-found";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute(
-  "/_authenticated/workspace/$workspaceId/form-builder/$formId/insights",
+	"/_authenticated/workspace/$workspaceId/form-builder/$formId/insights",
 )({
-  component: InsightsPage,
-  pendingComponent: Loader,
-  errorComponent: ErrorBoundary,
-  notFoundComponent: NotFound,
+	component: InsightsPage,
+	pendingComponent: Loader,
+	errorComponent: ErrorBoundary,
+	notFoundComponent: NotFound,
 });
 
 function InsightsPage() {
@@ -32,22 +34,22 @@ export function InsightsContent() {
 		"visits",
 	);
 
-  const stats = [
-    { label: "Visits", value: "0", icon: MousePointer2 },
-    { label: "Unique visitors", value: "0", icon: User },
-    { label: "Submissions", value: "1", icon: Users },
-    { label: "Unique respondents", value: "1", icon: Users },
-    { label: "Visit duration", value: "11s", icon: Clock },
-  ];
+	const stats = [
+		{ label: "Visits", value: "0", icon: MousePointer2 },
+		{ label: "Unique visitors", value: "0", icon: User },
+		{ label: "Submissions", value: "1", icon: Users },
+		{ label: "Unique respondents", value: "1", icon: Users },
+		{ label: "Visit duration", value: "11s", icon: Clock },
+	];
 
-  const analyticsGrids = [
-    { title: "Sources", items: [] },
-    { title: "Devices", items: [] },
-    { title: "Countries", items: [] },
-    { title: "Cities", items: [] },
-    { title: "Browsers", items: [] },
-    { title: "Operating Systems", items: [] },
-  ];
+	const analyticsGrids = [
+		{ title: "Sources", items: [] },
+		{ title: "Devices", items: [] },
+		{ title: "Countries", items: [] },
+		{ title: "Cities", items: [] },
+		{ title: "Browsers", items: [] },
+		{ title: "Operating Systems", items: [] },
+	];
 
 	return (
 		<div className="space-y-8">
@@ -130,30 +132,30 @@ export function InsightsContent() {
 				))}
 			</div>
 
-				{/* Footer */}
-				<div className="pt-12 pb-8 border-t flex flex-col md:flex-row items-center justify-between gap-4">
-					<p className="text-[11px] text-muted-foreground leading-relaxed text-center md:text-left max-w-2xl">
-						Privacy-friendly and fully anonymous analytics — no cookies, no
-						personal data, and no cross-device tracking.
-					</p>
-					<div className="flex gap-4">
-						<Button
-							variant="ghost"
-							size="icon"
-							className="h-8 w-8 rounded-full"
-						>
-							<Globe className="h-4 w-4 text-muted-foreground" />
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon"
-							className="h-8 w-8 rounded-full"
-						>
-							<Search className="h-4 w-4 text-muted-foreground" />
-						</Button>
-					</div>
+			{/* Footer */}
+			<div className="pt-12 pb-8 border-t flex flex-col md:flex-row items-center justify-between gap-4">
+				<p className="text-[11px] text-muted-foreground leading-relaxed text-center md:text-left max-w-2xl">
+					Privacy-friendly and fully anonymous analytics — no cookies, no
+					personal data, and no cross-device tracking.
+				</p>
+				<div className="flex gap-4">
+					<Button
+						variant="ghost"
+						size="icon"
+						className="h-8 w-8 rounded-full"
+					>
+						<Globe className="h-4 w-4 text-muted-foreground" />
+					</Button>
+					<Button
+						variant="ghost"
+						size="icon"
+						className="h-8 w-8 rounded-full"
+					>
+						<Search className="h-4 w-4 text-muted-foreground" />
+					</Button>
 				</div>
 			</div>
 		</div>
 	);
 }
+

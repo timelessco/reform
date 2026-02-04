@@ -15,14 +15,13 @@ import {
   PanelLeft,
   Search,
   Settings,
+  Settings2,
   Share,
   Star,
   User,
 } from "lucide-react";
-import { useState } from "react";
 import { toast } from "sonner";
 import { AuthDialog } from "@/components/auth";
-import { VersionHistoryDialog } from "@/components/form-builder/version-history-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Breadcrumb,
@@ -50,7 +49,9 @@ import {
   useHasUnpublishedChanges,
   usePublishVersion,
 } from "@/hooks/use-form-versions";
+import { useFormSettingsSidebar } from "@/hooks/use-form-settings-sidebar";
 import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
+import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
 import { auth, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { SidebarTrigger, useSidebarSafe } from "./sidebar";
@@ -89,8 +90,13 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
   const session = sessionData;
   const navigate = useNavigate();
 
-  // Version history dialog state
-  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  // Version history sidebar state
+  const { isOpen: isVersionHistoryOpen, toggle: toggleVersionHistory } =
+    useVersionHistorySidebar();
+
+  // Form settings sidebar state
+  const { isOpen: isSettingsSidebarOpen, toggle: toggleSettingsSidebar } =
+    useFormSettingsSidebar();
 
   // Get search params for the current route
   const search: any = useSearch({ strict: false });
@@ -323,19 +329,40 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
               </Tooltip>
             )}
 
-            {/* History button - opens version history dialog */}
+            {/* History button - toggles version history sidebar */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground relative"
-                  onClick={() => setHistoryDialogOpen(true)}
+                  className={cn(
+                    "h-8 w-8 text-muted-foreground hover:text-foreground relative",
+                    isVersionHistoryOpen && "bg-muted text-foreground",
+                  )}
+                  onClick={toggleVersionHistory}
                 >
                   <History className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Version History</TooltipContent>
+            </Tooltip>
+
+            {/* Settings button - toggles form settings sidebar */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-8 w-8 text-muted-foreground hover:text-foreground relative",
+                    isSettingsSidebarOpen && "bg-muted text-foreground",
+                  )}
+                  onClick={toggleSettingsSidebar}
+                >
+                  <Settings2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Settings & Integrations</TooltipContent>
             </Tooltip>
 
             {formId && workspaceId && (
@@ -491,15 +518,6 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
               {publishMutation.isPending && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
               {hasUnpublishedChanges ? "Publish Changes" : "Publish"}
             </Button>
-
-            {/* Version History Dialog */}
-            {formId && (
-              <VersionHistoryDialog
-                formId={formId}
-                open={historyDialogOpen}
-                onOpenChange={setHistoryDialogOpen}
-              />
-            )}
           </>
         ) : (
           <>

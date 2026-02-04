@@ -3,19 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import {
-	Sheet,
-	SheetContent,
-	SheetHeader,
-	SheetTitle,
-	SheetTrigger,
-} from "@/components/ui/sheet";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useForm, useWorkspace } from "@/hooks/use-live-hooks";
+import { useForm } from "@/hooks/use-live-hooks";
 import { getFormbyIdQueryOption } from "@/lib/fn/forms";
 import { cn } from "@/lib/utils";
 import {
@@ -25,10 +13,8 @@ import {
 	redirect,
 	useLocation,
 } from "@tanstack/react-router";
-import { Link as LinkIcon, Pencil, Puzzle, Settings2 } from "lucide-react";
+import { Link as LinkIcon, Pencil } from "lucide-react";
 import { z } from "zod";
-import { IntegrationsContent } from "./integrations";
-import { SettingsContent } from "./settings";
 
 export const Route = createFileRoute(
 	"/_authenticated/workspace/$workspaceId/form-builder/$formId",
@@ -217,49 +203,6 @@ function FormLayout() {
 									{tab.name}
 								</Link>
 							))}
-						</div>
-						<div className="flex items-center gap-1">
-							<Sheet>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<SheetTrigger asChild>
-											<Button variant="ghost" size="icon" className="h-8 w-8">
-												<Puzzle className="h-4 w-4" />
-											</Button>
-										</SheetTrigger>
-									</TooltipTrigger>
-									<TooltipContent>Integrations</TooltipContent>
-								</Tooltip>
-								<SheetContent className="sm:max-w-lg overflow-y-auto">
-									<SheetHeader>
-										<SheetTitle>Integrations</SheetTitle>
-									</SheetHeader>
-									<div className="mt-6">
-										<IntegrationsContent />
-									</div>
-								</SheetContent>
-							</Sheet>
-
-							<Sheet>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<SheetTrigger asChild>
-											<Button variant="ghost" size="icon" className="h-8 w-8">
-												<Settings2 className="h-4 w-4" />
-											</Button>
-										</SheetTrigger>
-									</TooltipTrigger>
-									<TooltipContent>Settings</TooltipContent>
-								</Tooltip>
-								<SheetContent className="sm:max-w-lg overflow-y-auto">
-									<SheetHeader>
-										<SheetTitle>Settings</SheetTitle>
-									</SheetHeader>
-									<div className="mt-6">
-										<SettingsContent formId={formId} />
-									</div>
-								</SheetContent>
-							</Sheet>
 						</div>
 					</nav>
 				</div>

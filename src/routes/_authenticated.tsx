@@ -38,8 +38,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { FormSettingsSidebar } from "@/components/form-builder/form-settings-sidebar";
 import { AppHeader } from "@/components/ui/app-header";
 import { Button } from "@/components/ui/button";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import {
   CommandDialog,
   CommandEmpty,
@@ -70,6 +76,7 @@ import {
   updateWorkspaceName,
 } from "@/db-collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
+import { useFormSettingsSidebar } from "@/hooks/use-form-settings-sidebar";
 import {
   useArchivedForms,
   useFavoriteForms,
@@ -110,6 +117,12 @@ function AuthLayoutContent() {
   const formMatch = pathname.match(/\/form-builder\/([^/]+)/);
   const workspaceId = workspaceMatch?.[1];
   const formId = formMatch?.[1];
+
+  // Form settings sidebar (only shown in form-builder routes)
+  const { isOpen: isSettingsSidebarOpen } = useFormSettingsSidebar();
+  const isFormBuilder = pathname.includes("/form-builder/");
+  const showSettingsSidebar = isSettingsSidebarOpen && isFormBuilder && formId;
+
   return (
     <div className="flex min-h-screen w-full overflow-hidden relative">
       {/* Hover Trigger Area - An invisible area at the left edge to detect hover */}
@@ -126,15 +139,31 @@ function AuthLayoutContent() {
       <MinimalSidebar />
       <SidebarInbox />
 
-      <div
+      <ResizablePanelGroup
+        direction="horizontal"
         className={cn(
-          "flex flex-col flex-1 min-h-screen min-w-0 transition-all duration-300 ease-in-out",
+          "flex-1 min-h-screen transition-all duration-300 ease-in-out",
           isInboxOpen ? (isPinned ? "ml-[544px]" : "ml-80") : isPinned ? "ml-56" : "ml-0",
         )}
       >
-        <AppHeader formId={formId} workspaceId={workspaceId} />
-        <Outlet />
-      </div>
+        {/* Main content panel */}
+        <ResizablePanel defaultSize={showSettingsSidebar ? 75 : 100} minSize={50}>
+          <div className="flex flex-col h-full min-w-0">
+            <AppHeader formId={formId} workspaceId={workspaceId} />
+            <Outlet />
+          </div>
+        </ResizablePanel>
+
+        {/* Right sidebar - Form Settings */}
+        {showSettingsSidebar && (
+          <>
+            <ResizableHandle />
+            <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
+              <FormSettingsSidebar formId={formId} />
+            </ResizablePanel>
+          </>
+        )}
+      </ResizablePanelGroup>
     </div>
   );
 }
@@ -471,7 +500,7 @@ function TrashDialog({
       .filter(
         (form) => !searchQuery || form.title.toLowerCase().includes(searchQuery.toLowerCase()),
       )
-      .sort(
+      .toSorted(
         (a, b) =>
           new Date(b.deletedAt || b.updatedAt).getTime() -
           new Date(a.deletedAt || a.updatedAt).getTime(),
@@ -1052,7 +1081,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
       .map((ws) => ({
         ...ws,
         // Sort forms by recently edited (most recent first)
-        forms: (formsByWorkspace[ws.id] || []).sort(
+        forms: (formsByWorkspace[ws.id] || []).toSorted(
           (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
         ),
       }));
