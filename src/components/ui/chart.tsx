@@ -45,7 +45,8 @@ function ChartContainer({
 	>["children"];
 }) {
 	const uniqueId = React.useId();
-	const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`;
+	const baseId = id ?? uniqueId;
+	const chartId = `chart-${sanitizeCssIdentifier(baseId)}`;
 
 	return (
 		<ChartContext.Provider value={{ config }}>
@@ -76,30 +77,32 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 		return null;
 	}
 
-	return (
-		<style
-			dangerouslySetInnerHTML={{
-				__html: Object.entries(THEMES)
-					.map(
-						([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-	.map(([key, itemConfig]) => {
-		const color =
-			itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
-			itemConfig.color;
-		return color ? `  --color-${key}: ${color};` : null;
-	})
-	.join("\n")}
-}
-`,
-					)
-					.join("\n"),
-			}}
-		/>
-	);
-};
+	const cssText = Object.entries(THEMES)
+		.map(([theme, prefix]) => {
+			const assignments = colorConfig
+				.map(([key, itemConfig]) => {
+					const color =
+						itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
+						itemConfig.color;
+					if (!color) return null;
+					return `  --color-${sanitizeCssIdentifier(key)}: ${sanitizeCssValue(color)};`;
+				})
+				.filter(Boolean)
+				.join("\n");
 
+			if (!assignments) return null;
+
+			return `${prefix} [data-chart="${id}"] {\n${assignments}\n}`;
+		})
+		.filter(Boolean)
+		.join("\n");
+
+	if (!cssText) {
+		return null;
+	}
+
+	return <style>{cssText}</style>;
+};
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
 function ChartTooltipContent({
@@ -353,3 +356,14 @@ export {
 	ChartLegendContent,
 	ChartStyle,
 };
+
+const SAFE_CSS_VALUE_PATTERN = /^[#%()\w\s.,-]+$/;
+
+function sanitizeCssIdentifier(value: string) {
+	return value.replace(/[^a-zA-Z0-9_-]+/g, "-");
+}
+
+function sanitizeCssValue(value: string) {
+	const trimmed = value.trim();
+	return SAFE_CSS_VALUE_PATTERN.test(trimmed) ? trimmed : "inherit";
+}

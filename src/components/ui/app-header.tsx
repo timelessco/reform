@@ -1,3 +1,31 @@
+import { useMutation } from "@tanstack/react-query";
+import {
+	Link,
+	useLocation,
+	useNavigate,
+	useSearch,
+} from "@tanstack/react-router";
+import { formatDistanceToNow } from "date-fns";
+import {
+	ChevronDown,
+	ChevronRight,
+	Database,
+	FileText,
+	Folder,
+	History,
+	LayoutGrid,
+	Loader2,
+	LogOut,
+	MoreHorizontal,
+	PanelLeft,
+	Search,
+	Settings,
+	Share,
+	Star,
+	User,
+} from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { AuthDialog } from "@/components/auth";
 import { VersionHistoryDialog } from "@/components/form-builder/version-history-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -34,35 +62,6 @@ import {
 import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
 import { auth, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
-import { useMutation } from "@tanstack/react-query";
-import {
-	Link,
-	useLocation,
-	useNavigate,
-	useSearch,
-} from "@tanstack/react-router";
-import { formatDistanceToNow } from "date-fns";
-import {
-	ChevronDown,
-	ChevronRight,
-	Database,
-	FileText,
-	Folder,
-	History,
-	LayoutGrid,
-	Loader2,
-	LogOut,
-	MoreHorizontal,
-	PanelLeft,
-	Search,
-	Settings,
-	Share,
-	Slash,
-	Star,
-	User,
-} from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
 import { SidebarTrigger, useSidebarSafe } from "./sidebar";
 
 interface AppHeaderProps {
@@ -86,8 +85,8 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 	const sidebarContext = useSidebarSafe();
 	const minimalSidebar = useMinimalSidebarSafe();
 	const isPinned = minimalSidebar?.isPinned ?? true;
-	const togglePin = minimalSidebar?.togglePin || (() => { });
-	const setIsHovered = minimalSidebar?.setIsHovered || (() => { });
+	const togglePin = minimalSidebar?.togglePin || (() => {});
+	const setIsHovered = minimalSidebar?.setIsHovered || (() => {});
 
 	const state = sidebarContext?.state;
 	const { pathname } = useLocation();
@@ -95,7 +94,7 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 		pathname.startsWith("/workspace/") && !pathname.includes("/form-builder/");
 	const isFormBuilder =
 		pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
-	const isCreateRoute = pathname === "/create";
+	const _isCreateRoute = pathname === "/create";
 	const { data: sessionData } = useSession();
 	const session = sessionData;
 	const navigate = useNavigate();
@@ -209,14 +208,21 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 							<BreadcrumbList className="flex items-center gap-1">
 								<BreadcrumbItem className="flex items-center">
 									<BreadcrumbLink asChild>
-										<Link to="/dashboard" className="flex items-center gap-1.5 text-muted-foreground/60 hover:text-foreground transition-colors py-1">
-											<img src="/timeless.png" alt="BetterForms" className="h-3.5 w-3.5 shrink-0" />
+										<Link
+											to="/dashboard"
+											className="flex items-center gap-1.5 text-muted-foreground/60 hover:text-foreground transition-colors py-1"
+										>
+											<img
+												src="/timeless.png"
+												alt="BetterForms"
+												className="h-3.5 w-3.5 shrink-0"
+											/>
 										</Link>
 									</BreadcrumbLink>
 								</BreadcrumbItem>
 
 								<div className="flex items-center justify-center p-0.5 opacity-20 rotate-12">
-									<ChevronRight className="h-2.5 w-2.5" />
+									<ChevronRight className="h-4 w-4 text-muted-foreground" />
 								</div>
 
 								<BreadcrumbItem className="flex items-center">
@@ -236,7 +242,9 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 											) : (
 												<span className="flex items-center gap-1.5 text-muted-foreground/60 py-1">
 													<Folder className="h-3.5 w-3.5 shrink-0" />
-													<span className="leading-none mb-0.5">My workspace</span>
+													<span className="leading-none mb-0.5">
+														My workspace
+													</span>
 												</span>
 											)}
 										</BreadcrumbLink>
@@ -253,7 +261,7 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 								{isFormBuilder && (
 									<>
 										<div className="flex items-center justify-center p-0.5 opacity-20 rotate-12">
-											<Slash className="h-2.5 w-2.5" />
+											<ChevronRight className="h-4 w-4 text-muted-foreground" />
 										</div>
 										<BreadcrumbItem className="flex items-center">
 											<BreadcrumbPage className="flex items-center gap-1.5 text-foreground font-semibold py-1">
@@ -440,7 +448,11 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 						{session ? (
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
-									<Button variant="ghost" size="sm" className="h-7 gap-1 px-1.5 hover:bg-muted/50">
+									<Button
+										variant="ghost"
+										size="sm"
+										className="h-7 gap-1 px-1.5 hover:bg-muted/50"
+									>
 										<Avatar className="h-5 w-5">
 											<AvatarImage
 												src={session.user.image || undefined}

@@ -141,7 +141,7 @@ function EmbedPage() {
 		}
 
 		if (embedType === "popup") {
-			return `<!-- Better Forms Popup Embed -->
+			return `${"<!-- Better Forms Popup Embed -->"}
 <script>
   (function() {
     var script = document.createElement('script');
@@ -159,10 +159,10 @@ function EmbedPage() {
 		}
 
 		// Full page
-		return `<!-- Redirect to full page form -->
+		return `${"<!-- Redirect to full page form -->"}
 <meta http-equiv="refresh" content="0; url=${embedUrl}" />
 
-<!-- Or link to it -->
+${"<!-- Or link to it -->"}
 <a href="${embedUrl}">Open Form</a>`;
 	}, [embedType, embedUrl, options, formId, doc?.title]);
 
@@ -950,6 +950,35 @@ function EmbedPage() {
 	);
 }
 
+function CopyButton({ text }: { text: string }) {
+	const [copied, setCopied] = useState(false);
+	const handleCopy = () => {
+		navigator.clipboard.writeText(text);
+		setCopied(true);
+		setTimeout(() => setCopied(false), 2000);
+	};
+	return (
+		<button
+			type="button"
+			onClick={handleCopy}
+			className="absolute top-3 right-3 p-1.5 rounded-md text-gray-400 hover:bg-gray-700/50 hover:text-white transition-colors"
+		>
+			{copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+		</button>
+	);
+}
+
+function CodeBlock({ code }: { code: string }) {
+	return (
+		<div className="relative group mt-3">
+			<pre className="bg-[#0D0F12] border border-white/5 rounded-xl p-6 overflow-x-auto text-[13px] font-mono text-gray-300 leading-relaxed scrollbar-hide shadow-2xl">
+				<code>{code}</code>
+			</pre>
+			<CopyButton text={code} />
+		</div>
+	);
+}
+
 function EmbedInstructions({
 	embedType,
 	options,
@@ -973,32 +1002,6 @@ function EmbedInstructions({
 	const toggleSection = (section: string) => {
 		setSections((prev) => ({ ...prev, [section]: !prev[section] }));
 	};
-
-	const CopyButton = ({ text }: { text: string }) => {
-		const [copied, setCopied] = useState(false);
-		const handleCopy = () => {
-			navigator.clipboard.writeText(text);
-			setCopied(true);
-			setTimeout(() => setCopied(false), 2000);
-		};
-		return (
-			<button
-				onClick={handleCopy}
-				className="absolute top-3 right-3 p-1.5 rounded-md text-gray-400 hover:bg-gray-700/50 hover:text-white transition-colors"
-			>
-				{copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-			</button>
-		);
-	};
-
-	const CodeBlock = ({ code }: { code: string }) => (
-		<div className="relative group mt-3">
-			<pre className="bg-[#0D0F12] border border-white/5 rounded-xl p-6 overflow-x-auto text-[13px] font-mono text-gray-300 leading-relaxed scrollbar-hide shadow-2xl">
-				<code>{code}</code>
-			</pre>
-			<CopyButton text={code} />
-		</div>
-	);
 
 	const emojiParams = options.emoji
 		? `&emoji-text=${encodeURIComponent(options.emojiIcon)}&emoji-animation=${options.emojiAnimation}`
@@ -1048,8 +1051,8 @@ function EmbedInstructions({
 						</div>
 					</div>
 				) : (
-					/* Popup Instructions */
 					<>
+						{/* Popup Instructions */}
 						<div>
 							<CodeBlock
 								code={`<script async src="${window.location.origin}/embed/popup.js"></script>`}
@@ -1071,7 +1074,7 @@ function EmbedInstructions({
 							</p>
 							<div className="bg-[#2D3139] border-l-4 border-blue-500 rounded-r-lg p-4 mb-4">
 								<p className="text-sm text-gray-300 font-mono">
-									<span className="text-gray-500">// Data attributes</span>
+									<span className="text-gray-500">{"// Data attributes"}</span>
 									<br />
 									<span className="break-all text-blue-300">
 										data-form-id="{formId}" data-align-left="
@@ -1091,7 +1094,7 @@ function EmbedInstructions({
 							</div>
 							<CodeBlock
 								code={`// Example
-<button 
+<button type="button" 
   data-form-id="${formId}" 
   data-align-left="${options.alignLeft ? 1 : 0}" 
   data-hide-title="${options.hideTitle ? 1 : 0}" 
@@ -1114,7 +1117,9 @@ function EmbedInstructions({
 							</p>
 							<div className="bg-[#2D3139] border-l-4 border-blue-500 rounded-r-lg p-4 mb-4">
 								<p className="text-sm text-gray-300 font-mono">
-									<span className="text-gray-500">// Link href attribute</span>
+									<span className="text-gray-500">
+										{"// Link href attribute"}
+									</span>
 									<br />
 									<span className="break-all text-blue-300">{hashUrl}</span>
 								</p>
@@ -1134,6 +1139,7 @@ function EmbedInstructions({
 					{/* Query Parameters Accordion */}
 					<div className="border-b border-gray-800">
 						<button
+							type="button"
 							onClick={() => toggleSection("save")}
 							className="w-full flex items-center justify-between py-6 text-left"
 						>
@@ -1175,7 +1181,7 @@ function EmbedInstructions({
 								{embedType === "popup" ? (
 									<>
 										<CodeBlock
-											code={`<button data-form-id="${formId}" data-ref="downloads" data-email="alice@example.com">Click me</button>`}
+											code={`<button type="button" data-form-id="${formId}" data-ref="downloads" data-email="alice@example.com">Click me</button>`}
 										/>
 										<p className="leading-relaxed">
 											If you are opening the popup on button click via custom
@@ -1197,6 +1203,7 @@ function EmbedInstructions({
 					{/* JavaScript API Accordion */}
 					<div className="border-b border-gray-800">
 						<button
+							type="button"
 							onClick={() => toggleSection("js")}
 							className="w-full flex items-center justify-between py-6 text-left"
 						>

@@ -1,4 +1,9 @@
-import { createFileRoute, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
+import {
+	createFileRoute,
+	useLocation,
+	useNavigate,
+	useSearch,
+} from "@tanstack/react-router";
 import { useEffect } from "react";
 import { z } from "zod";
 import { CustomizeSidebar } from "@/components/ui/customize-sidebar";
@@ -11,7 +16,7 @@ import EditorApp from "../-components/editor-app";
 import { PreviewMode } from "../-components/preview-mode";
 
 export const Route = createFileRoute(
-	'/_authenticated/workspace/$workspaceId/form-builder/$formId/edit',
+	"/_authenticated/workspace/$workspaceId/form-builder/$formId/edit",
 )({
 	validateSearch: z.object({
 		demo: z.boolean().optional(),
@@ -57,7 +62,7 @@ export const Route = createFileRoute(
 			const data = await context.queryClient.ensureQueryData({
 				...getFormbyIdQueryOption(params.formId),
 				revalidateIfStale: true,
-			})
+			});
 			return { initialContent: data.form.content };
 		} catch (_error) {
 			// Form may not exist on server yet (local-first sync in progress)
@@ -74,20 +79,24 @@ function DesignPage() {
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
 	// Extract formId from pathname to ensure it's always current
-	const formIdFromPath = pathname.split('/form-builder/')[1]?.split('/')[0] || '';
-	const { workspaceId } = Route.useParams();
-	const formId = formIdFromPath || Route.useParams().formId;
+	const formIdFromPath =
+		pathname.split("/form-builder/")[1]?.split("/")[0] || "";
+	const params = Route.useParams();
+	const { workspaceId } = params;
+	const formId = formIdFromPath || params.formId;
 
 	// Use local Electric data to check form status (more up-to-date than server)
 	const { data: localFormData, isReady } = useForm(formId);
 	const localForm = localFormData?.[0];
 	const localStatus = localForm?.status;
 
-	console.log('[edit.tsx DesignPage] Local form status check:', {
+	console.log("[edit.tsx DesignPage] Local form status check:", {
 		formId,
 		localStatus,
 		isReady,
-		localForm: localForm ? { id: localForm.id, title: localForm.title, status: localForm.status } : null,
+		localForm: localForm
+			? { id: localForm.id, title: localForm.title, status: localForm.status }
+			: null,
 	});
 
 	const loaderData = Route.useLoaderData();
@@ -100,10 +109,12 @@ function DesignPage() {
 	// Redirect to share page if form is published (using local Electric data)
 	// BUT skip redirect if user explicitly clicked "Edit" button (force=true)
 	useEffect(() => {
-		if (isReady && localStatus === 'published' && !forceEdit) {
-			console.log('[edit.tsx DesignPage] Form is published locally, redirecting to share...');
+		if (isReady && localStatus === "published" && !forceEdit) {
+			console.log(
+				"[edit.tsx DesignPage] Form is published locally, redirecting to share...",
+			);
 			navigate({
-				to: '/workspace/$workspaceId/form-builder/$formId/share',
+				to: "/workspace/$workspaceId/form-builder/$formId/share",
 				params: { workspaceId, formId },
 				replace: true, // Replace history entry so back button doesn't loop
 			});
@@ -116,7 +127,7 @@ function DesignPage() {
 	}
 
 	// If form is published and not forcing edit, show loader while redirecting
-	if (localStatus === 'published' && !forceEdit) {
+	if (localStatus === "published" && !forceEdit) {
 		return <Loader />;
 	}
 
@@ -136,5 +147,5 @@ function DesignPage() {
 			</main>
 			<CustomizeSidebar />
 		</div>
-	)
+	);
 }

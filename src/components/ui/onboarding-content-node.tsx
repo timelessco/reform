@@ -61,10 +61,7 @@ export function OnboardingContentElement(props: PlateElementProps) {
 
 	return (
 		<PlateElement {...props}>
-			<div
-				contentEditable={false}
-				className="select-none"
-			>
+			<div contentEditable={false} className="select-none">
 				<div className="max-w-[700px] mx-auto pt-8 pb-16 px-4 sm:px-16">
 					{/* Landing Hero Section */}
 					<div className="flex flex-col items-center text-center mb-10">

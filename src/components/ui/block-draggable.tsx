@@ -170,7 +170,7 @@ function Draggable(props: PlateElementProps) {
 			return plugin.options.gutterPosition as "center" | "top";
 
 		if (
-			["formTextarea", KEYS.code_block, KEYS.blockquote, KEYS.table].includes(
+			["formTextarea", KEYS.codeBlock, KEYS.blockquote, KEYS.table].includes(
 				element.type,
 			)
 		) {
@@ -211,12 +211,13 @@ function Draggable(props: PlateElementProps) {
 	const wasDraggingRef = React.useRef(isDragging);
 	const wasAboutToDragRef = React.useRef(isAboutToDrag);
 
-	const resetPreview = () => {
-		if (previewRef.current) {
-			previewRef.current.replaceChildren();
-			previewRef.current?.classList.add("hidden");
+	const resetPreview = React.useCallback(() => {
+		const previewEl = previewRef.current;
+		if (previewEl) {
+			previewEl.replaceChildren();
+			previewEl.classList.add("hidden");
 		}
-	};
+	}, [previewRef]);
 
 	// Reset preview only when transitioning from dragging to not dragging
 	React.useEffect(() => {
@@ -237,6 +238,23 @@ function Draggable(props: PlateElementProps) {
 			previewRef.current?.classList.remove("opacity-0");
 		}
 	}, [isAboutToDrag, previewRef.current?.classList.remove]);
+
+	React.useEffect(() => {
+		const node = nodeRef.current;
+		if (!node) return;
+
+		const handleContextMenu = (event: MouseEvent) => {
+			editor.getApi(BlockSelectionPlugin).blockSelection.addOnContextMenu({
+				element,
+				event: event as unknown as React.MouseEvent<HTMLDivElement>,
+			});
+		};
+
+		node.addEventListener("contextmenu", handleContextMenu);
+		return () => {
+			node.removeEventListener("contextmenu", handleContextMenu);
+		};
+	}, [editor, element, nodeRef]);
 
 	return (
 		<div
@@ -331,23 +349,13 @@ function Draggable(props: PlateElementProps) {
 					</div>
 				</Gutter>
 			)}
-
 			<div
 				ref={previewRef}
 				className={cn("left-0 absolute hidden w-full")}
 				style={{ top: `${-previewTop}px` }}
 				contentEditable={false}
 			/>
-
-			<div
-				ref={nodeRef}
-				className="slate-blockWrapper flow-root"
-				onContextMenu={(event) =>
-					editor
-						.getApi(BlockSelectionPlugin)
-						.blockSelection.addOnContextMenu({ element, event })
-				}
-			>
+			<div ref={nodeRef} className="slate-blockWrapper flow-root">
 				<MemoizedChildren>{children}</MemoizedChildren>
 				<DropLine />
 			</div>
@@ -412,7 +420,8 @@ const DragHandle = React.memo(function DragHandle({
 	return (
 		<Tooltip>
 			<TooltipTrigger asChild>
-				<div
+				<button
+					type="button"
 					className="flex size-full items-center justify-center"
 					onClick={(e) => {
 						// e.preventDefault();
@@ -505,14 +514,13 @@ const DragHandle = React.memo(function DragHandle({
 						resetPreview();
 					}}
 					data-plate-prevent-deselect
-					role="button"
 				>
 					{isFormButton ? (
 						<Settings className="text-muted-foreground" />
 					) : (
 						<GripVertical className="text-muted-foreground" />
 					)}
-				</div>
+				</button>
 			</TooltipTrigger>
 			<TooltipContent>
 				{isFormButton

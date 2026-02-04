@@ -22,7 +22,6 @@ import { FloatingToolbarKit } from "@/components/editor/plugins/floating-toolbar
 import { FontKit } from "@/components/editor/plugins/font-kit";
 import { FormBlocksKit } from "@/components/editor/plugins/form-blocks-kit";
 import { FormHeaderKit } from "@/components/editor/plugins/form-header-kit";
-import { OnboardingKit } from "@/components/editor/plugins/onboarding-kit";
 import { LineHeightKit } from "@/components/editor/plugins/line-height-kit";
 import { LinkKit } from "@/components/editor/plugins/link-kit";
 import { ListKit } from "@/components/editor/plugins/list-kit";
@@ -30,6 +29,7 @@ import { MarkdownKit } from "@/components/editor/plugins/markdown-kit";
 import { MathKit } from "@/components/editor/plugins/math-kit";
 import { MediaKit } from "@/components/editor/plugins/media-kit";
 import { MentionKit } from "@/components/editor/plugins/mention-kit";
+import { OnboardingKit } from "@/components/editor/plugins/onboarding-kit";
 import { SlashKit } from "@/components/editor/plugins/slash-kit";
 import { SuggestionKit } from "@/components/editor/plugins/suggestion-kit";
 import { TableKit } from "@/components/editor/plugins/table-kit";

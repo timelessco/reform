@@ -231,6 +231,7 @@ function Alert({
 			{children}
 			{close && (
 				<button
+					type="button"
 					onClick={onClose}
 					aria-label="Dismiss"
 					data-slot="alert-close"

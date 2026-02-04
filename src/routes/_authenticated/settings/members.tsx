@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +36,7 @@ export const Route = createFileRoute("/_authenticated/settings/members")({
 function OrgMembersSettings() {
 	const queryClient = useQueryClient();
 	const [email, setEmail] = useState("");
+	const emailInputId = useId();
 
 	const { data, isLoading: isLoadingMembers } = useQuery(
 		auth.organization.listMembers.queryOptions(),
@@ -86,11 +87,11 @@ function OrgMembersSettings() {
 				<CardContent>
 					<form onSubmit={handleInvite} className="flex gap-4">
 						<div className="flex-1 space-y-2">
-							<Label htmlFor="email" className="sr-only">
+							<Label htmlFor={emailInputId} className="sr-only">
 								Email
 							</Label>
 							<Input
-								id="email"
+								id={emailInputId}
 								type="email"
 								placeholder="colleague@example.com"
 								value={email}

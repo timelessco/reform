@@ -111,6 +111,8 @@ export function FormButtonElement({
 		setIsOpen(false);
 	};
 
+	const buttonLabelId = React.useId();
+
 	// Gear icon component
 	const GearIcon = (
 		<Popover
@@ -144,11 +146,11 @@ export function FormButtonElement({
 				onMouseDown={(e) => e.stopPropagation()}
 			>
 				<div className="space-y-2">
-					<Label htmlFor="button-label" className="text-sm font-medium">
+					<Label htmlFor={buttonLabelId} className="text-sm font-medium">
 						Button label
 					</Label>
 					<Input
-						id="button-label"
+						id={buttonLabelId}
 						value={inputValue}
 						placeholder={placeholder}
 						onChange={(e) => setInputValue(e.target.value)}
@@ -186,6 +188,8 @@ export function FormButtonElement({
 			<div
 				className="inline-flex items-center gap-1 group"
 				contentEditable={false}
+				role="presentation"
+				aria-hidden="true"
 				onMouseDown={(e) => {
 					e.preventDefault();
 					e.stopPropagation();

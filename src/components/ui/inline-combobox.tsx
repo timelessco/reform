@@ -52,7 +52,7 @@ const defaultFilter: FilterFn = (
 	);
 
 	return Array.from(uniqueTerms).some((keyword) =>
-		filterWords(keyword!, search),
+		filterWords(keyword ?? "", search),
 	);
 };
 
@@ -87,7 +87,7 @@ const InlineCombobox = ({
 
 	// Check if current user is the creator of this element (for Yjs collaboration)
 	const isCreator = React.useMemo(() => {
-		const elementUserId = (element as any).userId;
+		const elementUserId = (element as { userId?: string }).userId;
 		const currentUserId = editor.meta.userId;
 
 		// If no userId (backwards compatibility or non-Yjs), allow
@@ -213,7 +213,12 @@ const InlineComboboxInput = ({
 		trigger,
 	} = React.useContext(InlineComboboxContext);
 
-	const store = useComboboxContext()!;
+	const store = useComboboxContext();
+	if (!store) {
+		throw new Error(
+			"InlineComboboxInput must be used within an InlineCombobox",
+		);
+	}
 	const value = store.useState("value");
 
 	const ref = useComposedRef(propRef, contextRef);
@@ -307,14 +312,17 @@ const InlineComboboxItem = ({
 
 	const { filter, removeInput } = React.useContext(InlineComboboxContext);
 
-	const store = useComboboxContext()!;
+	const store = useComboboxContext();
+	if (!store) {
+		throw new Error("InlineComboboxItem must be used within an InlineCombobox");
+	}
 
 	// Optimization: Do not subscribe to value if filter is false
-	const search = filter && store.useState("value");
+	const storeValue = store.useState("value");
+	const search = filter ? storeValue : undefined;
 
 	const visible = React.useMemo(
-		() =>
-			!filter || filter({ group, keywords, label, value }, search as string),
+		() => !filter || filter({ group, keywords, label, value }, search ?? ""),
 		[filter, group, keywords, label, value, search],
 	);
 
@@ -337,7 +345,12 @@ const InlineComboboxEmpty = ({
 	className,
 }: React.HTMLAttributes<HTMLDivElement>) => {
 	const { setHasEmpty } = React.useContext(InlineComboboxContext);
-	const store = useComboboxContext()!;
+	const store = useComboboxContext();
+	if (!store) {
+		throw new Error(
+			"InlineComboboxEmpty must be used within an InlineCombobox",
+		);
+	}
 	const items = store.useState("items");
 
 	React.useEffect(() => {

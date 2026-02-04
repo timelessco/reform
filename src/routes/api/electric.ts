@@ -25,7 +25,12 @@ export const Route = createFileRoute("/api/electric")({
 				const url = new URL(request.url);
 
 				const table = url.searchParams.get("table")?.trim();
-				const allowedTables = ["workspaces", "forms", "submissions", "form_favorites"];
+				const allowedTables = [
+					"workspaces",
+					"forms",
+					"submissions",
+					"form_favorites",
+				];
 
 				if (!table || !allowedTables.includes(table)) {
 					return json({ error: "Invalid or missing table." }, 400);

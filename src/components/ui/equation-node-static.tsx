@@ -3,6 +3,7 @@ import { RadicalIcon } from "lucide-react";
 import type { TEquationElement } from "platejs";
 import type { SlateElementProps } from "platejs/static";
 import { SlateElement } from "platejs/static";
+import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,7 @@ export function EquationElementStatic(
 			trust: false,
 		},
 	});
+	const renderedNodes = React.useMemo(() => parseMathHtml(html), [html]);
 
 	return (
 		<SlateElement className="my-1" {...props}>
@@ -37,11 +39,9 @@ export function EquationElementStatic(
 				)}
 			>
 				{element.texExpression.length > 0 ? (
-					<span
-						dangerouslySetInnerHTML={{
-							__html: html,
-						}}
-					/>
+					<span className="flex min-h-[1em] items-center" aria-hidden>
+						{renderedNodes?.length ? renderedNodes : element.texExpression}
+					</span>
 				) : (
 					<div className="flex h-7 w-full items-center gap-2 whitespace-nowrap text-muted-foreground text-sm">
 						<RadicalIcon className="size-6 text-muted-foreground/80" />
@@ -71,6 +71,7 @@ export function InlineEquationElementStatic(
 			trust: false,
 		},
 	});
+	const renderedNodes = React.useMemo(() => parseMathHtml(html), [html]);
 
 	return (
 		<SlateElement
@@ -90,10 +91,108 @@ export function InlineEquationElementStatic(
 						props.element.texExpression.length === 0 && "hidden",
 						"font-mono leading-none",
 					)}
-					dangerouslySetInnerHTML={{ __html: html }}
-				/>
+				>
+					{renderedNodes?.length ? renderedNodes : props.element.texExpression}
+				</span>
 			</div>
 			{props.children}
 		</SlateElement>
 	);
+}
+
+const ATTRIBUTE_NAME_MAP: Record<string, string> = {
+	class: "className",
+	for: "htmlFor",
+};
+
+function parseMathHtml(html: string): React.ReactNode[] | null {
+	if (typeof DOMParser === "undefined") {
+		return null;
+	}
+
+	const parser = new DOMParser();
+	const document = parser.parseFromString(html, "text/html");
+
+	const nodes = Array.from(document.body.childNodes)
+		.map((node, index) => convertNodeToReact(node, `${index}`))
+		.filter((node): node is React.ReactNode => node !== null);
+
+	return nodes.length ? nodes : null;
+}
+
+function convertNodeToReact(
+	node: ChildNode,
+	key: string,
+): React.ReactNode | null {
+	if (node.nodeType === 3) {
+		return node.textContent;
+	}
+
+	if (node.nodeType !== 1) {
+		return null;
+	}
+
+	const element = node as Element;
+	const props = convertAttributes(element);
+	const children = Array.from(element.childNodes)
+		.map((child, index) => convertNodeToReact(child, `${key}-${index}`))
+		.filter((child): child is React.ReactNode => child !== null);
+	const content =
+		children.length === 0
+			? undefined
+			: children.length === 1
+				? children[0]
+				: children;
+
+	return React.createElement(
+		element.tagName.toLowerCase(),
+		{ ...props, key },
+		content,
+	);
+}
+
+function convertAttributes(element: Element): Record<string, unknown> {
+	const props: Record<string, unknown> = {};
+
+	Array.from(element.attributes).forEach((attr) => {
+		const name = attr.name.toLowerCase();
+		if (name.startsWith("on")) return;
+
+		if (name === "style") {
+			const styleValue = parseStyleString(attr.value);
+			if (Object.keys(styleValue).length) {
+				props.style = {
+					...(props.style as Record<string, string>),
+					...styleValue,
+				};
+			}
+			return;
+		}
+
+		const propName = ATTRIBUTE_NAME_MAP[name] ?? attr.name;
+		props[propName] = attr.value;
+	});
+
+	return props;
+}
+
+function parseStyleString(style: string): Record<string, string> {
+	return style.split(";").reduce<Record<string, string>>((acc, declaration) => {
+		const [property, ...rest] = declaration.split(":");
+		if (!property || !rest.length) {
+			return acc;
+		}
+
+		const value = rest.join(":").trim();
+		if (!value) {
+			return acc;
+		}
+
+		const camelCased = property
+			.trim()
+			.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
+
+		acc[camelCased] = value;
+		return acc;
+	}, {});
 }

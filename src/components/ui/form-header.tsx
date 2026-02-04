@@ -61,7 +61,7 @@ function CoverUpload({
 
 	return (
 		<div className="flex flex-col gap-4">
-			<div
+			<button
 				className={cn(
 					"group/cover-upload relative h-32 w-full cursor-pointer overflow-hidden rounded-md border-2 border-dashed transition-colors flex items-center justify-center",
 					isDragging
@@ -73,6 +73,7 @@ function CoverUpload({
 				onDragOver={handleDragOver}
 				onDrop={handleDrop}
 				onClick={openFileDialog}
+				type="button"
 			>
 				<input {...getInputProps()} className="sr-only" />
 				<div className="flex flex-col items-center gap-2 text-muted-foreground">
@@ -80,7 +81,7 @@ function CoverUpload({
 					<span className="text-sm font-medium">Upload cover image</span>
 					<span className="text-xs">Max 5MB</span>
 				</div>
-			</div>
+			</button>
 			{errors.length > 0 && (
 				<div className="text-destructive text-sm">{errors[0]}</div>
 			)}
@@ -164,52 +165,64 @@ export function FormHeader({
 										value="gallery"
 										className="grid grid-cols-4 gap-2 pt-4"
 									>
-										<div
+										<button
+											type="button"
 											onClick={() => setCoverUrl("#FFE4E1")}
 											className="h-16 bg-[#FFE4E1] rounded cursor-pointer hover:ring-2 ring-primary transition-all"
+											aria-label="Select blush cover"
 										/>
-										<div
+										<button
+											type="button"
 											onClick={() =>
 												setCoverUrl(
 													"https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80",
 												)
 											}
 											className="h-16 bg-blue-100 rounded cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+											aria-label="Select coastal cover"
 										>
 											<img
 												src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80"
+												alt="Coastal hills cover"
 												className="w-full h-full object-cover"
 											/>
-										</div>
-										<div
+										</button>
+										<button
+											type="button"
 											onClick={() =>
 												setCoverUrl(
 													"https://images.unsplash.com/photo-1557683316-973673baf926?w=800&q=80",
 												)
 											}
 											className="h-16 bg-purple-100 rounded cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+											aria-label="Select violet cover"
 										>
 											<img
 												src="https://images.unsplash.com/photo-1557683316-973673baf926?w=800&q=80"
+												alt="Violet hills cover"
 												className="w-full h-full object-cover"
 											/>
-										</div>
-										<div
+										</button>
+										<button
+											type="button"
 											onClick={() =>
 												setCoverUrl(
 													"https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80",
 												)
 											}
 											className="h-16 bg-green-100 rounded cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+											aria-label="Select green cover"
 										>
 											<img
 												src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80"
+												alt="Green meadow cover"
 												className="w-full h-full object-cover"
 											/>
-										</div>
+										</button>
 
 										{/* Remove Option in Gallery */}
 										<button
+											type="button"
 											onClick={() => setCoverUrl(null)}
 											className="col-span-4 mt-2 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-2 border rounded-md hover:bg-muted/50"
 										>
@@ -219,6 +232,7 @@ export function FormHeader({
 									<TabsContent value="upload" className="pt-4">
 										<CoverUpload onFileChange={setCoverUrl} />
 										<button
+											type="button"
 											onClick={() => setCoverUrl(null)}
 											className="w-full mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-2 border rounded-md hover:bg-muted/50"
 										>
@@ -242,7 +256,8 @@ export function FormHeader({
 				<div className="w-full  sm:px-[max(10px,calc(50%-350px))]">
 					{/* Logo Element */}
 					{hasLogo && (
-						<div
+						<button
+							type="button"
 							className={cn(
 								"relative z-10 mb-4",
 								hasCover ? "-mt-[30px] sm:-mt-[40px]" : "mt-6 sm:mt-8",
@@ -268,6 +283,7 @@ export function FormHeader({
 													strokeLinecap="round"
 													strokeLinejoin="round"
 												>
+													<title>Form header placeholder icon</title>
 													<path d="M12 2l9 4.9V17L12 22l-9-4.9V7z" />
 												</svg>
 											</div>
@@ -318,7 +334,7 @@ export function FormHeader({
 									</Tabs>
 								</DialogContent>
 							</Dialog>
-						</div>
+						</button>
 					)}
 
 					{/* Action Buttons Group */}

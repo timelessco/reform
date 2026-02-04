@@ -36,9 +36,9 @@ function Cursor({
 
 	return (
 		<>
-			{selectionRects.map((position, i) => (
+			{selectionRects.map((position) => (
 				<div
-					key={i}
+					key={`${position.left}-${position.top}-${position.width}-${position.height}`}
 					className={cn(
 						"pointer-events-none absolute z-10",
 						id === "selection" && "bg-brand/25",

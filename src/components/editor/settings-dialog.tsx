@@ -223,6 +223,7 @@ export function SettingsDialog() {
 	const [showKey, setShowKey] = React.useState<Record<string, boolean>>({});
 	const [open, setOpen] = React.useState(false);
 	const [openModel, setOpenModel] = React.useState(false);
+	const modelSelectId = React.useId();
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -358,12 +359,12 @@ export function SettingsDialog() {
 							<div className="group relative">
 								<label
 									className="-translate-y-1/2 absolute start-1 top-0 z-10 block bg-background px-2 font-medium text-foreground text-xs group-has-disabled:opacity-50"
-									htmlFor="select-model"
+									htmlFor={modelSelectId}
 								>
 									Model
 								</label>
 								<Popover open={openModel} onOpenChange={setOpenModel}>
-									<PopoverTrigger id="select-model" asChild>
+									<PopoverTrigger id={modelSelectId} asChild>
 										<Button
 											size="lg"
 											variant="outline"

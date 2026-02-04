@@ -1,51 +1,3 @@
-import { useTheme } from "@/components/ThemeProvider";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { AppHeader } from "@/components/ui/app-header";
-import { Button } from "@/components/ui/button";
-import {
-	CommandDialog,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-	CommandSeparator,
-} from "@/components/ui/command";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
-import { ErrorBoundary } from "@/components/ui/error-boundary";
-import { Input } from "@/components/ui/input";
-import Loader from "@/components/ui/loader";
-import { NotFound } from "@/components/ui/not-found";
-import { MinimalSidebarProvider, useMinimalSidebar } from "@/contexts/minimal-sidebar-context";
-import {
-	createWorkspaceLocal,
-	deleteWorkspaceLocal,
-	permanentDeleteFormLocal,
-	restoreFormLocal,
-	updateWorkspaceName,
-} from "@/db-collections";
-import { useArchivedForms } from "@/hooks/use-live-hooks";
-import { useCommandPalette } from "@/hooks/use-command-palette";
-import { useFavoriteForms, useForms, useWorkspaces } from "@/hooks/use-live-hooks";
-import { auth, useSession } from "@/lib/auth-client";
-import { cn } from "@/lib/utils";
-import { authMiddleware } from "@/middleware/auth";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
 	createFileRoute,
@@ -80,7 +32,62 @@ import {
 	Users,
 } from "lucide-react";
 import type * as React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useTheme } from "@/components/ThemeProvider";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { AppHeader } from "@/components/ui/app-header";
+import { Button } from "@/components/ui/button";
+import {
+	CommandDialog,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+	CommandSeparator,
+} from "@/components/ui/command";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { Input } from "@/components/ui/input";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
+import {
+	MinimalSidebarProvider,
+	useMinimalSidebar,
+} from "@/contexts/minimal-sidebar-context";
+import {
+	createWorkspaceLocal,
+	deleteWorkspaceLocal,
+	permanentDeleteFormLocal,
+	restoreFormLocal,
+	updateWorkspaceName,
+} from "@/db-collections";
+import { useCommandPalette } from "@/hooks/use-command-palette";
+import {
+	useArchivedForms,
+	useFavoriteForms,
+	useForms,
+	useWorkspaces,
+} from "@/hooks/use-live-hooks";
+import { auth, useSession } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
+import { authMiddleware } from "@/middleware/auth";
 
 // Route configuration
 export const Route = createFileRoute("/_authenticated")({
@@ -116,7 +123,10 @@ function AuthLayoutContent() {
 		<div className="flex min-h-screen w-full overflow-hidden relative">
 			{/* Hover Trigger Area - An invisible area at the left edge to detect hover */}
 			{!isPinned && (
-				<div
+				<button
+					type="button"
+					aria-hidden="true"
+					tabIndex={-1}
 					className="fixed left-0 top-12 bottom-0 w-4 z-60"
 					onMouseEnter={() => setIsHovered(true)}
 				/>
@@ -129,8 +139,12 @@ function AuthLayoutContent() {
 				className={cn(
 					"flex flex-col flex-1 min-h-screen min-w-0 transition-all duration-300 ease-in-out",
 					isInboxOpen
-						? (isPinned ? "ml-[544px]" : "ml-80")
-						: (isPinned ? "ml-56" : "ml-0"),
+						? isPinned
+							? "ml-[544px]"
+							: "ml-80"
+						: isPinned
+							? "ml-56"
+							: "ml-0",
 				)}
 			>
 				<AppHeader formId={formId} workspaceId={workspaceId} />
@@ -159,11 +173,12 @@ function SidebarItem({
 	prefix,
 	children,
 }: SidebarItemProps & { children?: React.ReactNode }) {
-	const Comp = to ? Link : "div";
+	const Component: React.ElementType = to ? Link : "button";
+	const componentProps = to ? { to } : { type: "button" as const };
 
 	return (
-		<Comp
-			to={to}
+		<Component
+			{...componentProps}
 			onClick={onClick}
 			className={cn(
 				"group flex w-full items-center justify-between rounded px-2 py-1 text-[13px] transition-colors hover:text-foreground relative cursor-pointer",
@@ -186,13 +201,21 @@ function SidebarItem({
 				)}
 			</span>
 			{children}
-		</Comp>
+		</Component>
 	);
 }
 
 // Minimal Sidebar Component
 function MinimalSidebar() {
-	const { isVisible, isPinned, togglePin, setIsHovered, isInboxOpen, setIsInboxOpen } = useMinimalSidebar();
+	const {
+		isVisible,
+		isPinned,
+		togglePin,
+		setIsHovered,
+		isInboxOpen,
+		setIsInboxOpen,
+	} = useMinimalSidebar();
+	const sidebarRef = useRef<HTMLDivElement>(null);
 	const location = useLocation();
 	const router = useRouter();
 	const { theme, setTheme } = useTheme();
@@ -245,6 +268,22 @@ function MinimalSidebar() {
 		return () => document.removeEventListener("keydown", down);
 	}, [togglePalette]);
 
+	useEffect(() => {
+		const node = sidebarRef.current;
+		if (!node) return;
+
+		const handleMouseEnterSidebar = () => setIsHovered(true);
+		const handleMouseLeaveSidebar = () => setIsHovered(false);
+
+		node.addEventListener("mouseenter", handleMouseEnterSidebar);
+		node.addEventListener("mouseleave", handleMouseLeaveSidebar);
+
+		return () => {
+			node.removeEventListener("mouseenter", handleMouseEnterSidebar);
+			node.removeEventListener("mouseleave", handleMouseLeaveSidebar);
+		};
+	}, [setIsHovered]);
+
 	const getInitials = (name?: string | null) => {
 		if (!name) return "U";
 		return name
@@ -260,11 +299,12 @@ function MinimalSidebar() {
 	return (
 		<>
 			<div
-				onMouseEnter={() => setIsHovered(true)}
-				onMouseLeave={() => setIsHovered(false)}
+				ref={sidebarRef}
 				className={cn(
 					"fixed left-0 z-50 flex w-56 flex-col bg-background p-3 select-none transition-all duration-300 ease-in-out",
-					isPinned ? "inset-y-0" : "top-12 bottom-12 rounded-r-2xl border-y border-r border-foreground/10 shadow-2xl",
+					isPinned
+						? "inset-y-0"
+						: "top-12 bottom-12 rounded-r-2xl border-y border-r border-foreground/10 shadow-2xl",
 					!isVisible && "-translate-x-full",
 					isVisible && "translate-x-0",
 					isPinned && "border-r border-foreground/5 shadow-none",
@@ -333,7 +373,10 @@ function MinimalSidebar() {
 								to: "/settings",
 							});
 						}}
-						isActive={location.pathname.startsWith("/settings") && !location.pathname.includes("/members")}
+						isActive={
+							location.pathname.startsWith("/settings") &&
+							!location.pathname.includes("/members")
+						}
 						prefix={<Settings className="h-4 w-4" />}
 					/>
 					<SidebarItem
@@ -349,6 +392,7 @@ function MinimalSidebar() {
 					<div className="h-px bg-foreground/5 my-2" />
 
 					<button
+						type="button"
 						onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
 						className="flex items-center gap-3 px-2 py-1.5 rounded hover:bg-muted/50 text-muted-foreground/60 hover:text-foreground transition-all group w-full"
 					>
@@ -455,7 +499,7 @@ function TrashDialog({
 		const orgWorkspaceIds = new Set(
 			workspacesData
 				.filter((ws) => ws.organizationId === activeOrgId)
-				.map((ws) => ws.id)
+				.map((ws) => ws.id),
 		);
 
 		// Filter forms that belong to org's workspaces
@@ -464,12 +508,12 @@ function TrashDialog({
 			.filter(
 				(form) =>
 					!searchQuery ||
-					form.title.toLowerCase().includes(searchQuery.toLowerCase())
+					form.title.toLowerCase().includes(searchQuery.toLowerCase()),
 			)
 			.sort(
 				(a, b) =>
 					new Date(b.deletedAt || b.updatedAt).getTime() -
-					new Date(a.deletedAt || a.updatedAt).getTime()
+					new Date(a.deletedAt || a.updatedAt).getTime(),
 			);
 	}, [archivedFormsData, workspacesData, activeOrgId, searchQuery]);
 
@@ -481,7 +525,7 @@ function TrashDialog({
 				acc[ws.id] = ws.name;
 				return acc;
 			},
-			{} as Record<string, string>
+			{} as Record<string, string>,
 		);
 	}, [workspacesData]);
 
@@ -535,12 +579,14 @@ function TrashDialog({
 												{form.title || "Untitled"}
 											</p>
 											<p className="text-[11px] text-muted-foreground/60 truncate">
-												{workspaceNames[form.workspaceId] || "Unknown workspace"}
+												{workspaceNames[form.workspaceId] ||
+													"Unknown workspace"}
 											</p>
 										</div>
 									</div>
 									<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
 										<button
+											type="button"
 											onClick={() => handleRestore(form.id)}
 											className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
 											title="Restore"
@@ -548,6 +594,7 @@ function TrashDialog({
 											<Undo2 className="h-4 w-4" />
 										</button>
 										<button
+											type="button"
 											onClick={() => handlePermanentDelete(form.id)}
 											className="p-1.5 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
 											title="Delete permanently"
@@ -566,7 +613,10 @@ function TrashDialog({
 					<p className="text-[11px] text-muted-foreground/60">
 						Pages in Trash for over 30 days will be automatically deleted
 					</p>
-					<button className="text-muted-foreground/40 hover:text-muted-foreground transition-colors">
+					<button
+						type="button"
+						className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+					>
 						<HelpCircle className="h-4 w-4" />
 					</button>
 				</div>
@@ -577,14 +627,15 @@ function TrashDialog({
 
 // Sidebar Inbox Panel Component
 function SidebarInbox() {
-	const { isInboxOpen, setIsInboxOpen, isPinned, isVisible } = useMinimalSidebar();
+	const { isInboxOpen, setIsInboxOpen, isPinned, isVisible } =
+		useMinimalSidebar();
 
 	if (!isInboxOpen) return null;
 
 	return (
 		<div
 			className={cn(
-				"fixed z-40 flex w-80 flex-col bg-background select-none transition-all duration-300 ease-in-out border-r border-foreground/5 shadow-xl top-0 bottom-0",
+				"fixed z-40 flex w-80 flex-col bg-background select-none transition-all duration-300 ease-in-out border-r border-foreground/5 top-0 bottom-0",
 				isPinned ? "left-56" : "left-0",
 				// The inbox should stay visible if it's open, but we handle the transition if the main sidebar collapses
 				!isPinned && !isVisible && "opacity-100",
@@ -597,16 +648,23 @@ function SidebarInbox() {
 				</div>
 				<div className="flex items-center gap-0.5">
 					<button
+						type="button"
 						onClick={() => setIsInboxOpen(false)}
 						className="p-1 px-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors mr-1"
 						title="Collapse"
 					>
 						<ChevronsLeft className="h-3.5 w-3.5" />
 					</button>
-					<button className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+					<button
+						type="button"
+						className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+					>
 						<Filter className="h-3.5 w-3.5" />
 					</button>
-					<button className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+					<button
+						type="button"
+						className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+					>
 						<MoreHorizontal className="h-3.5 w-3.5" />
 					</button>
 				</div>
@@ -615,7 +673,9 @@ function SidebarInbox() {
 			{/* Content */}
 			<div className="flex-1 overflow-y-auto p-2 no-scrollbar">
 				<div className="px-1 overflow-hidden">
-					<p className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest mb-3 px-2">Older</p>
+					<p className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest mb-3 px-2">
+						Older
+					</p>
 
 					<div className="space-y-1">
 						{/* Notification Item 1 */}
@@ -627,9 +687,12 @@ function SidebarInbox() {
 								<div className="flex-1 min-w-0">
 									<div className="flex items-center justify-between gap-2">
 										<p className="text-[13px] font-bold text-foreground leading-tight truncate">
-											SMART TECH requested access to <span className="text-red-500">📕 Betting Platform</span>
+											SMART TECH requested access to{" "}
+											<span className="text-red-500">📕 Betting Platform</span>
 										</p>
-										<span className="text-[10px] text-muted-foreground/30 whitespace-nowrap">12/08</span>
+										<span className="text-[10px] text-muted-foreground/30 whitespace-nowrap">
+											12/08
+										</span>
 									</div>
 									<p className="text-[11px] text-muted-foreground/50 mt-1">
 										Approved by You on Dec 8, 2025
@@ -641,14 +704,19 @@ function SidebarInbox() {
 						{/* Notification Item 2 */}
 						<div className="group flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer transition-colors border border-transparent hover:border-foreground/5">
 							<div className="h-8 w-8 rounded-full bg-foreground/5 flex items-center justify-center shrink-0">
-								<span className="text-xs font-bold text-muted-foreground/40">B</span>
+								<span className="text-xs font-bold text-muted-foreground/40">
+									B
+								</span>
 							</div>
 							<div className="flex-1 min-w-0">
 								<div className="flex items-center justify-between gap-2">
 									<p className="text-[12px] font-medium text-foreground truncate">
-										Basky & Velu invited you to <span className="font-bold">🕵️ I'm Vijay</span>
+										Basky & Velu invited you to{" "}
+										<span className="font-bold">🕵️ I'm Vijay</span>
 									</p>
-									<span className="text-[10px] text-muted-foreground/30 whitespace-nowrap">10/22</span>
+									<span className="text-[10px] text-muted-foreground/30 whitespace-nowrap">
+										10/22
+									</span>
 								</div>
 							</div>
 						</div>
@@ -699,9 +767,11 @@ function UserMenuMinimal({
 	return (
 		<div className="relative user-menu-container px-1">
 			<div className="flex items-center justify-between group/header">
-				<div
+				<button
+					type="button"
 					onClick={() => setIsOpen(!isOpen)}
 					className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/50 cursor-pointer transition-colors flex-1 min-w-0"
+					aria-label="Toggle user menu"
 				>
 					<div className="h-5.5 w-5.5 rounded bg-muted flex items-center justify-center text-[10px] font-bold shrink-0">
 						{getInitials(displayName)}
@@ -715,16 +785,20 @@ function UserMenuMinimal({
 							isOpen && "rotate-180 text-foreground",
 						)}
 					/>
-				</div>
+				</button>
 				<div className="flex items-center gap-0.5 opacity-0 group-hover/header:opacity-100 transition-opacity">
 					<button
+						type="button"
 						onClick={togglePin}
 						className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
 						title="Collapse sidebar"
 					>
 						<ChevronsLeft className="h-3.5 w-3.5" />
 					</button>
-					<button className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+					<button
+						type="button"
+						className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+					>
 						<PencilLine className="h-3.5 w-3.5" />
 					</button>
 				</div>
@@ -750,6 +824,7 @@ function UserMenuMinimal({
 					{/* Quick Actions */}
 					<div className="grid grid-cols-2 gap-1 mb-2 px-1">
 						<button
+							type="button"
 							onClick={() => {
 								router.navigate({ to: "/settings" });
 								setIsOpen(false);
@@ -759,7 +834,10 @@ function UserMenuMinimal({
 							<Settings className="h-3 w-3" />
 							Settings
 						</button>
-						<button className="flex items-center justify-center gap-1.5 py-1.5 rounded-md border border-foreground/5 hover:bg-muted/50 text-[11px] font-medium transition-colors">
+						<button
+							type="button"
+							className="flex items-center justify-center gap-1.5 py-1.5 rounded-md border border-foreground/5 hover:bg-muted/50 text-[11px] font-medium transition-colors"
+						>
 							<UserPlus className="h-3 w-3" />
 							Invite members
 						</button>
@@ -772,24 +850,31 @@ function UserMenuMinimal({
 						</p>
 						<div className="space-y-0.5">
 							{orgs?.map((org: any) => (
-								<div
+								<button
+									type="button"
 									key={org.id}
 									onClick={() => {
 										setActiveOrgMutation.mutate({ organizationId: org.id });
 										setIsOpen(false);
 									}}
 									className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/50 cursor-pointer transition-colors group"
+									aria-label={`Switch to ${org.name}`}
 								>
 									<div className="h-5 w-5 rounded bg-muted flex items-center justify-center text-[9px] font-bold">
 										{getInitials(org.name)}
 									</div>
-									<span className="text-[13px] font-medium flex-1 truncate">{org.name}</span>
+									<span className="text-[13px] font-medium flex-1 truncate">
+										{org.name}
+									</span>
 									{org.id === activeOrg?.id && (
 										<div className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
 									)}
-								</div>
+								</button>
 							))}
-							<button className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-muted/50 text-[13px] text-muted-foreground hover:text-foreground transition-colors text-left">
+							<button
+								type="button"
+								className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-muted/50 text-[13px] text-muted-foreground hover:text-foreground transition-colors text-left"
+							>
 								<Plus className="h-4 w-4" />
 								<span>New workspace</span>
 							</button>
@@ -799,11 +884,15 @@ function UserMenuMinimal({
 					{/* Footer Actions */}
 					<div className="h-px bg-foreground/5 my-1" />
 					<div className="space-y-0.5 px-1">
-						<button className="flex items-center gap-2.5 w-full px-2 py-1.5 text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md transition-colors text-left">
+						<button
+							type="button"
+							className="flex items-center gap-2.5 w-full px-2 py-1.5 text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md transition-colors text-left"
+						>
 							<Plus className="h-3.5 w-3.5" />
 							<span>Add another account</span>
 						</button>
 						<button
+							type="button"
 							onClick={() => {
 								signOutMutation.mutate({});
 								setIsOpen(false);
@@ -864,14 +953,12 @@ function WorkspaceItemMinimal({
 
 	return (
 		<div className="flex flex-col">
-			<SidebarItem
-				label={workspace.name}
-				onClick={() => setIsOpen(!isOpen)}
-			>
+			<SidebarItem label={workspace.name} onClick={() => setIsOpen(!isOpen)}>
 				<div className="flex items-center gap-1">
 					<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
 						<div className="relative workspace-menu-container">
 							<button
+								type="button"
 								onClick={(e) => {
 									e.stopPropagation();
 									setShowMenu(!showMenu);
@@ -884,6 +971,7 @@ function WorkspaceItemMinimal({
 							{showMenu && (
 								<div className="absolute right-0 top-full mt-1 bg-background border border-foreground/10 rounded-lg shadow-lg p-1 z-50 min-w-32">
 									<button
+										type="button"
 										onClick={(e) => {
 											e.stopPropagation();
 											onRename();
@@ -895,6 +983,7 @@ function WorkspaceItemMinimal({
 										<span>Rename</span>
 									</button>
 									<button
+										type="button"
 										onClick={(e) => {
 											e.stopPropagation();
 											onDelete();
@@ -966,9 +1055,11 @@ function SidebarSection({
 	return (
 		<div className="space-y-1">
 			<div className="group flex items-center justify-between px-2 py-1 transition-colors">
-				<div
+				<button
+					type="button"
 					className="flex items-center gap-1.5 cursor-pointer flex-1"
 					onClick={() => setIsOpen(!isOpen)}
+					aria-expanded={isOpen}
 				>
 					{isOpen ? (
 						<ChevronDown className="h-3 w-3 text-muted-foreground/50 transition-colors group-hover:text-foreground" />
@@ -978,7 +1069,7 @@ function SidebarSection({
 					<span className="text-[11px] font-bold text-muted-foreground/40 uppercase tracking-wider group-hover:text-muted-foreground/60 transition-colors">
 						{label}
 					</span>
-				</div>
+				</button>
 				{action}
 			</div>
 			{isOpen && <div className="space-y-0.5">{children}</div>}
@@ -1041,10 +1132,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
 	const handleCreateWorkspace = async () => {
 		if (!activeOrgId) return;
 		try {
-			const workspace = await createWorkspaceLocal(
-				activeOrgId,
-				"Collection",
-			);
+			const workspace = await createWorkspaceLocal(activeOrgId, "Collection");
 			router.navigate({
 				to: "/workspace/$workspaceId",
 				params: { workspaceId: workspace.id },
@@ -1100,7 +1188,10 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
 					label="Favorites"
 					initialOpen={favoriteForms.length > 0}
 					action={
-						<button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+						<button
+							type="button"
+							className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+						>
 							<MoreHorizontal className="h-3 w-3" />
 						</button>
 					}
@@ -1129,6 +1220,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
 					label="Collections"
 					action={
 						<button
+							type="button"
 							onClick={handleCreateWorkspace}
 							className="h-3.5 w-3.5 cursor-pointer hover:text-foreground transition-colors opacity-0 group-hover:opacity-100"
 						>
@@ -1137,8 +1229,8 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
 					}
 				>
 					{isLoading ? (
-						[1, 2].map((i) => (
-							<div key={i} className="flex items-center gap-2 px-2 py-1.5">
+						["collection-skeleton-1", "collection-skeleton-2"].map((key) => (
+							<div key={key} className="flex items-center gap-2 px-2 py-1.5">
 								<div className="h-4 w-4 rounded bg-muted animate-pulse" />
 								<div className="h-4 flex-1 rounded bg-muted animate-pulse" />
 							</div>
@@ -1245,4 +1337,3 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
 		</>
 	);
 }
-

@@ -168,6 +168,11 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 		sendOtpMutation.isPending ||
 		socialSignInMutation.isPending;
 
+	const nameId = React.useId();
+	const usernameId = React.useId();
+	const emailId = React.useId();
+	const passwordId = React.useId();
+
 	const handleResendOtp = async () => {
 		sendOtpMutation.mutate({
 			email,
@@ -261,6 +266,7 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 					<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 				) : (
 					<svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+						<title>Google logo</title>
 						<path
 							d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
 							fill="#4285F4"
@@ -299,9 +305,9 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 						{(field) => (
 							<field.FieldSet className="w-full">
 								<field.Field>
-									<field.FieldLabel htmlFor="name">Name</field.FieldLabel>
+									<field.FieldLabel htmlFor={nameId}>Name</field.FieldLabel>
 									<Input
-										id="name"
+										id={nameId}
 										name="name"
 										placeholder="John Doe"
 										value={(field.state.value as string) ?? ""}
@@ -322,11 +328,11 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 						{(field) => (
 							<field.FieldSet className="w-full">
 								<field.Field>
-									<field.FieldLabel htmlFor="username">
+									<field.FieldLabel htmlFor={usernameId}>
 										Username
 									</field.FieldLabel>
 									<Input
-										id="username"
+										id={usernameId}
 										name="username"
 										placeholder="johndoe"
 										value={(field.state.value as string) ?? ""}
@@ -347,9 +353,9 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 						{(field) => (
 							<field.FieldSet className="w-full">
 								<field.Field>
-									<field.FieldLabel htmlFor="email">Email</field.FieldLabel>
+									<field.FieldLabel htmlFor={emailId}>Email</field.FieldLabel>
 									<Input
-										id="email"
+										id={emailId}
 										name="email"
 										type="email"
 										placeholder="john@example.com"
@@ -371,11 +377,11 @@ export function SignUpForm({ onSuccess, onSwitchToSignIn }: SignUpFormProps) {
 						{(field) => (
 							<field.FieldSet className="w-full">
 								<field.Field>
-									<field.FieldLabel htmlFor="password">
+									<field.FieldLabel htmlFor={passwordId}>
 										Password
 									</field.FieldLabel>
 									<Input
-										id="password"
+										id={passwordId}
 										name="password"
 										type="password"
 										placeholder="Enter your password"

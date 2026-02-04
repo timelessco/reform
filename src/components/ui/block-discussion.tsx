@@ -285,7 +285,7 @@ function BlockComment({
 			<div className="p-4">
 				{discussion.comments.map((comment, index) => (
 					<Comment
-						key={comment.id ?? index}
+						key={comment.id}
 						comment={comment}
 						discussionLength={discussion.comments.length}
 						documentContent={discussion?.documentContent}

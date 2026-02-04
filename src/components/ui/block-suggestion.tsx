@@ -70,8 +70,31 @@ const TYPE_TEXT_MAP: Record<string, (node?: TElement) => string> = {
 	[KEYS.video]: () => "Video",
 };
 
+type SuggestionLineEntry = {
+	text: string;
+	key: string;
+};
+
+const createSuggestionLineEntries = (
+	lines: string[],
+	prefix: string,
+): SuggestionLineEntry[] => {
+	const seen: Record<string, number> = {};
+
+	return lines.map((line) => {
+		const normalized = line || "__line-break__";
+		const count = seen[normalized] ?? 0;
+		seen[normalized] = count + 1;
+
+		return {
+			text: line,
+			key: `${prefix}-${normalized}-${count}`,
+		};
+	});
+};
+
 export function BlockSuggestionCard({
-	idx,
+	idx: _idx,
 	isLast,
 	suggestion,
 }: {
@@ -103,12 +126,45 @@ export function BlockSuggestionCard({
 		return text.split(BLOCK_SUGGESTION).filter(Boolean);
 	};
 
+	const removeLines =
+		suggestion.type === "remove"
+			? createSuggestionLineEntries(
+					suggestionText2Array(suggestion.text!),
+					`${suggestion.suggestionId}-remove`,
+				)
+			: [];
+
+	const insertLines =
+		suggestion.type === "insert"
+			? createSuggestionLineEntries(
+					suggestionText2Array(suggestion.newText!),
+					`${suggestion.suggestionId}-insert`,
+				)
+			: [];
+
+	const replaceNewLines =
+		suggestion.type === "replace"
+			? createSuggestionLineEntries(
+					suggestionText2Array(suggestion.newText!),
+					`${suggestion.suggestionId}-replace-new`,
+				)
+			: [];
+
+	const replaceOldLines =
+		suggestion.type === "replace"
+			? createSuggestionLineEntries(
+					suggestionText2Array(suggestion.text!),
+					`${suggestion.suggestionId}-replace-old`,
+				)
+			: [];
+
 	const [editingId, setEditingId] = React.useState<string | null>(null);
 
 	return (
-		<div
-			key={`${suggestion.suggestionId}-${idx}`}
+		<article
+			key={suggestion.suggestionId}
 			className="relative"
+			aria-label={`Suggestion by ${userInfo?.name ?? "Unknown contributor"}`}
 			onMouseEnter={() => setHovering(true)}
 			onMouseLeave={() => setHovering(false)}
 		>
@@ -132,52 +188,42 @@ export function BlockSuggestionCard({
 				<div className="relative mt-1 mb-4 pl-[32px]">
 					<div className="flex flex-col gap-2">
 						{suggestion.type === "remove" &&
-							suggestionText2Array(suggestion.text!).map((text, index) => (
-								<div key={index} className="flex items-center gap-2">
+							removeLines.map(({ key, text }) => (
+								<div key={key} className="flex items-center gap-2">
 									<span className="text-muted-foreground text-sm">Delete:</span>
 
-									<span key={index} className="text-sm">
-										{text}
-									</span>
+									<span className="text-sm">{text}</span>
 								</div>
 							))}
 
 						{suggestion.type === "insert" &&
-							suggestionText2Array(suggestion.newText!).map((text, index) => (
-								<div key={index} className="flex items-center gap-2">
+							insertLines.map(({ key, text }) => (
+								<div key={key} className="flex items-center gap-2">
 									<span className="text-muted-foreground text-sm">Add:</span>
 
-									<span key={index} className="text-sm">
-										{text || "line breaks"}
-									</span>
+									<span className="text-sm">{text || "line breaks"}</span>
 								</div>
 							))}
 
 						{suggestion.type === "replace" && (
 							<div className="flex flex-col gap-2">
-								{suggestionText2Array(suggestion.newText!).map(
-									(text, index) => (
-										<React.Fragment key={index}>
-											<div
-												key={index}
-												className="flex items-start gap-2 text-brand/80"
-											>
-												<span className="text-sm">with:</span>
-												<span className="text-sm">{text || "line breaks"}</span>
-											</div>
-										</React.Fragment>
-									),
-								)}
+								{replaceNewLines.map(({ key, text }) => (
+									<div
+										key={key}
+										className="flex items-start gap-2 text-brand/80"
+									>
+										<span className="text-sm">with:</span>
+										<span className="text-sm">{text || "line breaks"}</span>
+									</div>
+								))}
 
-								{suggestionText2Array(suggestion.text!).map((text, index) => (
-									<React.Fragment key={index}>
-										<div key={index} className="flex items-start gap-2">
-											<span className="text-muted-foreground text-sm">
-												{index === 0 ? "Replace:" : "Delete:"}
-											</span>
-											<span className="text-sm">{text || "line breaks"}</span>
-										</div>
-									</React.Fragment>
+								{replaceOldLines.map(({ key, text }, index) => (
+									<div key={key} className="flex items-start gap-2">
+										<span className="text-muted-foreground text-sm">
+											{index === 0 ? "Replace:" : "Delete:"}
+										</span>
+										<span className="text-sm">{text || "line breaks"}</span>
+									</div>
 								))}
 							</div>
 						)}
@@ -203,7 +249,7 @@ export function BlockSuggestionCard({
 
 				{suggestion.comments.map((comment, index) => (
 					<Comment
-						key={comment.id ?? index}
+						key={comment.id}
 						comment={comment}
 						discussionLength={suggestion.comments.length}
 						documentContent="__suggestion__"
@@ -237,7 +283,7 @@ export function BlockSuggestionCard({
 			</div>
 
 			{!isLast && <div className="h-px w-full bg-muted" />}
-		</div>
+		</article>
 	);
 }
 

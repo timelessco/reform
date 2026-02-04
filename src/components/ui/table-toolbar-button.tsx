@@ -31,6 +31,19 @@ import { cn } from "@/lib/utils";
 
 import { ToolbarButton } from "./toolbar";
 
+type TablePickerCell = {
+	id: string;
+	active: boolean;
+};
+
+const createInitialTableGrid = () =>
+	Array.from({ length: 8 }, (_, rowIndex) =>
+		Array.from({ length: 8 }, (_, columnIndex) => ({
+			id: `table-picker-${rowIndex}-${columnIndex}`,
+			active: false,
+		})),
+	);
+
 export function TableToolbarButton(props: DropdownMenuProps) {
 	const tableSelected = useEditorSelector(
 		(editor) => editor.api.some({ match: { type: KEYS.table } }),
@@ -208,47 +221,71 @@ export function TableToolbarButton(props: DropdownMenuProps) {
 function TablePicker() {
 	const { editor, tf } = useEditorPlugin(TablePlugin);
 
-	const [tablePicker, setTablePicker] = React.useState({
-		grid: Array.from({ length: 8 }, () => Array.from({ length: 8 }).fill(0)),
+	const [tablePicker, setTablePicker] = React.useState<{
+		grid: TablePickerCell[][];
+		size: { colCount: number; rowCount: number };
+	}>(() => ({
+		grid: createInitialTableGrid(),
 		size: { colCount: 0, rowCount: 0 },
-	});
+	}));
 
 	const onCellMove = (rowIndex: number, colIndex: number) => {
-		const newGrid = [...tablePicker.grid];
-
-		for (let i = 0; i < newGrid.length; i++) {
-			for (let j = 0; j < newGrid[i].length; j++) {
-				newGrid[i][j] =
-					i >= 0 && i <= rowIndex && j >= 0 && j <= colIndex ? 1 : 0;
-			}
-		}
-
-		setTablePicker({
-			grid: newGrid,
+		setTablePicker((prev) => ({
+			grid: prev.grid.map((rows, currentRow) =>
+				rows.map((cell, currentCol) => ({
+					...cell,
+					active: currentRow <= rowIndex && currentCol <= colIndex,
+				})),
+			),
 			size: { colCount: colIndex + 1, rowCount: rowIndex + 1 },
-		});
+		}));
+	};
+
+	const handleInsertTable = () => {
+		tf.insert.table(tablePicker.size, { select: true });
+		editor.tf.focus();
+	};
+
+	const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+		if (
+			event.key === "Enter" ||
+			event.key === " " ||
+			event.key === "Spacebar"
+		) {
+			event.preventDefault();
+			handleInsertTable();
+		}
+	};
+
+	const handleKeyUp = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+		if (event.key === " " || event.key === "Spacebar") {
+			event.preventDefault();
+		}
 	};
 
 	return (
-		<div
+		<button
+			type="button"
 			className="flex! m-0 flex-col p-0"
-			onClick={() => {
-				tf.insert.table(tablePicker.size, { select: true });
-				editor.tf.focus();
-			}}
-			role="button"
+			onClick={handleInsertTable}
+			onKeyDown={handleKeyDown}
+			onKeyUp={handleKeyUp}
+			aria-label="Insert table"
 		>
 			<div className="grid size-[130px] grid-cols-8 gap-0.5 p-1">
 				{tablePicker.grid.map((rows, rowIndex) =>
-					rows.map((value, columIndex) => (
-						<div
-							key={`(${rowIndex},${columIndex})`}
+					rows.map((cell, columnIndex) => (
+						<button
+							type="button"
+							aria-hidden="true"
+							tabIndex={-1}
+							key={cell.id}
 							className={cn(
 								"col-span-1 size-3 border border-solid bg-secondary",
-								!!value && "border-current",
+								cell.active && "border-current",
 							)}
 							onMouseMove={() => {
-								onCellMove(rowIndex, columIndex);
+								onCellMove(rowIndex, columnIndex);
 							}}
 						/>
 					)),
@@ -258,6 +295,6 @@ function TablePicker() {
 			<div className="text-center text-current text-xs">
 				{tablePicker.size.rowCount} x {tablePicker.size.colCount}
 			</div>
-		</div>
+		</button>
 	);
 }

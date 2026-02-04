@@ -125,6 +125,7 @@ export function FontSizeToolbarButton() {
 				>
 					{FONT_SIZES.map((size) => (
 						<button
+							type="button"
 							key={size}
 							className={cn(
 								"flex h-8 w-full items-center justify-center text-sm hover:bg-accent data-[highlighted=true]:bg-accent",
@@ -134,7 +135,6 @@ export function FontSizeToolbarButton() {
 								setIsFocused(false);
 							}}
 							data-highlighted={size === displayValue}
-							type="button"
 						>
 							{size}
 						</button>

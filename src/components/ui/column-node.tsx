@@ -232,6 +232,7 @@ const DoubleColumnOutlined = (props: LucideProps) => (
 		xmlns="http://www.w3.org/2000/svg"
 		{...props}
 	>
+		<title>Two column layout</title>
 		<path
 			clipRule="evenodd"
 			d="M8.5 3H13V13H8.5V3ZM7.5 2H8.5H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H8.5H7.5H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2H7.5ZM7.5 13H3L3 3H7.5V13Z"
@@ -250,6 +251,7 @@ const ThreeColumnOutlined = (props: LucideProps) => (
 		xmlns="http://www.w3.org/2000/svg"
 		{...props}
 	>
+		<title>Three column layout</title>
 		<path
 			clipRule="evenodd"
 			d="M9.25 3H6.75V13H9.25V3ZM9.25 2H6.75H5.75H3C2.44772 2 2 2.44772 2 3V13C2 13.5523 2.44772 14 3 14H5.75H6.75H9.25H10.25H13C13.5523 14 14 13.5523 14 13V3C14 2.44772 13.5523 2 13 2H10.25H9.25ZM10.25 3V13H13V3H10.25ZM3 13H5.75V3H3L3 13Z"
@@ -268,6 +270,7 @@ const RightSideDoubleColumnOutlined = (props: LucideProps) => (
 		xmlns="http://www.w3.org/2000/svg"
 		{...props}
 	>
+		<title>Right side wider columns layout</title>
 		<path
 			clipRule="evenodd"
 			d="M11.25 3H13V13H11.25V3ZM10.25 2H11.25H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H11.25H10.25H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2H10.25ZM10.25 13H3L3 3H10.25V13Z"
@@ -286,6 +289,7 @@ const LeftSideDoubleColumnOutlined = (props: LucideProps) => (
 		xmlns="http://www.w3.org/2000/svg"
 		{...props}
 	>
+		<title>Left side wider columns layout</title>
 		<path
 			clipRule="evenodd"
 			d="M5.75 3H13V13H5.75V3ZM4.75 2H5.75H13C13.5523 2 14 2.44772 14 3V13C14 13.5523 13.5523 14 13 14H5.75H4.75H3C2.44772 14 2 13.5523 2 13V3C2 2.44772 2.44772 2 3 2H4.75ZM4.75 13H3L3 3H4.75V13Z"
@@ -304,6 +308,7 @@ const DoubleSideDoubleColumnOutlined = (props: LucideProps) => (
 		xmlns="http://www.w3.org/2000/svg"
 		{...props}
 	>
+		<title>Balanced three column layout</title>
 		<path
 			clipRule="evenodd"
 			d="M10.25 3H5.75V13H10.25V3ZM10.25 2H5.75H4.75H3C2.44772 2 2 2.44772 2 3V13C2 13.5523 2.44772 14 3 14H4.75H5.75H10.25H11.25H13C13.5523 14 14 13.5523 14 13V3C14 2.44772 13.5523 2 13 2H11.25H10.25ZM11.25 3V13H13V3H11.25ZM3 13H4.75V3H3L3 13Z"

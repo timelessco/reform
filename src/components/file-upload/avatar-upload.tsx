@@ -61,7 +61,7 @@ export default function AvatarUpload({
 		<div className={cn("flex flex-col items-center gap-4", className)}>
 			{/* Avatar Preview */}
 			<div className="relative">
-				<div
+				<button
 					className={cn(
 						"group/avatar relative h-24 w-24 cursor-pointer overflow-hidden rounded-full border border-dashed transition-colors",
 						isDragging
@@ -74,6 +74,7 @@ export default function AvatarUpload({
 					onDragOver={handleDragOver}
 					onDrop={handleDrop}
 					onClick={openFileDialog}
+					type="button"
 				>
 					<input {...getInputProps()} className="sr-only" />
 
@@ -88,7 +89,7 @@ export default function AvatarUpload({
 							<User className="size-6 text-muted-foreground" />
 						</div>
 					)}
-				</div>
+				</button>
 
 				{/* Remove Button - only show when file is uploaded */}
 				{currentFile && (
@@ -123,8 +124,8 @@ export default function AvatarUpload({
 					<AlertContent>
 						<AlertTitle>File upload error(s)</AlertTitle>
 						<AlertDescription>
-							{errors.map((error, index) => (
-								<p key={index} className="last:mb-0">
+							{errors.map((error) => (
+								<p key={error} className="last:mb-0">
 									{error}
 								</p>
 							))}

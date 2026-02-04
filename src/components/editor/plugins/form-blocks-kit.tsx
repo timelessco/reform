@@ -218,6 +218,23 @@ function handleFormBlockKeyDown(
 		}
 	}
 
+	// Enter in formLabel → if next sibling is formInput/formTextarea, move focus there
+	if (event.key === "Enter" && !event.shiftKey && node.type === "formLabel") {
+		const children = editor.children as TElement[];
+		const nextIndex = path[0] + 1;
+		const nextNode = children[nextIndex];
+
+		if (
+			nextNode &&
+			(nextNode.type === "formInput" || nextNode.type === "formTextarea")
+		) {
+			event.preventDefault();
+			event.stopPropagation();
+			moveToPath(editor, [nextIndex]);
+			return;
+		}
+	}
+
 	// Enter → create new paragraph (position depends on cursor location)
 	if (event.key === "Enter" && !event.shiftKey) {
 		event.preventDefault();

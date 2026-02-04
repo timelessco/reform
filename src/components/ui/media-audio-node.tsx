@@ -3,6 +3,7 @@ import { ResizableProvider } from "@platejs/resizable";
 import type { TAudioElement } from "platejs";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement, withHOC } from "platejs/react";
+import * as React from "react";
 
 import { Caption, CaptionTextarea } from "./caption";
 
@@ -11,6 +12,11 @@ export const AudioElement = withHOC(
 	function AudioElement(props: PlateElementProps<TAudioElement>) {
 		const { align = "center", readOnly, unsafeUrl } = useMediaState();
 
+		const placeholderTrackUrl = React.useMemo(() => {
+			const trackText = "WEBVTT\n\n00:00.000 --> 00:05.000\nAudio caption";
+			return `data:text/vtt,${encodeURIComponent(trackText)}`;
+		}, []);
+
 		return (
 			<PlateElement {...props} className="mb-1">
 				<figure
@@ -18,7 +24,15 @@ export const AudioElement = withHOC(
 					contentEditable={false}
 				>
 					<div className="h-16">
-						<audio className="size-full" src={unsafeUrl} controls />
+						<audio className="size-full" src={unsafeUrl} controls>
+							<track
+								kind="captions"
+								srcLang="en"
+								label="Preview caption"
+								src={placeholderTrackUrl}
+								default
+							/>
+						</audio>
 					</div>
 
 					<Caption style={{ width: "100%" }} align={align}>

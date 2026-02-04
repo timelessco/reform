@@ -3,6 +3,7 @@ import { normalizeNodeId, type TElement, type Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorKit } from "@/components/editor/editor-kit";
+import { RightSidebar } from "@/components/footer";
 import { AppHeader } from "@/components/ui/app-header";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
@@ -13,7 +14,6 @@ import { createOnboardingContentNode } from "@/components/ui/onboarding-content-
 import { localFormCollection } from "@/db-collections";
 import { useLocalForm } from "@/hooks/use-live-hooks";
 import { guestMiddleware } from "@/middleware/auth";
-import { RightSidebar } from "@/components/footer";
 
 const LOCAL_FORM_ID = "550e8400-e29b-41d4-a716-446655440000"; // Valid UUID for local draft
 const LOCAL_WORKSPACE_ID = "550e8400-e29b-41d4-a716-446655440001"; // Valid UUID for local workspace

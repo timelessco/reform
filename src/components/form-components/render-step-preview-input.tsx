@@ -53,11 +53,11 @@ function extractErrorMessage(error: unknown): string {
  */
 function ToggleRenderer({
 	title,
-	children,
+	items,
 	form,
 }: {
 	title: string;
-	children: TransformedElement[];
+	items: TransformedElement[];
 	form: AppForm;
 }) {
 	const [isOpen, setIsOpen] = useState(false);
@@ -71,7 +71,7 @@ function ToggleRenderer({
 				<span className="font-medium">{title}</span>
 			</CollapsibleTrigger>
 			<CollapsibleContent className="pl-6 space-y-2">
-				{children.map((child) => (
+				{items.map((child) => (
 					<RenderStepPreviewInput key={child.id} element={child} form={form} />
 				))}
 			</CollapsibleContent>
@@ -139,7 +139,7 @@ export function RenderStepPreviewInput({
 				return (
 					<ToggleRenderer
 						title={element.title}
-						children={element.children}
+						items={element.children}
 						form={form}
 					/>
 				);

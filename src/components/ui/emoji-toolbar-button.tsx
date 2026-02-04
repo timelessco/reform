@@ -172,6 +172,7 @@ const EmojiButton = React.memo(function EmojiButton({
 }) {
 	return (
 		<button
+			type="button"
 			className="group relative flex size-9 cursor-pointer items-center justify-center border-none bg-transparent text-2xl leading-none"
 			onClick={() => onSelect(emoji)}
 			onMouseEnter={() => onMouseOver(emoji)}
@@ -179,7 +180,6 @@ const EmojiButton = React.memo(function EmojiButton({
 			aria-label={emoji.skins[0].native}
 			data-index={index}
 			tabIndex={-1}
-			type="button"
 		>
 			<div
 				className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100"
@@ -485,10 +485,11 @@ function EmojiPickerNavigation({
 	UseEmojiPickerType,
 	"emojiLibrary" | "focusedCategory" | "i18n" | "icons"
 >) {
+	const navigationId = React.useId();
 	return (
 		<TooltipProvider delayDuration={500}>
 			<nav
-				id="emoji-nav"
+				id={navigationId}
 				className="mb-2.5 border-0 border-b border-b-border border-solid p-1.5"
 			>
 				<div className="relative flex items-center justify-evenly">
@@ -547,6 +548,7 @@ const emojiCategoryIcons: Record<
 				viewBox="0 0 24 24"
 				xmlns="http://www.w3.org/2000/svg"
 			>
+				<title>Activity category icon</title>
 				<circle cx="12" cy="12" r="10" />
 				<path d="M2.1 13.4A10.1 10.1 0 0 0 13.4 2.1" />
 				<path d="m5 4.9 14 14.2" />
@@ -564,6 +566,7 @@ const emojiCategoryIcons: Record<
 				viewBox="0 0 24 24"
 				xmlns="http://www.w3.org/2000/svg"
 			>
+				<title>Activity category icon</title>
 				<circle cx="12" cy="12" r="10" />
 				<path d="M2.1 13.4A10.1 10.1 0 0 0 13.4 2.1" />
 				<path d="m5 4.9 14 14.2" />

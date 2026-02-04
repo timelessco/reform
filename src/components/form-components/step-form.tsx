@@ -59,7 +59,7 @@ export function StepForm({ stepIndex, elements, isLastStep }: StepFormProps) {
 				noValidate
 				className="space-y-4 outline-none"
 			>
-				{groupedElements.map((item, index) => {
+				{groupedElements.map((item) => {
 					// Handle button groups (Previous + Next/Submit on same line)
 					if ("type" in item && item.type === "buttonGroup") {
 						const prevButton = item.buttons.find((b) => {
@@ -71,9 +71,11 @@ export function StepForm({ stepIndex, elements, isLastStep }: StepFormProps) {
 							return role === "next" || role === "submit";
 						});
 
+						const groupKey = `button-group-${item.buttons.map((b) => b.id).join("-")}`;
+
 						return (
 							<div
-								key={`button-group-${index}`}
+								key={groupKey}
 								className="flex flex-row-reverse justify-between items-center w-full"
 							>
 								{actionButton && actionButton.fieldType === "Button" && (

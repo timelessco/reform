@@ -264,6 +264,7 @@ function VerifyEmailPage() {
 
 						<div className="flex items-center justify-between px-2">
 							<button
+								type="button"
 								onClick={handleSignOut}
 								className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
 							>
@@ -271,6 +272,7 @@ function VerifyEmailPage() {
 								Sign out
 							</button>
 							<button
+								type="button"
 								onClick={() => navigate({ to: "/" })}
 								className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
 							>

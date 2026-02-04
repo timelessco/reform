@@ -84,15 +84,21 @@ export function AIMenu() {
 	)?.text;
 
 	React.useEffect(() => {
-		if (streaming) {
-			const anchor = api.aiChat.node({ anchor: true });
-			setTimeout(() => {
-				const anchorDom = editor.api.toDOMNode(anchor?.[0])!;
-				setAnchorElement(anchorDom);
-			}, 0);
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [streaming, api.aiChat.node, editor.api.toDOMNode]);
+		if (!streaming) return;
+
+		const anchor = api.aiChat.node({ anchor: true });
+		if (!anchor) return;
+
+		const timer = window.setTimeout(() => {
+			const anchorDom = editor.api.toDOMNode(anchor[0] as any);
+			if (!anchorDom) return;
+			setAnchorElement(anchorDom);
+		}, 0);
+
+		return () => {
+			window.clearTimeout(timer);
+		};
+	}, [streaming, api, editor]);
 
 	const setOpen = (open: boolean) => {
 		if (open) {
@@ -160,18 +166,13 @@ export function AIMenu() {
 			if (!anchorNode) return;
 
 			const block = editor.api.block({ at: anchorNode[1] });
-			setAnchorElement(editor.api.toDOMNode(block?.[0]!)!);
+			const blockNode = block?.[0];
+			if (!blockNode) return;
+			const anchorDom = editor.api.toDOMNode(blockNode as any);
+			if (!anchorDom) return;
+			setAnchorElement(anchorDom);
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [
-		isLoading,
-		editor.getApi,
-		editor.api.block,
-		editor.api.node,
-		editor.api.toDOMNode,
-		mode,
-		toolName,
-	]);
+	}, [editor, isLoading, mode, toolName]);
 
 	if (isLoading && mode === "insert") return null;
 
@@ -270,6 +271,7 @@ const AICommentIcon = () => (
 		width="24"
 		xmlns="http://www.w3.org/2000/svg"
 	>
+		<title>AI comment icon</title>
 		<path d="M0 0h24v24H0z" fill="none" stroke="none" />
 		<path d="M8 9h8" />
 		<path d="M8 13h4.5" />
@@ -593,28 +595,34 @@ export const AIMenuItems = ({
 
 	return (
 		<>
-			{menuGroups.map((group, index) => (
-				<CommandGroup key={index} heading={group.heading}>
-					{group.items.map((menuItem) => (
-						<CommandItem
-							key={menuItem.value}
-							className="[&_svg]:text-muted-foreground"
-							value={menuItem.value}
-							onSelect={() => {
-								menuItem.onSelect?.({
-									aiEditor,
-									editor,
-									input,
-								});
-								setInput("");
-							}}
-						>
-							{menuItem.icon}
-							<span>{menuItem.label}</span>
-						</CommandItem>
-					))}
-				</CommandGroup>
-			))}
+			{menuGroups.map((group) => {
+				const groupKey =
+					group.heading ??
+					`${menuState}-${group.items.map((item) => item.value).join("-")}`;
+
+				return (
+					<CommandGroup key={groupKey} heading={group.heading}>
+						{group.items.map((menuItem) => (
+							<CommandItem
+								key={menuItem.value}
+								className="[&_svg]:text-muted-foreground"
+								value={menuItem.value}
+								onSelect={() => {
+									menuItem.onSelect?.({
+										aiEditor,
+										editor,
+										input,
+									});
+									setInput("");
+								}}
+							>
+								{menuItem.icon}
+								<span>{menuItem.label}</span>
+							</CommandItem>
+						))}
+					</CommandGroup>
+				);
+			})}
 		</>
 	);
 };

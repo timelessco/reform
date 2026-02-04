@@ -11,11 +11,15 @@ const store = {
 	},
 	setIsOpen: (value: boolean) => {
 		isOpen = value;
-		listeners.forEach((l) => l());
+		listeners.forEach((l) => {
+			l();
+		});
 	},
 	toggle: () => {
 		isOpen = !isOpen;
-		listeners.forEach((l) => l());
+		listeners.forEach((l) => {
+			l();
+		});
 	},
 };
 

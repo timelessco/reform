@@ -99,25 +99,14 @@ export function PageBreakElement(props: PlateElementProps) {
 		});
 	};
 
-	// Prevent clicks from placing cursor on this element
-	const handleMouseDown = (e: React.MouseEvent) => {
-		// Allow clicks on the switch
-		if ((e.target as HTMLElement).closest('button[role="switch"]')) {
-			return;
-		}
-		e.preventDefault();
-		e.stopPropagation();
-	};
-
 	return (
 		<PlateElement {...props} className={cn("clear-both", props.className)}>
 			<div
 				contentEditable={false}
-				onMouseDown={handleMouseDown}
+				role="presentation"
 				className={cn(
 					"relative my-6 flex items-center justify-center select-none",
 					selected && focused && "ring-2 ring-ring ring-offset-2 rounded",
-					!readOnly && "cursor-pointer",
 				)}
 			>
 				{/* Left dashed line */}

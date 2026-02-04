@@ -205,9 +205,9 @@ export function CustomizeSidebar() {
 							<div className="bg-orange-50 border border-orange-100 rounded-lg p-3 text-xs text-orange-800">
 								You can preview advanced customization, but Tally Pro is
 								required to apply it to the published form.{" "}
-								<a href="#" className="underline font-semibold">
+								<button type="button" className="underline font-semibold">
 									Upgrade
-								</a>
+								</button>
 							</div>
 						</div>
 

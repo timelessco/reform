@@ -18,7 +18,6 @@ import type { TLinkElement } from "platejs";
 import { KEYS } from "platejs";
 import {
 	useEditorRef,
-	useEditorSelection,
 	useFormInputProps,
 	usePluginOption,
 } from "platejs/react";
@@ -168,7 +167,6 @@ export function LinkFloatingToolbar({
 
 function LinkOpenButton() {
 	const editor = useEditorRef();
-	const _selection = useEditorSelection();
 
 	const attributes = React.useMemo(
 		() => {
@@ -185,20 +183,36 @@ function LinkOpenButton() {
 		[editor],
 	);
 
+	const href = attributes.href;
+	const safeTarget = attributes.target ?? "_blank";
+	const handleOpenLink = React.useCallback(() => {
+		if (!href || typeof window === "undefined") return;
+		const newWindow = window.open(href, safeTarget, "noopener,noreferrer");
+		if (newWindow) {
+			newWindow.opener = null;
+		}
+	}, [href, safeTarget]);
+
+	const stopPropagationInteraction = React.useCallback(
+		(event: React.SyntheticEvent) => {
+			event.stopPropagation();
+		},
+		[],
+	);
+
 	return (
-		<a
-			{...attributes}
+		<button
+			type="button"
 			className={buttonVariants({
 				size: "sm",
 				variant: "ghost",
 			})}
-			onMouseOver={(e) => {
-				e.stopPropagation();
-			}}
+			onClick={handleOpenLink}
+			onMouseOver={stopPropagationInteraction}
+			onFocus={stopPropagationInteraction}
 			aria-label="Open link in a new tab"
-			target="_blank"
 		>
 			<ExternalLink width={18} />
-		</a>
+		</button>
 	);
 }

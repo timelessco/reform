@@ -10,11 +10,24 @@ import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { updateFormStatus } from "@/db-collections";
 import { useForm } from "@/hooks/use-live-hooks";
+import { getFormbyIdQueryOption } from "@/lib/fn/forms";
 
 export const Route = createFileRoute(
 	"/_authenticated/workspace/$workspaceId/form-builder/$formId/share",
 )({
 	component: SharePage,
+	loader: async ({ context, params }) => {
+		try {
+			const data = await context.queryClient.ensureQueryData({
+				...getFormbyIdQueryOption(params.formId),
+				revalidateIfStale: true,
+			});
+			return { form: data.form };
+		} catch (_error) {
+			// Form may not exist on server yet (local-first sync in progress)
+			return { form: null };
+		}
+	},
 	pendingComponent: Loader,
 	errorComponent: ErrorBoundary,
 	notFoundComponent: NotFound,
@@ -22,8 +35,10 @@ export const Route = createFileRoute(
 
 function SharePage() {
 	const { formId, workspaceId } = Route.useParams();
+	const { form: initialForm } = Route.useLoaderData();
 	const { data: savedDocs } = useForm(formId);
-	const doc = savedDocs?.[0];
+	// Use live data if available, fall back to loader data
+	const doc = savedDocs?.[0] ?? initialForm;
 	const [isPublishing, setIsPublishing] = useState(false);
 
 	// Construct the share URL (assuming a standard structure)

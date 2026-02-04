@@ -94,6 +94,7 @@ function DefaultIcon() {
 				strokeLinecap="round"
 				strokeLinejoin="round"
 			>
+				<title>Hexagon placeholder icon</title>
 				<path d="M12 2l9 4.9V17L12 22l-9-4.9V7z" />
 			</svg>
 		</div>
@@ -115,11 +116,11 @@ export type NavigationHandlers = {
  */
 function ToggleRenderer({
 	title,
-	children,
+	items,
 	form,
 }: {
 	title: string;
-	children: TransformedElement[];
+	items: TransformedElement[];
 	form: ReturnType<typeof usePreviewForm>["form"];
 }) {
 	const [isOpen, setIsOpen] = useState(false);
@@ -133,7 +134,7 @@ function ToggleRenderer({
 				<span className="font-medium">{title}</span>
 			</CollapsibleTrigger>
 			<CollapsibleContent className="pl-6 space-y-2">
-				{children.map((child) => (
+				{items.map((child) => (
 					<RenderPreviewElement key={child.id} element={child} form={form} />
 				))}
 			</CollapsibleContent>
@@ -206,7 +207,7 @@ function RenderPreviewElement({
 				return (
 					<ToggleRenderer
 						title={element.title}
-						children={element.children}
+						items={element.children}
 						form={form}
 					/>
 				);
@@ -351,7 +352,9 @@ function PreviewFormHeader({
 		if (icon === "default-icon") {
 			return (
 				<div
-					className={hasCover ? "-mt-[28px] sm:-mt-[40px] relative z-10 px-3" : ""}
+					className={
+						hasCover ? "-mt-[28px] sm:-mt-[40px] relative z-10 px-3" : ""
+					}
 				>
 					<DefaultIcon />
 				</div>
@@ -471,6 +474,7 @@ function DefaultThankYou({ onReset }: { onReset?: () => void }) {
 					strokeLinejoin="round"
 					className="text-green-600"
 				>
+					<title>Success checkmark</title>
 					<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
 					<polyline points="22 4 12 14.01 9 11.01" />
 				</svg>
@@ -535,6 +539,7 @@ export function FormPreviewFromPlate({
 						strokeLinejoin="round"
 						className="mx-auto mb-4 opacity-50"
 					>
+						<title>No content placeholder</title>
 						<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
 						<polyline points="14 2 14 8 20 8" />
 						<line x1="16" x2="8" y1="13" y2="13" />

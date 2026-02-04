@@ -74,6 +74,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 	const [buttonText, setButtonText] = React.useState("");
 	// Track previous open state to detect open transition
 	const wasOpenRef = React.useRef(false);
+	const blockMenuTriggerRef = React.useRef<HTMLDivElement | null>(null);
 
 	// Get the selected node info
 	// Get the selected node info reactive to editor state changes
@@ -303,6 +304,24 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 		api.blockMenu.hide();
 	};
 
+	React.useEffect(() => {
+		const node = blockMenuTriggerRef.current;
+		if (!node) return;
+
+		const handleContextMenu = (event: MouseEvent) => {
+			event.preventDefault();
+			api.blockMenu.show(BLOCK_CONTEXT_MENU_ID, {
+				x: event.clientX,
+				y: event.clientY,
+			});
+		};
+
+		node.addEventListener("contextmenu", handleContextMenu);
+		return () => {
+			node.removeEventListener("contextmenu", handleContextMenu);
+		};
+	}, [api.blockMenu]);
+
 	// Keyboard shortcuts
 	// Delete: Del or Backspace
 	useHotkeys(
@@ -347,17 +366,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 
 	return (
 		<>
-			<div
-				onContextMenu={(event) => {
-					event.preventDefault();
-					api.blockMenu.show(BLOCK_CONTEXT_MENU_ID, {
-						x: event.clientX,
-						y: event.clientY,
-					});
-				}}
-			>
-				{children}
-			</div>
+			<div ref={blockMenuTriggerRef}>{children}</div>
 
 			<Popover
 				open={isOpen}
@@ -378,6 +387,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 						/* Turn Into Submenu */
 						<div className="p-2">
 							<button
+								type="button"
 								onClick={() => setShowTurnInto(false)}
 								className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-2 px-2"
 							>
@@ -602,6 +612,7 @@ function MenuItem({
 }) {
 	return (
 		<button
+			type="button"
 			onClick={onClick}
 			className={cn(
 				"flex items-center w-full px-2 py-1.5 text-sm rounded-md hover:bg-muted transition-colors",

@@ -7,6 +7,7 @@ import {
 import { cva } from "class-variance-authority";
 import { ArrowLeft, ArrowRight, Download, Minus, Plus, X } from "lucide-react";
 import { useEditorRef } from "platejs/react";
+import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -44,17 +45,40 @@ export function MediaPreviewDialog() {
 		zoomOutDisabled,
 	} = useImagePreview({ scrollSpeed: SCROLL_SPEED });
 
+	const previewMaskRef = React.useRef<HTMLDivElement | null>(null);
+
+	React.useEffect(() => {
+		const node = previewMaskRef.current;
+		if (!node) return;
+
+		const stopContextMenu = (event: MouseEvent) => {
+			event.stopPropagation();
+		};
+
+		node.addEventListener("contextmenu", stopContextMenu);
+		return () => {
+			node.removeEventListener("contextmenu", stopContextMenu);
+		};
+	}, []);
+
 	return (
 		<div
+			ref={previewMaskRef}
 			className={cn(
 				"fixed top-0 left-0 z-50 h-screen w-screen select-none",
 				!isOpen && "hidden",
 			)}
-			onContextMenu={(e) => e.stopPropagation()}
-			{...maskLayerProps}
 		>
 			<div className="absolute inset-0 size-full bg-black opacity-30" />
 			<div className="absolute inset-0 size-full bg-black opacity-30" />
+			<button
+				type="button"
+				{...maskLayerProps}
+				className="absolute inset-0 z-10 bg-transparent"
+				aria-label="Close media preview"
+			>
+				<span className="sr-only">Close preview</span>
+			</button>
 			<div className="absolute inset-0 flex items-center justify-center">
 				<div className="relative flex max-h-screen w-full items-center">
 					<PreviewImage
@@ -62,9 +86,9 @@ export function MediaPreviewDialog() {
 							"mx-auto block max-h-[calc(100vh-4rem)] w-auto object-contain transition-transform",
 						)}
 					/>
-					<div
+					<section
 						className="-translate-x-1/2 absolute bottom-0 left-1/2 z-40 flex w-fit justify-center gap-4 p-2 text-center text-white"
-						onClick={(e) => e.stopPropagation()}
+						aria-label="Media preview controls"
 					>
 						<div className="flex gap-1">
 							<button
@@ -136,7 +160,7 @@ export function MediaPreviewDialog() {
 						>
 							<X className="size-4" />
 						</button>
-					</div>
+					</section>
 				</div>
 			</div>
 		</div>

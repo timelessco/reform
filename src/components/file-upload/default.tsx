@@ -15,16 +15,17 @@ export default function Component() {
 		<div className="flex flex-col items-center gap-2">
 			<div className="inline-flex items-center gap-2 align-top">
 				<div
-					className="border-input relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md border"
+					role="img"
 					aria-label={
 						previewUrl ? "Preview of uploaded image" : "Default user avatar"
 					}
+					className="border-input relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md border"
 				>
 					{previewUrl ? (
 						<img
 							className="size-full object-cover"
 							src={previewUrl}
-							alt="Preview of uploaded image"
+							alt={previewUrl ? "Uploaded preview" : ""}
 							width={32}
 							height={32}
 						/>
@@ -52,6 +53,7 @@ export default function Component() {
 						{fileName}
 					</p>{" "}
 					<button
+						type="button"
 						onClick={() => removeFile(files[0]?.id)}
 						className="cursor-pointer text-destructive font-medium hover:underline"
 						aria-label={`Remove ${fileName}`}

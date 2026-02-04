@@ -169,7 +169,8 @@ export function Comment(props: {
 	const [dropdownOpen, setDropdownOpen] = React.useState(false);
 
 	return (
-		<div
+		<article
+			aria-label={`Comment by ${userInfo?.name ?? "Unknown user"}`}
 			onMouseEnter={() => setHovering(true)}
 			onMouseLeave={() => setHovering(false)}
 		>
@@ -279,7 +280,7 @@ export function Comment(props: {
 					</EditorContainer>
 				</Plate>
 			</div>
-		</div>
+		</article>
 	);
 }
 

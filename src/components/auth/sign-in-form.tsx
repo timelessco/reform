@@ -218,6 +218,12 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 		verifyOtpMutation.isPending ||
 		socialSignInMutation.isPending;
 
+	const signInEmailId = React.useId();
+	const signInEmailPasswordId = React.useId();
+	const signInUsernameId = React.useId();
+	const signInUsernamePasswordId = React.useId();
+	const otpEmailId = React.useId();
+
 	const handleResendOtp = async () => {
 		sendOtpMutation.mutate({
 			email,
@@ -395,11 +401,11 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 							{(field) => (
 								<field.FieldSet className="w-full">
 									<field.Field>
-										<field.FieldLabel htmlFor="signin-email">
+										<field.FieldLabel htmlFor={signInEmailId}>
 											Email
 										</field.FieldLabel>
 										<Input
-											id="signin-email"
+											id={signInEmailId}
 											name="email"
 											type="email"
 											placeholder="john@example.com"
@@ -421,11 +427,11 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 							{(field) => (
 								<field.FieldSet className="w-full">
 									<field.Field>
-										<field.FieldLabel htmlFor="signin-password">
+										<field.FieldLabel htmlFor={signInEmailPasswordId}>
 											Password
 										</field.FieldLabel>
 										<Input
-											id="signin-password"
+											id={signInEmailPasswordId}
 											name="password"
 											type="password"
 											placeholder="Enter your password"
@@ -458,11 +464,11 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 							{(field) => (
 								<field.FieldSet className="w-full">
 									<field.Field>
-										<field.FieldLabel htmlFor="signin-username">
+										<field.FieldLabel htmlFor={signInUsernameId}>
 											Username
 										</field.FieldLabel>
 										<Input
-											id="signin-username"
+											id={signInUsernameId}
 											name="username"
 											placeholder="johndoe"
 											value={(field.state.value as string) ?? ""}
@@ -483,11 +489,11 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 							{(field) => (
 								<field.FieldSet className="w-full">
 									<field.Field>
-										<field.FieldLabel htmlFor="signin-username-password">
+										<field.FieldLabel htmlFor={signInUsernamePasswordId}>
 											Password
 										</field.FieldLabel>
 										<Input
-											id="signin-username-password"
+											id={signInUsernamePasswordId}
 											name="password"
 											type="password"
 											placeholder="Enter your password"
@@ -520,11 +526,11 @@ export function SignInForm({ onSuccess, onSwitchToSignUp }: SignInFormProps) {
 							{(field) => (
 								<field.FieldSet className="w-full">
 									<field.Field>
-										<field.FieldLabel htmlFor="otp-email">
+										<field.FieldLabel htmlFor={otpEmailId}>
 											Email
 										</field.FieldLabel>
 										<Input
-											id="otp-email"
+											id={otpEmailId}
 											name="email"
 											type="email"
 											placeholder="john@example.com"

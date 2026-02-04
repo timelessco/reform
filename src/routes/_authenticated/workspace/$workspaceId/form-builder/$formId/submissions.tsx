@@ -27,7 +27,7 @@ import {
 	Trash2,
 } from "lucide-react";
 import type { Value } from "platejs";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -149,10 +149,13 @@ function SubmissionsPage() {
 	}, [allSubmissions, activeTab]);
 
 	// Delete handler
-	const handleDelete = async (submissionId: string) => {
-		await deleteSubmission({ data: { id: submissionId, formId } });
-		queryClient.invalidateQueries({ queryKey: ["submissions", formId] });
-	};
+	const handleDelete = useCallback(
+		async (submissionId: string) => {
+			await deleteSubmission({ data: { id: submissionId, formId } });
+			queryClient.invalidateQueries({ queryKey: ["submissions", formId] });
+		},
+		[formId, queryClient],
+	);
 
 	// 3. Derive Columns from PUBLISHED Form Content (not draft)
 	// Also collect any orphaned field names from submissions (for deleted fields)
@@ -165,7 +168,8 @@ function SubmissionsPage() {
 		const baseColumns: ColumnDef<any, any>[] = [
 			columnHelper.accessor("createdAt", {
 				header: ({ column }) => (
-					<div
+					<button
+						type="button"
 						className="flex items-center gap-2 cursor-pointer select-none group/h"
 						onClick={() => column.toggleSorting()}
 					>
@@ -174,7 +178,7 @@ function SubmissionsPage() {
 							Submitted at
 						</span>
 						<ArrowUpDown className="h-3 w-3 opacity-0 group-hover/h:opacity-100 transition-opacity" />
-					</div>
+					</button>
 				),
 				cell: (info) => (
 					<div className="flex items-center justify-between group">
@@ -393,6 +397,7 @@ function SubmissionsPage() {
 				<div className="flex items-center justify-between border-b pb-1">
 					<div className="flex items-center gap-6 text-[13px]">
 						<button
+							type="button"
 							onClick={() => setActiveTab("all")}
 							className={cn(
 								"pb-3 transition-colors relative",
@@ -410,6 +415,7 @@ function SubmissionsPage() {
 							)}
 						</button>
 						<button
+							type="button"
 							onClick={() => setActiveTab("completed")}
 							className={cn(
 								"pb-3 transition-colors relative",
@@ -431,6 +437,7 @@ function SubmissionsPage() {
 							)}
 						</button>
 						<button
+							type="button"
 							onClick={() => setActiveTab("partial")}
 							className={cn(
 								"pb-3 transition-colors relative",

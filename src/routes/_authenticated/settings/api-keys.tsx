@@ -12,7 +12,7 @@ import {
 	Plus,
 	Trash2,
 } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { toast } from "sonner";
 import {
 	AlertDialog,
@@ -90,6 +90,8 @@ function APIKeysPage() {
 	const [createdKey, setCreatedKey] = useState<string | null>(null);
 	const [showKey, setShowKey] = useState(false);
 	const [copied, setCopied] = useState(false);
+	const nameInputId = useId();
+	const apiKeyInputId = useId();
 	const [apiKeyToDelete, setApiKeyToDelete] = useState<string | null>(null);
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -295,8 +297,11 @@ function APIKeysPage() {
 					</DialogHeader>
 					<div className="py-4">
 						<div className="space-y-2">
-							<label className="text-sm font-medium">Name</label>
+							<label className="text-sm font-medium" htmlFor={nameInputId}>
+								Name
+							</label>
 							<Input
+								id={nameInputId}
 								placeholder="e.g. Production"
 								value={newKeyName}
 								onChange={(e) => setNewKeyName(e.target.value)}
@@ -353,11 +358,15 @@ function APIKeysPage() {
 						</div>
 
 						<div className="space-y-3">
-							<label className="text-sm font-medium text-foreground">
+							<label
+								className="text-sm font-medium text-foreground"
+								htmlFor={apiKeyInputId}
+							>
 								API key
 							</label>
 							<div className="relative flex items-center">
 								<Input
+									id={apiKeyInputId}
 									type={showKey ? "text" : "password"}
 									readOnly
 									value={createdKey || ""}

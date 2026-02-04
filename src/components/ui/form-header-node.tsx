@@ -1,5 +1,4 @@
 import { ImageIcon, Settings, Smile, Upload, X } from "lucide-react";
-import { createFormButtonNode } from "@/components/ui/form-button-node";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorRef } from "platejs/react";
 import AvatarUpload from "@/components/file-upload/avatar-upload";
@@ -11,9 +10,10 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
+import { createFormButtonNode } from "@/components/ui/form-button-node";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useFileUpload } from "@/hooks/use-file-upload";
 import { useCustomizeSidebar } from "@/hooks/use-customize-sidebar";
+import { useFileUpload } from "@/hooks/use-file-upload";
 import { cn } from "@/lib/utils";
 
 export interface FormHeaderElementData {
@@ -66,7 +66,7 @@ function CoverUpload({
 
 	return (
 		<div className="flex flex-col gap-4">
-			<div
+			<button
 				className={cn(
 					"group/cover-upload relative h-32 w-full cursor-pointer overflow-hidden rounded-md border-2 border-dashed transition-colors flex items-center justify-center",
 					isDragging
@@ -78,6 +78,7 @@ function CoverUpload({
 				onDragOver={handleDragOver}
 				onDrop={handleDrop}
 				onClick={openFileDialog}
+				type="button"
 			>
 				<input {...getInputProps()} className="sr-only" />
 				<div className="flex flex-col items-center gap-2 text-muted-foreground">
@@ -85,7 +86,7 @@ function CoverUpload({
 					<span className="text-sm font-medium">Upload cover image</span>
 					<span className="text-xs">Max 5MB</span>
 				</div>
-			</div>
+			</button>
 			{errors.length > 0 && (
 				<div className="text-destructive text-sm">{errors[0]}</div>
 			)}

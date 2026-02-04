@@ -54,6 +54,7 @@ function InsightsPage() {
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-2 bg-muted/50 p-1 rounded-lg self-start">
 						<button
+							type="button"
 							onClick={() => setActiveSubTab("visits")}
 							className={cn(
 								"px-3 py-1.5 text-sm font-medium rounded-md transition-all",
@@ -65,6 +66,7 @@ function InsightsPage() {
 							Visits
 						</button>
 						<button
+							type="button"
 							onClick={() => setActiveSubTab("drop-off")}
 							className={cn(
 								"px-3 py-1.5 text-sm font-medium rounded-md transition-all",

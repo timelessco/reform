@@ -265,44 +265,52 @@ function WorkspaceDashboard() {
 				{/* Forms List */}
 				<div className="space-y-6">
 					<div className="grid grid-cols-1 gap-4">
-						{paginatedForms.map((form) => (
-							<div
-								key={form.id}
-								className="group flex flex-col p-2 -mx-2 rounded-xl hover:bg-muted/30 transition-all duration-200 cursor-pointer"
-								onClick={() =>
-									navigate({
-										to: "/workspace/$workspaceId/form-builder/$formId",
-										params: { workspaceId, formId: form.id },
-									})
-								}
-							>
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-3">
-										<div className="flex flex-col">
-											<div className="flex items-center gap-2">
-												<span className="text-lg font-semibold group-hover:text-blue-600 transition-colors">
-													{form.title || "Untitled"}
-												</span>
-												<Badge
-													variant="secondary"
-													className={`text-[10px] h-4 px-1.5 font-normal ${
-														form.status === "published"
-															? "bg-green-100 text-green-700"
-															: "bg-muted/80 text-muted-foreground"
-													} rounded-full`}
-												>
-													{form.status === "published" ? "Published" : "Draft"}
-												</Badge>
-											</div>
-											<div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 font-medium">
-												<span>0 submissions</span>
-												<span className="w-0.5 h-0.5 rounded-full bg-muted-foreground/30"></span>
-												<span>{formatLastEdited(form.updatedAt)}</span>
+						{paginatedForms.map((form) => {
+							const handleCardOpen = () => {
+								navigate({
+									to: "/workspace/$workspaceId/form-builder/$formId",
+									params: { workspaceId, formId: form.id },
+								});
+							};
+
+							return (
+								<article key={form.id} className="group relative">
+									<button
+										type="button"
+										className="group flex flex-col p-2 -mx-2 rounded-xl hover:bg-muted/30 transition-all duration-200 cursor-pointer w-full text-left"
+										aria-label={`Open form ${form.title || "Untitled"}`}
+										onClick={handleCardOpen}
+									>
+										<div className="flex items-center justify-between">
+											<div className="flex items-center gap-3">
+												<div className="flex flex-col">
+													<div className="flex items-center gap-2">
+														<span className="text-lg font-semibold group-hover:text-blue-600 transition-colors">
+															{form.title || "Untitled"}
+														</span>
+														<Badge
+															variant="secondary"
+															className={`text-[10px] h-4 px-1.5 font-normal ${
+																form.status === "published"
+																	? "bg-green-100 text-green-700"
+																	: "bg-muted/80 text-muted-foreground"
+															} rounded-full`}
+														>
+															{form.status === "published"
+																? "Published"
+																: "Draft"}
+														</Badge>
+													</div>
+													<div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 font-medium">
+														<span>0 submissions</span>
+														<span className="w-0.5 h-0.5 rounded-full bg-muted-foreground/30"></span>
+														<span>{formatLastEdited(form.updatedAt)}</span>
+													</div>
+												</div>
 											</div>
 										</div>
-									</div>
-
-									<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+									</button>
+									<div className="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
 										<TooltipProvider>
 											<Tooltip>
 												<TooltipTrigger asChild>
@@ -342,9 +350,9 @@ function WorkspaceDashboard() {
 											</Tooltip>
 										</TooltipProvider>
 									</div>
-								</div>
-							</div>
-						))}
+								</article>
+							);
+						})}
 					</div>
 
 					{/* Pagination */}

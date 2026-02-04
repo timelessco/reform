@@ -267,9 +267,9 @@ function DashboardPage() {
 							>
 								<Link
 									to={"/workspace/$workspaceId/form-builder/$formId/edit"}
-									params={{   workspaceId: form.workspaceId , formId: form.id }}
+									params={{ workspaceId: form.workspaceId, formId: form.id }}
 									preloadDelay={1000}
-									preload='intent'
+									preload="intent"
 								>
 									<div className="flex items-center justify-between">
 										<div className="flex items-center gap-3">

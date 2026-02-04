@@ -1,11 +1,3 @@
-import { FormActionsMenu } from "@/components/form-builder/form-actions-menu";
-import { Button } from "@/components/ui/button";
-import { ErrorBoundary } from "@/components/ui/error-boundary";
-import Loader from "@/components/ui/loader";
-import { NotFound } from "@/components/ui/not-found";
-import { useForm, useWorkspace } from "@/hooks/use-live-hooks";
-import { getFormbyIdQueryOption } from "@/lib/fn/forms";
-import { cn } from "@/lib/utils";
 import {
 	createFileRoute,
 	Link,
@@ -15,6 +7,14 @@ import {
 } from "@tanstack/react-router";
 import { Link as LinkIcon, Pencil } from "lucide-react";
 import { z } from "zod";
+import { FormActionsMenu } from "@/components/form-builder/form-actions-menu";
+import { Button } from "@/components/ui/button";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
+import { useForm } from "@/hooks/use-live-hooks";
+import { getFormbyIdQueryOption } from "@/lib/fn/forms";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute(
 	"/_authenticated/workspace/$workspaceId/form-builder/$formId",
@@ -25,11 +25,16 @@ export const Route = createFileRoute(
 	// Redirect to appropriate child route based on form status
 	beforeLoad: async ({ context, params, location }) => {
 		// Only redirect if we're at the exact parent route (no child route)
-		const isExactParentRoute = location.pathname === `/workspace/${params.workspaceId}/form-builder/${params.formId}` ||
-			location.pathname === `/workspace/${params.workspaceId}/form-builder/${params.formId}/`;
+		const isExactParentRoute =
+			location.pathname ===
+				`/workspace/${params.workspaceId}/form-builder/${params.formId}` ||
+			location.pathname ===
+				`/workspace/${params.workspaceId}/form-builder/${params.formId}/`;
 
 		if (isExactParentRoute) {
-			console.log('[route.tsx beforeLoad] At parent route, checking form status for redirect...');
+			console.log(
+				"[route.tsx beforeLoad] At parent route, checking form status for redirect...",
+			);
 			try {
 				const result = await context.queryClient.ensureQueryData({
 					...getFormbyIdQueryOption(params.formId),
@@ -37,16 +42,16 @@ export const Route = createFileRoute(
 				});
 
 				const status = result?.form?.status;
-				console.log('[route.tsx beforeLoad] Form status:', status);
+				console.log("[route.tsx beforeLoad] Form status:", status);
 
-				if (status === 'published') {
+				if (status === "published") {
 					throw redirect({
-						to: '/workspace/$workspaceId/form-builder/$formId/share',
+						to: "/workspace/$workspaceId/form-builder/$formId/share",
 						params: { workspaceId: params.workspaceId, formId: params.formId },
 					});
 				} else {
 					throw redirect({
-						to: '/workspace/$workspaceId/form-builder/$formId/edit',
+						to: "/workspace/$workspaceId/form-builder/$formId/edit",
 						params: { workspaceId: params.workspaceId, formId: params.formId },
 					});
 				}
@@ -66,9 +71,12 @@ export const Route = createFileRoute(
 					throw error;
 				}
 				// On error, default to edit route
-				console.error('[route.tsx beforeLoad] Error fetching form, defaulting to edit:', error);
+				console.error(
+					"[route.tsx beforeLoad] Error fetching form, defaulting to edit:",
+					error,
+				);
 				throw redirect({
-					to: '/workspace/$workspaceId/form-builder/$formId/edit',
+					to: "/workspace/$workspaceId/form-builder/$formId/edit",
 					params: { workspaceId: params.workspaceId, formId: params.formId },
 				});
 			}
@@ -101,27 +109,46 @@ export const Route = createFileRoute(
 function FormLayout() {
 	const { pathname } = useLocation();
 	// Extract formId from pathname to ensure it's always current
-	const formIdFromPath = pathname.split('/form-builder/')[1]?.split('/')[0] || '';
-	const { workspaceId } = Route.useParams();
-	const formId = formIdFromPath || Route.useParams().formId;
+	const formIdFromPath =
+		pathname.split("/form-builder/")[1]?.split("/")[0] || "";
+	const params = Route.useParams();
+	const { workspaceId } = params;
+	const formId = formIdFromPath || params.formId;
 
 	// Get form and workspace data from local Electric DB
 	const { data: formData } = useForm(formId);
-	const { data: workspaceData } = useWorkspace(workspaceId);
 	const form = formData?.[0];
 	const formTitle = form?.title || "Untitled Form";
-	const workspaceName = workspaceData?.name || "Workspace";
 
 	// Hide header on edit route (editor has its own full-screen layout)
-	const isEditRoute = pathname.includes('/form-builder/') && pathname.includes('/edit');
+	const isEditRoute =
+		pathname.includes("/form-builder/") && pathname.includes("/edit");
 
 	const tabs = [
-		{ name: "Summary", href: `/workspace/${workspaceId}/form-builder/${formId}/summary` },
-		{ name: "Submissions", href: `/workspace/${workspaceId}/form-builder/${formId}/submissions` },
-		{ name: "Share", href: `/workspace/${workspaceId}/form-builder/${formId}/share` },
-		{ name: "Integrations", href: `/workspace/${workspaceId}/form-builder/${formId}/integrations` },
-		{ name: "Insights", href: `/workspace/${workspaceId}/form-builder/${formId}/insights` },
-		{ name: "Settings", href: `/workspace/${workspaceId}/form-builder/${formId}/settings` },
+		{
+			name: "Summary",
+			href: `/workspace/${workspaceId}/form-builder/${formId}/summary`,
+		},
+		{
+			name: "Submissions",
+			href: `/workspace/${workspaceId}/form-builder/${formId}/submissions`,
+		},
+		{
+			name: "Share",
+			href: `/workspace/${workspaceId}/form-builder/${formId}/share`,
+		},
+		{
+			name: "Integrations",
+			href: `/workspace/${workspaceId}/form-builder/${formId}/integrations`,
+		},
+		{
+			name: "Insights",
+			href: `/workspace/${workspaceId}/form-builder/${formId}/insights`,
+		},
+		{
+			name: "Settings",
+			href: `/workspace/${workspaceId}/form-builder/${formId}/settings`,
+		},
 	];
 
 	// Helper to check if a tab is active
@@ -157,10 +184,13 @@ function FormLayout() {
 						</div>
 
 						<div className="flex items-center gap-3">
-							<button className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+							<button
+								type="button"
+								className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+							>
 								<LinkIcon className="h-4 w-4" />
 							</button>
-							<Button asChild variant='default'>
+							<Button asChild variant="default">
 								<Link
 									to="/workspace/$workspaceId/form-builder/$formId/edit"
 									params={{ workspaceId, formId }}
@@ -199,6 +229,6 @@ function FormLayout() {
 					<Outlet key={formId} />
 				</div>
 			</main>
-		</div >
+		</div>
 	);
 }

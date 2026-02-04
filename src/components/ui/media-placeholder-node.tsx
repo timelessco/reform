@@ -144,11 +144,12 @@ export const PlaceholderElement = withHOC(
 		return (
 			<PlateElement className="my-1" {...props}>
 				{(!loading || !isImage) && (
-					<div
+					<button
 						className={cn(
 							"flex cursor-pointer select-none items-center rounded-sm bg-muted p-3 pr-9 hover:bg-primary/10",
 						)}
 						onClick={() => !loading && openFilePicker()}
+						type="button"
 						contentEditable={false}
 					>
 						<div className="relative mr-3 flex text-muted-foreground/80 [&_svg]:size-6">
@@ -170,7 +171,7 @@ export const PlaceholderElement = withHOC(
 								</div>
 							)}
 						</div>
-					</div>
+					</button>
 				)}
 
 				{isImage && loading && (

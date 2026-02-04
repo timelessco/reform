@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Globe, Key, Loader2, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +57,10 @@ function MyAccountPage() {
 	const [totpUri, setTotpUri] = useState("");
 	const [otpCode, setOtpCode] = useState("");
 	const [password, setPassword] = useState("");
+	const firstNameId = useId();
+	const lastNameId = useId();
+	const emailId = useId();
+	const passwordId = useId();
 
 	// Accounts Query
 	const { data: accounts = [] } = useQuery({
@@ -223,7 +227,7 @@ function MyAccountPage() {
 			{/* Profile Section */}
 			<section className="space-y-6">
 				<div className="space-y-2">
-					<label className="text-sm font-medium">Photo</label>
+					<p className="text-sm font-medium">Photo</p>
 					<div className="flex items-center gap-4">
 						<Avatar className="h-24 w-24">
 							<AvatarImage src={user?.image || ""} />
@@ -236,31 +240,43 @@ function MyAccountPage() {
 
 				<div className="grid grid-cols-1 gap-6">
 					<div className="space-y-2">
-						<label className="text-sm font-medium text-muted-foreground">
+						<label
+							className="text-sm font-medium text-muted-foreground"
+							htmlFor={firstNameId}
+						>
 							First name
 						</label>
 						<Input
+							id={firstNameId}
 							value={firstName}
 							onChange={(e) => setFirstName(e.target.value)}
 							className="bg-muted/30"
 						/>
 					</div>
 					<div className="space-y-2">
-						<label className="text-sm font-medium text-muted-foreground">
+						<label
+							className="text-sm font-medium text-muted-foreground"
+							htmlFor={lastNameId}
+						>
 							Last name
 						</label>
 						<Input
+							id={lastNameId}
 							value={lastName}
 							onChange={(e) => setLastName(e.target.value)}
 							className="bg-muted/30"
 						/>
 					</div>
 					<div className="space-y-2">
-						<label className="text-sm font-medium text-muted-foreground">
+						<label
+							className="text-sm font-medium text-muted-foreground"
+							htmlFor={emailId}
+						>
 							Email
 						</label>
 						<div className="relative">
 							<Input
+								id={emailId}
 								value={user?.email || ""}
 								readOnly
 								className="pr-24 bg-muted/30"
@@ -274,11 +290,15 @@ function MyAccountPage() {
 						</div>
 					</div>
 					<div className="space-y-2">
-						<label className="text-sm font-medium text-muted-foreground">
+						<label
+							className="text-sm font-medium text-muted-foreground"
+							htmlFor={passwordId}
+						>
 							Password
 						</label>
 						<div className="relative">
 							<Input
+								id={passwordId}
 								placeholder="Not set"
 								readOnly
 								className="pr-24 bg-muted/30"
@@ -471,6 +491,7 @@ function MyAccountPage() {
 							<div className="flex items-center gap-3">
 								<div className="h-6 w-6 flex items-center justify-center">
 									<svg viewBox="0 0 24 24" className="h-5 w-5">
+										<title>Google logo</title>
 										<path
 											d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
 											fill="#4285F4"
@@ -520,6 +541,7 @@ function MyAccountPage() {
 							<div className="flex items-center gap-3">
 								<div className="h-6 w-6 flex items-center justify-center">
 									<svg viewBox="0 0 24 24" className="h-5 w-5 fill-current">
+										<title>Apple logo placeholder</title>
 										<path d="M17.05 20.28c-.96.95-2.03 2.03-3.08 2.03-1.01 0-1.45-.63-2.6-.63-1.16 0-1.63.61-2.6.61-1 0-2.18-1.12-3.13-2.07-1.94-1.94-3.41-5.49-3.41-8.6 0-4.9 3.11-7.49 6.07-7.49 1.58 0 2.9 1 3.73 1 .82 0 2.37-1.07 4.13-1.07 1.25 0 4.25.44 5.92 2.88-3.46 1.63-2.89 6.12.38 7.23-1.11 2.65-2.48 5.11-4.41 7.04zM12.03 3.11c-.13-1.61.94-3.11 2.37-3.11 1.62.01 2.82 1.48 2.6 3.03l-.01.08c-1.44.13-2.82-1.01-2.96-2.42z" />
 									</svg>
 								</div>

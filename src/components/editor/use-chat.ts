@@ -39,12 +39,12 @@ export const useChat = () => {
 
 	// remove when you implement the route /api/ai/command
 	const abortControllerRef = React.useRef<AbortController | null>(null);
-	const _abortFakeStream = () => {
+	const _abortFakeStream = React.useCallback(() => {
 		if (abortControllerRef.current) {
 			abortControllerRef.current.abort();
 			abortControllerRef.current = null;
 		}
-	};
+	}, []);
 
 	const baseChat = useBaseChat<ChatMessage>({
 		id: "editor",
@@ -178,15 +178,17 @@ export const useChat = () => {
 		...options,
 	});
 
-	const chat = {
-		...baseChat,
-		_abortFakeStream,
-	};
+	const chat = React.useMemo(
+		() => ({
+			...baseChat,
+			_abortFakeStream,
+		}),
+		[baseChat, _abortFakeStream],
+	);
 
 	React.useEffect(() => {
 		editor.setOption(AIChatPlugin, "chat", chat as any);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [chat.status, chat.messages, chat.error, chat, editor.setOption]);
+	}, [chat, editor.setOption]);
 
 	return chat;
 };

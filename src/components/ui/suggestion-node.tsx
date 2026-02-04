@@ -139,7 +139,9 @@ function SuggestionLineBreakContent({
 					</span>
 				</>
 			) : (
-				<div
+				<button
+					type="button"
+					tabIndex={-1}
 					className={cn(
 						suggestionVariants({
 							insertActive: isInsert && (isActive || isHover),
@@ -152,7 +154,7 @@ function SuggestionLineBreakContent({
 					data-block-suggestion="true"
 				>
 					{children}
-				</div>
+				</button>
 			)}
 		</>
 	);
