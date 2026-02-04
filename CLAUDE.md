@@ -7,35 +7,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Make the plan extremely concise. Sacrifice grammar for the sake of concision.
 - At the end of each plan, give me a list of unresolved questions to answer, if any.
 
-
-
 ## Build & Development Commands
 
 ```bash
+# Package Manager: Bun (do NOT use npm/pnpm)
+bun install           # Install dependencies
+
 # Development
-pnpm dev              # Start dev server on port 3000
+bun dev               # Start dev server on port 3000
 
 # Build & Production
-pnpm build            # Build for production
-pnpm start            # Run production server from .output/server
-pnpm preview          # Preview production build
+bun run build         # Build for production
+bun start             # Run production server from .output/server
+bun preview           # Preview production build
 
 # Testing
-pnpm test             # Run Vitest tests
+bun test              # Run Vitest tests
 
 # Code Quality
-pnpm lint             # Run Biome linter
-pnpm format           # Format code with Biome
-pnpm check            # Run Biome full check (lint + format)
+bun lint              # Run oxlint
+bun lint:fix          # Auto-fix lint issues
+bun fmt               # Format code with oxfmt
+bun fmt:check         # Check formatting
 
 # Database
-pnpm db:generate      # Generate Drizzle migrations
-pnpm db:migrate       # Run migrations
-pnpm db:push          # Push schema directly to database
-pnpm db:studio        # Open Drizzle Studio UI
+bun db:generate       # Generate Drizzle migrations
+bun db:migrate        # Run migrations
+bun db:push           # Push schema directly to database
+bun db:studio         # Open Drizzle Studio UI
 
 # Shadcn Components
-pnpm dlx shadcn@latest add <component>
+bunx shadcn@latest add <component>
 ```
 
 ## Tech Stack
@@ -49,40 +51,43 @@ pnpm dlx shadcn@latest add <component>
 - **UI**: Shadcn/Radix UI components + Tailwind CSS 4
 - **Form Builder**: Plate.js rich text editor with extensive plugin system
 - **Validation**: Zod 4
+
 ## Directory Routes
 
 Directories can be used to denote route hierarchy, which can be useful for organizing multiple routes into logical groups and also cutting down on the filename length for large groups of deeply nested routes.
 
 See the example below:
 
-| Filename                | Route Path                | Component Output                  |
-| ----------------------- | ------------------------- | --------------------------------- |
-| Ê¦ `__root.tsx`          |                           | `<Root>`                          |
-| Ê¦ `index.tsx`           | `/` (exact)               | `<Root><RootIndex>`               |
-| Ê¦ `about.tsx`           | `/about`                  | `<Root><About>`                   |
-| Ê¦ `posts.tsx`           | `/posts`                  | `<Root><Posts>`                   |
-| ðŸ“‚ `posts`              |                           |                                   |
+| Filename                   | Route Path                | Component Output                  |
+| -------------------------- | ------------------------- | --------------------------------- |
+| Ê¦ `__root.tsx`            |                           | `<Root>`                          |
+| Ê¦ `index.tsx`             | `/` (exact)               | `<Root><RootIndex>`               |
+| Ê¦ `about.tsx`             | `/about`                  | `<Root><About>`                   |
+| Ê¦ `posts.tsx`             | `/posts`                  | `<Root><Posts>`                   |
+| ðŸ“‚ `posts`               |                           |                                   |
 | â”„ Ê¦ `index.tsx`         | `/posts` (exact)          | `<Root><Posts><PostsIndex>`       |
 | â”„ Ê¦ `$postId.tsx`       | `/posts/$postId`          | `<Root><Posts><Post>`             |
-| ðŸ“‚ `posts_`             |                           |                                   |
-| â”„ ðŸ“‚ `$postId`          |                           |                                   |
-| â”„ â”„ Ê¦ `edit.tsx`        | `/posts/$postId/edit`     | `<Root><EditPost>`                |
-| Ê¦ `settings.tsx`        | `/settings`               | `<Root><Settings>`                |
-| ðŸ“‚ `settings`           |                           | `<Root><Settings>`                |
+| ðŸ“‚ `posts_`              |                           |                                   |
+| â”„ ðŸ“‚ `$postId`         |                           |                                   |
+| â”„ â”„ Ê¦ `edit.tsx`      | `/posts/$postId/edit`     | `<Root><EditPost>`                |
+| Ê¦ `settings.tsx`          | `/settings`               | `<Root><Settings>`                |
+| ðŸ“‚ `settings`            |                           | `<Root><Settings>`                |
 | â”„ Ê¦ `profile.tsx`       | `/settings/profile`       | `<Root><Settings><Profile>`       |
 | â”„ Ê¦ `notifications.tsx` | `/settings/notifications` | `<Root><Settings><Notifications>` |
-| Ê¦ `_pathlessLayout.tsx` |                           | `<Root><PathlessLayout>`          |
-| ðŸ“‚ `_pathlessLayout`    |                           |                                   |
+| Ê¦ `_pathlessLayout.tsx`   |                           | `<Root><PathlessLayout>`          |
+| ðŸ“‚ `_pathlessLayout`     |                           |                                   |
 | â”„ Ê¦ `route-a.tsx`       | `/route-a`                | `<Root><PathlessLayout><RouteA>`  |
 | â”„ Ê¦ `route-b.tsx`       | `/route-b`                | `<Root><PathlessLayout><RouteB>`  |
-| ðŸ“‚ `files`              |                           |                                   |
+| ðŸ“‚ `files`               |                           |                                   |
 | â”„ Ê¦ `$.tsx`             | `/files/$`                | `<Root><Files>`                   |
-| ðŸ“‚ `account`            |                           |                                   |
+| ðŸ“‚ `account`             |                           |                                   |
 | â”„ Ê¦ `route.tsx`         | `/account`                | `<Root><Account>`                 |
 | â”„ Ê¦ `overview.tsx`      | `/account/overview`       | `<Root><Account><Overview>`       |
+
 ## Architecture
 
 ### File-Based Routing (`src/routes/`)
+
 - `__root.tsx` - Root layout with providers
 - `index.tsx` - Home/landing page
 - `create.tsx` - Form creation page
@@ -96,6 +101,7 @@ See the example below:
 - `api/electric.ts` - Electric real-time sync endpoint
 
 ### Key Directories
+
 - `src/components/ui/` - Shadcn UI components (167 files)
 - `src/components/editor/` - Plate.js editor components and plugins (65 files)
 - `src/components/auth/` - Authentication dialogs and forms
@@ -116,11 +122,13 @@ See the example below:
 - `src/integrations/` - Provider integrations (TanStack Query)
 
 ### Authentication Flow
+
 - Routes in `_authenticated/` enforce `authMiddleware` (session + email verification)
 - Email OTP: 6 digits, 5-minute expiry
 - Server functions access session via Better Auth helpers
 
 ### API Pattern
+
 ```typescript
 // Server functions in src/lib/fn/
 // Business logic for forms, workspaces, etc.
@@ -144,6 +152,7 @@ export const formsCollection = collection({
 ```
 
 ### Form Builder Data Flow
+
 - Editor content stored as Plate.js `Value` (JSON array of nodes)
 - Client persistence: TanStack React DB collections in localStorage
 - Server persistence: PostgreSQL `forms` table with JSONB `content` and `settings`
@@ -152,10 +161,11 @@ export const formsCollection = collection({
 ## Sentry Integration
 
 Import and wrap server functions for instrumentation:
-```typescript
-import * as Sentry from '@sentry/tanstackstart-react'
 
-Sentry.startSpan({ name: 'Operation description' }, async () => {
+```typescript
+import * as Sentry from "@sentry/tanstackstart-react";
+
+Sentry.startSpan({ name: "Operation description" }, async () => {
   // Server operation
 });
 ```

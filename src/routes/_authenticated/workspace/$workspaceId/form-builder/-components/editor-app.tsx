@@ -6,6 +6,7 @@ import { EditorKit } from "@/components/editor/editor-kit";
 import { Button } from "@/components/ui/button";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { createFormButtonNode } from "@/components/ui/form-button-node";
+import type { FormHeaderElementData } from "@/components/ui/form-header-node";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import { updateDoc, updateHeader } from "@/db-collections";
 import { useForm } from "@/hooks/use-live-hooks";
@@ -31,7 +32,18 @@ export default function EditorApp({
 	defaultValue,
 }: EditorAppProps) {
 	// #region agent log
-	fetch('http://127.0.0.1:7243/ingest/bc04ab0d-75d0-4ec8-b742-bb373a0ca5a1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'editor-app.tsx:EditorApp:mount',message:'EditorApp component mounted/rendered',data:{formId,workspaceId},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+	fetch("http://127.0.0.1:7243/ingest/bc04ab0d-75d0-4ec8-b742-bb373a0ca5a1", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			location: "editor-app.tsx:EditorApp:mount",
+			message: "EditorApp component mounted/rendered",
+			data: { formId, workspaceId },
+			timestamp: Date.now(),
+			sessionId: "debug-session",
+			hypothesisId: "B",
+		}),
+	}).catch(() => {});
 	// #endregion
 	const { data: savedDocs } = useForm(formId);
 	const initializedRef = useRef(false);
@@ -46,7 +58,25 @@ export default function EditorApp({
 	const lastSavedContentRef = useRef<Value | null>(null);
 	useEffect(() => {
 		// #region agent log
-		fetch('http://127.0.0.1:7243/ingest/bc04ab0d-75d0-4ec8-b742-bb373a0ca5a1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'editor-app.tsx:useEffect:entry',message:'useEffect triggered',data:{formId,savedDocsUndefined:savedDocs===undefined,savedDocsLength:savedDocs?.length,savedDocsFirstId:savedDocs?.[0]?.id,savedDocsFirstTitle:savedDocs?.[0]?.title,initializedRef:initializedRef.current},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+		fetch("http://127.0.0.1:7243/ingest/bc04ab0d-75d0-4ec8-b742-bb373a0ca5a1", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				location: "editor-app.tsx:useEffect:entry",
+				message: "useEffect triggered",
+				data: {
+					formId,
+					savedDocsUndefined: savedDocs === undefined,
+					savedDocsLength: savedDocs?.length,
+					savedDocsFirstId: savedDocs?.[0]?.id,
+					savedDocsFirstTitle: savedDocs?.[0]?.title,
+					initializedRef: initializedRef.current,
+				},
+				timestamp: Date.now(),
+				sessionId: "debug-session",
+				hypothesisId: "C",
+			}),
+		}).catch(() => {});
 		// #endregion
 		if (savedDocs === undefined) return;
 		if (savedDocs.length === 0) return; // Wait for form data to be available
@@ -57,7 +87,21 @@ export default function EditorApp({
 		// First-time initialization
 		if (!initializedRef.current) {
 			// #region agent log
-			fetch('http://127.0.0.1:7243/ingest/bc04ab0d-75d0-4ec8-b742-bb373a0ca5a1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'editor-app.tsx:useEffect:firstInit',message:'First-time initialization branch',data:{formId,docId:docData?.id,docTitle:docData?.title},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+			fetch(
+				"http://127.0.0.1:7243/ingest/bc04ab0d-75d0-4ec8-b742-bb373a0ca5a1",
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						location: "editor-app.tsx:useEffect:firstInit",
+						message: "First-time initialization branch",
+						data: { formId, docId: docData?.id, docTitle: docData?.title },
+						timestamp: Date.now(),
+						sessionId: "debug-session",
+						hypothesisId: "C",
+					}),
+				},
+			).catch(() => {});
 			// #endregion
 			initializedRef.current = true;
 			lastKnownContentRef.current = incomingContentStr;
@@ -119,7 +163,21 @@ export default function EditorApp({
 		// Detect external changes (restore/discard via Electric sync)
 		if (lastKnownContentRef.current !== incomingContentStr) {
 			// #region agent log
-			fetch('http://127.0.0.1:7243/ingest/bc04ab0d-75d0-4ec8-b742-bb373a0ca5a1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'editor-app.tsx:useEffect:externalChange',message:'External change detected branch',data:{formId,docId:docData?.id,docTitle:docData?.title},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+			fetch(
+				"http://127.0.0.1:7243/ingest/bc04ab0d-75d0-4ec8-b742-bb373a0ca5a1",
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						location: "editor-app.tsx:useEffect:externalChange",
+						message: "External change detected branch",
+						data: { formId, docId: docData?.id, docTitle: docData?.title },
+						timestamp: Date.now(),
+						sessionId: "debug-session",
+						hypothesisId: "D",
+					}),
+				},
+			).catch(() => {});
 			// #endregion
 			lastKnownContentRef.current = incomingContentStr;
 			lastSavedContentRef.current = docData.content as Value;
@@ -129,7 +187,7 @@ export default function EditorApp({
 				autoSelect: "end",
 			});
 		}
-	}, [savedDocs, editor, defaultValue]);
+	}, [savedDocs, editor, defaultValue, formId]);
 
 	const handleChange = useCallback(
 		({ value }: { value: Value }) => {
@@ -151,15 +209,15 @@ export default function EditorApp({
 
 			// Always update the full content when it changes
 			updateDoc(formId, (draft) => {
-				(draft.workspaceId = workspaceId),
-					(draft.createdAt = now),
-					(draft.updatedAt = now),
-					(draft.content = value);
+				draft.workspaceId = workspaceId;
+				draft.createdAt = now;
+				draft.updatedAt = now;
+				draft.content = value;
 			});
 
 			// Optionally update header metadata if the first element is a formHeader
 			if (value.length > 0 && value[0]?.type === "formHeader") {
-				const headerNode = value[0] as any;
+				const headerNode = value[0] as FormHeaderElementData;
 				updateHeader(formId, {
 					title: headerNode.title,
 					icon: headerNode.icon,

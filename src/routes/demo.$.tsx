@@ -5,22 +5,22 @@ import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 
 export const Route = createFileRoute("/demo/$")({
-	component: RouteComponent,
-	validateSearch: z.object({
-		workspaceId: z.string(),
-		formId: z.string(),
-	}),
-	pendingComponent: Loader,
-	errorComponent: ErrorBoundary,
-	notFoundComponent: NotFound,
+  component: RouteComponent,
+  validateSearch: z.object({
+    workspaceId: z.string(),
+    formId: z.string(),
+  }),
+  pendingComponent: Loader,
+  errorComponent: ErrorBoundary,
+  notFoundComponent: NotFound,
 });
 
 function RouteComponent() {
-	return (
-		<div>
-			<Link to="/demo/$" search={{ workspaceId: "1", formId: "1" }}>
-				Home
-			</Link>
-		</div>
-	);
+  return (
+    <div>
+      <Link to="/demo/$" search={{ workspaceId: "1", formId: "1" }}>
+        Home
+      </Link>
+    </div>
+  );
 }

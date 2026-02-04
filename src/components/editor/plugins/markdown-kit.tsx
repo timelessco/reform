@@ -4,10 +4,10 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 
 export const MarkdownKit = [
-	MarkdownPlugin.configure({
-		options: {
-			plainMarks: [KEYS.suggestion, KEYS.comment],
-			remarkPlugins: [remarkMath, remarkGfm, remarkMdx, remarkMention],
-		},
-	}),
+  MarkdownPlugin.configure({
+    options: {
+      plainMarks: [KEYS.suggestion, KEYS.comment],
+      remarkPlugins: [remarkMath, remarkGfm, remarkMdx, remarkMention],
+    },
+  }),
 ];

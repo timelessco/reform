@@ -1,35 +1,32 @@
 import { polarClient } from "@polar-sh/better-auth";
 import {
-	apiKeyClient,
-	emailOTPClient,
-	organizationClient,
-	twoFactorClient,
-	usernameClient,
+  apiKeyClient,
+  emailOTPClient,
+  organizationClient,
+  twoFactorClient,
+  usernameClient,
 } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import { createAuthQueryClient } from "./auth-query";
 
 const getBaseURL = () => {
-	if (typeof window !== "undefined") {
-		return window.location.origin;
-	}
-	const url =
-		process.env.VERCEL_URL ||
-		process.env.BETTER_AUTH_URL ||
-		"http://localhost:3000";
-	return url.startsWith("http") ? url : `https://${url}`;
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  const url = process.env.VERCEL_URL || process.env.BETTER_AUTH_URL || "http://localhost:3000";
+  return url.startsWith("http") ? url : `https://${url}`;
 };
 
 export const authClient = createAuthClient({
-	baseURL: getBaseURL(),
-	plugins: [
-		usernameClient(),
-		emailOTPClient(),
-		twoFactorClient(),
-		apiKeyClient(),
-		organizationClient(),
-		polarClient(),
-	],
+  baseURL: getBaseURL(),
+  plugins: [
+    usernameClient(),
+    emailOTPClient(),
+    twoFactorClient(),
+    apiKeyClient(),
+    organizationClient(),
+    polarClient(),
+  ],
 });
 export const auth = createAuthQueryClient(authClient);
 

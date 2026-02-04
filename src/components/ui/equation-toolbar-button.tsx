@@ -5,20 +5,18 @@ import type * as React from "react";
 
 import { ToolbarButton } from "./toolbar";
 
-export function InlineEquationToolbarButton(
-	props: React.ComponentProps<typeof ToolbarButton>,
-) {
-	const editor = useEditorRef();
+export function InlineEquationToolbarButton(props: React.ComponentProps<typeof ToolbarButton>) {
+  const editor = useEditorRef();
 
-	return (
-		<ToolbarButton
-			{...props}
-			onClick={() => {
-				insertInlineEquation(editor);
-			}}
-			tooltip="Mark as equation"
-		>
-			<RadicalIcon />
-		</ToolbarButton>
-	);
+  return (
+    <ToolbarButton
+      {...props}
+      onClick={() => {
+        insertInlineEquation(editor);
+      }}
+      tooltip="Mark as equation"
+    >
+      <RadicalIcon />
+    </ToolbarButton>
+  );
 }

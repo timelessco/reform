@@ -19,127 +19,127 @@ const LOCAL_WORKSPACE_ID = "550e8400-e29b-41d4-a716-446655440001"; // Valid UUID
 
 // Initial state for new forms
 const onboardingValue = normalizeNodeId([
-	createFormHeaderNode({ title: "hello" }) as unknown as TElement,
-	createOnboardingContentNode() as unknown as TElement,
-	{
-		children: [{ text: "" }],
-		type: "p",
-	},
+  createFormHeaderNode({ title: "hello" }) as unknown as TElement,
+  createOnboardingContentNode() as unknown as TElement,
+  {
+    children: [{ text: "" }],
+    type: "p",
+  },
 ]);
 
 export const Route = createFileRoute("/create")({
-	server: {
-		middleware: [guestMiddleware],
-	},
-	component: RouteComponent,
-	pendingComponent: Loader,
-	errorComponent: ErrorBoundary,
-	notFoundComponent: NotFound,
+  server: {
+    middleware: [guestMiddleware],
+  },
+  component: RouteComponent,
+  pendingComponent: Loader,
+  errorComponent: ErrorBoundary,
+  notFoundComponent: NotFound,
 });
 
 function RouteComponent() {
-	return (
-		<div className="flex flex-col h-screen overflow-hidden">
-			<AppHeader />
-			<div className="flex-1 overflow-auto relative bg-background">
-				<LocalEditorApp />
-			</div>
-		</div>
-	);
+  return (
+    <div className="flex flex-col h-screen overflow-hidden">
+      <AppHeader />
+      <div className="flex-1 overflow-auto relative bg-background">
+        <LocalEditorApp />
+      </div>
+    </div>
+  );
 }
 
 function LocalEditorApp() {
-	const { data: savedDocs } = useLocalForm(LOCAL_FORM_ID);
+  const { data: savedDocs } = useLocalForm(LOCAL_FORM_ID);
 
-	const initializedRef = useRef(false);
-	const [isReady, setIsReady] = useState(false);
-	const skipSaveRef = useRef(false);
+  const initializedRef = useRef(false);
+  const [isReady, setIsReady] = useState(false);
+  const skipSaveRef = useRef(false);
 
-	const editor = usePlateEditor({
-		plugins: EditorKit,
-	});
+  const editor = usePlateEditor({
+    plugins: EditorKit,
+  });
 
-	const lastSavedContentRef = useRef<Value | null>(null);
+  const lastSavedContentRef = useRef<Value | null>(null);
 
-	useEffect(() => {
-		if (initializedRef.current) return;
-		if (savedDocs === undefined) return;
+  useEffect(() => {
+    if (initializedRef.current) return;
+    if (savedDocs === undefined) return;
 
-		initializedRef.current = true;
+    initializedRef.current = true;
 
-		const docData = savedDocs?.[0];
-		let initialContent: Value;
+    const docData = savedDocs?.[0];
+    let initialContent: Value;
 
-		if (docData?.content && Array.isArray(docData.content)) {
-			initialContent = docData.content as Value;
-		} else {
-			initialContent = onboardingValue;
-		}
+    if (docData?.content && Array.isArray(docData.content)) {
+      initialContent = docData.content as Value;
+    } else {
+      initialContent = onboardingValue;
+    }
 
-		lastSavedContentRef.current = initialContent;
-		skipSaveRef.current = true;
+    lastSavedContentRef.current = initialContent;
+    skipSaveRef.current = true;
 
-		editor.tf.init({
-			value: initialContent,
-		});
+    editor.tf.init({
+      value: initialContent,
+    });
 
-		setIsReady(true);
-	}, [savedDocs, editor]);
+    setIsReady(true);
+  }, [savedDocs, editor]);
 
-	const handleChange = useCallback(({ value }: { value: Value }) => {
-		// Skip the initial onChange triggered by editor.tf.init()
-		if (skipSaveRef.current) {
-			skipSaveRef.current = false;
-			return;
-		}
+  const handleChange = useCallback(({ value }: { value: Value }) => {
+    // Skip the initial onChange triggered by editor.tf.init()
+    if (skipSaveRef.current) {
+      skipSaveRef.current = false;
+      return;
+    }
 
-		// Only save if content actually changed
-		const contentStr = JSON.stringify(value);
-		const lastSavedStr = JSON.stringify(lastSavedContentRef.current);
-		if (contentStr === lastSavedStr) return;
+    // Only save if content actually changed
+    const contentStr = JSON.stringify(value);
+    const lastSavedStr = JSON.stringify(lastSavedContentRef.current);
+    if (contentStr === lastSavedStr) return;
 
-		lastSavedContentRef.current = value;
+    lastSavedContentRef.current = value;
 
-		// Persist to local collection
-		const headerNode = value.find((n: any) => n.type === "formHeader") as any;
-		const updateData = {
-			content: value,
-			title: headerNode?.title || "Draft Form",
-			icon: headerNode?.icon || null,
-			cover: headerNode?.cover || null,
-			updatedAt: new Date().toISOString(),
-		};
+    // Persist to local collection
+    const headerNode = value.find((n: any) => n.type === "formHeader") as any;
+    const updateData = {
+      content: value,
+      title: headerNode?.title || "Draft Form",
+      icon: headerNode?.icon || null,
+      cover: headerNode?.cover || null,
+      updatedAt: new Date().toISOString(),
+    };
 
-		try {
-			localFormCollection.update(LOCAL_FORM_ID, (draft) => {
-				Object.assign(draft, updateData);
-			});
-		} catch {
-			localFormCollection.insert({
-				id: LOCAL_FORM_ID,
-				workspaceId: LOCAL_WORKSPACE_ID,
-				formName: "draft",
-				schemaName: "draftFormSchema",
-				isMultiStep: false,
-				status: "draft" as const,
-				createdAt: new Date().toISOString(),
-				...updateData,
-			});
-		}
-	}, []);
+    try {
+      localFormCollection.update(LOCAL_FORM_ID, (draft) => {
+        Object.assign(draft, updateData);
+      });
+    } catch {
+      localFormCollection.insert({
+        id: LOCAL_FORM_ID,
+        workspaceId: LOCAL_WORKSPACE_ID,
+        formName: "draft",
+        schemaName: "draftFormSchema",
+        isMultiStep: false,
+        status: "draft" as const,
+        createdAt: new Date().toISOString(),
+        ...updateData,
+      });
+    }
+  }, []);
 
-	if (!isReady) return <Loader />;
+  if (!isReady) return <Loader />;
 
-	return (
-		<div className="h-full w-full overflow-y-auto">
-			<Plate editor={editor} readOnly={false} onChange={handleChange}>
-				<EditorContainer
-					variant="default"
-					className="px-0 sm:px-0 max-w-full mx-auto border-none shadow-none"
-				>
-					<Editor className="overflow-x-visible" />
-				</EditorContainer>
-			</Plate>
-		</div>
-	);
+  return (
+    <div className="h-full w-full overflow-y-auto">
+      <Plate editor={editor} readOnly={false} onChange={handleChange}>
+        <EditorContainer
+          variant="default"
+          className="px-0 sm:px-0 max-w-full mx-auto border-none shadow-none"
+        >
+          <Editor className="overflow-x-visible" />
+        </EditorContainer>
+      </Plate>
+    </div>
+  );
 }

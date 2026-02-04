@@ -211,10 +211,10 @@ export const STYLES = `
 
 /** Inject styles into document head (idempotent) */
 export function injectStyles(): void {
-	if (document.getElementById("bf-popup-styles")) return;
+  if (document.getElementById("bf-popup-styles")) return;
 
-	const styleEl = document.createElement("style");
-	styleEl.id = "bf-popup-styles";
-	styleEl.textContent = STYLES;
-	document.head.appendChild(styleEl);
+  const styleEl = document.createElement("style");
+  styleEl.id = "bf-popup-styles";
+  styleEl.textContent = STYLES;
+  document.head.appendChild(styleEl);
 }
