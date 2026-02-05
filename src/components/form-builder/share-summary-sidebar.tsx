@@ -1,4 +1,4 @@
-import { X, Copy, Share2, BarChart3, Rocket, Layout, Maximize, ExternalLink } from "lucide-react";
+import { X, Copy, Share2, BarChart3, Rocket, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
@@ -7,9 +7,9 @@ import { useForm } from "@/hooks/use-live-hooks";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { updateFormStatus } from "@/db-collections";
+import { EmbedSection } from "./embed-section";
 
 interface ShareSummarySidebarProps {
     formId: string;
@@ -48,7 +48,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
     const isDraft = doc.status === "draft";
 
     return (
-        <div className="flex flex-col h-full bg-background border-l w-full">
+        <div className="flex flex-col h-full overflow-hidden bg-background border-l w-full">
             {/* Header with tabs */}
             <div className="shrink-0">
                 {/* Top row with close button */}
@@ -95,10 +95,11 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
             {/* Divider */}
             <div className="border-b" />
 
-            <ScrollArea className="flex-1">
-                <div className="p-4 space-y-8">
-                    {shareTab === "share" ? (
-                        <>
+            {/* Scrollable content area — takes remaining height */}
+            <div className="flex-1 min-h-0">
+                {shareTab === "share" ? (
+                    <ScrollArea className="h-full">
+                        <div className="p-4 space-y-8">
                             {isDraft ? (
                                 <div className="flex flex-col items-center justify-center py-10 px-4 text-center space-y-6 bg-muted/20 border-2 border-dashed rounded-2xl">
                                     <div className="p-3 bg-primary/10 rounded-full text-primary">
@@ -195,65 +196,17 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                                         </div>
                                     </div>
 
-                                    {/* Embed Options Section */}
-                                    <div className="space-y-4 pt-4 border-t">
-                                        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">
-                                            Embed Form
-                                        </h3>
-                                        <div className="grid grid-cols-1 gap-3">
-                                            {/* Standard Embed */}
-                                            <Link
-                                                to="/workspace/$workspaceId/form-builder/$formId/embed"
-                                                params={{ workspaceId: doc.workspaceId || "", formId: doc.id }}
-                                                search={{ type: "standard" }}
-                                                className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-all group"
-                                            >
-                                                <div className="h-10 w-10 shrink-0 bg-background rounded-md border flex items-center justify-center group-hover:border-primary/50 transition-colors">
-                                                    <Layout className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-xs font-bold group-hover:text-primary transition-colors">Standard</p>
-                                                    <p className="text-[10px] text-muted-foreground">Embed as a section</p>
-                                                </div>
-                                            </Link>
-
-                                            {/* Popup Embed */}
-                                            <Link
-                                                to="/workspace/$workspaceId/form-builder/$formId/embed"
-                                                params={{ workspaceId: doc.workspaceId || "", formId: doc.id }}
-                                                search={{ type: "popup" }}
-                                                className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-all group"
-                                            >
-                                                <div className="h-10 w-10 shrink-0 bg-background rounded-md border flex items-center justify-center group-hover:border-primary/50 transition-colors">
-                                                    <Rocket className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-xs font-bold group-hover:text-primary transition-colors">Popup</p>
-                                                    <p className="text-[10px] text-muted-foreground">Show as a popover</p>
-                                                </div>
-                                            </Link>
-
-                                            {/* Full Page Embed */}
-                                            <Link
-                                                to="/workspace/$workspaceId/form-builder/$formId/embed"
-                                                params={{ workspaceId: doc.workspaceId || "", formId: doc.id }}
-                                                search={{ type: "fullpage" }}
-                                                className="flex items-center gap-3 p-3 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-all group"
-                                            >
-                                                <div className="h-10 w-10 shrink-0 bg-background rounded-md border flex items-center justify-center group-hover:border-primary/50 transition-colors">
-                                                    <Maximize className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-xs font-bold group-hover:text-primary transition-colors">Full Page</p>
-                                                    <p className="text-[10px] text-muted-foreground">Instant landing page</p>
-                                                </div>
-                                            </Link>
-                                        </div>
-                                    </div>
+                                    {/* Embed Section */}
+                                    <EmbedSection
+                                        formId={doc.id}
+                                        docTitle={doc.title || undefined}
+                                    />
                                 </div>
                             )}
-                        </>
-                    ) : (
+                        </div>
+                    </ScrollArea>
+                ) : (
+                    <ScrollArea className="h-full">
                         <div className="flex flex-col items-center justify-center py-20 px-6 text-center space-y-4">
                             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
                                 <BarChart3 className="h-8 w-8 text-muted-foreground" />
@@ -268,9 +221,9 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                                 View Analytics
                             </Button>
                         </div>
-                    )}
-                </div>
-            </ScrollArea>
+                    </ScrollArea>
+                )}
+            </div>
         </div>
     );
 }

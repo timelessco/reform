@@ -6,11 +6,13 @@ import {
   ChevronRight,
   Copy,
   FileText,
+  FolderPlus,
   HelpCircle,
   Loader2,
   Plus,
   Trash2,
 } from "lucide-react";
+import { createWorkspaceLocal } from "@/db-collections";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -92,21 +94,21 @@ function DashboardPage() {
   // Forms: use live forms when ready, otherwise flatten from loader workspaces data
   const orgForms = isLiveReady
     ? (liveForms ?? [])
-        .filter((form) => orgWorkspaces.some((ws) => ws.id === form.workspaceId))
-        .filter((form) => form.status !== "archived")
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .filter((form) => orgWorkspaces.some((ws) => ws.id === form.workspaceId))
+      .filter((form) => form.status !== "archived")
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     : orgWorkspaces
-        .flatMap((ws) =>
-          ((ws as any).forms ?? []).map((f: any) => ({
-            ...f,
-            workspaceId: ws.id,
-            status: f.status ?? "draft",
-          })),
-        )
-        .filter((form: any) => form.status !== "archived")
-        .sort(
-          (a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-        );
+      .flatMap((ws) =>
+        ((ws as any).forms ?? []).map((f: any) => ({
+          ...f,
+          workspaceId: ws.id,
+          status: f.status ?? "draft",
+        })),
+      )
+      .filter((form: any) => form.status !== "archived")
+      .sort(
+        (a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      );
   // Create workspace name lookup
   const workspaceNameMap = new Map(orgWorkspaces.map((ws) => [ws.id, ws.name]));
 
@@ -153,6 +155,18 @@ function DashboardPage() {
     };
     syncData();
   }, [session]);
+
+  const handleCreateWorkspace = async () => {
+    if (!activeOrg?.id) return;
+    try {
+      await createWorkspaceLocal(activeOrg.id, "New Collection");
+      toast.success("Workspace created");
+      // Live queries will pick up the new workspace
+    } catch (error) {
+      console.error("Failed to create workspace:", error);
+      toast.error("Failed to create workspace");
+    }
+  };
 
   const handleCreateForm = async () => {
     if (orgWorkspaces.length === 0) return;
@@ -217,21 +231,35 @@ function DashboardPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold">All Forms</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h1 className="text-2xl font-bold tracking-tight">Home</h1>
+            <p className="text-sm text-muted-foreground mt-1 font-medium">
               {orgForms.length} form{orgForms.length !== 1 ? "s" : ""} across {orgWorkspaces.length}{" "}
               workspace
               {orgWorkspaces.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <Button onClick={handleCreateForm} disabled={isCreating || orgWorkspaces.length === 0}>
-            {isCreating ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <Plus className="h-4 w-4 mr-2" />
-            )}
-            New Form
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium"
+              onClick={handleCreateWorkspace}
+            >
+              <FolderPlus className="h-4 w-4 mr-2" />
+              New workspace
+            </Button>
+            <Button
+              onClick={handleCreateForm}
+              disabled={isCreating || orgWorkspaces.length === 0}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
+            >
+              {isCreating ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Plus className="h-4 w-4 mr-2" />
+              )}
+              New form
+            </Button>
+          </div>
         </div>
 
         {/* Forms List */}
@@ -257,11 +285,10 @@ function DashboardPage() {
                           </span>
                           <Badge
                             variant="secondary"
-                            className={`text-[10px] h-4 px-1.5 font-normal ${
-                              form.status === "published"
-                                ? "bg-green-100 text-green-700"
-                                : "bg-muted/80 text-muted-foreground"
-                            } rounded-full`}
+                            className={`text-[10px] h-4 px-1.5 font-normal ${form.status === "published"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-muted/80 text-muted-foreground"
+                              } rounded-full`}
                           >
                             {form.status === "published" ? "Published" : "Draft"}
                           </Badge>

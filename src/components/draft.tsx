@@ -67,6 +67,11 @@ export function DraftForm() {
       }
       firstInput?.focus();
     },
+    listeners: {
+      onChange: (state) => {
+        console.log(state);
+      }
+    }
   });
   const isDefault = useStore(draftForm.store, (state) => state.isDefaultValue);
 

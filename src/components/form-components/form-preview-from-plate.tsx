@@ -72,25 +72,13 @@ function isValidUrl(str: string): boolean {
 }
 
 /**
- * Default hexagon icon SVG (matches the editor's form-header.tsx)
+ * Default icon (matches the editor's form-header-node.tsx)
  */
 function DefaultIcon() {
   return (
-    <div className="w-[80px] h-[80px] rounded-full overflow-hidden shadow-sm bg-black flex items-center justify-center text-white">
-      <svg
-        width="40"
-        height="40"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <title>Hexagon placeholder icon</title>
-        <path d="M12 2l9 4.9V17L12 22l-9-4.9V7z" />
-      </svg>
-    </div>
+    <span className="text-5xl sm:text-6xl md:text-7xl leading-none" role="img" aria-label="Form icon">
+      📄
+    </span>
   );
 }
 
@@ -328,9 +316,9 @@ function PreviewFormHeader({
     // Handle emoji
     if (isEmoji(icon)) {
       return (
-        <div className={hasCover ? "-mt-[28px] sm:-mt-[40px] relative z-10" : ""}>
+        <div className={hasCover ? "-mt-[28px] sm:-mt-[36px] relative z-10" : ""}>
           <span
-            className="text-5xl sm:text-6xl md:text-7xl block bg-background rounded-full leading-none p-1.5 sm:p-2 w-fit h-fit"
+            className="text-5xl sm:text-6xl md:text-7xl block leading-none"
             role="img"
             aria-label="Form icon"
           >
@@ -343,15 +331,13 @@ function PreviewFormHeader({
     // Handle image URL
     if (isValidUrl(icon) && !iconError) {
       return (
-        <div className={hasCover ? "-mt-[28px] sm:-mt-[40px] relative z-10" : ""}>
-          <div className="w-[56px] h-[56px] sm:w-[72px] sm:h-[72px] md:w-[80px] md:h-[80px] rounded-full overflow-hidden shadow-sm bg-background p-1">
-            <img
-              src={icon}
-              alt="Form icon"
-              className="w-full h-full object-cover rounded-full"
-              onError={() => setIconError(true)}
-            />
-          </div>
+        <div className={hasCover ? "-mt-[28px] sm:-mt-[36px] relative z-10" : ""}>
+          <img
+            src={icon}
+            alt="Form icon"
+            className="w-[56px] h-[56px] sm:w-[72px] sm:h-[72px] md:w-[80px] md:h-[80px] rounded-md object-cover"
+            onError={() => setIconError(true)}
+          />
         </div>
       );
     }

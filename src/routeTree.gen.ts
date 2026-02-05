@@ -31,7 +31,6 @@ import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteIm
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSubmissionsRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/submissions'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/settings'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/integrations'
-import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/embed'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/edit'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
@@ -163,13 +162,6 @@ const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRoute =
         AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRoute,
     } as any,
   )
-const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRoute =
-  AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRouteImport.update({
-    id: '/embed',
-    path: '/embed',
-    getParentRoute: () =>
-      AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRoute,
-  } as any)
 const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute =
   AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRouteImport.update({
     id: '/edit',
@@ -198,7 +190,6 @@ export interface FileRoutesByFullPath {
   '/workspace/$workspaceId/': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
   '/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
   '/workspace/$workspaceId/form-builder/$formId/edit': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute
-  '/workspace/$workspaceId/form-builder/$formId/embed': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRoute
   '/workspace/$workspaceId/form-builder/$formId/integrations': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRoute
   '/workspace/$workspaceId/form-builder/$formId/settings': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
   '/workspace/$workspaceId/form-builder/$formId/submissions': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSubmissionsRoute
@@ -222,7 +213,6 @@ export interface FileRoutesByTo {
   '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
   '/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
   '/workspace/$workspaceId/form-builder/$formId/edit': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute
-  '/workspace/$workspaceId/form-builder/$formId/embed': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRoute
   '/workspace/$workspaceId/form-builder/$formId/integrations': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRoute
   '/workspace/$workspaceId/form-builder/$formId/settings': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
   '/workspace/$workspaceId/form-builder/$formId/submissions': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSubmissionsRoute
@@ -249,7 +239,6 @@ export interface FileRoutesById {
   '/_authenticated/workspace/$workspaceId/': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
   '/_authenticated/workspace/$workspaceId/form-builder/$formId/edit': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute
-  '/_authenticated/workspace/$workspaceId/form-builder/$formId/embed': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId/integrations': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId/settings': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId/submissions': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSubmissionsRoute
@@ -276,7 +265,6 @@ export interface FileRouteTypes {
     | '/workspace/$workspaceId/'
     | '/workspace/$workspaceId/form-builder/$formId'
     | '/workspace/$workspaceId/form-builder/$formId/edit'
-    | '/workspace/$workspaceId/form-builder/$formId/embed'
     | '/workspace/$workspaceId/form-builder/$formId/integrations'
     | '/workspace/$workspaceId/form-builder/$formId/settings'
     | '/workspace/$workspaceId/form-builder/$formId/submissions'
@@ -300,7 +288,6 @@ export interface FileRouteTypes {
     | '/workspace/$workspaceId'
     | '/workspace/$workspaceId/form-builder/$formId'
     | '/workspace/$workspaceId/form-builder/$formId/edit'
-    | '/workspace/$workspaceId/form-builder/$formId/embed'
     | '/workspace/$workspaceId/form-builder/$formId/integrations'
     | '/workspace/$workspaceId/form-builder/$formId/settings'
     | '/workspace/$workspaceId/form-builder/$formId/submissions'
@@ -326,7 +313,6 @@ export interface FileRouteTypes {
     | '/_authenticated/workspace/$workspaceId/'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId/edit'
-    | '/_authenticated/workspace/$workspaceId/form-builder/$formId/embed'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId/integrations'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId/settings'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId/submissions'
@@ -499,13 +485,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRouteImport
       parentRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRoute
     }
-    '/_authenticated/workspace/$workspaceId/form-builder/$formId/embed': {
-      id: '/_authenticated/workspace/$workspaceId/form-builder/$formId/embed'
-      path: '/embed'
-      fullPath: '/workspace/$workspaceId/form-builder/$formId/embed'
-      preLoaderRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRouteImport
-      parentRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRoute
-    }
     '/_authenticated/workspace/$workspaceId/form-builder/$formId/edit': {
       id: '/_authenticated/workspace/$workspaceId/form-builder/$formId/edit'
       path: '/edit'
@@ -541,7 +520,6 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 
 interface AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteChildren {
   AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute
-  AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRoute
   AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRoute
   AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
   AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSubmissionsRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSubmissionsRoute
@@ -551,8 +529,6 @@ const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteChildren: Auth
   {
     AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute:
       AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute,
-    AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRoute:
-      AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEmbedRoute,
     AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRoute:
       AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdIntegrationsRoute,
     AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute:

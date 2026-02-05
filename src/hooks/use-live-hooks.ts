@@ -81,6 +81,7 @@ export const useForms = () => {
         workspaceId: form.workspaceId,
         status: form.status,
         updatedAt: form.updatedAt,
+        icon: form.icon,
       })),
   );
 };

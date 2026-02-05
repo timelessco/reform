@@ -60,7 +60,6 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { Input } from "@/components/ui/input";
@@ -168,7 +167,7 @@ function AuthLayoutContent() {
         {showEditorSidebar && (
           <>
             <ResizableHandle />
-            <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
+            <ResizablePanel defaultSize={25} minSize={15} maxSize={40} className="overflow-hidden">
               {activeSidebar === "settings" && <FormSettingsSidebar formId={formId} />}
               {activeSidebar === "share" && <ShareSummarySidebar formId={formId} />}
               {activeSidebar === "history" && <VersionHistorySidebar formId={formId} />}
@@ -207,11 +206,10 @@ function SidebarItem({
       {...componentProps}
       onClick={onClick}
       className={cn(
-        "group flex w-full items-center justify-between rounded px-2 py-1 text-[13px] transition-colors hover:text-foreground relative cursor-pointer",
-        !to && "text-muted-foreground/80",
-        isNested && "py-0.5 px-1",
-        isActive && "text-foreground font-medium",
-        !isActive && "text-muted-foreground/80",
+        "group flex w-full items-center justify-between rounded px-2 py-1.5 text-[13px] transition-colors hover:text-foreground relative cursor-pointer",
+        !isActive && "text-muted-foreground/80 hover:bg-muted/30",
+        isActive && "bg-muted text-foreground font-medium",
+        isNested && "py-1 px-1",
       )}
     >
       <span className="flex items-center gap-2 overflow-hidden flex-1">
@@ -360,6 +358,12 @@ function MinimalSidebar() {
               prefix={<Search className="h-4 w-4" />}
             />
             <SidebarItem
+              label="Notifications"
+              onClick={() => setIsInboxOpen(!isInboxOpen)}
+              isActive={isInboxOpen}
+              prefix={<Bell className="h-4 w-4" />}
+            />
+            <SidebarItem
               label="Trash"
               onClick={() => setTrashDialogOpen(true)}
               prefix={<Trash2 className="h-4 w-4" />}
@@ -375,12 +379,6 @@ function MinimalSidebar() {
                 location.pathname.startsWith("/settings") && !location.pathname.includes("/members")
               }
               prefix={<Settings className="h-4 w-4" />}
-            />
-            <SidebarItem
-              label="Inbox"
-              onClick={() => setIsInboxOpen(!isInboxOpen)}
-              isActive={isInboxOpen}
-              prefix={<Inbox className="h-4 w-4" />}
             />
           </div>
 
@@ -935,6 +933,7 @@ type WorkspaceWithForms = {
     title: string;
     updatedAt: string;
     workspaceId: string;
+    icon?: string | null;
   }>;
 };
 
@@ -965,71 +964,83 @@ function WorkspaceItemMinimal({
   }, [showMenu]);
 
   return (
-    <div className="flex flex-col">
-      <SidebarItem label={workspace.name} onClick={() => setIsOpen(!isOpen)}>
-        <div className="flex items-center gap-1">
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <div className="relative workspace-menu-container">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowMenu(!showMenu);
-                }}
-                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                title="More options"
-              >
-                <MoreHorizontal className="h-3 w-3" />
-              </button>
-              {showMenu && (
-                <div className="absolute right-0 top-full mt-1 bg-background border border-foreground/10 rounded-lg shadow-lg p-1 z-50 min-w-32">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRename();
-                      setShowMenu(false);
-                    }}
-                    className="flex items-center gap-2 w-full px-2 py-1.5 text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded transition-colors text-left font-medium"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    <span>Rename</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete();
-                      setShowMenu(false);
-                    }}
-                    className="flex items-center gap-2 w-full px-2 py-1.5 text-[12px] text-red-500/70 hover:text-red-500 hover:bg-red-500/5 rounded transition-colors text-left font-medium"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    <span>Delete</span>
-                  </button>
-                </div>
-              )}
-            </div>
+    <div className="flex flex-col space-y-0.5">
+      <div className="group flex items-center justify-between px-2 py-1.5 transition-colors">
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center gap-1.5 cursor-pointer flex-1 min-w-0"
+        >
+          <span className="text-[13px] font-medium text-muted-foreground/60 transition-colors group-hover:text-foreground truncate">
+            {workspace.name}
+          </span>
+          <ChevronDown
+            className={cn(
+              "h-3 w-3 text-muted-foreground/40 transition-all duration-200",
+              !isOpen && "-rotate-90",
+            )}
+          />
+        </button>
+
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="relative workspace-menu-container">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMenu(!showMenu);
+              }}
+              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              title="More options"
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" />
+            </button>
+            {showMenu && (
+              <div className="absolute right-0 top-full mt-1 bg-background border border-foreground/10 rounded-lg shadow-lg p-1 z-50 min-w-32">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRename();
+                    setShowMenu(false);
+                  }}
+                  className="flex items-center gap-2 w-full px-2 py-1.5 text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded transition-colors text-left font-medium"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  <span>Rename</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                    setShowMenu(false);
+                  }}
+                  className="flex items-center gap-2 w-full px-2 py-1.5 text-[12px] text-red-500/70 hover:text-red-500 hover:bg-red-500/5 rounded transition-colors text-left font-medium"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Delete</span>
+                </button>
+              </div>
+            )}
           </div>
-          {isOpen ? (
-            <ChevronDown className="h-3 w-3 text-muted-foreground/50 group-hover:text-foreground transition-colors" />
-          ) : (
-            <ChevronRight className="h-3 w-3 text-muted-foreground/50 group-hover:text-foreground transition-colors" />
-          )}
         </div>
-      </SidebarItem>
+      </div>
 
       {isOpen && (
-        <div className="ml-3 flex flex-col border-l border-foreground/5 mt-0.5 pl-3.5 relative">
+        <div className="flex flex-col space-y-0.5 mt-0.5">
           {workspace.forms.map((form) => (
             <WorkspaceFormMinimal
               key={form.id}
               label={form.title || "Untitled"}
+              icon={form.icon}
               to={`/workspace/${workspace.id}/form-builder/${form.id}/edit`}
             />
           ))}
           {workspace.forms.length === 0 && (
-            <span className="text-muted-foreground/50 text-[11px] px-2 py-1">No forms yet</span>
+            <span className="text-muted-foreground/30 text-[11px] px-8 py-1 italic">
+              No forms yet
+            </span>
           )}
         </div>
       )}
@@ -1037,9 +1048,28 @@ function WorkspaceItemMinimal({
   );
 }
 
-function WorkspaceFormMinimal({ label, to }: { label: string; to?: string }) {
+function isEmoji(str: string): boolean {
+  if (!str) return false;
+  const emojiRange = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
+  return str.length <= 4 && emojiRange.test(str);
+}
+
+function WorkspaceFormMinimal({ label, icon, to }: { label: string; icon?: string | null; to?: string }) {
   const location = useLocation();
-  return <SidebarItem label={label} to={to} isNested isActive={location.pathname === to} />;
+  const isActive = location.pathname === to;
+
+  const prefix = icon && isEmoji(icon)
+    ? <span className="text-sm leading-none">{icon}</span>
+    : <FileText className="h-3.5 w-3.5" />;
+
+  return (
+    <SidebarItem
+      label={label}
+      to={to}
+      isActive={isActive}
+      prefix={prefix}
+    />
+  );
 }
 
 // Sidebar Section Component
@@ -1120,6 +1150,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
         ),
       }));
   }, [workspacesData, formsData, activeOrgId, isElectricReady]);
+
   // State for dialogs
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [workspaceToDelete, setWorkspaceToDelete] = useState<WorkspaceWithForms | null>(null);
@@ -1127,19 +1158,6 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [workspaceToRename, setWorkspaceToRename] = useState<WorkspaceWithForms | null>(null);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
-
-  const handleCreateWorkspace = async () => {
-    if (!activeOrgId) return;
-    try {
-      const workspace = await createWorkspaceLocal(activeOrgId, "Collection");
-      router.navigate({
-        to: "/workspace/$workspaceId",
-        params: { workspaceId: workspace.id },
-      });
-    } catch (error) {
-      console.error("Failed to create workspace:", error);
-    }
-  };
 
   const handleDeleteWorkspace = async () => {
     if (!workspaceToDelete || deleteConfirmName !== workspaceToDelete.name) return;
@@ -1213,19 +1231,8 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
           )}
         </SidebarSection>
 
-        {/* Collections (formerly Workspaces) Section */}
-        <SidebarSection
-          label="Collections"
-          action={
-            <button
-              type="button"
-              onClick={handleCreateWorkspace}
-              className="h-3.5 w-3.5 cursor-pointer hover:text-foreground transition-colors opacity-0 group-hover:opacity-100"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </button>
-          }
-        >
+        {/* Workspaces Section */}
+        <div className="space-y-4 px-1">
           {isLoading ? (
             ["collection-skeleton-1", "collection-skeleton-2"].map((key) => (
               <div key={key} className="flex items-center gap-2 px-2 py-1.5">
@@ -1234,7 +1241,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
               </div>
             ))
           ) : (
-            <>
+            <div className="space-y-4">
               {workspaces.map((workspace) => (
                 <WorkspaceItemMinimal
                   key={workspace.id}
@@ -1244,13 +1251,13 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
                 />
               ))}
               {workspaces.length === 0 && (
-                <span className="text-muted-foreground/50 text-[11px] px-2 py-1">
-                  No collections yet
+                <span className="text-muted-foreground/50 text-[11px] px-2 py-1 italic">
+                  No workspaces yet
                 </span>
               )}
-            </>
+            </div>
           )}
-        </SidebarSection>
+        </div>
       </div>
 
       {/* Delete Workspace Confirmation Dialog */}
@@ -1305,7 +1312,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
       <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rename workspace</DialogTitle>
+            <AlertDialogTitle>Rename workspace</AlertDialogTitle>
             <DialogDescription>Enter a new name for this workspace.</DialogDescription>
           </DialogHeader>
           <Input

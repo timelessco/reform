@@ -65,7 +65,16 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 
   const toggleVersionHistory = () => toggleSidebar("history");
   const toggleSettingsSidebar = () => toggleSidebar("settings", "settings");
-  const toggleShareSidebar = () => toggleSidebar("share");
+  const toggleShareSidebar = () => {
+    toggleSidebar("share");
+    if(workspaceId && formId){
+    navigate({
+      to : '/workspace/$workspaceId/form-builder/$formId/edit',
+        params: { workspaceId : workspaceId, formId : formId },
+        search: { demo: true , force : true , sidebar : "share" }
+      });
+    }
+  };
   const toggleIntegrationsSidebar = () => toggleSidebar("settings", "integrations");
   const toggleAnalyticsSidebar = () => toggleSidebar("share", "summary");
 
@@ -230,6 +239,22 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
             )}
 
             <div className="flex items-center gap-1.5 mr-1">
+              {isEditRoute && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  asChild
+                  className={cn(
+                    "h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-muted font-normal",
+                    demo && "text-foreground bg-muted"
+                  )}
+                >
+                  <Link to="." search={(prev: any) => ({ ...prev, demo: !demo })} replace>
+                    {demo ? "Editor" : "Preview"}
+                  </Link>
+                </Button>
+              )}
+
               {currentForm?.status === "published" && (
                 <>
                   <Button

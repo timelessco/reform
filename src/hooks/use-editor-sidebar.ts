@@ -3,6 +3,7 @@ import { useSyncExternalStore } from "react";
 export type SidebarType = "settings" | "share" | "history" | null;
 export type SettingsTab = "integrations" | "settings";
 export type ShareTab = "share" | "summary";
+export type EmbedType = "standard" | "popup" | "fullpage";
 
 type EditorSidebarState = {
     activeSidebar: SidebarType;
