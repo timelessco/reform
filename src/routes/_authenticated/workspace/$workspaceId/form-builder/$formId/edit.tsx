@@ -4,14 +4,12 @@ import { Loader2 } from "lucide-react";
 import type { Value } from "platejs";
 import { useEffect } from "react";
 import { z } from "zod";
-import { VersionHistorySidebar } from "@/components/form-builder/version-history-sidebar";
 import { Button } from "@/components/ui/button";
 import { CustomizeSidebar } from "@/components/ui/customize-sidebar";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import {
-  ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
@@ -28,6 +26,7 @@ export const Route = createFileRoute(
   validateSearch: z.object({
     demo: z.boolean().optional(),
     force: z.boolean().optional(), // When true, skip redirect for published forms
+    sidebar: z.string().optional(),
   }),
   component: DesignPage,
   // beforeLoad: async ({ context, params }) => {
@@ -121,6 +120,7 @@ function DesignPage() {
   const initialContent = loaderData?.initialContent || [];
   const search: any = useSearch({ strict: false });
   const demo = search.demo;
+  console.log("[edit.tsx DesignPage] Demo:", demo);
   // Check if user explicitly wants to edit (force param from Edit button)
   const forceEdit = search.force === true;
 
@@ -130,8 +130,9 @@ function DesignPage() {
     if (isReady && localStatus === "published" && !forceEdit) {
       console.log("[edit.tsx DesignPage] Form is published locally, redirecting to share...");
       navigate({
-        to: "/workspace/$workspaceId/form-builder/$formId/share",
+        to: "/workspace/$workspaceId/form-builder/$formId/submissions",
         params: { workspaceId, formId },
+        search: { sidebar: "share" },
         replace: true, // Replace history entry so back button doesn't loop
       });
     }
@@ -203,15 +204,7 @@ function DesignPage() {
           </main>
         </ResizablePanel>
 
-        {/* Version history sidebar */}
-        {isVersionHistoryOpen && (
-          <>
-            <ResizableHandle />
-            <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
-              <VersionHistorySidebar formId={formId} />
-            </ResizablePanel>
-          </>
-        )}
+        {/* Version history sidebar is now handled in AuthLayout */}
       </ResizablePanelGroup>
       <CustomizeSidebar />
     </div>

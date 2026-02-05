@@ -192,8 +192,9 @@ ${"<!-- Or link to it -->"}
         <div className="flex items-center justify-between px-6 py-5 shrink-0">
           <h1 className="text-xl font-bold tracking-tight text-foreground">Embed</h1>
           <Link
-            to="/workspace/$workspaceId/form-builder/$formId/share"
+            to="/workspace/$workspaceId/form-builder/$formId/submissions"
             params={{ workspaceId, formId }}
+            search={{ sidebar: "share" }}
           >
             <div className="p-1 px-3 rounded-md hover:bg-muted transition-colors cursor-pointer">
               <span className="text-sm font-medium text-muted-foreground hover:text-foreground">
@@ -758,7 +759,7 @@ ${"<!-- Or link to it -->"}
                             title={options.hideTitle ? "" : doc.title}
                             icon={doc.icon ?? undefined}
                             cover={doc.cover ?? undefined}
-                            onSubmit={async () => {}}
+                            onSubmit={async () => { }}
                             hideTitle={options.hideTitle}
                           />
                         </div>
@@ -815,7 +816,7 @@ ${"<!-- Or link to it -->"}
                             title={options.hideTitle ? "" : doc.title}
                             icon={doc.icon ?? undefined}
                             cover={doc.cover ?? undefined}
-                            onSubmit={async () => {}}
+                            onSubmit={async () => { }}
                             hideTitle={options.hideTitle}
                           />
                         </div>
@@ -851,7 +852,7 @@ ${"<!-- Or link to it -->"}
                     title={options.hideTitle ? "" : doc.title}
                     icon={doc.icon ?? undefined}
                     cover={doc.cover ?? undefined}
-                    onSubmit={async () => {}}
+                    onSubmit={async () => { }}
                     hideTitle={options.hideTitle}
                   />
 

@@ -1,76 +1,34 @@
-import { useSyncExternalStore } from "react";
-
-type VersionHistorySidebarState = {
-  isOpen: boolean;
-  selectedVersionId: string | null;
-  isViewingVersion: boolean;
-};
-
-const listeners = new Set<() => void>();
-let state: VersionHistorySidebarState = {
-  isOpen: false,
-  selectedVersionId: null,
-  isViewingVersion: false,
-};
-
-function notify() {
-  listeners.forEach((l) => l());
-}
-
-const store = {
-  getSnapshot: () => state,
-  subscribe: (listener: () => void) => {
-    listeners.add(listener);
-    return () => listeners.delete(listener);
-  },
-  setIsOpen: (isOpen: boolean) => {
-    state = { ...state, isOpen };
-    if (!isOpen) {
-      // Reset to live editing when closing
-      state = { ...state, selectedVersionId: null, isViewingVersion: false };
-    }
-    notify();
-  },
-  selectVersion: (versionId: string | null) => {
-    state = {
-      ...state,
-      selectedVersionId: versionId,
-      isViewingVersion: versionId !== null,
-    };
-    notify();
-  },
-  exitVersionView: () => {
-    state = { ...state, selectedVersionId: null, isViewingVersion: false };
-    notify();
-  },
-  toggle: () => {
-    const isOpen = !state.isOpen;
-    state = { ...state, isOpen };
-    if (!isOpen) {
-      state = { ...state, selectedVersionId: null, isViewingVersion: false };
-    }
-    notify();
-  },
-};
-
-const serverSnapshot: VersionHistorySidebarState = {
-  isOpen: false,
-  selectedVersionId: null,
-  isViewingVersion: false,
-};
+import { useState, useEffect } from "react";
+import { useEditorSidebar } from "./use-editor-sidebar";
 
 export function useVersionHistorySidebar() {
-  const currentState = useSyncExternalStore(
-    store.subscribe,
-    store.getSnapshot,
-    () => serverSnapshot,
-  );
+  const { activeSidebar, toggleSidebar, setActiveSidebar } = useEditorSidebar();
+  const isOpen = activeSidebar === "history";
+
+  // These states are specific to the version history view
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+  const [isViewingVersion, setIsViewingVersion] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedVersionId(null);
+      setIsViewingVersion(false);
+    }
+  }, [isOpen]);
 
   return {
-    ...currentState,
-    setIsOpen: store.setIsOpen,
-    selectVersion: store.selectVersion,
-    exitVersionView: store.exitVersionView,
-    toggle: store.toggle,
+    isOpen,
+    selectedVersionId,
+    isViewingVersion,
+    setIsOpen: (open: boolean) => setActiveSidebar(open ? "history" : null),
+    selectVersion: (versionId: string | null) => {
+      setSelectedVersionId(versionId);
+      setIsViewingVersion(versionId !== null);
+    },
+    exitVersionView: () => {
+      setSelectedVersionId(null);
+      setIsViewingVersion(false);
+    },
+    toggle: () => toggleSidebar("history"),
   };
 }

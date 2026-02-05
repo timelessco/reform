@@ -11,6 +11,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
+import { z } from "zod";
 import {
   AlignLeft,
   ArrowUpDown,
@@ -25,6 +26,10 @@ import {
   Minus,
   Search,
   Trash2,
+  MousePointer2,
+  User,
+  Users,
+  Clock,
 } from "lucide-react";
 import type { Value } from "platejs";
 import { useCallback, useMemo, useState } from "react";
@@ -45,6 +50,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getLatestPublishedVersion } from "@/lib/fn/form-versions";
 import {
   deleteSubmission,
@@ -86,6 +92,10 @@ import { NotFound } from "@/components/ui/not-found";
 export const Route = createFileRoute(
   "/_authenticated/workspace/$workspaceId/form-builder/$formId/submissions",
 )({
+  validateSearch: z.object({
+    sidebar: z.string().optional(),
+    demo: z.boolean().optional(),
+  }),
   component: SubmissionsPage,
   loader: async ({ context, params }) => {
     const [publishedData, submissionsData] = await Promise.all([
@@ -370,6 +380,28 @@ function SubmissionsPage() {
 
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0 bg-background">
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 px-12 pt-8">
+        {[
+          { label: "Visits", value: "0", icon: MousePointer2 },
+          { label: "Unique visitors", value: "0", icon: User },
+          { label: "Submissions", value: allSubmissions.length.toString(), icon: Users },
+          { label: "Unique respondents", value: "0", icon: Users },
+          { label: "Visit duration", value: "0s", icon: Clock },
+        ].map((stat) => (
+          <Card key={stat.label} className="border-none shadow-none bg-muted/20">
+            <CardHeader className="p-4 pb-0">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                {stat.label}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-1">
+              <div className="text-2xl font-semibold">{stat.value}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       {/* Filter Controls Row */}
       <div className="shrink-0 px-12 pt-8 pb-4">
         <div className="flex items-center justify-between border-b pb-1">

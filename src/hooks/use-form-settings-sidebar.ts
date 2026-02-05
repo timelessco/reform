@@ -1,63 +1,23 @@
-import { useSyncExternalStore } from "react";
-
-type ActiveTab = "integrations" | "settings";
-
-type FormSettingsSidebarState = {
-  isOpen: boolean;
-  activeTab: ActiveTab;
-};
-
-const listeners = new Set<() => void>();
-let state: FormSettingsSidebarState = {
-  isOpen: false,
-  activeTab: "settings",
-};
-
-function notify() {
-  listeners.forEach((l) => l());
-}
-
-const store = {
-  getSnapshot: () => state,
-  subscribe: (listener: () => void) => {
-    listeners.add(listener);
-    return () => listeners.delete(listener);
-  },
-  setIsOpen: (isOpen: boolean) => {
-    state = { ...state, isOpen };
-    notify();
-  },
-  setActiveTab: (activeTab: ActiveTab) => {
-    state = { ...state, activeTab };
-    notify();
-  },
-  toggle: () => {
-    state = { ...state, isOpen: !state.isOpen };
-    notify();
-  },
-  openTab: (tab: ActiveTab) => {
-    state = { ...state, isOpen: true, activeTab: tab };
-    notify();
-  },
-};
-
-const serverSnapshot: FormSettingsSidebarState = {
-  isOpen: false,
-  activeTab: "settings",
-};
+import type { SettingsTab } from "./use-editor-sidebar";
+import { useEditorSidebar } from "./use-editor-sidebar";
 
 export function useFormSettingsSidebar() {
-  const currentState = useSyncExternalStore(
-    store.subscribe,
-    store.getSnapshot,
-    () => serverSnapshot,
-  );
+  const {
+    activeSidebar,
+    settingsTab,
+    setSettingsTab,
+    toggleSidebar,
+    setActiveSidebar
+  } = useEditorSidebar();
+
+  const isOpen = activeSidebar === "settings";
 
   return {
-    ...currentState,
-    setIsOpen: store.setIsOpen,
-    setActiveTab: store.setActiveTab,
-    toggle: store.toggle,
-    openTab: store.openTab,
+    isOpen,
+    activeTab: settingsTab,
+    setIsOpen: (open: boolean) => setActiveSidebar(open ? "settings" : null),
+    setActiveTab: setSettingsTab,
+    toggle: (tab?: SettingsTab) => toggleSidebar("settings", tab),
+    openTab: (tab: "integrations" | "settings") => setSettingsTab(tab),
   };
 }

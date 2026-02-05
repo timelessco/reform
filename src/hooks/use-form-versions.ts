@@ -62,8 +62,9 @@ export function usePublishVersion() {
   return useMutation({
     mutationFn: (formId: string) => publishFormVersion({ data: { formId } }),
     onSuccess: (_, formId) => {
-      // Invalidate versions list
+      // Invalidate versions list and all version content (new version needs fresh fetch)
       queryClient.invalidateQueries({ queryKey: ["formVersions", formId] });
+      queryClient.invalidateQueries({ queryKey: ["formVersionContent"] });
     },
   });
 }
@@ -107,7 +108,10 @@ export function useDiscardChanges() {
 export function useHasUnpublishedChanges(formId: string | undefined) {
   const { data: formData } = useForm(formId);
   const { data: versionsData } = useFormVersions(formId);
-  const form = formData?.[0];
+  const form = useMemo(() => {
+    if (!formId || !formData) return undefined;
+    return formData.find((f: any) => f.id === formId);
+  }, [formData, formId]);
   const latestVersion = versionsData?.versions?.[0];
 
   // Get the latest version content for comparison

@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet, useLocation, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useRouter, useSearch } from "@tanstack/react-router";
 import {
   Bell,
   ChevronDown,
@@ -10,19 +10,16 @@ import {
   HelpCircle,
   Home,
   Inbox,
-  LayoutGrid,
   LogOut,
   Moon,
   MoreHorizontal,
   Pencil,
-  PencilLine,
   Plus,
   Search,
   Settings,
   Sun,
   Trash2,
   Undo2,
-  UserPlus,
   Users,
 } from "lucide-react";
 import type * as React from "react";
@@ -39,6 +36,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { FormSettingsSidebar } from "@/components/form-builder/form-settings-sidebar";
+import { ShareSummarySidebar } from "@/components/form-builder/share-summary-sidebar";
+import { VersionHistorySidebar } from "@/components/form-builder/version-history-sidebar";
 import { AppHeader } from "@/components/ui/app-header";
 import { Button } from "@/components/ui/button";
 import {
@@ -76,13 +75,13 @@ import {
   updateWorkspaceName,
 } from "@/db-collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
-import { useFormSettingsSidebar } from "@/hooks/use-form-settings-sidebar";
 import {
   useArchivedForms,
   useFavoriteForms,
   useForms,
   useWorkspaces,
 } from "@/hooks/use-live-hooks";
+import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { auth, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/middleware/auth";
@@ -118,10 +117,21 @@ function AuthLayoutContent() {
   const workspaceId = workspaceMatch?.[1];
   const formId = formMatch?.[1];
 
-  // Form settings sidebar (only shown in form-builder routes)
-  const { isOpen: isSettingsSidebarOpen } = useFormSettingsSidebar();
+  // Editor sidebar management
+  const search: any = useSearch({ strict: false });
+  const sidebarParam = search.sidebar;
+  const { activeSidebar, setActiveSidebar, resetSidebar } = useEditorSidebar();
+
+  // Sync sidebar state from URL params, and reset when navigating between forms
+  useEffect(() => {
+    if (sidebarParam) {
+      setActiveSidebar(sidebarParam);
+    } else {
+      resetSidebar();
+    }
+  }, [sidebarParam, formId, setActiveSidebar, resetSidebar]);
   const isFormBuilder = pathname.includes("/form-builder/");
-  const showSettingsSidebar = isSettingsSidebarOpen && isFormBuilder && formId;
+  const showEditorSidebar = activeSidebar && isFormBuilder && formId;
 
   return (
     <div className="flex min-h-screen w-full overflow-hidden relative">
@@ -147,19 +157,21 @@ function AuthLayoutContent() {
         )}
       >
         {/* Main content panel */}
-        <ResizablePanel defaultSize={showSettingsSidebar ? 75 : 100} minSize={50}>
+        <ResizablePanel defaultSize={showEditorSidebar ? 75 : 100} minSize={50}>
           <div className="flex flex-col h-full min-w-0">
             <AppHeader formId={formId} workspaceId={workspaceId} />
-            <Outlet />
+            <Outlet key={formId} />
           </div>
         </ResizablePanel>
 
-        {/* Right sidebar - Form Settings */}
-        {showSettingsSidebar && (
+        {/* Right sidebar - Editor Sidebars (Settings, Share, History) */}
+        {showEditorSidebar && (
           <>
             <ResizableHandle />
             <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
-              <FormSettingsSidebar formId={formId} />
+              {activeSidebar === "settings" && <FormSettingsSidebar formId={formId} />}
+              {activeSidebar === "share" && <ShareSummarySidebar formId={formId} />}
+              {activeSidebar === "history" && <VersionHistorySidebar formId={formId} />}
             </ResizablePanel>
           </>
         )}
@@ -303,7 +315,7 @@ function MinimalSidebar() {
       <div
         ref={sidebarRef}
         className={cn(
-          "fixed left-0 z-50 flex w-56 flex-col bg-background p-3 select-none transition-all duration-300 ease-in-out",
+          "fixed left-0 z-50 flex w-56 flex-col bg-background py-1 px-3 select-none transition-all duration-300 ease-in-out",
           isPinned
             ? "inset-y-0"
             : "top-12 bottom-12 rounded-r-2xl border-y border-r border-foreground/10 shadow-2xl",
@@ -312,8 +324,84 @@ function MinimalSidebar() {
           isPinned && "border-r border-foreground/5 shadow-none",
         )}
       >
-        {/* Top Section: Workspace Switcher */}
-        <div className="mb-4">
+        {/* Top Section: Logo & Toggle */}
+        <div className="flex items-center justify-between px-3 mb-2 group/logo">
+          <span className="text-2xl font-serif italic font-bold tracking-tighter">f.</span>
+          <button
+            type="button"
+            onClick={togglePin}
+            className={cn(
+              "p-1.5 rounded-lg hover:bg-muted text-muted-foreground/40 hover:text-foreground transition-all",
+              isPinned ? "opacity-0 group-hover/logo:opacity-100" : "opacity-100",
+            )}
+            title={isPinned ? "Unpin sidebar" : "Pin sidebar"}
+          >
+            <ChevronsLeft
+              className={cn(
+                "h-4 w-4 transition-transform duration-300",
+                !isPinned && "rotate-180",
+              )}
+            />
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 space-y-6 relative overflow-y-auto no-scrollbar">
+          <div className="space-y-0.5 px-1">
+            <SidebarItem
+              label="All"
+              to="/dashboard"
+              isActive={location.pathname === "/dashboard"}
+              prefix={<Home className="h-4 w-4" />}
+            />
+            <SidebarItem
+              label="Search"
+              onClick={togglePalette}
+              prefix={<Search className="h-4 w-4" />}
+            />
+            <SidebarItem
+              label="Trash"
+              onClick={() => setTrashDialogOpen(true)}
+              prefix={<Trash2 className="h-4 w-4" />}
+            />
+            <SidebarItem
+              label="Settings"
+              onClick={() => {
+                router.navigate({
+                  to: "/settings",
+                });
+              }}
+              isActive={
+                location.pathname.startsWith("/settings") && !location.pathname.includes("/members")
+              }
+              prefix={<Settings className="h-4 w-4" />}
+            />
+            <SidebarItem
+              label="Inbox"
+              onClick={() => setIsInboxOpen(!isInboxOpen)}
+              isActive={isInboxOpen}
+              prefix={<Inbox className="h-4 w-4" />}
+            />
+          </div>
+
+          <div className="h-px bg-foreground/5 mx-2" />
+
+          {invitations && pendingCount > 0 && (
+            <div className="space-y-0.5 px-1">
+              <SidebarItem
+                label={`Invitations (${pendingCount})`}
+                to="/accept-invite"
+                isActive={location.pathname === "/accept-invite"}
+                prefix={<Bell className="h-4 w-4" />}
+              />
+            </div>
+          )}
+
+          <SidebarWorkspacesMinimal activeOrgId={activeOrg?.id} />
+        </nav>
+
+        {/* Bottom Section: User Menu */}
+        <div className="mt-auto pt-4 px-1">
           <UserMenuMinimal
             session={session}
             activeOrg={activeOrg}
@@ -323,84 +411,9 @@ function MinimalSidebar() {
             setActiveOrgMutation={setActiveOrgMutation}
             signOutMutation={signOutMutation}
             router={router}
-            togglePin={togglePin}
+            theme={theme}
+            setTheme={setTheme as any}
           />
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 space-y-6 relative overflow-y-auto no-scrollbar">
-          <div className="space-y-0.5 px-1">
-            <SidebarItem
-              label="Search"
-              onClick={togglePalette}
-              prefix={<Search className="h-4 w-4" />}
-            />
-            <SidebarItem
-              label="Home"
-              to="/dashboard"
-              isActive={location.pathname === "/dashboard"}
-              prefix={<Home className="h-4 w-4" />}
-            />
-            <SidebarItem
-              label="Inbox"
-              onClick={() => setIsInboxOpen(!isInboxOpen)}
-              isActive={isInboxOpen}
-              prefix={<Inbox className="h-4 w-4" />}
-            />
-            <SidebarItem
-              label="Members"
-              to="/settings/members"
-              isActive={location.pathname === "/settings/members"}
-              prefix={<Users className="h-4 w-4" />}
-            />
-            {invitations && pendingCount > 0 && (
-              <SidebarItem
-                label={`Invitations (${pendingCount})`}
-                to="/accept-invite"
-                isActive={location.pathname === "/accept-invite"}
-                prefix={<Bell className="h-4 w-4" />}
-              />
-            )}
-          </div>
-
-          <SidebarWorkspacesMinimal activeOrgId={activeOrg?.id} />
-        </nav>
-
-        {/* Bottom Section */}
-        <div className="mt-auto pt-4 flex flex-col gap-0.5 px-1">
-          <SidebarItem
-            label="Settings"
-            onClick={() => {
-              router.navigate({
-                to: "/settings",
-              });
-            }}
-            isActive={
-              location.pathname.startsWith("/settings") && !location.pathname.includes("/members")
-            }
-            prefix={<Settings className="h-4 w-4" />}
-          />
-          <SidebarItem label="Marketplace" prefix={<LayoutGrid className="h-4 w-4" />} />
-          <SidebarItem
-            label="Trash"
-            onClick={() => setTrashDialogOpen(true)}
-            prefix={<Trash2 className="h-4 w-4" />}
-          />
-
-          <div className="h-px bg-foreground/5 my-2" />
-
-          <button
-            type="button"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="flex items-center gap-3 px-2 py-1.5 rounded hover:bg-muted/50 text-muted-foreground/60 hover:text-foreground transition-all group w-full"
-          >
-            <div className="flex items-center justify-center shrink-0">
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </div>
-            <span className="text-[12px] font-medium tracking-tight">
-              {theme === "dark" ? "Light mode" : "Dark mode"}
-            </span>
-          </button>
         </div>
       </div>
 
@@ -459,10 +472,10 @@ function MinimalSidebar() {
             </CommandItem>
           </CommandGroup>
         </CommandList>
-      </CommandDialog>
+      </CommandDialog >
 
       {/* Trash Dialog */}
-      <TrashDialog
+      < TrashDialog
         open={trashDialogOpen}
         onOpenChange={setTrashDialogOpen}
         activeOrgId={activeOrg?.id}
@@ -722,7 +735,8 @@ function UserMenuMinimal({
   setActiveOrgMutation,
   signOutMutation,
   router,
-  togglePin,
+  theme,
+  setTheme,
 }: {
   session: any;
   activeOrg: any;
@@ -732,7 +746,8 @@ function UserMenuMinimal({
   setActiveOrgMutation: any;
   signOutMutation: any;
   router: any;
-  togglePin: () => void;
+  theme: string;
+  setTheme: (theme: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -758,43 +773,39 @@ function UserMenuMinimal({
           className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/50 cursor-pointer transition-colors flex-1 min-w-0"
           aria-label="Toggle user menu"
         >
-          <div className="h-5.5 w-5.5 rounded bg-muted flex items-center justify-center text-[10px] font-bold shrink-0">
-            {getInitials(displayName)}
+          <div className="h-6 w-6 rounded-full overflow-hidden bg-muted flex items-center justify-center text-[10px] font-bold shrink-0">
+            {session?.user?.image ? (
+              <img src={session.user.image} alt={displayName} className="h-full w-full object-cover" />
+            ) : (
+              getInitials(displayName)
+            )}
           </div>
-          <span className="text-[13px] font-semibold text-foreground truncate flex-1">
+          <span className="text-[13px] font-medium text-foreground truncate flex-1 text-left">
             {displayName}
           </span>
           <ChevronDown
             className={cn(
-              "h-3 w-3 text-muted-foreground/30 transition-transform duration-200 shrink-0",
+              "h-3.5 w-3.5 text-muted-foreground/40 transition-transform duration-200 shrink-0",
               isOpen && "rotate-180 text-foreground",
             )}
           />
         </button>
-        <div className="flex items-center gap-0.5 opacity-0 group-hover/header:opacity-100 transition-opacity">
-          <button
-            type="button"
-            onClick={togglePin}
-            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            title="Collapse sidebar"
-          >
-            <ChevronsLeft className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <PencilLine className="h-3.5 w-3.5" />
-          </button>
-        </div>
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-foreground/10 rounded-xl shadow-2xl p-1.5 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 ring-1 ring-black/5 min-w-[240px]">
+        <div className="absolute bottom-full left-0 right-0 mb-2 bg-background border border-foreground/10 rounded-xl shadow-2xl p-1.5 z-100 animate-in fade-in slide-in-from-bottom-2 duration-200 ring-1 ring-black/5 min-w-[220px]">
           {/* Active Workspace Info */}
           <div className="px-3 py-2 border-b border-foreground/5 mb-1.5 flex items-start gap-3">
-            <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-lg font-bold shrink-0">
-              {getInitials(displayName)}
+            <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-lg font-bold shrink-0 overflow-hidden">
+              {session?.user?.image ? (
+                <img
+                  src={session.user.image}
+                  alt={displayName}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                getInitials(displayName)
+              )}
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-[14px] font-bold text-foreground truncate">{displayName}</span>
@@ -802,26 +813,49 @@ function UserMenuMinimal({
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="grid grid-cols-2 gap-1 mb-2 px-1">
-            <button
-              type="button"
-              onClick={() => {
-                router.navigate({ to: "/settings" });
-                setIsOpen(false);
-              }}
-              className="flex items-center justify-center gap-1.5 py-1.5 rounded-md border border-foreground/5 hover:bg-muted/50 text-[11px] font-medium transition-colors"
-            >
-              <Settings className="h-3 w-3" />
-              Settings
-            </button>
-            <button
-              type="button"
-              className="flex items-center justify-center gap-1.5 py-1.5 rounded-md border border-foreground/5 hover:bg-muted/50 text-[11px] font-medium transition-colors"
-            >
-              <UserPlus className="h-3 w-3" />
-              Invite members
-            </button>
+          <div className="px-2 py-1 mb-1.5">
+            <p className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest px-1 mb-1">
+              Account
+            </p>
+            <div className="space-y-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  router.navigate({ to: "/settings" });
+                  setIsOpen(false);
+                }}
+                className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-muted/50 text-[13px] text-muted-foreground hover:text-foreground transition-colors text-left"
+              >
+                <Settings className="h-3 w-3" />
+                Settings
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTheme(theme === "dark" ? "light" : "dark");
+                  setIsOpen(false);
+                }}
+                className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-muted/50 text-[13px] text-muted-foreground hover:text-foreground transition-colors text-left"
+              >
+                {theme === "dark" ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+                <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  router.navigate({ to: "/settings/members" });
+                  setIsOpen(false);
+                }}
+                className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-muted/50 text-[13px] text-muted-foreground hover:text-foreground transition-colors text-left"
+              >
+                <Users className="h-4 w-4" />
+                <span>Members</span>
+              </button>
+            </div>
           </div>
 
           {/* Team Switcher */}
@@ -1154,7 +1188,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
           action={
             <button
               type="button"
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
             >
               <MoreHorizontal className="h-3 w-3" />
             </button>

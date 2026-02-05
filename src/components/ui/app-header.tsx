@@ -1,111 +1,93 @@
-import { useMutation } from "@tanstack/react-query";
-import { Link, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
-import { formatDistanceToNow } from "date-fns";
-import {
-  ChevronDown,
-  ChevronRight,
-  Database,
-  FileText,
-  Folder,
-  History,
-  LayoutGrid,
-  Loader2,
-  LogOut,
-  MoreHorizontal,
-  PanelLeft,
-  Search,
-  Settings,
-  Settings2,
-  Share,
-  Star,
-  User,
-} from "lucide-react";
-import { toast } from "sonner";
-import { AuthDialog } from "@/components/auth";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useMinimalSidebarSafe } from "@/contexts/minimal-sidebar-context";
 import { toggleFavoriteLocal } from "@/db-collections";
-import { useCommandPalette } from "@/hooks/use-command-palette";
+import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import {
   useDiscardChanges,
   useHasUnpublishedChanges,
   usePublishVersion,
 } from "@/hooks/use-form-versions";
-import { useFormSettingsSidebar } from "@/hooks/use-form-settings-sidebar";
-import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
-import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
-import { auth, useSession } from "@/lib/auth-client";
+import { useForm, useIsFavorite } from "@/hooks/use-live-hooks";
+import { useSession } from "@/lib/auth-client";
+import { deleteForm, getFormbyIdQueryOption } from "@/lib/fn/forms";
 import { cn } from "@/lib/utils";
-import { SidebarTrigger, useSidebarSafe } from "./sidebar";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Link, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
+import { formatDistanceToNow } from "date-fns";
+import {
+  BarChart3,
+  ChevronRight,
+  History,
+  Loader2,
+  MoreHorizontal,
+  Settings,
+  Settings2,
+  Star,
+  Trash2
+} from "lucide-react";
+import { useMemo } from "react";
+import { toast } from "sonner";
+import { useSidebarSafe } from "./sidebar";
 
 interface AppHeaderProps {
   formId?: string;
   workspaceId?: string;
 }
 
-// Client-only component for displaying form title from local DB
-function FormTitleDisplay({ formId }: { formId: string }) {
-  const { data: savedDocs } = useForm(formId);
-  return <>{savedDocs?.[0]?.title || "Untitled"}</>;
-}
-
-// Client-only component for displaying workspace name from local DB
-function WorkspaceNameDisplay({ workspaceId }: { workspaceId: string }) {
-  const { data: workspace } = useWorkspace(workspaceId);
-  return <>{workspace?.name || "Workspace"}</>;
-}
-
 export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
   const sidebarContext = useSidebarSafe();
   const minimalSidebar = useMinimalSidebarSafe();
   const isPinned = minimalSidebar?.isPinned ?? true;
-  const togglePin = minimalSidebar?.togglePin || (() => {});
-  const setIsHovered = minimalSidebar?.setIsHovered || (() => {});
+  const togglePin = minimalSidebar?.togglePin || (() => { });
+  const setIsHovered = minimalSidebar?.setIsHovered || (() => { });
 
   const state = sidebarContext?.state;
   const { pathname } = useLocation();
-  const isWorkspaceDashboard =
-    pathname.startsWith("/workspace/") && !pathname.includes("/form-builder/");
   const isFormBuilder = pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
-  const _isCreateRoute = pathname === "/create";
+  const isEditRoute = pathname.endsWith("/edit");
   const { data: sessionData } = useSession();
   const session = sessionData;
   const navigate = useNavigate();
 
-  // Version history sidebar state
-  const { isOpen: isVersionHistoryOpen, toggle: toggleVersionHistory } =
-    useVersionHistorySidebar();
+  // Editor sidebar state
+  const { activeSidebar, toggleSidebar } = useEditorSidebar();
 
-  // Form settings sidebar state
-  const { isOpen: isSettingsSidebarOpen, toggle: toggleSettingsSidebar } =
-    useFormSettingsSidebar();
+  const isSettingsSidebarOpen = activeSidebar === "settings";
+  const isShareSidebarOpen = activeSidebar === "share";
 
+  const toggleVersionHistory = () => toggleSidebar("history");
+  const toggleSettingsSidebar = () => toggleSidebar("settings", "settings");
+  const toggleShareSidebar = () => toggleSidebar("share");
+  const toggleIntegrationsSidebar = () => toggleSidebar("settings", "integrations");
+  const toggleAnalyticsSidebar = () => toggleSidebar("share", "summary");
+
+  const isVersionHistoryOpen = activeSidebar === "history";
   // Get search params for the current route
   const search: any = useSearch({ strict: false });
   const demo = search.demo;
-  const { setIsOpen: setIsPaletteOpen } = useCommandPalette();
 
-  // Get current form metadata for publishing
+  // Primary: TanStack Query cache (primed by route loader, immediate on navigation)
+  const { data: serverFormData } = useQuery({
+    ...getFormbyIdQueryOption(formId!),
+    enabled: !!formId,
+  });
+  // Secondary: Electric live data (real-time but async)
   const { data: savedDocs } = useForm(formId);
-  const currentForm = savedDocs?.[0];
+
+  // Prefer Electric (real-time) when available, fall back to server cache
+  const currentForm = useMemo(() => {
+    if (!formId) return undefined;
+    const electricForm = savedDocs?.find((doc: any) => doc.id === formId);
+    return electricForm ?? serverFormData?.form;
+  }, [savedDocs, formId, serverFormData]);
 
   // Version management hooks
   const hasUnpublishedChanges = useHasUnpublishedChanges(formId);
@@ -120,21 +102,22 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
     await toggleFavoriteLocal(session.user.id, formId);
   };
 
-  const signOutMutation = useMutation(
-    auth.signOut.mutationOptions({
-      onSuccess: () => {
-        toast.success("Signed out successfully");
-        navigate({ to: "/" });
-      },
-      onError: (error) => {
-        toast.error("Failed to sign out");
-        console.error(error);
-      },
-    }),
-  );
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteForm({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Form deleted successfully");
+      navigate({ to: "/" });
+    },
+    onError: () => {
+      toast.error("Failed to delete form");
+    },
+  });
 
-  const handleSignOut = async () => {
-    signOutMutation.mutate({});
+  const handleDeleteForm = async () => {
+    if (!formId) return;
+    if (confirm("Are you sure you want to delete this form?")) {
+      deleteMutation.mutate(formId);
+    }
   };
 
   const handlePublish = async () => {
@@ -146,8 +129,9 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
         toast.success(`Form published as version ${result.versionNumber}`);
         // Redirect to the share page
         navigate({
-          to: "/workspace/$workspaceId/form-builder/$formId/share",
+          to: "/workspace/$workspaceId/form-builder/$formId/submissions",
           params: { workspaceId, formId },
+          search: { sidebar: "share" }
         });
       } catch (error) {
         toast.error("Failed to publish form");
@@ -168,113 +152,45 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
     }
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   return (
     <header className="flex h-10 w-full items-center justify-between border-b border-foreground/5 bg-background px-3 text-[13px] font-medium shrink-0 select-none">
       {/* Left Section: Breadcrumbs */}
       <div className="flex items-center gap-1.5 min-w-0 flex-1">
         {state === "collapsed" && (
           <div className="mr-1">
-            <SidebarTrigger />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground -ml-1 group relative flex items-center justify-center transition-all duration-300"
+              onClick={() => sidebarContext?.toggleSidebar()}
+            >
+              {/* Vertical line - default state */}
+              <span className="absolute w-[2px] h-4 bg-muted-foreground/30 rounded-full transition-all duration-300 group-hover:opacity-0 group-hover:scale-y-0" />
+              {/* Chevron Right - hover state */}
+              <ChevronRight className="h-4 w-4 absolute opacity-0 scale-50 transition-all duration-300 group-hover:opacity-100 group-hover:scale-100 text-foreground" />
+            </Button>
           </div>
         )}
         {!isPinned && (
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-muted-foreground -ml-1"
+            className="h-8 w-8 text-muted-foreground -ml-1 group relative flex items-center justify-center transition-all duration-300"
             onClick={togglePin}
             onMouseEnter={() => setIsHovered(true)}
           >
-            <PanelLeft className="h-4 w-4" />
+            {/* Vertical line - default state */}
+            <span className="absolute w-[2px] h-4 bg-muted-foreground/30 rounded-full transition-all duration-300 group-hover:opacity-0 group-hover:scale-y-0" />
+            {/* Chevron Right - hover state */}
+            <ChevronRight className="h-4 w-4 absolute opacity-0 scale-50 transition-all duration-300 group-hover:opacity-100 group-hover:scale-100 text-foreground" />
           </Button>
         )}
 
-        <div className="flex items-center gap-1.5 min-w-0">
-          {isFormBuilder || isWorkspaceDashboard ? (
-            <Breadcrumb className="flex items-center">
-              <BreadcrumbList className="flex items-center gap-1">
-                <BreadcrumbItem className="flex items-center">
-                  <BreadcrumbLink asChild>
-                    <Link
-                      to="/dashboard"
-                      className="flex items-center gap-1.5 text-muted-foreground/60 hover:text-foreground transition-colors py-1"
-                    >
-                      <img src="/timeless.png" alt="BetterForms" className="h-3.5 w-3.5 shrink-0" />
-                    </Link>
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-
-                <div className="flex items-center justify-center p-0.5 opacity-20 rotate-12">
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </div>
-
-                <BreadcrumbItem className="flex items-center">
-                  {isFormBuilder ? (
-                    <BreadcrumbLink asChild>
-                      {workspaceId ? (
-                        <Link
-                          to="/workspace/$workspaceId"
-                          params={{ workspaceId }}
-                          className="flex items-center gap-1.5 text-muted-foreground/60 hover:text-foreground transition-colors py-1"
-                        >
-                          <Folder className="h-3.5 w-3.5 shrink-0" />
-                          <span className="leading-none mb-0.5">
-                            <WorkspaceNameDisplay workspaceId={workspaceId} />
-                          </span>
-                        </Link>
-                      ) : (
-                        <span className="flex items-center gap-1.5 text-muted-foreground/60 py-1">
-                          <Folder className="h-3.5 w-3.5 shrink-0" />
-                          <span className="leading-none mb-0.5">My workspace</span>
-                        </span>
-                      )}
-                    </BreadcrumbLink>
-                  ) : (
-                    <BreadcrumbPage className="flex items-center gap-1.5 text-foreground font-semibold py-1">
-                      <Folder className="h-3.5 w-3.5 shrink-0" />
-                      <span className="leading-none mb-0.5">
-                        <WorkspaceNameDisplay workspaceId={workspaceId || ""} />
-                      </span>
-                    </BreadcrumbPage>
-                  )}
-                </BreadcrumbItem>
-
-                {isFormBuilder && (
-                  <>
-                    <div className="flex items-center justify-center p-0.5 opacity-20 rotate-12">
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <BreadcrumbItem className="flex items-center">
-                      <BreadcrumbPage className="flex items-center gap-1.5 text-foreground font-semibold py-1">
-                        <FileText className="h-3.5 w-3.5 shrink-0" />
-                        <span className="leading-none mb-0.5 truncate">
-                          {formId ? <FormTitleDisplay formId={formId} /> : "Untitled"}
-                        </span>
-                      </BreadcrumbPage>
-                    </BreadcrumbItem>
-                  </>
-                )}
-              </BreadcrumbList>
-            </Breadcrumb>
-          ) : (
-            <Link
-              to="/"
-              className={cn("flex items-center gap-2", state === "collapsed" ? "pl-2" : "pl-0")}
-            >
-              <LayoutGrid className="h-4 w-4 text-blue-600" />
-              <span className="text-foreground font-bold tracking-tight">BetterForms</span>
-            </Link>
-          )}
-        </div>
+        {state === "collapsed" && (
+          <Link to="/" className="flex items-center hover:opacity-80 transition-opacity ml-1">
+            <span className="text-2xl font-serif italic font-bold tracking-tighter leading-none mb-1">f.</span>
+          </Link>
+        )}
       </div>
 
       {/* Right Section: Actions */}
@@ -285,23 +201,7 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
           </span>
         )}
 
-        {(isFormBuilder || isWorkspaceDashboard) && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                onClick={() => setIsPaletteOpen(true)}
-              >
-                <Search className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Search (⌘K)</TooltipContent>
-          </Tooltip>
-        )}
-
-        {isFormBuilder ? (
+        {isFormBuilder && (
           <>
             {/* Changes indicator - shows when there are unpublished changes */}
             {hasUnpublishedChanges && (
@@ -329,253 +229,112 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
               </Tooltip>
             )}
 
-            {/* History button - toggles version history sidebar */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "h-8 w-8 text-muted-foreground hover:text-foreground relative",
-                    isVersionHistoryOpen && "bg-muted text-foreground",
-                  )}
-                  onClick={toggleVersionHistory}
-                >
-                  <History className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Version History</TooltipContent>
-            </Tooltip>
+            <div className="flex items-center gap-1.5 mr-1">
+              {currentForm?.status === "published" && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-muted font-normal",
+                      isShareSidebarOpen && "text-foreground bg-muted"
+                    )}
+                    onClick={toggleShareSidebar}
+                  >
+                    Share
+                  </Button>
 
-            {/* Settings button - toggles form settings sidebar */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "h-8 w-8 text-muted-foreground hover:text-foreground relative",
-                    isSettingsSidebarOpen && "bg-muted text-foreground",
-                  )}
-                  onClick={toggleSettingsSidebar}
-                >
-                  <Settings2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Settings & Integrations</TooltipContent>
-            </Tooltip>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "h-8 w-8 text-muted-foreground hover:text-foreground",
+                      isSettingsSidebarOpen && "bg-muted text-foreground",
+                    )}
+                    onClick={toggleSettingsSidebar}
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
 
-            {formId && workspaceId && (
-              <>
+              {/* History icon - only in edit route for published forms */}
+              {isEditRoute && currentForm?.status === "published" && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                      asChild
+                      className={cn(
+                        "h-8 w-8 text-muted-foreground hover:text-foreground",
+                        isVersionHistoryOpen && "bg-muted text-foreground",
+                      )}
+                      onClick={toggleVersionHistory}
                     >
-                      <Link
-                        to="/workspace/$workspaceId/form-builder/$formId/submissions"
-                        params={{
-                          formId: formId,
-                          workspaceId: workspaceId,
-                        }}
-                      >
-                        <Database className="h-4 w-4" />
-                      </Link>
+                      <History className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Submissions</TooltipContent>
+                  <TooltipContent>Version History</TooltipContent>
                 </Tooltip>
+              )}
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                      asChild
-                    >
-                      <Link
-                        to="/workspace/$workspaceId/form-builder/$formId/share"
-                        params={{
-                          formId: formId,
-                          workspaceId: workspaceId,
-                        }}
-                      >
-                        <Share className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Share</TooltipContent>
-                </Tooltip>
-
-							</>
-						)}
-
-            <Separator orientation="vertical" className="mx-2 h-4" />
-            <Button
-              variant="ghost"
-              asChild
-              size="sm"
-              className="h-8 text-muted-foreground font-normal hover:text-foreground"
-            >
-              <Link to="." search={{ demo: !demo } as any}>
-                Demo
-              </Link>
-            </Button>
-            {/* Text Actions */}
-            {session ? (
+              {/* Three dots menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-7 gap-1 px-1.5 hover:bg-muted/50">
-                    <Avatar className="h-5 w-5">
-                      <AvatarImage src={session.user.image || undefined} alt={session.user.name} />
-                      <AvatarFallback className="text-[9px] bg-blue-100 text-blue-600">
-                        {getInitials(session.user.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <ChevronDown className="h-3 w-3 text-muted-foreground/30" />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                {/* ... Dropdown content remains same ... */}
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">{session.user.name}</p>
-                      <p className="text-xs text-muted-foreground">{session.user.email}</p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/settings/my-account">
-                      <User className="mr-2 h-4 w-4" />
-                      Profile
-                    </Link>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={handleToggleFavorite} className="gap-2">
+                    <Star className={cn("h-4 w-4", isFavorite && "fill-yellow-400 text-yellow-400")} />
+                    {isFavorite ? "Unfavorite" : "Favorite"}
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/settings/my-account" className="flex items-center gap-2">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
-                    </Link>
+
+                  <DropdownMenuItem onClick={toggleAnalyticsSidebar} className="gap-2">
+                    <BarChart3 className="h-4 w-4" />
+                    Analytics
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={toggleIntegrationsSidebar} className="gap-2">
+                    <Settings2 className="h-4 w-4" />
+                    Integrations
+                  </DropdownMenuItem>
+
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign out
+                  <DropdownMenuItem
+                    onClick={handleDeleteForm}
+                    className="gap-2 text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete form
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : (
-              <AuthDialog defaultMode="sign-up">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 text-blue-600 font-normal hover:text-blue-700 hover:bg-blue-50"
-                >
-                  Sign up
-                </Button>
-              </AuthDialog>
-            )}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                  onClick={handleToggleFavorite}
-                >
-                  <Star
-                    className={cn("h-3.5 w-3.5", isFavorite && "fill-yellow-400 text-yellow-400")}
-                  />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {isFavorite ? "Remove from favorites" : "Add to favorites"}
-              </TooltipContent>
-            </Tooltip>
+            </div>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                >
-                  <MoreHorizontal className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>More</TooltipContent>
-            </Tooltip>
-
-            <Button
-              size="sm"
-              className="h-7 px-3 bg-blue-600 hover:bg-blue-700 ml-1 text-white text-[11px] font-semibold"
-              onClick={handlePublish}
-              disabled={publishMutation.isPending}
-            >
-              {publishMutation.isPending && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
-              {hasUnpublishedChanges ? "Publish Changes" : "Publish"}
-            </Button>
-          </>
-        ) : (
-          <>
-            {session ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 gap-2 px-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarImage src={session.user.image || undefined} alt={session.user.name} />
-                      <AvatarFallback className="text-xs">
-                        {getInitials(session.user.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm font-normal hidden sm:inline">
-                      {session.user.name}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">{session.user.name}</p>
-                      <p className="text-xs text-muted-foreground">{session.user.email}</p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <Link to="/settings/my-account">
-                    <DropdownMenuItem asChild>
-                      <div className="flex items-center gap-2">
-                        <User className="mr-2 h-4 w-4" />
-                        Profile
-                      </div>
-                    </DropdownMenuItem>
-                  </Link>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <AuthDialog defaultMode="sign-in">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 text-muted-foreground font-normal hover:text-foreground"
-                >
-                  Sign in
-                </Button>
-              </AuthDialog>
-            )}
-            {!session && (
-              <AuthDialog defaultMode="sign-up">
-                <Button size="sm" className="h-8 px-4 bg-blue-600 hover:bg-blue-700 ml-2">
-                  Create a new form
-                </Button>
-              </AuthDialog>
+            {/* Main Action Button (Black style from mockup) */}
+            {isEditRoute && (
+              <Button
+                size="sm"
+                className={cn(
+                  "h-8 px-4 ml-1 text-[13px] font-semibold transition-all rounded-md shadow-sm border-none",
+                  (hasUnpublishedChanges || currentForm?.status !== "published")
+                    ? "bg-stone-900 border-none hover:bg-stone-800 text-white"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                )}
+                onClick={handlePublish}
+                disabled={publishMutation.isPending || (!hasUnpublishedChanges && currentForm?.status === "published")}
+              >
+                {publishMutation.isPending && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
+                {currentForm?.status === "published"
+                  ? (hasUnpublishedChanges ? "Publish Changes" : "Published")
+                  : "Publish"
+                }
+              </Button>
             )}
           </>
         )}

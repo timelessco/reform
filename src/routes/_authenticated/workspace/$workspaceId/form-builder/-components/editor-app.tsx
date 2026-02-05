@@ -61,14 +61,9 @@ export default function EditorApp({
 	}, [versionContent, editor]);
 
 	useEffect(() => {
-		// Skip normal initialization when viewing a version
 		if (versionContent) return;
-
-		// #region agent log
-		fetch('http://127.0.0.1:7243/ingest/bc04ab0d-75d0-4ec8-b742-bb373a0ca5a1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'editor-app.tsx:useEffect:entry',message:'useEffect triggered',data:{formId,savedDocsUndefined:savedDocs===undefined,savedDocsLength:savedDocs?.length,savedDocsFirstId:savedDocs?.[0]?.id,savedDocsFirstTitle:savedDocs?.[0]?.title,initializedRef:initializedRef.current},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-		// #endregion
 		if (savedDocs === undefined) return;
-		if (savedDocs.length === 0) return; // Wait for form data to be available
+		if (savedDocs.length === 0) return;
 
 		const docData = savedDocs?.[0];
 		const incomingContentStr = JSON.stringify(docData?.content);
@@ -141,7 +136,7 @@ export default function EditorApp({
 				autoSelect: "end",
 			});
 		}
-	}, [savedDocs, editor, defaultValue, formId, versionContent]);
+	}, [savedDocs, editor, defaultValue, versionContent]);
 
 	const handleChange = useCallback(
 		({ value }: { value: Value }) => {
@@ -169,11 +164,11 @@ export default function EditorApp({
 			});
 
 			if (value.length > 0 && value[0]?.type === "formHeader") {
-				const headerNode = value[0] as FormHeaderElementData;
+				const headerNode = value[0] as unknown as FormHeaderElementData;
 				updateHeader(formId, {
 					title: headerNode.title,
-					icon: headerNode.icon,
-					cover: headerNode.cover,
+					icon: headerNode.icon ?? undefined,
+					cover: headerNode.cover ?? undefined,
 					workspaceId: String(workspaceId),
 					createdAt: now,
 					updatedAt: now,
