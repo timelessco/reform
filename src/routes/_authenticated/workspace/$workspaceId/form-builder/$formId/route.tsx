@@ -1,23 +1,11 @@
+import { useQuery } from "@tanstack/react-query";
 import { FormActionsMenu } from "@/components/form-builder/form-actions-menu";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import {
-	Sheet,
-	SheetContent,
-	SheetHeader,
-	SheetTitle,
-	SheetTrigger,
-} from "@/components/ui/sheet";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useForm, useWorkspace } from "@/hooks/use-live-hooks";
+import { useForm } from "@/hooks/use-live-hooks";
 import { getFormbyIdQueryOption } from "@/lib/fn/forms";
-import { cn } from "@/lib/utils";
 import {
 	createFileRoute,
 	Link,
@@ -25,25 +13,32 @@ import {
 	redirect,
 	useLocation,
 } from "@tanstack/react-router";
-import { Link as LinkIcon, Pencil, Puzzle, Settings2 } from "lucide-react";
+import { Link as LinkIcon, Pencil } from "lucide-react";
+import type { Value } from "platejs";
 import { z } from "zod";
-import { IntegrationsContent } from "./integrations";
-import { SettingsContent } from "./settings";
+
+interface RedirectError {
+	to?: string;
+	href?: string;
+	isRedirect?: boolean;
+	statusCode?: number;
+}
 
 export const Route = createFileRoute(
 	"/_authenticated/workspace/$workspaceId/form-builder/$formId",
 )({
 	validateSearch: z.object({
 		demo: z.boolean().optional(),
+		sidebar: z.string().optional(),
 	}),
 	// Redirect to appropriate child route based on form status
 	beforeLoad: async ({ context, params, location }) => {
 		// Only redirect if we're at the exact parent route (no child route)
 		const isExactParentRoute =
 			location.pathname ===
-				`/workspace/${params.workspaceId}/form-builder/${params.formId}` ||
+			`/workspace/${params.workspaceId}/form-builder/${params.formId}` ||
 			location.pathname ===
-				`/workspace/${params.workspaceId}/form-builder/${params.formId}/`;
+			`/workspace/${params.workspaceId}/form-builder/${params.formId}/`;
 
 		if (isExactParentRoute) {
 			console.log(
@@ -60,8 +55,9 @@ export const Route = createFileRoute(
 
 				if (status === "published") {
 					throw redirect({
-						to: "/workspace/$workspaceId/form-builder/$formId/share",
+						to: "/workspace/$workspaceId/form-builder/$formId/submissions",
 						params: { workspaceId: params.workspaceId, formId: params.formId },
+						search: { sidebar: "share" }
 					});
 				} else {
 					throw redirect({
@@ -133,29 +129,17 @@ function FormLayout() {
 	const { workspaceId } = params;
 	const formId = formIdFromPath || params.formId;
 
-	// Get form and workspace data from local Electric DB
+	// Primary: TanStack Query cache (primed by loader, immediate on navigation)
+	const { data: serverFormData } = useQuery(getFormbyIdQueryOption(formId));
+	// Secondary: Electric live data (real-time but async)
 	const { data: formData } = useForm(formId);
-	const form = formData?.[0];
-	const formTitle = form?.title || "Untitled Form";
+
+	// Prefer Electric (real-time) when available, fall back to server cache
+	const form = formData?.[0] ?? serverFormData?.form;
 
 	// Hide header on edit route (editor has its own full-screen layout)
 	const isEditRoute =
 		pathname.includes("/form-builder/") && pathname.includes("/edit");
-
-	const tabs = [
-		{ name: "Summary", href: `/workspace/${workspaceId}/form-builder/${formId}/summary` },
-		{ name: "Submissions", href: `/workspace/${workspaceId}/form-builder/${formId}/submissions` },
-		{ name: "Share", href: `/workspace/${workspaceId}/form-builder/${formId}/share` },
-	];
-
-	// Helper to check if a tab is active
-	const isActive = (href: string) => {
-		if (href.endsWith(formId)) {
-			return pathname === href;
-		}
-		return pathname.startsWith(href);
-	};
-
 	// For edit route, render without header
 	if (isEditRoute) {
 		return (
@@ -175,7 +159,7 @@ function FormLayout() {
 					<div className="flex items-center justify-between mb-8">
 						<div className="flex items-center gap-3">
 							<h1 className="text-3xl font-bold text-foreground tracking-tight">
-								{formTitle}
+								{form?.title || "Untitled Form"}
 							</h1>
 							<FormActionsMenu form={form} workspaceId={workspaceId} />
 						</div>
@@ -200,68 +184,6 @@ function FormLayout() {
 						</div>
 					</div>
 
-					{/* Tab Navigation */}
-					<nav className="flex items-center justify-between">
-						<div className="flex items-center gap-6">
-							{tabs.map((tab) => (
-								<Link
-									key={tab.name}
-									to={tab.href as any}
-									className={cn(
-										"pb-3 text-[13px] font-medium transition-all relative",
-										isActive(tab.href)
-											? "text-foreground after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-foreground"
-											: "text-muted-foreground/60 hover:text-foreground/80",
-									)}
-								>
-									{tab.name}
-								</Link>
-							))}
-						</div>
-						<div className="flex items-center gap-1">
-							<Sheet>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<SheetTrigger asChild>
-											<Button variant="ghost" size="icon" className="h-8 w-8">
-												<Puzzle className="h-4 w-4" />
-											</Button>
-										</SheetTrigger>
-									</TooltipTrigger>
-									<TooltipContent>Integrations</TooltipContent>
-								</Tooltip>
-								<SheetContent className="sm:max-w-lg overflow-y-auto">
-									<SheetHeader>
-										<SheetTitle>Integrations</SheetTitle>
-									</SheetHeader>
-									<div className="mt-6">
-										<IntegrationsContent />
-									</div>
-								</SheetContent>
-							</Sheet>
-
-							<Sheet>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<SheetTrigger asChild>
-											<Button variant="ghost" size="icon" className="h-8 w-8">
-												<Settings2 className="h-4 w-4" />
-											</Button>
-										</SheetTrigger>
-									</TooltipTrigger>
-									<TooltipContent>Settings</TooltipContent>
-								</Tooltip>
-								<SheetContent className="sm:max-w-lg overflow-y-auto">
-									<SheetHeader>
-										<SheetTitle>Settings</SheetTitle>
-									</SheetHeader>
-									<div className="mt-6">
-										<SettingsContent formId={formId} />
-									</div>
-								</SheetContent>
-							</Sheet>
-						</div>
-					</nav>
 				</div>
 			</div>
 

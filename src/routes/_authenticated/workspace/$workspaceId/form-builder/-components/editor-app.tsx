@@ -15,6 +15,8 @@ interface EditorAppProps {
 	formId: string;
 	workspaceId?: string;
 	defaultValue?: ReturnType<typeof normalizeNodeId>;
+	versionContent?: Value;
+	readOnly?: boolean;
 }
 
 const DEFAULT_EDITOR_VALUE = normalizeNodeId([
@@ -30,6 +32,8 @@ export default function EditorApp({
 	formId,
 	workspaceId,
 	defaultValue,
+	versionContent,
+	readOnly = false,
 }: EditorAppProps) {
 	const { data: savedDocs } = useForm(formId);
 	const initializedRef = useRef(false);
@@ -42,12 +46,24 @@ export default function EditorApp({
 	});
 
 	const lastSavedContentRef = useRef<Value | null>(null);
+
+	// Handle version content - when viewing a version, use that content instead
 	useEffect(() => {
-		// #region agent log
-		fetch('http://127.0.0.1:7243/ingest/bc04ab0d-75d0-4ec8-b742-bb373a0ca5a1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'editor-app.tsx:useEffect:entry',message:'useEffect triggered',data:{formId,savedDocsUndefined:savedDocs===undefined,savedDocsLength:savedDocs?.length,savedDocsFirstId:savedDocs?.[0]?.id,savedDocsFirstTitle:savedDocs?.[0]?.title,initializedRef:initializedRef.current},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-		// #endregion
+		if (!versionContent) return;
+
+		// Initialize editor with version content (read-only viewing)
+		skipSaveRef.current = true;
+		editor.tf.init({
+			value: versionContent,
+			autoSelect: "end",
+		});
+		setIsReady(true);
+	}, [versionContent, editor]);
+
+	useEffect(() => {
+		if (versionContent) return;
 		if (savedDocs === undefined) return;
-		if (savedDocs.length === 0) return; // Wait for form data to be available
+		if (savedDocs.length === 0) return;
 
 		const docData = savedDocs?.[0];
 		const incomingContentStr = JSON.stringify(docData?.content);
@@ -120,10 +136,13 @@ export default function EditorApp({
 				autoSelect: "end",
 			});
 		}
-	}, [savedDocs, editor, defaultValue, formId]);
+	}, [savedDocs, editor, defaultValue, versionContent]);
 
 	const handleChange = useCallback(
 		({ value }: { value: Value }) => {
+			// Skip saving when in read-only mode (viewing a version)
+			if (readOnly) return;
+
 			if (skipSaveRef.current) {
 				skipSaveRef.current = false;
 				return;
@@ -145,22 +164,19 @@ export default function EditorApp({
 			});
 
 			if (value.length > 0 && value[0]?.type === "formHeader") {
-				const headerNode = value[0] as FormHeaderElementData;
+				const headerNode = value[0] as unknown as FormHeaderElementData;
 				updateHeader(formId, {
 					title: headerNode.title,
-					icon: headerNode.icon,
-					cover: headerNode.cover,
+					icon: headerNode.icon ?? undefined,
+					cover: headerNode.cover ?? undefined,
 					workspaceId: String(workspaceId),
 					createdAt: now,
 					updatedAt: now,
 				});
 			}
 		},
-		[formId, workspaceId],
+		[formId, workspaceId, readOnly],
 	);
-
-	// Preview mode is handled by route search params, not stored in DB
-	const isPreview = false;
 
 	if (!isReady) {
 		return (
@@ -190,7 +206,7 @@ export default function EditorApp({
 
 	return (
 		<div className="h-screen w-full overflow-y-auto">
-			<Plate editor={editor} readOnly={isPreview} onChange={handleChange}>
+			<Plate editor={editor} readOnly={readOnly} onChange={handleChange}>
 				<EditorContainer
 					variant="default"
 					className="px-0 sm:px-0 max-w-full mx-auto border-none shadow-none"

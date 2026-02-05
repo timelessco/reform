@@ -1,7 +1,3 @@
-import { useNavigate } from "@tanstack/react-router";
-import { Copy, Link as LinkIcon, MoreHorizontal, Pencil, Tag, Trash2 } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,12 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { duplicateForm, updateDoc, updateFormStatus } from "@/db-collections";
 import { useNavigate } from "@tanstack/react-router";
-import {
-    Copy,
-    MoreHorizontal,
-    Tag,
-    Trash2
-} from "lucide-react";
+import { Copy, MoreHorizontal, Tag, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 

@@ -1,4 +1,6 @@
+import { useEmojiDropdownMenuState } from "@platejs/emoji/react";
 import { ImageIcon, Settings, Smile, Upload, X } from "lucide-react";
+import { useState } from "react";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorRef } from "platejs/react";
 import AvatarUpload from "@/components/file-upload/avatar-upload";
@@ -10,11 +12,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { EmojiPicker } from "@/components/ui/emoji-toolbar-button";
 import { createFormButtonNode } from "@/components/ui/form-button-node";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCustomizeSidebar } from "@/hooks/use-customize-sidebar";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { cn } from "@/lib/utils";
+
+function isEmoji(str: string): boolean {
+  if (!str) return false;
+  const emojiRange = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
+  return str.length <= 4 && emojiRange.test(str);
+}
 
 export interface FormHeaderElementData {
   type: "formHeader";
@@ -113,7 +123,9 @@ export function FormHeaderElement(props: PlateElementProps) {
   };
 
   const handleAddCover = () => handleCoverChange("#FFE4E1");
-  const handleAddIcon = () => handleIconChange("default-icon");
+
+  const [iconPopoverOpen, setIconPopoverOpen] = useState(false);
+  const { emojiPickerState, isOpen: emojiIsOpen, setIsOpen: setEmojiIsOpen } = useEmojiDropdownMenuState();
 
   return (
     <PlateElement {...props}>
@@ -247,107 +259,59 @@ export function FormHeaderElement(props: PlateElementProps) {
 
         <div className={cn("relative max-w-[900px] mx-auto w-full flex flex-col")}>
           <div className="w-full sm:px-[max(10px,calc(50%-350px))]">
-            {hasLogo && (
-              <div
-                className={cn(
-                  "relative z-10 mb-4",
-                  hasCover ? "-mt-[30px] sm:-mt-[40px]" : "mt-6 sm:mt-8",
-                )}
-              >
-                <Dialog>
-                  <DialogTrigger asChild>
+            <Popover open={iconPopoverOpen} onOpenChange={setIconPopoverOpen}>
+              {hasLogo && (
+                <div
+                  className={cn(
+                    "relative z-10 mb-1",
+                    hasCover ? "-mt-[30px] sm:-mt-[36px]" : "mt-4 sm:mt-6",
+                  )}
+                >
+                  <PopoverTrigger asChild>
                     <button
                       type="button"
-                      className="w-[60px] h-[60px] sm:w-[80px] sm:h-[80px] rounded-full overflow-hidden shadow-sm bg-background cursor-pointer hover:ring-2 hover:ring-muted-foreground/20 transition-all group/logo"
+                      className="cursor-pointer hover:bg-muted/50 rounded-md p-1 transition-colors"
                       onMouseDown={(e) => e.preventDefault()}
                     >
                       {icon && icon !== "default-icon" ? (
-                        <img src={icon} alt="Logo" className="w-full h-full object-cover" />
+                        isEmoji(icon) ? (
+                          <span className="text-5xl sm:text-6xl leading-none" role="img" aria-label="Form icon">
+                            {icon}
+                          </span>
+                        ) : (
+                          <img src={icon} alt="Logo" className="w-[60px] h-[60px] sm:w-[72px] sm:h-[72px] rounded-md object-cover" />
+                        )
                       ) : (
-                        <div className="w-full h-full bg-black flex items-center justify-center text-white">
-                          <svg
-                            className="w-6 h-6 sm:w-10 sm:h-10"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            aria-hidden="true"
-                          >
-                            <title>Default icon</title>
-                            <path d="M12 2l9 4.9V17L12 22l-9-4.9V7z" />
-                          </svg>
-                        </div>
+                        <span className="text-5xl sm:text-6xl leading-none" role="img" aria-label="Form icon">
+                          📄
+                        </span>
                       )}
                     </button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Choose an icon</DialogTitle>
-                    </DialogHeader>
-                    <Tabs defaultValue="emoji" className="w-full">
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="emoji">Emoji</TabsTrigger>
-                        <TabsTrigger value="upload">Upload</TabsTrigger>
-                      </TabsList>
-                      <TabsContent
-                        value="emoji"
-                        className="h-[200px] flex flex-col items-center justify-center text-muted-foreground gap-4"
-                      >
-                        <span className="text-sm">Emoji picker placeholder</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleIconChange(null)}
-                          onMouseDown={(e) => e.preventDefault()}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <X className="mr-2 h-4 w-4" /> Remove icon
-                        </Button>
-                      </TabsContent>
-                      <TabsContent value="upload" className="pt-4 flex flex-col items-center">
-                        <AvatarUpload
-                          onFileChange={(file) => {
-                            if (file?.preview) handleIconChange(file.preview);
-                          }}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleIconChange(null)}
-                          onMouseDown={(e) => e.preventDefault()}
-                          className="mt-4 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
-                          Remove icon
-                        </Button>
-                      </TabsContent>
-                    </Tabs>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            )}
+                  </PopoverTrigger>
+                </div>
+              )}
 
-            <div
-              className={cn(
-                "flex gap-1 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200",
-                !hasCover && !hasLogo && "mt-8 sm:mt-12",
-                hasCover && !hasLogo && "mt-4",
-                !hasCover && hasLogo && "mt-0",
-              )}
-            >
-              {!hasLogo && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground h-6 px-2 text-xs hover:bg-muted"
-                  onClick={handleAddIcon}
-                  onMouseDown={(e) => e.preventDefault()}
-                >
-                  <Smile className="mr-1.5 h-3.5 w-3.5" />
-                  Add icon
-                </Button>
-              )}
+              <div
+                className={cn(
+                  "flex gap-1 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+                  !hasCover && !hasLogo && "mt-8 sm:mt-12",
+                  hasCover && !hasLogo && "mt-4",
+                  !hasCover && hasLogo && "mt-0",
+                )}
+              >
+                {!hasLogo && (
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground h-6 px-2 text-xs hover:bg-muted"
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      <Smile className="mr-1.5 h-3.5 w-3.5" />
+                      Add icon
+                    </Button>
+                  </PopoverTrigger>
+                )}
               {!hasCover && (
                 <Button
                   variant="ghost"
@@ -371,6 +335,49 @@ export function FormHeaderElement(props: PlateElementProps) {
                 Customize
               </Button>
             </div>
+
+              <PopoverContent align="start" side="bottom" className="w-auto p-0">
+                <Tabs defaultValue="emoji" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 rounded-b-none">
+                    <TabsTrigger value="emoji">Emoji</TabsTrigger>
+                    <TabsTrigger value="upload">Upload</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="emoji" className="mt-0">
+                    <EmojiPicker
+                      {...emojiPickerState}
+                      isOpen={emojiIsOpen}
+                      setIsOpen={setEmojiIsOpen}
+                      onSelectEmoji={(emoji) => {
+                        handleIconChange(emoji.skins[0].native);
+                        setIconPopoverOpen(false);
+                      }}
+                    />
+                  </TabsContent>
+                  <TabsContent value="upload" className="p-4 flex flex-col items-center">
+                    <AvatarUpload
+                      onFileChange={(file) => {
+                        if (file?.preview) {
+                          handleIconChange(file.preview);
+                          setIconPopoverOpen(false);
+                        }
+                      }}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        handleIconChange(null);
+                        setIconPopoverOpen(false);
+                      }}
+                      onMouseDown={(e) => e.preventDefault()}
+                      className="mt-4 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      Remove icon
+                    </Button>
+                  </TabsContent>
+                </Tabs>
+              </PopoverContent>
+            </Popover>
 
             <div className="relative group/title">
               <input

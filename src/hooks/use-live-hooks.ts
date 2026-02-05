@@ -81,6 +81,7 @@ export const useForms = () => {
         workspaceId: form.workspaceId,
         status: form.status,
         updatedAt: form.updatedAt,
+        icon: form.icon,
       })),
   );
 };
@@ -90,11 +91,8 @@ export const useForms = () => {
  */
 export const useForm = (formId?: string) => {
   return useLiveQuery((q) => {
-    let query = q.from({ doc: editorDocCollection });
-    if (formId) {
-      query = query.where(({ doc }) => eq(doc.id, formId));
-    }
-    return query;
+    if (!formId) return null as any;
+    return q.from({ doc: editorDocCollection }).where(({ doc }) => eq(doc.id, formId));
   });
 };
 
@@ -103,11 +101,8 @@ export const useForm = (formId?: string) => {
  */
 export const useLocalForm = (formId?: string) => {
   return useLiveQuery((q) => {
-    let query = q.from({ doc: localFormCollection });
-    if (formId) {
-      query = query.where(({ doc }) => eq(doc.id, formId));
-    }
-    return query;
+    if (!formId) return null as any;
+    return q.from({ doc: localFormCollection }).where(({ doc }) => eq(doc.id, formId));
   });
 };
 

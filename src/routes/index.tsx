@@ -4,7 +4,7 @@ import { Plate, usePlateEditor } from "platejs/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorKit } from "@/components/editor/editor-kit";
 import { RightSidebar } from "@/components/footer";
-import { AppHeader } from "@/components/ui/app-header";
+import { LandingHeader } from "@/components/ui/landing-header";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
@@ -41,7 +41,7 @@ export const Route = createFileRoute("/")({
 function RouteComponent() {
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <AppHeader />
+      <LandingHeader />
       <div className="flex-1 overflow-auto relative bg-background">
         <LocalEditorApp />
       </div>
