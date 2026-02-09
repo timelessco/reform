@@ -80,10 +80,6 @@ export const FormSchema = z.object({
 
 export type Form = z.infer<typeof FormSchema>;
 
-// Legacy type alias for backward compatibility
-export type EditorDoc = Form;
-export const EditorDocSchema = FormSchema;
-
 // ============================================================================
 // Collections with ElectricSQL sync
 // ============================================================================
@@ -133,8 +129,6 @@ export const localFormCollection = createCollection(
   }),
 );
 
-// Legacy export alias for backward compatibility
-export const editorDocCollection = formCollection;
 
 // ============================================================================
 // Form Service Functions

@@ -35,10 +35,26 @@ import { Input } from "@/components/ui/input";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import {
+  ImperativePanelHandle,
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarRail,
+  useSidebar,
+} from "@/components/ui/sidebar";
 import { MinimalSidebarProvider, useMinimalSidebar } from "@/contexts/minimal-sidebar-context";
 import {
   createWorkspaceLocal,
@@ -96,16 +112,19 @@ export const Route = createFileRoute("/_authenticated")({
   ssr: "data-only",
 });
 
+const TypedResizableHandle = ResizableHandle as any;
+
 function AuthLayout() {
   return (
-    <MinimalSidebarProvider>
-      <AuthLayoutContent />
-    </MinimalSidebarProvider>
+    <SidebarProvider style={{ "--app-header-height": "40px" } as React.CSSProperties}>
+      <MinimalSidebarProvider>
+        <AuthLayoutContent />
+      </MinimalSidebarProvider>
+    </SidebarProvider>
   );
 }
 
 function AuthLayoutContent() {
-  const { isPinned, setIsHovered, isInboxOpen } = useMinimalSidebar();
   const location = useLocation();
   const { pathname } = location;
   const [resizeTooltip, setResizeTooltip] = useState({
@@ -125,6 +144,7 @@ function AuthLayoutContent() {
   const sidebarParam = search.sidebar;
   const { activeSidebar, setActiveSidebar, resetSidebar, closeSidebar } = useEditorSidebar();
   const handleRef = useRef<HTMLDivElement>(null);
+  const rightPanelRef = useRef<ImperativePanelHandle>(null);
   const [handleLeft, setHandleLeft] = useState(0);
   const handleDragRef = useRef({ dragging: false, startX: 0, startY: 0 });
   const leftPanelRef = useRef<HTMLDivElement>(null);
@@ -137,8 +157,21 @@ function AuthLayoutContent() {
       resetSidebar();
     }
   }, [sidebarParam, formId, setActiveSidebar, resetSidebar]);
+
   const isFormBuilder = pathname.includes("/form-builder/");
-  const showEditorSidebar = activeSidebar && isFormBuilder && formId;
+  const showEditorSidebar = !!(activeSidebar && isFormBuilder && formId);
+
+  // Animate sidebar expansion/collapse
+  useEffect(() => {
+    const panel = rightPanelRef.current;
+    if (!panel) return;
+
+    if (showEditorSidebar) {
+      panel.expand(30);
+    } else {
+      panel.collapse();
+    }
+  }, [showEditorSidebar]);
 
   const updateHandleLeft = () => {
     const node = leftPanelRef.current;
@@ -148,149 +181,133 @@ function AuthLayoutContent() {
   };
 
   useLayoutEffect(() => {
-    if (!showEditorSidebar) return;
     updateHandleLeft();
   }, [showEditorSidebar]);
 
   useEffect(() => {
-    if (!showEditorSidebar) return;
     const onResize = () => updateHandleLeft();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, [showEditorSidebar]);
 
   useEffect(() => {
-    if (!showEditorSidebar || !leftPanelRef.current) return;
+    if (!leftPanelRef.current) return;
     const observer = new ResizeObserver(() => updateHandleLeft());
     observer.observe(leftPanelRef.current);
     return () => observer.disconnect();
   }, [showEditorSidebar]);
 
-  const contentInset = isInboxOpen
-    ? isPinned
-      ? "pl-[544px]"
-      : "pl-80"
-    : isPinned
-      ? "pl-56"
-      : "pl-0";
 
   return (
-    <div
-      className="flex h-screen w-full flex-col overflow-hidden relative"
-      style={{ "--app-header-height": "40px" } as React.CSSProperties}
-    >
-      {/* Hover Trigger Area - An invisible area at the left edge to detect hover */}
-      {!isPinned && (
-        <button
-          type="button"
-          aria-hidden="true"
-          tabIndex={-1}
-          className="fixed left-0 top-12 bottom-0 w-4 z-60"
-          onMouseEnter={() => setIsHovered(true)}
-        />
-      )}
-
-      <MinimalSidebar />
+    <>
+      <AppSidebar />
       <SidebarInbox />
 
-      <div className="relative z-0">
-        <AppHeader
-          formId={formId}
-          workspaceId={workspaceId}
-          dividerX={handleLeft}
-          isSidebarOpen={!!showEditorSidebar}
-        />
-      </div>
+      <SidebarInset className="overflow-hidden relative flex flex-col h-screen">
+        <div className="relative z-0">
+          <AppHeader
+            formId={formId}
+            workspaceId={workspaceId}
+            dividerX={handleLeft}
+            isSidebarOpen={showEditorSidebar}
+          />
+        </div>
 
-      <div className="relative z-20 flex-1 min-h-0 overflow-hidden">
-        <ResizablePanelGroup
-          direction="horizontal"
-          className="h-full transition-all duration-300 ease-in-out"
-        >
-          {/* Main content panel */}
-          <ResizablePanel defaultSize={showEditorSidebar ? 75 : 100} minSize={50}>
-            <div ref={leftPanelRef} className={cn("flex h-full min-w-0 flex-col z-50", contentInset)}>
-              <Outlet key={formId} />
-            </div>
-          </ResizablePanel>
+        <div className="relative z-20 flex-1 min-h-0 overflow-hidden">
+          <ResizablePanelGroup
+            direction="horizontal"
+            className="h-full"
+          >
+            {/* Main content panel */}
+            <ResizablePanel defaultSize={showEditorSidebar ? 70 : 100} minSize={70} className="transition-all duration-300 ease-in-out">
+              <div ref={leftPanelRef} className={cn("flex h-full min-w-0 flex-col z-50")}>
+                <Outlet key={formId} />
+              </div>
+            </ResizablePanel>
 
-          {/* Right sidebar - Editor Sidebars (Settings, Share, History) */}
-          {showEditorSidebar && (
-            <>
-              <ResizableHandle
+            {/* Right sidebar - Editor Sidebars (Settings, Share, History) */}
+            <TypedResizableHandle
+              className={cn(
+                "fixed top-0 bottom-0 left-(--handle-left) -translate-x-1/2 w-px",
+                "bg-border/60 z-[999] pointer-events-auto",
+                "transition-none duration-0 hover:w-px data-[resize-handle-state=drag]:w-px",
+                !showEditorSidebar && "hidden pointer-events-none"
+              )}
+              ref={handleRef}
+              style={{ "--handle-left": `${handleLeft}px` } as React.CSSProperties}
+              onPointerDown={(event: any) => {
+                handleDragRef.current = {
+                  dragging: false,
+                  startX: event.clientX,
+                  startY: event.clientY,
+                };
+                updateHandleLeft();
+              }}
+              onPointerMove={(event: any) => {
+                const dx = Math.abs(event.clientX - handleDragRef.current.startX);
+                const dy = Math.abs(event.clientY - handleDragRef.current.startY);
+                if (dx > 2 || dy > 2) handleDragRef.current.dragging = true;
+                updateHandleLeft();
+              }}
+              onPointerUp={() => {
+                if (!handleDragRef.current.dragging && activeSidebar) closeSidebar();
+                handleDragRef.current.dragging = false;
+              }}
+              onMouseEnter={(event: any) => {
+                setResizeTooltip({ visible: true, x: event.clientX, y: event.clientY });
+              }}
+              onMouseMove={(event: any) => {
+                setResizeTooltip((prev) => ({
+                  ...prev,
+                  x: event.clientX,
+                  y: event.clientY,
+                }));
+              }}
+              onMouseLeave={() => {
+                setResizeTooltip((prev) => ({ ...prev, visible: false }));
+              }}
+            >
+              <div
                 className={cn(
-                  "fixed top-0 bottom-0 left-[var(--handle-left)] -translate-x-1/2 w-[1px]",
-                  "bg-border/60 z-[999] pointer-events-auto",
-                  "transition-none duration-0 hover:w-[1px] data-[resize-handle-state=drag]:w-[1px]",
+                  "pointer-events-none fixed",
+                  "rounded-md border border-foreground/10 bg-background/90 px-2 py-1 text-[11px] text-muted-foreground shadow-lg",
+                  "transition-opacity duration-150",
+                  resizeTooltip.visible ? "opacity-100" : "opacity-0",
                 )}
-                ref={handleRef}
-                style={{ "--handle-left": `${handleLeft}px` } as React.CSSProperties}
-                onPointerDown={(event) => {
-                  handleDragRef.current = {
-                    dragging: false,
-                    startX: event.clientX,
-                    startY: event.clientY,
-                  };
-                  updateHandleLeft();
-                }}
-                onPointerMove={(event) => {
-                  const dx = Math.abs(event.clientX - handleDragRef.current.startX);
-                  const dy = Math.abs(event.clientY - handleDragRef.current.startY);
-                  if (dx > 2 || dy > 2) handleDragRef.current.dragging = true;
-                  updateHandleLeft();
-                }}
-                onPointerUp={() => {
-                  if (!handleDragRef.current.dragging && activeSidebar) closeSidebar();
-                  handleDragRef.current.dragging = false;
-                }}
-                onMouseEnter={(event) => {
-                  setResizeTooltip({ visible: true, x: event.clientX, y: event.clientY });
-                }}
-                onMouseMove={(event) => {
-                  setResizeTooltip((prev) => ({
-                    ...prev,
-                    x: event.clientX,
-                    y: event.clientY,
-                  }));
-                }}
-                onMouseLeave={() => {
-                  setResizeTooltip((prev) => ({ ...prev, visible: false }));
+                style={{
+                  left: resizeTooltip.x - 12,
+                  top: resizeTooltip.y + 12,
+                  transform: "translateX(-100%)",
                 }}
               >
-                <div
-                  className={cn(
-                    "pointer-events-none fixed",
-                    "rounded-md border border-foreground/10 bg-background/90 px-2 py-1 text-[11px] text-muted-foreground shadow-lg",
-                    "transition-opacity duration-150",
-                    resizeTooltip.visible ? "opacity-100" : "opacity-0",
-                  )}
-                  style={{
-                    left: resizeTooltip.x - 12,
-                    top: resizeTooltip.y + 12,
-                    transform: "translateX(-100%)",
-                  }}
-                >
-                  <div className="leading-4">
-                    <div>Close Click</div>
-                    <div>Resize Drag</div>
-                  </div>
+                <div className="leading-4">
+                  <div>Close Click</div>
+                  <div>Resize Drag</div>
                 </div>
-              </ResizableHandle>
-              <ResizablePanel
-                defaultSize={25}
-                minSize={15}
-                maxSize={40}
-                className="h-full overflow-hidden"
-              >
-                {activeSidebar === "settings" && <FormSettingsSidebar formId={formId} />}
-                {activeSidebar === "share" && <ShareSummarySidebar formId={formId} />}
-                {activeSidebar === "history" && <VersionHistorySidebar formId={formId} />}
-              </ResizablePanel>
-            </>
-          )}
-        </ResizablePanelGroup>
-      </div>
-    </div>
+              </div>
+            </TypedResizableHandle>
+            <ResizablePanel
+              ref={rightPanelRef}
+              collapsible
+              collapsedSize={0}
+              defaultSize={showEditorSidebar ? 30 : 0}
+              minSize={20}
+              maxSize={40}
+              className={cn(
+                "h-full overflow-hidden transition-all duration-300 ease-in-out bg-background",
+                !showEditorSidebar && "border-none"
+              )}
+            >
+              <div className="h-full w-full">
+                {activeSidebar === "settings" && formId && <FormSettingsSidebar formId={formId} />}
+                {activeSidebar === "share" && formId && <ShareSummarySidebar formId={formId} />}
+                {activeSidebar === "history" && formId && <VersionHistorySidebar formId={formId} />}
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </div>
+      </SidebarInset>
+    </>
   );
 }
 
@@ -342,11 +359,10 @@ function SidebarItem({
   );
 }
 
-// Minimal Sidebar Component
-function MinimalSidebar() {
-  const { isVisible, isPinned, togglePin, setIsHovered, isInboxOpen, setIsInboxOpen } =
-    useMinimalSidebar();
-  const sidebarRef = useRef<HTMLDivElement>(null);
+// App Sidebar Component using shadcn/ui
+function AppSidebar() {
+  const { toggleSidebar } = useSidebar();
+  const { isInboxOpen, setIsInboxOpen } = useMinimalSidebar();
   const location = useLocation();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -395,22 +411,6 @@ function MinimalSidebar() {
     return () => document.removeEventListener("keydown", down);
   }, [togglePalette]);
 
-  useEffect(() => {
-    const node = sidebarRef.current;
-    if (!node) return;
-
-    const handleMouseEnterSidebar = () => setIsHovered(true);
-    const handleMouseLeaveSidebar = () => setIsHovered(false);
-
-    node.addEventListener("mouseenter", handleMouseEnterSidebar);
-    node.addEventListener("mouseleave", handleMouseLeaveSidebar);
-
-    return () => {
-      node.removeEventListener("mouseenter", handleMouseEnterSidebar);
-      node.removeEventListener("mouseleave", handleMouseLeaveSidebar);
-    };
-  }, [setIsHovered]);
-
   const getInitials = (name?: string | null) => {
     if (!name) return "U";
     return name
@@ -425,96 +425,98 @@ function MinimalSidebar() {
 
   return (
     <>
-      <div
-        ref={sidebarRef}
-        className={cn(
-          "fixed left-0 z-50 flex w-56 flex-col bg-background py-1 px-3 select-none transition-all duration-300 ease-in-out",
-          isPinned
-            ? "inset-y-0"
-            : "top-12 bottom-12 rounded-r-2xl border-y border-r border-foreground/10 shadow-2xl",
-          !isVisible && "-translate-x-full",
-          isVisible && "translate-x-0",
-          isPinned && "border-r border-foreground/5 shadow-none",
-        )}
-      >
-        {/* Top Section: Logo & Toggle */}
-        <div className="flex items-center justify-between px-3 mb-2 group/logo">
+      <Sidebar className="border-r border-foreground/5 bg-background">
+        <SidebarHeader className="h-10 px-4 flex flex-row items-center justify-between group/logo">
           <span className="text-2xl font-serif italic font-bold tracking-tighter">f.</span>
           <button
             type="button"
-            onClick={togglePin}
-            className={cn(
-              "p-1.5 rounded-lg hover:bg-muted text-muted-foreground/40 hover:text-foreground transition-all",
-              isPinned ? "opacity-0 group-hover/logo:opacity-100" : "opacity-100",
-            )}
-            title={isPinned ? "Unpin sidebar" : "Pin sidebar"}
+            onClick={() => toggleSidebar()}
+            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground/40 hover:text-foreground transition-all group-data-[state=collapsed]:hidden"
+            title="Collapse sidebar"
           >
-            <ChevronsLeft
-              className={cn(
-                "h-4 w-4 transition-transform duration-300",
-                !isPinned && "rotate-180",
-              )}
-            />
+            <ChevronsLeft className="h-4 w-4" />
           </button>
-        </div>
+        </SidebarHeader>
 
-        {/* Navigation */}
-        <nav className="flex-1 space-y-6 relative overflow-y-auto no-scrollbar">
-          <div className="space-y-0.5 px-1">
-            <SidebarItem
-              label="All"
-              to="/dashboard"
-              isActive={location.pathname === "/dashboard"}
-              prefix={<Home className="h-4 w-4" />}
-            />
-            <SidebarItem
-              label="Search"
-              onClick={togglePalette}
-              prefix={<Search className="h-4 w-4" />}
-            />
-            <SidebarItem
-              label="Notifications"
-              onClick={() => setIsInboxOpen(!isInboxOpen)}
-              isActive={isInboxOpen}
-              prefix={<Bell className="h-4 w-4" />}
-            />
-            <SidebarItem
-              label="Trash"
-              onClick={() => setTrashDialogOpen(true)}
-              prefix={<Trash2 className="h-4 w-4" />}
-            />
-            <SidebarItem
-              label="Settings"
-              onClick={() => {
-                router.navigate({
-                  to: "/settings/my-account",
-                });
-              }}
-              isActive={
-                location.pathname.startsWith("/settings") && !location.pathname.includes("/members")
-              }
-              prefix={<Settings className="h-4 w-4" />}
-            />
-          </div>
-
-          <div className="h-px bg-foreground/5 mx-2" />
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupContent className="px-2">
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location.pathname === "/dashboard"}
+                    tooltip="All"
+                  >
+                    <Link to="/dashboard">
+                      <Home className="h-4 w-4" />
+                      <span>All</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={togglePalette} tooltip="Search">
+                    <Search className="h-4 w-4" />
+                    <span>Search</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => setIsInboxOpen(!isInboxOpen)}
+                    isActive={isInboxOpen}
+                    tooltip="Notifications"
+                  >
+                    <Bell className="h-4 w-4" />
+                    <span>Notifications</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={() => setTrashDialogOpen(true)} tooltip="Trash">
+                    <Trash2 className="h-4 w-4" />
+                    <span>Trash</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => router.navigate({ to: "/settings/my-account" })}
+                    isActive={location.pathname.startsWith("/settings") && !location.pathname.includes("/members")}
+                    tooltip="Settings"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
 
           {invitations && pendingCount > 0 && (
-            <div className="space-y-0.5 px-1">
-              <SidebarItem
-                label={`Invitations (${pendingCount})`}
-                to="/accept-invite"
-                isActive={location.pathname === "/accept-invite"}
-                prefix={<Bell className="h-4 w-4" />}
-              />
-            </div>
+            <SidebarGroup>
+              <SidebarGroupContent className="px-2">
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location.pathname === "/accept-invite"}
+                      tooltip={`Invitations (${pendingCount})`}
+                    >
+                      <Link to="/accept-invite" search={{ invitationId: invitations[0].id }}>
+                        <Bell className="h-4 w-4" />
+                        <span>Invitations ({pendingCount})</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
           )}
 
-          <SidebarWorkspacesMinimal activeOrgId={activeOrg?.id} />
-        </nav>
+          <div className="mt-4 px-2">
+            <SidebarWorkspacesMinimal activeOrgId={activeOrg?.id} />
+          </div>
+        </SidebarContent>
 
-        {/* Bottom Section: User Menu */}
-        <div className="mt-auto pt-4 px-1">
+        <SidebarFooter>
           <UserMenuMinimal
             session={session}
             activeOrg={activeOrg}
@@ -527,8 +529,9 @@ function MinimalSidebar() {
             theme={theme}
             setTheme={setTheme as any}
           />
-        </div>
-      </div>
+        </SidebarFooter>
+        <SidebarRail />
+      </Sidebar>
 
       {/* Command Palette */}
       <CommandDialog open={isPaletteOpen} onOpenChange={setIsPaletteOpen}>
@@ -585,10 +588,10 @@ function MinimalSidebar() {
             </CommandItem>
           </CommandGroup>
         </CommandList>
-      </CommandDialog >
+      </CommandDialog>
 
       {/* Trash Dialog */}
-      < TrashDialog
+      <TrashDialog
         open={trashDialogOpen}
         onOpenChange={setTrashDialogOpen}
         activeOrgId={activeOrg?.id}
@@ -742,7 +745,8 @@ function TrashDialog({
 
 // Sidebar Inbox Panel Component
 function SidebarInbox() {
-  const { isInboxOpen, setIsInboxOpen, isPinned, isVisible } = useMinimalSidebar();
+  const { isInboxOpen, setIsInboxOpen } = useMinimalSidebar();
+  const { state } = useSidebar();
 
   if (!isInboxOpen) return null;
 
@@ -750,9 +754,7 @@ function SidebarInbox() {
     <div
       className={cn(
         "fixed z-40 flex w-80 flex-col bg-background select-none transition-all duration-300 ease-in-out border-r border-foreground/5 top-0 bottom-0",
-        isPinned ? "left-56" : "left-0",
-        // The inbox should stay visible if it's open, but we handle the transition if the main sidebar collapses
-        !isPinned && !isVisible && "opacity-100",
+        state === "expanded" ? "left-56" : "left-11",
       )}
     >
       {/* Header */}

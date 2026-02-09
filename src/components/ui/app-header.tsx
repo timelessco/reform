@@ -47,13 +47,7 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ formId, workspaceId, dividerX, isSidebarOpen }: AppHeaderProps) {
-  const sidebarContext = useSidebarSafe();
-  const minimalSidebar = useMinimalSidebarSafe();
-  const isPinned = minimalSidebar?.isPinned ?? true;
-  const togglePin = minimalSidebar?.togglePin || (() => { });
-  const setIsHovered = minimalSidebar?.setIsHovered || (() => { });
-
-  const state = sidebarContext?.state;
+  const { state, toggleSidebar: toggleMainSidebar } = useSidebarSafe() || { state: "expanded", toggleSidebar: () => { } };
   const { pathname } = useLocation();
   const isFormBuilder = pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
   const isEditRoute = pathname.endsWith("/edit");
@@ -71,12 +65,12 @@ export function AppHeader({ formId, workspaceId, dividerX, isSidebarOpen }: AppH
   const toggleSettingsSidebar = () => toggleSidebar("settings", "settings");
   const toggleShareSidebar = () => {
     toggleSidebar("share");
-    if(workspaceId && formId){
-    navigate({
-      to: "/workspace/$workspaceId/form-builder/$formId/edit",
-      params: { workspaceId: workspaceId, formId: formId },
-      search: { demo: true, force: true, sidebar: "share", embedType: "fullpage" },
-    });
+    if (workspaceId && formId) {
+      navigate({
+        to: "/workspace/$workspaceId/form-builder/$formId/edit",
+        params: { workspaceId: workspaceId, formId: formId },
+        search: { demo: true, force: true, sidebar: "share", embedType: "fullpage" },
+      });
     }
   };
   const toggleIntegrationsSidebar = () => toggleSidebar("settings", "integrations");
@@ -169,39 +163,17 @@ export function AppHeader({ formId, workspaceId, dividerX, isSidebarOpen }: AppH
       {/* Left Section: Breadcrumbs */}
       <div className="flex items-center gap-1.5 min-w-0 flex-1">
         {state === "collapsed" && (
-          <div className="mr-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground -ml-1 group relative flex items-center justify-center transition-all duration-300"
-              onClick={() => sidebarContext?.toggleSidebar()}
-            >
-              {/* Vertical line - default state */}
-              <span className="absolute w-[2px] h-4 bg-muted-foreground/30 rounded-full transition-all duration-300 group-hover:opacity-0 group-hover:scale-y-0" />
-              {/* Chevron Right - hover state */}
-              <ChevronRight className="h-4 w-4 absolute opacity-0 scale-50 transition-all duration-300 group-hover:opacity-100 group-hover:scale-100 text-foreground" />
-            </Button>
-          </div>
-        )}
-        {!isPinned && (
           <Button
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-muted-foreground -ml-1 group relative flex items-center justify-center transition-all duration-300"
-            onClick={togglePin}
-            onMouseEnter={() => setIsHovered(true)}
+            onClick={() => toggleMainSidebar()}
           >
             {/* Vertical line - default state */}
             <span className="absolute w-[2px] h-4 bg-muted-foreground/30 rounded-full transition-all duration-300 group-hover:opacity-0 group-hover:scale-y-0" />
             {/* Chevron Right - hover state */}
             <ChevronRight className="h-4 w-4 absolute opacity-0 scale-50 transition-all duration-300 group-hover:opacity-100 group-hover:scale-100 text-foreground" />
           </Button>
-        )}
-
-        {state === "collapsed" && (
-          <Link to="/" className="flex items-center hover:opacity-80 transition-opacity ml-1">
-            <span className="text-2xl font-serif italic font-bold tracking-tighter leading-none mb-1">f.</span>
-          </Link>
         )}
       </div>
 
@@ -329,14 +301,14 @@ export function AppHeader({ formId, workspaceId, dividerX, isSidebarOpen }: AppH
                     {isFavorite ? "Unfavorite" : "Favorite"}
                   </DropdownMenuItem>
 
-                  <DropdownMenuItem onClick={toggleAnalyticsSidebar} className="gap-2">
+                  {/* <DropdownMenuItem onClick={toggleAnalyticsSidebar} className="gap-2">
                     <BarChart3 className="h-4 w-4" />
                     Analytics
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={toggleIntegrationsSidebar} className="gap-2">
+                  </DropdownMenuItem> */}
+                  {/* <DropdownMenuItem onClick={toggleIntegrationsSidebar} className="gap-2">
                     <Settings2 className="h-4 w-4" />
                     Integrations
-                  </DropdownMenuItem>
+                  </DropdownMenuItem> */}
 
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -376,7 +348,7 @@ export function AppHeader({ formId, workspaceId, dividerX, isSidebarOpen }: AppH
 
       {isSidebarOpen && typeof dividerX === "number" && (
         <div
-          className="pointer-events-none fixed top-0 h-10 z-[1000]"
+          className="pointer-events-none fixed top-0 h-10 z-1000"
           style={{ left: dividerX + 8 }}
         >
           <div className="pointer-events-auto absolute top-[6px]">

@@ -34,7 +34,12 @@ export async function sendOTPEmail(email: string, otp: string, type: string) {
   }
 }
 
-export async function sendOrgInvitationEmail(email: string, orgName: string, inviterName: string) {
+export async function sendOrgInvitationEmail(
+  email: string,
+  orgName: string,
+  inviterName: string,
+  inviteLink: string,
+) {
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
     to: email,
@@ -45,9 +50,11 @@ export async function sendOrgInvitationEmail(email: string, orgName: string, inv
 				<p style="font-size: 16px; color: #555;">
 					<strong>${inviterName}</strong> has invited you to join <strong>${orgName}</strong> on Better Forms.
 				</p>
-				<p style="font-size: 14px; color: #555; margin-top: 24px;">
-					Sign in to your account to accept the invitation.
+				<p style="font-size: 16px; color: #555; margin-top: 24px;">
+					<a href="${inviteLink}" style="display: inline-block; background-color: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 16px;">Accept Invitation</a>
 				</p>
+				<p style="font-size: 14px; color: #666; margin-top: 16px;">Or copy this link:</p>
+				<p style="font-size: 14px; color: #0066cc; word-break: break-all;">${inviteLink}</p>
 				<hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
 				<p style="font-size: 12px; color: #999;">If you weren't expecting this invitation, you can safely ignore this email.</p>
 			</div>

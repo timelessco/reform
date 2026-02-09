@@ -1,6 +1,5 @@
 import { Copy, Share2, BarChart3, Rocket, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { cn } from "@/lib/utils";
 import { useForm } from "@/hooks/use-live-hooks";
@@ -10,6 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { updateFormStatus } from "@/db-collections";
 import { EmbedSection } from "./embed-section";
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarHeader,
+} from "@/components/ui/sidebar";
 
 interface ShareSummarySidebarProps {
     formId: string;
@@ -48,9 +54,9 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
     const isDraft = doc.status === "draft";
 
     return (
-        <div className="flex flex-col h-full overflow-hidden bg-background border-l w-full">
+        <Sidebar collapsible="none" className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out">
             {/* Header with tabs */}
-            <div className="shrink-0">
+            <SidebarHeader className="p-0 shrink-0 border-b">
                 {/* Tab Navigation - underline style like FormSettingsSidebar */}
                 <div className="px-4 pt-4 flex items-center gap-6">
                     <button
@@ -65,7 +71,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                     >
                         Share
                     </button>
-                    <button
+                    {/* <button
                         type="button"
                         onClick={() => setShareTab("summary")}
                         className={cn(
@@ -76,18 +82,15 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                         )}
                     >
                         Summary
-                    </button>
+                    </button> */}
                 </div>
-            </div>
+            </SidebarHeader>
 
-            {/* Divider */}
-            <div className="border-b" />
-
-            {/* Scrollable content area — takes remaining height */}
-            <div className="flex-1 min-h-0 overflow-hidden">
+            {/* Scrollable content area */}
+            <SidebarContent>
                 {shareTab === "share" ? (
-                    <ScrollArea className="h-full">
-                        <div className="p-4 space-y-8">
+                    <SidebarGroup>
+                        <SidebarGroupContent className="p-4 space-y-8">
                             {isDraft ? (
                                 <div className="flex flex-col items-center justify-center py-10 px-4 text-center space-y-6 bg-muted/20 border-2 border-dashed rounded-2xl">
                                     <div className="p-3 bg-primary/10 rounded-full text-primary">
@@ -191,27 +194,29 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                                     />
                                 </div>
                             )}
-                        </div>
-                    </ScrollArea>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
                 ) : (
-                    <ScrollArea className="h-full">
-                        <div className="flex flex-col items-center justify-center py-20 px-6 text-center space-y-4">
-                            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
-                                <BarChart3 className="h-8 w-8 text-muted-foreground" />
+                    <SidebarGroup>
+                        <SidebarGroupContent className="p-4">
+                            <div className="flex flex-col items-center justify-center py-20 px-6 text-center space-y-4">
+                                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center">
+                                    <BarChart3 className="h-8 w-8 text-muted-foreground" />
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="font-semibold">Summary View</h3>
+                                    <p className="text-xs text-muted-foreground">
+                                        View a high-level summary of your form responses and completion rates. This feature is coming soon!
+                                    </p>
+                                </div>
+                                <Button variant="outline" size="sm" disabled>
+                                    View Analytics
+                                </Button>
                             </div>
-                            <div className="space-y-2">
-                                <h3 className="font-semibold">Summary View</h3>
-                                <p className="text-xs text-muted-foreground">
-                                    View a high-level summary of your form responses and completion rates. This feature is coming soon!
-                                </p>
-                            </div>
-                            <Button variant="outline" size="sm" disabled>
-                                View Analytics
-                            </Button>
-                        </div>
-                    </ScrollArea>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
                 )}
-            </div>
-        </div>
+            </SidebarContent>
+        </Sidebar>
     );
 }

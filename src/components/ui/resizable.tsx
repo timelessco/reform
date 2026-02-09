@@ -1,3 +1,4 @@
+import * as React from "react"
 import { GripVerticalIcon } from "lucide-react"
 import {
   Panel,
@@ -6,29 +7,35 @@ import {
   type PanelGroupProps,
   type PanelProps,
   type PanelResizeHandleProps,
+  type ImperativePanelHandle,
+  type ImperativePanelGroupHandle,
 } from "react-resizable-panels"
 
 import { cn } from "@/lib/utils"
 
-function ResizablePanelGroup({
-  className,
-  ...props
-}: PanelGroupProps) {
-  return (
-    <PanelGroup
-      data-slot="resizable-panel-group"
-      className={cn(
-        "flex h-full w-full data-[panel-group-direction=vertical]:flex-col",
-        className
-      )}
-      {...props}
-    />
-  )
-}
+const ResizablePanelGroup = React.forwardRef<
+  ImperativePanelGroupHandle,
+  PanelGroupProps
+>(({ className, ...props }, ref) => (
+  <PanelGroup
+    ref={ref}
+    data-slot="resizable-panel-group"
+    className={cn(
+      "flex h-full w-full data-[panel-group-direction=vertical]:flex-col",
+      className
+    )}
+    {...props}
+  />
+))
+ResizablePanelGroup.displayName = "ResizablePanelGroup"
 
-function ResizablePanel({ ...props }: PanelProps) {
-  return <Panel data-slot="resizable-panel" {...props} />
-}
+const ResizablePanel = React.forwardRef<
+  ImperativePanelHandle,
+  PanelProps
+>(({ ...props }, ref) => (
+  <Panel ref={ref} data-slot="resizable-panel" {...props} />
+))
+ResizablePanel.displayName = "ResizablePanel"
 
 function ResizableHandle({
   withHandle,
@@ -74,4 +81,10 @@ function ResizableHandle({
   )
 }
 
-export { ResizableHandle, ResizablePanel, ResizablePanelGroup }
+export {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+  type ImperativePanelHandle,
+  type ImperativePanelGroupHandle,
+}
