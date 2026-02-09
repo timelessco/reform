@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { FormSettingsSidebar } from "@/components/form-builder/form-settings-sidebar";
 import { ShareSummarySidebar } from "@/components/form-builder/share-summary-sidebar";
 import { VersionHistorySidebar } from "@/components/form-builder/version-history-sidebar";
@@ -55,8 +56,10 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { EditorHeaderVisibilityProvider, useEditorHeaderVisibility } from "@/contexts/editor-header-visibility-context";
 import { MinimalSidebarProvider, useMinimalSidebar } from "@/contexts/minimal-sidebar-context";
 import {
+  createFormLocal,
   createWorkspaceLocal,
   deleteWorkspaceLocal,
   permanentDeleteFormLocal,
@@ -74,7 +77,7 @@ import {
 import { auth, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/middleware/auth";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, Outlet, useLocation, useRouter, useSearch } from "@tanstack/react-router";
 import {
   Bell,
@@ -115,11 +118,16 @@ export const Route = createFileRoute("/_authenticated")({
 const TypedResizableHandle = ResizableHandle as any;
 
 function AuthLayout() {
+  const { pathname } = useLocation();
+  const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
+
   return (
     <SidebarProvider style={{ "--app-header-height": "40px" } as React.CSSProperties}>
-      <MinimalSidebarProvider>
-        <AuthLayoutContent />
-      </MinimalSidebarProvider>
+      <EditorHeaderVisibilityProvider enabled={isEditRoute}>
+        <MinimalSidebarProvider>
+          <AuthLayoutContent />
+        </MinimalSidebarProvider>
+      </EditorHeaderVisibilityProvider>
     </SidebarProvider>
   );
 }
@@ -127,6 +135,8 @@ function AuthLayout() {
 function AuthLayoutContent() {
   const location = useLocation();
   const { pathname } = location;
+  const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
+  const { visible: isHeaderVisible, reportPointerActivity } = useEditorHeaderVisibility();
   const [resizeTooltip, setResizeTooltip] = useState({
     visible: false,
     x: 0,
@@ -160,6 +170,7 @@ function AuthLayoutContent() {
 
   const isFormBuilder = pathname.includes("/form-builder/");
   const showEditorSidebar = !!(activeSidebar && isFormBuilder && formId);
+  const isDistractionHeaderHidden = isEditRoute && !isHeaderVisible;
 
   // Animate sidebar expansion/collapse
   useEffect(() => {
@@ -204,12 +215,20 @@ function AuthLayoutContent() {
       <SidebarInbox />
 
       <SidebarInset className="overflow-hidden relative flex flex-col h-screen">
+        {isDistractionHeaderHidden && (
+          <div
+            className="fixed inset-x-0 top-0 z-[1200] h-3 bg-transparent"
+            onMouseEnter={reportPointerActivity}
+            aria-hidden="true"
+          />
+        )}
         <div className="relative z-0">
           <AppHeader
             formId={formId}
             workspaceId={workspaceId}
             dividerX={handleLeft}
             isSidebarOpen={showEditorSidebar}
+            isDistractionHidden={isDistractionHeaderHidden}
           />
         </div>
 
@@ -365,6 +384,7 @@ function AppSidebar() {
   const { isInboxOpen, setIsInboxOpen } = useMinimalSidebar();
   const location = useLocation();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
   const {
     toggle: togglePalette,
@@ -376,9 +396,10 @@ function AppSidebar() {
   const [trashDialogOpen, setTrashDialogOpen] = useState(false);
 
   const { data: activeOrg } = useQuery(auth.organization.getFullOrganization.queryOptions());
+  const { data: workspacesData } = useWorkspaces();
 
-  const { data: invitations } = useQuery(auth.organization.listInvitations.queryOptions());
-  const pendingCount = invitations?.length ?? 0;
+  const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
+  const pendingCount = (invitations ?? []).filter((inv: any) => inv.status === "pending").length;
 
   const { data: session } = useSession();
 
@@ -394,8 +415,17 @@ function AppSidebar() {
 
   const setActiveOrgMutation = useMutation(
     auth.organization.setActive.mutationOptions({
-      onSuccess: () => {
-        router.invalidate();
+      onSuccess: async () => {
+        // Invalidate and wait for refetch before navigating
+        await queryClient.invalidateQueries({
+          queryKey: ["organization", "getFullOrganization"],
+          refetchType: "all",
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["workspaces-with-forms"],
+          refetchType: "all",
+        });
+        router.navigate({ to: "/dashboard" });
       },
     }),
   );
@@ -464,10 +494,20 @@ function AppSidebar() {
                   <SidebarMenuButton
                     onClick={() => setIsInboxOpen(!isInboxOpen)}
                     isActive={isInboxOpen}
-                    tooltip="Notifications"
+                    tooltip={pendingCount > 0 ? `Notifications (${pendingCount})` : "Notifications"}
                   >
-                    <Bell className="h-4 w-4" />
+                    <div className="relative">
+                      <Bell className="h-4 w-4" />
+                      {pendingCount > 0 && (
+                        <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-primary" />
+                      )}
+                    </div>
                     <span>Notifications</span>
+                    {pendingCount > 0 && (
+                      <span className="ml-auto text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
+                        {pendingCount}
+                      </span>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -489,27 +529,6 @@ function AppSidebar() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-
-          {invitations && pendingCount > 0 && (
-            <SidebarGroup>
-              <SidebarGroupContent className="px-2">
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={location.pathname === "/accept-invite"}
-                      tooltip={`Invitations (${pendingCount})`}
-                    >
-                      <Link to="/accept-invite" search={{ invitationId: invitations[0].id }}>
-                        <Bell className="h-4 w-4" />
-                        <span>Invitations ({pendingCount})</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          )}
 
           <div className="mt-4 px-2">
             <SidebarWorkspacesMinimal activeOrgId={activeOrg?.id} />
@@ -540,8 +559,30 @@ function AppSidebar() {
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Actions">
             <CommandItem
-              onSelect={() => {
+              onSelect={async () => {
                 setIsPaletteOpen(false);
+                if (activeOrg && workspacesData) {
+                  const orgWorkspaces = workspacesData.filter(
+                    (ws) => ws.organizationId === activeOrg.id
+                  );
+                  if (orgWorkspaces.length > 0) {
+                    // Use workspace from URL if available, otherwise use first workspace
+                    const workspaceMatch = location.pathname.match(/\/workspace\/([^/]+)/);
+                    const currentWorkspaceId = workspaceMatch?.[1];
+                    const targetWorkspace = currentWorkspaceId
+                      ? orgWorkspaces.find((ws) => ws.id === currentWorkspaceId) || orgWorkspaces[0]
+                      : orgWorkspaces[0];
+
+                    const newForm = await createFormLocal(targetWorkspace.id);
+                    router.navigate({
+                      to: "/workspace/$workspaceId/form-builder/$formId/edit",
+                      params: {
+                        workspaceId: targetWorkspace.id,
+                        formId: newForm.id,
+                      },
+                    });
+                  }
+                }
               }}
             >
               <Plus className="mr-2 h-4 w-4" />
@@ -747,20 +788,69 @@ function TrashDialog({
 function SidebarInbox() {
   const { isInboxOpen, setIsInboxOpen } = useMinimalSidebar();
   const { state } = useSidebar();
+  const queryClient = useQueryClient();
+
+  // Fetch invitations received by current user
+  const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
+
+  // Helper to refetch invitations on error (stale data)
+  const handleError = (error: any) => {
+    const message = error?.message || "Something went wrong";
+    toast.error(message);
+    // Refetch to clear stale invitations
+    queryClient.invalidateQueries({
+      queryKey: auth.organization.listUserInvitations.queryKey(),
+    });
+  };
+
+  // Accept/Reject mutations
+  const acceptMutation = useMutation(
+    auth.organization.acceptInvitation.mutationOptions({
+      onSuccess: () => {
+        toast.success("Invitation accepted!");
+        queryClient.invalidateQueries({
+          queryKey: auth.organization.listUserInvitations.queryKey(),
+        });
+      },
+      onError: handleError,
+    }),
+  );
+
+  const rejectMutation = useMutation(
+    auth.organization.rejectInvitation.mutationOptions({
+      onSuccess: () => {
+        toast.success("Invitation declined");
+        queryClient.invalidateQueries({
+          queryKey: auth.organization.listUserInvitations.queryKey(),
+        });
+      },
+      onError: handleError,
+    }),
+  );
 
   if (!isInboxOpen) return null;
+
+  // Only show pending invitations
+  const pendingInvitations = (invitations ?? []).filter(
+    (inv: any) => inv.status === "pending"
+  );
 
   return (
     <div
       className={cn(
-        "fixed z-40 flex w-80 flex-col bg-background select-none transition-all duration-300 ease-in-out border-r border-foreground/5 top-0 bottom-0",
-        state === "expanded" ? "left-56" : "left-11",
+        "fixed z-40 flex w-80 flex-col bg-background select-none transition-[left] duration-200 ease-linear border-r border-foreground/5 top-0 bottom-0",
+        state === "expanded" ? "left-[var(--sidebar-width)]" : "left-[var(--sidebar-width-icon)]",
       )}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 h-10 border-b border-foreground/5">
         <div className="flex items-center gap-2">
           <h2 className="text-[13px] font-bold text-foreground">Inbox</h2>
+          {pendingInvitations.length > 0 && (
+            <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
+              {pendingInvitations.length}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-0.5">
           <button
@@ -789,49 +879,77 @@ function SidebarInbox() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-2 no-scrollbar">
         <div className="px-1 overflow-hidden">
+          {/* Invitations Section */}
+          {pendingInvitations.length > 0 && (
+            <>
+              <p className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest mb-3 px-2">
+                Invitations
+              </p>
+              <div className="space-y-1 mb-4">
+                {pendingInvitations.map((invitation) => {
+                  const isProcessing =
+                    (acceptMutation.isPending && acceptMutation.variables?.invitationId === invitation.id) ||
+                    (rejectMutation.isPending && rejectMutation.variables?.invitationId === invitation.id);
+
+                  return (
+                    <div
+                      key={invitation.id}
+                      className="group flex flex-col gap-2 p-2 rounded-md hover:bg-muted/50 transition-colors border border-transparent hover:border-foreground/5"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="h-8 w-8 rounded bg-foreground/5 flex items-center justify-center shrink-0">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[12px] font-medium text-foreground leading-tight">
+                            You've been invited to join{" "}
+                            <span className="font-bold">
+                              {(invitation as any).organization?.name ?? "an organization"}
+                            </span>
+                          </p>
+                          <p className="text-[11px] text-muted-foreground/50 mt-0.5">
+                            Role: <span className="capitalize">{invitation.role}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 ml-11">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="h-7 text-xs px-3"
+                          disabled={isProcessing}
+                          onClick={() => acceptMutation.mutate({ invitationId: invitation.id })}
+                        >
+                          {acceptMutation.isPending && acceptMutation.variables?.invitationId === invitation.id
+                            ? "Accepting..."
+                            : "Accept"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs px-3"
+                          disabled={isProcessing}
+                          onClick={() => rejectMutation.mutate({ invitationId: invitation.id })}
+                        >
+                          {rejectMutation.isPending && rejectMutation.variables?.invitationId === invitation.id
+                            ? "Declining..."
+                            : "Decline"}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {/* Older / Other notifications section (for future extensibility) */}
           <p className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest mb-3 px-2">
-            Older
+            {pendingInvitations.length > 0 ? "Other" : "Notifications"}
           </p>
-
           <div className="space-y-1">
-            {/* Notification Item 1 */}
-            <div className="group flex flex-col gap-1 p-2 rounded-md hover:bg-muted/50 cursor-pointer transition-colors border border-transparent hover:border-foreground/5">
-              <div className="flex items-start gap-3">
-                <div className="h-8 w-8 rounded bg-foreground/5 flex items-center justify-center shrink-0">
-                  <span className="text-xs font-bold">S</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-[13px] font-bold text-foreground leading-tight truncate">
-                      SMART TECH requested access to{" "}
-                      <span className="text-red-500">📕 Betting Platform</span>
-                    </p>
-                    <span className="text-[10px] text-muted-foreground/30 whitespace-nowrap">
-                      12/08
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground/50 mt-1">
-                    Approved by You on Dec 8, 2025
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Notification Item 2 */}
-            <div className="group flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer transition-colors border border-transparent hover:border-foreground/5">
-              <div className="h-8 w-8 rounded-full bg-foreground/5 flex items-center justify-center shrink-0">
-                <span className="text-xs font-bold text-muted-foreground/40">B</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[12px] font-medium text-foreground truncate">
-                    Basky & Velu invited you to <span className="font-bold">🕵️ I'm Vijay</span>
-                  </p>
-                  <span className="text-[10px] text-muted-foreground/30 whitespace-nowrap">
-                    10/22
-                  </span>
-                </div>
-              </div>
+            <div className="flex items-center justify-center py-8 text-muted-foreground/40">
+              <p className="text-xs">No other notifications</p>
             </div>
           </div>
         </div>
@@ -1014,13 +1132,6 @@ function UserMenuMinimal({
           <div className="space-y-0.5 px-1">
             <button
               type="button"
-              className="flex items-center gap-2.5 w-full px-2 py-1.5 text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md transition-colors text-left"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>Add another account</span>
-            </button>
-            <button
-              type="button"
               onClick={() => {
                 signOutMutation.mutate({});
                 setIsOpen(false);
@@ -1064,6 +1175,7 @@ function WorkspaceItemMinimal({
   onRename: () => void;
   onDelete: () => void;
 }) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
 
@@ -1085,12 +1197,27 @@ function WorkspaceItemMinimal({
       <div className="group flex items-center justify-between px-2 py-1.5 transition-colors">
         <button
           type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1.5 cursor-pointer flex-1 min-w-0"
+          onClick={() => {
+            router.navigate({
+              to: "/workspace/$workspaceId",
+              params: { workspaceId: workspace.id },
+            });
+          }}
+          className="flex items-center gap-1.5 cursor-pointer flex-1 min-w-0 text-left"
         >
           <span className="text-[13px] font-medium text-muted-foreground/60 transition-colors group-hover:text-foreground truncate">
             {workspace.name}
           </span>
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(!isOpen);
+          }}
+          className="p-1 rounded hover:bg-muted text-muted-foreground/50 hover:text-foreground transition-colors"
+          aria-label={`${isOpen ? "Collapse" : "Expand"} ${workspace.name}`}
+        >
           <ChevronDown
             className={cn(
               "h-3 w-3 text-muted-foreground/40 transition-all duration-200",

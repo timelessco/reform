@@ -29,7 +29,7 @@ function searchToFormValues(search: Record<string, unknown>): EmbedFormValues {
   return {
     embedType:
       (search.embedType as EmbedType) ??
-      ((search.demo as boolean) ? "fullpage" : "standard"),
+      ((search.demo as boolean) ? "standard" : "fullpage"),
     height: (search.embedHeight as number) ?? defaultEmbedOptions.height,
     dynamicHeight: (search.embedDynamicHeight as boolean) ?? defaultEmbedOptions.dynamicHeight,
     hideTitle: (search.embedHideTitle as boolean) ?? defaultEmbedOptions.hideTitle,

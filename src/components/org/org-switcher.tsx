@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { ChevronDown, Home, LogOut, Settings, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,6 +20,7 @@ import { auth, useSession } from "@/lib/auth-client";
 export function OrganizationSwitcher() {
   const { isMobile } = useSidebar();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: session } = useSession();
   const user = session?.user;
 
@@ -29,8 +30,17 @@ export function OrganizationSwitcher() {
 
   const setActiveOrgMutation = useMutation(
     auth.organization.setActive.mutationOptions({
-      onSuccess: () => {
-        router.invalidate();
+      onSuccess: async () => {
+        // Invalidate and wait for refetch before navigating
+        await queryClient.invalidateQueries({
+          queryKey: ["organization", "getFullOrganization"],
+          refetchType: "all",
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["workspaces-with-forms"],
+          refetchType: "all",
+        });
+        router.navigate({ to: "/dashboard" });
       },
     }),
   );

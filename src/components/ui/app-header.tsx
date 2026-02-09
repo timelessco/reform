@@ -44,9 +44,16 @@ interface AppHeaderProps {
   workspaceId?: string;
   dividerX?: number;
   isSidebarOpen?: boolean;
+  isDistractionHidden?: boolean;
 }
 
-export function AppHeader({ formId, workspaceId, dividerX, isSidebarOpen }: AppHeaderProps) {
+export function AppHeader({
+  formId,
+  workspaceId,
+  dividerX,
+  isSidebarOpen,
+  isDistractionHidden = false,
+}: AppHeaderProps) {
   const { state, toggleSidebar: toggleMainSidebar } = useSidebarSafe() || { state: "expanded", toggleSidebar: () => { } };
   const { pathname } = useLocation();
   const isFormBuilder = pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
@@ -77,8 +84,8 @@ export function AppHeader({ formId, workspaceId, dividerX, isSidebarOpen }: AppH
   const toggleAnalyticsSidebar = () => toggleSidebar("share", "summary");
 
   // Get search params for the current route
-  const search: any = useSearch({ strict: false });
-  const demo = search.demo;
+  const searchParams: any = useSearch({ strict: false });
+  const demo = searchParams.demo;
 
   // Primary: TanStack Query cache (primed by route loader, immediate on navigation)
   const { data: serverFormData } = useQuery({
@@ -137,7 +144,7 @@ export function AppHeader({ formId, workspaceId, dividerX, isSidebarOpen }: AppH
         navigate({
           to: "/workspace/$workspaceId/form-builder/$formId/submissions",
           params: { workspaceId, formId },
-          search: { sidebar: "share" }
+          // search: { sidebar: "share" }
         });
       } catch (error) {
         toast.error("Failed to publish form");
@@ -159,7 +166,12 @@ export function AppHeader({ formId, workspaceId, dividerX, isSidebarOpen }: AppH
   };
 
   return (
-    <header className="group/header flex h-10 w-full items-center justify-between bg-background px-3 text-[13px] -z-10 font-medium shrink-0 select-none">
+    <header
+      className={cn(
+        "group/header flex h-10 w-full items-center justify-between bg-background px-3 text-[13px] -z-10 font-medium shrink-0 select-none transition-opacity duration-150",
+        isDistractionHidden && "opacity-0 pointer-events-none",
+      )}
+    >
       {/* Left Section: Breadcrumbs */}
       <div className="flex items-center gap-1.5 min-w-0 flex-1">
         {state === "collapsed" && (

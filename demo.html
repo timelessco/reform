@@ -1,35 +1,32 @@
-<iframe
-  data-better-forms-src="http://localhost:3000/forms/6d58aa9d-bd1d-4792-bca7-77bf5637b985?dynamicHeight=true"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    body {
+      background: orange;
+    }
+  </style>
+</head>
+<body>// Example
+  <button type="button"
+    data-form-id="a25ea63e-601a-4b4b-8449-9ceac3ab445c"
+    data-overlay="1"
+    data-auto-close="4700"
+  >
+    Click me
+  </button><iframe
+  data-better-forms-src="http://localhost:3000/forms/a25ea63e-601a-4b4b-8449-9ceac3ab445c?hideTitle=true&transparent=true&align=left&branding=false"
   loading="lazy"
   width="100%"
-  height="558"
+  height="500"
   frameborder="0"
   marginheight="0"
   marginwidth="0"
-  title="Multi Step Test"
+  title="Form 01"
 ></iframe>
-<script>
-  window.addEventListener("message", function (e) {
-    try {
-      var d = JSON.parse(e.data);
-      if (d.event === "BetterForms.Resize") {
-        var f = document.querySelector("iframe[data-better-forms-src]");
-        if (f && typeof d.height === "number") f.style.height = d.height + "px";
-      }
-    } catch {}
-  });
-  var d = document,
-    w = "http://localhost:3000/widgets/embed.js",
-    v = function () {
-      "undefined" != typeof BetterForms
-        ? BetterForms.loadEmbeds()
-        : d.querySelectorAll("iframe[data-better-forms-src]:not([src])").forEach(function (e) {
-            e.src = e.dataset.betterFormsSrc;
-          });
-    };
-  if ("undefined" != typeof BetterForms) v();
-  else if (d.querySelector('script[src="' + w + '"]') == null) {
-    var s = d.createElement("script");
-    ((s.src = w), (s.onload = v), (s.onerror = v), d.body.appendChild(s));
-  }
-</script>
+<script>var d=document,w="http://localhost:3000/widgets/embed.js",v=function(){"undefined"!=typeof BetterForms?BetterForms.loadEmbeds():d.querySelectorAll("iframe[data-better-forms-src]:not([src])").forEach((function(e){e.src=e.dataset.betterFormsSrc}))};if("undefined"!=typeof BetterForms)v();else if(d.querySelector('script[src="'+w+'"]')==null){var s=d.createElement("script");s.src=w,s.onload=v,s.onerror=v,d.body.appendChild(s);}</script>
+</body>
+</html>

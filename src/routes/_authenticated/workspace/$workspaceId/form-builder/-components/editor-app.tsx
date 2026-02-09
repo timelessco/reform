@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { normalizeNodeId, type TElement, type Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
+import type { KeyboardEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorKit } from "@/components/editor/editor-kit";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { Editor, EditorContainer } from "@/components/ui/editor";
 import { createFormButtonNode } from "@/components/ui/form-button-node";
 import type { FormHeaderElementData } from "@/components/ui/form-header-node";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
+import { useEditorHeaderVisibilitySafe } from "@/contexts/editor-header-visibility-context";
 import { updateDoc, updateHeader } from "@/db-collections";
 import { useForm } from "@/hooks/use-live-hooks";
 
@@ -40,6 +42,7 @@ export default function EditorApp({
 	const [isReady, setIsReady] = useState(false);
 	const skipSaveRef = useRef(false);
 	const lastKnownContentRef = useRef<string | null>(null);
+	const headerVisibility = useEditorHeaderVisibilitySafe();
 
 	const editor = usePlateEditor({
 		plugins: EditorKit,
@@ -178,6 +181,27 @@ export default function EditorApp({
 		[formId, workspaceId, readOnly],
 	);
 
+	const handleEditorKeyDown = useCallback(
+		(event: KeyboardEvent<HTMLDivElement>) => {
+			if (readOnly || !headerVisibility?.enabled) return;
+			if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+			const key = event.key;
+			const isPrintable = key.length === 1;
+			const isTypingIntentKey =
+				isPrintable ||
+				key === "Enter" ||
+				key === "Backspace" ||
+				key === "Delete" ||
+				key === " " ||
+				key === "Spacebar";
+
+			if (!isTypingIntentKey) return;
+			headerVisibility.reportTyping();
+		},
+		[readOnly, headerVisibility],
+	);
+
 	if (!isReady) {
 		return (
 			<div className="h-screen w-full flex items-center justify-center">
@@ -211,7 +235,7 @@ export default function EditorApp({
 					variant="default"
 					className="px-0 sm:px-0 max-w-full  border-none shadow-none"
 				>
-					<Editor variant='demo' />
+					<Editor variant="demo" onKeyDown={handleEditorKeyDown} />
 				</EditorContainer>
 			</Plate>
 		</div>

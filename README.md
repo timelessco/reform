@@ -4,3 +4,9 @@
 - [] left Sidebar Normal , and dragable list
 - [] Right sidebar animationn and visual junk\
 - [] header animation on hover similar to notion
+
+
+- popup issues
+- [] height is auto adjusting
+- [] position is not working
+- []

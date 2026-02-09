@@ -8,6 +8,7 @@ import {
   FileText,
   HelpCircle,
   Loader2,
+  MoreHorizontal,
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
@@ -24,6 +25,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -36,7 +43,6 @@ import { WorkspaceHeader } from "@/components/ui/form-header";
 import { Input } from "@/components/ui/input";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   createWorkspaceLocal,
   deleteWorkspaceLocal,
@@ -81,7 +87,7 @@ function WorkspaceDashboard() {
   const forms = formsData ?? [];
 
   // Sort by updatedAt descending (most recent first)
-  const sortedForms = [...forms].sort(
+  const sortedForms = [...forms].toSorted(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
   );
   // Pagination
@@ -240,9 +246,7 @@ function WorkspaceDashboard() {
           name={workspace.name}
           onRename={openRenameWorkspace}
           onDelete={openDeleteWorkspace}
-          onNewWorkspace={handleCreateWorkspace}
           onNewForm={handleCreateForm}
-          isCreatingWorkspace={isCreatingWorkspace}
           isCreatingForm={isCreating}
         />
 
@@ -256,7 +260,6 @@ function WorkspaceDashboard() {
                   params: { workspaceId, formId: form.id },
                 });
               };
-
               return (
                 <article key={form.id} className="group relative">
                   <button
@@ -293,44 +296,48 @@ function WorkspaceDashboard() {
                     </div>
                   </button>
                   <div className="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-muted"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDuplicate(form.id);
-                            }}
-                          >
-                            <Copy className="h-4 w-4 text-muted-foreground" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Duplicate</TooltipContent>
-                      </Tooltip>
-
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteClick({
-                                id: form.id,
-                                title: form.title || "Untitled",
-                              });
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 text-muted-foreground" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Delete</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 rounded-full hover:bg-muted"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                          aria-label={`Open actions for ${form.title || "Untitled"}`}
+                        >
+                          <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDuplicate(form.id);
+                          }}
+                        >
+                          <Copy className="mr-2 h-4 w-4" />
+                          Duplicate
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDeleteClick({
+                              id: form.id,
+                              title: form.title || "Untitled",
+                            });
+                          }}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </article>
               );

@@ -6,7 +6,7 @@ interface EmbedPreviewMockupProps {
   popupPosition?: "bottom-right" | "bottom-left" | "center";
 }
 
-export function EmbedPreviewMockup({ embedType, popupPosition = "bottom-right" }: EmbedPreviewMockupProps) {
+export function EmbedPreviewMockup({ embedType = "fullpage", popupPosition = "bottom-right" }: EmbedPreviewMockupProps) {
   return (
     <div className="rounded-xl border bg-muted/20 overflow-hidden shadow-sm">
       {/* Browser Chrome */}

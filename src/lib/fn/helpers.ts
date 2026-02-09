@@ -14,32 +14,69 @@ export const authUser = async () => {
   return user;
 };
 
+/**
+ * Get authenticated user with their active organization.
+ * Throws if user is not authenticated or has no active org.
+ */
+export const authUserWithOrg = async () => {
+  const headers = getRequestHeaders();
+  const session = await auth.api.getSession({ headers });
+  const user = session?.user;
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const activeOrgId = session?.session?.activeOrganizationId;
+  if (!activeOrgId) {
+    throw new Error("No active organization");
+  }
+
+  return { user, activeOrgId };
+};
+
+/**
+ * Authorize access to a workspace.
+ * Checks if the workspace belongs to the user's active organization.
+ */
 export const authWorkspace = async (workspaceId: string) => {
-  const user = await authUser();
+  const { user, activeOrgId } = await authUserWithOrg();
+
   const workspace = await db
     .select({ id: workspaces.id })
     .from(workspaces)
-    .where(and(eq(workspaces.id, workspaceId), eq(workspaces.createdByUserId, user.id)))
+    .where(and(
+      eq(workspaces.id, workspaceId),
+      eq(workspaces.organizationId, activeOrgId)
+    ))
     .limit(1);
 
   if (workspace.length === 0) {
     throw new Error("Workspace not found or access denied");
   }
-  return { user, workspace: workspace[0] };
+  return { user, workspace: workspace[0], activeOrgId };
 };
 
+/**
+ * Authorize access to a form.
+ * Checks if the form's workspace belongs to the user's active organization.
+ */
 export const authForm = async (formId: string) => {
-  const user = await authUser();
+  const { user, activeOrgId } = await authUserWithOrg();
+
   const form = await db
-    .select({ id: forms.id })
+    .select({ id: forms.id, workspaceId: forms.workspaceId })
     .from(forms)
-    .where(and(eq(forms.id, formId), eq(forms.createdByUserId, user.id)))
+    .innerJoin(workspaces, eq(forms.workspaceId, workspaces.id))
+    .where(and(
+      eq(forms.id, formId),
+      eq(workspaces.organizationId, activeOrgId)
+    ))
     .limit(1);
 
   if (form.length === 0) {
     throw new Error("Form not found or access denied");
   }
-  return { user, form: form[0] };
+  return { user, form: form[0], activeOrgId };
 };
 
 export const getTxId = async () => {

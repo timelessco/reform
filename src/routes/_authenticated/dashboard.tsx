@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -70,6 +70,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { activeOrg, orgsData, workspacesData: initialWorkspacesData } = Route.useLoaderData();
   const [isCreating, setIsCreating] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -136,8 +137,16 @@ function DashboardPage() {
 
   const setActiveMutation = useMutation(
     auth.organization.setActive.mutationOptions({
-      onSuccess: () => {
-        // Refetch route data to get updated active org
+      onSuccess: async () => {
+        // Invalidate and wait for refetch before navigating
+        await queryClient.invalidateQueries({
+          queryKey: ["organization", "getFullOrganization"],
+          refetchType: "all",
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["workspaces-with-forms"],
+          refetchType: "all",
+        });
         navigate({ to: "/dashboard", replace: true });
       },
     }),

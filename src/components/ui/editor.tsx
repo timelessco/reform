@@ -100,6 +100,8 @@ export const Editor = ({
         focused,
         variant,
       }),
+      (variant === "default" || variant === "demo") &&
+      "[--editor-px:max(64px,calc(50%-350px))]",
       className,
     )}
     disabled={disabled}
