@@ -154,7 +154,7 @@ function FormLayout() {
 	return (
 		<div className="flex flex-col h-screen overflow-hidden bg-background">
 			{/* Header Section */}
-			<div className="shrink-0 bg-background pt-16">
+			<div className="shrink-0 bg-background pt-10">
 				<div className="max-w-5xl mx-auto w-full px-8">
 					<div className="flex items-center justify-between mb-8">
 						<div className="flex items-center gap-3">

@@ -2,10 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Don't run dev server yourslef , cause I always works with dev server running in my tmux session.
+
 ## Plan Mode
 
 - Make the plan extremely concise. Sacrifice grammar for the sake of concision.
 - At the end of each plan, give me a list of unresolved questions to answer, if any.
+
+## Debugging
+- while you dubugging if you need to check the logs you can do so by alias check the tmux live logs which also have browser logs piped to it.
+- you can reload and do brower activites by using browser skill and using agentic browser cli.
+- When I say "watch mode", call agentation_watch_annotations in a loop. For each annotation: acknowledge it, make the fix, then resolve it with a summary. Continue watching until I say stop or timeout is reached.
 
 ## Build & Development Commands
 
@@ -169,3 +176,5 @@ Sentry.startSpan({ name: "Operation description" }, async () => {
   // Server operation
 });
 ```
+
+

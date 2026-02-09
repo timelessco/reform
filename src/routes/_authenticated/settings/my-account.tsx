@@ -24,6 +24,9 @@ import { auth, useSession } from "@/lib/auth-client";
 export const Route = createFileRoute("/_authenticated/settings/my-account")({
   component: MyAccountPage,
   loader: async ({ context }) => {
+      if (typeof window === "undefined") {
+        return { accounts: [] };
+      }
     const accounts = await context.queryClient.ensureQueryData({
       ...auth.listAccounts.queryOptions(),
       revalidateIfStale: true,
@@ -40,7 +43,7 @@ function MyAccountPage() {
   const { data: session, isPending: isSessionPending } = useSession();
   const user = session?.user;
   const { accounts: initialAccounts } = Route.useLoaderData();
-
+  console.log(initialAccounts , 'initialAccounts')
   // Initialize names from user (no useEffect needed since component waits for session)
   const [firstName, setFirstName] = useState(user?.name?.split(" ")[0] || "");
   const [lastName, setLastName] = useState(user?.name?.split(" ").slice(1).join(" ") || "");

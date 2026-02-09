@@ -1,4 +1,4 @@
-import { createFileRoute, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import type { Value } from "platejs";
@@ -19,6 +19,7 @@ import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
 import { getFormbyIdQueryOption } from "@/lib/fn/forms";
 import EditorApp from "../-components/editor-app";
 import { PreviewMode } from "../-components/preview-mode";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute(
   "/_authenticated/workspace/$workspaceId/form-builder/$formId/edit",
@@ -136,7 +137,7 @@ function DesignPage() {
 
   const loaderData = Route.useLoaderData();
   const initialContent = loaderData?.initialContent || [];
-  const search: any = useSearch({ strict: false });
+  const search = Route.useSearch();
   const demo = search.demo;
   console.log("[edit.tsx DesignPage] Demo:", demo);
   // Check if user explicitly wants to edit (force param from Edit button)
@@ -178,7 +179,7 @@ function DesignPage() {
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         {/* Main editor panel */}
         <ResizablePanel defaultSize={isVersionHistoryOpen ? 75 : 100} minSize={50}>
-          <main className="flex-1 overflow-auto relative bg-background h-full flex flex-col">
+          <main className="flex-1 overflow-y-auto overflow-x-hidden relative bg-background h-full flex flex-col">
             {/* Version viewing banner */}
             {isViewingVersion && (
               <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between shrink-0">
@@ -205,7 +206,7 @@ function DesignPage() {
               </div>
             )}
 
-            <div className="flex-1 overflow-auto">
+            <div className={cn("flex-1 overflow-x-hidden", demo ? "h-full overflow-hidden" : "overflow-y-auto")}>
               {demo ? (
                 <PreviewMode formId={formId} workspaceId={workspaceId} />
               ) : (

@@ -33,9 +33,11 @@ function ResizablePanel({ ...props }: PanelProps) {
 function ResizableHandle({
   withHandle,
   className,
+  children,
   ...props
 }: PanelResizeHandleProps & {
   withHandle?: boolean
+  children?: React.ReactNode
 }) {
   return (
     <PanelResizeHandle
@@ -62,6 +64,7 @@ function ResizableHandle({
       )}
       {...props}
     >
+      {children}
       {withHandle && (
         <div className="bg-border z-10 flex h-4 w-3 items-center justify-center rounded-xs border">
           <GripVerticalIcon className="size-2.5" />

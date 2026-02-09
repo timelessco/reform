@@ -1,5 +1,3 @@
-import { X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useFormSettingsSidebar } from "@/hooks/use-form-settings-sidebar";
 import { cn } from "@/lib/utils";
@@ -11,30 +9,14 @@ interface FormSettingsSidebarProps {
 }
 
 export function FormSettingsSidebar({ formId }: FormSettingsSidebarProps) {
-  const { activeTab, setActiveTab, setIsOpen } = useFormSettingsSidebar();
-
-  const handleClose = () => {
-    setIsOpen(false);
-  };
+  const { activeTab, setActiveTab } = useFormSettingsSidebar();
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full overflow-hidden bg-background">
       {/* Header with tabs */}
       <div className="shrink-0">
-        {/* Top row with close button */}
-        <div className="px-4 h-12 flex items-center justify-end">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-            onClick={handleClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-
         {/* Tab Navigation - underline style like the image */}
-        <div className="px-4 flex items-center gap-6">
+        <div className="px-4 pt-4 flex items-center gap-6">
           <button
             type="button"
             onClick={() => setActiveTab("integrations")}

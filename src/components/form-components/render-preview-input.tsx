@@ -19,6 +19,8 @@ interface RenderPreviewInputProps {
   grouped?: boolean;
   /** When true, form has multiple pages/steps - affects button alignment */
   isMultiPage?: boolean;
+  /** Layout variant */
+  layout?: "public" | "editor";
 }
 
 /**
@@ -57,6 +59,7 @@ export function RenderPreviewInput({
   navigation,
   grouped = false,
   isMultiPage = false,
+  layout = "public",
 }: RenderPreviewInputProps) {
   // Handle Button field type
   if (field.fieldType === "Button") {
@@ -106,7 +109,7 @@ export function RenderPreviewInput({
         disabled={navigation?.isSubmitting}
       >
         {navigation?.isSubmitting ? "Submitting..." : buttonText}
-        <ChevronRight className="h-4 w-4" />
+        {layout !== "editor" && <ChevronRight className="h-4 w-4" />}
       </Button>
     );
     // When grouped, parent handles layout; single-page aligns left, multi-page aligns right

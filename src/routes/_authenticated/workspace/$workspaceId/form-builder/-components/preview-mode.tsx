@@ -45,7 +45,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
   }
 
   return (
-    <div className="relative min-h-full overflow-y-auto bg-[#F9FAFB]">
+    <div className="relative min-h-full overflow-y-auto overflow-x-hidden bg-[#F9FAFB]">
       {/* Standard & Popup — mock website background */}
       {embedType !== "fullpage" && (
         <div className="flex flex-col min-h-full">
@@ -110,7 +110,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                       title={hideTitle ? "" : doc.title}
                       icon={doc.icon ?? undefined}
                       cover={doc.cover ?? undefined}
-                      onSubmit={async () => {}}
+                      onSubmit={async () => { }}
                       hideTitle={hideTitle}
                     />
                   </div>
@@ -157,7 +157,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                       title={hideTitle ? "" : doc.title}
                       icon={doc.icon ?? undefined}
                       cover={doc.cover ?? undefined}
-                      onSubmit={async () => {}}
+                      onSubmit={async () => { }}
                       hideTitle={hideTitle}
                     />
                   </div>
@@ -187,14 +187,15 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
             transparentBackground ? "bg-transparent" : "bg-white",
           )}
         >
-          <div className="flex-1 w-full max-w-3xl mx-auto py-12 px-8">
+          <div className="flex-1 w-full">
             <FormPreviewFromPlate
               content={content}
               title={hideTitle ? "" : doc.title}
               icon={doc.icon ?? undefined}
               cover={doc.cover ?? undefined}
-              onSubmit={async () => {}}
+              onSubmit={async () => { }}
               hideTitle={hideTitle}
+              layout="editor"
             />
 
             {branding && (

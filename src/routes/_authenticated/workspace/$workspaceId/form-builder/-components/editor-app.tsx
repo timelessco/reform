@@ -205,13 +205,13 @@ export default function EditorApp({
 	}
 
 	return (
-		<div className="h-screen w-full overflow-y-auto">
+		<div className="h-screen w-full overflow-y-auto overflow-x-hidden">
 			<Plate editor={editor} readOnly={readOnly} onChange={handleChange}>
 				<EditorContainer
 					variant="default"
-					className="px-0 sm:px-0 max-w-full mx-auto border-none shadow-none"
+					className="px-0 sm:px-0 max-w-full  border-none shadow-none"
 				>
-					<Editor className="overflow-x-visible" />
+					<Editor variant='demo' />
 				</EditorContainer>
 			</Plate>
 		</div>

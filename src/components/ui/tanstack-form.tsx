@@ -50,7 +50,7 @@ const Form = React.forwardRef<
     <form
       ref={ref}
       onSubmit={handleSubmit}
-      className={cn("flex flex-col p-2 md:p-5 w-full mx-auto gap-2", className)}
+      className={cn("flex flex-col  w-full mx-auto", className)}
       noValidate
       {...props}
     >
@@ -99,7 +99,7 @@ function FieldSet({ className, children, ...props }: React.ComponentProps<"field
 
   return (
     <FormItemContext.Provider value={{ id }}>
-      <DefaultFieldSet className={cn("grid gap-1", className)} {...props}>
+      <DefaultFieldSet className={cn("grid ", className)} {...props}>
         {children}
       </DefaultFieldSet>
     </FormItemContext.Provider>

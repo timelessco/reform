@@ -85,30 +85,47 @@ function DashboardPage() {
   // Live queries for real-time sync
   const { data: liveWorkspaces, isReady: wsReady } = useWorkspaces();
   const { data: liveForms, isReady: formsReady } = useForms();
-  console.log(liveWorkspaces, wsReady, "wsReady");
   const isLiveReady = wsReady && formsReady;
-  // Hybrid approach: use live data when ready, fallback to loader data
-  const orgWorkspaces = isLiveReady
-    ? (liveWorkspaces ?? []).filter((ws) => ws.organizationId === activeOrg?.id)
-    : (initialWorkspacesData?.workspaces ?? []).filter((ws) => ws.organizationId === activeOrg?.id);
-  // Forms: use live forms when ready, otherwise flatten from loader workspaces data
-  const orgForms = isLiveReady
-    ? (liveForms ?? [])
-      .filter((form) => orgWorkspaces.some((ws) => ws.id === form.workspaceId))
-      .filter((form) => form.status !== "archived")
-      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    : orgWorkspaces
-      .flatMap((ws) =>
-        ((ws as any).forms ?? []).map((f: any) => ({
-          ...f,
-          workspaceId: ws.id,
-          status: f.status ?? "draft",
-        })),
-      )
-      .filter((form: any) => form.status !== "archived")
-      .sort(
-        (a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-      );
+
+  // Track when live forms data has actually been received with content.
+  // This prevents switching from loader data to empty live data during
+  // the Electric sync race condition on first login redirect.
+  const [hasReceivedLiveForms, setHasReceivedLiveForms] = useState(false);
+  useEffect(() => {
+    if (formsReady && (liveForms ?? []).length > 0) {
+      setHasReceivedLiveForms(true);
+    }
+  }, [formsReady, liveForms]);
+
+  // Always compute loader-based data
+  const loaderWorkspaces = (initialWorkspacesData?.workspaces ?? []).filter(
+    (ws) => ws.organizationId === activeOrg?.id,
+  );
+  const loaderForms = loaderWorkspaces
+    .flatMap((ws) =>
+      ((ws as any).forms ?? []).map((f: any) => ({
+        ...f,
+        workspaceId: ws.id,
+        status: f.status ?? "draft",
+      })),
+    )
+    .filter((form: any) => form.status !== "archived")
+    .sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+  // Compute live data
+  const liveOrgWorkspaces = (liveWorkspaces ?? []).filter(
+    (ws) => ws.organizationId === activeOrg?.id,
+  );
+  const liveOrgForms = (liveForms ?? [])
+    .filter((form) => liveOrgWorkspaces.some((ws) => ws.id === form.workspaceId))
+    .filter((form) => form.status !== "archived")
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+  // Smart switch: don't drop loader data until live data is reliable.
+  // Use live data when Electric is ready AND (we've received live forms at least once OR loader had no forms).
+  const useLiveData = isLiveReady && (hasReceivedLiveForms || loaderForms.length === 0);
+  const orgWorkspaces = useLiveData ? liveOrgWorkspaces : loaderWorkspaces;
+  const orgForms = useLiveData ? liveOrgForms : loaderForms;
   // Create workspace name lookup
   const workspaceNameMap = new Map(orgWorkspaces.map((ws) => [ws.id, ws.name]));
 

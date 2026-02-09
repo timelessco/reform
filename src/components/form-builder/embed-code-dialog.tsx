@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Check, ChevronDown, Copy } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
@@ -10,6 +11,35 @@ import {
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 import { cn } from "@/lib/utils";
 import type { EmbedOptions } from "./embed-config-panel";
+import { all, createLowlight } from "lowlight";
+import { toHtml } from "hast-util-to-html";
+
+const lowlight = createLowlight(all);
+const hljsClassName =
+  "py-1 **:[.hljs-addition]:bg-[#f0fff4] **:[.hljs-addition]:text-[#22863a] dark:**:[.hljs-addition]:bg-[#3c5743] dark:**:[.hljs-addition]:text-[#ceead5] **:[.hljs-attr,.hljs-attribute,.hljs-literal,.hljs-meta,.hljs-number,.hljs-operator,.hljs-selector-attr,.hljs-selector-class,.hljs-selector-id,.hljs-variable]:text-[#005cc5] dark:**:[.hljs-attr,.hljs-attribute,.hljs-literal,.hljs-meta,.hljs-number,.hljs-operator,.hljs-selector-attr,.hljs-selector-class,.hljs-selector-id,.hljs-variable]:text-[#6596cf] **:[.hljs-built\\\\_in,.hljs-symbol]:text-[#e36209] dark:**:[.hljs-built\\\\_in,.hljs-symbol]:text-[#c3854e] **:[.hljs-bullet]:text-[#735c0f] **:[.hljs-comment,.hljs-code,.hljs-formula]:text-[#6a737d] dark:**:[.hljs-comment,.hljs-code,.hljs-formula]:text-[#6a737d] **:[.hljs-deletion]:bg-[#ffeef0] **:[.hljs-deletion]:text-[#b31d28] dark:**:[.hljs-deletion]:bg-[#473235] dark:**:[.hljs-deletion]:text-[#e7c7cb] **:[.hljs-emphasis]:italic **:[.hljs-keyword,.hljs-doctag,.hljs-template-tag,.hljs-template-variable,.hljs-type,.hljs-variable.language\\\\_]:text-[#d73a49] dark:**:[.hljs-keyword,.hljs-doctag,.hljs-template-tag,.hljs-template-variable,.hljs-type,.hljs-variable.language\\\\_]:text-[#ee6960] **:[.hljs-name,.hljs-quote,.hljs-selector-tag,.hljs-selector-pseudo]:text-[#22863a] dark:**:[.hljs-name,.hljs-quote,.hljs-selector-tag,.hljs-selector-pseudo]:text-[#36a84f] **:[.hljs-regexp,.hljs-string,.hljs-meta_.hljs-string]:text-[#032f62] dark:**:[.hljs-regexp,.hljs-string,.hljs-meta_.hljs-string]:text-[#3593ff] **:[.hljs-section]:font-bold **:[.hljs-section]:text-[#005cc5] dark:**:[.hljs-section]:text-[#61a5f2] **:[.hljs-strong]:font-bold **:[.hljs-title,.hljs-title.class\\\\_,.hljs-title.class\\\\_.inherited\\\\_\\\\_,.hljs-title.function\\\\_]:text-[#6f42c1] dark:**:[.hljs-title,.hljs-title.class\\\\_,.hljs-title.class\\\\_.inherited\\\\_\\\\_,.hljs-title.function\\\\_]:text-[#a77bfa]";
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function renderHighlighted(code: string, language?: string) {
+  try {
+    const tree = language ? lowlight.highlight(language, code) : lowlight.highlightAuto(code);
+    return toHtml(tree);
+  } catch {
+    try {
+      const tree = lowlight.highlightAuto(code);
+      return toHtml(tree);
+    } catch {
+      return escapeHtml(code);
+    }
+  }
+}
 
 interface EmbedCodeDialogProps {
   open: boolean;
@@ -104,11 +134,51 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-function CodeBlock({ code }: { code: string }) {
+function InlineCopyBar({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
   return (
-    <div className="relative group mt-3 w-full overflow-hidden">
-      <pre className="w-full max-w-full bg-muted/30 border border-border/50 rounded-xl p-4 overflow-x-auto text-[12px] font-mono text-foreground/90 leading-relaxed scrollbar-hide">
-        <code>{code}</code>
+    <div className="flex gap-1.5">
+      <Input
+        value={value}
+        readOnly
+        className="h-9 text-[11px] bg-muted/30 focus-visible:ring-primary border-transparent focus:border-primary transition-all pr-2 font-mono"
+      />
+      <Button size="icon" className="h-9 w-9 shrink-0" onClick={handleCopy}>
+        {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+      </Button>
+    </div>
+  );
+}
+
+function CodeBlock({
+  code,
+  language,
+  inline,
+}: {
+  code: string;
+  language?: string;
+  inline?: boolean;
+}) {
+  const isInline = inline ?? !code.includes("\n");
+  if (isInline) {
+    return <InlineCopyBar value={code} />;
+  }
+
+  const highlighted = useMemo(() => renderHighlighted(code, language), [code, language]);
+  return (
+    <div className="relative group mt-3 w-full max-w-full overflow-hidden">
+      <pre
+        className={cn(
+          "w-full max-w-full bg-muted/30 border border-border/50 rounded-xl p-4 text-[12px] font-mono text-foreground/90 leading-relaxed scrollbar-hide whitespace-pre-wrap break-words overflow-x-hidden [tab-size:2]",
+          hljsClassName,
+        )}
+      >
+        <code dangerouslySetInnerHTML={{ __html: highlighted }} />
       </pre>
       <div className="absolute top-0 right-0 p-1">
         <CopyButton text={code} />
@@ -168,7 +238,7 @@ export function EmbedCodeDialog({
                   <p className="text-muted-foreground text-[12px] mb-3.5">
                     Paste this HTML code snippet on the page where you want the embed to appear.
                   </p>
-                  <CodeBlock code={embedCode} />
+                  <CodeBlock code={embedCode} language="html" />
                 </div>
 
                 <div>
@@ -176,11 +246,12 @@ export function EmbedCodeDialog({
                   <p className="text-muted-foreground text-[12px] mb-3.5">
                     Alternatively, paste this link in a no-code tool (Notion, Ghost, Canva, etc).
                   </p>
-                  <div className="bg-muted/50 p-3.5 rounded-lg border border-border/50 text-[12px] break-all font-mono text-brand mb-4">
-                    {embedUrl}
+                  <div className="mb-4">
+                    <InlineCopyBar value={embedUrl} />
                   </div>
                   <CodeBlock
                     code={`<script async src="${window.location.origin}/widgets/embed.js"></script>`}
+                    language="html"
                   />
                 </div>
               </div>
@@ -189,6 +260,7 @@ export function EmbedCodeDialog({
                 <div>
                   <CodeBlock
                     code={`<script async src="${window.location.origin}/embed/popup.js"></script>`}
+                    language="html"
                   />
                 </div>
 
@@ -221,6 +293,7 @@ export function EmbedCodeDialog({
 >
   Click me
 </button>`}
+                    language="html"
                   />
                 </div>
 
@@ -237,6 +310,7 @@ export function EmbedCodeDialog({
                   </div>
                   <CodeBlock
                     code={`// Example\n<a href="${hashUrl}">\n  Click me\n</a>`}
+                    language="html"
                   />
                 </div>
               </>
@@ -247,9 +321,9 @@ export function EmbedCodeDialog({
                 <p className="text-muted-foreground text-[12px] mb-3.5">
                   Use a meta redirect or link to send visitors directly to your form.
                 </p>
-                <CodeBlock code={embedCode} />
-                <div className="mt-5 bg-muted/50 p-3.5 rounded-lg border border-border/50 text-[12px] break-all font-mono text-brand">
-                  {embedUrl}
+                <CodeBlock code={embedCode} language="html" />
+                <div className="mt-5">
+                  <InlineCopyBar value={embedUrl} />
                 </div>
               </div>
             )}
@@ -289,6 +363,7 @@ export function EmbedCodeDialog({
                         </p>
                         <CodeBlock
                           code={`<button type="button" data-form-id="${formId}" data-ref="downloads" data-email="alice@example.com">Click me</button>`}
+                          language="html"
                         />
                       </div>
                     )}
@@ -327,6 +402,7 @@ export function EmbedCodeDialog({
 
 // Load all embeds
 BetterForms.loadEmbeds();`}
+                        language="javascript"
                       />
                     ) : (
                       <div className="space-y-4">
@@ -343,6 +419,7 @@ BetterForms.openPopup('${formId}', options);
 
 // Close popup
 BetterForms.closePopup('${formId}');`}
+                          language="javascript"
                         />
                       </div>
                     )}
@@ -368,6 +445,7 @@ BetterForms.closePopup('${formId}');`}
   onPageView?: (page: number) => void;
   onSubmit?: (payload: any) => void;
 };`}
+                        language="typescript"
                       />
                     </div>
 
@@ -381,6 +459,7 @@ BetterForms.closePopup('${formId}');`}
   width: ${options.popupWidth},
   autoClose: 5000,
 });`}
+                          language="javascript"
                         />
                       </div>
                       <div className="space-y-3">
@@ -392,6 +471,7 @@ BetterForms.closePopup('${formId}');`}
     email: 'alice@example.com'
   }
 });`}
+                          language="javascript"
                         />
                       </div>
                       <div className="space-y-3">
@@ -401,6 +481,7 @@ BetterForms.closePopup('${formId}');`}
   onOpen: () => console.log('Opened'),
   onSubmit: (payload) => console.log('Submitted', payload)
 });`}
+                          language="javascript"
                         />
                       </div>
                     </div>

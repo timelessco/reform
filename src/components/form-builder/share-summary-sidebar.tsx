@@ -1,4 +1,4 @@
-import { X, Copy, Share2, BarChart3, Rocket, ExternalLink } from "lucide-react";
+import { Copy, Share2, BarChart3, Rocket, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
@@ -16,7 +16,7 @@ interface ShareSummarySidebarProps {
 }
 
 export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
-    const { shareTab, setShareTab, closeSidebar } = useEditorSidebar();
+    const { shareTab, setShareTab } = useEditorSidebar();
     const { data: savedDocs } = useForm(formId);
     const doc = savedDocs?.[0];
     const [isPublishing, setIsPublishing] = useState(false);
@@ -51,20 +51,8 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
         <div className="flex flex-col h-full overflow-hidden bg-background border-l w-full">
             {/* Header with tabs */}
             <div className="shrink-0">
-                {/* Top row with close button */}
-                <div className="px-4 h-12 flex items-center justify-end">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                        onClick={closeSidebar}
-                    >
-                        <X className="h-4 w-4" />
-                    </Button>
-                </div>
-
                 {/* Tab Navigation - underline style like FormSettingsSidebar */}
-                <div className="px-4 flex items-center gap-6">
+                <div className="px-4 pt-4 flex items-center gap-6">
                     <button
                         type="button"
                         onClick={() => setShareTab("share")}
@@ -96,7 +84,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
             <div className="border-b" />
 
             {/* Scrollable content area — takes remaining height */}
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 overflow-hidden">
                 {shareTab === "share" ? (
                     <ScrollArea className="h-full">
                         <div className="p-4 space-y-8">

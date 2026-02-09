@@ -1,29 +1,6 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet, useLocation, useRouter, useSearch } from "@tanstack/react-router";
-import {
-  Bell,
-  ChevronDown,
-  ChevronRight,
-  ChevronsLeft,
-  FileText,
-  Filter,
-  HelpCircle,
-  Home,
-  Inbox,
-  LogOut,
-  Moon,
-  MoreHorizontal,
-  Pencil,
-  Plus,
-  Search,
-  Settings,
-  Sun,
-  Trash2,
-  Undo2,
-  Users,
-} from "lucide-react";
-import type * as React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { FormSettingsSidebar } from "@/components/form-builder/form-settings-sidebar";
+import { ShareSummarySidebar } from "@/components/form-builder/share-summary-sidebar";
+import { VersionHistorySidebar } from "@/components/form-builder/version-history-sidebar";
 import { useTheme } from "@/components/ThemeProvider";
 import {
   AlertDialog,
@@ -35,16 +12,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { FormSettingsSidebar } from "@/components/form-builder/form-settings-sidebar";
-import { ShareSummarySidebar } from "@/components/form-builder/share-summary-sidebar";
-import { VersionHistorySidebar } from "@/components/form-builder/version-history-sidebar";
 import { AppHeader } from "@/components/ui/app-header";
 import { Button } from "@/components/ui/button";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
 import {
   CommandDialog,
   CommandEmpty,
@@ -65,6 +34,11 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { Input } from "@/components/ui/input";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import { MinimalSidebarProvider, useMinimalSidebar } from "@/contexts/minimal-sidebar-context";
 import {
   createWorkspaceLocal,
@@ -74,16 +48,41 @@ import {
   updateWorkspaceName,
 } from "@/db-collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
+import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import {
   useArchivedForms,
   useFavoriteForms,
   useForms,
   useWorkspaces,
 } from "@/hooks/use-live-hooks";
-import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { auth, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/middleware/auth";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, Outlet, useLocation, useRouter, useSearch } from "@tanstack/react-router";
+import {
+  Bell,
+  ChevronDown,
+  ChevronRight,
+  ChevronsLeft,
+  FileText,
+  Filter,
+  HelpCircle,
+  Home,
+  LogOut,
+  Moon,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Search,
+  Settings,
+  Sun,
+  Trash2,
+  Undo2,
+  Users
+} from "lucide-react";
+import type * as React from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 // Route configuration
 export const Route = createFileRoute("/_authenticated")({
@@ -109,6 +108,11 @@ function AuthLayoutContent() {
   const { isPinned, setIsHovered, isInboxOpen } = useMinimalSidebar();
   const location = useLocation();
   const { pathname } = location;
+  const [resizeTooltip, setResizeTooltip] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+  });
 
   // Extract route params from URL
   const workspaceMatch = pathname.match(/\/workspace\/([^/]+)/);
@@ -119,7 +123,11 @@ function AuthLayoutContent() {
   // Editor sidebar management
   const search: any = useSearch({ strict: false });
   const sidebarParam = search.sidebar;
-  const { activeSidebar, setActiveSidebar, resetSidebar } = useEditorSidebar();
+  const { activeSidebar, setActiveSidebar, resetSidebar, closeSidebar } = useEditorSidebar();
+  const handleRef = useRef<HTMLDivElement>(null);
+  const [handleLeft, setHandleLeft] = useState(0);
+  const handleDragRef = useRef({ dragging: false, startX: 0, startY: 0 });
+  const leftPanelRef = useRef<HTMLDivElement>(null);
 
   // Sync sidebar state from URL params, and reset when navigating between forms
   useEffect(() => {
@@ -132,8 +140,45 @@ function AuthLayoutContent() {
   const isFormBuilder = pathname.includes("/form-builder/");
   const showEditorSidebar = activeSidebar && isFormBuilder && formId;
 
+  const updateHandleLeft = () => {
+    const node = leftPanelRef.current;
+    if (!node) return;
+    const rect = node.getBoundingClientRect();
+    setHandleLeft(rect.right);
+  };
+
+  useLayoutEffect(() => {
+    if (!showEditorSidebar) return;
+    updateHandleLeft();
+  }, [showEditorSidebar]);
+
+  useEffect(() => {
+    if (!showEditorSidebar) return;
+    const onResize = () => updateHandleLeft();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [showEditorSidebar]);
+
+  useEffect(() => {
+    if (!showEditorSidebar || !leftPanelRef.current) return;
+    const observer = new ResizeObserver(() => updateHandleLeft());
+    observer.observe(leftPanelRef.current);
+    return () => observer.disconnect();
+  }, [showEditorSidebar]);
+
+  const contentInset = isInboxOpen
+    ? isPinned
+      ? "pl-[544px]"
+      : "pl-80"
+    : isPinned
+      ? "pl-56"
+      : "pl-0";
+
   return (
-    <div className="flex min-h-screen w-full overflow-hidden relative">
+    <div
+      className="flex h-screen w-full flex-col overflow-hidden relative"
+      style={{ "--app-header-height": "40px" } as React.CSSProperties}
+    >
       {/* Hover Trigger Area - An invisible area at the left edge to detect hover */}
       {!isPinned && (
         <button
@@ -148,33 +193,103 @@ function AuthLayoutContent() {
       <MinimalSidebar />
       <SidebarInbox />
 
-      <ResizablePanelGroup
-        direction="horizontal"
-        className={cn(
-          "flex-1 min-h-screen transition-all duration-300 ease-in-out",
-          isInboxOpen ? (isPinned ? "ml-[544px]" : "ml-80") : isPinned ? "ml-56" : "ml-0",
-        )}
-      >
-        {/* Main content panel */}
-        <ResizablePanel defaultSize={showEditorSidebar ? 75 : 100} minSize={50}>
-          <div className="flex flex-col h-full min-w-0">
-            <AppHeader formId={formId} workspaceId={workspaceId} />
-            <Outlet key={formId} />
-          </div>
-        </ResizablePanel>
+      <div className="relative z-0">
+        <AppHeader
+          formId={formId}
+          workspaceId={workspaceId}
+          dividerX={handleLeft}
+          isSidebarOpen={!!showEditorSidebar}
+        />
+      </div>
 
-        {/* Right sidebar - Editor Sidebars (Settings, Share, History) */}
-        {showEditorSidebar && (
-          <>
-            <ResizableHandle />
-            <ResizablePanel defaultSize={25} minSize={15} maxSize={40} className="overflow-hidden">
-              {activeSidebar === "settings" && <FormSettingsSidebar formId={formId} />}
-              {activeSidebar === "share" && <ShareSummarySidebar formId={formId} />}
-              {activeSidebar === "history" && <VersionHistorySidebar formId={formId} />}
-            </ResizablePanel>
-          </>
-        )}
-      </ResizablePanelGroup>
+      <div className="relative z-20 flex-1 min-h-0 overflow-hidden">
+        <ResizablePanelGroup
+          direction="horizontal"
+          className="h-full transition-all duration-300 ease-in-out"
+        >
+          {/* Main content panel */}
+          <ResizablePanel defaultSize={showEditorSidebar ? 75 : 100} minSize={50}>
+            <div ref={leftPanelRef} className={cn("flex h-full min-w-0 flex-col z-50", contentInset)}>
+              <Outlet key={formId} />
+            </div>
+          </ResizablePanel>
+
+          {/* Right sidebar - Editor Sidebars (Settings, Share, History) */}
+          {showEditorSidebar && (
+            <>
+              <ResizableHandle
+                className={cn(
+                  "fixed top-0 bottom-0 left-[var(--handle-left)] -translate-x-1/2 w-[1px]",
+                  "bg-border/60 z-[999] pointer-events-auto",
+                  "transition-none duration-0 hover:w-[1px] data-[resize-handle-state=drag]:w-[1px]",
+                )}
+                ref={handleRef}
+                style={{ "--handle-left": `${handleLeft}px` } as React.CSSProperties}
+                onPointerDown={(event) => {
+                  handleDragRef.current = {
+                    dragging: false,
+                    startX: event.clientX,
+                    startY: event.clientY,
+                  };
+                  updateHandleLeft();
+                }}
+                onPointerMove={(event) => {
+                  const dx = Math.abs(event.clientX - handleDragRef.current.startX);
+                  const dy = Math.abs(event.clientY - handleDragRef.current.startY);
+                  if (dx > 2 || dy > 2) handleDragRef.current.dragging = true;
+                  updateHandleLeft();
+                }}
+                onPointerUp={() => {
+                  if (!handleDragRef.current.dragging && activeSidebar) closeSidebar();
+                  handleDragRef.current.dragging = false;
+                }}
+                onMouseEnter={(event) => {
+                  setResizeTooltip({ visible: true, x: event.clientX, y: event.clientY });
+                }}
+                onMouseMove={(event) => {
+                  setResizeTooltip((prev) => ({
+                    ...prev,
+                    x: event.clientX,
+                    y: event.clientY,
+                  }));
+                }}
+                onMouseLeave={() => {
+                  setResizeTooltip((prev) => ({ ...prev, visible: false }));
+                }}
+              >
+                <div
+                  className={cn(
+                    "pointer-events-none fixed",
+                    "rounded-md border border-foreground/10 bg-background/90 px-2 py-1 text-[11px] text-muted-foreground shadow-lg",
+                    "transition-opacity duration-150",
+                    resizeTooltip.visible ? "opacity-100" : "opacity-0",
+                  )}
+                  style={{
+                    left: resizeTooltip.x - 12,
+                    top: resizeTooltip.y + 12,
+                    transform: "translateX(-100%)",
+                  }}
+                >
+                  <div className="leading-4">
+                    <div>Close Click</div>
+                    <div>Resize Drag</div>
+                  </div>
+                </div>
+              </ResizableHandle>
+              <ResizablePanel
+                defaultSize={25}
+                minSize={15}
+                maxSize={40}
+                className="h-full overflow-hidden"
+              >
+                {activeSidebar === "settings" && <FormSettingsSidebar formId={formId} />}
+                {activeSidebar === "share" && <ShareSummarySidebar formId={formId} />}
+                {activeSidebar === "history" && <VersionHistorySidebar formId={formId} />}
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
+      </div>
     </div>
   );
 }
@@ -372,7 +487,7 @@ function MinimalSidebar() {
               label="Settings"
               onClick={() => {
                 router.navigate({
-                  to: "/settings",
+                  to: "/settings/my-account",
                 });
               }}
               isActive={

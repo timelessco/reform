@@ -19,6 +19,16 @@ const config = defineConfig({
 					);
 				},
 			},
+			enhancedLogs : {
+				enabled: true,
+			},
+			logging : true,
+			consolePiping: {
+				// Whether to enable console piping (defaults to true)
+				enabled: true,
+				// Which console methods to pipe (defaults to all)
+				levels: ['log', 'warn', 'error', 'info', 'debug'],
+			  }
 		}),
 		nitro({}),
 		// this is the plugin that enables path aliases

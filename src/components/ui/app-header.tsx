@@ -21,10 +21,12 @@ import { deleteForm, getFormbyIdQueryOption } from "@/lib/fn/forms";
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import {
+  AlertCircle,
   BarChart3,
   ChevronRight,
+  ChevronsRight,
   History,
   Loader2,
   MoreHorizontal,
@@ -40,9 +42,11 @@ import { useSidebarSafe } from "./sidebar";
 interface AppHeaderProps {
   formId?: string;
   workspaceId?: string;
+  dividerX?: number;
+  isSidebarOpen?: boolean;
 }
 
-export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
+export function AppHeader({ formId, workspaceId, dividerX, isSidebarOpen }: AppHeaderProps) {
   const sidebarContext = useSidebarSafe();
   const minimalSidebar = useMinimalSidebarSafe();
   const isPinned = minimalSidebar?.isPinned ?? true;
@@ -58,10 +62,10 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
   const navigate = useNavigate();
 
   // Editor sidebar state
-  const { activeSidebar, toggleSidebar } = useEditorSidebar();
+  const { activeSidebar, toggleSidebar, closeSidebar } = useEditorSidebar();
 
-  const isSettingsSidebarOpen = activeSidebar === "settings";
   const isShareSidebarOpen = activeSidebar === "share";
+  const isEditorSidebarOpen = !!activeSidebar;
 
   const toggleVersionHistory = () => toggleSidebar("history");
   const toggleSettingsSidebar = () => toggleSidebar("settings", "settings");
@@ -69,16 +73,15 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
     toggleSidebar("share");
     if(workspaceId && formId){
     navigate({
-      to : '/workspace/$workspaceId/form-builder/$formId/edit',
-        params: { workspaceId : workspaceId, formId : formId },
-        search: { demo: true , force : true , sidebar : "share" }
-      });
+      to: "/workspace/$workspaceId/form-builder/$formId/edit",
+      params: { workspaceId: workspaceId, formId: formId },
+      search: { demo: true, force: true, sidebar: "share", embedType: "fullpage" },
+    });
     }
   };
   const toggleIntegrationsSidebar = () => toggleSidebar("settings", "integrations");
   const toggleAnalyticsSidebar = () => toggleSidebar("share", "summary");
 
-  const isVersionHistoryOpen = activeSidebar === "history";
   // Get search params for the current route
   const search: any = useSearch({ strict: false });
   const demo = search.demo;
@@ -162,7 +165,7 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
   };
 
   return (
-    <header className="flex h-10 w-full items-center justify-between border-b border-foreground/5 bg-background px-3 text-[13px] font-medium shrink-0 select-none">
+    <header className="group/header flex h-10 w-full items-center justify-between bg-background px-3 text-[13px] -z-10 font-medium shrink-0 select-none">
       {/* Left Section: Breadcrumbs */}
       <div className="flex items-center gap-1.5 min-w-0 flex-1">
         {state === "collapsed" && (
@@ -204,10 +207,34 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
 
       {/* Right Section: Actions */}
       <div className="flex items-center gap-1">
-        {isFormBuilder && currentForm?.updatedAt && (
-          <span className="text-[11px] text-muted-foreground/40 mr-2 whitespace-nowrap">
-            Edited {formatDistanceToNow(new Date(currentForm.updatedAt))} ago
-          </span>
+        {isFormBuilder && currentForm?.updatedAt && !isEditorSidebarOpen && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-[11px] text-muted-foreground/70 mr-2 whitespace-nowrap rounded-md bg-muted/60 px-2 py-1">
+                Edited {formatDistanceToNow(new Date(currentForm.updatedAt))} ago
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="end">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">
+                  Edited by{" "}
+                  <span className="font-medium text-foreground">
+                    {session?.user?.name ?? "You"}
+                  </span>{" "}
+                  {formatDistanceToNow(new Date(currentForm.updatedAt))} ago
+                </p>
+                {currentForm?.createdAt && (
+                  <p className="text-xs text-muted-foreground">
+                    Created by{" "}
+                    <span className="font-medium text-foreground">
+                      {session?.user?.name ?? "You"}
+                    </span>{" "}
+                    {format(new Date(currentForm.createdAt), "MMM d, yyyy")}
+                  </p>
+                )}
+              </div>
+            </TooltipContent>
+          </Tooltip>
         )}
 
         {isFormBuilder && (
@@ -217,16 +244,17 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 px-2 text-xs text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100 hover:text-orange-700"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                     onClick={handleDiscardChanges}
                     disabled={discardMutation.isPending}
                   >
                     {discardMutation.isPending ? (
-                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                    ) : null}
-                    Changes
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4" />
+                    )}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -256,51 +284,17 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
               )}
 
               {currentForm?.status === "published" && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-muted font-normal",
-                      isShareSidebarOpen && "text-foreground bg-muted"
-                    )}
-                    onClick={toggleShareSidebar}
-                  >
-                    Share
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      "h-8 w-8 text-muted-foreground hover:text-foreground",
-                      isSettingsSidebarOpen && "bg-muted text-foreground",
-                    )}
-                    onClick={toggleSettingsSidebar}
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-
-              {/* History icon - only in edit route for published forms */}
-              {isEditRoute && currentForm?.status === "published" && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={cn(
-                        "h-8 w-8 text-muted-foreground hover:text-foreground",
-                        isVersionHistoryOpen && "bg-muted text-foreground",
-                      )}
-                      onClick={toggleVersionHistory}
-                    >
-                      <History className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Version History</TooltipContent>
-                </Tooltip>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-muted font-normal",
+                    isShareSidebarOpen && "text-foreground bg-muted"
+                  )}
+                  onClick={toggleShareSidebar}
+                >
+                  Share
+                </Button>
               )}
 
               {/* Three dots menu */}
@@ -315,6 +309,21 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
+                  {currentForm?.status === "published" && (
+                    <>
+                      <DropdownMenuItem onClick={toggleSettingsSidebar} className="gap-2">
+                        <Settings className="h-4 w-4" />
+                        Settings
+                      </DropdownMenuItem>
+                      {isEditRoute && (
+                        <DropdownMenuItem onClick={toggleVersionHistory} className="gap-2">
+                          <History className="h-4 w-4" />
+                          Version History
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem onClick={handleToggleFavorite} className="gap-2">
                     <Star className={cn("h-4 w-4", isFavorite && "fill-yellow-400 text-yellow-400")} />
                     {isFavorite ? "Unfavorite" : "Favorite"}
@@ -364,6 +373,31 @@ export function AppHeader({ formId, workspaceId }: AppHeaderProps) {
           </>
         )}
       </div>
+
+      {isSidebarOpen && typeof dividerX === "number" && (
+        <div
+          className="pointer-events-none fixed top-0 h-10 z-[1000]"
+          style={{ left: dividerX + 8 }}
+        >
+          <div className="pointer-events-auto absolute top-[6px]">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={closeSidebar}
+                  className="flex h-8 w-8 items-center justify-center rounded-md bg-muted/60 text-muted-foreground opacity-0 transition-opacity group-hover/header:opacity-100 hover:text-foreground hover:bg-muted"
+                >
+                  <ChevronsRight className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="end">
+                <p className="font-medium">Close panel</p>
+                <p className="text-xs text-muted-foreground">⌘⇧\\</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

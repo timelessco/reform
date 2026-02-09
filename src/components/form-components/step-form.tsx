@@ -10,13 +10,14 @@ interface StepFormProps {
   stepIndex: number;
   elements: TransformedElement[];
   isLastStep: boolean;
+  layout?: "public" | "editor";
 }
 
 /**
  * Individual step form component with its own form instance.
  * Uses StepFormContext for navigation and data accumulation.
  */
-export function StepForm({ stepIndex, elements, isLastStep }: StepFormProps) {
+export function StepForm({ stepIndex, elements, isLastStep, layout = "public" }: StepFormProps) {
   const { currentStep, goToPrevStep, isSubmitting } = useStepForm();
   const fields = getEditableFields(elements);
 
@@ -76,6 +77,7 @@ export function StepForm({ stepIndex, elements, isLastStep }: StepFormProps) {
                     isSubmitting={isSubmitting}
                     onPrevious={currentStep > 0 ? goToPrevStep : undefined}
                     grouped
+                    layout={layout}
                   />
                 )}
                 {prevButton && prevButton.fieldType === "Button" ? (
@@ -84,6 +86,7 @@ export function StepForm({ stepIndex, elements, isLastStep }: StepFormProps) {
                     isSubmitting={isSubmitting}
                     onPrevious={currentStep > 0 ? goToPrevStep : undefined}
                     grouped
+                    layout={layout}
                   />
                 ) : (
                   <div /> // Spacer for justify-between
@@ -103,6 +106,7 @@ export function StepForm({ stepIndex, elements, isLastStep }: StepFormProps) {
                 field={element}
                 isSubmitting={isSubmitting}
                 onPrevious={currentStep > 0 ? goToPrevStep : undefined}
+                layout={layout}
               />
             );
           }
@@ -176,11 +180,13 @@ function RenderStepButton({
   isSubmitting,
   onPrevious,
   grouped = false,
+  layout = "public",
 }: {
   field: ButtonField;
   isSubmitting: boolean;
   onPrevious?: () => void;
   grouped?: boolean;
+  layout?: "public" | "editor";
 }) {
   const { totalSteps } = useStepForm();
   const isSinglePage = totalSteps === 1;
@@ -220,7 +226,7 @@ function RenderStepButton({
   const submitButton = (
     <Button type="submit" className="inline-flex items-center gap-2" disabled={isSubmitting}>
       {isSubmitting ? "Submitting..." : buttonText}
-      <ChevronRight className="h-4 w-4" />
+      {layout !== "editor" && <ChevronRight className="h-4 w-4" />}
     </Button>
   );
   return grouped ? (

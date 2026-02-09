@@ -1,3 +1,7 @@
+import * as schema from "@/db/schema";
+import { db } from "@/lib/db";
+import { sendOrgInvitationEmail, sendOTPEmail } from "@/lib/email";
+import { logger } from "@/lib/utils";
 import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { betterAuth } from "better-auth";
@@ -5,10 +9,6 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { apiKey, emailOTP, organization, twoFactor, username } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { eq } from "drizzle-orm";
-import * as schema from "@/db/schema";
-import { db } from "@/lib/db";
-import { sendOrgInvitationEmail, sendOTPEmail } from "@/lib/email";
-import { logger } from "@/lib/utils";
 
 const polarClient = new Polar({
   accessToken: process.env.POLAR_ACCESS_TOKEN!,

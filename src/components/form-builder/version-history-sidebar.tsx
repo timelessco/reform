@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { HelpCircle, Loader2, Lock, X } from "lucide-react";
+import { HelpCircle, Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -18,8 +18,7 @@ interface VersionHistorySidebarProps {
 
 export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
   const { data: versionsData } = useFormVersions(formId);
-  const { selectedVersionId, selectVersion, setIsOpen, exitVersionView } =
-    useVersionHistorySidebar();
+  const { selectedVersionId, selectVersion, exitVersionView } = useVersionHistorySidebar();
   const restoreMutation = useRestoreVersion();
   const { data: sessionData } = useSession();
   const currentUser = sessionData?.user;
@@ -49,10 +48,6 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
     }
   };
 
-  const handleClose = () => {
-    setIsOpen(false);
-  };
-
   // Format time for display (e.g., "03:44 PM")
   const formatTime = (dateString: string) => {
     return format(new Date(dateString), "hh:mm a");
@@ -64,21 +59,13 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-background border-l">
+    <div className="flex flex-col h-full overflow-hidden bg-background border-l">
       {/* Sidebar Header */}
       <div className="px-4 h-14 border-b flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold">Version history</span>
           <HelpCircle className="h-4 w-4 text-muted-foreground" />
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={handleClose}
-        >
-          <X className="h-4 w-4" />
-        </Button>
       </div>
 
       {/* Current Version */}

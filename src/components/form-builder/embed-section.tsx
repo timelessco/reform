@@ -27,7 +27,9 @@ const tabs: { value: EmbedType; label: string }[] = [
 /** Map URL search params → form field values */
 function searchToFormValues(search: Record<string, unknown>): EmbedFormValues {
   return {
-    embedType: (search.embedType as EmbedType) ?? "standard",
+    embedType:
+      (search.embedType as EmbedType) ??
+      ((search.demo as boolean) ? "fullpage" : "standard"),
     height: (search.embedHeight as number) ?? defaultEmbedOptions.height,
     dynamicHeight: (search.embedDynamicHeight as boolean) ?? defaultEmbedOptions.dynamicHeight,
     hideTitle: (search.embedHideTitle as boolean) ?? defaultEmbedOptions.hideTitle,

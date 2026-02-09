@@ -63,6 +63,9 @@ import { auth, useSession } from "@/lib/auth-client";
 export const Route = createFileRoute("/_authenticated/settings/api-keys")({
   component: APIKeysPage,
   loader: async ({ context }) => {
+    if (typeof window === "undefined") {
+      return { apiKeys: [] };
+    }
     const apiKeys = await context.queryClient.ensureQueryData({
       ...auth.apiKey.list.queryOptions(),
       revalidateIfStale: true,
