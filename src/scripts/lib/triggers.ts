@@ -101,6 +101,12 @@ export function parseHashParams(hash: string): {
   const formId = params.get("form-open");
   const options: PopupOptions = {};
 
+  // Position
+  const position = params.get("position");
+  if (position === "bottom-right" || position === "bottom-left" || position === "center") {
+    options.position = position;
+  }
+
   // Boolean options
   if (params.get("align-left") === "1") {
     options.alignLeft = true;
@@ -138,6 +144,7 @@ export function parseHashParams(hash: string): {
   const hiddenFields: Record<string, string> = {};
   const knownParams = [
     "form-open",
+    "position",
     "align-left",
     "hide-title",
     "overlay",

@@ -9,4 +9,5 @@
 - popup issues
 - [] height is auto adjusting
 - [] position is not working
-- []
+- [] show emoji picker
+

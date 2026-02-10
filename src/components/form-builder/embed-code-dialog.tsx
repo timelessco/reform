@@ -213,7 +213,7 @@ export function EmbedCodeDialog({
   const emojiParams = options.emoji
     ? `&emoji-text=${encodeURIComponent(options.emojiIcon)}&emoji-animation=${options.emojiAnimation}`
     : "";
-  const hashUrl = `#form-open=${formId}&align-left=${options.alignLeft ? 1 : 0}&hide-title=${options.hideTitle ? 1 : 0}&overlay=${options.darkOverlay ? 1 : 0}${emojiParams}&auto-close=${options.hideOnSubmit ? options.hideOnSubmitDelay * 1000 : 0}`;
+  const hashUrl = `#form-open=${formId}&position=${options.popupPosition}&align-left=${options.alignLeft ? 1 : 0}&hide-title=${options.hideTitle ? 1 : 0}&overlay=${options.darkOverlay ? 1 : 0}${emojiParams}&auto-close=${options.hideOnSubmit ? options.hideOnSubmitDelay * 1000 : 0}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -278,6 +278,7 @@ export function EmbedCodeDialog({
                       <div className="text-muted-foreground/60">{"// Data attributes"}</div>
                       <div className="break-all leading-relaxed">
                         data-form-id="{formId}"
+                        {` data-position="${options.popupPosition}"`}
                         {options.alignLeft && ` data-align-left="1"`}
                         {options.hideTitle && ` data-hide-title="1"`}
                         {options.darkOverlay && ` data-overlay="1"`}
@@ -289,7 +290,8 @@ export function EmbedCodeDialog({
                   <CodeBlock
                     code={`// Example
 <button type="button"
-  data-form-id="${formId}"${options.alignLeft ? `\n  data-align-left="1"` : ""}${options.hideTitle ? `\n  data-hide-title="1"` : ""}${options.darkOverlay ? `\n  data-overlay="1"` : ""}${options.emoji ? `\n  data-emoji-text="${options.emojiIcon}"\n  data-emoji-animation="${options.emojiAnimation}"` : ""}${options.hideOnSubmit ? `\n  data-auto-close="${options.hideOnSubmitDelay * 1000}"` : ""}
+  data-form-id="${formId}"
+  data-position="${options.popupPosition}"${options.alignLeft ? `\n  data-align-left="1"` : ""}${options.hideTitle ? `\n  data-hide-title="1"` : ""}${options.darkOverlay ? `\n  data-overlay="1"` : ""}${options.emoji ? `\n  data-emoji-text="${options.emojiIcon}"\n  data-emoji-animation="${options.emojiAnimation}"` : ""}${options.hideOnSubmit ? `\n  data-auto-close="${options.hideOnSubmitDelay * 1000}"` : ""}
 >
   Click me
 </button>`}

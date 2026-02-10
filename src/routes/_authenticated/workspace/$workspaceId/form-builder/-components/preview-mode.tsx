@@ -48,8 +48,8 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
     <div className={cn(
       "w-full h-full flex flex-col transition-colors duration-300",
       embedType === "fullpage"
-        ? cn(transparentBackground ? "bg-transparent" : "bg-white", "overflow-y-auto overflow-x-hidden")
-        : "bg-white text-gray-900 overflow-hidden"
+        ? cn(transparentBackground ? "bg-transparent" : "bg-background", "overflow-y-auto overflow-x-hidden")
+        : "bg-background text-foreground overflow-hidden"
     )}>
       {/* Standard & Popup — mock website background */}
       {embedType !== "fullpage" && (
@@ -58,20 +58,20 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
             <div className="max-w-[1000px] mx-auto pt-4 px-4 lg:px-8 space-y-8">
               {/* Preview label */}
               <div className="flex items-center pt-2">
-                <span className="text-gray-200 font-bold text-[10px] uppercase tracking-widest">
+                <span className="text-muted-foreground/40 font-bold text-[10px] uppercase tracking-widest">
                   Live Preview
                 </span>
               </div>
 
               {/* Mock header bars (Subtle) */}
               <div className="space-y-4 opacity-40">
-                <div className="w-20 h-4 bg-gray-50 border border-gray-100 rounded-sm" />
-                <div className="flex justify-between items-end border-b border-gray-50 pb-3">
+                <div className="w-20 h-4 bg-muted/50 border border-border/50 rounded-sm" />
+                <div className="flex justify-between items-end border-b border-border/30 pb-3">
                   <div className="flex gap-4 lg:gap-6">
-                    <div className="w-8 lg:w-10 h-1.5 bg-gray-50 rounded-full" />
-                    <div className="w-8 lg:w-10 h-1.5 bg-gray-50 rounded-full" />
+                    <div className="w-8 lg:w-10 h-1.5 bg-muted/50 rounded-full" />
+                    <div className="w-8 lg:w-10 h-1.5 bg-muted/50 rounded-full" />
                   </div>
-                  <div className="w-12 lg:w-14 h-6 bg-gray-100/50 border border-gray-200/30 rounded-md" />
+                  <div className="w-12 lg:w-14 h-6 bg-muted/30 border border-border/30 rounded-md" />
                 </div>
               </div>
 
@@ -79,21 +79,21 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
               <div className="grid grid-cols-12 gap-4 lg:gap-8 pt-2">
                 {/* Mock sidebar (Very Subtle) */}
                 <div className="hidden lg:block col-span-3 space-y-5 opacity-30">
-                  <div className="w-full h-6 bg-gray-50/60 rounded-sm" />
+                  <div className="w-full h-6 bg-muted/40 rounded-sm" />
                   <div className="space-y-2">
-                    <div className="w-full h-1.5 bg-gray-50 rounded-full" />
-                    <div className="w-4/5 h-1.5 bg-gray-50 rounded-full" />
+                    <div className="w-full h-1.5 bg-muted/50 rounded-full" />
+                    <div className="w-4/5 h-1.5 bg-muted/50 rounded-full" />
                   </div>
-                  <div className="w-full h-24 bg-gray-50/20 border border-dashed border-gray-100 rounded-xl" />
+                  <div className="w-full h-24 bg-muted/20 border border-dashed border-border/50 rounded-xl" />
                 </div>
 
                 {/* Main content area */}
                 <div className="col-span-12 lg:col-span-9 space-y-6">
                   <div className="space-y-3 opacity-40">
-                    <div className="w-2/3 h-5 bg-gray-50 border border-gray-100 rounded-sm" />
+                    <div className="w-2/3 h-5 bg-muted/50 border border-border/50 rounded-sm" />
                     <div className="space-y-1.5">
-                      <div className="w-full h-1.5 bg-gray-50 rounded-full" />
-                      <div className="w-full h-1.5 bg-gray-50 rounded-full" />
+                      <div className="w-full h-1.5 bg-muted/50 rounded-full" />
+                      <div className="w-full h-1.5 bg-muted/50 rounded-full" />
                     </div>
                   </div>
 
@@ -101,7 +101,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                   <div className="relative group/embed">
                     {/* Minimal indicator */}
                     {embedType === "standard" && (
-                      <div className="absolute -top-5 right-0 text-[8px] font-bold text-gray-200 uppercase tracking-widest pointer-events-none">
+                      <div className="absolute -top-5 right-0 text-[8px] font-bold text-muted-foreground/30 uppercase tracking-widest pointer-events-none">
                         Embedded State
                       </div>
                     )}
@@ -110,8 +110,8 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                       className={cn(
                         "w-full transition-all duration-500",
                         embedType === "standard"
-                          ? "bg-transparent border-2 border-dashed border-gray-100 rounded-lg"
-                          : "bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-gray-100"
+                          ? "bg-transparent border-2 border-dashed border-border rounded-lg"
+                          : "bg-background rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-border"
                       )}
                       style={{
                         height: dynamicHeight ? "auto" : height,
@@ -119,7 +119,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                     >
                       <div className={cn(
                         "w-full h-full",
-                        !dynamicHeight ? "overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 p-8" : "p-8 md:p-12"
+                        !dynamicHeight ? "overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 p-8" : "p-8 md:p-12"
                       )}>
                         <FormPreviewFromPlate
                           content={content}
@@ -134,8 +134,8 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                   </div>
 
                   <div className="space-y-2 pt-4 opacity-20">
-                    <div className="w-full h-1.5 bg-gray-50 rounded-full" />
-                    <div className="w-3/4 h-1.5 bg-gray-50 rounded-full" />
+                    <div className="w-full h-1.5 bg-muted/50 rounded-full" />
+                    <div className="w-3/4 h-1.5 bg-muted/50 rounded-full" />
                   </div>
 
                   {/* Branding */}
@@ -153,7 +153,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
 
                 <div
                   className={cn(
-                    "absolute bg-white rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden flex flex-col transition-all duration-300 z-20 pointer-events-auto",
+                    "absolute bg-background rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.15)] border border-border overflow-hidden flex flex-col transition-all duration-300 z-20 pointer-events-auto",
                     popupPosition === "center"
                       ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
                       : popupPosition === "bottom-left"
@@ -167,7 +167,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 hover:bg-black/10 text-gray-400 bg-white/50 backdrop-blur-sm rounded-full shadow-sm"
+                      className="h-8 w-8 hover:bg-muted text-muted-foreground bg-background/50 backdrop-blur-sm rounded-full shadow-sm"
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -187,10 +187,10 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
 
                   {/* Popup branding */}
                   {branding && (
-                    <div className="py-3 flex justify-center bg-[#EBF5FF] border-t shrink-0">
-                      <div className="flex items-center gap-1.5 text-[12px] font-semibold text-[#0066CC]">
+                    <div className="py-3 flex justify-center bg-primary/10 border-t border-border shrink-0">
+                      <div className="flex items-center gap-1.5 text-[12px] font-semibold text-primary">
                         <span>Made with</span>
-                        <Sparkles className="h-3 w-3 fill-[#0066CC] text-[#0066CC]" />
+                        <Sparkles className="h-3 w-3 fill-primary text-primary" />
                         <span>Better Forms</span>
                       </div>
                     </div>
@@ -207,7 +207,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
         <div
           className={cn(
             "flex-1 flex flex-col transition-colors duration-300",
-            transparentBackground ? "bg-transparent" : "bg-white",
+            transparentBackground ? "bg-transparent" : "bg-background",
           )}
         >
           <div className="flex-1 w-full">
@@ -236,9 +236,9 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
 function BrandingBadge() {
   return (
     <div className="flex justify-end pt-6">
-      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-50/50 rounded-full text-[10px] font-bold text-gray-400 hover:text-gray-600 transition-colors cursor-default border border-gray-100/50">
+      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted/50 rounded-full text-[10px] font-bold text-muted-foreground hover:text-foreground transition-colors cursor-default border border-border/50">
         <span>Made with</span>
-        <Sparkles className="h-3 w-3 fill-gray-300 text-gray-300" />
+        <Sparkles className="h-3 w-3 fill-muted-foreground/50 text-muted-foreground/50" />
         <span>Better Forms</span>
       </div>
     </div>
