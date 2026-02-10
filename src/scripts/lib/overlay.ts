@@ -13,7 +13,7 @@ const DEFAULT_WIDTH = 376;
 /** Default popup height (max) */
 const DEFAULT_MAX_HEIGHT = 600;
 
-export interface OverlayElements {
+interface OverlayElements {
   overlay: HTMLElement;
   popup: HTMLElement;
   iframeContainer: HTMLElement;

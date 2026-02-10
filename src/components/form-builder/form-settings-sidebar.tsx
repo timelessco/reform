@@ -17,7 +17,10 @@ export function FormSettingsSidebar({ formId }: FormSettingsSidebarProps) {
   const { activeTab, setActiveTab } = useFormSettingsSidebar();
 
   return (
-    <Sidebar collapsible="none" className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out">
+    <Sidebar
+      collapsible="none"
+      className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out"
+    >
       {/* Header with tabs */}
       <SidebarHeader className="p-0 shrink-0 border-b">
         {/* Tab Navigation - underline style like the image */}

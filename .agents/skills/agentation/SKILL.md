@@ -24,19 +24,25 @@ Set up the Agentation annotation toolbar in this project.
 4. **Add the component**
 
    For Next.js App Router, add to the root layout:
+
    ```tsx
    import { Agentation } from "agentation";
 
    // Add inside the body, after children:
-   {process.env.NODE_ENV === "development" && <Agentation />}
+   {
+     process.env.NODE_ENV === "development" && <Agentation />;
+   }
    ```
 
-   For Next.js Pages Router, add to _app:
+   For Next.js Pages Router, add to \_app:
+
    ```tsx
    import { Agentation } from "agentation";
 
    // Add after Component:
-   {process.env.NODE_ENV === "development" && <Agentation />}
+   {
+     process.env.NODE_ENV === "development" && <Agentation />;
+   }
    ```
 
 5. **Confirm component setup**

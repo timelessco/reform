@@ -25,7 +25,11 @@ function AcceptInvitePage() {
   const { invitationId } = Route.useSearch();
   const router = useRouter();
 
-  const { data: invitation, isLoading, error } = useQuery({
+  const {
+    data: invitation,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["invitation", invitationId],
     queryFn: async () => {
       logger("[AcceptInvite] Fetching invitation:", invitationId);
@@ -80,7 +84,8 @@ function AcceptInvitePage() {
           <CardHeader>
             <CardTitle>Error Loading Invitation</CardTitle>
             <CardDescription>
-              {error.message || "There was a problem loading this invitation. Please check the link and try again."}
+              {error.message ||
+                "There was a problem loading this invitation. Please check the link and try again."}
             </CardDescription>
           </CardHeader>
           <CardContent>

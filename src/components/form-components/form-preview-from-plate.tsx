@@ -79,7 +79,11 @@ function isValidUrl(str: string): boolean {
  */
 function DefaultIcon() {
   return (
-    <span className="text-5xl sm:text-6xl md:text-7xl leading-none" role="img" aria-label="Form icon">
+    <span
+      className="text-5xl sm:text-6xl md:text-7xl leading-none"
+      role="img"
+      aria-label="Form icon"
+    >
       📄
     </span>
   );
@@ -180,7 +184,14 @@ function RenderPreviewElement({
           </ol>
         );
       case "Toggle":
-        return <ToggleRenderer title={element.title} items={element.children} form={form} layout={layout} />;
+        return (
+          <ToggleRenderer
+            title={element.title}
+            items={element.children}
+            form={form}
+            layout={layout}
+          />
+        );
       case "Table":
         return (
           <div className="my-4 border rounded-md overflow-hidden">
@@ -292,9 +303,7 @@ function PreviewFormHeader({
 
     if (isHexColor(cover)) {
       // Render as solid color background
-      return (
-        <div className={coverClass} style={{ backgroundColor: cover }} />
-      );
+      return <div className={coverClass} style={{ backgroundColor: cover }} />;
     }
 
     if (isValidUrl(cover) && !imageError) {
@@ -370,7 +379,9 @@ function PreviewFormHeader({
         <div className="max-w-[700px] mx-auto w-full px-4">
           {hasIcon && renderIcon()}
           {hasTitle && (
-            <h1 className={`text-2xl sm:text-4xl font-bold ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}>
+            <h1
+              className={`text-2xl sm:text-4xl font-bold ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
+            >
               {title}
             </h1>
           )}
@@ -388,7 +399,9 @@ function PreviewFormHeader({
         <div className="flex flex-col">
           {hasIcon && renderIcon()}
           {hasTitle && (
-            <h1 className={`text-2xl sm:text-3xl font-bold ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}>
+            <h1
+              className={`text-2xl sm:text-3xl font-bold ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
+            >
               {title}
             </h1>
           )}
@@ -488,13 +501,9 @@ export function FormPreviewFromPlate({
   const headerFromContent = extractFormHeader(content);
   const hasHeaderNode = headerFromContent !== null;
 
-  const title = hideTitle
-    ? ""
-    : hasHeaderNode
-      ? headerFromContent.title
-      : legacyTitle;
-  const icon = hasHeaderNode ? headerFromContent.icon ?? undefined : legacyIcon;
-  const cover = hasHeaderNode ? headerFromContent.cover ?? undefined : legacyCover;
+  const title = hideTitle ? "" : hasHeaderNode ? headerFromContent.title : legacyTitle;
+  const icon = hasHeaderNode ? (headerFromContent.icon ?? undefined) : legacyIcon;
+  const cover = hasHeaderNode ? (headerFromContent.cover ?? undefined) : legacyCover;
 
   const elements = transformPlateStateToFormElements(content);
 
@@ -612,9 +621,7 @@ function FormPreviewContent({
         <div
           className={cn(
             "w-full",
-            layout === "editor"
-              ? "max-w-[700px] mx-auto px-4"
-              : "max-w-2xl mx-auto px-4 sm:px-0",
+            layout === "editor" ? "max-w-[700px] mx-auto px-4" : "max-w-2xl mx-auto px-4 sm:px-0",
           )}
         >
           <motion.div
@@ -656,9 +663,7 @@ function FormPreviewContent({
       <div
         className={cn(
           "overflow-hidden",
-          layout === "editor"
-            ? "max-w-[700px] mx-auto w-full px-4"
-            : "max-w-2xl mx-auto px-4",
+          layout === "editor" ? "max-w-[700px] mx-auto w-full px-4" : "max-w-2xl mx-auto px-4",
         )}
       >
         <AnimatePresence mode="wait" custom={direction}>

@@ -6,10 +6,7 @@ export function LandingHeader() {
   return (
     <header className="flex h-10 w-full items-center justify-between border-b border-foreground/5 bg-background px-3 text-[13px] font-medium shrink-0 select-none">
       {/* Logo */}
-      <Link
-        to="/"
-        className="flex items-center hover:opacity-80 transition-opacity"
-      >
+      <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
         <span className="text-2xl font-serif italic font-bold tracking-tighter leading-none mb-1">
           f.
         </span>

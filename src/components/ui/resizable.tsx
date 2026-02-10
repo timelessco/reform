@@ -1,5 +1,5 @@
-import * as React from "react"
-import { GripVerticalIcon } from "lucide-react"
+import * as React from "react";
+import { GripVerticalIcon } from "lucide-react";
 import {
   Panel,
   PanelGroup,
@@ -9,33 +9,26 @@ import {
   type PanelResizeHandleProps,
   type ImperativePanelHandle,
   type ImperativePanelGroupHandle,
-} from "react-resizable-panels"
+} from "react-resizable-panels";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
-const ResizablePanelGroup = React.forwardRef<
-  ImperativePanelGroupHandle,
-  PanelGroupProps
->(({ className, ...props }, ref) => (
-  <PanelGroup
-    ref={ref}
-    data-slot="resizable-panel-group"
-    className={cn(
-      "flex h-full w-full data-[panel-group-direction=vertical]:flex-col",
-      className
-    )}
-    {...props}
-  />
-))
-ResizablePanelGroup.displayName = "ResizablePanelGroup"
+const ResizablePanelGroup = React.forwardRef<ImperativePanelGroupHandle, PanelGroupProps>(
+  ({ className, ...props }, ref) => (
+    <PanelGroup
+      ref={ref}
+      data-slot="resizable-panel-group"
+      className={cn("flex h-full w-full data-[panel-group-direction=vertical]:flex-col", className)}
+      {...props}
+    />
+  ),
+);
+ResizablePanelGroup.displayName = "ResizablePanelGroup";
 
-const ResizablePanel = React.forwardRef<
-  ImperativePanelHandle,
-  PanelProps
->(({ ...props }, ref) => (
+const ResizablePanel = React.forwardRef<ImperativePanelHandle, PanelProps>(({ ...props }, ref) => (
   <Panel ref={ref} data-slot="resizable-panel" {...props} />
-))
-ResizablePanel.displayName = "ResizablePanel"
+));
+ResizablePanel.displayName = "ResizablePanel";
 
 function ResizableHandle({
   withHandle,
@@ -43,8 +36,8 @@ function ResizableHandle({
   children,
   ...props
 }: PanelResizeHandleProps & {
-  withHandle?: boolean
-  children?: React.ReactNode
+  withHandle?: boolean;
+  children?: React.ReactNode;
 }) {
   return (
     <PanelResizeHandle
@@ -67,7 +60,7 @@ function ResizableHandle({
         "data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-2 data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:translate-x-0 data-[panel-group-direction=vertical]:after:-translate-y-1/2",
         "data-[panel-group-direction=vertical]:hover:h-[2px]",
         "[&[data-panel-group-direction=vertical]>div]:rotate-90",
-        className
+        className,
       )}
       {...props}
     >
@@ -78,7 +71,7 @@ function ResizableHandle({
         </div>
       )}
     </PanelResizeHandle>
-  )
+  );
 }
 
 export {
@@ -87,4 +80,4 @@ export {
   ResizablePanelGroup,
   type ImperativePanelHandle,
   type ImperativePanelGroupHandle,
-}
+};

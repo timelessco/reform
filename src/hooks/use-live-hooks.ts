@@ -108,7 +108,7 @@ export const useLocalForm = (formId?: string) => {
 /**
  * Custom hook for real-time favorites sync for current user.
  */
-export const useFavorites = (userId?: string) => {
+const useFavorites = (userId?: string) => {
   return useLiveQuery((q) => {
     let query = q.from({ fav: favoriteCollection });
     if (userId) {

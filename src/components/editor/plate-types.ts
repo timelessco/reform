@@ -20,116 +20,115 @@ import type {
   TTextAlignProps,
 } from "platejs";
 
-export interface MyBlockElement extends TElement, TListProps {
+interface MyBlockElement extends TElement, TListProps {
   id?: string;
 }
 
-export interface MyTextBlockElement extends TElement, TLineHeightProps, TTextAlignProps {
+interface MyTextBlockElement extends TElement, TLineHeightProps, TTextAlignProps {
   children: (MyLinkElement | MyMentionElement | MyMentionInputElement | RichText)[];
 }
 
-export interface MyBlockquoteElement extends MyTextBlockElement {
+interface MyBlockquoteElement extends MyTextBlockElement {
   type: typeof KEYS.blockquote;
 }
 
-export interface MyCodeBlockElement extends MyBlockElement {
+interface MyCodeBlockElement extends MyBlockElement {
   children: MyCodeLineElement[];
   type: typeof KEYS.codeBlock;
 }
 
-export interface MyCodeLineElement extends TElement {
+interface MyCodeLineElement extends TElement {
   children: PlainText[];
   type: typeof KEYS.codeLine;
 }
 
-export interface MyH1Element extends MyTextBlockElement {
+interface MyH1Element extends MyTextBlockElement {
   type: typeof KEYS.h1;
 }
 
-export interface MyH2Element extends MyTextBlockElement {
+interface MyH2Element extends MyTextBlockElement {
   type: typeof KEYS.h2;
 }
 
 /** Block props */
 
-export interface MyH3Element extends MyTextBlockElement {
+interface MyH3Element extends MyTextBlockElement {
   type: typeof KEYS.h3;
 }
 
-export interface MyH4Element extends MyTextBlockElement {
+interface MyH4Element extends MyTextBlockElement {
   type: typeof KEYS.h4;
 }
 
-export interface MyH5Element extends MyTextBlockElement {
+interface MyH5Element extends MyTextBlockElement {
   type: typeof KEYS.h5;
 }
 
-export interface MyH6Element extends MyTextBlockElement {
+interface MyH6Element extends MyTextBlockElement {
   type: typeof KEYS.h6;
 }
 
-export interface MyHrElement extends MyBlockElement {
+interface MyHrElement extends MyBlockElement {
   children: [EmptyText];
   type: typeof KEYS.hr;
 }
 
-export interface MyImageElement
-  extends MyBlockElement, TCaptionProps, TImageElement, TResizableProps {
+interface MyImageElement extends MyBlockElement, TCaptionProps, TImageElement, TResizableProps {
   children: [EmptyText];
   type: typeof KEYS.img;
 }
 
-export interface MyLinkElement extends TLinkElement {
+interface MyLinkElement extends TLinkElement {
   children: RichText[];
   type: typeof KEYS.link;
 }
 
-export interface MyMediaEmbedElement
+interface MyMediaEmbedElement
   extends MyBlockElement, TCaptionProps, TMediaEmbedElement, TResizableProps {
   children: [EmptyText];
   type: typeof KEYS.mediaEmbed;
 }
 
-export interface MyMentionElement extends TMentionElement {
+interface MyMentionElement extends TMentionElement {
   children: [EmptyText];
   type: typeof KEYS.mention;
 }
 
-export interface MyMentionInputElement extends TComboboxInputElement {
+interface MyMentionInputElement extends TComboboxInputElement {
   children: [PlainText];
   type: typeof KEYS.mentionInput;
 }
 
-export type MyNestableBlock = MyParagraphElement;
+type MyNestableBlock = MyParagraphElement;
 
-export interface MyParagraphElement extends MyTextBlockElement {
+interface MyParagraphElement extends MyTextBlockElement {
   type: typeof KEYS.p;
 }
 
-export interface MyTableCellElement extends TElement {
+interface MyTableCellElement extends TElement {
   children: MyNestableBlock[];
   type: typeof KEYS.td;
 }
 
-export interface MyTableElement extends MyBlockElement, TTableElement {
+interface MyTableElement extends MyBlockElement, TTableElement {
   children: MyTableRowElement[];
   type: typeof KEYS.table;
 }
 
-export interface MyTableRowElement extends TElement {
+interface MyTableRowElement extends TElement {
   children: MyTableCellElement[];
   type: typeof KEYS.tr;
 }
 
-export interface MyToggleElement extends MyTextBlockElement {
+interface MyToggleElement extends MyTextBlockElement {
   type: typeof KEYS.toggle;
 }
 
-export interface RichText extends TBasicMarks, TCommentText, TFontMarks, TText {
+interface RichText extends TBasicMarks, TCommentText, TFontMarks, TText {
   kbd?: boolean;
 }
 
-export type MyValue = (
+type MyValue = (
   | MyBlockquoteElement
   | MyCodeBlockElement
   | MyH1Element

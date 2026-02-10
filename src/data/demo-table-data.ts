@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 
-export type Person = {
+type Person = {
   id: number;
   firstName: string;
   lastName: string;
@@ -31,7 +31,7 @@ const newPerson = (num: number): Person => {
   };
 };
 
-export function makeData(...lens: number[]) {
+function makeData(...lens: number[]) {
   const makeDataLevel = (depth = 0): Person[] => {
     const len = lens[depth]!;
     return range(len).map((index): Person => {

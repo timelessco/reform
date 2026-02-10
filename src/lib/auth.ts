@@ -120,9 +120,9 @@ export const auth = betterAuth({
       sendVerificationOnSignUp: true,
     }),
     twoFactor({
-      totpOptions : {
-        digits : 6,
-      }
+      totpOptions: {
+        digits: 6,
+      },
     }),
     apiKey(),
     organization({

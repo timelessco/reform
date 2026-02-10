@@ -10,11 +10,11 @@ type OMIT_BETTER_AUTH_CLIENT_KEYS =
   | "fetchOptions";
 
 // Match any method starting with 'get' or 'list', plus specific read-only methods from plugins
-export type QueryMethod = `get${string}` | `list${string}` | "state" | "portal";
+type QueryMethod = `get${string}` | `list${string}` | "state" | "portal";
 
 // Extract data type from better-auth's generic functions
 // Constrain the options arg to throw: false to resolve the conditional return type
-export type InferBetterAuthData<TFn> = TFn extends (
+type InferBetterAuthData<TFn> = TFn extends (
   data: any,
   options?: { throw?: false },
 ) => Promise<infer R>
@@ -23,7 +23,7 @@ export type InferBetterAuthData<TFn> = TFn extends (
     : R
   : never;
 
-export type InferBetterAuthError<TFn> = TFn extends (
+type InferBetterAuthError<TFn> = TFn extends (
   data: any,
   options?: { throw?: true },
 ) => Promise<infer R>
@@ -32,7 +32,7 @@ export type InferBetterAuthError<TFn> = TFn extends (
     : R
   : never;
 
-export interface InferQueryOptions<
+interface InferQueryOptions<
   TFn extends (...args: any[]) => any,
   TPath extends readonly string[],
   TData = InferBetterAuthData<TFn>,
@@ -42,7 +42,7 @@ export interface InferQueryOptions<
   queryFn: () => Promise<TData>;
 }
 
-export interface InferMutationOptions<
+interface InferMutationOptions<
   TFn extends (...args: any[]) => any,
   TData = InferBetterAuthData<TFn>,
   TError = InferBetterAuthError<TFn>,
@@ -51,7 +51,7 @@ export interface InferMutationOptions<
   mutationFn: (variables: TVariables) => Promise<TData>;
 }
 
-export type TransformFunction<
+type TransformFunction<
   TFn extends (...args: any[]) => any,
   Path extends string[],
   TParams extends Parameters<TFn>[0] = Parameters<TFn>[0],
@@ -88,7 +88,7 @@ type BuiltinFunctionKeys = keyof ((...args: any[]) => any);
 // Helper: check if T has any meaningful keys beyond built-in function properties
 type HasExtraKeys<T> = Exclude<keyof T, BuiltinFunctionKeys> extends never ? false : true;
 
-export type AuthClientToQuery<T, Path extends string[] = []> = {
+type AuthClientToQuery<T, Path extends string[] = []> = {
   [K in keyof T as K extends OMIT_BETTER_AUTH_CLIENT_KEYS ? never : K]: T[K] extends (
     ...args: any[]
   ) => any

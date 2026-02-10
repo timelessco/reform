@@ -235,7 +235,7 @@ const processArrayFields = (
   return schemaObject;
 };
 
-export const generateZodSchemaObject = (
+const generateZodSchemaObject = (
   formElements: (FormElement | FormArray)[],
 ): z.ZodObject<Record<string, ZodType>> => {
   const schemaObject: Record<string, ZodType> = {};
@@ -243,7 +243,7 @@ export const generateZodSchemaObject = (
   return z.object(schemaObject);
 };
 
-export const generateZodSchemaString = (schema: ZodType): string => {
+const generateZodSchemaString = (schema: ZodType): string => {
   if (schema instanceof z.ZodDefault) {
     const defaultSchema = schema as z.ZodDefault<ZodType>;
     return `${generateZodSchemaString(defaultSchema.def.innerType)}.default(${JSON.stringify(defaultSchema._def.defaultValue)})`;
@@ -400,7 +400,7 @@ export const generateZodSchemaString = (schema: ZodType): string => {
   return "z.unknown()";
 };
 
-export const getZodSchemaString = (
+const getZodSchemaString = (
   formElements: FormStep[] | (FormElement | FormArray)[],
   isMultiStep = false,
   schemaName = "formSchema",

@@ -1,14 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [
-    "react",
-    "react-hooks",
-    "typescript",
-    "jsx-a11y",
-    "import",
-    "unicorn",
-    "promise"
-  ],
+  "plugins": ["react", "react-hooks", "typescript", "jsx-a11y", "import", "unicorn", "promise"],
   "categories": {
     "correctness": "error",
     "suspicious": "warn",
@@ -67,9 +59,7 @@
     },
     "react": {
       "formComponents": [],
-      "linkComponents": [
-        { "name": "Link", "linkAttribute": "to" }
-      ],
+      "linkComponents": [{ "name": "Link", "linkAttribute": "to" }],
       "version": "19.0"
     }
   },

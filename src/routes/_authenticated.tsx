@@ -56,7 +56,10 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { EditorHeaderVisibilityProvider, useEditorHeaderVisibility } from "@/contexts/editor-header-visibility-context";
+import {
+  EditorHeaderVisibilityProvider,
+  useEditorHeaderVisibility,
+} from "@/contexts/editor-header-visibility-context";
 import { MinimalSidebarProvider, useMinimalSidebar } from "@/contexts/minimal-sidebar-context";
 import {
   createFormLocal,
@@ -78,7 +81,14 @@ import { auth, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/middleware/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet, useLocation, useRouter, useSearch } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useLocation,
+  useRouter,
+  useSearch,
+} from "@tanstack/react-router";
 import {
   Bell,
   ChevronDown,
@@ -98,7 +108,7 @@ import {
   Sun,
   Trash2,
   Undo2,
-  Users
+  Users,
 } from "lucide-react";
 import type * as React from "react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -208,7 +218,6 @@ function AuthLayoutContent() {
     return () => observer.disconnect();
   }, [showEditorSidebar]);
 
-
   return (
     <>
       <AppSidebar />
@@ -233,12 +242,13 @@ function AuthLayoutContent() {
         </div>
 
         <div className="relative z-20 flex-1 min-h-0 overflow-hidden">
-          <ResizablePanelGroup
-            direction="horizontal"
-            className="h-full"
-          >
+          <ResizablePanelGroup direction="horizontal" className="h-full">
             {/* Main content panel */}
-            <ResizablePanel defaultSize={showEditorSidebar ? 70 : 100} minSize={70} className="transition-all duration-300 ease-in-out">
+            <ResizablePanel
+              defaultSize={showEditorSidebar ? 70 : 100}
+              minSize={70}
+              className="transition-all duration-300 ease-in-out"
+            >
               <div ref={leftPanelRef} className={cn("flex h-full min-w-0 flex-col z-50")}>
                 <Outlet key={formId} />
               </div>
@@ -250,7 +260,7 @@ function AuthLayoutContent() {
                 "fixed top-0 bottom-0 left-(--handle-left) -translate-x-1/2 w-px",
                 "bg-border/60 z-[999] pointer-events-auto",
                 "transition-none duration-0 hover:w-px data-[resize-handle-state=drag]:w-px",
-                !showEditorSidebar && "hidden pointer-events-none"
+                !showEditorSidebar && "hidden pointer-events-none",
               )}
               ref={handleRef}
               style={{ "--handle-left": `${handleLeft}px` } as React.CSSProperties}
@@ -314,7 +324,7 @@ function AuthLayoutContent() {
               maxSize={40}
               className={cn(
                 "h-full overflow-hidden transition-all duration-300 ease-in-out bg-background",
-                !showEditorSidebar && "border-none"
+                !showEditorSidebar && "border-none",
               )}
             >
               <div className="h-full w-full">
@@ -519,7 +529,10 @@ function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => router.navigate({ to: "/settings/my-account" })}
-                    isActive={location.pathname.startsWith("/settings") && !location.pathname.includes("/members")}
+                    isActive={
+                      location.pathname.startsWith("/settings") &&
+                      !location.pathname.includes("/members")
+                    }
                     tooltip="Settings"
                   >
                     <Settings className="h-4 w-4" />
@@ -563,7 +576,7 @@ function AppSidebar() {
                 setIsPaletteOpen(false);
                 if (activeOrg && workspacesData) {
                   const orgWorkspaces = workspacesData.filter(
-                    (ws) => ws.organizationId === activeOrg.id
+                    (ws) => ws.organizationId === activeOrg.id,
                   );
                   if (orgWorkspaces.length > 0) {
                     // Use workspace from URL if available, otherwise use first workspace
@@ -831,9 +844,7 @@ function SidebarInbox() {
   if (!isInboxOpen) return null;
 
   // Only show pending invitations
-  const pendingInvitations = (invitations ?? []).filter(
-    (inv: any) => inv.status === "pending"
-  );
+  const pendingInvitations = (invitations ?? []).filter((inv: any) => inv.status === "pending");
 
   return (
     <div
@@ -888,8 +899,10 @@ function SidebarInbox() {
               <div className="space-y-1 mb-4">
                 {pendingInvitations.map((invitation) => {
                   const isProcessing =
-                    (acceptMutation.isPending && acceptMutation.variables?.invitationId === invitation.id) ||
-                    (rejectMutation.isPending && rejectMutation.variables?.invitationId === invitation.id);
+                    (acceptMutation.isPending &&
+                      acceptMutation.variables?.invitationId === invitation.id) ||
+                    (rejectMutation.isPending &&
+                      rejectMutation.variables?.invitationId === invitation.id);
 
                   return (
                     <div
@@ -920,7 +933,8 @@ function SidebarInbox() {
                           disabled={isProcessing}
                           onClick={() => acceptMutation.mutate({ invitationId: invitation.id })}
                         >
-                          {acceptMutation.isPending && acceptMutation.variables?.invitationId === invitation.id
+                          {acceptMutation.isPending &&
+                          acceptMutation.variables?.invitationId === invitation.id
                             ? "Accepting..."
                             : "Accept"}
                         </Button>
@@ -931,7 +945,8 @@ function SidebarInbox() {
                           disabled={isProcessing}
                           onClick={() => rejectMutation.mutate({ invitationId: invitation.id })}
                         >
-                          {rejectMutation.isPending && rejectMutation.variables?.invitationId === invitation.id
+                          {rejectMutation.isPending &&
+                          rejectMutation.variables?.invitationId === invitation.id
                             ? "Declining..."
                             : "Decline"}
                         </Button>
@@ -1008,7 +1023,11 @@ function UserMenuMinimal({
         >
           <div className="h-6 w-6 rounded-full overflow-hidden bg-muted flex items-center justify-center text-[10px] font-bold shrink-0">
             {session?.user?.image ? (
-              <img src={session.user.image} alt={displayName} className="h-full w-full object-cover" />
+              <img
+                src={session.user.image}
+                alt={displayName}
+                className="h-full w-full object-cover"
+              />
             ) : (
               getInitials(displayName)
             )}
@@ -1070,11 +1089,7 @@ function UserMenuMinimal({
                 }}
                 className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-muted/50 text-[13px] text-muted-foreground hover:text-foreground transition-colors text-left"
               >
-                {theme === "dark" ? (
-                  <Sun className="h-4 w-4" />
-                ) : (
-                  <Moon className="h-4 w-4" />
-                )}
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                 <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
               </button>
               <button
@@ -1298,22 +1313,26 @@ function isEmoji(str: string): boolean {
   return str.length <= 4 && emojiRange.test(str);
 }
 
-function WorkspaceFormMinimal({ label, icon, to }: { label: string; icon?: string | null; to?: string }) {
+function WorkspaceFormMinimal({
+  label,
+  icon,
+  to,
+}: {
+  label: string;
+  icon?: string | null;
+  to?: string;
+}) {
   const location = useLocation();
   const isActive = location.pathname === to;
 
-  const prefix = icon && isEmoji(icon)
-    ? <span className="text-sm leading-none">{icon}</span>
-    : <FileText className="h-3.5 w-3.5" />;
+  const prefix =
+    icon && isEmoji(icon) ? (
+      <span className="text-sm leading-none">{icon}</span>
+    ) : (
+      <FileText className="h-3.5 w-3.5" />
+    );
 
-  return (
-    <SidebarItem
-      label={label}
-      to={to}
-      isActive={isActive}
-      prefix={prefix}
-    />
-  );
+  return <SidebarItem label={label} to={to} isActive={isActive} prefix={prefix} />;
 }
 
 // Sidebar Section Component

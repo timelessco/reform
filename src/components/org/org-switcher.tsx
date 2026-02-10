@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 import { auth, useSession } from "@/lib/auth-client";
 
-export function OrganizationSwitcher() {
+function OrganizationSwitcher() {
   const { isMobile } = useSidebar();
   const router = useRouter();
   const queryClient = useQueryClient();

@@ -4,7 +4,7 @@ import { Plate, usePlateEditor } from "platejs/react";
 import { BasicNodesKit } from "@/components/editor/plugins/basic-nodes-kit";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 
-export function PlateEditor() {
+function PlateEditor() {
   const editor = usePlateEditor({
     plugins: BasicNodesKit,
     value,

@@ -22,7 +22,6 @@ export default {
     "tw-animate-css", // tailwind plugin
     "2026-01-08-platjs", // self-reference
     "katex", // used in CSS
-    "type-fest", // used in auth-query.ts (unused file)
   ],
   rules: {
     unlisted: "off", // dev deps in config files are expected

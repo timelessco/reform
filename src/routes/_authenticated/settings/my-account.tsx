@@ -3,7 +3,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Camera, Globe, Key, Loader2, RotateCcw, Trash2 } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ImageCrop, ImageCropApply, ImageCropContent, ImageCropReset } from "@/components/ui/image-crop";
+import {
+  ImageCrop,
+  ImageCropApply,
+  ImageCropContent,
+  ImageCropReset,
+} from "@/components/ui/image-crop";
 import { uploadAvatar } from "@/lib/fn/upload";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -26,9 +31,9 @@ import { auth, useSession } from "@/lib/auth-client";
 export const Route = createFileRoute("/_authenticated/settings/my-account")({
   component: MyAccountPage,
   loader: async ({ context }) => {
-      if (typeof window === "undefined") {
-        return { accounts: [] };
-      }
+    if (typeof window === "undefined") {
+      return { accounts: [] };
+    }
     const accounts = await context.queryClient.ensureQueryData({
       ...auth.listAccounts.queryOptions(),
       revalidateIfStale: true,
@@ -45,7 +50,7 @@ function MyAccountPage() {
   const { data: session, isPending: isSessionPending } = useSession();
   const user = session?.user;
   const { accounts: initialAccounts } = Route.useLoaderData();
-  console.log(initialAccounts , 'initialAccounts')
+  console.log(initialAccounts, "initialAccounts");
   // Initialize names from user (no useEffect needed since component waits for session)
   const [firstName, setFirstName] = useState(user?.name?.split(" ")[0] || "");
   const [lastName, setLastName] = useState(user?.name?.split(" ").slice(1).join(" ") || "");
@@ -274,9 +279,7 @@ function MyAccountPage() {
               onChange={handleFileSelect}
               className="hidden"
             />
-            <p className="text-sm text-muted-foreground">
-              Click to upload a new photo
-            </p>
+            <p className="text-sm text-muted-foreground">Click to upload a new photo</p>
           </div>
         </div>
 
@@ -445,7 +448,8 @@ function MyAccountPage() {
                       <div className="space-y-2">
                         <p className="text-sm font-medium text-amber-600">Backup codes</p>
                         <p className="text-xs text-muted-foreground">
-                          Save these codes securely. Each code can be used once to access your account if you lose your authenticator.
+                          Save these codes securely. Each code can be used once to access your
+                          account if you lose your authenticator.
                         </p>
                         <div className="grid grid-cols-2 gap-2 p-3 bg-muted/50 rounded-lg border border-border">
                           {backupCodes.map((code) => (
@@ -474,10 +478,7 @@ function MyAccountPage() {
                       <Button
                         className="w-full bg-black text-white hover:bg-black/90"
                         onClick={handleVerifyAndEnable2fa}
-                        disabled={
-                          otpCode.length < 6 ||
-                          verifyTotpMutation.isPending
-                        }
+                        disabled={otpCode.length < 6 || verifyTotpMutation.isPending}
                       >
                         {verifyTotpMutation.isPending ? (
                           <Loader2 className="animate-spin mr-2 h-4 w-4" />
@@ -597,25 +598,21 @@ function MyAccountPage() {
       </section>
 
       {/* Avatar Crop Dialog */}
-      <Dialog open={isAvatarDialogOpen} onOpenChange={(open) => {
-        setIsAvatarDialogOpen(open);
-        if (!open) setSelectedFile(null);
-      }}>
+      <Dialog
+        open={isAvatarDialogOpen}
+        onOpenChange={(open) => {
+          setIsAvatarDialogOpen(open);
+          if (!open) setSelectedFile(null);
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Crop your photo</DialogTitle>
-            <DialogDescription>
-              Adjust the crop area to set your profile picture.
-            </DialogDescription>
+            <DialogDescription>Adjust the crop area to set your profile picture.</DialogDescription>
           </DialogHeader>
 
           {selectedFile && (
-            <ImageCrop
-              file={selectedFile}
-              aspect={1}
-              circularCrop
-              onCrop={handleCroppedImage}
-            >
+            <ImageCrop file={selectedFile} aspect={1} circularCrop onCrop={handleCroppedImage}>
               <div className="space-y-4">
                 <ImageCropContent className="max-h-[300px]" />
 

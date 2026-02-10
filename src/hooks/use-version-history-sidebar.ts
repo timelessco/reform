@@ -17,12 +17,15 @@ export function useVersionHistorySidebar() {
   const isViewingVersion = selectedVersionId !== null;
 
   // Wrapper that resets state when closing
-  const handleSetIsOpen = useCallback((open: boolean) => {
-    if (!open) {
-      exitVersionView();
-    }
-    setActiveSidebar(open ? "history" : null);
-  }, [setActiveSidebar, exitVersionView]);
+  const handleSetIsOpen = useCallback(
+    (open: boolean) => {
+      if (!open) {
+        exitVersionView();
+      }
+      setActiveSidebar(open ? "history" : null);
+    },
+    [setActiveSidebar, exitVersionView],
+  );
 
   return {
     isOpen,

@@ -111,7 +111,9 @@ function DashboardPage() {
       })),
     )
     .filter((form: any) => form.status !== "archived")
-    .sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    .toSorted(
+      (a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    );
 
   // Compute live data
   const liveOrgWorkspaces = (liveWorkspaces ?? []).filter(
@@ -120,7 +122,7 @@ function DashboardPage() {
   const liveOrgForms = (liveForms ?? [])
     .filter((form) => liveOrgWorkspaces.some((ws) => ws.id === form.workspaceId))
     .filter((form) => form.status !== "archived")
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    .toSorted((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   // Smart switch: don't drop loader data until live data is reliable.
   // Use live data when Electric is ready AND (we've received live forms at least once OR loader had no forms).
@@ -311,10 +313,11 @@ function DashboardPage() {
                           </span>
                           <Badge
                             variant="secondary"
-                            className={`text-[10px] h-4 px-1.5 font-normal ${form.status === "published"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-muted/80 text-muted-foreground"
-                              } rounded-full`}
+                            className={`text-[10px] h-4 px-1.5 font-normal ${
+                              form.status === "published"
+                                ? "bg-green-100 text-green-700"
+                                : "bg-muted/80 text-muted-foreground"
+                            } rounded-full`}
                           >
                             {form.status === "published" ? "Published" : "Draft"}
                           </Badge>

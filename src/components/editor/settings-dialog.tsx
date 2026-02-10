@@ -41,7 +41,7 @@ type Model = {
   value: string;
 };
 
-export const models: Model[] = [
+const models: Model[] = [
   // OpenAI Models
   { label: "GPT-3.5 Turbo", value: "openai/gpt-3.5-turbo" },
   { label: "GPT-3.5 Turbo Instruct", value: "openai/gpt-3.5-turbo-instruct" },
@@ -208,7 +208,7 @@ export const models: Model[] = [
   { label: "GLM 4.5V", value: "zai/glm-4.5v" },
 ];
 
-export function SettingsDialog() {
+function SettingsDialog() {
   const editor = useEditorRef();
 
   const [tempModel, setTempModel] = React.useState(models[7]);

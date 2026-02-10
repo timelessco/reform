@@ -125,7 +125,11 @@ export function FormHeaderElement(props: PlateElementProps) {
   const handleAddCover = () => handleCoverChange("#FFE4E1");
 
   const [iconPopoverOpen, setIconPopoverOpen] = useState(false);
-  const { emojiPickerState, isOpen: emojiIsOpen, setIsOpen: setEmojiIsOpen } = useEmojiDropdownMenuState();
+  const {
+    emojiPickerState,
+    isOpen: emojiIsOpen,
+    setIsOpen: setEmojiIsOpen,
+  } = useEmojiDropdownMenuState();
 
   return (
     <PlateElement {...props}>
@@ -134,7 +138,11 @@ export function FormHeaderElement(props: PlateElementProps) {
           <>
             <div className="relative w-screen left-[50%] right-[50%] -ml-[50vw] -mr-[50vw] h-[120px] sm:h-[200px] group/cover bg-muted/20">
               {cover && !cover.startsWith("#") ? (
-                <img src={cover} alt="Cover" className="w-full h-full object-cover border-0 rounded-none" />
+                <img
+                  src={cover}
+                  alt="Cover"
+                  className="w-full h-full object-cover border-0 rounded-none"
+                />
               ) : (
                 <div
                   className="w-full h-full"
@@ -281,14 +289,26 @@ export function FormHeaderElement(props: PlateElementProps) {
                     >
                       {icon && icon !== "default-icon" ? (
                         isEmoji(icon) ? (
-                          <span className="text-5xl sm:text-6xl leading-none" role="img" aria-label="Form icon">
+                          <span
+                            className="text-5xl sm:text-6xl leading-none"
+                            role="img"
+                            aria-label="Form icon"
+                          >
                             {icon}
                           </span>
                         ) : (
-                          <img src={icon} alt="Logo" className="w-[60px] h-[60px] sm:w-[72px] sm:h-[72px] rounded-md object-cover" />
+                          <img
+                            src={icon}
+                            alt="Logo"
+                            className="w-[60px] h-[60px] sm:w-[72px] sm:h-[72px] rounded-md object-cover"
+                          />
                         )
                       ) : (
-                        <span className="text-5xl sm:text-6xl leading-none" role="img" aria-label="Form icon">
+                        <span
+                          className="text-5xl sm:text-6xl leading-none"
+                          role="img"
+                          aria-label="Form icon"
+                        >
                           📄
                         </span>
                       )}
@@ -435,6 +455,6 @@ export function FormHeaderElement(props: PlateElementProps) {
         </div>
       </div>
       {children}
-    </PlateElement >
+    </PlateElement>
   );
 }

@@ -5,7 +5,7 @@
 
 import type { EmojiAnimation, PopupOptions } from "./types";
 
-export type OpenPopupCallback = (formId: string, options: PopupOptions) => void;
+type OpenPopupCallback = (formId: string, options: PopupOptions) => void;
 
 /**
  * Parse options from element data attributes
@@ -93,7 +93,7 @@ function parseDataAttributes(element: HTMLElement): PopupOptions {
  * Parse options from URL hash parameters
  * Format: #form-open=formId&align-left=1&hide-title=1&overlay=1&emoji-text=👋&emoji-animation=wave&auto-close=5000
  */
-export function parseHashParams(hash: string): {
+function parseHashParams(hash: string): {
   formId: string | null;
   options: PopupOptions;
 } {

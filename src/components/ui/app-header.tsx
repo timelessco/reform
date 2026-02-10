@@ -30,7 +30,7 @@ import {
   MoreHorizontal,
   Settings,
   Star,
-  Trash2
+  Trash2,
 } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
@@ -51,8 +51,11 @@ export function AppHeader({
   isSidebarOpen,
   isDistractionHidden = false,
 }: AppHeaderProps) {
-  const { state, toggleSidebar: toggleMainSidebar } = useSidebarSafe() || { state: "expanded", toggleSidebar: () => { } };
-  const { pathname , search } = useLocation();
+  const { state, toggleSidebar: toggleMainSidebar } = useSidebarSafe() || {
+    state: "expanded",
+    toggleSidebar: () => {},
+  };
+  const { pathname, search } = useLocation();
   const isFormBuilder = pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
   const isEditRoute = pathname.endsWith("/edit");
   const { data: sessionData } = useSession();
@@ -76,8 +79,8 @@ export function AppHeader({
         search: {
           demo: !isShareSidebarOpen,
           force: true,
-          sidebar: isShareSidebarOpen ? '' : 'share',
-          embedType: "fullpage"
+          sidebar: isShareSidebarOpen ? "" : "share",
+          embedType: "fullpage",
         },
       });
     }
@@ -260,10 +263,14 @@ export function AppHeader({
                   asChild
                   className={cn(
                     "h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-muted font-normal",
-                    demo && "text-foreground bg-muted"
+                    demo && "text-foreground bg-muted",
                   )}
                 >
-                  <Link to="." search={(prev: any) => ({ ...prev, demo: !demo , sidebar : ''})} replace>
+                  <Link
+                    to="."
+                    search={(prev: any) => ({ ...prev, demo: !demo, sidebar: "" })}
+                    replace
+                  >
                     {demo ? "Editor" : "Preview"}
                   </Link>
                 </Button>
@@ -275,7 +282,7 @@ export function AppHeader({
                   size="sm"
                   className={cn(
                     "h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-muted font-normal",
-                    isShareSidebarOpen && "text-foreground bg-muted"
+                    isShareSidebarOpen && "text-foreground bg-muted",
                   )}
                   onClick={toggleShareSidebar}
                 >
@@ -311,7 +318,9 @@ export function AppHeader({
                     </>
                   )}
                   <DropdownMenuItem onClick={handleToggleFavorite} className="gap-2">
-                    <Star className={cn("h-4 w-4", isFavorite && "fill-yellow-400 text-yellow-400")} />
+                    <Star
+                      className={cn("h-4 w-4", isFavorite && "fill-yellow-400 text-yellow-400")}
+                    />
                     {isFavorite ? "Unfavorite" : "Favorite"}
                   </DropdownMenuItem>
 
@@ -342,18 +351,22 @@ export function AppHeader({
                 size="sm"
                 className={cn(
                   "h-8 px-4 ml-1 text-[13px] font-semibold transition-all rounded-md shadow-sm border-none",
-                  (hasUnpublishedChanges || currentForm?.status !== "published")
+                  hasUnpublishedChanges || currentForm?.status !== "published"
                     ? "bg-stone-900 border-none hover:bg-stone-800 text-white"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80",
                 )}
                 onClick={handlePublish}
-                disabled={publishMutation.isPending || (!hasUnpublishedChanges && currentForm?.status === "published")}
+                disabled={
+                  publishMutation.isPending ||
+                  (!hasUnpublishedChanges && currentForm?.status === "published")
+                }
               >
                 {publishMutation.isPending && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
                 {currentForm?.status === "published"
-                  ? (hasUnpublishedChanges ? "Publish Changes" : "Published")
-                  : "Publish"
-                }
+                  ? hasUnpublishedChanges
+                    ? "Publish Changes"
+                    : "Published"
+                  : "Publish"}
               </Button>
             )}
           </>
@@ -361,10 +374,7 @@ export function AppHeader({
       </div>
 
       {isSidebarOpen && typeof dividerX === "number" && (
-        <div
-          className="pointer-events-none fixed top-0 h-10 z-1000"
-          style={{ left: dividerX + 8 }}
-        >
+        <div className="pointer-events-none fixed top-0 h-10 z-1000" style={{ left: dividerX + 8 }}>
           <div className="pointer-events-auto absolute top-[6px]">
             <Tooltip>
               <TooltipTrigger asChild>

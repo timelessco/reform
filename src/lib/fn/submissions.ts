@@ -25,7 +25,7 @@ const serializeSubmission = (s: typeof submissions.$inferSelect) => ({
 });
 
 // GET submissions by form
-export const getSubmissionsByFormId = createServerFn({ method: "GET" })
+const getSubmissionsByFormId = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ formId: z.string().uuid() }))
   .handler(async ({ data }) => {

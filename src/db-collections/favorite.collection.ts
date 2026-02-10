@@ -4,14 +4,14 @@ import { z } from "zod";
 import { addFavorite, removeFavorite } from "@/lib/fn/favorites";
 import { electricFetchClient, getElectricUrl, type ServerTxResult, timestampField } from "./shared";
 
-export const FormFavoriteSchema = z.object({
+const FormFavoriteSchema = z.object({
   id: z.string(), // Format: ${userId}:${formId}
   userId: z.string(),
   formId: z.string().uuid(),
   createdAt: timestampField,
 });
 
-export type FormFavorite = z.infer<typeof FormFavoriteSchema>;
+type FormFavorite = z.infer<typeof FormFavoriteSchema>;
 
 export const favoriteCollection = createCollection(
   electricCollectionOptions({
@@ -56,7 +56,7 @@ export async function toggleFavoriteLocal(userId: string, formId: string): Promi
   }
 }
 
-export async function addFavoriteLocal(userId: string, formId: string): Promise<void> {
+async function addFavoriteLocal(userId: string, formId: string): Promise<void> {
   const id = `${userId}:${formId}`;
   await favoriteCollection.insert({
     id,
@@ -66,11 +66,11 @@ export async function addFavoriteLocal(userId: string, formId: string): Promise<
   });
 }
 
-export async function removeFavoriteLocal(userId: string, formId: string): Promise<void> {
+async function removeFavoriteLocal(userId: string, formId: string): Promise<void> {
   await favoriteCollection.delete(`${userId}:${formId}`);
 }
 
-export function isFavoriteLocal(userId: string, formId: string): boolean {
+function isFavoriteLocal(userId: string, formId: string): boolean {
   const id = `${userId}:${formId}`;
   return favoriteCollection.state.has(id);
 }

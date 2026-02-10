@@ -6,7 +6,7 @@ import type { TextStreamPart, ToolSet } from "ai";
  *
  * @experimental
  */
-export const markdownJoinerTransform =
+const markdownJoinerTransform =
   <TOOLS extends ToolSet>() =>
   () => {
     const joiner = new MarkdownJoiner();
@@ -69,7 +69,7 @@ const ORDERED_LIST_PATTERN = /^\d+\.\s+.+/;
 const MDX_TAG_PATTERN = /<([A-Za-z][A-Za-z0-9\-_]*)>/;
 const DIGIT_PATTERN = /^[0-9]$/;
 
-export class MarkdownJoiner {
+class MarkdownJoiner {
   delayInMs = DEFAULT_DELAY_IN_MS;
 
   private buffer = "";

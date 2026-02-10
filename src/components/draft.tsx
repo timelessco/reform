@@ -32,7 +32,7 @@ import { draftFormSchema } from "@/lib/draftFormSchema";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
 
-export function DraftForm() {
+function DraftForm() {
   const draftForm = useAppForm({
     defaultValues: {
       Checkbox_1767870049368: false,
@@ -70,8 +70,8 @@ export function DraftForm() {
     listeners: {
       onChange: (state) => {
         console.log(state);
-      }
-    }
+      },
+    },
   });
   const isDefault = useStore(draftForm.store, (state) => state.isDefaultValue);
 

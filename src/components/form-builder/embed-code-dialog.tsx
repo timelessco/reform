@@ -2,12 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Check, ChevronDown, Copy } from "lucide-react";
 import { useMemo, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 import { cn } from "@/lib/utils";
 import type { EmbedOptions } from "./embed-config-panel";
@@ -62,7 +57,7 @@ export function generateEmbedUrl(formId: string, options: EmbedOptions): string 
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 }
 
-export function generateEmbedCode(
+function generateEmbedCode(
   embedType: EmbedType,
   options: EmbedOptions,
   formId: string,
@@ -149,7 +144,11 @@ function InlineCopyBar({ value }: { value: string }) {
         className="h-9 text-[11px] bg-muted/30 focus-visible:ring-primary border-transparent focus:border-primary transition-all pr-2 font-mono"
       />
       <Button size="icon" className="h-9 w-9 shrink-0" onClick={handleCopy}>
-        {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+        {copied ? (
+          <Check className="h-3.5 w-3.5 text-green-500" />
+        ) : (
+          <Copy className="h-3.5 w-3.5" />
+        )}
       </Button>
     </div>
   );
@@ -266,8 +265,11 @@ export function EmbedCodeDialog({
 
                 <div>
                   <p className="text-muted-foreground text-[12px] mt-6 mb-4 leading-relaxed">
-                    To <strong className="text-foreground font-semibold">open the popup on clicking a button</strong>,
-                    add{" "}
+                    To{" "}
+                    <strong className="text-foreground font-semibold">
+                      open the popup on clicking a button
+                    </strong>
+                    , add{" "}
                     <code className="text-foreground font-mono bg-muted px-1.5 py-0.5 rounded text-[11px] border border-border/50">
                       data-form-id
                     </code>{" "}
@@ -277,13 +279,14 @@ export function EmbedCodeDialog({
                     <div className="text-[11px] text-foreground/80 font-mono space-y-1">
                       <div className="text-muted-foreground/60">{"// Data attributes"}</div>
                       <div className="break-all leading-relaxed">
-                        data-form-id="{formId}"
-                        {` data-position="${options.popupPosition}"`}
+                        data-form-id="{formId}"{` data-position="${options.popupPosition}"`}
                         {options.alignLeft && ` data-align-left="1"`}
                         {options.hideTitle && ` data-hide-title="1"`}
                         {options.darkOverlay && ` data-overlay="1"`}
-                        {options.emoji && ` data-emoji-text="${options.emojiIcon}" data-emoji-animation="${options.emojiAnimation}"`}
-                        {options.hideOnSubmit && ` data-auto-close="${options.hideOnSubmitDelay * 1000}"`}
+                        {options.emoji &&
+                          ` data-emoji-text="${options.emojiIcon}" data-emoji-animation="${options.emojiAnimation}"`}
+                        {options.hideOnSubmit &&
+                          ` data-auto-close="${options.hideOnSubmitDelay * 1000}"`}
                       </div>
                     </div>
                   </div>
@@ -302,7 +305,8 @@ export function EmbedCodeDialog({
                 <div>
                   <p className="text-muted-foreground text-[12px] mt-8 mb-4">
                     Alternatively,{" "}
-                    <strong className="text-foreground font-semibold">open via a link</strong> with a custom URL hash.
+                    <strong className="text-foreground font-semibold">open via a link</strong> with
+                    a custom URL hash.
                   </p>
                   <div className="bg-brand/5 border-l-4 border-brand rounded-r-lg p-4 mb-4">
                     <div className="text-[11px] text-foreground/80 font-mono space-y-1">
@@ -319,7 +323,9 @@ export function EmbedCodeDialog({
             ) : (
               /* Full page */
               <div>
-                <h3 className="text-foreground font-semibold text-[13px] mb-2.5">Full page redirect</h3>
+                <h3 className="text-foreground font-semibold text-[13px] mb-2.5">
+                  Full page redirect
+                </h3>
                 <p className="text-muted-foreground text-[12px] mb-3.5">
                   Use a meta redirect or link to send visitors directly to your form.
                 </p>
@@ -380,7 +386,9 @@ export function EmbedCodeDialog({
                   onClick={() => toggleSection("js")}
                   className="w-full flex items-center justify-between py-5 text-left group"
                 >
-                  <span className="text-[14px] font-semibold text-foreground group-hover:text-brand transition-colors">Use JavaScript</span>
+                  <span className="text-[14px] font-semibold text-foreground group-hover:text-brand transition-colors">
+                    Use JavaScript
+                  </span>
                   <ChevronDown
                     className={cn(
                       "w-4 h-4 text-muted-foreground/50 transition-transform group-hover:text-brand",
@@ -410,7 +418,10 @@ BetterForms.loadEmbeds();`}
                       <div className="space-y-4">
                         <p className="leading-relaxed">
                           Open and close popups via{" "}
-                          <code className="text-foreground font-mono bg-muted px-1 rounded">window.BetterForms</code>.
+                          <code className="text-foreground font-mono bg-muted px-1 rounded">
+                            window.BetterForms
+                          </code>
+                          .
                         </p>
                         <CodeBlock
                           code={`// Include the script
@@ -427,7 +438,9 @@ BetterForms.closePopup('${formId}');`}
                     )}
 
                     <div className="space-y-4 pt-4 border-t border-border/30">
-                      <h4 className="text-foreground font-semibold text-[13px]">Available options</h4>
+                      <h4 className="text-foreground font-semibold text-[13px]">
+                        Available options
+                      </h4>
                       <CodeBlock
                         code={`type PopupOptions = {
   key?: string;
@@ -452,9 +465,13 @@ BetterForms.closePopup('${formId}');`}
                     </div>
 
                     <div className="space-y-5 pt-6">
-                      <h4 className="text-foreground font-semibold text-[13px] italic opacity-80 border-b border-border/30 pb-2">Examples</h4>
+                      <h4 className="text-foreground font-semibold text-[13px] italic opacity-80 border-b border-border/30 pb-2">
+                        Examples
+                      </h4>
                       <div className="space-y-3">
-                        <p className="text-[12px] font-medium text-foreground/80">1. Open as centered modal with delay</p>
+                        <p className="text-[12px] font-medium text-foreground/80">
+                          1. Open as centered modal with delay
+                        </p>
                         <CodeBlock
                           code={`BetterForms.openPopup('${formId}', {
   layout: 'modal',
@@ -465,7 +482,9 @@ BetterForms.closePopup('${formId}');`}
                         />
                       </div>
                       <div className="space-y-3">
-                        <p className="text-[12px] font-medium text-foreground/80">2. Set custom hidden fields</p>
+                        <p className="text-[12px] font-medium text-foreground/80">
+                          2. Set custom hidden fields
+                        </p>
                         <CodeBlock
                           code={`BetterForms.openPopup('${formId}', {
   hiddenFields: {
@@ -477,7 +496,9 @@ BetterForms.closePopup('${formId}');`}
                         />
                       </div>
                       <div className="space-y-3">
-                        <p className="text-[12px] font-medium text-foreground/80">3. Handle events</p>
+                        <p className="text-[12px] font-medium text-foreground/80">
+                          3. Handle events
+                        </p>
                         <CodeBlock
                           code={`BetterForms.openPopup('${formId}', {
   onOpen: () => console.log('Opened'),

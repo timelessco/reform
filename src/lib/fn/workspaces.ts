@@ -112,7 +112,7 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
     };
   });
 
-export const getWorkspaceById = createServerFn({ method: "GET" })
+const getWorkspaceById = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data }) => {
@@ -133,7 +133,7 @@ export const getWorkspaceById = createServerFn({ method: "GET" })
     };
   });
 
-export const getWorkspaces = createServerFn({ method: "GET" })
+const getWorkspaces = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async () => {
     const user = await authUser();
@@ -165,7 +165,7 @@ export const getWorkspaces = createServerFn({ method: "GET" })
     };
   });
 
-export const getWorkspacesWithForms = createServerFn({ method: "GET" })
+const getWorkspacesWithForms = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async () => {
     const user = await authUser();

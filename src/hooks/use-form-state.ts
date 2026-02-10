@@ -15,7 +15,7 @@ const defaultContent = normalizeNodeId([
   },
 ]);
 
-export const DEFAULT_FORM_STATE: Omit<Form, "id" | "workspaceId" | "createdAt" | "updatedAt"> = {
+const DEFAULT_FORM_STATE: Omit<Form, "id" | "workspaceId" | "createdAt" | "updatedAt"> = {
   formName: "draft",
   schemaName: "draftFormSchema",
   isMultiStep: false,
@@ -38,7 +38,7 @@ export const DEFAULT_FORM_STATE: Omit<Form, "id" | "workspaceId" | "createdAt" |
   status: "draft",
 };
 
-export type FormState = Form;
+type FormState = Form;
 
 /**
  * useFormState - A hook to access the current form builder state.
@@ -74,13 +74,11 @@ const useFormState = createIsomorphicFn()
     );
   });
 
-export default useFormState;
-
 /**
  * useFormStateById - A hook to access a specific form by ID.
  * Uses TanStack DB live query to stay in sync with the persistent store.
  */
-export function useFormStateById(formId?: string): FormState {
+function useFormStateById(formId?: string): FormState {
   const { data } = useForm(formId);
 
   const now = new Date().toISOString();

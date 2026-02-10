@@ -9,10 +9,7 @@ import { CustomizeSidebar } from "@/components/ui/customize-sidebar";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import {
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { useFormVersionContent } from "@/hooks/use-form-versions";
 import { useForm } from "@/hooks/use-live-hooks";
 import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
@@ -36,7 +33,10 @@ export const Route = createFileRoute(
     embedAlignLeft: z.coerce.boolean().catch(false).optional(),
     embedTransparent: z.coerce.boolean().catch(false).optional(),
     embedBranding: z.coerce.boolean().catch(true).optional(),
-    embedPopupPosition: z.enum(["bottom-right", "bottom-left", "center"]).catch("bottom-right").optional(),
+    embedPopupPosition: z
+      .enum(["bottom-right", "bottom-left", "center"])
+      .catch("bottom-right")
+      .optional(),
     embedPopupWidth: z.coerce.number().catch(376).optional(),
     embedDarkOverlay: z.coerce.boolean().catch(false).optional(),
     embedEmoji: z.coerce.boolean().catch(true).optional(),
@@ -118,8 +118,9 @@ function DesignPage() {
   } = useVersionHistorySidebar();
 
   // Fetch version content when viewing a version
-  const { data: versionContentData, isLoading: isLoadingVersionContent } =
-    useFormVersionContent(isViewingVersion ? selectedVersionId ?? undefined : undefined);
+  const { data: versionContentData, isLoading: isLoadingVersionContent } = useFormVersionContent(
+    isViewingVersion ? (selectedVersionId ?? undefined) : undefined,
+  );
 
   // Use local Electric data to check form status (more up-to-date than server)
   const { data: localFormData, isReady } = useForm(formId);
@@ -212,7 +213,12 @@ function DesignPage() {
               </div>
             )}
 
-            <div className={cn("flex-1 overflow-x-hidden", demo ? "h-full overflow-hidden" : "overflow-y-auto")}>
+            <div
+              className={cn(
+                "flex-1 overflow-x-hidden",
+                demo ? "h-full overflow-hidden" : "overflow-y-auto",
+              )}
+            >
               {demo ? (
                 <PreviewMode formId={formId} workspaceId={workspaceId} />
               ) : isViewingVersion && isLoadingVersionContent ? (

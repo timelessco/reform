@@ -3,10 +3,7 @@ import { HelpCircle, Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  useFormVersions,
-  useRestoreVersion,
-} from "@/hooks/use-form-versions";
+import { useFormVersions, useRestoreVersion } from "@/hooks/use-form-versions";
 import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
@@ -67,7 +64,10 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
   };
 
   return (
-    <Sidebar collapsible="none" className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out">
+    <Sidebar
+      collapsible="none"
+      className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out"
+    >
       {/* Sidebar Header */}
       <SidebarHeader className="px-4 h-14 border-b flex flex-row items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
@@ -84,10 +84,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
           </div>
           <div className="flex items-center gap-3 p-2 rounded-md bg-muted/50 border">
             <Avatar className="h-8 w-8">
-              <AvatarImage
-                src={currentUser?.image ?? undefined}
-                alt={currentUser?.name}
-              />
+              <AvatarImage src={currentUser?.image ?? undefined} alt={currentUser?.name} />
               <AvatarFallback className="text-xs">
                 {currentUser?.name?.charAt(0) ?? "?"}
               </AvatarFallback>
@@ -158,9 +155,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
           className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
           size="lg"
         >
-          {restoreMutation.isPending ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : null}
+          {restoreMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
           Restore
         </Button>
       </SidebarFooter>

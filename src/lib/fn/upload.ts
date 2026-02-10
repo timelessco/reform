@@ -15,7 +15,7 @@ export const uploadAvatar = createServerFn({ method: "POST" })
       filename: z.string().optional(),
     }),
   )
-  .handler(async ({ data, context , }) => {
+  .handler(async ({ data, context }) => {
     const userId = context.session.user.id;
 
     // Extract the base64 data (remove data:image/xxx;base64, prefix)

@@ -2,7 +2,7 @@ import { CircleUserRoundIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFileUpload } from "@/hooks/use-file-upload";
 
-export default function Component() {
+function Component() {
   const [{ files }, { removeFile, openFileDialog, getInputProps }] = useFileUpload({
     accept: "image/*",
   });

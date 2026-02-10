@@ -49,10 +49,12 @@ export function EmbedPreviewMockup({
       </div>
 
       {/* Content Area */}
-      <div className={cn(
-        "relative h-[240px] transition-colors duration-300 overflow-hidden",
-        transparent && embedType === "standard" ? "bg-muted/10" : "bg-background/50"
-      )}>
+      <div
+        className={cn(
+          "relative h-[240px] transition-colors duration-300 overflow-hidden",
+          transparent && embedType === "standard" ? "bg-muted/10" : "bg-background/50",
+        )}
+      >
         <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-none p-4 pb-8">
           {embedType === "standard" && (
             <StandardPreview
@@ -124,7 +126,7 @@ function FormSkeleton({
         <div
           className={cn(
             "w-full rounded-lg mb-4 bg-muted/30",
-            size === "sm" ? "h-8" : size === "md" ? "h-12" : "h-16"
+            size === "sm" ? "h-8" : size === "md" ? "h-12" : "h-16",
           )}
           style={{ backgroundColor: cover.startsWith("#") ? cover : undefined }}
         >
@@ -137,19 +139,23 @@ function FormSkeleton({
       {/* Icon & Title Skeleton */}
       <div className="space-y-3">
         {icon && (
-          <div className={cn(
-            "rounded-md bg-muted/20 flex items-center justify-center",
-            size === "sm" ? "h-6 w-6 text-xs" : "h-10 w-10 text-xl",
-            cover ? "-mt-8 ml-2 border-2 border-background" : ""
-          )}>
+          <div
+            className={cn(
+              "rounded-md bg-muted/20 flex items-center justify-center",
+              size === "sm" ? "h-6 w-6 text-xs" : "h-10 w-10 text-xl",
+              cover ? "-mt-8 ml-2 border-2 border-background" : "",
+            )}
+          >
             {icon.length <= 4 ? icon : "📄"}
           </div>
         )}
         {!hideTitle && (
-          <div className={cn(
-            "bg-foreground/10 rounded-full",
-            size === "sm" ? "h-3 w-1/2" : "h-5 w-2/3"
-          )}>
+          <div
+            className={cn(
+              "bg-foreground/10 rounded-full",
+              size === "sm" ? "h-3 w-1/2" : "h-5 w-2/3",
+            )}
+          >
             <span className="sr-only">{title}</span>
           </div>
         )}
@@ -161,10 +167,12 @@ function FormSkeleton({
           currentStepElements.slice(0, 5).map((el) => (
             <div key={el.id} className="space-y-1.5">
               <div className="h-2 bg-muted/40 rounded-full w-1/4" />
-              <div className={cn(
-                "bg-muted/20 rounded-md border border-muted/30",
-                el.fieldType === "Textarea" ? "h-12" : "h-8"
-              )} />
+              <div
+                className={cn(
+                  "bg-muted/20 rounded-md border border-muted/30",
+                  el.fieldType === "Textarea" ? "h-12" : "h-8",
+                )}
+              />
             </div>
           ))
         ) : (
@@ -189,15 +197,7 @@ function FormSkeleton({
   );
 }
 
-function StandardPreview({
-  content,
-  title,
-  icon,
-  cover,
-  branding,
-  transparent,
-  hideTitle,
-}: any) {
+function StandardPreview({ content, title, icon, cover, branding, transparent, hideTitle }: any) {
   return (
     <div className="space-y-6">
       {/* Mock Website Background */}
@@ -208,12 +208,14 @@ function StandardPreview({
       </div>
 
       {/* Embedded Form */}
-      <div className={cn(
-        "w-full rounded-xl transition-all duration-300",
-        transparent
-          ? "bg-transparent border-2 border-dashed border-muted-foreground/20 p-4"
-          : "bg-background border shadow-sm p-4"
-      )}>
+      <div
+        className={cn(
+          "w-full rounded-xl transition-all duration-300",
+          transparent
+            ? "bg-transparent border-2 border-dashed border-muted-foreground/20 p-4"
+            : "bg-background border shadow-sm p-4",
+        )}
+      >
         <FormSkeleton
           content={content}
           title={title}
@@ -235,7 +237,17 @@ function StandardPreview({
   );
 }
 
-function PopupPreview({ position, content, title, icon, cover, branding, hideTitle, emojiIcon, emojiAnimation }: any) {
+function PopupPreview({
+  position,
+  content,
+  title,
+  icon,
+  cover,
+  branding,
+  hideTitle,
+  emojiIcon,
+  emojiAnimation,
+}: any) {
   return (
     <div className="relative min-h-full">
       {/* Page Content Wireframe */}
@@ -269,7 +281,7 @@ function PopupPreview({ position, content, title, icon, cover, branding, hideTit
               position === "bottom-left" ? "left-2" : "right-2",
               emojiAnimation === "wave" && "animate-wave",
               emojiAnimation === "bounce" && "animate-bounce",
-              emojiAnimation === "pulse" && "animate-pulse"
+              emojiAnimation === "pulse" && "animate-pulse",
             )}
           >
             {emojiIcon}
@@ -295,10 +307,12 @@ function PopupPreview({ position, content, title, icon, cover, branding, hideTit
 
 function FullPagePreview({ content, title, icon, cover, branding, transparent, hideTitle }: any) {
   return (
-    <div className={cn(
-      "w-full max-w-[240px] mx-auto transition-all duration-300",
-      transparent ? "bg-transparent" : ""
-    )}>
+    <div
+      className={cn(
+        "w-full max-w-[240px] mx-auto transition-all duration-300",
+        transparent ? "bg-transparent" : "",
+      )}
+    >
       <FormSkeleton
         content={content}
         title={title}
@@ -318,10 +332,12 @@ function FullPagePreview({ content, title, icon, cover, branding, transparent, h
 
 function BrandingBadge({ size = "sm" }: { size?: "xs" | "sm" }) {
   return (
-    <div className={cn(
-      "flex items-center gap-1 font-semibold text-primary/80",
-      size === "xs" ? "text-[8px]" : "text-[10px]"
-    )}>
+    <div
+      className={cn(
+        "flex items-center gap-1 font-semibold text-primary/80",
+        size === "xs" ? "text-[8px]" : "text-[10px]",
+      )}
+    >
       <span>Made with</span>
       <Sparkles className={cn("fill-primary/20", size === "xs" ? "h-2 w-2" : "h-2.5 w-2.5")} />
       <span>Better Forms</span>

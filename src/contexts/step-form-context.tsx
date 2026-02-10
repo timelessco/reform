@@ -24,7 +24,7 @@ export function useStepForm() {
   return context;
 }
 
-export function useStepFormSafe() {
+function useStepFormSafe() {
   return React.useContext(StepFormContext);
 }
 

@@ -45,12 +45,17 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
   }
 
   return (
-    <div className={cn(
-      "w-full h-full flex flex-col transition-colors duration-300",
-      embedType === "fullpage"
-        ? cn(transparentBackground ? "bg-transparent" : "bg-background", "overflow-y-auto overflow-x-hidden")
-        : "bg-background text-foreground overflow-hidden"
-    )}>
+    <div
+      className={cn(
+        "w-full h-full flex flex-col transition-colors duration-300",
+        embedType === "fullpage"
+          ? cn(
+              transparentBackground ? "bg-transparent" : "bg-background",
+              "overflow-y-auto overflow-x-hidden",
+            )
+          : "bg-background text-foreground overflow-hidden",
+      )}
+    >
       {/* Standard & Popup — mock website background */}
       {embedType !== "fullpage" && (
         <div className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col scrollbar-hide">
@@ -111,22 +116,26 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                         "w-full transition-all duration-500",
                         embedType === "standard"
                           ? "bg-transparent border-2 border-dashed border-border rounded-lg"
-                          : "bg-background rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-border"
+                          : "bg-background rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-border",
                       )}
                       style={{
                         height: dynamicHeight ? "auto" : height,
                       }}
                     >
-                      <div className={cn(
-                        "w-full h-full",
-                        !dynamicHeight ? "overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 p-8" : "p-8 md:p-12"
-                      )}>
+                      <div
+                        className={cn(
+                          "w-full h-full",
+                          !dynamicHeight
+                            ? "overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 p-8"
+                            : "p-8 md:p-12",
+                        )}
+                      >
                         <FormPreviewFromPlate
                           content={content}
                           title={hideTitle ? "" : doc.title}
                           icon={doc.icon ?? undefined}
                           cover={doc.cover ?? undefined}
-                          onSubmit={async () => { }}
+                          onSubmit={async () => {}}
                           hideTitle={hideTitle}
                         />
                       </div>
@@ -180,7 +189,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                       title={hideTitle ? "" : doc.title}
                       icon={doc.icon ?? undefined}
                       cover={doc.cover ?? undefined}
-                      onSubmit={async () => { }}
+                      onSubmit={async () => {}}
                       hideTitle={hideTitle}
                     />
                   </div>
@@ -216,7 +225,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
               title={hideTitle ? "" : doc.title}
               icon={doc.icon ?? undefined}
               cover={doc.cover ?? undefined}
-              onSubmit={async () => { }}
+              onSubmit={async () => {}}
               hideTitle={hideTitle}
               layout="editor"
             />

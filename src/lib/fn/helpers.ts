@@ -18,7 +18,7 @@ export const authUser = async () => {
  * Get authenticated user with their active organization.
  * Throws if user is not authenticated or has no active org.
  */
-export const authUserWithOrg = async () => {
+const authUserWithOrg = async () => {
   const headers = getRequestHeaders();
   const session = await auth.api.getSession({ headers });
   const user = session?.user;
@@ -44,10 +44,7 @@ export const authWorkspace = async (workspaceId: string) => {
   const workspace = await db
     .select({ id: workspaces.id })
     .from(workspaces)
-    .where(and(
-      eq(workspaces.id, workspaceId),
-      eq(workspaces.organizationId, activeOrgId)
-    ))
+    .where(and(eq(workspaces.id, workspaceId), eq(workspaces.organizationId, activeOrgId)))
     .limit(1);
 
   if (workspace.length === 0) {
@@ -67,10 +64,7 @@ export const authForm = async (formId: string) => {
     .select({ id: forms.id, workspaceId: forms.workspaceId })
     .from(forms)
     .innerJoin(workspaces, eq(forms.workspaceId, workspaces.id))
-    .where(and(
-      eq(forms.id, formId),
-      eq(workspaces.organizationId, activeOrgId)
-    ))
+    .where(and(eq(forms.id, formId), eq(workspaces.organizationId, activeOrgId)))
     .limit(1);
 
   if (form.length === 0) {

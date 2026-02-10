@@ -8,7 +8,7 @@ import { logger } from "@/lib/utils";
 /**
  * Server function to sync forms to the cloud
  */
-export const syncFormsToCloud = createServerFn({ method: "POST" })
+const syncFormsToCloud = createServerFn({ method: "POST" })
   .inputValidator((forms: any[]) => forms)
   .handler(async ({ data: localForms }) => {
     try {
@@ -155,7 +155,7 @@ export const syncFormsToCloud = createServerFn({ method: "POST" })
 /**
  * Result type for syncLocalDataToCloud
  */
-export type SyncResult = {
+type SyncResult = {
   success: boolean;
   txids: number[];
   syncedForms: string[];
@@ -220,7 +220,7 @@ export async function syncLocalDataToCloud(): Promise<SyncResult | null> {
 /**
  * Checks if there is local data that needs to be synced
  */
-export async function hasLocalDataToSync(): Promise<boolean> {
+async function hasLocalDataToSync(): Promise<boolean> {
   try {
     const { localFormCollection } = await import("@/db-collections");
     const forms = await localFormCollection.toArrayWhenReady();
