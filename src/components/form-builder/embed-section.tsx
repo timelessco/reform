@@ -1,15 +1,17 @@
-import { useForm } from "@tanstack/react-form";
+import { useForm as useTanstackForm } from "@tanstack/react-form";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Code, Copy, Check } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useForm } from "@/hooks/use-live-hooks";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 import { cn } from "@/lib/utils";
 import { EmbedCodeDialog, generateEmbedUrl } from "./embed-code-dialog";
 import { EmbedConfigPanel, defaultEmbedOptions } from "./embed-config-panel";
 import type { EmbedOptions } from "./embed-config-panel";
 import { EmbedPreviewMockup } from "./embed-preview-mockup";
+import type { Value } from "platejs";
 
 export type EmbedFormValues = EmbedOptions & { embedType: EmbedType };
 
@@ -79,7 +81,11 @@ export function EmbedSection({ formId, docTitle }: EmbedSectionProps) {
   const [codeDialogOpen, setCodeDialogOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const form = useForm({
+  // Fetch actual form data to show in preview
+  const { data: formDocs } = useForm(formId);
+  const doc = formDocs?.[0];
+
+  const form = useTanstackForm({
     defaultValues: searchToFormValues(search),
     listeners: {
       onChange: ({ formApi }) => {
@@ -96,27 +102,37 @@ export function EmbedSection({ formId, docTitle }: EmbedSectionProps) {
     },
   });
 
+  // Sync emojiIcon with form's header icon when available
+  useEffect(() => {
+    const formIcon = doc?.icon;
+    if (formIcon) {
+      form.setFieldValue("emojiIcon", formIcon);
+    }
+  }, [doc?.icon]);
+
   return (
     <div className="space-y-4 pt-4 border-t">
       {/* Section header */}
-      <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">
-        Embed Form
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">
+          Embed Form
+        </h3>
+      </div>
 
       {/* Embed type tabs — managed by form.Field so onChange fires */}
       <form.Field name="embedType">
         {(field) => (
-          <div className="flex items-center bg-muted/30 rounded-lg p-1 gap-0.5">
+          <div className="flex items-center bg-muted/40 rounded-lg p-1 gap-1">
             {tabs.map((tab) => (
               <button
                 key={tab.value}
                 type="button"
                 onClick={() => field.handleChange(tab.value)}
                 className={cn(
-                  "flex-1 text-xs font-medium py-1.5 px-2 rounded-md transition-all",
+                  "flex-1 text-[11px] font-semibold py-1.5 px-2 rounded-md transition-all",
                   field.state.value === tab.value
                     ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                 )}
               >
                 {tab.label}
@@ -164,6 +180,15 @@ export function EmbedSection({ formId, docTitle }: EmbedSectionProps) {
               <EmbedPreviewMockup
                 embedType={embedType}
                 popupPosition={options.popupPosition}
+                content={(doc?.content as Value) || []}
+                title={doc?.title || "Untitled Form"}
+                icon={doc?.icon || undefined}
+                cover={doc?.cover || undefined}
+                branding={options.branding}
+                transparent={options.transparentBackground}
+                hideTitle={options.hideTitle}
+                emojiIcon={options.emoji ? options.emojiIcon : undefined}
+                emojiAnimation={options.emojiAnimation}
               />
 
               {/* Settings — uses form.Field internally */}
@@ -173,7 +198,7 @@ export function EmbedSection({ formId, docTitle }: EmbedSectionProps) {
               <div className="space-y-2 pt-2">
                 <Button
                   onClick={() => setCodeDialogOpen(true)}
-                  className="w-full h-9 gap-2 rounded-lg font-semibold text-xs"
+                  className="w-full h-10 gap-2 rounded-xl font-bold text-xs shadow-sm bg-slate-900 hover:bg-slate-800 text-white"
                 >
                   <Code className="h-3.5 w-3.5" />
                   Get the code
@@ -183,7 +208,7 @@ export function EmbedSection({ formId, docTitle }: EmbedSectionProps) {
                   <Button
                     variant="outline"
                     onClick={handleCopyLink}
-                    className="w-full h-9 gap-2 text-muted-foreground font-medium text-xs hover:bg-muted hover:text-foreground border-muted-foreground/10 rounded-lg"
+                    className="w-full h-10 gap-2 text-muted-foreground font-bold text-xs hover:bg-muted hover:text-foreground border-muted-foreground/10 rounded-xl"
                   >
                     {copiedLink ? (
                       <Check className="h-3.5 w-3.5 text-green-500" />

@@ -57,7 +57,7 @@ export const Route = createFileRoute(
 					throw redirect({
 						to: "/workspace/$workspaceId/form-builder/$formId/submissions",
 						params: { workspaceId: params.workspaceId, formId: params.formId },
-						search: { sidebar: "share" }
+						// search: { sidebar: "share" }
 					});
 				} else {
 					throw redirect({

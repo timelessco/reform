@@ -1,9 +1,9 @@
 # Better Forms
 
-- [] remove unwanted stuffs routes feature and so on
+- [X] remove unwanted stuffs routes feature and so on
 - [] left Sidebar Normal , and dragable list
-- [] Right sidebar animationn and visual junk\
-- [] header animation on hover similar to notion
+- [X] Right sidebar animationn and visual junk\
+- [X] header animation on hover similar to notion
 
 
 - popup issues

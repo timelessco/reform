@@ -147,11 +147,10 @@ function DesignPage() {
   // BUT skip redirect if user explicitly clicked "Edit" button (force=true)
   useEffect(() => {
     if (isReady && localStatus === "published" && !forceEdit) {
-      console.log("[edit.tsx DesignPage] Form is published locally, redirecting to share...");
       navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/submissions",
         params: { workspaceId, formId },
-        search: { sidebar: "share" },
+        // search: { sidebar: "share" },
         replace: true, // Replace history entry so back button doesn't loop
       });
     }

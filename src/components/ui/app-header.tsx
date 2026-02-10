@@ -261,7 +261,7 @@ export function AppHeader({
                     demo && "text-foreground bg-muted"
                   )}
                 >
-                  <Link to="." search={(prev: any) => ({ ...prev, demo: !demo })} replace>
+                  <Link to="." search={(prev: any) => ({ ...prev, demo: !demo , sidebar : ''})} replace>
                     {demo ? "Editor" : "Preview"}
                   </Link>
                 </Button>

@@ -642,7 +642,7 @@ function FormPreviewContent({
   const currentStepElements = steps[currentStep] || [];
 
   return (
-    <div className="w-full h-screen">
+    <div className="w-full">
       {/* Header Section */}
       <PreviewFormHeader
         title={title}
