@@ -1054,7 +1054,7 @@ function UserMenuMinimal({
               <button
                 type="button"
                 onClick={() => {
-                  router.navigate({ to: "/settings" });
+                  router.navigate({ to: "/settings/my-account" });
                   setIsOpen(false);
                 }}
                 className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-muted/50 text-[13px] text-muted-foreground hover:text-foreground transition-colors text-left"

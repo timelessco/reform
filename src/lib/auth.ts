@@ -119,7 +119,11 @@ export const auth = betterAuth({
       expiresIn: 300,
       sendVerificationOnSignUp: true,
     }),
-    twoFactor(),
+    twoFactor({
+      totpOptions : {
+        digits : 6,
+      }
+    }),
     apiKey(),
     organization({
       async sendInvitationEmail(data) {
