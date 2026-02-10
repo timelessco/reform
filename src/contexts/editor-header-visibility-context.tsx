@@ -58,10 +58,8 @@ export function EditorHeaderVisibilityProvider({
 		setVisible(true);
 	}, [enabled, clearHideTimer]);
 
-	useEffect(() => {
-		if (enabled) return;
-		resetVisibility();
-	}, [enabled, resetVisibility]);
+	// When disabled, visibility is always true (derived, not via effect)
+	const effectiveVisible = enabled ? visible : true;
 
 	useEffect(() => {
 		if (!enabled || visible) return;
@@ -82,7 +80,7 @@ export function EditorHeaderVisibilityProvider({
 		<EditorHeaderVisibilityContext.Provider
 			value={{
 				enabled,
-				visible,
+				visible: effectiveVisible,
 				reportTyping,
 				reportPointerActivity,
 				resetVisibility,

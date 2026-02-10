@@ -1,7 +1,7 @@
 import { useForm as useTanstackForm } from "@tanstack/react-form";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Code, Copy, Check } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useForm } from "@/hooks/use-live-hooks";
@@ -27,7 +27,10 @@ const tabs: { value: EmbedType; label: string }[] = [
 ];
 
 /** Map URL search params → form field values */
-function searchToFormValues(search: Record<string, unknown>): EmbedFormValues {
+function searchToFormValues(
+  search: Record<string, unknown>,
+  formIcon?: string | null
+): EmbedFormValues {
   return {
     embedType:
       (search.embedType as EmbedType) ??
@@ -45,7 +48,7 @@ function searchToFormValues(search: Record<string, unknown>): EmbedFormValues {
     popupWidth: (search.embedPopupWidth as number) ?? defaultEmbedOptions.popupWidth,
     darkOverlay: (search.embedDarkOverlay as boolean) ?? defaultEmbedOptions.darkOverlay,
     emoji: (search.embedEmoji as boolean) ?? defaultEmbedOptions.emoji,
-    emojiIcon: (search.embedEmojiIcon as string) ?? defaultEmbedOptions.emojiIcon,
+    emojiIcon: (search.embedEmojiIcon as string) ?? (formIcon || defaultEmbedOptions.emojiIcon),
     emojiAnimation: (search.embedEmojiAnimation as EmbedOptions["emojiAnimation"]) ?? defaultEmbedOptions.emojiAnimation,
     hideOnSubmit: (search.embedHideOnSubmit as boolean) ?? defaultEmbedOptions.hideOnSubmit,
     hideOnSubmitDelay: (search.embedHideOnSubmitDelay as number) ?? defaultEmbedOptions.hideOnSubmitDelay,
@@ -86,7 +89,7 @@ export function EmbedSection({ formId, docTitle }: EmbedSectionProps) {
   const doc = formDocs?.[0];
 
   const form = useTanstackForm({
-    defaultValues: searchToFormValues(search),
+    defaultValues: searchToFormValues(search, doc?.icon),
     listeners: {
       onChange: ({ formApi }) => {
         const v = formApi.state.values;
@@ -101,14 +104,6 @@ export function EmbedSection({ formId, docTitle }: EmbedSectionProps) {
       onChangeDebounceMs: 150,
     },
   });
-
-  // Sync emojiIcon with form's header icon when available
-  useEffect(() => {
-    const formIcon = doc?.icon;
-    if (formIcon) {
-      form.setFieldValue("emojiIcon", formIcon);
-    }
-  }, [doc?.icon]);
 
   return (
     <div className="space-y-4 pt-4 border-t">

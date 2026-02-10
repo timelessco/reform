@@ -156,6 +156,13 @@ function DesignPage() {
     }
   }, [isReady, localStatus, formId, workspaceId, navigate, forceEdit]);
 
+  // Reset version view when sidebar closes (revert to current content)
+  useEffect(() => {
+    if (!isVersionHistoryOpen && isViewingVersion) {
+      exitVersionView();
+    }
+  }, [isVersionHistoryOpen, isViewingVersion, exitVersionView]);
+
   // Show loader while checking form status
   if (!isReady) {
     return <Loader />;
@@ -208,6 +215,10 @@ function DesignPage() {
             <div className={cn("flex-1 overflow-x-hidden", demo ? "h-full overflow-hidden" : "overflow-y-auto")}>
               {demo ? (
                 <PreviewMode formId={formId} workspaceId={workspaceId} />
+              ) : isViewingVersion && isLoadingVersionContent ? (
+                <div className="h-full w-full flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
               ) : (
                 <EditorApp
                   key={isViewingVersion ? `version-${selectedVersionId}` : formId}

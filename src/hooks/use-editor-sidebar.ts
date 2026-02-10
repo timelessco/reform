@@ -9,6 +9,7 @@ type EditorSidebarState = {
     activeSidebar: SidebarType;
     settingsTab: SettingsTab;
     shareTab: ShareTab;
+    selectedVersionId: string | null;
 };
 
 const listeners = new Set<() => void>();
@@ -16,10 +17,11 @@ let state: EditorSidebarState = {
     activeSidebar: null,
     settingsTab: "settings",
     shareTab: "share",
+    selectedVersionId: null,
 };
 
 function notify() {
-    listeners.forEach((l) => l());
+    listeners?.forEach((l) => { l(); });
 }
 
 const store = {
@@ -63,11 +65,19 @@ const store = {
         notify();
     },
     closeSidebar: () => {
-        state = { ...state, activeSidebar: null };
+        state = { ...state, activeSidebar: null, selectedVersionId: null };
         notify();
     },
     resetSidebar: () => {
-        state = { activeSidebar: null, settingsTab: "settings", shareTab: "share" };
+        state = { activeSidebar: null, settingsTab: "settings", shareTab: "share", selectedVersionId: null };
+        notify();
+    },
+    selectVersion: (versionId: string | null) => {
+        state = { ...state, selectedVersionId: versionId };
+        notify();
+    },
+    exitVersionView: () => {
+        state = { ...state, selectedVersionId: null };
         notify();
     },
 };
@@ -76,6 +86,7 @@ const serverSnapshot: EditorSidebarState = {
     activeSidebar: null,
     settingsTab: "settings",
     shareTab: "share",
+    selectedVersionId: null,
 };
 
 export function useEditorSidebar() {
@@ -93,5 +104,7 @@ export function useEditorSidebar() {
         setShareTab: store.setShareTab,
         closeSidebar: store.closeSidebar,
         resetSidebar: store.resetSidebar,
+        selectVersion: store.selectVersion,
+        exitVersionView: store.exitVersionView,
     };
 }
