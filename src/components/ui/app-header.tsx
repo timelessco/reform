@@ -7,7 +7,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useMinimalSidebarSafe } from "@/contexts/minimal-sidebar-context";
 import { toggleFavoriteLocal } from "@/db-collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import {
@@ -24,14 +23,12 @@ import { Link, useLocation, useNavigate, useSearch } from "@tanstack/react-route
 import { format, formatDistanceToNow } from "date-fns";
 import {
   AlertCircle,
-  BarChart3,
   ChevronRight,
   ChevronsRight,
   History,
   Loader2,
   MoreHorizontal,
   Settings,
-  Settings2,
   Star,
   Trash2
 } from "lucide-react";
@@ -55,7 +52,7 @@ export function AppHeader({
   isDistractionHidden = false,
 }: AppHeaderProps) {
   const { state, toggleSidebar: toggleMainSidebar } = useSidebarSafe() || { state: "expanded", toggleSidebar: () => { } };
-  const { pathname } = useLocation();
+  const { pathname , search } = useLocation();
   const isFormBuilder = pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
   const isEditRoute = pathname.endsWith("/edit");
   const { data: sessionData } = useSession();
@@ -76,7 +73,12 @@ export function AppHeader({
       navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
         params: { workspaceId: workspaceId, formId: formId },
-        search: { demo: true, force: true, sidebar: "share", embedType: "fullpage" },
+        search: {
+          demo: !isShareSidebarOpen,
+          force: true,
+          sidebar: isShareSidebarOpen ? '' : 'share',
+          embedType: "fullpage"
+        },
       });
     }
   };

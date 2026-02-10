@@ -161,7 +161,6 @@ export default function EditorApp({
 
 			updateDoc(formId, (draft) => {
 				draft.workspaceId = workspaceId;
-				draft.createdAt = now;
 				draft.updatedAt = now;
 				draft.content = value;
 			});
@@ -173,8 +172,8 @@ export default function EditorApp({
 					icon: headerNode.icon ?? undefined,
 					cover: headerNode.cover ?? undefined,
 					workspaceId: String(workspaceId),
-					createdAt: now,
 					updatedAt: now,
+					createdAt: savedDocs?.[0]?.createdAt ?? "",
 				});
 			}
 		},
