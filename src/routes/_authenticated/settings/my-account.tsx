@@ -1,8 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Globe, Key, Loader2, Trash2 } from "lucide-react";
-import { useId, useState } from "react";
+import { Camera, Globe, Key, Loader2, RotateCcw, Trash2 } from "lucide-react";
+import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
+import {
+  ImageCrop,
+  ImageCropApply,
+  ImageCropContent,
+  ImageCropReset,
+} from "@/components/ui/image-crop";
+import { uploadAvatar } from "@/lib/fn/upload";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +31,9 @@ import { auth, useSession } from "@/lib/auth-client";
 export const Route = createFileRoute("/_authenticated/settings/my-account")({
   component: MyAccountPage,
   loader: async ({ context }) => {
+    if (typeof window === "undefined") {
+      return { accounts: [] };
+    }
     const accounts = await context.queryClient.ensureQueryData({
       ...auth.listAccounts.queryOptions(),
       revalidateIfStale: true,
@@ -40,7 +50,7 @@ function MyAccountPage() {
   const { data: session, isPending: isSessionPending } = useSession();
   const user = session?.user;
   const { accounts: initialAccounts } = Route.useLoaderData();
-
+  console.log(initialAccounts, "initialAccounts");
   // Initialize names from user (no useEffect needed since component waits for session)
   const [firstName, setFirstName] = useState(user?.name?.split(" ")[0] || "");
   const [lastName, setLastName] = useState(user?.name?.split(" ").slice(1).join(" ") || "");
@@ -49,12 +59,18 @@ function MyAccountPage() {
   const [is2faDialogOpen, setIs2faDialogOpen] = useState(false);
   const [twoFaStep, setTwoFaStep] = useState(1);
   const [totpUri, setTotpUri] = useState("");
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [otpCode, setOtpCode] = useState("");
   const [password, setPassword] = useState("");
   const firstNameId = useId();
   const lastNameId = useId();
   const emailId = useId();
   const passwordId = useId();
+
+  // Profile picture state
+  const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Accounts Query
   const { data: accounts = [] } = useQuery({
@@ -74,32 +90,15 @@ function MyAccountPage() {
     }),
   );
 
-  const setup2faMutation = useMutation({
-    mutationFn: async (variables: { password: string }) => {
-      const options = auth.twoFactor.getTotpUri.queryOptions(variables);
-      return options.queryFn();
-    },
-    onSuccess: (res) => {
-      setTotpUri(res.totpURI);
-      setTwoFaStep(2);
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to start 2FA setup");
-    },
-  });
-
-  const enable2faMutation = useMutation(
+  const setup2faMutation = useMutation(
     auth.twoFactor.enable.mutationOptions({
-      onSuccess: () => {
-        toast.success("Two-factor authentication enabled");
-        setIs2faDialogOpen(false);
-        setTwoFaStep(1);
-        setPassword("");
-        setOtpCode("");
-        queryClient.invalidateQueries({ queryKey: auth.getSession.queryKey() });
+      onSuccess: (res) => {
+        setTotpUri(res.totpURI);
+        setBackupCodes(res.backupCodes || []);
+        setTwoFaStep(2);
       },
       onError: (error) => {
-        toast.error(error.message || "Failed to enable 2FA");
+        toast.error(error.message || "Failed to start 2FA setup");
       },
     }),
   );
@@ -107,10 +106,17 @@ function MyAccountPage() {
   const verifyTotpMutation = useMutation(
     auth.twoFactor.verifyTotp.mutationOptions({
       onSuccess: () => {
-        enable2faMutation.mutate({ password });
+        toast.success("Two-factor authentication enabled");
+        setIs2faDialogOpen(false);
+        setTwoFaStep(1);
+        setPassword("");
+        setOtpCode("");
+        setTotpUri("");
+        setBackupCodes([]);
+        queryClient.invalidateQueries({ queryKey: auth.getSession.queryKey() });
       },
       onError: (error) => {
-        toast.error(error.message || "Invalid OTP code");
+        toast.error(error.message || "Invalid OTP code. Please try again.");
       },
     }),
   );
@@ -161,19 +167,49 @@ function MyAccountPage() {
     }),
   );
 
+  // Profile picture upload mutation
+  const uploadAvatarMutation = useMutation({
+    mutationFn: async (base64: string) => {
+      // Upload to Vercel Blob
+      const { url } = await uploadAvatar({ data: { base64 } });
+      // Update user profile with new image URL
+      await updateProfileMutation.mutateAsync({ image: url });
+      return url;
+    },
+    onSuccess: () => {
+      setIsAvatarDialogOpen(false);
+      setSelectedFile(null);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to upload image");
+    },
+  });
+
   const handleUpdateProfile = async () => {
     updateProfileMutation.mutate({
       name: `${firstName} ${lastName}`.trim(),
     });
   };
 
-  const handleStart2faSetup = async () => {
-    if (!password) {
-      setTwoFaStep(1);
-      setIs2faDialogOpen(true);
-      return;
+  // Handle file selection for avatar
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setIsAvatarDialogOpen(true);
     }
-    setup2faMutation.mutate({ password });
+    // Reset input so same file can be selected again
+    e.target.value = "";
+  };
+
+  // Handle cropped image - upload base64 directly
+  const handleCroppedImage = async (croppedImage: string) => {
+    await uploadAvatarMutation.mutateAsync(croppedImage);
+  };
+
+  const handleStart2faSetup = async () => {
+    setIs2faDialogOpen(true);
+    setTwoFaStep(1);
   };
 
   const handleVerifyAndEnable2fa = async () => {
@@ -220,12 +256,30 @@ function MyAccountPage() {
         <div className="space-y-2">
           <p className="text-sm font-medium">Photo</p>
           <div className="flex items-center gap-4">
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={user?.image || ""} />
-              <AvatarFallback className="text-3xl bg-indigo-600 text-white">
-                {user?.name?.charAt(0) || "V"}
-              </AvatarFallback>
-            </Avatar>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="relative group cursor-pointer"
+            >
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={user?.image || ""} />
+                <AvatarFallback className="text-3xl bg-indigo-600 text-white">
+                  {user?.name?.charAt(0) || "V"}
+                </AvatarFallback>
+              </Avatar>
+              {/* Hover overlay */}
+              <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="h-6 w-6 text-white" />
+              </div>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <p className="text-sm text-muted-foreground">Click to upload a new photo</p>
           </div>
         </div>
 
@@ -377,7 +431,7 @@ function MyAccountPage() {
                   )}
 
                   {twoFaStep === 2 && (
-                    <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                    <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                       <div className="space-y-2">
                         <p className="text-sm font-medium">
                           2. Scan the QR code with your authenticator app
@@ -390,6 +444,22 @@ function MyAccountPage() {
                           )}
                         </div>
                       </div>
+
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-amber-600">Backup codes</p>
+                        <p className="text-xs text-muted-foreground">
+                          Save these codes securely. Each code can be used once to access your
+                          account if you lose your authenticator.
+                        </p>
+                        <div className="grid grid-cols-2 gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+                          {backupCodes.map((code) => (
+                            <code key={code} className="text-sm font-mono">
+                              {code}
+                            </code>
+                          ))}
+                        </div>
+                      </div>
+
                       <div className="space-y-2">
                         <p className="text-sm font-medium">3. Enter the code from your app</p>
                         <div className="flex justify-center">
@@ -408,13 +478,9 @@ function MyAccountPage() {
                       <Button
                         className="w-full bg-black text-white hover:bg-black/90"
                         onClick={handleVerifyAndEnable2fa}
-                        disabled={
-                          otpCode.length < 6 ||
-                          verifyTotpMutation.isPending ||
-                          enable2faMutation.isPending
-                        }
+                        disabled={otpCode.length < 6 || verifyTotpMutation.isPending}
                       >
-                        {verifyTotpMutation.isPending || enable2faMutation.isPending ? (
+                        {verifyTotpMutation.isPending ? (
                           <Loader2 className="animate-spin mr-2 h-4 w-4" />
                         ) : null}
                         Enable 2FA
@@ -530,6 +596,55 @@ function MyAccountPage() {
           Delete account
         </Button>
       </section>
+
+      {/* Avatar Crop Dialog */}
+      <Dialog
+        open={isAvatarDialogOpen}
+        onOpenChange={(open) => {
+          setIsAvatarDialogOpen(open);
+          if (!open) setSelectedFile(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Crop your photo</DialogTitle>
+            <DialogDescription>Adjust the crop area to set your profile picture.</DialogDescription>
+          </DialogHeader>
+
+          {selectedFile && (
+            <ImageCrop file={selectedFile} aspect={1} circularCrop onCrop={handleCroppedImage}>
+              <div className="space-y-4">
+                <ImageCropContent className="max-h-[300px]" />
+
+                <div className="flex justify-between">
+                  <ImageCropReset asChild>
+                    <Button variant="outline" size="sm">
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Reset
+                    </Button>
+                  </ImageCropReset>
+
+                  <ImageCropApply asChild>
+                    <Button
+                      disabled={uploadAvatarMutation.isPending}
+                      className="bg-black text-white hover:bg-black/90"
+                    >
+                      {uploadAvatarMutation.isPending ? (
+                        <>
+                          <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                          Uploading...
+                        </>
+                      ) : (
+                        "Save photo"
+                      )}
+                    </Button>
+                  </ImageCropApply>
+                </div>
+              </div>
+            </ImageCrop>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -74,7 +74,9 @@ export function EmbedConfigPanel({ embedType, form }: EmbedConfigPanelProps) {
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <Label className="text-[12px] font-medium">Height</Label>
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Pixels</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase">
+                    Pixels
+                  </span>
                 </div>
                 <Input
                   type="number"
@@ -191,7 +193,9 @@ export function EmbedConfigPanel({ embedType, form }: EmbedConfigPanelProps) {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <Label className="text-[12px] font-medium">Popup width</Label>
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Pixels</span>
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase">
+                      Pixels
+                    </span>
                   </div>
                   <Input
                     type="number"
@@ -432,9 +436,7 @@ function ToggleRow({
     <div className="flex items-center justify-between gap-2">
       <div className="space-y-0.5">
         <Label className="text-[12px] font-medium cursor-pointer">{label}</Label>
-        {description && (
-          <p className="text-[10px] text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="text-[10px] text-muted-foreground">{description}</p>}
       </div>
       <Switch checked={checked} onCheckedChange={onCheckedChange} />
     </div>

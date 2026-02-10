@@ -15,7 +15,7 @@ const editorContainerVariants = cva(
     variants: {
       variant: {
         comment: cn(
-          "flex flex-wrap justify-between gap-1 px-1 py-0.5 text-sm",
+          "flex flex-wrap justify-between gap-1   text-sm",
           "rounded-md border-[1.5px] border-transparent bg-transparent",
           "has-[[data-slate-editor]:focus]:border-brand/50 has-[[data-slate-editor]:focus]:ring-2 has-[[data-slate-editor]:focus]:ring-brand/30",
           "has-aria-disabled:border-input has-aria-disabled:bg-muted",
@@ -72,9 +72,9 @@ const editorVariants = cva(
         aiChat:
           "max-h-[min(70vh,320px)] w-full max-w-[700px] overflow-y-auto px-3 py-2 text-base md:text-sm",
         comment: cn("rounded-none border-none bg-transparent text-sm"),
-        default: "size-full px-16 pt-4 pb-72 text-base sm:px-[max(64px,calc(50%-350px))]",
-        demo: "size-full px-16 pt-4 pb-72 text-base sm:px-[max(64px,calc(50%-350px))]",
-        fullWidth: "size-full px-16 pt-4 pb-72 text-base sm:px-24",
+        default: "size-full px-16 pb-72 text-base sm:px-[max(64px,calc(50%-350px))]",
+        demo: "size-full px-16 pb-72 text-base sm:px-[max(64px,calc(50%-350px))]",
+        fullWidth: "size-full px-16  pb-72 text-base sm:px-24",
         none: "",
         select: "px-3 py-2 text-base data-readonly:w-fit",
       },
@@ -100,6 +100,7 @@ export const Editor = ({
         focused,
         variant,
       }),
+      (variant === "default" || variant === "demo") && "[--editor-px:max(64px,calc(50%-350px))]",
       className,
     )}
     disabled={disabled}

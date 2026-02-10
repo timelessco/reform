@@ -1,17 +1,19 @@
-import { useForm } from "@tanstack/react-form";
+import { useForm as useTanstackForm } from "@tanstack/react-form";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Code, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useForm } from "@/hooks/use-live-hooks";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 import { cn } from "@/lib/utils";
 import { EmbedCodeDialog, generateEmbedUrl } from "./embed-code-dialog";
 import { EmbedConfigPanel, defaultEmbedOptions } from "./embed-config-panel";
 import type { EmbedOptions } from "./embed-config-panel";
 import { EmbedPreviewMockup } from "./embed-preview-mockup";
+import type { Value } from "platejs";
 
-export type EmbedFormValues = EmbedOptions & { embedType: EmbedType };
+type EmbedFormValues = EmbedOptions & { embedType: EmbedType };
 
 interface EmbedSectionProps {
   formId: string;
@@ -25,26 +27,38 @@ const tabs: { value: EmbedType; label: string }[] = [
 ];
 
 /** Map URL search params → form field values */
-function searchToFormValues(search: Record<string, unknown>): EmbedFormValues {
+function searchToFormValues(
+  search: Record<string, unknown>,
+  formIcon?: string | null,
+): EmbedFormValues {
   return {
-    embedType: (search.embedType as EmbedType) ?? "standard",
+    embedType:
+      (search.embedType as EmbedType) ?? ((search.demo as boolean) ? "standard" : "fullpage"),
     height: (search.embedHeight as number) ?? defaultEmbedOptions.height,
     dynamicHeight: (search.embedDynamicHeight as boolean) ?? defaultEmbedOptions.dynamicHeight,
     hideTitle: (search.embedHideTitle as boolean) ?? defaultEmbedOptions.hideTitle,
     alignLeft: (search.embedAlignLeft as boolean) ?? defaultEmbedOptions.alignLeft,
-    transparentBackground: (search.embedTransparent as boolean) ?? defaultEmbedOptions.transparentBackground,
+    transparentBackground:
+      (search.embedTransparent as boolean) ?? defaultEmbedOptions.transparentBackground,
     branding: (search.embedBranding as boolean) ?? defaultEmbedOptions.branding,
     trackEvents: (search.embedTrackEvents as boolean) ?? defaultEmbedOptions.trackEvents,
     customDomain: defaultEmbedOptions.customDomain,
-    popupTrigger: (search.embedPopupTrigger as EmbedOptions["popupTrigger"]) ?? defaultEmbedOptions.popupTrigger,
-    popupPosition: (search.embedPopupPosition as EmbedOptions["popupPosition"]) ?? defaultEmbedOptions.popupPosition,
+    popupTrigger:
+      (search.embedPopupTrigger as EmbedOptions["popupTrigger"]) ??
+      defaultEmbedOptions.popupTrigger,
+    popupPosition:
+      (search.embedPopupPosition as EmbedOptions["popupPosition"]) ??
+      defaultEmbedOptions.popupPosition,
     popupWidth: (search.embedPopupWidth as number) ?? defaultEmbedOptions.popupWidth,
     darkOverlay: (search.embedDarkOverlay as boolean) ?? defaultEmbedOptions.darkOverlay,
     emoji: (search.embedEmoji as boolean) ?? defaultEmbedOptions.emoji,
-    emojiIcon: (search.embedEmojiIcon as string) ?? defaultEmbedOptions.emojiIcon,
-    emojiAnimation: (search.embedEmojiAnimation as EmbedOptions["emojiAnimation"]) ?? defaultEmbedOptions.emojiAnimation,
+    emojiIcon: (search.embedEmojiIcon as string) ?? (formIcon || defaultEmbedOptions.emojiIcon),
+    emojiAnimation:
+      (search.embedEmojiAnimation as EmbedOptions["emojiAnimation"]) ??
+      defaultEmbedOptions.emojiAnimation,
     hideOnSubmit: (search.embedHideOnSubmit as boolean) ?? defaultEmbedOptions.hideOnSubmit,
-    hideOnSubmitDelay: (search.embedHideOnSubmitDelay as number) ?? defaultEmbedOptions.hideOnSubmitDelay,
+    hideOnSubmitDelay:
+      (search.embedHideOnSubmitDelay as number) ?? defaultEmbedOptions.hideOnSubmitDelay,
   };
 }
 
@@ -77,8 +91,12 @@ export function EmbedSection({ formId, docTitle }: EmbedSectionProps) {
   const [codeDialogOpen, setCodeDialogOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const form = useForm({
-    defaultValues: searchToFormValues(search),
+  // Fetch actual form data to show in preview
+  const { data: formDocs } = useForm(formId);
+  const doc = formDocs?.[0];
+
+  const form = useTanstackForm({
+    defaultValues: searchToFormValues(search, doc?.icon),
     listeners: {
       onChange: ({ formApi }) => {
         const v = formApi.state.values;
@@ -97,24 +115,26 @@ export function EmbedSection({ formId, docTitle }: EmbedSectionProps) {
   return (
     <div className="space-y-4 pt-4 border-t">
       {/* Section header */}
-      <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">
-        Embed Form
-      </h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">
+          Embed Form
+        </h3>
+      </div>
 
       {/* Embed type tabs — managed by form.Field so onChange fires */}
       <form.Field name="embedType">
         {(field) => (
-          <div className="flex items-center bg-muted/30 rounded-lg p-1 gap-0.5">
+          <div className="flex items-center bg-muted/40 rounded-lg p-1 gap-1">
             {tabs.map((tab) => (
               <button
                 key={tab.value}
                 type="button"
                 onClick={() => field.handleChange(tab.value)}
                 className={cn(
-                  "flex-1 text-xs font-medium py-1.5 px-2 rounded-md transition-all",
+                  "flex-1 text-[11px] font-semibold py-1.5 px-2 rounded-md transition-all",
                   field.state.value === tab.value
                     ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                 )}
               >
                 {tab.label}
@@ -162,6 +182,15 @@ export function EmbedSection({ formId, docTitle }: EmbedSectionProps) {
               <EmbedPreviewMockup
                 embedType={embedType}
                 popupPosition={options.popupPosition}
+                content={(doc?.content as Value) || []}
+                title={doc?.title || "Untitled Form"}
+                icon={doc?.icon || undefined}
+                cover={doc?.cover || undefined}
+                branding={options.branding}
+                transparent={options.transparentBackground}
+                hideTitle={options.hideTitle}
+                emojiIcon={options.emoji ? options.emojiIcon : undefined}
+                emojiAnimation={options.emojiAnimation}
               />
 
               {/* Settings — uses form.Field internally */}
@@ -171,7 +200,7 @@ export function EmbedSection({ formId, docTitle }: EmbedSectionProps) {
               <div className="space-y-2 pt-2">
                 <Button
                   onClick={() => setCodeDialogOpen(true)}
-                  className="w-full h-9 gap-2 rounded-lg font-semibold text-xs"
+                  className="w-full h-10 gap-2 rounded-xl font-bold text-xs shadow-sm bg-slate-900 hover:bg-slate-800 text-white"
                 >
                   <Code className="h-3.5 w-3.5" />
                   Get the code
@@ -181,7 +210,7 @@ export function EmbedSection({ formId, docTitle }: EmbedSectionProps) {
                   <Button
                     variant="outline"
                     onClick={handleCopyLink}
-                    className="w-full h-9 gap-2 text-muted-foreground font-medium text-xs hover:bg-muted hover:text-foreground border-muted-foreground/10 rounded-lg"
+                    className="w-full h-10 gap-2 text-muted-foreground font-bold text-xs hover:bg-muted hover:text-foreground border-muted-foreground/10 rounded-xl"
                   >
                     {copiedLink ? (
                       <Check className="h-3.5 w-3.5 text-green-500" />

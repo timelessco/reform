@@ -141,7 +141,7 @@ export function useHasUnpublishedChanges(formId: string | undefined) {
 /**
  * Hook to get the current form's version info
  */
-export function useFormVersionInfo(formId: string | undefined) {
+function useFormVersionInfo(formId: string | undefined) {
   const { data: versionsData, isLoading } = useFormVersions(formId);
   const hasChanges = useHasUnpublishedChanges(formId);
 

@@ -24,6 +24,7 @@ import {
   type TransformedElement,
   transformPlateStateToFormElements,
 } from "@/lib/transform-plate-to-form";
+import { cn } from "@/lib/utils";
 
 interface FormPreviewFromPlateProps {
   /** Plate editor content array */
@@ -38,6 +39,8 @@ interface FormPreviewFromPlateProps {
   onSubmit?: (values: Record<string, any>) => Promise<void>;
   /** Whether to hide the form title */
   hideTitle?: boolean;
+  /** Layout variant */
+  layout?: "public" | "editor";
 }
 
 /**
@@ -76,7 +79,11 @@ function isValidUrl(str: string): boolean {
  */
 function DefaultIcon() {
   return (
-    <span className="text-5xl sm:text-6xl md:text-7xl leading-none" role="img" aria-label="Form icon">
+    <span
+      className="text-5xl sm:text-6xl md:text-7xl leading-none"
+      role="img"
+      aria-label="Form icon"
+    >
       📄
     </span>
   );
@@ -99,10 +106,12 @@ function ToggleRenderer({
   title,
   items,
   form,
+  layout,
 }: {
   title: string;
   items: TransformedElement[];
   form: ReturnType<typeof usePreviewForm>["form"];
+  layout: "public" | "editor";
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -116,7 +125,7 @@ function ToggleRenderer({
       </CollapsibleTrigger>
       <CollapsibleContent className="pl-6 space-y-2">
         {items.map((child) => (
-          <RenderPreviewElement key={child.id} element={child} form={form} />
+          <RenderPreviewElement key={child.id} element={child} form={form} layout={layout} />
         ))}
       </CollapsibleContent>
     </Collapsible>
@@ -131,11 +140,13 @@ function RenderPreviewElement({
   form,
   navigation,
   grouped = false,
+  layout,
 }: {
   element: TransformedElement;
   form: ReturnType<typeof usePreviewForm>["form"];
   navigation?: NavigationHandlers;
   grouped?: boolean;
+  layout: "public" | "editor";
 }) {
   // Static elements
   if ("static" in element && element.static) {
@@ -149,7 +160,7 @@ function RenderPreviewElement({
       case "Separator":
         return <Separator className="my-4" />;
       case "EmptyBlock":
-        return <div className="h-6" aria-hidden="true" />; // Empty spacer
+        return <div className="-mt-2 h-2" aria-hidden="true" />; // Minimal spacer, offset space-y-4
       case "FieldDescription":
         return <p className="text-muted-foreground text-sm my-2">{element.content}</p>;
       case "UnorderedList":
@@ -173,7 +184,14 @@ function RenderPreviewElement({
           </ol>
         );
       case "Toggle":
-        return <ToggleRenderer title={element.title} items={element.children} form={form} />;
+        return (
+          <ToggleRenderer
+            title={element.title}
+            items={element.children}
+            form={form}
+            layout={layout}
+          />
+        );
       case "Table":
         return (
           <div className="my-4 border rounded-md overflow-hidden">
@@ -235,6 +253,7 @@ function RenderPreviewElement({
         form={form}
         navigation={navigation}
         grouped={grouped}
+        layout={layout}
       />
     );
   }
@@ -251,11 +270,13 @@ function PreviewFormHeader({
   icon,
   cover,
   hideTitle,
+  layout,
 }: {
   title?: string;
   icon?: string;
   cover?: string;
   hideTitle?: boolean;
+  layout: "public" | "editor";
 }) {
   const [imageError, setImageError] = useState(false);
   const [iconError, setIconError] = useState(false);
@@ -269,24 +290,26 @@ function PreviewFormHeader({
     return null;
   }
 
+  // For editor layout, cover uses negative margins to break out of the padded container
+  // For public layout, cover is simply full width
+  const coverClass =
+    layout === "editor"
+      ? "relative -mx-16  h-[120px] sm:h-[200px] max-w-[1400px] mx-auto"
+      : "w-full h-[120px] sm:h-[200px] md:h-[280px]";
+
   // Render cover - can be image or solid color
   const renderCover = () => {
     if (!cover) return null;
 
     if (isHexColor(cover)) {
       // Render as solid color background
-      return (
-        <div
-          className="w-full h-[120px] sm:h-[200px] md:h-[280px]"
-          style={{ backgroundColor: cover }}
-        />
-      );
+      return <div className={coverClass} style={{ backgroundColor: cover }} />;
     }
 
     if (isValidUrl(cover) && !imageError) {
       // Render as image
       return (
-        <div className="w-full h-[120px] sm:h-[200px] md:h-[280px] overflow-hidden bg-muted">
+        <div className={cn(coverClass, "overflow-hidden bg-muted")}>
           <img
             src={cover}
             alt="Form cover"
@@ -307,7 +330,7 @@ function PreviewFormHeader({
     // Handle 'default-icon' - render hexagon
     if (icon === "default-icon") {
       return (
-        <div className={hasCover ? "-mt-[28px] sm:-mt-[40px] relative z-10 px-3" : ""}>
+        <div className={hasCover ? "-mt-[28px] sm:-mt-[40px] relative z-10" : ""}>
           <DefaultIcon />
         </div>
       );
@@ -345,16 +368,39 @@ function PreviewFormHeader({
     return null;
   };
 
+  // For editor layout, we need the outer wrapper to have padding so the cover
+  // can use negative margins to break out and achieve full width
+  if (layout === "editor") {
+    return (
+      <div className="mb-4 sm:mb-8 w-full">
+        {hasCover && renderCover()}
+
+        {/* Match editor's left-aligned layout */}
+        <div className="max-w-[700px] mx-auto w-full px-4">
+          {hasIcon && renderIcon()}
+          {hasTitle && (
+            <h1
+              className={`text-2xl sm:text-4xl font-bold ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
+            >
+              {title}
+            </h1>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // For public layout, no negative margin tricks needed
   return (
     <div className="mb-4 sm:mb-8 w-full">
       {hasCover && renderCover()}
 
-      <div className="max-w-2xl mx-auto px-4 sm:px-0 relative">
+      <div className="max-w-2xl mx-auto px-4 sm:px-0">
         <div className="flex flex-col">
           {hasIcon && renderIcon()}
           {hasTitle && (
             <h1
-              className={`text-2xl sm:text-3xl font-bold px-3 ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
+              className={`text-2xl sm:text-3xl font-bold ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
             >
               {title}
             </h1>
@@ -372,16 +418,18 @@ function RenderThankYouContent({
   elements,
   form,
   onReset,
+  layout,
 }: {
   elements: TransformedElement[];
   form: ReturnType<typeof usePreviewForm>["form"];
   onReset?: () => void;
+  layout: "public" | "editor";
 }) {
   return (
     <div className="space-y-4">
       {elements.map((element) => (
         <div key={element.id} className="w-full">
-          <RenderPreviewElement element={element} form={form} />
+          <RenderPreviewElement element={element} form={form} layout={layout} />
         </div>
       ))}
       {onReset && (
@@ -448,12 +496,14 @@ export function FormPreviewFromPlate({
   cover: legacyCover,
   onSubmit,
   hideTitle,
+  layout = "public",
 }: FormPreviewFromPlateProps) {
   const headerFromContent = extractFormHeader(content);
+  const hasHeaderNode = headerFromContent !== null;
 
-  const title = hideTitle ? "" : headerFromContent?.title || legacyTitle;
-  const icon = headerFromContent?.icon || legacyIcon;
-  const cover = headerFromContent?.cover || legacyCover;
+  const title = hideTitle ? "" : hasHeaderNode ? headerFromContent.title : legacyTitle;
+  const icon = hasHeaderNode ? (headerFromContent.icon ?? undefined) : legacyIcon;
+  const cover = hasHeaderNode ? (headerFromContent.cover ?? undefined) : legacyCover;
 
   const elements = transformPlateStateToFormElements(content);
 
@@ -506,6 +556,7 @@ export function FormPreviewFromPlate({
         icon={icon}
         cover={cover}
         hideTitle={hideTitle}
+        layout={layout}
       />
     </StepFormProvider>
   );
@@ -541,6 +592,7 @@ function FormPreviewContent({
   icon,
   cover,
   hideTitle,
+  layout,
 }: {
   steps: TransformedElement[][];
   thankYouContent: TransformedElement[] | null;
@@ -548,6 +600,7 @@ function FormPreviewContent({
   icon?: string;
   cover?: string;
   hideTitle?: boolean;
+  layout: "public" | "editor";
 }) {
   const { currentStep, isSubmitted, direction, reset } = useStepForm();
 
@@ -558,15 +611,31 @@ function FormPreviewContent({
   if (isSubmitted) {
     return (
       <div className="w-full">
-        <PreviewFormHeader title={title} icon={icon} cover={cover} hideTitle={hideTitle} />
-        <div className="max-w-2xl mx-auto px-4 sm:px-0">
+        <PreviewFormHeader
+          title={title}
+          icon={icon}
+          cover={cover}
+          hideTitle={hideTitle}
+          layout={layout}
+        />
+        <div
+          className={cn(
+            "w-full",
+            layout === "editor" ? "max-w-[700px] mx-auto px-4" : "max-w-2xl mx-auto px-4 sm:px-0",
+          )}
+        >
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
             {thankYouContent && thankYouContent.length > 0 ? (
-              <RenderThankYouContent elements={thankYouContent} form={form} onReset={reset} />
+              <RenderThankYouContent
+                elements={thankYouContent}
+                form={form}
+                onReset={reset}
+                layout={layout}
+              />
             ) : (
               <DefaultThankYou onReset={reset} />
             )}
@@ -582,10 +651,21 @@ function FormPreviewContent({
   return (
     <div className="w-full">
       {/* Header Section */}
-      <PreviewFormHeader title={title} icon={icon} cover={cover} hideTitle={hideTitle} />
+      <PreviewFormHeader
+        title={title}
+        icon={icon}
+        cover={cover}
+        hideTitle={hideTitle}
+        layout={layout}
+      />
 
       {/* Step Form */}
-      <div className="max-w-2xl mx-auto px-4 overflow-hidden">
+      <div
+        className={cn(
+          "overflow-hidden",
+          layout === "editor" ? "max-w-[700px] mx-auto w-full px-4" : "max-w-2xl mx-auto px-4",
+        )}
+      >
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={currentStep}
@@ -605,6 +685,7 @@ function FormPreviewContent({
               stepIndex={currentStep}
               elements={currentStepElements}
               isLastStep={isLastStep}
+              layout={layout}
             />
           </motion.div>
         </AnimatePresence>

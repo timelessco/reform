@@ -51,6 +51,6 @@ export function useMinimalSidebar() {
   return context;
 }
 
-export function useMinimalSidebarSafe() {
+function useMinimalSidebarSafe() {
   return useContext(MinimalSidebarContext);
 }

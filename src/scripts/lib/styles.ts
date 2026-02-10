@@ -3,7 +3,7 @@
  * All styles are injected as a single <style> tag to avoid external dependencies
  */
 
-export const STYLES = `
+const STYLES = `
 /* Keyframe Animations */
 @keyframes bf-wave {
   0%, 100% { transform: rotate(0deg); }

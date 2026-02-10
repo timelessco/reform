@@ -4,7 +4,7 @@ import { z } from "zod";
 import { createWorkspace, deleteWorkspace, updateWorkspace } from "@/lib/fn/workspaces";
 import { electricFetchClient, getElectricUrl, type ServerTxResult, timestampField } from "./shared";
 
-export const WorkspaceSchema = z.object({
+const WorkspaceSchema = z.object({
   id: z.string().uuid(),
   organizationId: z.string().uuid(),
   createdByUserId: z.string(),
@@ -13,7 +13,7 @@ export const WorkspaceSchema = z.object({
   updatedAt: timestampField,
 });
 
-export type Workspace = z.infer<typeof WorkspaceSchema>;
+type Workspace = z.infer<typeof WorkspaceSchema>;
 
 export const workspaceCollection = createCollection(
   electricCollectionOptions({
@@ -81,10 +81,7 @@ export async function updateWorkspaceName(id: string, name: string): Promise<voi
   });
 }
 
-export async function updateWorkspaceLocal(
-  id: string,
-  updater: (draft: any) => void,
-): Promise<void> {
+async function updateWorkspaceLocal(id: string, updater: (draft: any) => void): Promise<void> {
   await workspaceCollection.update(id, (draft) => {
     updater(draft);
     draft.updatedAt = new Date().toISOString();

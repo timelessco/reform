@@ -74,17 +74,18 @@ export const updateForm = createServerFn({ method: "POST" })
       cover: z.string().nullable().optional(),
       isMultiStep: z.boolean().optional(),
       status: z.enum(["draft", "published", "archived"]).optional(),
+      updatedAt: z.string().optional(),
     }),
   )
   .handler(async ({ data }) => {
-    const { id, ...updateData } = data;
+    const { id, updatedAt: clientUpdatedAt, ...updateData } = data;
     await authForm(id);
 
     const [form] = await db
       .update(forms)
       .set({
         ...updateData,
-        updatedAt: new Date(),
+        updatedAt: clientUpdatedAt ? new Date(clientUpdatedAt) : new Date(),
       })
       .where(eq(forms.id, id))
       .returning();
@@ -107,7 +108,7 @@ export const deleteForm = createServerFn({ method: "POST" })
     return { form: serializeForm(form), txid };
   });
 
-export const getFormsByWorkspace = createServerFn({ method: "GET" })
+const getFormsByWorkspace = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ workspaceId: z.string().uuid() }))
   .handler(async ({ data }) => {
@@ -165,7 +166,7 @@ export const duplicateForm = createServerFn({ method: "POST" })
     return { form: serializeForm(newForm), txid };
   });
 
-export const moveFormToWorkspace = createServerFn({ method: "POST" })
+const moveFormToWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
@@ -190,7 +191,7 @@ export const moveFormToWorkspace = createServerFn({ method: "POST" })
     return { form: serializeForm(form), txid };
   });
 
-export const getFormById = createServerFn({ method: "GET" })
+const getFormById = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data }) => {

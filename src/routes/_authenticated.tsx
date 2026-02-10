@@ -1,29 +1,6 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, Outlet, useLocation, useRouter, useSearch } from "@tanstack/react-router";
-import {
-  Bell,
-  ChevronDown,
-  ChevronRight,
-  ChevronsLeft,
-  FileText,
-  Filter,
-  HelpCircle,
-  Home,
-  Inbox,
-  LogOut,
-  Moon,
-  MoreHorizontal,
-  Pencil,
-  Plus,
-  Search,
-  Settings,
-  Sun,
-  Trash2,
-  Undo2,
-  Users,
-} from "lucide-react";
-import type * as React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { FormSettingsSidebar } from "@/components/form-builder/form-settings-sidebar";
+import { ShareSummarySidebar } from "@/components/form-builder/share-summary-sidebar";
+import { VersionHistorySidebar } from "@/components/form-builder/version-history-sidebar";
 import { useTheme } from "@/components/ThemeProvider";
 import {
   AlertDialog,
@@ -35,16 +12,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { FormSettingsSidebar } from "@/components/form-builder/form-settings-sidebar";
-import { ShareSummarySidebar } from "@/components/form-builder/share-summary-sidebar";
-import { VersionHistorySidebar } from "@/components/form-builder/version-history-sidebar";
 import { AppHeader } from "@/components/ui/app-header";
 import { Button } from "@/components/ui/button";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
 import {
   CommandDialog,
   CommandEmpty,
@@ -65,8 +34,34 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { Input } from "@/components/ui/input";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
+import {
+  ImperativePanelHandle,
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarRail,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import {
+  EditorHeaderVisibilityProvider,
+  useEditorHeaderVisibility,
+} from "@/contexts/editor-header-visibility-context";
 import { MinimalSidebarProvider, useMinimalSidebar } from "@/contexts/minimal-sidebar-context";
 import {
+  createFormLocal,
   createWorkspaceLocal,
   deleteWorkspaceLocal,
   permanentDeleteFormLocal,
@@ -74,16 +69,49 @@ import {
   updateWorkspaceName,
 } from "@/db-collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
+import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import {
   useArchivedForms,
   useFavoriteForms,
   useForms,
   useWorkspaces,
 } from "@/hooks/use-live-hooks";
-import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { auth, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/middleware/auth";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useLocation,
+  useRouter,
+  useSearch,
+} from "@tanstack/react-router";
+import {
+  Bell,
+  ChevronDown,
+  ChevronRight,
+  ChevronsLeft,
+  FileText,
+  Filter,
+  HelpCircle,
+  Home,
+  LogOut,
+  Moon,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Search,
+  Settings,
+  Sun,
+  Trash2,
+  Undo2,
+  Users,
+} from "lucide-react";
+import type * as React from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 // Route configuration
 export const Route = createFileRoute("/_authenticated")({
@@ -97,18 +125,33 @@ export const Route = createFileRoute("/_authenticated")({
   ssr: "data-only",
 });
 
+const TypedResizableHandle = ResizableHandle as any;
+
 function AuthLayout() {
+  const { pathname } = useLocation();
+  const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
+
   return (
-    <MinimalSidebarProvider>
-      <AuthLayoutContent />
-    </MinimalSidebarProvider>
+    <SidebarProvider style={{ "--app-header-height": "40px" } as React.CSSProperties}>
+      <EditorHeaderVisibilityProvider enabled={isEditRoute}>
+        <MinimalSidebarProvider>
+          <AuthLayoutContent />
+        </MinimalSidebarProvider>
+      </EditorHeaderVisibilityProvider>
+    </SidebarProvider>
   );
 }
 
 function AuthLayoutContent() {
-  const { isPinned, setIsHovered, isInboxOpen } = useMinimalSidebar();
   const location = useLocation();
   const { pathname } = location;
+  const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
+  const { visible: isHeaderVisible, reportPointerActivity } = useEditorHeaderVisibility();
+  const [resizeTooltip, setResizeTooltip] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+  });
 
   // Extract route params from URL
   const workspaceMatch = pathname.match(/\/workspace\/([^/]+)/);
@@ -119,7 +162,12 @@ function AuthLayoutContent() {
   // Editor sidebar management
   const search: any = useSearch({ strict: false });
   const sidebarParam = search.sidebar;
-  const { activeSidebar, setActiveSidebar, resetSidebar } = useEditorSidebar();
+  const { activeSidebar, setActiveSidebar, resetSidebar, closeSidebar } = useEditorSidebar();
+  const handleRef = useRef<HTMLDivElement>(null);
+  const rightPanelRef = useRef<ImperativePanelHandle>(null);
+  const [handleLeft, setHandleLeft] = useState(0);
+  const handleDragRef = useRef({ dragging: false, startX: 0, startY: 0 });
+  const leftPanelRef = useRef<HTMLDivElement>(null);
 
   // Sync sidebar state from URL params, and reset when navigating between forms
   useEffect(() => {
@@ -129,53 +177,166 @@ function AuthLayoutContent() {
       resetSidebar();
     }
   }, [sidebarParam, formId, setActiveSidebar, resetSidebar]);
+
   const isFormBuilder = pathname.includes("/form-builder/");
-  const showEditorSidebar = activeSidebar && isFormBuilder && formId;
+  const showEditorSidebar = !!(activeSidebar && isFormBuilder && formId);
+  const isDistractionHeaderHidden = isEditRoute && !isHeaderVisible;
+
+  // Animate sidebar expansion/collapse
+  useEffect(() => {
+    const panel = rightPanelRef.current;
+    if (!panel) return;
+
+    if (showEditorSidebar) {
+      panel.expand(30);
+    } else {
+      panel.collapse();
+    }
+  }, [showEditorSidebar]);
+
+  const updateHandleLeft = () => {
+    const node = leftPanelRef.current;
+    if (!node) return;
+    const rect = node.getBoundingClientRect();
+    setHandleLeft(rect.right);
+  };
+
+  useLayoutEffect(() => {
+    updateHandleLeft();
+  }, [showEditorSidebar]);
+
+  useEffect(() => {
+    const onResize = () => updateHandleLeft();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [showEditorSidebar]);
+
+  useEffect(() => {
+    if (!leftPanelRef.current) return;
+    const observer = new ResizeObserver(() => updateHandleLeft());
+    observer.observe(leftPanelRef.current);
+    return () => observer.disconnect();
+  }, [showEditorSidebar]);
 
   return (
-    <div className="flex min-h-screen w-full overflow-hidden relative">
-      {/* Hover Trigger Area - An invisible area at the left edge to detect hover */}
-      {!isPinned && (
-        <button
-          type="button"
-          aria-hidden="true"
-          tabIndex={-1}
-          className="fixed left-0 top-12 bottom-0 w-4 z-60"
-          onMouseEnter={() => setIsHovered(true)}
-        />
-      )}
-
-      <MinimalSidebar />
+    <>
+      <AppSidebar />
       <SidebarInbox />
 
-      <ResizablePanelGroup
-        direction="horizontal"
-        className={cn(
-          "flex-1 min-h-screen transition-all duration-300 ease-in-out",
-          isInboxOpen ? (isPinned ? "ml-[544px]" : "ml-80") : isPinned ? "ml-56" : "ml-0",
+      <SidebarInset className="overflow-hidden relative flex flex-col h-screen">
+        {isDistractionHeaderHidden && (
+          <div
+            className="fixed inset-x-0 top-0 z-[1200] h-3 bg-transparent"
+            onMouseEnter={reportPointerActivity}
+            aria-hidden="true"
+          />
         )}
-      >
-        {/* Main content panel */}
-        <ResizablePanel defaultSize={showEditorSidebar ? 75 : 100} minSize={50}>
-          <div className="flex flex-col h-full min-w-0">
-            <AppHeader formId={formId} workspaceId={workspaceId} />
-            <Outlet key={formId} />
-          </div>
-        </ResizablePanel>
+        <div className="relative z-0">
+          <AppHeader
+            formId={formId}
+            workspaceId={workspaceId}
+            dividerX={handleLeft}
+            isSidebarOpen={showEditorSidebar}
+            isDistractionHidden={isDistractionHeaderHidden}
+          />
+        </div>
 
-        {/* Right sidebar - Editor Sidebars (Settings, Share, History) */}
-        {showEditorSidebar && (
-          <>
-            <ResizableHandle />
-            <ResizablePanel defaultSize={25} minSize={15} maxSize={40} className="overflow-hidden">
-              {activeSidebar === "settings" && <FormSettingsSidebar formId={formId} />}
-              {activeSidebar === "share" && <ShareSummarySidebar formId={formId} />}
-              {activeSidebar === "history" && <VersionHistorySidebar formId={formId} />}
+        <div className="relative z-20 flex-1 min-h-0 overflow-hidden">
+          <ResizablePanelGroup direction="horizontal" className="h-full">
+            {/* Main content panel */}
+            <ResizablePanel
+              defaultSize={showEditorSidebar ? 70 : 100}
+              minSize={70}
+              className="transition-all duration-300 ease-in-out"
+            >
+              <div ref={leftPanelRef} className={cn("flex h-full min-w-0 flex-col z-50")}>
+                <Outlet key={formId} />
+              </div>
             </ResizablePanel>
-          </>
-        )}
-      </ResizablePanelGroup>
-    </div>
+
+            {/* Right sidebar - Editor Sidebars (Settings, Share, History) */}
+            <TypedResizableHandle
+              className={cn(
+                "fixed top-0 bottom-0 left-(--handle-left) -translate-x-1/2 w-px",
+                "bg-border/60 z-[999] pointer-events-auto",
+                "transition-none duration-0 hover:w-px data-[resize-handle-state=drag]:w-px",
+                !showEditorSidebar && "hidden pointer-events-none",
+              )}
+              ref={handleRef}
+              style={{ "--handle-left": `${handleLeft}px` } as React.CSSProperties}
+              onPointerDown={(event: any) => {
+                handleDragRef.current = {
+                  dragging: false,
+                  startX: event.clientX,
+                  startY: event.clientY,
+                };
+                updateHandleLeft();
+              }}
+              onPointerMove={(event: any) => {
+                const dx = Math.abs(event.clientX - handleDragRef.current.startX);
+                const dy = Math.abs(event.clientY - handleDragRef.current.startY);
+                if (dx > 2 || dy > 2) handleDragRef.current.dragging = true;
+                updateHandleLeft();
+              }}
+              onPointerUp={() => {
+                if (!handleDragRef.current.dragging && activeSidebar) closeSidebar();
+                handleDragRef.current.dragging = false;
+              }}
+              onMouseEnter={(event: any) => {
+                setResizeTooltip({ visible: true, x: event.clientX, y: event.clientY });
+              }}
+              onMouseMove={(event: any) => {
+                setResizeTooltip((prev) => ({
+                  ...prev,
+                  x: event.clientX,
+                  y: event.clientY,
+                }));
+              }}
+              onMouseLeave={() => {
+                setResizeTooltip((prev) => ({ ...prev, visible: false }));
+              }}
+            >
+              <div
+                className={cn(
+                  "pointer-events-none fixed",
+                  "rounded-md border border-foreground/10 bg-background/90 px-2 py-1 text-[11px] text-muted-foreground shadow-lg",
+                  "transition-opacity duration-150",
+                  resizeTooltip.visible ? "opacity-100" : "opacity-0",
+                )}
+                style={{
+                  left: resizeTooltip.x - 12,
+                  top: resizeTooltip.y + 12,
+                  transform: "translateX(-100%)",
+                }}
+              >
+                <div className="leading-4">
+                  <div>Close Click</div>
+                  <div>Resize Drag</div>
+                </div>
+              </div>
+            </TypedResizableHandle>
+            <ResizablePanel
+              ref={rightPanelRef}
+              collapsible
+              collapsedSize={0}
+              defaultSize={showEditorSidebar ? 30 : 0}
+              minSize={20}
+              maxSize={40}
+              className={cn(
+                "h-full overflow-hidden transition-all duration-300 ease-in-out bg-background",
+                !showEditorSidebar && "border-none",
+              )}
+            >
+              <div className="h-full w-full">
+                {activeSidebar === "settings" && formId && <FormSettingsSidebar formId={formId} />}
+                {activeSidebar === "share" && formId && <ShareSummarySidebar formId={formId} />}
+                {activeSidebar === "history" && formId && <VersionHistorySidebar formId={formId} />}
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </div>
+      </SidebarInset>
+    </>
   );
 }
 
@@ -227,13 +388,13 @@ function SidebarItem({
   );
 }
 
-// Minimal Sidebar Component
-function MinimalSidebar() {
-  const { isVisible, isPinned, togglePin, setIsHovered, isInboxOpen, setIsInboxOpen } =
-    useMinimalSidebar();
-  const sidebarRef = useRef<HTMLDivElement>(null);
+// App Sidebar Component using shadcn/ui
+function AppSidebar() {
+  const { toggleSidebar } = useSidebar();
+  const { isInboxOpen, setIsInboxOpen } = useMinimalSidebar();
   const location = useLocation();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
   const {
     toggle: togglePalette,
@@ -245,9 +406,10 @@ function MinimalSidebar() {
   const [trashDialogOpen, setTrashDialogOpen] = useState(false);
 
   const { data: activeOrg } = useQuery(auth.organization.getFullOrganization.queryOptions());
+  const { data: workspacesData } = useWorkspaces();
 
-  const { data: invitations } = useQuery(auth.organization.listInvitations.queryOptions());
-  const pendingCount = invitations?.length ?? 0;
+  const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
+  const pendingCount = (invitations ?? []).filter((inv: any) => inv.status === "pending").length;
 
   const { data: session } = useSession();
 
@@ -263,8 +425,17 @@ function MinimalSidebar() {
 
   const setActiveOrgMutation = useMutation(
     auth.organization.setActive.mutationOptions({
-      onSuccess: () => {
-        router.invalidate();
+      onSuccess: async () => {
+        // Invalidate and wait for refetch before navigating
+        await queryClient.invalidateQueries({
+          queryKey: ["organization", "getFullOrganization"],
+          refetchType: "all",
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["workspaces-with-forms"],
+          refetchType: "all",
+        });
+        router.navigate({ to: "/dashboard" });
       },
     }),
   );
@@ -280,22 +451,6 @@ function MinimalSidebar() {
     return () => document.removeEventListener("keydown", down);
   }, [togglePalette]);
 
-  useEffect(() => {
-    const node = sidebarRef.current;
-    if (!node) return;
-
-    const handleMouseEnterSidebar = () => setIsHovered(true);
-    const handleMouseLeaveSidebar = () => setIsHovered(false);
-
-    node.addEventListener("mouseenter", handleMouseEnterSidebar);
-    node.addEventListener("mouseleave", handleMouseLeaveSidebar);
-
-    return () => {
-      node.removeEventListener("mouseenter", handleMouseEnterSidebar);
-      node.removeEventListener("mouseleave", handleMouseLeaveSidebar);
-    };
-  }, [setIsHovered]);
-
   const getInitials = (name?: string | null) => {
     if (!name) return "U";
     return name
@@ -310,96 +465,90 @@ function MinimalSidebar() {
 
   return (
     <>
-      <div
-        ref={sidebarRef}
-        className={cn(
-          "fixed left-0 z-50 flex w-56 flex-col bg-background py-1 px-3 select-none transition-all duration-300 ease-in-out",
-          isPinned
-            ? "inset-y-0"
-            : "top-12 bottom-12 rounded-r-2xl border-y border-r border-foreground/10 shadow-2xl",
-          !isVisible && "-translate-x-full",
-          isVisible && "translate-x-0",
-          isPinned && "border-r border-foreground/5 shadow-none",
-        )}
-      >
-        {/* Top Section: Logo & Toggle */}
-        <div className="flex items-center justify-between px-3 mb-2 group/logo">
+      <Sidebar className="border-r border-foreground/5 bg-background">
+        <SidebarHeader className="h-10 px-4 flex flex-row items-center justify-between group/logo">
           <span className="text-2xl font-serif italic font-bold tracking-tighter">f.</span>
           <button
             type="button"
-            onClick={togglePin}
-            className={cn(
-              "p-1.5 rounded-lg hover:bg-muted text-muted-foreground/40 hover:text-foreground transition-all",
-              isPinned ? "opacity-0 group-hover/logo:opacity-100" : "opacity-100",
-            )}
-            title={isPinned ? "Unpin sidebar" : "Pin sidebar"}
+            onClick={() => toggleSidebar()}
+            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground/40 hover:text-foreground transition-all group-data-[state=collapsed]:hidden"
+            title="Collapse sidebar"
           >
-            <ChevronsLeft
-              className={cn(
-                "h-4 w-4 transition-transform duration-300",
-                !isPinned && "rotate-180",
-              )}
-            />
+            <ChevronsLeft className="h-4 w-4" />
           </button>
-        </div>
+        </SidebarHeader>
 
-        {/* Navigation */}
-        <nav className="flex-1 space-y-6 relative overflow-y-auto no-scrollbar">
-          <div className="space-y-0.5 px-1">
-            <SidebarItem
-              label="All"
-              to="/dashboard"
-              isActive={location.pathname === "/dashboard"}
-              prefix={<Home className="h-4 w-4" />}
-            />
-            <SidebarItem
-              label="Search"
-              onClick={togglePalette}
-              prefix={<Search className="h-4 w-4" />}
-            />
-            <SidebarItem
-              label="Notifications"
-              onClick={() => setIsInboxOpen(!isInboxOpen)}
-              isActive={isInboxOpen}
-              prefix={<Bell className="h-4 w-4" />}
-            />
-            <SidebarItem
-              label="Trash"
-              onClick={() => setTrashDialogOpen(true)}
-              prefix={<Trash2 className="h-4 w-4" />}
-            />
-            <SidebarItem
-              label="Settings"
-              onClick={() => {
-                router.navigate({
-                  to: "/settings",
-                });
-              }}
-              isActive={
-                location.pathname.startsWith("/settings") && !location.pathname.includes("/members")
-              }
-              prefix={<Settings className="h-4 w-4" />}
-            />
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupContent className="px-2">
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location.pathname === "/dashboard"}
+                    tooltip="All"
+                  >
+                    <Link to="/dashboard">
+                      <Home className="h-4 w-4" />
+                      <span>All</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={togglePalette} tooltip="Search">
+                    <Search className="h-4 w-4" />
+                    <span>Search</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => setIsInboxOpen(!isInboxOpen)}
+                    isActive={isInboxOpen}
+                    tooltip={pendingCount > 0 ? `Notifications (${pendingCount})` : "Notifications"}
+                  >
+                    <div className="relative">
+                      <Bell className="h-4 w-4" />
+                      {pendingCount > 0 && (
+                        <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-primary" />
+                      )}
+                    </div>
+                    <span>Notifications</span>
+                    {pendingCount > 0 && (
+                      <span className="ml-auto text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
+                        {pendingCount}
+                      </span>
+                    )}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={() => setTrashDialogOpen(true)} tooltip="Trash">
+                    <Trash2 className="h-4 w-4" />
+                    <span>Trash</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => router.navigate({ to: "/settings/my-account" })}
+                    isActive={
+                      location.pathname.startsWith("/settings") &&
+                      !location.pathname.includes("/members")
+                    }
+                    tooltip="Settings"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <div className="mt-4 px-2">
+            <SidebarWorkspacesMinimal activeOrgId={activeOrg?.id} />
           </div>
+        </SidebarContent>
 
-          <div className="h-px bg-foreground/5 mx-2" />
-
-          {invitations && pendingCount > 0 && (
-            <div className="space-y-0.5 px-1">
-              <SidebarItem
-                label={`Invitations (${pendingCount})`}
-                to="/accept-invite"
-                isActive={location.pathname === "/accept-invite"}
-                prefix={<Bell className="h-4 w-4" />}
-              />
-            </div>
-          )}
-
-          <SidebarWorkspacesMinimal activeOrgId={activeOrg?.id} />
-        </nav>
-
-        {/* Bottom Section: User Menu */}
-        <div className="mt-auto pt-4 px-1">
+        <SidebarFooter>
           <UserMenuMinimal
             session={session}
             activeOrg={activeOrg}
@@ -412,8 +561,9 @@ function MinimalSidebar() {
             theme={theme}
             setTheme={setTheme as any}
           />
-        </div>
-      </div>
+        </SidebarFooter>
+        <SidebarRail />
+      </Sidebar>
 
       {/* Command Palette */}
       <CommandDialog open={isPaletteOpen} onOpenChange={setIsPaletteOpen}>
@@ -422,8 +572,30 @@ function MinimalSidebar() {
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Actions">
             <CommandItem
-              onSelect={() => {
+              onSelect={async () => {
                 setIsPaletteOpen(false);
+                if (activeOrg && workspacesData) {
+                  const orgWorkspaces = workspacesData.filter(
+                    (ws) => ws.organizationId === activeOrg.id,
+                  );
+                  if (orgWorkspaces.length > 0) {
+                    // Use workspace from URL if available, otherwise use first workspace
+                    const workspaceMatch = location.pathname.match(/\/workspace\/([^/]+)/);
+                    const currentWorkspaceId = workspaceMatch?.[1];
+                    const targetWorkspace = currentWorkspaceId
+                      ? orgWorkspaces.find((ws) => ws.id === currentWorkspaceId) || orgWorkspaces[0]
+                      : orgWorkspaces[0];
+
+                    const newForm = await createFormLocal(targetWorkspace.id);
+                    router.navigate({
+                      to: "/workspace/$workspaceId/form-builder/$formId/edit",
+                      params: {
+                        workspaceId: targetWorkspace.id,
+                        formId: newForm.id,
+                      },
+                    });
+                  }
+                }
               }}
             >
               <Plus className="mr-2 h-4 w-4" />
@@ -470,10 +642,10 @@ function MinimalSidebar() {
             </CommandItem>
           </CommandGroup>
         </CommandList>
-      </CommandDialog >
+      </CommandDialog>
 
       {/* Trash Dialog */}
-      < TrashDialog
+      <TrashDialog
         open={trashDialogOpen}
         onOpenChange={setTrashDialogOpen}
         activeOrgId={activeOrg?.id}
@@ -627,23 +799,69 @@ function TrashDialog({
 
 // Sidebar Inbox Panel Component
 function SidebarInbox() {
-  const { isInboxOpen, setIsInboxOpen, isPinned, isVisible } = useMinimalSidebar();
+  const { isInboxOpen, setIsInboxOpen } = useMinimalSidebar();
+  const { state } = useSidebar();
+  const queryClient = useQueryClient();
+
+  // Fetch invitations received by current user
+  const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
+
+  // Helper to refetch invitations on error (stale data)
+  const handleError = (error: any) => {
+    const message = error?.message || "Something went wrong";
+    toast.error(message);
+    // Refetch to clear stale invitations
+    queryClient.invalidateQueries({
+      queryKey: auth.organization.listUserInvitations.queryKey(),
+    });
+  };
+
+  // Accept/Reject mutations
+  const acceptMutation = useMutation(
+    auth.organization.acceptInvitation.mutationOptions({
+      onSuccess: () => {
+        toast.success("Invitation accepted!");
+        queryClient.invalidateQueries({
+          queryKey: auth.organization.listUserInvitations.queryKey(),
+        });
+      },
+      onError: handleError,
+    }),
+  );
+
+  const rejectMutation = useMutation(
+    auth.organization.rejectInvitation.mutationOptions({
+      onSuccess: () => {
+        toast.success("Invitation declined");
+        queryClient.invalidateQueries({
+          queryKey: auth.organization.listUserInvitations.queryKey(),
+        });
+      },
+      onError: handleError,
+    }),
+  );
 
   if (!isInboxOpen) return null;
+
+  // Only show pending invitations
+  const pendingInvitations = (invitations ?? []).filter((inv: any) => inv.status === "pending");
 
   return (
     <div
       className={cn(
-        "fixed z-40 flex w-80 flex-col bg-background select-none transition-all duration-300 ease-in-out border-r border-foreground/5 top-0 bottom-0",
-        isPinned ? "left-56" : "left-0",
-        // The inbox should stay visible if it's open, but we handle the transition if the main sidebar collapses
-        !isPinned && !isVisible && "opacity-100",
+        "fixed z-40 flex w-80 flex-col bg-background select-none transition-[left] duration-200 ease-linear border-r border-foreground/5 top-0 bottom-0",
+        state === "expanded" ? "left-[var(--sidebar-width)]" : "left-[var(--sidebar-width-icon)]",
       )}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 h-10 border-b border-foreground/5">
         <div className="flex items-center gap-2">
           <h2 className="text-[13px] font-bold text-foreground">Inbox</h2>
+          {pendingInvitations.length > 0 && (
+            <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
+              {pendingInvitations.length}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-0.5">
           <button
@@ -672,49 +890,81 @@ function SidebarInbox() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-2 no-scrollbar">
         <div className="px-1 overflow-hidden">
+          {/* Invitations Section */}
+          {pendingInvitations.length > 0 && (
+            <>
+              <p className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest mb-3 px-2">
+                Invitations
+              </p>
+              <div className="space-y-1 mb-4">
+                {pendingInvitations.map((invitation) => {
+                  const isProcessing =
+                    (acceptMutation.isPending &&
+                      acceptMutation.variables?.invitationId === invitation.id) ||
+                    (rejectMutation.isPending &&
+                      rejectMutation.variables?.invitationId === invitation.id);
+
+                  return (
+                    <div
+                      key={invitation.id}
+                      className="group flex flex-col gap-2 p-2 rounded-md hover:bg-muted/50 transition-colors border border-transparent hover:border-foreground/5"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="h-8 w-8 rounded bg-foreground/5 flex items-center justify-center shrink-0">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[12px] font-medium text-foreground leading-tight">
+                            You've been invited to join{" "}
+                            <span className="font-bold">
+                              {(invitation as any).organization?.name ?? "an organization"}
+                            </span>
+                          </p>
+                          <p className="text-[11px] text-muted-foreground/50 mt-0.5">
+                            Role: <span className="capitalize">{invitation.role}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 ml-11">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="h-7 text-xs px-3"
+                          disabled={isProcessing}
+                          onClick={() => acceptMutation.mutate({ invitationId: invitation.id })}
+                        >
+                          {acceptMutation.isPending &&
+                          acceptMutation.variables?.invitationId === invitation.id
+                            ? "Accepting..."
+                            : "Accept"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs px-3"
+                          disabled={isProcessing}
+                          onClick={() => rejectMutation.mutate({ invitationId: invitation.id })}
+                        >
+                          {rejectMutation.isPending &&
+                          rejectMutation.variables?.invitationId === invitation.id
+                            ? "Declining..."
+                            : "Decline"}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {/* Older / Other notifications section (for future extensibility) */}
           <p className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest mb-3 px-2">
-            Older
+            {pendingInvitations.length > 0 ? "Other" : "Notifications"}
           </p>
-
           <div className="space-y-1">
-            {/* Notification Item 1 */}
-            <div className="group flex flex-col gap-1 p-2 rounded-md hover:bg-muted/50 cursor-pointer transition-colors border border-transparent hover:border-foreground/5">
-              <div className="flex items-start gap-3">
-                <div className="h-8 w-8 rounded bg-foreground/5 flex items-center justify-center shrink-0">
-                  <span className="text-xs font-bold">S</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-[13px] font-bold text-foreground leading-tight truncate">
-                      SMART TECH requested access to{" "}
-                      <span className="text-red-500">📕 Betting Platform</span>
-                    </p>
-                    <span className="text-[10px] text-muted-foreground/30 whitespace-nowrap">
-                      12/08
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground/50 mt-1">
-                    Approved by You on Dec 8, 2025
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Notification Item 2 */}
-            <div className="group flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer transition-colors border border-transparent hover:border-foreground/5">
-              <div className="h-8 w-8 rounded-full bg-foreground/5 flex items-center justify-center shrink-0">
-                <span className="text-xs font-bold text-muted-foreground/40">B</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[12px] font-medium text-foreground truncate">
-                    Basky & Velu invited you to <span className="font-bold">🕵️ I'm Vijay</span>
-                  </p>
-                  <span className="text-[10px] text-muted-foreground/30 whitespace-nowrap">
-                    10/22
-                  </span>
-                </div>
-              </div>
+            <div className="flex items-center justify-center py-8 text-muted-foreground/40">
+              <p className="text-xs">No other notifications</p>
             </div>
           </div>
         </div>
@@ -773,7 +1023,11 @@ function UserMenuMinimal({
         >
           <div className="h-6 w-6 rounded-full overflow-hidden bg-muted flex items-center justify-center text-[10px] font-bold shrink-0">
             {session?.user?.image ? (
-              <img src={session.user.image} alt={displayName} className="h-full w-full object-cover" />
+              <img
+                src={session.user.image}
+                alt={displayName}
+                className="h-full w-full object-cover"
+              />
             ) : (
               getInitials(displayName)
             )}
@@ -819,7 +1073,7 @@ function UserMenuMinimal({
               <button
                 type="button"
                 onClick={() => {
-                  router.navigate({ to: "/settings" });
+                  router.navigate({ to: "/settings/my-account" });
                   setIsOpen(false);
                 }}
                 className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-muted/50 text-[13px] text-muted-foreground hover:text-foreground transition-colors text-left"
@@ -835,11 +1089,7 @@ function UserMenuMinimal({
                 }}
                 className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-muted/50 text-[13px] text-muted-foreground hover:text-foreground transition-colors text-left"
               >
-                {theme === "dark" ? (
-                  <Sun className="h-4 w-4" />
-                ) : (
-                  <Moon className="h-4 w-4" />
-                )}
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                 <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
               </button>
               <button
@@ -897,13 +1147,6 @@ function UserMenuMinimal({
           <div className="space-y-0.5 px-1">
             <button
               type="button"
-              className="flex items-center gap-2.5 w-full px-2 py-1.5 text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md transition-colors text-left"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>Add another account</span>
-            </button>
-            <button
-              type="button"
               onClick={() => {
                 signOutMutation.mutate({});
                 setIsOpen(false);
@@ -947,6 +1190,7 @@ function WorkspaceItemMinimal({
   onRename: () => void;
   onDelete: () => void;
 }) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
 
@@ -968,12 +1212,27 @@ function WorkspaceItemMinimal({
       <div className="group flex items-center justify-between px-2 py-1.5 transition-colors">
         <button
           type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1.5 cursor-pointer flex-1 min-w-0"
+          onClick={() => {
+            router.navigate({
+              to: "/workspace/$workspaceId",
+              params: { workspaceId: workspace.id },
+            });
+          }}
+          className="flex items-center gap-1.5 cursor-pointer flex-1 min-w-0 text-left"
         >
           <span className="text-[13px] font-medium text-muted-foreground/60 transition-colors group-hover:text-foreground truncate">
             {workspace.name}
           </span>
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(!isOpen);
+          }}
+          className="p-1 rounded hover:bg-muted text-muted-foreground/50 hover:text-foreground transition-colors"
+          aria-label={`${isOpen ? "Collapse" : "Expand"} ${workspace.name}`}
+        >
           <ChevronDown
             className={cn(
               "h-3 w-3 text-muted-foreground/40 transition-all duration-200",
@@ -1054,22 +1313,26 @@ function isEmoji(str: string): boolean {
   return str.length <= 4 && emojiRange.test(str);
 }
 
-function WorkspaceFormMinimal({ label, icon, to }: { label: string; icon?: string | null; to?: string }) {
+function WorkspaceFormMinimal({
+  label,
+  icon,
+  to,
+}: {
+  label: string;
+  icon?: string | null;
+  to?: string;
+}) {
   const location = useLocation();
   const isActive = location.pathname === to;
 
-  const prefix = icon && isEmoji(icon)
-    ? <span className="text-sm leading-none">{icon}</span>
-    : <FileText className="h-3.5 w-3.5" />;
+  const prefix =
+    icon && isEmoji(icon) ? (
+      <span className="text-sm leading-none">{icon}</span>
+    ) : (
+      <FileText className="h-3.5 w-3.5" />
+    );
 
-  return (
-    <SidebarItem
-      label={label}
-      to={to}
-      isActive={isActive}
-      prefix={prefix}
-    />
-  );
+  return <SidebarItem label={label} to={to} isActive={isActive} prefix={prefix} />;
 }
 
 // Sidebar Section Component

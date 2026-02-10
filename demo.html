@@ -1,35 +1,19 @@
-<iframe
-  data-better-forms-src="http://localhost:3000/forms/6d58aa9d-bd1d-4792-bca7-77bf5637b985?dynamicHeight=true"
-  loading="lazy"
-  width="100%"
-  height="558"
-  frameborder="0"
-  marginheight="0"
-  marginwidth="0"
-  title="Multi Step Test"
-></iframe>
-<script>
-  window.addEventListener("message", function (e) {
-    try {
-      var d = JSON.parse(e.data);
-      if (d.event === "BetterForms.Resize") {
-        var f = document.querySelector("iframe[data-better-forms-src]");
-        if (f && typeof d.height === "number") f.style.height = d.height + "px";
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script async src="http://localhost:3000/embed/popup.js"></script>
+    <style>
+      body {
+        background: orange;
       }
-    } catch {}
-  });
-  var d = document,
-    w = "http://localhost:3000/widgets/embed.js",
-    v = function () {
-      "undefined" != typeof BetterForms
-        ? BetterForms.loadEmbeds()
-        : d.querySelectorAll("iframe[data-better-forms-src]:not([src])").forEach(function (e) {
-            e.src = e.dataset.betterFormsSrc;
-          });
-    };
-  if ("undefined" != typeof BetterForms) v();
-  else if (d.querySelector('script[src="' + w + '"]') == null) {
-    var s = d.createElement("script");
-    ((s.src = w), (s.onload = v), (s.onerror = v), d.body.appendChild(s));
-  }
-</script>
+    </style>
+  </head>
+  <body>
+    <a href="http://localhost:3000/forms/13d0a44e-2175-45e7-b92e-e9045bcac4f2?dynamicHeight=true"
+      >Open Form</a
+    >
+  </body>
+</html>

@@ -93,7 +93,7 @@ const BlockCommentContent = ({
 
   const noneActive = !activeSuggestion && !activeDiscussion;
 
-  const sortedMergedData = [...resolvedDiscussions, ...resolvedSuggestions].sort(
+  const sortedMergedData = [...resolvedDiscussions, ...resolvedSuggestions].toSorted(
     (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
   );
 

@@ -47,4 +47,4 @@ export const customizeFormSchema = z.object({
   customCss: z.string().optional(),
 });
 
-export type CustomizeFormValues = z.infer<typeof customizeFormSchema>;
+type CustomizeFormValues = z.infer<typeof customizeFormSchema>;

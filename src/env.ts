@@ -1,7 +1,7 @@
 import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
 
-export const env = createEnv({
+const env = createEnv({
   server: {
     SERVER_URL: z.string().url().optional(),
     // Database

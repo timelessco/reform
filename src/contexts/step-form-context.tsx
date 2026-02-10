@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import type { TransformedElement } from "@/lib/transform-plate-to-form";
 
@@ -26,7 +24,7 @@ export function useStepForm() {
   return context;
 }
 
-export function useStepFormSafe() {
+function useStepFormSafe() {
   return React.useContext(StepFormContext);
 }
 

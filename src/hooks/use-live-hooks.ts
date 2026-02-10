@@ -1,7 +1,6 @@
 import { eq, or, useLiveQuery } from "@tanstack/react-db";
 import { useMemo } from "react";
 import {
-  editorDocCollection,
   favoriteCollection,
   formCollection,
   localFormCollection,
@@ -92,7 +91,7 @@ export const useForms = () => {
 export const useForm = (formId?: string) => {
   return useLiveQuery((q) => {
     if (!formId) return null as any;
-    return q.from({ doc: editorDocCollection }).where(({ doc }) => eq(doc.id, formId));
+    return q.from({ form: formCollection }).where(({ form }) => eq(form.id, formId));
   });
 };
 
@@ -109,7 +108,7 @@ export const useLocalForm = (formId?: string) => {
 /**
  * Custom hook for real-time favorites sync for current user.
  */
-export const useFavorites = (userId?: string) => {
+const useFavorites = (userId?: string) => {
   return useLiveQuery((q) => {
     let query = q.from({ fav: favoriteCollection });
     if (userId) {

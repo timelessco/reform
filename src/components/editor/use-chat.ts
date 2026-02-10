@@ -13,9 +13,9 @@ import { aiChatPlugin } from "@/components/editor/plugins/ai-kit";
 
 import { discussionPlugin } from "./plugins/discussion-kit";
 
-export type ToolName = "comment" | "edit" | "generate";
+type ToolName = "comment" | "edit" | "generate";
 
-export type TComment = {
+type TComment = {
   comment: {
     blockId: string;
     comment: string;
@@ -24,14 +24,14 @@ export type TComment = {
   status: "finished" | "streaming";
 };
 
-export type MessageDataPart = {
+type MessageDataPart = {
   toolName: ToolName;
   comment?: TComment;
 };
 
-export type Chat = UseChatHelpers<ChatMessage>;
+type Chat = UseChatHelpers<ChatMessage>;
 
-export type ChatMessage = UIMessage<{}, MessageDataPart>;
+type ChatMessage = UIMessage<{}, MessageDataPart>;
 
 export const useChat = () => {
   const editor = useEditorRef();
@@ -1477,7 +1477,7 @@ const createCommentChunks = (editor: PlateEditor) => {
     result.add(num);
   }
 
-  const indexes = Array.from(result).sort((a, b) => a - b);
+  const indexes = Array.from(result).toSorted((a, b) => a - b);
 
   const chunks = indexes
     .map((index, i) => {

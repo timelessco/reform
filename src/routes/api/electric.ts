@@ -155,13 +155,13 @@ export const Route = createFileRoute("/api/electric")({
         upstreamUrl.searchParams.set("table", table);
         upstreamUrl.searchParams.set("where", whereSql);
 
-        logger("electric-proxy", {
-          userId,
-          table,
-          where: whereSql,
-          sourceId: sourceId ? `${sourceId.substring(0, 8)}...` : "not set",
-          url: upstreamUrl.toString().replace(sourceSecret || "", "[REDACTED]"),
-        });
+        // logger("electric-proxy", {
+        //   userId,
+        //   table,
+        //   where: whereSql,
+        //   sourceId: sourceId ? `${sourceId.substring(0, 8)}...` : "not set",
+        //   url: upstreamUrl.toString().replace(sourceSecret || "", "[REDACTED]"),
+        // });
 
         try {
           const upstream = await fetch(upstreamUrl.toString(), {

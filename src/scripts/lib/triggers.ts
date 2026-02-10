@@ -5,7 +5,7 @@
 
 import type { EmojiAnimation, PopupOptions } from "./types";
 
-export type OpenPopupCallback = (formId: string, options: PopupOptions) => void;
+type OpenPopupCallback = (formId: string, options: PopupOptions) => void;
 
 /**
  * Parse options from element data attributes
@@ -93,13 +93,19 @@ function parseDataAttributes(element: HTMLElement): PopupOptions {
  * Parse options from URL hash parameters
  * Format: #form-open=formId&align-left=1&hide-title=1&overlay=1&emoji-text=👋&emoji-animation=wave&auto-close=5000
  */
-export function parseHashParams(hash: string): {
+function parseHashParams(hash: string): {
   formId: string | null;
   options: PopupOptions;
 } {
   const params = new URLSearchParams(hash.replace(/^#/, ""));
   const formId = params.get("form-open");
   const options: PopupOptions = {};
+
+  // Position
+  const position = params.get("position");
+  if (position === "bottom-right" || position === "bottom-left" || position === "center") {
+    options.position = position;
+  }
 
   // Boolean options
   if (params.get("align-left") === "1") {
@@ -138,6 +144,7 @@ export function parseHashParams(hash: string): {
   const hiddenFields: Record<string, string> = {};
   const knownParams = [
     "form-open",
+    "position",
     "align-left",
     "hide-title",
     "overlay",

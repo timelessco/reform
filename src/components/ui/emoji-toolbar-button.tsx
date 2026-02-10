@@ -235,7 +235,9 @@ function EmojiPickerContent({
     (categoryId: any) =>
       visibleCategories.size === 0
         ? true
-        : (visibleCategories.has(categoryId) ? visibleCategories.get(categoryId) : false),
+        : visibleCategories.has(categoryId)
+          ? visibleCategories.get(categoryId)
+          : false,
     [visibleCategories],
   );
 

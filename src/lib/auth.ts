@@ -1,3 +1,7 @@
+import * as schema from "@/db/schema";
+import { db } from "@/lib/db";
+import { sendOrgInvitationEmail, sendOTPEmail } from "@/lib/email";
+import { logger } from "@/lib/utils";
 import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { betterAuth } from "better-auth";
@@ -5,10 +9,6 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { apiKey, emailOTP, organization, twoFactor, username } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { eq } from "drizzle-orm";
-import * as schema from "@/db/schema";
-import { db } from "@/lib/db";
-import { sendOrgInvitationEmail, sendOTPEmail } from "@/lib/email";
-import { logger } from "@/lib/utils";
 
 const polarClient = new Polar({
   accessToken: process.env.POLAR_ACCESS_TOKEN!,
@@ -119,14 +119,26 @@ export const auth = betterAuth({
       expiresIn: 300,
       sendVerificationOnSignUp: true,
     }),
-    twoFactor(),
+    twoFactor({
+      totpOptions: {
+        digits: 6,
+      },
+    }),
     apiKey(),
     organization({
       async sendInvitationEmail(data) {
         logger(
-          `[Org] Invitation sent to ${data.email} for org "${data.organization.name}" by ${data.inviter.user.name}`,
+          `[Org] sendInvitationEmail callback START - email: ${data.email}, org: ${data.organization.name}, inviter: ${data.inviter.user.name}, invitationId: ${data.id}`,
         );
-        void sendOrgInvitationEmail(data.email, data.organization.name, data.inviter.user.name);
+        const inviteLink = `${process.env.APP_URL || "http://localhost:3000"}/accept-invite?invitationId=${data.id}`;
+        logger(`[Org] Generated invite link: ${inviteLink}`);
+        void sendOrgInvitationEmail(
+          data.email,
+          data.organization.name,
+          data.inviter.user.name,
+          inviteLink,
+        );
+        logger(`[Org] sendInvitationEmail callback END`);
       },
     }),
     polar({

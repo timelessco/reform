@@ -6,7 +6,7 @@ interface ThankYouPageProps {
   onSubmitAnother?: () => void;
 }
 
-export function ThankYouPage({ formTitle, onSubmitAnother }: ThankYouPageProps) {
+function ThankYouPage({ formTitle, onSubmitAnother }: ThankYouPageProps) {
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 text-center">
       <div className="max-w-md mx-auto space-y-6">

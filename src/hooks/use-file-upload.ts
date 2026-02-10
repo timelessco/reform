@@ -22,7 +22,7 @@ export type FileWithPreview = {
   preview?: string;
 };
 
-export type FileUploadOptions = {
+type FileUploadOptions = {
   maxFiles?: number; // Only used when multiple is true, defaults to Infinity
   maxSize?: number; // in bytes
   accept?: string;
@@ -33,13 +33,13 @@ export type FileUploadOptions = {
   onError?: (errors: string[]) => void;
 };
 
-export type FileUploadState = {
+type FileUploadState = {
   files: FileWithPreview[];
   isDragging: boolean;
   errors: string[];
 };
 
-export type FileUploadActions = {
+type FileUploadActions = {
   addFiles: (files: FileList | File[]) => void;
   removeFile: (id: string) => void;
   clearFiles: () => void;

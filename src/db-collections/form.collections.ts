@@ -9,7 +9,7 @@ import { electricFetchClient, getElectricUrl, type ServerTxResult, timestampFiel
 // Form Builder Settings Schema
 // ============================================================================
 
-export const SettingsSchema = z.object({
+const SettingsSchema = z.object({
   defaultRequiredValidation: z.boolean().default(true),
   numericInput: z.boolean().default(false),
   focusOnError: z.boolean().default(true),
@@ -22,7 +22,7 @@ export const SettingsSchema = z.object({
   isCodeSidebarOpen: z.boolean().default(false),
 });
 
-export type FormBuilderSettings = z.infer<typeof SettingsSchema>;
+type FormBuilderSettings = z.infer<typeof SettingsSchema>;
 
 // ============================================================================
 // Form Schema
@@ -80,10 +80,6 @@ export const FormSchema = z.object({
 
 export type Form = z.infer<typeof FormSchema>;
 
-// Legacy type alias for backward compatibility
-export type EditorDoc = Form;
-export const EditorDocSchema = FormSchema;
-
 // ============================================================================
 // Collections with ElectricSQL sync
 // ============================================================================
@@ -133,9 +129,6 @@ export const localFormCollection = createCollection(
   }),
 );
 
-// Legacy export alias for backward compatibility
-export const editorDocCollection = formCollection;
-
 // ============================================================================
 // Form Service Functions
 // ============================================================================
@@ -182,7 +175,7 @@ const DEFAULT_FORM_SETTINGS = {
 /**
  * Updates the form content (Plate editor value).
  */
-export async function updateContent(id: string, content: Value) {
+async function updateContent(id: string, content: Value) {
   return formCollection.update(id, (draft) => {
     draft.content = content;
     draft.updatedAt = new Date().toISOString();
@@ -273,7 +266,7 @@ export async function createFormLocal(workspaceId: string, title = "Untitled"): 
 /**
  * Deletes a form by ID.
  */
-export async function deleteFormLocal(id: string): Promise<void> {
+async function deleteFormLocal(id: string): Promise<void> {
   await formCollection.delete(id);
 }
 
@@ -301,10 +294,7 @@ export async function duplicateForm(sourceForm: Form): Promise<Form> {
 /**
  * Moves a form to a different workspace.
  */
-export async function moveFormToWorkspace(
-  formId: string,
-  targetWorkspaceId: string,
-): Promise<void> {
+async function moveFormToWorkspace(formId: string, targetWorkspaceId: string): Promise<void> {
   await formCollection.update(formId, (draft) => {
     draft.workspaceId = targetWorkspaceId;
     draft.updatedAt = new Date().toISOString();
@@ -315,7 +305,7 @@ export async function moveFormToWorkspace(
  * Archives a form (moves to trash).
  * Sets status to 'archived' and records deletedAt timestamp.
  */
-export async function archiveFormLocal(id: string): Promise<void> {
+async function archiveFormLocal(id: string): Promise<void> {
   await formCollection.update(id, (draft) => {
     draft.status = "archived";
     draft.deletedAt = new Date().toISOString();

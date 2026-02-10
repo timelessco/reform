@@ -7,6 +7,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { auth, authClient } from "@/lib/auth-client";
+import { logger } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/accept-invite")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -24,17 +25,31 @@ function AcceptInvitePage() {
   const { invitationId } = Route.useSearch();
   const router = useRouter();
 
-  // getInvitation requires specific structure - use manual query
-  const { data: invitation, isLoading } = useQuery({
+  const {
+    data: invitation,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["invitation", invitationId],
     queryFn: async () => {
-      const { data, error } = await authClient.organization.getInvitation({
+      logger("[AcceptInvite] Fetching invitation:", invitationId);
+      const result = await authClient.organization.getInvitation({
         query: { id: invitationId },
       });
-      if (error) throw error;
-      return data;
+      logger("[AcceptInvite] Full result:", JSON.stringify(result, null, 2));
+      if (result.error) {
+        logger("[AcceptInvite] Error fetching invitation:", result.error);
+        throw result.error;
+      }
+      if (!result.data) {
+        logger("[AcceptInvite] No data returned for invitation:", invitationId);
+        return null;
+      }
+      return result.data;
     },
     enabled: !!invitationId,
+    retry: 1,
+    staleTime: 0,
   });
 
   const acceptMutation = useMutation(
@@ -60,6 +75,25 @@ function AcceptInvitePage() {
 
   if (isLoading) {
     return <div className="flex flex-1 items-center justify-center">Loading invitation...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <CardTitle>Error Loading Invitation</CardTitle>
+            <CardDescription>
+              {error.message ||
+                "There was a problem loading this invitation. Please check the link and try again."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => router.navigate({ to: "/dashboard" })}>Go to Dashboard</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (!invitation) {

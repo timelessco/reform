@@ -1,16 +1,4 @@
-import {
-  ImageIcon,
-  Loader2,
-  MoreHorizontal,
-  Pencil,
-  Plus,
-  Smile,
-  Trash2,
-  Upload,
-  X,
-} from "lucide-react";
 import AvatarUpload from "@/components/file-upload/avatar-upload";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,6 +18,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+import {
+  ImageIcon,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Smile,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 
 // Inline CoverUpload component using the hook
 function CoverUpload({ onFileChange }: { onFileChange: (url: string) => void }) {
@@ -356,9 +355,7 @@ export interface WorkspaceHeaderProps {
   name: string;
   onRename: () => void;
   onDelete: () => void;
-  onNewWorkspace: () => void;
   onNewForm: () => void;
-  isCreatingWorkspace?: boolean;
   isCreatingForm?: boolean;
 }
 
@@ -366,24 +363,9 @@ export function WorkspaceHeader({
   name,
   onRename,
   onDelete,
-  onNewWorkspace,
   onNewForm,
-  isCreatingWorkspace,
   isCreatingForm,
 }: WorkspaceHeaderProps) {
-  const { data: session } = useSession();
-  const user = session?.user;
-
-  const getInitials = (name?: string | null) => {
-    if (!name) return "U";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   return (
     <div className="flex items-center justify-between mb-12">
       <div className="flex items-center gap-2">
@@ -415,29 +397,7 @@ export function WorkspaceHeader({
         </DropdownMenu>
       </div>
       <div className="flex items-center gap-4">
-        <div className="flex -space-x-2">
-          <Avatar className="w-8 h-8 border-2 border-background">
-            <AvatarImage src={user?.image || undefined} alt={user?.name || "User"} />
-            <AvatarFallback className="text-[10px] bg-blue-100 text-blue-600 font-semibold">
-              {getInitials(user?.name)}
-            </AvatarFallback>
-          </Avatar>
-        </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 gap-2 border-muted-foreground/20 text-muted-foreground hover:text-foreground hover:bg-muted font-medium"
-            onClick={onNewWorkspace}
-            disabled={isCreatingWorkspace}
-          >
-            {isCreatingWorkspace ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Plus className="h-4 w-4" />
-            )}
-            New workspace
-          </Button>
           <Button
             size="sm"
             className="h-9 gap-2 bg-blue-600 hover:bg-blue-700 font-medium px-4"

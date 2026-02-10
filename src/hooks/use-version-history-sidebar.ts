@@ -1,34 +1,39 @@
-import { useState, useEffect } from "react";
+import { useCallback } from "react";
 import { useEditorSidebar } from "./use-editor-sidebar";
 
 export function useVersionHistorySidebar() {
-  const { activeSidebar, toggleSidebar, setActiveSidebar } = useEditorSidebar();
+  const {
+    activeSidebar,
+    toggleSidebar,
+    setActiveSidebar,
+    selectedVersionId,
+    selectVersion,
+    exitVersionView,
+  } = useEditorSidebar();
+
   const isOpen = activeSidebar === "history";
 
-  // These states are specific to the version history view
-  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
-  const [isViewingVersion, setIsViewingVersion] = useState(false);
+  // Derived: viewing a version when one is selected
+  const isViewingVersion = selectedVersionId !== null;
 
-  useEffect(() => {
-    if (!isOpen) {
-      setSelectedVersionId(null);
-      setIsViewingVersion(false);
-    }
-  }, [isOpen]);
+  // Wrapper that resets state when closing
+  const handleSetIsOpen = useCallback(
+    (open: boolean) => {
+      if (!open) {
+        exitVersionView();
+      }
+      setActiveSidebar(open ? "history" : null);
+    },
+    [setActiveSidebar, exitVersionView],
+  );
 
   return {
     isOpen,
     selectedVersionId,
     isViewingVersion,
-    setIsOpen: (open: boolean) => setActiveSidebar(open ? "history" : null),
-    selectVersion: (versionId: string | null) => {
-      setSelectedVersionId(versionId);
-      setIsViewingVersion(versionId !== null);
-    },
-    exitVersionView: () => {
-      setSelectedVersionId(null);
-      setIsViewingVersion(false);
-    },
+    setIsOpen: handleSetIsOpen,
+    selectVersion,
+    exitVersionView,
     toggle: () => toggleSidebar("history"),
   };
 }

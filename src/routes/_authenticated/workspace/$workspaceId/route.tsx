@@ -11,5 +11,6 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId")({
 });
 
 function WorkspaceLayout() {
-  return <Outlet />;
+  const { workspaceId } = Route.useParams();
+  return <Outlet key={workspaceId} />;
 }

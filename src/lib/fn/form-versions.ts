@@ -313,7 +313,7 @@ export const getLatestPublishedVersion = createServerFn({ method: "GET" })
 /**
  * Compute content hash - exported for use in hooks
  */
-export const computeFormContentHash = createServerFn({ method: "POST" })
+const computeFormContentHash = createServerFn({ method: "POST" })
   .inputValidator(z.object({ content: z.array(z.any()) }))
   .handler(async ({ data }) => {
     return { hash: computeContentHash(data.content) };

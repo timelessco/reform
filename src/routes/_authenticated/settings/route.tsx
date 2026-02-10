@@ -26,30 +26,33 @@ function SettingsLayout() {
             >
               My account
             </Link>
-            <Link
+            {/* <Link
+            // TODO: Future feature
               to="/settings/notifications"
               className="pb-3 text-sm font-medium border-b-2 border-transparent transition-colors hover:text-foreground/80 [&.active]:border-foreground [&.active]:text-foreground"
             >
               Notifications
-            </Link>
+            </Link> */}
             <Link
               to="/settings/members"
               className="pb-3 text-sm font-medium border-b-2 border-transparent transition-colors hover:text-foreground/80 [&.active]:border-foreground [&.active]:text-foreground"
             >
               Members
             </Link>
-            <Link
+            {/* <Link
+            // TODO: Future feature
               to="/settings/api-keys"
               className="pb-3 text-sm font-medium border-b-2 border-transparent transition-colors hover:text-foreground/80 [&.active]:border-foreground [&.active]:text-foreground"
             >
               API keys
-            </Link>
-            <Link
+            </Link> */}
+            {/* <Link
+            // TODO: Future feature
               to="/settings/billing"
               className="pb-3 text-sm font-medium border-b-2 border-transparent transition-colors hover:text-foreground/80 [&.active]:border-foreground [&.active]:text-foreground"
             >
               Billing
-            </Link>
+            </Link> */}
           </nav>
 
           <div className="pt-4">

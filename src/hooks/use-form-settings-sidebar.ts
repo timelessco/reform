@@ -2,13 +2,8 @@ import type { SettingsTab } from "./use-editor-sidebar";
 import { useEditorSidebar } from "./use-editor-sidebar";
 
 export function useFormSettingsSidebar() {
-  const {
-    activeSidebar,
-    settingsTab,
-    setSettingsTab,
-    toggleSidebar,
-    setActiveSidebar
-  } = useEditorSidebar();
+  const { activeSidebar, settingsTab, setSettingsTab, toggleSidebar, setActiveSidebar } =
+    useEditorSidebar();
 
   const isOpen = activeSidebar === "settings";
 

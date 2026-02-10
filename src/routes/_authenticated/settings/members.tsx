@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Trash2 } from "lucide-react";
+import { Clock, Mail, Plus, Trash2, X } from "lucide-react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
@@ -37,6 +38,12 @@ function OrgMembersSettings() {
   );
   const members = data?.members ?? [];
 
+  // Fetch sent invitations for this organization
+  const { data: invitationsData, isLoading: isLoadingInvitations } = useQuery(
+    auth.organization.listInvitations.queryOptions(),
+  );
+  const invitations = invitationsData ?? [];
+
   const inviteMutation = useMutation(
     auth.organization.inviteMember.mutationOptions({
       onSuccess: () => {
@@ -44,10 +51,27 @@ function OrgMembersSettings() {
         queryClient.invalidateQueries({
           queryKey: auth.organization.listMembers.queryKey(),
         });
+        queryClient.invalidateQueries({
+          queryKey: auth.organization.listInvitations.queryKey(),
+        });
         toast.success("Invitation sent successfully");
       },
       onError: (error: any) => {
         toast.error(error.message || "Failed to send invitation");
+      },
+    }),
+  );
+
+  const cancelInvitationMutation = useMutation(
+    auth.organization.cancelInvitation.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: auth.organization.listInvitations.queryKey(),
+        });
+        toast.success("Invitation cancelled");
+      },
+      onError: (error: any) => {
+        toast.error(error.message || "Failed to cancel invitation");
       },
     }),
   );
@@ -96,6 +120,92 @@ function OrgMembersSettings() {
               {inviteMutation.isPending ? "Inviting..." : "Invite"}
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Pending Invitations */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Pending Invitations</CardTitle>
+          <CardDescription>Invitations sent to users who haven't joined yet.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Sent</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoadingInvitations ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                    Loading invitations...
+                  </TableCell>
+                </TableRow>
+              ) : invitations.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                    No pending invitations
+                  </TableCell>
+                </TableRow>
+              ) : (
+                invitations.map((invitation: any) => (
+                  <TableRow key={invitation.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span>{invitation.email}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="capitalize">{invitation.role}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          invitation.status === "pending"
+                            ? "secondary"
+                            : invitation.status === "accepted"
+                              ? "default"
+                              : invitation.status === "rejected"
+                                ? "destructive"
+                                : "outline"
+                        }
+                        className="capitalize"
+                      >
+                        {invitation.status === "pending" && <Clock className="mr-1 h-3 w-3" />}
+                        {invitation.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {new Date(invitation.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {invitation.status === "pending" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive"
+                          onClick={() =>
+                            cancelInvitationMutation.mutate({
+                              invitationId: invitation.id,
+                            })
+                          }
+                          disabled={cancelInvitationMutation.isPending}
+                          title="Cancel invitation"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 

@@ -1,7 +1,26 @@
 import { type ZodType, z } from "zod";
-import { flattenFormSteps, getStepFields } from "@/lib/form-elements-helpers";
 import type { FormArray, FormElement, FormStep } from "@/types/form-types";
-import { isStatic } from "@/utils/utils";
+
+// Static field types that don't need schema validation
+const STATIC_FIELD_TYPES = new Set(["H1", "H2", "H3", "Separator"]);
+
+const isStatic = (fieldType: string): boolean => STATIC_FIELD_TYPES.has(fieldType);
+
+// Flatten multi-step form into a flat array of elements
+const flattenFormSteps = (steps: FormStep[]): (FormElement | FormArray)[][] =>
+  steps.map((step) => step.stepFields);
+
+// Get field names for each step (used for generating step-specific schemas)
+const getStepFields = (steps: FormStep[]): Record<string, string[]> => {
+  const result: Record<string, string[]> = {};
+  steps.forEach((step, index) => {
+    result[index.toString()] = step.stepFields
+      .filter((field): field is FormElement | FormArray => !Array.isArray(field))
+      .filter((field) => "name" in field && !isStatic(field.fieldType))
+      .map((field) => field.name);
+  });
+  return result;
+};
 
 // Type guard to check if an element is a FormArray
 const isFormArray = (element: unknown): element is FormArray => {
@@ -216,7 +235,7 @@ const processArrayFields = (
   return schemaObject;
 };
 
-export const generateZodSchemaObject = (
+const generateZodSchemaObject = (
   formElements: (FormElement | FormArray)[],
 ): z.ZodObject<Record<string, ZodType>> => {
   const schemaObject: Record<string, ZodType> = {};
@@ -224,7 +243,7 @@ export const generateZodSchemaObject = (
   return z.object(schemaObject);
 };
 
-export const generateZodSchemaString = (schema: ZodType): string => {
+const generateZodSchemaString = (schema: ZodType): string => {
   if (schema instanceof z.ZodDefault) {
     const defaultSchema = schema as z.ZodDefault<ZodType>;
     return `${generateZodSchemaString(defaultSchema.def.innerType)}.default(${JSON.stringify(defaultSchema._def.defaultValue)})`;
@@ -381,7 +400,7 @@ export const generateZodSchemaString = (schema: ZodType): string => {
   return "z.unknown()";
 };
 
-export const getZodSchemaString = (
+const getZodSchemaString = (
   formElements: FormStep[] | (FormElement | FormArray)[],
   isMultiStep = false,
   schemaName = "formSchema",

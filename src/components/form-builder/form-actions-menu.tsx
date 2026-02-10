@@ -89,42 +89,42 @@ export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
     }
   };
 
-    return (
-        <>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full text-muted-foreground/40 hover:text-foreground transition-colors mt-1"
-                    >
-                        <MoreHorizontal className="h-5 w-5" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                    <DropdownMenuItem
-                        onClick={() => {
-                            setNewTitle(form?.title || "");
-                            setIsRenameOpen(true);
-                        }}
-                    >
-                        <Tag className="mr-2 h-4 w-4 text-muted-foreground" />
-                        <span>Rename</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleDuplicate}>
-                        <Copy className="mr-2 h-4 w-4 text-muted-foreground" />
-                        <span>Duplicate</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                        onClick={() => setIsDeleteOpen(true)}
-                        className="text-destructive focus:text-destructive"
-                    >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        <span>Delete</span>
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full text-muted-foreground/40 hover:text-foreground transition-colors mt-1"
+          >
+            <MoreHorizontal className="h-5 w-5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56">
+          <DropdownMenuItem
+            onClick={() => {
+              setNewTitle(form?.title || "");
+              setIsRenameOpen(true);
+            }}
+          >
+            <Tag className="mr-2 h-4 w-4 text-muted-foreground" />
+            <span>Rename</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleDuplicate}>
+            <Copy className="mr-2 h-4 w-4 text-muted-foreground" />
+            <span>Duplicate</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => setIsDeleteOpen(true)}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            <span>Delete</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {/* Rename Dialog */}
       <Dialog open={isRenameOpen} onOpenChange={setIsRenameOpen}>

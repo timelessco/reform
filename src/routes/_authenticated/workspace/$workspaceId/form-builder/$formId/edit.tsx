@@ -1,4 +1,4 @@
-import { createFileRoute, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import type { Value } from "platejs";
@@ -9,16 +9,14 @@ import { CustomizeSidebar } from "@/components/ui/customize-sidebar";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import {
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { useFormVersionContent } from "@/hooks/use-form-versions";
 import { useForm } from "@/hooks/use-live-hooks";
 import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
 import { getFormbyIdQueryOption } from "@/lib/fn/forms";
 import EditorApp from "../-components/editor-app";
 import { PreviewMode } from "../-components/preview-mode";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute(
   "/_authenticated/workspace/$workspaceId/form-builder/$formId/edit",
@@ -35,7 +33,10 @@ export const Route = createFileRoute(
     embedAlignLeft: z.coerce.boolean().catch(false).optional(),
     embedTransparent: z.coerce.boolean().catch(false).optional(),
     embedBranding: z.coerce.boolean().catch(true).optional(),
-    embedPopupPosition: z.enum(["bottom-right", "bottom-left", "center"]).catch("bottom-right").optional(),
+    embedPopupPosition: z
+      .enum(["bottom-right", "bottom-left", "center"])
+      .catch("bottom-right")
+      .optional(),
     embedPopupWidth: z.coerce.number().catch(376).optional(),
     embedDarkOverlay: z.coerce.boolean().catch(false).optional(),
     embedEmoji: z.coerce.boolean().catch(true).optional(),
@@ -117,8 +118,9 @@ function DesignPage() {
   } = useVersionHistorySidebar();
 
   // Fetch version content when viewing a version
-  const { data: versionContentData, isLoading: isLoadingVersionContent } =
-    useFormVersionContent(isViewingVersion ? selectedVersionId ?? undefined : undefined);
+  const { data: versionContentData, isLoading: isLoadingVersionContent } = useFormVersionContent(
+    isViewingVersion ? (selectedVersionId ?? undefined) : undefined,
+  );
 
   // Use local Electric data to check form status (more up-to-date than server)
   const { data: localFormData, isReady } = useForm(formId);
@@ -136,7 +138,7 @@ function DesignPage() {
 
   const loaderData = Route.useLoaderData();
   const initialContent = loaderData?.initialContent || [];
-  const search: any = useSearch({ strict: false });
+  const search = Route.useSearch();
   const demo = search.demo;
   console.log("[edit.tsx DesignPage] Demo:", demo);
   // Check if user explicitly wants to edit (force param from Edit button)
@@ -146,15 +148,21 @@ function DesignPage() {
   // BUT skip redirect if user explicitly clicked "Edit" button (force=true)
   useEffect(() => {
     if (isReady && localStatus === "published" && !forceEdit) {
-      console.log("[edit.tsx DesignPage] Form is published locally, redirecting to share...");
       navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/submissions",
         params: { workspaceId, formId },
-        search: { sidebar: "share" },
+        // search: { sidebar: "share" },
         replace: true, // Replace history entry so back button doesn't loop
       });
     }
   }, [isReady, localStatus, formId, workspaceId, navigate, forceEdit]);
+
+  // Reset version view when sidebar closes (revert to current content)
+  useEffect(() => {
+    if (!isVersionHistoryOpen && isViewingVersion) {
+      exitVersionView();
+    }
+  }, [isVersionHistoryOpen, isViewingVersion, exitVersionView]);
 
   // Show loader while checking form status
   if (!isReady) {
@@ -178,7 +186,7 @@ function DesignPage() {
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         {/* Main editor panel */}
         <ResizablePanel defaultSize={isVersionHistoryOpen ? 75 : 100} minSize={50}>
-          <main className="flex-1 overflow-auto relative bg-background h-full flex flex-col">
+          <main className="flex-1 overflow-y-auto overflow-x-hidden relative bg-background h-full flex flex-col">
             {/* Version viewing banner */}
             {isViewingVersion && (
               <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between shrink-0">
@@ -205,9 +213,18 @@ function DesignPage() {
               </div>
             )}
 
-            <div className="flex-1 overflow-auto">
+            <div
+              className={cn(
+                "flex-1 overflow-x-hidden",
+                demo ? "h-full overflow-hidden" : "overflow-y-auto",
+              )}
+            >
               {demo ? (
                 <PreviewMode formId={formId} workspaceId={workspaceId} />
+              ) : isViewingVersion && isLoadingVersionContent ? (
+                <div className="h-full w-full flex items-center justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
               ) : (
                 <EditorApp
                   key={isViewingVersion ? `version-${selectedVersionId}` : formId}

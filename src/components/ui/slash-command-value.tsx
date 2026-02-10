@@ -2,7 +2,7 @@
 /** @jsx jsx */
 import { jsx } from "@platejs/test-utils";
 
-jsx;
+void jsx;
 
 export const slashCommandValue: any = (
   <fragment>

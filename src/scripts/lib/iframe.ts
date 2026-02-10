@@ -9,7 +9,7 @@ import type { PopupOptions } from "./types";
  * In production, this comes from the script's src attribute
  * Falls back to current origin for local development
  */
-export function getBaseUrl(): string {
+function getBaseUrl(): string {
   // Try to get URL from the script tag that loaded us
   const scripts = document.getElementsByTagName("script");
   for (let i = scripts.length - 1; i >= 0; i--) {
@@ -32,7 +32,7 @@ export function getBaseUrl(): string {
 /**
  * Build the iframe URL with query parameters
  */
-export function buildIframeUrl(formId: string, options: PopupOptions): string {
+function buildIframeUrl(formId: string, options: PopupOptions): string {
   const baseUrl = getBaseUrl();
   const params = new URLSearchParams();
 

@@ -1,9 +1,9 @@
 import type { Value } from "platejs";
 import type { FormElement, StaticFormElement } from "@/types/form-types";
 
-export type PreviewElement = FormElement | StaticFormElement;
+type PreviewElement = FormElement | StaticFormElement;
 
-export type FormHeaderData = {
+type FormHeaderData = {
   title: string;
   icon: string | null;
   cover: string | null;
@@ -508,7 +508,7 @@ export function getEditableFields(elements: TransformedElement[]): PlateFormFiel
  * Generates default form values from a list of form fields.
  * Used to initialize TanStack Form with empty values.
  */
-export function generateDefaultValues(elements: TransformedElement[]): Record<string, unknown> {
+function generateDefaultValues(elements: TransformedElement[]): Record<string, unknown> {
   const defaults: Record<string, unknown> = {};
 
   for (const el of elements) {
@@ -523,7 +523,7 @@ export function generateDefaultValues(elements: TransformedElement[]): Record<st
 /**
  * Result of splitting elements into steps
  */
-export type StepSplitResult = {
+type StepSplitResult = {
   /** Array of steps, each containing elements for that step */
   steps: TransformedElement[][];
   /** Content to show after form submission (from thank you page break) */

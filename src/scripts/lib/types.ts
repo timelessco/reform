@@ -68,7 +68,7 @@ export type IframeEvent =
   | { event: "BetterForms.Close"; formId: string };
 
 /** Global API exposed on window */
-export interface BetterFormsAPI {
+interface BetterFormsAPI {
   openPopup: (formId: string, options?: PopupOptions) => void;
   closePopup: (formId: string) => void;
 }
