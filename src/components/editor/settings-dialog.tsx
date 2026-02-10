@@ -352,6 +352,7 @@ function SettingsDialog() {
                       variant="outline"
                       className="w-full justify-between"
                       aria-expanded={openModel}
+                      aria-controls="model-listbox"
                       role="combobox"
                     >
                       <code>{tempModel.label}</code>
@@ -362,7 +363,7 @@ function SettingsDialog() {
                     <Command>
                       <CommandInput placeholder="Search model..." />
                       <CommandEmpty>No model found.</CommandEmpty>
-                      <CommandList>
+                      <CommandList id="model-listbox">
                         <CommandGroup>
                           {models.map((m) => (
                             <CommandItem

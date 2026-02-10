@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import { AuthDialog } from "@/components/auth/auth-dialog";
 import { Button } from "@/components/ui/button";
 
 export function LandingHeader() {
@@ -14,7 +13,7 @@ export function LandingHeader() {
 
       {/* Auth buttons */}
       <div className="flex items-center gap-1.5">
-        <AuthDialog defaultMode="sign-in">
+        <Link to="/login">
           <Button
             variant="ghost"
             size="sm"
@@ -22,16 +21,16 @@ export function LandingHeader() {
           >
             Sign in
           </Button>
-        </AuthDialog>
+        </Link>
 
-        <AuthDialog defaultMode="sign-up">
+        <Link to="/signup">
           <Button
             size="sm"
             className="h-8 px-4 text-[13px] font-semibold bg-stone-900 hover:bg-stone-800 text-white rounded-md shadow-sm border-none"
           >
             Sign up
           </Button>
-        </AuthDialog>
+        </Link>
       </div>
     </header>
   );

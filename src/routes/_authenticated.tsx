@@ -1,4 +1,3 @@
-import { toast } from "sonner";
 import { FormSettingsSidebar } from "@/components/form-builder/form-settings-sidebar";
 import { ShareSummarySidebar } from "@/components/form-builder/share-summary-sidebar";
 import { VersionHistorySidebar } from "@/components/form-builder/version-history-sidebar";
@@ -112,6 +111,7 @@ import {
 } from "lucide-react";
 import type * as React from "react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 // Route configuration
 export const Route = createFileRoute("/_authenticated")({

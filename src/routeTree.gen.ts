@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
@@ -35,6 +37,16 @@ import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRouteImp
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreateRoute = CreateRouteImport.update({
@@ -163,6 +175,8 @@ const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/create': typeof CreateRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/verify-email': typeof VerifyEmailRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/accept-invite': typeof AuthenticatedAcceptInviteRoute
@@ -186,6 +200,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/create': typeof CreateRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/verify-email': typeof VerifyEmailRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/accept-invite': typeof AuthenticatedAcceptInviteRoute
@@ -210,6 +226,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/create': typeof CreateRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
   '/verify-email': typeof VerifyEmailRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/_authenticated/accept-invite': typeof AuthenticatedAcceptInviteRoute
@@ -235,6 +253,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/create'
+    | '/login'
+    | '/signup'
     | '/verify-email'
     | '/settings'
     | '/accept-invite'
@@ -258,6 +278,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/create'
+    | '/login'
+    | '/signup'
     | '/verify-email'
     | '/settings'
     | '/accept-invite'
@@ -281,6 +303,8 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/create'
+    | '/login'
+    | '/signup'
     | '/verify-email'
     | '/_authenticated/settings'
     | '/_authenticated/accept-invite'
@@ -306,6 +330,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   CreateRoute: typeof CreateRoute
+  LoginRoute: typeof LoginRoute
+  SignupRoute: typeof SignupRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   ApiElectricRoute: typeof ApiElectricRoute
   DemoSplatRoute: typeof DemoSplatRoute
@@ -320,6 +346,20 @@ declare module '@tanstack/react-router' {
       path: '/verify-email'
       fullPath: '/verify-email'
       preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/create': {
@@ -557,6 +597,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   CreateRoute: CreateRoute,
+  LoginRoute: LoginRoute,
+  SignupRoute: SignupRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   ApiElectricRoute: ApiElectricRoute,
   DemoSplatRoute: DemoSplatRoute,

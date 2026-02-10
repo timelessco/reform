@@ -55,7 +55,7 @@ export function AppHeader({
     state: "expanded",
     toggleSidebar: () => {},
   };
-  const { pathname, search } = useLocation();
+  const { pathname } = useLocation();
   const isFormBuilder = pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
   const isEditRoute = pathname.endsWith("/edit");
   const { data: sessionData } = useSession();
@@ -85,10 +85,7 @@ export function AppHeader({
       });
     }
   };
-  const toggleIntegrationsSidebar = () => toggleSidebar("settings", "integrations");
-  const toggleAnalyticsSidebar = () => toggleSidebar("share", "summary");
 
-  // Get search params for the current route
   const searchParams: any = useSearch({ strict: false });
   const demo = searchParams.demo;
 
@@ -98,7 +95,7 @@ export function AppHeader({
     enabled: !!formId,
   });
   // Secondary: Electric live data (real-time but async)
-  const { data: savedDocs } = useForm(formId);
+  const { data: savedDocs , isLoading: isLoadingSavedDocs } = useForm(formId);
 
   // Prefer Electric (real-time) when available, fall back to server cache
   const currentForm = useMemo(() => {
@@ -196,7 +193,7 @@ export function AppHeader({
 
       {/* Right Section: Actions */}
       <div className="flex items-center gap-1">
-        {isFormBuilder && currentForm?.updatedAt && !isEditorSidebarOpen && (
+        {isFormBuilder && currentForm?.updatedAt && !isEditorSidebarOpen && !isLoadingSavedDocs && (
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="text-[11px] text-muted-foreground/70 mr-2 whitespace-nowrap rounded-md bg-muted/60 px-2 py-1">
@@ -276,7 +273,7 @@ export function AppHeader({
                 </Button>
               )}
 
-              {currentForm?.status === "published" && (
+               { !isLoadingSavedDocs && currentForm?.status === "published" && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -302,7 +299,7 @@ export function AppHeader({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  {currentForm?.status === "published" && (
+                  { !isLoadingSavedDocs && currentForm?.status === "published" && (
                     <>
                       <DropdownMenuItem onClick={toggleSettingsSidebar} className="gap-2">
                         <Settings className="h-4 w-4" />
@@ -351,7 +348,7 @@ export function AppHeader({
                 size="sm"
                 className={cn(
                   "h-8 px-4 ml-1 text-[13px] font-semibold transition-all rounded-md shadow-sm border-none",
-                  hasUnpublishedChanges || currentForm?.status !== "published"
+                  !isLoadingSavedDocs && (hasUnpublishedChanges || currentForm?.status !== "published")
                     ? "bg-stone-900 border-none hover:bg-stone-800 text-white"
                     : "bg-muted text-muted-foreground hover:bg-muted/80",
                 )}

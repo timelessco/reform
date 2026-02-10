@@ -120,9 +120,9 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">
                           Share Link
-                        </label>
+                        </span>
                         <Badge
                           variant="outline"
                           className="text-[9px] bg-green-50 text-green-700 border-green-200 uppercase px-1 py-0"
@@ -158,7 +158,8 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                       </Button>
                     </div>
                   </div>
-
+                  {/* Embed Section */}
+                  <EmbedSection formId={doc.id} docTitle={doc.title || undefined} />
                   {/* Link Preview Mockup */}
                   <div className="space-y-3">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70 flex items-center gap-2">
@@ -199,9 +200,6 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                       </div>
                     </div>
                   </div>
-
-                  {/* Embed Section */}
-                  <EmbedSection formId={doc.id} docTitle={doc.title || undefined} />
                 </div>
               )}
             </SidebarGroupContent>

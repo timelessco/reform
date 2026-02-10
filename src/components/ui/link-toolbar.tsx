@@ -9,7 +9,7 @@ import {
   useFloatingLinkInsertState,
 } from "@platejs/link/react";
 import { cva } from "class-variance-authority";
-import { ExternalLink, Link, Text, Unlink } from "lucide-react";
+import { ExternalLink, Link as LinkIcon, Text, Unlink } from "lucide-react";
 import type { TLinkElement } from "platejs";
 import { KEYS } from "platejs";
 import { useEditorRef, useFormInputProps, usePluginOption } from "platejs/react";
@@ -81,7 +81,7 @@ export function LinkFloatingToolbar({ state }: { state?: LinkFloatingToolbarStat
     <div className="flex w-[330px] flex-col" {...inputProps}>
       <div className="flex items-center">
         <div className="flex items-center pr-1 pl-2 text-muted-foreground">
-          <Link className="size-4" />
+          <LinkIcon className="size-4" />
         </div>
 
         <FloatingLinkUrlInput

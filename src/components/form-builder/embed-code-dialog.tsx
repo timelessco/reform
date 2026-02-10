@@ -163,12 +163,13 @@ function CodeBlock({
   language?: string;
   inline?: boolean;
 }) {
+  const highlighted = useMemo(() => renderHighlighted(code, language), [code, language]);
   const isInline = inline ?? !code.includes("\n");
+
   if (isInline) {
     return <InlineCopyBar value={code} />;
   }
 
-  const highlighted = useMemo(() => renderHighlighted(code, language), [code, language]);
   return (
     <div className="relative group mt-3 w-full max-w-full overflow-hidden">
       <pre
