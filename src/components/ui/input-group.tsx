@@ -69,11 +69,11 @@ function InputGroupAddon({
   };
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
       data-slot="input-group-addon"
       data-align={align}
-      className={cn(inputGroupAddonVariants({ align }), className)}
+      className={cn(inputGroupAddonVariants({ align }), "h-auto hover:bg-transparent", className)}
       onClick={handleClick}
       {...props}
     />

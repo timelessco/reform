@@ -7,6 +7,7 @@ import { PlateElement, useEditorPlugin, withHOC } from "platejs/react";
 import * as React from "react";
 import { useFilePicker } from "use-file-picker";
 import { useUploadFile } from "@/hooks/use-upload-file";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const CONTENT: Record<
@@ -127,18 +128,18 @@ export const PlaceholderElement = withHOC(
     return (
       <PlateElement className="my-1" {...props}>
         {(!loading || !isImage) && (
-          <button
+          <Button
+            variant="ghost"
             className={cn(
-              "flex cursor-pointer select-none items-center rounded-sm bg-muted p-3 pr-9 hover:bg-primary/10",
+              "flex cursor-pointer select-none items-center rounded-sm bg-muted p-3 pr-9 h-auto justify-start hover:bg-primary/10",
             )}
             onClick={() => !loading && openFilePicker()}
-            type="button"
             contentEditable={false}
           >
             <div className="relative mr-3 flex text-muted-foreground/80 [&_svg]:size-6">
               {currentContent.icon}
             </div>
-            <div className="whitespace-nowrap text-muted-foreground text-sm">
+            <div className="whitespace-nowrap text-muted-foreground text-sm text-left">
               <div>{loading ? uploadingFile?.name : currentContent.content}</div>
 
               {loading && !isImage && (
@@ -152,7 +153,7 @@ export const PlaceholderElement = withHOC(
                 </div>
               )}
             </div>
-          </button>
+          </Button>
         )}
 
         {isImage && loading && (

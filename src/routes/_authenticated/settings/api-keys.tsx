@@ -267,9 +267,9 @@ function APIKeysPage() {
       )}
 
       <div className="flex items-center gap-1 text-[13px] text-muted-foreground pt-8">
-        <span>Tally's API is currently in Beta. Learn more about it on</span>
-        <a href="https://developers.tally.so" className="text-blue-600 hover:underline">
-          https://developers.tally.so
+        <span>BetterForms's API is currently in Beta. Learn more about it on</span>
+        <a href="https://developers.betterforms.so" className="text-blue-600 hover:underline">
+          https://developers.betterforms.so
         </a>
         <span>.</span>
       </div>

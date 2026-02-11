@@ -4,6 +4,7 @@ import type { TSuggestionData, TSuggestionText } from "platejs";
 import type { PlateLeafProps, RenderNodeWrapper } from "platejs/react";
 import { PlateLeaf, useEditorPlugin, usePluginOption } from "platejs/react";
 import * as React from "react";
+import { Button } from "@/components/ui/button";
 import {
   type SuggestionConfig,
   suggestionPlugin,
@@ -132,8 +133,8 @@ function SuggestionLineBreakContent({
           </span>
         </>
       ) : (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           tabIndex={-1}
           className={cn(
             suggestionVariants({
@@ -141,13 +142,14 @@ function SuggestionLineBreakContent({
               remove: isRemove,
               removeActive: (isActive || isHover) && isRemove,
             }),
+            "h-auto p-0 hover:bg-transparent"
           )}
           onMouseEnter={() => setOption("hoverId", suggestionData.id)}
           onMouseLeave={() => setOption("hoverId", null)}
           data-block-suggestion="true"
         >
           {children}
-        </button>
+        </Button>
       )}
     </>
   );

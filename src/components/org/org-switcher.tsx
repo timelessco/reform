@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { ChevronDown, Home, LogOut, Settings, Users } from "lucide-react";
+import { useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +18,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { auth, useSession } from "@/lib/auth-client";
+import { getUserMembershipsQueryOptions } from "@/lib/fn/workspaces";
 
 function OrganizationSwitcher() {
   const { isMobile } = useSidebar();
@@ -27,6 +30,16 @@ function OrganizationSwitcher() {
   const { data: activeOrg } = useQuery(auth.organization.getFullOrganization.queryOptions());
 
   const { data: orgs } = useQuery(auth.organization.list.queryOptions());
+
+  const { data: membershipsData } = useQuery(getUserMembershipsQueryOptions());
+
+  const roleByOrgId = useMemo(() => {
+    const map: Record<string, string> = {};
+    membershipsData?.memberships?.forEach((m) => {
+      map[m.organizationId] = m.role;
+    });
+    return map;
+  }, [membershipsData]);
 
   const setActiveOrgMutation = useMutation(
     auth.organization.setActive.mutationOptions({
@@ -100,19 +113,30 @@ function OrganizationSwitcher() {
             <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
               Organizations
             </div>
-            {orgs?.map((org) => (
-              <DropdownMenuItem
-                key={org.id}
-                onClick={() => setActiveOrgMutation.mutate({ organizationId: org.id })}
-                className="gap-2.5 py-2"
-              >
-                <Avatar className="h-4 w-4 rounded-full">
-                  <AvatarFallback className="text-[8px]">{getInitials(org.name)}</AvatarFallback>
-                </Avatar>
-                <span className="flex-1 truncate">{org.name}</span>
-                {org.id === activeOrg?.id && <div className="h-2 w-2 rounded-full bg-primary" />}
-              </DropdownMenuItem>
-            ))}
+            {orgs?.map((org) => {
+              const role = roleByOrgId[org.id];
+              return (
+                <DropdownMenuItem
+                  key={org.id}
+                  onClick={() => setActiveOrgMutation.mutate({ organizationId: org.id })}
+                  className="gap-2.5 py-2"
+                >
+                  <Avatar className="h-4 w-4 rounded-full">
+                    <AvatarFallback className="text-[8px]">{getInitials(org.name)}</AvatarFallback>
+                  </Avatar>
+                  <span className="flex-1 truncate">{org.name}</span>
+                  {role && (
+                    <Badge
+                      variant={role === "owner" ? "default" : "outline"}
+                      className="text-[9px] px-1.5 py-0 h-4 capitalize"
+                    >
+                      {role}
+                    </Badge>
+                  )}
+                  {org.id === activeOrg?.id && <div className="h-2 w-2 rounded-full bg-primary" />}
+                </DropdownMenuItem>
+              );
+            })}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => router.navigate({ to: "/dashboard" })}

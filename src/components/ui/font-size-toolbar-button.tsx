@@ -6,6 +6,7 @@ import { KEYS } from "platejs";
 import { useEditorPlugin, useEditorSelector } from "platejs/react";
 import * as React from "react";
 
+import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
@@ -114,11 +115,11 @@ export function FontSizeToolbarButton() {
         </PopoverTrigger>
         <PopoverContent className="w-10 px-px py-1" onOpenAutoFocus={(e) => e.preventDefault()}>
           {FONT_SIZES.map((size) => (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               key={size}
               className={cn(
-                "flex h-8 w-full items-center justify-center text-sm hover:bg-accent data-[highlighted=true]:bg-accent",
+                "flex h-8 w-full items-center justify-center text-sm data-[highlighted=true]:bg-accent",
               )}
               onClick={() => {
                 tf.fontSize.addMark(`${size}px`);
@@ -127,7 +128,7 @@ export function FontSizeToolbarButton() {
               data-highlighted={size === displayValue}
             >
               {size}
-            </button>
+            </Button>
           ))}
         </PopoverContent>
       </Popover>

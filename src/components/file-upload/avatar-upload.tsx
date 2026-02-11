@@ -57,12 +57,13 @@ export default function AvatarUpload({
     <div className={cn("flex flex-col items-center gap-4", className)}>
       {/* Avatar Preview */}
       <div className="relative">
-        <button
+        <Button
+          variant="ghost"
           className={cn(
-            "group/avatar relative h-24 w-24 cursor-pointer overflow-hidden rounded-full border border-dashed transition-colors",
+            "group/avatar relative h-24 w-24 cursor-pointer overflow-hidden rounded-full border border-dashed p-0",
             isDragging
               ? "border-primary bg-primary/5"
-              : "border-muted-foreground/25 hover:border-muted-foreground/20",
+              : "border-muted-foreground/25 hover:border-muted-foreground/20 hover:bg-transparent",
             previewUrl && "border-solid",
           )}
           onDragEnter={handleDragEnter}
@@ -70,7 +71,6 @@ export default function AvatarUpload({
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           onClick={openFileDialog}
-          type="button"
         >
           <input {...getInputProps()} className="sr-only" />
 
@@ -81,7 +81,7 @@ export default function AvatarUpload({
               <User className="size-6 text-muted-foreground" />
             </div>
           )}
-        </button>
+        </Button>
 
         {/* Remove Button - only show when file is uploaded */}
         {currentFile && (

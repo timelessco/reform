@@ -203,7 +203,7 @@ export const formSettings = pgTable("form_settings", {
   redirectOnCompletion: boolean().notNull().default(false),
   redirectUrl: text(),
   progressBar: boolean().notNull().default(false),
-  tallyBranding: boolean().notNull().default(true), // Pro feature
+  branding: boolean().notNull().default(true), // Pro feature
   dataRetention: boolean().notNull().default(false), // Business feature
   dataRetentionDays: integer(),
 

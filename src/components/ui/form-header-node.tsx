@@ -155,7 +155,7 @@ export function FormHeaderElement(props: PlateElementProps) {
 
             <div className="absolute top-0 left-0 w-full h-[120px] sm:h-[200px] pointer-events-none group-hover:opacity-100 transition-opacity z-20">
               <div className="relative w-full h-full">
-                <div className="absolute bottom-2 flex gap-2 pointer-events-auto right-[calc(8px-var(--editor-px,0px))]">
+                <div className="absolute top-2 flex gap-2 pointer-events-auto left-[calc(8px+var(--editor-px,0px))]">
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button
@@ -278,19 +278,19 @@ export function FormHeaderElement(props: PlateElementProps) {
                 <div
                   className={cn(
                     "relative z-10 mb-1",
-                    hasCover ? "-mt-[30px] sm:-mt-[36px]" : "mt-4 sm:mt-6",
+                    hasCover ? "-mt-[40px] sm:-mt-[50px]" : "mt-4 sm:mt-6",
                   )}
                 >
                   <PopoverTrigger asChild>
                     <button
                       type="button"
-                      className="cursor-pointer hover:bg-muted/50 rounded-md p-1 transition-colors"
+                      className="cursor-pointer transition-colors"
                       onMouseDown={(e) => e.preventDefault()}
                     >
                       {icon && icon !== "default-icon" ? (
                         isEmoji(icon) ? (
                           <span
-                            className="text-5xl sm:text-6xl leading-none"
+                            className="text-[80px] sm:text-[100px] leading-none inline-block"
                             role="img"
                             aria-label="Form icon"
                           >
@@ -300,12 +300,12 @@ export function FormHeaderElement(props: PlateElementProps) {
                           <img
                             src={icon}
                             alt="Logo"
-                            className="w-[60px] h-[60px] sm:w-[72px] sm:h-[72px] rounded-md object-cover"
+                            className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-md object-cover"
                           />
                         )
                       ) : (
                         <span
-                          className="text-5xl sm:text-6xl leading-none"
+                          className="text-[80px] sm:text-[100px] leading-none inline-block"
                           role="img"
                           aria-label="Form icon"
                         >
@@ -408,7 +408,8 @@ export function FormHeaderElement(props: PlateElementProps) {
             <div className="relative group/title">
               <input
                 type="text"
-                placeholder="Form title"
+                className="w-full text-4xl sm:text-9xl font-serif font-light -tracking-5 leading-tight border-none outline-none bg-transparent placeholder:text-muted-foreground/50 placeholder:font-light py-1 sm:py-2 h-auto select-text placeholder:font-serif"
+                placeholder="Create your form."
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 onKeyDown={(e) => {
@@ -448,7 +449,6 @@ export function FormHeaderElement(props: PlateElementProps) {
                   }
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
-                className="w-full text-2xl sm:text-4xl font-bold border-none outline-none bg-transparent placeholder:text-muted-foreground/50 py-1 sm:py-2 h-auto select-text"
               />
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { submissions } from "@/db/schema";
 import { db } from "@/lib/db";
@@ -46,6 +46,24 @@ export const deleteSubmission = createServerFn({ method: "POST" })
     await authForm(data.formId);
     await db.delete(submissions).where(eq(submissions.id, data.id));
     return { success: true };
+  });
+
+// DELETE submissions bulk
+export const deleteSubmissionsBulk = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(
+    z.object({
+      formId: z.string().uuid(),
+      submissionIds: z.array(z.string().uuid()),
+    }),
+  )
+  .handler(async ({ data }) => {
+    await authForm(data.formId);
+    if (data.submissionIds.length === 0) {
+      return { success: true, deleted: 0 };
+    }
+    await db.delete(submissions).where(inArray(submissions.id, data.submissionIds));
+    return { success: true, deleted: data.submissionIds.length };
   });
 
 // Query options

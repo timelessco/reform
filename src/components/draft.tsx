@@ -232,9 +232,10 @@ function DraftForm() {
                       aria-invalid={!!field.state.meta.errors.length && field.state.meta.isTouched}
                     />
                     <field.InputGroupAddon align="inline-end">
-                      <button
-                        type="button"
-                        className="cursor-pointer flex items-center justify-center p-1 hover:text-gray-100 rounded transition-colors"
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="cursor-pointer h-6 w-6"
                         onClick={(e) => {
                           const input = e.currentTarget.parentElement?.parentElement?.querySelector(
                             "input",
@@ -252,7 +253,7 @@ function DraftForm() {
                       >
                         <EyeIcon className="size-3 data-[show=true]:hidden" />
                         <EyeOffIcon className="size-3 hidden data-[show=true]:block" />
-                      </button>
+                      </Button>
                     </field.InputGroupAddon>
                   </field.InputGroup>
                 </field.Field>

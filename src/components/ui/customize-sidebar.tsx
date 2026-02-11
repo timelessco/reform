@@ -192,11 +192,11 @@ export function CustomizeSidebar() {
                 </div>
               </div>
               <div className="bg-orange-50 border border-orange-100 rounded-lg p-3 text-xs text-orange-800">
-                You can preview advanced customization, but Tally Pro is required to apply it to the
-                published form.{" "}
-                <button type="button" className="underline font-semibold">
+                You can preview advanced customization, but BetterForms Pro is required to apply it
+                to the published form.{" "}
+                <Button variant="link" className="underline font-semibold p-0 h-auto text-xs text-orange-800">
                   Upgrade
-                </button>
+                </Button>
               </div>
             </div>
 

@@ -22,7 +22,7 @@ export interface FormSettings {
   redirectOnCompletion: boolean;
   redirectUrl: string | null;
   progressBar: boolean;
-  tallyBranding: boolean;
+  branding: boolean;
   dataRetention: boolean;
   dataRetentionDays: number | null;
 
@@ -109,7 +109,7 @@ export const defaultFormSettings: Omit<FormSettings, "id" | "formId" | "createdA
     redirectOnCompletion: false,
     redirectUrl: null,
     progressBar: false,
-    tallyBranding: true,
+    branding: true,
     dataRetention: false,
     dataRetentionDays: null,
     selfEmailNotifications: false,

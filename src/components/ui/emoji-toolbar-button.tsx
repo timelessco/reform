@@ -156,9 +156,9 @@ const EmojiButton = React.memo(function EmojiButton({
   onSelect: (emoji: Emoji) => void;
 }) {
   return (
-    <button
-      type="button"
-      className="group relative flex size-9 cursor-pointer items-center justify-center border-none bg-transparent text-2xl leading-none"
+    <Button
+      variant="ghost"
+      className="group relative flex size-9 cursor-pointer items-center justify-center border-none bg-transparent text-2xl leading-none p-0 hover:bg-transparent"
       onClick={() => onSelect(emoji)}
       onMouseEnter={() => onMouseOver(emoji)}
       onMouseLeave={() => onMouseOver()}
@@ -180,7 +180,7 @@ const EmojiButton = React.memo(function EmojiButton({
       >
         {emoji.skins[0].native}
       </span>
-    </button>
+    </Button>
   );
 });
 

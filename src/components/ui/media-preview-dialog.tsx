@@ -9,6 +9,7 @@ import { ArrowLeft, ArrowRight, Download, Minus, Plus, X } from "lucide-react";
 import { useEditorRef } from "platejs/react";
 import * as React from "react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva("rounded bg-[rgba(0,0,0,0.5)] px-1", {
@@ -68,14 +69,14 @@ export function MediaPreviewDialog() {
     >
       <div className="absolute inset-0 size-full bg-black opacity-30" />
       <div className="absolute inset-0 size-full bg-black opacity-30" />
-      <button
-        type="button"
+      <Button
+        variant="ghost"
         {...maskLayerProps}
-        className="absolute inset-0 z-10 bg-transparent"
+        className="absolute inset-0 z-10 bg-transparent h-auto rounded-none hover:bg-transparent"
         aria-label="Close media preview"
       >
         <span className="sr-only">Close preview</span>
-      </button>
+      </Button>
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="relative flex max-h-screen w-full items-center">
           <PreviewImage
@@ -88,42 +89,45 @@ export function MediaPreviewDialog() {
             aria-label="Media preview controls"
           >
             <div className="flex gap-1">
-              <button
+              <Button
+                variant="ghost"
                 {...prevProps}
                 className={cn(
                   buttonVariants({
                     variant: prevDisabled ? "disabled" : "default",
                   }),
+                  "h-auto"
                 )}
-                type="button"
               >
                 <ArrowLeft />
-              </button>
+              </Button>
               {(currentUrlIndex ?? 0) + 1}
-              <button
+              <Button
+                variant="ghost"
                 {...nextProps}
                 className={cn(
                   buttonVariants({
                     variant: nextDisabled ? "disabled" : "default",
                   }),
+                  "h-auto"
                 )}
-                type="button"
               >
                 <ArrowRight />
-              </button>
+              </Button>
             </div>
             <div className="flex">
-              <button
+              <Button
+                variant="ghost"
                 className={cn(
                   buttonVariants({
                     variant: zoomOutDisabled ? "disabled" : "default",
                   }),
+                  "h-auto"
                 )}
                 {...zommOutProps}
-                type="button"
               >
                 <Minus className="size-4" />
-              </button>
+              </Button>
               <div className="mx-px">
                 {isEditingScale ? (
                   <>
@@ -134,25 +138,26 @@ export function MediaPreviewDialog() {
                   <span {...scaleTextProps}>{`${scale * 100}%`}</span>
                 )}
               </div>
-              <button
+              <Button
+                variant="ghost"
                 className={cn(
                   buttonVariants({
                     variant: zoomInDisabled ? "disabled" : "default",
                   }),
+                  "h-auto"
                 )}
                 {...zoomInProps}
-                type="button"
               >
                 <Plus className="size-4" />
-              </button>
+              </Button>
             </div>
             {/* TODO: downLoad the image */}
-            <button className={cn(buttonVariants())} type="button">
+            <Button variant="ghost" className={cn(buttonVariants(), "h-auto")}>
               <Download className="size-4" />
-            </button>
-            <button {...closeProps} className={cn(buttonVariants())} type="button">
+            </Button>
+            <Button variant="ghost" {...closeProps} className={cn(buttonVariants(), "h-auto")}>
               <X className="size-4" />
-            </button>
+            </Button>
           </section>
         </div>
       </div>

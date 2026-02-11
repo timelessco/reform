@@ -105,7 +105,7 @@ export function SettingsContent({ formId }: { formId: string }) {
             <SettingItem
               title={
                 <span>
-                  Tally branding{" "}
+                  BetterForms branding{" "}
                   <Badge
                     variant="secondary"
                     className="bg-pink-100 text-pink-600 border-none text-[10px] h-4 px-1.5 ml-1"
@@ -114,9 +114,9 @@ export function SettingsContent({ formId }: { formId: string }) {
                   </Badge>
                 </span>
               }
-              description='Show "Made with Tally" on your form.'
+              description='Show "Made with BetterForms" on your form.'
             >
-              <form.AppField name="tallyBranding">
+              <form.AppField name="branding">
                 {(field) => (
                   <Switch checked={!!field.state.value} onCheckedChange={field.handleChange} />
                 )}

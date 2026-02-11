@@ -49,14 +49,14 @@ function Component() {
           <p className="text-muted-foreground truncate" aria-live="polite">
             {fileName}
           </p>{" "}
-          <button
-            type="button"
+          <Button
+            variant="link"
             onClick={() => removeFile(files[0]?.id)}
-            className="cursor-pointer text-destructive font-medium hover:underline"
+            className="cursor-pointer text-destructive font-medium p-0 h-auto text-xs"
             aria-label={`Remove ${fileName}`}
           >
             Remove
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="inline-flex gap-2 text-xs">

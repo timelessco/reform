@@ -15,7 +15,7 @@ import { KEYS } from "platejs";
 import { useEditorRef, useFormInputProps, usePluginOption } from "platejs/react";
 import * as React from "react";
 
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 const popoverVariants = cva(
@@ -109,13 +109,13 @@ export function LinkFloatingToolbar({ state }: { state?: LinkFloatingToolbarStat
     input
   ) : (
     <div className="box-content flex items-center">
-      <button
-        className={buttonVariants({ size: "sm", variant: "ghost" })}
-        type="button"
+      <Button
+        variant="ghost"
+        size="sm"
         {...editButtonProps}
       >
         Edit link
-      </button>
+      </Button>
 
       <Separator orientation="vertical" />
 
@@ -123,16 +123,13 @@ export function LinkFloatingToolbar({ state }: { state?: LinkFloatingToolbarStat
 
       <Separator orientation="vertical" />
 
-      <button
-        className={buttonVariants({
-          size: "sm",
-          variant: "ghost",
-        })}
-        type="button"
+      <Button
+        variant="ghost"
+        size="sm"
         {...unlinkButtonProps}
       >
         <Unlink width={18} />
-      </button>
+      </Button>
     </div>
   );
 
@@ -182,18 +179,15 @@ function LinkOpenButton() {
   }, []);
 
   return (
-    <button
-      type="button"
-      className={buttonVariants({
-        size: "sm",
-        variant: "ghost",
-      })}
+    <Button
+      variant="ghost"
+      size="sm"
       onClick={handleOpenLink}
       onMouseOver={stopPropagationInteraction}
       onFocus={stopPropagationInteraction}
       aria-label="Open link in a new tab"
     >
       <ExternalLink width={18} />
-    </button>
+    </Button>
   );
 }

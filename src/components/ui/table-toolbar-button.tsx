@@ -17,6 +17,7 @@ import { KEYS } from "platejs";
 import { useEditorPlugin, useEditorSelector } from "platejs/react";
 import * as React from "react";
 
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -257,9 +258,9 @@ function TablePicker() {
   };
 
   return (
-    <button
-      type="button"
-      className="flex! m-0 flex-col p-0"
+    <Button
+      variant="ghost"
+      className="flex! m-0 flex-col p-0 h-auto hover:bg-transparent"
       onClick={handleInsertTable}
       onKeyDown={handleKeyDown}
       onKeyUp={handleKeyUp}
@@ -268,10 +269,8 @@ function TablePicker() {
       <div className="grid size-[130px] grid-cols-8 gap-0.5 p-1">
         {tablePicker.grid.map((rows, rowIndex) =>
           rows.map((cell, columnIndex) => (
-            <button
-              type="button"
+            <span
               aria-hidden="true"
-              tabIndex={-1}
               key={cell.id}
               className={cn(
                 "col-span-1 size-3 border border-solid bg-secondary",
@@ -288,6 +287,6 @@ function TablePicker() {
       <div className="text-center text-current text-xs">
         {tablePicker.size.rowCount} x {tablePicker.size.colCount}
       </div>
-    </button>
+    </Button>
   );
 }

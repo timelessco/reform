@@ -219,16 +219,25 @@ function LoginPage() {
         {step === "otp" ? (
           <div className="space-y-6">
             {/* Back button */}
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setStep("form")}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+              className="text-muted-foreground hover:text-foreground"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-label="Back icon"
+              >
+                <title>Back icon</title>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
               Back
-            </button>
+            </Button>
 
             <div className="text-center space-y-2">
               <h2 className="text-xl font-semibold text-foreground">Check your email</h2>
@@ -282,14 +291,14 @@ function LoginPage() {
 
             <p className="text-center text-sm text-muted-foreground">
               Didn't receive the code?{" "}
-              <button
-                type="button"
+              <Button
+                variant="link"
                 onClick={() => sendOtpMutation.mutate({ email, type: "sign-in" })}
                 disabled={isPending}
-                className="font-medium text-foreground hover:underline"
+                className="p-0 h-auto font-medium"
               >
                 Resend
-              </button>
+              </Button>
             </p>
           </div>
         ) : (
@@ -340,19 +349,19 @@ function LoginPage() {
             {/* Method tabs */}
             <div className="flex justify-center gap-1 text-sm">
               {(["email", "username", "otp"] as const).map((method) => (
-                <button
+                <Button
                   key={method}
-                  type="button"
+                  variant="tab"
+                  size="sm"
                   onClick={() => setSignInMethod(method)}
+                  data-active={signInMethod === method}
                   className={cn(
-                    "px-3 py-1.5 rounded-full transition-colors capitalize",
-                    signInMethod === method
-                      ? "bg-foreground text-background font-medium"
-                      : "text-muted-foreground hover:text-foreground",
+                    "rounded-full capitalize",
+                    signInMethod === method && "bg-foreground text-background font-medium hover:bg-foreground hover:text-background",
                   )}
                 >
                   {method === "otp" ? "Passwordless" : method}
-                </button>
+                </Button>
               ))}
             </div>
 
@@ -444,7 +453,9 @@ function LoginPage() {
                   </usernameForm.AppField>
 
                   <Button type="submit" className="w-full h-11" disabled={isPending}>
-                    {signInUsernameMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {signInUsernameMutation.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
                     Sign in
                   </Button>
                 </usernameForm.Form>

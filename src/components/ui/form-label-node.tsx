@@ -2,6 +2,7 @@ import type { PlateElementProps } from "platejs/react";
 
 import { PlateElement } from "platejs/react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export function FormLabelElement({ className, children, ...props }: PlateElementProps) {
@@ -32,17 +33,18 @@ export function FormLabelElement({ className, children, ...props }: PlateElement
         )}
         <span className="min-w-px outline-none">{children}</span>
         {isRequired && (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={toggleRequired}
             className={cn(
-              "flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded-full bg-muted text-xs text-red-500 leading-none  hover:bg-muted-foreground hover:text-muted transition-colors",
+              "flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded-full bg-muted text-xs text-red-500 leading-none hover:bg-muted-foreground hover:text-muted",
               "ml-2",
             )}
             contentEditable={false}
           >
             *
-          </button>
+          </Button>
         )}
       </div>
     </PlateElement>

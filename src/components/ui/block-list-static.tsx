@@ -4,6 +4,7 @@ import type { RenderStaticNodeWrapper, TListElement } from "platejs";
 import type { SlateRenderElementProps } from "platejs/static";
 import type * as React from "react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const config: Record<
@@ -43,18 +44,18 @@ function TodoMarkerStatic(props: SlateRenderElementProps) {
 
   return (
     <div contentEditable={false}>
-      <button
+      <Button
+        variant="ghost"
         className={cn(
-          "peer -left-6 pointer-events-none absolute top-1 size-4 shrink-0 rounded-sm border border-primary bg-background ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
+          "peer -left-6 pointer-events-none absolute top-1 size-4 shrink-0 rounded-sm border border-primary bg-background ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground p-0 h-4 w-4 hover:bg-background",
           props.className,
         )}
         data-state={checked ? "checked" : "unchecked"}
-        type="button"
       >
         <div className={cn("flex items-center justify-center text-current")}>
           {checked && <CheckIcon className="size-4" />}
         </div>
-      </button>
+      </Button>
     </div>
   );
 }

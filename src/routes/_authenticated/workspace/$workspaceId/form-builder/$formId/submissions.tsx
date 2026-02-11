@@ -2,8 +2,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   type ColumnDef,
+  type ColumnPinningState,
+  type RowSelectionState,
+  type VisibilityState,
   createColumnHelper,
-  flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
@@ -14,46 +16,42 @@ import { format } from "date-fns";
 import { z } from "zod";
 import {
   AlignLeft,
-  ArrowUpDown,
   Calendar,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Circle,
+  Columns,
   Download,
   Filter,
   Maximize,
   Minus,
   Search,
   Trash2,
-  MousePointer2,
-  User,
-  Users,
-  Clock,
+  X,
 } from "lucide-react";
 import type { Value } from "platejs";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DataGrid, DataGridContainer } from "@/components/ui/data-grid";
+import { DataGridColumnHeader } from "@/components/ui/data-grid-column-header";
+import { DataGridColumnVisibility } from "@/components/ui/data-grid-column-visibility";
+import { DataGridTable } from "@/components/ui/data-grid-table";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { getLatestPublishedVersion } from "@/lib/fn/form-versions";
 import {
   deleteSubmission,
+  deleteSubmissionsBulk,
   getSubmissionsByFormIdQueryOption,
   type SerializedSubmission,
 } from "@/lib/fn/submissions";
@@ -124,10 +122,14 @@ function SubmissionsPage() {
   const [activeTab, setActiveTab] = useState<"all" | "completed" | "partial">("all");
   const [sorting, setSorting] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 });
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
   const [fieldStatusFilter, setFieldStatusFilter] = useState<Set<FieldStatus>>(
     new Set(["current", "deleted"]),
   );
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({});
+  const [columnOrder, setColumnOrder] = useState<string[]>([]);
 
   // 1. Fetch Published Form Structure (to derive columns from published version, not draft)
   const { data: publishedData } = useQuery({
@@ -153,7 +155,7 @@ function SubmissionsPage() {
     return allSubmissions;
   }, [allSubmissions, activeTab]);
 
-  // Delete handler
+  // Delete handler (needed in column definition)
   const handleDelete = useCallback(
     async (submissionId: string) => {
       await deleteSubmission({ data: { id: submissionId, formId } });
@@ -162,33 +164,86 @@ function SubmissionsPage() {
     [formId, queryClient],
   );
 
-  // 3. Derive Columns from PUBLISHED Form Content (not draft)
-  // Also collect any orphaned field names from submissions (for deleted fields)
+  // 3. Derive stable orphaned field names from submissions
+  // This prevents columns from rebuilding when submission data reference changes
+  const orphanedFieldNamesRef = useRef<Set<string>>(new Set());
+  const orphanedFieldNames = useMemo(() => {
+    const currentFieldNames = new Set<string>();
+    if (publishedContent) {
+      const elements = transformPlateStateToFormElements(publishedContent as Value);
+      const editableFields = getEditableFields(elements);
+      editableFields
+        .filter((field) => field.fieldType === "Input" || field.fieldType === "Textarea")
+        .forEach((field) => currentFieldNames.add(field.name));
+    }
+
+    const orphaned = new Set<string>();
+    allSubmissions.forEach((submission) => {
+      if (submission.data && typeof submission.data === "object") {
+        Object.keys(submission.data as Record<string, unknown>).forEach((key) => {
+          if (!currentFieldNames.has(key)) {
+            orphaned.add(key);
+          }
+        });
+      }
+    });
+
+    // Only update ref if the set actually changed
+    const prevKeys = [...orphanedFieldNamesRef.current].sort().join(",");
+    const nextKeys = [...orphaned].sort().join(",");
+    if (prevKeys !== nextKeys) {
+      orphanedFieldNamesRef.current = orphaned;
+    }
+    return orphanedFieldNamesRef.current;
+  }, [allSubmissions, publishedContent]);
+
+  // 4. Derive Columns from PUBLISHED Form Content (not draft)
   // Track field counts by status for the filter badge
   const { columns, fieldCounts } = useMemo(() => {
     const columnHelper = createColumnHelper<any>();
     const counts: Record<FieldStatus, number> = { current: 0, deleted: 0 };
 
-    // Fixed first column: Submission Date
+    // Select column for row selection
     const baseColumns: ColumnDef<any, any>[] = [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all"
+            className="translate-y-[2px]"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+            className="translate-y-[2px]"
+          />
+        ),
+        size: 40,
+        enableSorting: false,
+        enableHiding: false,
+        enablePinning: false,
+      },
+      // Submission Date column
       columnHelper.accessor("createdAt", {
         header: ({ column }) => (
-          <button
-            type="button"
-            className="flex items-center gap-2 cursor-pointer select-none group/h"
-            onClick={() => column.toggleSorting()}
-          >
-            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">
-              Submitted at
-            </span>
-            <ArrowUpDown className="h-3 w-3 opacity-0 group-hover/h:opacity-100 transition-opacity" />
-          </button>
+          <DataGridColumnHeader
+            column={column}
+            title="Submitted at"
+            icon={<Calendar className="h-3.5 w-3.5" />}
+          />
         ),
         cell: (info) => (
-          <div className="flex items-center justify-between group">
+          <div className="flex items-center justify-between group/row">
             <span className="text-sm">{format(new Date(info.getValue()), "MMM d, h:mm a")}</span>
-            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity pr-4">
+            <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
               <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground">
                 <Maximize className="h-3.5 w-3.5" />
               </Button>
@@ -196,7 +251,10 @@ function SubmissionsPage() {
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                onClick={() => handleDelete(info.row.original.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(info.row.original.id);
+                }}
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
@@ -204,12 +262,9 @@ function SubmissionsPage() {
           </div>
         ),
         id: "submitted_at",
-        meta: { status: null }, // System column, no status
+        size: 180,
       }),
     ];
-
-    // Track field names we've added columns for
-    const addedFieldNames = new Set<string>();
 
     // Dynamic columns based on PUBLISHED form fields (current fields)
     if (publishedContent) {
@@ -224,7 +279,6 @@ function SubmissionsPage() {
       inputFields.forEach((field) => {
         const Icon = field.fieldType === "Input" ? Minus : AlignLeft;
         const status: FieldStatus = "current";
-        addedFieldNames.add(field.name);
         counts.current++;
 
         // Only add if status filter includes this status
@@ -233,50 +287,37 @@ function SubmissionsPage() {
           baseColumns.push(
             columnHelper.accessor((row) => row.data?.[field.name], {
               id: field.name,
-              header: () => (
-                <div
-                  className={cn(
-                    "flex items-center gap-2 px-2 py-1 rounded-md -mx-2",
-                    config.bgColor,
-                  )}
-                >
-                  <Circle className={cn("h-2 w-2", config.dotColor)} />
-                  <Icon className={cn("h-3.5 w-3.5", config.color)} />
-                  <span
-                    className={cn("text-[11px] font-bold uppercase tracking-wider", config.color)}
-                  >
-                    {field.label || field.name}
-                  </span>
-                </div>
+              header: ({ column }) => (
+                <DataGridColumnHeader
+                  column={column}
+                  title={field.label || field.name}
+                  icon={
+                    <div className={cn("flex items-center gap-1.5", config.color)}>
+                      <Circle className={cn("h-2 w-2", config.dotColor)} />
+                      <Icon className="h-3.5 w-3.5" />
+                    </div>
+                  }
+                />
               ),
               cell: (info) => (
-                <span className="text-sm truncate max-w-[300px] block py-1">
+                <span className="text-sm truncate max-w-[300px] block">
                   {info.getValue() || "-"}
                 </span>
               ),
-              meta: { status },
+              size: 150,
+              meta: {
+                headerClassName: config.bgColor,
+              },
             }),
           );
         }
       });
     }
 
-    // Collect orphaned field names from submission data (fields that existed in old versions but were deleted)
-    const orphanedFields = new Set<string>();
-    allSubmissions.forEach((submission) => {
-      if (submission.data && typeof submission.data === "object") {
-        Object.keys(submission.data as Record<string, unknown>).forEach((key) => {
-          if (!addedFieldNames.has(key)) {
-            orphanedFields.add(key);
-          }
-        });
-      }
-    });
-
     // Add columns for orphaned fields (deleted from current version but have data)
-    orphanedFields.forEach((fieldName) => {
+    counts.deleted = orphanedFieldNames.size;
+    orphanedFieldNames.forEach((fieldName) => {
       const status: FieldStatus = "deleted";
-      counts.deleted++;
 
       // Only add if status filter includes this status
       if (fieldStatusFilter.has(status)) {
@@ -284,35 +325,34 @@ function SubmissionsPage() {
         baseColumns.push(
           columnHelper.accessor((row) => row.data?.[fieldName], {
             id: fieldName,
-            header: () => (
-              <div
-                className={cn("flex items-center gap-2 px-2 py-1 rounded-md -mx-2", config.bgColor)}
-              >
-                <Circle className={cn("h-2 w-2", config.dotColor)} />
-                <Minus className={cn("h-3.5 w-3.5", config.color)} />
-                <span
-                  className={cn(
-                    "text-[11px] font-bold uppercase tracking-wider italic",
-                    config.color,
-                  )}
-                >
-                  {fieldName}
-                </span>
-              </div>
+            header: ({ column }) => (
+              <DataGridColumnHeader
+                column={column}
+                title={fieldName}
+                icon={
+                  <div className={cn("flex items-center gap-1.5", config.color)}>
+                    <Circle className={cn("h-2 w-2", config.dotColor)} />
+                    <Minus className="h-3.5 w-3.5" />
+                  </div>
+                }
+              />
             ),
             cell: (info) => (
-              <span className="text-sm truncate max-w-[300px] block py-1 text-muted-foreground">
+              <span className="text-sm truncate max-w-[300px] block text-muted-foreground italic">
                 {info.getValue() || "-"}
               </span>
             ),
-            meta: { status },
+            size: 150,
+            meta: {
+              headerClassName: config.bgColor,
+            },
           }),
         );
       }
     });
 
     return { columns: baseColumns, fieldCounts: counts };
-  }, [publishedContent, allSubmissions, fieldStatusFilter, handleDelete]);
+  }, [publishedContent, orphanedFieldNames, fieldStatusFilter, handleDelete]);
 
   // Toggle field status filter
   const toggleFieldStatus = (status: FieldStatus) => {
@@ -334,7 +374,16 @@ function SubmissionsPage() {
       sorting,
       globalFilter,
       pagination,
+      rowSelection,
+      columnVisibility,
+      columnPinning,
+      columnOrder,
     },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    onColumnVisibilityChange: setColumnVisibility,
+    onColumnPinningChange: setColumnPinning,
+    onColumnOrderChange: setColumnOrder,
     onSortingChange: setSorting as any,
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
@@ -342,10 +391,68 @@ function SubmissionsPage() {
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    autoResetPageIndex: false,
+    columnResizeMode: "onChange",
+    getRowId: (row) => row.id,
   });
+
+  // Bulk delete handler
+  const handleBulkDelete = useCallback(async () => {
+    const selectedIds = Object.keys(rowSelection);
+    if (selectedIds.length === 0) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${selectedIds.length} submission${selectedIds.length > 1 ? "s" : ""}?`,
+    );
+    if (!confirmed) return;
+
+    await deleteSubmissionsBulk({ data: { formId, submissionIds: selectedIds } });
+    queryClient.invalidateQueries({ queryKey: ["submissions", formId] });
+    setRowSelection({});
+  }, [formId, queryClient, rowSelection]);
+
+  // Export selected rows as CSV
+  const handleExportSelected = useCallback(() => {
+    const selectedRows = table.getSelectedRowModel().rows;
+    if (selectedRows.length === 0) return;
+
+    const headers = columns
+      .filter((col) => col.id !== "select")
+      .map((col) => {
+        if (typeof col.header === "string") return col.header;
+        if (col.id === "submitted_at") return "Submitted At";
+        return col.id || "Field";
+      })
+      .join(",");
+
+    const rows = selectedRows
+      .map((row) => {
+        return row
+          .getVisibleCells()
+          .filter((cell) => cell.column.id !== "select")
+          .map((cell) => {
+            const val = cell.getValue();
+            return `"${val ?? ""}"`;
+          })
+          .join(",");
+      })
+      .join("\n");
+
+    const csv = `${headers}\n${rows}`;
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.setAttribute("hidden", "");
+    a.setAttribute("href", url);
+    a.setAttribute("download", `submissions-selected-${formId}.csv`);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }, [columns, formId, table]);
 
   const handleDownloadCSV = () => {
     const headers = columns
+      .filter((col) => col.id !== "select")
       .map((col) => {
         if (typeof col.header === "string") return col.header;
         if (col.id === "submitted_at") return "Submitted At";
@@ -358,6 +465,7 @@ function SubmissionsPage() {
       .rows.map((row) => {
         return row
           .getVisibleCells()
+          .filter((cell) => cell.column.id !== "select")
           .map((cell) => {
             const val = cell.getValue();
             return `"${val ?? ""}"`;
@@ -380,89 +488,46 @@ function SubmissionsPage() {
 
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0 bg-background">
-      {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 px-12 pt-8">
-        {[
-          { label: "Visits", value: "0", icon: MousePointer2 },
-          { label: "Unique visitors", value: "0", icon: User },
-          { label: "Submissions", value: allSubmissions.length.toString(), icon: Users },
-          { label: "Unique respondents", value: "0", icon: Users },
-          { label: "Visit duration", value: "0s", icon: Clock },
-        ].map((stat) => (
-          <Card key={stat.label} className="border-none shadow-none bg-muted/20">
-            <CardHeader className="p-4 pb-0">
-              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                {stat.label}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-1">
-              <div className="text-2xl font-semibold">{stat.value}</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
       {/* Filter Controls Row */}
-      <div className="shrink-0 px-12 pt-8 pb-4">
-        <div className="flex items-center justify-between border-b pb-1">
-          <div className="flex items-center gap-6 text-[13px]">
-            <button
-              type="button"
-              onClick={() => setActiveTab("all")}
-              className={cn(
-                "pb-3 transition-colors relative",
-                activeTab === "all"
-                  ? "text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              All{" "}
-              <span className="ml-1 text-[11px] px-1.5 py-0.5 bg-muted rounded-full font-normal">
-                {allSubmissions.length}
-              </span>
-              {activeTab === "all" && (
-                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground" />
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("completed")}
-              className={cn(
-                "pb-3 transition-colors relative",
-                activeTab === "completed"
-                  ? "text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              Completed{" "}
-              <span className="ml-1 text-[11px] px-1.5 py-0.5 bg-muted rounded-full font-normal">
-                {allSubmissions.filter((s: SerializedSubmission) => s.isCompleted).length}
-              </span>
-              {activeTab === "completed" && (
-                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground" />
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("partial")}
-              className={cn(
-                "pb-3 transition-colors relative",
-                activeTab === "partial"
-                  ? "text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              Partial{" "}
-              <span className="ml-1 text-[11px] px-1.5 py-0.5 bg-muted rounded-full font-normal">
-                {allSubmissions.filter((s: SerializedSubmission) => !s.isCompleted).length}
-              </span>
-              {activeTab === "partial" && (
-                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-foreground" />
-              )}
-            </button>
-          </div>
+      <div className="shrink-0 px-4 pt-3 pb-2">
+        <div className="flex items-center justify-between">
+          {/* Status filter dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-7 gap-1.5 text-[11px] font-medium">
+                {activeTab === "all" ? "All" : activeTab === "completed" ? "Completed" : "Partial"}
+                <span className="opacity-60">
+                  {activeTab === "all"
+                    ? allSubmissions.length
+                    : activeTab === "completed"
+                      ? allSubmissions.filter((s: SerializedSubmission) => s.isCompleted).length
+                      : allSubmissions.filter((s: SerializedSubmission) => !s.isCompleted).length}
+                </span>
+                <ChevronDown className="h-3 w-3 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-36">
+              <DropdownMenuItem onClick={() => setActiveTab("all")} className="gap-2">
+                All
+                <span className="ml-auto text-xs text-muted-foreground">{allSubmissions.length}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveTab("completed")} className="gap-2">
+                Completed
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {allSubmissions.filter((s: SerializedSubmission) => s.isCompleted).length}
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveTab("partial")} className="gap-2">
+                Partial
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {allSubmissions.filter((s: SerializedSubmission) => !s.isCompleted).length}
+                </span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-          <div className="flex items-center gap-4 pb-3">
+          {/* Right side: Search and filters */}
+          <div className="flex items-center gap-3">
             <div className="relative group/s">
               <Search className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50 group-focus-within/s:text-foreground transition-colors" />
               <input
@@ -510,6 +575,17 @@ function SubmissionsPage() {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* Column Visibility Toggle */}
+            <DataGridColumnVisibility
+              table={table}
+              trigger={
+                <Button variant="outline" size="sm" className="h-7 gap-1.5 text-[11px] font-medium">
+                  <Columns className="h-3 w-3" />
+                  Columns
+                </Button>
+              }
+            />
+
             <Button
               variant="ghost"
               size="sm"
@@ -523,90 +599,126 @@ function SubmissionsPage() {
         </div>
       </div>
 
-      {/* Table Container - scrollable table, fixed pagination */}
-      <div className="flex-1 flex flex-col min-h-0 min-w-0 px-12 pb-4">
-        <div className="flex-1 min-w-0 overflow-auto border rounded-xl bg-background shadow-sm min-h-0">
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="hover:bg-transparent">
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} className="h-11 py-0">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="group transition-colors"
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="py-3.5">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-72 text-center">
-                    <div className="flex flex-col items-center justify-center space-y-3 opacity-50">
-                      <div className="p-3 bg-muted rounded-full">
-                        <Filter className="h-6 w-6" />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="font-medium">No results found</p>
-                        <p className="text-xs">
-                          {globalFilter
-                            ? "Try adjusting your search query."
-                            : "When people fill out your form, their responses will appear here."}
-                        </p>
-                      </div>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+      {/* Table Container with DataGrid */}
+      <div className="flex-1 flex flex-col min-h-0 min-w-0 pb-2">
+        {/* Bulk Action Toolbar */}
+        {Object.keys(rowSelection).length > 0 && (
+          <div className="mb-3 flex items-center justify-between px-4 py-2.5 bg-primary/5 border border-primary/20 rounded-lg backdrop-blur-sm animate-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center gap-3">
+              <Checkbox checked={true} className="border-primary" />
+              <span className="text-sm font-medium">
+                {Object.keys(rowSelection).length} selected
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleExportSelected}>
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                Export
+              </Button>
+              <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
+                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                Delete
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setRowSelection({})}
+                className="text-muted-foreground"
+              >
+                <X className="h-3.5 w-3.5 mr-1" />
+                Clear
+              </Button>
+            </div>
+          </div>
+        )}
 
-        {/* Pagination - fixed at bottom */}
-        <div className="flex items-center justify-between px-4 py-3 mt-3 border rounded-lg bg-muted/10">
-          <div className="text-xs text-muted-foreground">
-            Showing {table.getRowModel().rows.length} of {allSubmissions.length} results
+        <DataGrid
+          table={table}
+          recordCount={allSubmissions.length}
+          tableLayout={{
+            columnsResizable: true,
+            columnsPinnable: true,
+            columnsVisibility: true,
+            columnsMovable: true,
+            headerSticky: true,
+            rowBorder: true,
+          }}
+          emptyMessage={
+            <div className="flex flex-col items-center justify-center space-y-3 py-16 opacity-50">
+              <div className="p-3 bg-muted rounded-full">
+                <Filter className="h-6 w-6" />
+              </div>
+              <div className="space-y-1 text-center">
+                <p className="font-medium">No results found</p>
+                <p className="text-xs text-muted-foreground">
+                  {globalFilter
+                    ? "Try adjusting your search query."
+                    : "When people fill out your form, their responses will appear here."}
+                </p>
+              </div>
+            </div>
+          }
+        >
+          <div className="w-full flex-1 flex flex-col min-h-0 overflow-hidden">
+            <DataGridContainer border={false} className="flex-1 min-h-0 border-y border-border overflow-auto content-start">
+              <DataGridTable />
+            </DataGridContainer>
+
+            {/* Custom Pagination - 20/50/80 style */}
+            <div className="shrink-0 flex items-center justify-between px-2 py-2 border-b border-border">
+              {/* Left: Page size buttons */}
+              <div className="flex items-center gap-1">
+                {[20, 50, 80].map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    className={cn(
+                      "px-3 py-1 text-xs font-medium rounded-md transition-colors",
+                      pagination.pageSize === size
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                    )}
+                    onClick={() => setPagination((prev) => ({ ...prev, pageSize: size, pageIndex: 0 }))}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+
+              {/* Right: Page info and navigation */}
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span>
+                  {table.getState().pagination.pageIndex * pagination.pageSize + 1} -{" "}
+                  {Math.min(
+                    (table.getState().pagination.pageIndex + 1) * pagination.pageSize,
+                    table.getFilteredRowModel().rows.length,
+                  )}{" "}
+                  of {table.getFilteredRowModel().rows.length}
+                </span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-xs font-medium">
-              Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        </DataGrid>
       </div>
     </div>
   );

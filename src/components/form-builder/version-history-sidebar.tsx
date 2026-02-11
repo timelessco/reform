@@ -108,18 +108,18 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
           <SidebarGroupContent className="px-2">
             <div className="space-y-1">
               {versions.map((version, index) => (
-                <button
+                <Button
                   key={version.id}
-                  type="button"
+                  variant="ghost"
                   onClick={() => handleSelectVersion(version.id)}
                   className={cn(
-                    "w-full px-3 py-3 text-left rounded-md transition-colors group",
+                    "w-full px-3 py-3 h-auto flex-col items-start justify-start group",
                     effectiveVersionId === version.id
-                      ? "bg-blue-50 text-blue-700 ring-1 ring-blue-200"
+                      ? "bg-blue-50 text-blue-700 ring-1 ring-blue-200 hover:bg-blue-50"
                       : "hover:bg-muted",
                   )}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between w-full">
                     <span className="text-sm font-medium">
                       {index === 0
                         ? formatTime(version.publishedAt)
@@ -140,7 +140,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
                       {version.publishedBy.name}
                     </span>
                   </div>
-                </button>
+                </Button>
               ))}
             </div>
           </SidebarGroupContent>

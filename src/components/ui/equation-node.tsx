@@ -44,13 +44,13 @@ export function EquationElement(props: PlateElementProps<TEquationElement>) {
     <PlateElement className="my-1" {...props}>
       <Popover open={open} onOpenChange={setOpen} modal={false}>
         <PopoverTrigger asChild>
-          <button
+          <Button
+            variant="ghost"
             className={cn(
-              "group flex cursor-pointer select-none items-center justify-center rounded-sm hover:bg-primary/10 data-[selected=true]:bg-primary/10",
+              "group flex cursor-pointer select-none items-center justify-center rounded-sm hover:bg-primary/10 data-[selected=true]:bg-primary/10 h-auto",
               props.element.texExpression.length === 0 ? "bg-muted p-3 pr-9" : "px-2 py-1",
             )}
             data-selected={selected}
-            type="button"
           >
             {props.element.texExpression.length > 0 ? (
               <span ref={katexRef} />
@@ -60,7 +60,7 @@ export function EquationElement(props: PlateElementProps<TEquationElement>) {
                 <div>Add a Tex equation</div>
               </div>
             )}
-          </button>
+          </Button>
         </PopoverTrigger>
 
         <EquationPopoverContent

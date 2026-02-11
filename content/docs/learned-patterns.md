@@ -7,22 +7,23 @@ This document captures useful patterns from the original form-components codebas
 ## Implementation Status
 
 ### ✅ Already Adapted (Current Implementation)
-| Pattern | Where Used | Notes |
-|---------|-----------|-------|
-| **Switch-Based Field Rendering** | `form-preview-from-plate.tsx` | Simplified for static elements + Input only |
-| **Field Type Configuration** | `block-menu.tsx` | Toggle options for Required, Min/Max, Default |
+
+| Pattern                          | Where Used                    | Notes                                         |
+| -------------------------------- | ----------------------------- | --------------------------------------------- |
+| **Switch-Based Field Rendering** | `form-preview-from-plate.tsx` | Simplified for static elements + Input only   |
+| **Field Type Configuration**     | `block-menu.tsx`              | Toggle options for Required, Min/Max, Default |
 
 ### 🔮 Future Consideration
-| Pattern | Priority | Use Case |
-|---------|----------|----------|
-| **Reorderable Options List** | High | When adding Select/RadioGroup field types |
-| **Tabbed Settings Panel** | Medium | For advanced field settings in sidebar |
-| **Dialog/Drawer Responsive** | Medium | Mobile-friendly field editing |
-| **useListState Hook** | Medium | Multi-step form management |
-| **Full Field Type Switch** | High | When supporting all 15+ field types |
+
+| Pattern                      | Priority | Use Case                                  |
+| ---------------------------- | -------- | ----------------------------------------- |
+| **Reorderable Options List** | High     | When adding Select/RadioGroup field types |
+| **Tabbed Settings Panel**    | Medium   | For advanced field settings in sidebar    |
+| **Dialog/Drawer Responsive** | Medium   | Mobile-friendly field editing             |
+| **useListState Hook**        | Medium   | Multi-step form management                |
+| **Full Field Type Switch**   | High     | When supporting all 15+ field types       |
 
 ---
-
 
 **Source:** `render-form-element.tsx`
 
@@ -56,6 +57,7 @@ case "Input":
 ```
 
 **Key field types to support:**
+
 - Input, Password, Textarea
 - Select, MultiSelect
 - RadioGroup, Checkbox
@@ -78,18 +80,12 @@ Three-tab structure for field configuration:
     <TabsTrigger value="validation">Validation</TabsTrigger>
     <TabsTrigger value="appearance">Appearance</TabsTrigger>
   </TabsList>
-  
-  <TabsContent value="general">
-    {/* Label, Name, Options (for select/radio) */}
-  </TabsContent>
-  
-  <TabsContent value="validation">
-    {/* Required, Min/Max Length, Pattern */}
-  </TabsContent>
-  
-  <TabsContent value="appearance">
-    {/* Placeholder, Help Text, Width */}
-  </TabsContent>
+
+  <TabsContent value="general">{/* Label, Name, Options (for select/radio) */}</TabsContent>
+
+  <TabsContent value="validation">{/* Required, Min/Max Length, Pattern */}</TabsContent>
+
+  <TabsContent value="appearance">{/* Placeholder, Help Text, Width */}</TabsContent>
 </Tabs>
 ```
 
@@ -106,11 +102,7 @@ import { Reorder } from "motion/react";
 
 <Reorder.Group axis="y" onReorder={handleReorder} values={localOptions}>
   {localOptions.map((option, index) => (
-    <Reorder.Item
-      key={option.value}
-      value={option}
-      className="cursor-grab active:cursor-grabbing"
-    >
+    <Reorder.Item key={option.value} value={option} className="cursor-grab active:cursor-grabbing">
       <GripVertical className="h-4 w-4" />
       {editingIndex === index ? (
         // Edit mode with inline inputs
@@ -121,7 +113,7 @@ import { Reorder } from "motion/react";
       )}
     </Reorder.Item>
   ))}
-</Reorder.Group>
+</Reorder.Group>;
 ```
 
 ---
@@ -138,9 +130,13 @@ const isMobile = useIsMobile();
 if (isMobile) {
   return (
     <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild><Button>Edit</Button></DrawerTrigger>
+      <DrawerTrigger asChild>
+        <Button>Edit</Button>
+      </DrawerTrigger>
       <DrawerContent>
-        <DrawerHeader><DrawerTitle>{title}</DrawerTitle></DrawerHeader>
+        <DrawerHeader>
+          <DrawerTitle>{title}</DrawerTitle>
+        </DrawerHeader>
         {/* Form content */}
       </DrawerContent>
     </Drawer>
@@ -149,9 +145,13 @@ if (isMobile) {
 
 return (
   <Dialog open={open} onOpenChange={setOpen}>
-    <DialogTrigger asChild><Button>Edit</Button></DialogTrigger>
+    <DialogTrigger asChild>
+      <Button>Edit</Button>
+    </DialogTrigger>
     <DialogContent>
-      <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
+      <DialogHeader>
+        <DialogTitle>{title}</DialogTitle>
+      </DialogHeader>
       {/* Form content */}
     </DialogContent>
   </Dialog>
@@ -170,10 +170,10 @@ Custom hook for array state management:
 const [localOptions, handlers] = useListState<Option>(options);
 
 // Available handlers:
-handlers.append(newItem);      // Add to end
-handlers.remove(index);        // Remove at index
+handlers.append(newItem); // Add to end
+handlers.remove(index); // Remove at index
 handlers.setItem(index, item); // Update at index
-handlers.setState(newArray);   // Replace all
+handlers.setState(newArray); // Replace all
 ```
 
 ---
@@ -259,6 +259,7 @@ interface ChoiceField extends Field {
 ## Usage Notes
 
 These patterns can be adapted for the Plate.js editor:
+
 - Field settings can be exposed through the block menu popover
 - The tabbed panel can be used in a sidebar for advanced settings
 - Reorderable options are useful for select/radio field configuration

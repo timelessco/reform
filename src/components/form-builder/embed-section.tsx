@@ -11,7 +11,6 @@ import { EmbedCodeDialog, generateEmbedUrl } from "./embed-code-dialog";
 import { EmbedConfigPanel, defaultEmbedOptions } from "./embed-config-panel";
 import type { EmbedOptions } from "./embed-config-panel";
 import { EmbedPreviewMockup } from "./embed-preview-mockup";
-import type { Value } from "platejs";
 
 type EmbedFormValues = EmbedOptions & { embedType: EmbedType };
 
@@ -113,32 +112,26 @@ export function EmbedSection({ formId, docTitle }: EmbedSectionProps) {
   });
 
   return (
-    <div className="space-y-4 pt-4 border-t">
-      {/* Section header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">
-          Embed Form
-        </h3>
-      </div>
-
+    <div className="space-y-4">
       {/* Embed type tabs — managed by form.Field so onChange fires */}
       <form.Field name="embedType">
         {(field) => (
-          <div className="flex items-center bg-muted/40 rounded-lg p-1 gap-1">
+          <div className="flex items-center bg-muted rounded-[10px] p-[3px] gap-1">
             {tabs.map((tab) => (
-              <button
+              <Button
                 key={tab.value}
-                type="button"
+                variant="tab"
                 onClick={() => field.handleChange(tab.value)}
+                data-active={field.state.value === tab.value}
                 className={cn(
-                  "flex-1 text-[11px] font-semibold py-1.5 px-2 rounded-md transition-all",
+                  "flex-1 text-[13px] font-medium py-1.5 px-2 h-auto rounded-[8px]",
                   field.state.value === tab.value
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                    ? "bg-background text-foreground shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:bg-background"
+                    : "text-muted-foreground hover:text-foreground/80 hover:bg-transparent",
                 )}
               >
                 {tab.label}
-              </button>
+              </Button>
             ))}
           </div>
         )}
@@ -178,19 +171,10 @@ export function EmbedSection({ formId, docTitle }: EmbedSectionProps) {
 
           return (
             <>
-              {/* Preview mockup */}
+              {/* Preview mockup - now ultra-minimal box design */}
               <EmbedPreviewMockup
                 embedType={embedType}
                 popupPosition={options.popupPosition}
-                content={(doc?.content as Value) || []}
-                title={doc?.title || "Untitled Form"}
-                icon={doc?.icon || undefined}
-                cover={doc?.cover || undefined}
-                branding={options.branding}
-                transparent={options.transparentBackground}
-                hideTitle={options.hideTitle}
-                emojiIcon={options.emoji ? options.emojiIcon : undefined}
-                emojiAnimation={options.emojiAnimation}
               />
 
               {/* Settings — uses form.Field internally */}

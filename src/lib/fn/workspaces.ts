@@ -233,3 +233,26 @@ export const getWorkspacesWithFormsQueryOptions = () =>
     queryFn: () => getWorkspacesWithForms(),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
+
+const getUserMemberships = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async () => {
+    const user = await authUser();
+
+    const memberships = await db
+      .select({
+        organizationId: member.organizationId,
+        role: member.role,
+      })
+      .from(member)
+      .where(eq(member.userId, user.id));
+
+    return { memberships };
+  });
+
+export const getUserMembershipsQueryOptions = () =>
+  queryOptions({
+    queryKey: ["user-memberships"],
+    queryFn: () => getUserMemberships(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });

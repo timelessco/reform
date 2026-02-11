@@ -23,11 +23,13 @@ import { Link, useLocation, useNavigate, useSearch } from "@tanstack/react-route
 import { format, formatDistanceToNow } from "date-fns";
 import {
   AlertCircle,
-  ChevronRight,
   ChevronsRight,
+  Copy,
   History,
+  Link2,
   Loader2,
   MoreHorizontal,
+  Pencil,
   Settings,
   Star,
   Trash2,
@@ -53,9 +55,10 @@ export function AppHeader({
 }: AppHeaderProps) {
   const { state, toggleSidebar: toggleMainSidebar } = useSidebarSafe() || {
     state: "expanded",
-    toggleSidebar: () => {},
+    toggleSidebar: () => { },
   };
   const { pathname } = useLocation();
+  const isDashboard = pathname === "/dashboard";
   const isFormBuilder = pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
   const isEditRoute = pathname.endsWith("/edit");
   const { data: sessionData } = useSession();
@@ -69,9 +72,30 @@ export function AppHeader({
   const isEditorSidebarOpen = !!activeSidebar;
 
   const toggleVersionHistory = () => toggleSidebar("history");
-  const toggleSettingsSidebar = () => toggleSidebar("settings", "settings");
+  const isSettingsSidebarOpen = activeSidebar === "settings";
+  const toggleSettingsSidebar = () => {
+    // Update URL param - the URL sync effect will handle opening/closing the sidebar
+    navigate({
+      to: ".",
+      search: (prev: any) => ({ ...prev, sidebar: isSettingsSidebarOpen ? "" : "settings" }),
+      replace: true,
+    });
+  };
+
+  // Close sidebar and update URL to clear sidebar param
+  const handleCloseSidebar = () => {
+    closeSidebar();
+    if (workspaceId && formId) {
+      navigate({
+        to: ".",
+        search: (prev: any) => ({ ...prev, sidebar: "" }),
+        replace: true,
+      });
+    }
+  };
+
   const toggleShareSidebar = () => {
-    toggleSidebar("share");
+    // Only navigate - the URL param sync effect will handle opening/closing the sidebar
     if (workspaceId && formId) {
       navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
@@ -95,7 +119,7 @@ export function AppHeader({
     enabled: !!formId,
   });
   // Secondary: Electric live data (real-time but async)
-  const { data: savedDocs , isLoading: isLoadingSavedDocs } = useForm(formId);
+  const { data: savedDocs, isLoading: isLoadingSavedDocs } = useForm(formId);
 
   // Prefer Electric (real-time) when available, fall back to server cache
   const currentForm = useMemo(() => {
@@ -167,6 +191,18 @@ export function AppHeader({
     }
   };
 
+  const handleCopyLink = () => {
+    if (!formId) return;
+    const url = `${window.location.origin}/f/${formId}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Link copied to clipboard");
+  };
+
+  const handleDuplicate = () => {
+    // TODO: Implement duplicate functionality
+    toast.info("Duplicate feature coming soon");
+  };
+
   return (
     <header
       className={cn(
@@ -175,7 +211,7 @@ export function AppHeader({
       )}
     >
       {/* Left Section: Breadcrumbs */}
-      <div className="flex items-center gap-1.5 min-w-0 flex-1">
+      <div className="flex items-center gap-2 min-w-0 flex-1">
         {state === "collapsed" && (
           <Button
             variant="ghost"
@@ -183,11 +219,21 @@ export function AppHeader({
             className="h-8 w-8 text-muted-foreground -ml-1 group relative flex items-center justify-center transition-all duration-300"
             onClick={() => toggleMainSidebar()}
           >
-            {/* Vertical line - default state */}
-            <span className="absolute w-[2px] h-4 bg-muted-foreground/30 rounded-full transition-all duration-300 group-hover:opacity-0 group-hover:scale-y-0" />
-            {/* Chevron Right - hover state */}
-            <ChevronRight className="h-4 w-4 absolute opacity-0 scale-50 transition-all duration-300 group-hover:opacity-100 group-hover:scale-100 text-foreground" />
+            <span className="text-2xl font-serif italic font-bold tracking-tighter">f.</span>
           </Button>
+        )}
+
+        {/* Breadcrumb: Form Name / Page */}
+        {isFormBuilder && currentForm && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-medium truncate max-w-[200px]">
+              {currentForm.title || "Untitled"}
+            </span>
+            <span className="text-muted-foreground/50">/</span>
+            <span className="text-muted-foreground">
+              {isEditRoute ? "Editor" : "Submissions"}
+            </span>
+          </div>
         )}
       </div>
 
@@ -223,6 +269,17 @@ export function AppHeader({
           </Tooltip>
         )}
 
+        {isDashboard && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2.5 text-muted-foreground hover:text-foreground font-normal"
+            asChild
+          >
+            <Link to="/">About</Link>
+          </Button>
+        )}
+
         {isFormBuilder && (
           <>
             {/* Changes indicator - shows when there are unpublished changes */}
@@ -252,15 +309,15 @@ export function AppHeader({
               </Tooltip>
             )}
 
-            <div className="flex items-center gap-1.5 mr-1">
+            <div className="flex items-center gap-1">
               {isEditRoute && (
                 <Button
                   variant="ghost"
                   size="sm"
                   asChild
                   className={cn(
-                    "h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-muted font-normal",
-                    demo && "text-foreground bg-muted",
+                    "h-8 px-2.5 text-muted-foreground hover:text-foreground font-normal",
+                    demo && "text-foreground bg-accent/50",
                   )}
                 >
                   <Link
@@ -273,19 +330,29 @@ export function AppHeader({
                 </Button>
               )}
 
-               { !isLoadingSavedDocs && currentForm?.status === "published" && (
+              {!isLoadingSavedDocs && currentForm?.status === "published" && (
                 <Button
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    "h-8 px-2.5 text-muted-foreground hover:text-foreground hover:bg-muted font-normal",
-                    isShareSidebarOpen && "text-foreground bg-muted",
+                    "h-8 px-2.5 text-muted-foreground hover:text-foreground font-normal",
+                    isShareSidebarOpen && "text-foreground bg-accent/50",
                   )}
                   onClick={toggleShareSidebar}
                 >
                   Share
                 </Button>
               )}
+
+              {/* Settings icon button directly in header - toggles form settings sidebar */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                onClick={toggleSettingsSidebar}
+              >
+                <Settings className="h-[18px] w-[18px]" strokeWidth={1.5} />
+              </Button>
 
               {/* Three dots menu */}
               <DropdownMenu>
@@ -295,24 +362,30 @@ export function AppHeader({
                     size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
                   >
-                    <MoreHorizontal className="h-4 w-4" />
+                    <MoreHorizontal className="h-[18px] w-[18px]" strokeWidth={1.5} />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  { !isLoadingSavedDocs && currentForm?.status === "published" && (
-                    <>
-                      <DropdownMenuItem onClick={toggleSettingsSidebar} className="gap-2">
-                        <Settings className="h-4 w-4" />
-                        Settings
-                      </DropdownMenuItem>
-                      {isEditRoute && (
-                        <DropdownMenuItem onClick={toggleVersionHistory} className="gap-2">
-                          <History className="h-4 w-4" />
-                          Version History
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuSeparator />
-                    </>
+                <DropdownMenuContent align="end" className="w-56">
+
+                  {/* Copy link */}
+                  <DropdownMenuItem onClick={handleCopyLink} className="gap-2">
+                    <Link2 className="h-4 w-4" />
+                    Copy link
+                  </DropdownMenuItem>
+
+                  {/* Duplicate */}
+                  <DropdownMenuItem onClick={handleDuplicate} className="gap-2">
+                    <Copy className="h-4 w-4" />
+                    Duplicate
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
+                  {isEditRoute && (
+                    <DropdownMenuItem onClick={toggleVersionHistory} className="gap-2">
+                      <History className="h-4 w-4" />
+                      Version History
+                    </DropdownMenuItem>
                   )}
                   <DropdownMenuItem onClick={handleToggleFavorite} className="gap-2">
                     <Star
@@ -320,16 +393,6 @@ export function AppHeader({
                     />
                     {isFavorite ? "Unfavorite" : "Favorite"}
                   </DropdownMenuItem>
-
-                  {/* <DropdownMenuItem onClick={toggleAnalyticsSidebar} className="gap-2">
-                    <BarChart3 className="h-4 w-4" />
-                    Analytics
-                  </DropdownMenuItem> */}
-                  {/* <DropdownMenuItem onClick={toggleIntegrationsSidebar} className="gap-2">
-                    <Settings2 className="h-4 w-4" />
-                    Integrations
-                  </DropdownMenuItem> */}
-
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleDeleteForm}
@@ -342,14 +405,16 @@ export function AppHeader({
               </DropdownMenu>
             </div>
 
-            {/* Main Action Button (Black style from mockup) */}
-            {isEditRoute && (
+            {/* Main Action Button */}
+            {isEditRoute ? (
+              // On edit route: show Publish / Publish Changes
               <Button
                 size="sm"
                 className={cn(
                   "h-8 px-4 ml-1 text-[13px] font-semibold transition-all rounded-md shadow-sm border-none",
-                  !isLoadingSavedDocs && (hasUnpublishedChanges || currentForm?.status !== "published")
-                    ? "bg-stone-900 border-none hover:bg-stone-800 text-white"
+                  !isLoadingSavedDocs &&
+                    (hasUnpublishedChanges || currentForm?.status !== "published")
+                    ? "bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
                     : "bg-muted text-muted-foreground hover:bg-muted/80",
                 )}
                 onClick={handlePublish}
@@ -359,12 +424,26 @@ export function AppHeader({
                 }
               >
                 {publishMutation.isPending && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
-                {currentForm?.status === "published"
-                  ? hasUnpublishedChanges
-                    ? "Publish Changes"
-                    : "Published"
-                  : "Publish"}
+                {currentForm?.status === "published" ? "Published" : "Publish"}
               </Button>
+            ) : (
+              // Not on edit route: show Edit button to navigate to the editor
+              workspaceId && formId && (
+                <Button
+                  size="sm"
+                  asChild
+                  className="h-8 px-4 ml-1 text-[13px] font-semibold transition-all rounded-md shadow-sm border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
+                >
+                  <Link
+                    to="/workspace/$workspaceId/form-builder/$formId/edit"
+                    params={{ workspaceId, formId }}
+                    search={{ force: true }}
+                  >
+                    <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                    Edit
+                  </Link>
+                </Button>
+              )
             )}
           </>
         )}
@@ -375,13 +454,14 @@ export function AppHeader({
           <div className="pointer-events-auto absolute top-[6px]">
             <Tooltip>
               <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={closeSidebar}
-                  className="flex h-8 w-8 items-center justify-center rounded-md bg-muted/60 text-muted-foreground opacity-0 transition-opacity group-hover/header:opacity-100 hover:text-foreground hover:bg-muted"
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCloseSidebar}
+                  className="h-8 w-8 bg-muted/60 opacity-0 group-hover/header:opacity-100"
                 >
                   <ChevronsRight className="h-4 w-4" />
-                </button>
+                </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" align="end">
                 <p className="font-medium">Close panel</p>

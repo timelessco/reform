@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { useFormSettingsSidebar } from "@/hooks/use-form-settings-sidebar";
 import { cn } from "@/lib/utils";
 import { SettingsContent } from "@/routes/_authenticated/workspace/$workspaceId/form-builder/$formId/settings";
@@ -25,18 +26,19 @@ export function FormSettingsSidebar({ formId }: FormSettingsSidebarProps) {
       <SidebarHeader className="p-0 shrink-0 border-b">
         {/* Tab Navigation - underline style like the image */}
         <div className="px-4 pt-4 flex items-center gap-6">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={() => setActiveTab("settings")}
+            data-active={activeTab === "settings"}
             className={cn(
-              "pb-3 text-sm font-medium transition-colors relative",
+              "pb-3 h-auto rounded-none px-0 text-sm font-medium relative hover:bg-transparent",
               activeTab === "settings"
                 ? "text-foreground after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-foreground"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
             Settings
-          </button>
+          </Button>
         </div>
       </SidebarHeader>
 

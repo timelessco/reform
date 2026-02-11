@@ -6,6 +6,6 @@
 - [x] header animation on hover similar to notion
 
 - popup issues
-- [X] height is auto adjusting
-- [X] position is not working
-- [X] show emoji picker
+- [x] height is auto adjusting
+- [x] position is not working
+- [x] show emoji picker

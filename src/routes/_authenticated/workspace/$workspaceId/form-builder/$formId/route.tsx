@@ -1,13 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { FormActionsMenu } from "@/components/form-builder/form-actions-menu";
-import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { useForm } from "@/hooks/use-live-hooks";
 import { getFormbyIdQueryOption } from "@/lib/fn/forms";
-import { createFileRoute, Link, Outlet, redirect, useLocation } from "@tanstack/react-router";
-import { Link as LinkIcon, Pencil } from "lucide-react";
+import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import type { Value } from "platejs";
 import { z } from "zod";
 
@@ -112,16 +109,7 @@ function FormLayout() {
   // Extract formId from pathname to ensure it's always current
   const formIdFromPath = pathname.split("/form-builder/")[1]?.split("/")[0] || "";
   const params = Route.useParams();
-  const { workspaceId } = params;
   const formId = formIdFromPath || params.formId;
-
-  // Primary: TanStack Query cache (primed by loader, immediate on navigation)
-  const { data: serverFormData } = useQuery(getFormbyIdQueryOption(formId));
-  // Secondary: Electric live data (real-time but async)
-  const { data: formData } = useForm(formId);
-
-  // Prefer Electric (real-time) when available, fall back to server cache
-  const form = formData?.[0] ?? serverFormData?.form;
 
   // Hide header on edit route (editor has its own full-screen layout)
   const isEditRoute = pathname.includes("/form-builder/") && pathname.includes("/edit");
@@ -136,46 +124,11 @@ function FormLayout() {
     );
   }
 
+  // Non-edit routes (submissions, settings, etc.) - full-width layout
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-background">
-      {/* Header Section */}
-      <div className="shrink-0 bg-background pt-10">
-        <div className="max-w-5xl mx-auto w-full px-8">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-foreground tracking-tight">
-                {form?.title || "Untitled Form"}
-              </h1>
-              <FormActionsMenu form={form} workspaceId={workspaceId} />
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <LinkIcon className="h-4 w-4" />
-              </button>
-              <Button asChild variant="default">
-                <Link
-                  to="/workspace/$workspaceId/form-builder/$formId/edit"
-                  params={{ workspaceId, formId }}
-                  search={{ force: true }}
-                >
-                  <Pencil className="h-3.5 w-3.5 fill-white/20" />
-                  Edit
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Page Content */}
+    <div className="flex flex-col h-full overflow-hidden bg-background">
       <main className="flex-1 min-h-0 min-w-0 overflow-auto relative">
-        <div className="max-w-5xl mx-auto w-full px-8 pb-20">
-          <Outlet key={formId} />
-        </div>
+        <Outlet key={formId} />
       </main>
     </div>
   );

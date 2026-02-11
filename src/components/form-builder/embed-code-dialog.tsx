@@ -341,10 +341,10 @@ export function EmbedCodeDialog({
             <div className="pt-8 border-t border-border space-y-1">
               {/* Query Parameters */}
               <div className="border-b border-border/50">
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
                   onClick={() => toggleSection("save")}
-                  className="w-full flex items-center justify-between py-5 text-left group"
+                  className="w-full flex items-center justify-between py-5 h-auto px-0 text-left group hover:bg-transparent"
                 >
                   <span className="text-[14px] font-semibold text-foreground group-hover:text-brand transition-colors">
                     Save website page and query parameters
@@ -355,7 +355,7 @@ export function EmbedCodeDialog({
                       sections.save && "rotate-180",
                     )}
                   />
-                </button>
+                </Button>
                 {sections.save && (
                   <div className="pb-8 space-y-4 text-muted-foreground text-[12px]">
                     <p className="leading-relaxed">
@@ -382,10 +382,10 @@ export function EmbedCodeDialog({
 
               {/* JavaScript API */}
               <div className="border-b border-border/50">
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
                   onClick={() => toggleSection("js")}
-                  className="w-full flex items-center justify-between py-5 text-left group"
+                  className="w-full flex items-center justify-between py-5 h-auto px-0 text-left group hover:bg-transparent"
                 >
                   <span className="text-[14px] font-semibold text-foreground group-hover:text-brand transition-colors">
                     Use JavaScript
@@ -396,7 +396,7 @@ export function EmbedCodeDialog({
                       sections.js && "rotate-180",
                     )}
                   />
-                </button>
+                </Button>
                 {sections.js && (
                   <div className="pb-8 space-y-5 text-muted-foreground text-[12px]">
                     <p className="leading-relaxed opacity-80">

@@ -262,9 +262,9 @@ function WorkspaceDashboard() {
               };
               return (
                 <article key={form.id} className="group relative">
-                  <button
-                    type="button"
-                    className="group flex flex-col p-2 -mx-2 rounded-xl hover:bg-muted/30 transition-all duration-200 cursor-pointer w-full text-left"
+                  <Button
+                    variant="ghost"
+                    className="group flex flex-col p-2 -mx-2 h-auto rounded-xl hover:bg-muted/30 w-full justify-start items-start"
                     aria-label={`Open form ${form.title || "Untitled"}`}
                     onClick={handleCardOpen}
                   >
@@ -294,7 +294,7 @@ function WorkspaceDashboard() {
                         </div>
                       </div>
                     </div>
-                  </button>
+                  </Button>
                   <div className="absolute top-2 right-2 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

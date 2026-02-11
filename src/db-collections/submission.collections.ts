@@ -22,7 +22,7 @@ type Submission = z.infer<typeof SubmissionSchema>;
 // Collection with ElectricSQL sync
 // ============================================================================
 
-const submissionCollection = createCollection(
+export const submissionCollection = createCollection(
   electricCollectionOptions({
     id: "submissions",
     schema: SubmissionSchema,

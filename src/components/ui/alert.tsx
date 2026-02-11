@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
 import type * as React from "react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const alertVariants = cva("flex items-stretch w-full gap-2 group-[.toaster]:w-(--width)", {
@@ -222,15 +223,16 @@ function Alert({
     >
       {children}
       {close && (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={onClose}
           aria-label="Dismiss"
           data-slot="alert-close"
-          className={cn("group shrink-0 size-4 cursor-pointer")}
+          className={cn("group shrink-0 size-4 cursor-pointer p-0 h-4 w-4 hover:bg-transparent")}
         >
           <X className="opacity-60 group-hover:opacity-100 size-4" />
-        </button>
+        </Button>
       )}
     </div>
   );

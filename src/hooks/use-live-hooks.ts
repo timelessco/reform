@@ -4,6 +4,7 @@ import {
   favoriteCollection,
   formCollection,
   localFormCollection,
+  submissionCollection,
   workspaceCollection,
 } from "@/db-collections";
 
@@ -165,4 +166,25 @@ export const useArchivedForms = () => {
         deletedAt: form.deletedAt,
       })),
   );
+};
+
+/**
+ * Custom hook for real-time submission counts by formId.
+ * Returns a Map<formId, count> for efficient lookups.
+ */
+export const useSubmissionCounts = () => {
+  const { data: submissions } = useLiveQuery((q) =>
+    q.from({ sub: submissionCollection }).select(({ sub }) => ({
+      formId: sub.formId,
+    })),
+  );
+
+  return useMemo(() => {
+    if (!submissions) return new Map<string, number>();
+    const counts = new Map<string, number>();
+    for (const sub of submissions) {
+      counts.set(sub.formId, (counts.get(sub.formId) || 0) + 1);
+    }
+    return counts;
+  }, [submissions]);
 };

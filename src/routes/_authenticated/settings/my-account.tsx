@@ -256,10 +256,10 @@ function MyAccountPage() {
         <div className="space-y-2">
           <p className="text-sm font-medium">Photo</p>
           <div className="flex items-center gap-4">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={() => fileInputRef.current?.click()}
-              className="relative group cursor-pointer"
+              className="relative group cursor-pointer p-0 h-auto rounded-full"
             >
               <Avatar className="h-24 w-24">
                 <AvatarImage src={user?.image || ""} />
@@ -271,7 +271,7 @@ function MyAccountPage() {
               <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <Camera className="h-6 w-6 text-white" />
               </div>
-            </button>
+            </Button>
             <input
               ref={fileInputRef}
               type="file"

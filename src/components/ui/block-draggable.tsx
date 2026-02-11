@@ -385,9 +385,9 @@ const DragHandle = React.memo(function DragHandle({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button
-          type="button"
-          className="flex size-full items-center justify-center"
+        <Button
+          variant="ghost"
+          className="flex size-full items-center justify-center p-0 h-auto hover:bg-transparent"
           onClick={(e) => {
             // e.preventDefault();
             // e.stopPropagation();
@@ -477,7 +477,7 @@ const DragHandle = React.memo(function DragHandle({
           ) : (
             <GripVertical className="text-muted-foreground" />
           )}
-        </button>
+        </Button>
       </TooltipTrigger>
       <TooltipContent>
         {isFormButton ? "Click for settings" : "Drag to move, Click to open menu"}

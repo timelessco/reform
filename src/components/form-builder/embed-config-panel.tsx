@@ -64,7 +64,7 @@ export function EmbedConfigPanel({ embedType, form }: EmbedConfigPanelProps) {
       {/* Standard Embed Options */}
       {embedType === "standard" && (
         <div className="space-y-4">
-          <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">
+          <Label className="text-[10px] font-bold uppercase tracking-widest text-light-gray-400">
             Appearance
           </Label>
 
@@ -139,7 +139,7 @@ export function EmbedConfigPanel({ embedType, form }: EmbedConfigPanelProps) {
       {embedType === "popup" && (
         <div className="space-y-6">
           <div className="space-y-4">
-            <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">
+            <Label className="text-[10px] font-bold uppercase tracking-widest text-light-gray-400">
               Trigger & Position
             </Label>
 
@@ -210,7 +210,7 @@ export function EmbedConfigPanel({ embedType, form }: EmbedConfigPanelProps) {
           </div>
 
           <div className="space-y-4">
-            <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">
+            <Label className="text-[10px] font-bold uppercase tracking-widest text-light-gray-400">
               Visuals
             </Label>
 
@@ -283,7 +283,7 @@ export function EmbedConfigPanel({ embedType, form }: EmbedConfigPanelProps) {
           </div>
 
           <div className="space-y-4">
-            <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">
+            <Label className="text-[10px] font-bold uppercase tracking-widest text-light-gray-400">
               Behavior
             </Label>
 
@@ -328,7 +328,7 @@ export function EmbedConfigPanel({ embedType, form }: EmbedConfigPanelProps) {
       {/* Full Page Options */}
       {embedType === "fullpage" && (
         <div className="space-y-4">
-          <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">
+          <Label className="text-[10px] font-bold uppercase tracking-widest text-light-gray-400">
             Appearance
           </Label>
           <form.Field name="transparentBackground">
@@ -346,7 +346,7 @@ export function EmbedConfigPanel({ embedType, form }: EmbedConfigPanelProps) {
 
       {/* Pro Settings */}
       <div className="space-y-4 pt-4 border-t border-muted/60">
-        <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/70">
+        <Label className="text-[10px] font-bold uppercase tracking-widest text-light-gray-400">
           Pro Settings
         </Label>
 

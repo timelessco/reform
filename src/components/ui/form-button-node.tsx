@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, Settings } from "lucide-react";
 import type { PlateEditor, PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorRef } from "platejs/react";
 import * as React from "react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /**
@@ -111,9 +112,10 @@ export function FormButtonElement({ className, children, ...props }: PlateElemen
       }}
     >
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="p-1.5 rounded hover:bg-muted/80 transition-colors opacity-0 group-hover:opacity-100"
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="h-7 w-7 opacity-0 group-hover:opacity-100"
           onMouseDown={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -125,7 +127,7 @@ export function FormButtonElement({ className, children, ...props }: PlateElemen
           }}
         >
           <Settings className="h-4 w-4 text-muted-foreground" />
-        </button>
+        </Button>
       </PopoverTrigger>
       <PopoverContent
         className="w-64"
