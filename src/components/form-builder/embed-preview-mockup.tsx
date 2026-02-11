@@ -11,13 +11,13 @@ export function EmbedPreviewMockup({
   popupPosition = "bottom-right",
 }: EmbedPreviewMockupProps) {
   return (
-    <div className="rounded-[12px] border border-[#EDEDED] bg-[#F8F8F8] overflow-hidden">
+    <div className="rounded-[12px] border border-border bg-muted/30 overflow-hidden">
       {/* Browser Chrome */}
       <div className="flex items-center gap-1 px-3 py-2.5">
         <div className="flex gap-1.5">
-          <div className="h-1.5 w-1.5 rounded-full bg-[#E5E5E5]" />
-          <div className="h-1.5 w-1.5 rounded-full bg-[#E5E5E5]" />
-          <div className="h-1.5 w-1.5 rounded-full bg-[#E5E5E5]" />
+          <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/20" />
+          <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/20" />
+          <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/20" />
         </div>
       </div>
 
@@ -35,7 +35,7 @@ function BoxSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "rounded-xl bg-[#EDEDED] shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-white/50",
+        "rounded-xl bg-card shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-border/50",
         className
       )}
     />
@@ -47,9 +47,9 @@ function StandardPreview() {
     <div className="h-full flex flex-col justify-center gap-4 py-2">
       {/* Abstract Background context */}
       <div className="space-y-2 opacity-30 px-2">
-        <div className="h-2 bg-[#E5E5E5] rounded-full w-1/4" />
-        <div className="h-1.5 bg-[#E5E5E5] rounded-full w-full" />
-        <div className="h-1.5 bg-[#E5E5E5] rounded-full w-4/5" />
+        <div className="h-2 bg-muted rounded-full w-1/4" />
+        <div className="h-1.5 bg-muted rounded-full w-full" />
+        <div className="h-1.5 bg-muted rounded-full w-4/5" />
       </div>
 
       {/* The centered "Embed" box */}
@@ -58,8 +58,8 @@ function StandardPreview() {
       </div>
 
       <div className="space-y-2 opacity-10 px-2">
-        <div className="h-1.5 bg-[#E5E5E5] rounded-full w-full" />
-        <div className="h-1.5 bg-[#E5E5E5] rounded-full w-11/12" />
+        <div className="h-1.5 bg-muted rounded-full w-full" />
+        <div className="h-1.5 bg-muted rounded-full w-11/12" />
       </div>
     </div>
   );
@@ -70,11 +70,11 @@ function PopupPreview({ position }: { position: string }) {
     <div className="relative h-full w-full">
       {/* Abstract Page Background */}
       <div className="space-y-3 opacity-20 pt-2">
-        <div className="h-2.5 bg-[#E5E5E5] rounded-full w-1/5" />
+        <div className="h-2.5 bg-muted rounded-full w-1/5" />
         <div className="space-y-2">
-          <div className="h-2 bg-[#E5E5E5] rounded-full w-full" />
-          <div className="h-2 bg-[#E5E5E5] rounded-full w-full" />
-          <div className="h-2 bg-[#E5E5E5] rounded-full w-3/4" />
+          <div className="h-2 bg-muted rounded-full w-full" />
+          <div className="h-2 bg-muted rounded-full w-full" />
+          <div className="h-2 bg-muted rounded-full w-3/4" />
         </div>
       </div>
 
