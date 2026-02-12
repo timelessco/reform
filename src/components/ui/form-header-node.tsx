@@ -152,121 +152,116 @@ export function FormHeaderElement(props: PlateElementProps) {
                 />
               )}
             </div>
-
-            <div className="absolute top-0 left-0 w-full h-[120px] sm:h-[200px] pointer-events-none group-hover:opacity-100 transition-opacity z-20">
-              <div className="relative w-full h-full">
-                <div className="absolute top-2 flex gap-2 pointer-events-auto left-[calc(8px+var(--editor-px,0px))]">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="bg-white/80 hover:bg-white text-xs h-7"
-                        onMouseDown={(e) => e.preventDefault()}
-                      >
-                        Change cover
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Cover Image</DialogTitle>
-                      </DialogHeader>
-                      <Tabs defaultValue="gallery" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                          <TabsTrigger value="gallery">Gallery</TabsTrigger>
-                          <TabsTrigger value="upload">Upload</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="gallery" className="grid grid-cols-4 gap-2 pt-4">
-                          <button
-                            type="button"
-                            onClick={() => handleCoverChange("#FFE4E1")}
-                            className="h-16 bg-[#FFE4E1] rounded cursor-pointer hover:ring-2 ring-primary transition-all"
-                            aria-label="Pink color"
-                          />
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleCoverChange(
-                                "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80",
-                              )
-                            }
-                            className="h-16 bg-blue-100 rounded cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
-                            aria-label="Blue gradient"
-                          >
-                            <img
-                              src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80"
-                              alt="Blue gradient"
-                              className="w-full h-full object-cover"
-                            />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleCoverChange(
-                                "https://images.unsplash.com/photo-1557683316-973673baf926?w=800&q=80",
-                              )
-                            }
-                            className="h-16 bg-purple-100 rounded cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
-                            aria-label="Purple gradient"
-                          >
-                            <img
-                              src="https://images.unsplash.com/photo-1557683316-973673baf926?w=800&q=80"
-                              alt="Purple gradient"
-                              className="w-full h-full object-cover"
-                            />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleCoverChange(
-                                "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80",
-                              )
-                            }
-                            className="h-16 bg-green-100 rounded cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
-                            aria-label="Green gradient"
-                          >
-                            <img
-                              src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80"
-                              alt="Green gradient"
-                              className="w-full h-full object-cover"
-                            />
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleCoverChange(null)}
-                            onMouseDown={(e) => e.preventDefault()}
-                            className="col-span-4 mt-2 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-2 border rounded-md hover:bg-muted/50"
-                          >
-                            <X className="h-4 w-4" /> Remove cover
-                          </button>
-                        </TabsContent>
-                        <TabsContent value="upload" className="pt-4">
-                          <CoverUpload onFileChange={handleCoverChange} />
-                          <button
-                            type="button"
-                            onClick={() => handleCoverChange(null)}
-                            onMouseDown={(e) => e.preventDefault()}
-                            className="w-full mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-2 border rounded-md hover:bg-muted/50"
-                          >
-                            <X className="h-4 w-4" /> Remove cover
-                          </button>
-                        </TabsContent>
-                      </Tabs>
-                    </DialogContent>
-                  </Dialog>
-
+            <div className="absolute top-2 right-4 flex gap-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Dialog>
+                <DialogTrigger asChild>
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="bg-white/80 hover:bg-white text-xs h-7 text-muted-foreground hover:text-destructive"
-                    onClick={() => handleCoverChange(null)}
+                    className="bg-white/80 hover:bg-white text-xs h-7"
                     onMouseDown={(e) => e.preventDefault()}
                   >
-                    Remove
+                    Change cover
                   </Button>
-                </div>
-              </div>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Cover Image</DialogTitle>
+                  </DialogHeader>
+                  <Tabs defaultValue="gallery" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="gallery">Gallery</TabsTrigger>
+                      <TabsTrigger value="upload">Upload</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="gallery" className="grid grid-cols-4 gap-2 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => handleCoverChange("#FFE4E1")}
+                        className="h-16 bg-[#FFE4E1] rounded cursor-pointer hover:ring-2 ring-primary transition-all"
+                        aria-label="Pink color"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleCoverChange(
+                            "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80",
+                          )
+                        }
+                        className="h-16 bg-blue-100 rounded cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        aria-label="Blue gradient"
+                      >
+                        <img
+                          src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80"
+                          alt="Blue gradient"
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleCoverChange(
+                            "https://images.unsplash.com/photo-1557683316-973673baf926?w=800&q=80",
+                          )
+                        }
+                        className="h-16 bg-purple-100 rounded cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        aria-label="Purple gradient"
+                      >
+                        <img
+                          src="https://images.unsplash.com/photo-1557683316-973673baf926?w=800&q=80"
+                          alt="Purple gradient"
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleCoverChange(
+                            "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80",
+                          )
+                        }
+                        className="h-16 bg-green-100 rounded cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        aria-label="Green gradient"
+                      >
+                        <img
+                          src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80"
+                          alt="Green gradient"
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleCoverChange(null)}
+                        onMouseDown={(e) => e.preventDefault()}
+                        className="col-span-4 mt-2 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-2 border rounded-md hover:bg-muted/50"
+                      >
+                        <X className="h-4 w-4" /> Remove cover
+                      </button>
+                    </TabsContent>
+                    <TabsContent value="upload" className="pt-4">
+                      <CoverUpload onFileChange={handleCoverChange} />
+                      <button
+                        type="button"
+                        onClick={() => handleCoverChange(null)}
+                        onMouseDown={(e) => e.preventDefault()}
+                        className="w-full mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-2 border rounded-md hover:bg-muted/50"
+                      >
+                        <X className="h-4 w-4" /> Remove cover
+                      </button>
+                    </TabsContent>
+                  </Tabs>
+                </DialogContent>
+              </Dialog>
+
+              <Button
+                variant="secondary"
+                size="sm"
+                className="bg-white/80 hover:bg-white text-xs h-7 text-muted-foreground hover:text-destructive"
+                onClick={() => handleCoverChange(null)}
+                onMouseDown={(e) => e.preventDefault()}
+              >
+                Remove
+              </Button>
             </div>
           </>
         )}

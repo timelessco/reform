@@ -353,8 +353,8 @@ function AuthLayoutContent() {
               ref={rightPanelRef}
               collapsible
               collapsedSize={0}
-              defaultSize={showEditorSidebar ? 30 : 0}
-              minSize={20}
+              defaultSize={showEditorSidebar ?40 : 0}
+              minSize={30}
               maxSize={40}
               className={cn(
                 "h-full overflow-hidden transition-all duration-300 ease-in-out bg-background",

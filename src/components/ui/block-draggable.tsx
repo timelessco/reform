@@ -19,7 +19,7 @@ import {
 } from "platejs/react";
 import * as React from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -300,12 +300,10 @@ function Draggable(props: PlateElementProps) {
               </Tooltip>
             )}
 
-            {/* Drag Handle or Settings Gear */}
-            <Button
+            {/* Drag Handle or Settings Gear - div to avoid nested button (Tooltip+Button inside) */}
+            <div
               ref={isFormButton ? null : handleRef}
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 p-0"
+              className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-6 w-6 p-0")}
               data-plate-prevent-deselect
             >
               <DragHandle
@@ -315,7 +313,7 @@ function Draggable(props: PlateElementProps) {
                 setPreviewTop={setPreviewTop}
                 isFormButton={isFormButton}
               />
-            </Button>
+            </div>
           </div>
         </Gutter>
       )}
