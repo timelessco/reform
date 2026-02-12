@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
@@ -90,6 +91,51 @@ export function SettingsContent({ formId }: { formId: string }) {
                 )}
               </form.AppField>
             </SettingItem>
+
+            {/* Conditional redirect URL and delay fields */}
+            <form.Subscribe selector={(state) => state.values.redirectOnCompletion}>
+              {(redirectOnCompletion) =>
+                redirectOnCompletion ? (
+                  <>
+                    <SettingItem
+                      title="Redirect URL"
+                      description="The URL to redirect to after form submission."
+                    >
+                      <form.AppField name="redirectUrl">
+                        {(field) => (
+                          <Input
+                            type="url"
+                            placeholder="https://example.com/thank-you"
+                            value={(field.state.value as string) || ""}
+                            onChange={(e) => field.handleChange(e.target.value || null)}
+                            className="w-[280px] h-9"
+                          />
+                        )}
+                      </form.AppField>
+                    </SettingItem>
+
+                    <SettingItem
+                      title="Redirect delay (seconds)"
+                      description="How long to show the thank you page before redirecting. Set to 0 for immediate redirect."
+                    >
+                      <form.AppField name="redirectDelay">
+                        {(field) => (
+                          <Input
+                            type="number"
+                            min={0}
+                            max={60}
+                            placeholder="0"
+                            value={(field.state.value as number) || 0}
+                            onChange={(e) => field.handleChange(Number(e.target.value) || 0)}
+                            className="w-[100px] h-9"
+                          />
+                        )}
+                      </form.AppField>
+                    </SettingItem>
+                  </>
+                ) : null
+              }
+            </form.Subscribe>
 
             <SettingItem
               title="Progress bar"

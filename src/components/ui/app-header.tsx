@@ -14,7 +14,7 @@ import {
   useHasUnpublishedChanges,
   usePublishVersion,
 } from "@/hooks/use-form-versions";
-import { useForm, useIsFavorite } from "@/hooks/use-live-hooks";
+import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
 import { deleteForm, getFormbyIdQueryOption } from "@/lib/fn/forms";
 import { cn } from "@/lib/utils";
@@ -121,6 +121,9 @@ export function AppHeader({
   // Secondary: Electric live data (real-time but async)
   const { data: savedDocs, isLoading: isLoadingSavedDocs } = useForm(formId);
 
+  // Get workspace data for breadcrumb
+  const { data: workspace } = useWorkspace(workspaceId);
+
   // Prefer Electric (real-time) when available, fall back to server cache
   const currentForm = useMemo(() => {
     if (!formId) return undefined;
@@ -223,9 +226,20 @@ export function AppHeader({
           </Button>
         )}
 
-        {/* Breadcrumb: Form Name / Page */}
+        {/* Breadcrumb: Workspace / Form Name / Page */}
         {isFormBuilder && currentForm && (
           <div className="flex items-center gap-2 text-sm">
+            {workspace && (
+              <>
+                <Link
+                  to="/dashboard"
+                  className="text-muted-foreground hover:text-foreground truncate max-w-[150px]"
+                >
+                  {workspace.name}
+                </Link>
+                <span className="text-muted-foreground/50">/</span>
+              </>
+            )}
             <span className="font-medium truncate max-w-[200px]">
               {currentForm.title || "Untitled"}
             </span>

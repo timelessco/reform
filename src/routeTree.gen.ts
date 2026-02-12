@@ -28,7 +28,6 @@ import { Route as AuthenticatedSettingsMembersRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_authenticated/settings/billing'
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings/api-keys'
 import { Route as AuthenticatedWorkspaceWorkspaceIdRouteRouteImport } from './routes/_authenticated/workspace/$workspaceId/route'
-import { Route as AuthenticatedWorkspaceWorkspaceIdIndexRouteImport } from './routes/_authenticated/workspace/$workspaceId/index'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/route'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSubmissionsRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/submissions'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/settings'
@@ -136,12 +135,6 @@ const AuthenticatedWorkspaceWorkspaceIdRouteRoute =
     path: '/workspace/$workspaceId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedWorkspaceWorkspaceIdIndexRoute =
-  AuthenticatedWorkspaceWorkspaceIdIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedWorkspaceWorkspaceIdRouteRoute,
-  } as any)
 const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRoute =
   AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteImport.update({
     id: '/form-builder/$formId',
@@ -191,7 +184,6 @@ export interface FileRoutesByFullPath {
   '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/workspace/$workspaceId/': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
   '/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
   '/workspace/$workspaceId/form-builder/$formId/edit': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute
   '/workspace/$workspaceId/form-builder/$formId/settings': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
@@ -209,13 +201,13 @@ export interface FileRoutesByTo {
   '/api/electric': typeof ApiElectricRoute
   '/demo/$': typeof DemoSplatRoute
   '/forms/$formId': typeof FormsFormIdRoute
+  '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/members': typeof AuthenticatedSettingsMembersRoute
   '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
   '/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
   '/workspace/$workspaceId/form-builder/$formId/edit': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute
   '/workspace/$workspaceId/form-builder/$formId/settings': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
@@ -242,7 +234,6 @@ export interface FileRoutesById {
   '/_authenticated/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/_authenticated/workspace/$workspaceId/': typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
   '/_authenticated/workspace/$workspaceId/form-builder/$formId/edit': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId/settings': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
@@ -269,7 +260,6 @@ export interface FileRouteTypes {
     | '/settings/my-account'
     | '/settings/notifications'
     | '/api/auth/$'
-    | '/workspace/$workspaceId/'
     | '/workspace/$workspaceId/form-builder/$formId'
     | '/workspace/$workspaceId/form-builder/$formId/edit'
     | '/workspace/$workspaceId/form-builder/$formId/settings'
@@ -287,13 +277,13 @@ export interface FileRouteTypes {
     | '/api/electric'
     | '/demo/$'
     | '/forms/$formId'
+    | '/workspace/$workspaceId'
     | '/settings/api-keys'
     | '/settings/billing'
     | '/settings/members'
     | '/settings/my-account'
     | '/settings/notifications'
     | '/api/auth/$'
-    | '/workspace/$workspaceId'
     | '/workspace/$workspaceId/form-builder/$formId'
     | '/workspace/$workspaceId/form-builder/$formId/edit'
     | '/workspace/$workspaceId/form-builder/$formId/settings'
@@ -319,7 +309,6 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/my-account'
     | '/_authenticated/settings/notifications'
     | '/api/auth/$'
-    | '/_authenticated/workspace/$workspaceId/'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId/edit'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId/settings'
@@ -474,13 +463,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/workspace/$workspaceId/': {
-      id: '/_authenticated/workspace/$workspaceId/'
-      path: '/'
-      fullPath: '/workspace/$workspaceId/'
-      preLoaderRoute: typeof AuthenticatedWorkspaceWorkspaceIdIndexRouteImport
-      parentRoute: typeof AuthenticatedWorkspaceWorkspaceIdRouteRoute
-    }
     '/_authenticated/workspace/$workspaceId/form-builder/$formId': {
       id: '/_authenticated/workspace/$workspaceId/form-builder/$formId'
       path: '/form-builder/$formId'
@@ -557,14 +539,11 @@ const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren =
   )
 
 interface AuthenticatedWorkspaceWorkspaceIdRouteRouteChildren {
-  AuthenticatedWorkspaceWorkspaceIdIndexRoute: typeof AuthenticatedWorkspaceWorkspaceIdIndexRoute
   AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRoute: typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
 }
 
 const AuthenticatedWorkspaceWorkspaceIdRouteRouteChildren: AuthenticatedWorkspaceWorkspaceIdRouteRouteChildren =
   {
-    AuthenticatedWorkspaceWorkspaceIdIndexRoute:
-      AuthenticatedWorkspaceWorkspaceIdIndexRoute,
     AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRoute:
       AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren,
   }

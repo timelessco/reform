@@ -1,9 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { eq, inArray } from "drizzle-orm";
 import { member, workspaces } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { logger } from "@/lib/utils";
+import { createFileRoute } from "@tanstack/react-router";
+import { eq, inArray } from "drizzle-orm";
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {

@@ -51,6 +51,8 @@ export const FormSchema = z.object({
       // New Tally-style settings
       language: z.string().default("English"),
       redirectOnCompletion: z.boolean().default(false),
+      redirectUrl: z.string().nullable().default(null),
+      redirectDelay: z.number().default(0), // seconds to wait before redirect
       progressBar: z.boolean().default(false),
       branding: z.boolean().default(true),
       dataRetention: z.boolean().default(true),
@@ -157,6 +159,8 @@ const DEFAULT_FORM_SETTINGS = {
   isCodeSidebarOpen: false,
   language: "English",
   redirectOnCompletion: false,
+  redirectUrl: null,
+  redirectDelay: 0,
   progressBar: false,
   branding: true,
   dataRetention: true,
@@ -274,7 +278,12 @@ async function deleteFormLocal(id: string): Promise<void> {
  * Duplicates a form by ID and returns the new document.
  * The new form's title will be "{original title} copy"
  */
-export async function duplicateForm(sourceForm: Form): Promise<Form> {
+export async function duplicateFormById(formId: string): Promise<Form> {
+  const sourceForm = formCollection.state.get(formId);
+  if (!sourceForm) {
+    throw new Error(`Form not found: ${formId}`);
+  }
+
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const title = sourceForm.title ? `${sourceForm.title} copy` : "Untitled copy";
@@ -289,6 +298,13 @@ export async function duplicateForm(sourceForm: Form): Promise<Form> {
 
   await formCollection.insert(newForm);
   return newForm;
+}
+
+/**
+ * @deprecated Use duplicateFormById instead
+ */
+export async function duplicateForm(sourceForm: Form): Promise<Form> {
+  return duplicateFormById(sourceForm.id);
 }
 
 /**

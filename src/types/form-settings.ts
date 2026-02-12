@@ -21,6 +21,7 @@ export interface FormSettings {
   language: Language;
   redirectOnCompletion: boolean;
   redirectUrl: string | null;
+  redirectDelay: number; // seconds to wait before redirect
   progressBar: boolean;
   branding: boolean;
   dataRetention: boolean;
@@ -52,6 +53,29 @@ export interface FormSettings {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// ============================================================================
+// Public Form Settings (subset for public form page)
+// ============================================================================
+export interface PublicFormSettings {
+  progressBar: boolean;
+  branding: boolean;
+  autoJump: boolean;
+  saveAnswersForLater: boolean;
+  redirectOnCompletion: boolean;
+  redirectUrl: string | null;
+  redirectDelay: number;
+}
+
+export const defaultPublicFormSettings: PublicFormSettings = {
+  progressBar: false,
+  branding: true,
+  autoJump: false,
+  saveAnswersForLater: false,
+  redirectOnCompletion: false,
+  redirectUrl: null,
+  redirectDelay: 0,
+};
 
 // ============================================================================
 // Form Share Settings Interface
@@ -108,6 +132,7 @@ export const defaultFormSettings: Omit<FormSettings, "id" | "formId" | "createdA
     language: "English",
     redirectOnCompletion: false,
     redirectUrl: null,
+    redirectDelay: 0,
     progressBar: false,
     branding: true,
     dataRetention: false,

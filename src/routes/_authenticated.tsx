@@ -67,11 +67,13 @@ import {
   createFormLocal,
   createWorkspaceLocal,
   deleteWorkspaceLocal,
-  duplicateForm,
+  duplicateFormById,
+  formCollection,
   permanentDeleteFormLocal,
   restoreFormLocal,
   updateFormStatus,
   updateWorkspaceName,
+  workspaceCollection,
 } from "@/db-collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
@@ -83,6 +85,7 @@ import {
   useWorkspaces,
 } from "@/hooks/use-live-hooks";
 import { auth, useSession } from "@/lib/auth-client";
+import { orgDataForLayoutQueryOptions } from "@/lib/fn/org";
 import { getUserMembershipsQueryOptions } from "@/lib/fn/workspaces";
 import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/middleware/auth";
@@ -99,7 +102,6 @@ import {
 import {
   Bell,
   ChevronDown,
-  ChevronRight,
   ChevronsLeft,
   Copy,
   FileText,
@@ -119,10 +121,10 @@ import {
   Trash2,
   Undo2,
   Users,
-  Zap,
+  Zap
 } from "lucide-react";
 import type * as React from "react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 // Route configuration
@@ -131,6 +133,25 @@ export const Route = createFileRoute("/_authenticated")({
     middleware: [authMiddleware],
   },
   component: AuthLayout,
+  loader: async ({ context }) => {
+    // Pre-fetch org data via ensureQueryData (like my-account pattern)
+    const { activeOrg, orgsData } = await context.queryClient.ensureQueryData({
+      ...orgDataForLayoutQueryOptions(),
+      revalidateIfStale: true,
+    });
+    // Seed auth.organization cache so useQuery in org-switcher, billing, etc. works
+    context.queryClient.setQueryData(
+      auth.organization.getFullOrganization.queryKey(),
+      activeOrg,
+    );
+    context.queryClient.setQueryData(
+      auth.organization.list.queryKey(),
+      orgsData,
+    );
+    await workspaceCollection.preload();
+    await formCollection.preload();
+    return { activeOrg, orgsData };
+  },
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,
@@ -436,7 +457,8 @@ function AppSidebar() {
   // Trash dialog state
   const [trashDialogOpen, setTrashDialogOpen] = useState(false);
 
-  const { data: activeOrg } = useQuery(auth.organization.getFullOrganization.queryOptions());
+  // Get pre-fetched data from route loader for immediate render
+  const {activeOrg , orgsData} = Route.useLoaderData();
   const { data: membersData } = useQuery(auth.organization.listMembers.queryOptions());
   const memberCount = membersData?.members?.length ?? 0;
   const { data: workspacesData } = useWorkspaces();
@@ -482,6 +504,14 @@ function AppSidebar() {
       },
     }),
   );
+
+  // Set active organization if user has orgs but none is active (runs for all auth routes)
+  useEffect(() => {
+    if (!session?.user) return;
+    if (!activeOrg && orgsData && orgsData.length > 0) {
+      setActiveOrgMutation.mutate({ organizationId: orgsData[0].id });
+    }
+  }, [activeOrg, orgsData, session, setActiveOrgMutation]);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -1663,7 +1693,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
 
   const handleDuplicateForm = async (form: WorkspaceWithForms["forms"][0]) => {
     try {
-      const newForm = await duplicateForm(form as any);
+      const newForm = await duplicateFormById(form.id);
       toast.success("Form duplicated");
       router.navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",

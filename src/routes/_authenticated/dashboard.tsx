@@ -1,20 +1,3 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { formatDistanceToNow } from "date-fns";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Copy,
-  FileText,
-  FolderPlus,
-  HelpCircle,
-  Loader2,
-  Plus,
-  Trash2,
-} from "lucide-react";
-import { createWorkspaceLocal } from "@/db-collections";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,38 +14,36 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  createFormLocal,
+  createWorkspaceLocal,
+  duplicateFormById,
+  updateFormStatus,
+} from "@/db-collections";
 import { useForms, useWorkspaces } from "@/hooks/use-live-hooks";
-import { auth, useSession } from "@/lib/auth-client";
-import { createForm, duplicateForm, updateForm } from "@/lib/fn/forms";
-import { getWorkspacesWithFormsQueryOptions } from "@/lib/fn/workspaces";
+import { useSession } from "@/lib/auth-client";
 import { syncLocalDataToCloud } from "@/lib/sync";
+import { createFileRoute, Link, useLoaderData, useNavigate } from "@tanstack/react-router";
+import { formatDistanceToNow } from "date-fns";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  FileText,
+  FolderPlus,
+  HelpCircle,
+  Loader2,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 const FORMS_PER_PAGE = 10;
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
   ssr: false,
-  loader: async ({ context }) => {
-    const [activeOrg, orgsData, workspacesData] = await Promise.all([
-      context.queryClient.ensureQueryData({
-        ...auth.organization.getFullOrganization.queryOptions(),
-        revalidateIfStale: true,
-      }),
-      context.queryClient.ensureQueryData({
-        ...auth.organization.list.queryOptions(),
-        revalidateIfStale: true,
-      }),
-      context.queryClient.ensureQueryData({
-        ...getWorkspacesWithFormsQueryOptions(),
-        revalidateIfStale: true,
-      }),
-    ]);
-    return {
-      activeOrg,
-      orgsData,
-      workspacesData,
-    };
-  },
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,
@@ -70,8 +51,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { activeOrg, orgsData, workspacesData: initialWorkspacesData } = Route.useLoaderData();
+  const { activeOrg } = useLoaderData({ from: "/_authenticated" });
   const [isCreating, setIsCreating] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [formToDelete, setFormToDelete] = useState<{
@@ -83,52 +63,28 @@ function DashboardPage() {
   // Get current session/user
   const { data: session } = useSession();
 
-  // Live queries for real-time sync
-  const { data: liveWorkspaces, isReady: wsReady } = useWorkspaces();
-  const { data: liveForms, isReady: formsReady } = useForms();
-  const isLiveReady = wsReady && formsReady;
+  // Live queries for real-time sync - single source of truth
+  const { data: liveWorkspaces, isLoading: wsLoading } = useWorkspaces();
+  const { data: liveForms, isLoading: formsLoading } = useForms();
 
-  // Track when live forms data has actually been received with content.
-  // This prevents switching from loader data to empty live data during
-  // the Electric sync race condition on first login redirect.
-  const [hasReceivedLiveForms, setHasReceivedLiveForms] = useState(false);
-  useEffect(() => {
-    if (formsReady && (liveForms ?? []).length > 0) {
-      setHasReceivedLiveForms(true);
-    }
-  }, [formsReady, liveForms]);
+  // Determine if Electric has synced
+  const isLoading = wsLoading || formsLoading;
+  const isElectricReady = !isLoading && liveWorkspaces !== undefined && liveForms !== undefined;
 
-  // Always compute loader-based data
-  const loaderWorkspaces = (initialWorkspacesData?.workspaces ?? []).filter(
-    (ws) => ws.organizationId === activeOrg?.id,
-  );
-  const loaderForms = loaderWorkspaces
-    .flatMap((ws) =>
-      ((ws as any).forms ?? []).map((f: any) => ({
-        ...f,
-        workspaceId: ws.id,
-        status: f.status ?? "draft",
-      })),
-    )
-    .filter((form: any) => form.status !== "archived")
-    .toSorted(
-      (a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-    );
+  // Use live data directly once Electric is ready (like sidebar does)
+  const orgWorkspaces = useMemo(() => {
+    if (!activeOrg?.id || !isElectricReady) return [];
+    return (liveWorkspaces || []).filter((ws) => ws.organizationId === activeOrg.id);
+  }, [liveWorkspaces, activeOrg?.id, isElectricReady]);
 
-  // Compute live data
-  const liveOrgWorkspaces = (liveWorkspaces ?? []).filter(
-    (ws) => ws.organizationId === activeOrg?.id,
-  );
-  const liveOrgForms = (liveForms ?? [])
-    .filter((form) => liveOrgWorkspaces.some((ws) => ws.id === form.workspaceId))
-    .filter((form) => form.status !== "archived")
-    .toSorted((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  const orgForms = useMemo(() => {
+    if (!isElectricReady) return [];
+    return (liveForms || [])
+      .filter((form) => orgWorkspaces.some((ws) => ws.id === form.workspaceId))
+      .filter((form) => form.status !== "archived")
+      .toSorted((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  }, [liveForms, orgWorkspaces, isElectricReady]);
 
-  // Smart switch: don't drop loader data until live data is reliable.
-  // Use live data when Electric is ready AND (we've received live forms at least once OR loader had no forms).
-  const useLiveData = isLiveReady && (hasReceivedLiveForms || loaderForms.length === 0);
-  const orgWorkspaces = useLiveData ? liveOrgWorkspaces : loaderWorkspaces;
-  const orgForms = useLiveData ? liveOrgForms : loaderForms;
   // Create workspace name lookup
   const workspaceNameMap = new Map(orgWorkspaces.map((ws) => [ws.id, ws.name]));
 
@@ -136,31 +92,6 @@ function DashboardPage() {
   const totalPages = Math.ceil(orgForms.length / FORMS_PER_PAGE);
   const startIndex = (currentPage - 1) * FORMS_PER_PAGE;
   const paginatedForms = orgForms.slice(startIndex, startIndex + FORMS_PER_PAGE);
-
-  const setActiveMutation = useMutation(
-    auth.organization.setActive.mutationOptions({
-      onSuccess: async () => {
-        // Invalidate and wait for refetch before navigating
-        await queryClient.invalidateQueries({
-          queryKey: ["organization", "getFullOrganization"],
-          refetchType: "all",
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["workspaces-with-forms"],
-          refetchType: "all",
-        });
-        navigate({ to: "/dashboard", replace: true });
-      },
-    }),
-  );
-
-  // Set active organization if user has orgs but none is active
-  useEffect(() => {
-    if (!session?.user) return;
-    if (!activeOrg && orgsData && orgsData.length > 0) {
-      setActiveMutation.mutate({ organizationId: orgsData[0].id });
-    }
-  }, [activeOrg, orgsData, session, setActiveMutation]);
 
   // Handle sync after social login redirect
   useEffect(() => {
@@ -202,17 +133,11 @@ function DashboardPage() {
     setIsCreating(true);
     try {
       const defaultWorkspace = orgWorkspaces[0];
-      const response = (await createForm({
-        data: {
-          id: crypto.randomUUID(),
-          workspaceId: defaultWorkspace.id,
-          title: "Untitled",
-        },
-      })) as { form: { id: string } };
+      const newForm = await createFormLocal(defaultWorkspace.id);
       // Live queries will automatically pick up the new form
       navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
-        params: { workspaceId: defaultWorkspace.id, formId: response.form.id },
+        params: { workspaceId: defaultWorkspace.id, formId: newForm.id },
       });
     } catch (error) {
       console.error("Failed to create form:", error);
@@ -229,7 +154,7 @@ function DashboardPage() {
   const handleConfirmDelete = async () => {
     if (formToDelete) {
       try {
-        await updateForm({ data: { id: formToDelete.id, status: "archived" } });
+        await updateFormStatus(formToDelete.id, "archived");
         // Live queries will automatically pick up the archived form
         setDeleteDialogOpen(false);
         setFormToDelete(null);
@@ -241,10 +166,16 @@ function DashboardPage() {
 
   const handleDuplicate = async (formId: string) => {
     try {
-      await duplicateForm({ data: { id: formId } });
-      // Live queries will automatically pick up the duplicated form
+      const newForm = await duplicateFormById(formId);
+      toast.success("Form duplicated");
+      // Navigate to the duplicated form
+      navigate({
+        to: "/workspace/$workspaceId/form-builder/$formId/edit",
+        params: { workspaceId: newForm.workspaceId, formId: newForm.id },
+      });
     } catch (error) {
       console.error("Failed to duplicate form:", error);
+      toast.error("Failed to duplicate form");
     }
   };
 
@@ -261,9 +192,9 @@ function DashboardPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Home</h1>
             <p className="text-sm text-muted-foreground mt-1 font-medium">
-              {orgForms.length} form{orgForms.length !== 1 ? "s" : ""} across {orgWorkspaces.length}{" "}
-              workspace
-              {orgWorkspaces.length !== 1 ? "s" : ""}
+              {isLoading
+                ? "Loading..."
+                : `${orgForms.length} form${orgForms.length !== 1 ? "s" : ""} across ${orgWorkspaces.length} workspace${orgWorkspaces.length !== 1 ? "s" : ""}`}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -271,13 +202,14 @@ function DashboardPage() {
               variant="ghost"
               className="text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium"
               onClick={handleCreateWorkspace}
+              disabled={isLoading}
             >
               <FolderPlus className="h-4 w-4 mr-2" />
               New workspace
             </Button>
             <Button
               onClick={handleCreateForm}
-              disabled={isCreating || orgWorkspaces.length === 0}
+              disabled={isLoading || isCreating || orgWorkspaces.length === 0}
               className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
             >
               {isCreating ? (
@@ -293,7 +225,24 @@ function DashboardPage() {
         {/* Forms List */}
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-4">
-            {paginatedForms.map((form) => (
+            {isLoading ? (
+              [1, 2, 3, 4, 5].map((i) => (
+                <div
+                  key={`skeleton-${i}`}
+                  className="flex flex-col p-2 -mx-2 rounded-xl animate-pulse"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex flex-col gap-2">
+                        <div className="h-5 w-48 rounded bg-muted" />
+                        <div className="h-3 w-32 rounded bg-muted" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              paginatedForms.map((form) => (
               <div
                 key={form.id}
                 className="group flex flex-col p-2 -mx-2 rounded-xl hover:bg-muted/30 transition-all duration-200 cursor-pointer"
@@ -377,11 +326,12 @@ function DashboardPage() {
                   </div>
                 </Link>
               </div>
-            ))}
+            ))
+            )}
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
+          {!isLoading && totalPages > 1 && (
             <div className="flex items-center justify-between pt-4 border-t">
               <p className="text-sm text-muted-foreground">
                 Showing {startIndex + 1}-{Math.min(startIndex + FORMS_PER_PAGE, orgForms.length)} of{" "}
@@ -423,7 +373,7 @@ function DashboardPage() {
             </div>
           )}
 
-          {orgForms.length === 0 && (
+          {!isLoading && orgForms.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 border-2 border-dashed rounded-2xl bg-muted/20">
               <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
                 <FileText className="h-6 w-6 text-muted-foreground" />
@@ -437,7 +387,7 @@ function DashboardPage() {
               <Button
                 size="sm"
                 onClick={handleCreateForm}
-                disabled={isCreating || orgWorkspaces.length === 0}
+                disabled={isLoading || isCreating || orgWorkspaces.length === 0}
               >
                 {isCreating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                 Create my first form

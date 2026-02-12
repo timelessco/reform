@@ -28,8 +28,8 @@ const serializeSubmission = (s: typeof submissions.$inferSelect) => ({
 const getSubmissionsByFormId = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ formId: z.string().uuid() }))
-  .handler(async ({ data }) => {
-    await authForm(data.formId);
+  .handler(async ({ data, context }) => {
+    await authForm(data.formId, context.session.user.id);
     const list = await db
       .select()
       .from(submissions)
@@ -42,8 +42,8 @@ const getSubmissionsByFormId = createServerFn({ method: "GET" })
 export const deleteSubmission = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid(), formId: z.string().uuid() }))
-  .handler(async ({ data }) => {
-    await authForm(data.formId);
+  .handler(async ({ data, context }) => {
+    await authForm(data.formId, context.session.user.id);
     await db.delete(submissions).where(eq(submissions.id, data.id));
     return { success: true };
   });
@@ -57,8 +57,8 @@ export const deleteSubmissionsBulk = createServerFn({ method: "POST" })
       submissionIds: z.array(z.string().uuid()),
     }),
   )
-  .handler(async ({ data }) => {
-    await authForm(data.formId);
+  .handler(async ({ data, context }) => {
+    await authForm(data.formId, context.session.user.id);
     if (data.submissionIds.length === 0) {
       return { success: true, deleted: 0 };
     }

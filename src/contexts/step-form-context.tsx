@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useFormPersistence } from "@/hooks/use-form-persistence";
 import type { TransformedElement } from "@/lib/transform-plate-to-form";
 
 type StepFormContextValue = {
@@ -33,14 +34,48 @@ interface StepFormProviderProps {
   totalSteps: number;
   thankYouContent?: TransformedElement[] | null;
   onSubmit?: (data: Record<string, unknown>) => Promise<void>;
+  /** Form ID for localStorage key */
+  formId?: string;
+  /** Enable auto-save to localStorage */
+  saveAnswersForLater?: boolean;
 }
 
-export function StepFormProvider({ children, totalSteps, onSubmit }: StepFormProviderProps) {
+export function StepFormProvider({
+  children,
+  totalSteps,
+  onSubmit,
+  formId = "",
+  saveAnswersForLater = false,
+}: StepFormProviderProps) {
+  const { loadSavedData, saveData, clearSavedData } = useFormPersistence(
+    formId,
+    saveAnswersForLater,
+  );
+
   const [currentStep, setCurrentStep] = React.useState(0);
   const [direction, setDirection] = React.useState(0);
   const [formData, setFormData] = React.useState<Record<string, unknown>>({});
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSubmitted, setIsSubmitted] = React.useState(false);
+  const [isInitialized, setIsInitialized] = React.useState(false);
+
+  // Load saved data on mount
+  React.useEffect(() => {
+    if (!isInitialized) {
+      const savedData = loadSavedData();
+      if (savedData) {
+        setFormData(savedData);
+      }
+      setIsInitialized(true);
+    }
+  }, [loadSavedData, isInitialized]);
+
+  // Save data whenever formData changes (after initialization)
+  React.useEffect(() => {
+    if (isInitialized && Object.keys(formData).length > 0) {
+      saveData(formData);
+    }
+  }, [formData, saveData, isInitialized]);
 
   const goToNextStep = React.useCallback(
     (stepData: Record<string, unknown>) => {
@@ -64,12 +99,14 @@ export function StepFormProvider({ children, totalSteps, onSubmit }: StepFormPro
         if (onSubmit) {
           await onSubmit(allData);
         }
+        // Clear saved data on successful submission
+        clearSavedData();
         setIsSubmitted(true);
       } finally {
         setIsSubmitting(false);
       }
     },
-    [formData, onSubmit],
+    [formData, onSubmit, clearSavedData],
   );
 
   const reset = React.useCallback(() => {

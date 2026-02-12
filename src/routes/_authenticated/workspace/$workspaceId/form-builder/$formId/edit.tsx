@@ -82,20 +82,20 @@ export const Route = createFileRoute(
   // 	console.log('[edit.tsx beforeLoad] Form is draft, continuing to edit page');
   // 	return { formStatus: status };
   // },
-  loader: async ({ context, params }) => {
-    try {
-      const data = await context.queryClient.ensureQueryData({
-        ...getFormbyIdQueryOption(params.formId),
-        revalidateIfStale: true,
-      });
-      return { initialContent: data.form.content };
-    } catch {
-      // Form may not exist on server yet (local-first sync in progress)
-      // Return empty content - the EditorApp will use local data from Electric
-      return { initialContent: [] };
-    }
-  },
-  pendingComponent: Loader,
+  // loader: async ({ context, params }) => {
+  //   try {
+  //     const data = await context.queryClient.ensureQueryData({
+  //       ...getFormbyIdQueryOption(params.formId),
+  //       revalidateIfStale: true,
+  //     });
+  //     return { initialContent: data.form.content };
+  //   } catch {
+  //     // Form may not exist on server yet (local-first sync in progress)
+  //     // Return empty content - the EditorApp will use local data from Electric
+  //     return { initialContent: [] };  
+  //   }
+  // },
+  pendingComponent: () => <div>Loading...</div>,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,
 });
@@ -136,8 +136,6 @@ function DesignPage() {
       : null,
   });
 
-  const loaderData = Route.useLoaderData();
-  const initialContent = loaderData?.initialContent || [];
   const search = Route.useSearch();
   const demo = search.demo;
   console.log("[edit.tsx DesignPage] Demo:", demo);
@@ -164,15 +162,15 @@ function DesignPage() {
     }
   }, [isVersionHistoryOpen, isViewingVersion, exitVersionView]);
 
-  // Show loader while checking form status
-  if (!isReady) {
-    return <Loader />;
-  }
+  // // Show loader while checking form status
+  // if (!isReady) {
+  //   return <Loader />;
+  // }
 
-  // If form is published and not forcing edit, show loader while redirecting
-  if (localStatus === "published" && !forceEdit) {
-    return <Loader />;
-  }
+  // // If form is published and not forcing edit, show loader while redirecting
+  // if (localStatus === "published" && !forceEdit) {
+  //   return <Loader />;
+  // }
 
   // Format date for version banner
   const formatDateTime = (dateString: string) => {
@@ -230,7 +228,6 @@ function DesignPage() {
                   key={isViewingVersion ? `version-${selectedVersionId}` : formId}
                   formId={formId}
                   workspaceId={workspaceId}
-                  defaultValue={initialContent}
                   versionContent={isViewingVersion ? versionContent : undefined}
                   readOnly={isViewingVersion}
                 />

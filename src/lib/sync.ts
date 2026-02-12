@@ -1,16 +1,18 @@
-import { createServerFn } from "@tanstack/react-start";
-import { eq, inArray } from "drizzle-orm";
 import { forms, member, organization, workspaces } from "@/db/schema";
 import { db } from "@/lib/db";
-import { authUser, getTxId } from "@/lib/fn/helpers";
+import { getTxId } from "@/lib/fn/helpers";
 import { logger } from "@/lib/utils";
+import { authMiddleware } from "@/middleware/auth";
+import { createServerFn } from "@tanstack/react-start";
+import { eq, inArray } from "drizzle-orm";
 
 /**
  * Server function to sync forms to the cloud
  */
 const syncFormsToCloud = createServerFn({ method: "POST" })
   .inputValidator((forms: any[]) => forms)
-  .handler(async ({ data: localForms }) => {
+  .middleware([authMiddleware])
+  .handler(async ({ data: localForms, context }) => {
     try {
       logger("Starting server-side form sync...");
 
@@ -19,9 +21,6 @@ const syncFormsToCloud = createServerFn({ method: "POST" })
         return { success: true };
       }
 
-      // Ensure user is authenticated
-      const user = await authUser();
-
       // Track all txids for Electric sync
       const txids: number[] = [];
 
@@ -29,7 +28,7 @@ const syncFormsToCloud = createServerFn({ method: "POST" })
       const userMemberships = await db
         .select({ organizationId: member.organizationId })
         .from(member)
-        .where(eq(member.userId, user.id));
+        .where(eq(member.userId, context.session.user.id));
 
       if (userMemberships.length === 0) {
         logger("User has no organization memberships, creating default org...");
@@ -38,7 +37,7 @@ const syncFormsToCloud = createServerFn({ method: "POST" })
         const newOrgId = crypto.randomUUID();
         await db.insert(organization).values({
           id: newOrgId,
-          name: `${user.name || user.email}'s Organization`,
+          name: `${context.session.user.name || context.session.user.email}'s Organization`,
           slug: `org-${newOrgId.slice(0, 8)}`,
           createdAt: now,
         });
@@ -47,7 +46,7 @@ const syncFormsToCloud = createServerFn({ method: "POST" })
         // Add user as owner of the new organization
         await db.insert(member).values({
           id: crypto.randomUUID(),
-          userId: user.id,
+          userId: context.session.user.id,
           organizationId: newOrgId,
           role: "owner",
           createdAt: now,
@@ -83,7 +82,7 @@ const syncFormsToCloud = createServerFn({ method: "POST" })
           .values({
             id: crypto.randomUUID(),
             organizationId: defaultOrgId,
-            createdByUserId: user.id,
+            createdByUserId: context.session.user.id,
             name: "My workspace",
             createdAt: now,
             updatedAt: now,
@@ -109,7 +108,7 @@ const syncFormsToCloud = createServerFn({ method: "POST" })
           // Insert form with new ID (local forms may have conflicting IDs)
           await db.insert(forms).values({
             id: newFormId,
-            createdByUserId: user.id,
+            createdByUserId: context.session.user.id,
             workspaceId: serverWorkspaceId,
             title: localForm.title || "Untitled",
             formName: localForm.formName || "draft",
