@@ -104,10 +104,6 @@ function findPrevNonButtonPath(editor: PlateEditor, currentPath: Path): Path | n
 }
 
 function handleFormBlockKeyDown(editor: PlateEditor, event: React.KeyboardEvent): void {
-  // [TAB DEBUG] - remove after fix verified
-  if (event.key === "Tab") {
-    console.log("[TAB DEBUG] handleFormBlockKeyDown entry, block:", editor.api.block()?.[0]?.type);
-  }
 
   // Prevent double-handling when multiple form plugins process same event
   if ((event as any).__formBlockHandled) return;
@@ -640,7 +636,6 @@ export const FormButtonPlugin = createPlatePlugin({
             // Remove duplicate Previous buttons (keep only the last one)
             if (previousButtonIndices.length > 1) {
               const indexToRemove = previousButtonIndices[0]; // Remove the first one
-              console.log("Normalize: Removing duplicate Previous button at", indexToRemove);
               originalRemoveNodes({ at: [indexToRemove] });
               return; // Restart normalization
             }
@@ -648,7 +643,6 @@ export const FormButtonPlugin = createPlatePlugin({
             // Remove duplicate action buttons (keep only the last one)
             if (actionButtonIndices.length > 1) {
               const indexToRemove = actionButtonIndices[0]; // Remove the first one
-              console.log("Normalize: Removing duplicate action button at", indexToRemove);
               originalRemoveNodes({ at: [indexToRemove] });
               return; // Restart normalization
             }
@@ -662,7 +656,6 @@ export const FormButtonPlugin = createPlatePlugin({
               const prevBreak = getChildren()[precedingBreakIndex] as any;
               const currentHasData = prevBreak.hasFormFields === true;
               if (currentHasData !== hasFields) {
-                // console.log('Normalize: Updating PageBreak hasFormFields', { at: precedingBreakIndex, hasFields });
                 editorRef.tf.setNodes({ hasFormFields: hasFields }, { at: [precedingBreakIndex] });
                 return; // Restart normalization to apply change
               }
@@ -702,10 +695,6 @@ export const FormButtonPlugin = createPlatePlugin({
 
               // If form fields exist, convert thank you page to normal page
               if (hasFormFields && precedingBreakIndex !== -1) {
-                console.log(
-                  "Normalize: Converting Thank You page to normal page at",
-                  precedingBreakIndex,
-                );
                 editorRef.tf.setNodes({ isThankYouPage: false }, { at: [precedingBreakIndex] });
                 return; // Restart normalization (will now process as normal page)
               }
@@ -744,17 +733,12 @@ export const FormButtonPlugin = createPlatePlugin({
 
             // 1. First Page: Remove Previous Button if present
             if (isFirstPage && previousButtonIndex !== -1) {
-              console.log(
-                "Normalize: Removing Previous Button on First Page at",
-                previousButtonIndex,
-              );
               originalRemoveNodes({ at: [previousButtonIndex] });
               return;
             }
 
             // 2. Ensure Action Button Exists
             if (actionButtonIndex === -1) {
-              console.log("Normalize: Inserting Missing Action Button at", pageEndIndex);
               const role = isLastPage ? "submit" : "next";
               const labelText = role === "next" ? "Next" : "Submit";
               editorRef.tf.insertNodes(
@@ -777,11 +761,6 @@ export const FormButtonPlugin = createPlatePlugin({
             const expectedRole = isLastPage ? "submit" : "next";
 
             if (currentRole !== expectedRole) {
-              console.log("Normalize: Updating Action Button Role", {
-                from: currentRole,
-                to: expectedRole,
-                index: actionButtonIndex,
-              });
               // Check if we should update label (if it matches the OLD default)
               const oldDefault = currentRole === "submit" ? "Submit" : "Next";
               // Re-read button - check label property first, fallback to children for backwards compat
@@ -810,7 +789,6 @@ export const FormButtonPlugin = createPlatePlugin({
 
             // 4. Ensure Previous Button (Non-First Page)
             if (!isFirstPage && previousButtonIndex === -1) {
-              console.log("Normalize: Inserting Previous Button at", actionButtonIndex);
               editorRef.tf.insertNodes(
                 {
                   type: "formButton",
@@ -830,10 +808,6 @@ export const FormButtonPlugin = createPlatePlugin({
               previousButtonIndex !== -1 &&
               previousButtonIndex !== actionButtonIndex - 1
             ) {
-              console.log("Normalize: Moving Previous Button", {
-                from: previousButtonIndex,
-                to: actionButtonIndex,
-              });
               editorRef.tf.moveNodes({
                 at: [previousButtonIndex],
                 to: [actionButtonIndex],
@@ -880,16 +854,6 @@ export const PageBreakPlugin = createPlatePlugin({
  * This applies to ALL blocks, not just form blocks.
  */
 function handleGlobalKeyDown(editor: PlateEditor, event: React.KeyboardEvent): void {
-  // [TAB DEBUG] - remove after fix verified
-  if (event.key === "Tab") {
-    console.log(
-      "[TAB DEBUG] handleGlobalKeyDown entry, block:",
-      editor.api.block()?.[0]?.type,
-      "alreadyHandled:",
-      (event as any).__formBlockHandled,
-    );
-  }
-
   // Don't interfere if already handled by form block handlers
   if ((event as any).__formBlockHandled) return;
 

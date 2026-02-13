@@ -242,33 +242,10 @@ function Draggable(props: PlateElementProps) {
           <div
             className={cn(
               "slate-blockToolbarWrapper",
-              "flex items-start gap-0.5 pointer-events-auto",
+              "flex items-start gap-0.5 pointer-events-auto pr-2",
               isInColumn && "h-4",
             )}
           >
-            {/* Delete Button - hidden for form buttons */}
-            {!isFormButton && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      // Delete the current block
-                      editor.tf.removeNodes({ at: path });
-                    }}
-                    data-plate-prevent-deselect
-                  >
-                    <Trash2 className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Delete block</TooltipContent>
-              </Tooltip>
-            )}
-
             {/* Plus Button - Add after (hidden for form buttons) */}
             {!isFormButton && (
               <Tooltip>
@@ -276,7 +253,7 @@ function Draggable(props: PlateElementProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 p-0"
+                    className="h-7 w-6 p-0"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -293,7 +270,7 @@ function Draggable(props: PlateElementProps) {
                     }}
                     data-plate-prevent-deselect
                   >
-                    <Plus className="h-4 w-4 text-muted-foreground" />
+                    <Plus className="h-7 w-6 text-muted-foreground" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Add block below</TooltipContent>
@@ -473,7 +450,7 @@ const DragHandle = React.memo(function DragHandle({
           {isFormButton ? (
             <Settings className="text-muted-foreground" />
           ) : (
-            <GripVertical className="text-muted-foreground" />
+            <GripVertical className="h-6 w-6 text-muted-foreground" />
           )}
         </Button>
       </TooltipTrigger>

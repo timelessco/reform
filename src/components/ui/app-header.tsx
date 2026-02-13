@@ -3,7 +3,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -24,15 +23,10 @@ import { format, formatDistanceToNow } from "date-fns";
 import {
   AlertCircle,
   ChevronsRight,
-  Copy,
-  History,
-  Link2,
   Loader2,
   MoreHorizontal,
   Pencil,
   Settings,
-  Star,
-  Trash2,
 } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
@@ -137,7 +131,7 @@ export function AppHeader({
   const discardMutation = useDiscardChanges();
 
   // Favorite state
-  const isFavorite = useIsFavorite(session?.user?.id, formId);
+  useIsFavorite(session?.user?.id, formId);
 
   const handleToggleFavorite = async () => {
     if (!session?.user?.id || !formId) return;
@@ -194,18 +188,6 @@ export function AppHeader({
     }
   };
 
-  const handleCopyLink = () => {
-    if (!formId) return;
-    const url = `${window.location.origin}/f/${formId}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Link copied to clipboard");
-  };
-
-  const handleDuplicate = () => {
-    // TODO: Implement duplicate functionality
-    toast.info("Duplicate feature coming soon");
-  };
-
   return (
     <header
       className={cn(
@@ -222,7 +204,7 @@ export function AppHeader({
             className="h-8 w-8 text-muted-foreground -ml-1 group relative flex items-center justify-center transition-all duration-300"
             onClick={() => toggleMainSidebar()}
           >
-            <span className="text-2xl font-serif italic font-bold tracking-tighter">f.</span>
+               <span className="text-2xl font-serif italic font-light tracking-tighter text-sidebar-nav-text dark:text-dark-gray-950">f.</span>
           </Button>
         )}
 
@@ -349,7 +331,7 @@ export function AppHeader({
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    "h-8 px-2.5 text-muted-foreground hover:text-foreground font-normal",
+                    "w-17 px-2.5 text-muted-foreground hover:text-foreground font-normal",
                     isShareSidebarOpen && "text-foreground bg-accent/50",
                   )}
                   onClick={toggleShareSidebar}
@@ -368,7 +350,7 @@ export function AppHeader({
                 <Settings className="h-[18px] w-[18px]" strokeWidth={1.5} />
               </Button>
 
-              {/* Three dots menu */}
+              {/* Three dots menu - Figma system-flat 23508:7036 */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -379,40 +361,42 @@ export function AppHeader({
                     <MoreHorizontal className="h-[18px] w-[18px]" strokeWidth={1.5} />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-
-                  {/* Copy link */}
-                  <DropdownMenuItem onClick={handleCopyLink} className="gap-2">
-                    <Link2 className="h-4 w-4" />
-                    Copy link
+                <DropdownMenuContent
+                  align="end"
+                  className="w-[180px] rounded-[6px] border-0 bg-white p-[6px] py-[4px] shadow-sm dark:bg-popover"
+                >
+                  <DropdownMenuItem
+                    onClick={handleToggleFavorite}
+                    className="rounded-[4px] px-3 py-2 text-[14px] font-normal tracking-[0.14px] text-sidebar-nav-text focus:bg-light-gray-100 focus:text-sidebar-nav-text dark:focus:bg-accent dark:focus:text-accent-foreground"
+                  >
+                    Favorite
                   </DropdownMenuItem>
-
-                  {/* Duplicate */}
-                  <DropdownMenuItem onClick={handleDuplicate} className="gap-2">
-                    <Copy className="h-4 w-4" />
-                    Duplicate
+                  <DropdownMenuItem
+                    onClick={() =>
+                      workspaceId && formId && navigate({ to: "/workspace/$workspaceId/form-builder/$formId/submissions", params: { workspaceId, formId } })
+                    }
+                    className="rounded-[4px] px-3 py-2 text-[14px] font-normal tracking-[0.14px] text-sidebar-nav-text focus:bg-light-gray-100 focus:text-sidebar-nav-text dark:focus:bg-accent dark:focus:text-accent-foreground"
+                  >
+                    Analytics
                   </DropdownMenuItem>
-
-                  <DropdownMenuSeparator />
-
+                  <DropdownMenuItem
+                    onClick={toggleSettingsSidebar}
+                    className="rounded-[4px] px-3 py-2 text-[14px] font-normal tracking-[0.14px] text-sidebar-nav-text focus:bg-light-gray-100 focus:text-sidebar-nav-text dark:focus:bg-accent dark:focus:text-accent-foreground"
+                  >
+                    Customisation
+                  </DropdownMenuItem>
                   {isEditRoute && (
-                    <DropdownMenuItem onClick={toggleVersionHistory} className="gap-2">
-                      <History className="h-4 w-4" />
+                    <DropdownMenuItem
+                      onClick={toggleVersionHistory}
+                      className="rounded-[4px] px-3 py-2 text-[14px] font-normal tracking-[0.14px] text-sidebar-nav-text focus:bg-light-gray-100 focus:text-sidebar-nav-text dark:focus:bg-accent dark:focus:text-accent-foreground"
+                    >
                       Version History
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem onClick={handleToggleFavorite} className="gap-2">
-                    <Star
-                      className={cn("h-4 w-4", isFavorite && "fill-yellow-400 text-yellow-400")}
-                    />
-                    {isFavorite ? "Unfavorite" : "Favorite"}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleDeleteForm}
-                    className="gap-2 text-destructive focus:text-destructive"
+                    className="rounded-[4px] px-3 py-2 text-[14px] font-normal tracking-[0.14px] text-sidebar-nav-text focus:bg-light-gray-100 focus:text-sidebar-nav-text dark:focus:bg-accent dark:focus:text-accent-foreground"
                   >
-                    <Trash2 className="h-4 w-4" />
                     Delete form
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -425,7 +409,7 @@ export function AppHeader({
               <Button
                 size="sm"
                 className={cn(
-                  "h-8 px-4 ml-1 text-[13px] font-semibold transition-all rounded-md shadow-sm border-none",
+                  "h-8 px-4 ml-1 text-[13px] font-semibold transition-all rounded-md shadow-sm border-none  ",
                   !isLoadingSavedDocs &&
                     (hasUnpublishedChanges || currentForm?.status !== "published")
                     ? "bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"

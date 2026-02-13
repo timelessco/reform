@@ -13,6 +13,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
+import { formCollection } from "@/db-collections";
 import { auth } from "@/lib/auth-client";
 import { syncLocalDataToCloud } from "@/lib/sync";
 import { guestMiddleware } from "@/middleware/auth";
@@ -72,9 +73,10 @@ function SignUpPage() {
         });
         try {
           const syncResult = await syncLocalDataToCloud();
-          if (syncResult?.txids?.length) {
-            const { awaitSyncTxids } = await import("@/lib/sync");
-            await awaitSyncTxids(syncResult);
+          if (syncResult?.workspaceTxid) {
+            const { workspaceCollection } = await import("@/db-collections");
+            await workspaceCollection.utils.awaitTxId(syncResult.workspaceTxid, 1000);
+            await formCollection.utils.awaitTxId(syncResult.syncedForms, 1000);
           }
         } catch (error) {
           console.error("Failed to sync local data:", error);

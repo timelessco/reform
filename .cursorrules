@@ -27,3 +27,10 @@ Use the latest version of Shadcn to install new components, like this command to
 ```bash
 pnpm dlx shadcn@latest add button
 ```
+
+# Design tokens – avoid hardcoded colors
+
+**Never use hardcoded hex colors (e.g. `#212121`, `text-[#212121]`) in components.** Use design tokens from `src/styles.css` instead.
+
+- **Sidebar nav text**: `text-sidebar-nav-text` (uses `--sidebar-nav-text`, defaults to `#212121`, plan-overridable)
+- **Other colors**: Use existing tokens (`text-light-gray-800`, `bg-light-gray-100`, etc.) or add new variables in `:root` / `.dark` for plan-specific overrides

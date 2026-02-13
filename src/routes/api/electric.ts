@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { createFileRoute } from "@tanstack/react-router";
 import { eq, inArray } from "drizzle-orm";
+import { authMiddleware } from "@/middleware/auth";
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -12,6 +13,7 @@ const json = (data: unknown, status = 200) =>
 
 export const Route = createFileRoute("/api/electric")({
   server: {
+    middleware: [authMiddleware],
     handlers: {
       GET: async ({ request }: { request: Request }) => {
         const session = await auth.api.getSession({ headers: request.headers });

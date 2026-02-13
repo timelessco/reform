@@ -26,7 +26,6 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
         location.pathname === `/workspace/${params.workspaceId}/form-builder/${params.formId}/`;
 
       if (isExactParentRoute) {
-        console.log("[route.tsx beforeLoad] At parent route, checking form status for redirect...");
         try {
           const result = await context.queryClient.ensureQueryData({
             ...getFormbyIdQueryOption(params.formId),
@@ -34,7 +33,6 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
           });
 
           const status = result?.form?.status;
-          console.log("[route.tsx beforeLoad] Form status:", status);
 
           if (status === "published") {
             throw redirect({

@@ -56,11 +56,7 @@ function LoginPage() {
       onSuccess: async () => {
         toast.success("Signed in successfully!");
         try {
-          const syncResult = await syncLocalDataToCloud();
-          if (syncResult?.txids?.length) {
-            const { awaitSyncTxids } = await import("@/lib/sync");
-            await awaitSyncTxids(syncResult);
-          }
+          await syncLocalDataToCloud();
         } catch (error) {
           console.error("Failed to sync local data:", error);
         }
@@ -80,11 +76,7 @@ function LoginPage() {
       onSuccess: async () => {
         toast.success("Signed in successfully!");
         try {
-          const syncResult = await syncLocalDataToCloud();
-          if (syncResult?.txids?.length) {
-            const { awaitSyncTxids } = await import("@/lib/sync");
-            await awaitSyncTxids(syncResult);
-          }
+          await syncLocalDataToCloud();
         } catch (error) {
           console.error("Failed to sync local data:", error);
         }
@@ -117,11 +109,7 @@ function LoginPage() {
       onSuccess: async () => {
         toast.success("Signed in successfully!");
         try {
-          const syncResult = await syncLocalDataToCloud();
-          if (syncResult?.txids?.length) {
-            const { awaitSyncTxids } = await import("@/lib/sync");
-            await awaitSyncTxids(syncResult);
-          }
+          await syncLocalDataToCloud();
         } catch (error) {
           console.error("Failed to sync local data:", error);
         }

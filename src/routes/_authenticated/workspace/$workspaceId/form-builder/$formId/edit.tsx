@@ -1,22 +1,20 @@
+import { Button } from "@/components/ui/button";
+import { CustomizeSidebar } from "@/components/ui/customize-sidebar";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { NotFound } from "@/components/ui/not-found";
+import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { useFormVersionContent } from "@/hooks/use-form-versions";
+import { useForm } from "@/hooks/use-live-hooks";
+import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
+import { cn } from "@/lib/utils";
 import { createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import type { Value } from "platejs";
 import { useEffect } from "react";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { CustomizeSidebar } from "@/components/ui/customize-sidebar";
-import { ErrorBoundary } from "@/components/ui/error-boundary";
-import Loader from "@/components/ui/loader";
-import { NotFound } from "@/components/ui/not-found";
-import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { useFormVersionContent } from "@/hooks/use-form-versions";
-import { useForm } from "@/hooks/use-live-hooks";
-import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
-import { getFormbyIdQueryOption } from "@/lib/fn/forms";
 import EditorApp from "../-components/editor-app";
 import { PreviewMode } from "../-components/preview-mode";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute(
   "/_authenticated/workspace/$workspaceId/form-builder/$formId/edit",
@@ -48,53 +46,6 @@ export const Route = createFileRoute(
     embedTrackEvents: z.coerce.boolean().catch(false).optional(),
   }),
   component: DesignPage,
-  // beforeLoad: async ({ context, params }) => {
-  // 	console.log('[edit.tsx beforeLoad] Starting with params:', params);
-  // 	let data;
-  // 	try {
-  // 		data = await context.queryClient.ensureQueryData({
-  // 			...getFormbyIdQueryOption(params.formId),
-  // 			revalidateIfStale: true,
-  // 		})
-  // 		console.log('[edit.tsx beforeLoad] Form data fetched:', {
-  // 			status: data?.form?.status,
-  // 			formId: data?.form?.id,
-  // 		});
-  // 	} catch (error) {
-  // 		console.error('[edit.tsx beforeLoad] Error fetching form:', error);
-  // 		return { formStatus: 'unknown' };
-  // 	}
-
-  // 	const status = data?.form?.status;
-  // 	console.log('[edit.tsx beforeLoad] Checking status:', status);
-
-  // 	if (status === 'published') {
-  // 		console.log('[edit.tsx beforeLoad] Form is published, redirecting to share...');
-  // 		throw redirect({
-  // 			to: '/workspace/$workspaceId/form-builder/$formId/share',
-  // 			params: {
-  // 				workspaceId: params.workspaceId,
-  // 				formId: params.formId
-  // 			}
-  // 		});
-  // 	}
-
-  // 	console.log('[edit.tsx beforeLoad] Form is draft, continuing to edit page');
-  // 	return { formStatus: status };
-  // },
-  // loader: async ({ context, params }) => {
-  //   try {
-  //     const data = await context.queryClient.ensureQueryData({
-  //       ...getFormbyIdQueryOption(params.formId),
-  //       revalidateIfStale: true,
-  //     });
-  //     return { initialContent: data.form.content };
-  //   } catch {
-  //     // Form may not exist on server yet (local-first sync in progress)
-  //     // Return empty content - the EditorApp will use local data from Electric
-  //     return { initialContent: [] };  
-  //   }
-  // },
   pendingComponent: () => <div>Loading...</div>,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,
@@ -127,52 +78,25 @@ function DesignPage() {
   const localForm = localFormData?.[0];
   const localStatus = localForm?.status;
 
-  console.log("[edit.tsx DesignPage] Local form status check:", {
-    formId,
-    localStatus,
-    isReady,
-    localForm: localForm
-      ? { id: localForm.id, title: localForm.title, status: localForm.status }
-      : null,
-  });
 
   const search = Route.useSearch();
   const demo = search.demo;
-  console.log("[edit.tsx DesignPage] Demo:", demo);
-  // Check if user explicitly wants to edit (force param from Edit button)
   const forceEdit = search.force === true;
-
-  // Redirect to share page if form is published (using local Electric data)
-  // BUT skip redirect if user explicitly clicked "Edit" button (force=true)
   useEffect(() => {
     if (isReady && localStatus === "published" && !forceEdit) {
       navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/submissions",
         params: { workspaceId, formId },
-        // search: { sidebar: "share" },
         replace: true, // Replace history entry so back button doesn't loop
       });
     }
   }, [isReady, localStatus, formId, workspaceId, navigate, forceEdit]);
 
-  // Reset version view when sidebar closes (revert to current content)
   useEffect(() => {
     if (!isVersionHistoryOpen && isViewingVersion) {
       exitVersionView();
     }
   }, [isVersionHistoryOpen, isViewingVersion, exitVersionView]);
-
-  // // Show loader while checking form status
-  // if (!isReady) {
-  //   return <Loader />;
-  // }
-
-  // // If form is published and not forcing edit, show loader while redirecting
-  // if (localStatus === "published" && !forceEdit) {
-  //   return <Loader />;
-  // }
-
-  // Format date for version banner
   const formatDateTime = (dateString: string) => {
     return format(new Date(dateString), "MMM d, h:mm a");
   };

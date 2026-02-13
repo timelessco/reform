@@ -12,9 +12,9 @@ export const Route = createFileRoute("/_authenticated/settings")({
 
 function SettingsLayout() {
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-background">
-      {/* Main Content */}
-      <main className="flex-1 p-12 max-w-5xl mx-auto w-full space-y-8">
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-background">
+      {/* Fixed Header - Title and Tabs */}
+      <div className="shrink-0 px-12 pt-12 max-w-5xl mx-auto w-full">
         <div className="space-y-6">
           <h1 className="text-4xl font-bold tracking-tight">Settings</h1>
 
@@ -54,12 +54,15 @@ function SettingsLayout() {
               Billing
             </Link> */}
           </nav>
-
-          <div className="pt-4">
-            <Outlet />
-          </div>
         </div>
-      </main>
+      </div>
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto px-12 pt-8 pb-12">
+        <div className="max-w-5xl mx-auto w-full">
+          <Outlet />
+        </div>
+      </div>
     </div>
   );
 }
