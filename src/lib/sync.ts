@@ -35,24 +35,23 @@ const syncFormsToCloud = createServerFn({ method: "POST" })
         // Create a default organization for the user
         const now = new Date();
         const newOrgId = crypto.randomUUID();
-        await db.insert(organization).values({
-          id: newOrgId,
-          name: `${context.session.user.name || context.session.user.email}'s Organization`,
-          slug: `org-${newOrgId.slice(0, 8)}`,
-          createdAt: now,
+        const orgTxid = await db.transaction(async (tx) => {
+          await tx.insert(organization).values({
+            id: newOrgId,
+            name: `${context.session.user.name || context.session.user.email}'s Organization`,
+            slug: `org-${newOrgId.slice(0, 8)}`,
+            createdAt: now,
+          });
+          await tx.insert(member).values({
+            id: crypto.randomUUID(),
+            userId: context.session.user.id,
+            organizationId: newOrgId,
+            role: "owner",
+            createdAt: now,
+          });
+          return getTxId(tx);
         });
-        txids.push(await getTxId()); // Capture org txid
-
-        // Add user as owner of the new organization
-        await db.insert(member).values({
-          id: crypto.randomUUID(),
-          userId: context.session.user.id,
-          organizationId: newOrgId,
-          role: "owner",
-          createdAt: now,
-        });
-        txids.push(await getTxId()); // Capture member txid
-
+        txids.push(orgTxid);
         userMemberships.push({ organizationId: newOrgId });
         logger("Created default organization:", newOrgId);
       }
@@ -77,20 +76,24 @@ const syncFormsToCloud = createServerFn({ method: "POST" })
       if (serverWorkspaces.length === 0) {
         logger("Creating default workspace on server...");
         const now = new Date();
-        const [newWorkspace] = await db
-          .insert(workspaces)
-          .values({
-            id: crypto.randomUUID(),
-            organizationId: defaultOrgId,
-            createdByUserId: context.session.user.id,
-            name: "My workspace",
-            createdAt: now,
-            updatedAt: now,
-          })
-          .returning();
-        workspaceTxid = await getTxId(); // Capture workspace txid separately
+        const { workspaceId, txid } = await db.transaction(async (tx) => {
+          const [newWorkspace] = await tx
+            .insert(workspaces)
+            .values({
+              id: crypto.randomUUID(),
+              organizationId: defaultOrgId,
+              createdByUserId: context.session.user.id,
+              name: "My workspace",
+              createdAt: now,
+              updatedAt: now,
+            })
+            .returning();
+          const txid = await getTxId(tx);
+          return { workspaceId: newWorkspace.id, txid };
+        });
+        workspaceTxid = txid;
         txids.push(workspaceTxid);
-        defaultWorkspaceId = newWorkspace.id;
+        defaultWorkspaceId = workspaceId;
         logger("Created default workspace:", defaultWorkspaceId);
       } else {
         defaultWorkspaceId = serverWorkspaces[0].id;
@@ -100,33 +103,31 @@ const syncFormsToCloud = createServerFn({ method: "POST" })
       const syncedForms: string[] = [];
       for (const localForm of localForms) {
         try {
-          // Use default workspace for all forms
           const serverWorkspaceId = defaultWorkspaceId;
           const now = new Date();
           const newFormId = crypto.randomUUID();
 
-          // Insert form with new ID (local forms may have conflicting IDs)
-          await db.insert(forms).values({
-            id: newFormId,
-            createdByUserId: context.session.user.id,
-            workspaceId: serverWorkspaceId,
-            title: localForm.title || "Untitled",
-            formName: localForm.formName || "draft",
-            schemaName: localForm.schemaName || "draftFormSchema",
-            content: localForm.content || [],
-            settings: localForm.settings || {},
-            icon: localForm.icon,
-            cover: localForm.cover,
-            isMultiStep: localForm.isMultiStep ?? false,
-            status: localForm.status || "draft",
-            createdAt: now,
-            updatedAt: now,
+          const txid = await db.transaction(async (tx) => {
+            await tx.insert(forms).values({
+              id: newFormId,
+              createdByUserId: context.session.user.id,
+              workspaceId: serverWorkspaceId,
+              title: localForm.title || "Untitled",
+              formName: localForm.formName || "draft",
+              schemaName: localForm.schemaName || "draftFormSchema",
+              content: localForm.content || [],
+              settings: localForm.settings || {},
+              icon: localForm.icon,
+              cover: localForm.cover,
+              isMultiStep: localForm.isMultiStep ?? false,
+              status: localForm.status || "draft",
+              createdAt: now,
+              updatedAt: now,
+            });
+            return getTxId(tx);
           });
 
-          // Capture txid immediately after insert for Electric sync tracking
-          const txid = await getTxId();
           txids.push(txid);
-
           syncedForms.push(newFormId);
           logger(
             `Synced form "${localForm.title || "Untitled"}" as ${newFormId} to workspace ${serverWorkspaceId} (txid: ${txid})`,
@@ -154,13 +155,92 @@ const syncFormsToCloud = createServerFn({ method: "POST" })
 /**
  * Result type for syncLocalDataToCloud
  */
-type SyncResult = {
+export type SyncResult = {
   success: boolean;
   txids: number[];
   syncedForms: string[];
   defaultWorkspaceId?: string;
   workspaceTxid?: number;
 };
+
+const AWAIT_TXID_TIMEOUT_MS = 10000;
+const AWAIT_MATCH_TIMEOUT_MS = 15000;
+
+/**
+ * Awaits Electric sync for all txids from a sync result.
+ * Must be called client-side (uses formCollection, workspaceCollection).
+ * Preloads collections first so Electric streams are active (required when called
+ * from verify-email/signup before navigating to dashboard).
+ *
+ * Strategy (from TanStack electric-db-collection tests):
+ * 1. Try awaitTxId first (works when txids match what Electric sends).
+ * 2. On timeout, fall back to awaitMatch - match on inserted row IDs (workspace id, form ids).
+ *    This is more reliable with Electric Cloud where txids may not match or replication lag exists.
+ */
+export async function awaitSyncTxids(result: SyncResult): Promise<void> {
+  const { workspaceCollection, formCollection } = await import("@/db-collections");
+  const { isChangeMessage } = await import("@tanstack/electric-db-collection");
+
+  // Start Electric sync streams (e.g. when on verify-email, _authenticated layout hasn't loaded yet)
+  await Promise.all([workspaceCollection.preload(), formCollection.preload()]);
+
+  const tryAwaitTxId = async () => {
+    if (!result.txids.length) return;
+    if (result.workspaceTxid !== undefined) {
+      await workspaceCollection.utils.awaitTxId(result.workspaceTxid, AWAIT_TXID_TIMEOUT_MS);
+    }
+    const formTxids =
+      result.syncedForms.length > 0 ? result.txids.slice(-result.syncedForms.length) : [];
+    await Promise.all(
+      formTxids.map((txid) => formCollection.utils.awaitTxId(txid, AWAIT_TXID_TIMEOUT_MS)),
+    );
+  };
+
+  const fallbackAwaitMatch = async () => {
+    const promises: Promise<boolean>[] = [];
+    if (result.defaultWorkspaceId) {
+      const targetId = result.defaultWorkspaceId;
+      promises.push(
+        workspaceCollection.utils.awaitMatch(
+          ((msg: unknown) =>
+            isChangeMessage(msg as import("@electric-sql/client").Message<Record<string, unknown>>) &&
+            (msg as { headers?: { operation?: string }; value?: { id?: string } }).headers?.operation === "insert" &&
+            (msg as { headers?: { operation?: string }; value?: { id?: string } }).value?.id === targetId) as Parameters<typeof workspaceCollection.utils.awaitMatch>[0],
+          AWAIT_MATCH_TIMEOUT_MS,
+        ),
+      );
+    }
+    for (const formId of result.syncedForms) {
+      promises.push(
+        formCollection.utils.awaitMatch(
+          ((msg: unknown) =>
+            isChangeMessage(msg as import("@electric-sql/client").Message<Record<string, unknown>>) &&
+            (msg as { headers?: { operation?: string }; value?: { id?: string } }).headers?.operation === "insert" &&
+            (msg as { headers?: { operation?: string }; value?: { id?: string } }).value?.id === formId) as Parameters<typeof formCollection.utils.awaitMatch>[0],
+          AWAIT_MATCH_TIMEOUT_MS,
+        ),
+      );
+    }
+    if (promises.length > 0) {
+      await Promise.all(promises);
+    }
+  };
+
+  try {
+    await tryAwaitTxId();
+  } catch (error) {
+    const isTimeout =
+      error && typeof error === "object" && "name" in error && error.name === "TimeoutWaitingForTxIdError";
+    if (isTimeout && (result.defaultWorkspaceId || result.syncedForms.length > 0)) {
+      logger("awaitTxId timed out, using awaitMatch fallback (match by row id)");
+      await fallbackAwaitMatch();
+    } else if (isTimeout) {
+      logger("awaitTxId timed out, no ids to match - data will sync eventually");
+    } else {
+      throw error;
+    }
+  }
+}
 
 /**
  * Client-side function that coordinates the sync process

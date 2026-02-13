@@ -22,7 +22,8 @@ import {
 } from "@/db-collections";
 import { useForms, useWorkspaces } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
-import { syncLocalDataToCloud } from "@/lib/sync";
+import { consumeSyncAfterLoginFlag } from "@/lib/local-draft";
+import { awaitSyncTxids, syncLocalDataToCloud } from "@/lib/sync";
 import { createFileRoute, Link, useLoaderData, useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -59,6 +60,7 @@ function DashboardPage() {
     title: string;
   } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [syncOverlayVisible, setSyncOverlayVisible] = useState(false);
 
   // Get current session/user
   const { data: session } = useSession();
@@ -93,22 +95,29 @@ function DashboardPage() {
   const startIndex = (currentPage - 1) * FORMS_PER_PAGE;
   const paginatedForms = orgForms.slice(startIndex, startIndex + FORMS_PER_PAGE);
 
-  // Handle sync after social login redirect
+  // Handle sync after social/social login redirect (blocking overlay until Electric sync completes)
   useEffect(() => {
     const syncData = async () => {
-      const shouldSync = sessionStorage.getItem("shouldSyncAfterSocialLogin");
-      if (shouldSync === "true" && session?.user) {
-        // Clear the flag immediately to prevent multiple syncs
-        sessionStorage.removeItem("shouldSyncAfterSocialLogin");
+      const shouldSyncSocial =
+        sessionStorage.getItem("shouldSyncAfterSocialLogin") === "true";
+      const shouldSyncLogin = consumeSyncAfterLoginFlag();
+      const shouldSync = (shouldSyncSocial || shouldSyncLogin) && session?.user;
 
-        // Wait a bit for session to be fully established and queries to be ready
+      if (shouldSync) {
+        if (shouldSyncSocial) sessionStorage.removeItem("shouldSyncAfterSocialLogin");
+        setSyncOverlayVisible(true);
+
         try {
-          await syncLocalDataToCloud();
+          const syncResult = await syncLocalDataToCloud();
+          if (syncResult?.txids?.length) {
+            await awaitSyncTxids(syncResult);
+          }
           toast.success("Local data synced successfully!");
-          // Live queries will automatically pick up the synced data
         } catch (error) {
           console.error("Failed to sync local data:", error);
           toast.error("Signed in but failed to sync local data");
+        } finally {
+          setSyncOverlayVisible(false);
         }
       }
     };
@@ -184,7 +193,19 @@ function DashboardPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-background text-foreground">
+    <div className="flex-1 flex flex-col min-h-screen bg-background text-foreground relative">
+      {/* Sync overlay for social login (blocking until Electric sync completes) */}
+      {syncOverlayVisible && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
+            <p className="text-sm font-medium text-muted-foreground">
+              Syncing your data...
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <main className="flex-1 p-6 md:p-12 lg:p-20 max-w-6xl mx-auto w-full">
         {/* Header */}

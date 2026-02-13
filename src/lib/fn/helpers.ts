@@ -46,9 +46,20 @@ export const authForm = async (formId: string, userId: string) => {
   return { form: form[0] };
 };
 
-export const getTxId = async () => {
-  const result = await db.execute<{ txid: number }>(
-    sql`SELECT pg_current_xact_id()::xid::text::int as txid`,
+type DbLike = { execute: typeof db.execute };
+
+/**
+ * Get PostgreSQL transaction ID. Must be called inside the same transaction as the mutation
+ * for Electric sync to match correctly (see TanStack Electric docs).
+ */
+export const getTxId = async (tx?: DbLike): Promise<number> => {
+  const client = tx ?? db;
+  // Use ::xid::text (no ::int) - TanStack docs: "The ::xid cast strips off the epoch,
+  // giving you the raw 32-bit value that matches what PostgreSQL sends in logical replication"
+  const result = await client.execute<{ txid: string }>(
+    sql`SELECT pg_current_xact_id()::xid::text as txid`,
   );
-  return result.rows[0].txid;
+  const txid = result.rows[0]?.txid;
+  if (txid === undefined) throw new Error("Failed to get transaction ID");
+  return parseInt(txid, 10);
 };

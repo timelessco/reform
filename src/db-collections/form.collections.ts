@@ -98,7 +98,7 @@ export const formCollection = createCollection(
     getKey: (item) => item.id,
     startSync: true,
     syncMode: "eager",
-    onInsert: async ({ transaction }) => {
+    onInsert: async ({ transaction , collection  }) => {
       const newItem = transaction.mutations[0].modified;
       const result = (await createForm({ data: newItem })) as ServerTxResult;
       return { txid: result.txid };
