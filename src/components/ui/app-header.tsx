@@ -15,9 +15,9 @@ import {
 } from "@/hooks/use-form-versions";
 import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
-import { deleteForm, getFormbyIdQueryOption } from "@/lib/fn/forms";
-import { cn } from "@/lib/utils";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { deleteForm } from "@/lib/fn/forms";
+import { cn, parseTimestampAsUTC } from "@/lib/utils";
+import { useMutation } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
 import {
@@ -28,7 +28,6 @@ import {
   Pencil,
   Settings,
 } from "lucide-react";
-import { useMemo } from "react";
 import { toast } from "sonner";
 import { useSidebarSafe } from "./sidebar";
 
@@ -107,23 +106,9 @@ export function AppHeader({
   const searchParams: any = useSearch({ strict: false });
   const demo = searchParams.demo;
 
-  // Primary: TanStack Query cache (primed by route loader, immediate on navigation)
-  const { data: serverFormData } = useQuery({
-    ...getFormbyIdQueryOption(formId!),
-    enabled: !!formId,
-  });
-  // Secondary: Electric live data (real-time but async)
-  const { data: savedDocs, isLoading: isLoadingSavedDocs } = useForm(formId);
-
-  // Get workspace data for breadcrumb
+  // Single source: Electric live data (useForm)
   const { data: workspace } = useWorkspace(workspaceId);
-
-  // Prefer Electric (real-time) when available, fall back to server cache
-  const currentForm = useMemo(() => {
-    if (!formId) return undefined;
-    const electricForm = savedDocs?.find((doc: any) => doc.id === formId);
-    return electricForm ?? serverFormData?.form;
-  }, [savedDocs, formId, serverFormData]);
+  const { data: savedDocs, isLoading: isLoadingSavedDocs } = useForm(formId);
 
   // Version management hooks
   const hasUnpublishedChanges = useHasUnpublishedChanges(formId);
@@ -209,7 +194,7 @@ export function AppHeader({
         )}
 
         {/* Breadcrumb: Workspace / Form Name / Page */}
-        {isFormBuilder && currentForm && (
+        {isFormBuilder && savedDocs?.[0] && (
           <div className="flex items-center gap-2 text-sm">
             {workspace && (
               <>
@@ -222,9 +207,19 @@ export function AppHeader({
                 <span className="text-muted-foreground/50">/</span>
               </>
             )}
-            <span className="font-medium truncate max-w-[200px]">
-              {currentForm.title || "Untitled"}
-            </span>
+            {savedDocs?.[0].status === "published" && workspaceId && formId ? (
+              <Link
+                to="/workspace/$workspaceId/form-builder/$formId/submissions"
+                params={{ workspaceId, formId }}
+                className="font-medium truncate max-w-[200px] text-foreground hover:underline"
+              >
+                {savedDocs?.[0].title || "Untitled"}
+              </Link>
+            ) : (
+              <span className="font-medium truncate max-w-[200px]">
+                {savedDocs?.[0].title || "Untitled"}
+              </span>
+            )}
             <span className="text-muted-foreground/50">/</span>
             <span className="text-muted-foreground">
               {isEditRoute ? "Editor" : "Submissions"}
@@ -235,11 +230,11 @@ export function AppHeader({
 
       {/* Right Section: Actions */}
       <div className="flex items-center gap-1">
-        {isFormBuilder && currentForm?.updatedAt && !isEditorSidebarOpen && !isLoadingSavedDocs && (
+        {isFormBuilder && savedDocs?.[0]?.updatedAt && !isEditorSidebarOpen && !isLoadingSavedDocs && (
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="text-[11px] text-muted-foreground/70 mr-2 whitespace-nowrap rounded-md bg-muted/60 px-2 py-1">
-                Edited {formatDistanceToNow(new Date(currentForm.updatedAt))} ago
+                Edited {formatDistanceToNow(parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date())} ago
               </span>
             </TooltipTrigger>
             <TooltipContent side="bottom" align="end">
@@ -249,15 +244,15 @@ export function AppHeader({
                   <span className="font-medium text-foreground">
                     {session?.user?.name ?? "You"}
                   </span>{" "}
-                  {formatDistanceToNow(new Date(currentForm.updatedAt))} ago
+                  {formatDistanceToNow(parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date())} ago
                 </p>
-                {currentForm?.createdAt && (
+                {savedDocs?.[0]?.createdAt && (
                   <p className="text-xs text-muted-foreground">
                     Created by{" "}
                     <span className="font-medium text-foreground">
                       {session?.user?.name ?? "You"}
                     </span>{" "}
-                    {format(new Date(currentForm.createdAt), "MMM d, yyyy")}
+                    {format(parseTimestampAsUTC(savedDocs?.[0]?.createdAt) ?? new Date(), "MMM d, yyyy")}
                   </p>
                 )}
               </div>
@@ -326,7 +321,7 @@ export function AppHeader({
                 </Button>
               )}
 
-              {!isLoadingSavedDocs && currentForm?.status === "published" && (
+              {savedDocs?.[0]?.status === "published" && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -411,18 +406,18 @@ export function AppHeader({
                 className={cn(
                   "h-8 px-4 ml-1 text-[13px] font-semibold transition-all rounded-md shadow-sm border-none  ",
                   !isLoadingSavedDocs &&
-                    (hasUnpublishedChanges || currentForm?.status !== "published")
+                    (hasUnpublishedChanges || savedDocs?.[0]?.status !== "published")
                     ? "bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
                     : "bg-muted text-muted-foreground hover:bg-muted/80",
                 )}
                 onClick={handlePublish}
                 disabled={
                   publishMutation.isPending ||
-                  (!hasUnpublishedChanges && currentForm?.status === "published")
+                  (!hasUnpublishedChanges && savedDocs?.[0]?.status === "published")
                 }
               >
                 {publishMutation.isPending && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
-                {currentForm?.status === "published" ? "Published" : "Publish"}
+                {savedDocs?.[0]?.status === "published" ? "Published" : "Publish"}
               </Button>
             ) : (
               // Not on edit route: show Edit button to navigate to the editor

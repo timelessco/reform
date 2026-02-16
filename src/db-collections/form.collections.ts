@@ -96,7 +96,7 @@ export const formCollection = createCollection(
       fetchClient: electricFetchClient,
     },
     getKey: (item) => item.id,
-    startSync: true,
+    startSync: false, // Sync starts in _authenticated.tsx loader after auth is confirmed
     syncMode: "eager",
     onInsert: async ({ transaction , collection  }) => {
       const newItem = transaction.mutations[0].modified;

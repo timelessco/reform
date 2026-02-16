@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "postinstall": "node scripts/patch-tanstack.js",
     "dev": "vite dev --port 3000",
     "preview": "vite preview",
     "test": "vitest run",

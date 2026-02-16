@@ -73,9 +73,11 @@ import {
   createWorkspaceLocal,
   deleteWorkspaceLocal,
   duplicateFormById,
+  favoriteCollection,
   formCollection,
   permanentDeleteFormLocal,
   restoreFormLocal,
+  submissionCollection,
   updateFormStatus,
   updateWorkspaceName,
   workspaceCollection,
@@ -153,10 +155,18 @@ export const Route = createFileRoute("/_authenticated")({
       auth.organization.list.queryKey(),
       orgsData,
     );
-    await workspaceCollection.preload();
-    await formCollection.preload();
+    // Start Electric sync for all collections (startSync: false means we control when sync starts)
+    await Promise.all([
+      // workspaceCollection.startSyncImmediate(),
+      // formCollection.startSyncImmediate(),
+      workspaceCollection.preload(),
+      formCollection.preload(),
+      submissionCollection.preload(),
+      favoriteCollection.preload(),
+    ]);
     return { activeOrg, orgsData };
   },
+  staleTime: 500000,// 500 seconds
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,
@@ -469,6 +479,9 @@ function AppSidebar() {
   const signOutMutation = useMutation(
     auth.signOut.mutationOptions({
       onSuccess: () => {
+        localStorage.removeItem("electricAuthToken");
+        localStorage.clear();
+        router.invalidate();
         router.navigate({ to: "/" });
       },
     }),

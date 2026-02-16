@@ -23,6 +23,7 @@ import {
 import { useForms, useWorkspaces } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
 import { syncLocalDataToCloud } from "@/lib/sync";
+import { parseTimestampAsUTC } from "@/lib/utils";
 import { createFileRoute, Link, useLoaderData, useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -93,27 +94,34 @@ function DashboardPage() {
   const startIndex = (currentPage - 1) * FORMS_PER_PAGE;
   const paginatedForms = orgForms.slice(startIndex, startIndex + FORMS_PER_PAGE);
 
-  // Handle sync after social login redirect
+  // Handle sync after login/signup redirect
   useEffect(() => {
     const syncData = async () => {
-      const shouldSync = sessionStorage.getItem("shouldSyncAfterSocialLogin");
-      if (shouldSync === "true" && session?.user) {
-        // Clear the flag immediately to prevent multiple syncs
-        sessionStorage.removeItem("shouldSyncAfterSocialLogin");
+      const shouldSync =
+        sessionStorage.getItem("shouldSyncAfterSocialLogin") === "true" ||
+        sessionStorage.getItem("shouldSyncAfterLogin") === "true";
 
-        // Wait a bit for session to be fully established and queries to be ready
-        try {
-          await syncLocalDataToCloud();
-          toast.success("Local data synced successfully!");
-          // Live queries will automatically pick up the synced data
-        } catch (error) {
-          console.error("Failed to sync local data:", error);
-          toast.error("Signed in but failed to sync local data");
+      if (!shouldSync || !session?.user || !activeOrg?.id) return;
+
+      // Clear flags immediately to prevent multiple syncs
+      sessionStorage.removeItem("shouldSyncAfterSocialLogin");
+      sessionStorage.removeItem("shouldSyncAfterLogin");
+
+      try {
+        // Sync via Electric collections
+        // Shapes now have proper auth context because startSync: false
+        // means sync only starts after _authenticated loader calls preload()
+        const result = await syncLocalDataToCloud(activeOrg.id);
+        if (result?.syncedForms && result.syncedForms.length > 0) {
+          toast.success("Local data synced!");
         }
+      } catch (error) {
+        console.error("Failed to sync local data:", error);
+        toast.error("Signed in but failed to sync local data");
       }
     };
     syncData();
-  }, [session]);
+  }, [session, activeOrg?.id]);
 
   const handleCreateWorkspace = async () => {
     if (!activeOrg?.id) return;
@@ -180,7 +188,7 @@ function DashboardPage() {
   };
 
   const formatLastEdited = (timestamp: string) => {
-    return `Edited ${formatDistanceToNow(new Date(timestamp))} ago`;
+    return `Edited ${formatDistanceToNow(parseTimestampAsUTC(timestamp) ?? new Date())} ago`;
   };
 
   return (

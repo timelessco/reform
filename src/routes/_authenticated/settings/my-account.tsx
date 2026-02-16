@@ -160,6 +160,9 @@ function MyAccountPage() {
 
   const socialSignInMutation = useMutation(
     auth.signIn.social.mutationOptions({
+      onSuccess: () => {
+        sessionStorage.setItem("shouldSyncAfterSocialLogin", "true");
+      },
       onError: (error) => {
         toast.error(error.message || "Failed to connect account");
       },
@@ -233,6 +236,7 @@ function MyAccountPage() {
   const handleGoogleSignIn = async () => {
     socialSignInMutation.mutate({
       provider: "google",
+      callbackURL: window.location.origin,
     });
   };
 

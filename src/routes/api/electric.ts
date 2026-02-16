@@ -1,7 +1,7 @@
 import { member, workspaces } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute  } from "@tanstack/react-router";
 import { eq, inArray } from "drizzle-orm";
 import { authMiddleware } from "@/middleware/auth";
 
@@ -170,22 +170,41 @@ export const Route = createFileRoute("/api/electric")({
             cache: "no-store",
           });
 
-          const headers = new Headers(upstream.headers);
-          headers.delete("content-encoding");
-          headers.delete("content-length");
-          headers.delete("access-control-allow-origin");
-          headers.delete("access-control-allow-credentials");
-          headers.delete("cache-control"); // Remove upstream cache control
+          // Log upstream response for debugging
+          console.log("[Electric Proxy] Upstream status:", upstream.status);
+          console.log("[Electric Proxy] Upstream headers:", Object.fromEntries(upstream.headers.entries()));
 
-          // Force no-cache
-          headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-          headers.set("Pragma", "no-cache");
-          headers.set("Expires", "0");
-          headers.set("Vary", "Cookie");
+          // Clone headers to avoid modification issues
+          const responseHeaders = new Headers();
 
+          // Copy all headers from upstream including electric-*
+          for (const [key, value] of upstream.headers.entries()) {
+            // Skip problematic headers
+            if (
+              key === "content-encoding" ||
+              key === "content-length" ||
+              key === "transfer-encoding"
+            ) {
+              continue;
+            }
+            responseHeaders.set(key, value);
+          }
+
+          // Override cache control
+          responseHeaders.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+          responseHeaders.set("Pragma", "no-cache");
+          responseHeaders.set("Expires", "0");
+          responseHeaders.set("Vary", "Cookie");
+
+          // Test header to verify headers are being set
+          responseHeaders.set("X-Electric-Proxy", "true");
+
+          console.log("[Electric Proxy] Final headers:", Object.fromEntries(responseHeaders.entries()));
+
+          // Create new Response - TanStack Start should preserve these headers
           return new Response(upstream.body, {
             status: upstream.status,
-            headers,
+            headers: responseHeaders,
           });
         } catch (error) {
           console.error("Electric proxy error:", error);
