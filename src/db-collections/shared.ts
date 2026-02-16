@@ -1,11 +1,17 @@
 import { z } from "zod";
 
+/** Parse Postgres timestamp (no TZ) as UTC before converting to ISO. Avoids local-time misparse. */
+function parseAsUTC(val: string): string {
+  if (val.endsWith("Z") || /[+-]\d{2}/.test(val)) return new Date(val).toISOString();
+  return new Date(val.replace(" ", "T") + "Z").toISOString();
+}
+
 // Helper to transform timestamp strings from Electric
-// Handles both string timestamps and provides a default for undefined values
+// Postgres returns "YYYY-MM-DD HH:mm:ss" without timezone - treat as UTC
 export const timestampField = z
   .string()
   .optional()
-  .transform((val) => (val ? new Date(val).toISOString() : new Date().toISOString()));
+  .transform((val) => (val ? parseAsUTC(val) : new Date().toISOString()));
 
 // ============================================================================
 // Electric URL Helper

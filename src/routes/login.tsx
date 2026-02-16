@@ -15,7 +15,6 @@ import {
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { auth } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
-import { syncLocalDataToCloud } from "@/lib/sync";
 import { guestMiddleware } from "@/middleware/auth";
 
 export const Route = createFileRoute("/login")({
@@ -55,11 +54,8 @@ function LoginPage() {
     auth.signIn.email.mutationOptions({
       onSuccess: async () => {
         toast.success("Signed in successfully!");
-        try {
-          await syncLocalDataToCloud();
-        } catch (error) {
-          console.error("Failed to sync local data:", error);
-        }
+        // Set flag for dashboard to handle sync (org is available there)
+        sessionStorage.setItem("shouldSyncAfterLogin", "true");
         router.navigate({ to: "/dashboard", replace: true });
       },
       onError: (error) => {
@@ -75,11 +71,8 @@ function LoginPage() {
     auth.signIn.username.mutationOptions({
       onSuccess: async () => {
         toast.success("Signed in successfully!");
-        try {
-          await syncLocalDataToCloud();
-        } catch (error) {
-          console.error("Failed to sync local data:", error);
-        }
+        // Set flag for dashboard to handle sync (org is available there)
+        sessionStorage.setItem("shouldSyncAfterLogin", "true");
         router.navigate({ to: "/dashboard", replace: true });
       },
       onError: (error) => {
@@ -108,11 +101,8 @@ function LoginPage() {
     auth.signIn.emailOtp.mutationOptions({
       onSuccess: async () => {
         toast.success("Signed in successfully!");
-        try {
-          await syncLocalDataToCloud();
-        } catch (error) {
-          console.error("Failed to sync local data:", error);
-        }
+        // Set flag for dashboard to handle sync (org is available there)
+        sessionStorage.setItem("shouldSyncAfterLogin", "true");
         router.navigate({ to: "/dashboard", replace: true });
       },
       onError: (error) => {
@@ -202,7 +192,7 @@ function LoginPage() {
     socialSignInMutation.isPending;
 
   const handleGoogleSignIn = async () => {
-    socialSignInMutation.mutate({ provider: "google" });
+    socialSignInMutation.mutate({ provider: "google", callbackURL: window.location.origin });
   };
 
   return (

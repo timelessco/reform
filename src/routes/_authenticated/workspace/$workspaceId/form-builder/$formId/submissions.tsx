@@ -1,19 +1,45 @@
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DataGrid, DataGridContainer } from "@/components/ui/data-grid";
+import { DataGridColumnHeader } from "@/components/ui/data-grid-column-header";
+import { DataGridColumnVisibility } from "@/components/ui/data-grid-column-visibility";
+import { DataGridTable } from "@/components/ui/data-grid-table";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { getLatestPublishedVersion } from "@/lib/fn/form-versions";
+import {
+  deleteSubmission,
+  deleteSubmissionsBulk,
+  getSubmissionsByFormIdQueryOption,
+  type SerializedSubmission,
+} from "@/lib/fn/submissions";
+import {
+  getEditableFields,
+  transformPlateStateToFormElements,
+} from "@/lib/transform-plate-to-form";
+import { cn } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  type ColumnDef,
-  type ColumnPinningState,
-  type RowSelectionState,
-  type VisibilityState,
   createColumnHelper,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  type ColumnDef,
+  type ColumnPinningState,
+  type RowSelectionState,
+  type VisibilityState,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { z } from "zod";
 import {
   AlignLeft,
   Calendar,
@@ -32,34 +58,7 @@ import {
 } from "lucide-react";
 import type { Value } from "platejs";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { DataGrid, DataGridContainer } from "@/components/ui/data-grid";
-import { DataGridColumnHeader } from "@/components/ui/data-grid-column-header";
-import { DataGridColumnVisibility } from "@/components/ui/data-grid-column-visibility";
-import { DataGridTable } from "@/components/ui/data-grid-table";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { getLatestPublishedVersion } from "@/lib/fn/form-versions";
-import {
-  deleteSubmission,
-  deleteSubmissionsBulk,
-  getSubmissionsByFormIdQueryOption,
-  type SerializedSubmission,
-} from "@/lib/fn/submissions";
-import {
-  getEditableFields,
-  transformPlateStateToFormElements,
-} from "@/lib/transform-plate-to-form";
-import { cn } from "@/lib/utils";
+import { z } from "zod";
 
 // Field status types for color coding
 type FieldStatus = "current" | "deleted";

@@ -1,11 +1,11 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { forms } from "@/db/schema";
 import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
-import { authForm, authUser, getTxId } from "./helpers";
+import { authForm, getTxId } from "./helpers";
 
 const serializeForm = (form: typeof forms.$inferSelect) => ({
   ...form,
@@ -77,9 +77,9 @@ export const updateForm = createServerFn({ method: "POST" })
       updatedAt: z.string().optional(),
     }),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { id, updatedAt: clientUpdatedAt, ...updateData } = data;
-    await authForm(id);
+    await authForm(id, context.session.user.id);
 
     const [form] = await db
       .update(forms)
@@ -98,8 +98,8 @@ export const updateForm = createServerFn({ method: "POST" })
 export const deleteForm = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid() }))
-  .handler(async ({ data }) => {
-    await authForm(data.id);
+  .handler(async ({ data, context }) => {
+    await authForm(data.id, context.session.user.id);
 
     const [form] = await db.delete(forms).where(eq(forms.id, data.id)).returning();
 
@@ -111,13 +111,12 @@ export const deleteForm = createServerFn({ method: "POST" })
 const getFormsByWorkspace = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ workspaceId: z.string().uuid() }))
-  .handler(async ({ data }) => {
-    await authUser(); // Just check authentication
+  .handler(async ({ data, context }) => {
 
     const formList = await db
       .select()
       .from(forms)
-      .where(eq(forms.workspaceId, data.workspaceId))
+      .where(and(eq(forms.workspaceId, data.workspaceId), eq(forms.createdByUserId, context.session.user.id)))
       .orderBy(forms.updatedAt);
 
     return { forms: formList.map(serializeForm) };
@@ -126,9 +125,8 @@ const getFormsByWorkspace = createServerFn({ method: "GET" })
 export const duplicateForm = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid() }))
-  .handler(async ({ data }) => {
-    const user = await authUser();
-    await authForm(data.id);
+  .handler(async ({ data, context }) => {
+    await authForm(data.id, context.session.user.id);
 
     // Get the original form
     const [originalForm] = await db.select().from(forms).where(eq(forms.id, data.id));
@@ -145,7 +143,7 @@ export const duplicateForm = createServerFn({ method: "POST" })
       .insert(forms)
       .values({
         id: newId,
-        createdByUserId: user.id,
+        createdByUserId: context.session.user.id,
         workspaceId: originalForm.workspaceId,
         title,
         formName: originalForm.formName,
@@ -174,8 +172,8 @@ const moveFormToWorkspace = createServerFn({ method: "POST" })
       targetWorkspaceId: z.string().uuid(),
     }),
   )
-  .handler(async ({ data }) => {
-    await authForm(data.formId);
+  .handler(async ({ data, context }) => {
+    await authForm(data.formId, context.session.user.id);
 
     const [form] = await db
       .update(forms)
@@ -194,8 +192,8 @@ const moveFormToWorkspace = createServerFn({ method: "POST" })
 const getFormById = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid() }))
-  .handler(async ({ data }) => {
-    await authForm(data.id);
+  .handler(async ({ data, context }) => {
+    await authForm(data.id, context.session.user.id);
 
     const [form] = await db.select().from(forms).where(eq(forms.id, data.id));
 

@@ -30,7 +30,15 @@ const config = defineConfig({
         levels: ["log", "warn", "error", "info", "debug"],
       },
     }),
-    nitro({}),
+    nitro({
+      vercel : {
+        functions : {
+          maxDuration : 799,
+          runtime : 'bun1.x',
+          supportsResponseStreaming : true,
+        }
+      }
+    }),
     // this is the plugin that enables path aliases
     viteTsConfigPaths({
       projects: ["./tsconfig.json"],

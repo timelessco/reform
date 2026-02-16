@@ -19,7 +19,7 @@ import {
 } from "platejs/react";
 import * as React from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -242,33 +242,10 @@ function Draggable(props: PlateElementProps) {
           <div
             className={cn(
               "slate-blockToolbarWrapper",
-              "flex items-start gap-0.5 pointer-events-auto",
+              "flex items-start gap-0.5 pointer-events-auto pr-2",
               isInColumn && "h-4",
             )}
           >
-            {/* Delete Button - hidden for form buttons */}
-            {!isFormButton && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      // Delete the current block
-                      editor.tf.removeNodes({ at: path });
-                    }}
-                    data-plate-prevent-deselect
-                  >
-                    <Trash2 className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Delete block</TooltipContent>
-              </Tooltip>
-            )}
-
             {/* Plus Button - Add after (hidden for form buttons) */}
             {!isFormButton && (
               <Tooltip>
@@ -276,7 +253,7 @@ function Draggable(props: PlateElementProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 p-0"
+                    className="h-7 w-6 p-0"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -293,19 +270,17 @@ function Draggable(props: PlateElementProps) {
                     }}
                     data-plate-prevent-deselect
                   >
-                    <Plus className="h-4 w-4 text-muted-foreground" />
+                    <Plus className="h-7 w-6 text-muted-foreground" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Add block below</TooltipContent>
               </Tooltip>
             )}
 
-            {/* Drag Handle or Settings Gear */}
-            <Button
+            {/* Drag Handle or Settings Gear - div to avoid nested button (Tooltip+Button inside) */}
+            <div
               ref={isFormButton ? null : handleRef}
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 p-0"
+              className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-6 w-6 p-0")}
               data-plate-prevent-deselect
             >
               <DragHandle
@@ -315,7 +290,7 @@ function Draggable(props: PlateElementProps) {
                 setPreviewTop={setPreviewTop}
                 isFormButton={isFormButton}
               />
-            </Button>
+            </div>
           </div>
         </Gutter>
       )}
@@ -475,7 +450,7 @@ const DragHandle = React.memo(function DragHandle({
           {isFormButton ? (
             <Settings className="text-muted-foreground" />
           ) : (
-            <GripVertical className="text-muted-foreground" />
+            <GripVertical className="h-6 w-6 text-muted-foreground" />
           )}
         </Button>
       </TooltipTrigger>

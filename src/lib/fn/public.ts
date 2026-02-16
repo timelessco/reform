@@ -3,6 +3,10 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { forms, formVersions, submissions } from "@/db/schema";
 import { db } from "@/lib/db";
+import {
+  type PublicFormSettings,
+  defaultPublicFormSettings,
+} from "@/types/form-settings";
 
 /**
  * Public server functions - NO authentication required
@@ -44,6 +48,18 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
         .where(eq(formVersions.id, form.lastPublishedVersionId));
 
       if (version) {
+        // Extract public settings from version settings
+        const versionSettings = version.settings as Record<string, unknown> | null;
+        const settings: PublicFormSettings = {
+          progressBar: (versionSettings?.progressBar as boolean) ?? defaultPublicFormSettings.progressBar,
+          branding: (versionSettings?.branding as boolean) ?? defaultPublicFormSettings.branding,
+          autoJump: (versionSettings?.autoJump as boolean) ?? defaultPublicFormSettings.autoJump,
+          saveAnswersForLater: (versionSettings?.saveAnswersForLater as boolean) ?? defaultPublicFormSettings.saveAnswersForLater,
+          redirectOnCompletion: (versionSettings?.redirectOnCompletion as boolean) ?? defaultPublicFormSettings.redirectOnCompletion,
+          redirectUrl: (versionSettings?.redirectUrl as string | null) ?? defaultPublicFormSettings.redirectUrl,
+          redirectDelay: (versionSettings?.redirectDelay as number) ?? defaultPublicFormSettings.redirectDelay,
+        };
+
         return {
           form: {
             id: form.id,
@@ -52,6 +68,7 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
             icon: form.icon,
             cover: form.cover,
             status: form.status,
+            settings,
           },
           error: null,
         };
@@ -67,6 +84,7 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
         icon: form.icon,
         cover: form.cover,
         status: form.status,
+        settings: defaultPublicFormSettings,
       },
       error: null,
     };

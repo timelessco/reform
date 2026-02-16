@@ -1,179 +1,44 @@
-import { createServerFn } from "@tanstack/react-start";
-import { eq, inArray } from "drizzle-orm";
-import { forms, member, organization, workspaces } from "@/db/schema";
-import { db } from "@/lib/db";
-import { authUser, getTxId } from "@/lib/fn/helpers";
 import { logger } from "@/lib/utils";
-
-/**
- * Server function to sync forms to the cloud
- */
-const syncFormsToCloud = createServerFn({ method: "POST" })
-  .inputValidator((forms: any[]) => forms)
-  .handler(async ({ data: localForms }) => {
-    try {
-      logger("Starting server-side form sync...");
-
-      if (!localForms || localForms.length === 0) {
-        logger("No forms to sync");
-        return { success: true };
-      }
-
-      // Ensure user is authenticated
-      const user = await authUser();
-
-      // Track all txids for Electric sync
-      const txids: number[] = [];
-
-      // Get user's organization memberships
-      const userMemberships = await db
-        .select({ organizationId: member.organizationId })
-        .from(member)
-        .where(eq(member.userId, user.id));
-
-      if (userMemberships.length === 0) {
-        logger("User has no organization memberships, creating default org...");
-        // Create a default organization for the user
-        const now = new Date();
-        const newOrgId = crypto.randomUUID();
-        await db.insert(organization).values({
-          id: newOrgId,
-          name: `${user.name || user.email}'s Organization`,
-          slug: `org-${newOrgId.slice(0, 8)}`,
-          createdAt: now,
-        });
-        txids.push(await getTxId()); // Capture org txid
-
-        // Add user as owner of the new organization
-        await db.insert(member).values({
-          id: crypto.randomUUID(),
-          userId: user.id,
-          organizationId: newOrgId,
-          role: "owner",
-          createdAt: now,
-        });
-        txids.push(await getTxId()); // Capture member txid
-
-        userMemberships.push({ organizationId: newOrgId });
-        logger("Created default organization:", newOrgId);
-      }
-
-      const userOrgIds = userMemberships.map((m) => m.organizationId);
-
-      // Get existing server workspaces for user's organizations
-      const serverWorkspaces = await db
-        .select({
-          id: workspaces.id,
-          name: workspaces.name,
-          organizationId: workspaces.organizationId,
-        })
-        .from(workspaces)
-        .where(inArray(workspaces.organizationId, userOrgIds))
-        .orderBy(workspaces.createdAt);
-
-      // Create default workspace if no workspaces exist on server
-      let defaultWorkspaceId: string;
-      let workspaceTxid: number | undefined;
-      const defaultOrgId = userOrgIds[0];
-      if (serverWorkspaces.length === 0) {
-        logger("Creating default workspace on server...");
-        const now = new Date();
-        const [newWorkspace] = await db
-          .insert(workspaces)
-          .values({
-            id: crypto.randomUUID(),
-            organizationId: defaultOrgId,
-            createdByUserId: user.id,
-            name: "My workspace",
-            createdAt: now,
-            updatedAt: now,
-          })
-          .returning();
-        workspaceTxid = await getTxId(); // Capture workspace txid separately
-        txids.push(workspaceTxid);
-        defaultWorkspaceId = newWorkspace.id;
-        logger("Created default workspace:", defaultWorkspaceId);
-      } else {
-        defaultWorkspaceId = serverWorkspaces[0].id;
-      }
-
-      // Sync forms to server (always create new forms with new IDs)
-      const syncedForms: string[] = [];
-      for (const localForm of localForms) {
-        try {
-          // Use default workspace for all forms
-          const serverWorkspaceId = defaultWorkspaceId;
-          const now = new Date();
-          const newFormId = crypto.randomUUID();
-
-          // Insert form with new ID (local forms may have conflicting IDs)
-          await db.insert(forms).values({
-            id: newFormId,
-            createdByUserId: user.id,
-            workspaceId: serverWorkspaceId,
-            title: localForm.title || "Untitled",
-            formName: localForm.formName || "draft",
-            schemaName: localForm.schemaName || "draftFormSchema",
-            content: localForm.content || [],
-            settings: localForm.settings || {},
-            icon: localForm.icon,
-            cover: localForm.cover,
-            isMultiStep: localForm.isMultiStep ?? false,
-            status: localForm.status || "draft",
-            createdAt: now,
-            updatedAt: now,
-          });
-
-          // Capture txid immediately after insert for Electric sync tracking
-          const txid = await getTxId();
-          txids.push(txid);
-
-          syncedForms.push(newFormId);
-          logger(
-            `Synced form "${localForm.title || "Untitled"}" as ${newFormId} to workspace ${serverWorkspaceId} (txid: ${txid})`,
-          );
-        } catch (error) {
-          console.error(`Failed to sync form "${localForm.title || "Untitled"}":`, error);
-          // Continue with other forms
-        }
-      }
-
-      logger(`Successfully synced ${syncedForms.length} forms to cloud`);
-      return {
-        success: true,
-        syncedForms,
-        txids,
-        defaultWorkspaceId,
-        workspaceTxid,
-      };
-    } catch (error) {
-      console.error("Failed to sync forms to cloud:", error);
-      throw error;
-    }
-  });
 
 /**
  * Result type for syncLocalDataToCloud
  */
 type SyncResult = {
   success: boolean;
-  txids: number[];
   syncedForms: string[];
-  defaultWorkspaceId?: string;
-  workspaceTxid?: number;
 };
 
 /**
- * Client-side function that coordinates the sync process
- * Syncs forms from localFormCollection (localStorage) to the cloud
- * Returns txids that can be used to wait for Electric sync
+ * Client-side function that syncs local forms to the cloud via Electric collections.
+ *
+ * Instead of inserting directly into PostgreSQL (which causes 409 Conflict errors
+ * when Electric shapes have stale handles), this uses formCollection.insert() which:
+ * 1. Inserts locally into the Electric collection
+ * 2. Triggers onInsert callback that calls createForm() server function
+ * 3. Server writes to PostgreSQL with proper auth context
+ * 4. Electric tracks the txid and syncs automatically
+ *
+ * @param organizationId - The organization ID to sync forms to
  */
-export async function syncLocalDataToCloud(): Promise<SyncResult | null> {
+export async function syncLocalDataToCloud(
+  organizationId: string,
+): Promise<SyncResult | null> {
   try {
-    logger("Starting local data sync to cloud...");
+    logger("Starting local data sync to cloud via Electric collections...");
+    logger(`Organization ID: ${organizationId}`);
 
-    // Import localFormCollection (localStorage) to sync local forms to cloud
+    // Validate organizationId
+    if (!organizationId) {
+      console.error("syncLocalDataToCloud: organizationId is required");
+      throw new Error("Organization ID is required for sync");
+    }
+
+    // Import collections
     const { localFormCollection } = await import("@/db-collections");
+    const { formCollection } = await import("@/db-collections/form.collections");
+    const { workspaceCollection, createWorkspaceLocal } = await import(
+      "@/db-collections/workspace.collection"
+    );
 
     // Get all local forms from localStorage
     const localForms = await localFormCollection.toArrayWhenReady();
@@ -184,33 +49,73 @@ export async function syncLocalDataToCloud(): Promise<SyncResult | null> {
       return null;
     }
 
-    // Call server function to sync forms
-    const result = await syncFormsToCloud({ data: localForms });
-    logger("Sync result:", result);
+    // Get existing workspaces or create one via Electric collection
+    const existingWorkspaces = await workspaceCollection.toArrayWhenReady();
+    const orgWorkspaces = existingWorkspaces.filter(
+      (ws) => ws.organizationId === organizationId,
+    );
 
-    if (result.success) {
-      logger("Server sync completed, clearing local data...");
-
-      // Clear local data after successful server sync
-      for (const localForm of localForms) {
-        try {
-          await localFormCollection.delete(localForm.id);
-        } catch (error) {
-          console.error(`Failed to delete local form ${localForm.id}:`, error);
-        }
+    let targetWorkspaceId: string;
+    if (orgWorkspaces.length === 0) {
+      // Create workspace via Electric collection (triggers onInsert → createWorkspace server fn)
+      logger("No workspace found, creating via Electric collection...");
+      logger(`Creating workspace with organizationId: ${organizationId}`);
+      try {
+        const newWorkspace = await createWorkspaceLocal(organizationId, "My workspace");
+        targetWorkspaceId = newWorkspace.id;
+        logger(`Created workspace ${targetWorkspaceId} via Electric collection`);
+      } catch (wsError) {
+        console.error("Failed to create workspace:", wsError);
+        throw wsError;
       }
-
-      logger("Local data sync completed successfully!");
-      return {
-        success: true,
-        txids: result.txids || [],
-        syncedForms: result.syncedForms || [],
-        defaultWorkspaceId: result.defaultWorkspaceId,
-        workspaceTxid: result.workspaceTxid,
-      };
+    } else {
+      targetWorkspaceId = orgWorkspaces[0].id;
+      logger(`Using existing workspace ${targetWorkspaceId}`);
     }
 
-    return null;
+    // Sync each local form via Electric collection
+    const syncedForms: string[] = [];
+    for (const localForm of localForms) {
+      try {
+        const newFormId = crypto.randomUUID();
+        const now = new Date().toISOString();
+
+        // Insert via Electric collection (triggers onInsert → createForm server fn)
+        await formCollection.insert({
+          id: newFormId,
+          workspaceId: targetWorkspaceId,
+          createdByUserId: "", // Server will use context.session.user.id
+          title: localForm.title || "Untitled",
+          formName: localForm.formName || "draft",
+          schemaName: localForm.schemaName || "draftFormSchema",
+          content: localForm.content || [],
+          settings: localForm.settings || {},
+          icon: localForm.icon,
+          cover: localForm.cover,
+          isMultiStep: localForm.isMultiStep ?? false,
+          status: localForm.status || "draft",
+          createdAt: now,
+          updatedAt: now,
+        });
+
+        syncedForms.push(newFormId);
+        logger(
+          `Synced form "${localForm.title || "Untitled"}" as ${newFormId} via Electric collection`,
+        );
+
+        // Delete from localStorage after successful sync
+        await localFormCollection.delete(localForm.id);
+      } catch (error) {
+        console.error(`Failed to sync form "${localForm.title || "Untitled"}":`, error);
+        // Continue with other forms
+      }
+    }
+
+    logger(`Successfully synced ${syncedForms.length} forms via Electric collections`);
+    return {
+      success: true,
+      syncedForms,
+    };
   } catch (error) {
     console.error("Failed to sync local data to cloud:", error);
     throw error;
@@ -220,7 +125,7 @@ export async function syncLocalDataToCloud(): Promise<SyncResult | null> {
 /**
  * Checks if there is local data that needs to be synced
  */
-async function hasLocalDataToSync(): Promise<boolean> {
+export async function hasLocalDataToSync(): Promise<boolean> {
   try {
     const { localFormCollection } = await import("@/db-collections");
     const forms = await localFormCollection.toArrayWhenReady();

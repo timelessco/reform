@@ -3,8 +3,13 @@ import type { Value } from "platejs";
 import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
+import { BrandingFooter } from "@/components/public/branding-footer";
 import { createPublicSubmission } from "@/lib/fn/public";
 import { cn } from "@/lib/utils";
+import {
+  type PublicFormSettings,
+  defaultPublicFormSettings,
+} from "@/types/form-settings";
 
 interface PublicForm {
   id: string;
@@ -13,6 +18,7 @@ interface PublicForm {
   icon: string | null;
   cover: string | null;
   status: string;
+  settings?: PublicFormSettings;
 }
 
 interface PublicFormPageProps {
@@ -198,6 +204,9 @@ export function PublicFormPage({
     return <FormNotPublished />;
   }
 
+  // Get settings with defaults
+  const settings = form.settings ?? defaultPublicFormSettings;
+
   // Render the form - FormPreviewFromPlate handles thank you page via StepFormContext
   return (
     <div
@@ -217,7 +226,10 @@ export function PublicFormPage({
         cover={hideTitle ? undefined : (form.cover ?? undefined)}
         onSubmit={handleSubmit}
         hideTitle={hideTitle}
+        settings={settings}
+        formId={formId}
       />
+      {settings.branding && <BrandingFooter />}
     </div>
   );
 }

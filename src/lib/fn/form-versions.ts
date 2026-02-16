@@ -32,8 +32,8 @@ const serializeVersion = (version: typeof formVersions.$inferSelect) => ({
 export const publishFormVersion = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ formId: z.string().uuid() }))
-  .handler(async ({ data }) => {
-    const { user: currentUser } = await authForm(data.formId);
+  .handler(async ({ data, context }) => {
+    await authForm(data.formId, context.session.user.id);
 
     // Get current form draft
     const [form] = await db.select().from(forms).where(eq(forms.id, data.formId));
@@ -68,7 +68,7 @@ export const publishFormVersion = createServerFn({ method: "POST" })
         content: form.content,
         settings: form.settings,
         title: form.title,
-        publishedByUserId: currentUser.id,
+        publishedByUserId: context.session.user.id,
         publishedAt: now,
         createdAt: now,
       })
@@ -113,8 +113,8 @@ export const publishFormVersion = createServerFn({ method: "POST" })
 export const getFormVersions = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ formId: z.string().uuid() }))
-  .handler(async ({ data }) => {
-    await authForm(data.formId);
+  .handler(async ({ data, context }) => {
+    await authForm(data.formId, context.session.user.id);
 
     const versions = await db
       .select({
@@ -152,7 +152,7 @@ export const getFormVersions = createServerFn({ method: "GET" })
 export const getFormVersionContent = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ versionId: z.string().uuid() }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     // Get the version
     const [version] = await db
       .select()
@@ -164,7 +164,7 @@ export const getFormVersionContent = createServerFn({ method: "GET" })
     }
 
     // Verify user has access to the form
-    await authForm(version.formId);
+    await authForm(version.formId, context.session.user.id);
 
     return { version: serializeVersion(version) };
   });
@@ -181,8 +181,8 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
       versionId: z.string().uuid(),
     }),
   )
-  .handler(async ({ data }) => {
-    await authForm(data.formId);
+  .handler(async ({ data, context }) => {
+    await authForm(data.formId, context.session.user.id);
 
     // Get the version
     const [version] = await db
@@ -217,8 +217,8 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
 export const discardFormChanges = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ formId: z.string().uuid() }))
-  .handler(async ({ data }) => {
-    await authForm(data.formId);
+  .handler(async ({ data, context }) => {
+    await authForm(data.formId, context.session.user.id);
 
     // Get the form to find last published version
     const [form] = await db

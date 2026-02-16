@@ -1,10 +1,4 @@
-import { Link } from "@tanstack/react-router";
-import { normalizeNodeId, type TElement, type Value } from "platejs";
-import { Plate, usePlateEditor } from "platejs/react";
-import type { KeyboardEvent } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorKit } from "@/components/editor/editor-kit";
-import { Button } from "@/components/ui/button";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { createFormButtonNode } from "@/components/ui/form-button-node";
 import type { FormHeaderElementData } from "@/components/ui/form-header-node";
@@ -12,11 +6,16 @@ import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import { useEditorHeaderVisibilitySafe } from "@/contexts/editor-header-visibility-context";
 import { updateDoc, updateHeader } from "@/db-collections";
 import { useForm } from "@/hooks/use-live-hooks";
+import { normalizeNodeId, type TElement, type Value } from "platejs";
+import { Plate, usePlateEditor } from "platejs/react";
+import type { KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 interface EditorAppProps {
   formId: string;
   workspaceId?: string;
   defaultValue?: ReturnType<typeof normalizeNodeId>;
+  initialForm?: any;
   versionContent?: Value;
   readOnly?: boolean;
 }
@@ -33,107 +32,86 @@ const DEFAULT_EDITOR_VALUE = normalizeNodeId([
 export default function EditorApp({
   formId,
   workspaceId,
-  defaultValue,
   versionContent,
   readOnly = false,
 }: EditorAppProps) {
   const { data: savedDocs } = useForm(formId);
-  const initializedRef = useRef(false);
-  const [isReady, setIsReady] = useState(false);
   const skipSaveRef = useRef(false);
   const lastKnownContentRef = useRef<string | null>(null);
   const headerVisibility = useEditorHeaderVisibilitySafe();
+  const mountedRef = useRef(false);
+
+  // Compute initial content from liveQuery - single source of truth
+  const initialContent = useMemo(() => {
+    // Version content takes priority (read-only viewing)
+    if (versionContent) return versionContent;
+
+    const docData = savedDocs?.[0];
+    if (!docData?.content || !Array.isArray(docData.content)) {
+      return DEFAULT_EDITOR_VALUE;
+    }
+
+    let content: Value;
+
+    if (docData.content.length > 0 && docData.content[0]?.type === "formHeader") {
+      content = docData.content as Value;
+    } else {
+      // Add formHeader at index 0 with data from doc metadata
+      content = [
+        createFormHeaderNode({
+          title: docData.title || "",
+          icon: docData.icon || null,
+          cover: docData.cover || null,
+        }) as unknown as TElement,
+        ...(docData.content as Value),
+      ];
+    }
+
+    // Migration: ensure Submit button exists for existing forms
+    const hasSubmitButton = content.some(
+      (node: TElement) => node.type === "formButton" && node.buttonRole === "submit",
+    );
+    if (!hasSubmitButton) {
+      const thankYouIndex = content.findIndex(
+        (node: TElement) => node.type === "pageBreak" && node.isThankYouPage === true,
+      );
+      const insertIndex = thankYouIndex !== -1 ? thankYouIndex : content.length;
+      content = [
+        ...content.slice(0, insertIndex),
+        createFormButtonNode("submit") as unknown as TElement,
+        ...content.slice(insertIndex),
+      ];
+    }
+
+    return content;
+  }, [versionContent, savedDocs]);
 
   const editor = usePlateEditor({
     plugins: EditorKit,
+    value: initialContent,
   });
 
-  const lastSavedContentRef = useRef<Value | null>(null);
+  const lastSavedContentRef = useRef<Value | null>(initialContent);
 
-  // Handle version content - when viewing a version, use that content instead
-  useEffect(() => {
-    if (!versionContent) return;
-
-    // Initialize editor with version content (read-only viewing)
-    skipSaveRef.current = true;
-    editor.tf.init({
-      value: versionContent,
-      autoSelect: "end",
-    });
-    setIsReady(true);
-  }, [versionContent, editor]);
-
+  // Handle external updates (remote sync changes)
   useEffect(() => {
     if (versionContent) return;
-    if (savedDocs === undefined) return;
-    if (savedDocs.length === 0) return;
+    if (!savedDocs?.length) return;
 
-    const docData = savedDocs?.[0];
+    const docData = savedDocs[0];
     const incomingContentStr = JSON.stringify(docData?.content);
 
-    // First-time initialization
-    if (!initializedRef.current) {
-      initializedRef.current = true;
-      lastKnownContentRef.current = incomingContentStr;
+    // Skip if this is our own change or content hasn't changed
+    if (lastKnownContentRef.current === incomingContentStr) return;
 
-      let initialContent: Value;
-
-      if (docData?.content && Array.isArray(docData.content)) {
-        if (docData.content.length > 0 && docData.content[0]?.type === "formHeader") {
-          initialContent = docData.content as Value;
-        } else {
-          // Add formHeader at index 0 with data from doc metadata
-          initialContent = [
-            createFormHeaderNode({
-              title: docData.title || "",
-              icon: docData.icon || null,
-              cover: docData.cover || null,
-            }) as unknown as TElement,
-            ...(docData.content as Value),
-          ];
-        }
-
-        // Migration: ensure Submit button exists for existing forms
-        const hasSubmitButton = initialContent.some(
-          (node: TElement) => node.type === "formButton" && node.buttonRole === "submit",
-        );
-        if (!hasSubmitButton) {
-          // Find the position to insert Submit (before thank-you pageBreak if exists, otherwise at end)
-          const thankYouIndex = initialContent.findIndex(
-            (node: TElement) => node.type === "pageBreak" && node.isThankYouPage === true,
-          );
-          const insertIndex = thankYouIndex !== -1 ? thankYouIndex : initialContent.length;
-          initialContent = [
-            ...initialContent.slice(0, insertIndex),
-            createFormButtonNode("submit") as unknown as TElement,
-            ...initialContent.slice(insertIndex),
-          ];
-        }
-      } else {
-        initialContent = defaultValue ?? DEFAULT_EDITOR_VALUE;
-      }
-
-      lastSavedContentRef.current = initialContent;
-      skipSaveRef.current = true;
-      editor.tf.init({
-        value: initialContent,
-        autoSelect: "end",
-      });
-
-      setIsReady(true);
-      return;
-    }
-
-    if (lastKnownContentRef.current !== incomingContentStr) {
-      lastKnownContentRef.current = incomingContentStr;
-      lastSavedContentRef.current = docData.content as Value;
-      skipSaveRef.current = true;
-      editor.tf.init({
-        value: docData.content as Value,
-        autoSelect: "end",
-      });
-    }
-  }, [savedDocs, editor, defaultValue, versionContent]);
+    lastKnownContentRef.current = incomingContentStr;
+    lastSavedContentRef.current = docData.content as Value;
+    skipSaveRef.current = true;
+    editor.tf.init({
+      value: docData.content as Value,
+      autoSelect: "end",
+    });
+  }, [savedDocs, editor, versionContent]);
 
   const handleChange = useCallback(
     ({ value }: { value: Value }) => {
@@ -171,7 +149,7 @@ export default function EditorApp({
         });
       }
     },
-    [formId, workspaceId, readOnly],
+    [formId, workspaceId, readOnly, savedDocs],
   );
 
   const handleEditorKeyDown = useCallback(
@@ -195,27 +173,10 @@ export default function EditorApp({
     [readOnly, headerVisibility],
   );
 
-  if (!isReady) {
+  // Form not found - show error
+  if (savedDocs !== undefined && savedDocs.length === 0 && !versionContent) {
     return (
       <div className="h-screen w-full flex items-center justify-center">Loading editor...</div>
-    );
-  }
-
-  // Only show "Form Not Found" after we've confirmed the form doesn't exist
-  // If savedDocs is undefined, we're still loading/syncing
-  if (savedDocs !== undefined && savedDocs.length === 0) {
-    return (
-      <div className="h-screen w-full flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-lg font-medium mb-2">Form Not Found</h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            This form does not exist or has been deleted.
-          </p>
-          <Link to="/dashboard">
-            <Button>Back to Dashboard</Button>
-          </Link>
-        </div>
-      </div>
     );
   }
 

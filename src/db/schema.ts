@@ -202,6 +202,7 @@ export const formSettings = pgTable("form_settings", {
   language: text().notNull().default("English"), // 'English' | 'Spanish' | 'French'
   redirectOnCompletion: boolean().notNull().default(false),
   redirectUrl: text(),
+  redirectDelay: integer().notNull().default(0), // seconds to wait before redirect
   progressBar: boolean().notNull().default(false),
   branding: boolean().notNull().default(true), // Pro feature
   dataRetention: boolean().notNull().default(false), // Business feature

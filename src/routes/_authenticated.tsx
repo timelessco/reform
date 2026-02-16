@@ -55,9 +55,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  BellIcon,
+  HomeIcon,
+  SearchIcon,
+  SettingsIcon,
+} from "@/components/ui/sidebar-icons";
 import {
   EditorHeaderVisibilityProvider,
   useEditorHeaderVisibility,
@@ -67,11 +72,15 @@ import {
   createFormLocal,
   createWorkspaceLocal,
   deleteWorkspaceLocal,
-  duplicateForm,
+  duplicateFormById,
+  favoriteCollection,
+  formCollection,
   permanentDeleteFormLocal,
   restoreFormLocal,
+  submissionCollection,
   updateFormStatus,
   updateWorkspaceName,
+  workspaceCollection,
 } from "@/db-collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
@@ -83,6 +92,7 @@ import {
   useWorkspaces,
 } from "@/hooks/use-live-hooks";
 import { auth, useSession } from "@/lib/auth-client";
+import { orgDataForLayoutQueryOptions } from "@/lib/fn/org";
 import { getUserMembershipsQueryOptions } from "@/lib/fn/workspaces";
 import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/middleware/auth";
@@ -97,13 +107,13 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import {
-  Bell,
   ChevronDown,
-  ChevronRight,
   ChevronsLeft,
   Copy,
+  Feather,
   FileText,
   Filter,
+  Github,
   HelpCircle,
   Home,
   Loader2,
@@ -112,17 +122,16 @@ import {
   MoreHorizontal,
   Pencil,
   Plus,
-  Search,
   Settings,
   Star,
   Sun,
   Trash2,
   Undo2,
   Users,
-  Zap,
+  Zap
 } from "lucide-react";
 import type * as React from "react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 // Route configuration
@@ -131,6 +140,33 @@ export const Route = createFileRoute("/_authenticated")({
     middleware: [authMiddleware],
   },
   component: AuthLayout,
+  loader: async ({ context }) => {
+    // Pre-fetch org data via ensureQueryData (like my-account pattern)
+    const { activeOrg, orgsData } = await context.queryClient.ensureQueryData({
+      ...orgDataForLayoutQueryOptions(),
+      revalidateIfStale: true,
+    });
+    // Seed auth.organization cache so useQuery in org-switcher, billing, etc. works
+    context.queryClient.setQueryData(
+      auth.organization.getFullOrganization.queryKey(),
+      activeOrg,
+    );
+    context.queryClient.setQueryData(
+      auth.organization.list.queryKey(),
+      orgsData,
+    );
+    // Start Electric sync for all collections (startSync: false means we control when sync starts)
+    await Promise.all([
+      // workspaceCollection.startSyncImmediate(),
+      // formCollection.startSyncImmediate(),
+      workspaceCollection.preload(),
+      formCollection.preload(),
+      submissionCollection.preload(),
+      favoriteCollection.preload(),
+    ]);
+    return { activeOrg, orgsData };
+  },
+  staleTime: 500000,// 500 seconds
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,
@@ -232,7 +268,7 @@ function AuthLayoutContent() {
     return () => observer.disconnect();
   }, [updateHandleLeft]);
 
-  // Bug 4 fix: Imperatively control right panel expand/collapse
+  // Imperatively control right panel expand/collapse
   useEffect(() => {
     if (rightPanelRef.current) {
       if (showEditorSidebar) {
@@ -277,7 +313,7 @@ function AuthLayoutContent() {
 
         <div className="relative z-20 flex-1 min-h-0 overflow-hidden">
           <ResizablePanelGroup direction="horizontal" className="h-full">
-            {/* Main content panel */}
+            {/* Main content panel - non-resizable */}
             <ResizablePanel
               defaultSize={showEditorSidebar ? 70 : 100}
               minSize={70}
@@ -288,7 +324,7 @@ function AuthLayoutContent() {
               </div>
             </ResizablePanel>
 
-            {/* Right sidebar - Editor Sidebars (Settings, Share, History) */}
+            {/* Resize handle - draggable, click to close */}
             <TypedResizableHandle
               className={cn(
                 "fixed top-0 bottom-0 left-(--handle-left) -translate-x-1/2 w-px",
@@ -298,18 +334,14 @@ function AuthLayoutContent() {
               )}
               ref={handleRef}
               style={{ "--handle-left": `${handleLeft}px` } as React.CSSProperties}
-              onPointerDown={(event: any) => {
-                handleDragRef.current = {
-                  dragging: false,
-                  startX: event.clientX,
-                  startY: event.clientY,
-                };
+              onDragging={(isDragging: boolean) => {
+                handleDragRef.current.dragging = isDragging;
+              }}
+              onPointerDown={() => {
+                handleDragRef.current.dragging = false;
                 updateHandleLeft();
               }}
-              onPointerMove={(event: any) => {
-                const dx = Math.abs(event.clientX - handleDragRef.current.startX);
-                const dy = Math.abs(event.clientY - handleDragRef.current.startY);
-                if (dx > 2 || dy > 2) handleDragRef.current.dragging = true;
+              onPointerMove={() => {
                 updateHandleLeft();
               }}
               onPointerUp={() => {
@@ -349,13 +381,15 @@ function AuthLayoutContent() {
                 </div>
               </div>
             </TypedResizableHandle>
+
+            {/* Right sidebar - Settings/Share/History, resizable */}
             <ResizablePanel
               ref={rightPanelRef}
               collapsible
               collapsedSize={0}
-              defaultSize={showEditorSidebar ? 30 : 0}
-              minSize={20}
-              maxSize={40}
+              defaultSize={showEditorSidebar ? 40 : 0}
+              minSize={30}
+              maxSize={50}
               className={cn(
                 "h-full overflow-hidden transition-all duration-300 ease-in-out bg-background",
                 !showEditorSidebar && "border-none",
@@ -374,7 +408,7 @@ function AuthLayoutContent() {
   );
 }
 
-// Minimal Sidebar Item Component
+// Minimal Sidebar Item Component (Figma system-flat: form list item with icon, title, optional count)
 interface SidebarItemProps {
   to?: string;
   label: string;
@@ -387,7 +421,6 @@ interface SidebarItemProps {
 function SidebarItem({
   to,
   label,
-  isNested,
   isActive,
   onClick,
   prefix,
@@ -401,18 +434,15 @@ function SidebarItem({
       {...componentProps}
       onClick={onClick}
       className={cn(
-        "group flex w-full items-center justify-between rounded-lg px-2 py-[7px] text-[14px] transition-colors relative cursor-pointer h-[30px]",
-        !isActive && "text-light-gray-800 hover:bg-light-gray-100 dark:text-dark-gray-900 dark:hover:bg-dark-gray-400",
-        isActive && "bg-light-gray-100 text-light-gray-800 font-medium dark:bg-dark-gray-300 dark:text-dark-gray-950",
+        "group flex w-full items-center justify-between gap-2 rounded-lg px-2 py-[7px] text-[14px] font-medium transition-colors relative cursor-pointer min-h-[30px]",
+        "text-foreground",
+        !isActive && "hover:bg-muted",
+        isActive && "bg-secondary text-foreground",
       )}
     >
-      <span className="flex items-center gap-2 overflow-hidden flex-1">
-        <span className="flex items-center gap-2 flex-1 overflow-hidden">
-          <div className="flex items-center justify-center shrink-0">
-            {prefix}
-          </div>
-          <span className="truncate">{label}</span>
-        </span>
+      <span className="flex items-center gap-2 overflow-hidden flex-1 min-w-0">
+        <div className="flex items-center justify-center shrink-0">{prefix}</div>
+        <span className="truncate leading-[1.15] font-case">{label}</span>
       </span>
       {children}
     </Component>
@@ -436,9 +466,9 @@ function AppSidebar() {
   // Trash dialog state
   const [trashDialogOpen, setTrashDialogOpen] = useState(false);
 
-  const { data: activeOrg } = useQuery(auth.organization.getFullOrganization.queryOptions());
+  // Get pre-fetched data from route loader for immediate render
+  const { activeOrg, orgsData } = Route.useLoaderData();
   const { data: membersData } = useQuery(auth.organization.listMembers.queryOptions());
-  const memberCount = membersData?.members?.length ?? 0;
   const { data: workspacesData } = useWorkspaces();
 
   const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
@@ -449,13 +479,15 @@ function AppSidebar() {
   const signOutMutation = useMutation(
     auth.signOut.mutationOptions({
       onSuccess: () => {
+        localStorage.removeItem("electricAuthToken");
+        localStorage.clear();
+        router.invalidate();
         router.navigate({ to: "/" });
       },
     }),
   );
 
   const { data: orgs } = useQuery(auth.organization.list.queryOptions());
-
   const { data: membershipsData } = useQuery(getUserMembershipsQueryOptions());
 
   const roleByOrgId = useMemo(() => {
@@ -483,6 +515,14 @@ function AppSidebar() {
     }),
   );
 
+  // Set active organization if user has orgs but none is active (runs for all auth routes)
+  useEffect(() => {
+    if (!session?.user) return;
+    if (!activeOrg && orgsData && orgsData.length > 0) {
+      setActiveOrgMutation.mutate({ organizationId: orgsData[0].id });
+    }
+  }, [activeOrg, orgsData, session, setActiveOrgMutation]);
+
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
@@ -508,14 +548,14 @@ function AppSidebar() {
 
   return (
     <>
-      <Sidebar className="border-r-[0.5px] border-light-gray-200 bg-white dark:bg-black dark:border-dark-gray-400">
-        <SidebarHeader className="h-12 px-4 flex flex-row items-center justify-between group/logo pt-4">
-          <span className="text-2xl font-serif italic font-bold tracking-tighter text-light-gray-900 dark:text-dark-gray-950">f.</span>
+      <Sidebar className="border-r-[0.5px] border-r bg-background h-screen">
+        <SidebarHeader className="h-12 pl-[21px] pr-2 pt-3 pb-2.5 flex flex-row items-center justify-between group/logo">
+          <span className="text-2xl font-serif italic font-light tracking-tighter text-sidebar-foreground">f.</span>
           <Button
             variant="ghost"
             size="icon-sm"
             onClick={() => toggleSidebar()}
-            className="hover:bg-light-gray-100 dark:hover:bg-dark-gray-300 text-light-gray-400 hover:text-light-gray-900 group-data-[state=collapsed]:hidden"
+            className="hover:bg-sidebar-active text-light-gray-400 hover:text-light-gray-900 group-data-[state=collapsed]:hidden"
             title="Collapse sidebar"
           >
             <ChevronsLeft className="h-4 w-4" strokeWidth={1.5} />
@@ -523,19 +563,20 @@ function AppSidebar() {
         </SidebarHeader>
 
         <SidebarContent>
-          <SidebarGroup className="pt-2">
-            <SidebarGroupContent className="px-2">
-              <SidebarMenu className="gap-0.5">
+          <SidebarGroup className="pt-2 py-0">
+            <SidebarGroupContent className="">
+              {/* Nav items: Figma system-flat node 23504-5047 - pixel-perfect */}
+              <SidebarMenu className="gap-0">
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
                     isActive={location.pathname === "/dashboard"}
                     tooltip="All"
-                    className="h-[30px] rounded-lg px-2 hover:bg-light-gray-100 dark:hover:bg-dark-gray-300 transition-colors"
+                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] gap-2 transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
                   >
-                    <Link to="/dashboard" className="flex items-center gap-2">
-                      <Home className="h-[18px] w-[18px] text-light-gray-800 dark:text-dark-gray-900" strokeWidth={1.5} />
-                      <span className="text-[14px] font-medium text-light-gray-800 dark:text-dark-gray-950 tracking-[0.14px]">All</span>
+                    <Link to="/dashboard" className="flex items-center gap-2 min-w-0">
+                      <HomeIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
+                      <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-[1.15] font-case truncate">All</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -543,10 +584,10 @@ function AppSidebar() {
                   <SidebarMenuButton
                     onClick={togglePalette}
                     tooltip="Search"
-                    className="h-[30px] rounded-lg px-2 hover:bg-light-gray-100 dark:hover:bg-dark-gray-300 transition-colors"
+                    className="h-[30px] min-w-0 rounded-lg px-[7px] gap-2 transition-colors hover:bg-sidebar-active"
                   >
-                    <Search className="h-[18px] w-[18px] text-light-gray-800 dark:text-dark-gray-900" strokeWidth={1.5} />
-                    <span className="text-[14px] font-medium text-light-gray-800 dark:text-dark-gray-950 tracking-[0.14px]">Search</span>
+                    <SearchIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
+                    <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-[1.15] font-case truncate">Search</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -554,17 +595,17 @@ function AppSidebar() {
                     onClick={() => setIsInboxOpen(!isInboxOpen)}
                     isActive={isInboxOpen}
                     tooltip={pendingCount > 0 ? `Notifications (${pendingCount})` : "Notifications"}
-                    className="h-[30px] rounded-lg px-2 hover:bg-light-gray-100 dark:hover:bg-dark-gray-300 transition-colors"
+                    className="h-[30px] min-w-0 rounded-lg px-[7px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
                   >
-                    <div className="relative">
-                      <Bell className="h-[18px] w-[18px] text-light-gray-800 dark:text-dark-gray-900" strokeWidth={1.5} />
+                    <div className="relative shrink-0">
+                      <BellIcon className="h-[18px] w-[18px] text-muted-foreground" />
                       {pendingCount > 0 && (
-                        <span className="absolute top-0 right-0 h-1.5 w-1.5 rounded-full bg-blue-500" />
+                        <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-background" />
                       )}
                     </div>
-                    <span className="text-[14px] font-medium text-light-gray-800 dark:text-dark-gray-950 tracking-[0.14px]">Notifications</span>
+                    <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-[1.15] font-case truncate flex-1 min-w-0">Notifications</span>
                     {pendingCount > 0 && (
-                      <span className="ml-auto text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded-full font-bold">
+                      <span className="text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded-full font-semibold shrink-0 tabular-nums">
                         {pendingCount}
                       </span>
                     )}
@@ -575,11 +616,11 @@ function AppSidebar() {
                     asChild
                     isActive={location.pathname.startsWith("/settings")}
                     tooltip="Settings"
-                    className="h-[30px] rounded-lg px-2 hover:bg-light-gray-100 dark:hover:bg-dark-gray-300 transition-colors"
+                    className="h-[30px] min-w-0 rounded-lg px-[7px] gap-2 transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
                   >
-                    <Link to="/settings/my-account" className="flex items-center gap-2">
-                      <Settings className="h-[18px] w-[18px] text-light-gray-800 dark:text-dark-gray-900" strokeWidth={1.5} />
-                      <span className="text-[14px] font-medium text-light-gray-800 dark:text-dark-gray-950 tracking-[0.14px]">Settings</span>
+                    <Link to="/settings/my-account" className="flex items-center gap-2 min-w-0">
+                      <SettingsIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
+                      <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-[1.15] font-case truncate">Settings</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -587,12 +628,13 @@ function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          <div className="mt-4 px-2">
+          <div className="mt-[15px] px-2">
             <SidebarWorkspacesMinimal activeOrgId={activeOrg?.id} />
           </div>
         </SidebarContent>
 
-        <SidebarFooter>
+        <SidebarFooter className="p-0 pt-2 pb-2 flex flex-col gap-4">
+          <FreePlanCard />
           <UserMenuMinimal
             session={session}
             activeOrg={activeOrg}
@@ -603,13 +645,13 @@ function AppSidebar() {
             signOutMutation={signOutMutation}
             router={router}
             theme={theme}
-            setTheme={setTheme as any}
+            setTheme={setTheme as (theme: string) => void}
             onOpenTrash={() => setTrashDialogOpen(true)}
             membersData={membersData}
             roleByOrgId={roleByOrgId}
           />
         </SidebarFooter>
-        <SidebarRail />
+        {/* <SidebarRail /> */}
       </Sidebar>
 
       {/* Command Palette */}
@@ -686,6 +728,24 @@ function AppSidebar() {
             >
               <Settings className="mr-2 h-4 w-4" />
               <span>Go to settings</span>
+            </CommandItem>
+            <CommandItem
+              onSelect={() => {
+                setTrashDialogOpen(true);
+                setIsPaletteOpen(false);
+              }}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              <span>Trash</span>
+            </CommandItem>
+            <CommandItem
+              onSelect={() => {
+                signOutMutation.mutate({});
+                setIsPaletteOpen(false);
+              }}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Sign out</span>
             </CommandItem>
           </CommandGroup>
         </CommandList>
@@ -852,6 +912,45 @@ function SidebarInbox() {
   const { isInboxOpen, setIsInboxOpen } = useMinimalSidebar();
   const { state } = useSidebar();
   const queryClient = useQueryClient();
+  const prevOpenRef = useRef(isInboxOpen);
+  const [isExiting, setIsExiting] = useState(false);
+  const [applyExitClass, setApplyExitClass] = useState(false);
+
+  // Start exit animation when closing - set isExiting so we keep rendering (prevents flash)
+  useEffect(() => {
+    if (isInboxOpen) {
+      prevOpenRef.current = true;
+      setIsExiting(false);
+      setApplyExitClass(false);
+    } else if (prevOpenRef.current) {
+      setIsExiting(true);
+      prevOpenRef.current = false;
+    }
+  }, [isInboxOpen]);
+
+  // Apply exit class after mount so transition runs (visible -> slide out)
+  useLayoutEffect(() => {
+    if (!isExiting) return;
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setApplyExitClass(true));
+    });
+    return () => cancelAnimationFrame(id);
+  }, [isExiting]);
+
+  // Unmount after transition - use both transitionend and setTimeout fallback (Safari can be unreliable with transitionend)
+  const EXIT_DURATION_MS = 250;
+  useEffect(() => {
+    if (!isExiting) return;
+    const timeoutId = setTimeout(() => {
+      setIsExiting(false);
+    }, EXIT_DURATION_MS);
+    return () => clearTimeout(timeoutId);
+  }, [isExiting]);
+
+  const handleTransitionEnd = useCallback((e: React.TransitionEvent) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.propertyName === "transform") setIsExiting(false);
+  }, []);
 
   // Fetch invitations received by current user
   const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
@@ -891,7 +990,8 @@ function SidebarInbox() {
     }),
   );
 
-  if (!isInboxOpen) return null;
+  // Keep mounted during "closing" transition - avoid return null before effect sets isExiting (which would cause flash: close → open → close)
+  if (!isInboxOpen && !isExiting && !prevOpenRef.current) return null;
 
   // Only show pending invitations
   const pendingInvitations = (invitations ?? []).filter((inv: any) => inv.status === "pending");
@@ -899,9 +999,12 @@ function SidebarInbox() {
   return (
     <div
       className={cn(
-        "fixed z-40 flex w-80 flex-col bg-background select-none transition-[left] duration-200 ease-linear border-r border-foreground/5 top-0 bottom-0",
+        "fixed z-40 flex w-80 flex-col bg-background select-none border-r border-foreground/5 top-0 bottom-0",
+        "transition-[left,opacity] duration-150 ease-out",
         state === "expanded" ? "left-[var(--sidebar-width)]" : "left-[var(--sidebar-width-icon)]",
+        applyExitClass && "opacity-0",
       )}
+      onTransitionEnd={handleTransitionEnd}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 h-10 border-b border-foreground/5">
@@ -1026,7 +1129,7 @@ function SidebarInbox() {
   );
 }
 
-// User Menu Component (Minimal Style - Workspace Switcher)
+// User Menu Component - styled to match sidebar design tokens
 function UserMenuMinimal({
   session,
   activeOrg,
@@ -1058,7 +1161,6 @@ function UserMenuMinimal({
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Close menu when clicking outside
   useEffect(() => {
     if (!isOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -1072,43 +1174,40 @@ function UserMenuMinimal({
   }, [isOpen]);
 
   return (
-    <div className="relative user-menu-container px-1 pt-2 pb-1 bg-white dark:bg-black">
-      <div className="flex items-center justify-between group/header">
-        <Button
-          variant="ghost"
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 px-2 py-[7px] h-auto hover:bg-light-gray-100 dark:hover:bg-dark-gray-300 cursor-pointer flex-1 min-w-0"
-          aria-label="Toggle user menu"
-        >
-          <div className="h-6 w-6 rounded-full overflow-hidden bg-light-gray-100 dark:bg-dark-gray-300 flex items-center justify-center text-[10px] font-bold shrink-0">
-            {session?.user?.image ? (
-              <img
-                src={session.user.image}
-                alt={displayName}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              getInitials(displayName)
-            )}
-          </div>
-          <span className="text-[14px] font-medium text-light-gray-800 dark:text-dark-gray-900 truncate flex-1 text-left tracking-[0.14px]">
-            {displayName}
-          </span>
-          <ChevronDown
-            className={cn(
-              "h-3.5 w-3.5 text-light-gray-400 transition-transform duration-200 shrink-0",
-              isOpen && "rotate-180 text-light-gray-900 dark:text-dark-gray-950",
-            )}
-            strokeWidth={1.5}
-          />
-        </Button>
-      </div>
+    <div className="relative user-menu-container border-t border-b pt-[4.8px] pb-2 bg-background">
+      <Button
+        variant="ghost"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-2 py-1.5 h-8 w-full min-w-0 rounded-md hover:bg-sidebar-active justify-start"
+        aria-label="Toggle user menu"
+      >
+        <div className="h-6 w-6 rounded-full overflow-hidden bg-sidebar-active flex items-center justify-center text-[10px] font-bold shrink-0">
+          {session?.user?.image ? (
+            <img
+              src={session.user.image}
+              alt={displayName}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            getInitials(displayName)
+          )}
+        </div>
+        <span className="text-[14px] font-medium text-sidebar-foreground truncate flex-1 text-left tracking-[0.14px]">
+          {displayName}
+        </span>
+        <ChevronDown
+          className={cn(
+            "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 shrink-0",
+            isOpen && "rotate-180",
+          )}
+          strokeWidth={1.5}
+        />
+      </Button>
 
       {isOpen && (
-        <div className="absolute bottom-full left-0 right-0 mb-2 bg-white dark:bg-black border border-light-gray-200 dark:border-dark-gray-400 rounded-xl shadow-[0px_4px_16px_rgba(0,0,0,0.08)] p-1.5 z-100 animate-in fade-in slide-in-from-bottom-2 duration-200 min-w-[220px]">
-          {/* Active Workspace Info */}
-          <div className="px-3 py-2 border-b border-light-gray-100 dark:border-dark-gray-300 mb-1.5 flex items-start gap-3">
-            <div className="h-10 w-10 rounded-lg bg-light-gray-100 dark:bg-dark-gray-300 flex items-center justify-center text-lg font-bold shrink-0 overflow-hidden">
+        <div className="absolute bottom-full left-0 right-0 mb-2 mx-2 bg-background border rounded-xl shadow-[0px_4px_16px_rgba(0,0,0,0.08)] p-1.5 z-100 animate-in fade-in slide-in-from-bottom-2 duration-200 min-w-[220px]">
+          <div className="px-3 py-2 border-b mb-1.5 flex items-start gap-3">
+            <div className="h-10 w-10 rounded-lg bg-sidebar-active flex items-center justify-center text-lg font-bold shrink-0 overflow-hidden">
               {session?.user?.image ? (
                 <img
                   src={session.user.image}
@@ -1120,13 +1219,13 @@ function UserMenuMinimal({
               )}
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-[14px] font-bold text-light-gray-900 dark:text-dark-gray-950 truncate">{displayName}</span>
-              <span className="text-[11px] text-light-gray-600">Free Plan · {membersData?.members?.length ?? 0} {membersData?.members?.length === 1 ? "member" : "members"}</span>
+              <span className="text-[14px] font-bold text-sidebar-foreground truncate">{displayName}</span>
+              <span className="text-[11px] text-muted-foreground">Free Plan · {membersData?.members?.length ?? 0} {membersData?.members?.length === 1 ? "member" : "members"}</span>
             </div>
           </div>
 
           <div className="px-2 py-1 mb-1.5">
-            <p className="text-[10px] font-bold text-light-gray-400 uppercase tracking-widest px-1 mb-1">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1 mb-1">
               Account
             </p>
             <div className="space-y-0.5">
@@ -1136,9 +1235,9 @@ function UserMenuMinimal({
                   router.navigate({ to: "/settings/my-account" });
                   setIsOpen(false);
                 }}
-                className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-light-gray-600 dark:text-dark-gray-800 hover:text-light-gray-900 dark:hover:text-dark-gray-950 hover:bg-light-gray-100 dark:hover:bg-dark-gray-300"
+                className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-active rounded-lg"
               >
-                <Settings className="h-3 w-3" strokeWidth={1.5} />
+                <Settings className="h-3.5 w-3.5" strokeWidth={1.5} />
                 Settings
               </Button>
               <Button
@@ -1147,9 +1246,9 @@ function UserMenuMinimal({
                   setTheme(theme === "dark" ? "light" : "dark");
                   setIsOpen(false);
                 }}
-                className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-light-gray-600 dark:text-dark-gray-800 hover:text-light-gray-900 dark:hover:text-dark-gray-950 hover:bg-light-gray-100 dark:hover:bg-dark-gray-300"
+                className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-active rounded-lg"
               >
-                {theme === "dark" ? <Sun className="h-4 w-4" strokeWidth={1.5} /> : <Moon className="h-4 w-4" strokeWidth={1.5} />}
+                {theme === "dark" ? <Sun className="h-3.5 w-3.5" strokeWidth={1.5} /> : <Moon className="h-3.5 w-3.5" strokeWidth={1.5} />}
                 <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
               </Button>
               <Button
@@ -1158,10 +1257,10 @@ function UserMenuMinimal({
                   onOpenTrash();
                   setIsOpen(false);
                 }}
-                className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-light-gray-600 dark:text-dark-gray-800 hover:text-light-gray-900 dark:hover:text-dark-gray-950 hover:bg-light-gray-100 dark:hover:bg-dark-gray-300"
+                className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-active rounded-lg"
               >
-                <Trash2 className="h-4 w-4" strokeWidth={1.5} />
-                <span>Trash</span>
+                <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
+                Trash
               </Button>
               <Button
                 variant="ghost"
@@ -1169,17 +1268,16 @@ function UserMenuMinimal({
                   router.navigate({ to: "/settings/members" });
                   setIsOpen(false);
                 }}
-                className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-light-gray-600 dark:text-dark-gray-800 hover:text-light-gray-900 dark:hover:text-dark-gray-950 hover:bg-light-gray-100 dark:hover:bg-dark-gray-300"
+                className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-active rounded-lg"
               >
-                <Users className="h-4 w-4" strokeWidth={1.5} />
-                <span>Members</span>
+                <Users className="h-3.5 w-3.5" strokeWidth={1.5} />
+                Members
               </Button>
             </div>
           </div>
 
-          {/* Team Switcher */}
           <div className="px-2 py-1 mb-1.5">
-            <p className="text-[10px] font-bold text-light-gray-400 uppercase tracking-widest px-1 mb-1">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1 mb-1">
               {session?.user?.email}
             </p>
             <div className="space-y-0.5">
@@ -1193,13 +1291,13 @@ function UserMenuMinimal({
                       setActiveOrgMutation.mutate({ organizationId: org.id });
                       setIsOpen(false);
                     }}
-                    className="flex items-center gap-2 px-2 py-1.5 h-auto w-full justify-start hover:bg-light-gray-100 dark:hover:bg-dark-gray-300 group"
+                    className="flex items-center gap-2 px-2 py-1.5 h-auto w-full justify-start text-muted-foreground hover:bg-sidebar-active rounded-lg"
                     aria-label={`Switch to ${org.name}`}
                   >
-                    <div className="h-5 w-5 rounded bg-light-gray-100 dark:bg-dark-gray-300 flex items-center justify-center text-[9px] font-bold">
+                    <div className="h-5 w-5 rounded bg-sidebar-active flex items-center justify-center text-[9px] font-bold text-sidebar-foreground">
                       {getInitials(org.name)}
                     </div>
-                    <span className="text-[13px] font-medium text-light-gray-800 dark:text-dark-gray-900 group-hover:text-light-gray-900 dark:group-hover:text-dark-gray-950 flex-1 truncate">{org.name}</span>
+                    <span className="text-[13px] font-medium text-foreground group-hover:text-sidebar-foreground flex-1 truncate">{org.name}</span>
                     {role && (
                       <Badge
                         variant={role === "owner" ? "primary" : "outline"}
@@ -1217,7 +1315,6 @@ function UserMenuMinimal({
             </div>
           </div>
 
-          {/* Footer Actions */}
           <div className="h-px bg-foreground/5 my-1" />
           <div className="space-y-0.5 px-1">
             <Button
@@ -1226,14 +1323,39 @@ function UserMenuMinimal({
                 signOutMutation.mutate({});
                 setIsOpen(false);
               }}
-              className="flex items-center gap-2.5 w-full px-2 py-1.5 h-auto justify-start text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-active rounded-lg"
             >
-              <LogOut className="h-3.5 w-3.5" />
-              <span>Log out</span>
+              <LogOut className="h-3.5 w-3.5" strokeWidth={1.5} />
+              Log out
             </Button>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Free Plan Card - Figma node 23504-5269 (pixel-perfect)
+function FreePlanCard() {
+  return (
+    <div className="rounded-xl bg-free-plan-card-bg p-3 mx-3 w-[204px]">
+      <div className="flex items-start gap-2 mb-2">
+        <div className="shrink-0 size-6 rounded flex items-center justify-center bg-teal-100 dark:bg-teal-700/20">
+          <Zap className="h-3.5 w-3.5 text-teal-700" strokeWidth={2} fill="currentColor" />
+        </div>
+        <span className="text-[14px] font-medium text-sidebar-foreground">
+          Free Plan
+        </span>
+      </div>
+      <p className="text-[13px] text-muted-foreground tracking-[0.13px] leading-[1.48] mb-3">
+        Try Booster to capture high-quality inbound and outbound leads
+      </p>
+      <Button
+        variant="outline"
+        className="w-full h-7 text-[13px] font-medium text-sidebar-foreground bg-background border hover:bg-muted rounded-lg shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
+      >
+        Try for free
+      </Button>
     </div>
   );
 }
@@ -1306,45 +1428,27 @@ function WorkspaceItemMinimal({
   };
 
   return (
-    <div className="flex flex-col space-y-0.5">
-      <div className="group flex items-center justify-between px-2 py-1.5 transition-colors">
+    <div className="flex flex-col">
+      <div className="group flex items-center justify-between transition-colors">
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1 h-auto p-0 cursor-pointer flex-1 min-w-0 justify-start bg-transparent border-none"
+          className="flex items-center gap-1 h-auto py-[5.5px] px-[4px] cursor-pointer flex-1 min-w-0 justify-start bg-transparent border-none"
+          aria-expanded={isOpen}
         >
-          <div className="relative shrink-0 size-[10px] flex items-center justify-center">
-            <ChevronDown
-              className={cn(
-                "h-2.5 w-2.5 text-light-gray-600 transition-all duration-200",
-                !isOpen && "-rotate-90",
-              )}
-              strokeWidth={2}
-            />
-          </div>
-          <span className="text-[13px] font-medium text-light-gray-600 dark:text-dark-gray-800 tracking-[0.26px]">
+          <span className="text-[13px] font-medium text-muted-foreground tracking-[0.26px] truncate">
             {workspace.name}
           </span>
+          <ChevronDown
+            className={cn(
+              "h-2.5 w-2.5 shrink-0 text-muted-foreground transition-transform duration-200",
+              !isOpen && "-rotate-90",
+            )}
+            strokeWidth={2}
+          />
         </button>
 
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCreateForm();
-            }}
-            disabled={isCreatingForm}
-            className="h-6 w-6 hover:bg-light-gray-100 dark:hover:bg-dark-gray-300 text-light-gray-600 hover:text-light-gray-900"
-            title="New form"
-          >
-            {isCreatingForm ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
-            )}
-          </Button>
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           <div className="relative workspace-menu-container">
             <Button
               variant="ghost"
@@ -1353,13 +1457,30 @@ function WorkspaceItemMinimal({
                 e.stopPropagation();
                 setShowMenu(!showMenu);
               }}
-              className="h-6 w-6 hover:bg-light-gray-100 dark:hover:bg-dark-gray-300 text-light-gray-600 hover:text-light-gray-900"
+              className="h-6 w-6 hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
               title="More options"
             >
               <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
             </Button>
             {showMenu && (
               <div className="absolute right-0 top-full mt-1 bg-background border border-foreground/10 rounded-lg shadow-lg p-1 z-50 min-w-32">
+                <Button
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCreateForm();
+                    setShowMenu(false);
+                  }}
+                  disabled={isCreatingForm}
+                  className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium"
+                >
+                  {isCreatingForm ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Plus className="h-3.5 w-3.5" />
+                  )}
+                  <span>New form</span>
+                </Button>
                 <Button
                   variant="ghost"
                   onClick={(e) => {
@@ -1391,7 +1512,7 @@ function WorkspaceItemMinimal({
       </div>
 
       {isOpen && (
-        <div className="flex flex-col space-y-0.5 mt-0.5">
+        <div className="flex flex-col">
           {workspace.forms.map((form) => (
             <WorkspaceFormMinimal
               key={form.id}
@@ -1403,7 +1524,7 @@ function WorkspaceItemMinimal({
             />
           ))}
           {workspace.forms.length === 0 && (
-            <span className="text-muted-foreground/30 text-[11px] px-8 py-1 italic">
+            <span className="text-muted-foreground/50 text-[11px] px-8 py-1 italic">
               No forms yet
             </span>
           )}
@@ -1413,34 +1534,52 @@ function WorkspaceItemMinimal({
   );
 }
 
+// Form icons matching Figma system-flat (23504-5089): Contact=star, Employee Intake=teardrop, etc.
 const getFormIcon = (title: string, icon?: string | null) => {
+  const iconWrapper = "rounded-full size-[18px] flex items-center justify-center border-[0.5px] border-form-icon-border shrink-0";
+  const iconFill = "text-foreground fill-foreground";
+
   if (icon && isEmoji(icon)) return (
-    <div className="bg-white dark:bg-dark-gray-300 rounded-full size-[18px] flex items-center justify-center border-[0.5px] border-light-gray-200 dark:border-dark-gray-400">
+    <div className={`bg-form-icon-bg ${iconWrapper}`}>
       <span className="text-xs leading-none">{icon}</span>
     </div>
   );
 
-  // Match icons from Figma design
   const lowerTitle = title.toLowerCase();
+  // Contact: white circle, black star (Figma)
   if (lowerTitle.includes("contact")) return (
-    <div className="bg-white rounded-full size-[18px] flex items-center justify-center border-[0.5px] border-light-gray-200 shadow-sm">
-      <Star className="h-3 w-3 text-light-gray-800 fill-light-gray-800" />
+    <div className={`bg-form-icon-bg shadow-sm ${iconWrapper}`}>
+      <Star className="h-3 w-3 fill-foreground text-foreground" />
     </div>
   );
+  // Employee Intake: teardrop/inverted triangle
   if (lowerTitle.includes("employee intake")) return (
-    <div className="bg-light-gray-100 rounded-full size-[18px] flex items-center justify-center border-[0.5px] border-light-gray-200">
-      <div className="size-2 bg-light-gray-800 rounded-full" style={{ clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)" }} />
+    <div className={`bg-secondary ${iconWrapper}`}>
+      <div className="size-2 bg-foreground rounded-full" style={{ clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)" }} />
     </div>
   );
-  if (lowerTitle.includes("onboarding")) return (
-    <div className="bg-light-gray-100 rounded-full size-[18px] flex items-center justify-center border-[0.5px] border-light-gray-200">
-      <Zap className="h-3 w-3 text-light-gray-800 fill-light-gray-800" strokeWidth={1} />
+  // Onboarding: lightning bolt
+  if (lowerTitle.includes("onboarding") && !lowerTitle.includes("client")) return (
+    <div className={`bg-secondary ${iconWrapper}`}>
+      <Zap className={`h-3 w-3 ${iconFill}`} strokeWidth={1} />
+    </div>
+  );
+  // Client Onboarding / feedback: feather
+  if (lowerTitle.includes("client onboarding") || lowerTitle.includes("feedback")) return (
+    <div className={`bg-secondary ${iconWrapper}`}>
+      <Feather className="h-3 w-3 text-foreground" strokeWidth={1.5} />
+    </div>
+  );
+  // Open source: GitHub
+  if (lowerTitle.includes("open source")) return (
+    <div className={`bg-secondary ${iconWrapper}`}>
+      <Github className={`h-3 w-3 ${iconFill}`} strokeWidth={1} />
     </div>
   );
 
-  // Default: sparkle emoji in rounded highlight
+  // Default: sparkle in white circle
   return (
-    <div className="bg-white dark:bg-dark-gray-300 rounded-full size-[18px] flex items-center justify-center border-[0.5px] border-light-gray-200 dark:border-dark-gray-400">
+    <div className={`bg-form-icon-bg ${iconWrapper}`}>
       <span className="text-xs leading-none">✨</span>
     </div>
   );
@@ -1482,7 +1621,7 @@ function WorkspaceFormMinimal({
         <div>
           <SidebarItem label={label} to={to} isActive={isActive} prefix={prefix}>
             {showCount && (
-              <span className="text-[11px] text-muted-foreground/60 opacity-0 group-hover:opacity-100 transition-opacity tabular-nums">
+              <span className="text-[11px] tracking-[0.33px] text-muted-foreground tabular-nums shrink-0 font-normal">
                 {submissionCount}
               </span>
             )}
@@ -1515,7 +1654,7 @@ function WorkspaceFormMinimal({
   );
 }
 
-// Sidebar Section Component (matches workspace header styling)
+// Sidebar Section Component (Figma system-flat: External/collapsible section with chevron)
 function SidebarSection({
   label,
   children,
@@ -1530,34 +1669,32 @@ function SidebarSection({
   const [isOpen, setIsOpen] = useState(initialOpen);
 
   return (
-    <div className="flex flex-col space-y-0.5">
-      <div className="group flex items-center justify-between px-2 py-1.5 transition-colors">
+    <div className="flex flex-col">
+      <div className="group flex items-center justify-between px-1 py-[7px] transition-colors">
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-1 h-auto p-0 cursor-pointer flex-1 min-w-0 justify-start bg-transparent border-none"
           aria-expanded={isOpen}
         >
-          <div className="relative shrink-0 size-[10px] flex items-center justify-center">
-            <ChevronDown
-              className={cn(
-                "h-2.5 w-2.5 text-light-gray-600 transition-all duration-200",
-                !isOpen && "-rotate-90",
-              )}
-              strokeWidth={2}
-            />
-          </div>
-          <span className="text-[13px] font-medium text-light-gray-600 dark:text-dark-gray-800 tracking-[0.26px]">
+          <span className="text-[13px] font-medium text-muted-foreground tracking-[0.26px] truncate">
             {label}
           </span>
+          <ChevronDown
+            className={cn(
+              "h-2.5 w-2.5 shrink-0 text-muted-foreground transition-transform duration-200",
+              !isOpen && "-rotate-90",
+            )}
+            strokeWidth={2}
+          />
         </button>
 
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           {action ?? (
             <Button
               variant="ghost"
               size="icon-sm"
-              className="h-6 w-6 hover:bg-light-gray-100 dark:hover:bg-dark-gray-300 text-light-gray-600 hover:text-light-gray-900"
+              className="h-6 w-6 hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
             >
               <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
             </Button>
@@ -1565,7 +1702,7 @@ function SidebarSection({
         </div>
       </div>
 
-      {isOpen && <div className="flex flex-col space-y-0.5 mt-0.5">{children}</div>}
+      {isOpen && <div className="flex flex-col">{children}</div>}
     </div>
   );
 }
@@ -1663,7 +1800,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
 
   const handleDuplicateForm = async (form: WorkspaceWithForms["forms"][0]) => {
     try {
-      const newForm = await duplicateForm(form as any);
+      const newForm = await duplicateFormById(form.id);
       toast.success("Form duplicated");
       router.navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
@@ -1699,23 +1836,16 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="flex flex-col">
         {/* Favorites Section */}
         <SidebarSection
           label="Favorites"
           initialOpen={favoriteForms.length > 0}
-          action={
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="opacity-0 group-hover:opacity-100 h-6 w-6"
-            >
-              <MoreHorizontal className="h-3 w-3" />
-            </Button>
+          action={<></>
           }
         >
           {favoriteForms.length === 0 ? (
-            <span className="text-muted-foreground/30 text-[11px] px-2 py-1 italic">
+            <span className="text-muted-foreground/50 text-[11px] px-2 py-1 italic">
               No favorites yet
             </span>
           ) : (
@@ -1729,8 +1859,8 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
                   to={favTo}
                   isActive={isFavActive}
                   prefix={
-                    <div className="bg-white dark:bg-dark-gray-300 rounded-full size-[18px] flex items-center justify-center border-[0.5px] border-light-gray-200 dark:border-dark-gray-400">
-                      <Star className="h-3 w-3 text-light-gray-600" strokeWidth={1.5} fill="currentColor" />
+                    <div className="bg-form-icon-bg rounded-full size-[18px] flex items-center justify-center border-[0.5px] border-form-icon-border shrink-0">
+                      <Star className="h-3 w-3 fill-foreground text-foreground" strokeWidth={1.5} />
                     </div>
                   }
                 />
@@ -1739,8 +1869,8 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
           )}
         </SidebarSection>
 
-        {/* Workspaces Section */}
-        <div className="space-y-4 px-1">
+        {/* Workspaces Section - 15px gap to match Figma mt-[15px] */}
+        <div className="mt-[15px] space-y-4">
           {isLoading ? (
             ["collection-skeleton-1", "collection-skeleton-2"].map((key) => (
               <div key={key} className="flex items-center gap-2 px-2 py-1.5">

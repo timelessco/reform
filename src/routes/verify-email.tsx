@@ -7,7 +7,7 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { auth, useSession } from "@/lib/auth-client";
-import { syncLocalDataToCloud } from "@/lib/sync";
+import { setSyncAfterLoginFlag } from "@/lib/local-draft";
 import { sessionMiddleware } from "@/middleware/auth";
 
 const searchSchema = z.object({
@@ -47,13 +47,9 @@ function VerifyEmailPage() {
   // Sign in with OTP (for new sign-in flow)
   const signInOtpMutation = useMutation(
     auth.signIn.emailOtp.mutationOptions({
-      onSuccess: async () => {
+      onSuccess: () => {
         toast.success("Signed in successfully!");
-        try {
-          await syncLocalDataToCloud();
-        } catch (error) {
-          console.error("Failed to sync local data:", error);
-        }
+        setSyncAfterLoginFlag();
         queryClient.invalidateQueries({ queryKey: auth.getSession.queryKey() });
         navigate({ to: "/dashboard", replace: true });
       },

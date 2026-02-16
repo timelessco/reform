@@ -4,78 +4,62 @@ import { forms, workspaces } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
-export const authUser = async () => {
-  const headers = getRequestHeaders();
-  const session = await auth.api.getSession({ headers });
-  const user = session?.user;
-  if (!user) {
-    throw new Error("Unauthorized");
-  }
-  return user;
-};
-
 /**
  * Get authenticated user with their active organization.
  * Throws if user is not authenticated or has no active org.
  */
-const authUserWithOrg = async () => {
-  const headers = getRequestHeaders();
-  const session = await auth.api.getSession({ headers });
-  const user = session?.user;
-  if (!user) {
-    throw new Error("Unauthorized");
-  }
-
-  const activeOrgId = session?.session?.activeOrganizationId;
-  if (!activeOrgId) {
-    throw new Error("No active organization");
-  }
-
-  return { user, activeOrgId };
-};
 
 /**
  * Authorize access to a workspace.
  * Checks if the workspace belongs to the user's active organization.
  */
-export const authWorkspace = async (workspaceId: string) => {
-  const { user, activeOrgId } = await authUserWithOrg();
+export const authWorkspace = async (workspaceId: string, userId: string) => {
 
   const workspace = await db
     .select({ id: workspaces.id })
     .from(workspaces)
-    .where(and(eq(workspaces.id, workspaceId), eq(workspaces.organizationId, activeOrgId)))
+    .where(and(eq(workspaces.id, workspaceId), eq(workspaces.createdByUserId, userId)))
     .limit(1);
 
   if (workspace.length === 0) {
     throw new Error("Workspace not found or access denied");
   }
-  return { user, workspace: workspace[0], activeOrgId };
+  return { workspace: workspace[0] };
 };
 
 /**
  * Authorize access to a form.
  * Checks if the form's workspace belongs to the user's active organization.
  */
-export const authForm = async (formId: string) => {
-  const { user, activeOrgId } = await authUserWithOrg();
+export const authForm = async (formId: string, userId: string) => {
 
   const form = await db
     .select({ id: forms.id, workspaceId: forms.workspaceId })
     .from(forms)
     .innerJoin(workspaces, eq(forms.workspaceId, workspaces.id))
-    .where(and(eq(forms.id, formId), eq(workspaces.organizationId, activeOrgId)))
+    .where(and(eq(forms.id, formId), eq(forms.createdByUserId, userId)))
     .limit(1);
 
   if (form.length === 0) {
     throw new Error("Form not found or access denied");
   }
-  return { user, form: form[0], activeOrgId };
+  return { form: form[0] };
 };
 
-export const getTxId = async () => {
-  const result = await db.execute<{ txid: number }>(
-    sql`SELECT pg_current_xact_id()::xid::text::int as txid`,
+type DbLike = { execute: typeof db.execute };
+
+/**
+ * Get PostgreSQL transaction ID. Must be called inside the same transaction as the mutation
+ * for Electric sync to match correctly (see TanStack Electric docs).
+ */
+export const getTxId = async (tx?: DbLike): Promise<number> => {
+  const client = tx ?? db;
+  // Use ::xid::text (no ::int) - TanStack docs: "The ::xid cast strips off the epoch,
+  // giving you the raw 32-bit value that matches what PostgreSQL sends in logical replication"
+  const result = await client.execute<{ txid: string }>(
+    sql`SELECT pg_current_xact_id()::xid::text as txid`,
   );
-  return result.rows[0].txid;
+  const txid = result.rows[0]?.txid;
+  if (txid === undefined) throw new Error("Failed to get transaction ID");
+  return parseInt(txid, 10);
 };

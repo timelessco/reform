@@ -7,7 +7,7 @@ import { electricFetchClient, getElectricUrl, type ServerTxResult, timestampFiel
 const WorkspaceSchema = z.object({
   id: z.string().uuid(),
   organizationId: z.string().uuid(),
-  createdByUserId: z.string(),
+  createdByUserId: z.string().optional(), // Server injects this from auth context
   name: z.string().default("My workspace"),
   createdAt: timestampField,
   updatedAt: timestampField,
@@ -25,6 +25,7 @@ export const workspaceCollection = createCollection(
       fetchClient: electricFetchClient,
     },
     getKey: (item) => item.id,
+    startSync: false, // Sync starts in _authenticated.tsx loader after auth is confirmed
     onInsert: async ({ transaction }) => {
       const newItem = transaction.mutations[0].modified;
       const result = (await createWorkspace({
@@ -64,7 +65,7 @@ export async function createWorkspaceLocal(
   const newWorkspace: Workspace = {
     id,
     organizationId,
-    createdByUserId: "",
+    // createdByUserId is injected by server from auth context
     name,
     createdAt: now,
     updatedAt: now,

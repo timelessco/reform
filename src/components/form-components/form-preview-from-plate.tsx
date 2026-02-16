@@ -1,9 +1,10 @@
 import { ChevronRightIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type { Value } from "platejs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RenderPreviewInput } from "@/components/form-components/render-preview-input";
 import { StepForm } from "@/components/form-components/step-form";
+import { ProgressBar } from "@/components/public/progress-bar";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
@@ -25,6 +26,7 @@ import {
   transformPlateStateToFormElements,
 } from "@/lib/transform-plate-to-form";
 import { cn } from "@/lib/utils";
+import type { PublicFormSettings } from "@/types/form-settings";
 
 interface FormPreviewFromPlateProps {
   /** Plate editor content array */
@@ -41,6 +43,10 @@ interface FormPreviewFromPlateProps {
   hideTitle?: boolean;
   /** Layout variant */
   layout?: "public" | "editor";
+  /** Form settings for public forms */
+  settings?: PublicFormSettings;
+  /** Form ID for localStorage persistence */
+  formId?: string;
 }
 
 /**
@@ -497,6 +503,8 @@ export function FormPreviewFromPlate({
   onSubmit,
   hideTitle,
   layout = "public",
+  settings,
+  formId,
 }: FormPreviewFromPlateProps) {
   const headerFromContent = extractFormHeader(content);
   const hasHeaderNode = headerFromContent !== null;
@@ -548,6 +556,8 @@ export function FormPreviewFromPlate({
       totalSteps={steps.length}
       thankYouContent={thankYouContent}
       onSubmit={onSubmit}
+      formId={formId}
+      saveAnswersForLater={settings?.saveAnswersForLater}
     >
       <FormPreviewContent
         steps={steps}
@@ -557,6 +567,7 @@ export function FormPreviewFromPlate({
         cover={cover}
         hideTitle={hideTitle}
         layout={layout}
+        settings={settings}
       />
     </StepFormProvider>
   );
@@ -593,6 +604,7 @@ function FormPreviewContent({
   cover,
   hideTitle,
   layout,
+  settings,
 }: {
   steps: TransformedElement[][];
   thankYouContent: TransformedElement[] | null;
@@ -601,11 +613,45 @@ function FormPreviewContent({
   cover?: string;
   hideTitle?: boolean;
   layout: "public" | "editor";
+  settings?: PublicFormSettings;
 }) {
-  const { currentStep, isSubmitted, direction, reset } = useStepForm();
+  const { currentStep, totalSteps, isSubmitted, direction, reset } = useStepForm();
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
 
   // Create a dummy form for thank you content rendering (static elements only)
   const { form } = usePreviewForm({ fields: [] });
+
+  // Handle redirect on completion
+  useEffect(() => {
+    if (!isSubmitted) return;
+    if (!settings?.redirectOnCompletion || !settings?.redirectUrl) return;
+
+    const delay = settings.redirectDelay ?? 0;
+
+    if (delay === 0) {
+      // Immediate redirect
+      window.location.href = settings.redirectUrl;
+      return;
+    }
+
+    // Start countdown
+    setRedirectCountdown(delay);
+
+    const interval = setInterval(() => {
+      setRedirectCountdown((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(interval);
+          if (settings.redirectUrl) {
+            window.location.href = settings.redirectUrl;
+          }
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isSubmitted, settings?.redirectOnCompletion, settings?.redirectUrl, settings?.redirectDelay]);
 
   // Show thank you content after submission
   if (isSubmitted) {
@@ -639,6 +685,11 @@ function FormPreviewContent({
             ) : (
               <DefaultThankYou onReset={reset} />
             )}
+            {redirectCountdown !== null && (
+              <p className="text-muted-foreground text-center mt-4">
+                Redirecting in {redirectCountdown} second{redirectCountdown !== 1 ? "s" : ""}...
+              </p>
+            )}
           </motion.div>
         </div>
       </div>
@@ -658,6 +709,18 @@ function FormPreviewContent({
         hideTitle={hideTitle}
         layout={layout}
       />
+
+      {/* Progress Bar */}
+      {settings?.progressBar && totalSteps > 1 && (
+        <div
+          className={cn(
+            "mb-6",
+            layout === "editor" ? "max-w-[700px] mx-auto w-full px-4" : "max-w-2xl mx-auto px-4",
+          )}
+        >
+          <ProgressBar currentStep={currentStep} totalSteps={totalSteps} />
+        </div>
+      )}
 
       {/* Step Form */}
       <div

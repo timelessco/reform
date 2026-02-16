@@ -3,7 +3,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -14,27 +13,21 @@ import {
   useHasUnpublishedChanges,
   usePublishVersion,
 } from "@/hooks/use-form-versions";
-import { useForm, useIsFavorite } from "@/hooks/use-live-hooks";
+import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
-import { deleteForm, getFormbyIdQueryOption } from "@/lib/fn/forms";
-import { cn } from "@/lib/utils";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { deleteForm } from "@/lib/fn/forms";
+import { cn, parseTimestampAsUTC } from "@/lib/utils";
+import { useMutation } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   AlertCircle,
   ChevronsRight,
-  Copy,
-  History,
-  Link2,
   Loader2,
   MoreHorizontal,
   Pencil,
   Settings,
-  Star,
-  Trash2,
 } from "lucide-react";
-import { useMemo } from "react";
 import { toast } from "sonner";
 import { useSidebarSafe } from "./sidebar";
 
@@ -113,20 +106,9 @@ export function AppHeader({
   const searchParams: any = useSearch({ strict: false });
   const demo = searchParams.demo;
 
-  // Primary: TanStack Query cache (primed by route loader, immediate on navigation)
-  const { data: serverFormData } = useQuery({
-    ...getFormbyIdQueryOption(formId!),
-    enabled: !!formId,
-  });
-  // Secondary: Electric live data (real-time but async)
+  // Single source: Electric live data (useForm)
+  const { data: workspace } = useWorkspace(workspaceId);
   const { data: savedDocs, isLoading: isLoadingSavedDocs } = useForm(formId);
-
-  // Prefer Electric (real-time) when available, fall back to server cache
-  const currentForm = useMemo(() => {
-    if (!formId) return undefined;
-    const electricForm = savedDocs?.find((doc: any) => doc.id === formId);
-    return electricForm ?? serverFormData?.form;
-  }, [savedDocs, formId, serverFormData]);
 
   // Version management hooks
   const hasUnpublishedChanges = useHasUnpublishedChanges(formId);
@@ -134,7 +116,7 @@ export function AppHeader({
   const discardMutation = useDiscardChanges();
 
   // Favorite state
-  const isFavorite = useIsFavorite(session?.user?.id, formId);
+  useIsFavorite(session?.user?.id, formId);
 
   const handleToggleFavorite = async () => {
     if (!session?.user?.id || !formId) return;
@@ -191,18 +173,6 @@ export function AppHeader({
     }
   };
 
-  const handleCopyLink = () => {
-    if (!formId) return;
-    const url = `${window.location.origin}/f/${formId}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Link copied to clipboard");
-  };
-
-  const handleDuplicate = () => {
-    // TODO: Implement duplicate functionality
-    toast.info("Duplicate feature coming soon");
-  };
-
   return (
     <header
       className={cn(
@@ -219,16 +189,37 @@ export function AppHeader({
             className="h-8 w-8 text-muted-foreground -ml-1 group relative flex items-center justify-center transition-all duration-300"
             onClick={() => toggleMainSidebar()}
           >
-            <span className="text-2xl font-serif italic font-bold tracking-tighter">f.</span>
+               <span className="text-2xl font-serif italic font-light tracking-tighter text-sidebar-nav-text dark:text-dark-gray-950">f.</span>
           </Button>
         )}
 
-        {/* Breadcrumb: Form Name / Page */}
-        {isFormBuilder && currentForm && (
+        {/* Breadcrumb: Workspace / Form Name / Page */}
+        {isFormBuilder && savedDocs?.[0] && (
           <div className="flex items-center gap-2 text-sm">
-            <span className="font-medium truncate max-w-[200px]">
-              {currentForm.title || "Untitled"}
-            </span>
+            {workspace && (
+              <>
+                <Link
+                  to="/dashboard"
+                  className="text-muted-foreground hover:text-foreground truncate max-w-[150px]"
+                >
+                  {workspace.name}
+                </Link>
+                <span className="text-muted-foreground/50">/</span>
+              </>
+            )}
+            {savedDocs?.[0].status === "published" && workspaceId && formId ? (
+              <Link
+                to="/workspace/$workspaceId/form-builder/$formId/submissions"
+                params={{ workspaceId, formId }}
+                className="font-medium truncate max-w-[200px] text-foreground hover:underline"
+              >
+                {savedDocs?.[0].title || "Untitled"}
+              </Link>
+            ) : (
+              <span className="font-medium truncate max-w-[200px]">
+                {savedDocs?.[0].title || "Untitled"}
+              </span>
+            )}
             <span className="text-muted-foreground/50">/</span>
             <span className="text-muted-foreground">
               {isEditRoute ? "Editor" : "Submissions"}
@@ -239,11 +230,11 @@ export function AppHeader({
 
       {/* Right Section: Actions */}
       <div className="flex items-center gap-1">
-        {isFormBuilder && currentForm?.updatedAt && !isEditorSidebarOpen && !isLoadingSavedDocs && (
+        {isFormBuilder && savedDocs?.[0]?.updatedAt && !isEditorSidebarOpen && !isLoadingSavedDocs && (
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="text-[11px] text-muted-foreground/70 mr-2 whitespace-nowrap rounded-md bg-muted/60 px-2 py-1">
-                Edited {formatDistanceToNow(new Date(currentForm.updatedAt))} ago
+                Edited {formatDistanceToNow(parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date())} ago
               </span>
             </TooltipTrigger>
             <TooltipContent side="bottom" align="end">
@@ -253,15 +244,15 @@ export function AppHeader({
                   <span className="font-medium text-foreground">
                     {session?.user?.name ?? "You"}
                   </span>{" "}
-                  {formatDistanceToNow(new Date(currentForm.updatedAt))} ago
+                  {formatDistanceToNow(parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date())} ago
                 </p>
-                {currentForm?.createdAt && (
+                {savedDocs?.[0]?.createdAt && (
                   <p className="text-xs text-muted-foreground">
                     Created by{" "}
                     <span className="font-medium text-foreground">
                       {session?.user?.name ?? "You"}
                     </span>{" "}
-                    {format(new Date(currentForm.createdAt), "MMM d, yyyy")}
+                    {format(parseTimestampAsUTC(savedDocs?.[0]?.createdAt) ?? new Date(), "MMM d, yyyy")}
                   </p>
                 )}
               </div>
@@ -330,12 +321,12 @@ export function AppHeader({
                 </Button>
               )}
 
-              {!isLoadingSavedDocs && currentForm?.status === "published" && (
+              {savedDocs?.[0]?.status === "published" && (
                 <Button
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    "h-8 px-2.5 text-muted-foreground hover:text-foreground font-normal",
+                    "w-17 px-2.5 text-muted-foreground hover:text-foreground font-normal",
                     isShareSidebarOpen && "text-foreground bg-accent/50",
                   )}
                   onClick={toggleShareSidebar}
@@ -354,7 +345,7 @@ export function AppHeader({
                 <Settings className="h-[18px] w-[18px]" strokeWidth={1.5} />
               </Button>
 
-              {/* Three dots menu */}
+              {/* Three dots menu - Figma system-flat 23508:7036 */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -365,40 +356,42 @@ export function AppHeader({
                     <MoreHorizontal className="h-[18px] w-[18px]" strokeWidth={1.5} />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-
-                  {/* Copy link */}
-                  <DropdownMenuItem onClick={handleCopyLink} className="gap-2">
-                    <Link2 className="h-4 w-4" />
-                    Copy link
+                <DropdownMenuContent
+                  align="end"
+                  className="w-[180px] rounded-[6px] border-0 bg-white p-[6px] py-[4px] shadow-sm dark:bg-popover"
+                >
+                  <DropdownMenuItem
+                    onClick={handleToggleFavorite}
+                    className="rounded-[4px] px-3 py-2 text-[14px] font-normal tracking-[0.14px] text-sidebar-nav-text focus:bg-light-gray-100 focus:text-sidebar-nav-text dark:focus:bg-accent dark:focus:text-accent-foreground"
+                  >
+                    Favorite
                   </DropdownMenuItem>
-
-                  {/* Duplicate */}
-                  <DropdownMenuItem onClick={handleDuplicate} className="gap-2">
-                    <Copy className="h-4 w-4" />
-                    Duplicate
+                  <DropdownMenuItem
+                    onClick={() =>
+                      workspaceId && formId && navigate({ to: "/workspace/$workspaceId/form-builder/$formId/submissions", params: { workspaceId, formId } })
+                    }
+                    className="rounded-[4px] px-3 py-2 text-[14px] font-normal tracking-[0.14px] text-sidebar-nav-text focus:bg-light-gray-100 focus:text-sidebar-nav-text dark:focus:bg-accent dark:focus:text-accent-foreground"
+                  >
+                    Analytics
                   </DropdownMenuItem>
-
-                  <DropdownMenuSeparator />
-
+                  <DropdownMenuItem
+                    onClick={toggleSettingsSidebar}
+                    className="rounded-[4px] px-3 py-2 text-[14px] font-normal tracking-[0.14px] text-sidebar-nav-text focus:bg-light-gray-100 focus:text-sidebar-nav-text dark:focus:bg-accent dark:focus:text-accent-foreground"
+                  >
+                    Customisation
+                  </DropdownMenuItem>
                   {isEditRoute && (
-                    <DropdownMenuItem onClick={toggleVersionHistory} className="gap-2">
-                      <History className="h-4 w-4" />
+                    <DropdownMenuItem
+                      onClick={toggleVersionHistory}
+                      className="rounded-[4px] px-3 py-2 text-[14px] font-normal tracking-[0.14px] text-sidebar-nav-text focus:bg-light-gray-100 focus:text-sidebar-nav-text dark:focus:bg-accent dark:focus:text-accent-foreground"
+                    >
                       Version History
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem onClick={handleToggleFavorite} className="gap-2">
-                    <Star
-                      className={cn("h-4 w-4", isFavorite && "fill-yellow-400 text-yellow-400")}
-                    />
-                    {isFavorite ? "Unfavorite" : "Favorite"}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleDeleteForm}
-                    className="gap-2 text-destructive focus:text-destructive"
+                    className="rounded-[4px] px-3 py-2 text-[14px] font-normal tracking-[0.14px] text-sidebar-nav-text focus:bg-light-gray-100 focus:text-sidebar-nav-text dark:focus:bg-accent dark:focus:text-accent-foreground"
                   >
-                    <Trash2 className="h-4 w-4" />
                     Delete form
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -411,20 +404,20 @@ export function AppHeader({
               <Button
                 size="sm"
                 className={cn(
-                  "h-8 px-4 ml-1 text-[13px] font-semibold transition-all rounded-md shadow-sm border-none",
+                  "h-8 px-4 ml-1 text-[13px] font-semibold transition-all rounded-md shadow-sm border-none  ",
                   !isLoadingSavedDocs &&
-                    (hasUnpublishedChanges || currentForm?.status !== "published")
+                    (hasUnpublishedChanges || savedDocs?.[0]?.status !== "published")
                     ? "bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
                     : "bg-muted text-muted-foreground hover:bg-muted/80",
                 )}
                 onClick={handlePublish}
                 disabled={
                   publishMutation.isPending ||
-                  (!hasUnpublishedChanges && currentForm?.status === "published")
+                  (!hasUnpublishedChanges && savedDocs?.[0]?.status === "published")
                 }
               >
                 {publishMutation.isPending && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
-                {currentForm?.status === "published" ? "Published" : "Publish"}
+                {savedDocs?.[0]?.status === "published" ? "Published" : "Publish"}
               </Button>
             ) : (
               // Not on edit route: show Edit button to navigate to the editor

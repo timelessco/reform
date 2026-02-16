@@ -112,8 +112,11 @@ export const auth = betterAuth({
     username(),
     emailOTP({
       async sendVerificationOTP({ email, otp, type }) {
-        logger(`[Auth] Sending OTP to ${email} (type: ${type})`);
-        void sendOTPEmail(email, otp, type);
+        if(import.meta.env.DEV) {
+          logger(`[Auth] Sending OTP to ${email} (type: ${type}) : ${otp}`);
+        } else {
+          void sendOTPEmail(email, otp, type);
+        }
       },
       otpLength: 6,
       expiresIn: 300,

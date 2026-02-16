@@ -1,12 +1,11 @@
-import { queryOptions } from "@tanstack/react-query";
-import { createMiddleware, createServerFn } from "@tanstack/react-start";
-import { getRequestHeaders } from "@tanstack/react-start/server";
-import { and, desc, eq, inArray, not } from "drizzle-orm";
-import { z } from "zod";
 import { forms, member, workspaces } from "@/db/schema";
 import { db } from "@/lib/db";
-import { auth } from "../auth";
-import { authUser, authWorkspace, getTxId } from "./helpers";
+import { authMiddleware } from "@/middleware/auth";
+import { queryOptions } from "@tanstack/react-query";
+import { createServerFn } from "@tanstack/react-start";
+import { and, desc, eq, inArray, not } from "drizzle-orm";
+import { z } from "zod";
+import { authWorkspace, getTxId } from "./helpers";
 
 const workspaceSchema = z.object({
   id: z.string().uuid(),
@@ -16,18 +15,6 @@ const workspaceSchema = z.object({
   updatedAt: z.string().optional(),
 });
 
-const authMiddleware = createMiddleware({ type: "function" }).server(async ({ next }) => {
-  const headers = getRequestHeaders();
-  const session = await auth.api.getSession({ headers });
-  if (!session?.user) {
-    throw new Error("Unauthorized");
-  }
-  return await next({
-    context: {
-      user: session.user,
-    },
-  });
-});
 
 export const createWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
@@ -45,7 +32,7 @@ export const createWorkspace = createServerFn({ method: "POST" })
       .values({
         id: data.id ?? crypto.randomUUID(),
         organizationId: data.organizationId,
-        createdByUserId: context.user.id,
+        createdByUserId: context.session.user.id,
         name: data.name,
         createdAt: now,
         updatedAt: now,
@@ -67,9 +54,9 @@ export const createWorkspace = createServerFn({ method: "POST" })
 export const updateWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(workspaceSchema.pick({ id: true, name: true }).partial({ name: true }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data ,context}) => {
     const { id, ...updateData } = data;
-    await authWorkspace(id);
+    await authWorkspace(id, context.session.user.id);
 
     const [workspace] = await db
       .update(workspaces)
@@ -95,8 +82,8 @@ export const updateWorkspace = createServerFn({ method: "POST" })
 export const deleteWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(workspaceSchema.pick({ id: true }))
-  .handler(async ({ data }) => {
-    await authWorkspace(data.id);
+  .handler(async ({ data, context }) => {
+    await authWorkspace(data.id, context.session.user.id);
 
     const [workspace] = await db.delete(workspaces).where(eq(workspaces.id, data.id)).returning();
 
@@ -115,8 +102,8 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
 const getWorkspaceById = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid() }))
-  .handler(async ({ data }) => {
-    await authWorkspace(data.id);
+  .handler(async ({ data, context }) => {
+    await authWorkspace(data.id, context.session.user.id);
 
     const [workspace] = await db.select().from(workspaces).where(eq(workspaces.id, data.id));
 
@@ -135,14 +122,13 @@ const getWorkspaceById = createServerFn({ method: "GET" })
 
 const getWorkspaces = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .handler(async () => {
-    const user = await authUser();
+  .handler(async ({ context }) => {
 
     // Get organizations the user is a member of
     const userMemberships = await db
       .select({ organizationId: member.organizationId })
       .from(member)
-      .where(eq(member.userId, user.id));
+      .where(eq(member.userId, context.session.user.id));
 
     if (userMemberships.length === 0) {
       return { workspaces: [] };
@@ -167,14 +153,13 @@ const getWorkspaces = createServerFn({ method: "GET" })
 
 const getWorkspacesWithForms = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .handler(async () => {
-    const user = await authUser();
+  .handler(async ({ context }) => {
 
     // Get organizations the user is a member of
     const userMemberships = await db
       .select({ organizationId: member.organizationId })
       .from(member)
-      .where(eq(member.userId, user.id));
+      .where(eq(member.userId, context.session.user.id));
 
     if (userMemberships.length === 0) {
       return { workspaces: [] };
@@ -236,8 +221,7 @@ export const getWorkspacesWithFormsQueryOptions = () =>
 
 const getUserMemberships = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .handler(async () => {
-    const user = await authUser();
+  .handler(async ({ context }) => {
 
     const memberships = await db
       .select({
@@ -245,7 +229,7 @@ const getUserMemberships = createServerFn({ method: "GET" })
         role: member.role,
       })
       .from(member)
-      .where(eq(member.userId, user.id));
+      .where(eq(member.userId, context.session.user.id));
 
     return { memberships };
   });

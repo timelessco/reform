@@ -23,6 +23,7 @@ export const favoriteCollection = createCollection(
       fetchClient: electricFetchClient,
     },
     getKey: (item) => item.id,
+    startSync: false, // Sync starts in _authenticated.tsx loader after auth is confirmed
     onInsert: async ({ transaction }) => {
       const newItem = transaction.mutations[0].modified;
       const result = (await addFavorite({

@@ -1,11 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import { useForm } from "@/hooks/use-live-hooks";
 import { getFormbyIdQueryOption } from "@/lib/fn/forms";
 import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
-import type { Value } from "platejs";
 import { z } from "zod";
 
 interface RedirectError {
@@ -29,7 +26,6 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
         location.pathname === `/workspace/${params.workspaceId}/form-builder/${params.formId}/`;
 
       if (isExactParentRoute) {
-        console.log("[route.tsx beforeLoad] At parent route, checking form status for redirect...");
         try {
           const result = await context.queryClient.ensureQueryData({
             ...getFormbyIdQueryOption(params.formId),
@@ -37,7 +33,6 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
           });
 
           const status = result?.form?.status;
-          console.log("[route.tsx beforeLoad] Form status:", status);
 
           if (status === "published") {
             throw redirect({
@@ -76,23 +71,6 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
             params: { workspaceId: params.workspaceId, formId: params.formId },
           });
         }
-      }
-    },
-    loader: async ({ params, context }) => {
-      const { formId } = params;
-      try {
-        const result = await context.queryClient.ensureQueryData({
-          ...getFormbyIdQueryOption(formId),
-          revalidateIfStale: true,
-        });
-        const initialContent = (result.form.content as Value) ?? ([] as Value);
-        return {
-          initialContent,
-        };
-      } catch {
-        return {
-          initialContent: [] as Value,
-        };
       }
     },
     staleTime: 0,

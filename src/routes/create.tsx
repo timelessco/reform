@@ -12,10 +12,8 @@ import { NotFound } from "@/components/ui/not-found";
 import { createOnboardingContentNode } from "@/components/ui/onboarding-content-node";
 import { localFormCollection } from "@/db-collections";
 import { useLocalForm } from "@/hooks/use-live-hooks";
+import { getLocalFormId, getLocalWorkspaceId } from "@/lib/local-draft";
 import { guestMiddleware } from "@/middleware/auth";
-
-const LOCAL_FORM_ID = "550e8400-e29b-41d4-a716-446655440000"; // Valid UUID for local draft
-const LOCAL_WORKSPACE_ID = "550e8400-e29b-41d4-a716-446655440001"; // Valid UUID for local workspace
 
 // Initial state for new forms
 const onboardingValue = normalizeNodeId([
@@ -49,7 +47,9 @@ function RouteComponent() {
 }
 
 function LocalEditorApp() {
-  const { data: savedDocs } = useLocalForm(LOCAL_FORM_ID);
+  const localFormId = getLocalFormId();
+  const localWorkspaceId = getLocalWorkspaceId();
+  const { data: savedDocs } = useLocalForm(localFormId);
 
   const initializedRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
@@ -111,13 +111,13 @@ function LocalEditorApp() {
     };
 
     try {
-      localFormCollection.update(LOCAL_FORM_ID, (draft) => {
+      localFormCollection.update(localFormId, (draft) => {
         Object.assign(draft, updateData);
       });
     } catch {
       localFormCollection.insert({
-        id: LOCAL_FORM_ID,
-        workspaceId: LOCAL_WORKSPACE_ID,
+        id: localFormId,
+        workspaceId: localWorkspaceId,
         formName: "draft",
         schemaName: "draftFormSchema",
         isMultiStep: false,
@@ -126,7 +126,7 @@ function LocalEditorApp() {
         ...updateData,
       });
     }
-  }, []);
+  }, [localFormId, localWorkspaceId]);
 
   if (!isReady) return <Loader />;
 
