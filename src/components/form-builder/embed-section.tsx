@@ -116,7 +116,7 @@ export function EmbedSection({ formId, docTitle }: EmbedSectionProps) {
       {/* Embed type tabs — managed by form.Field so onChange fires */}
       <form.Field name="embedType">
         {(field) => (
-          <div className="flex items-center bg-muted rounded-[10px] p-[3px] gap-1">
+          <div className="flex items-center bg-light-gray-100 dark:bg-muted rounded-[10px] p-[3px] gap-1">
             {tabs.map((tab) => (
               <Button
                 key={tab.value}

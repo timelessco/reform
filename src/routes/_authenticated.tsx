@@ -58,6 +58,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
+  BellIcon,
+  HomeIcon,
+  SearchIcon,
+  SettingsIcon,
+} from "@/components/ui/sidebar-icons";
+import {
   EditorHeaderVisibilityProvider,
   useEditorHeaderVisibility,
 } from "@/contexts/editor-header-visibility-context";
@@ -99,7 +105,6 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import {
-  Bell,
   ChevronDown,
   ChevronsLeft,
   Copy,
@@ -115,14 +120,13 @@ import {
   MoreHorizontal,
   Pencil,
   Plus,
-  Search,
   Settings,
   Star,
   Sun,
   Trash2,
   Undo2,
   Users,
-  Zap,
+  Zap
 } from "lucide-react";
 import type * as React from "react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -558,7 +562,7 @@ function AppSidebar() {
                     className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] gap-2 transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
                   >
                     <Link to="/dashboard" className="flex items-center gap-2 min-w-0">
-                      <Home className="h-[18px] w-[18px] shrink-0 text-muted-foreground" strokeWidth={1.5} />
+                      <HomeIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
                       <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-[1.15] font-case truncate">All</span>
                     </Link>
                   </SidebarMenuButton>
@@ -569,7 +573,7 @@ function AppSidebar() {
                     tooltip="Search"
                     className="h-[30px] min-w-0 rounded-lg px-[7px] gap-2 transition-colors hover:bg-sidebar-active"
                   >
-                    <Search className="h-[18px] w-[18px] shrink-0 text-muted-foreground" strokeWidth={1.5} />
+                    <SearchIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
                     <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-[1.15] font-case truncate">Search</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -581,7 +585,7 @@ function AppSidebar() {
                     className="h-[30px] min-w-0 rounded-lg px-[7px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
                   >
                     <div className="relative shrink-0">
-                      <Bell className="h-[18px] w-[18px] text-muted-foreground" strokeWidth={1.5} />
+                      <BellIcon className="h-[18px] w-[18px] text-muted-foreground" />
                       {pendingCount > 0 && (
                         <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-background" />
                       )}
@@ -602,7 +606,7 @@ function AppSidebar() {
                     className="h-[30px] min-w-0 rounded-lg px-[7px] gap-2 transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
                   >
                     <Link to="/settings/my-account" className="flex items-center gap-2 min-w-0">
-                      <Settings className="h-[18px] w-[18px] shrink-0 text-muted-foreground" strokeWidth={1.5} />
+                      <SettingsIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
                       <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-[1.15] font-case truncate">Settings</span>
                     </Link>
                   </SidebarMenuButton>
@@ -1412,39 +1416,39 @@ function WorkspaceItemMinimal({
 
   return (
     <div className="flex flex-col">
-          <div className="group flex items-center justify-between transition-colors">
-            <button
-              type="button"
-              onClick={() => setIsOpen(!isOpen)}
-              className="flex items-center gap-1 h-auto py-[5.5px] px-[4px] cursor-pointer flex-1 min-w-0 justify-start bg-transparent border-none"
-              aria-expanded={isOpen}
-            >
-              <span className="text-[13px] font-medium text-muted-foreground tracking-[0.26px] truncate">
-                {workspace.name}
-              </span>
-              <ChevronDown
-                className={cn(
-                  "h-2.5 w-2.5 shrink-0 text-muted-foreground transition-transform duration-200",
-                  !isOpen && "-rotate-90",
-                )}
-                strokeWidth={2}
-              />
-            </button>
+      <div className="group flex items-center justify-between transition-colors">
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center gap-1 h-auto py-[5.5px] px-[4px] cursor-pointer flex-1 min-w-0 justify-start bg-transparent border-none"
+          aria-expanded={isOpen}
+        >
+          <span className="text-[13px] font-medium text-muted-foreground tracking-[0.26px] truncate">
+            {workspace.name}
+          </span>
+          <ChevronDown
+            className={cn(
+              "h-2.5 w-2.5 shrink-0 text-muted-foreground transition-transform duration-200",
+              !isOpen && "-rotate-90",
+            )}
+            strokeWidth={2}
+          />
+        </button>
 
-            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-              <div className="relative workspace-menu-container">
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowMenu(!showMenu);
-                  }}
-                  className="h-6 w-6 hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
-                  title="More options"
-                >
-                  <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
-                </Button>
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          <div className="relative workspace-menu-container">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMenu(!showMenu);
+              }}
+              className="h-6 w-6 hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
+              title="More options"
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
+            </Button>
             {showMenu && (
               <div className="absolute right-0 top-full mt-1 bg-background border border-foreground/10 rounded-lg shadow-lg p-1 z-50 min-w-32">
                 <Button
@@ -1654,34 +1658,34 @@ function SidebarSection({
   return (
     <div className="flex flex-col">
       <div className="group flex items-center justify-between px-1 py-[7px] transition-colors">
-          <button
-            type="button"
-            onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-1 h-auto p-0 cursor-pointer flex-1 min-w-0 justify-start bg-transparent border-none"
-            aria-expanded={isOpen}
-          >
-            <span className="text-[13px] font-medium text-muted-foreground tracking-[0.26px] truncate">
-              {label}
-            </span>
-            <ChevronDown
-              className={cn(
-                "h-2.5 w-2.5 shrink-0 text-muted-foreground transition-transform duration-200",
-                !isOpen && "-rotate-90",
-              )}
-              strokeWidth={2}
-            />
-          </button>
-
-          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-            {action ?? (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="h-6 w-6 hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
-              >
-                <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
-              </Button>
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center gap-1 h-auto p-0 cursor-pointer flex-1 min-w-0 justify-start bg-transparent border-none"
+          aria-expanded={isOpen}
+        >
+          <span className="text-[13px] font-medium text-muted-foreground tracking-[0.26px] truncate">
+            {label}
+          </span>
+          <ChevronDown
+            className={cn(
+              "h-2.5 w-2.5 shrink-0 text-muted-foreground transition-transform duration-200",
+              !isOpen && "-rotate-90",
             )}
+            strokeWidth={2}
+          />
+        </button>
+
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          {action ?? (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="h-6 w-6 hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
+            </Button>
+          )}
         </div>
       </div>
 

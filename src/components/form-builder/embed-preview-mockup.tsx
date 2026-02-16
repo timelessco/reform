@@ -11,7 +11,7 @@ export function EmbedPreviewMockup({
   popupPosition = "bottom-right",
 }: EmbedPreviewMockupProps) {
   return (
-    <div className="rounded-[12px] border border-border bg-muted/30 overflow-hidden">
+    <div className="rounded-[12px] border border-border bg-[#f5f5f5] dark:bg-muted/30 overflow-hidden">
       {/* Browser Chrome */}
       <div className="flex items-center gap-1 px-3 py-2.5">
         <div className="flex gap-1.5">
@@ -35,7 +35,7 @@ function BoxSkeleton({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "rounded-xl bg-card shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-border/50",
+        "rounded-xl bg-[#e0e0e0] dark:bg-card shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-border/50",
         className
       )}
     />
