@@ -258,7 +258,7 @@ function DashboardPage() {
                 className="group flex flex-col p-2 -mx-2 rounded-xl hover:bg-muted/30 transition-all duration-200 cursor-pointer"
               >
                 <Link
-                  to={"/workspace/$workspaceId/form-builder/$formId/edit"}
+                  to={form.status === "published" ? "/workspace/$workspaceId/form-builder/$formId/submissions" : "/workspace/$workspaceId/form-builder/$formId/edit"}
                   params={{ workspaceId: form.workspaceId, formId: form.id }}
                   preloadDelay={1000}
                   preload="intent"

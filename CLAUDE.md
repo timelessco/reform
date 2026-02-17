@@ -164,6 +164,32 @@ export const formsCollection = collection({
 - Server persistence: PostgreSQL `forms` table with JSONB `content` and `settings`
 - Zod schemas generated dynamically from form content via `src/lib/generate-zod-schema.ts`
 
+## TanStack DB Collection Update Rules
+
+`collection.update()` (including helpers like `updateDoc`, `updateFormStatus`) **always triggers `onUpdate`**, which fires a server function. This is the correct pattern when the update originates from user input (typing, renaming, deleting).
+
+**NEVER call `collection.update()` / `updateDoc` / `updateFormStatus` after a server function that already wrote the same data to the DB.** This causes a redundant double server call.
+
+When you need to update the collection locally after a server fn already persisted the change (e.g. publish, restore version, discard changes), use `createTransaction` with a no-op `mutationFn`:
+
+```typescript
+import { createTransaction } from "@tanstack/react-db";
+import { formCollection } from "@/db-collections/form.collections";
+
+// After server fn already wrote to DB — update collection WITHOUT triggering onUpdate
+const tx = createTransaction({ mutationFn: async () => {} });
+tx.mutate(() => {
+  formCollection.update(id, (draft) => {
+    draft.status = "published";
+  });
+});
+```
+
+**Decision checklist:**
+- User action → server not called yet → use `collection.update()` / `updateDoc` (onUpdate IS the server call)
+- Server fn already called → need instant UI update → use `createTransaction` no-op pattern
+- Server fn already called → can wait for sync → do nothing, let Electric push the update
+
 ## Sentry Integration
 
 Import and wrap server functions for instrumentation:

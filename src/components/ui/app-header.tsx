@@ -6,19 +6,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { toggleFavoriteLocal } from "@/db-collections";
+import { toggleFavoriteLocal, updateFormStatus } from "@/db-collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import {
-  useDiscardChanges,
+  discardChangesAction,
+  publishFormAction,
   useHasUnpublishedChanges,
-  usePublishVersion,
 } from "@/hooks/use-form-versions";
 import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
-import { deleteForm } from "@/lib/fn/forms";
 import { cn, parseTimestampAsUTC } from "@/lib/utils";
-import { useMutation } from "@tanstack/react-query";
-import { Link, useLocation, useNavigate, useSearch } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   AlertCircle,
@@ -28,24 +26,22 @@ import {
   Pencil,
   Settings,
 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { useSidebarSafe } from "./sidebar";
 
 interface AppHeaderProps {
-  formId?: string;
-  workspaceId?: string;
   dividerX?: number;
   isSidebarOpen?: boolean;
   isDistractionHidden?: boolean;
 }
 
 export function AppHeader({
-  formId,
-  workspaceId,
   dividerX,
   isSidebarOpen,
   isDistractionHidden = false,
 }: AppHeaderProps) {
+  const { formId, workspaceId } = useParams({ strict: false }) as { formId?: string; workspaceId?: string };
   const { state, toggleSidebar: toggleMainSidebar } = useSidebarSafe() || {
     state: "expanded",
     toggleSidebar: () => { },
@@ -64,7 +60,14 @@ export function AppHeader({
   const isShareSidebarOpen = activeSidebar === "share";
   const isEditorSidebarOpen = !!activeSidebar;
 
-  const toggleVersionHistory = () => toggleSidebar("history");
+  const isVersionHistoryOpen = activeSidebar === "history";
+  const toggleVersionHistory = () => {
+    navigate({
+      to: ".",
+      search: (prev: any) => ({ ...prev, sidebar: isVersionHistoryOpen ? "" : "history" }),
+      replace: true,
+    });
+  };
   const isSettingsSidebarOpen = activeSidebar === "settings";
   const toggleSettingsSidebar = () => {
     // Update URL param - the URL sync effect will handle opening/closing the sidebar
@@ -109,11 +112,9 @@ export function AppHeader({
   // Single source: Electric live data (useForm)
   const { data: workspace } = useWorkspace(workspaceId);
   const { data: savedDocs, isLoading: isLoadingSavedDocs } = useForm(formId);
-
-  // Version management hooks
+  // Version management
   const hasUnpublishedChanges = useHasUnpublishedChanges(formId);
-  const publishMutation = usePublishVersion();
-  const discardMutation = useDiscardChanges();
+  const [isDiscarding, setIsDiscarding] = useState(false);
 
   // Favorite state
   useIsFavorite(session?.user?.id, formId);
@@ -123,36 +124,28 @@ export function AppHeader({
     await toggleFavoriteLocal(session.user.id, formId);
   };
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteForm({ data: { id } }),
-    onSuccess: () => {
-      toast.success("Form deleted successfully");
-      navigate({ to: "/" });
-    },
-    onError: () => {
-      toast.error("Failed to delete form");
-    },
-  });
-
   const handleDeleteForm = async () => {
     if (!formId) return;
-    if (confirm("Are you sure you want to delete this form?")) {
-      deleteMutation.mutate(formId);
+    if (confirm("Are you sure you want to move this form to trash?")) {
+      try {
+        await updateFormStatus(formId, "archived");
+        toast.success("Form moved to trash");
+        navigate({ to: "/" });
+      } catch {
+        toast.error("Failed to delete form");
+      }
     }
   };
 
   const handlePublish = async () => {
     if (formId && workspaceId) {
       try {
-        const result = (await publishMutation.mutateAsync(formId)) as {
-          versionNumber: number;
-        };
-        toast.success(`Form published as version ${result.versionNumber}`);
-        // Redirect to the share page
+        const tx = publishFormAction({ formId });
+        await tx.isPersisted.promise;
+        toast.success("Form published");
         navigate({
           to: "/workspace/$workspaceId/form-builder/$formId/submissions",
           params: { workspaceId, formId },
-          // search: { sidebar: "share" }
         });
       } catch (error) {
         toast.error("Failed to publish form");
@@ -163,12 +156,16 @@ export function AppHeader({
 
   const handleDiscardChanges = async () => {
     if (formId) {
+      setIsDiscarding(true);
       try {
-        await discardMutation.mutateAsync(formId);
+        const tx = discardChangesAction({ formId });
+        await tx.isPersisted.promise;
         toast.info("Changes discarded, reverted to last published version");
       } catch (error) {
         toast.error("Failed to discard changes");
         console.error(error);
+      } finally {
+        setIsDiscarding(false);
       }
     }
   };
@@ -282,9 +279,9 @@ export function AppHeader({
                     size="icon"
                     className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                     onClick={handleDiscardChanges}
-                    disabled={discardMutation.isPending}
+                    disabled={isDiscarding}
                   >
-                    {discardMutation.isPending ? (
+                    {isDiscarding ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <AlertCircle className="h-4 w-4" />
@@ -411,12 +408,8 @@ export function AppHeader({
                     : "bg-muted text-muted-foreground hover:bg-muted/80",
                 )}
                 onClick={handlePublish}
-                disabled={
-                  publishMutation.isPending ||
-                  (!hasUnpublishedChanges && savedDocs?.[0]?.status === "published")
-                }
+                disabled={!hasUnpublishedChanges && savedDocs?.[0]?.status === "published"}
               >
-                {publishMutation.isPending && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
                 {savedDocs?.[0]?.status === "published" ? "Published" : "Publish"}
               </Button>
             ) : (

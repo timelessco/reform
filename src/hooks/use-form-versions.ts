@@ -1,157 +1,106 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createOptimisticAction, eq, useLiveQuery } from "@tanstack/react-db";
 import { useMemo } from "react";
+import { formCollection, formVersionCollection } from "@/db-collections";
 import {
   discardFormChanges,
-  getFormVersionContent,
-  getFormVersions,
   publishFormVersion,
   restoreFormVersion,
 } from "@/lib/fn/form-versions";
 import { useForm } from "./use-live-hooks";
 
-// Type for version content returned by getFormVersionContent
-type VersionContent = {
-  version: {
-    id: string;
-    formId: string;
-    version: number;
-    content: object[];
-    settings: Record<string, object>;
-    title: string;
-    publishedByUserId: string;
-    publishedAt: string;
-    createdAt: string;
-  };
-};
-
 /**
- * Hook to get list of published versions for a form
+ * Hook to get list of published versions for a form (Electric-synced)
  */
 export function useFormVersions(formId: string | undefined) {
-  return useQuery({
-    queryKey: ["formVersions", formId],
-    queryFn: () => getFormVersions({ data: { formId: formId! } }),
-    enabled: !!formId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
+  return useLiveQuery(
+    (q) => {
+      if (!formId) return null as any;
+      return q
+        .from({ v: formVersionCollection })
+        .where(({ v }) => eq(v.formId, formId))
+        .orderBy(({ v }) => v.version, "desc");
+    },
+    [formId],
+  );
 }
 
 /**
- * Hook to get full content of a specific version
+ * Hook to get full content of a specific version (Electric-synced)
  */
 export function useFormVersionContent(versionId: string | undefined) {
-  return useQuery<VersionContent>({
-    queryKey: ["formVersionContent", versionId],
-    queryFn: async () => {
-      const result = await getFormVersionContent({
-        data: { versionId: versionId! },
-      });
-      return result as VersionContent;
+  return useLiveQuery(
+    (q) => {
+      if (!versionId) return null as any;
+      return q
+        .from({ v: formVersionCollection })
+        .where(({ v }) => eq(v.id, versionId));
     },
-    enabled: !!versionId,
-    staleTime: 1000 * 60 * 10, // 10 minutes (versions are immutable)
-  });
+    [versionId],
+  );
 }
 
 /**
- * Hook to publish the current form draft as a new version
- */
-export function usePublishVersion() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (formId: string) => publishFormVersion({ data: { formId } }),
-    onSuccess: (_, formId) => {
-      // Invalidate versions list and all version content (new version needs fresh fetch)
-      queryClient.invalidateQueries({ queryKey: ["formVersions", formId] });
-      queryClient.invalidateQueries({ queryKey: ["formVersionContent"] });
-    },
-  });
-}
-
-/**
- * Hook to restore a version's content to the form draft
- */
-export function useRestoreVersion() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ formId, versionId }: { formId: string; versionId: string }) =>
-      restoreFormVersion({ data: { formId, versionId } }),
-    onSuccess: (_, { formId }) => {
-      // The form content will be updated via Electric sync
-      // Invalidate any related queries
-      queryClient.invalidateQueries({ queryKey: ["forms", formId] });
-    },
-  });
-}
-
-/**
- * Hook to discard all changes and revert to last published version
- */
-export function useDiscardChanges() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (formId: string) => discardFormChanges({ data: { formId } }),
-    onSuccess: (_, formId) => {
-      // The form content will be updated via Electric sync
-      queryClient.invalidateQueries({ queryKey: ["forms", formId] });
-    },
-  });
-}
-
-/**
- * Hook to detect if the current draft has unpublished changes
- * Compares current content with the latest published version
+ * Hook to detect if the current draft has unpublished changes.
+ * Compares current content with the latest published version.
  */
 export function useHasUnpublishedChanges(formId: string | undefined) {
   const { data: formData } = useForm(formId);
-  const { data: versionsData } = useFormVersions(formId);
+  const { data: versions } = useFormVersions(formId);
+
   const form = useMemo(() => {
     if (!formId || !formData) return undefined;
     return formData.find((f: any) => f.id === formId);
   }, [formData, formId]);
-  const latestVersion = versionsData?.versions?.[0];
 
-  // Get the latest version content for comparison
-  const { data: versionContent } = useFormVersionContent(latestVersion?.id);
+  const latestVersion = versions?.[0];
 
   return useMemo(() => {
     if (!form) return false;
 
     // If form was never published (no versions), no "unpublished changes"
-    if (!latestVersion) {
-      return false;
-    }
-
-    // If we don't have version content yet, assume no changes
-    if (!versionContent?.version) {
-      return false;
-    }
+    if (!latestVersion) return false;
 
     // Compare current content with published version content
+    // formVersionCollection already has full content via Electric sync
     const currentContent = JSON.stringify(form.content);
-    const publishedContent = JSON.stringify(versionContent.version.content);
+    const publishedContent = JSON.stringify(latestVersion.content);
 
     return currentContent !== publishedContent;
-  }, [form, latestVersion, versionContent]);
+  }, [form, latestVersion]);
 }
 
-/**
- * Hook to get the current form's version info
- */
-function useFormVersionInfo(formId: string | undefined) {
-  const { data: versionsData, isLoading } = useFormVersions(formId);
-  const hasChanges = useHasUnpublishedChanges(formId);
+// ============================================================================
+// Optimistic Actions (replace useMutation hooks)
+// ============================================================================
 
-  const latestVersion = versionsData?.versions?.[0];
-  const versionCount = versionsData?.versions?.length ?? 0;
+export const publishFormAction = createOptimisticAction<{ formId: string }>({
+  onMutate: ({ formId }) => {
+    formCollection.update(formId, (draft) => {
+      draft.status = "published";
+    });
+  },
+  mutationFn: async ({ formId }) => {
+    return await publishFormVersion({ data: { formId } });
+  },
+});
 
-  return {
-    latestVersion,
-    versionCount,
-    hasUnpublishedChanges: hasChanges,
-    isLoading,
-  };
-}
+export const restoreVersionAction = createOptimisticAction<{
+  formId: string;
+  versionId: string;
+}>({
+  onMutate: () => {
+    // No optimistic update — Electric syncs content back
+  },
+  mutationFn: async ({ formId, versionId }) => {
+    return await restoreFormVersion({ data: { formId, versionId } });
+  },
+});
+
+export const discardChangesAction = createOptimisticAction<{ formId: string }>({
+  onMutate: () => {
+    // No optimistic update — Electric syncs content back
+  },
+  mutationFn: async ({ formId }) => {
+    return await discardFormChanges({ data: { formId } });
+  },
+});

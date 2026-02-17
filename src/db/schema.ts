@@ -12,7 +12,7 @@ export const organization = pgTable("organization", {
   slug: text().unique(),
   logo: text(),
   metadata: text(),
-  createdAt: timestamp().notNull().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
 export const member = pgTable("member", {
@@ -20,7 +20,7 @@ export const member = pgTable("member", {
   userId: text().notNull(),
   organizationId: text().notNull(),
   role: text().notNull().default("member"),
-  createdAt: timestamp().notNull().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
 export const invitation = pgTable("invitation", {
@@ -30,14 +30,14 @@ export const invitation = pgTable("invitation", {
   organizationId: text().notNull(),
   role: text().notNull().default("member"),
   status: text().notNull().default("pending"), // pending, accepted, rejected, canceled
-  expiresAt: timestamp().notNull(),
-  createdAt: timestamp().notNull().defaultNow(),
+  expiresAt: timestamp({ withTimezone: true }).notNull(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
 export const todos = pgTable("todos", {
   id: serial().primaryKey(),
   title: text().notNull(),
-  createdAt: timestamp().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).defaultNow(),
 });
 
 // Better Auth Tables
@@ -48,8 +48,8 @@ export const user = pgTable("user", {
   email: text().notNull().unique(),
   emailVerified: boolean().notNull().default(false),
   image: text(),
-  createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   // Username plugin fields
   username: text().unique(),
   displayUsername: text(),
@@ -61,11 +61,11 @@ export const session = pgTable("session", {
   id: text().primaryKey(),
   userId: text().notNull(),
   token: text().notNull().unique(),
-  expiresAt: timestamp().notNull(),
+  expiresAt: timestamp({ withTimezone: true }).notNull(),
   ipAddress: text(),
   userAgent: text(),
-  createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   activeOrganizationId: text(),
 });
 
@@ -76,22 +76,22 @@ export const account = pgTable("account", {
   providerId: text().notNull(),
   accessToken: text(),
   refreshToken: text(),
-  accessTokenExpiresAt: timestamp(),
-  refreshTokenExpiresAt: timestamp(),
+  accessTokenExpiresAt: timestamp({ withTimezone: true }),
+  refreshTokenExpiresAt: timestamp({ withTimezone: true }),
   scope: text(),
   idToken: text(),
   password: text(),
-  createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
 export const verification = pgTable("verification", {
   id: text().primaryKey(),
   identifier: text().notNull(),
   value: text().notNull(),
-  expiresAt: timestamp().notNull(),
-  createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
+  expiresAt: timestamp({ withTimezone: true }).notNull(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
 export const twoFactor = pgTable("twoFactor", {
@@ -110,17 +110,17 @@ export const apikey = pgTable("apikey", {
   userId: text().notNull(),
   refillInterval: integer(),
   refillAmount: integer(),
-  lastRefillAt: timestamp(),
+  lastRefillAt: timestamp({ withTimezone: true }),
   enabled: boolean().default(true),
   rateLimitEnabled: boolean().default(true),
   rateLimitTimeWindow: integer().default(86400000),
   rateLimitMax: integer().default(10),
   requestCount: integer().default(0),
   remaining: integer(),
-  lastRequest: timestamp(),
-  expiresAt: timestamp(),
-  createdAt: timestamp().notNull(),
-  updatedAt: timestamp().notNull(),
+  lastRequest: timestamp({ withTimezone: true }),
+  expiresAt: timestamp({ withTimezone: true }),
+  createdAt: timestamp({ withTimezone: true }).notNull(),
+  updatedAt: timestamp({ withTimezone: true }).notNull(),
   permissions: text(),
   metadata: text(),
 });
@@ -131,8 +131,8 @@ export const workspaces = pgTable("workspaces", {
   organizationId: text().notNull(),
   createdByUserId: text().notNull(),
   name: text().notNull().default("Collection"),
-  createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
 // Forms table for storing form builder documents
@@ -149,12 +149,12 @@ export const forms = pgTable("forms", {
   cover: text(),
   isMultiStep: boolean().notNull().default(false),
   status: text().notNull().default("draft"), // 'draft' | 'published' | 'archived'
-  deletedAt: timestamp(), // Soft delete timestamp for trash feature
+  deletedAt: timestamp({ withTimezone: true }), // Soft delete timestamp for trash feature
   // Version history fields
   lastPublishedVersionId: text(), // FK to formVersions.id
   publishedContentHash: text(), // Hash for fast change detection
-  createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
 // Form Versions table for storing published snapshots
@@ -166,8 +166,8 @@ export const formVersions = pgTable("form_versions", {
   settings: jsonb().notNull(), // Settings snapshot
   title: text().notNull(),
   publishedByUserId: text().notNull(),
-  publishedAt: timestamp().notNull().defaultNow(),
-  createdAt: timestamp().notNull().defaultNow(),
+  publishedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
 // Submissions table for storing form responses
@@ -177,8 +177,8 @@ export const submissions = pgTable("submissions", {
   formVersionId: text(), // Links to the form version this submission was created against
   data: jsonb().notNull().default({}),
   isCompleted: boolean().notNull().default(true),
-  createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
 // Form Favorites table for per-user favorites
@@ -188,7 +188,7 @@ export const formFavorites = pgTable("form_favorites", {
   formId: text()
     .notNull()
     .references(() => forms.id, { onDelete: "cascade" }),
-  createdAt: timestamp().notNull().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
 // ============================================================================
@@ -221,7 +221,7 @@ export const formSettings = pgTable("form_settings", {
   closeForm: boolean().notNull().default(false),
   closedFormMessage: text(),
   closeOnDate: boolean().notNull().default(false),
-  closeDate: timestamp(),
+  closeDate: timestamp({ withTimezone: true }),
   limitSubmissions: boolean().notNull().default(false),
   maxSubmissions: integer(),
   preventDuplicateSubmissions: boolean().notNull().default(false),
@@ -231,8 +231,8 @@ export const formSettings = pgTable("form_settings", {
   autoJump: boolean().notNull().default(false),
   saveAnswersForLater: boolean().notNull().default(false),
 
-  createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
 // ============================================================================
@@ -244,7 +244,7 @@ export const formShareSettings = pgTable("form_share_settings", {
 
   // === VISIBILITY & ACCESS ===
   isPublic: boolean().notNull().default(true),
-  expiresAt: timestamp(),
+  expiresAt: timestamp({ withTimezone: true }),
 
   // === LINK PREVIEW / OG METADATA ===
   customTitle: text(),
@@ -278,8 +278,8 @@ export const formShareSettings = pgTable("form_share_settings", {
   fullPageMaxWidth: text().default("720px"),
   fullPagePadding: text().default("2rem"),
 
-  createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
 // ============================================================================
@@ -313,8 +313,8 @@ export const formVisits = pgTable("form_visits", {
   region: text(),
 
   // Timing
-  visitStartedAt: timestamp().notNull().defaultNow(),
-  visitEndedAt: timestamp(),
+  visitStartedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  visitEndedAt: timestamp({ withTimezone: true }),
   durationMs: integer(),
 
   // Interaction tracking
@@ -322,8 +322,8 @@ export const formVisits = pgTable("form_visits", {
   didSubmit: boolean().notNull().default(false),
   submissionId: text(),
 
-  createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
 // ============================================================================
@@ -339,12 +339,12 @@ export const formQuestionProgress = pgTable("form_question_progress", {
   questionType: text(),
   questionIndex: integer().notNull(),
 
-  viewedAt: timestamp().notNull().defaultNow(),
-  startedAt: timestamp(),
-  completedAt: timestamp(),
+  viewedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  startedAt: timestamp({ withTimezone: true }),
+  completedAt: timestamp({ withTimezone: true }),
   wasLastQuestion: boolean().notNull().default(false),
 
-  createdAt: timestamp().notNull().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
 // ============================================================================
@@ -388,8 +388,8 @@ export const formAnalyticsDaily = pgTable("form_analytics_daily", {
   cityBreakdown: jsonb().notNull().default({}),
   sourceBreakdown: jsonb().notNull().default({}),
 
-  createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
 // ============================================================================
@@ -409,8 +409,8 @@ export const formDropoffDaily = pgTable("form_dropoff_daily", {
   dropoffRate: integer(), // Percentage * 100
   completionRate: integer(),
 
-  createdAt: timestamp().notNull().defaultNow(),
-  updatedAt: timestamp().notNull().defaultNow(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
 // Drizzle v2 Relations using defineRelations

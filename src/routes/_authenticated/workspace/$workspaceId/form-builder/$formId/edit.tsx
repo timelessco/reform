@@ -4,10 +4,11 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { NotFound } from "@/components/ui/not-found";
 import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { useFormVersionContent } from "@/hooks/use-form-versions";
-import { useForm } from "@/hooks/use-live-hooks";
+import { formCollection } from "@/db-collections/form.collections";
 import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
+import { getFormbyIdQueryOption } from "@/lib/fn/forms";
 import { cn } from "@/lib/utils";
-import { createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useLocation } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import type { Value } from "platejs";
@@ -45,6 +46,46 @@ export const Route = createFileRoute(
     embedHideOnSubmitDelay: z.coerce.number().catch(0).optional(),
     embedTrackEvents: z.coerce.boolean().catch(false).optional(),
   }),
+  // Redirect published forms to submissions (prevents flash of editor)
+  beforeLoad: async ({ context, params, search }) => {
+    if ((search as any).force === true) return;
+
+    try {
+      // Try collection cache first (instant, no network)
+      const cachedForm = formCollection.state.get(params.formId);
+      let status = cachedForm?.status;
+
+      // Fall back to server fetch if not in collection yet
+      if (!status) {
+        const result = await context.queryClient.ensureQueryData({
+          ...getFormbyIdQueryOption(params.formId),
+          revalidateIfStale: true,
+        });
+        status = result?.form?.status;
+      }
+
+      if (status === "published") {
+        throw redirect({
+          to: "/workspace/$workspaceId/form-builder/$formId/submissions",
+          params: { workspaceId: params.workspaceId, formId: params.formId },
+        });
+      }
+    } catch (error: unknown) {
+      // Rethrow redirects
+      if (
+        error instanceof Response ||
+        (typeof error === "object" &&
+          error !== null &&
+          ((error as any).to !== undefined ||
+            (error as any).href !== undefined ||
+            (error as any).isRedirect === true ||
+            [301, 302, 307, 308].includes((error as any).statusCode)))
+      ) {
+        throw error;
+      }
+      // On error, allow edit route to load
+    }
+  },
   component: DesignPage,
   pendingComponent: () => <div>Loading...</div>,
   errorComponent: ErrorBoundary,
@@ -52,7 +93,6 @@ export const Route = createFileRoute(
 });
 
 function DesignPage() {
-  const navigate = useNavigate();
   const { pathname } = useLocation();
   // Extract formId from pathname to ensure it's always current
   const formIdFromPath = pathname.split("/form-builder/")[1]?.split("/")[0] || "";
@@ -73,24 +113,8 @@ function DesignPage() {
     isViewingVersion ? (selectedVersionId ?? undefined) : undefined,
   );
 
-  // Use local Electric data to check form status (more up-to-date than server)
-  const { data: localFormData, isReady } = useForm(formId);
-  const localForm = localFormData?.[0];
-  const localStatus = localForm?.status;
-
-
   const search = Route.useSearch();
   const demo = search.demo;
-  const forceEdit = search.force === true;
-  useEffect(() => {
-    if (isReady && localStatus === "published" && !forceEdit) {
-      navigate({
-        to: "/workspace/$workspaceId/form-builder/$formId/submissions",
-        params: { workspaceId, formId },
-        replace: true, // Replace history entry so back button doesn't loop
-      });
-    }
-  }, [isReady, localStatus, formId, workspaceId, navigate, forceEdit]);
 
   useEffect(() => {
     if (!isVersionHistoryOpen && isViewingVersion) {

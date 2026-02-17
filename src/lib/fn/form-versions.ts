@@ -208,7 +208,15 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
 
     const txid = await getTxId();
 
-    return { success: true, txid };
+    return {
+      success: true,
+      txid,
+      version: {
+        content: version.content as object[],
+        settings: version.settings as Record<string, object>,
+        title: version.title,
+      },
+    };
   });
 
 /**
@@ -257,7 +265,15 @@ export const discardFormChanges = createServerFn({ method: "POST" })
 
     const txid = await getTxId();
 
-    return { success: true, txid };
+    return {
+      success: true,
+      txid,
+      version: {
+        content: version.content as object[],
+        settings: version.settings as Record<string, object>,
+        title: version.title,
+      },
+    };
   });
 
 /**

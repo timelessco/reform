@@ -1,6 +1,7 @@
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
+import { formCollection } from "@/db-collections/form.collections";
 import { getFormbyIdQueryOption } from "@/lib/fn/forms";
 import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { z } from "zod";
@@ -27,12 +28,18 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
 
       if (isExactParentRoute) {
         try {
-          const result = await context.queryClient.ensureQueryData({
-            ...getFormbyIdQueryOption(params.formId),
-            revalidateIfStale: true,
-          });
+          // Try collection first (instant, no network)
+          const cachedForm = formCollection.state.get(params.formId);
+          let status = cachedForm?.status;
 
-          const status = result?.form?.status;
+          // Fall back to server fetch if not in collection yet
+          if (!status) {
+            const result = await context.queryClient.ensureQueryData({
+              ...getFormbyIdQueryOption(params.formId),
+              revalidateIfStale: true,
+            });
+            status = result?.form?.status;
+          }
 
           if (status === "published") {
             throw redirect({

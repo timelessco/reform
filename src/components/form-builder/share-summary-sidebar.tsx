@@ -4,8 +4,7 @@ import { useForm } from "@/hooks/use-live-hooks";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
-import { updateFormStatus } from "@/db-collections";
+import { publishFormAction } from "@/hooks/use-form-versions";
 import { EmbedSection } from "./embed-section";
 import {
   Sidebar,
@@ -22,7 +21,6 @@ interface ShareSummarySidebarProps {
 export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
   const { data: savedDocs } = useForm(formId);
   const doc = savedDocs?.[0];
-  const [isPublishing, setIsPublishing] = useState(false);
 
   const shareUrl = doc ? `${window.location.origin}/forms/${doc.id}` : "";
 
@@ -34,15 +32,13 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
   };
 
   const handlePublish = async () => {
-    setIsPublishing(true);
     try {
-      await updateFormStatus(formId, "published");
+      const tx = publishFormAction({ formId });
+      await tx.isPersisted.promise;
       toast.success("Form published successfully!");
     } catch (error) {
       toast.error("Failed to publish form");
       console.error(error);
-    } finally {
-      setIsPublishing(false);
     }
   };
 
@@ -89,10 +85,9 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                 <Button
                   size="sm"
                   onClick={handlePublish}
-                  disabled={isPublishing}
                   className="w-full font-semibold gap-2"
                 >
-                  {isPublishing ? "Publishing..." : "Publish Now"}
+                  Publish Now
                 </Button>
               </div>
             ) : (

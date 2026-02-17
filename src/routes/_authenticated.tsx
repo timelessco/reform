@@ -75,6 +75,7 @@ import {
   duplicateFormById,
   favoriteCollection,
   formCollection,
+  formVersionCollection,
   permanentDeleteFormLocal,
   restoreFormLocal,
   submissionCollection,
@@ -103,6 +104,7 @@ import {
   Outlet,
   useLocation,
   useNavigate,
+  useParams,
   useRouter,
   useSearch,
 } from "@tanstack/react-router";
@@ -155,15 +157,17 @@ export const Route = createFileRoute("/_authenticated")({
       auth.organization.list.queryKey(),
       orgsData,
     );
-    // Start Electric sync for all collections (startSync: false means we control when sync starts)
-    await Promise.all([
-      // workspaceCollection.startSyncImmediate(),
-      // formCollection.startSyncImmediate(),
-      workspaceCollection.preload(),
-      formCollection.preload(),
-      submissionCollection.preload(),
-      favoriteCollection.preload(),
-    ]);
+    // Start Electric sync for all collections - client-only since Electric
+    // requires browser cookies for auth and server-side preload would fail
+    if (typeof window !== "undefined") {
+      await Promise.all([
+        workspaceCollection.preload(),
+        formCollection.preload(),
+        submissionCollection.preload(),
+        favoriteCollection.preload(),
+        formVersionCollection.preload(),
+      ]);
+    }
     return { activeOrg, orgsData };
   },
   staleTime: 500000,// 500 seconds
@@ -201,11 +205,7 @@ function AuthLayoutContent() {
     y: 0,
   });
 
-  // Extract route params from URL
-  const workspaceMatch = pathname.match(/\/workspace\/([^/]+)/);
-  const formMatch = pathname.match(/\/form-builder\/([^/]+)/);
-  const workspaceId = workspaceMatch?.[1];
-  const formId = formMatch?.[1];
+  const { formId } = useParams({ strict: false }) as { formId?: string };
 
   // Editor sidebar management
   const navigate = useNavigate();
@@ -303,8 +303,6 @@ function AuthLayoutContent() {
         )}
         <div className="relative z-0">
           <AppHeader
-            formId={formId}
-            workspaceId={workspaceId}
             dividerX={handleLeft}
             isSidebarOpen={showEditorSidebar}
             isDistractionHidden={isDistractionHeaderHidden}
@@ -618,7 +616,7 @@ function AppSidebar() {
                     tooltip="Settings"
                     className="h-[30px] min-w-0 rounded-lg px-[7px] gap-2 transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
                   >
-                    <Link to="/settings/my-account" className="flex items-center gap-2 min-w-0">
+                    <Link to="/settings/my-account"  className="flex items-center gap-2 min-w-0">
                       <SettingsIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
                       <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-[1.15] font-case truncate">Settings</span>
                     </Link>
@@ -1606,8 +1604,11 @@ function WorkspaceFormMinimal({
   onDelete: () => void;
 }) {
   const location = useLocation();
-  const to = `/workspace/${workspaceId}/form-builder/${form.id}/edit`;
-  const isActive = location.pathname === to;
+  const isPublishedForm = form.status === "published";
+  const to = isPublishedForm
+    ? `/workspace/${workspaceId}/form-builder/${form.id}/submissions`
+    : `/workspace/${workspaceId}/form-builder/${form.id}/edit`;
+  const isActive = location.pathname.startsWith(`/workspace/${workspaceId}/form-builder/${form.id}`);
   const label = form.title || "Untitled";
 
   const prefix = getFormIcon(label, form.icon);
@@ -1726,7 +1727,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
   const isElectricReady = !isLoading && workspacesData !== undefined && formsData !== undefined;
 
   // Combine workspaces with their forms, filtered by active organization
-  const workspaces = useMemo(() => {
+  const workspaces: WorkspaceWithForms[] = useMemo(() => {
     if (!activeOrgId || !isElectricReady) return [];
 
     const formsByWorkspace = (formsData || []).reduce(
@@ -1850,8 +1851,10 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
             </span>
           ) : (
             favoriteForms.map((form) => {
-              const favTo = `/workspace/${form.workspaceId}/form-builder/${form.id}/edit`;
-              const isFavActive = location.pathname === favTo;
+              const favTo = form.status === "published"
+                ? `/workspace/${form.workspaceId}/form-builder/${form.id}/submissions`
+                : `/workspace/${form.workspaceId}/form-builder/${form.id}/edit`;
+              const isFavActive = location.pathname.startsWith(`/workspace/${form.workspaceId}/form-builder/${form.id}`);
               return (
                 <SidebarItem
                   key={form.id}

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
 import z from "zod";
 import { PublicFormPage } from "@/components/public/public-form-page";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
@@ -27,6 +28,12 @@ export const Route = createFileRoute("/forms/$formId")({
           : "Fill out this form",
       },
     ],
+    scripts: [
+      {
+        // Inline script to force light theme before paint — prevents dark mode flash
+        children: `document.documentElement.classList.remove("dark");document.documentElement.classList.add("light");`,
+      },
+    ],
   }),
   component: PublicFormRoute,
   pendingComponent: Loader,
@@ -53,6 +60,13 @@ function PublicFormRoute() {
   const loaderData = Route.useLoaderData();
   const { formId } = Route.useParams();
   const search = Route.useSearch();
+
+  // Force light theme for public form pages — isolate from app's dark mode
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.remove("dark");
+    root.classList.add("light");
+  }, []);
 
   // Support both transparentBackground and transparent params
   const isTransparent = search.transparentBackground || search.transparent || false;

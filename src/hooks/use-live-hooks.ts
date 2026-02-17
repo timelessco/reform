@@ -41,7 +41,7 @@ export const useWorkspace = (workspaceId?: string) => {
       createdAt: ws.createdAt,
       updatedAt: ws.updatedAt,
     }));
-  });
+  }, [workspaceId]);
   return { ...result, data: result.data?.[0] };
 };
 
@@ -64,7 +64,7 @@ export const useFormsForWorkspace = (workspaceId?: string) => {
       status: form.status,
       updatedAt: form.updatedAt,
     }));
-  });
+  }, [workspaceId]);
 };
 
 /**
@@ -93,7 +93,7 @@ export const useForm = (formId?: string) => {
   return useLiveQuery((q) => {
     if (!formId) return null as any;
     return q.from({ form: formCollection }).where(({ form }) => eq(form.id, formId));
-  });
+  }, [formId]);
 };
 
 /**
@@ -103,7 +103,7 @@ export const useLocalForm = (formId?: string) => {
   return useLiveQuery((q) => {
     if (!formId) return null as any;
     return q.from({ doc: localFormCollection }).where(({ doc }) => eq(doc.id, formId));
-  });
+  }, [formId]);
 };
 
 /**
@@ -121,7 +121,7 @@ const useFavorites = (userId?: string) => {
       formId: fav.formId,
       createdAt: fav.createdAt,
     }));
-  });
+  }, [userId]);
 };
 
 /**
