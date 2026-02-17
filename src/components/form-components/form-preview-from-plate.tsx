@@ -373,7 +373,7 @@ function PreviewFormHeader({
 
   if (layout === "editor") {
     return (
-      <div className="mb-4 sm:mb-8 w-full overflow-x-hidden">
+      <div className="mb-4 sm:mb-8 w-full">
         {hasCover && renderCover()}
 
         {/* Match editor's left-aligned layout */}
@@ -393,7 +393,7 @@ function PreviewFormHeader({
 
   // For public layout, no negative margin tricks needed
   return (
-    <div className="mb-4 sm:mb-8 w-full overflow-x-hidden">
+    <div className="mb-4 sm:mb-8 w-full">
       {hasCover && renderCover()}
 
       <div className="max-w-2xl mx-auto px-4 sm:px-0">
