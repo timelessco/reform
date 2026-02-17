@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { forms } from "@/db/schema";
+import { forms, formSettings } from "@/db/schema";
 import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
 import { authForm, getTxId } from "./helpers";
@@ -53,6 +53,14 @@ export const createForm = createServerFn({ method: "GET" })
         updatedAt: now,
       })
       .returning();
+
+    // Create default form_settings row
+    await db.insert(formSettings).values({
+      id: crypto.randomUUID(),
+      formId: form.id,
+      createdAt: now,
+      updatedAt: now,
+    });
 
     const txid = await getTxId();
 
@@ -158,6 +166,31 @@ export const duplicateForm = createServerFn({ method: "POST" })
         updatedAt: now,
       })
       .returning();
+
+    // Duplicate form_settings from source form
+    const [sourceSettings] = await db
+      .select()
+      .from(formSettings)
+      .where(eq(formSettings.formId, data.id));
+
+    if (sourceSettings) {
+      const { id: _oldId, formId: _oldFormId, createdAt: _ca, updatedAt: _ua, ...settingsData } = sourceSettings;
+      await db.insert(formSettings).values({
+        ...settingsData,
+        id: crypto.randomUUID(),
+        formId: newId,
+        createdAt: now,
+        updatedAt: now,
+      });
+    } else {
+      // Create default settings if source had none
+      await db.insert(formSettings).values({
+        id: crypto.randomUUID(),
+        formId: newId,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
 
     const txid = await getTxId();
 

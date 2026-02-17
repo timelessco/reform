@@ -1,7 +1,10 @@
+import { useTranslation } from "@/contexts/translation-context";
+
 export function BrandingFooter() {
+  const { t } = useTranslation();
   return (
     <div className="text-center py-4 mt-8 text-sm text-muted-foreground">
-      Powered by{" "}
+      {t("poweredBy")}{" "}
       <a
         href="https://betterforms.com"
         target="_blank"

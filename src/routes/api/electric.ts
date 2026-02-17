@@ -26,7 +26,7 @@ export const Route = createFileRoute("/api/electric")({
         const url = new URL(request.url);
 
         const table = url.searchParams.get("table")?.trim();
-        const allowedTables = ["workspaces", "forms", "submissions", "form_favorites", "form_versions"];
+        const allowedTables = ["workspaces", "forms", "submissions", "form_favorites", "form_versions", "form_settings"];
 
         if (!table || !allowedTables.includes(table)) {
           return json({ error: "Invalid or missing table." }, 400);
@@ -165,6 +165,51 @@ export const Route = createFileRoute("/api/electric")({
                   whereSql = `1 = 0`;
                 } else {
                   const formIds = formListVersions.map((f) => `'${f.id}'`).join(", ");
+                  whereSql = `"formId" IN (${formIds})`;
+                }
+              }
+            }
+            break;
+          }
+
+          case "form_settings": {
+            // Get all forms the user has access to via their organizations
+            const userMembershipsSettings = await db
+              .select({ organizationId: member.organizationId })
+              .from(member)
+              .where(eq(member.userId, userId));
+
+            if (userMembershipsSettings.length === 0) {
+              whereSql = `1 = 0`;
+            } else {
+              const workspaceListSettings = await db
+                .select({ id: workspaces.id })
+                .from(workspaces)
+                .where(
+                  inArray(
+                    workspaces.organizationId,
+                    userMembershipsSettings.map((m) => m.organizationId),
+                  ),
+                );
+
+              if (workspaceListSettings.length === 0) {
+                whereSql = `1 = 0`;
+              } else {
+                const { forms } = await import("@/db/schema");
+                const formListSettings = await db
+                  .select({ id: forms.id })
+                  .from(forms)
+                  .where(
+                    inArray(
+                      forms.workspaceId,
+                      workspaceListSettings.map((ws) => ws.id),
+                    ),
+                  );
+
+                if (formListSettings.length === 0) {
+                  whereSql = `1 = 0`;
+                } else {
+                  const formIds = formListSettings.map((f) => `'${f.id}'`).join(", ");
                   whereSql = `"formId" IN (${formIds})`;
                 }
               }

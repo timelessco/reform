@@ -1,6 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { Input } from "@/components/ui/input";
@@ -17,8 +14,12 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
-import { updateSettings } from "@/db-collections/form.collections";
-import { useForm as useLiveForm } from "@/hooks/use-live-hooks";
+import { formSettingsCollection } from "@/db-collections/form-settings.collection";
+import { useFormSettings } from "@/hooks/use-live-hooks";
+import { cn } from "@/lib/utils";
+import { createFileRoute } from "@tanstack/react-router";
+import { Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute(
   "/_authenticated/workspace/$workspaceId/form-builder/$formId/settings",
@@ -35,21 +36,76 @@ function SettingsPage() {
 }
 
 export function SettingsContent({ formId }: { formId: string }) {
-  const savedDocs = useLiveForm(formId);
-  const doc = savedDocs.data?.[0];
+  const { data: settingsDoc } = useFormSettings(formId);
 
   const form = useAppForm({
-    defaultValues: doc?.settings || {},
+    defaultValues: settingsDoc ?? {
+      language: "English",
+      redirectOnCompletion: false,
+      redirectUrl: null,
+      redirectDelay: 0,
+      progressBar: false,
+      branding: true,
+      dataRetention: false,
+      dataRetentionDays: null,
+      selfEmailNotifications: false,
+      notificationEmail: null,
+      respondentEmailNotifications: false,
+      respondentEmailSubject: null,
+      respondentEmailBody: null,
+      passwordProtect: false,
+      password: null,
+      closeForm: false,
+      closedFormMessage: null,
+      closeOnDate: false,
+      closeDate: null,
+      limitSubmissions: false,
+      maxSubmissions: null,
+      preventDuplicateSubmissions: false,
+      autoJump: false,
+      saveAnswersForLater: true,
+    },
     validationLogic: revalidateLogic(),
     listeners: {
-      onChange: ({ value }) => {
-        updateSettings(formId, value);
+      onChange: ({ formApi }) => {
+        console.log("formApi.state.values", formApi.state.values);
+        if (!settingsDoc?.id) return;
+        const values = formApi.state.values;
+        formSettingsCollection.update(settingsDoc.id, (draft) => {
+          Object.assign(draft, {
+            language: values.language,
+            redirectOnCompletion: values.redirectOnCompletion,
+            redirectUrl: values.redirectUrl,
+            redirectDelay: values.redirectDelay,
+            progressBar: values.progressBar,
+            branding: values.branding,
+            dataRetention: values.dataRetention,
+            dataRetentionDays: values.dataRetentionDays,
+            selfEmailNotifications: values.selfEmailNotifications,
+            notificationEmail: values.notificationEmail,
+            respondentEmailNotifications: values.respondentEmailNotifications,
+            respondentEmailSubject: values.respondentEmailSubject,
+            respondentEmailBody: values.respondentEmailBody,
+            passwordProtect: values.passwordProtect,
+            password: values.password,
+            closeForm: values.closeForm,
+            closedFormMessage: values.closedFormMessage,
+            closeOnDate: values.closeOnDate,
+            closeDate: values.closeDate,
+            limitSubmissions: values.limitSubmissions,
+            maxSubmissions: values.maxSubmissions,
+            preventDuplicateSubmissions: values.preventDuplicateSubmissions,
+            autoJump: values.autoJump,
+            saveAnswersForLater: values.saveAnswersForLater,
+          });
+          draft.updatedAt = new Date().toISOString();
+        });
       },
       onChangeDebounceMs: 500,
     },
   });
 
-  if (!doc) return null;
+  if (!settingsDoc) return null;
 
   return (
     <div className="space-y-8 pb-20">
@@ -99,6 +155,7 @@ export function SettingsContent({ formId }: { formId: string }) {
                     <SettingItem
                       title="Redirect URL"
                       description="The URL to redirect to after form submission."
+                      vertical
                     >
                       <form.AppField name="redirectUrl">
                         {(field) => (
@@ -107,7 +164,7 @@ export function SettingsContent({ formId }: { formId: string }) {
                             placeholder="https://example.com/thank-you"
                             value={(field.state.value as string) || ""}
                             onChange={(e) => field.handleChange(e.target.value || null)}
-                            className="w-[280px] h-9"
+                            className="w-full h-9"
                           />
                         )}
                       </form.AppField>
@@ -167,7 +224,7 @@ export function SettingsContent({ formId }: { formId: string }) {
                 )}
               </form.AppField>
             </SettingItem>
-
+            {/* TODO: Future feature */}
             <SettingItem
               title={
                 <span>
@@ -233,6 +290,7 @@ export function SettingsContent({ formId }: { formId: string }) {
                   <SettingItem
                     title="Notification email"
                     description="Email address to receive submission notifications. Leave empty to use your account email."
+                    vertical
                   >
                     <form.AppField name="notificationEmail">
                       {(field) => (
@@ -241,7 +299,7 @@ export function SettingsContent({ formId }: { formId: string }) {
                           placeholder="you@example.com"
                           value={(field.state.value as string) || ""}
                           onChange={(e) => field.handleChange(e.target.value || null)}
-                          className="w-[280px] h-9"
+                          className="w-full h-9"
                         />
                       )}
                     </form.AppField>
@@ -278,6 +336,7 @@ export function SettingsContent({ formId }: { formId: string }) {
                     <SettingItem
                       title="Email subject"
                       description="Subject line for the confirmation email sent to respondents."
+                      vertical
                     >
                       <form.AppField name="respondentEmailSubject">
                         {(field) => (
@@ -286,7 +345,7 @@ export function SettingsContent({ formId }: { formId: string }) {
                             placeholder="Thank you for your submission"
                             value={(field.state.value as string) || ""}
                             onChange={(e) => field.handleChange(e.target.value || null)}
-                            className="w-[280px] h-9"
+                            className="w-full h-9"
                           />
                         )}
                       </form.AppField>
@@ -294,6 +353,7 @@ export function SettingsContent({ formId }: { formId: string }) {
                     <SettingItem
                       title="Email body"
                       description="Message body for the confirmation email. The respondent's email is auto-detected from submission data."
+                      vertical
                     >
                       <form.AppField name="respondentEmailBody">
                         {(field) => (
@@ -301,7 +361,7 @@ export function SettingsContent({ formId }: { formId: string }) {
                             placeholder="Thank you for filling out our form. We'll be in touch soon."
                             value={(field.state.value as string) || ""}
                             onChange={(e) => field.handleChange(e.target.value || null)}
-                            className="w-[280px] min-h-[80px]"
+                            className="w-full min-h-[80px]"
                           />
                         )}
                       </form.AppField>
@@ -357,6 +417,7 @@ export function SettingsContent({ formId }: { formId: string }) {
                   <SettingItem
                     title="Closed form message"
                     description="Message displayed when someone tries to access the closed form."
+                    vertical
                   >
                     <form.AppField name="closedFormMessage">
                       {(field) => (
@@ -364,7 +425,7 @@ export function SettingsContent({ formId }: { formId: string }) {
                           placeholder="This form is now closed."
                           value={(field.state.value as string) || ""}
                           onChange={(e) => field.handleChange(e.target.value || "This form is now closed.")}
-                          className="w-[280px] min-h-[60px]"
+                          className="w-full min-h-[60px]"
                         />
                       )}
                     </form.AppField>
@@ -509,18 +570,20 @@ function SettingItem({
   title,
   description,
   children,
+  vertical = false,
 }: {
   title: React.ReactNode;
   description: string;
   children: React.ReactNode;
+  vertical?: boolean;
 }) {
   return (
-    <div className="flex items-start justify-between gap-8">
+    <div className={cn("flex gap-8", vertical ? "flex-col items-stretch" : "items-start justify-between")}>
       <div className="space-y-1 max-w-xl">
         <Label className="text-sm font-semibold">{title}</Label>
         <p className="text-[13px] text-muted-foreground leading-relaxed">{description}</p>
       </div>
-      <div className="shrink-0 flex items-center pt-1">{children}</div>
+      <div className={cn("shrink-0 flex items-center", !vertical && "pt-1")}>{children}</div>
     </div>
   );
 }

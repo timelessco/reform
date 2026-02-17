@@ -21,6 +21,7 @@ import { Route as ApiElectricRouteImport } from './routes/api/electric'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAcceptInviteRouteImport } from './routes/_authenticated/accept-invite'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
+import { Route as FormsI8nFormIdRouteImport } from './routes/forms/$i8n.$formId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsMyAccountRouteImport } from './routes/_authenticated/settings/my-account'
@@ -94,6 +95,11 @@ const AuthenticatedSettingsRouteRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const FormsI8nFormIdRoute = FormsI8nFormIdRouteImport.update({
+  id: '/forms/$i8n/$formId',
+  path: '/forms/$i8n/$formId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -184,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/forms/$i8n/$formId': typeof FormsI8nFormIdRoute
   '/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
   '/workspace/$workspaceId/form-builder/$formId/edit': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute
   '/workspace/$workspaceId/form-builder/$formId/settings': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
@@ -208,6 +215,7 @@ export interface FileRoutesByTo {
   '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/forms/$i8n/$formId': typeof FormsI8nFormIdRoute
   '/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
   '/workspace/$workspaceId/form-builder/$formId/edit': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute
   '/workspace/$workspaceId/form-builder/$formId/settings': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
@@ -234,6 +242,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/forms/$i8n/$formId': typeof FormsI8nFormIdRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
   '/_authenticated/workspace/$workspaceId/form-builder/$formId/edit': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId/settings': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
@@ -260,6 +269,7 @@ export interface FileRouteTypes {
     | '/settings/my-account'
     | '/settings/notifications'
     | '/api/auth/$'
+    | '/forms/$i8n/$formId'
     | '/workspace/$workspaceId/form-builder/$formId'
     | '/workspace/$workspaceId/form-builder/$formId/edit'
     | '/workspace/$workspaceId/form-builder/$formId/settings'
@@ -284,6 +294,7 @@ export interface FileRouteTypes {
     | '/settings/my-account'
     | '/settings/notifications'
     | '/api/auth/$'
+    | '/forms/$i8n/$formId'
     | '/workspace/$workspaceId/form-builder/$formId'
     | '/workspace/$workspaceId/form-builder/$formId/edit'
     | '/workspace/$workspaceId/form-builder/$formId/settings'
@@ -309,6 +320,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/my-account'
     | '/_authenticated/settings/notifications'
     | '/api/auth/$'
+    | '/forms/$i8n/$formId'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId/edit'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId/settings'
@@ -326,6 +338,7 @@ export interface RootRouteChildren {
   DemoSplatRoute: typeof DemoSplatRoute
   FormsFormIdRoute: typeof FormsFormIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  FormsI8nFormIdRoute: typeof FormsI8nFormIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -413,6 +426,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/forms/$i8n/$formId': {
+      id: '/forms/$i8n/$formId'
+      path: '/forms/$i8n/$formId'
+      fullPath: '/forms/$i8n/$formId'
+      preLoaderRoute: typeof FormsI8nFormIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -583,6 +603,7 @@ const rootRouteChildren: RootRouteChildren = {
   DemoSplatRoute: DemoSplatRoute,
   FormsFormIdRoute: FormsFormIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  FormsI8nFormIdRoute: FormsI8nFormIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

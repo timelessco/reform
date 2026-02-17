@@ -75,6 +75,7 @@ import {
   duplicateFormById,
   favoriteCollection,
   formCollection,
+  formSettingsCollection,
   formVersionCollection,
   permanentDeleteFormLocal,
   restoreFormLocal,
@@ -166,6 +167,7 @@ export const Route = createFileRoute("/_authenticated")({
         submissionCollection.preload(),
         favoriteCollection.preload(),
         formVersionCollection.preload(),
+        formSettingsCollection.preload(),
       ]);
     }
     return { activeOrg, orgsData };
@@ -546,7 +548,7 @@ function AppSidebar() {
 
   return (
     <>
-      <Sidebar className="border-r-[0.5px] border-r bg-background h-screen">
+      <Sidebar className="border-r-[0.5px] bg-background h-screen">
         <SidebarHeader className="h-12 pl-[21px] pr-2 pt-3 pb-2.5 flex flex-row items-center justify-between group/logo">
           <span className="text-2xl font-serif italic font-light tracking-tighter text-sidebar-foreground">f.</span>
           <Button
@@ -574,7 +576,7 @@ function AppSidebar() {
                   >
                     <Link to="/dashboard" className="flex items-center gap-2 min-w-0">
                       <HomeIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
-                      <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-[1.15] font-case truncate">All</span>
+                      <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-tight font-case truncate">All</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -585,7 +587,7 @@ function AppSidebar() {
                     className="h-[30px] min-w-0 rounded-lg px-[7px] gap-2 transition-colors hover:bg-sidebar-active"
                   >
                     <SearchIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
-                    <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-[1.15] font-case truncate">Search</span>
+                    <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-tight font-case truncate">Search</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -601,7 +603,7 @@ function AppSidebar() {
                         <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-background" />
                       )}
                     </div>
-                    <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-[1.15] font-case truncate flex-1 min-w-0">Notifications</span>
+                    <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-tight font-case truncate flex-1 min-w-0">Notifications</span>
                     {pendingCount > 0 && (
                       <span className="text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded-full font-semibold shrink-0 tabular-nums">
                         {pendingCount}
@@ -618,7 +620,7 @@ function AppSidebar() {
                   >
                     <Link to="/settings/my-account"  className="flex items-center gap-2 min-w-0">
                       <SettingsIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
-                      <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-[1.15] font-case truncate">Settings</span>
+                      <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-tight font-case truncate">Settings</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -999,7 +1001,7 @@ function SidebarInbox() {
       className={cn(
         "fixed z-40 flex w-80 flex-col bg-background select-none border-r border-foreground/5 top-0 bottom-0",
         "transition-[left,opacity] duration-150 ease-out",
-        state === "expanded" ? "left-[var(--sidebar-width)]" : "left-[var(--sidebar-width-icon)]",
+        state === "expanded" ? "left-(--sidebar-width)" : "left-(--sidebar-width-icon)",
         applyExitClass && "opacity-0",
       )}
       onTransitionEnd={handleTransitionEnd}
@@ -1362,7 +1364,7 @@ function FreePlanCard() {
 type WorkspaceWithForms = {
   id: string;
   organizationId: string;
-  createdByUserId: string;
+  createdByUserId?: string;
   name: string;
   createdAt: string;
   updatedAt: string;

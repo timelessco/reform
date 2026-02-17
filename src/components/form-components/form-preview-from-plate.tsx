@@ -17,6 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { StepFormProvider, useStepForm } from "@/contexts/step-form-context";
+import { useTranslation } from "@/contexts/translation-context";
 import { usePreviewForm } from "@/hooks/use-preview-form";
 import {
   extractFormHeader,
@@ -426,6 +427,7 @@ function RenderThankYouContent({
   onReset?: () => void;
   layout: "public" | "editor";
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
       {elements.map((element) => (
@@ -442,7 +444,7 @@ function RenderThankYouContent({
             size="sm"
             className="rounded-lg"
           >
-            Submit another response
+            {t("submitAnother")}
           </Button>
         </div>
       )}
@@ -454,6 +456,7 @@ function RenderThankYouContent({
  * Default thank you message when no custom content is provided
  */
 function DefaultThankYou({ onReset }: { onReset?: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
@@ -474,11 +477,11 @@ function DefaultThankYou({ onReset }: { onReset?: () => void }) {
           <polyline points="22 4 12 14.01 9 11.01" />
         </svg>
       </div>
-      <h2 className="text-2xl font-bold mb-2">Thank you!</h2>
-      <p className="text-muted-foreground mb-6">Your response has been submitted successfully.</p>
+      <h2 className="text-2xl font-bold mb-2">{t("thankYou")}</h2>
+      <p className="text-muted-foreground mb-6">{t("responseSubmitted")}</p>
       {onReset && (
         <Button type="button" onClick={onReset} variant="outline" size="sm" className="rounded-lg">
-          Submit another response
+          {t("submitAnother")}
         </Button>
       )}
     </div>
@@ -611,6 +614,7 @@ function FormPreviewContent({
   settings?: PublicFormSettings;
 }) {
   const { currentStep, totalSteps, isSubmitted, direction, reset } = useStepForm();
+  const { t } = useTranslation();
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
 
   // Create a dummy form for thank you content rendering (static elements only)
@@ -682,7 +686,10 @@ function FormPreviewContent({
             )}
             {redirectCountdown !== null && (
               <p className="text-muted-foreground text-center mt-4">
-                Redirecting in {redirectCountdown} second{redirectCountdown !== 1 ? "s" : ""}...
+                {t("redirecting", {
+                  n: redirectCountdown,
+                  s: redirectCountdown !== 1 ? "s" : "",
+                })}
               </p>
             )}
           </motion.div>

@@ -196,11 +196,11 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
 
     // Update form draft with version content
     // Note: We don't update publishedContentHash so the form shows "has changes"
+    // Note: settings are NOT reverted — public form settings live in form_settings table
     await db
       .update(forms)
       .set({
         content: version.content,
-        settings: version.settings,
         title: version.title,
         updatedAt: new Date(),
       })
@@ -252,11 +252,11 @@ export const discardFormChanges = createServerFn({ method: "POST" })
     const contentHash = computeContentHash(version.content);
 
     // Update form draft with version content AND hash (so no "changes" indicator)
+    // Note: settings are NOT reverted — public form settings live in form_settings table
     await db
       .update(forms)
       .set({
         content: version.content,
-        settings: version.settings,
         title: version.title,
         publishedContentHash: contentHash,
         updatedAt: new Date(),

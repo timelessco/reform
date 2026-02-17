@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useStepForm } from "@/contexts/step-form-context";
+import { useTranslation } from "@/contexts/translation-context";
 import { useStepPreviewForm } from "@/hooks/use-preview-form";
 import { getEditableFields, type TransformedElement } from "@/lib/transform-plate-to-form";
 import { RenderStepPreviewInput } from "./render-step-preview-input";
@@ -222,11 +223,12 @@ function RenderStepButton({
   layout?: "public" | "editor";
 }) {
   const { totalSteps } = useStepForm();
+  const { t } = useTranslation();
   const isSinglePage = totalSteps === 1;
   const buttonRole = field.buttonRole || "submit";
-  const buttonText =
-    field.buttonText ||
-    (buttonRole === "next" ? "Next" : buttonRole === "previous" ? "Previous" : "Submit");
+  const defaultText =
+    buttonRole === "next" ? t("next") : buttonRole === "previous" ? t("previous") : t("submit");
+  const buttonText = field.buttonText || defaultText;
 
   // Previous button - onClick handler from context
   if (buttonRole === "previous") {
@@ -258,7 +260,7 @@ function RenderStepButton({
   // Submit button - type="submit" triggers form validation and final submit
   const submitButton = (
     <Button type="submit" className="inline-flex items-center gap-2" disabled={isSubmitting}>
-      {isSubmitting ? "Submitting..." : buttonText}
+      {isSubmitting ? t("submitting") : buttonText}
       {layout !== "editor" && <ChevronRight className="h-4 w-4" />}
     </Button>
   );

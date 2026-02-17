@@ -6,8 +6,20 @@ import { FormPreviewFromPlate } from "@/components/form-components/form-preview-
 import { BrandingFooter } from "@/components/public/branding-footer";
 import { AlreadySubmitted, FormClosed } from "@/components/public/form-closed";
 import { PasswordGate } from "@/components/public/password-gate";
+import {
+  TranslationProvider,
+  useTranslation,
+} from "@/contexts/translation-context";
 import { createPublicSubmission } from "@/lib/fn/public";
+import { getTranslations } from "@/lib/translations";
 import { cn } from "@/lib/utils";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import {
   type PublicFormSettings,
   defaultPublicFormSettings,
@@ -58,39 +70,35 @@ function sendToParent(event: string, payload?: Record<string, unknown>): void {
 }
 
 function FormNotFound() {
+  const { t } = useTranslation();
   return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 text-center">
-      <div className="max-w-md mx-auto space-y-6">
-        <div className="flex justify-center">
-          <div className="rounded-full bg-muted p-3">
-            <FileQuestion className="h-12 w-12 text-muted-foreground" />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold tracking-tight">Form not found</h1>
-          <p className="text-muted-foreground">
-            This form doesn't exist or is no longer available.
-          </p>
-        </div>
-      </div>
+    <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
+      <Empty className="border-none">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <FileQuestion />
+          </EmptyMedia>
+          <EmptyTitle>{t("formNotFound")}</EmptyTitle>
+          <EmptyDescription>{t("formNotFoundDescription")}</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     </div>
   );
 }
 
 function FormNotPublished() {
+  const { t } = useTranslation();
   return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 text-center">
-      <div className="max-w-md mx-auto space-y-6">
-        <div className="flex justify-center">
-          <div className="rounded-full bg-muted p-3">
-            <Lock className="h-12 w-12 text-muted-foreground" />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold tracking-tight">Form not available</h1>
-          <p className="text-muted-foreground">This form is not currently accepting responses.</p>
-        </div>
-      </div>
+    <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
+      <Empty className="border-none">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <Lock />
+          </EmptyMedia>
+          <EmptyTitle>{t("formNotAvailable")}</EmptyTitle>
+          <EmptyDescription>{t("formNotAvailableDescription")}</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
     </div>
   );
 }
@@ -108,6 +116,8 @@ export function PublicFormPage({
 }: PublicFormPageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [submitted, setSubmitted] = useState(false);
+
+  const resolvedLanguage = form?.settings?.language ?? "English";
 
   // Check duplicate prevention on mount
   useEffect(() => {
@@ -219,31 +229,47 @@ export function PublicFormPage({
         }
       } catch (err) {
         console.error("Submission error:", err);
-        toast.error("Failed to submit form. Please try again.");
+        toast.error(getTranslations(resolvedLanguage).submitFailed);
         throw err; // Re-throw so the form knows it failed
       }
     },
-    [formId, isPopup, form?.title, form?.settings?.preventDuplicateSubmissions],
+    [formId, isPopup, form?.title, form?.settings?.preventDuplicateSubmissions, resolvedLanguage],
   );
 
   // Handle error states
   if (error === "not_found" || !form) {
-    return <FormNotFound />;
+    return (
+      <TranslationProvider language={resolvedLanguage}>
+        <FormNotFound />
+      </TranslationProvider>
+    );
   }
 
   // Handle non-published status (shouldn't happen with SSR, but defensive)
   if (form.status !== "published") {
-    return <FormNotPublished />;
+    return (
+      <TranslationProvider language={resolvedLanguage}>
+        <FormNotPublished />
+      </TranslationProvider>
+    );
   }
 
   // Handle gated states (closed, date expired, limit reached)
   if (gated && gated.type !== "password_required") {
-    return <FormClosed message={gated.message} />;
+    return (
+      <TranslationProvider language={resolvedLanguage}>
+        <FormClosed message={gated.message} />
+      </TranslationProvider>
+    );
   }
 
   // Handle duplicate prevention (client-side check)
   if (submitted) {
-    return <AlreadySubmitted />;
+    return (
+      <TranslationProvider language={resolvedLanguage}>
+        <AlreadySubmitted />
+      </TranslationProvider>
+    );
   }
 
   // Get settings with defaults
@@ -277,8 +303,16 @@ export function PublicFormPage({
 
   // Wrap with password gate if needed
   if (gated?.type === "password_required") {
-    return <PasswordGate formId={formId}>{formContent}</PasswordGate>;
+    return (
+      <TranslationProvider language={resolvedLanguage}>
+        <PasswordGate formId={formId}>{formContent}</PasswordGate>
+      </TranslationProvider>
+    );
   }
 
-  return formContent;
+  return (
+    <TranslationProvider language={resolvedLanguage}>
+      {formContent}
+    </TranslationProvider>
+  );
 }

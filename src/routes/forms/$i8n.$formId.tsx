@@ -7,7 +7,7 @@ import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { getPublishedFormById } from "@/lib/fn/public";
 
-export const Route = createFileRoute("/forms/$formId")({
+export const Route = createFileRoute("/forms/$i8n/$formId")({
   // SSR loader - fetches form data on the server for SEO
   loader: async ({ params }) => {
     // ISOmorpci

@@ -2,6 +2,7 @@ import { Eye, EyeOff, Lock } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "@/contexts/translation-context";
 import { verifyFormPassword } from "@/lib/fn/public";
 
 interface PasswordGateProps {
@@ -14,6 +15,7 @@ function getStorageKey(formId: string) {
 }
 
 export function PasswordGate({ formId, children }: PasswordGateProps) {
+  const { t } = useTranslation();
   const [unlocked, setUnlocked] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +35,7 @@ export function PasswordGate({ formId, children }: PasswordGateProps) {
 
   const handleUnlock = useCallback(async () => {
     if (!password.trim()) {
-      setError("Please enter a password");
+      setError(t("pleaseEnterPassword"));
       return;
     }
 
@@ -53,10 +55,10 @@ export function PasswordGate({ formId, children }: PasswordGateProps) {
         }
         setUnlocked(true);
       } else {
-        setError("Incorrect password. Please try again.");
+        setError(t("incorrectPassword"));
       }
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(t("somethingWentWrong"));
     } finally {
       setLoading(false);
     }
@@ -83,16 +85,16 @@ export function PasswordGate({ formId, children }: PasswordGateProps) {
               </div>
             </div>
             <div className="text-center space-y-1">
-              <h2 className="text-lg font-semibold">Password protected</h2>
+              <h2 className="text-lg font-semibold">{t("passwordProtected")}</h2>
               <p className="text-sm text-muted-foreground">
-                Enter the password to access this form.
+                {t("passwordDescription")}
               </p>
             </div>
             <div className="space-y-3">
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter password"
+                  placeholder={t("enterPassword")}
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
@@ -124,7 +126,7 @@ export function PasswordGate({ formId, children }: PasswordGateProps) {
                 disabled={loading}
                 className="w-full"
               >
-                {loading ? "Verifying..." : "Unlock"}
+                {loading ? t("verifying") : t("unlock")}
               </Button>
             </div>
           </div>

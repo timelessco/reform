@@ -22,7 +22,7 @@ const SettingsSchema = z.object({
   isCodeSidebarOpen: z.boolean().default(false),
 });
 
-type FormBuilderSettings = z.infer<typeof SettingsSchema>;
+export type FormBuilderSettings = z.infer<typeof SettingsSchema>;
 
 // ============================================================================
 // Form Schema
@@ -36,45 +36,7 @@ export const FormSchema = z.object({
   formName: z.string().default("draft"),
   schemaName: z.string().default("draftFormSchema"),
   content: z.array(z.any()).default([]),
-  settings: z
-    .object({
-      defaultRequiredValidation: z.boolean().default(true),
-      numericInput: z.boolean().default(false),
-      focusOnError: z.boolean().default(true),
-      validationMethod: z.enum(["onChange", "onBlur", "onDynamic"]).default("onDynamic"),
-      asyncValidation: z.number().min(0).max(10000).default(500),
-      activeTab: z.enum(["builder", "template", "settings", "generate"]).default("builder"),
-      preferredSchema: z.enum(["zod", "valibot", "arktype"]).default("zod"),
-      preferredFramework: z.enum(["react", "vue", "angular", "solid"]).default("react"),
-      preferredPackageManager: z.enum(["pnpm", "npm", "yarn", "bun"]).default("pnpm"),
-      isCodeSidebarOpen: z.boolean().default(false),
-      // New Tally-style settings
-      language: z.string().default("English"),
-      redirectOnCompletion: z.boolean().default(false),
-      redirectUrl: z.string().nullable().default(null),
-      redirectDelay: z.number().default(0),
-      progressBar: z.boolean().default(false),
-      branding: z.boolean().default(true),
-      dataRetention: z.boolean().default(false),
-      dataRetentionDays: z.number().nullable().default(null),
-      selfEmailNotifications: z.boolean().default(false),
-      notificationEmail: z.string().nullable().default(null),
-      respondentEmailNotifications: z.boolean().default(false),
-      respondentEmailSubject: z.string().nullable().default(null),
-      respondentEmailBody: z.string().nullable().default(null),
-      passwordProtect: z.boolean().default(false),
-      password: z.string().nullable().default(null),
-      closeForm: z.boolean().default(false),
-      closedFormMessage: z.string().default("This form is now closed."),
-      closeOnDate: z.boolean().default(false),
-      closeDate: z.string().nullable().default(null),
-      limitSubmissions: z.boolean().default(false),
-      maxSubmissions: z.number().nullable().default(null),
-      preventDuplicateSubmissions: z.boolean().default(false),
-      autoJump: z.boolean().default(false),
-      saveAnswersForLater: z.boolean().default(true),
-    })
-    .optional(),
+  settings: SettingsSchema.optional(),
   icon: z.string().nullable().optional(),
   cover: z.string().nullable().optional(),
   isMultiStep: z.boolean().default(false),
@@ -153,41 +115,17 @@ const DEFAULT_FORM_CONTENT = [
   },
 ];
 
-const DEFAULT_FORM_SETTINGS = {
+const DEFAULT_FORM_SETTINGS: FormBuilderSettings = {
   defaultRequiredValidation: true,
   numericInput: false,
   focusOnError: true,
-  validationMethod: "onDynamic" as const,
+  validationMethod: "onDynamic",
   asyncValidation: 500,
-  activeTab: "builder" as const,
-  preferredSchema: "zod" as const,
-  preferredFramework: "react" as const,
-  preferredPackageManager: "pnpm" as const,
+  activeTab: "builder",
+  preferredSchema: "zod",
+  preferredFramework: "react",
+  preferredPackageManager: "pnpm",
   isCodeSidebarOpen: false,
-  language: "English",
-  redirectOnCompletion: false,
-  redirectUrl: null,
-  redirectDelay: 0,
-  progressBar: false,
-  branding: true,
-  dataRetention: false,
-  dataRetentionDays: null,
-  selfEmailNotifications: false,
-  notificationEmail: null,
-  respondentEmailNotifications: false,
-  respondentEmailSubject: null,
-  respondentEmailBody: null,
-  passwordProtect: false,
-  password: null,
-  closeForm: false,
-  closedFormMessage: "This form is now closed.",
-  closeOnDate: false,
-  closeDate: null,
-  limitSubmissions: false,
-  maxSubmissions: null,
-  preventDuplicateSubmissions: false,
-  autoJump: false,
-  saveAnswersForLater: true,
 };
 
 /**
@@ -229,6 +167,8 @@ export async function updateHeader(
  */
 export async function updateSettings(id: string, settings: Partial<typeof DEFAULT_FORM_SETTINGS>) {
   return formCollection.update(id, (draft) => {
+    console.log("settings", settings);
+    console.log("draft.settings", draft.settings);
     draft.settings = { ...draft.settings, ...settings };
     draft.updatedAt = new Date().toISOString();
   });
@@ -278,6 +218,8 @@ export async function createFormLocal(workspaceId: string, title = "Untitled"): 
   };
 
   await formCollection.insert(newForm);
+  // form_settings row is created server-side via createForm and synced back via Electric
+
   return newForm;
 }
 

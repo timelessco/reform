@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import {
   favoriteCollection,
   formCollection,
+  formSettingsCollection,
   localFormCollection,
   submissionCollection,
   workspaceCollection,
@@ -166,6 +167,23 @@ export const useArchivedForms = () => {
         deletedAt: form.deletedAt,
       })),
   );
+};
+
+/**
+ * Custom hook for real-time form settings sync by formId.
+ * Returns the first matching settings doc (one-to-one with form).
+ */
+export const useFormSettings = (formId?: string) => {
+  const result = useLiveQuery(
+    (q) => {
+      if (!formId) return null as any;
+      return q
+        .from({ s: formSettingsCollection })
+        .where(({ s }) => eq(s.formId, formId));
+    },
+    [formId],
+  );
+  return { ...result, data: result.data?.[0] ?? null };
 };
 
 /**

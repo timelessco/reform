@@ -11,17 +11,17 @@ export type PopupAnimation = "fade" | "slide" | "scale";
 export type EmbedType = "standard" | "popup" | "fullPage";
 
 // ============================================================================
-// Form Settings Interface
+// Form Settings Interface (matches form_settings table)
 // ============================================================================
 export interface FormSettings {
   id: string;
   formId: string;
 
   // General
-  language: Language;
+  language: string;
   redirectOnCompletion: boolean;
   redirectUrl: string | null;
-  redirectDelay: number; // seconds to wait before redirect
+  redirectDelay: number;
   progressBar: boolean;
   branding: boolean;
   dataRetention: boolean;
@@ -40,18 +40,17 @@ export interface FormSettings {
   closeForm: boolean;
   closedFormMessage: string | null;
   closeOnDate: boolean;
-  closeDate: Date | null;
+  closeDate: string | null;
   limitSubmissions: boolean;
   maxSubmissions: number | null;
   preventDuplicateSubmissions: boolean;
-  duplicateCheckField: string | null;
 
   // Behavior
   autoJump: boolean;
   saveAnswersForLater: boolean;
 
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date | string;
+  updatedAt: Date | string;
 }
 
 // ============================================================================
@@ -125,7 +124,6 @@ export const defaultFormSettings: Omit<FormSettings, "id" | "formId" | "createdA
     limitSubmissions: false,
     maxSubmissions: null,
     preventDuplicateSubmissions: false,
-    duplicateCheckField: null,
     autoJump: false,
     saveAnswersForLater: false,
   };
