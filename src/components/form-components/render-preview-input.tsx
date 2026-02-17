@@ -132,7 +132,7 @@ export function RenderPreviewInput({
             <div className="space-y-2">
               <Label htmlFor={field.name}>
                 {field.label}
-                {field.required && <span className="text-destructive ml-0.5">*</span>}
+                {field.required && <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 leading-none ml-2">*</span>}
               </Label>
               <Textarea
                 id={field.name}
@@ -144,7 +144,7 @@ export function RenderPreviewInput({
                 minLength={field.minLength}
                 maxLength={field.maxLength}
                 aria-invalid={hasErrors}
-                className={hasErrors ? "border-destructive min-h-24" : "min-h-24"}
+                className={hasErrors ? "border-destructive min-h-24 max-w-md" : "min-h-24 max-w-md"}
               />
               {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
             </div>
@@ -165,7 +165,7 @@ export function RenderPreviewInput({
           <div className="space-y-2">
             <Label htmlFor={field.name}>
               {field.label}
-              {field.required && <span className="text-destructive ml-0.5">*</span>}
+              {field.required && <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 leading-none ml-2">*</span>}
             </Label>
             <Input
               id={field.name}
@@ -177,7 +177,7 @@ export function RenderPreviewInput({
               minLength={field.minLength}
               maxLength={field.maxLength}
               aria-invalid={hasErrors}
-              className={hasErrors ? "border-destructive" : ""}
+              className={hasErrors ? "border-destructive max-w-md" : "max-w-md"}
             />
             {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
           </div>

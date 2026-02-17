@@ -212,7 +212,7 @@ export function PublicFormPage({
     <div
       ref={containerRef}
       className={cn(
-        "py-8 px-4",
+        "py-8 px-4 overflow-x-hidden",
         // Don't use min-h-screen for popup mode - it causes resize loop
         !isPopup && "min-h-screen",
         transparentBackground || isPopup ? "bg-transparent" : "bg-white",
