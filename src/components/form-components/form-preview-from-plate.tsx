@@ -86,7 +86,7 @@ function isValidUrl(str: string): boolean {
 function DefaultIcon() {
   return (
     <span
-      className="text-5xl sm:text-6xl md:text-7xl leading-none"
+      className="text-[80px] sm:text-[100px] leading-none"
       role="img"
       aria-label="Form icon"
     >
@@ -296,12 +296,9 @@ function PreviewFormHeader({
     return null;
   }
 
-  // For editor layout, cover uses negative margins to break out of the padded container
-  // For public layout, cover is simply full width
+  // Full-bleed cover using viewport-width trick (matches editor's form-header-node.tsx)
   const coverClass =
-    layout === "editor"
-      ? "relative -mx-16  h-[120px] sm:h-[200px] max-w-[1400px] mx-auto"
-      : "w-full h-[120px] sm:h-[200px] md:h-[280px]";
+    "relative w-screen left-[50%] right-[50%] -ml-[50vw] -mr-[50vw] h-[120px] sm:h-[200px]";
 
   // Render cover - can be image or solid color
   const renderCover = () => {
@@ -336,7 +333,7 @@ function PreviewFormHeader({
     // Handle 'default-icon' - render hexagon
     if (icon === "default-icon") {
       return (
-        <div className={hasCover ? "-mt-[28px] sm:-mt-[40px] relative z-10" : ""}>
+        <div className={hasCover ? "-mt-[40px] sm:-mt-[50px] relative z-10" : ""}>
           <DefaultIcon />
         </div>
       );
@@ -345,9 +342,9 @@ function PreviewFormHeader({
     // Handle emoji
     if (isEmoji(icon)) {
       return (
-        <div className={hasCover ? "-mt-[28px] sm:-mt-[36px] relative z-10" : ""}>
+        <div className={hasCover ? "-mt-[40px] sm:-mt-[50px] relative z-10" : ""}>
           <span
-            className="text-5xl sm:text-6xl md:text-7xl block leading-none"
+            className="text-[80px] sm:text-[100px] block leading-none"
             role="img"
             aria-label="Form icon"
           >
@@ -360,11 +357,11 @@ function PreviewFormHeader({
     // Handle image URL
     if (isValidUrl(icon) && !iconError) {
       return (
-        <div className={hasCover ? "-mt-[28px] sm:-mt-[36px] relative z-10" : ""}>
+        <div className={hasCover ? "-mt-[40px] sm:-mt-[50px] relative z-10" : ""}>
           <img
             src={icon}
             alt="Form icon"
-            className="w-[56px] h-[56px] sm:w-[72px] sm:h-[72px] md:w-[80px] md:h-[80px] rounded-md object-cover"
+            className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-md object-cover"
             onError={() => setIconError(true)}
           />
         </div>
@@ -374,8 +371,6 @@ function PreviewFormHeader({
     return null;
   };
 
-  // For editor layout, we need the outer wrapper to have padding so the cover
-  // can use negative margins to break out and achieve full width
   if (layout === "editor") {
     return (
       <div className="mb-4 sm:mb-8 w-full">
@@ -386,7 +381,7 @@ function PreviewFormHeader({
           {hasIcon && renderIcon()}
           {hasTitle && (
             <h1
-              className={`text-2xl sm:text-4xl font-bold ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
+              className={`text-4xl sm:text-9xl font-serif font-light -tracking-5 leading-tight ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
             >
               {title}
             </h1>
@@ -406,7 +401,7 @@ function PreviewFormHeader({
           {hasIcon && renderIcon()}
           {hasTitle && (
             <h1
-              className={`text-2xl sm:text-3xl font-bold ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
+              className={`text-4xl sm:text-9xl font-serif font-light -tracking-5 leading-tight ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
             >
               {title}
             </h1>
@@ -510,8 +505,8 @@ export function FormPreviewFromPlate({
   const hasHeaderNode = headerFromContent !== null;
 
   const title = hideTitle ? "" : hasHeaderNode ? headerFromContent.title : legacyTitle;
-  const icon = hasHeaderNode ? (headerFromContent.icon ?? undefined) : legacyIcon;
-  const cover = hasHeaderNode ? (headerFromContent.cover ?? undefined) : legacyCover;
+  const icon = hasHeaderNode ? (headerFromContent.icon ?? legacyIcon) : legacyIcon;
+  const cover = hasHeaderNode ? (headerFromContent.cover ?? legacyCover) : legacyCover;
 
   const elements = transformPlateStateToFormElements(content);
 
