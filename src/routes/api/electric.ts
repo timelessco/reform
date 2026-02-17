@@ -170,16 +170,10 @@ export const Route = createFileRoute("/api/electric")({
             cache: "no-store",
           });
 
-          // Log upstream response for debugging
-          console.log("[Electric Proxy] Upstream status:", upstream.status);
-          console.log("[Electric Proxy] Upstream headers:", Object.fromEntries(upstream.headers.entries()));
-
-          // Clone headers to avoid modification issues
           const responseHeaders = new Headers();
 
-          // Copy all headers from upstream including electric-*
+          // Copy all upstream headers including electric-* headers
           for (const [key, value] of upstream.headers.entries()) {
-            // Skip problematic headers
             if (
               key === "content-encoding" ||
               key === "content-length" ||
@@ -196,12 +190,6 @@ export const Route = createFileRoute("/api/electric")({
           responseHeaders.set("Expires", "0");
           responseHeaders.set("Vary", "Cookie");
 
-          // Test header to verify headers are being set
-          responseHeaders.set("X-Electric-Proxy", "true");
-
-          console.log("[Electric Proxy] Final headers:", Object.fromEntries(responseHeaders.entries()));
-
-          // Create new Response - TanStack Start should preserve these headers
           return new Response(upstream.body, {
             status: upstream.status,
             headers: responseHeaders,
