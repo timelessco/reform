@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite dev --port 3000",
+    "dev": "caddy run --config Caddyfile & vite dev --port ${PORT:-3000}",
+    "dev:auto": "p=3000; while lsof -iTCP:$p -sTCP:LISTEN >/dev/null 2>&1; do p=$((p+1)); done; PORT=$p CADDY_PORT=$((p+1)) bun dev",
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "oxlint && knip --strict --use-tsconfig-files",

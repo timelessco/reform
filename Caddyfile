@@ -1,11 +1,20 @@
 # Caddy reverse proxy for HTTP/2 support during development
-# This fixes the HTTP/1.1 6-connection limit issue with Electric SQL shapes
+# Fixes HTTP/1.1 6-connection limit that starves Electric SQL shape connections + HMR
 #
-# Usage:
-#   1. Run: caddy trust (one-time, installs local CA)
-#   2. Run: caddy run (in project directory)
-#   3. Open: https://localhost:3001 (instead of http://localhost:3000)
+# Prerequisites (one-time):
+#   caddy trust
+#
+# Access app at: https://localhost:3001
 
-localhost:3001 {
-	reverse_proxy localhost:3000
+localhost:{$CADDY_PORT:3001} {
+	reverse_proxy localhost:{$PORT:3000} {
+		flush_interval -1
+	}
+
+	encode gzip
+
+	header {
+		Cache-Control "no-cache, no-transform"
+		X-Accel-Buffering "no"
+	}
 }
