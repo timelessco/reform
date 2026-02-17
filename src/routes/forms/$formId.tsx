@@ -75,6 +75,7 @@ function PublicFormRoute() {
     <PublicFormPage
       form={loaderData?.form ?? null}
       error={loaderData?.error ?? null}
+      gated={loaderData?.gated ?? null}
       formId={formId}
       transparentBackground={isTransparent}
       isPopup={search.popup}

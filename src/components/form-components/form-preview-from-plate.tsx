@@ -749,6 +749,7 @@ function FormPreviewContent({
               elements={currentStepElements}
               isLastStep={isLastStep}
               layout={layout}
+              autoJump={settings?.autoJump}
             />
           </motion.div>
         </AnimatePresence>

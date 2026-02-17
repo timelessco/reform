@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
+import { Textarea } from "@/components/ui/textarea";
 import { updateSettings } from "@/db-collections/form.collections";
 import { useForm as useLiveForm } from "@/hooks/use-live-hooks";
 
@@ -40,13 +41,11 @@ export function SettingsContent({ formId }: { formId: string }) {
   const form = useAppForm({
     defaultValues: doc?.settings || {},
     validationLogic: revalidateLogic(),
-    onSubmit: async ({ value }) => {
-      try {
-        await updateSettings(formId, value);
-        toast.success("Settings saved successfully");
-      } catch {
-        toast.error("Failed to save settings");
-      }
+    listeners: {
+      onChange: ({ value }) => {
+        updateSettings(formId, value);
+      },
+      onChangeDebounceMs: 500,
     },
   });
 
@@ -189,6 +188,30 @@ export function SettingsContent({ formId }: { formId: string }) {
                 )}
               </form.AppField>
             </SettingItem>
+
+            <form.Subscribe selector={(state) => state.values.dataRetention}>
+              {(dataRetention) =>
+                dataRetention ? (
+                  <SettingItem
+                    title="Retention period (days)"
+                    description="Number of days to retain submission data before automatic deletion."
+                  >
+                    <form.AppField name="dataRetentionDays">
+                      {(field) => (
+                        <Input
+                          type="number"
+                          min={1}
+                          placeholder="30"
+                          value={(field.state.value as number) || ""}
+                          onChange={(e) => field.handleChange(e.target.value ? Number(e.target.value) : null)}
+                          className="w-[100px] h-9"
+                        />
+                      )}
+                    </form.AppField>
+                  </SettingItem>
+                ) : null
+              }
+            </form.Subscribe>
           </Section>
 
           {/* Email Notifications Section */}
@@ -203,6 +226,29 @@ export function SettingsContent({ formId }: { formId: string }) {
                 )}
               </form.AppField>
             </SettingItem>
+
+            <form.Subscribe selector={(state) => state.values.selfEmailNotifications}>
+              {(selfEmailNotifications) =>
+                selfEmailNotifications ? (
+                  <SettingItem
+                    title="Notification email"
+                    description="Email address to receive submission notifications. Leave empty to use your account email."
+                  >
+                    <form.AppField name="notificationEmail">
+                      {(field) => (
+                        <Input
+                          type="email"
+                          placeholder="you@example.com"
+                          value={(field.state.value as string) || ""}
+                          onChange={(e) => field.handleChange(e.target.value || null)}
+                          className="w-[280px] h-9"
+                        />
+                      )}
+                    </form.AppField>
+                  </SettingItem>
+                ) : null
+              }
+            </form.Subscribe>
 
             <SettingItem
               title={
@@ -224,6 +270,46 @@ export function SettingsContent({ formId }: { formId: string }) {
                 )}
               </form.AppField>
             </SettingItem>
+
+            <form.Subscribe selector={(state) => state.values.respondentEmailNotifications}>
+              {(respondentEmailNotifications) =>
+                respondentEmailNotifications ? (
+                  <>
+                    <SettingItem
+                      title="Email subject"
+                      description="Subject line for the confirmation email sent to respondents."
+                    >
+                      <form.AppField name="respondentEmailSubject">
+                        {(field) => (
+                          <Input
+                            type="text"
+                            placeholder="Thank you for your submission"
+                            value={(field.state.value as string) || ""}
+                            onChange={(e) => field.handleChange(e.target.value || null)}
+                            className="w-[280px] h-9"
+                          />
+                        )}
+                      </form.AppField>
+                    </SettingItem>
+                    <SettingItem
+                      title="Email body"
+                      description="Message body for the confirmation email. The respondent's email is auto-detected from submission data."
+                    >
+                      <form.AppField name="respondentEmailBody">
+                        {(field) => (
+                          <Textarea
+                            placeholder="Thank you for filling out our form. We'll be in touch soon."
+                            value={(field.state.value as string) || ""}
+                            onChange={(e) => field.handleChange(e.target.value || null)}
+                            className="w-[280px] min-h-[80px]"
+                          />
+                        )}
+                      </form.AppField>
+                    </SettingItem>
+                  </>
+                ) : null
+              }
+            </form.Subscribe>
           </Section>
 
           {/* Access Section */}
@@ -239,6 +325,21 @@ export function SettingsContent({ formId }: { formId: string }) {
               </form.AppField>
             </SettingItem>
 
+            <form.Subscribe selector={(state) => state.values.passwordProtect}>
+              {(passwordProtect) =>
+                passwordProtect ? (
+                  <SettingItem
+                    title="Password"
+                    description="Respondents must enter this password to access the form."
+                  >
+                    <form.AppField name="password">
+                      {(field) => <PasswordInput value={(field.state.value as string) || ""} onChange={(val) => field.handleChange(val || null)} />}
+                    </form.AppField>
+                  </SettingItem>
+                ) : null
+              }
+            </form.Subscribe>
+
             <SettingItem
               title="Close form"
               description="People won't be able to respond to this form anymore."
@@ -249,6 +350,28 @@ export function SettingsContent({ formId }: { formId: string }) {
                 )}
               </form.AppField>
             </SettingItem>
+
+            <form.Subscribe selector={(state) => state.values.closeForm}>
+              {(closeForm) =>
+                closeForm ? (
+                  <SettingItem
+                    title="Closed form message"
+                    description="Message displayed when someone tries to access the closed form."
+                  >
+                    <form.AppField name="closedFormMessage">
+                      {(field) => (
+                        <Textarea
+                          placeholder="This form is now closed."
+                          value={(field.state.value as string) || ""}
+                          onChange={(e) => field.handleChange(e.target.value || "This form is now closed.")}
+                          className="w-[280px] min-h-[60px]"
+                        />
+                      )}
+                    </form.AppField>
+                  </SettingItem>
+                ) : null
+              }
+            </form.Subscribe>
 
             <SettingItem
               title="Close form on a scheduled date"
@@ -261,6 +384,28 @@ export function SettingsContent({ formId }: { formId: string }) {
               </form.AppField>
             </SettingItem>
 
+            <form.Subscribe selector={(state) => state.values.closeOnDate}>
+              {(closeOnDate) =>
+                closeOnDate ? (
+                  <SettingItem
+                    title="Close date"
+                    description="The form will stop accepting responses after this date and time."
+                  >
+                    <form.AppField name="closeDate">
+                      {(field) => (
+                        <Input
+                          type="datetime-local"
+                          value={(field.state.value as string) || ""}
+                          onChange={(e) => field.handleChange(e.target.value || null)}
+                          className="w-[220px] h-9"
+                        />
+                      )}
+                    </form.AppField>
+                  </SettingItem>
+                ) : null
+              }
+            </form.Subscribe>
+
             <SettingItem
               title="Limit number of submissions"
               description="Set how many submissions you want to receive in total."
@@ -272,6 +417,30 @@ export function SettingsContent({ formId }: { formId: string }) {
               </form.AppField>
             </SettingItem>
 
+            <form.Subscribe selector={(state) => state.values.limitSubmissions}>
+              {(limitSubmissions) =>
+                limitSubmissions ? (
+                  <SettingItem
+                    title="Maximum submissions"
+                    description="The form will stop accepting responses after reaching this number."
+                  >
+                    <form.AppField name="maxSubmissions">
+                      {(field) => (
+                        <Input
+                          type="number"
+                          min={1}
+                          placeholder="100"
+                          value={(field.state.value as number) || ""}
+                          onChange={(e) => field.handleChange(e.target.value ? Number(e.target.value) : null)}
+                          className="w-[100px] h-9"
+                        />
+                      )}
+                    </form.AppField>
+                  </SettingItem>
+                ) : null
+              }
+            </form.Subscribe>
+
             <SettingItem
               title="Prevent duplicate submissions"
               description="Ensure each respondent can only submit the form once by selecting a form field (e.g. email address, phone number, IP address) that will be used as a unique identifier. This allows our system to detect and prevent duplicate submissions."
@@ -282,6 +451,18 @@ export function SettingsContent({ formId }: { formId: string }) {
                 )}
               </form.AppField>
             </SettingItem>
+
+            <form.Subscribe selector={(state) => state.values.preventDuplicateSubmissions}>
+              {(preventDuplicateSubmissions) =>
+                preventDuplicateSubmissions ? (
+                  <div className="ml-0 pl-0">
+                    <p className="text-xs text-muted-foreground italic">
+                      Duplicate submissions are detected using a browser cookie. Respondents using a different browser or clearing cookies can submit again.
+                    </p>
+                  </div>
+                ) : null
+              }
+            </form.Subscribe>
           </Section>
 
           {/* Behavior Section */}
@@ -309,20 +490,6 @@ export function SettingsContent({ formId }: { formId: string }) {
             </SettingItem>
           </Section>
 
-          {/* Save Button */}
-          <div className="pt-4 border-t">
-            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
-              {([canSubmit, isSubmitting]) => (
-                <Button
-                  className="w-full"
-                  disabled={!canSubmit || isSubmitting}
-                  onClick={() => form.handleSubmit()}
-                >
-                  {isSubmitting ? "Saving..." : "Save changes"}
-                </Button>
-              )}
-            </form.Subscribe>
-          </div>
         </form.Form>
       </form.AppForm>
     </div>
@@ -354,6 +521,28 @@ function SettingItem({
         <p className="text-[13px] text-muted-foreground leading-relaxed">{description}</p>
       </div>
       <div className="shrink-0 flex items-center pt-1">{children}</div>
+    </div>
+  );
+}
+
+function PasswordInput({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative w-[220px]">
+      <Input
+        type={show ? "text" : "password"}
+        placeholder="Enter password"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 pr-10"
+      />
+      <button
+        type="button"
+        onClick={() => setShow(!show)}
+        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+      >
+        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
     </div>
   );
 }

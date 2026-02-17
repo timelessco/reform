@@ -1,9 +1,11 @@
 import { FileQuestion, Lock } from "lucide-react";
 import type { Value } from "platejs";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
 import { BrandingFooter } from "@/components/public/branding-footer";
+import { AlreadySubmitted, FormClosed } from "@/components/public/form-closed";
+import { PasswordGate } from "@/components/public/password-gate";
 import { createPublicSubmission } from "@/lib/fn/public";
 import { cn } from "@/lib/utils";
 import {
@@ -21,10 +23,16 @@ interface PublicForm {
   settings?: PublicFormSettings;
 }
 
+interface GatedState {
+  type: "closed" | "date_expired" | "limit_reached" | "password_required";
+  message?: string | null;
+}
+
 interface PublicFormPageProps {
   form: PublicForm | null;
   error: "not_found" | null;
   formId: string;
+  gated?: GatedState | null;
   transparentBackground?: boolean;
   /** Whether this form is loaded in a popup iframe */
   isPopup?: boolean;
@@ -91,6 +99,7 @@ export function PublicFormPage({
   form,
   error,
   formId,
+  gated,
   transparentBackground,
   isPopup = false,
   hideTitle = false,
@@ -98,6 +107,20 @@ export function PublicFormPage({
   dynamicHeight = false,
 }: PublicFormPageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  // Check duplicate prevention on mount
+  useEffect(() => {
+    if (form?.settings?.preventDuplicateSubmissions) {
+      try {
+        if (localStorage.getItem(`bf-submitted-${formId}`) === "1") {
+          setSubmitted(true);
+        }
+      } catch {
+        // localStorage unavailable
+      }
+    }
+  }, [form?.settings?.preventDuplicateSubmissions, formId]);
 
   // Handle body/html transparency for iframes
   useEffect(() => {
@@ -174,6 +197,15 @@ export function PublicFormPage({
           },
         });
 
+        // Mark as submitted for duplicate prevention
+        if (form?.settings?.preventDuplicateSubmissions) {
+          try {
+            localStorage.setItem(`bf-submitted-${formId}`, "1");
+          } catch {
+            // localStorage unavailable
+          }
+        }
+
         // Notify parent of submission (for popup embeds)
         if (isPopup) {
           sendToParent("BetterForms.FormSubmitted", {
@@ -191,7 +223,7 @@ export function PublicFormPage({
         throw err; // Re-throw so the form knows it failed
       }
     },
-    [formId, isPopup, form?.title],
+    [formId, isPopup, form?.title, form?.settings?.preventDuplicateSubmissions],
   );
 
   // Handle error states
@@ -204,11 +236,21 @@ export function PublicFormPage({
     return <FormNotPublished />;
   }
 
+  // Handle gated states (closed, date expired, limit reached)
+  if (gated && gated.type !== "password_required") {
+    return <FormClosed message={gated.message} />;
+  }
+
+  // Handle duplicate prevention (client-side check)
+  if (submitted) {
+    return <AlreadySubmitted />;
+  }
+
   // Get settings with defaults
   const settings = form.settings ?? defaultPublicFormSettings;
 
-  // Render the form - FormPreviewFromPlate handles thank you page via StepFormContext
-  return (
+  // Render the form content
+  const formContent = (
     <div
       ref={containerRef}
       className={cn(
@@ -232,4 +274,11 @@ export function PublicFormPage({
       {settings.branding && <BrandingFooter />}
     </div>
   );
+
+  // Wrap with password gate if needed
+  if (gated?.type === "password_required") {
+    return <PasswordGate formId={formId}>{formContent}</PasswordGate>;
+  }
+
+  return formContent;
 }

@@ -191,96 +191,6 @@ export const formFavorites = pgTable("form_favorites", {
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
-// ============================================================================
-// Form Settings Table (typed columns for type safety)
-// ============================================================================
-export const formSettings = pgTable("form_settings", {
-  id: text().primaryKey(),
-  formId: text().notNull().unique(),
-
-  // === GENERAL ===
-  language: text().notNull().default("English"), // 'English' | 'Spanish' | 'French'
-  redirectOnCompletion: boolean().notNull().default(false),
-  redirectUrl: text(),
-  redirectDelay: integer().notNull().default(0), // seconds to wait before redirect
-  progressBar: boolean().notNull().default(false),
-  branding: boolean().notNull().default(true), // Pro feature
-  dataRetention: boolean().notNull().default(false), // Business feature
-  dataRetentionDays: integer(),
-
-  // === EMAIL NOTIFICATIONS ===
-  selfEmailNotifications: boolean().notNull().default(false),
-  notificationEmail: text(),
-  respondentEmailNotifications: boolean().notNull().default(false), // Pro
-  respondentEmailSubject: text(),
-  respondentEmailBody: text(),
-
-  // === ACCESS ===
-  passwordProtect: boolean().notNull().default(false),
-  password: text(), // Hashed password
-  closeForm: boolean().notNull().default(false),
-  closedFormMessage: text(),
-  closeOnDate: boolean().notNull().default(false),
-  closeDate: timestamp({ withTimezone: true }),
-  limitSubmissions: boolean().notNull().default(false),
-  maxSubmissions: integer(),
-  preventDuplicateSubmissions: boolean().notNull().default(false),
-  duplicateCheckField: text(),
-
-  // === BEHAVIOR ===
-  autoJump: boolean().notNull().default(false),
-  saveAnswersForLater: boolean().notNull().default(false),
-
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-});
-
-// ============================================================================
-// Form Share Settings Table (embed modes: Standard, Popup, Full Page)
-// ============================================================================
-export const formShareSettings = pgTable("form_share_settings", {
-  id: text().primaryKey(),
-  formId: text().notNull().unique(),
-
-  // === VISIBILITY & ACCESS ===
-  isPublic: boolean().notNull().default(true),
-  expiresAt: timestamp({ withTimezone: true }),
-
-  // === LINK PREVIEW / OG METADATA ===
-  customTitle: text(),
-  customDescription: text(),
-  ogImageUrl: text(),
-
-  // === CUSTOM DOMAIN (Pro) ===
-  customDomain: text(),
-  customDomainVerified: boolean().notNull().default(false),
-
-  // === STANDARD EMBED ===
-  standardEnabled: boolean().notNull().default(true),
-  standardWidth: text().default("100%"),
-  standardHeight: text().default("500px"),
-  standardBorderRadius: text().default("8px"),
-  standardShowBorder: boolean().default(true),
-
-  // === POPUP EMBED ===
-  popupEnabled: boolean().notNull().default(false),
-  popupTriggerType: text().default("button"), // 'button' | 'delay' | 'scroll'
-  popupTriggerDelay: integer(),
-  popupTriggerScrollPercent: integer(),
-  popupButtonText: text().default("Open Form"),
-  popupButtonPosition: text().default("bottom-right"),
-  popupOverlayColor: text().default("rgba(0,0,0,0.5)"),
-  popupAnimation: text().default("fade"), // 'fade' | 'slide' | 'scale'
-
-  // === FULL PAGE EMBED ===
-  fullPageEnabled: boolean().notNull().default(false),
-  fullPageBackgroundColor: text(),
-  fullPageMaxWidth: text().default("720px"),
-  fullPagePadding: text().default("2rem"),
-
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-});
 
 // ============================================================================
 // Form Visits Table (Analytics - Raw Events)
@@ -430,8 +340,6 @@ export const relations = defineRelations(
     formVersions,
     workspaces,
     submissions,
-    formSettings,
-    formShareSettings,
     formVisits,
     formQuestionProgress,
     formAnalyticsDaily,
@@ -578,14 +486,6 @@ export const relations = defineRelations(
         from: r.forms.id,
         to: r.submissions.formId,
       }),
-      formSettingsRelation: r.one.formSettings({
-        from: r.forms.id,
-        to: r.formSettings.formId,
-      }),
-      formShareSettingsRelation: r.one.formShareSettings({
-        from: r.forms.id,
-        to: r.formShareSettings.formId,
-      }),
       visits: r.many.formVisits({
         from: r.forms.id,
         to: r.formVisits.formId,
@@ -628,20 +528,6 @@ export const relations = defineRelations(
     submissions: {
       form: r.one.forms({
         from: r.submissions.formId,
-        to: r.forms.id,
-      }),
-    },
-    // Form Settings belongs to one form
-    formSettings: {
-      form: r.one.forms({
-        from: r.formSettings.formId,
-        to: r.forms.id,
-      }),
-    },
-    // Form Share Settings belongs to one form
-    formShareSettings: {
-      form: r.one.forms({
-        from: r.formShareSettings.formId,
         to: r.forms.id,
       }),
     },
@@ -707,8 +593,6 @@ export const WorkspaceZod = createSelectSchema(workspaces);
 export const FormZod = createSelectSchema(forms);
 export const FormVersionZod = createSelectSchema(formVersions);
 export const SubmissionZod = createSelectSchema(submissions);
-export const FormSettingsZod = createSelectSchema(formSettings);
-export const FormShareSettingsZod = createSelectSchema(formShareSettings);
 export const FormVisitsZod = createSelectSchema(formVisits);
 export const FormQuestionProgressZod = createSelectSchema(formQuestionProgress);
 export const FormAnalyticsDailyZod = createSelectSchema(formAnalyticsDaily);

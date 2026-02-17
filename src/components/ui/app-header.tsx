@@ -29,6 +29,7 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { useSidebarSafe } from "./sidebar";
+import { SettingsIcon } from "./sidebar-icons";
 
 interface AppHeaderProps {
   dividerX?: number;
@@ -339,8 +340,8 @@ export function AppHeader({
                 className="h-8 w-8 text-muted-foreground hover:text-foreground"
                 onClick={toggleSettingsSidebar}
               >
-                <Settings className="h-[18px] w-[18px]" strokeWidth={1.5} />
-              </Button>
+      <SettingsIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
+            </Button>
 
               {/* Three dots menu - Figma system-flat 23508:7036 */}
               <DropdownMenu>
@@ -401,7 +402,7 @@ export function AppHeader({
               <Button
                 size="sm"
                 className={cn(
-                  "h-8 px-4 ml-1 text-[13px] font-semibold transition-all rounded-md shadow-sm border-none  ",
+                  "h-8 pl-[10px] pr-[8px] ml-1 text-[14px] font-medium tracking-[0.14px] leading-[1.15] transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none",
                   !isLoadingSavedDocs &&
                     (hasUnpublishedChanges || savedDocs?.[0]?.status !== "published")
                     ? "bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
@@ -418,7 +419,7 @@ export function AppHeader({
                 <Button
                   size="sm"
                   asChild
-                  className="h-8 px-4 ml-1 text-[13px] font-semibold transition-all rounded-md shadow-sm border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
+                  className="h-8 pl-[10px] pr-[8px] ml-1 text-[14px] font-medium tracking-[0.14px] leading-[1.15] transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
                 >
                   <Link
                     to="/workspace/$workspaceId/form-builder/$formId/edit"

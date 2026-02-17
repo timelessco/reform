@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useStepForm } from "@/contexts/step-form-context";
 import { useStepPreviewForm } from "@/hooks/use-preview-form";
@@ -11,13 +11,14 @@ interface StepFormProps {
   elements: TransformedElement[];
   isLastStep: boolean;
   layout?: "public" | "editor";
+  autoJump?: boolean;
 }
 
 /**
  * Individual step form component with its own form instance.
  * Uses StepFormContext for navigation and data accumulation.
  */
-export function StepForm({ stepIndex, elements, isLastStep, layout = "public" }: StepFormProps) {
+export function StepForm({ stepIndex, elements, isLastStep, layout = "public", autoJump = false }: StepFormProps) {
   const { currentStep, goToPrevStep, isSubmitting } = useStepForm();
   const fields = getEditableFields(elements);
 
@@ -32,6 +33,7 @@ export function StepForm({ stepIndex, elements, isLastStep, layout = "public" }:
   const groupedElements = groupElementsForRendering(elements);
 
   const formRef = useRef<HTMLFormElement>(null);
+  const autoJumpTriggered = useRef(false);
 
   // Auto-focus the first focusable element on mount
   useEffect(() => {
@@ -49,9 +51,40 @@ export function StepForm({ stepIndex, elements, isLastStep, layout = "public" }:
     return () => clearTimeout(timer);
   }, []);
 
+  // Auto-jump: check if all required fields are filled and auto-submit
+  const checkAutoJump = useCallback(() => {
+    if (!autoJump || isLastStep || autoJumpTriggered.current || isSubmitting) return;
+
+    // Check if all required fields have values
+    const allRequiredFilled = fields.every((field) => {
+      if (!field.required) return true;
+      const value = form.getFieldValue(field.name as never);
+      if (value === undefined || value === null || value === "") return false;
+      if (Array.isArray(value) && value.length === 0) return false;
+      return true;
+    });
+
+    if (allRequiredFilled && fields.length > 0) {
+      autoJumpTriggered.current = true;
+      // Short delay to let the user see their selection
+      setTimeout(() => {
+        form.handleSubmit();
+      }, 400);
+    }
+  }, [autoJump, isLastStep, isSubmitting, fields, form]);
+
   return (
     <form.AppForm>
       <form.Form id={formName} ref={formRef} noValidate className="space-y-4 outline-none">
+        {/* Auto-jump watcher */}
+        {autoJump && !isLastStep && (
+          <form.Subscribe selector={(state) => state.values}>
+            {() => {
+              checkAutoJump();
+              return null;
+            }}
+          </form.Subscribe>
+        )}
         {groupedElements.map((item) => {
           // Handle button groups (Previous + Next/Submit on same line)
           if ("type" in item && item.type === "buttonGroup") {

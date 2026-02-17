@@ -65,3 +65,74 @@ export async function sendOrgInvitationEmail(
     logger("[Email] Failed to send invitation:", error);
   }
 }
+
+export async function sendFormSubmissionNotification(
+  to: string,
+  formTitle: string,
+  submissionId: string,
+  data: Record<string, unknown>,
+) {
+  // Build a simple key-value HTML table from submission data
+  const rows = Object.entries(data)
+    .map(
+      ([key, value]) =>
+        `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #eee; font-weight: 500; color: #333;">${escapeHtml(key)}</td><td style="padding: 8px 12px; border-bottom: 1px solid #eee; color: #555;">${escapeHtml(String(value ?? ""))}</td></tr>`,
+    )
+    .join("");
+
+  const { error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject: `New submission: ${formTitle}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">New form submission</h2>
+        <p style="font-size: 16px; color: #555;">
+          You received a new response for <strong>${escapeHtml(formTitle)}</strong>.
+        </p>
+        <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+          ${rows}
+        </table>
+        <p style="font-size: 12px; color: #999;">Submission ID: ${submissionId}</p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+        <p style="font-size: 12px; color: #999;">You're receiving this because you enabled email notifications for this form.</p>
+      </div>
+    `,
+  });
+
+  if (error) {
+    logger("[Email] Failed to send submission notification:", error);
+  }
+}
+
+export async function sendRespondentConfirmation(
+  to: string,
+  subject: string,
+  body: string,
+) {
+  const { error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <p style="font-size: 16px; color: #333; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(body)}</p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+        <p style="font-size: 12px; color: #999;">This email was sent via Better Forms.</p>
+      </div>
+    `,
+  });
+
+  if (error) {
+    logger("[Email] Failed to send respondent confirmation:", error);
+  }
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}

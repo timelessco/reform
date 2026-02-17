@@ -58,6 +58,7 @@ export interface FormSettings {
 // Public Form Settings (subset for public form page)
 // ============================================================================
 export interface PublicFormSettings {
+  // Display
   progressBar: boolean;
   branding: boolean;
   autoJump: boolean;
@@ -65,6 +66,17 @@ export interface PublicFormSettings {
   redirectOnCompletion: boolean;
   redirectUrl: string | null;
   redirectDelay: number;
+
+  // Access gating
+  language: string;
+  passwordProtect: boolean;
+  closeForm: boolean;
+  closedFormMessage: string | null;
+  closeOnDate: boolean;
+  closeDate: string | null;
+  limitSubmissions: boolean;
+  maxSubmissions: number | null;
+  preventDuplicateSubmissions: boolean;
 }
 
 export const defaultPublicFormSettings: PublicFormSettings = {
@@ -75,54 +87,16 @@ export const defaultPublicFormSettings: PublicFormSettings = {
   redirectOnCompletion: false,
   redirectUrl: null,
   redirectDelay: 0,
+  language: "English",
+  passwordProtect: false,
+  closeForm: false,
+  closedFormMessage: null,
+  closeOnDate: false,
+  closeDate: null,
+  limitSubmissions: false,
+  maxSubmissions: null,
+  preventDuplicateSubmissions: false,
 };
-
-// ============================================================================
-// Form Share Settings Interface
-// ============================================================================
-export interface FormShareSettings {
-  id: string;
-  formId: string;
-
-  // Visibility & Access
-  isPublic: boolean;
-  expiresAt: Date | null;
-
-  // Link Preview / OG Metadata
-  customTitle: string | null;
-  customDescription: string | null;
-  ogImageUrl: string | null;
-
-  // Custom Domain (Pro)
-  customDomain: string | null;
-  customDomainVerified: boolean;
-
-  // Standard Embed
-  standardEnabled: boolean;
-  standardWidth: string;
-  standardHeight: string;
-  standardBorderRadius: string;
-  standardShowBorder: boolean;
-
-  // Popup Embed
-  popupEnabled: boolean;
-  popupTriggerType: PopupTriggerType;
-  popupTriggerDelay: number | null;
-  popupTriggerScrollPercent: number | null;
-  popupButtonText: string;
-  popupButtonPosition: PopupButtonPosition;
-  popupOverlayColor: string;
-  popupAnimation: PopupAnimation;
-
-  // Full Page Embed
-  fullPageEnabled: boolean;
-  fullPageBackgroundColor: string | null;
-  fullPageMaxWidth: string;
-  fullPagePadding: string;
-
-  createdAt: Date;
-  updatedAt: Date;
-}
 
 // ============================================================================
 // Default Settings Values
@@ -155,33 +129,3 @@ export const defaultFormSettings: Omit<FormSettings, "id" | "formId" | "createdA
     autoJump: false,
     saveAnswersForLater: false,
   };
-
-export const defaultFormShareSettings: Omit<
-  FormShareSettings,
-  "id" | "formId" | "createdAt" | "updatedAt"
-> = {
-  isPublic: true,
-  expiresAt: null,
-  customTitle: null,
-  customDescription: null,
-  ogImageUrl: null,
-  customDomain: null,
-  customDomainVerified: false,
-  standardEnabled: true,
-  standardWidth: "100%",
-  standardHeight: "500px",
-  standardBorderRadius: "8px",
-  standardShowBorder: true,
-  popupEnabled: false,
-  popupTriggerType: "button",
-  popupTriggerDelay: null,
-  popupTriggerScrollPercent: null,
-  popupButtonText: "Open Form",
-  popupButtonPosition: "bottom-right",
-  popupOverlayColor: "rgba(0,0,0,0.5)",
-  popupAnimation: "fade",
-  fullPageEnabled: false,
-  fullPageBackgroundColor: null,
-  fullPageMaxWidth: "720px",
-  fullPagePadding: "2rem",
-};
