@@ -3,7 +3,7 @@ import {
   BlockMenuPlugin,
   BlockSelectionPlugin,
 } from "@platejs/selection/react";
-import { ChevronRight, Copy, EyeOff, GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronRight, GripVertical } from "lucide-react";
 import { KEYS } from "platejs";
 import { useEditorPlugin, useEditorSelector, useHotkeys, usePluginOption } from "platejs/react";
 import * as React from "react";
@@ -12,8 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import {
+  CopyIcon,
+  EyeOffIcon,
+  Pencil2Icon,
+  PlusIcon,
+  TrashIcon,
+} from "@/components/ui/sidebar-icons";
 import { cn } from "@/lib/utils";
 
 type BlockFieldType = "formInput" | "formButton" | "static" | "unknown";
@@ -345,31 +351,30 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
             pointerEvents: "none",
           }}
         />
-        <PopoverContent className="p-0 w-72" align="start" sideOffset={5}>
+        <PopoverContent className="w-[288px]" align="start" sideOffset={4}>
           {showTurnInto ? (
-            /* Turn Into Submenu */
-            <div className="p-2">
+            /* Turn Into Submenu - sidebar popover style */
+            <div>
               <Button
                 variant="ghost"
                 onClick={() => setShowTurnInto(false)}
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-2 px-2 h-auto"
+                className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] text-light-gray-800 hover:bg-black/5 hover:text-foreground mb-1"
               >
                 ← Back
               </Button>
-              <div className="space-y-1">
-                <MenuItem onClick={() => handleTurnInto(KEYS.p)}>Paragraph</MenuItem>
-                <MenuItem onClick={() => handleTurnInto(KEYS.h1)}>Heading 1</MenuItem>
-                <MenuItem onClick={() => handleTurnInto(KEYS.h2)}>Heading 2</MenuItem>
-                <MenuItem onClick={() => handleTurnInto(KEYS.h3)}>Heading 3</MenuItem>
-                <MenuItem onClick={() => handleTurnInto(KEYS.blockquote)}>Blockquote</MenuItem>
-              </div>
+              <div className="my-1 h-px bg-border" />
+              <MenuItem onClick={() => handleTurnInto(KEYS.p)}>Paragraph</MenuItem>
+              <MenuItem onClick={() => handleTurnInto(KEYS.h1)}>Heading 1</MenuItem>
+              <MenuItem onClick={() => handleTurnInto(KEYS.h2)}>Heading 2</MenuItem>
+              <MenuItem onClick={() => handleTurnInto(KEYS.h3)}>Heading 3</MenuItem>
+              <MenuItem onClick={() => handleTurnInto(KEYS.blockquote)}>Blockquote</MenuItem>
             </div>
           ) : (
-            /* Main Menu */
+            /* Main Menu - sidebar popover style */
             <div>
               {/* Field Name Header */}
-              <div className="flex items-center gap-2 p-3 border-b">
-                <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+              <div className="flex items-center gap-2 px-2 py-1.5">
+                <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0" strokeWidth={1.5} />
                 {isEditingName ? (
                   <Input
                     value={fieldName}
@@ -379,132 +384,129 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                       if (e.key === "Enter") handleUpdateFieldName();
                       if (e.key === "Escape") setIsEditingName(false);
                     }}
-                    className="h-7 text-sm flex-1"
+                    className="h-7 text-[13px] flex-1 rounded-lg"
                     autoFocus
                   />
                 ) : (
-                  <span className="text-sm font-medium flex-1 truncate">{fieldName}</span>
+                  <span className="text-[13px] font-medium flex-1 truncate text-light-gray-800">{fieldName}</span>
                 )}
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 shrink-0"
+                  className="h-6 w-6 shrink-0 rounded-lg hover:bg-black/5"
                   onClick={() => setIsEditingName(!isEditingName)}
                 >
-                  <Pencil className="h-3.5 w-3.5" />
+                  <Pencil2Icon className="h-3.5 w-3.5" />
                 </Button>
               </div>
+              <div className="my-1 h-px bg-border" />
 
               {/* Field-Specific Options */}
               {fieldType === "formInput" && (
-                <div className="p-3 space-y-3 border-b">
-                  <ToggleOption
-                    label="Required"
-                    checked={isRequired}
-                    onCheckedChange={handleToggleRequired}
-                  />
-
-                  {/* Default Value Option */}
-                  <div className="space-y-2">
+                <>
+                  <div className="px-2 py-1.5 space-y-2">
                     <ToggleOption
-                      label="Default answer"
-                      checked={hasDefaultValue}
-                      onCheckedChange={handleToggleDefaultValue}
+                      label="Required"
+                      checked={isRequired}
+                      onCheckedChange={handleToggleRequired}
                     />
-                    {hasDefaultValue && (
-                      <Input
-                        value={currentDefaultValue || ""}
-                        onChange={(e) => handleUpdateDefaultValue(e.target.value)}
-                        placeholder="Enter default value"
-                        className="h-8 text-sm"
+                    <div className="space-y-1.5">
+                      <ToggleOption
+                        label="Default answer"
+                        checked={hasDefaultValue}
+                        onCheckedChange={handleToggleDefaultValue}
                       />
-                    )}
-                  </div>
-
-                  {/* Min Characters Option */}
-                  <div className="space-y-2">
-                    <ToggleOption
-                      label="Min characters"
-                      checked={hasMinLength}
-                      onCheckedChange={handleToggleMinLength}
-                    />
-                    {hasMinLength && (
-                      <Input
-                        type="number"
-                        min={1}
-                        value={currentMinLength || 1}
-                        onChange={(e) => handleUpdateMinLength(Number(e.target.value))}
-                        placeholder="Min"
-                        className="h-8 text-sm"
+                      {hasDefaultValue && (
+                        <Input
+                          value={currentDefaultValue || ""}
+                          onChange={(e) => handleUpdateDefaultValue(e.target.value)}
+                          placeholder="Enter default value"
+                          className="h-8 text-[13px] rounded-lg"
+                        />
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <ToggleOption
+                        label="Min characters"
+                        checked={hasMinLength}
+                        onCheckedChange={handleToggleMinLength}
                       />
-                    )}
-                  </div>
-
-                  {/* Max Characters Option */}
-                  <div className="space-y-2">
-                    <ToggleOption
-                      label="Max characters"
-                      checked={hasMaxLength}
-                      onCheckedChange={handleToggleMaxLength}
-                    />
-                    {hasMaxLength && (
-                      <Input
-                        type="number"
-                        min={1}
-                        value={currentMaxLength || 100}
-                        onChange={(e) => handleUpdateMaxLength(Number(e.target.value))}
-                        placeholder="Max"
-                        className="h-8 text-sm"
+                      {hasMinLength && (
+                        <Input
+                          type="number"
+                          min={1}
+                          value={currentMinLength || 1}
+                          onChange={(e) => handleUpdateMinLength(Number(e.target.value))}
+                          placeholder="Min"
+                          className="h-8 text-[13px] rounded-lg"
+                        />
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <ToggleOption
+                        label="Max characters"
+                        checked={hasMaxLength}
+                        onCheckedChange={handleToggleMaxLength}
                       />
-                    )}
+                      {hasMaxLength && (
+                        <Input
+                          type="number"
+                          min={1}
+                          value={currentMaxLength || 100}
+                          onChange={(e) => handleUpdateMaxLength(Number(e.target.value))}
+                          placeholder="Max"
+                          className="h-8 text-[13px] rounded-lg"
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
+                  <div className="my-1 h-px bg-border" />
+                </>
               )}
 
               {/* Button-Specific Options */}
               {fieldType === "formButton" && (
-                <div className="p-3 space-y-3 border-b">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-normal">Button Name</Label>
+                <>
+                  <div className="px-2 py-1.5 space-y-2">
+                    <Label className="text-[12px] font-medium text-muted-foreground tracking-[0.24px]">Button Name</Label>
                     <Input
                       value={buttonText}
                       onChange={(e) => handleUpdateButtonText(e.target.value)}
                       placeholder="Enter button name"
-                      className="h-8 text-sm"
+                      className="h-8 text-[13px] rounded-lg"
                     />
                   </div>
-                </div>
+                  <div className="my-1 h-px bg-border" />
+                </>
               )}
 
               {/* Common Actions */}
-              <div className="p-2 space-y-1">
-                <MenuItem onClick={handleDelete}>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                  <span className="ml-auto text-xs text-muted-foreground">Del</span>
+              <div className="px-0">
+                <MenuItem destructive onClick={handleDelete}>
+                  <TrashIcon className="h-3.5 w-3.5 shrink-0" />
+                  <span className="flex-1 text-left">Delete</span>
+                  <span className="text-xs text-muted-foreground">Del</span>
                 </MenuItem>
                 <MenuItem onClick={handleDuplicate}>
-                  <Copy className="h-4 w-4 mr-2" />
-                  Duplicate
-                  <span className="ml-auto text-xs text-muted-foreground">⌘D</span>
+                  <CopyIcon className="h-3.5 w-3.5 shrink-0" />
+                  <span className="flex-1 text-left">Duplicate</span>
+                  <span className="text-xs text-muted-foreground">⌘D</span>
                 </MenuItem>
                 <MenuItem onClick={() => api.blockMenu.hide()}>
-                  <EyeOff className="h-4 w-4 mr-2" />
-                  Hide
-                  <span className="ml-auto text-xs text-muted-foreground">⌘⌥H</span>
+                  <EyeOffIcon className="h-3.5 w-3.5 shrink-0" />
+                  <span className="flex-1 text-left">Hide</span>
+                  <span className="text-xs text-muted-foreground">⌘⌥H</span>
                 </MenuItem>
                 <MenuItem onClick={() => api.blockMenu.hide()}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add conditional logic
-                  <span className="ml-auto text-xs text-muted-foreground">⌘⌥L</span>
+                  <PlusIcon className="h-3.5 w-3.5 shrink-0" />
+                  <span className="flex-1 text-left">Add conditional logic</span>
+                  <span className="text-xs text-muted-foreground">⌘⌥L</span>
                 </MenuItem>
-
-                <Separator className="my-2" />
-
+                <div className="my-1 h-px bg-border mx-0" />
                 <MenuItem onClick={() => setShowTurnInto(true)}>
-                  <span className="mr-2">↺</span>
-                  Turn into
-                  <ChevronRight className="h-4 w-4 ml-auto" />
+                  <span className="text-[13px]">↺</span>
+                  <span className="flex-1 text-left">Turn into</span>
+                  <ChevronRight className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
                 </MenuItem>
               </div>
             </div>
@@ -515,7 +517,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Reusable Toggle Option component
+// Reusable Toggle Option component - aligns with sidebar popover typography
 function ToggleOption({
   label,
   checked,
@@ -527,28 +529,33 @@ function ToggleOption({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <Label className="text-sm font-normal">{label}</Label>
+      <Label className="text-[13px] font-medium text-light-gray-800">{label}</Label>
       <Switch checked={checked} onCheckedChange={onCheckedChange} className="scale-90" />
     </div>
   );
 }
 
-// Reusable Menu Item component
+// Reusable Menu Item component - matches sidebar popover style
 function MenuItem({
   children,
   onClick,
   className,
+  destructive,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   className?: string;
+  destructive?: boolean;
 }) {
   return (
     <Button
       variant="ghost"
       onClick={onClick}
       className={cn(
-        "flex items-center w-full px-2 py-1.5 h-auto text-sm justify-start",
+        "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors [&_svg]:shrink-0",
+        destructive
+          ? "text-red-500/70 hover:bg-red-500/5 hover:text-red-500 focus:bg-red-500/5 focus:text-red-500"
+          : "text-light-gray-800 hover:bg-black/5 hover:text-foreground",
         className,
       )}
     >

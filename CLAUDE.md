@@ -2,7 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Don't run dev server yourslef , cause I always works with dev server running in my tmux session.
+Don't run dev server yourself , cause I always works with dev server running in my tmux session , so that both can see the logs not only use. also dont run bun run build for verification , it take too much time.
+
+- when I give a positive feedback like awesome or super check that session and if you used any trick in that session updated that trick to the claude.md
+
 
 ## Plan Mode
 
@@ -12,6 +15,13 @@ Don't run dev server yourslef , cause I always works with dev server running in 
 ## Debugging
 
 - dev server will always be running in the tmux , so you can listen for the logs , if not runed, always run the dev server in tmux and let me know so that I can also see the logs 
+
+## Design Mode
+
+- When Using FIGMA MCP Follow this
+  - First, analyze the design and compare it with the already existing components, compare it with the figma design , color tokens , typography, spacing and component
+  - if the component is used that need to be used in multiple places directly change the component style until otherwise specific so that component looks uniform through out the application.
+
 
 ## Build & Development Commands
 

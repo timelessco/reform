@@ -40,9 +40,9 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
+import { CalendarIcon } from "@/components/ui/sidebar-icons";
 import {
   AlignLeft,
-  Calendar,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -202,7 +202,7 @@ function SubmissionsPage() {
     const columnHelper = createColumnHelper<any>();
     const counts: Record<FieldStatus, number> = { current: 0, deleted: 0 };
 
-    // Select column for row selection
+    // Select column for row selection - fixed width, non-resizable to prevent overlap with actions
     const baseColumns: ColumnDef<any, any>[] = [
       {
         id: "select",
@@ -225,31 +225,36 @@ function SubmissionsPage() {
             className="translate-y-[2px]"
           />
         ),
-        size: 40,
+        size: 48,
+        minSize: 48,
+        maxSize: 48,
         enableSorting: false,
         enableHiding: false,
         enablePinning: false,
+        enableResizing: false,
       },
-      // Submission Date column
+      // Submission Date column - minSize prevents action buttons from truncating into select column
       columnHelper.accessor("createdAt", {
         header: ({ column }) => (
           <DataGridColumnHeader
             column={column}
             title="Submitted at"
-            icon={<Calendar className="h-3.5 w-3.5" />}
+            icon={<CalendarIcon className="h-3.5 w-3.5" />}
           />
         ),
         cell: (info) => (
-          <div className="flex items-center justify-between group/row">
-            <span className="text-sm">{format(new Date(info.getValue()), "MMM d, h:mm a")}</span>
-            <div className="flex items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
-              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground">
+          <div className="flex items-center justify-between gap-2 group/row min-w-0">
+            <span className="text-sm truncate min-w-0">
+              {format(new Date(info.getValue()), "MMM d, h:mm a")}
+            </span>
+            <div className="flex shrink-0 items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground">
                 <Maximize className="h-3.5 w-3.5" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDelete(info.row.original.id);
@@ -261,7 +266,8 @@ function SubmissionsPage() {
           </div>
         ),
         id: "submitted_at",
-        size: 180,
+        size: 200,
+        minSize: 140,
       }),
     ];
 

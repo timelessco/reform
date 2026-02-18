@@ -266,8 +266,8 @@ export function FormHeaderElement(props: PlateElementProps) {
           </>
         )}
 
-        <div className={cn("relative max-w-[900px] mx-auto w-full flex flex-col")}>
-          <div className="w-full sm:px-[max(10px,calc(50%-350px))]">
+        <div className={cn("relative w-full flex flex-col")}>
+          <div className="w-full">
             <Popover open={iconPopoverOpen} onOpenChange={setIconPopoverOpen}>
               {hasLogo && (
                 <div

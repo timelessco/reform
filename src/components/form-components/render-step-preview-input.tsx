@@ -4,6 +4,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -192,7 +193,10 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
                 minLength={element.minLength}
                 maxLength={element.maxLength}
                 aria-invalid={hasErrors}
-                className={hasErrors ? "border-destructive min-h-24 max-w-md" : "min-h-24 max-w-md"}
+                className={cn(
+                  "max-w-md min-h-24 rounded-lg border-0 bg-white pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50 dark:bg-input/30",
+                  hasErrors && "ring-destructive/20 ring-[3px]",
+                )}
               />
               {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
             </div>
@@ -227,7 +231,10 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
                 minLength={element.minLength}
                 maxLength={element.maxLength}
                 aria-invalid={hasErrors}
-                className={hasErrors ? "border-destructive max-w-md" : "max-w-md"}
+                className={cn(
+                  "max-w-md rounded-lg border-0 bg-white pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50 dark:bg-input/30",
+                  hasErrors && "ring-destructive/20 ring-[3px]",
+                )}
               />
               {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
             </div>

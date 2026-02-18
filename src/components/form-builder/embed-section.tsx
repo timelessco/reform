@@ -116,22 +116,21 @@ export function EmbedSection({ formId, docTitle }: EmbedSectionProps) {
       {/* Embed type tabs — managed by form.Field so onChange fires */}
       <form.Field name="embedType">
         {(field) => (
-          <div className="flex items-center bg-light-gray-100 dark:bg-muted rounded-[10px] p-[3px] gap-1">
+          <div className="bg-secondary rounded-xl p-px w-full flex">
             {tabs.map((tab) => (
-              <Button
+              <button
                 key={tab.value}
-                variant="tab"
+                type="button"
                 onClick={() => field.handleChange(tab.value)}
-                data-active={field.state.value === tab.value}
                 className={cn(
-                  "flex-1 text-[13px] font-medium py-1.5 px-2 h-auto rounded-[8px]",
+                  "flex-1 h-7 rounded-[9px] text-sm font-medium text-center transition-all",
                   field.state.value === tab.value
-                    ? "bg-background text-foreground shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:bg-background"
-                    : "text-muted-foreground hover:text-foreground/80 hover:bg-transparent",
+                    ? "bg-white shadow-[0_0_1.5px_rgba(0,0,0,0.16),0_2px_5px_rgba(0,0,0,0.14)] text-foreground dark:bg-background"
+                    : "text-muted-foreground",
                 )}
               >
                 {tab.label}
-              </Button>
+              </button>
             ))}
           </div>
         )}

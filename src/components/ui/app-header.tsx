@@ -1,10 +1,5 @@
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toggleFavoriteLocal, updateFormStatus } from "@/db-collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
@@ -20,14 +15,18 @@ import { Link, useLocation, useNavigate, useParams, useSearch } from "@tanstack/
 import { format, formatDistanceToNow } from "date-fns";
 import {
   AlertCircle,
+  BarChart2,
   ChevronsRight,
+  History,
   Loader2,
   MoreHorizontal,
   Pencil,
-  Settings,
+  Star,
+  Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Logo } from "./logo";
 import { useSidebarSafe } from "./sidebar";
 import { SettingsIcon } from "./sidebar-icons";
 
@@ -187,7 +186,7 @@ export function AppHeader({
             className="h-8 w-8 text-muted-foreground -ml-1 group relative flex items-center justify-center transition-all duration-300"
             onClick={() => toggleMainSidebar()}
           >
-               <span className="text-2xl font-serif italic font-light tracking-tighter text-sidebar-nav-text dark:text-dark-gray-950">f.</span>
+               <Logo className="h-6 w-6 text-sidebar-nav-text dark:text-dark-gray-950" />
           </Button>
         )}
 
@@ -278,7 +277,7 @@ export function AppHeader({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                    className="h-7 w-7 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                     onClick={handleDiscardChanges}
                     disabled={isDiscarding}
                   >
@@ -337,63 +336,73 @@ export function AppHeader({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
                 onClick={toggleSettingsSidebar}
               >
       <SettingsIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
             </Button>
 
-              {/* Three dots menu - Figma system-flat 23508:7036 */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+              {/* Three dots menu - popover button list matching workspace/sidebar style */}
+              <Popover>
+                <PopoverTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    className="h-7 w-7 bg-secondary rounded-lg text-muted-foreground hover:text-foreground"
                   >
                     <MoreHorizontal className="h-[18px] w-[18px]" strokeWidth={1.5} />
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="w-[180px] rounded-[6px] border-0 bg-white p-[6px] py-[4px] shadow-sm dark:bg-popover"
-                >
-                  <DropdownMenuItem
-                    onClick={handleToggleFavorite}
-                    className="rounded-[4px] px-3 py-2 text-[14px] font-normal tracking-[0.14px] text-sidebar-nav-text focus:bg-light-gray-100 focus:text-sidebar-nav-text dark:focus:bg-accent dark:focus:text-accent-foreground"
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-[151px]" sideOffset={4}>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      handleToggleFavorite();
+                    }}
+                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-light-gray-800 hover:bg-black/5 hover:text-foreground"
                   >
-                    Favorite
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
+                    {/* <Star className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
+                    <span className="flex-1 text-left">Favorite</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
                     onClick={() =>
                       workspaceId && formId && navigate({ to: "/workspace/$workspaceId/form-builder/$formId/submissions", params: { workspaceId, formId } })
                     }
-                    className="rounded-[4px] px-3 py-2 text-[14px] font-normal tracking-[0.14px] text-sidebar-nav-text focus:bg-light-gray-100 focus:text-sidebar-nav-text dark:focus:bg-accent dark:focus:text-accent-foreground"
+                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-light-gray-800 hover:bg-black/5 hover:text-foreground"
                   >
-                    Analytics
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
+                    {/* <BarChart2 className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
+                    <span className="flex-1 text-left">Analytics</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
                     onClick={toggleSettingsSidebar}
-                    className="rounded-[4px] px-3 py-2 text-[14px] font-normal tracking-[0.14px] text-sidebar-nav-text focus:bg-light-gray-100 focus:text-sidebar-nav-text dark:focus:bg-accent dark:focus:text-accent-foreground"
+                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-light-gray-800 hover:bg-black/5 hover:text-foreground"
                   >
-                    Customisation
-                  </DropdownMenuItem>
+                    {/* <SettingsIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
+                    <span className="flex-1 text-left">Customisation</span>
+                  </Button>
                   {isEditRoute && (
-                    <DropdownMenuItem
+                    <Button
+                      variant="ghost"
                       onClick={toggleVersionHistory}
-                      className="rounded-[4px] px-3 py-2 text-[14px] font-normal tracking-[0.14px] text-sidebar-nav-text focus:bg-light-gray-100 focus:text-sidebar-nav-text dark:focus:bg-accent dark:focus:text-accent-foreground"
+                      className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-light-gray-800 hover:bg-black/5 hover:text-foreground"
                     >
-                      Version History
-                    </DropdownMenuItem>
+                      {/* <History className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
+                      <span className="flex-1 text-left">Version History</span>
+                    </Button>
                   )}
-                  <DropdownMenuItem
+                  {/* <div className="my-1 h-px bg-border" /> */}
+                  <Button
+                    variant="ghost"
                     onClick={handleDeleteForm}
-                    className="rounded-[4px] px-3 py-2 text-[14px] font-normal tracking-[0.14px] text-sidebar-nav-text focus:bg-light-gray-100 focus:text-sidebar-nav-text dark:focus:bg-accent dark:focus:text-accent-foreground"
+                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-red-500/70 hover:text-red-500 hover:bg-red-500/5"
                   >
-                    Delete form
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    {/* <Trash2 className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
+                    <span className="flex-1 text-left">Delete form</span>
+                  </Button>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Main Action Button */}

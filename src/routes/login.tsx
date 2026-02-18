@@ -16,6 +16,7 @@ import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { auth } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { guestMiddleware } from "@/middleware/auth";
+import { Logo } from "@/components/ui/logo";
 
 export const Route = createFileRoute("/login")({
   server: {
@@ -200,9 +201,7 @@ function LoginPage() {
       <div className="w-full max-w-[400px]">
         {/* Logo */}
         <div className="flex justify-center mb-10">
-          <span className="text-4xl font-serif italic font-bold tracking-tighter text-foreground">
-            f.
-          </span>
+        <Logo />
         </div>
 
         {/* OTP verification step */}

@@ -5,7 +5,7 @@ import {
   BlockMenuPlugin,
   BlockSelectionPlugin,
 } from "@platejs/selection/react";
-import { GripVertical, Plus, Settings, Trash2 } from "lucide-react";
+import { GripVertical, GripVerticalIcon, Plus, Settings, Trash2 } from "lucide-react";
 import { getPluginByType, isType, KEYS, type TElement } from "platejs";
 import {
   MemoizedChildren,
@@ -242,7 +242,7 @@ function Draggable(props: PlateElementProps) {
           <div
             className={cn(
               "slate-blockToolbarWrapper",
-              "flex items-start gap-0.5 pointer-events-auto pr-2",
+              "flex items-center gap-0 pointer-events-auto",
               isInColumn && "h-4",
             )}
           >
@@ -250,10 +250,8 @@ function Draggable(props: PlateElementProps) {
             {!isFormButton && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-6 p-0"
+                  <button
+                    className="h-auto w-auto rounded-lg has-[>svg]:px-1.5 has-[>svg]:py-1"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -270,8 +268,8 @@ function Draggable(props: PlateElementProps) {
                     }}
                     data-plate-prevent-deselect
                   >
-                    <Plus className="h-7 w-6 text-muted-foreground" />
-                  </Button>
+                    <Plus className="size-4 text-[#52525B] dark:text-muted-foreground" />
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent>Add block below</TooltipContent>
               </Tooltip>
@@ -280,7 +278,7 @@ function Draggable(props: PlateElementProps) {
             {/* Drag Handle or Settings Gear - div to avoid nested button (Tooltip+Button inside) */}
             <div
               ref={isFormButton ? null : handleRef}
-              className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-6 w-6 p-0")}
+              className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-auto w-auto  rounded-lg hover:bg-transparent")}
               data-plate-prevent-deselect
             >
               <DragHandle
@@ -359,10 +357,9 @@ const DragHandle = React.memo(function DragHandle({
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          variant="ghost"
-          className="flex size-full items-center justify-center p-0 h-auto hover:bg-transparent"
+      <TooltipTrigger asChild className="px-0">
+        <button
+          className="flex size-full items-center justify-center h-auto hover:bg-transparent has-[>svg]:px-1.5 has-[>svg]:py-1"
           onClick={(e) => {
             // e.preventDefault();
             // e.stopPropagation();
@@ -450,9 +447,9 @@ const DragHandle = React.memo(function DragHandle({
           {isFormButton ? (
             <Settings className="text-muted-foreground" />
           ) : (
-            <GripVertical className="h-6 w-6 text-muted-foreground" />
+            <GripVerticalIcon className="text-[#52525B] dark:text-muted-foreground" />
           )}
-        </Button>
+        </button>
       </TooltipTrigger>
       <TooltipContent>
         {isFormButton ? "Click for settings" : "Drag to move, Click to open menu"}

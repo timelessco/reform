@@ -130,7 +130,7 @@ export function FormButtonElement({ className, children, ...props }: PlateElemen
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-64"
+        className="w-64 p-4 border"
         side={isPrevious ? "right" : "left"}
         align="start"
         onMouseDown={(e) => e.stopPropagation()}

@@ -192,7 +192,7 @@ const EquationPopoverContent = ({
 
   return (
     <PopoverContent
-      className="flex gap-2"
+      className="flex gap-2 w-72 p-4 border"
       onEscapeKeyDown={(e) => {
         e.preventDefault();
       }}

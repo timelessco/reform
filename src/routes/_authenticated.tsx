@@ -24,7 +24,14 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Dialog,
   DialogContent,
@@ -58,10 +65,20 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
+  AlphabeticalIcon,
   BellIcon,
+  CalendarIcon,
+  ChevronDownIcon,
+  ClockFastForwardIcon,
+  ClockRewindIcon,
+  CopyIcon,
   HomeIcon,
+  MoreHorizontalIcon,
+  Pencil2Icon,
+  PlusIcon,
   SearchIcon,
   SettingsIcon,
+  StarIcon,
 } from "@/components/ui/sidebar-icons";
 import {
   EditorHeaderVisibilityProvider,
@@ -110,13 +127,14 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import {
+  Check,
   ChevronDown,
   ChevronsLeft,
-  Copy,
   Feather,
   FileText,
   Filter,
   Github,
+  GripVertical,
   HelpCircle,
   Home,
   Loader2,
@@ -129,6 +147,7 @@ import {
   Star,
   Sun,
   Trash2,
+  TrashIcon,
   Undo2,
   Users,
   Zap
@@ -136,6 +155,7 @@ import {
 import type * as React from "react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Logo } from "@/components/ui/logo";
 
 // Route configuration
 export const Route = createFileRoute("/_authenticated")({
@@ -434,15 +454,15 @@ function SidebarItem({
       {...componentProps}
       onClick={onClick}
       className={cn(
-        "group flex w-full items-center justify-between gap-2 rounded-lg px-2 py-[7px] text-[14px] font-medium transition-colors relative cursor-pointer min-h-[30px]",
-        "text-foreground",
+        "group flex w-full items-center justify-between gap-x-2.5 rounded-lg px-2 py-[7px] text-[14px] font-medium transition-colors relative cursor-pointer h-[30px] overflow-clip",
+        "text-accent-foreground",
         !isActive && "hover:bg-muted",
-        isActive && "bg-secondary text-foreground",
+        isActive && "bg-secondary text-accent-foreground",
       )}
     >
       <span className="flex items-center gap-2 overflow-hidden flex-1 min-w-0">
         <div className="flex items-center justify-center shrink-0">{prefix}</div>
-        <span className="truncate leading-[1.15] font-case">{label}</span>
+        <span className="truncate leading-[1.15] font-case tracking-1">{label}</span>
       </span>
       {children}
     </Component>
@@ -549,8 +569,8 @@ function AppSidebar() {
   return (
     <>
       <Sidebar className="border-r-[0.5px] bg-background h-screen">
-        <SidebarHeader className="h-12 pl-[21px] pr-2 pt-3 pb-2.5 flex flex-row items-center justify-between group/logo">
-          <span className="text-2xl font-serif italic font-light tracking-tighter text-sidebar-foreground">f.</span>
+        <SidebarHeader className="h-12 pl-3.5 pr-2 pt-2 pb-0 flex flex-row items-center justify-between group/logo">
+          <Logo className="h-5.5 w-5.5 text-sidebar-foreground" />
           <Button
             variant="ghost"
             size="icon-sm"
@@ -575,8 +595,10 @@ function AppSidebar() {
                     className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] gap-2 transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
                   >
                     <Link to="/dashboard" className="flex items-center gap-2 min-w-0">
-                      <HomeIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
-                      <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-tight font-case truncate">All</span>
+                      <div className="flex items-center justify-center size-5 shrink-0">
+                        <HomeIcon className="h-[18px] w-[18px] text-muted-foreground" />
+                      </div>
+                      <span className="text-[14px] font-medium font-var-medium-14 text-light-gray-800 dark:text-dark-gray-800 tracking-[0.14px] leading-tight font-case truncate">All</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -584,10 +606,14 @@ function AppSidebar() {
                   <SidebarMenuButton
                     onClick={togglePalette}
                     tooltip="Search"
-                    className="h-[30px] min-w-0 rounded-lg px-[7px] gap-2 transition-colors hover:bg-sidebar-active"
+                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] gap-2 transition-colors hover:bg-sidebar-active"
                   >
-                    <SearchIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
-                    <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-tight font-case truncate">Search</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center justify-center size-5 shrink-0">
+                        <SearchIcon className="h-[18px] w-[18px] text-muted-foreground" />
+                      </div>
+                      <span className="text-[14px] font-var-medium-14 text-light-gray-800 dark:text-dark-gray-800 tracking-[0.14px] leading-tight font-case truncate">Search</span>
+                    </div>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -595,20 +621,22 @@ function AppSidebar() {
                     onClick={() => setIsInboxOpen(!isInboxOpen)}
                     isActive={isInboxOpen}
                     tooltip={pendingCount > 0 ? `Notifications (${pendingCount})` : "Notifications"}
-                    className="h-[30px] min-w-0 rounded-lg px-[7px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
+                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] gap-2 transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
                   >
-                    <div className="relative shrink-0">
-                      <BellIcon className="h-[18px] w-[18px] text-muted-foreground" />
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className="relative flex items-center justify-center size-5 shrink-0">
+                        <BellIcon className="h-[18px] w-[18px] text-muted-foreground" />
+                        {pendingCount > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-background" />
+                        )}
+                      </div>
+                      <span className="text-[14px] font-medium font-var-medium-14 text-light-gray-800 dark:text-dark-gray-800 tracking-[0.14px] leading-tight font-case truncate flex-1 min-w-0">Notifications</span>
                       {pendingCount > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-background" />
+                        <span className="text-[10px] bg-blue-500 text-white  py-0.5 rounded-full font-semibold shrink-0 tabular-nums">
+                          {pendingCount}
+                        </span>
                       )}
                     </div>
-                    <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-tight font-case truncate flex-1 min-w-0">Notifications</span>
-                    {pendingCount > 0 && (
-                      <span className="text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded-full font-semibold shrink-0 tabular-nums">
-                        {pendingCount}
-                      </span>
-                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -616,11 +644,13 @@ function AppSidebar() {
                     asChild
                     isActive={location.pathname.startsWith("/settings")}
                     tooltip="Settings"
-                    className="h-[30px] min-w-0 rounded-lg px-[7px] gap-2 transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
+                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] gap-2 transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
                   >
-                    <Link to="/settings/my-account"  className="flex items-center gap-2 min-w-0">
-                      <SettingsIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
-                      <span className="text-[14px] font-medium text-sidebar-foreground tracking-[0.14px] leading-tight font-case truncate">Settings</span>
+                    <Link to="/settings/my-account" className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center justify-center size-5 shrink-0">
+                        <SettingsIcon className="h-[18px] w-[18px] text-muted-foreground" />
+                      </div>
+                      <span className="text-[14px] font-medium font-var-medium-14 text-light-gray-800 dark:text-dark-gray-800 tracking-[0.14px] leading-tight font-case truncate">Settings</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -633,7 +663,7 @@ function AppSidebar() {
           </div>
         </SidebarContent>
 
-        <SidebarFooter className="p-0 pt-2 pb-2 flex flex-col gap-4">
+        <SidebarFooter className="p-0 pt-2 pb-2 flex shrink-0 flex-col gap-4">
           <FreePlanCard />
           <UserMenuMinimal
             session={session}
@@ -1338,10 +1368,10 @@ function UserMenuMinimal({
 // Free Plan Card - Figma node 23504-5269 (pixel-perfect)
 function FreePlanCard() {
   return (
-    <div className="rounded-xl bg-free-plan-card-bg p-3 mx-3 w-[204px]">
-      <div className="flex items-start gap-2 mb-2">
+    <div className="shrink-0 overflow-hidden rounded-xl bg-free-plan-card-bg p-3 mx-3 w-[204px] shadow-sm">
+      <div className="flex items-center gap-2 mb-2">
         <div className="shrink-0 size-6 rounded flex items-center justify-center bg-teal-100 dark:bg-teal-700/20">
-          <Zap className="h-3.5 w-3.5 text-teal-700" strokeWidth={2} fill="currentColor" />
+          <Zap className="h-3.5 w-3.5 text-teal-700 dark:text-teal-400" strokeWidth={2} fill="currentColor" />
         </div>
         <span className="text-[14px] font-medium text-sidebar-foreground">
           Free Plan
@@ -1352,7 +1382,7 @@ function FreePlanCard() {
       </p>
       <Button
         variant="outline"
-        className="w-full h-7 text-[13px] font-medium text-sidebar-foreground bg-background border hover:bg-muted rounded-lg shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
+        className="w-full h-7 text-[13px] font-medium text-sidebar-foreground bg-background border border-border hover:bg-muted rounded-lg shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
       >
         Try for free
       </Button>
@@ -1382,6 +1412,8 @@ type WorkspaceWithForms = {
 function WorkspaceItemMinimal({
   workspace,
   submissionCounts,
+  sortMode,
+  onSortChange,
   onRename,
   onDelete,
   onDuplicateForm,
@@ -1389,6 +1421,8 @@ function WorkspaceItemMinimal({
 }: {
   workspace: WorkspaceWithForms;
   submissionCounts: Map<string, number>;
+  sortMode: string;
+  onSortChange: (mode: "recent" | "oldest" | "alphabetical" | "manual") => void;
   onRename: () => void;
   onDelete: () => void;
   onDuplicateForm: (form: WorkspaceWithForms["forms"][0]) => void;
@@ -1396,21 +1430,7 @@ function WorkspaceItemMinimal({
 }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(true);
-  const [showMenu, setShowMenu] = useState(false);
   const [isCreatingForm, setIsCreatingForm] = useState(false);
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    if (!showMenu) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest(".workspace-menu-container")) {
-        setShowMenu(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showMenu]);
 
   const handleCreateForm = async () => {
     setIsCreatingForm(true);
@@ -1429,85 +1449,107 @@ function WorkspaceItemMinimal({
 
   return (
     <div className="flex flex-col">
-      <div className="group flex items-center justify-between transition-colors">
+      {/* Figma system-flat node 23504-5156: workspace/collection header row */}
+      <div className="group flex items-center justify-between px-1 py-[7px] transition-colors">
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1 h-auto py-[5.5px] px-[4px] cursor-pointer flex-1 min-w-0 justify-start bg-transparent border-none"
+          className="flex items-center gap-1 h-auto p-0 cursor-pointer flex-1 min-w-0 justify-start bg-transparent border-none"
           aria-expanded={isOpen}
         >
           <span className="text-[13px] font-medium text-muted-foreground tracking-[0.26px] truncate">
             {workspace.name}
           </span>
-          <ChevronDown
+          <ChevronDownIcon
             className={cn(
               "h-2.5 w-2.5 shrink-0 text-muted-foreground transition-transform duration-200",
               !isOpen && "-rotate-90",
             )}
-            strokeWidth={2}
           />
         </button>
 
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-          <div className="relative workspace-menu-container">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMenu(!showMenu);
-              }}
-              className="h-6 w-6 hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
-              title="More options"
-            >
-              <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
-            </Button>
-            {showMenu && (
-              <div className="absolute right-0 top-full mt-1 bg-background border border-foreground/10 rounded-lg shadow-lg p-1 z-50 min-w-32">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="h-6 w-6 hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
+                title="More options"
+              >
+                <MoreHorizontalIcon className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-[195px]" sideOffset={4}>
+              <div className="text-[12px] font-medium text-muted-foreground px-2 py-1.5 tracking-[0.24px]">Sort by</div>
+              {[
+                { value: "recent", label: "Recent First", icon: CalendarIcon},
+                { value: "oldest", label: "Oldest First", icon: ClockRewindIcon },
+                { value: "alphabetical", label: "Alphabetical", icon: AlphabeticalIcon },
+                { value: "manual", label: "Manual", icon: CopyIcon },
+              ].map((option) => (
                 <Button
+                  key={option.value}
                   variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCreateForm();
-                    setShowMenu(false);
-                  }}
-                  disabled={isCreatingForm}
-                  className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium"
-                >
-                  {isCreatingForm ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Plus className="h-3.5 w-3.5" />
+                  onClick={() => onSortChange(option.value as "recent" | "oldest" | "alphabetical" | "manual")}
+                  className={cn(
+                    "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors",
+                    sortMode === option.value
+                      ? "bg-black/5 text-[#212121]"
+                      : "text-light-gray-800 hover:bg-black/5 hover:text-[#212121]",
                   )}
-                  <span>New form</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRename();
-                    setShowMenu(false);
-                  }}
-                  className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[12px] text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium"
                 >
-                  <Pencil className="h-3.5 w-3.5" />
-                  <span>Rename</span>
+                  <option.icon className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  <span className="flex-1 text-left">{option.label}</span>
+                  {sortMode === option.value && (
+                    <Check className="h-3 w-3" strokeWidth={2} />
+                  )}
                 </Button>
-                <Button
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete();
-                    setShowMenu(false);
-                  }}
-                  className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[12px] text-red-500/70 hover:text-red-500 hover:bg-red-500/5 font-medium"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  <span>Delete</span>
-                </Button>
+              ))}
+              <div className="my-1 h-px bg-border" />
+              <div className="text-[12px] font-medium text-muted-foreground px-2 py-1.5 tracking-[0.24px]">
+                Workspace
               </div>
-            )}
-          </div>
+              <Button
+                variant="ghost"
+                onClick={handleCreateForm}
+                disabled={isCreatingForm}
+                className={cn(
+                  "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors",
+                  "text-light-gray-800 hover:bg-black/5 hover:text-[#212121]",
+                )}
+              >
+                {isCreatingForm ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" strokeWidth={1.5} />
+                ) : (
+                  <PlusIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                )}
+                <span className="flex-1 text-left">New form</span>
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={onRename}
+                className={cn(
+                  "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors",
+                  "text-light-gray-800 hover:bg-black/5 hover:text-[#212121]",
+                )}
+              >
+                <Pencil2Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                <span className="flex-1 text-left">Rename</span>
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={onDelete}
+                className={cn(
+                  "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors",
+                  "text-red-500/70 hover:text-red-500 hover:bg-red-500/5",
+                )}
+              >
+                <TrashIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                <span className="flex-1 text-left">Delete</span>
+              </Button>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
@@ -1624,33 +1666,38 @@ function WorkspaceFormMinimal({
         <div>
           <SidebarItem label={label} to={to} isActive={isActive} prefix={prefix}>
             {showCount && (
-              <span className="text-[11px] tracking-[0.33px] text-muted-foreground tabular-nums shrink-0 font-normal">
+              <span className="text-[11px] tracking-[0.33px] text-muted-foreground tabular-nums shrink-0 font-medium leading-[1.15] font-case">
                 {submissionCount}
               </span>
             )}
           </SidebarItem>
         </div>
       </ContextMenuTrigger>
-      <ContextMenuContent className="w-40">
+      <ContextMenuContent className="w-[195px] rounded-2xl p-1 shadow-popover border-0 outline-hidden">
+        <div className="text-[12px] font-medium text-muted-foreground px-2 py-1.5 tracking-[0.24px]">
+          Form
+        </div>
         <ContextMenuItem
           onClick={(e) => {
             e.stopPropagation();
             onDuplicate();
           }}
+          className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-light-gray-800 hover:bg-black/5 hover:text-foreground focus:bg-black/5 focus:text-foreground [&_svg]:size-3.5"
         >
-          <Copy className="mr-2 h-4 w-4" />
-          Duplicate
+          <CopyIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+          <span className="flex-1 text-left">Duplicate</span>
         </ContextMenuItem>
-        <ContextMenuSeparator />
+        <ContextMenuSeparator className="my-1 h-px bg-border mx-0" />
         <ContextMenuItem
           variant="destructive"
           onClick={(e) => {
             e.stopPropagation();
             onDelete();
           }}
+          className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-red-500/70 hover:bg-red-500/5 focus:bg-red-500/5 focus:text-red-500 [&_svg]:size-3.5"
         >
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete
+          <TrashIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+          <span className="flex-1 text-left">Delete</span>
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
@@ -1716,6 +1763,18 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
   const location = useLocation();
   const { data: session } = useSession();
 
+  // Sort mode state with localStorage persistence
+  const [sortMode, setSortMode] = useState<"recent" | "oldest" | "alphabetical" | "manual">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("sidebar-sort-mode") as "recent" | "oldest" | "alphabetical" | "manual") || "recent";
+    }
+    return "recent";
+  });
+  const handleSortChange = (mode: "recent" | "oldest" | "alphabetical" | "manual") => {
+    setSortMode(mode);
+    localStorage.setItem("sidebar-sort-mode", mode);
+  };
+
   // Use live queries for real-time sync
   const { data: workspacesData, isLoading: workspacesLoading } = useWorkspaces();
   const { data: formsData, isLoading: formsLoading } = useForms();
@@ -1746,11 +1805,21 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
       .map((ws) => ({
         ...ws,
         // Sort forms by recently edited (most recent first)
-        forms: (formsByWorkspace[ws.id] || []).toSorted(
-          (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-        ),
+        forms: (formsByWorkspace[ws.id] || []).toSorted((a, b) => {
+          switch (sortMode) {
+            case "oldest":
+              return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+            case "alphabetical":
+              return (a.title || "").localeCompare(b.title || "");
+            case "manual":
+              return 0;
+            case "recent":
+            default:
+              return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+          }
+        }),
       }));
-  }, [workspacesData, formsData, activeOrgId, isElectricReady]);
+  }, [workspacesData, formsData, activeOrgId, isElectricReady, sortMode]);
 
   // State for workspace dialogs
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -1844,8 +1913,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
         <SidebarSection
           label="Favorites"
           initialOpen={favoriteForms.length > 0}
-          action={<></>
-          }
+          action={<></>}
         >
           {favoriteForms.length === 0 ? (
             <span className="text-muted-foreground/50 text-[11px] px-2 py-1 italic">
@@ -1865,7 +1933,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
                   isActive={isFavActive}
                   prefix={
                     <div className="bg-form-icon-bg rounded-full size-[18px] flex items-center justify-center border-[0.5px] border-form-icon-border shrink-0">
-                      <Star className="h-3 w-3 fill-foreground text-foreground" strokeWidth={1.5} />
+                      <StarIcon className="h-4.5 w-4.5 fill-foreground text-foreground" />
                     </div>
                   }
                 />
@@ -1890,6 +1958,8 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
                   key={workspace.id}
                   workspace={workspace}
                   submissionCounts={submissionCounts}
+                  sortMode={sortMode}
+                  onSortChange={handleSortChange}
                   onRename={() => openRenameDialog(workspace)}
                   onDelete={() => openDeleteDialog(workspace)}
                   onDuplicateForm={handleDuplicateForm}

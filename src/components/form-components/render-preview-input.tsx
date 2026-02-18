@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import type { AppForm } from "@/hooks/use-form-builder";
 /**
  * Simplified input field renderer for form preview.
@@ -144,7 +145,10 @@ export function RenderPreviewInput({
                 minLength={field.minLength}
                 maxLength={field.maxLength}
                 aria-invalid={hasErrors}
-                className={hasErrors ? "border-destructive min-h-24 max-w-md" : "min-h-24 max-w-md"}
+                className={cn(
+                  "max-w-md min-h-24 rounded-lg border-0 bg-white pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50 dark:bg-input/30",
+                  hasErrors && "ring-destructive/20 ring-[3px]",
+                )}
               />
               {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
             </div>
@@ -177,7 +181,10 @@ export function RenderPreviewInput({
               minLength={field.minLength}
               maxLength={field.maxLength}
               aria-invalid={hasErrors}
-              className={hasErrors ? "border-destructive max-w-md" : "max-w-md"}
+              className={cn(
+                "max-w-md rounded-lg border-0 bg-white pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50 dark:bg-input/30",
+                hasErrors && "ring-destructive/20 ring-[3px]",
+              )}
             />
             {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
           </div>
