@@ -3,8 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "preinstall": "node -e \"if(!/bun/.test(process.env.npm_execpath||''))throw new Error('Use bun install')\"",
-    "dev": "caddy run --config Caddyfile & vite dev --port ${PORT:-3000}",
+    "dev": "caddy run --config Caddyfile & sleep 1 && printf '\\n  ➜  HTTP/2: https://localhost:%s\\n\\n' \"${CADDY_PORT:-3001}\" && vite dev --port ${PORT:-3000}",
     "dev:auto": "p=3000; while lsof -iTCP:$p -sTCP:LISTEN >/dev/null 2>&1; do p=$((p+1)); done; PORT=$p CADDY_PORT=$((p+1)) bun dev",
     "dev:worktree": "cp -f /Users/vijayabaskar/work/better-form/.env .env && bun dev:auto",
     "preview": "vite preview",
