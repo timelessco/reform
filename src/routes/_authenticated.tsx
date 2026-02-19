@@ -1,7 +1,9 @@
 import { FormSettingsSidebar } from "@/components/form-builder/form-settings-sidebar";
 import { ShareSummarySidebar } from "@/components/form-builder/share-summary-sidebar";
 import { VersionHistorySidebar } from "@/components/form-builder/version-history-sidebar";
-import { useTheme } from "@/components/ThemeProvider";
+import { SidebarItem } from "@/components/sidebar-item";
+import { UserMenuMinimal } from "@/components/user-menu-minimal";
+import { WorkspaceItemMinimal, type WorkspaceWithForms } from "@/components/workspace-item-minimal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +15,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AppHeader } from "@/components/ui/app-header";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   CommandDialog,
@@ -24,14 +25,6 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Dialog,
   DialogContent,
@@ -64,22 +57,7 @@ import {
   SidebarProvider,
   useSidebar,
 } from "@/components/ui/sidebar";
-import {
-  AlphabeticalIcon,
-  BellIcon,
-  CalendarIcon,
-  ChevronDownIcon,
-  ClockFastForwardIcon,
-  ClockRewindIcon,
-  CopyIcon,
-  HomeIcon,
-  MoreHorizontalIcon,
-  Pencil2Icon,
-  PlusIcon,
-  SearchIcon,
-  SettingsIcon,
-  StarIcon,
-} from "@/components/ui/sidebar-icons";
+import { BellIcon, HomeIcon, SearchIcon, SettingsIcon, StarIcon } from "@/components/ui/sidebar-icons";
 import {
   EditorHeaderVisibilityProvider,
   useEditorHeaderVisibility,
@@ -112,7 +90,6 @@ import {
 } from "@/hooks/use-live-hooks";
 import { auth, useSession } from "@/lib/auth-client";
 import { orgDataForLayoutQueryOptions } from "@/lib/fn/org";
-import { getUserMembershipsQueryOptions } from "@/lib/fn/workspaces";
 import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/middleware/auth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -127,27 +104,17 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import {
-  Check,
   ChevronDown,
   ChevronsLeft,
-  Feather,
   FileText,
   Filter,
-  Github,
-  GripVertical,
   HelpCircle,
   Home,
-  Loader2,
   LogOut,
-  Moon,
   MoreHorizontal,
-  Pencil,
   Plus,
   Settings,
-  Star,
-  Sun,
   Trash2,
-  TrashIcon,
   Undo2,
   Users,
   Zap,
@@ -169,21 +136,17 @@ export const Route = createFileRoute("/_authenticated")({
       ...orgDataForLayoutQueryOptions(),
       revalidateIfStale: true,
     });
-    // Seed auth.organization cache so useQuery in org-switcher, billing, etc. works
-    context.queryClient.setQueryData(auth.organization.getFullOrganization.queryKey(), activeOrg);
-    context.queryClient.setQueryData(auth.organization.list.queryKey(), orgsData);
-    // Start Electric sync for all collections - client-only since Electric
     // requires browser cookies for auth and server-side preload would fail
-    if (typeof window !== "undefined") {
-      await Promise.all([
-        workspaceCollection.preload(),
-        formCollection.preload(),
-        submissionCollection.preload(),
-        favoriteCollection.preload(),
-        formVersionCollection.preload(),
-        formSettingsCollection.preload(),
-      ]);
-    }
+    // if (typeof window !== "undefined") {
+    //   await Promise.all([
+    //     workspaceCollection.preload(),
+    //     formCollection.preload(),
+    //     favoriteCollection.preload(),
+    //     // submissionCollection.preload(),
+    //     // formVersionCollection.preload(),
+    //     // formSettingsCollection.preload(),
+    //   ]);
+    // }
     return { activeOrg, orgsData };
   },
   staleTime: 500000, // 500 seconds
@@ -423,46 +386,6 @@ function AuthLayoutContent() {
 }
 
 // Minimal Sidebar Item Component (Figma system-flat: form list item with icon, title, optional count)
-interface SidebarItemProps {
-  to?: string;
-  label: string;
-  isNested?: boolean;
-  isActive?: boolean;
-  onClick?: () => void;
-  prefix?: React.ReactNode;
-}
-
-function SidebarItem({
-  to,
-  label,
-  isActive,
-  onClick,
-  prefix,
-  children,
-}: SidebarItemProps & { children?: React.ReactNode }) {
-  const Component: React.ElementType = to ? Link : "button";
-  const componentProps = to ? { to } : { type: "button" as const };
-
-  return (
-    <Component
-      {...componentProps}
-      onClick={onClick}
-      className={cn(
-        "group flex w-full items-center justify-between gap-x-2.5 rounded-lg px-2 py-[7px] text-[14px] font-medium transition-colors relative cursor-pointer h-[30px] overflow-clip",
-        "text-accent-foreground",
-        !isActive && "hover:bg-muted",
-        isActive && "bg-secondary text-accent-foreground",
-      )}
-    >
-      <span className="flex items-center gap-2 overflow-hidden flex-1 min-w-0">
-        <div className="flex items-center justify-center shrink-0">{prefix}</div>
-        <span className="truncate leading-[1.15] font-case tracking-1">{label}</span>
-      </span>
-      {children}
-    </Component>
-  );
-}
-
 // App Sidebar Component using shadcn/ui
 function AppSidebar() {
   const { toggleSidebar } = useSidebar();
@@ -470,7 +393,6 @@ function AppSidebar() {
   const location = useLocation();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { theme, setTheme } = useTheme();
   const {
     toggle: togglePalette,
     isOpen: isPaletteOpen,
@@ -482,7 +404,6 @@ function AppSidebar() {
 
   // Get pre-fetched data from route loader for immediate render
   const { activeOrg, orgsData } = Route.useLoaderData();
-  const { data: membersData } = useQuery(auth.organization.listMembers.queryOptions());
   const { data: workspacesData } = useWorkspaces();
 
   const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
@@ -500,17 +421,6 @@ function AppSidebar() {
       },
     }),
   );
-
-  const { data: orgs } = useQuery(auth.organization.list.queryOptions());
-  const { data: membershipsData } = useQuery(getUserMembershipsQueryOptions());
-
-  const roleByOrgId = useMemo(() => {
-    const map: Record<string, string> = {};
-    membershipsData?.memberships?.forEach((m) => {
-      map[m.organizationId] = m.role;
-    });
-    return map;
-  }, [membershipsData]);
 
   const setActiveOrgMutation = useMutation(
     auth.organization.setActive.mutationOptions({
@@ -547,18 +457,6 @@ function AppSidebar() {
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
   }, [togglePalette]);
-
-  const getInitials = (name?: string | null) => {
-    if (!name) return "U";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const displayName = activeOrg?.name || session?.user?.name || "User";
 
   return (
     <>
@@ -667,21 +565,7 @@ function AppSidebar() {
 
         <SidebarFooter className="p-0 pt-2 pb-2 flex shrink-0 flex-col gap-4">
           <FreePlanCard />
-          <UserMenuMinimal
-            session={session}
-            activeOrg={activeOrg}
-            orgs={orgs}
-            displayName={displayName}
-            getInitials={getInitials}
-            setActiveOrgMutation={setActiveOrgMutation}
-            signOutMutation={signOutMutation}
-            router={router}
-            theme={theme}
-            setTheme={setTheme as (theme: string) => void}
-            onOpenTrash={() => setTrashDialogOpen(true)}
-            membersData={membersData}
-            roleByOrgId={roleByOrgId}
-          />
+          <UserMenuMinimal onOpenTrash={() => setTrashDialogOpen(true)} />
         </SidebarFooter>
         {/* <SidebarRail /> */}
       </Sidebar>
@@ -1153,223 +1037,6 @@ function SidebarInbox() {
   );
 }
 
-// User Menu Component - styled to match sidebar design tokens
-function UserMenuMinimal({
-  session,
-  activeOrg,
-  orgs,
-  displayName,
-  getInitials,
-  setActiveOrgMutation,
-  signOutMutation,
-  router,
-  theme,
-  setTheme,
-  onOpenTrash,
-  membersData,
-  roleByOrgId,
-}: {
-  session: any;
-  activeOrg: any;
-  orgs: any;
-  displayName: string;
-  getInitials: (name?: string | null) => string;
-  setActiveOrgMutation: any;
-  signOutMutation: any;
-  router: any;
-  theme: string;
-  setTheme: (theme: string) => void;
-  onOpenTrash: () => void;
-  membersData: any;
-  roleByOrgId: Record<string, string>;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest(".user-menu-container")) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
-
-  return (
-    <div className="relative user-menu-container border-t border-b pt-[4.8px] pb-2 bg-background">
-      <Button
-        variant="ghost"
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-2 py-1.5 h-8 w-full min-w-0 rounded-md hover:bg-sidebar-active justify-start"
-        aria-label="Toggle user menu"
-      >
-        <div className="h-6 w-6 rounded-full overflow-hidden bg-sidebar-active flex items-center justify-center text-[10px] font-bold shrink-0">
-          {session?.user?.image ? (
-            <img
-              src={session.user.image}
-              alt={displayName}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            getInitials(displayName)
-          )}
-        </div>
-        <span className="text-[14px] font-medium text-sidebar-foreground truncate flex-1 text-left tracking-[0.14px]">
-          {displayName}
-        </span>
-        <ChevronDown
-          className={cn(
-            "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 shrink-0",
-            isOpen && "rotate-180",
-          )}
-          strokeWidth={1.5}
-        />
-      </Button>
-
-      {isOpen && (
-        <div className="absolute bottom-full left-0 right-0 mb-2 mx-2 bg-background border rounded-xl shadow-[0px_4px_16px_rgba(0,0,0,0.08)] p-1.5 z-100 animate-in fade-in slide-in-from-bottom-2 duration-200 min-w-[220px]">
-          <div className="px-3 py-2 border-b mb-1.5 flex items-start gap-3">
-            <div className="h-10 w-10 rounded-lg bg-sidebar-active flex items-center justify-center text-lg font-bold shrink-0 overflow-hidden">
-              {session?.user?.image ? (
-                <img
-                  src={session.user.image}
-                  alt={displayName}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                getInitials(displayName)
-              )}
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-[14px] font-bold text-sidebar-foreground truncate">
-                {displayName}
-              </span>
-              <span className="text-[11px] text-muted-foreground">
-                Free Plan · {membersData?.members?.length ?? 0}{" "}
-                {membersData?.members?.length === 1 ? "member" : "members"}
-              </span>
-            </div>
-          </div>
-
-          <div className="px-2 py-1 mb-1.5">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1 mb-1">
-              Account
-            </p>
-            <div className="space-y-0.5">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  router.navigate({ to: "/settings/my-account" });
-                  setIsOpen(false);
-                }}
-                className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-active rounded-lg"
-              >
-                <Settings className="h-3.5 w-3.5" strokeWidth={1.5} />
-                Settings
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setTheme(theme === "dark" ? "light" : "dark");
-                  setIsOpen(false);
-                }}
-                className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-active rounded-lg"
-              >
-                {theme === "dark" ? (
-                  <Sun className="h-3.5 w-3.5" strokeWidth={1.5} />
-                ) : (
-                  <Moon className="h-3.5 w-3.5" strokeWidth={1.5} />
-                )}
-                <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  onOpenTrash();
-                  setIsOpen(false);
-                }}
-                className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-active rounded-lg"
-              >
-                <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
-                Trash
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  router.navigate({ to: "/settings/members" });
-                  setIsOpen(false);
-                }}
-                className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-active rounded-lg"
-              >
-                <Users className="h-3.5 w-3.5" strokeWidth={1.5} />
-                Members
-              </Button>
-            </div>
-          </div>
-
-          <div className="px-2 py-1 mb-1.5">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1 mb-1">
-              {session?.user?.email}
-            </p>
-            <div className="space-y-0.5">
-              {orgs?.map((org: any) => {
-                const role = roleByOrgId[org.id];
-                return (
-                  <Button
-                    variant="ghost"
-                    key={org.id}
-                    onClick={() => {
-                      setActiveOrgMutation.mutate({ organizationId: org.id });
-                      setIsOpen(false);
-                    }}
-                    className="flex items-center gap-2 px-2 py-1.5 h-auto w-full justify-start text-muted-foreground hover:bg-sidebar-active rounded-lg"
-                    aria-label={`Switch to ${org.name}`}
-                  >
-                    <div className="h-5 w-5 rounded bg-sidebar-active flex items-center justify-center text-[9px] font-bold text-sidebar-foreground">
-                      {getInitials(org.name)}
-                    </div>
-                    <span className="text-[13px] font-medium text-foreground group-hover:text-sidebar-foreground flex-1 truncate">
-                      {org.name}
-                    </span>
-                    {role && (
-                      <Badge
-                        variant={role === "owner" ? "primary" : "outline"}
-                        className="text-[9px] px-1.5 py-0 h-4 capitalize"
-                      >
-                        {role}
-                      </Badge>
-                    )}
-                    {org.id === activeOrg?.id && (
-                      <div className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
-                    )}
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="h-px bg-foreground/5 my-1" />
-          <div className="space-y-0.5 px-1">
-            <Button
-              variant="ghost"
-              onClick={() => {
-                signOutMutation.mutate({});
-                setIsOpen(false);
-              }}
-              className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-active rounded-lg"
-            >
-              <LogOut className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Log out
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // Free Plan Card - Figma node 23504-5269 (pixel-perfect)
 function FreePlanCard() {
   return (
@@ -1394,333 +1061,6 @@ function FreePlanCard() {
         Try for free
       </Button>
     </div>
-  );
-}
-
-// Type for workspace with forms from server
-type WorkspaceWithForms = {
-  id: string;
-  organizationId: string;
-  createdByUserId?: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-  forms: Array<{
-    id: string;
-    title: string;
-    updatedAt: string;
-    workspaceId: string;
-    icon?: string | null;
-    status: string;
-  }>;
-};
-
-// Minimal Workspace Item Component
-function WorkspaceItemMinimal({
-  workspace,
-  submissionCounts,
-  sortMode,
-  onSortChange,
-  onRename,
-  onDelete,
-  onDuplicateForm,
-  onDeleteForm,
-}: {
-  workspace: WorkspaceWithForms;
-  submissionCounts: Map<string, number>;
-  sortMode: string;
-  onSortChange: (mode: "recent" | "oldest" | "alphabetical" | "manual") => void;
-  onRename: () => void;
-  onDelete: () => void;
-  onDuplicateForm: (form: WorkspaceWithForms["forms"][0]) => void;
-  onDeleteForm: (form: WorkspaceWithForms["forms"][0]) => void;
-}) {
-  const router = useRouter();
-  const [isOpen, setIsOpen] = useState(true);
-  const [isCreatingForm, setIsCreatingForm] = useState(false);
-
-  const handleCreateForm = async () => {
-    setIsCreatingForm(true);
-    try {
-      const newForm = await createFormLocal(workspace.id);
-      router.navigate({
-        to: "/workspace/$workspaceId/form-builder/$formId/edit",
-        params: { workspaceId: workspace.id, formId: newForm.id },
-      });
-    } catch (error) {
-      console.error("Failed to create form:", error);
-    } finally {
-      setIsCreatingForm(false);
-    }
-  };
-
-  return (
-    <div className="flex flex-col">
-      {/* Figma system-flat node 23504-5156: workspace/collection header row */}
-      <div className="group flex items-center justify-between px-1 py-[7px] transition-colors">
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1 h-auto p-0 cursor-pointer flex-1 min-w-0 justify-start bg-transparent border-none"
-          aria-expanded={isOpen}
-        >
-          <span className="text-[13px] font-medium text-muted-foreground tracking-[0.26px] truncate">
-            {workspace.name}
-          </span>
-          <ChevronDownIcon
-            className={cn(
-              "h-2.5 w-2.5 shrink-0 text-muted-foreground transition-transform duration-200",
-              !isOpen && "-rotate-90",
-            )}
-          />
-        </button>
-
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="h-6 w-6 hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
-                title="More options"
-              >
-                <MoreHorizontalIcon className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-[195px]" sideOffset={4}>
-              <div className="text-[12px] font-medium text-muted-foreground px-2 py-1.5 tracking-[0.24px]">
-                Sort by
-              </div>
-              {[
-                { value: "recent", label: "Recent First", icon: CalendarIcon },
-                { value: "oldest", label: "Oldest First", icon: ClockRewindIcon },
-                { value: "alphabetical", label: "Alphabetical", icon: AlphabeticalIcon },
-                { value: "manual", label: "Manual", icon: CopyIcon },
-              ].map((option) => (
-                <Button
-                  key={option.value}
-                  variant="ghost"
-                  onClick={() =>
-                    onSortChange(option.value as "recent" | "oldest" | "alphabetical" | "manual")
-                  }
-                  className={cn(
-                    "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors",
-                    sortMode === option.value
-                      ? "bg-black/5 text-[#212121]"
-                      : "text-light-gray-800 hover:bg-black/5 hover:text-[#212121]",
-                  )}
-                >
-                  <option.icon className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  <span className="flex-1 text-left">{option.label}</span>
-                  {sortMode === option.value && <Check className="h-3 w-3" strokeWidth={2} />}
-                </Button>
-              ))}
-              <div className="my-1 h-px bg-border" />
-              <div className="text-[12px] font-medium text-muted-foreground px-2 py-1.5 tracking-[0.24px]">
-                Workspace
-              </div>
-              <Button
-                variant="ghost"
-                onClick={handleCreateForm}
-                disabled={isCreatingForm}
-                className={cn(
-                  "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors",
-                  "text-light-gray-800 hover:bg-black/5 hover:text-[#212121]",
-                )}
-              >
-                {isCreatingForm ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" strokeWidth={1.5} />
-                ) : (
-                  <PlusIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
-                )}
-                <span className="flex-1 text-left">New form</span>
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={onRename}
-                className={cn(
-                  "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors",
-                  "text-light-gray-800 hover:bg-black/5 hover:text-[#212121]",
-                )}
-              >
-                <Pencil2Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
-                <span className="flex-1 text-left">Rename</span>
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={onDelete}
-                className={cn(
-                  "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors",
-                  "text-red-500/70 hover:text-red-500 hover:bg-red-500/5",
-                )}
-              >
-                <TrashIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
-                <span className="flex-1 text-left">Delete</span>
-              </Button>
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
-
-      {isOpen && (
-        <div className="flex flex-col">
-          {workspace.forms.map((form) => (
-            <WorkspaceFormMinimal
-              key={form.id}
-              form={form}
-              workspaceId={workspace.id}
-              submissionCount={submissionCounts.get(form.id) || 0}
-              onDuplicate={() => onDuplicateForm(form)}
-              onDelete={() => onDeleteForm(form)}
-            />
-          ))}
-          {workspace.forms.length === 0 && (
-            <span className="text-muted-foreground/50 text-[11px] px-8 py-1 italic">
-              No forms yet
-            </span>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Form icons matching Figma system-flat (23504-5089): Contact=star, Employee Intake=teardrop, etc.
-const getFormIcon = (title: string, icon?: string | null) => {
-  const iconWrapper =
-    "rounded-full size-[18px] flex items-center justify-center border-[0.5px] border-form-icon-border shrink-0";
-  const iconFill = "text-foreground fill-foreground";
-
-  if (icon && isEmoji(icon))
-    return (
-      <div className={`bg-form-icon-bg ${iconWrapper}`}>
-        <span className="text-xs leading-none">{icon}</span>
-      </div>
-    );
-
-  const lowerTitle = title.toLowerCase();
-  // Contact: white circle, black star (Figma)
-  if (lowerTitle.includes("contact"))
-    return (
-      <div className={`bg-form-icon-bg shadow-sm ${iconWrapper}`}>
-        <Star className="h-3 w-3 fill-foreground text-foreground" />
-      </div>
-    );
-  // Employee Intake: teardrop/inverted triangle
-  if (lowerTitle.includes("employee intake"))
-    return (
-      <div className={`bg-secondary ${iconWrapper}`}>
-        <div
-          className="size-2 bg-foreground rounded-full"
-          style={{ clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)" }}
-        />
-      </div>
-    );
-  // Onboarding: lightning bolt
-  if (lowerTitle.includes("onboarding") && !lowerTitle.includes("client"))
-    return (
-      <div className={`bg-secondary ${iconWrapper}`}>
-        <Zap className={`h-3 w-3 ${iconFill}`} strokeWidth={1} />
-      </div>
-    );
-  // Client Onboarding / feedback: feather
-  if (lowerTitle.includes("client onboarding") || lowerTitle.includes("feedback"))
-    return (
-      <div className={`bg-secondary ${iconWrapper}`}>
-        <Feather className="h-3 w-3 text-foreground" strokeWidth={1.5} />
-      </div>
-    );
-  // Open source: GitHub
-  if (lowerTitle.includes("open source"))
-    return (
-      <div className={`bg-secondary ${iconWrapper}`}>
-        <Github className={`h-3 w-3 ${iconFill}`} strokeWidth={1} />
-      </div>
-    );
-
-  // Default: sparkle in white circle
-  return (
-    <div className={`bg-form-icon-bg ${iconWrapper}`}>
-      <span className="text-xs leading-none">✨</span>
-    </div>
-  );
-};
-
-function isEmoji(str: string): boolean {
-  if (!str) return false;
-  const emojiRange = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
-  return str.length <= 4 && emojiRange.test(str);
-}
-
-function WorkspaceFormMinimal({
-  form,
-  workspaceId,
-  submissionCount,
-  onDuplicate,
-  onDelete,
-}: {
-  form: { id: string; title: string; icon?: string | null; workspaceId: string; status: string };
-  workspaceId: string;
-  submissionCount: number;
-  onDuplicate: () => void;
-  onDelete: () => void;
-}) {
-  const location = useLocation();
-  const isPublishedForm = form.status === "published";
-  const to = isPublishedForm
-    ? `/workspace/${workspaceId}/form-builder/${form.id}/submissions`
-    : `/workspace/${workspaceId}/form-builder/${form.id}/edit`;
-  const isActive = location.pathname.startsWith(
-    `/workspace/${workspaceId}/form-builder/${form.id}`,
-  );
-  const label = form.title || "Untitled";
-
-  const prefix = getFormIcon(label, form.icon);
-
-  const isPublished = form.status === "published";
-  const showCount = isPublished && submissionCount > 0;
-
-  return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
-        <div>
-          <SidebarItem label={label} to={to} isActive={isActive} prefix={prefix}>
-            {showCount && (
-              <span className="text-[11px] tracking-[0.33px] text-muted-foreground tabular-nums shrink-0 font-medium leading-[1.15] font-case">
-                {submissionCount}
-              </span>
-            )}
-          </SidebarItem>
-        </div>
-      </ContextMenuTrigger>
-      <ContextMenuContent className="w-[195px] rounded-2xl p-1 shadow-popover border-0 outline-hidden">
-        <div className="text-[12px] font-medium text-muted-foreground px-2 py-1.5 tracking-[0.24px]">
-          Form
-        </div>
-        <ContextMenuItem
-          onClick={(e) => {
-            e.stopPropagation();
-            onDuplicate();
-          }}
-          className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-light-gray-800 hover:bg-black/5 hover:text-foreground focus:bg-black/5 focus:text-foreground [&_svg]:size-3.5"
-        >
-          <CopyIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
-          <span className="flex-1 text-left">Duplicate</span>
-        </ContextMenuItem>
-        <ContextMenuSeparator className="my-1 h-px bg-border mx-0" />
-        <ContextMenuItem
-          variant="destructive"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-red-500/70 hover:bg-red-500/5 focus:bg-red-500/5 focus:text-red-500 [&_svg]:size-3.5"
-        >
-          <TrashIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
-          <span className="flex-1 text-left">Delete</span>
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
   );
 }
 
