@@ -181,7 +181,6 @@ export const Route = createFileRoute("/_authenticated")({
         submissionCollection.preload(),
         favoriteCollection.preload(),
         formVersionCollection.preload(),
-        formSettingsCollection.preload(),
       ]);
     }
     return { activeOrg, orgsData };

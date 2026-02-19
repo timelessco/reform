@@ -4,7 +4,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { toggleFavoriteLocal, updateFormStatus } from "@/db-collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import {
-  discardChangesAction,
+  discardChanges,
   publishFormAction,
   useHasUnpublishedChanges,
 } from "@/hooks/use-form-versions";
@@ -15,14 +15,10 @@ import { Link, useLocation, useNavigate, useParams, useSearch } from "@tanstack/
 import { format, formatDistanceToNow } from "date-fns";
 import {
   AlertCircle,
-  BarChart2,
   ChevronsRight,
-  History,
   Loader2,
   MoreHorizontal,
   Pencil,
-  Star,
-  Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -58,7 +54,7 @@ export function AppHeader({
   const navigate = useNavigate();
 
   // Editor sidebar state
-  const { activeSidebar, toggleSidebar, closeSidebar } = useEditorSidebar();
+  const { activeSidebar, closeSidebar } = useEditorSidebar();
 
   const isShareSidebarOpen = activeSidebar === "share";
   const isEditorSidebarOpen = !!activeSidebar;
@@ -116,9 +112,9 @@ export function AppHeader({
   const { data: workspace } = useWorkspace(workspaceId);
   const { data: savedDocs, isLoading: isLoadingSavedDocs } = useForm(formId);
   // Version management
+
   const hasUnpublishedChanges = useHasUnpublishedChanges(formId);
   const [isDiscarding, setIsDiscarding] = useState(false);
-
   // Favorite state
   useIsFavorite(session?.user?.id, formId);
 
@@ -161,8 +157,14 @@ export function AppHeader({
     if (formId) {
       setIsDiscarding(true);
       try {
-        const tx = discardChangesAction({ formId });
-        await tx.isPersisted.promise;
+        // Clear DOM focus/selection before swapping editor content.
+        if (typeof window !== "undefined") {
+          const activeElement = document.activeElement as HTMLElement | null;
+          activeElement?.blur();
+          window.getSelection()?.removeAllRanges();
+        }
+
+        await discardChanges(formId);
         toast.info("Changes discarded, reverted to last published version");
       } catch (error) {
         toast.error("Failed to discard changes");

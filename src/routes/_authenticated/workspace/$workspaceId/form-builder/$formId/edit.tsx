@@ -61,7 +61,7 @@ export const Route = createFileRoute(
           ...getFormbyIdQueryOption(params.formId),
           revalidateIfStale: true,
         });
-        status = result?.form?.status;
+        status = result?.form?.status as "draft" | "published" | "archived" | undefined;
       }
 
       if (status === "published") {
@@ -125,7 +125,7 @@ function DesignPage() {
     return format(new Date(dateString), "MMM d, h:mm a");
   };
 
-  const versionContent = versionContentData?.version?.content as Value | undefined;
+  const versionContent = versionContentData?.[0]?.content as Value | undefined;
 
   return (
     <div className="flex flex-1 h-full overflow-hidden">
@@ -142,11 +142,11 @@ function DesignPage() {
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Loading version...
                     </span>
-                  ) : versionContentData?.version?.publishedAt ? (
+                  ) : versionContentData?.[0]?.publishedAt ? (
                     <>
                       Viewing version from{" "}
                       <span className="font-semibold">
-                        {formatDateTime(versionContentData.version.publishedAt)}
+                        {formatDateTime(versionContentData[0].publishedAt)}
                       </span>
                     </>
                   ) : (

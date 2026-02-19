@@ -1,7 +1,3 @@
-import { ChevronRightIcon } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
-import type { Value } from "platejs";
-import { useEffect, useState } from "react";
 import { RenderPreviewInput } from "@/components/form-components/render-preview-input";
 import { StepForm } from "@/components/form-components/step-form";
 import { ProgressBar } from "@/components/public/progress-bar";
@@ -28,6 +24,10 @@ import {
 } from "@/lib/transform-plate-to-form";
 import { cn } from "@/lib/utils";
 import type { PublicFormSettings } from "@/types/form-settings";
+import { ChevronRightIcon } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import type { Value } from "platejs";
+import { useEffect, useState } from "react";
 
 interface FormPreviewFromPlateProps {
   /** Plate editor content array */
