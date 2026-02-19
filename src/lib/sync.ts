@@ -20,9 +20,7 @@ type SyncResult = {
  *
  * @param organizationId - The organization ID to sync forms to
  */
-export async function syncLocalDataToCloud(
-  organizationId: string,
-): Promise<SyncResult | null> {
+export async function syncLocalDataToCloud(organizationId: string): Promise<SyncResult | null> {
   try {
     logger("Starting local data sync to cloud via Electric collections...");
     logger(`Organization ID: ${organizationId}`);
@@ -36,9 +34,8 @@ export async function syncLocalDataToCloud(
     // Import collections
     const { localFormCollection } = await import("@/db-collections");
     const { formCollection } = await import("@/db-collections/form.collections");
-    const { workspaceCollection, createWorkspaceLocal } = await import(
-      "@/db-collections/workspace.collection"
-    );
+    const { workspaceCollection, createWorkspaceLocal } =
+      await import("@/db-collections/workspace.collection");
 
     // Get all local forms from localStorage
     const localForms = await localFormCollection.toArrayWhenReady();
@@ -51,9 +48,7 @@ export async function syncLocalDataToCloud(
 
     // Get existing workspaces or create one via Electric collection
     const existingWorkspaces = await workspaceCollection.toArrayWhenReady();
-    const orgWorkspaces = existingWorkspaces.filter(
-      (ws) => ws.organizationId === organizationId,
-    );
+    const orgWorkspaces = existingWorkspaces.filter((ws) => ws.organizationId === organizationId);
 
     let targetWorkspaceId: string;
     if (orgWorkspaces.length === 0) {

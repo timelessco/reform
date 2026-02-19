@@ -201,7 +201,7 @@ function LoginPage() {
       <div className="w-full max-w-[400px]">
         {/* Logo */}
         <div className="flex justify-center mb-10">
-        <Logo />
+          <Logo />
         </div>
 
         {/* OTP verification step */}
@@ -346,7 +346,8 @@ function LoginPage() {
                   data-active={signInMethod === method}
                   className={cn(
                     "rounded-full capitalize",
-                    signInMethod === method && "bg-foreground text-background font-medium hover:bg-foreground hover:text-background",
+                    signInMethod === method &&
+                      "bg-foreground text-background font-medium hover:bg-foreground hover:text-background",
                   )}
                 >
                   {method === "otp" ? "Passwordless" : method}

@@ -41,10 +41,13 @@ export function AppHeader({
   isSidebarOpen,
   isDistractionHidden = false,
 }: AppHeaderProps) {
-  const { formId, workspaceId } = useParams({ strict: false }) as { formId?: string; workspaceId?: string };
+  const { formId, workspaceId } = useParams({ strict: false }) as {
+    formId?: string;
+    workspaceId?: string;
+  };
   const { state, toggleSidebar: toggleMainSidebar } = useSidebarSafe() || {
     state: "expanded",
-    toggleSidebar: () => { },
+    toggleSidebar: () => {},
   };
   const { pathname } = useLocation();
   const isDashboard = pathname === "/dashboard";
@@ -186,7 +189,7 @@ export function AppHeader({
             className="h-8 w-8 text-muted-foreground -ml-1 group relative flex items-center justify-center transition-all duration-300"
             onClick={() => toggleMainSidebar()}
           >
-               <Logo className="h-6 w-6 text-sidebar-nav-text dark:text-dark-gray-950" />
+            <Logo className="h-6 w-6 text-sidebar-nav-text dark:text-dark-gray-950" />
           </Button>
         )}
 
@@ -218,44 +221,55 @@ export function AppHeader({
               </span>
             )}
             <span className="text-muted-foreground/50">/</span>
-            <span className="text-muted-foreground">
-              {isEditRoute ? "Editor" : "Submissions"}
-            </span>
+            <span className="text-muted-foreground">{isEditRoute ? "Editor" : "Submissions"}</span>
           </div>
         )}
       </div>
 
       {/* Right Section: Actions */}
       <div className="flex items-center gap-1">
-        {isFormBuilder && savedDocs?.[0]?.updatedAt && !isEditorSidebarOpen && !isLoadingSavedDocs && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="text-[11px] text-muted-foreground/70 mr-2 whitespace-nowrap rounded-md bg-muted/60 px-2 py-1">
-                Edited {formatDistanceToNow(parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date())} ago
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" align="end">
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">
-                  Edited by{" "}
-                  <span className="font-medium text-foreground">
-                    {session?.user?.name ?? "You"}
-                  </span>{" "}
-                  {formatDistanceToNow(parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date())} ago
-                </p>
-                {savedDocs?.[0]?.createdAt && (
+        {isFormBuilder &&
+          savedDocs?.[0]?.updatedAt &&
+          !isEditorSidebarOpen &&
+          !isLoadingSavedDocs && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-[11px] text-muted-foreground/70 mr-2 whitespace-nowrap rounded-md bg-muted/60 px-2 py-1">
+                  Edited{" "}
+                  {formatDistanceToNow(
+                    parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date(),
+                  )}{" "}
+                  ago
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="end">
+                <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">
-                    Created by{" "}
+                    Edited by{" "}
                     <span className="font-medium text-foreground">
                       {session?.user?.name ?? "You"}
                     </span>{" "}
-                    {format(parseTimestampAsUTC(savedDocs?.[0]?.createdAt) ?? new Date(), "MMM d, yyyy")}
+                    {formatDistanceToNow(
+                      parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date(),
+                    )}{" "}
+                    ago
                   </p>
-                )}
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        )}
+                  {savedDocs?.[0]?.createdAt && (
+                    <p className="text-xs text-muted-foreground">
+                      Created by{" "}
+                      <span className="font-medium text-foreground">
+                        {session?.user?.name ?? "You"}
+                      </span>{" "}
+                      {format(
+                        parseTimestampAsUTC(savedDocs?.[0]?.createdAt) ?? new Date(),
+                        "MMM d, yyyy",
+                      )}
+                    </p>
+                  )}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
         {isDashboard && (
           <Button
@@ -339,8 +353,8 @@ export function AppHeader({
                 className="h-7 w-7 text-muted-foreground hover:text-foreground"
                 onClick={toggleSettingsSidebar}
               >
-      <SettingsIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
-            </Button>
+                <SettingsIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
+              </Button>
 
               {/* Three dots menu - popover button list matching workspace/sidebar style */}
               <Popover>
@@ -367,7 +381,12 @@ export function AppHeader({
                   <Button
                     variant="ghost"
                     onClick={() =>
-                      workspaceId && formId && navigate({ to: "/workspace/$workspaceId/form-builder/$formId/submissions", params: { workspaceId, formId } })
+                      workspaceId &&
+                      formId &&
+                      navigate({
+                        to: "/workspace/$workspaceId/form-builder/$formId/submissions",
+                        params: { workspaceId, formId },
+                      })
                     }
                     className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-light-gray-800 hover:bg-black/5 hover:text-foreground"
                   >
@@ -424,7 +443,8 @@ export function AppHeader({
               </Button>
             ) : (
               // Not on edit route: show Edit button to navigate to the editor
-              workspaceId && formId && (
+              workspaceId &&
+              formId && (
                 <Button
                   size="sm"
                   asChild

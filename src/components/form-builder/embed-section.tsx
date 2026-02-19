@@ -171,10 +171,7 @@ export function EmbedSection({ formId, docTitle }: EmbedSectionProps) {
           return (
             <>
               {/* Preview mockup - now ultra-minimal box design */}
-              <EmbedPreviewMockup
-                embedType={embedType}
-                popupPosition={options.popupPosition}
-              />
+              <EmbedPreviewMockup embedType={embedType} popupPosition={options.popupPosition} />
 
               {/* Settings — uses form.Field internally */}
               <EmbedConfigPanel form={form} embedType={embedType} />

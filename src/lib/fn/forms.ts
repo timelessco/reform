@@ -120,11 +120,15 @@ const getFormsByWorkspace = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ workspaceId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
-
     const formList = await db
       .select()
       .from(forms)
-      .where(and(eq(forms.workspaceId, data.workspaceId), eq(forms.createdByUserId, context.session.user.id)))
+      .where(
+        and(
+          eq(forms.workspaceId, data.workspaceId),
+          eq(forms.createdByUserId, context.session.user.id),
+        ),
+      )
       .orderBy(forms.updatedAt);
 
     return { forms: formList.map(serializeForm) };
@@ -174,7 +178,13 @@ export const duplicateForm = createServerFn({ method: "POST" })
       .where(eq(formSettings.formId, data.id));
 
     if (sourceSettings) {
-      const { id: _oldId, formId: _oldFormId, createdAt: _ca, updatedAt: _ua, ...settingsData } = sourceSettings;
+      const {
+        id: _oldId,
+        formId: _oldFormId,
+        createdAt: _ca,
+        updatedAt: _ua,
+        ...settingsData
+      } = sourceSettings;
       await db.insert(formSettings).values({
         ...settingsData,
         id: crypto.randomUUID(),

@@ -96,7 +96,7 @@ export function MediaPreviewDialog() {
                   buttonVariants({
                     variant: prevDisabled ? "disabled" : "default",
                   }),
-                  "h-auto"
+                  "h-auto",
                 )}
               >
                 <ArrowLeft />
@@ -109,7 +109,7 @@ export function MediaPreviewDialog() {
                   buttonVariants({
                     variant: nextDisabled ? "disabled" : "default",
                   }),
-                  "h-auto"
+                  "h-auto",
                 )}
               >
                 <ArrowRight />
@@ -122,7 +122,7 @@ export function MediaPreviewDialog() {
                   buttonVariants({
                     variant: zoomOutDisabled ? "disabled" : "default",
                   }),
-                  "h-auto"
+                  "h-auto",
                 )}
                 {...zommOutProps}
               >
@@ -144,7 +144,7 @@ export function MediaPreviewDialog() {
                   buttonVariants({
                     variant: zoomInDisabled ? "disabled" : "default",
                   }),
-                  "h-auto"
+                  "h-auto",
                 )}
                 {...zoomInProps}
               >

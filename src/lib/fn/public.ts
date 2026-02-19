@@ -3,10 +3,7 @@ import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { forms, formSettings, formVersions, submissions, user } from "@/db/schema";
 import { db } from "@/lib/db";
-import {
-  type PublicFormSettings,
-  defaultPublicFormSettings,
-} from "@/types/form-settings";
+import { type PublicFormSettings, defaultPublicFormSettings } from "@/types/form-settings";
 
 /**
  * Public server functions - NO authentication required
@@ -219,7 +216,11 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
         throw new Error("This form is closed");
       }
       // Close on date
-      if (settingsRow.closeOnDate && settingsRow.closeDate && new Date(settingsRow.closeDate) < new Date()) {
+      if (
+        settingsRow.closeOnDate &&
+        settingsRow.closeDate &&
+        new Date(settingsRow.closeDate) < new Date()
+      ) {
         throw new Error("This form is no longer accepting responses");
       }
       // Submission limit
@@ -256,9 +257,13 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
         respondentEmailSubject: settingsRow.respondentEmailSubject,
         respondentEmailBody: settingsRow.respondentEmailBody,
       };
-      sendEmailNotifications(settingsForEmail, form.createdByUserId, data.formId, id, data.data).catch(
-        (err) => console.error("[Email] Notification error:", err),
-      );
+      sendEmailNotifications(
+        settingsForEmail,
+        form.createdByUserId,
+        data.formId,
+        id,
+        data.data,
+      ).catch((err) => console.error("[Email] Notification error:", err));
     }
 
     return { submissionId: id, success: true };
@@ -295,7 +300,8 @@ async function sendEmailNotifications(
   submissionId: string,
   submissionData: Record<string, unknown>,
 ) {
-  const { sendFormSubmissionNotification, sendRespondentConfirmation } = await import("@/lib/email");
+  const { sendFormSubmissionNotification, sendRespondentConfirmation } =
+    await import("@/lib/email");
 
   // Self email notification
   if (settings.selfEmailNotifications === true) {
@@ -312,10 +318,16 @@ async function sendEmailNotifications(
 
     if (toEmail) {
       // Get form title for the email
-      const [formRow] = await db.select({ title: forms.title }).from(forms).where(eq(forms.id, formId));
-      sendFormSubmissionNotification(toEmail, formRow?.title ?? "Untitled Form", submissionId, submissionData).catch(
-        (err) => console.error("[Email] Self notification error:", err),
-      );
+      const [formRow] = await db
+        .select({ title: forms.title })
+        .from(forms)
+        .where(eq(forms.id, formId));
+      sendFormSubmissionNotification(
+        toEmail,
+        formRow?.title ?? "Untitled Form",
+        submissionId,
+        submissionData,
+      ).catch((err) => console.error("[Email] Self notification error:", err));
     }
   }
 
@@ -323,10 +335,13 @@ async function sendEmailNotifications(
   if (settings.respondentEmailNotifications === true) {
     const respondentEmail = findRespondentEmail(submissionData);
     if (respondentEmail) {
-      const subject = (settings.respondentEmailSubject as string) || "Thank you for your submission";
-      const body = (settings.respondentEmailBody as string) || "Thank you for filling out our form. We have received your response.";
-      sendRespondentConfirmation(respondentEmail, subject, body).catch(
-        (err) => console.error("[Email] Respondent notification error:", err),
+      const subject =
+        (settings.respondentEmailSubject as string) || "Thank you for your submission";
+      const body =
+        (settings.respondentEmailBody as string) ||
+        "Thank you for filling out our form. We have received your response.";
+      sendRespondentConfirmation(respondentEmail, subject, body).catch((err) =>
+        console.error("[Email] Respondent notification error:", err),
       );
     }
   }

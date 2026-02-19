@@ -230,7 +230,6 @@ export const formFavorites = pgTable("form_favorites", {
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
-
 // ============================================================================
 // Form Visits Table (Analytics - Raw Events)
 // ============================================================================

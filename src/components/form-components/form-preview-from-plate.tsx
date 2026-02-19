@@ -86,11 +86,7 @@ function isValidUrl(str: string): boolean {
  */
 function DefaultIcon() {
   return (
-    <span
-      className="text-[80px] sm:text-[100px] leading-none"
-      role="img"
-      aria-label="Form icon"
-    >
+    <span className="text-[80px] sm:text-[100px] leading-none" role="img" aria-label="Form icon">
       📄
     </span>
   );

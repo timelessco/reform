@@ -104,7 +104,6 @@ function findPrevNonButtonPath(editor: PlateEditor, currentPath: Path): Path | n
 }
 
 function handleFormBlockKeyDown(editor: PlateEditor, event: React.KeyboardEvent): void {
-
   // Prevent double-handling when multiple form plugins process same event
   if ((event as any).__formBlockHandled) return;
 

@@ -15,7 +15,6 @@ const workspaceSchema = z.object({
   updatedAt: z.string().optional(),
 });
 
-
 export const createWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
@@ -54,7 +53,7 @@ export const createWorkspace = createServerFn({ method: "POST" })
 export const updateWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(workspaceSchema.pick({ id: true, name: true }).partial({ name: true }))
-  .handler(async ({ data ,context}) => {
+  .handler(async ({ data, context }) => {
     const { id, ...updateData } = data;
     await authWorkspace(id, context.session.user.id);
 
@@ -123,7 +122,6 @@ const getWorkspaceById = createServerFn({ method: "GET" })
 const getWorkspaces = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
-
     // Get organizations the user is a member of
     const userMemberships = await db
       .select({ organizationId: member.organizationId })
@@ -154,7 +152,6 @@ const getWorkspaces = createServerFn({ method: "GET" })
 const getWorkspacesWithForms = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
-
     // Get organizations the user is a member of
     const userMemberships = await db
       .select({ organizationId: member.organizationId })
@@ -222,7 +219,6 @@ export const getWorkspacesWithFormsQueryOptions = () =>
 const getUserMemberships = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
-
     const memberships = await db
       .select({
         organizationId: member.organizationId,

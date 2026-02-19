@@ -22,9 +22,7 @@ export function FormClosed({ message }: FormClosedProps) {
             <Ban />
           </EmptyMedia>
           <EmptyTitle>{t("formClosed")}</EmptyTitle>
-          <EmptyDescription>
-            {message || t("formClosedDescription")}
-          </EmptyDescription>
+          <EmptyDescription>{message || t("formClosedDescription")}</EmptyDescription>
         </EmptyHeader>
       </Empty>
     </div>
@@ -41,9 +39,7 @@ export function AlreadySubmitted() {
             <Ban />
           </EmptyMedia>
           <EmptyTitle>{t("alreadySubmitted")}</EmptyTitle>
-          <EmptyDescription>
-            {t("alreadySubmittedDescription")}
-          </EmptyDescription>
+          <EmptyDescription>{t("alreadySubmittedDescription")}</EmptyDescription>
         </EmptyHeader>
       </Empty>
     </div>

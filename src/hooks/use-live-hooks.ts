@@ -29,20 +29,23 @@ export const useWorkspaces = () => {
  * Custom hook for real-time workspace sync by ID.
  */
 export const useWorkspace = (workspaceId?: string) => {
-  const result = useLiveQuery((q) => {
-    let query = q.from({ ws: workspaceCollection });
-    if (workspaceId) {
-      query = query.where(({ ws }) => eq(ws.id, workspaceId));
-    }
-    return query.select(({ ws }) => ({
-      id: ws.id,
-      organizationId: ws.organizationId,
-      createdByUserId: ws.createdByUserId,
-      name: ws.name,
-      createdAt: ws.createdAt,
-      updatedAt: ws.updatedAt,
-    }));
-  }, [workspaceId]);
+  const result = useLiveQuery(
+    (q) => {
+      let query = q.from({ ws: workspaceCollection });
+      if (workspaceId) {
+        query = query.where(({ ws }) => eq(ws.id, workspaceId));
+      }
+      return query.select(({ ws }) => ({
+        id: ws.id,
+        organizationId: ws.organizationId,
+        createdByUserId: ws.createdByUserId,
+        name: ws.name,
+        createdAt: ws.createdAt,
+        updatedAt: ws.updatedAt,
+      }));
+    },
+    [workspaceId],
+  );
   return { ...result, data: result.data?.[0] };
 };
 
@@ -50,22 +53,25 @@ export const useWorkspace = (workspaceId?: string) => {
  * Custom hook for real-time forms sync filtered by workspace ID.
  */
 export const useFormsForWorkspace = (workspaceId?: string) => {
-  return useLiveQuery((q) => {
-    let query = q.from({ form: formCollection });
-    if (workspaceId) {
-      query = query.where(({ form }) => eq(form.workspaceId, workspaceId));
-    }
-    // Only fetch forms that are not archived
-    query = query.where(({ form }) => or(eq(form.status, "draft"), eq(form.status, "published")));
+  return useLiveQuery(
+    (q) => {
+      let query = q.from({ form: formCollection });
+      if (workspaceId) {
+        query = query.where(({ form }) => eq(form.workspaceId, workspaceId));
+      }
+      // Only fetch forms that are not archived
+      query = query.where(({ form }) => or(eq(form.status, "draft"), eq(form.status, "published")));
 
-    return query.select(({ form }) => ({
-      id: form.id,
-      title: form.title,
-      workspaceId: form.workspaceId,
-      status: form.status,
-      updatedAt: form.updatedAt,
-    }));
-  }, [workspaceId]);
+      return query.select(({ form }) => ({
+        id: form.id,
+        title: form.title,
+        workspaceId: form.workspaceId,
+        status: form.status,
+        updatedAt: form.updatedAt,
+      }));
+    },
+    [workspaceId],
+  );
 };
 
 /**
@@ -91,38 +97,47 @@ export const useForms = () => {
  * Custom hook for real-time form sync by ID.
  */
 export const useForm = (formId?: string) => {
-  return useLiveQuery((q) => {
-    if (!formId) return null as any;
-    return q.from({ form: formCollection }).where(({ form }) => eq(form.id, formId));
-  }, [formId]);
+  return useLiveQuery(
+    (q) => {
+      if (!formId) return null as any;
+      return q.from({ form: formCollection }).where(({ form }) => eq(form.id, formId));
+    },
+    [formId],
+  );
 };
 
 /**
  * Custom hook for real-time local form draft sync by ID.
  */
 export const useLocalForm = (formId?: string) => {
-  return useLiveQuery((q) => {
-    if (!formId) return null as any;
-    return q.from({ doc: localFormCollection }).where(({ doc }) => eq(doc.id, formId));
-  }, [formId]);
+  return useLiveQuery(
+    (q) => {
+      if (!formId) return null as any;
+      return q.from({ doc: localFormCollection }).where(({ doc }) => eq(doc.id, formId));
+    },
+    [formId],
+  );
 };
 
 /**
  * Custom hook for real-time favorites sync for current user.
  */
 const useFavorites = (userId?: string) => {
-  return useLiveQuery((q) => {
-    let query = q.from({ fav: favoriteCollection });
-    if (userId) {
-      query = query.where(({ fav }) => eq(fav.userId, userId));
-    }
-    return query.select(({ fav }) => ({
-      id: fav.id,
-      userId: fav.userId,
-      formId: fav.formId,
-      createdAt: fav.createdAt,
-    }));
-  }, [userId]);
+  return useLiveQuery(
+    (q) => {
+      let query = q.from({ fav: favoriteCollection });
+      if (userId) {
+        query = query.where(({ fav }) => eq(fav.userId, userId));
+      }
+      return query.select(({ fav }) => ({
+        id: fav.id,
+        userId: fav.userId,
+        formId: fav.formId,
+        createdAt: fav.createdAt,
+      }));
+    },
+    [userId],
+  );
 };
 
 /**
@@ -177,9 +192,7 @@ export const useFormSettings = (formId?: string) => {
   const result = useLiveQuery(
     (q) => {
       if (!formId) return null as any;
-      return q
-        .from({ s: formSettingsCollection })
-        .where(({ s }) => eq(s.formId, formId));
+      return q.from({ s: formSettingsCollection }).where(({ s }) => eq(s.formId, formId));
     },
     [formId],
   );

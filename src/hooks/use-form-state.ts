@@ -47,7 +47,7 @@ const DEFAULT_FORM_STATE: Omit<Form, "id" | "workspaceId" | "createdAt" | "updat
     limitSubmissions: false,
     closedFormMessage: "",
     preventDuplicateSubmissions: false,
-    autoJump: false
+    autoJump: false,
   },
   title: "",
   icon: null,

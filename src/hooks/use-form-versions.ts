@@ -1,11 +1,7 @@
 import { createOptimisticAction, eq, useLiveQuery } from "@tanstack/react-db";
 import { useMemo } from "react";
 import { formCollection, formVersionCollection } from "@/db-collections";
-import {
-  discardFormChanges,
-  publishFormVersion,
-  restoreFormVersion,
-} from "@/lib/fn/form-versions";
+import { discardFormChanges, publishFormVersion, restoreFormVersion } from "@/lib/fn/form-versions";
 import { useForm } from "./use-live-hooks";
 
 /**
@@ -31,9 +27,7 @@ export function useFormVersionContent(versionId: string | undefined) {
   return useLiveQuery(
     (q) => {
       if (!versionId) return null as any;
-      return q
-        .from({ v: formVersionCollection })
-        .where(({ v }) => eq(v.id, versionId));
+      return q.from({ v: formVersionCollection }).where(({ v }) => eq(v.id, versionId));
     },
     [versionId],
   );

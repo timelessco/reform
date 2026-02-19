@@ -181,7 +181,11 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
             <div className="space-y-2">
               <Label htmlFor={element.name}>
                 {element.label}
-                {element.required && <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 leading-none ml-2">*</span>}
+                {element.required && (
+                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 leading-none ml-2">
+                    *
+                  </span>
+                )}
               </Label>
               <Textarea
                 id={element.name}
@@ -219,7 +223,11 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
             <div className="space-y-2">
               <Label htmlFor={element.name}>
                 {element.label}
-                {element.required && <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 leading-none ml-2">*</span>}
+                {element.required && (
+                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 leading-none ml-2">
+                    *
+                  </span>
+                )}
               </Label>
               <Input
                 id={element.name}

@@ -36,7 +36,7 @@ function BoxSkeleton({ className }: { className?: string }) {
     <div
       className={cn(
         "rounded-xl bg-[#e0e0e0] dark:bg-card shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-border/50",
-        className
+        className,
       )}
     />
   );
@@ -86,7 +86,7 @@ function PopupPreview({ position }: { position: string }) {
             ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
             : position === "bottom-left"
               ? "bottom-0 left-0"
-              : "bottom-0 right-0"
+              : "bottom-0 right-0",
         )}
       >
         <BoxSkeleton className="h-24 w-[110px]" />

@@ -194,7 +194,10 @@ export function CustomizeSidebar() {
               <div className="bg-orange-50 border border-orange-100 rounded-lg p-3 text-xs text-orange-800">
                 You can preview advanced customization, but BetterForms Pro is required to apply it
                 to the published form.{" "}
-                <Button variant="link" className="underline font-semibold p-0 h-auto text-xs text-orange-800">
+                <Button
+                  variant="link"
+                  className="underline font-semibold p-0 h-auto text-xs text-orange-800"
+                >
                   Upgrade
                 </Button>
               </div>

@@ -154,9 +154,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
                     <div className="flex items-center gap-2 mt-1.5">
                       <Avatar className="h-5 w-5">
                         <AvatarImage src={publisher.image} />
-                        <AvatarFallback className="text-[10px]">
-                          {publisher.initial}
-                        </AvatarFallback>
+                        <AvatarFallback className="text-[10px]">{publisher.initial}</AvatarFallback>
                       </Avatar>
                       <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
                         {publisher.name}

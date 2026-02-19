@@ -31,13 +31,13 @@ const config = defineConfig({
       },
     }),
     nitro({
-      vercel : {
-        functions : {
-          maxDuration : 799,
-          runtime : 'bun1.x',
-          supportsResponseStreaming : true,
-        }
-      }
+      vercel: {
+        functions: {
+          maxDuration: 799,
+          runtime: "bun1.x",
+          supportsResponseStreaming: true,
+        },
+      },
     }),
     // this is the plugin that enables path aliases
     viteTsConfigPaths({
@@ -45,8 +45,7 @@ const config = defineConfig({
     }),
     tailwindcss(),
     tanstackStart({}),
-    viteReact({
-    }),
+    viteReact({}),
     // oxlintPlugin({
     //   path: 'src',
     //   configFile: '.oxlintrc.json',

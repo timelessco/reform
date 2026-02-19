@@ -59,7 +59,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
           size="icon"
           className="h-8 w-8 text-muted-foreground hover:text-foreground"
           onClick={() => {
-            // This is handled by the parent layout generally, 
+            // This is handled by the parent layout generally,
             // but we can trigger a close action if available.
           }}
         >
@@ -82,11 +82,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                     Your form is currently in draft. Publish it to start collecting responses.
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  onClick={handlePublish}
-                  className="w-full font-semibold gap-2"
-                >
+                <Button size="sm" onClick={handlePublish} className="w-full font-semibold gap-2">
                   Publish Now
                 </Button>
               </div>
@@ -161,8 +157,8 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                       {doc.title || "Untitled Form"}
                     </h4>
                     <p className="text-[10px] text-muted-foreground leading-snug line-clamp-2">
-                      Made with Better Forms, the simplest way to create beautiful,
-                      high-converting forms.
+                      Made with Better Forms, the simplest way to create beautiful, high-converting
+                      forms.
                     </p>
 
                     <div className="aspect-video rounded-lg bg-muted/50 border border-muted/50 flex flex-col items-center justify-center p-4 text-center space-y-2">
@@ -173,9 +169,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                         <p className="text-[9px] font-bold text-primary uppercase tracking-widest">
                           Better Forms
                         </p>
-                        <p className="text-[8px] text-muted-foreground">
-                          Build forms in minutes.
-                        </p>
+                        <p className="text-[8px] text-muted-foreground">Build forms in minutes.</p>
                       </div>
                     </div>
                   </div>

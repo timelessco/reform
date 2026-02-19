@@ -260,7 +260,9 @@ export function SettingsContent({ formId }: { formId: string }) {
                           min={1}
                           placeholder="30"
                           value={(field.state.value as number) || ""}
-                          onChange={(e) => field.handleChange(e.target.value ? Number(e.target.value) : null)}
+                          onChange={(e) =>
+                            field.handleChange(e.target.value ? Number(e.target.value) : null)
+                          }
                           className="w-[100px] h-9"
                         />
                       )}
@@ -393,7 +395,12 @@ export function SettingsContent({ formId }: { formId: string }) {
                     description="Respondents must enter this password to access the form."
                   >
                     <form.AppField name="password">
-                      {(field) => <PasswordInput value={(field.state.value as string) || ""} onChange={(val) => field.handleChange(val || null)} />}
+                      {(field) => (
+                        <PasswordInput
+                          value={(field.state.value as string) || ""}
+                          onChange={(val) => field.handleChange(val || null)}
+                        />
+                      )}
                     </form.AppField>
                   </SettingItem>
                 ) : null
@@ -424,7 +431,9 @@ export function SettingsContent({ formId }: { formId: string }) {
                         <Textarea
                           placeholder="This form is now closed."
                           value={(field.state.value as string) || ""}
-                          onChange={(e) => field.handleChange(e.target.value || "This form is now closed.")}
+                          onChange={(e) =>
+                            field.handleChange(e.target.value || "This form is now closed.")
+                          }
                           className="w-full min-h-[60px]"
                         />
                       )}
@@ -492,7 +501,9 @@ export function SettingsContent({ formId }: { formId: string }) {
                           min={1}
                           placeholder="100"
                           value={(field.state.value as number) || ""}
-                          onChange={(e) => field.handleChange(e.target.value ? Number(e.target.value) : null)}
+                          onChange={(e) =>
+                            field.handleChange(e.target.value ? Number(e.target.value) : null)
+                          }
                           className="w-[100px] h-9"
                         />
                       )}
@@ -518,7 +529,8 @@ export function SettingsContent({ formId }: { formId: string }) {
                 preventDuplicateSubmissions ? (
                   <div className="ml-0 pl-0">
                     <p className="text-xs text-muted-foreground italic">
-                      Duplicate submissions are detected using a browser cookie. Respondents using a different browser or clearing cookies can submit again.
+                      Duplicate submissions are detected using a browser cookie. Respondents using a
+                      different browser or clearing cookies can submit again.
                     </p>
                   </div>
                 ) : null
@@ -550,7 +562,6 @@ export function SettingsContent({ formId }: { formId: string }) {
               </form.AppField>
             </SettingItem>
           </Section>
-
         </form.Form>
       </form.AppForm>
     </div>
@@ -578,7 +589,12 @@ function SettingItem({
   vertical?: boolean;
 }) {
   return (
-    <div className={cn("flex gap-8", vertical ? "flex-col items-stretch" : "items-start justify-between")}>
+    <div
+      className={cn(
+        "flex gap-8",
+        vertical ? "flex-col items-stretch" : "items-start justify-between",
+      )}
+    >
       <div className="space-y-1 max-w-xl">
         <Label className="text-sm font-semibold">{title}</Label>
         <p className="text-[13px] text-muted-foreground leading-relaxed">{description}</p>

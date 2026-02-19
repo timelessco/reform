@@ -130,11 +130,7 @@ function VerifyEmailPage() {
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">No email address found</p>
-          <Button
-            variant="link"
-            onClick={() => navigate({ to: "/login" })}
-            className="p-0 h-auto"
-          >
+          <Button variant="link" onClick={() => navigate({ to: "/login" })} className="p-0 h-auto">
             Go to login
           </Button>
         </div>

@@ -14,7 +14,6 @@ import { db } from "@/lib/db";
  * Checks if the workspace belongs to the user's active organization.
  */
 export const authWorkspace = async (workspaceId: string, userId: string) => {
-
   const workspace = await db
     .select({ id: workspaces.id })
     .from(workspaces)
@@ -32,7 +31,6 @@ export const authWorkspace = async (workspaceId: string, userId: string) => {
  * Checks if the form's workspace belongs to the user's active organization.
  */
 export const authForm = async (formId: string, userId: string) => {
-
   const form = await db
     .select({ id: forms.id, workspaceId: forms.workspaceId })
     .from(forms)

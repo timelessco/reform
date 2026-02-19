@@ -248,7 +248,11 @@ function SubmissionsPage() {
               {format(new Date(info.getValue()), "MMM d, h:mm a")}
             </span>
             <div className="flex shrink-0 items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
-              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0 text-muted-foreground"
+              >
                 <Maximize className="h-3.5 w-3.5" />
               </Button>
               <Button
@@ -514,7 +518,9 @@ function SubmissionsPage() {
             <DropdownMenuContent align="start" className="w-36">
               <DropdownMenuItem onClick={() => setActiveTab("all")} className="gap-2">
                 All
-                <span className="ml-auto text-xs text-muted-foreground">{allSubmissions.length}</span>
+                <span className="ml-auto text-xs text-muted-foreground">
+                  {allSubmissions.length}
+                </span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setActiveTab("completed")} className="gap-2">
                 Completed
@@ -665,7 +671,10 @@ function SubmissionsPage() {
           }
         >
           <div className="w-full flex-1 flex flex-col min-h-0 overflow-hidden">
-            <DataGridContainer border={false} className="flex-1 min-h-0 border-y border-border overflow-auto content-start">
+            <DataGridContainer
+              border={false}
+              className="flex-1 min-h-0 border-y border-border overflow-auto content-start"
+            >
               <DataGridTable />
             </DataGridContainer>
 
@@ -683,7 +692,9 @@ function SubmissionsPage() {
                         ? "bg-foreground text-background"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted",
                     )}
-                    onClick={() => setPagination((prev) => ({ ...prev, pageSize: size, pageIndex: 0 }))}
+                    onClick={() =>
+                      setPagination((prev) => ({ ...prev, pageSize: size, pageIndex: 0 }))
+                    }
                   >
                     {size}
                   </button>

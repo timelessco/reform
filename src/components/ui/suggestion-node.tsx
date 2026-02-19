@@ -142,7 +142,7 @@ function SuggestionLineBreakContent({
               remove: isRemove,
               removeActive: (isActive || isHover) && isRemove,
             }),
-            "h-auto p-0 hover:bg-transparent"
+            "h-auto p-0 hover:bg-transparent",
           )}
           onMouseEnter={() => setOption("hoverId", suggestionData.id)}
           onMouseLeave={() => setOption("hoverId", null)}

@@ -6,10 +6,7 @@ import { FormPreviewFromPlate } from "@/components/form-components/form-preview-
 import { BrandingFooter } from "@/components/public/branding-footer";
 import { AlreadySubmitted, FormClosed } from "@/components/public/form-closed";
 import { PasswordGate } from "@/components/public/password-gate";
-import {
-  TranslationProvider,
-  useTranslation,
-} from "@/contexts/translation-context";
+import { TranslationProvider, useTranslation } from "@/contexts/translation-context";
 import { createPublicSubmission } from "@/lib/fn/public";
 import { getTranslations } from "@/lib/translations";
 import { cn } from "@/lib/utils";
@@ -20,10 +17,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import {
-  type PublicFormSettings,
-  defaultPublicFormSettings,
-} from "@/types/form-settings";
+import { type PublicFormSettings, defaultPublicFormSettings } from "@/types/form-settings";
 
 interface PublicForm {
   id: string;
@@ -310,9 +304,5 @@ export function PublicFormPage({
     );
   }
 
-  return (
-    <TranslationProvider language={resolvedLanguage}>
-      {formContent}
-    </TranslationProvider>
-  );
+  return <TranslationProvider language={resolvedLanguage}>{formContent}</TranslationProvider>;
 }

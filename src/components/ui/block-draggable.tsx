@@ -278,7 +278,10 @@ function Draggable(props: PlateElementProps) {
             {/* Drag Handle or Settings Gear - div to avoid nested button (Tooltip+Button inside) */}
             <div
               ref={isFormButton ? null : handleRef}
-              className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "h-auto w-auto  rounded-lg hover:bg-transparent")}
+              className={cn(
+                buttonVariants({ variant: "ghost", size: "icon" }),
+                "h-auto w-auto  rounded-lg hover:bg-transparent",
+              )}
               data-plate-prevent-deselect
             >
               <DragHandle

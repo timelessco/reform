@@ -1,7 +1,7 @@
 import { member, workspaces } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { createFileRoute  } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { eq, inArray } from "drizzle-orm";
 import { authMiddleware } from "@/middleware/auth";
 
@@ -26,7 +26,14 @@ export const Route = createFileRoute("/api/electric")({
         const url = new URL(request.url);
 
         const table = url.searchParams.get("table")?.trim();
-        const allowedTables = ["workspaces", "forms", "submissions", "form_favorites", "form_versions", "form_settings"];
+        const allowedTables = [
+          "workspaces",
+          "forms",
+          "submissions",
+          "form_favorites",
+          "form_versions",
+          "form_settings",
+        ];
 
         if (!table || !allowedTables.includes(table)) {
           return json({ error: "Invalid or missing table." }, 400);
@@ -275,7 +282,10 @@ export const Route = createFileRoute("/api/electric")({
           }
 
           // Override cache control
-          responseHeaders.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+          responseHeaders.set(
+            "Cache-Control",
+            "no-store, no-cache, must-revalidate, proxy-revalidate",
+          );
           responseHeaders.set("Pragma", "no-cache");
           responseHeaders.set("Expires", "0");
           responseHeaders.set("Vary", "Cookie");

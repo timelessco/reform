@@ -374,7 +374,10 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
             <div>
               {/* Field Name Header */}
               <div className="flex items-center gap-2 px-2 py-1.5">
-                <GripVertical className="h-3.5 w-3.5 text-muted-foreground shrink-0" strokeWidth={1.5} />
+                <GripVertical
+                  className="h-3.5 w-3.5 text-muted-foreground shrink-0"
+                  strokeWidth={1.5}
+                />
                 {isEditingName ? (
                   <Input
                     value={fieldName}
@@ -388,7 +391,9 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                     autoFocus
                   />
                 ) : (
-                  <span className="text-[13px] font-medium flex-1 truncate text-light-gray-800">{fieldName}</span>
+                  <span className="text-[13px] font-medium flex-1 truncate text-light-gray-800">
+                    {fieldName}
+                  </span>
                 )}
                 <Button
                   variant="ghost"
@@ -468,7 +473,9 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
               {fieldType === "formButton" && (
                 <>
                   <div className="px-2 py-1.5 space-y-2">
-                    <Label className="text-[12px] font-medium text-muted-foreground tracking-[0.24px]">Button Name</Label>
+                    <Label className="text-[12px] font-medium text-muted-foreground tracking-[0.24px]">
+                      Button Name
+                    </Label>
                     <Input
                       value={buttonText}
                       onChange={(e) => handleUpdateButtonText(e.target.value)}

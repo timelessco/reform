@@ -19,7 +19,13 @@ interface StepFormProps {
  * Individual step form component with its own form instance.
  * Uses StepFormContext for navigation and data accumulation.
  */
-export function StepForm({ stepIndex, elements, isLastStep, layout = "public", autoJump = false }: StepFormProps) {
+export function StepForm({
+  stepIndex,
+  elements,
+  isLastStep,
+  layout = "public",
+  autoJump = false,
+}: StepFormProps) {
   const { currentStep, goToPrevStep, isSubmitting } = useStepForm();
   const fields = getEditableFields(elements);
 

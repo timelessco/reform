@@ -109,11 +109,7 @@ export function LinkFloatingToolbar({ state }: { state?: LinkFloatingToolbarStat
     input
   ) : (
     <div className="box-content flex items-center">
-      <Button
-        variant="ghost"
-        size="sm"
-        {...editButtonProps}
-      >
+      <Button variant="ghost" size="sm" {...editButtonProps}>
         Edit link
       </Button>
 
@@ -123,11 +119,7 @@ export function LinkFloatingToolbar({ state }: { state?: LinkFloatingToolbarStat
 
       <Separator orientation="vertical" />
 
-      <Button
-        variant="ghost"
-        size="sm"
-        {...unlinkButtonProps}
-      >
+      <Button variant="ghost" size="sm" {...unlinkButtonProps}>
         <Unlink width={18} />
       </Button>
     </div>

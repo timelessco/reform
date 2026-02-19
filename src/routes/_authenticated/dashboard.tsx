@@ -217,7 +217,7 @@ function DashboardPage() {
               New workspace
             </Button>
             <Button
-            size="sm"
+              size="sm"
               onClick={handleCreateForm}
               disabled={isLoading || isCreating || orgWorkspaces.length === 0}
               className=" font-medium"
@@ -235,109 +235,111 @@ function DashboardPage() {
         {/* Forms List */}
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-4">
-            {isLoading ? (
-              [1, 2, 3, 4, 5].map((i) => (
-                <div
-                  key={`skeleton-${i}`}
-                  className="flex flex-col p-2 -mx-2 rounded-xl animate-pulse"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex flex-col gap-2">
-                        <div className="h-5 w-48 rounded bg-muted" />
-                        <div className="h-3 w-32 rounded bg-muted" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              paginatedForms.map((form) => (
-              <div
-                key={form.id}
-                className="group flex flex-col p-2 -mx-2 rounded-xl hover:bg-muted/30 transition-all duration-200 cursor-pointer"
-              >
-                <Link
-                  to={form.status === "published" ? "/workspace/$workspaceId/form-builder/$formId/submissions" : "/workspace/$workspaceId/form-builder/$formId/edit"}
-                  params={{ workspaceId: form.workspaceId, formId: form.id }}
-                  preloadDelay={1000}
-                  preload="intent"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-semibold group-hover:text-blue-600 transition-colors">
-                            {form.title || "Untitled"}
-                          </span>
-                          <Badge
-                            variant="secondary"
-                            className={`text-[10px] h-4 px-1.5 font-normal ${
-                              form.status === "published"
-                                ? "bg-green-100 text-green-700"
-                                : "bg-muted/80 text-muted-foreground"
-                            } rounded-full`}
-                          >
-                            {form.status === "published" ? "Published" : "Draft"}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 font-medium">
-                          <span>
-                            {workspaceNameMap.get(form.workspaceId) || "Unknown workspace"}
-                          </span>
-                          <span className="w-0.5 h-0.5 rounded-full bg-muted-foreground/30"></span>
-                          <span>{formatLastEdited(form.updatedAt)}</span>
+            {isLoading
+              ? [1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={`skeleton-${i}`}
+                    className="flex flex-col p-2 -mx-2 rounded-xl animate-pulse"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex flex-col gap-2">
+                          <div className="h-5 w-48 rounded bg-muted" />
+                          <div className="h-3 w-32 rounded bg-muted" />
                         </div>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-muted"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleDuplicate(form.id);
-                              }}
-                            >
-                              <Copy className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Duplicate</TooltipContent>
-                        </Tooltip>
-
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleDeleteClick({
-                                  id: form.id,
-                                  title: form.title || "Untitled",
-                                });
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Delete</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
                   </div>
-                </Link>
-              </div>
-            ))
-            )}
+                ))
+              : paginatedForms.map((form) => (
+                  <div
+                    key={form.id}
+                    className="group flex flex-col p-2 -mx-2 rounded-xl hover:bg-muted/30 transition-all duration-200 cursor-pointer"
+                  >
+                    <Link
+                      to={
+                        form.status === "published"
+                          ? "/workspace/$workspaceId/form-builder/$formId/submissions"
+                          : "/workspace/$workspaceId/form-builder/$formId/edit"
+                      }
+                      params={{ workspaceId: form.workspaceId, formId: form.id }}
+                      preloadDelay={1000}
+                      preload="intent"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg font-semibold group-hover:text-blue-600 transition-colors">
+                                {form.title || "Untitled"}
+                              </span>
+                              <Badge
+                                variant="secondary"
+                                className={`text-[10px] h-4 px-1.5 font-normal ${
+                                  form.status === "published"
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-muted/80 text-muted-foreground"
+                                } rounded-full`}
+                              >
+                                {form.status === "published" ? "Published" : "Draft"}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 font-medium">
+                              <span>
+                                {workspaceNameMap.get(form.workspaceId) || "Unknown workspace"}
+                              </span>
+                              <span className="w-0.5 h-0.5 rounded-full bg-muted-foreground/30"></span>
+                              <span>{formatLastEdited(form.updatedAt)}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full hover:bg-muted"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDuplicate(form.id);
+                                  }}
+                                >
+                                  <Copy className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Duplicate</TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDeleteClick({
+                                      id: form.id,
+                                      title: form.title || "Untitled",
+                                    });
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Delete</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
+                ))}
           </div>
 
           {/* Pagination */}

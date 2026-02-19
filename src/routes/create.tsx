@@ -86,47 +86,50 @@ function LocalEditorApp() {
     setIsReady(true);
   }, [savedDocs, editor]);
 
-  const handleChange = useCallback(({ value }: { value: Value }) => {
-    // Skip the initial onChange triggered by editor.tf.init()
-    if (skipSaveRef.current) {
-      skipSaveRef.current = false;
-      return;
-    }
+  const handleChange = useCallback(
+    ({ value }: { value: Value }) => {
+      // Skip the initial onChange triggered by editor.tf.init()
+      if (skipSaveRef.current) {
+        skipSaveRef.current = false;
+        return;
+      }
 
-    // Only save if content actually changed
-    const contentStr = JSON.stringify(value);
-    const lastSavedStr = JSON.stringify(lastSavedContentRef.current);
-    if (contentStr === lastSavedStr) return;
+      // Only save if content actually changed
+      const contentStr = JSON.stringify(value);
+      const lastSavedStr = JSON.stringify(lastSavedContentRef.current);
+      if (contentStr === lastSavedStr) return;
 
-    lastSavedContentRef.current = value;
+      lastSavedContentRef.current = value;
 
-    // Persist to local collection
-    const headerNode = value.find((n: any) => n.type === "formHeader") as any;
-    const updateData = {
-      content: value,
-      title: headerNode?.title || "Draft Form",
-      icon: headerNode?.icon || null,
-      cover: headerNode?.cover || null,
-      updatedAt: new Date().toISOString(),
-    };
+      // Persist to local collection
+      const headerNode = value.find((n: any) => n.type === "formHeader") as any;
+      const updateData = {
+        content: value,
+        title: headerNode?.title || "Draft Form",
+        icon: headerNode?.icon || null,
+        cover: headerNode?.cover || null,
+        updatedAt: new Date().toISOString(),
+      };
 
-    try {
-      localFormCollection.update(localFormId, (draft) => {
-        Object.assign(draft, updateData);
-      });
-    } catch {
-      localFormCollection.insert({
-        id: localFormId,
-        workspaceId: localWorkspaceId,
-        formName: "draft",
-        schemaName: "draftFormSchema",
-        isMultiStep: false,
-        status: "draft" as const,
-        createdAt: new Date().toISOString(),
-        ...updateData,
-      });
-    }
-  }, [localFormId, localWorkspaceId]);
+      try {
+        localFormCollection.update(localFormId, (draft) => {
+          Object.assign(draft, updateData);
+        });
+      } catch {
+        localFormCollection.insert({
+          id: localFormId,
+          workspaceId: localWorkspaceId,
+          formName: "draft",
+          schemaName: "draftFormSchema",
+          isMultiStep: false,
+          status: "draft" as const,
+          createdAt: new Date().toISOString(),
+          ...updateData,
+        });
+      }
+    },
+    [localFormId, localWorkspaceId],
+  );
 
   if (!isReady) return <Loader />;
 
