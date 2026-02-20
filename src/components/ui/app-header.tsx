@@ -4,8 +4,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { toggleFavoriteLocal, updateFormStatus } from "@/db-collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import {
-  discardChangesAction,
-  publishFormAction,
+  discardChanges,
+  publishForm,
   useHasUnpublishedChanges,
 } from "@/hooks/use-form-versions";
 import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
@@ -123,6 +123,7 @@ export function AppHeader({
   // Version management
   const hasUnpublishedChanges = useHasUnpublishedChanges(formId);
   const [isDiscarding, setIsDiscarding] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   // Favorite state
   useIsFavorite(session?.user?.id, formId);
@@ -147,8 +148,9 @@ export function AppHeader({
 
   const handlePublish = async () => {
     if (formId && workspaceId) {
+      setIsPublishing(true);
       try {
-        const tx = publishFormAction({ formId });
+        const tx = publishForm(formId);
         await tx.isPersisted.promise;
         toast.success("Form published");
         navigate({
@@ -158,6 +160,8 @@ export function AppHeader({
       } catch (error) {
         toast.error("Failed to publish form");
         console.error(error);
+      } finally {
+        setIsPublishing(false);
       }
     }
   };
@@ -166,7 +170,7 @@ export function AppHeader({
     if (formId) {
       setIsDiscarding(true);
       try {
-        const tx = discardChangesAction({ formId });
+        const tx = discardChanges(formId);
         await tx.isPersisted.promise;
         toast.info("Changes discarded, reverted to last published version");
       } catch (error) {
@@ -446,9 +450,11 @@ export function AppHeader({
                     : "bg-muted text-muted-foreground hover:bg-muted/80",
                 )}
                 onClick={handlePublish}
-                disabled={!hasUnpublishedChanges && savedDocs?.[0]?.status === "published"}
+                disabled={isPublishing || (!hasUnpublishedChanges && savedDocs?.[0]?.status === "published")}
               >
-                {savedDocs?.[0]?.status === "published" ? "Published" : "Publish"}
+                {isPublishing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : savedDocs?.[0]?.status === "published" ? "Published" : "Publish"}
               </Button>
             ) : (
               // Not on edit route: show Edit button to navigate to the editor
