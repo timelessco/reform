@@ -225,20 +225,19 @@ export const restoreVersionAction = createOptimisticAction<{
 	},
 	mutationFn: async ({ formId, versionId }) => {
 		const result = await restoreFormVersion({ data: { formId, versionId } });
-		const version = result?.version;
-		if (version) {
-			const tx = createTransaction({ mutationFn: async () => {} });
-			tx.mutate(() => {
-				formCollection.update(formId, (draft) => {
-					draft.content = version.content;
-					draft.title = version.title;
-				});
-			});
+
+		if (typeof result?.txid === "number") {
+			await formCollection.utils.awaitTxId(result.txid);
+		}
+
+		const latest = formCollection.state.get(formId);
+		if (latest) {
 			setEditorDraftSnapshot(formId, {
-				content: version.content,
-				title: version.title,
+				content: latest.content,
+				title: latest.title,
 			});
 		}
+
 		return result;
 	},
 });
@@ -272,45 +271,43 @@ export const discardChangesAction = createOptimisticAction<{ formId: string }>({
 	},
 	mutationFn: async ({ formId }) => {
 		const result = await discardFormChanges({ data: { formId } });
-		const version = result?.version;
-		if (version) {
-			const tx = createTransaction({ mutationFn: async () => {} });
-			tx.mutate(() => {
-				formCollection.update(formId, (draft) => {
-					draft.content = version.content;
-					draft.title = version.title;
-					draft.publishedContentHash = computeContentHash(version.content);
-				});
-			});
+
+		if (typeof result?.txid === "number") {
+			await formCollection.utils.awaitTxId(result.txid);
+		}
+
+		const latest = formCollection.state.get(formId);
+		if (latest) {
+			publishedContentCanonicalSnapshots.set(
+				formId,
+				canonicalizeContent(latest.content),
+			);
 			setEditorDraftSnapshot(formId, {
-				content: version.content,
-				title: version.title,
+				content: latest.content,
+				title: latest.title,
 			});
 		}
+
 		return result;
 	},
 });
 
 export async function discardChanges(formId: string) {
 	const result = await discardFormChanges({ data: { formId } });
-	const version = result?.version;
 
-	if (version) {
-		const tx = createTransaction({ mutationFn: async () => {} });
-		tx.mutate(() => {
-			formCollection.update(formId, (draft) => {
-				draft.content = version.content;
-				draft.title = version.title;
-				draft.publishedContentHash = computeContentHash(version.content);
-			});
-		});
+	if (typeof result?.txid === "number") {
+		await formCollection.utils.awaitTxId(result.txid);
+	}
+
+	const latest = formCollection.state.get(formId);
+	if (latest) {
 		publishedContentCanonicalSnapshots.set(
 			formId,
-			canonicalizeContent(version.content),
+			canonicalizeContent(latest.content),
 		);
 		setEditorDraftSnapshot(formId, {
-			content: version.content,
-			title: version.title,
+			content: latest.content,
+			title: latest.title,
 		});
 	} else {
 		clearEditorDraftSnapshot(formId);

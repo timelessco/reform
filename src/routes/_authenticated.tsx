@@ -2,8 +2,6 @@ import { FormSettingsSidebar } from "@/components/form-builder/form-settings-sid
 import { ShareSummarySidebar } from "@/components/form-builder/share-summary-sidebar";
 import { VersionHistorySidebar } from "@/components/form-builder/version-history-sidebar";
 import { SidebarItem } from "@/components/sidebar-item";
-import { UserMenuMinimal } from "@/components/user-menu-minimal";
-import { WorkspaceItemMinimal, type WorkspaceWithForms } from "@/components/workspace-item-minimal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +34,7 @@ import {
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { Input } from "@/components/ui/input";
 import Loader from "@/components/ui/loader";
+import { Logo } from "@/components/ui/logo";
 import { NotFound } from "@/components/ui/not-found";
 import {
   type ImperativePanelHandle,
@@ -58,6 +57,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { BellIcon, HomeIcon, SearchIcon, SettingsIcon, StarIcon } from "@/components/ui/sidebar-icons";
+import { UserMenuMinimal } from "@/components/user-menu-minimal";
+import { WorkspaceItemMinimal, type WorkspaceWithForms } from "@/components/workspace-item-minimal";
 import {
   EditorHeaderVisibilityProvider,
   useEditorHeaderVisibility,
@@ -68,16 +69,10 @@ import {
   createWorkspaceLocal,
   deleteWorkspaceLocal,
   duplicateFormById,
-  favoriteCollection,
-  formCollection,
-  formSettingsCollection,
-  formVersionCollection,
   permanentDeleteFormLocal,
   restoreFormLocal,
-  submissionCollection,
   updateFormStatus,
-  updateWorkspaceName,
-  workspaceCollection,
+  updateWorkspaceName
 } from "@/db-collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
@@ -122,7 +117,6 @@ import {
 import type * as React from "react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Logo } from "@/components/ui/logo";
 
 // Route configuration
 export const Route = createFileRoute("/_authenticated")({
