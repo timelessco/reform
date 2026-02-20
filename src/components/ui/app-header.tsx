@@ -4,8 +4,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { toggleFavoriteLocal, updateFormStatus } from "@/db-collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import {
-  discardFormChanges,
-  publishFormVersion,
+  discardChanges,
+  publishForm,
   useHasUnpublishedChanges,
 } from "@/hooks/use-form-versions";
 import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
@@ -145,7 +145,8 @@ export function AppHeader({
     if (formId && workspaceId) {
       setIsPublishing(true);
       try {
-        await publishFormVersion({ data: { formId } });
+        const tx = publishForm(formId);
+        await tx.isPersisted.promise;
         toast.success("Form published");
         navigate({
           to: "/workspace/$workspaceId/form-builder/$formId/submissions",
@@ -164,7 +165,8 @@ export function AppHeader({
     if (formId) {
       setIsDiscarding(true);
       try {
-        await discardFormChanges({ data: { formId } });
+        const tx = discardChanges(formId);
+        await tx.isPersisted.promise;
         toast.info("Changes discarded, reverted to last published version");
       } catch (error) {
         toast.error("Failed to discard changes");

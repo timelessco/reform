@@ -1,6 +1,6 @@
-import { eq, useLiveQuery } from "@tanstack/react-db";
+import { createTransaction, eq, useLiveQuery } from "@tanstack/react-db";
 import { useMemo } from "react";
-import { formVersionCollection } from "@/db-collections";
+import { formCollection, formVersionCollection } from "@/db-collections";
 import { discardFormChanges, publishFormVersion, restoreFormVersion } from "@/lib/fn/form-versions";
 import { useForm } from "./use-live-hooks";
 
@@ -66,10 +66,82 @@ export function useHasUnpublishedChanges(formId: string | undefined) {
 }
 
 // ============================================================================
-// Direct server function wrappers
-// createOptimisticAction with empty onMutate skips mutationFn entirely,
-// so we call server functions directly instead.
-// Electric syncs the changes back to collections automatically.
+// Optimistic action functions using createTransaction
+// Applies optimistic state instantly, then calls server fn in mutationFn.
+// Collection's onUpdate does NOT fire because mutations are owned by the tx.
+// On success the overlay is confirmed; Electric syncs the real data seamlessly.
+// On error the transaction auto-rolls back the optimistic state.
 // ============================================================================
 
-export { publishFormVersion, restoreFormVersion, discardFormChanges };
+/**
+ * Publish the current form draft. Optimistically sets status to "published".
+ */
+export function publishForm(formId: string) {
+  const tx = createTransaction({
+    mutationFn: async () => {
+      await publishFormVersion({ data: { formId } });
+    },
+  });
+
+  tx.mutate(() => {
+    formCollection.update(formId, (draft) => {
+      draft.status = "published";
+      draft.updatedAt = new Date().toISOString();
+    });
+  });
+
+  return tx;
+}
+
+/**
+ * Restore a version's content to the form draft.
+ * Optimistically updates content/title from the local version data.
+ */
+export function restoreVersion(formId: string, versionId: string) {
+  const version = formVersionCollection.state.get(versionId);
+  if (!version) throw new Error("Version not found in local state");
+
+  const tx = createTransaction({
+    mutationFn: async () => {
+      await restoreFormVersion({ data: { formId, versionId } });
+    },
+  });
+
+  tx.mutate(() => {
+    formCollection.update(formId, (draft) => {
+      draft.content = version.content;
+      draft.title = version.title;
+      draft.updatedAt = new Date().toISOString();
+    });
+  });
+
+  return tx;
+}
+
+/**
+ * Discard changes and revert to last published version.
+ * Optimistically updates content/title from the published version.
+ */
+export function discardChanges(formId: string) {
+  const form = formCollection.state.get(formId);
+  if (!form?.lastPublishedVersionId) throw new Error("No published version to revert to");
+
+  const version = formVersionCollection.state.get(form.lastPublishedVersionId);
+  if (!version) throw new Error("Published version not found in local state");
+
+  const tx = createTransaction({
+    mutationFn: async () => {
+      await discardFormChanges({ data: { formId } });
+    },
+  });
+
+  tx.mutate(() => {
+    formCollection.update(formId, (draft) => {
+      draft.content = version.content;
+      draft.title = version.title;
+      draft.updatedAt = new Date().toISOString();
+    });
+  });
+
+  return tx;
+}
