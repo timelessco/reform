@@ -126,9 +126,7 @@ function DesignPage() {
     return format(new Date(dateString), "MMM d, h:mm a");
   };
 
-  // useLiveQuery returns an array — get the first (and only) matching version
-  const selectedVersion = versionContentData?.[0];
-  const versionContent = selectedVersion?.content as Value | undefined;
+  const versionContent = versionData?.content as Value | undefined;
 
   return (
     <div className="flex flex-1 h-full overflow-hidden">
@@ -145,11 +143,11 @@ function DesignPage() {
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Loading version...
                     </span>
-                  ) : selectedVersion?.publishedAt ? (
+                  ) : versionData?.publishedAt ? (
                     <>
                       Viewing version from{" "}
                       <span className="font-semibold">
-                        {formatDateTime(selectedVersion.publishedAt)}
+                        {formatDateTime(versionData.publishedAt)}
                       </span>
                     </>
                   ) : (

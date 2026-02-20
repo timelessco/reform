@@ -1,5 +1,5 @@
 import { electricCollectionOptions } from "@tanstack/electric-db-collection";
-import { createCollection, localStorageCollectionOptions } from "@tanstack/react-db";
+import { createCollection, createTransaction, localStorageCollectionOptions } from "@tanstack/react-db";
 import { z } from "zod";
 import { createForm, deleteForm, updateForm } from "@/lib/fn/forms";
 import { logger } from "@/lib/utils";
@@ -234,7 +234,7 @@ async function deleteFormLocal(id: string): Promise<void> {
  * Duplicates a form by ID and returns the new document.
  * The new form's title will be "{original title} copy"
  */
-export async function duplicateFormById(formId: string): Promise<Form> {
+export function duplicateFormById(formId: string): Form {
   const sourceForm = formCollection.state.get(formId);
   if (!sourceForm) {
     throw new Error(`Form not found: ${formId}`);
@@ -248,18 +248,35 @@ export async function duplicateFormById(formId: string): Promise<Form> {
     ...sourceForm,
     id,
     title,
+    status: "draft",
+    lastPublishedVersionId: null,
+    publishedContentHash: null,
+    deletedAt: null,
     createdAt: now,
     updatedAt: now,
   };
 
-  await formCollection.insert(newForm);
+  // Same pattern as publishForm/restoreVersion in use-form-versions.ts:
+  // Optimistic insert applied instantly, server call runs in background via mutationFn.
+  // onInsert does NOT fire because the mutation is owned by the transaction.
+  // On success → confirmed; on error → auto-rollback.
+  const tx = createTransaction({
+    mutationFn: async () => {
+      await createForm({ data: newForm });
+    },
+  });
+
+  tx.mutate(() => {
+    formCollection.insert(newForm);
+  });
+
   return newForm;
 }
 
 /**
  * @deprecated Use duplicateFormById instead
  */
-export async function duplicateForm(sourceForm: Form): Promise<Form> {
+export function duplicateForm(sourceForm: Form): Form {
   return duplicateFormById(sourceForm.id);
 }
 
