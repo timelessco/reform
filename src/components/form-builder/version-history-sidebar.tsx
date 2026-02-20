@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { useFormVersions, restoreVersionAction } from "@/hooks/use-form-versions";
+import { useFormVersions, restoreFormVersion } from "@/hooks/use-form-versions";
 import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
@@ -43,11 +43,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
     if (!effectiveVersionId) return;
     setIsRestoring(true);
     try {
-      const tx = restoreVersionAction({
-        formId,
-        versionId: effectiveVersionId,
-      });
-      await tx.isPersisted.promise;
+      await restoreFormVersion({ data: { formId, versionId: effectiveVersionId } });
       toast.success("Version restored. Publish again to make it live.");
       exitVersionView();
     } catch {

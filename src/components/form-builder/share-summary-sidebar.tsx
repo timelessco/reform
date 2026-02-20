@@ -4,7 +4,7 @@ import { useForm } from "@/hooks/use-live-hooks";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { publishFormAction } from "@/hooks/use-form-versions";
+import { publishFormVersion } from "@/hooks/use-form-versions";
 import { EmbedSection } from "./embed-section";
 import {
   Sidebar,
@@ -33,8 +33,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
 
   const handlePublish = async () => {
     try {
-      const tx = publishFormAction({ formId });
-      await tx.isPersisted.promise;
+      await publishFormVersion({ data: { formId } });
       toast.success("Form published successfully!");
     } catch (error) {
       toast.error("Failed to publish form");

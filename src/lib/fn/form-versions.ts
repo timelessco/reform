@@ -98,7 +98,18 @@ export const publishFormVersion = createServerFn({ method: "POST" })
       await db.delete(formVersions).where(inArray(formVersions.id, versionsToDelete));
     }
 
+    // Post-cleanup count: we keep at most MAX_VERSIONS_PER_FORM
+    const totalInDb = Math.min(allVersions.length, MAX_VERSIONS_PER_FORM);
+
     const txid = await getTxId();
+
+    console.log("[publishFormVersion] SUCCESS", {
+      formId: data.formId,
+      versionId,
+      versionNumber: nextVersion,
+      totalVersionsInDb: totalInDb,
+      txid,
+    });
 
     return {
       version: serializeVersion(newVersion),

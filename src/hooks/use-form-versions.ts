@@ -1,6 +1,6 @@
-import { createOptimisticAction, eq, useLiveQuery } from "@tanstack/react-db";
+import { eq, useLiveQuery } from "@tanstack/react-db";
 import { useMemo } from "react";
-import { formCollection, formVersionCollection } from "@/db-collections";
+import { formVersionCollection } from "@/db-collections";
 import { discardFormChanges, publishFormVersion, restoreFormVersion } from "@/lib/fn/form-versions";
 import { useForm } from "./use-live-hooks";
 
@@ -51,11 +51,13 @@ export function useHasUnpublishedChanges(formId: string | undefined) {
   return useMemo(() => {
     if (!form) return false;
 
-    // If form was never published (no versions), no "unpublished changes"
+    // Never published — no "unpublished changes" indicator
+    if (!form.lastPublishedVersionId) return false;
+
+    // Published but version collection hasn't synced yet — can't compare
     if (!latestVersion) return false;
 
     // Compare current content with published version content
-    // formVersionCollection already has full content via Electric sync
     const currentContent = JSON.stringify(form.content);
     const publishedContent = JSON.stringify(latestVersion.content);
 
@@ -64,37 +66,10 @@ export function useHasUnpublishedChanges(formId: string | undefined) {
 }
 
 // ============================================================================
-// Optimistic Actions (replace useMutation hooks)
+// Direct server function wrappers
+// createOptimisticAction with empty onMutate skips mutationFn entirely,
+// so we call server functions directly instead.
+// Electric syncs the changes back to collections automatically.
 // ============================================================================
 
-export const publishFormAction = createOptimisticAction<{ formId: string }>({
-  onMutate: ({ formId }) => {
-    formCollection.update(formId, (draft) => {
-      draft.status = "published";
-    });
-  },
-  mutationFn: async ({ formId }) => {
-    return await publishFormVersion({ data: { formId } });
-  },
-});
-
-export const restoreVersionAction = createOptimisticAction<{
-  formId: string;
-  versionId: string;
-}>({
-  onMutate: () => {
-    // No optimistic update — Electric syncs content back
-  },
-  mutationFn: async ({ formId, versionId }) => {
-    return await restoreFormVersion({ data: { formId, versionId } });
-  },
-});
-
-export const discardChangesAction = createOptimisticAction<{ formId: string }>({
-  onMutate: () => {
-    // No optimistic update — Electric syncs content back
-  },
-  mutationFn: async ({ formId }) => {
-    return await discardFormChanges({ data: { formId } });
-  },
-});
+export { publishFormVersion, restoreFormVersion, discardFormChanges };
