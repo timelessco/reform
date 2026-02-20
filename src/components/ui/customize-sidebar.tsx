@@ -1,27 +1,32 @@
 import { revalidateLogic } from "@tanstack/react-form";
-import { AlignCenter, AlignLeft, AlignRight, X } from "lucide-react";
+import { X } from "lucide-react";
 import type * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { ColorPicker } from "@/components/ui/color-picker";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { useAppForm } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useCustomizeSidebar } from "@/hooks/use-customize-sidebar";
+import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { customizeFormSchema } from "@/lib/customize-form-schema";
 import { cn } from "@/lib/utils";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+} from "@/components/ui/sidebar";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  StyleSelect,
+  StyleColorPicker,
+  StyleNumberInput,
+  StyleAlignToggle,
+} from "@/components/ui/style-controls";
 
 export function CustomizeSidebar() {
-  const { isOpen, setIsOpen } = useCustomizeSidebar();
+  const { closeSidebar } = useEditorSidebar();
 
   const form = useAppForm({
     defaultValues: {
@@ -59,533 +64,401 @@ export function CustomizeSidebar() {
     } as z.input<typeof customizeFormSchema>,
     validationLogic: revalidateLogic(),
     validators: { onDynamic: customizeFormSchema },
-    onSubmit: async ({ value }) => {},
+    onSubmit: async ({ value }) => { },
   });
 
   return (
-    <aside
-      className={cn(
-        "bg-background flex flex-col h-full shrink-0 transition-all duration-300 ease-in-out overflow-hidden",
-        isOpen ? "w-[350px] border-l" : "w-0 border-l-0",
-      )}
+    <Sidebar
+      collapsible="none"
+      className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out"
     >
-      <div className="flex items-center justify-between p-4 border-b">
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold tracking-tight">Customize</h2>
+      <SidebarHeader className="px-4 h-[52px] border-b border-border/40 flex flex-row items-center justify-between shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="text-[13px] font-medium tracking-[0.13px] text-foreground/80">Customize</span>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="h-8 w-8">
-          <X className="h-4 w-4" />
+        <Button variant="ghost" size="icon" onClick={() => closeSidebar()} className="h-7 w-7 text-muted-foreground hover:bg-accent/50 rounded-lg transition-colors">
+          <X className="h-3.5 w-3.5" strokeWidth={1.5} />
         </Button>
-      </div>
+      </SidebarHeader>
 
-      <div className="flex-1 overflow-y-auto">
+      <SidebarContent className="p-0 overflow-y-auto custom-scrollbar">
         <form.AppForm>
-          <form.Form className="p-4 space-y-6">
-            {/* Top Section: Theme & Colors */}
-            <div className="space-y-4">
-              <form.AppField name="theme">
-                {(field) => (
-                  <div className="space-y-1.5">
-                    <Label htmlFor={field.name} className="text-xs text-muted-foreground">
-                      Theme
-                    </Label>
-                    <Select
-                      value={(field.state.value as string) ?? ""}
-                      onValueChange={field.handleChange}
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder="Select theme" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Custom">Custom</SelectItem>
-                        <SelectItem value="Light">Light</SelectItem>
-                        <SelectItem value="Dark">Dark</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </form.AppField>
+          <form.Form className="p-4 space-y-6 pb-12">
+            <Accordion type="multiple" defaultValue={["theme", "layout", "inputs", "buttons"]} className="w-full space-y-4">
 
-              <form.AppField name="font">
-                {(field) => (
-                  <div className="space-y-1.5">
-                    <Label htmlFor={field.name} className="text-xs text-muted-foreground">
-                      Font
-                    </Label>
-                    <Select
-                      value={(field.state.value as string) ?? ""}
-                      onValueChange={field.handleChange}
-                    >
-                      <SelectTrigger className="h-9">
-                        <SelectValue placeholder="Select font" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Inter">Inter</SelectItem>
-                        <SelectItem value="Roboto">Roboto</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </form.AppField>
+              {/* Theme Section */}
+              <AccordionItem value="theme" className="border-b-0">
+                <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
+                  Theme
+                </AccordionTrigger>
+                <AccordionContent className="space-y-2 pt-1 pb-2">
+                  <form.AppField name="theme">
+                    {(field) => (
+                      <StyleSelect
+                        label="Theme"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                        options={[
+                          { label: "Custom", value: "Custom" },
+                          { label: "Light", value: "Light" },
+                          { label: "Dark", value: "Dark" },
+                        ]}
+                      />
+                    )}
+                  </form.AppField>
 
-              <div className="grid grid-cols-2 gap-4">
-                <form.AppField name="backgroundColor">
-                  {(field) => (
-                    <ColorPicker
-                      label="Background"
-                      value={(field.state.value as string) ?? ""}
-                      onChange={field.handleChange}
-                    />
-                  )}
-                </form.AppField>
-                <form.AppField name="accentColor">
-                  {(field) => (
-                    <ColorPicker
-                      label="Text"
-                      value={(field.state.value as string) ?? ""}
-                      onChange={field.handleChange}
-                    />
-                  )}
-                </form.AppField>
-              </div>
+                  <form.AppField name="font">
+                    {(field) => (
+                      <StyleSelect
+                        label="Font"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                        options={[
+                          { label: "Inter", value: "Inter" },
+                          { label: "Roboto", value: "Roboto" },
+                        ]}
+                      />
+                    )}
+                  </form.AppField>
 
-              <div className="grid grid-cols-2 gap-4">
-                <form.AppField name="buttonBackgroundColor">
-                  {(field) => (
-                    <ColorPicker
-                      label="Button background"
-                      value={(field.state.value as string) ?? ""}
-                      onChange={field.handleChange}
-                    />
-                  )}
-                </form.AppField>
-                <form.AppField name="buttonTextColor">
-                  {(field) => (
-                    <ColorPicker
-                      label="Button text"
-                      value={(field.state.value as string) ?? ""}
-                      onChange={field.handleChange}
-                    />
-                  )}
-                </form.AppField>
-              </div>
+                  <form.AppField name="backgroundColor">
+                    {(field) => (
+                      <StyleColorPicker
+                        label="Background"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
 
-              <form.AppField name="accentColor">
-                {(field) => (
-                  <ColorPicker
-                    label="Accent (?)"
-                    value={(field.state.value as string) ?? ""}
-                    onChange={field.handleChange}
-                  />
-                )}
-              </form.AppField>
-            </div>
+                  <form.AppField name="accentColor">
+                    {(field) => (
+                      <StyleColorPicker
+                        label="Accent Color"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
 
-            <Separator />
+                  <form.AppField name="buttonBackgroundColor">
+                    {(field) => (
+                      <StyleColorPicker
+                        label="Button bg"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
 
-            {/* Advanced Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-medium">Advanced</h3>
-                <div className="bg-pink-100 text-pink-600 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">
+                  <form.AppField name="buttonTextColor">
+                    {(field) => (
+                      <StyleColorPicker
+                        label="Button text"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+            {/* Advanced Banner */}
+            <div className="mx-3 mt-6 mb-2 shrink-0 overflow-hidden rounded-xl bg-free-plan-card-bg p-3 shadow-sm border border-border/40">
+              <div className="flex items-center gap-2 mb-2 justify-between">
+                <span className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider">
+                  Advanced
+                </span>
+                <div className="bg-teal-100 dark:bg-teal-700/20 text-teal-700 dark:text-teal-400 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
                   Pro
                 </div>
               </div>
-              <div className="bg-orange-50 border border-orange-100 rounded-lg p-3 text-xs text-orange-800">
-                You can preview advanced customization, but BetterForms Pro is required to apply it
-                to the published form.{" "}
-                <Button
-                  variant="link"
-                  className="underline font-semibold p-0 h-auto text-xs text-orange-800"
-                >
-                  Upgrade
-                </Button>
-              </div>
+              <p className="text-[12px] text-muted-foreground tracking-[0.13px] leading-[1.48] mb-3">
+                Preview advanced customization. BetterForms Pro is required to apply it to the published form.
+              </p>
+              <Button
+                variant="outline"
+                className="w-full h-7 text-[13px] font-medium text-sidebar-foreground bg-background border border-border hover:bg-muted rounded-lg shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
+              >
+                Upgrade to Pro
+              </Button>
             </div>
 
-            <Separator />
+            <Accordion type="multiple" defaultValue={["layout", "inputs", "buttons"]}>
 
-            {/* Layout Section */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium">Layout</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <form.AppField name="pageWidth">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Page width</Label>
-                      <Input
+              {/* Layout Section */}
+              <AccordionItem value="layout" className="border-b-0">
+                <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
+                  Layout
+                </AccordionTrigger>
+                <AccordionContent className="space-y-2 pt-1 pb-2">
+                  <form.AppField name="pageWidth">
+                    {(field) => (
+                      <StyleNumberInput
+                        label="Page Width"
                         value={(field.state.value as string) ?? ""}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        className="h-8"
+                        onChange={field.handleChange}
                       />
-                    </div>
-                  )}
-                </form.AppField>
-                <form.AppField name="baseFontSize">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Base font size</Label>
-                      <Input
+                    )}
+                  </form.AppField>
+                  <form.AppField name="baseFontSize">
+                    {(field) => (
+                      <StyleNumberInput
+                        label="Base Font Size"
                         value={(field.state.value as string) ?? ""}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        className="h-8"
+                        onChange={field.handleChange}
                       />
-                    </div>
-                  )}
-                </form.AppField>
-              </div>
+                    )}
+                  </form.AppField>
+                  <form.AppField name="logoWidth">
+                    {(field) => (
+                      <StyleNumberInput
+                        label="Logo Width"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="logoHeight">
+                    {(field) => (
+                      <StyleNumberInput
+                        label="Logo Height"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="logoCornerRadius">
+                    {(field) => (
+                      <StyleNumberInput
+                        label="Logo Radius"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="coverHeight">
+                    {(field) => (
+                      <StyleNumberInput
+                        label="Cover Height"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
+                </AccordionContent>
+              </AccordionItem>
 
-              <div className="grid grid-cols-3 gap-4">
-                <form.AppField name="logoWidth">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between items-center">
-                        <Label className="text-xs text-muted-foreground">Logo</Label>{" "}
-                        <span className="text-[10px] text-muted-foreground">Width</span>
-                      </div>
-                      <Input
+              {/* Inputs Section */}
+              <AccordionItem value="inputs" className="border-b-0">
+                <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
+                  Inputs
+                </AccordionTrigger>
+                <AccordionContent className="space-y-2 pt-1 pb-2">
+                  <form.AppField name="inputWidth">
+                    {(field) => (
+                      <StyleNumberInput
+                        label="Input Width"
                         value={(field.state.value as string) ?? ""}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        className="h-8"
+                        onChange={field.handleChange}
                       />
-                    </div>
-                  )}
-                </form.AppField>
-                <form.AppField name="logoHeight">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <div className="flex justify-end">
-                        <span className="text-[10px] text-muted-foreground">Height</span>
-                      </div>
-                      <Input
+                    )}
+                  </form.AppField>
+                  <form.AppField name="inputHeight">
+                    {(field) => (
+                      <StyleNumberInput
+                        label="Input Height"
                         value={(field.state.value as string) ?? ""}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        className="h-8"
+                        onChange={field.handleChange}
                       />
-                    </div>
-                  )}
-                </form.AppField>
-                <form.AppField name="logoCornerRadius">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <div className="flex justify-end">
-                        <span className="text-[10px] text-muted-foreground">Corner radius</span>
-                      </div>
-                      <Input
+                    )}
+                  </form.AppField>
+                  <form.AppField name="inputBackgroundColor">
+                    {(field) => (
+                      <StyleColorPicker
+                        label="Background"
                         value={(field.state.value as string) ?? ""}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        className="h-8"
+                        onChange={field.handleChange}
                       />
-                    </div>
-                  )}
-                </form.AppField>
-              </div>
+                    )}
+                  </form.AppField>
+                  <form.AppField name="inputPlaceholderColor">
+                    {(field) => (
+                      <StyleColorPicker
+                        label="Placeholder"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="inputBorderColor">
+                    {(field) => (
+                      <StyleColorPicker
+                        label="Border Color"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="inputBorderWidth">
+                    {(field) => (
+                      <StyleNumberInput
+                        label="Border Width"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="inputBorderRadius">
+                    {(field) => (
+                      <StyleNumberInput
+                        label="Border Radius"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="inputMarginBottom">
+                    {(field) => (
+                      <StyleNumberInput
+                        label="Margin Bottom"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="inputHorizontalPadding">
+                    {(field) => (
+                      <StyleNumberInput
+                        label="Horiz Padding"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
+                </AccordionContent>
+              </AccordionItem>
 
-              <div className="grid grid-cols-2 gap-4">
-                <form.AppField name="coverHeight">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between items-center">
-                        <Label className="text-xs text-muted-foreground">Cover</Label>{" "}
-                        <span className="text-[10px] text-muted-foreground">Height</span>
-                      </div>
-                      <Input
+              {/* Buttons Section */}
+              <AccordionItem value="buttons" className="border-b-0">
+                <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
+                  Buttons
+                </AccordionTrigger>
+                <AccordionContent className="space-y-2 pt-1 pb-2">
+                  <form.AppField name="buttonWidth">
+                    {(field) => (
+                      <StyleNumberInput
+                        label="Width"
                         value={(field.state.value as string) ?? ""}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        className="h-8"
+                        onChange={field.handleChange}
                       />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="buttonHeight">
+                    {(field) => (
+                      <StyleNumberInput
+                        label="Height"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="buttonAlignment">
+                    {(field) => (
+                      <StyleAlignToggle
+                        label="Alignment"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={(val) => field.handleChange(val as any)}
+                      />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="buttonFontSize">
+                    {(field) => (
+                      <StyleNumberInput
+                        label="Font Size"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="buttonCornerRadius">
+                    {(field) => (
+                      <StyleNumberInput
+                        label="Corner Radius"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="buttonsBackgroundColor">
+                    {(field) => (
+                      <StyleColorPicker
+                        label="Background"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="buttonsTextColor">
+                    {(field) => (
+                      <StyleColorPicker
+                        label="Text Color"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="buttonVerticalMargin">
+                    {(field) => (
+                      <StyleNumberInput
+                        label="Vertical Margin"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="buttonHorizontalPadding">
+                    {(field) => (
+                      <StyleNumberInput
+                        label="Horiz Padding"
+                        value={(field.state.value as string) ?? ""}
+                        onChange={field.handleChange}
+                      />
+                    )}
+                  </form.AppField>
+                </AccordionContent>
+              </AccordionItem>
+
+              {/* Custom CSS */}
+              <AccordionItem value="css" className="border-b-0">
+                <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
+                  <div className="flex items-center gap-2">
+                    Custom CSS
+                    <div className="bg-teal-100 text-teal-700 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
+                      Pro
                     </div>
-                  )}
-                </form.AppField>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Inputs Section */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium">Inputs</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <form.AppField name="inputWidth">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Width</Label>
-                      <div className="flex items-center gap-2">
-                        <AlignLeft className="w-4 h-4 text-muted-foreground" />
-                        <Input
-                          value={(field.state.value as string) ?? ""}
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pt-1 pb-2">
+                  <form.AppField name="customCss">
+                    {(field) => (
+                      <div className="rounded-lg overflow-hidden border border-border/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                        <Textarea
+                          value={field.state.value}
                           onChange={(e) => field.handleChange(e.target.value)}
-                          className="h-8"
+                          className="font-mono text-[11px] h-32 bg-light-gray-950 text-[#d4d4d4] border-0 rounded-none focus-visible:ring-0 p-3 leading-relaxed"
+                          placeholder=".class { ... }"
+                          spellCheck={false}
                         />
                       </div>
-                    </div>
-                  )}
-                </form.AppField>
-                <form.AppField name="inputHeight">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Height</Label>
-                      <Input
-                        value={(field.state.value as string) ?? ""}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        className="h-8"
-                      />
-                    </div>
-                  )}
-                </form.AppField>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <form.AppField name="inputBackgroundColor">
-                  {(field) => (
-                    <ColorPicker
-                      label="Background"
-                      value={(field.state.value as string) ?? ""}
-                      onChange={field.handleChange}
-                    />
-                  )}
-                </form.AppField>
-                <form.AppField name="inputPlaceholderColor">
-                  {(field) => (
-                    <ColorPicker
-                      label="Placeholder"
-                      value={(field.state.value as string) ?? ""}
-                      onChange={field.handleChange}
-                    />
-                  )}
-                </form.AppField>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <form.AppField name="inputBorderColor">
-                  {(field) => (
-                    <ColorPicker
-                      label="Border"
-                      value={(field.state.value as string) ?? ""}
-                      onChange={field.handleChange}
-                    />
-                  )}
-                </form.AppField>
-                <form.AppField name="inputBorderWidth">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <div className="flex justify-end">
-                        <span className="text-[10px] text-muted-foreground">Width</span>
-                      </div>
-                      <Input
-                        value={(field.state.value as string) ?? ""}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        className="h-8"
-                      />
-                    </div>
-                  )}
-                </form.AppField>
-                <form.AppField name="inputBorderRadius">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <div className="flex justify-end">
-                        <span className="text-[10px] text-muted-foreground">Radius</span>
-                      </div>
-                      <Input
-                        value={(field.state.value as string) ?? ""}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        className="h-8"
-                      />
-                    </div>
-                  )}
-                </form.AppField>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <form.AppField name="inputMarginBottom">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Margin bottom</Label>
-                      <Input
-                        value={(field.state.value as string) ?? ""}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        className="h-8"
-                      />
-                    </div>
-                  )}
-                </form.AppField>
-                <form.AppField name="inputHorizontalPadding">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Horizontal padding</Label>
-                      <Input
-                        value={(field.state.value as string) ?? ""}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        className="h-8"
-                      />
-                    </div>
-                  )}
-                </form.AppField>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Buttons Section */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium">Buttons</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <form.AppField name="buttonWidth">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Width</Label>
-                      <div className="flex items-center gap-2">
-                        <AlignLeft className="w-4 h-4 text-muted-foreground" />
-                        <Input
-                          value={(field.state.value as string) ?? ""}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          className="h-8"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </form.AppField>
-                <form.AppField name="buttonHeight">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Height</Label>
-                      <Input
-                        value={(field.state.value as string) ?? ""}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        className="h-8"
-                      />
-                    </div>
-                  )}
-                </form.AppField>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <form.AppField name="buttonAlignment">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Alignment</Label>
-                      <ToggleGroup
-                        type="single"
-                        value={(field.state.value as string) ?? ""}
-                        onValueChange={(val) => field.handleChange(val as any)}
-                        className="justify-start"
-                      >
-                        <ToggleGroupItem value="left" className="h-8 w-8 p-0" aria-label="Left">
-                          <AlignLeft className="w-4 h-4" />
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="center" className="h-8 w-8 p-0" aria-label="Center">
-                          <AlignCenter className="w-4 h-4" />
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="right" className="h-8 w-8 p-0" aria-label="Right">
-                          <AlignRight className="w-4 h-4" />
-                        </ToggleGroupItem>
-                      </ToggleGroup>
-                    </div>
-                  )}
-                </form.AppField>
-                <form.AppField name="buttonFontSize">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <div className="flex justify-end">
-                        <span className="text-[10px] text-muted-foreground">Font size</span>
-                      </div>
-                      <Input
-                        value={(field.state.value as string) ?? ""}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        className="h-8"
-                      />
-                    </div>
-                  )}
-                </form.AppField>
-                <form.AppField name="buttonCornerRadius">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <div className="flex justify-end">
-                        <span className="text-[10px] text-muted-foreground">Corner radius</span>
-                      </div>
-                      <Input
-                        value={(field.state.value as string) ?? ""}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        className="h-8"
-                      />
-                    </div>
-                  )}
-                </form.AppField>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <form.AppField name="buttonsBackgroundColor">
-                  {(field) => (
-                    <ColorPicker
-                      label="Background"
-                      value={(field.state.value as string) ?? ""}
-                      onChange={field.handleChange}
-                    />
-                  )}
-                </form.AppField>
-                <form.AppField name="buttonsTextColor">
-                  {(field) => (
-                    <ColorPicker
-                      label="Text"
-                      value={(field.state.value as string) ?? ""}
-                      onChange={field.handleChange}
-                    />
-                  )}
-                </form.AppField>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <form.AppField name="buttonVerticalMargin">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Vertical margin</Label>
-                      <Input
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        className="h-8"
-                      />
-                    </div>
-                  )}
-                </form.AppField>
-                <form.AppField name="buttonHorizontalPadding">
-                  {(field) => (
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Horizontal padding</Label>
-                      <Input
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        className="h-8"
-                      />
-                    </div>
-                  )}
-                </form.AppField>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Custom CSS */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-medium">Custom CSS</h3>
-                <div className="bg-pink-100 text-pink-600 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">
-                  Pro
-                </div>
-              </div>
-              <form.AppField name="customCss">
-                {(field) => (
-                  <Textarea
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    className="font-mono text-xs h-32 bg-slate-900 text-slate-50"
-                    placeholder=".class { ... }"
-                  />
-                )}
-              </form.AppField>
-            </div>
+                    )}
+                  </form.AppField>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </form.Form>
         </form.AppForm>
-      </div>
-    </aside>
+      </SidebarContent>
+    </Sidebar>
   );
 }

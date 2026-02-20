@@ -16,7 +16,7 @@ import { EmojiPicker } from "@/components/ui/emoji-toolbar-button";
 import { createFormButtonNode } from "@/components/ui/form-button-node";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCustomizeSidebar } from "@/hooks/use-customize-sidebar";
+import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { cn } from "@/lib/utils";
 
@@ -94,7 +94,14 @@ function CoverUpload({ onFileChange }: { onFileChange: (url: string) => void }) 
 export function FormHeaderElement(props: PlateElementProps) {
   const { element, children } = props;
   const editor = useEditorRef();
-  const { toggle: toggleCustomize } = useCustomizeSidebar();
+  const { activeSidebar, setActiveSidebar, closeSidebar } = useEditorSidebar();
+  const toggleCustomize = () => {
+    if (activeSidebar === "customize") {
+      closeSidebar();
+    } else {
+      setActiveSidebar("customize");
+    }
+  };
 
   const title = (element.title as string) || "";
   const icon = (element.icon as string | null) || null;

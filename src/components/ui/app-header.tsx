@@ -15,14 +15,10 @@ import { Link, useLocation, useNavigate, useParams, useSearch } from "@tanstack/
 import { format, formatDistanceToNow } from "date-fns";
 import {
   AlertCircle,
-  BarChart2,
   ChevronsRight,
-  History,
   Loader2,
   MoreHorizontal,
-  Pencil,
-  Star,
-  Trash2,
+  Pencil
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -47,7 +43,7 @@ export function AppHeader({
   };
   const { state, toggleSidebar: toggleMainSidebar } = useSidebarSafe() || {
     state: "expanded",
-    toggleSidebar: () => {},
+    toggleSidebar: () => { },
   };
   const { pathname } = useLocation();
   const isDashboard = pathname === "/dashboard";
@@ -77,6 +73,15 @@ export function AppHeader({
     navigate({
       to: ".",
       search: (prev: any) => ({ ...prev, sidebar: isSettingsSidebarOpen ? "" : "settings" }),
+      replace: true,
+    });
+  };
+
+  const isCustomizeSidebarOpen = activeSidebar === "customize";
+  const toggleCustomizeSidebar = () => {
+    navigate({
+      to: ".",
+      search: (prev: any) => ({ ...prev, sidebar: isCustomizeSidebarOpen ? "" : "customize" }),
       replace: true,
     });
   };
@@ -373,7 +378,7 @@ export function AppHeader({
                     onClick={() => {
                       handleToggleFavorite();
                     }}
-                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-light-gray-800 hover:bg-black/5 hover:text-foreground"
+                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
                   >
                     {/* <Star className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
                     <span className="flex-1 text-left">Favorite</span>
@@ -388,15 +393,19 @@ export function AppHeader({
                         params: { workspaceId, formId },
                       })
                     }
-                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-light-gray-800 hover:bg-black/5 hover:text-foreground"
+                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
                   >
                     {/* <BarChart2 className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
                     <span className="flex-1 text-left">Analytics</span>
                   </Button>
                   <Button
                     variant="ghost"
-                    onClick={toggleSettingsSidebar}
-                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-light-gray-800 hover:bg-black/5 hover:text-foreground"
+                    onClick={() => {
+                      toggleCustomizeSidebar();
+                      // Also close other sidebars if needed, or maybe just close settings
+                      if (isSettingsSidebarOpen) toggleSettingsSidebar();
+                    }}
+                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
                   >
                     {/* <SettingsIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
                     <span className="flex-1 text-left">Customisation</span>
@@ -405,7 +414,7 @@ export function AppHeader({
                     <Button
                       variant="ghost"
                       onClick={toggleVersionHistory}
-                      className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-light-gray-800 hover:bg-black/5 hover:text-foreground"
+                      className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
                     >
                       {/* <History className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
                       <span className="flex-1 text-left">Version History</span>

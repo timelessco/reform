@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 
-type SidebarType = "settings" | "share" | "history" | null;
+type SidebarType = "settings" | "share" | "history" | "customize" | null;
 export type SettingsTab = "integrations" | "settings";
 type ShareTab = "share" | "summary";
 export type EmbedType = "standard" | "popup" | "fullpage";

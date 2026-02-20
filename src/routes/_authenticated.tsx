@@ -2,8 +2,6 @@ import { FormSettingsSidebar } from "@/components/form-builder/form-settings-sid
 import { ShareSummarySidebar } from "@/components/form-builder/share-summary-sidebar";
 import { VersionHistorySidebar } from "@/components/form-builder/version-history-sidebar";
 import { SidebarItem } from "@/components/sidebar-item";
-import { UserMenuMinimal } from "@/components/user-menu-minimal";
-import { WorkspaceItemMinimal, type WorkspaceWithForms } from "@/components/workspace-item-minimal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +23,7 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
+import { CustomizeSidebar } from "@/components/ui/customize-sidebar";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +35,7 @@ import {
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { Input } from "@/components/ui/input";
 import Loader from "@/components/ui/loader";
+import { Logo } from "@/components/ui/logo";
 import { NotFound } from "@/components/ui/not-found";
 import {
   type ImperativePanelHandle,
@@ -58,6 +58,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { BellIcon, HomeIcon, SearchIcon, SettingsIcon, StarIcon } from "@/components/ui/sidebar-icons";
+import { UserMenuMinimal } from "@/components/user-menu-minimal";
+import { WorkspaceItemMinimal, type WorkspaceWithForms } from "@/components/workspace-item-minimal";
 import {
   EditorHeaderVisibilityProvider,
   useEditorHeaderVisibility,
@@ -68,16 +70,10 @@ import {
   createWorkspaceLocal,
   deleteWorkspaceLocal,
   duplicateFormById,
-  favoriteCollection,
-  formCollection,
-  formSettingsCollection,
-  formVersionCollection,
   permanentDeleteFormLocal,
   restoreFormLocal,
-  submissionCollection,
   updateFormStatus,
-  updateWorkspaceName,
-  workspaceCollection,
+  updateWorkspaceName
 } from "@/db-collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
@@ -122,7 +118,6 @@ import {
 import type * as React from "react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Logo } from "@/components/ui/logo";
 
 // Route configuration
 export const Route = createFileRoute("/_authenticated")({
@@ -376,6 +371,7 @@ function AuthLayoutContent() {
                 {activeSidebar === "settings" && formId && <FormSettingsSidebar formId={formId} />}
                 {activeSidebar === "share" && formId && <ShareSummarySidebar formId={formId} />}
                 {activeSidebar === "history" && formId && <VersionHistorySidebar formId={formId} />}
+                {activeSidebar === "customize" && <CustomizeSidebar />}
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>
@@ -490,7 +486,7 @@ function AppSidebar() {
                       <div className="flex items-center justify-center size-5 shrink-0">
                         <HomeIcon className="h-[18px] w-[18px] text-muted-foreground" />
                       </div>
-                      <span className="text-[14px] font-medium font-var-medium-14 text-light-gray-800 dark:text-dark-gray-800 tracking-[0.14px] leading-tight font-case truncate">
+                      <span className="text-[14px] font-medium font-var-medium-14 text-sidebar-nav-text tracking-[0.14px] leading-tight font-case truncate">
                         All
                       </span>
                     </Link>
@@ -506,7 +502,7 @@ function AppSidebar() {
                       <div className="flex items-center justify-center size-5 shrink-0">
                         <SearchIcon className="h-[18px] w-[18px] text-muted-foreground" />
                       </div>
-                      <span className="text-[14px] font-var-medium-14 text-light-gray-800 dark:text-dark-gray-800 tracking-[0.14px] leading-tight font-case truncate">
+                      <span className="text-[14px] font-var-medium-14 text-sidebar-nav-text tracking-[0.14px] leading-tight font-case truncate">
                         Search
                       </span>
                     </div>
@@ -526,7 +522,7 @@ function AppSidebar() {
                           <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-background" />
                         )}
                       </div>
-                      <span className="text-[14px] font-medium font-var-medium-14 text-light-gray-800 dark:text-dark-gray-800 tracking-[0.14px] leading-tight font-case truncate flex-1 min-w-0">
+                      <span className="text-[14px] font-medium font-var-medium-14 text-sidebar-nav-text tracking-[0.14px] leading-tight font-case truncate flex-1 min-w-0">
                         Notifications
                       </span>
                       {pendingCount > 0 && (
@@ -548,7 +544,7 @@ function AppSidebar() {
                       <div className="flex items-center justify-center size-5 shrink-0">
                         <SettingsIcon className="h-[18px] w-[18px] text-muted-foreground" />
                       </div>
-                      <span className="text-[14px] font-medium font-var-medium-14 text-light-gray-800 dark:text-dark-gray-800 tracking-[0.14px] leading-tight font-case truncate">
+                      <span className="text-[14px] font-medium font-var-medium-14 text-sidebar-nav-text tracking-[0.14px] leading-tight font-case truncate">
                         Settings
                       </span>
                     </Link>
@@ -998,7 +994,7 @@ function SidebarInbox() {
                           onClick={() => acceptMutation.mutate({ invitationId: invitation.id })}
                         >
                           {acceptMutation.isPending &&
-                          acceptMutation.variables?.invitationId === invitation.id
+                            acceptMutation.variables?.invitationId === invitation.id
                             ? "Accepting..."
                             : "Accept"}
                         </Button>
@@ -1010,7 +1006,7 @@ function SidebarInbox() {
                           onClick={() => rejectMutation.mutate({ invitationId: invitation.id })}
                         >
                           {rejectMutation.isPending &&
-                          rejectMutation.variables?.invitationId === invitation.id
+                            rejectMutation.variables?.invitationId === invitation.id
                             ? "Declining..."
                             : "Decline"}
                         </Button>
@@ -1042,9 +1038,9 @@ function FreePlanCard() {
   return (
     <div className="shrink-0 overflow-hidden rounded-xl bg-free-plan-card-bg p-3 mx-3 w-[204px] shadow-sm">
       <div className="flex items-center gap-2 mb-2">
-        <div className="shrink-0 size-6 rounded flex items-center justify-center bg-teal-100 dark:bg-teal-700/20">
+        <div className="shrink-0 size-6 rounded flex items-center justify-center bg-teal-100">
           <Zap
-            className="h-3.5 w-3.5 text-teal-700 dark:text-teal-400"
+            className="h-3.5 w-3.5 text-teal-700"
             strokeWidth={2}
             fill="currentColor"
           />
