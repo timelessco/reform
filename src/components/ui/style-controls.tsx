@@ -92,7 +92,7 @@ export function StyleNumberInput({
     return (
         <div
             className={cn(
-                "relative flex items-center rounded-lg overflow-hidden border border-border/60 bg-transparent h-[34px] text-[13px] shadow-sm select-none cursor-ew-resize group",
+                "relative flex items-center rounded-lg overflow-hidden border border-border/60 bg-transparent h-[34px] text-[13px] select-none cursor-ew-resize group",
                 className
             )}
             onPointerDown={handlePointerDown}
@@ -173,7 +173,7 @@ export function StyleColorPicker({
     return (
         <div
             className={cn(
-                "flex items-center rounded-[8px] overflow-hidden border border-border/60 bg-transparent h-[32px] text-[13px] shadow-[0_1px_2px_rgba(0,0,0,0.02)]",
+                "flex items-center rounded-[8px] overflow-hidden border border-border/60 bg-transparent h-[32px] text-[13px]",
                 className
             )}
         >
@@ -186,7 +186,7 @@ export function StyleColorPicker({
                     onChange={(e) => onChange(e.target.value)}
                     className="w-[60px] text-right bg-transparent outline-none tabular-nums font-mono text-muted-foreground uppercase text-[11px]"
                 />
-                <div className="w-[18px] h-[18px] rounded-[4px] border border-border/60 overflow-hidden relative shrink-0 shadow-sm">
+                <div className="w-[18px] h-[18px] rounded-[4px] border border-border/60 overflow-hidden relative shrink-0">
                     <input
                         type="color"
                         value={value?.slice(0, 7) || "#000000"}
@@ -281,7 +281,7 @@ export function StyleSelect({
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
-                    "w-full flex items-center justify-between rounded-lg border border-border/60 bg-transparent h-[34px] px-3 font-medium text-[13px] shadow-sm hover:bg-accent/50 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                    "w-full flex items-center justify-between rounded-lg border border-border/60 bg-transparent h-[34px] px-3 font-medium text-[13px] hover:bg-accent/50 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                     isOpen && "bg-accent/50 border-border/80"
                 )}
             >

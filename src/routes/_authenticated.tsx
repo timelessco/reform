@@ -173,11 +173,6 @@ function AuthLayoutContent() {
   const { pathname } = location;
   const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
   const { visible: isHeaderVisible, reportPointerActivity } = useEditorHeaderVisibility();
-  const [resizeTooltip, setResizeTooltip] = useState({
-    visible: false,
-    x: 0,
-    y: 0,
-  });
 
   const { formId } = useParams({ strict: false }) as { formId?: string };
 
@@ -199,7 +194,7 @@ function AuthLayoutContent() {
   const handleRef = useRef<HTMLDivElement>(null);
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
   const [handleLeft, setHandleLeft] = useState(0);
-  const handleDragRef = useRef({ dragging: false, startX: 0, startY: 0 });
+  const handleDragRef = useRef({ dragging: false, hasDragged: false, startX: 0, startY: 0 });
   const leftPanelRef = useRef<HTMLDivElement>(null);
 
   // Initialize sidebar state from URL params on mount only
@@ -270,7 +265,7 @@ function AuthLayoutContent() {
       <SidebarInset className="overflow-hidden relative flex flex-col h-screen">
         {isDistractionHeaderHidden && (
           <div
-            className="fixed inset-x-0 top-0 z-[1200] h-3 bg-transparent"
+            className="fixed inset-x-0 top-0 z-1200 h-3 bg-transparent"
             onMouseEnter={reportPointerActivity}
             aria-hidden="true"
           />
@@ -288,8 +283,7 @@ function AuthLayoutContent() {
             {/* Main content panel - non-resizable */}
             <ResizablePanel
               defaultSize={showEditorSidebar ? 70 : 100}
-              minSize={70}
-              className="transition-all duration-300 ease-in-out"
+              minSize={50}
             >
               <div ref={leftPanelRef} className={cn("flex h-full min-w-0 flex-col z-50")}>
                 <Outlet key={formId} />
@@ -299,7 +293,7 @@ function AuthLayoutContent() {
             {/* Resize handle - draggable, click to close */}
             <TypedResizableHandle
               className={cn(
-                "fixed top-0 bottom-0 left-(--handle-left) -translate-x-1/2 w-px",
+                "group fixed top-0 bottom-0 left-(--handle-left) -translate-x-1/2 w-px flex items-center h-full",
                 "bg-border/60 z-[999] pointer-events-auto",
                 "transition-none duration-0 hover:w-px data-[resize-handle-state=drag]:w-px",
                 !showEditorSidebar && "hidden pointer-events-none",
@@ -307,47 +301,36 @@ function AuthLayoutContent() {
               ref={handleRef}
               style={{ "--handle-left": `${handleLeft}px` } as React.CSSProperties}
               onDragging={(isDragging: boolean) => {
-                handleDragRef.current.dragging = isDragging;
+                if (isDragging) {
+                  handleDragRef.current.dragging = true;
+                  handleDragRef.current.hasDragged = true;
+                } else {
+                  handleDragRef.current.dragging = false;
+                  setTimeout(() => {
+                    handleDragRef.current.hasDragged = false;
+                  }, 50);
+                }
               }}
-              onPointerDown={() => {
-                handleDragRef.current.dragging = false;
-                updateHandleLeft();
+              onPointerDown={(e: React.PointerEvent<HTMLDivElement>) => {
+                handleDragRef.current.hasDragged = false;
+                handleDragRef.current.startX = e.clientX;
               }}
-              onPointerMove={() => {
-                updateHandleLeft();
-              }}
-              onPointerUp={() => {
-                if (!handleDragRef.current.dragging && activeSidebar) handleCloseSidebar();
-                handleDragRef.current.dragging = false;
-              }}
-              onMouseEnter={(event: any) => {
-                setResizeTooltip({ visible: true, x: event.clientX, y: event.clientY });
-              }}
-              onMouseMove={(event: any) => {
-                setResizeTooltip((prev) => ({
-                  ...prev,
-                  x: event.clientX,
-                  y: event.clientY,
-                }));
-              }}
-              onMouseLeave={() => {
-                setResizeTooltip((prev) => ({ ...prev, visible: false }));
+              onPointerUp={(e: React.PointerEvent<HTMLDivElement>) => {
+                const deltaX = Math.abs(e.clientX - (handleDragRef.current.startX || 0));
+                // If it was just a click (no internal drag state activated, and mouse barely moved)
+                if (!handleDragRef.current.hasDragged && deltaX < 5 && activeSidebar) {
+                  handleCloseSidebar();
+                }
               }}
             >
               <div
                 className={cn(
-                  "pointer-events-none fixed",
+                  "pointer-events-none absolute -left-3 -translate-x-full",
                   "rounded-md border border-foreground/10 bg-background/90 px-2 py-1 text-[11px] text-muted-foreground shadow-lg",
-                  "transition-opacity duration-150",
-                  resizeTooltip.visible ? "opacity-100" : "opacity-0",
+                  "opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-data-[resize-handle-state=drag]:opacity-0",
                 )}
-                style={{
-                  left: resizeTooltip.x - 12,
-                  top: resizeTooltip.y + 12,
-                  transform: "translateX(-100%)",
-                }}
               >
-                <div className="leading-4">
+                <div className="leading-4 whitespace-nowrap">
                   <div>Close Click</div>
                   <div>Resize Drag</div>
                 </div>
@@ -359,11 +342,11 @@ function AuthLayoutContent() {
               ref={rightPanelRef}
               collapsible
               collapsedSize={0}
-              defaultSize={showEditorSidebar ? 40 : 0}
-              minSize={30}
+              defaultSize={showEditorSidebar ? 30 : 0}
+              minSize={25}
               maxSize={50}
               className={cn(
-                "h-full overflow-hidden transition-all duration-300 ease-in-out bg-background",
+                "h-full overflow-hidden bg-background",
                 !showEditorSidebar && "border-none",
               )}
             >

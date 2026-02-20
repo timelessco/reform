@@ -437,13 +437,11 @@ export function AppHeader({
               </Popover>
             </div>
 
-            {/* Main Action Button */}
             {isEditRoute ? (
-              // On edit route: show Publish / Publish Changes
               <Button
                 size="sm"
                 className={cn(
-                  "h-8 pl-[10px] pr-[8px] ml-1 text-[14px] font-medium tracking-[0.14px] leading-[1.15] transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none",
+                  "h-8 pl-[10px] pr-[8px] ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none",
                   !isLoadingSavedDocs &&
                     (hasUnpublishedChanges || savedDocs?.[0]?.status !== "published")
                     ? "bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
@@ -457,13 +455,12 @@ export function AppHeader({
                 ) : savedDocs?.[0]?.status === "published" ? "Published" : "Publish"}
               </Button>
             ) : (
-              // Not on edit route: show Edit button to navigate to the editor
               workspaceId &&
               formId && (
                 <Button
                   size="sm"
                   asChild
-                  className="h-8 pl-[10px] pr-[8px] ml-1 text-[14px] font-medium tracking-[0.14px] leading-[1.15] transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
+                  className="h-8 pl-[10px] pr-[8px] ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
                 >
                   <Link
                     to="/workspace/$workspaceId/form-builder/$formId/edit"
