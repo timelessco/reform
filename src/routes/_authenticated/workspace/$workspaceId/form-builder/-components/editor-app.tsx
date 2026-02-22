@@ -5,7 +5,9 @@ import type { FormHeaderElementData } from "@/components/ui/form-header-node";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import { useEditorHeaderVisibilitySafe } from "@/contexts/editor-header-visibility-context";
 import { updateDoc, updateHeader } from "@/db-collections";
-import { useForm } from "@/hooks/use-live-hooks";
+import { useForm, useFormSettings } from "@/hooks/use-live-hooks";
+import { getThemeStyleVars } from "@/lib/generate-theme-css";
+import { cn } from "@/lib/utils";
 import { normalizeNodeId, type TElement, type Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
 import type { KeyboardEvent } from "react";
@@ -36,6 +38,13 @@ export default function EditorApp({
   readOnly = false,
 }: EditorAppProps) {
   const { data: savedDocs } = useForm(formId);
+  const { data: formSettings } = useFormSettings(formId);
+  const customization = formSettings?.customization as Record<string, string> | null;
+  const hasCustomization = customization && Object.keys(customization).length > 0;
+  const themeVars = useMemo(
+    () => getThemeStyleVars(customization),
+    [customization],
+  );
   const skipSaveRef = useRef(false);
   const lastKnownContentRef = useRef<string | null>(null);
   const headerVisibility = useEditorHeaderVisibilitySafe();
@@ -181,7 +190,7 @@ export default function EditorApp({
   }
 
   return (
-    <div className="h-screen w-full overflow-y-auto overflow-x-hidden">
+    <div className={cn("h-screen w-full overflow-y-auto overflow-x-hidden", hasCustomization && "bf-themed")} style={hasCustomization ? themeVars : undefined}>
       <Plate editor={editor} readOnly={readOnly} onChange={handleChange}>
         <EditorContainer
           variant="default"

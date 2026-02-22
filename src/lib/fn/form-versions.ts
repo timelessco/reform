@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { createServerFn } from "@tanstack/react-start";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { forms, formVersions, user } from "@/db/schema";
+import { forms, formSettings, formVersions, user } from "@/db/schema";
 import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
 import { authForm, getTxId } from "./helpers";
@@ -24,6 +24,7 @@ const serializeVersion = (version: typeof formVersions.$inferSelect) => ({
   createdAt: version.createdAt.toISOString(),
   content: version.content as object[],
   settings: version.settings as Record<string, object>,
+  customization: (version.customization ?? {}) as Record<string, string>,
 });
 
 /**
@@ -55,6 +56,12 @@ export const publishFormVersion = createServerFn({ method: "POST" })
     // Compute content hash
     const contentHash = computeContentHash(form.content);
 
+    // Fetch customization from form_settings to snapshot
+    const [settingsRow] = await db
+      .select({ customization: formSettings.customization })
+      .from(formSettings)
+      .where(eq(formSettings.formId, data.formId));
+
     // Create version snapshot
     const versionId = crypto.randomUUID();
     const now = new Date();
@@ -67,6 +74,7 @@ export const publishFormVersion = createServerFn({ method: "POST" })
         version: nextVersion,
         content: form.content,
         settings: form.settings,
+        customization: settingsRow?.customization ?? {},
         title: form.title,
         publishedByUserId: context.session.user.id,
         publishedAt: now,
@@ -329,6 +337,7 @@ export const getLatestPublishedVersion = createServerFn({ method: "GET" })
         title: version.title,
         content: version.content as object[],
         settings: version.settings as Record<string, object>,
+        customization: (version.customization ?? {}) as Record<string, string>,
         icon: form.icon,
         cover: form.cover,
         status: form.status,

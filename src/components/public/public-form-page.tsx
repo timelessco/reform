@@ -23,6 +23,7 @@ interface PublicForm {
   id: string;
   title: string;
   content: any;
+  customization?: Record<string, string>;
   icon: string | null;
   cover: string | null;
   status: string;
@@ -275,6 +276,7 @@ export function PublicFormPage({
       ref={containerRef}
       className={cn(
         "pb-8 overflow-x-hidden",
+        form.customization && Object.keys(form.customization).length > 0 && "bf-themed",
         // Don't use min-h-screen for popup mode - it causes resize loop
         !isPopup && "min-h-screen",
         transparentBackground || isPopup ? "bg-transparent" : "bg-white",

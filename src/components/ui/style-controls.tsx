@@ -11,6 +11,8 @@ interface StyleNumberInputProps {
     min?: number;
     max?: number;
     step?: number;
+    /** Force a specific unit (e.g. "px", "%"). Overrides the unit parsed from the value. */
+    unit?: string;
     className?: string;
     valueWidth?: string;
 }
@@ -22,48 +24,26 @@ export function StyleNumberInput({
     min = 0,
     max = 100, // Used for visual fill percentage
     step = 1,
+    unit: forcedUnit,
     className,
     valueWidth = "60px",
 }: StyleNumberInputProps) {
     const match = value?.toString().match(/^(-?\d*\.?\d+)(.*)$/);
     const numValue = match ? parseFloat(match[1]) : 0;
-    const unit = match ? match[2] : "";
+    const unit = forcedUnit ?? (match ? match[2] : "");
 
+    const [isInteracting, setIsInteracting] = React.useState(false);
     const [isDragging, setIsDragging] = React.useState(false);
     const [isHovered, setIsHovered] = React.useState(false);
     const inputRef = React.useRef<HTMLInputElement>(null);
+    const trackRef = React.useRef<HTMLDivElement>(null);
 
-    const startX = React.useRef(0);
-    const startVal = React.useRef(0);
-
-    const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-        if (document.activeElement === inputRef.current) return;
-        e.preventDefault();
-        setIsDragging(true);
-        startX.current = e.clientX;
-        startVal.current = numValue;
-        e.currentTarget.setPointerCapture(e.pointerId);
-    };
-
-    const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-        if (!isDragging) return;
-        const deltaX = e.clientX - startX.current;
-        // Sensitivity adjustment for dragging
-        const rawNewValue = startVal.current + Math.round(deltaX / 1) * step;
-        const newValue = Math.min(Math.max(rawNewValue, min), max);
-        onChange(`${newValue}${unit}`);
-    };
-
-    const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-        if (!isDragging) return;
-        setIsDragging(false);
-        e.currentTarget.releasePointerCapture(e.pointerId);
-        // If it was just a click without moving, focus the input
-        if (e.clientX === startX.current) {
-            inputRef.current?.focus();
-            inputRef.current?.select();
-        }
-    };
+    // Click-vs-drag detection refs
+    const pointerDownPos = React.useRef<{ x: number; y: number } | null>(null);
+    const isClickRef = React.useRef(true);
+    const animRef = React.useRef<ReturnType<typeof animate> | null>(null);
+    const wrapperRectRef = React.useRef<DOMRect | null>(null);
+    const CLICK_THRESHOLD = 3;
 
     const visualMax = max === Infinity ? 1000 : max;
     const visualMin = min === -Infinity ? 0 : min;
@@ -72,25 +52,106 @@ export function StyleNumberInput({
     // Motion values for imperative animation
     const fillPercent = useMotionValue(percentage);
     const fillWidth = useTransform(fillPercent, (pct) => `${pct}%`);
-    const handleLeft = useTransform(fillPercent, (pct) => `calc(${pct}% - 2px)`);
+    const handleLeft = useTransform(fillPercent, (pct) => `max(3px, calc(${pct}% - 2.5px))`);
 
+    // Sync fill from props when not interacting
     React.useEffect(() => {
-        if (!isDragging) {
-            animate(fillPercent, percentage, { type: "spring", stiffness: 300, damping: 30, mass: 1 });
-        } else {
+        if (!isInteracting && !animRef.current) {
             fillPercent.jump(percentage);
         }
-    }, [percentage, isDragging, fillPercent]);
+    }, [percentage, isInteracting, fillPercent]);
 
-    const isActive = isHovered || isDragging;
+    const positionToValue = React.useCallback(
+        (clientX: number) => {
+            const rect = wrapperRectRef.current;
+            if (!rect) return numValue;
+            const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+            const rawValue = visualMin + pct * (visualMax - visualMin);
+            return Math.max(min, Math.min(max, rawValue));
+        },
+        [min, max, visualMin, visualMax, numValue]
+    );
+
+    const percentFromValue = React.useCallback(
+        (v: number) => ((v - visualMin) / (visualMax - visualMin)) * 100,
+        [visualMin, visualMax]
+    );
+
+    const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (document.activeElement === inputRef.current) return;
+        e.preventDefault();
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        pointerDownPos.current = { x: e.clientX, y: e.clientY };
+        isClickRef.current = true;
+        setIsInteracting(true);
+
+        // Capture rect at pointer down for stable reference during drag
+        if (trackRef.current) {
+            wrapperRectRef.current = trackRef.current.getBoundingClientRect();
+        }
+    };
+
+    const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!isInteracting || !pointerDownPos.current) return;
+
+        const dx = e.clientX - pointerDownPos.current.x;
+        const dy = e.clientY - pointerDownPos.current.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Promote to drag once past threshold
+        if (isClickRef.current && distance > CLICK_THRESHOLD) {
+            isClickRef.current = false;
+            setIsDragging(true);
+        }
+
+        if (!isClickRef.current) {
+            // Drag mode — handle follows cursor position on track (absolute, not delta)
+            const newValue = positionToValue(e.clientX);
+            const snapped = Math.round(newValue / step) * step;
+            const clamped = Math.max(min, Math.min(max, snapped));
+            const newPct = percentFromValue(clamped);
+            if (animRef.current) {
+                animRef.current.stop();
+                animRef.current = null;
+            }
+            fillPercent.jump(newPct);
+            onChange(`${clamped}${unit}`);
+        }
+    };
+
+    const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!isInteracting) return;
+
+        if (isClickRef.current) {
+            // Click → spring animate to clicked position
+            const rawValue = positionToValue(e.clientX);
+            const snapped = Math.round(rawValue / step) * step;
+            const clamped = Math.max(min, Math.min(max, snapped));
+            const newPct = percentFromValue(clamped);
+
+            if (animRef.current) animRef.current.stop();
+            animRef.current = animate(fillPercent, newPct, {
+                type: "spring", stiffness: 300, damping: 25, mass: 0.8,
+                onComplete: () => { animRef.current = null; },
+            });
+            onChange(`${clamped}${unit}`);
+        }
+
+        setIsInteracting(false);
+        setIsDragging(false);
+        pointerDownPos.current = null;
+    };
+
+    const isActive = isHovered || isInteracting;
 
     // Dodge text on the left/right edges to avoid overlapping the label or value
     const valueDodge = percentage < 25 || percentage > 75;
 
-    const handleOpacity = !isActive ? 0 : valueDodge ? 0.3 : isDragging ? 1 : 0.6;
+    const handleOpacity = !isActive ? 0 : valueDodge ? 0.1 : isDragging ? 0.9 : 0.5;
 
     return (
         <div
+            ref={trackRef}
             className={cn(
                 "relative flex items-center rounded-lg overflow-hidden border border-border/60 bg-transparent h-[34px] text-[13px] select-none cursor-ew-resize group",
                 className
@@ -109,18 +170,22 @@ export function StyleNumberInput({
                 transition={{ duration: 0.15 }}
             />
 
-            {/* Handle spinner */}
+            {/* Handle knob */}
             <motion.div
-                className="absolute top-1/2 w-[4px] h-[16px] rounded-full pointer-events-none shadow-[0_1px_3px_rgba(0,0,0,0.1)] mix-blend-multiply dark:mix-blend-screen z-20"
+                className="absolute top-1/2 w-[5px] h-[20px] rounded-full pointer-events-none z-20"
                 style={{
                     left: handleLeft,
-                    y: "-50%"
+                    y: "-50%",
+                    maskImage: "linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%)",
+                    WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%)",
                 }}
                 animate={{
                     opacity: handleOpacity,
-                    scaleX: isActive ? 1 : 0.4,
-                    scaleY: isActive && valueDodge ? 0.8 : 1.2,
-                    backgroundColor: isDragging ? "hsl(var(--foreground) / 0.8)" : "hsl(var(--foreground) / 0.4)"
+                    scaleX: isActive ? 1 : 0.3,
+                    scaleY: isActive && valueDodge ? 0.7 : 1,
+                    backgroundColor: isDragging
+                        ? "var(--bf-handle-active, rgba(120,120,120,0.9))"
+                        : "var(--bf-handle-idle, rgba(120,120,120,0.55))",
                 }}
                 transition={{
                     scaleX: { type: 'spring', visualDuration: 0.25, bounce: 0.15 },
@@ -129,13 +194,15 @@ export function StyleNumberInput({
                 }}
             />
 
-            {/* Decorative notch lines in the background */}
-            <div className="absolute inset-0 flex items-center justify-evenly pointer-events-none opacity-10 mix-blend-multiply dark:mix-blend-screen">
-                <div className="w-px h-2 bg-foreground" />
-                <div className="w-px h-2 bg-foreground" />
-                <div className="w-px h-2 bg-foreground" />
-                <div className="w-px h-2 bg-foreground" />
-                <div className="w-px h-2 bg-foreground" />
+            {/* Hash marks at 10%–90% */}
+            <div className="absolute inset-0 flex items-center pointer-events-none">
+                {Array.from({ length: 9 }, (_, i) => (
+                    <div
+                        key={i}
+                        className="absolute w-px h-2 bg-foreground opacity-10"
+                        style={{ left: `${(i + 1) * 10}%` }}
+                    />
+                ))}
             </div>
 
             <div className="relative px-3 font-medium text-muted-foreground flex-1 z-10 pointer-events-none transition-colors group-hover:text-foreground">
@@ -157,6 +224,18 @@ export function StyleNumberInput({
             </div>
         </div>
     );
+}
+
+/** Convert any CSS color (hex, oklch, rgb, etc.) to #rrggbb for <input type="color"> */
+function cssColorToHex(color: string): string {
+    if (color?.startsWith("#")) return color.slice(0, 7);
+    try {
+        const ctx = document.createElement("canvas").getContext("2d")!;
+        ctx.fillStyle = color;
+        return ctx.fillStyle; // always returns #rrggbb
+    } catch {
+        return "#000000";
+    }
 }
 
 export function StyleColorPicker({
@@ -189,7 +268,7 @@ export function StyleColorPicker({
                 <div className="w-[18px] h-[18px] rounded-[4px] border border-border/60 overflow-hidden relative shrink-0">
                     <input
                         type="color"
-                        value={value?.slice(0, 7) || "#000000"}
+                        value={cssColorToHex(value)}
                         onChange={(e) => onChange(e.target.value)}
                         className="absolute -inset-2 w-10 h-10 opacity-0 cursor-pointer"
                     />
@@ -213,7 +292,7 @@ export function StyleSelect({
     label: string;
     value: string;
     onChange: (val: string) => void;
-    options: { label: string; value: string }[];
+    options: { label: string; value: string; description?: string; swatchColor?: string }[];
     className?: string;
 }) {
     const [isOpen, setIsOpen] = React.useState(false);
@@ -222,21 +301,25 @@ export function StyleSelect({
     const [portalTarget, setPortalTarget] = React.useState<HTMLElement | null>(null);
     const [pos, setPos] = React.useState<{ top: number; left: number; width: number; above: boolean } | null>(null);
     const selectedOption = options.find((o) => o.value === value);
+    const hasDescriptions = options.some((o) => o.description);
+    const itemHeight = hasDescriptions ? 60 : 36;
 
     const updatePos = React.useCallback(() => {
         const el = triggerRef.current;
         if (!el) return;
         const rect = el.getBoundingClientRect();
-        const dropdownHeight = 8 + options.length * 36;
+        const dropdownHeight = 8 + options.length * itemHeight;
+        const maxHeight = 320;
+        const clampedHeight = Math.min(dropdownHeight, maxHeight);
         const spaceBelow = window.innerHeight - rect.bottom - 4;
-        const above = spaceBelow < dropdownHeight && rect.top > spaceBelow;
+        const above = spaceBelow < clampedHeight && rect.top > spaceBelow;
         setPos({
             top: above ? rect.top - 4 : rect.bottom + 4,
             left: rect.left,
             width: rect.width,
             above,
         });
-    }, [options.length]);
+    }, [options.length, itemHeight]);
 
     React.useEffect(() => {
         // Portal directly to document.body to avoid parent overflow:hidden or z-index issues
@@ -287,6 +370,12 @@ export function StyleSelect({
             >
                 <span className="text-muted-foreground">{label}</span>
                 <div className="flex items-center gap-2 ml-auto">
+                    {selectedOption?.swatchColor && (
+                        <div
+                            className="w-3.5 h-3.5 rounded-full border border-border/60 shrink-0"
+                            style={{ backgroundColor: selectedOption.swatchColor }}
+                        />
+                    )}
                     <span className="text-foreground">{selectedOption?.label ?? value}</span>
                     <motion.svg
                         className="w-3.5 h-3.5 text-muted-foreground"
@@ -318,12 +407,13 @@ export function StyleSelect({
                                 position: 'fixed',
                                 left: pos.left,
                                 width: pos.width,
+                                maxHeight: 320,
                                 ...(pos.above
                                     ? { bottom: window.innerHeight - pos.top, transformOrigin: 'bottom' }
                                     : { top: pos.top, transformOrigin: 'top' }),
                             }}
                         >
-                            <div className="p-1 flex flex-col">
+                            <div className="p-1 flex flex-col overflow-y-auto max-h-[312px] custom-scrollbar">
                                 {options.map((option) => {
                                     const isSelected = option.value === value;
                                     return (
@@ -331,9 +421,10 @@ export function StyleSelect({
                                             key={option.value}
                                             type="button"
                                             className={cn(
-                                                "w-full text-left px-2 py-1.5 rounded-md text-[13px] transition-colors flex items-center justify-between group",
+                                                "w-full text-left rounded-md transition-colors flex items-center justify-between group shrink-0",
+                                                hasDescriptions ? "px-3 py-2.5" : "px-2 py-1.5",
                                                 isSelected
-                                                    ? "bg-primary/10 text-primary font-medium"
+                                                    ? "bg-primary/10 text-primary"
                                                     : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                                             )}
                                             onClick={() => {
@@ -341,9 +432,22 @@ export function StyleSelect({
                                                 setIsOpen(false);
                                             }}
                                         >
-                                            {option.label}
+                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                {option.swatchColor && (
+                                                    <div
+                                                        className="w-5 h-5 rounded-full border border-border/60 shrink-0"
+                                                        style={{ backgroundColor: option.swatchColor }}
+                                                    />
+                                                )}
+                                                <div className="min-w-0">
+                                                    <div className={cn("text-[13px] capitalize", isSelected && "font-medium")}>{option.label}</div>
+                                                    {option.description && (
+                                                        <div className="text-[11px] text-muted-foreground leading-snug mt-0.5">{option.description}</div>
+                                                    )}
+                                                </div>
+                                            </div>
                                             {isSelected && (
-                                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <svg className="w-3.5 h-3.5 shrink-0 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                                     <polyline points="20 6 9 17 4 12" />
                                                 </svg>
                                             )}
@@ -392,15 +496,15 @@ export function StyleToggle({
     return (
         <div
             className={cn(
-                "flex items-center justify-between rounded-lg border border-border/60 bg-transparent h-[34px] px-3 shadow-sm",
+                "flex items-center justify-between rounded-lg border border-border/60 bg-transparent h-[34px] pl-4 pr-1",
                 className
             )}
         >
             <span className="font-medium text-muted-foreground text-[13px]">{label}</span>
-            <div ref={containerRef} className="relative flex bg-muted/30 rounded-md p-0.5 isolation-auto">
+            <div ref={containerRef} className="relative flex rounded-md  isolation-auto h-[26px] items-center">
                 {pillStyle && (
                     <motion.div
-                        className="absolute top-0.5 bottom-0.5 bg-background rounded shadow-sm z-0"
+                        className="absolute top-0.5 bottom-0.5 bg-white/10 rounded z-0"
                         style={{ left: pillStyle.left, width: pillStyle.width }}
                         animate={{ left: pillStyle.left, width: pillStyle.width }}
                         transition={
@@ -416,7 +520,7 @@ export function StyleToggle({
                     type="button"
                     onClick={() => onChange(false)}
                     className={cn(
-                        "relative z-10 px-3 py-1 rounded text-[12px] font-medium transition-colors cursor-pointer",
+                        "relative z-10 px-3 h-full rounded text-[11px] font-semibold transition-colors cursor-pointer flex items-center justify-center min-w-[34px]",
                         !value ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                     )}
                 >
@@ -427,7 +531,7 @@ export function StyleToggle({
                     type="button"
                     onClick={() => onChange(true)}
                     className={cn(
-                        "relative z-10 px-3 py-1 rounded text-[12px] font-medium transition-colors cursor-pointer",
+                        "relative z-10 px-3 h-full rounded text-[11px] font-semibold transition-colors cursor-pointer flex items-center justify-center min-w-[34px]",
                         value ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                     )}
                 >
@@ -470,7 +574,7 @@ export function StyleAlignToggle({
     return (
         <div
             className={cn(
-                "flex items-center rounded-lg overflow-hidden border border-border/60 bg-transparent h-[32px] text-[13px] shadow-[0_1px_2px_rgba(0,0,0,0.02)]",
+                "flex items-center rounded-lg overflow-hidden border border-border/60 bg-transparent h-[32px] text-[13px]",
                 className
             )}
         >
@@ -480,7 +584,7 @@ export function StyleAlignToggle({
             <div ref={containerRef} className="flex-none flex items-center h-full px-1 gap-1 relative isolation-auto">
                 {pillStyle && (
                     <motion.div
-                        className="absolute top-1.5 bottom-1.5 bg-background border border-border/40 rounded shadow-sm z-0"
+                        className="absolute top-1.5 bottom-1.5 bg-background border border-border/40 rounded z-0"
                         style={{ left: pillStyle.left, width: pillStyle.width }}
                         animate={{ left: pillStyle.left, width: pillStyle.width }}
                         transition={

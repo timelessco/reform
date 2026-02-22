@@ -1,12 +1,10 @@
-import { revalidateLogic } from "@tanstack/react-form";
-import { X } from "lucide-react";
-import type * as z from "zod";
+import { useCallback, useMemo } from "react";
+import { Info, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAppForm } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
-import { customizeFormSchema } from "@/lib/customize-form-schema";
-import { cn } from "@/lib/utils";
+import { useFormSettings } from "@/hooks/use-live-hooks";
+import { formSettingsCollection } from "@/db-collections";
 import {
   Sidebar,
   SidebarContent,
@@ -20,52 +18,147 @@ import {
 } from "@/components/ui/accordion";
 import {
   StyleSelect,
+  StyleToggle,
   StyleColorPicker,
   StyleNumberInput,
-  StyleAlignToggle,
 } from "@/components/ui/style-controls";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  STYLES,
+  BASE_COLORS,
+  DARK_BASE_COLORS,
+  THEME_COLORS,
+  FONT_MAP,
+} from "@/lib/theme-presets";
 
-export function CustomizeSidebar() {
+const FONT_OPTIONS = Object.keys(FONT_MAP);
+
+const STYLE_OPTIONS: { label: string; value: string; description: string }[] = [
+  { label: "Vega", value: "vega", description: "Classic shadcn/ui look. Clean and familiar." },
+  { label: "Nova", value: "nova", description: "Compact. Reduced spacing for efficient forms." },
+  { label: "Maia", value: "maia", description: "Soft and rounded. Generous spacing." },
+  { label: "Lyra", value: "lyra", description: "Sharp and boxy. Modern and precise." },
+  { label: "Mira", value: "mira", description: "Dense. Maximizes content per screen." },
+];
+
+const THEME_COLOR_OPTIONS: { label: string; value: string; description: string }[] = [
+  { label: "Zinc", value: "zinc", description: "Neutral gray. Understated and versatile." },
+  { label: "Rose", value: "rose", description: "Warm pink. Soft and inviting." },
+  { label: "Blue", value: "blue", description: "Classic blue. Professional and trustworthy." },
+  { label: "Green", value: "green", description: "Natural green. Fresh and reliable." },
+  { label: "Amber", value: "amber", description: "Warm amber. Friendly and approachable." },
+  { label: "Orange", value: "orange", description: "Bright orange. Energetic and bold." },
+  { label: "Violet", value: "violet", description: "Rich violet. Creative and elegant." },
+  { label: "Emerald", value: "emerald", description: "Deep emerald. Premium and lush." },
+  { label: "Cyan", value: "cyan", description: "Cool cyan. Modern and techy." },
+  { label: "Indigo", value: "indigo", description: "Deep indigo. Focused and authoritative." },
+  { label: "Pink", value: "pink", description: "Vibrant pink. Playful and eye-catching." },
+  { label: "Red", value: "red", description: "Bold red. Urgent and powerful." },
+];
+
+const BASE_COLOR_OPTIONS: { label: string; value: string; description: string }[] = [
+  { label: "Zinc", value: "zinc", description: "Pure neutral. Works with everything." },
+  { label: "Slate", value: "slate", description: "Cool undertone. Pairs with blues." },
+  { label: "Stone", value: "stone", description: "Warm undertone. Pairs with ambers." },
+  { label: "Gray", value: "gray", description: "Slightly cool. Versatile and clean." },
+  { label: "Neutral", value: "neutral", description: "True neutral. The most balanced." },
+];
+
+const RADIUS_OPTIONS_WITH_DESC: { label: string; value: string; description: string }[] = [
+  { label: "None", value: "none", description: "Sharp corners. Boxy and precise." },
+  { label: "Small", value: "small", description: "Subtle rounding. Clean and modern." },
+  { label: "Medium", value: "medium", description: "Standard rounding. Balanced look." },
+  { label: "Large", value: "large", description: "Generous rounding. Soft and friendly." },
+];
+
+interface CustomizeSidebarProps {
+  formId: string;
+}
+
+export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
   const { closeSidebar } = useEditorSidebar();
+  const { data: settings } = useFormSettings(formId);
 
-  const form = useAppForm({
-    defaultValues: {
-      theme: "Custom",
-      font: "Inter",
-      backgroundColor: "#ff9966",
-      buttonBackgroundColor: "#000000",
-      buttonTextColor: "#ffffff",
-      accentColor: "#000000",
-      pageWidth: "700px",
-      baseFontSize: "16px",
-      logoWidth: "100px",
-      logoHeight: "100px",
-      logoCornerRadius: "50px",
-      coverHeight: "25%",
-      inputWidth: "320px",
-      inputHeight: "36px",
-      inputBackgroundColor: "#ffffff80",
-      inputPlaceholderColor: "#a86543",
-      inputBorderColor: "#080503",
-      inputBorderWidth: "1px",
-      inputBorderRadius: "8px",
-      inputMarginBottom: "10px",
-      inputHorizontalPadding: "10px",
-      buttonWidth: "auto",
-      buttonHeight: "36px",
-      buttonAlignment: "center",
-      buttonFontSize: "16px",
-      buttonCornerRadius: "8px",
-      buttonsBackgroundColor: "#000000",
-      buttonsTextColor: "#ffffff",
-      buttonVerticalMargin: "10px",
-      buttonHorizontalPadding: "14px",
-      customCss: `/* \n.tally-block { ... \n*/`,
-    } as z.input<typeof customizeFormSchema>,
-    validationLogic: revalidateLogic(),
-    validators: { onDynamic: customizeFormSchema },
-    onSubmit: async ({ value }) => { },
-  });
+  const customization = (settings?.customization ?? {}) as Record<string, string>;
+
+  // Resolve the active style to get fallback values
+  const resolvedStyle = useMemo(() => {
+    const presetName = customization.preset || "vega";
+    return STYLES[presetName] ?? STYLES.vega;
+  }, [customization.preset]);
+
+  const getValue = useCallback(
+    (field: string) => {
+      if (customization[field]) return customization[field];
+      // Resolve from style for style-derived fields
+      if (field === "radius") return resolvedStyle.radius;
+      if (field === "spacing") return resolvedStyle.spacing;
+      // Color/font defaults (not bundled in style)
+      if (field === "baseColor") return "zinc";
+      if (field === "themeColor") return "zinc";
+      if (field === "font") return "Inter";
+      return "";
+    },
+    [customization, resolvedStyle],
+  );
+
+  const updateField = useCallback(
+    (field: string, value: string) => {
+      if (!settings?.id) return;
+      formSettingsCollection.update(settings.id, (draft) => {
+        const current = (draft.customization ?? {}) as Record<string, string>;
+        draft.customization = { ...current, [field]: value };
+        draft.updatedAt = new Date().toISOString();
+      });
+    },
+    [settings?.id],
+  );
+
+  const updateFields = useCallback(
+    (fields: Record<string, string>) => {
+      if (!settings?.id) return;
+      formSettingsCollection.update(settings.id, (draft) => {
+        const current = (draft.customization ?? {}) as Record<string, string>;
+        draft.customization = { ...current, ...fields };
+        draft.updatedAt = new Date().toISOString();
+      });
+    },
+    [settings?.id],
+  );
+
+  const selectStyle = useCallback(
+    (styleName: string) => {
+      const style = STYLES[styleName];
+      if (!style) return;
+      updateFields({
+        preset: styleName,
+        radius: style.radius,
+        spacing: style.spacing,
+      });
+    },
+    [updateFields],
+  );
+
+  const updateWithCustomPreset = useCallback(
+    (field: string, value: string) => {
+      updateFields({ [field]: value, preset: "custom" });
+    },
+    [updateFields],
+  );
+
+  if (!settings) return null;
+
+  const activePreset = customization.preset || "vega";
+  const activeMode = customization.mode || "light";
+  const activeBaseColors = activeMode === "dark" ? DARK_BASE_COLORS : BASE_COLORS;
+  const activeThemeColor = getValue("themeColor");
+  const activeBaseColor = getValue("baseColor");
+  const activeFont = getValue("font");
+  const activeRadius = getValue("radius");
 
   return (
     <Sidebar
@@ -82,89 +175,61 @@ export function CustomizeSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="p-0 overflow-y-auto custom-scrollbar">
-        <form.AppForm>
-          <form.Form className="p-4 space-y-6 pb-12">
-            <Accordion type="multiple" defaultValue={["theme", "layout", "inputs", "buttons"]} className="w-full space-y-4">
+        <div className="px-4 pt-3 pb-12">
+          <Accordion type="single" collapsible defaultValue="theme" className="w-full space-y-0">
 
-              {/* Theme Section */}
-              <AccordionItem value="theme" className="border-b-0">
-                <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
-                  Theme
-                </AccordionTrigger>
-                <AccordionContent className="space-y-2 pt-1 pb-2">
-                  <form.AppField name="theme">
-                    {(field) => (
-                      <StyleSelect
-                        label="Theme"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                        options={[
-                          { label: "Custom", value: "Custom" },
-                          { label: "Light", value: "Light" },
-                          { label: "Dark", value: "Dark" },
-                        ]}
-                      />
-                    )}
-                  </form.AppField>
+            {/* ── Theme ── */}
+            <AccordionItem value="theme" className="border-b-0">
+              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
+                Theme
+              </AccordionTrigger>
+              <AccordionContent className="space-y-2 pt-1 pb-2">
+                <StyleToggle
+                  label="Dark Mode"
+                  value={activeMode === "dark"}
+                  onChange={(on) => updateField("mode", on ? "dark" : "light")}
+                />
+                <StyleSelect
+                  label="Style"
+                  value={activePreset}
+                  onChange={(v) => selectStyle(v)}
+                  options={STYLE_OPTIONS}
+                />
+                <StyleSelect
+                  label="Accent"
+                  value={activeThemeColor}
+                  onChange={(v) => updateWithCustomPreset("themeColor", v)}
+                  options={THEME_COLOR_OPTIONS.map((o) => ({
+                    ...o,
+                    swatchColor: THEME_COLORS[o.value]?.primary,
+                  }))}
+                />
+                <StyleSelect
+                  label="Base"
+                  value={activeBaseColor}
+                  onChange={(v) => updateWithCustomPreset("baseColor", v)}
+                  options={BASE_COLOR_OPTIONS.map((o) => ({
+                    ...o,
+                    swatchColor: activeBaseColors[o.value]?.muted,
+                  }))}
+                />
+                <StyleSelect
+                  label="Font"
+                  value={activeFont}
+                  onChange={(v) => updateWithCustomPreset("font", v)}
+                  options={FONT_OPTIONS.map((f) => ({ label: f, value: f }))}
+                />
+                <StyleSelect
+                  label="Radius"
+                  value={activeRadius}
+                  onChange={(v) => updateWithCustomPreset("radius", v)}
+                  options={RADIUS_OPTIONS_WITH_DESC}
+                />
+              </AccordionContent>
+            </AccordionItem>
 
-                  <form.AppField name="font">
-                    {(field) => (
-                      <StyleSelect
-                        label="Font"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                        options={[
-                          { label: "Inter", value: "Inter" },
-                          { label: "Roboto", value: "Roboto" },
-                        ]}
-                      />
-                    )}
-                  </form.AppField>
-
-                  <form.AppField name="backgroundColor">
-                    {(field) => (
-                      <StyleColorPicker
-                        label="Background"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-
-                  <form.AppField name="accentColor">
-                    {(field) => (
-                      <StyleColorPicker
-                        label="Accent Color"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-
-                  <form.AppField name="buttonBackgroundColor">
-                    {(field) => (
-                      <StyleColorPicker
-                        label="Button bg"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-
-                  <form.AppField name="buttonTextColor">
-                    {(field) => (
-                      <StyleColorPicker
-                        label="Button text"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-            {/* Advanced Banner */}
-            <div className="mx-3 mt-6 mb-2 shrink-0 overflow-hidden rounded-xl bg-free-plan-card-bg p-3 shadow-sm border border-border/40">
+            {/* ── Advanced Banner ── */}
+            <div className="mx-0 mt-4 mb-2 shrink-0 overflow-hidden rounded-xl bg-free-plan-card-bg p-3 shadow-sm border border-border/40">
               <div className="flex items-center gap-2 mb-2 justify-between">
                 <span className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider">
                   Advanced
@@ -184,281 +249,152 @@ export function CustomizeSidebar() {
               </Button>
             </div>
 
-            <Accordion type="multiple" defaultValue={["layout", "inputs", "buttons"]}>
-
-              {/* Layout Section */}
-              <AccordionItem value="layout" className="border-b-0">
-                <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
+            {/* Layout */}
+            <AccordionItem value="layout" className="border-b-0">
+              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
+                <div className="flex items-center gap-2">
                   Layout
-                </AccordionTrigger>
-                <AccordionContent className="space-y-2 pt-1 pb-2">
-                  <form.AppField name="pageWidth">
-                    {(field) => (
-                      <StyleNumberInput
-                        label="Page Width"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="baseFontSize">
-                    {(field) => (
-                      <StyleNumberInput
-                        label="Base Font Size"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="logoWidth">
-                    {(field) => (
-                      <StyleNumberInput
-                        label="Logo Width"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="logoHeight">
-                    {(field) => (
-                      <StyleNumberInput
-                        label="Logo Height"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="logoCornerRadius">
-                    {(field) => (
-                      <StyleNumberInput
-                        label="Logo Radius"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="coverHeight">
-                    {(field) => (
-                      <StyleNumberInput
-                        label="Cover Height"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* Inputs Section */}
-              <AccordionItem value="inputs" className="border-b-0">
-                <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
-                  Inputs
-                </AccordionTrigger>
-                <AccordionContent className="space-y-2 pt-1 pb-2">
-                  <form.AppField name="inputWidth">
-                    {(field) => (
-                      <StyleNumberInput
-                        label="Input Width"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="inputHeight">
-                    {(field) => (
-                      <StyleNumberInput
-                        label="Input Height"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="inputBackgroundColor">
-                    {(field) => (
-                      <StyleColorPicker
-                        label="Background"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="inputPlaceholderColor">
-                    {(field) => (
-                      <StyleColorPicker
-                        label="Placeholder"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="inputBorderColor">
-                    {(field) => (
-                      <StyleColorPicker
-                        label="Border Color"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="inputBorderWidth">
-                    {(field) => (
-                      <StyleNumberInput
-                        label="Border Width"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="inputBorderRadius">
-                    {(field) => (
-                      <StyleNumberInput
-                        label="Border Radius"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="inputMarginBottom">
-                    {(field) => (
-                      <StyleNumberInput
-                        label="Margin Bottom"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="inputHorizontalPadding">
-                    {(field) => (
-                      <StyleNumberInput
-                        label="Horiz Padding"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* Buttons Section */}
-              <AccordionItem value="buttons" className="border-b-0">
-                <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
-                  Buttons
-                </AccordionTrigger>
-                <AccordionContent className="space-y-2 pt-1 pb-2">
-                  <form.AppField name="buttonWidth">
-                    {(field) => (
-                      <StyleNumberInput
-                        label="Width"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="buttonHeight">
-                    {(field) => (
-                      <StyleNumberInput
-                        label="Height"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="buttonAlignment">
-                    {(field) => (
-                      <StyleAlignToggle
-                        label="Alignment"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={(val) => field.handleChange(val as any)}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="buttonFontSize">
-                    {(field) => (
-                      <StyleNumberInput
-                        label="Font Size"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="buttonCornerRadius">
-                    {(field) => (
-                      <StyleNumberInput
-                        label="Corner Radius"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="buttonsBackgroundColor">
-                    {(field) => (
-                      <StyleColorPicker
-                        label="Background"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="buttonsTextColor">
-                    {(field) => (
-                      <StyleColorPicker
-                        label="Text Color"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="buttonVerticalMargin">
-                    {(field) => (
-                      <StyleNumberInput
-                        label="Vertical Margin"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                  <form.AppField name="buttonHorizontalPadding">
-                    {(field) => (
-                      <StyleNumberInput
-                        label="Horiz Padding"
-                        value={(field.state.value as string) ?? ""}
-                        onChange={field.handleChange}
-                      />
-                    )}
-                  </form.AppField>
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* Custom CSS */}
-              <AccordionItem value="css" className="border-b-0">
-                <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
-                  <div className="flex items-center gap-2">
-                    Custom CSS
-                    <div className="bg-teal-100 text-teal-700 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
-                      Pro
-                    </div>
+                  <div className="bg-teal-100 text-teal-700 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
+                    Pro
                   </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-1 pb-2">
-                  <form.AppField name="customCss">
-                    {(field) => (
-                      <div className="rounded-lg overflow-hidden border border-border/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                        <Textarea
-                          value={field.state.value}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          className="font-mono text-[11px] h-32 bg-light-gray-950 text-[#d4d4d4] border-0 rounded-none focus-visible:ring-0 p-3 leading-relaxed"
-                          placeholder=".class { ... }"
-                          spellCheck={false}
-                        />
-                      </div>
-                    )}
-                  </form.AppField>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </form.Form>
-        </form.AppForm>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-2 pt-1 pb-2">
+                <StyleNumberInput label="Page Width" value={getValue("pageWidth") || "50%"} onChange={(v) => updateField("pageWidth", v)} min={30} max={100} step={5} unit="%" />
+                <StyleNumberInput label="Cover Height" value={getValue("coverHeight") || "200px"} onChange={(v) => updateField("coverHeight", v)} min={100} max={400} step={10} unit="px" />
+                <StyleNumberInput label="Logo Width" value={getValue("logoWidth") || "100px"} onChange={(v) => updateField("logoWidth", v)} min={40} max={200} step={4} unit="px" />
+                <StyleNumberInput label="Input Width" value={getValue("inputWidth") || "320px"} onChange={(v) => updateField("inputWidth", v)} min={200} max={600} step={10} unit="px" />
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Colors */}
+            <AccordionItem value="colors" className="border-b-0">
+              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
+                <div className="flex items-center gap-2">
+                  Colors
+                  <div className="bg-teal-100 text-teal-700 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
+                    Pro
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-2 pt-1 pb-2">
+                <AdvancedColorPickers customization={customization} updateField={updateField} />
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Typography */}
+            <AccordionItem value="typography" className="border-b-0">
+              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
+                <div className="flex items-center gap-2">
+                  Typography
+                  <div className="bg-teal-100 text-teal-700 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
+                    Pro
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-2 pt-1 pb-2">
+                <StyleNumberInput label="Font Size" value={getValue("baseFontSize") || "16px"} onChange={(v) => updateField("baseFontSize", v)} min={12} max={24} step={1} unit="px" />
+                <StyleNumberInput label="Letter Spacing" value={getValue("letterSpacing") || "0.02em"} onChange={(v) => updateField("letterSpacing", v)} min={0} max={0.2} step={0.005} unit="em" />
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Custom CSS */}
+            <AccordionItem value="css" className="border-b-0">
+              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
+                <div className="flex items-center gap-2">
+                  Custom CSS
+                  <div className="bg-teal-100 text-teal-700 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
+                    Pro
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-1 pb-2 space-y-2">
+                <div className="rounded-lg overflow-hidden border border-border/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                  <Textarea
+                    value={getValue("customCss")}
+                    onChange={(e) => updateField("customCss", e.target.value)}
+                    className="font-mono text-[11px] h-32 bg-light-gray-950 text-[#d4d4d4] border-0 rounded-none focus-visible:ring-0 p-3 leading-relaxed"
+                    placeholder=".bf-themed { ... }"
+                    spellCheck={false}
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 px-1">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[240px] text-[11px]">
+                      Supports shadcn tokens: --bf-primary, --bf-background, --bf-foreground, etc.
+                    </TooltipContent>
+                  </Tooltip>
+                  <span className="text-[11px] text-muted-foreground/60">
+                    Use --bf-* tokens for overrides
+                  </span>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
       </SidebarContent>
     </Sidebar>
+  );
+}
+
+// ── Advanced Color Pickers (extracted for readability) ──
+
+const ADVANCED_COLOR_TOKENS = [
+  { key: "primary", label: "Primary" },
+  { key: "primary-foreground", label: "Primary FG" },
+  { key: "secondary", label: "Secondary" },
+  { key: "secondary-foreground", label: "Secondary FG" },
+  { key: "accent", label: "Accent" },
+  { key: "accent-foreground", label: "Accent FG" },
+  { key: "background", label: "Background" },
+  { key: "foreground", label: "Foreground" },
+  { key: "destructive", label: "Destructive" },
+  { key: "destructive-foreground", label: "Destructive FG" },
+  { key: "input", label: "Input" },
+  { key: "border", label: "Border" },
+  { key: "muted", label: "Muted" },
+  { key: "muted-foreground", label: "Muted FG" },
+  { key: "ring", label: "Ring" },
+] as const;
+
+function AdvancedColorPickers({
+  customization,
+  updateField,
+}: {
+  customization: Record<string, string>;
+  updateField: (field: string, value: string) => void;
+}) {
+  // Resolve current base + theme to show fallback colors
+  const baseColorName = customization.baseColor || "zinc";
+  const themeColorName = customization.themeColor || "zinc";
+  const isDark = customization.mode === "dark";
+  const baseColors = isDark ? DARK_BASE_COLORS : BASE_COLORS;
+  const base = baseColors[baseColorName] ?? baseColors.zinc;
+  const theme = THEME_COLORS[themeColorName] ?? THEME_COLORS.zinc;
+
+  // Merged resolved tokens for fallback display
+  const resolved: Record<string, string> = {
+    ...base,
+    ...theme,
+    secondary: base.muted,
+    "secondary-foreground": base["muted-foreground"],
+    destructive: "#ef4444",
+    "destructive-foreground": "#fafafa",
+  };
+
+  return (
+    <>
+      {ADVANCED_COLOR_TOKENS.map(({ key, label }) => (
+        <StyleColorPicker
+          key={key}
+          label={label}
+          value={customization[key] || resolved[key] || "#000000"}
+          onChange={(v) => updateField(key, v)}
+        />
+      ))}
+    </>
   );
 }

@@ -82,7 +82,7 @@ export function StepForm({
 
   return (
     <form.AppForm>
-      <form.Form id={formName} ref={formRef} noValidate className="space-y-4 outline-none">
+      <form.Form id={formName} ref={formRef} noValidate data-bf-field-list className="space-y-4 outline-none">
         {/* Auto-jump watcher */}
         {autoJump && !isLastStep && (
           <form.Subscribe selector={(state) => state.values}>

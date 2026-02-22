@@ -248,6 +248,8 @@ export function duplicateFormById(formId: string): Form {
     ...sourceForm,
     id,
     title,
+    content: structuredClone(sourceForm.content),
+    settings: structuredClone(sourceForm.settings),
     status: "draft",
     lastPublishedVersionId: null,
     publishedContentHash: null,

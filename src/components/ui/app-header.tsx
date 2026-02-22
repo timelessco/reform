@@ -198,7 +198,7 @@ export function AppHeader({
             className="h-8 w-8 text-muted-foreground -ml-1 group relative flex items-center justify-center transition-all duration-300"
             onClick={() => toggleMainSidebar()}
           >
-            <Logo className="h-6 w-6 text-sidebar-nav-text dark:text-dark-gray-950" />
+            <Logo className="h-6 w-6 text-sidebar-nav-text" />
           </Button>
         )}
 

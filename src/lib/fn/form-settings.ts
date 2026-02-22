@@ -35,6 +35,7 @@ export const updateFormSettings = createServerFn({ method: "POST" })
       preventDuplicateSubmissions: z.boolean().optional(),
       dataRetention: z.boolean().optional(),
       dataRetentionDays: z.number().nullable().optional(),
+      customization: z.record(z.string(), z.any()).optional(),
       updatedAt: z.string().optional(),
     }),
   )

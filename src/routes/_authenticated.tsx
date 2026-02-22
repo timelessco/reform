@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AppHeader } from "@/components/ui/app-header";
 import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   CommandDialog,
   CommandEmpty,
@@ -57,7 +58,7 @@ import {
   SidebarProvider,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { BellIcon, HomeIcon, SearchIcon, SettingsIcon, StarIcon } from "@/components/ui/sidebar-icons";
+import { BellIcon, ChevronDownIcon, HomeIcon, SearchIcon, SettingsIcon, StarIcon } from "@/components/ui/sidebar-icons";
 import { UserMenuMinimal } from "@/components/user-menu-minimal";
 import { WorkspaceItemMinimal, type WorkspaceWithForms } from "@/components/workspace-item-minimal";
 import {
@@ -115,6 +116,7 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+
 import type * as React from "react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -354,7 +356,7 @@ function AuthLayoutContent() {
                 {activeSidebar === "settings" && formId && <FormSettingsSidebar formId={formId} />}
                 {activeSidebar === "share" && formId && <ShareSummarySidebar formId={formId} />}
                 {activeSidebar === "history" && formId && <VersionHistorySidebar formId={formId} />}
-                {activeSidebar === "customize" && <CustomizeSidebar />}
+                {activeSidebar === "customize" && formId && <CustomizeSidebar formId={formId} />}
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>
@@ -1069,7 +1071,7 @@ function SidebarSection({
           <span className="text-[13px] font-medium text-muted-foreground tracking-[0.26px] truncate">
             {label}
           </span>
-          <ChevronDown
+          <ChevronDownIcon
             className={cn(
               "h-2.5 w-2.5 shrink-0 text-muted-foreground transition-transform duration-200",
               !isOpen && "-rotate-90",
