@@ -204,13 +204,13 @@ export function FormHeaderElement(props: PlateElementProps) {
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleCoverChange("https://images.unsplash.com/photo-1557682250-33ac1df5f2e6?w=800&q=80&tint=true")}
+                        onClick={() => handleCoverChange("https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80&tint=true")}
                         className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
                         aria-label="Abstract gradient"
                       >
                         <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
                         <img
-                          src="https://images.unsplash.com/photo-1557682250-33ac1df5f2e6?w=800&q=80&tint=true"
+                          src="https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80&tint=true"
                           alt="Abstract gradient"
                           className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
                         />

@@ -1,8 +1,8 @@
 import { createTransaction, eq, useLiveQuery } from "@tanstack/react-db";
 import { useMemo } from "react";
-import { formCollection, formVersionCollection } from "@/db-collections";
+import { formCollection, formSettingsCollection, formVersionCollection } from "@/db-collections";
 import { discardFormChanges, publishFormVersion, restoreFormVersion } from "@/lib/fn/form-versions";
-import { useForm } from "./use-live-hooks";
+import { useForm, useFormSettings } from "./use-live-hooks";
 
 /**
  * Hook to get list of published versions for a form (Electric-synced)
@@ -40,6 +40,7 @@ export function useFormVersionContent(versionId: string | undefined) {
 export function useHasUnpublishedChanges(formId: string | undefined) {
   const { data: formData } = useForm(formId);
   const { data: versions } = useFormVersions(formId);
+  const { data: settings } = useFormSettings(formId);
 
   const form = useMemo(() => {
     if (!formId || !formData) return undefined;
@@ -61,8 +62,14 @@ export function useHasUnpublishedChanges(formId: string | undefined) {
     const currentContent = JSON.stringify(form.content);
     const publishedContent = JSON.stringify(latestVersion.content);
 
-    return currentContent !== publishedContent;
-  }, [form, latestVersion]);
+    if (currentContent !== publishedContent) return true;
+
+    // Compare current customization with published version customization
+    const currentCustomization = JSON.stringify(settings?.customization ?? {});
+    const publishedCustomization = JSON.stringify(latestVersion.customization ?? {});
+
+    return currentCustomization !== publishedCustomization;
+  }, [form, latestVersion, settings]);
 }
 
 // ============================================================================
@@ -101,6 +108,11 @@ export function restoreVersion(formId: string, versionId: string) {
   const version = formVersionCollection.state.get(versionId);
   if (!version) throw new Error("Version not found in local state");
 
+  // Find the settings doc for this form
+  const settingsDoc = Array.from(formSettingsCollection.state.values()).find(
+    (s) => s.formId === formId,
+  );
+
   const tx = createTransaction({
     mutationFn: async () => {
       await restoreFormVersion({ data: { formId, versionId } });
@@ -113,6 +125,13 @@ export function restoreVersion(formId: string, versionId: string) {
       draft.title = version.title;
       draft.updatedAt = new Date().toISOString();
     });
+
+    // Restore customization from the version
+    if (settingsDoc) {
+      formSettingsCollection.update(settingsDoc.id, (draft) => {
+        draft.customization = version.customization ?? {};
+      });
+    }
   });
 
   return tx;
@@ -129,6 +148,11 @@ export function discardChanges(formId: string) {
   const version = formVersionCollection.state.get(form.lastPublishedVersionId);
   if (!version) throw new Error("Published version not found in local state");
 
+  // Find the settings doc for this form
+  const settingsDoc = Array.from(formSettingsCollection.state.values()).find(
+    (s) => s.formId === formId,
+  );
+
   const tx = createTransaction({
     mutationFn: async () => {
       await discardFormChanges({ data: { formId } });
@@ -141,6 +165,13 @@ export function discardChanges(formId: string) {
       draft.title = version.title;
       draft.updatedAt = new Date().toISOString();
     });
+
+    // Revert customization to published version
+    if (settingsDoc) {
+      formSettingsCollection.update(settingsDoc.id, (draft) => {
+        draft.customization = version.customization ?? {};
+      });
+    }
   });
 
   return tx;

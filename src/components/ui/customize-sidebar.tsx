@@ -198,7 +198,18 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                 <StyleSelect
                   label="Accent"
                   value={activeThemeColor}
-                  onChange={(v) => updateWithCustomPreset("themeColor", v)}
+                  onChange={(v) => {
+                    const theme = THEME_COLORS[v];
+                    if (theme) {
+                      updateFields({
+                        themeColor: v,
+                        preset: "custom",
+                        primary: theme.primary,
+                        "primary-foreground": theme["primary-foreground"],
+                        ring: theme.ring,
+                      });
+                    }
+                  }}
                   options={THEME_COLOR_OPTIONS.map((o) => ({
                     ...o,
                     swatchColor: THEME_COLORS[o.value]?.primary,
@@ -207,7 +218,18 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                 <StyleSelect
                   label="Base"
                   value={activeBaseColor}
-                  onChange={(v) => updateWithCustomPreset("baseColor", v)}
+                  onChange={(v) => {
+                    const base = activeBaseColors[v];
+                    if (base) {
+                      updateFields({
+                        baseColor: v,
+                        preset: "custom",
+                        ...base,
+                        secondary: base.muted,
+                        "secondary-foreground": base["muted-foreground"],
+                      });
+                    }
+                  }}
                   options={BASE_COLOR_OPTIONS.map((o) => ({
                     ...o,
                     swatchColor: activeBaseColors[o.value]?.muted,
@@ -260,10 +282,10 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="space-y-2 pt-1 pb-2">
-                <StyleNumberInput label="Page Width" value={getValue("pageWidth") || "50%"} onChange={(v) => updateField("pageWidth", v)} min={30} max={100} step={5} unit="%" />
-                <StyleNumberInput label="Cover Height" value={getValue("coverHeight") || "200px"} onChange={(v) => updateField("coverHeight", v)} min={100} max={400} step={10} unit="px" />
-                <StyleNumberInput label="Logo Width" value={getValue("logoWidth") || "100px"} onChange={(v) => updateField("logoWidth", v)} min={40} max={200} step={4} unit="px" />
-                <StyleNumberInput label="Input Width" value={getValue("inputWidth") || "320px"} onChange={(v) => updateField("inputWidth", v)} min={200} max={600} step={10} unit="px" />
+                <StyleNumberInput label="Page Width" value={getValue("pageWidth") || "50%"} onChange={(v) => updateWithCustomPreset("pageWidth", v)} min={30} max={100} step={5} unit="%" />
+                <StyleNumberInput label="Cover Height" value={getValue("coverHeight") || "200px"} onChange={(v) => updateWithCustomPreset("coverHeight", v)} min={100} max={400} step={10} unit="px" />
+                <StyleNumberInput label="Logo Width" value={getValue("logoWidth") || "100px"} onChange={(v) => updateWithCustomPreset("logoWidth", v)} min={40} max={200} step={4} unit="px" />
+                <StyleNumberInput label="Input Width" value={getValue("inputWidth") || "320px"} onChange={(v) => updateWithCustomPreset("inputWidth", v)} min={200} max={600} step={10} unit="px" />
               </AccordionContent>
             </AccordionItem>
 
@@ -278,7 +300,7 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="space-y-2 pt-1 pb-2">
-                <AdvancedColorPickers customization={customization} updateField={updateField} />
+                <AdvancedColorPickers customization={customization} updateField={updateWithCustomPreset} />
               </AccordionContent>
             </AccordionItem>
 
@@ -293,8 +315,8 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="space-y-2 pt-1 pb-2">
-                <StyleNumberInput label="Font Size" value={getValue("baseFontSize") || "16px"} onChange={(v) => updateField("baseFontSize", v)} min={12} max={24} step={1} unit="px" />
-                <StyleNumberInput label="Letter Spacing" value={getValue("letterSpacing") || "0.02em"} onChange={(v) => updateField("letterSpacing", v)} min={0} max={0.2} step={0.005} unit="em" />
+                <StyleNumberInput label="Font Size" value={getValue("baseFontSize") || "16px"} onChange={(v) => updateWithCustomPreset("baseFontSize", v)} min={12} max={24} step={1} unit="px" />
+                <StyleNumberInput label="Letter Spacing" value={getValue("letterSpacing") || "0.02em"} onChange={(v) => updateWithCustomPreset("letterSpacing", v)} min={0} max={0.2} step={0.005} unit="em" />
               </AccordionContent>
             </AccordionItem>
 
@@ -312,7 +334,7 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                 <div className="rounded-lg overflow-hidden border border-border/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
                   <Textarea
                     value={getValue("customCss")}
-                    onChange={(e) => updateField("customCss", e.target.value)}
+                    onChange={(e) => updateWithCustomPreset("customCss", e.target.value)}
                     className="font-mono text-[11px] h-32 bg-light-gray-950 text-[#d4d4d4] border-0 rounded-none focus-visible:ring-0 p-3 leading-relaxed"
                     placeholder=".bf-themed { ... }"
                     spellCheck={false}

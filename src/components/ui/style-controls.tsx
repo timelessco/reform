@@ -4,6 +4,19 @@ import { cn } from "@/lib/utils";
 import { AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 import { motion, useMotionValue, useTransform, animate, AnimatePresence } from "motion/react";
 
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ColorPicker, EyeDropper } from "@/components/ui/color-picker";
+import { parseColor } from "@react-stately/color";
+import {
+    ColorArea,
+    ColorField,
+    ColorSlider,
+    ColorThumb,
+    SliderTrack,
+    SliderThumb,
+    Input as AriaInput,
+} from "react-aria-components";
+
 interface StyleNumberInputProps {
     label: string;
     value: string;
@@ -249,6 +262,15 @@ export function StyleColorPicker({
     onChange: (val: string) => void;
     className?: string;
 }) {
+    const hexColor = cssColorToHex(value);
+    const parsedColor = React.useMemo(() => {
+        try {
+            return parseColor(hexColor).toFormat("hsb");
+        } catch {
+            return parseColor("#000000").toFormat("hsb");
+        }
+    }, [hexColor]);
+
     return (
         <div
             className={cn(
@@ -261,22 +283,48 @@ export function StyleColorPicker({
             </div>
             <div className="flex-none px-2 h-full flex items-center gap-2 relative">
                 <input
-                    value={value}
-                    onChange={(e) => onChange(e.target.value)}
+                    value={hexColor.toUpperCase()}
+                    onChange={(e) => {
+                        const val = e.target.value;
+                        if (val.length === 7 || val.length === 4) onChange(val);
+                    }}
                     className="w-[60px] text-right bg-transparent outline-none tabular-nums font-mono text-muted-foreground uppercase text-[11px]"
+                    maxLength={7}
                 />
-                <div className="w-[18px] h-[18px] rounded-[4px] border border-border/60 overflow-hidden relative shrink-0">
-                    <input
-                        type="color"
-                        value={cssColorToHex(value)}
-                        onChange={(e) => onChange(e.target.value)}
-                        className="absolute -inset-2 w-10 h-10 opacity-0 cursor-pointer"
-                    />
-                    <div
-                        className="w-full h-full pointer-events-none"
-                        style={{ backgroundColor: value }}
-                    />
-                </div>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <button className="w-[18px] h-[18px] rounded-[4px] border border-border/60 overflow-hidden relative shrink-0 cursor-pointer group">
+                            <div
+                                className="w-full h-full pointer-events-none group-hover:opacity-90 transition-opacity"
+                                style={{ backgroundColor: hexColor }}
+                            />
+                        </button>
+                    </PopoverTrigger>
+                    <PopoverContent side="left" className="w-[220px] p-3 flex flex-col gap-3 z-100" sideOffset={16}>
+                        <ColorPicker
+                            value={parsedColor}
+                            onChange={(color) => onChange(color.toString("hex"))}
+                            className="flex flex-col gap-3"
+                        >
+                            <ColorArea className="w-full h-[140px] rounded-md overflow-hidden border border-border/60" colorSpace="hsb">
+                                <ColorThumb className="w-4 h-4 rounded-full border-2 border-white shadow-sm ring-1 ring-black/50 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-ring" />
+                            </ColorArea>
+
+                            <ColorSlider channel="hue" className="w-full h-3 rounded-full overflow-hidden border border-border/60" orientation="horizontal">
+                                <SliderTrack className="w-full h-full">
+                                    <SliderThumb className="top-1/2 w-4 h-4 rounded-full border-2 border-white shadow-sm ring-1 ring-black/50 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-ring" />
+                                </SliderTrack>
+                            </ColorSlider>
+
+                            <div className="flex items-center gap-2">
+                                <ColorField className="flex-1 flex items-center justify-between border border-border/60 rounded-md px-2 h-7 bg-background shadow-sm">
+                                    <AriaInput className="w-full bg-transparent outline-none uppercase font-mono text-[11px] tabular-nums text-foreground focus-visible:ring-0" />
+                                </ColorField>
+                                <EyeDropper />
+                            </div>
+                        </ColorPicker>
+                    </PopoverContent>
+                </Popover>
             </div>
         </div>
     );
