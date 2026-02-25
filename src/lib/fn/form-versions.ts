@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { createServerFn } from "@tanstack/react-start";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { forms, formVersions, user } from "@/db/schema";
+import { forms, formSettings, formVersions, user } from "@/db/schema";
 import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
 import { authForm, getTxId } from "./helpers";
@@ -24,6 +24,7 @@ const serializeVersion = (version: typeof formVersions.$inferSelect) => ({
   createdAt: version.createdAt.toISOString(),
   content: version.content as object[],
   settings: version.settings as Record<string, object>,
+  customization: (version.customization ?? {}) as Record<string, string>,
 });
 
 /**
@@ -34,9 +35,6 @@ export const publishFormVersion = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
       formId: z.string().uuid(),
-      content: z.array(z.any()),
-      title: z.string(),
-      settings: z.record(z.string(), z.any()).optional(),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -50,13 +48,6 @@ export const publishFormVersion = createServerFn({ method: "POST" })
         throw new Error("Form not found");
       }
 
-      const nextContent = data.content as object[];
-      const nextTitle = data.title;
-      const nextSettings = (data.settings ?? (form.settings as Record<string, unknown>)) as Record<
-        string,
-        unknown
-      >;
-
       // Get latest version info
       const [lastVersion] = await tx
         .select({ id: formVersions.id, version: formVersions.version })
@@ -66,46 +57,28 @@ export const publishFormVersion = createServerFn({ method: "POST" })
         .limit(1);
 
       const nextVersionNumber = (lastVersion?.version ?? 0) + 1;
-      const contentHash = computeContentHash(nextContent);
+      const contentHash = computeContentHash(form.content);
       const now = new Date();
 
-      const shouldCreateVersion =
-        !form.lastPublishedVersionId || !form.publishedContentHash || form.publishedContentHash !== contentHash;
+      // Fetch customization from form_settings to snapshot
+      const [settingsRow] = await tx
+        .select({ customization: formSettings.customization })
+        .from(formSettings)
+        .where(eq(formSettings.formId, data.formId));
 
-      if (!shouldCreateVersion) {
-        await tx
-          .update(forms)
-          .set({
-            content: nextContent,
-            title: nextTitle,
-            settings: nextSettings,
-            status: "published",
-            publishedContentHash: contentHash,
-            updatedAt: now,
-          })
-          .where(eq(forms.id, data.formId));
-
-        const txid = await getTxId(tx);
-
-        return {
-          createdVersion: false,
-          txid,
-          versionId: form.lastPublishedVersionId,
-          versionNumber: lastVersion?.version ?? null,
-        };
-      }
-
-      // Create version snapshot from current editor state sent by client
+      // Create version snapshot
       const versionId = crypto.randomUUID();
+
       const [newVersion] = await tx
         .insert(formVersions)
         .values({
           id: versionId,
           formId: data.formId,
           version: nextVersionNumber,
-          content: nextContent,
-          settings: nextSettings,
-          title: nextTitle,
+          content: form.content,
+          settings: form.settings,
+          customization: settingsRow?.customization ?? {},
+          title: form.title,
           publishedByUserId: context.session.user.id,
           publishedAt: now,
           createdAt: now,
@@ -116,9 +89,9 @@ export const publishFormVersion = createServerFn({ method: "POST" })
       await tx
         .update(forms)
         .set({
-          content: nextContent,
-          title: nextTitle,
-          settings: nextSettings,
+          content: form.content,
+          title: form.title,
+          settings: form.settings,
           status: "published",
           lastPublishedVersionId: versionId,
           publishedContentHash: contentHash,
@@ -138,12 +111,19 @@ export const publishFormVersion = createServerFn({ method: "POST" })
         await tx.delete(formVersions).where(inArray(formVersions.id, versionsToDelete));
       }
 
+      const totalInDb = Math.min(allVersions.length, MAX_VERSIONS_PER_FORM);
       const txid = await getTxId(tx);
 
-      return {
-        createdVersion: true,
-        version: serializeVersion(newVersion),
+      console.log("[publishFormVersion] SUCCESS", {
+        formId: data.formId,
         versionId,
+        versionNumber: nextVersionNumber,
+        totalVersionsInDb: totalInDb,
+        txid,
+      });
+
+      return {
+        version: serializeVersion(newVersion),
         versionNumber: nextVersionNumber,
         txid,
       };
@@ -239,7 +219,6 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
 
     // Update form draft with version content
     // Note: We don't update publishedContentHash so the form shows "has changes"
-    // Note: settings are NOT reverted — public form settings live in form_settings table
     await db
       .update(forms)
       .set({
@@ -248,6 +227,12 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
         updatedAt: new Date(),
       })
       .where(eq(forms.id, data.formId));
+
+    // Restore customization from the version
+    await db
+      .update(formSettings)
+      .set({ customization: version.customization ?? {} })
+      .where(eq(formSettings.formId, data.formId));
 
     const txid = await getTxId();
 
@@ -295,7 +280,6 @@ export const discardFormChanges = createServerFn({ method: "POST" })
     const contentHash = computeContentHash(version.content);
 
     // Update form draft with version content AND hash (so no "changes" indicator)
-    // Note: settings are NOT reverted — public form settings live in form_settings table
     await db
       .update(forms)
       .set({
@@ -305,6 +289,12 @@ export const discardFormChanges = createServerFn({ method: "POST" })
         updatedAt: new Date(),
       })
       .where(eq(forms.id, data.formId));
+
+    // Revert customization to published version's customization
+    await db
+      .update(formSettings)
+      .set({ customization: version.customization ?? {} })
+      .where(eq(formSettings.formId, data.formId));
 
     const txid = await getTxId();
 
@@ -361,6 +351,7 @@ export const getLatestPublishedVersion = createServerFn({ method: "GET" })
         title: version.title,
         content: version.content as object[],
         settings: version.settings as Record<string, object>,
+        customization: (version.customization ?? {}) as Record<string, string>,
         icon: form.icon,
         cover: form.cover,
         status: form.status,

@@ -16,8 +16,9 @@ import { EmojiPicker } from "@/components/ui/emoji-toolbar-button";
 import { createFormButtonNode } from "@/components/ui/form-button-node";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCustomizeSidebar } from "@/hooks/use-customize-sidebar";
+import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useFileUpload } from "@/hooks/use-file-upload";
+import type { FormHeaderElementData } from "@/lib/form-header-factory";
 import { cn } from "@/lib/utils";
 
 function isEmoji(str: string): boolean {
@@ -26,26 +27,7 @@ function isEmoji(str: string): boolean {
   return str.length <= 4 && emojiRange.test(str);
 }
 
-export interface FormHeaderElementData {
-  type: "formHeader";
-  id?: string;
-  title: string;
-  icon: string | null;
-  cover: string | null;
-  children: [{ text: "" }];
-}
-
-export function createFormHeaderNode(
-  data: Partial<Omit<FormHeaderElementData, "type" | "children">> = {},
-): FormHeaderElementData {
-  return {
-    type: "formHeader",
-    title: data.title ?? "",
-    icon: data.icon ?? null,
-    cover: data.cover ?? null,
-    children: [{ text: "" }],
-  };
-}
+export { createFormHeaderNode, type FormHeaderElementData } from "@/lib/form-header-factory";
 
 function CoverUpload({ onFileChange }: { onFileChange: (url: string) => void }) {
   const [
@@ -94,7 +76,14 @@ function CoverUpload({ onFileChange }: { onFileChange: (url: string) => void }) 
 export function FormHeaderElement(props: PlateElementProps) {
   const { element, children } = props;
   const editor = useEditorRef();
-  const { toggle: toggleCustomize } = useCustomizeSidebar();
+  const { activeSidebar, setActiveSidebar, closeSidebar } = useEditorSidebar();
+  const toggleCustomize = () => {
+    if (activeSidebar === "customize") {
+      closeSidebar();
+    } else {
+      setActiveSidebar("customize");
+    }
+  };
 
   const title = (element.title as string) || "";
   const icon = (element.icon as string | null) || null;
@@ -138,11 +127,19 @@ export function FormHeaderElement(props: PlateElementProps) {
           <>
             <div className="relative w-screen left-[50%] right-[50%] -ml-[50vw] -mr-[50vw] h-[120px] sm:h-[200px] group/cover bg-muted/20">
               {cover && !cover.startsWith("#") ? (
-                <img
-                  src={cover}
-                  alt="Cover"
-                  className="w-full h-full object-cover border-0 rounded-none"
-                />
+                <>
+                  {cover.includes("tint=true") && (
+                    <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
+                  )}
+                  <img
+                    src={cover}
+                    alt="Cover"
+                    className={cn(
+                      "w-full h-full object-cover border-0 rounded-none",
+                      cover.includes("tint=true") && "relative z-0 brightness-60 grayscale",
+                    )}
+                  />
+                </>
               ) : (
                 <div
                   className="w-full h-full"
@@ -176,56 +173,138 @@ export function FormHeaderElement(props: PlateElementProps) {
                     <TabsContent value="gallery" className="grid grid-cols-4 gap-2 pt-4">
                       <button
                         type="button"
-                        onClick={() => handleCoverChange("#FFE4E1")}
-                        className="h-16 bg-[#FFE4E1] rounded cursor-pointer hover:ring-2 ring-primary transition-all"
-                        aria-label="Pink color"
-                      />
-                      <button
-                        type="button"
                         onClick={() =>
                           handleCoverChange(
-                            "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80",
+                            "https://images.unsplash.com/photo-1604076850742-4c7221f3101b?w=800&q=80&tint=true",
                           )
                         }
-                        className="h-16 bg-blue-100 rounded cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
-                        aria-label="Blue gradient"
+                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        aria-label="Abstract mesh"
                       >
+                        <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
                         <img
-                          src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80"
-                          alt="Blue gradient"
-                          className="w-full h-full object-cover"
+                          src="https://images.unsplash.com/photo-1604076850742-4c7221f3101b?w=800&q=80&tint=true"
+                          alt="Abstract mesh"
+                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
                         />
                       </button>
                       <button
                         type="button"
                         onClick={() =>
                           handleCoverChange(
-                            "https://images.unsplash.com/photo-1557683316-973673baf926?w=800&q=80",
+                            "https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80&tint=true",
                           )
                         }
-                        className="h-16 bg-purple-100 rounded cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
-                        aria-label="Purple gradient"
+                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        aria-label="Abstract gradient"
                       >
+                        <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
                         <img
-                          src="https://images.unsplash.com/photo-1557683316-973673baf926?w=800&q=80"
-                          alt="Purple gradient"
-                          className="w-full h-full object-cover"
+                          src="https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80&tint=true"
+                          alt="Abstract gradient"
+                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
                         />
                       </button>
                       <button
                         type="button"
                         onClick={() =>
                           handleCoverChange(
-                            "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80",
+                            "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true",
                           )
                         }
-                        className="h-16 bg-green-100 rounded cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
-                        aria-label="Green gradient"
+                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        aria-label="Abstract geometric"
                       >
+                        <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
                         <img
-                          src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80"
-                          alt="Green gradient"
-                          className="w-full h-full object-cover"
+                          src="https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true"
+                          alt="Abstract geometric"
+                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleCoverChange(
+                            "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80&tint=true",
+                          )
+                        }
+                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        aria-label="Abstract liquid"
+                      >
+                        <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
+                        <img
+                          src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80&tint=true"
+                          alt="Abstract liquid"
+                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleCoverChange(
+                            "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=800&q=80&tint=true",
+                          )
+                        }
+                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        aria-label="3D shapes"
+                      >
+                        <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
+                        <img
+                          src="https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=800&q=80&tint=true"
+                          alt="3D shapes"
+                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleCoverChange(
+                            "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80&tint=true",
+                          )
+                        }
+                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        aria-label="Gradient curves"
+                      >
+                        <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
+                        <img
+                          src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80&tint=true"
+                          alt="Gradient curves"
+                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleCoverChange(
+                            "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80&tint=true",
+                          )
+                        }
+                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        aria-label="Geometric waves"
+                      >
+                        <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
+                        <img
+                          src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80&tint=true"
+                          alt="Geometric waves"
+                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleCoverChange(
+                            "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&q=80&tint=true",
+                          )
+                        }
+                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        aria-label="Abstract paint"
+                      >
+                        <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
+                        <img
+                          src="https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&q=80&tint=true"
+                          alt="Abstract paint"
+                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
                         />
                       </button>
 
@@ -271,10 +350,17 @@ export function FormHeaderElement(props: PlateElementProps) {
             <Popover open={iconPopoverOpen} onOpenChange={setIconPopoverOpen}>
               {hasLogo && (
                 <div
-                  className={cn(
-                    "relative z-10 mb-1",
-                    hasCover ? "-mt-[40px] sm:-mt-[50px]" : "mt-4 sm:mt-6",
-                  )}
+                  className={cn("relative z-10 mb-1", hasCover ? "" : "mt-4 sm:mt-6")}
+                  data-bf-logo-emoji-container={
+                    hasCover && (!icon || icon === "default-icon" || isEmoji(icon))
+                      ? "true"
+                      : undefined
+                  }
+                  data-bf-logo-container={
+                    hasCover && icon && icon !== "default-icon" && !isEmoji(icon)
+                      ? "true"
+                      : undefined
+                  }
                 >
                   <PopoverTrigger asChild>
                     <button

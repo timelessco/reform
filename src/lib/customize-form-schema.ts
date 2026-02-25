@@ -9,7 +9,7 @@ export const customizeFormSchema = z.object({
   accentColor: z.string().default("#000000"),
 
   // Layout
-  pageWidth: z.string().default("700px"),
+  pageWidth: z.string().default("50vw"),
   baseFontSize: z.string().default("16px"),
   logoWidth: z.string().default("100px"),
   logoHeight: z.string().default("100px"),
@@ -17,7 +17,7 @@ export const customizeFormSchema = z.object({
   coverHeight: z.string().default("25%"),
 
   // Inputs
-  inputWidth: z.string().default("320px"),
+  inputWidth: z.string().default("60%"),
   inputHeight: z.string().default("36px"),
   inputBackgroundColor: z.string().default("#ffffff80"),
   inputPlaceholderColor: z.string().default("#a86543"),

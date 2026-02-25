@@ -34,6 +34,7 @@ const FormSettingsSchema = z.object({
   preventDuplicateSubmissions: z.coerce.boolean().default(false),
   dataRetention: z.coerce.boolean().default(false),
   dataRetentionDays: z.coerce.number().nullable().default(null),
+  customization: z.record(z.string(), z.any()).default({}),
   createdAt: timestampField,
   updatedAt: timestampField,
 });

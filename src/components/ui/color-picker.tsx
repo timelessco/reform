@@ -1,39 +1,55 @@
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+"use client";
 
-interface ColorPickerProps {
-  value: string;
-  onChange: (value: string) => void;
-  label?: string;
-  id?: string;
+import { EyeDropperIcon } from "@heroicons/react/24/solid";
+import { parseColor } from "@react-stately/color";
+import { use } from "react";
+import {
+  ColorPicker as ColorPickerPrimitive,
+  type ColorPickerProps as ColorPickerPrimitiveProps,
+  ColorPickerStateContext,
+} from "react-aria-components";
+import { twMerge } from "tailwind-merge";
+import { Button } from "./button";
+
+interface ColorPickerProps extends ColorPickerPrimitiveProps {
+  className?: string;
 }
 
-export function ColorPicker({ value, onChange, label, id }: ColorPickerProps) {
+const ColorPicker = ({ className, ...props }: ColorPickerProps) => {
   return (
-    <div className="flex flex-col gap-1.5">
-      {label && (
-        <Label htmlFor={id} className="text-xs text-muted-foreground">
-          {label}
-        </Label>
-      )}
-      <div className="flex items-center gap-2">
-        <div className="relative shrink-0">
-          <div className="w-8 h-8 rounded border shadow-sm" style={{ backgroundColor: value }} />
-          <input
-            type="color"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-          />
-        </div>
-        <Input
-          id={id}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="flex-1 h-8 font-mono text-xs uppercase"
-          maxLength={7}
-        />
-      </div>
+    <div data-slot="control" className={twMerge(className)}>
+      <ColorPickerPrimitive {...props} />
     </div>
   );
+};
+
+declare global {
+  interface Window {
+    EyeDropper?: new () => { open: () => Promise<{ sRGBHex: string }> };
+  }
 }
+
+const EyeDropper = () => {
+  const state = use(ColorPickerStateContext)!;
+
+  if (!window.EyeDropper) {
+    return "EyeDropper is not supported in your browser.";
+  }
+
+  return (
+    <Button
+      className="shrink-0"
+      aria-label="Eye dropper"
+      size="sm"
+      onClick={() => {
+        const eyeDropper = window.EyeDropper ? new window.EyeDropper() : null;
+        eyeDropper?.open().then((result) => state.setColor(parseColor(result.sRGBHex)));
+      }}
+    >
+      <EyeDropperIcon />
+    </Button>
+  );
+};
+
+export type { ColorPickerProps };
+export { ColorPicker, EyeDropper };

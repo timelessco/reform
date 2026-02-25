@@ -21,6 +21,7 @@
   "registries": {
     "@plate": "https://platejs.org/r/{name}.json",
     "@reui": "https://reui.io/r/{name}.json",
-    "@kibo-ui": "https://www.kibo-ui.com/r/{name}.json"
+    "@kibo-ui": "https://www.kibo-ui.com/r/{name}.json",
+    "@intentui": "https://intentui.com/r/{name}"
   }
 }

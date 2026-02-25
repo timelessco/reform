@@ -3,23 +3,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toggleFavoriteLocal, updateFormStatus } from "@/db-collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
-import {
-  discardChanges,
-  publishFormAction,
-  useHasUnpublishedChanges,
-} from "@/hooks/use-form-versions";
+import { discardChanges, publishForm, useHasUnpublishedChanges } from "@/hooks/use-form-versions";
 import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
 import { cn, parseTimestampAsUTC } from "@/lib/utils";
 import { Link, useLocation, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
-import {
-  AlertCircle,
-  ChevronsRight,
-  Loader2,
-  MoreHorizontal,
-  Pencil,
-} from "lucide-react";
+import { AlertCircle, ChevronsRight, Loader2, MoreHorizontal, Pencil } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Logo } from "./logo";
@@ -77,6 +67,15 @@ export function AppHeader({
     });
   };
 
+  const isCustomizeSidebarOpen = activeSidebar === "customize";
+  const toggleCustomizeSidebar = () => {
+    navigate({
+      to: ".",
+      search: (prev: any) => ({ ...prev, sidebar: isCustomizeSidebarOpen ? "" : "customize" }),
+      replace: true,
+    });
+  };
+
   // Close sidebar and update URL to clear sidebar param
   const handleCloseSidebar = () => {
     closeSidebar();
@@ -115,6 +114,8 @@ export function AppHeader({
 
   const hasUnpublishedChanges = useHasUnpublishedChanges(formId);
   const [isDiscarding, setIsDiscarding] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+
   // Favorite state
   useIsFavorite(session?.user?.id, formId);
 
@@ -138,8 +139,9 @@ export function AppHeader({
 
   const handlePublish = async () => {
     if (formId && workspaceId) {
+      setIsPublishing(true);
       try {
-        const tx = publishFormAction({ formId });
+        const tx = publishForm(formId);
         await tx.isPersisted.promise;
         toast.success("Form published");
         navigate({
@@ -149,6 +151,8 @@ export function AppHeader({
       } catch (error) {
         toast.error("Failed to publish form");
         console.error(error);
+      } finally {
+        setIsPublishing(false);
       }
     }
   };
@@ -157,14 +161,8 @@ export function AppHeader({
     if (formId) {
       setIsDiscarding(true);
       try {
-        // Clear DOM focus/selection before swapping editor content.
-        if (typeof window !== "undefined") {
-          const activeElement = document.activeElement as HTMLElement | null;
-          activeElement?.blur();
-          window.getSelection()?.removeAllRanges();
-        }
-
-        await discardChanges(formId);
+        const tx = discardChanges(formId);
+        await tx.isPersisted.promise;
         toast.info("Changes discarded, reverted to last published version");
       } catch (error) {
         toast.error("Failed to discard changes");
@@ -191,7 +189,7 @@ export function AppHeader({
             className="h-8 w-8 text-muted-foreground -ml-1 group relative flex items-center justify-center transition-all duration-300"
             onClick={() => toggleMainSidebar()}
           >
-            <Logo className="h-6 w-6 text-sidebar-nav-text dark:text-dark-gray-950" />
+            <Logo className="h-6 w-6 text-sidebar-nav-text" />
           </Button>
         )}
 
@@ -375,7 +373,7 @@ export function AppHeader({
                     onClick={() => {
                       handleToggleFavorite();
                     }}
-                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-light-gray-800 hover:bg-black/5 hover:text-foreground"
+                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
                   >
                     {/* <Star className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
                     <span className="flex-1 text-left">Favorite</span>
@@ -390,15 +388,19 @@ export function AppHeader({
                         params: { workspaceId, formId },
                       })
                     }
-                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-light-gray-800 hover:bg-black/5 hover:text-foreground"
+                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
                   >
                     {/* <BarChart2 className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
                     <span className="flex-1 text-left">Analytics</span>
                   </Button>
                   <Button
                     variant="ghost"
-                    onClick={toggleSettingsSidebar}
-                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-light-gray-800 hover:bg-black/5 hover:text-foreground"
+                    onClick={() => {
+                      toggleCustomizeSidebar();
+                      // Also close other sidebars if needed, or maybe just close settings
+                      if (isSettingsSidebarOpen) toggleSettingsSidebar();
+                    }}
+                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
                   >
                     {/* <SettingsIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
                     <span className="flex-1 text-left">Customisation</span>
@@ -407,7 +409,7 @@ export function AppHeader({
                     <Button
                       variant="ghost"
                       onClick={toggleVersionHistory}
-                      className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-light-gray-800 hover:bg-black/5 hover:text-foreground"
+                      className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
                     >
                       {/* <History className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
                       <span className="flex-1 text-left">Version History</span>
@@ -426,31 +428,36 @@ export function AppHeader({
               </Popover>
             </div>
 
-            {/* Main Action Button */}
             {isEditRoute ? (
-              // On edit route: show Publish / Publish Changes
               <Button
                 size="sm"
                 className={cn(
-                  "h-8 pl-[10px] pr-[8px] ml-1 text-[14px] font-medium tracking-[0.14px] leading-[1.15] transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none",
+                  "h-8 pl-[10px] pr-[8px] ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none",
                   !isLoadingSavedDocs &&
                     (hasUnpublishedChanges || savedDocs?.[0]?.status !== "published")
                     ? "bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
                     : "bg-muted text-muted-foreground hover:bg-muted/80",
                 )}
                 onClick={handlePublish}
-                disabled={!hasUnpublishedChanges && savedDocs?.[0]?.status === "published"}
+                disabled={
+                  isPublishing || (!hasUnpublishedChanges && savedDocs?.[0]?.status === "published")
+                }
               >
-                {savedDocs?.[0]?.status === "published" ? "Published" : "Publish"}
+                {isPublishing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : savedDocs?.[0]?.status === "published" ? (
+                  "Published"
+                ) : (
+                  "Publish"
+                )}
               </Button>
             ) : (
-              // Not on edit route: show Edit button to navigate to the editor
               workspaceId &&
               formId && (
                 <Button
                   size="sm"
                   asChild
-                  className="h-8 pl-[10px] pr-[8px] ml-1 text-[14px] font-medium tracking-[0.14px] leading-[1.15] transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
+                  className="h-8 pl-[10px] pr-[8px] ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
                 >
                   <Link
                     to="/workspace/$workspaceId/form-builder/$formId/edit"

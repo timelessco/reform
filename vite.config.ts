@@ -9,13 +9,22 @@ import viteTsConfigPaths from "vite-tsconfig-paths";
 const config = defineConfig({
   plugins: [
     devtools({
+      // editor: {
+      //   name: "Cursor",
+      //   open: async (path, lineNumber, columnNumber) => {
+      //     const { exec } = await import("node:child_process");
+      //     exec(
+      //       // or windsurf/cursor/webstorm/cursor/cursor
+      //       `cursor -g "${path.replaceAll("$", "\\$")}${lineNumber ? `:${lineNumber}` : ""}${columnNumber ? `:${columnNumber}` : ""}"`,
+      //     );
+      //   },
+      // },
       editor: {
-        name: "Cursor",
+        name: "Antigravity",
         open: async (path, lineNumber, columnNumber) => {
           const { exec } = await import("node:child_process");
           exec(
-            // or windsurf/cursor/webstorm/cursor/cursor
-            `cursor -g "${path.replaceAll("$", "\\$")}${lineNumber ? `:${lineNumber}` : ""}${columnNumber ? `:${columnNumber}` : ""}"`,
+            `antigravity -g "${path.replaceAll("$", "\\$")}${lineNumber ? `:${lineNumber}` : ""}${columnNumber ? `:${columnNumber}` : ""}"`,
           );
         },
       },
@@ -51,6 +60,17 @@ const config = defineConfig({
     //   configFile: '.oxlintrc.json',
     // })
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("@platejs/") || id.includes("platejs")) return "editor";
+          if (id.includes("@radix-ui/")) return "ui";
+          if (id.includes("@sentry/")) return "sentry";
+        },
+      },
+    },
+  },
   ssr: {
     noExternal: [/^@platejs\//, "katex", "react-tweet"],
     // Dexie is browser-only (IndexedDB), externalize for SSR

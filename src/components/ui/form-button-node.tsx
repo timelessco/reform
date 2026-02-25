@@ -187,10 +187,10 @@ export function FormButtonElement({ className, children, ...props }: PlateElemen
         {!(isPrevious || isSubmitOnSinglePage) && GearIcon}
         <span
           className={cn(
-            "inline-flex h-9 min-w-[100px] items-center justify-center rounded-md px-4 py-2 text-sm font-medium shadow transition-colors cursor-default select-none",
+            "inline-flex h-9 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors cursor-default select-none gap-2",
             isPrevious
-              ? "bg-secondary text-secondary-foreground"
-              : "bg-primary text-primary-foreground",
+              ? "border border-input bg-background shadow-xs text-foreground"
+              : "bg-primary text-primary-foreground ",
           )}
         >
           {isPrevious && <ChevronLeft className="h-4 w-4" />}

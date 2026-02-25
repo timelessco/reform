@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import z from "zod";
 import { PublicFormPage } from "@/components/public/public-form-page";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { getPublishedFormById } from "@/lib/fn/public";
+import { generateThemeCss } from "@/lib/generate-theme-css";
 
 export const Route = createFileRoute("/forms/$formId")({
   // SSR loader - fetches form data on the server for SEO
@@ -72,17 +73,23 @@ function PublicFormRoute() {
   // Support both transparentBackground and transparent params
   const isTransparent = search.transparentBackground || search.transparent || false;
 
+  const customization = loaderData?.form?.customization ?? null;
+  const themeCss = useMemo(() => generateThemeCss(customization), [customization]);
+
   return (
-    <PublicFormPage
-      form={loaderData?.form ?? null}
-      error={loaderData?.error ?? null}
-      gated={loaderData?.gated ?? null}
-      formId={formId}
-      transparentBackground={isTransparent}
-      isPopup={search.popup}
-      hideTitle={search.hideTitle}
-      alignLeft={search.alignLeft}
-      dynamicHeight={search.dynamicHeight}
-    />
+    <>
+      {themeCss && <style>{themeCss}</style>}
+      <PublicFormPage
+        form={loaderData?.form ?? null}
+        error={loaderData?.error ?? null}
+        gated={loaderData?.gated ?? null}
+        formId={formId}
+        transparentBackground={isTransparent}
+        isPopup={search.popup}
+        hideTitle={search.hideTitle}
+        alignLeft={search.alignLeft}
+        dynamicHeight={search.dynamicHeight}
+      />
+    </>
   );
 }

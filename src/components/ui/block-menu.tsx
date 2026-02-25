@@ -358,7 +358,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
               <Button
                 variant="ghost"
                 onClick={() => setShowTurnInto(false)}
-                className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] text-light-gray-800 hover:bg-black/5 hover:text-foreground mb-1"
+                className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] text-foreground/80 hover:bg-accent hover:text-accent-foreground mb-1"
               >
                 ← Back
               </Button>
@@ -391,7 +391,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                     autoFocus
                   />
                 ) : (
-                  <span className="text-[13px] font-medium flex-1 truncate text-light-gray-800">
+                  <span className="text-[13px] font-medium flex-1 truncate text-foreground">
                     {fieldName}
                   </span>
                 )}
@@ -536,7 +536,7 @@ function ToggleOption({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <Label className="text-[13px] font-medium text-light-gray-800">{label}</Label>
+      <Label className="text-[13px] font-medium text-foreground/80">{label}</Label>
       <Switch checked={checked} onCheckedChange={onCheckedChange} className="scale-90" />
     </div>
   );
@@ -562,7 +562,7 @@ function MenuItem({
         "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors [&_svg]:shrink-0",
         destructive
           ? "text-red-500/70 hover:bg-red-500/5 hover:text-red-500 focus:bg-red-500/5 focus:text-red-500"
-          : "text-light-gray-800 hover:bg-black/5 hover:text-foreground",
+          : "text-foreground/80 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
         className,
       )}
     >

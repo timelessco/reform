@@ -1,23 +1,8 @@
-import {
-	createOptimisticAction,
-	createTransaction,
-	eq,
-	useLiveQuery,
-} from "@tanstack/react-db";
-import md5 from "md5";
+import { createTransaction, eq, useLiveQuery } from "@tanstack/react-db";
 import { useMemo } from "react";
-import { formCollection, formVersionCollection } from "@/db-collections";
-import {
-	discardFormChanges,
-	publishFormVersion,
-	restoreFormVersion,
-} from "@/lib/fn/form-versions";
-import {
-	clearEditorDraftSnapshot,
-	getEditorDraftSnapshot,
-	setEditorDraftSnapshot,
-} from "@/lib/editor-draft-snapshots";
-import { useForm } from "./use-live-hooks";
+import { formCollection, formSettingsCollection, formVersionCollection } from "@/db-collections";
+import { discardFormChanges, publishFormVersion, restoreFormVersion } from "@/lib/fn/form-versions";
+import { useForm, useFormSettings } from "./use-live-hooks";
 
 /**
  * Hook to get list of published versions for a form (Electric-synced)
@@ -57,6 +42,7 @@ export function useFormVersionContent(versionId: string | undefined) {
 export function useHasUnpublishedChanges(formId: string | undefined) {
 	const { data: formData } = useForm(formId);
 	const { data: versions } = useFormVersions(formId);
+	const { data: settings } = useFormSettings(formId);
 
 	const form = useMemo(() => {
 		if (!formId || !formData) return undefined;
@@ -69,249 +55,127 @@ export function useHasUnpublishedChanges(formId: string | undefined) {
 		if (!form || !formId) return false;
 		if (!form.publishedContentHash) return false;
 
-		const draftSnapshot = getEditorDraftSnapshot(formId);
-		const effectiveContent = draftSnapshot?.content ?? form.content;
+		// Never published — no "unpublished changes" indicator
+		if (!form.lastPublishedVersionId) return false;
 
-		const currentCanonical = canonicalizeContent(effectiveContent);
-		const currentHash = computeContentHash(effectiveContent);
-		if (currentHash === form.publishedContentHash) {
-			publishedContentCanonicalSnapshots.set(formId, currentCanonical);
-			return false;
-		}
+		// Published but version collection hasn't synced yet — can't compare
+		if (!latestVersion) return false;
 
-		const localPublishedCanonical =
-			publishedContentCanonicalSnapshots.get(formId);
-		if (
-			localPublishedCanonical &&
-			currentCanonical === localPublishedCanonical
-		) {
-			return false;
-		}
+		// Compare current content with published version content
+		const currentContent = JSON.stringify(form.content);
+		const publishedContent = JSON.stringify(latestVersion.content);
 
-		// Fallback for structural drift (e.g. regenerated Plate node ids):
-		// treat content as unchanged if semantic content matches latest published snapshot.
-		if (
-			latestVersion &&
-			isSemanticallyEqual(effectiveContent, latestVersion.content)
-		) {
-			publishedContentCanonicalSnapshots.set(
-				formId,
-				canonicalizeContent(latestVersion.content),
-			);
-			return false;
-		}
+		if (currentContent !== publishedContent) return true;
 
-		return true;
-	}, [form, latestVersion, formId]);
+		// Compare current customization with published version customization
+		const currentCustomization = JSON.stringify(settings?.customization ?? {});
+		const publishedCustomization = JSON.stringify(latestVersion.customization ?? {});
+
+		return currentCustomization !== publishedCustomization;
+	}, [form, latestVersion, settings]);
 }
 
 // ============================================================================
-// Optimistic Actions (replace useMutation hooks)
+// Optimistic action functions using createTransaction
+// Applies optimistic state instantly, then calls server fn in mutationFn.
+// Collection's onUpdate does NOT fire because mutations are owned by the tx.
+// On success the overlay is confirmed; Electric syncs the real data seamlessly.
+// On error the transaction auto-rolls back the optimistic state.
 // ============================================================================
 
-function computeContentHash(content: unknown) {
-	return md5(JSON.stringify(content));
+/**
+ * Publish the current form draft. Optimistically sets status to "published".
+ */
+export function publishForm(formId: string) {
+  const tx = createTransaction({
+    mutationFn: async () => {
+      await publishFormVersion({ data: { formId } });
+    },
+  });
+
+  tx.mutate(() => {
+    formCollection.update(formId, (draft) => {
+      draft.status = "published";
+      draft.updatedAt = new Date().toISOString();
+    });
+  });
+
+  return tx;
 }
 
-function canonicalizeContent(content: unknown) {
-	return JSON.stringify(stripVolatileKeys(content));
+/**
+ * Restore a version's content to the form draft.
+ * Optimistically updates content/title from the local version data.
+ */
+export function restoreVersion(formId: string, versionId: string) {
+  const version = formVersionCollection.state.get(versionId);
+  if (!version) throw new Error("Version not found in local state");
+
+  // Find the settings doc for this form
+  const settingsDoc = Array.from(formSettingsCollection.state.values()).find(
+    (s) => s.formId === formId,
+  );
+
+  const tx = createTransaction({
+    mutationFn: async () => {
+      await restoreFormVersion({ data: { formId, versionId } });
+    },
+  });
+
+  tx.mutate(() => {
+    formCollection.update(formId, (draft) => {
+      draft.content = version.content;
+      draft.title = version.title;
+      draft.updatedAt = new Date().toISOString();
+    });
+
+    // Restore customization from the version
+    if (settingsDoc) {
+      formSettingsCollection.update(settingsDoc.id, (draft) => {
+        draft.customization = version.customization ?? {};
+      });
+    }
+  });
+
+  return tx;
 }
 
-function isSemanticallyEqual(left: unknown, right: unknown) {
-	return canonicalizeContent(left) === canonicalizeContent(right);
-}
+/**
+ * Discard changes and revert to last published version.
+ * Optimistically updates content/title from the published version.
+ */
+export function discardChanges(formId: string) {
+  const form = formCollection.state.get(formId);
+  if (!form?.lastPublishedVersionId) throw new Error("No published version to revert to");
 
-function stripVolatileKeys(value: unknown): unknown {
-	if (Array.isArray(value)) {
-		return value.map((item) => stripVolatileKeys(item));
-	}
+  const version = formVersionCollection.state.get(form.lastPublishedVersionId);
+  if (!version) throw new Error("Published version not found in local state");
 
-	if (value && typeof value === "object") {
-		const obj = value as Record<string, unknown>;
+  // Find the settings doc for this form
+  const settingsDoc = Array.from(formSettingsCollection.state.values()).find(
+    (s) => s.formId === formId,
+  );
 
-		const cleanedEntries = Object.entries(obj)
-			.filter(([key]) => key !== "id")
-			.toSorted(([a], [b]) => a.localeCompare(b))
-			.map(([key, item]) => [key, stripVolatileKeys(item)]);
+  const tx = createTransaction({
+    mutationFn: async () => {
+      await discardFormChanges({ data: { formId } });
+    },
+  });
 
-		return Object.fromEntries(cleanedEntries);
-	}
+  tx.mutate(() => {
+    formCollection.update(formId, (draft) => {
+      draft.content = version.content;
+      draft.title = version.title;
+      draft.updatedAt = new Date().toISOString();
+    });
 
-	return value;
-}
+    // Revert customization to published version
+    if (settingsDoc) {
+      formSettingsCollection.update(settingsDoc.id, (draft) => {
+        draft.customization = version.customization ?? {};
+      });
+    }
+  });
 
-const publishedContentCanonicalSnapshots = new Map<string, string>();
-
-export const publishFormAction = createOptimisticAction<{ formId: string }>({
-	onMutate: ({ formId }) => {
-		const draftSnapshot = getEditorDraftSnapshot(formId);
-		const form = formCollection.state.get(formId);
-		const effectiveContent = draftSnapshot?.content ?? form?.content;
-		if (effectiveContent) {
-			publishedContentCanonicalSnapshots.set(
-				formId,
-				canonicalizeContent(effectiveContent),
-			);
-		}
-	},
-	mutationFn: async ({ formId }) => {
-		const form = formCollection.state.get(formId);
-		if (!form) {
-			throw new Error("Form not found in local state");
-		}
-
-		const draftSnapshot = getEditorDraftSnapshot(formId);
-		const effectiveContent = Array.isArray(draftSnapshot?.content)
-			? draftSnapshot.content
-			: form.content;
-		const effectiveTitle = draftSnapshot?.title ?? form.title;
-
-		const result = await publishFormVersion({
-			data: {
-				formId,
-				content: effectiveContent,
-				title: effectiveTitle,
-				settings: form.settings,
-			},
-		});
-
-		if (typeof result?.txid === "number") {
-			await formCollection.utils.awaitTxId(result.txid);
-			if (result.createdVersion) {
-				await formVersionCollection.utils.awaitTxId(result.txid);
-			}
-		}
-
-		const latest = formCollection.state.get(formId);
-		if (latest?.content) {
-			publishedContentCanonicalSnapshots.set(
-				formId,
-				canonicalizeContent(latest.content),
-			);
-			setEditorDraftSnapshot(formId, {
-				content: latest.content as unknown[],
-				title: latest.title,
-			});
-		} else {
-			setEditorDraftSnapshot(formId, {
-				content: effectiveContent,
-				title: effectiveTitle,
-			});
-		}
-
-		return result;
-	},
-});
-
-export const restoreVersionAction = createOptimisticAction<{
-	formId: string;
-	versionId: string;
-}>({
-	onMutate: ({ formId, versionId }) => {
-		const version = formVersionCollection.state.get(versionId);
-		if (!version) return;
-
-		const tx = createTransaction({ mutationFn: async () => {} });
-		tx.mutate(() => {
-			formCollection.update(formId, (draft) => {
-				draft.content = version.content;
-				draft.title = version.title;
-			});
-		});
-		setEditorDraftSnapshot(formId, {
-			content: version.content,
-			title: version.title,
-		});
-	},
-	mutationFn: async ({ formId, versionId }) => {
-		const result = await restoreFormVersion({ data: { formId, versionId } });
-
-		if (typeof result?.txid === "number") {
-			await formCollection.utils.awaitTxId(result.txid);
-		}
-
-		const latest = formCollection.state.get(formId);
-		if (latest) {
-			setEditorDraftSnapshot(formId, {
-				content: latest.content,
-				title: latest.title,
-			});
-		}
-
-		return result;
-	},
-});
-
-export const discardChangesAction = createOptimisticAction<{ formId: string }>({
-	onMutate: ({ formId }) => {
-		const form = formCollection.state.get(formId);
-		if (!form?.lastPublishedVersionId) return;
-
-		const version = formVersionCollection.state.get(
-			form.lastPublishedVersionId,
-		);
-		if (!version) return;
-
-		const tx = createTransaction({ mutationFn: async () => {} });
-		tx.mutate(() => {
-			formCollection.update(formId, (draft) => {
-				draft.content = version.content;
-				draft.title = version.title;
-				draft.publishedContentHash = computeContentHash(version.content);
-			});
-		});
-		publishedContentCanonicalSnapshots.set(
-			formId,
-			canonicalizeContent(version.content),
-		);
-		setEditorDraftSnapshot(formId, {
-			content: version.content,
-			title: version.title,
-		});
-	},
-	mutationFn: async ({ formId }) => {
-		const result = await discardFormChanges({ data: { formId } });
-
-		if (typeof result?.txid === "number") {
-			await formCollection.utils.awaitTxId(result.txid);
-		}
-
-		const latest = formCollection.state.get(formId);
-		if (latest) {
-			publishedContentCanonicalSnapshots.set(
-				formId,
-				canonicalizeContent(latest.content),
-			);
-			setEditorDraftSnapshot(formId, {
-				content: latest.content,
-				title: latest.title,
-			});
-		}
-
-		return result;
-	},
-});
-
-export async function discardChanges(formId: string) {
-	const result = await discardFormChanges({ data: { formId } });
-
-	if (typeof result?.txid === "number") {
-		await formCollection.utils.awaitTxId(result.txid);
-	}
-
-	const latest = formCollection.state.get(formId);
-	if (latest) {
-		publishedContentCanonicalSnapshots.set(
-			formId,
-			canonicalizeContent(latest.content),
-		);
-		setEditorDraftSnapshot(formId, {
-			content: latest.content,
-			title: latest.title,
-		});
-	} else {
-		clearEditorDraftSnapshot(formId);
-	}
-
-	return result;
+  return tx;
 }

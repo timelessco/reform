@@ -15,7 +15,7 @@ const serializeForm = (form: typeof forms.$inferSelect) => ({
   settings: form.settings as any,
 });
 
-export const createForm = createServerFn({ method: "GET" })
+export const createForm = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({

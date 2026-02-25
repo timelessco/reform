@@ -150,7 +150,7 @@ export function RenderPreviewInput({
                 maxLength={field.maxLength}
                 aria-invalid={hasErrors}
                 className={cn(
-                  "max-w-md min-h-24 rounded-lg border-0 bg-white pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50 dark:bg-input/30",
+                  "max-w-md min-h-24 rounded-lg border-0 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
                   hasErrors && "ring-destructive/20 ring-[3px]",
                 )}
               />
@@ -190,7 +190,7 @@ export function RenderPreviewInput({
               maxLength={field.maxLength}
               aria-invalid={hasErrors}
               className={cn(
-                "max-w-md rounded-lg border-0 bg-white pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50 dark:bg-input/30",
+                "max-w-md rounded-lg border-0 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
                 hasErrors && "ring-destructive/20 ring-[3px]",
               )}
             />

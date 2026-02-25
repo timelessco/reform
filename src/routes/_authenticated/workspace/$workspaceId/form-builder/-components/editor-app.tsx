@@ -5,8 +5,9 @@ import type { FormHeaderElementData } from "@/components/ui/form-header-node";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import { useEditorHeaderVisibilitySafe } from "@/contexts/editor-header-visibility-context";
 import { updateDoc, updateHeader } from "@/db-collections";
-import { useForm } from "@/hooks/use-live-hooks";
-import { setEditorDraftSnapshot } from "@/lib/editor-draft-snapshots";
+import { useForm, useFormSettings } from "@/hooks/use-live-hooks";
+import { getThemeStyleVars } from "@/lib/generate-theme-css";
+import { cn } from "@/lib/utils";
 import { normalizeNodeId, type TElement, type Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
 import type { KeyboardEvent } from "react";
@@ -37,34 +38,26 @@ export default function EditorApp({
 	readOnly = false,
 }: EditorAppProps) {
 	const { data: savedDocs } = useForm(formId);
+	const { data: formSettings } = useFormSettings(formId);
+	const customization = formSettings?.customization as Record<string, string> | null;
+	const hasCustomization = customization && Object.keys(customization).length > 0;
+	const themeVars = useMemo(() => getThemeStyleVars(customization), [customization]);
 	const skipSaveRef = useRef(false);
 	const lastKnownContentRef = useRef<string | null>(null);
 	const headerVisibility = useEditorHeaderVisibilitySafe();
 	const [resetKey, setResetKey] = useState(0);
-	const lastSavedContentRef = useRef<Value | null>(null);
 
 	// Detect external content change (discard, remote sync) and recreate editor.
 	// setState during render is a documented React pattern — React aborts this
 	// render and immediately re-renders with the new state.
 	if (!versionContent && savedDocs?.length) {
 		const contentStr = JSON.stringify(savedDocs[0]?.content);
-		const syncedTitle = savedDocs[0]?.title ?? "Untitled";
 		if (lastKnownContentRef.current === null) {
 			lastKnownContentRef.current = contentStr;
-			lastSavedContentRef.current = savedDocs[0].content as Value;
-			setEditorDraftSnapshot(formId, {
-				content: savedDocs[0].content as unknown[],
-				title: syncedTitle,
-			});
 		} else if (lastKnownContentRef.current !== contentStr) {
 			setResetKey((k) => k + 1);
 			lastKnownContentRef.current = contentStr;
-			lastSavedContentRef.current = savedDocs[0].content as Value;
 			skipSaveRef.current = true;
-			setEditorDraftSnapshot(formId, {
-				content: savedDocs[0].content as unknown[],
-				title: syncedTitle,
-			});
 		}
 	}
 
@@ -137,23 +130,14 @@ export default function EditorApp({
 			}
 
 			const contentStr = JSON.stringify(value);
-			const lastSavedStr = JSON.stringify(lastSavedContentRef.current);
-			if (contentStr === lastSavedStr) return;
+			if (lastKnownContentRef.current === contentStr) return;
 
-			lastSavedContentRef.current = value;
 			lastKnownContentRef.current = contentStr;
 			const now = new Date().toISOString();
 			const headerNode =
 				value.length > 0 && value[0]?.type === "formHeader"
 					? (value[0] as unknown as FormHeaderElementData)
 					: null;
-			const nextTitle =
-				headerNode?.title ?? savedDocs?.[0]?.title ?? "Untitled";
-
-			setEditorDraftSnapshot(formId, {
-				content: value as unknown[],
-				title: nextTitle,
-			});
 
 			updateDoc(formId, (draft) => {
 				draft.workspaceId = workspaceId;
@@ -206,7 +190,13 @@ export default function EditorApp({
 	}
 
 	return (
-		<div className="h-screen w-full overflow-y-auto overflow-x-hidden">
+		<div
+			className={cn(
+				"h-screen w-full overflow-y-auto overflow-x-hidden",
+				hasCustomization && "bf-themed",
+			)}
+			style={hasCustomization ? themeVars : undefined}
+		>
 			<Plate editor={editor} readOnly={readOnly} onChange={handleChange}>
 				<EditorContainer
 					variant="default"

@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { CustomizeSidebar } from "@/components/ui/customize-sidebar";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { NotFound } from "@/components/ui/not-found";
 import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
@@ -53,7 +52,7 @@ export const Route = createFileRoute(
     try {
       // Try collection cache first (instant, no network)
       const cachedForm = formCollection.state.get(params.formId);
-      let status = cachedForm?.status;
+      let status = cachedForm?.status as "draft" | "published" | "archived" | undefined;
 
       // Fall back to server fetch if not in collection yet
       if (!status) {
@@ -109,9 +108,10 @@ function DesignPage() {
   } = useVersionHistorySidebar();
 
   // Fetch version content when viewing a version
-  const { data: versionContentData, isLoading: isLoadingVersionContent } = useFormVersionContent(
-    isViewingVersion ? (selectedVersionId ?? undefined) : undefined,
-  );
+  const { data: versionContentDataArray, isLoading: isLoadingVersionContent } =
+    useFormVersionContent(isViewingVersion ? (selectedVersionId ?? undefined) : undefined);
+
+  const versionData = versionContentDataArray?.[0];
 
   const search = Route.useSearch();
   const demo = search.demo;
@@ -125,7 +125,7 @@ function DesignPage() {
     return format(new Date(dateString), "MMM d, h:mm a");
   };
 
-  const versionContent = versionContentData?.[0]?.content as Value | undefined;
+  const versionContent = versionData?.content as Value | undefined;
 
   return (
     <div className="flex flex-1 h-full overflow-hidden">
@@ -142,11 +142,11 @@ function DesignPage() {
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Loading version...
                     </span>
-                  ) : versionContentData?.[0]?.publishedAt ? (
+                  ) : versionData?.publishedAt ? (
                     <>
                       Viewing version from{" "}
                       <span className="font-semibold">
-                        {formatDateTime(versionContentData[0].publishedAt)}
+                        {formatDateTime(versionData.publishedAt)}
                       </span>
                     </>
                   ) : (
@@ -186,7 +186,6 @@ function DesignPage() {
 
         {/* Version history sidebar is now handled in AuthLayout */}
       </ResizablePanelGroup>
-      <CustomizeSidebar />
     </div>
   );
 }

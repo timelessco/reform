@@ -154,11 +154,11 @@ function DataGrid<TData extends object>({ children, table, ...props }: DataGridP
     ...props,
     tableLayout: {
       ...defaultProps.tableLayout,
-      ...(props.tableLayout || {}),
+      ...props.tableLayout,
     },
     tableClassNames: {
       ...defaultProps.tableClassNames,
-      ...(props.tableClassNames || {}),
+      ...props.tableClassNames,
     },
   };
 

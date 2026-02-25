@@ -16,20 +16,21 @@
     -webkit-appearance: none;
     margin: 0;
   }
+
   input[type="number"] {
     -moz-appearance: textfield;
     appearance: textfield;
   }
 
   svg {
-    stroke-width: 1
+    stroke-width: 1.5;
   }
 }
 
 @font-face {
   font-family: "Inter-V";
   font-weight: 100 900;
-  font-display: block;
+  font-display: swap;
   font-style: normal;
   font-named-instance: "Regular";
   src: url("/fonts/Inter-V.woff2") format("woff2");
@@ -693,8 +694,8 @@
     0 0 1.5px 0 rgba(0, 0, 0, 0.25), 0 0 10px 2px rgba(0, 0, 0, 0.03),
     0 44px 52px -10px rgba(0, 0, 0, 0.1);
   --shadow-blue-ring: 0 0 0 2px rgba(101, 185, 252, 0.9);
-  --shadow-popover: 0px 0px 1px 0px rgba(0,0,0,0.19), 0px 1px 2px 0px rgba(0,0,0,0.07), 0px 6px 15px 0px rgba(0,0,0,0.11);
-  --shadow-form-input: 0px 0px 1px 0px rgba(0,0,0,0.54), 0px 1px 1px 0px rgba(0,0,0,0.06);
+  --shadow-popover: 0px 0px 1px 0px rgba(0, 0, 0, 0.19), 0px 1px 2px 0px rgba(0, 0, 0, 0.07), 0px 6px 15px 0px rgba(0, 0, 0, 0.11);
+  --shadow-form-input: 0px 0px 1px 0px rgba(0, 0, 0, 0.54), 0px 1px 1px 0px rgba(0, 0, 0, 0.06);
 }
 
 :root {
@@ -841,6 +842,8 @@
       rgba(205, 40, 40, 1) 260.571deg,
       rgba(205, 40, 40, 0) 359.525deg,
       rgba(205, 40, 40, 0.0018) 360deg);
+  --bf-handle-idle: rgba(0, 0, 0, 0.45);
+  --bf-handle-active: rgba(0, 0, 0, 0.7);
 }
 
 .dark {
@@ -976,6 +979,8 @@
       rgba(255, 255, 255, 1) 260.571deg,
       rgba(255, 255, 255, 0) 359.525deg,
       rgba(255, 255, 255, 0.0018) 360deg);
+  --bf-handle-idle: rgba(255, 255, 255, 0.55);
+  --bf-handle-active: rgba(255, 255, 255, 0.85);
 }
 
 @utility shadow-focus-light {
@@ -1057,6 +1062,105 @@
         black 32px,
         black 100%);
   }
+}
+
+/* ============================================================================
+   Form Theme Customization (.bf-themed)
+   Token bridge: --bf-* → standard shadcn vars within scope.
+   CSS custom properties are set via inline style from generate-theme-css.ts.
+   ============================================================================ */
+
+.bf-themed {
+  --background: var(--bf-background, var(--background));
+  --foreground: var(--bf-foreground, var(--foreground));
+  --card: var(--bf-card, var(--card));
+  --card-foreground: var(--bf-card-foreground, var(--card-foreground));
+  --popover: var(--bf-popover, var(--popover));
+  --popover-foreground: var(--bf-popover-foreground, var(--popover-foreground));
+  --primary: var(--bf-primary, var(--primary));
+  --primary-foreground: var(--bf-primary-foreground, var(--primary-foreground));
+  --secondary: var(--bf-secondary, var(--secondary));
+  --secondary-foreground: var(--bf-secondary-foreground, var(--secondary-foreground));
+  --muted: var(--bf-muted, var(--muted));
+  --muted-foreground: var(--bf-muted-foreground, var(--muted-foreground));
+  --accent: var(--bf-accent, var(--accent));
+  --accent-foreground: var(--bf-accent-foreground, var(--accent-foreground));
+  --destructive: var(--bf-destructive, var(--destructive));
+  --destructive-foreground: var(--bf-destructive-foreground, var(--destructive-foreground));
+  --border: var(--bf-border, var(--border));
+  --input: var(--bf-input, var(--input));
+  --ring: var(--bf-ring, var(--ring));
+
+  /* Radius — derive sm/md/lg from single --bf-radius */
+  --radius-sm: calc(var(--bf-radius, 0.3125rem) - 0.1875rem);
+  --radius-md: calc(var(--bf-radius, 0.3125rem) - 0.125rem);
+  --radius-lg: var(--bf-radius, 0.5rem);
+  --radius-xl: calc(var(--bf-radius, 0.5rem) + 0.125rem);
+
+  /* Typography */
+  font-family: var(--bf-font, inherit), sans-serif;
+  font-size: var(--bf-font-size, inherit);
+  letter-spacing: var(--bf-letter-spacing, inherit);
+
+  /* Field spacing */
+  --bf-field-gap: var(--bf-spacing, 1rem);
+
+  /* Apply themed background */
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* Field list spacing — driven by style preset */
+.bf-themed [data-bf-field-list] > * + * {
+  margin-top: var(--bf-field-gap);
+}
+
+/* Layout: page width */
+.bf-themed [data-bf-form-container] {
+  max-width: var(--bf-page-width) !important;
+}
+
+/* Layout: logo */
+.bf-themed [data-bf-logo] {
+  width: var(--bf-logo-width) !important;
+  height: var(--bf-logo-height) !important;
+}
+
+/* Layout: emoji logo — map width to font-size */
+.bf-themed [data-bf-logo-emoji] {
+  font-size: var(--bf-logo-width) !important;
+}
+
+/* Layout: logo centering */
+.bf-themed [data-bf-logo-container] {
+  margin-top: calc(var(--bf-logo-height, 100px) / -2);
+}
+@media (min-width: 640px) {
+  .bf-themed [data-bf-logo-container] {
+    margin-top: calc(var(--bf-logo-height, 120px) / -2);
+  }
+}
+
+.bf-themed [data-bf-logo-emoji-container] {
+  margin-top: calc(var(--bf-logo-width, 80px) / -2);
+}
+@media (min-width: 640px) {
+  .bf-themed [data-bf-logo-emoji-container] {
+    margin-top: calc(var(--bf-logo-width, 100px) / -2);
+  }
+}
+
+/* Layout: cover */
+.bf-themed [data-bf-cover] {
+  height: var(--bf-cover-height) !important;
+}
+
+/* Layout: input max-width */
+.bf-themed input:not([type="checkbox"]):not([type="radio"]):not([role="combobox"]),
+.bf-themed textarea,
+.bf-themed select,
+.bf-themed [data-bf-input] {
+  max-width: var(--bf-input-width, 60%) !important;
 }
 
 /* Respect user preference for reduced motion */

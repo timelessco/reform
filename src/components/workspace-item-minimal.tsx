@@ -132,8 +132,8 @@ export function WorkspaceItemMinimal({
                   className={cn(
                     "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors",
                     sortMode === option.value
-                      ? "bg-black/5 text-sidebar-nav-text"
-                      : "text-light-gray-800 hover:bg-black/5 hover:text-sidebar-nav-text",
+                      ? "bg-accent text-accent-foreground"
+                      : "text-foreground/80 hover:bg-accent hover:text-accent-foreground",
                   )}
                 >
                   <option.icon className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -151,7 +151,7 @@ export function WorkspaceItemMinimal({
                 disabled={isCreatingForm}
                 className={cn(
                   "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors",
-                  "text-light-gray-800 hover:bg-black/5 hover:text-sidebar-nav-text",
+                  "text-foreground/80 hover:bg-accent hover:text-accent-foreground",
                 )}
               >
                 {isCreatingForm ? (
@@ -166,7 +166,7 @@ export function WorkspaceItemMinimal({
                 onClick={onRename}
                 className={cn(
                   "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors",
-                  "text-light-gray-800 hover:bg-black/5 hover:text-sidebar-nav-text",
+                  "text-foreground/80 hover:bg-accent hover:text-accent-foreground",
                 )}
               >
                 <Pencil2Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
@@ -334,7 +334,7 @@ function WorkspaceFormMinimal({
             e.stopPropagation();
             onDuplicate();
           }}
-          className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-light-gray-800 hover:bg-black/5 hover:text-foreground focus:bg-black/5 focus:text-foreground [&_svg]:size-3.5"
+          className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground [&_svg]:size-3.5"
         >
           <CopyIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
           <span className="flex-1 text-left">Duplicate</span>
@@ -355,4 +355,3 @@ function WorkspaceFormMinimal({
     </ContextMenu>
   );
 }
-

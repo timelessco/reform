@@ -303,17 +303,23 @@ function PreviewFormHeader({
 
     if (isHexColor(cover)) {
       // Render as solid color background
-      return <div className={coverClass} style={{ backgroundColor: cover }} />;
+      return <div className={coverClass} data-bf-cover style={{ backgroundColor: cover }} />;
     }
 
     if (isValidUrl(cover) && !imageError) {
       // Render as image
       return (
-        <div className={cn(coverClass, "overflow-hidden bg-muted")}>
+        <div className={cn(coverClass, "overflow-hidden bg-muted")} data-bf-cover>
+          {cover.includes("tint=true") && (
+            <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
+          )}
           <img
             src={cover}
             alt="Form cover"
-            className="w-full h-full object-cover"
+            className={cn(
+              "w-full h-full object-cover",
+              cover.includes("tint=true") && "relative z-0 brightness-60 grayscale",
+            )}
             onError={() => setImageError(true)}
           />
         </div>
@@ -330,7 +336,10 @@ function PreviewFormHeader({
     // Handle 'default-icon' - render hexagon
     if (icon === "default-icon") {
       return (
-        <div className={hasCover ? "-mt-[40px] sm:-mt-[50px] relative z-10" : ""}>
+        <div
+          className={hasCover ? "relative z-10" : ""}
+          data-bf-logo-container={hasCover ? "true" : undefined}
+        >
           <DefaultIcon />
         </div>
       );
@@ -339,11 +348,15 @@ function PreviewFormHeader({
     // Handle emoji
     if (isEmoji(icon)) {
       return (
-        <div className={hasCover ? "-mt-[40px] sm:-mt-[50px] relative z-10" : ""}>
+        <div
+          className={hasCover ? "relative z-10 block" : ""}
+          data-bf-logo-emoji-container={hasCover ? "true" : undefined}
+        >
           <span
             className="text-[80px] sm:text-[100px] block leading-none"
             role="img"
             aria-label="Form icon"
+            data-bf-logo-emoji
           >
             {icon}
           </span>
@@ -354,11 +367,15 @@ function PreviewFormHeader({
     // Handle image URL
     if (isValidUrl(icon) && !iconError) {
       return (
-        <div className={hasCover ? "-mt-[40px] sm:-mt-[50px] relative z-10" : ""}>
+        <div
+          className={hasCover ? "relative z-10 block" : ""}
+          data-bf-logo-container={hasCover ? "true" : undefined}
+        >
           <img
             src={icon}
             alt="Form icon"
             className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-md object-cover"
+            data-bf-logo
             onError={() => setIconError(true)}
           />
         </div>
@@ -374,7 +391,7 @@ function PreviewFormHeader({
         {hasCover && renderCover()}
 
         {/* Match editor's left-aligned layout */}
-        <div className="max-w-[700px] mx-auto w-full px-4">
+        <div className="max-w-[700px] mx-auto w-full px-4" data-bf-form-container>
           {hasIcon && renderIcon()}
           {hasTitle && (
             <h1
@@ -393,7 +410,7 @@ function PreviewFormHeader({
     <div className="mb-4 sm:mb-8 w-full">
       {hasCover && renderCover()}
 
-      <div className="max-w-2xl mx-auto px-4 sm:px-0">
+      <div className="max-w-2xl mx-auto px-4 sm:px-0" data-bf-form-container>
         <div className="flex flex-col">
           {hasIcon && renderIcon()}
           {hasTitle && (
@@ -425,7 +442,7 @@ function RenderThankYouContent({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="space-y-4">
+    <div data-bf-field-list className="space-y-4">
       {elements.map((element) => (
         <div key={element.id} className="w-full">
           <RenderPreviewElement element={element} form={form} layout={layout} />
@@ -664,6 +681,7 @@ function FormPreviewContent({
             "w-full",
             layout === "editor" ? "max-w-[700px] mx-auto px-4" : "max-w-2xl mx-auto px-4 sm:px-0",
           )}
+          data-bf-form-container
         >
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -715,6 +733,7 @@ function FormPreviewContent({
             "mb-6",
             layout === "editor" ? "max-w-[700px] mx-auto w-full px-4" : "max-w-2xl mx-auto px-4",
           )}
+          data-bf-form-container
         >
           <ProgressBar currentStep={currentStep} totalSteps={totalSteps} />
         </div>
@@ -726,6 +745,7 @@ function FormPreviewContent({
           "overflow-hidden",
           layout === "editor" ? "max-w-[700px] mx-auto w-full px-4" : "max-w-2xl mx-auto px-4",
         )}
+        data-bf-form-container
       >
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div

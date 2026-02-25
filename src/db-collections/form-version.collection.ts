@@ -13,6 +13,7 @@ const FormVersionSchema = z.object({
   version: z.coerce.number(),
   content: z.array(z.any()),
   settings: z.record(z.string(), z.any()),
+  customization: z.record(z.string(), z.any()).default({}),
   title: z.string(),
   publishedByUserId: z.string(),
   publishedAt: timestampField,
@@ -36,5 +37,6 @@ export const formVersionCollection = createCollection(
     },
     getKey: (item) => item.id,
     startSync: false,
+    syncMode: "eager",
   }),
 );

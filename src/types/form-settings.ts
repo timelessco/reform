@@ -49,6 +49,22 @@ export interface FormSettings {
   autoJump: boolean;
   saveAnswersForLater: boolean;
 
+  /**
+   * Theme customization — flat `Record<string, string>`.
+   *
+   * Recognized keys:
+   * - **Style**: `preset` (vega|nova|maia|lyra|mira|custom) — visual feel preset
+   * - **Mode**: `mode` (light|dark) — form-scoped color mode
+   * - **Simple**: `baseColor`, `themeColor`, `font`, `radius`, `spacing`
+   * - **Layout**: `pageWidth`, `coverHeight`, `logoWidth`, `logoHeight`, `inputWidth`
+   * - **Typography**: `baseFontSize`, `letterSpacing`
+   * - **Advanced token overrides**: `primary`, `primary-foreground`, `secondary`, `secondary-foreground`,
+   *   `accent`, `accent-foreground`, `background`, `foreground`, `destructive`, `destructive-foreground`,
+   *   `input`, `border`, `muted`, `muted-foreground`, `ring`
+   * - **Custom CSS**: `customCss`
+   */
+  customization: Record<string, string> | null;
+
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -126,4 +142,5 @@ export const defaultFormSettings: Omit<FormSettings, "id" | "formId" | "createdA
     preventDuplicateSubmissions: false,
     autoJump: false,
     saveAnswersForLater: false,
+    customization: null,
   };

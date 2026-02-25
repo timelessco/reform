@@ -1,6 +1,3 @@
-import { FormSettingsSidebar } from "@/components/form-builder/form-settings-sidebar";
-import { ShareSummarySidebar } from "@/components/form-builder/share-summary-sidebar";
-import { VersionHistorySidebar } from "@/components/form-builder/version-history-sidebar";
 import { SidebarItem } from "@/components/sidebar-item";
 import {
   AlertDialog,
@@ -56,7 +53,14 @@ import {
   SidebarProvider,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { BellIcon, HomeIcon, SearchIcon, SettingsIcon, StarIcon } from "@/components/ui/sidebar-icons";
+import {
+  BellIcon,
+  ChevronDownIcon,
+  HomeIcon,
+  SearchIcon,
+  SettingsIcon,
+  StarIcon,
+} from "@/components/ui/sidebar-icons";
 import { UserMenuMinimal } from "@/components/user-menu-minimal";
 import { WorkspaceItemMinimal, type WorkspaceWithForms } from "@/components/workspace-item-minimal";
 import {
@@ -72,7 +76,7 @@ import {
   permanentDeleteFormLocal,
   restoreFormLocal,
   updateFormStatus,
-  updateWorkspaceName
+  updateWorkspaceName,
 } from "@/db-collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
@@ -99,7 +103,6 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import {
-  ChevronDown,
   ChevronsLeft,
   FileText,
   Filter,
@@ -114,9 +117,40 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+
 import type * as React from "react";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
+
+const LazyFormSettingsSidebar = lazy(() =>
+  import("@/components/form-builder/form-settings-sidebar").then((m) => ({
+    default: m.FormSettingsSidebar,
+  })),
+);
+const LazyShareSummarySidebar = lazy(() =>
+  import("@/components/form-builder/share-summary-sidebar").then((m) => ({
+    default: m.ShareSummarySidebar,
+  })),
+);
+const LazyVersionHistorySidebar = lazy(() =>
+  import("@/components/form-builder/version-history-sidebar").then((m) => ({
+    default: m.VersionHistorySidebar,
+  })),
+);
+const LazyCustomizeSidebar = lazy(() =>
+  import("@/components/ui/customize-sidebar").then((m) => ({
+    default: m.CustomizeSidebar,
+  })),
+);
 
 // Route configuration
 export const Route = createFileRoute("/_authenticated")({
@@ -172,11 +206,6 @@ function AuthLayoutContent() {
   const { pathname } = location;
   const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
   const { visible: isHeaderVisible, reportPointerActivity } = useEditorHeaderVisibility();
-  const [resizeTooltip, setResizeTooltip] = useState({
-    visible: false,
-    x: 0,
-    y: 0,
-  });
 
   const { formId } = useParams({ strict: false }) as { formId?: string };
 
@@ -198,7 +227,7 @@ function AuthLayoutContent() {
   const handleRef = useRef<HTMLDivElement>(null);
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
   const [handleLeft, setHandleLeft] = useState(0);
-  const handleDragRef = useRef({ dragging: false, startX: 0, startY: 0 });
+  const handleDragRef = useRef({ dragging: false, hasDragged: false, startX: 0, startY: 0 });
   const leftPanelRef = useRef<HTMLDivElement>(null);
 
   // Initialize sidebar state from URL params on mount only
@@ -269,7 +298,7 @@ function AuthLayoutContent() {
       <SidebarInset className="overflow-hidden relative flex flex-col h-screen">
         {isDistractionHeaderHidden && (
           <div
-            className="fixed inset-x-0 top-0 z-[1200] h-3 bg-transparent"
+            className="fixed inset-x-0 top-0 z-1200 h-3 bg-transparent"
             onMouseEnter={reportPointerActivity}
             aria-hidden="true"
           />
@@ -285,11 +314,7 @@ function AuthLayoutContent() {
         <div className="relative z-20 flex-1 min-h-0 overflow-hidden">
           <ResizablePanelGroup direction="horizontal" className="h-full">
             {/* Main content panel - non-resizable */}
-            <ResizablePanel
-              defaultSize={showEditorSidebar ? 70 : 100}
-              minSize={70}
-              className="transition-all duration-300 ease-in-out"
-            >
+            <ResizablePanel defaultSize={showEditorSidebar ? 70 : 100} minSize={50}>
               <div ref={leftPanelRef} className={cn("flex h-full min-w-0 flex-col z-50")}>
                 <Outlet key={formId} />
               </div>
@@ -298,7 +323,7 @@ function AuthLayoutContent() {
             {/* Resize handle - draggable, click to close */}
             <TypedResizableHandle
               className={cn(
-                "fixed top-0 bottom-0 left-(--handle-left) -translate-x-1/2 w-px",
+                "group fixed top-0 bottom-0 left-(--handle-left) -translate-x-1/2 w-px flex items-center h-full",
                 "bg-border/60 z-[999] pointer-events-auto",
                 "transition-none duration-0 hover:w-px data-[resize-handle-state=drag]:w-px",
                 !showEditorSidebar && "hidden pointer-events-none",
@@ -306,47 +331,36 @@ function AuthLayoutContent() {
               ref={handleRef}
               style={{ "--handle-left": `${handleLeft}px` } as React.CSSProperties}
               onDragging={(isDragging: boolean) => {
-                handleDragRef.current.dragging = isDragging;
+                if (isDragging) {
+                  handleDragRef.current.dragging = true;
+                  handleDragRef.current.hasDragged = true;
+                } else {
+                  handleDragRef.current.dragging = false;
+                  setTimeout(() => {
+                    handleDragRef.current.hasDragged = false;
+                  }, 50);
+                }
               }}
-              onPointerDown={() => {
-                handleDragRef.current.dragging = false;
-                updateHandleLeft();
+              onPointerDown={(e: React.PointerEvent<HTMLDivElement>) => {
+                handleDragRef.current.hasDragged = false;
+                handleDragRef.current.startX = e.clientX;
               }}
-              onPointerMove={() => {
-                updateHandleLeft();
-              }}
-              onPointerUp={() => {
-                if (!handleDragRef.current.dragging && activeSidebar) handleCloseSidebar();
-                handleDragRef.current.dragging = false;
-              }}
-              onMouseEnter={(event: any) => {
-                setResizeTooltip({ visible: true, x: event.clientX, y: event.clientY });
-              }}
-              onMouseMove={(event: any) => {
-                setResizeTooltip((prev) => ({
-                  ...prev,
-                  x: event.clientX,
-                  y: event.clientY,
-                }));
-              }}
-              onMouseLeave={() => {
-                setResizeTooltip((prev) => ({ ...prev, visible: false }));
+              onPointerUp={(e: React.PointerEvent<HTMLDivElement>) => {
+                const deltaX = Math.abs(e.clientX - (handleDragRef.current.startX || 0));
+                // If it was just a click (no internal drag state activated, and mouse barely moved)
+                if (!handleDragRef.current.hasDragged && deltaX < 5 && activeSidebar) {
+                  handleCloseSidebar();
+                }
               }}
             >
               <div
                 className={cn(
-                  "pointer-events-none fixed",
+                  "pointer-events-none absolute -left-3 -translate-x-full",
                   "rounded-md border border-foreground/10 bg-background/90 px-2 py-1 text-[11px] text-muted-foreground shadow-lg",
-                  "transition-opacity duration-150",
-                  resizeTooltip.visible ? "opacity-100" : "opacity-0",
+                  "opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-data-[resize-handle-state=drag]:opacity-0",
                 )}
-                style={{
-                  left: resizeTooltip.x - 12,
-                  top: resizeTooltip.y + 12,
-                  transform: "translateX(-100%)",
-                }}
               >
-                <div className="leading-4">
+                <div className="leading-4 whitespace-nowrap">
                   <div>Close Click</div>
                   <div>Resize Drag</div>
                 </div>
@@ -358,18 +372,29 @@ function AuthLayoutContent() {
               ref={rightPanelRef}
               collapsible
               collapsedSize={0}
-              defaultSize={showEditorSidebar ? 40 : 0}
-              minSize={30}
+              defaultSize={showEditorSidebar ? 30 : 0}
+              minSize={25}
               maxSize={50}
               className={cn(
-                "h-full overflow-hidden transition-all duration-300 ease-in-out bg-background",
+                "h-full overflow-hidden bg-background",
                 !showEditorSidebar && "border-none",
               )}
             >
               <div className="h-full w-full">
-                {activeSidebar === "settings" && formId && <FormSettingsSidebar formId={formId} />}
-                {activeSidebar === "share" && formId && <ShareSummarySidebar formId={formId} />}
-                {activeSidebar === "history" && formId && <VersionHistorySidebar formId={formId} />}
+                <Suspense fallback={null}>
+                  {activeSidebar === "settings" && formId && (
+                    <LazyFormSettingsSidebar formId={formId} />
+                  )}
+                  {activeSidebar === "share" && formId && (
+                    <LazyShareSummarySidebar formId={formId} />
+                  )}
+                  {activeSidebar === "history" && formId && (
+                    <LazyVersionHistorySidebar formId={formId} />
+                  )}
+                  {activeSidebar === "customize" && formId && (
+                    <LazyCustomizeSidebar formId={formId} />
+                  )}
+                </Suspense>
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>
@@ -484,7 +509,7 @@ function AppSidebar() {
                       <div className="flex items-center justify-center size-5 shrink-0">
                         <HomeIcon className="h-[18px] w-[18px] text-muted-foreground" />
                       </div>
-                      <span className="text-[14px] font-medium font-var-medium-14 text-light-gray-800 dark:text-dark-gray-800 tracking-[0.14px] leading-tight font-case truncate">
+                      <span className="text-[14px] font-medium font-var-medium-14 text-sidebar-nav-text tracking-[0.14px] leading-tight font-case truncate">
                         All
                       </span>
                     </Link>
@@ -500,7 +525,7 @@ function AppSidebar() {
                       <div className="flex items-center justify-center size-5 shrink-0">
                         <SearchIcon className="h-[18px] w-[18px] text-muted-foreground" />
                       </div>
-                      <span className="text-[14px] font-var-medium-14 text-light-gray-800 dark:text-dark-gray-800 tracking-[0.14px] leading-tight font-case truncate">
+                      <span className="text-[14px] font-var-medium-14 text-sidebar-nav-text tracking-[0.14px] leading-tight font-case truncate">
                         Search
                       </span>
                     </div>
@@ -520,7 +545,7 @@ function AppSidebar() {
                           <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-background" />
                         )}
                       </div>
-                      <span className="text-[14px] font-medium font-var-medium-14 text-light-gray-800 dark:text-dark-gray-800 tracking-[0.14px] leading-tight font-case truncate flex-1 min-w-0">
+                      <span className="text-[14px] font-medium font-var-medium-14 text-sidebar-nav-text tracking-[0.14px] leading-tight font-case truncate flex-1 min-w-0">
                         Notifications
                       </span>
                       {pendingCount > 0 && (
@@ -542,7 +567,7 @@ function AppSidebar() {
                       <div className="flex items-center justify-center size-5 shrink-0">
                         <SettingsIcon className="h-[18px] w-[18px] text-muted-foreground" />
                       </div>
-                      <span className="text-[14px] font-medium font-var-medium-14 text-light-gray-800 dark:text-dark-gray-800 tracking-[0.14px] leading-tight font-case truncate">
+                      <span className="text-[14px] font-medium font-var-medium-14 text-sidebar-nav-text tracking-[0.14px] leading-tight font-case truncate">
                         Settings
                       </span>
                     </Link>
@@ -1036,12 +1061,8 @@ function FreePlanCard() {
   return (
     <div className="shrink-0 overflow-hidden rounded-xl bg-free-plan-card-bg p-3 mx-3 w-[204px] shadow-sm">
       <div className="flex items-center gap-2 mb-2">
-        <div className="shrink-0 size-6 rounded flex items-center justify-center bg-teal-100 dark:bg-teal-700/20">
-          <Zap
-            className="h-3.5 w-3.5 text-teal-700 dark:text-teal-400"
-            strokeWidth={2}
-            fill="currentColor"
-          />
+        <div className="shrink-0 size-6 rounded flex items-center justify-center bg-teal-100">
+          <Zap className="h-3.5 w-3.5 text-teal-700" strokeWidth={2} fill="currentColor" />
         </div>
         <span className="text-[14px] font-medium text-sidebar-foreground">Free Plan</span>
       </div>
@@ -1084,7 +1105,7 @@ function SidebarSection({
           <span className="text-[13px] font-medium text-muted-foreground tracking-[0.26px] truncate">
             {label}
           </span>
-          <ChevronDown
+          <ChevronDownIcon
             className={cn(
               "h-2.5 w-2.5 shrink-0 text-muted-foreground transition-transform duration-200",
               !isOpen && "-rotate-90",

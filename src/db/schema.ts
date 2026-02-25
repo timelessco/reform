@@ -164,6 +164,7 @@ export const formVersions = pgTable("form_versions", {
   version: integer().notNull(), // v1, v2, v3...
   content: jsonb().notNull(), // Plate.js JSON snapshot
   settings: jsonb().notNull(), // Settings snapshot
+  customization: jsonb().default({}), // Theme customization snapshot
   title: text().notNull(),
   publishedByUserId: text().notNull(),
   publishedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
@@ -215,6 +216,8 @@ export const formSettings = pgTable("form_settings", {
   // Data retention (UI only for now)
   dataRetention: boolean().default(false).notNull(),
   dataRetentionDays: integer(),
+  // Theme customization (draft/working copy — snapshotted into form_versions on publish)
+  customization: jsonb().default({}),
   // Timestamps
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),

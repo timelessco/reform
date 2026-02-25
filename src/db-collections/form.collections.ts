@@ -1,5 +1,9 @@
 import { electricCollectionOptions } from "@tanstack/electric-db-collection";
-import { createCollection, localStorageCollectionOptions } from "@tanstack/react-db";
+import {
+  createCollection,
+  createTransaction,
+  localStorageCollectionOptions,
+} from "@tanstack/react-db";
 import { z } from "zod";
 import { createForm, deleteForm, updateForm } from "@/lib/fn/forms";
 import { logger } from "@/lib/utils";
@@ -104,8 +108,7 @@ export const localFormCollection = createCollection(
 // Form Service Functions
 // ============================================================================
 
-import type { Value } from "platejs";
-import { createFormHeaderNode } from "@/components/ui/form-header-node";
+import { createFormHeaderNode } from "@/lib/form-header-factory";
 
 const DEFAULT_FORM_CONTENT = [
   createFormHeaderNode({ title: "Untitled", icon: null, cover: null }),
@@ -131,7 +134,7 @@ const DEFAULT_FORM_SETTINGS: FormBuilderSettings = {
 /**
  * Updates the form content (Plate editor value).
  */
-async function updateContent(id: string, content: Value) {
+async function updateContent(id: string, content: any[]) {
   return formCollection.update(id, (draft) => {
     draft.content = content;
     draft.updatedAt = new Date().toISOString();
@@ -234,7 +237,7 @@ async function deleteFormLocal(id: string): Promise<void> {
  * Duplicates a form by ID and returns the new document.
  * The new form's title will be "{original title} copy"
  */
-export async function duplicateFormById(formId: string): Promise<Form> {
+export function duplicateFormById(formId: string): Form {
   const sourceForm = formCollection.state.get(formId);
   if (!sourceForm) {
     throw new Error(`Form not found: ${formId}`);
@@ -248,18 +251,37 @@ export async function duplicateFormById(formId: string): Promise<Form> {
     ...sourceForm,
     id,
     title,
+    content: structuredClone(sourceForm.content),
+    settings: structuredClone(sourceForm.settings),
+    status: "draft",
+    lastPublishedVersionId: null,
+    publishedContentHash: null,
+    deletedAt: null,
     createdAt: now,
     updatedAt: now,
   };
 
-  await formCollection.insert(newForm);
+  // Same pattern as publishForm/restoreVersion in use-form-versions.ts:
+  // Optimistic insert applied instantly, server call runs in background via mutationFn.
+  // onInsert does NOT fire because the mutation is owned by the transaction.
+  // On success → confirmed; on error → auto-rollback.
+  const tx = createTransaction({
+    mutationFn: async () => {
+      await createForm({ data: newForm });
+    },
+  });
+
+  tx.mutate(() => {
+    formCollection.insert(newForm);
+  });
+
   return newForm;
 }
 
 /**
  * @deprecated Use duplicateFormById instead
  */
-export async function duplicateForm(sourceForm: Form): Promise<Form> {
+export function duplicateForm(sourceForm: Form): Form {
   return duplicateFormById(sourceForm.id);
 }
 
