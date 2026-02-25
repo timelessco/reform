@@ -180,7 +180,7 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
 
             {/* ── Theme ── */}
             <AccordionItem value="theme" className="border-b-0">
-              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
+              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline">
                 Theme
               </AccordionTrigger>
               <AccordionContent className="space-y-2 pt-1 pb-2">
@@ -273,7 +273,7 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
 
             {/* Layout */}
             <AccordionItem value="layout" className="border-b-0">
-              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
+              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline">
                 <div className="flex items-center gap-2">
                   Layout
                   <div className="bg-teal-100 text-teal-700 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
@@ -291,7 +291,7 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
 
             {/* Colors */}
             <AccordionItem value="colors" className="border-b-0">
-              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
+              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline">
                 <div className="flex items-center gap-2">
                   Colors
                   <div className="bg-teal-100 text-teal-700 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
@@ -306,7 +306,7 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
 
             {/* Typography */}
             <AccordionItem value="typography" className="border-b-0">
-              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
+              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline">
                 <div className="flex items-center gap-2">
                   Typography
                   <div className="bg-teal-100 text-teal-700 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
@@ -322,7 +322,7 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
 
             {/* Custom CSS */}
             <AccordionItem value="css" className="border-b-0">
-              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline px-1">
+              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline">
                 <div className="flex items-center gap-2">
                   Custom CSS
                   <div className="bg-teal-100 text-teal-700 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 import { motion, useMotionValue, useTransform, animate, AnimatePresence } from "motion/react";
 
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger, PopoverAnchor } from "@/components/ui/popover";
 import { ColorPicker, EyeDropper } from "@/components/ui/color-picker";
 import { parseColor } from "@react-stately/color";
 import {
@@ -271,62 +271,80 @@ export function StyleColorPicker({
         }
     }, [hexColor]);
 
+    const [popoverWidth, setPopoverWidth] = React.useState<number | undefined>();
+    const anchorRef = React.useRef<HTMLDivElement>(null);
+
+    const updateWidth = React.useCallback(() => {
+        if (anchorRef.current) {
+            setPopoverWidth(anchorRef.current.offsetWidth);
+        }
+    }, []);
+
     return (
-        <div
-            className={cn(
-                "flex items-center rounded-[8px] overflow-hidden border border-border/60 bg-transparent h-[32px] text-[13px]",
-                className
-            )}
-        >
-            <div className="bg-transparent px-3 h-full flex items-center font-medium text-muted-foreground flex-1 select-none border-r border-border/60">
-                {label}
-            </div>
-            <div className="flex-none px-2 h-full flex items-center gap-2 relative">
-                <input
-                    value={hexColor.toUpperCase()}
-                    onChange={(e) => {
-                        const val = e.target.value;
-                        if (val.length === 7 || val.length === 4) onChange(val);
-                    }}
-                    className="w-[60px] text-right bg-transparent outline-none tabular-nums font-mono text-muted-foreground uppercase text-[11px]"
-                    maxLength={7}
-                />
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <button className="w-[18px] h-[18px] rounded-[4px] border border-border/60 overflow-hidden relative shrink-0 cursor-pointer group">
-                            <div
-                                className="w-full h-full pointer-events-none group-hover:opacity-90 transition-opacity"
-                                style={{ backgroundColor: hexColor }}
-                            />
-                        </button>
-                    </PopoverTrigger>
-                    <PopoverContent side="left" className="w-[220px] p-3 flex flex-col gap-3 z-100" sideOffset={16}>
-                        <ColorPicker
-                            value={parsedColor}
-                            onChange={(color) => onChange(color.toString("hex"))}
-                            className="flex flex-col gap-3"
-                        >
-                            <ColorArea className="w-full h-[140px] rounded-md overflow-hidden border border-border/60" colorSpace="hsb">
-                                <ColorThumb className="w-4 h-4 rounded-full border-2 border-white shadow-sm ring-1 ring-black/50 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-ring" />
-                            </ColorArea>
+        <Popover onOpenChange={(open) => { if (open) updateWidth(); }}>
+            <PopoverAnchor asChild>
+                <div
+                    ref={anchorRef}
+                    className={cn(
+                        "flex items-center rounded-[8px] overflow-hidden border border-border/60 bg-transparent h-[32px] text-[13px]",
+                        className
+                    )}
+                >
+                    <div className="bg-transparent px-3 h-full flex items-center font-medium text-muted-foreground flex-1 select-none border-r border-border/60">
+                        {label}
+                    </div>
+                    <div className="flex-none px-2 h-full flex items-center gap-2 relative">
+                        <input
+                            value={hexColor.toUpperCase()}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                if (val.length === 7 || val.length === 4) onChange(val);
+                            }}
+                            className="w-[60px] text-right bg-transparent outline-none tabular-nums font-mono text-muted-foreground uppercase text-[11px]"
+                            maxLength={7}
+                        />
+                        <PopoverTrigger asChild>
+                            <button className="w-[18px] h-[18px] rounded-[4px] border border-border/60 overflow-hidden relative shrink-0 cursor-pointer group">
+                                <div
+                                    className="w-full h-full pointer-events-none group-hover:opacity-90 transition-opacity"
+                                    style={{ backgroundColor: hexColor }}
+                                />
+                            </button>
+                        </PopoverTrigger>
+                    </div>
+                </div>
+            </PopoverAnchor>
+            <PopoverContent
+                side="bottom"
+                align="center"
+                style={{ width: popoverWidth ? `${popoverWidth}px` : '220px' }}
+                className="p-3 flex flex-col gap-3 z-100"
+                sideOffset={8}
+            >
+                <ColorPicker
+                    value={parsedColor}
+                    onChange={(color) => onChange(color.toString("hex"))}
+                    className="flex flex-col gap-3"
+                >
+                    <ColorArea className="w-full h-[140px] rounded-md overflow-hidden border border-border/60" colorSpace="hsb">
+                        <ColorThumb className="w-4 h-4 rounded-full border-2 border-white shadow-sm ring-1 ring-black/50 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-ring" />
+                    </ColorArea>
 
-                            <ColorSlider channel="hue" className="w-full h-3 rounded-full overflow-hidden border border-border/60" orientation="horizontal">
-                                <SliderTrack className="w-full h-full">
-                                    <SliderThumb className="top-1/2 w-4 h-4 rounded-full border-2 border-white shadow-sm ring-1 ring-black/50 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-ring" />
-                                </SliderTrack>
-                            </ColorSlider>
+                    <ColorSlider channel="hue" className="w-full h-3 rounded-full overflow-hidden border border-border/60" orientation="horizontal">
+                        <SliderTrack className="w-full h-full">
+                            <SliderThumb className="top-1/2 w-4 h-4 rounded-full border-2 border-white shadow-sm ring-1 ring-black/50 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-ring" />
+                        </SliderTrack>
+                    </ColorSlider>
 
-                            <div className="flex items-center gap-2">
-                                <ColorField className="flex-1 flex items-center justify-between border border-border/60 rounded-md px-2 h-7 bg-background shadow-sm">
-                                    <AriaInput className="w-full bg-transparent outline-none uppercase font-mono text-[11px] tabular-nums text-foreground focus-visible:ring-0" />
-                                </ColorField>
-                                <EyeDropper />
-                            </div>
-                        </ColorPicker>
-                    </PopoverContent>
-                </Popover>
-            </div>
-        </div>
+                    <div className="flex items-center gap-2">
+                        <ColorField className="flex-1 flex items-center justify-between border border-border/60 rounded-md px-2 h-7 bg-background shadow-sm">
+                            <AriaInput className="w-full bg-transparent outline-none uppercase font-mono text-[11px] tabular-nums text-foreground focus-visible:ring-0" />
+                        </ColorField>
+                        <EyeDropper />
+                    </div>
+                </ColorPicker>
+            </PopoverContent>
+        </Popover>
     );
 }
 
