@@ -60,6 +60,17 @@ const config = defineConfig({
     //   configFile: '.oxlintrc.json',
     // })
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("@platejs/") || id.includes("platejs")) return "editor";
+          if (id.includes("@radix-ui/")) return "ui";
+          if (id.includes("@sentry/")) return "sentry";
+        },
+      },
+    },
+  },
   ssr: {
     noExternal: [/^@platejs\//, "katex", "react-tweet"],
     // Dexie is browser-only (IndexedDB), externalize for SSR

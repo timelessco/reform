@@ -282,10 +282,10 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="space-y-2 pt-1 pb-2">
-                <StyleNumberInput label="Page Width" value={getValue("pageWidth") || "50%"} onChange={(v) => updateWithCustomPreset("pageWidth", v)} min={30} max={100} step={5} unit="%" />
+                <StyleNumberInput label="Page Width" value={getValue("pageWidth") || "50vw"} onChange={(v) => updateWithCustomPreset("pageWidth", v)} min={30} max={100} step={5} unit="vw" />
                 <StyleNumberInput label="Cover Height" value={getValue("coverHeight") || "200px"} onChange={(v) => updateWithCustomPreset("coverHeight", v)} min={100} max={400} step={10} unit="px" />
                 <StyleNumberInput label="Logo Width" value={getValue("logoWidth") || "100px"} onChange={(v) => updateWithCustomPreset("logoWidth", v)} min={40} max={200} step={4} unit="px" />
-                <StyleNumberInput label="Input Width" value={getValue("inputWidth") || "320px"} onChange={(v) => updateWithCustomPreset("inputWidth", v)} min={200} max={600} step={10} unit="px" />
+                <StyleNumberInput label="Input Width" value={getValue("inputWidth") || "60%"} onChange={(v) => updateWithCustomPreset("inputWidth", v)} min={20} max={100} step={5} unit="%" />
               </AccordionContent>
             </AccordionItem>
 

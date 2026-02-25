@@ -44,7 +44,7 @@ const FORMS_PER_PAGE = 10;
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
-  ssr: false,
+  ssr: "data-only",
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,

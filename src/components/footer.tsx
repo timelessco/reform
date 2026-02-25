@@ -11,15 +11,15 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
       <Button
         variant="ghost"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between py-3 h-auto w-full px-0 group hover:text-foreground hover:bg-transparent"
+        className="flex items-start justify-between py-3 h-auto w-full px-0 group hover:text-foreground hover:bg-transparent"
         aria-expanded={isOpen}
       >
-        <span className="text-[13px] text-muted-foreground group-hover:text-foreground font-normal pr-4 leading-snug text-left">
+        <span className="text-[13px] text-muted-foreground group-hover:text-foreground font-normal pr-4 leading-snug text-left whitespace-normal flex-1">
           {question}
         </span>
         <ChevronDown
           className={cn(
-            "h-3 w-3 text-muted-foreground/30 group-hover:text-foreground transition-transform duration-200 shrink-0",
+            "h-3 w-3 text-muted-foreground/30 group-hover:text-foreground transition-transform duration-200 shrink-0 mt-1",
             isOpen && "rotate-180 text-foreground",
           )}
         />

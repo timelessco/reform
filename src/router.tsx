@@ -29,7 +29,7 @@ export const getRouter = () => {
     Sentry.init({
       dsn: import.meta.env.VITE_SENTRY_DSN,
       integrations: [],
-      tracesSampleRate: 1.0,
+      tracesSampleRate: import.meta.env.PROD ? 0.1 : 1.0,
       sendDefaultPii: true,
     });
   }

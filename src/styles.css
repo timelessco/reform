@@ -30,7 +30,7 @@
 @font-face {
   font-family: "Inter-V";
   font-weight: 100 900;
-  font-display: block;
+  font-display: swap;
   font-style: normal;
   font-named-instance: "Regular";
   src: url("/fonts/Inter-V.woff2") format("woff2");
@@ -1157,7 +1157,7 @@
 .bf-themed textarea,
 .bf-themed select,
 .bf-themed [data-bf-input] {
-  max-width: var(--bf-input-width, 28rem) !important;
+  max-width: var(--bf-input-width, 60%) !important;
 }
 
 /* Respect user preference for reduced motion */
