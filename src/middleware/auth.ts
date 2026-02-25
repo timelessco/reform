@@ -22,17 +22,6 @@ export const authMiddleware = createMiddleware().server(async ({ next }) => {
   });
 });
 
-export const sessionMiddleware = createMiddleware().server(async ({ next }) => {
-  const headers = getRequestHeaders();
-  const session = await auth.api.getSession({ headers });
-
-  return await next({
-    context: {
-      session,
-    },
-  });
-});
-
 export const guestMiddleware = createMiddleware().server(async ({ next }) => {
   // O(1) cookie check instead of DB round-trip (~1.97s saving)
   // authMiddleware on /dashboard will do full session validation + email verification

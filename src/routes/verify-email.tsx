@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { auth, useSession } from "@/lib/auth-client";
 import { setSyncAfterLoginFlag } from "@/lib/local-draft";
-import { sessionMiddleware } from "@/middleware/auth";
 
 const searchSchema = z.object({
   email: z.string().email().optional(),
@@ -16,9 +15,6 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/verify-email")({
-  server: {
-    middleware: [sessionMiddleware],
-  },
   validateSearch: searchSchema,
   component: VerifyEmailPage,
 });

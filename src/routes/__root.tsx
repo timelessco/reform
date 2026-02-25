@@ -7,7 +7,6 @@ import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { Toaster } from "@/components/ui/sonner";
 import type { Session } from "../lib/auth";
-import { sessionMiddleware } from "../middleware/auth";
 import appCss from "../styles.css?url";
 
 const LazyDevtools = lazy(() =>
@@ -42,9 +41,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   }),
 
   shellComponent: RootDocument,
-  server: {
-    middleware: [sessionMiddleware],
-  },
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,
