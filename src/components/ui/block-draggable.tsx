@@ -250,8 +250,10 @@ function Draggable(props: PlateElementProps) {
             {!isFormButton && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button
-                    className="h-auto w-auto rounded-lg has-[>svg]:px-1.5 has-[>svg]:py-1"
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="h-auto w-auto rounded-lg hover:bg-transparent has-[>svg]:px-1.5 has-[>svg]:py-1"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -269,7 +271,7 @@ function Draggable(props: PlateElementProps) {
                     data-plate-prevent-deselect
                   >
                     <Plus className="size-4 text-[#52525B] dark:text-muted-foreground" />
-                  </button>
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent>Add block below</TooltipContent>
               </Tooltip>
@@ -280,7 +282,7 @@ function Draggable(props: PlateElementProps) {
               ref={isFormButton ? null : handleRef}
               className={cn(
                 buttonVariants({ variant: "ghost", size: "icon" }),
-                "h-auto w-auto  rounded-lg hover:bg-transparent",
+                "h-auto w-auto  rounded-lg hover:bg-transparent px-1",
               )}
               data-plate-prevent-deselect
             >
@@ -360,8 +362,10 @@ const DragHandle = React.memo(function DragHandle({
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild className="px-0">
-        <button
+      <TooltipTrigger asChild className="">
+        <Button
+          variant="ghost"
+          size="icon-sm"
           className="flex size-full items-center justify-center h-auto hover:bg-transparent has-[>svg]:px-1.5 has-[>svg]:py-1"
           onClick={(e) => {
             // e.preventDefault();
@@ -452,7 +456,7 @@ const DragHandle = React.memo(function DragHandle({
           ) : (
             <GripVerticalIcon className="text-[#52525B] dark:text-muted-foreground" />
           )}
-        </button>
+        </Button>
       </TooltipTrigger>
       <TooltipContent>
         {isFormButton ? "Click for settings" : "Drag to move, Click to open menu"}
