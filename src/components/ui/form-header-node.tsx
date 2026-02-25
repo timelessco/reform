@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useFileUpload } from "@/hooks/use-file-upload";
+import type { FormHeaderElementData } from "@/lib/form-header-factory";
 import { cn } from "@/lib/utils";
 
 function isEmoji(str: string): boolean {
@@ -26,26 +27,7 @@ function isEmoji(str: string): boolean {
   return str.length <= 4 && emojiRange.test(str);
 }
 
-export interface FormHeaderElementData {
-  type: "formHeader";
-  id?: string;
-  title: string;
-  icon: string | null;
-  cover: string | null;
-  children: [{ text: "" }];
-}
-
-export function createFormHeaderNode(
-  data: Partial<Omit<FormHeaderElementData, "type" | "children">> = {},
-): FormHeaderElementData {
-  return {
-    type: "formHeader",
-    title: data.title ?? "",
-    icon: data.icon ?? null,
-    cover: data.cover ?? null,
-    children: [{ text: "" }],
-  };
-}
+export { createFormHeaderNode, type FormHeaderElementData } from "@/lib/form-header-factory";
 
 function CoverUpload({ onFileChange }: { onFileChange: (url: string) => void }) {
   const [

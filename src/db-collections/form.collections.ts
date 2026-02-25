@@ -105,7 +105,7 @@ export const localFormCollection = createCollection(
 // ============================================================================
 
 import type { Value } from "platejs";
-import { createFormHeaderNode } from "@/components/ui/form-header-node";
+import { createFormHeaderNode } from "@/lib/form-header-factory";
 
 const DEFAULT_FORM_CONTENT = [
   createFormHeaderNode({ title: "Untitled", icon: null, cover: null }),
