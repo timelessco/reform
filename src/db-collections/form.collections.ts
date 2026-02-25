@@ -104,7 +104,6 @@ export const localFormCollection = createCollection(
 // Form Service Functions
 // ============================================================================
 
-import type { Value } from "platejs";
 import { createFormHeaderNode } from "@/lib/form-header-factory";
 
 const DEFAULT_FORM_CONTENT = [
@@ -131,7 +130,7 @@ const DEFAULT_FORM_SETTINGS: FormBuilderSettings = {
 /**
  * Updates the form content (Plate editor value).
  */
-async function updateContent(id: string, content: Value) {
+async function updateContent(id: string, content: any[]) {
   return formCollection.update(id, (draft) => {
     draft.content = content;
     draft.updatedAt = new Date().toISOString();

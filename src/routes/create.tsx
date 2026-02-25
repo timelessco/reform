@@ -1,29 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { normalizeNodeId, type TElement, type Value } from "platejs";
-import { Plate, usePlateEditor } from "platejs/react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { EditorKit } from "@/components/editor/editor-kit";
-import { AppHeader } from "@/components/ui/app-header";
-import { Editor, EditorContainer } from "@/components/ui/editor";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
-import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import { createOnboardingContentNode } from "@/components/ui/onboarding-content-node";
-import { localFormCollection } from "@/db-collections";
-import { useLocalForm } from "@/hooks/use-live-hooks";
-import { getLocalFormId, getLocalWorkspaceId } from "@/lib/local-draft";
 import { guestMiddleware } from "@/middleware/auth";
-
-// Initial state for new forms
-const onboardingValue = normalizeNodeId([
-  createFormHeaderNode({ title: "hello" }) as unknown as TElement,
-  createOnboardingContentNode() as unknown as TElement,
-  {
-    children: [{ text: "" }],
-    type: "p",
-  },
-]);
 
 export const Route = createFileRoute("/create")({
   server: {
@@ -34,6 +13,20 @@ export const Route = createFileRoute("/create")({
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,
 });
+
+// ---- Everything below is code-split by autoCodeSplitting ----
+
+import { normalizeNodeId, type TElement, type Value } from "platejs";
+import { Plate, usePlateEditor } from "platejs/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { EditorKit } from "@/components/editor/editor-kit";
+import { AppHeader } from "@/components/ui/app-header";
+import { Editor, EditorContainer } from "@/components/ui/editor";
+import { createFormHeaderNode } from "@/components/ui/form-header-node";
+import { createOnboardingContentNode } from "@/components/ui/onboarding-content-node";
+import { localFormCollection } from "@/db-collections";
+import { useLocalForm } from "@/hooks/use-live-hooks";
+import { getLocalFormId, getLocalWorkspaceId } from "@/lib/local-draft";
 
 function RouteComponent() {
   return (
@@ -61,6 +54,20 @@ function LocalEditorApp() {
 
   const lastSavedContentRef = useRef<Value | null>(null);
 
+  // Compute onboarding value lazily (was previously module-scope)
+  const onboardingValue = useMemo(
+    () =>
+      normalizeNodeId([
+        createFormHeaderNode({ title: "hello" }) as unknown as TElement,
+        createOnboardingContentNode() as unknown as TElement,
+        {
+          children: [{ text: "" }],
+          type: "p",
+        },
+      ]),
+    [],
+  );
+
   useEffect(() => {
     if (initializedRef.current) return;
     if (savedDocs === undefined) return;
@@ -84,7 +91,7 @@ function LocalEditorApp() {
     });
 
     setIsReady(true);
-  }, [savedDocs, editor]);
+  }, [savedDocs, editor, onboardingValue]);
 
   const handleChange = useCallback(
     ({ value }: { value: Value }) => {
