@@ -9,6 +9,7 @@ import { workspaceCollection, createWorkspaceLocal } from "@/db-collections/work
 type SyncResult = {
   success: boolean;
   syncedForms: string[];
+  
 };
 
 /**
@@ -73,7 +74,7 @@ export async function syncLocalDataToCloud(organizationId: string): Promise<Sync
         const now = new Date().toISOString();
 
         // Insert via Electric collection (triggers onInsert → createForm server fn)
-        await formCollection.insert({
+        formCollection.insert({
           id: newFormId,
           workspaceId: targetWorkspaceId,
           createdByUserId: "", // Server will use context.session.user.id
@@ -96,7 +97,7 @@ export async function syncLocalDataToCloud(organizationId: string): Promise<Sync
         );
 
         // Delete from localStorage after successful sync
-        await localFormCollection.delete(localForm.id);
+        localFormCollection.delete(localForm.id);
       } catch (error) {
         console.error(`Failed to sync form "${localForm.title || "Untitled"}":`, error);
         // Continue with other forms

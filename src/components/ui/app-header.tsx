@@ -277,7 +277,9 @@ export function AppHeader({
             className="h-8 px-2.5 text-muted-foreground hover:text-foreground font-normal"
             asChild
           >
-            <Link to="/">About</Link>
+            <Link to="/" preload={false}>
+              About
+            </Link>
           </Button>
         )}
 

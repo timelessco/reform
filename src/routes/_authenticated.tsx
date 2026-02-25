@@ -9,7 +9,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AppHeader } from "@/components/ui/app-header";
 import { Button } from "@/components/ui/button";
 import {
   CommandDialog,
@@ -34,12 +33,6 @@ import Loader from "@/components/ui/loader";
 import { Logo } from "@/components/ui/logo";
 import { NotFound } from "@/components/ui/not-found";
 import {
-  type ImperativePanelHandle,
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
-import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -63,10 +56,6 @@ import {
 } from "@/components/ui/sidebar-icons";
 import { UserMenuMinimal } from "@/components/user-menu-minimal";
 import { WorkspaceItemMinimal, type WorkspaceWithForms } from "@/components/workspace-item-minimal";
-import {
-  EditorHeaderVisibilityProvider,
-  useEditorHeaderVisibility,
-} from "@/contexts/editor-header-visibility-context";
 import { MinimalSidebarProvider, useMinimalSidebar } from "@/contexts/minimal-sidebar-context";
 import {
   createFormLocal,
@@ -79,7 +68,6 @@ import {
   updateWorkspaceName,
 } from "@/db-collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
-import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import {
   useArchivedForms,
   useFavoriteForms,
@@ -97,10 +85,7 @@ import {
   Link,
   Outlet,
   useLocation,
-  useNavigate,
-  useParams,
   useRouter,
-  useSearch,
 } from "@tanstack/react-router";
 import {
   ChevronsLeft,
@@ -120,8 +105,6 @@ import {
 
 import type * as React from "react";
 import {
-  lazy,
-  Suspense,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -130,27 +113,6 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
-
-const LazyFormSettingsSidebar = lazy(() =>
-  import("@/components/form-builder/form-settings-sidebar").then((m) => ({
-    default: m.FormSettingsSidebar,
-  })),
-);
-const LazyShareSummarySidebar = lazy(() =>
-  import("@/components/form-builder/share-summary-sidebar").then((m) => ({
-    default: m.ShareSummarySidebar,
-  })),
-);
-const LazyVersionHistorySidebar = lazy(() =>
-  import("@/components/form-builder/version-history-sidebar").then((m) => ({
-    default: m.VersionHistorySidebar,
-  })),
-);
-const LazyCustomizeSidebar = lazy(() =>
-  import("@/components/ui/customize-sidebar").then((m) => ({
-    default: m.CustomizeSidebar,
-  })),
-);
 
 // Route configuration
 export const Route = createFileRoute("/_authenticated")({
@@ -184,111 +146,19 @@ export const Route = createFileRoute("/_authenticated")({
   ssr: "data-only",
 });
 
-const TypedResizableHandle = ResizableHandle as any;
-
 function AuthLayout() {
-  const { pathname } = useLocation();
-  const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
-
   return (
     <SidebarProvider style={{ "--app-header-height": "40px" } as React.CSSProperties}>
-      <EditorHeaderVisibilityProvider enabled={isEditRoute}>
-        <MinimalSidebarProvider>
-          <AuthLayoutContent />
-        </MinimalSidebarProvider>
-      </EditorHeaderVisibilityProvider>
+      <MinimalSidebarProvider>
+        <AuthLayoutContent />
+      </MinimalSidebarProvider>
     </SidebarProvider>
   );
 }
 
 function AuthLayoutContent() {
-  const location = useLocation();
-  const { pathname } = location;
-  const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
-  const { visible: isHeaderVisible, reportPointerActivity } = useEditorHeaderVisibility();
-
-  const { formId } = useParams({ strict: false }) as { formId?: string };
-
-  // Editor sidebar management
-  const navigate = useNavigate();
-  const search: any = useSearch({ strict: false });
-  const sidebarParam = search.sidebar;
-  const { activeSidebar, setActiveSidebar, resetSidebar, closeSidebar } = useEditorSidebar();
-
-  // Close sidebar and update URL to clear sidebar param
-  const handleCloseSidebar = useCallback(() => {
-    closeSidebar();
-    navigate({
-      to: ".",
-      search: (prev: any) => ({ ...prev, sidebar: "" }),
-      replace: true,
-    });
-  }, [closeSidebar, navigate]);
-  const handleRef = useRef<HTMLDivElement>(null);
-  const rightPanelRef = useRef<ImperativePanelHandle>(null);
-  const [handleLeft, setHandleLeft] = useState(0);
-  const handleDragRef = useRef({ dragging: false, hasDragged: false, startX: 0, startY: 0 });
-  const leftPanelRef = useRef<HTMLDivElement>(null);
-
-  // Initialize sidebar state from URL params on mount only
-  // Changes should be handled via event handlers (router navigation)
-  const initializedRef = useRef(false);
-  if (!initializedRef.current) {
-    initializedRef.current = true;
-    if (sidebarParam) {
-      setActiveSidebar(sidebarParam);
-    } else {
-      resetSidebar();
-    }
-  }
-
+  const { pathname } = useLocation();
   const isFormBuilder = pathname.includes("/form-builder/");
-  const showEditorSidebar = !!(activeSidebar && isFormBuilder && formId);
-  const isDistractionHeaderHidden = isEditRoute && !isHeaderVisible;
-
-  const updateHandleLeft = useCallback(() => {
-    const node = leftPanelRef.current;
-    if (!node) return;
-    const rect = node.getBoundingClientRect();
-    setHandleLeft(rect.right);
-  }, []);
-
-  useLayoutEffect(() => {
-    updateHandleLeft();
-  }, [updateHandleLeft]);
-
-  useEffect(() => {
-    const onResize = () => updateHandleLeft();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [updateHandleLeft]);
-
-  useEffect(() => {
-    if (!leftPanelRef.current) return;
-    const observer = new ResizeObserver(() => updateHandleLeft());
-    observer.observe(leftPanelRef.current);
-    return () => observer.disconnect();
-  }, [updateHandleLeft]);
-
-  // Imperatively control right panel expand/collapse
-  useEffect(() => {
-    if (rightPanelRef.current) {
-      if (showEditorSidebar) {
-        rightPanelRef.current.expand();
-      } else {
-        rightPanelRef.current.collapse();
-      }
-    }
-  }, [showEditorSidebar]);
-
-  // Bug 2 fix: Sync sidebar state with URL param changes
-  useEffect(() => {
-    if (sidebarParam && sidebarParam !== activeSidebar) {
-      setActiveSidebar(sidebarParam);
-    } else if (!sidebarParam && activeSidebar) {
-      closeSidebar();
-    }
-  }, [sidebarParam, activeSidebar, setActiveSidebar, closeSidebar]);
 
   return (
     <>
@@ -296,111 +166,23 @@ function AuthLayoutContent() {
       <SidebarInbox />
 
       <SidebarInset className="overflow-hidden relative flex flex-col h-screen">
-        {isDistractionHeaderHidden && (
-          <div
-            className="fixed inset-x-0 top-0 z-1200 h-3 bg-transparent"
-            onMouseEnter={reportPointerActivity}
-            aria-hidden="true"
-          />
-        )}
-        <div className="relative z-0">
-          <AppHeader
-            dividerX={handleLeft}
-            isSidebarOpen={showEditorSidebar}
-            isDistractionHidden={isDistractionHeaderHidden}
-          />
-        </div>
+        {!isFormBuilder && <SimpleTopHeader />}
 
         <div className="relative z-20 flex-1 min-h-0 overflow-hidden">
-          <ResizablePanelGroup direction="horizontal" className="h-full">
-            {/* Main content panel - non-resizable */}
-            <ResizablePanel defaultSize={showEditorSidebar ? 70 : 100} minSize={50}>
-              <div ref={leftPanelRef} className={cn("flex h-full min-w-0 flex-col z-50")}>
-                <Outlet key={formId} />
-              </div>
-            </ResizablePanel>
-
-            {/* Resize handle - draggable, click to close */}
-            <TypedResizableHandle
-              className={cn(
-                "group fixed top-0 bottom-0 left-(--handle-left) -translate-x-1/2 w-px flex items-center h-full",
-                "bg-border/60 z-[999] pointer-events-auto",
-                "transition-none duration-0 hover:w-px data-[resize-handle-state=drag]:w-px",
-                !showEditorSidebar && "hidden pointer-events-none",
-              )}
-              ref={handleRef}
-              style={{ "--handle-left": `${handleLeft}px` } as React.CSSProperties}
-              onDragging={(isDragging: boolean) => {
-                if (isDragging) {
-                  handleDragRef.current.dragging = true;
-                  handleDragRef.current.hasDragged = true;
-                } else {
-                  handleDragRef.current.dragging = false;
-                  setTimeout(() => {
-                    handleDragRef.current.hasDragged = false;
-                  }, 50);
-                }
-              }}
-              onPointerDown={(e: React.PointerEvent<HTMLDivElement>) => {
-                handleDragRef.current.hasDragged = false;
-                handleDragRef.current.startX = e.clientX;
-              }}
-              onPointerUp={(e: React.PointerEvent<HTMLDivElement>) => {
-                const deltaX = Math.abs(e.clientX - (handleDragRef.current.startX || 0));
-                // If it was just a click (no internal drag state activated, and mouse barely moved)
-                if (!handleDragRef.current.hasDragged && deltaX < 5 && activeSidebar) {
-                  handleCloseSidebar();
-                }
-              }}
-            >
-              <div
-                className={cn(
-                  "pointer-events-none absolute -left-3 -translate-x-full",
-                  "rounded-md border border-foreground/10 bg-background/90 px-2 py-1 text-[11px] text-muted-foreground shadow-lg",
-                  "opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-data-[resize-handle-state=drag]:opacity-0",
-                )}
-              >
-                <div className="leading-4 whitespace-nowrap">
-                  <div>Close Click</div>
-                  <div>Resize Drag</div>
-                </div>
-              </div>
-            </TypedResizableHandle>
-
-            {/* Right sidebar - Settings/Share/History, resizable */}
-            <ResizablePanel
-              ref={rightPanelRef}
-              collapsible
-              collapsedSize={0}
-              defaultSize={showEditorSidebar ? 30 : 0}
-              minSize={25}
-              maxSize={50}
-              className={cn(
-                "h-full overflow-hidden bg-background",
-                !showEditorSidebar && "border-none",
-              )}
-            >
-              <div className="h-full w-full">
-                <Suspense fallback={null}>
-                  {activeSidebar === "settings" && formId && (
-                    <LazyFormSettingsSidebar formId={formId} />
-                  )}
-                  {activeSidebar === "share" && formId && (
-                    <LazyShareSummarySidebar formId={formId} />
-                  )}
-                  {activeSidebar === "history" && formId && (
-                    <LazyVersionHistorySidebar formId={formId} />
-                  )}
-                  {activeSidebar === "customize" && formId && (
-                    <LazyCustomizeSidebar formId={formId} />
-                  )}
-                </Suspense>
-              </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
+          <Outlet />
         </div>
       </SidebarInset>
     </>
+  );
+}
+
+function SimpleTopHeader() {
+  return (
+    <header className="flex h-10 w-full items-center justify-end bg-background px-3 text-[13px] font-medium shrink-0">
+      <Link to="/" preload={false} className="text-muted-foreground hover:text-foreground">
+        About
+      </Link>
+    </header>
   );
 }
 

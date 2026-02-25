@@ -63,10 +63,19 @@ const config = defineConfig({
   build: {
     rollupOptions: {
       output: {
+        onlyExplicitManualChunks: true,
         manualChunks(id) {
-          if (id.includes("@platejs/") || id.includes("platejs")) return "editor";
-          if (id.includes("@radix-ui/")) return "ui";
-          if (id.includes("@sentry/")) return "sentry";
+          if (!id.includes("/node_modules/")) return;
+
+          if (
+            id.includes("/node_modules/@platejs/") ||
+            id.includes("/node_modules/platejs/")
+          ) {
+            return "editor-vendor";
+          }
+
+          if (id.includes("/node_modules/@radix-ui/")) return "ui";
+          if (id.includes("/node_modules/@sentry/")) return "sentry";
         },
       },
     },

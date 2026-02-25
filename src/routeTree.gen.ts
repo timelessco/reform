@@ -53,7 +53,7 @@ const CreateRoute = CreateRouteImport.update({
   id: '/create',
   path: '/create',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/create.lazy').then((d) => d.Route))
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -67,7 +67,7 @@ const FormsFormIdRoute = FormsFormIdRouteImport.update({
   id: '/forms/$formId',
   path: '/forms/$formId',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/forms/$formId.lazy').then((d) => d.Route))
 const DemoSplatRoute = DemoSplatRouteImport.update({
   id: '/demo/$',
   path: '/demo/$',
@@ -99,7 +99,9 @@ const FormsI8nFormIdRoute = FormsI8nFormIdRouteImport.update({
   id: '/forms/$i8n/$formId',
   path: '/forms/$i8n/$formId',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() =>
+  import('./routes/forms/$i8n.$formId.lazy').then((d) => d.Route),
+)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -155,6 +157,10 @@ const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSubmissionsRoute =
       getParentRoute: () =>
         AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRoute,
     } as any,
+  ).lazy(() =>
+    import('./routes/_authenticated/workspace/$workspaceId/form-builder/$formId/submissions.lazy').then(
+      (d) => d.Route,
+    ),
   )
 const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute =
   AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRouteImport.update({
@@ -162,14 +168,22 @@ const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute =
     path: '/settings',
     getParentRoute: () =>
       AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/_authenticated/workspace/$workspaceId/form-builder/$formId/settings.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute =
   AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRouteImport.update({
     id: '/edit',
     path: '/edit',
     getParentRoute: () =>
       AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/_authenticated/workspace/$workspaceId/form-builder/$formId/edit.lazy').then(
+      (d) => d.Route,
+    ),
+  )
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute

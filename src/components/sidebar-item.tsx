@@ -9,6 +9,7 @@ export interface SidebarItemProps {
   isActive?: boolean;
   onClick?: () => void;
   prefix?: React.ReactNode;
+  preload?: false;
 }
 
 export function SidebarItem({
@@ -17,10 +18,11 @@ export function SidebarItem({
   isActive,
   onClick,
   prefix,
+  preload = false,
   children,
 }: SidebarItemProps & { children?: React.ReactNode }) {
   const Component: React.ElementType = to ? Link : "button";
-  const componentProps = to ? { to } : { type: "button" as const };
+  const componentProps = to ? { to, preload } : { type: "button" as const };
 
   return (
     <Component

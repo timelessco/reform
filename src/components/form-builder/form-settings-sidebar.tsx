@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useFormSettingsSidebar } from "@/hooks/use-form-settings-sidebar";
 import { cn } from "@/lib/utils";
-import { SettingsContent } from "@/routes/_authenticated/workspace/$workspaceId/form-builder/$formId/settings";
+import { SettingsContent } from "@/routes/_authenticated/workspace/$workspaceId/form-builder/$formId/settings.lazy";
 import {
   Sidebar,
   SidebarContent,
