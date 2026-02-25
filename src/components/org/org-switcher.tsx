@@ -27,7 +27,9 @@ function OrganizationSwitcher() {
   const { data: session } = useSession();
   const user = session?.user;
 
-  const { data: activeOrg } = useQuery(auth.organization.getFullOrganization.queryOptions());
+  const { data: activeOrg } = useQuery(
+    auth.organization.getFullOrganization.queryOptions(),
+  );
 
   const { data: orgs } = useQuery(auth.organization.list.queryOptions());
 
@@ -86,22 +88,24 @@ function OrganizationSwitcher() {
     <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-            >
-              <Avatar className="h-8 w-8 rounded-full">
-                <AvatarImage src={user?.image || undefined} alt={displayName} />
-                <AvatarFallback className="rounded-full bg-primary text-primary-foreground text-xs">
-                  {getInitials(displayName)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{displayName}</span>
-              </div>
-              <ChevronDown className="ml-auto h-4 w-4 text-muted-foreground" />
-            </SidebarMenuButton>
+          <DropdownMenuTrigger
+            render={
+              <SidebarMenuButton
+                size="lg"
+                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              />
+            }
+          >
+            <Avatar className="h-8 w-8 rounded-full">
+              <AvatarImage src={user?.image || undefined} alt={displayName} />
+              <AvatarFallback className="rounded-full bg-primary text-primary-foreground text-xs">
+                {getInitials(displayName)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-semibold">{displayName}</span>
+            </div>
+            <ChevronDown className="ml-auto h-4 w-4 text-muted-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-[--radix-dropdown-menu-trigger-width] min-w-48 rounded-lg"
@@ -118,11 +122,15 @@ function OrganizationSwitcher() {
               return (
                 <DropdownMenuItem
                   key={org.id}
-                  onClick={() => setActiveOrgMutation.mutate({ organizationId: org.id })}
+                  onClick={() =>
+                    setActiveOrgMutation.mutate({ organizationId: org.id })
+                  }
                   className="gap-2.5 py-2"
                 >
                   <Avatar className="h-4 w-4 rounded-full">
-                    <AvatarFallback className="text-[8px]">{getInitials(org.name)}</AvatarFallback>
+                    <AvatarFallback className="text-[8px]">
+                      {getInitials(org.name)}
+                    </AvatarFallback>
                   </Avatar>
                   <span className="flex-1 truncate">{org.name}</span>
                   {role && (
@@ -133,7 +141,9 @@ function OrganizationSwitcher() {
                       {role}
                     </Badge>
                   )}
-                  {org.id === activeOrg?.id && <div className="h-2 w-2 rounded-full bg-primary" />}
+                  {org.id === activeOrg?.id && (
+                    <div className="h-2 w-2 rounded-full bg-primary" />
+                  )}
                 </DropdownMenuItem>
               );
             })}

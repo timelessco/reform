@@ -1,5 +1,8 @@
 import { useDraggable, useDropLine } from "@platejs/dnd";
-import { BlockSelectionPlugin, useBlockSelected } from "@platejs/selection/react";
+import {
+  BlockSelectionPlugin,
+  useBlockSelected,
+} from "@platejs/selection/react";
 import { setCellBackground } from "@platejs/table";
 import {
   TablePlugin,
@@ -10,7 +13,6 @@ import {
   useTableElement,
   useTableMergeState,
 } from "@platejs/table/react";
-import type * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { PopoverAnchor } from "@radix-ui/react-popover";
 import { cva } from "class-variance-authority";
 import {
@@ -67,7 +69,10 @@ import { Popover, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 import { blockSelectionVariants } from "./block-selection";
-import { ColorDropdownMenuItems, DEFAULT_COLORS } from "./font-color-toolbar-button";
+import {
+  ColorDropdownMenuItems,
+  DEFAULT_COLORS,
+} from "./font-color-toolbar-button";
 import { ResizeHandle } from "./resize-handle";
 import {
   BorderAllIcon,
@@ -77,14 +82,29 @@ import {
   BorderRightIcon,
   BorderTopIcon,
 } from "./table-icons";
-import { Toolbar, ToolbarButton, ToolbarGroup, ToolbarMenuGroup } from "./toolbar";
+import {
+  Toolbar,
+  ToolbarButton,
+  ToolbarGroup,
+  ToolbarMenuGroup,
+} from "./toolbar";
 export const TableElement = withHOC(
   TableProvider,
-  function TableElement({ children, ...props }: PlateElementProps<TTableElement>) {
+  function TableElement({
+    children,
+    ...props
+  }: PlateElementProps<TTableElement>) {
     const readOnly = useReadOnly();
-    const isSelectionAreaVisible = usePluginOption(BlockSelectionPlugin, "isSelectionAreaVisible");
+    const isSelectionAreaVisible = usePluginOption(
+      BlockSelectionPlugin,
+      "isSelectionAreaVisible",
+    );
     const hasControls = !readOnly && !isSelectionAreaVisible;
-    const { isSelectingCell, marginLeft, props: tableProps } = useTableElement();
+    const {
+      isSelectingCell,
+      marginLeft,
+      props: tableProps,
+    } = useTableElement();
 
     const isSelectingTable = useBlockSelected(props.element.id as string);
 
@@ -108,7 +128,9 @@ export const TableElement = withHOC(
             <tbody className="min-w-full">{children}</tbody>
           </table>
 
-          {isSelectingTable && <div className={blockSelectionVariants()} contentEditable={false} />}
+          {isSelectingTable && (
+            <div className={blockSelectionVariants()} contentEditable={false} />
+          )}
         </div>
       </PlateElement>
     );
@@ -121,7 +143,10 @@ export const TableElement = withHOC(
   },
 );
 
-function TableFloatingToolbar({ children, ...props }: React.ComponentProps<typeof PopoverContent>) {
+function TableFloatingToolbar({
+  children,
+  ...props
+}: React.ComponentProps<typeof PopoverContent>) {
   const { tf } = useEditorPlugin(TablePlugin);
   const selected = useSelected();
   const element = useElement<TTableElement>();
@@ -135,135 +160,136 @@ function TableFloatingToolbar({ children, ...props }: React.ComponentProps<typeo
   const { canMerge, canSplit } = useTableMergeState();
 
   return (
-    <Popover open={isFocusedLast && (canMerge || canSplit || collapsedInside)} modal={false}>
-      <PopoverAnchor asChild>{children}</PopoverAnchor>
+    <Popover
+      open={isFocusedLast && (canMerge || canSplit || collapsedInside)}
+      modal={false}
+    >
+      <PopoverAnchor>{children}</PopoverAnchor>
       <PopoverContent
-        asChild
-        onOpenAutoFocus={(e) => e.preventDefault()}
+        render={
+          <Toolbar
+            className="scrollbar-hide flex w-auto max-w-[80vw] flex-row overflow-x-auto rounded-md border bg-popover p-1 shadow-md print:hidden"
+            contentEditable={false}
+          />
+        }
         contentEditable={false}
         {...props}
       >
-        <Toolbar
-          className="scrollbar-hide flex w-auto max-w-[80vw] flex-row overflow-x-auto rounded-md border bg-popover p-1 shadow-md print:hidden"
-          contentEditable={false}
-        >
+        <ToolbarGroup>
+          <ColorDropdownMenu tooltip="Background color">
+            <PaintBucketIcon />
+          </ColorDropdownMenu>
+          {canMerge && (
+            <ToolbarButton
+              onClick={() => tf.table.merge()}
+              onMouseDown={(e) => e.preventDefault()}
+              tooltip="Merge cells"
+            >
+              <CombineIcon />
+            </ToolbarButton>
+          )}
+          {canSplit && (
+            <ToolbarButton
+              onClick={() => tf.table.split()}
+              onMouseDown={(e) => e.preventDefault()}
+              tooltip="Split cell"
+            >
+              <SquareSplitHorizontalIcon />
+            </ToolbarButton>
+          )}
+
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger
+              render={<ToolbarButton tooltip="Cell borders" />}
+            >
+              <Grid2X2Icon />
+            </DropdownMenuTrigger>
+
+            <DropdownMenuPortal>
+              <TableBordersDropdownMenuContent />
+            </DropdownMenuPortal>
+          </DropdownMenu>
+
+          {collapsedInside && (
+            <ToolbarGroup>
+              <ToolbarButton tooltip="Delete table" {...buttonProps}>
+                <Trash2Icon />
+              </ToolbarButton>
+            </ToolbarGroup>
+          )}
+        </ToolbarGroup>
+
+        {collapsedInside && (
           <ToolbarGroup>
-            <ColorDropdownMenu tooltip="Background color">
-              <PaintBucketIcon />
-            </ColorDropdownMenu>
-            {canMerge && (
-              <ToolbarButton
-                onClick={() => tf.table.merge()}
-                onMouseDown={(e) => e.preventDefault()}
-                tooltip="Merge cells"
-              >
-                <CombineIcon />
-              </ToolbarButton>
-            )}
-            {canSplit && (
-              <ToolbarButton
-                onClick={() => tf.table.split()}
-                onMouseDown={(e) => e.preventDefault()}
-                tooltip="Split cell"
-              >
-                <SquareSplitHorizontalIcon />
-              </ToolbarButton>
-            )}
-
-            <DropdownMenu modal={false}>
-              <DropdownMenuTrigger asChild>
-                <ToolbarButton tooltip="Cell borders">
-                  <Grid2X2Icon />
-                </ToolbarButton>
-              </DropdownMenuTrigger>
-
-              <DropdownMenuPortal>
-                <TableBordersDropdownMenuContent />
-              </DropdownMenuPortal>
-            </DropdownMenu>
-
-            {collapsedInside && (
-              <ToolbarGroup>
-                <ToolbarButton tooltip="Delete table" {...buttonProps}>
-                  <Trash2Icon />
-                </ToolbarButton>
-              </ToolbarGroup>
-            )}
+            <ToolbarButton
+              onClick={() => {
+                tf.insert.tableRow({ before: true });
+              }}
+              onMouseDown={(e) => e.preventDefault()}
+              tooltip="Insert row before"
+            >
+              <ArrowUp />
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={() => {
+                tf.insert.tableRow();
+              }}
+              onMouseDown={(e) => e.preventDefault()}
+              tooltip="Insert row after"
+            >
+              <ArrowDown />
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={() => {
+                tf.remove.tableRow();
+              }}
+              onMouseDown={(e) => e.preventDefault()}
+              tooltip="Delete row"
+            >
+              <XIcon />
+            </ToolbarButton>
           </ToolbarGroup>
+        )}
 
-          {collapsedInside && (
-            <ToolbarGroup>
-              <ToolbarButton
-                onClick={() => {
-                  tf.insert.tableRow({ before: true });
-                }}
-                onMouseDown={(e) => e.preventDefault()}
-                tooltip="Insert row before"
-              >
-                <ArrowUp />
-              </ToolbarButton>
-              <ToolbarButton
-                onClick={() => {
-                  tf.insert.tableRow();
-                }}
-                onMouseDown={(e) => e.preventDefault()}
-                tooltip="Insert row after"
-              >
-                <ArrowDown />
-              </ToolbarButton>
-              <ToolbarButton
-                onClick={() => {
-                  tf.remove.tableRow();
-                }}
-                onMouseDown={(e) => e.preventDefault()}
-                tooltip="Delete row"
-              >
-                <XIcon />
-              </ToolbarButton>
-            </ToolbarGroup>
-          )}
-
-          {collapsedInside && (
-            <ToolbarGroup>
-              <ToolbarButton
-                onClick={() => {
-                  tf.insert.tableColumn({ before: true });
-                }}
-                onMouseDown={(e) => e.preventDefault()}
-                tooltip="Insert column before"
-              >
-                <ArrowLeft />
-              </ToolbarButton>
-              <ToolbarButton
-                onClick={() => {
-                  tf.insert.tableColumn();
-                }}
-                onMouseDown={(e) => e.preventDefault()}
-                tooltip="Insert column after"
-              >
-                <ArrowRight />
-              </ToolbarButton>
-              <ToolbarButton
-                onClick={() => {
-                  tf.remove.tableColumn();
-                }}
-                onMouseDown={(e) => e.preventDefault()}
-                tooltip="Delete column"
-              >
-                <XIcon />
-              </ToolbarButton>
-            </ToolbarGroup>
-          )}
-        </Toolbar>
+        {collapsedInside && (
+          <ToolbarGroup>
+            <ToolbarButton
+              onClick={() => {
+                tf.insert.tableColumn({ before: true });
+              }}
+              onMouseDown={(e) => e.preventDefault()}
+              tooltip="Insert column before"
+            >
+              <ArrowLeft />
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={() => {
+                tf.insert.tableColumn();
+              }}
+              onMouseDown={(e) => e.preventDefault()}
+              tooltip="Insert column after"
+            >
+              <ArrowRight />
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={() => {
+                tf.remove.tableColumn();
+              }}
+              onMouseDown={(e) => e.preventDefault()}
+              tooltip="Delete column"
+            >
+              <XIcon />
+            </ToolbarButton>
+          </ToolbarGroup>
+        )}
       </PopoverContent>
     </Popover>
   );
 }
 
 function TableBordersDropdownMenuContent(
-  props: React.ComponentProps<typeof DropdownMenuPrimitive.Content>,
+  props: React.HTMLAttributes<HTMLDivElement>,
 ) {
-  const editor = useEditorRef();
   const {
     getOnSelectTableBorder,
     hasBottomBorder,
@@ -277,14 +303,10 @@ function TableBordersDropdownMenuContent(
   return (
     <DropdownMenuContent
       className="min-w-[220px]"
-      onCloseAutoFocus={(e) => {
-        e.preventDefault();
-        editor.tf.focus();
-      }}
       align="start"
       side="right"
       sideOffset={0}
-      {...props}
+      {...(props as any)}
     >
       <DropdownMenuGroup>
         <DropdownMenuCheckboxItem
@@ -337,7 +359,13 @@ function TableBordersDropdownMenuContent(
   );
 }
 
-function ColorDropdownMenu({ children, tooltip }: { children: React.ReactNode; tooltip: string }) {
+function ColorDropdownMenu({
+  children,
+  tooltip,
+}: {
+  children: React.ReactNode;
+  tooltip: string;
+}) {
   const [open, setOpen] = React.useState(false);
 
   const editor = useEditorRef();
@@ -361,8 +389,8 @@ function ColorDropdownMenu({ children, tooltip }: { children: React.ReactNode; t
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
-      <DropdownMenuTrigger asChild>
-        <ToolbarButton tooltip={tooltip}>{children}</ToolbarButton>
+      <DropdownMenuTrigger render={<ToolbarButton tooltip={tooltip} />}>
+        {children}
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="start">
@@ -384,19 +412,28 @@ function ColorDropdownMenu({ children, tooltip }: { children: React.ReactNode; t
   );
 }
 
-export function TableRowElement({ children, ...props }: PlateElementProps<TTableRowElement>) {
+export function TableRowElement({
+  children,
+  ...props
+}: PlateElementProps<TTableRowElement>) {
   const { element } = props;
   const readOnly = useReadOnly();
   const selected = useSelected();
   const editor = useEditorRef();
-  const isSelectionAreaVisible = usePluginOption(BlockSelectionPlugin, "isSelectionAreaVisible");
+  const isSelectionAreaVisible = usePluginOption(
+    BlockSelectionPlugin,
+    "isSelectionAreaVisible",
+  );
   const hasControls = !readOnly && !isSelectionAreaVisible;
 
   const { isDragging, nodeRef, previewRef, handleRef } = useDraggable({
     element,
     type: element.type,
     canDropNode: ({ dragEntry, dropEntry }) =>
-      PathApi.equals(PathApi.parent(dragEntry[1]), PathApi.parent(dropEntry[1])),
+      PathApi.equals(
+        PathApi.parent(dragEntry[1]),
+        PathApi.parent(dropEntry[1]),
+      ),
     onDropHandler: (_, { dragItem }) => {
       const dragElement = (dragItem as { element: TElement }).element;
 
@@ -484,16 +521,20 @@ export function TableCellElement({
   });
   const isSelectingTable = useBlockSelected(tableId);
   const isSelectingRow = useBlockSelected(rowId) || isSelectingTable;
-  const isSelectionAreaVisible = usePluginOption(BlockSelectionPlugin, "isSelectionAreaVisible");
+  const isSelectionAreaVisible = usePluginOption(
+    BlockSelectionPlugin,
+    "isSelectionAreaVisible",
+  );
 
   const { borders, colIndex, colSpan, minHeight, rowIndex, selected, width } =
     useTableCellElement();
 
-  const { bottomProps, hiddenLeft, leftProps, rightProps } = useTableCellElementResizable({
-    colIndex,
-    colSpan,
-    rowIndex,
-  });
+  const { bottomProps, hiddenLeft, leftProps, rightProps } =
+    useTableCellElementResizable({
+      colIndex,
+      colSpan,
+      rowIndex,
+    });
 
   return (
     <PlateElement
@@ -524,7 +565,10 @@ export function TableCellElement({
         rowSpan: api.table.getRowSpan(element),
       }}
     >
-      <div className="relative z-20 box-border h-full px-3 py-2" style={{ minHeight }}>
+      <div
+        className="relative z-20 box-border h-full px-3 py-2"
+        style={{ minHeight }}
+      >
         {props.children}
       </div>
 
@@ -571,12 +615,16 @@ export function TableCellElement({
         </div>
       )}
 
-      {isSelectingRow && <div className={blockSelectionVariants()} contentEditable={false} />}
+      {isSelectingRow && (
+        <div className={blockSelectionVariants()} contentEditable={false} />
+      )}
     </PlateElement>
   );
 }
 
-export function TableCellHeaderElement(props: React.ComponentProps<typeof TableCellElement>) {
+export function TableCellHeaderElement(
+  props: React.ComponentProps<typeof TableCellElement>,
+) {
   return <TableCellElement {...props} isHeader />;
 }
 

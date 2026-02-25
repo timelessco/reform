@@ -15,7 +15,10 @@ const defaultContent = normalizeNodeId([
   },
 ]);
 
-const DEFAULT_FORM_STATE: Omit<Form, "id" | "workspaceId" | "createdAt" | "updatedAt"> = {
+const DEFAULT_FORM_STATE: Omit<
+  Form,
+  "id" | "workspaceId" | "createdAt" | "updatedAt"
+> = {
   formName: "draft",
   schemaName: "draftFormSchema",
   isMultiStep: false,
@@ -31,10 +34,6 @@ const DEFAULT_FORM_STATE: Omit<Form, "id" | "workspaceId" | "createdAt" | "updat
     preferredFramework: "react",
     preferredPackageManager: "pnpm",
     isCodeSidebarOpen: false,
-    language: "en",
-    redirectOnCompletion: false,
-    redirectUrl: "",
-    redirectDelay: 0,
     saveAnswersForLater: true,
     progressBar: false,
     branding: true,
@@ -48,7 +47,7 @@ const DEFAULT_FORM_STATE: Omit<Form, "id" | "workspaceId" | "createdAt" | "updat
     closedFormMessage: "",
     preventDuplicateSubmissions: false,
     autoJump: false,
-  },
+  } as any,
   title: "",
   icon: null,
   cover: null,

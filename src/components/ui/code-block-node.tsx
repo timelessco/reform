@@ -21,7 +21,11 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 export function CodeBlockElement(props: PlateElementProps<TCodeBlockElement>) {
@@ -79,7 +83,8 @@ function CodeBlockCombobox() {
     () =>
       languages.filter(
         (language) =>
-          !searchValue || language.label.toLowerCase().includes(searchValue.toLowerCase()),
+          !searchValue ||
+          language.label.toLowerCase().includes(searchValue.toLowerCase()),
       ),
     [searchValue],
   );
@@ -87,20 +92,29 @@ function CodeBlockCombobox() {
   if (readOnly) return null;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-6 select-none justify-between gap-1 px-2 text-muted-foreground text-xs"
-          aria-expanded={open}
-          aria-controls="language-listbox"
-          role="combobox"
-        >
-          {languages.find((language) => language.value === value)?.label ?? "Plain Text"}
-        </Button>
+    <Popover
+      open={open}
+      onOpenChange={(newOpen) => {
+        setOpen(newOpen);
+        if (!newOpen) setSearchValue("");
+      }}
+    >
+      <PopoverTrigger
+        render={
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 select-none justify-between gap-1 px-2 text-muted-foreground text-xs"
+            aria-expanded={open}
+            aria-controls="language-listbox"
+            role="combobox"
+          />
+        }
+      >
+        {languages.find((language) => language.value === value)?.label ??
+          "Plain Text"}
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0" onCloseAutoFocus={() => setSearchValue("")}>
+      <PopoverContent className="w-[200px] p-0">
         <Command shouldFilter={false}>
           <CommandInput
             className="h-9"
@@ -110,7 +124,10 @@ function CodeBlockCombobox() {
           />
           <CommandEmpty>No language found.</CommandEmpty>
 
-          <CommandList id="language-listbox" className="h-[344px] overflow-y-auto">
+          <CommandList
+            id="language-listbox"
+            className="h-[344px] overflow-y-auto"
+          >
             <CommandGroup>
               {items.map((language) => (
                 <CommandItem
@@ -118,12 +135,19 @@ function CodeBlockCombobox() {
                   className="cursor-pointer"
                   value={language.value}
                   onSelect={(value) => {
-                    editor.tf.setNodes<TCodeBlockElement>({ lang: value }, { at: element });
+                    editor.tf.setNodes<TCodeBlockElement>(
+                      { lang: value },
+                      { at: element },
+                    );
                     setSearchValue(value);
                     setOpen(false);
                   }}
                 >
-                  <Check className={cn(value === language.value ? "opacity-100" : "opacity-0")} />
+                  <Check
+                    className={cn(
+                      value === language.value ? "opacity-100" : "opacity-0",
+                    )}
+                  />
                   {language.label}
                 </CommandItem>
               ))}
@@ -138,7 +162,10 @@ function CodeBlockCombobox() {
 function CopyButton({
   value,
   ...props
-}: { value: (() => string) | string } & Omit<React.ComponentProps<typeof Button>, "value">) {
+}: { value: (() => string) | string } & Omit<
+  React.ComponentProps<typeof Button>,
+  "value"
+>) {
   const [hasCopied, setHasCopied] = React.useState(false);
 
   React.useEffect(() => {
@@ -150,13 +177,19 @@ function CopyButton({
   return (
     <Button
       onClick={() => {
-        void navigator.clipboard.writeText(typeof value === "function" ? value() : value);
+        void navigator.clipboard.writeText(
+          typeof value === "function" ? value() : value,
+        );
         setHasCopied(true);
       }}
       {...props}
     >
       <span className="sr-only">Copy</span>
-      {hasCopied ? <CheckIcon className="!size-3" /> : <CopyIcon className="!size-3" />}
+      {hasCopied ? (
+        <CheckIcon className="!size-3" />
+      ) : (
+        <CopyIcon className="!size-3" />
+      )}
     </Button>
   );
 }

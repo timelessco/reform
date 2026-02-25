@@ -29,7 +29,10 @@ import {
   Settings2,
 } from "lucide-react";
 
-interface DataGridColumnHeaderProps<TData, TValue> extends HTMLAttributes<HTMLDivElement> {
+interface DataGridColumnHeaderProps<
+  TData,
+  TValue,
+> extends HTMLAttributes<HTMLDivElement> {
   column: Column<TData, TValue>;
   title?: string;
   icon?: ReactNode;
@@ -93,45 +96,47 @@ function DataGridColumnHeader<TData, TValue>({
     );
   };
 
-  const headerButton = () => {
-    return (
-      <Button
-        variant="ghost"
-        className={cn(
-          "text-secondary-foreground/80 rounded-md font-normal -ms-2 px-2 h-7 hover:bg-secondary data-[state=open]:bg-secondary hover:text-foreground data-[state=open]:text-foreground",
-          className,
-        )}
-        disabled={isLoading || recordCount === 0}
-        onClick={() => {
-          const isSorted = column.getIsSorted();
-          if (isSorted === "asc") {
-            column.toggleSorting(true);
-          } else if (isSorted === "desc") {
-            column.clearSorting();
-          } else {
-            column.toggleSorting(false);
-          }
-        }}
-      >
-        {icon && icon}
-        {title}
+  const headerButtonProps = {
+    variant: "ghost" as const,
+    className: cn(
+      "text-secondary-foreground/80 rounded-md font-normal -ms-2 px-2 h-7 hover:bg-secondary data-[state=open]:bg-secondary hover:text-foreground data-[state=open]:text-foreground",
+      className,
+    ),
+    disabled: isLoading || recordCount === 0,
+    onClick: () => {
+      const isSorted = column.getIsSorted();
+      if (isSorted === "asc") {
+        column.toggleSorting(true);
+      } else if (isSorted === "desc") {
+        column.clearSorting();
+      } else {
+        column.toggleSorting(false);
+      }
+    },
+  };
 
-        {column.getCanSort() &&
-          (column.getIsSorted() === "desc" ? (
-            <ArrowDown className="size-[0.7rem]! mt-px" />
-          ) : column.getIsSorted() === "asc" ? (
-            <ArrowUp className="size-[0.7rem]! mt-px" />
-          ) : (
-            <ChevronsUpDown className="size-[0.7rem]! mt-px" />
-          ))}
-      </Button>
-    );
+  const headerButtonContent = (
+    <>
+      {icon && icon}
+      {title}
+      {column.getCanSort() &&
+        (column.getIsSorted() === "desc" ? (
+          <ArrowDown className="size-[0.7rem]! mt-px" />
+        ) : column.getIsSorted() === "asc" ? (
+          <ArrowUp className="size-[0.7rem]! mt-px" />
+        ) : (
+          <ChevronsUpDown className="size-[0.7rem]! mt-px" />
+        ))}
+    </>
+  );
+
+  const headerButton = () => {
+    return <Button {...headerButtonProps}>{headerButtonContent}</Button>;
   };
 
   const headerPin = () => {
     return (
       <Button
-        mode="icon"
         size="sm"
         variant="ghost"
         className="-me-1 size-7 rounded-md"
@@ -148,13 +153,16 @@ function DataGridColumnHeader<TData, TValue>({
     return (
       <div className="flex items-center h-full gap-1.5 justify-between">
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>{headerButton()}</DropdownMenuTrigger>
+          <DropdownMenuTrigger render={<Button {...headerButtonProps} />}>
+            {headerButtonContent}
+          </DropdownMenuTrigger>
           <DropdownMenuContent className="w-40" align="start">
             {filter && <DropdownMenuLabel>{filter}</DropdownMenuLabel>}
 
-            {filter && (column.getCanSort() || column.getCanPin() || visibility) && (
-              <DropdownMenuSeparator />
-            )}
+            {filter &&
+              (column.getCanSort() || column.getCanPin() || visibility) && (
+                <DropdownMenuSeparator />
+              )}
 
             {column.getCanSort() && (
               <>
@@ -201,7 +209,9 @@ function DataGridColumnHeader<TData, TValue>({
             {props.tableLayout?.columnsPinnable && column.getCanPin() && (
               <>
                 <DropdownMenuItem
-                  onClick={() => column.pin(column.getIsPinned() === "left" ? false : "left")}
+                  onClick={() =>
+                    column.pin(column.getIsPinned() === "left" ? false : "left")
+                  }
                 >
                   <ArrowLeftToLine className="size-3.5!" aria-hidden="true" />
                   <span className="grow">Pin to left</span>
@@ -210,7 +220,11 @@ function DataGridColumnHeader<TData, TValue>({
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => column.pin(column.getIsPinned() === "right" ? false : "right")}
+                  onClick={() =>
+                    column.pin(
+                      column.getIsPinned() === "right" ? false : "right",
+                    )
+                  }
                 >
                   <ArrowRightToLine className="size-3.5!" aria-hidden="true" />
                   <span className="grow">Pin to right</span>
@@ -243,7 +257,9 @@ function DataGridColumnHeader<TData, TValue>({
 
             {props.tableLayout?.columnsVisibility &&
               visibility &&
-              (column.getCanSort() || column.getCanPin() || filter) && <DropdownMenuSeparator />}
+              (column.getCanSort() || column.getCanPin() || filter) && (
+                <DropdownMenuSeparator />
+              )}
 
             {props.tableLayout?.columnsVisibility && visibility && (
               <DropdownMenuSub>
@@ -255,14 +271,20 @@ function DataGridColumnHeader<TData, TValue>({
                   <DropdownMenuSubContent>
                     {table
                       .getAllColumns()
-                      .filter((col) => typeof col.accessorFn !== "undefined" && col.getCanHide())
+                      .filter(
+                        (col) =>
+                          typeof col.accessorFn !== "undefined" &&
+                          col.getCanHide(),
+                      )
                       .map((col) => {
                         return (
                           <DropdownMenuCheckboxItem
                             key={col.id}
                             checked={col.getIsVisible()}
                             onSelect={(event) => event.preventDefault()}
-                            onCheckedChange={(value) => col.toggleVisibility(!!value)}
+                            onCheckedChange={(value) =>
+                              col.toggleVisibility(!!value)
+                            }
                             className="capitalize"
                           >
                             {col.columnDef.meta?.headerTitle || col.id}
@@ -292,7 +314,10 @@ function DataGridColumnHeader<TData, TValue>({
     return headerControls();
   }
 
-  if (column.getCanSort() || (props.tableLayout?.columnsResizable && column.getCanResize())) {
+  if (
+    column.getCanSort() ||
+    (props.tableLayout?.columnsResizable && column.getCanResize())
+  ) {
     return <div className="flex items-center h-full">{headerButton()}</div>;
   }
 

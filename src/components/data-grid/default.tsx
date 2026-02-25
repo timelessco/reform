@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import Link from "next/link";
+
 import { DataGrid, DataGridContainer } from "@/components/ui/data-grid";
 import { DataGridPagination } from "@/components/ui/data-grid-pagination";
 import { DataGridTable } from "@/components/ui/data-grid-table";
@@ -206,14 +206,18 @@ export default function DataGridDemo() {
     pageIndex: 0,
     pageSize: 5,
   });
-  const [sorting, setSorting] = useState<SortingState>([{ id: "name", desc: true }]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "name", desc: true },
+  ]);
 
   const columns = useMemo<ColumnDef<IData>[]>(
     () => [
       {
         accessorKey: "name",
         header: "Name",
-        cell: (info) => <span className="font-medium">{info.getValue() as string}</span>,
+        cell: (info) => (
+          <span className="font-medium">{info.getValue() as string}</span>
+        ),
         size: 175,
         meta: {
           headerClassName: "",
@@ -224,9 +228,12 @@ export default function DataGridDemo() {
         accessorKey: "email",
         header: "Email",
         cell: (info) => (
-          <Link href={`mailto:${info.getValue()}`} className="hover:text-primary hover:underline">
+          <a
+            href={`mailto:${info.getValue() as string}`}
+            className="hover:text-primary hover:underline"
+          >
             {info.getValue() as string}
-          </Link>
+          </a>
         ),
         size: 150,
         meta: {
@@ -248,7 +255,12 @@ export default function DataGridDemo() {
         accessorKey: "balance",
         header: "Balance ($)",
         cell: (info) => (
-          <span className="font-semibold">${(info.getValue() as number).toFixed(2)}</span>
+          <a
+            href={`mailto:${info.getValue()}`}
+            className="hover:text-primary hover:underline"
+          >
+            {info.getValue() as string}
+          </a>
         ),
         size: 120,
         meta: {

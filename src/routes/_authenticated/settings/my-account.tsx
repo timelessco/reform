@@ -23,7 +23,11 @@ import {
 } from "@/components/ui/dialog";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { Input } from "@/components/ui/input";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { auth, useSession } from "@/lib/auth-client";
@@ -52,7 +56,9 @@ function MyAccountPage() {
   const { accounts: initialAccounts } = Route.useLoaderData();
   // Initialize names from user (no useEffect needed since component waits for session)
   const [firstName, setFirstName] = useState(user?.name?.split(" ")[0] || "");
-  const [lastName, setLastName] = useState(user?.name?.split(" ").slice(1).join(" ") || "");
+  const [lastName, setLastName] = useState(
+    user?.name?.split(" ").slice(1).join(" ") || "",
+  );
 
   // 2FA State
   const [is2faDialogOpen, setIs2faDialogOpen] = useState(false);
@@ -229,7 +235,10 @@ function MyAccountPage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!window.confirm("Are you absolutely sure? This action cannot be undone.")) return;
+    if (
+      !window.confirm("Are you absolutely sure? This action cannot be undone.")
+    )
+      return;
     deleteAccountMutation.mutate({});
   };
 
@@ -282,13 +291,18 @@ function MyAccountPage() {
               onChange={handleFileSelect}
               className="hidden"
             />
-            <p className="text-sm text-muted-foreground">Click to upload a new photo</p>
+            <p className="text-sm text-muted-foreground">
+              Click to upload a new photo
+            </p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground" htmlFor={firstNameId}>
+            <label
+              className="text-sm font-medium text-muted-foreground"
+              htmlFor={firstNameId}
+            >
               First name
             </label>
             <Input
@@ -299,7 +313,10 @@ function MyAccountPage() {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground" htmlFor={lastNameId}>
+            <label
+              className="text-sm font-medium text-muted-foreground"
+              htmlFor={lastNameId}
+            >
               Last name
             </label>
             <Input
@@ -310,7 +327,10 @@ function MyAccountPage() {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground" htmlFor={emailId}>
+            <label
+              className="text-sm font-medium text-muted-foreground"
+              htmlFor={emailId}
+            >
               Email
             </label>
             <div className="relative">
@@ -320,18 +340,32 @@ function MyAccountPage() {
                 readOnly
                 className="pr-24 bg-muted/30"
               />
-              <Button variant="link" className="absolute right-0 top-0 h-full px-4 text-xs">
+              <Button
+                variant="link"
+                className="absolute right-0 top-0 h-full px-4 text-xs"
+              >
                 Change email
               </Button>
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground" htmlFor={passwordId}>
+            <label
+              className="text-sm font-medium text-muted-foreground"
+              htmlFor={passwordId}
+            >
               Password
             </label>
             <div className="relative">
-              <Input id={passwordId} placeholder="Not set" readOnly className="pr-24 bg-muted/30" />
-              <Button variant="link" className="absolute right-0 top-0 h-full px-4 text-xs">
+              <Input
+                id={passwordId}
+                placeholder="Not set"
+                readOnly
+                className="pr-24 bg-muted/30"
+              />
+              <Button
+                variant="link"
+                className="absolute right-0 top-0 h-full px-4 text-xs"
+              >
                 Set password
               </Button>
             </div>
@@ -362,15 +396,18 @@ function MyAccountPage() {
                   Enabled
                 </Badge>
               ) : (
-                <Badge variant="secondary" className="font-normal text-[10px] uppercase">
+                <Badge
+                  variant="secondary"
+                  className="font-normal text-[10px] uppercase"
+                >
                   Disabled
                 </Badge>
               )}
             </div>
           </div>
           <p className="text-sm text-muted-foreground max-w-md">
-            Secure your account with two-factor authentication which adds an additional layer of
-            security during login.
+            Secure your account with two-factor authentication which adds an
+            additional layer of security during login.
           </p>
 
           {user?.twoFactorEnabled ? (
@@ -390,15 +427,17 @@ function MyAccountPage() {
                 if (!open) setTwoFaStep(1);
               }}
             >
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleStart2faSetup}
-                  className="bg-black text-white hover:bg-black/80 font-medium"
-                >
-                  Set up
-                </Button>
+              <DialogTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleStart2faSetup}
+                    className="bg-black text-white hover:bg-black/80 font-medium"
+                  />
+                }
+              >
+                Set up
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
@@ -412,7 +451,9 @@ function MyAccountPage() {
                   {twoFaStep === 1 && (
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <p className="text-sm font-medium">1. Confirm your password to continue</p>
+                        <p className="text-sm font-medium">
+                          1. Confirm your password to continue
+                        </p>
                         <Input
                           type="password"
                           placeholder="Your password"
@@ -441,7 +482,11 @@ function MyAccountPage() {
                         </p>
                         <div className="flex justify-center p-4 bg-white rounded-lg border border-border shadow-sm">
                           {qrCodeUrl ? (
-                            <img src={qrCodeUrl} alt="QR Code" className="w-40 h-40" />
+                            <img
+                              src={qrCodeUrl}
+                              alt="QR Code"
+                              className="w-40 h-40"
+                            />
                           ) : (
                             <div className="w-40 h-40 bg-muted animate-pulse rounded-md" />
                           )}
@@ -449,10 +494,12 @@ function MyAccountPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-sm font-medium text-amber-600">Backup codes</p>
+                        <p className="text-sm font-medium text-amber-600">
+                          Backup codes
+                        </p>
                         <p className="text-xs text-muted-foreground">
-                          Save these codes securely. Each code can be used once to access your
-                          account if you lose your authenticator.
+                          Save these codes securely. Each code can be used once
+                          to access your account if you lose your authenticator.
                         </p>
                         <div className="grid grid-cols-2 gap-2 p-3 bg-muted/50 rounded-lg border border-border">
                           {backupCodes.map((code) => (
@@ -464,9 +511,15 @@ function MyAccountPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-sm font-medium">3. Enter the code from your app</p>
+                        <p className="text-sm font-medium">
+                          3. Enter the code from your app
+                        </p>
                         <div className="flex justify-center">
-                          <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
+                          <InputOTP
+                            maxLength={6}
+                            value={otpCode}
+                            onChange={setOtpCode}
+                          >
                             <InputOTPGroup>
                               <InputOTPSlot index={0} />
                               <InputOTPSlot index={1} />
@@ -481,7 +534,9 @@ function MyAccountPage() {
                       <Button
                         className="w-full bg-black text-white hover:bg-black/90"
                         onClick={handleVerifyAndEnable2fa}
-                        disabled={otpCode.length < 6 || verifyTotpMutation.isPending}
+                        disabled={
+                          otpCode.length < 6 || verifyTotpMutation.isPending
+                        }
                       >
                         {verifyTotpMutation.isPending ? (
                           <Loader2 className="animate-spin mr-2 h-4 w-4" />
@@ -502,8 +557,8 @@ function MyAccountPage() {
             <h3 className="font-semibold">Connected accounts</h3>
           </div>
           <p className="text-sm text-muted-foreground">
-            Connect your account with Google or Apple to enable faster, secure and more convenient
-            access.
+            Connect your account with Google or Apple to enable faster, secure
+            and more convenient access.
           </p>
 
           <div className="space-y-4 pt-2">
@@ -568,7 +623,11 @@ function MyAccountPage() {
                 </div>
                 <span className="font-medium">Apple</span>
               </div>
-              <Button variant="ghost" size="sm" className="text-muted-foreground font-normal">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground font-normal"
+              >
                 Coming soon
               </Button>
             </div>
@@ -583,8 +642,8 @@ function MyAccountPage() {
           <h3 className="font-semibold">Danger zone</h3>
         </div>
         <p className="text-sm text-muted-foreground">
-          This will permanently delete your entire account. All your forms, submissions and
-          workspaces will be deleted.
+          This will permanently delete your entire account. All your forms,
+          submissions and workspaces will be deleted.
         </p>
         <Button
           variant="destructive"
@@ -611,36 +670,45 @@ function MyAccountPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Crop your photo</DialogTitle>
-            <DialogDescription>Adjust the crop area to set your profile picture.</DialogDescription>
+            <DialogDescription>
+              Adjust the crop area to set your profile picture.
+            </DialogDescription>
           </DialogHeader>
 
           {selectedFile && (
-            <ImageCrop file={selectedFile} aspect={1} circularCrop onCrop={handleCroppedImage}>
+            <ImageCrop
+              file={selectedFile}
+              aspect={1}
+              circularCrop
+              onCrop={handleCroppedImage}
+            >
               <div className="space-y-4">
                 <ImageCropContent className="max-h-[300px]" />
 
                 <div className="flex justify-between">
-                  <ImageCropReset asChild>
-                    <Button variant="outline" size="sm">
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      Reset
-                    </Button>
+                  <ImageCropReset
+                    render={<Button variant="outline" size="sm" />}
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Reset
                   </ImageCropReset>
 
-                  <ImageCropApply asChild>
-                    <Button
-                      disabled={uploadAvatarMutation.isPending}
-                      className="bg-black text-white hover:bg-black/90"
-                    >
-                      {uploadAvatarMutation.isPending ? (
-                        <>
-                          <Loader2 className="animate-spin mr-2 h-4 w-4" />
-                          Uploading...
-                        </>
-                      ) : (
-                        "Save photo"
-                      )}
-                    </Button>
+                  <ImageCropApply
+                    render={
+                      <Button
+                        disabled={uploadAvatarMutation.isPending}
+                        className="bg-black text-white hover:bg-black/90"
+                      />
+                    }
+                  >
+                    {uploadAvatarMutation.isPending ? (
+                      <>
+                        <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                        Uploading...
+                      </>
+                    ) : (
+                      "Save photo"
+                    )}
                   </ImageCropApply>
                 </div>
               </div>

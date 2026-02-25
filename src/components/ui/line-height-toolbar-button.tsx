@@ -30,17 +30,21 @@ export function LineHeightToolbarButton(props: DropdownMenuProps) {
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
-      <DropdownMenuTrigger asChild>
-        <ToolbarButton pressed={open} tooltip="Line height" isDropdown>
-          <WrapText />
-        </ToolbarButton>
+      <DropdownMenuTrigger
+        render={
+          <ToolbarButton pressed={open} tooltip="Line height" isDropdown />
+        }
+      >
+        <WrapText />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent className="min-w-0" align="start">
         <DropdownMenuRadioGroup
           value={value}
           onValueChange={(newValue) => {
-            editor.getTransforms(LineHeightPlugin).lineHeight.setNodes(Number(newValue));
+            editor
+              .getTransforms(LineHeightPlugin)
+              .lineHeight.setNodes(Number(newValue));
             editor.tf.focus();
           }}
         >

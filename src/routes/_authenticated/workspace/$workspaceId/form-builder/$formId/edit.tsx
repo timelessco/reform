@@ -24,7 +24,10 @@ export const Route = createFileRoute(
     force: z.boolean().optional(), // When true, skip redirect for published forms
     sidebar: z.string().optional(),
     // Embed config params — synced from sidebar, read by PreviewMode
-    embedType: z.enum(["standard", "popup", "fullpage"]).catch("standard").optional(),
+    embedType: z
+      .enum(["standard", "popup", "fullpage"])
+      .catch("standard")
+      .optional(),
     embedHeight: z.coerce.number().catch(558).optional(),
     embedDynamicHeight: z.coerce.boolean().catch(true).optional(),
     embedHideTitle: z.coerce.boolean().catch(false).optional(),
@@ -39,8 +42,14 @@ export const Route = createFileRoute(
     embedDarkOverlay: z.coerce.boolean().catch(false).optional(),
     embedEmoji: z.coerce.boolean().catch(true).optional(),
     embedEmojiIcon: z.string().catch("👋").optional(),
-    embedEmojiAnimation: z.enum(["wave", "bounce", "pulse"]).catch("wave").optional(),
-    embedPopupTrigger: z.enum(["button", "auto", "scroll"]).catch("button").optional(),
+    embedEmojiAnimation: z
+      .enum(["wave", "bounce", "pulse"])
+      .catch("wave")
+      .optional(),
+    embedPopupTrigger: z
+      .enum(["button", "auto", "scroll"])
+      .catch("button")
+      .optional(),
     embedHideOnSubmit: z.coerce.boolean().catch(false).optional(),
     embedHideOnSubmitDelay: z.coerce.number().catch(0).optional(),
     embedTrackEvents: z.coerce.boolean().catch(false).optional(),
@@ -52,7 +61,11 @@ export const Route = createFileRoute(
     try {
       // Try collection cache first (instant, no network)
       const cachedForm = formCollection.state.get(params.formId);
-      let status = cachedForm?.status as "draft" | "published" | "archived" | undefined;
+      let status = cachedForm?.status as
+        | "draft"
+        | "published"
+        | "archived"
+        | undefined;
 
       // Fall back to server fetch if not in collection yet
       if (!status) {
@@ -60,7 +73,11 @@ export const Route = createFileRoute(
           ...getFormbyIdQueryOption(params.formId),
           revalidateIfStale: true,
         });
-        status = result?.form?.status as "draft" | "published" | "archived" | undefined;
+        status = result?.form?.status as
+          | "draft"
+          | "published"
+          | "archived"
+          | undefined;
       }
 
       if (status === "published") {
@@ -94,7 +111,8 @@ export const Route = createFileRoute(
 function DesignPage() {
   const { pathname } = useLocation();
   // Extract formId from pathname to ensure it's always current
-  const formIdFromPath = pathname.split("/form-builder/")[1]?.split("/")[0] || "";
+  const formIdFromPath =
+    pathname.split("/form-builder/")[1]?.split("/")[0] || "";
   const params = Route.useParams();
   const { workspaceId } = params;
   const formId = formIdFromPath || params.formId;
@@ -108,9 +126,10 @@ function DesignPage() {
   } = useVersionHistorySidebar();
 
   // Fetch version content when viewing a version
-  const { data: versionContentDataArray, isLoading: isLoadingVersionContent } = useFormVersionContent(
-    isViewingVersion ? (selectedVersionId ?? undefined) : undefined,
-  );
+  const { data: versionContentDataArray, isLoading: isLoadingVersionContent } =
+    useFormVersionContent(
+      isViewingVersion ? (selectedVersionId ?? undefined) : undefined,
+    );
 
   const versionData = versionContentDataArray?.[0];
 
@@ -130,9 +149,12 @@ function DesignPage() {
 
   return (
     <div className="flex flex-1 h-full overflow-hidden">
-      <ResizablePanelGroup direction="horizontal" className="flex-1">
+      <ResizablePanelGroup orientation="horizontal" className="flex-1">
         {/* Main editor panel */}
-        <ResizablePanel defaultSize={isVersionHistoryOpen ? 75 : 100} minSize={50}>
+        <ResizablePanel
+          defaultSize={isVersionHistoryOpen ? 75 : 100}
+          minSize={50}
+        >
           <main className="flex-1 overflow-y-auto overflow-x-hidden relative bg-background h-full flex flex-col">
             {/* Version viewing banner */}
             {isViewingVersion && (
@@ -174,7 +196,9 @@ function DesignPage() {
                 </div>
               ) : (
                 <EditorApp
-                  key={isViewingVersion ? `version-${selectedVersionId}` : formId}
+                  key={
+                    isViewingVersion ? `version-${selectedVersionId}` : formId
+                  }
                   formId={formId}
                   workspaceId={workspaceId}
                   versionContent={isViewingVersion ? versionContent : undefined}

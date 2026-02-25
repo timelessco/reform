@@ -25,7 +25,10 @@ import {
 import { KEYS } from "platejs";
 import { type PlateEditor, useEditorRef } from "platejs/react";
 import * as React from "react";
-import { insertBlock, insertInlineElement } from "@/components/editor/transforms";
+import {
+  insertBlock,
+  insertInlineElement,
+} from "@/components/editor/transforms";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -215,10 +218,10 @@ export function InsertToolbarButton(props: DropdownMenuProps) {
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
-      <DropdownMenuTrigger asChild>
-        <ToolbarButton pressed={open} tooltip="Insert" isDropdown>
-          <PlusIcon />
-        </ToolbarButton>
+      <DropdownMenuTrigger
+        render={<ToolbarButton pressed={open} tooltip="Insert" isDropdown />}
+      >
+        <PlusIcon />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent

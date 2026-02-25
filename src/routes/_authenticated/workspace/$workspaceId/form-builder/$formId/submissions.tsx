@@ -98,7 +98,8 @@ export const Route = createFileRoute(
     const [publishedData, submissionsData] = await Promise.all([
       context.queryClient.ensureQueryData({
         queryKey: ["publishedFormVersion", params.formId],
-        queryFn: () => getLatestPublishedVersion({ data: { formId: params.formId } }),
+        queryFn: () =>
+          getLatestPublishedVersion({ data: { formId: params.formId } }),
         revalidateIfStale: true,
       }),
       context.queryClient.ensureQueryData({
@@ -116,9 +117,13 @@ export const Route = createFileRoute(
 function SubmissionsPage() {
   const { formId } = Route.useParams();
   const queryClient = useQueryClient();
-  const { publishedData: initialPublishedData, submissionsData: initialSubmissionsData } =
-    Route.useLoaderData();
-  const [activeTab, setActiveTab] = useState<"all" | "completed" | "partial">("all");
+  const {
+    publishedData: initialPublishedData,
+    submissionsData: initialSubmissionsData,
+  } = Route.useLoaderData();
+  const [activeTab, setActiveTab] = useState<"all" | "completed" | "partial">(
+    "all",
+  );
   const [sorting, setSorting] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
@@ -169,21 +174,28 @@ function SubmissionsPage() {
   const orphanedFieldNames = useMemo(() => {
     const currentFieldNames = new Set<string>();
     if (publishedContent) {
-      const elements = transformPlateStateToFormElements(publishedContent as Value);
+      const elements = transformPlateStateToFormElements(
+        publishedContent as Value,
+      );
       const editableFields = getEditableFields(elements);
       editableFields
-        .filter((field) => field.fieldType === "Input" || field.fieldType === "Textarea")
+        .filter(
+          (field) =>
+            field.fieldType === "Input" || field.fieldType === "Textarea",
+        )
         .forEach((field) => currentFieldNames.add(field.name));
     }
 
     const orphaned = new Set<string>();
     allSubmissions.forEach((submission) => {
       if (submission.data && typeof submission.data === "object") {
-        Object.keys(submission.data as Record<string, unknown>).forEach((key) => {
-          if (!currentFieldNames.has(key)) {
-            orphaned.add(key);
-          }
-        });
+        Object.keys(submission.data as Record<string, unknown>).forEach(
+          (key) => {
+            if (!currentFieldNames.has(key)) {
+              orphaned.add(key);
+            }
+          },
+        );
       }
     });
 
@@ -208,11 +220,14 @@ function SubmissionsPage() {
         id: "select",
         header: ({ table }) => (
           <Checkbox
-            checked={
-              table.getIsAllPageRowsSelected() ||
-              (table.getIsSomePageRowsSelected() && "indeterminate")
+            checked={table.getIsAllPageRowsSelected()}
+            indeterminate={
+              table.getIsSomePageRowsSelected() &&
+              !table.getIsAllPageRowsSelected()
             }
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
             aria-label="Select all"
             className="translate-y-[2px]"
           />
@@ -277,12 +292,15 @@ function SubmissionsPage() {
 
     // Dynamic columns based on PUBLISHED form fields (current fields)
     if (publishedContent) {
-      const elements = transformPlateStateToFormElements(publishedContent as Value);
+      const elements = transformPlateStateToFormElements(
+        publishedContent as Value,
+      );
       const editableFields = getEditableFields(elements);
 
       // Only include Input and Textarea fields (not Button)
       const inputFields = editableFields.filter(
-        (field) => field.fieldType === "Input" || field.fieldType === "Textarea",
+        (field) =>
+          field.fieldType === "Input" || field.fieldType === "Textarea",
       );
 
       inputFields.forEach((field) => {
@@ -301,7 +319,9 @@ function SubmissionsPage() {
                   column={column}
                   title={field.label || field.name}
                   icon={
-                    <div className={cn("flex items-center gap-1.5", config.color)}>
+                    <div
+                      className={cn("flex items-center gap-1.5", config.color)}
+                    >
                       <Circle className={cn("h-2 w-2", config.dotColor)} />
                       <Icon className="h-3.5 w-3.5" />
                     </div>
@@ -339,7 +359,9 @@ function SubmissionsPage() {
                 column={column}
                 title={fieldName}
                 icon={
-                  <div className={cn("flex items-center gap-1.5", config.color)}>
+                  <div
+                    className={cn("flex items-center gap-1.5", config.color)}
+                  >
                     <Circle className={cn("h-2 w-2", config.dotColor)} />
                     <Minus className="h-3.5 w-3.5" />
                   </div>
@@ -415,7 +437,9 @@ function SubmissionsPage() {
     );
     if (!confirmed) return;
 
-    await deleteSubmissionsBulk({ data: { formId, submissionIds: selectedIds } });
+    await deleteSubmissionsBulk({
+      data: { formId, submissionIds: selectedIds },
+    });
     queryClient.invalidateQueries({ queryKey: ["submissions", formId] });
     setRowSelection({});
   }, [formId, queryClient, rowSelection]);
@@ -502,36 +526,67 @@ function SubmissionsPage() {
         <div className="flex items-center justify-between">
           {/* Status filter dropdown */}
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-7 gap-1.5 text-[11px] font-medium">
-                {activeTab === "all" ? "All" : activeTab === "completed" ? "Completed" : "Partial"}
-                <span className="opacity-60">
-                  {activeTab === "all"
-                    ? allSubmissions.length
-                    : activeTab === "completed"
-                      ? allSubmissions.filter((s: SerializedSubmission) => s.isCompleted).length
-                      : allSubmissions.filter((s: SerializedSubmission) => !s.isCompleted).length}
-                </span>
-                <ChevronDown className="h-3 w-3 ml-1" />
-              </Button>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1.5 text-[11px] font-medium"
+                />
+              }
+            >
+              {activeTab === "all"
+                ? "All"
+                : activeTab === "completed"
+                  ? "Completed"
+                  : "Partial"}
+              <span className="opacity-60">
+                {activeTab === "all"
+                  ? allSubmissions.length
+                  : activeTab === "completed"
+                    ? allSubmissions.filter(
+                        (s: SerializedSubmission) => s.isCompleted,
+                      ).length
+                    : allSubmissions.filter(
+                        (s: SerializedSubmission) => !s.isCompleted,
+                      ).length}
+              </span>
+              <ChevronDown className="h-3 w-3 ml-1" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-36">
-              <DropdownMenuItem onClick={() => setActiveTab("all")} className="gap-2">
+              <DropdownMenuItem
+                onClick={() => setActiveTab("all")}
+                className="gap-2"
+              >
                 All
                 <span className="ml-auto text-xs text-muted-foreground">
                   {allSubmissions.length}
                 </span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setActiveTab("completed")} className="gap-2">
+              <DropdownMenuItem
+                onClick={() => setActiveTab("completed")}
+                className="gap-2"
+              >
                 Completed
                 <span className="ml-auto text-xs text-muted-foreground">
-                  {allSubmissions.filter((s: SerializedSubmission) => s.isCompleted).length}
+                  {
+                    allSubmissions.filter(
+                      (s: SerializedSubmission) => s.isCompleted,
+                    ).length
+                  }
                 </span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setActiveTab("partial")} className="gap-2">
+              <DropdownMenuItem
+                onClick={() => setActiveTab("partial")}
+                className="gap-2"
+              >
                 Partial
                 <span className="ml-auto text-xs text-muted-foreground">
-                  {allSubmissions.filter((s: SerializedSubmission) => !s.isCompleted).length}
+                  {
+                    allSubmissions.filter(
+                      (s: SerializedSubmission) => !s.isCompleted,
+                    ).length
+                  }
                 </span>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -551,38 +606,48 @@ function SubmissionsPage() {
 
             {/* Field Status Filter */}
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-7 gap-1.5 text-[11px] font-medium">
-                  <Filter className="h-3 w-3" />
-                  Fields
-                  {fieldStatusFilter.size < 2 && (
-                    <span className="ml-1 px-1.5 py-0.5 bg-primary text-primary-foreground rounded text-[10px]">
-                      {fieldStatusFilter.size}
-                    </span>
-                  )}
-                  <ChevronDown className="h-3 w-3 ml-1" />
-                </Button>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 gap-1.5 text-[11px] font-medium"
+                  />
+                }
+              >
+                <Filter className="h-3 w-3" />
+                Fields
+                {fieldStatusFilter.size < 2 && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-primary text-primary-foreground rounded text-[10px]">
+                    {fieldStatusFilter.size}
+                  </span>
+                )}
+                <ChevronDown className="h-3 w-3 ml-1" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel className="text-xs">Filter by field status</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-xs">
+                  Filter by field status
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {(Object.keys(FIELD_STATUS_CONFIG) as FieldStatus[]).map((status) => {
-                  const config = FIELD_STATUS_CONFIG[status];
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={status}
-                      checked={fieldStatusFilter.has(status)}
-                      onCheckedChange={() => toggleFieldStatus(status)}
-                      className="gap-2"
-                    >
-                      <Circle className={cn("h-2 w-2", config.dotColor)} />
-                      <span>{config.label}</span>
-                      <span className="ml-auto text-xs text-muted-foreground">
-                        {fieldCounts[status]}
-                      </span>
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
+                {(Object.keys(FIELD_STATUS_CONFIG) as FieldStatus[]).map(
+                  (status) => {
+                    const config = FIELD_STATUS_CONFIG[status];
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={status}
+                        checked={fieldStatusFilter.has(status)}
+                        onCheckedChange={() => toggleFieldStatus(status)}
+                        className="gap-2"
+                      >
+                        <Circle className={cn("h-2 w-2", config.dotColor)} />
+                        <span>{config.label}</span>
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          {fieldCounts[status]}
+                        </span>
+                      </DropdownMenuCheckboxItem>
+                    );
+                  },
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -590,7 +655,11 @@ function SubmissionsPage() {
             <DataGridColumnVisibility
               table={table}
               trigger={
-                <Button variant="outline" size="sm" className="h-7 gap-1.5 text-[11px] font-medium">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1.5 text-[11px] font-medium"
+                >
                   <Columns className="h-3 w-3" />
                   Columns
                 </Button>
@@ -622,11 +691,19 @@ function SubmissionsPage() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleExportSelected}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportSelected}
+              >
                 <Download className="h-3.5 w-3.5 mr-1.5" />
                 Export
               </Button>
-              <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDelete}
+              >
                 <Trash2 className="h-3.5 w-3.5 mr-1.5" />
                 Delete
               </Button>
@@ -693,7 +770,11 @@ function SubmissionsPage() {
                         : "text-muted-foreground hover:text-foreground hover:bg-muted",
                     )}
                     onClick={() =>
-                      setPagination((prev) => ({ ...prev, pageSize: size, pageIndex: 0 }))
+                      setPagination((prev) => ({
+                        ...prev,
+                        pageSize: size,
+                        pageIndex: 0,
+                      }))
                     }
                   >
                     {size}
@@ -704,9 +785,12 @@ function SubmissionsPage() {
               {/* Right: Page info and navigation */}
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span>
-                  {table.getState().pagination.pageIndex * pagination.pageSize + 1} -{" "}
+                  {table.getState().pagination.pageIndex * pagination.pageSize +
+                    1}{" "}
+                  -{" "}
                   {Math.min(
-                    (table.getState().pagination.pageIndex + 1) * pagination.pageSize,
+                    (table.getState().pagination.pageIndex + 1) *
+                      pagination.pageSize,
                     table.getFilteredRowModel().rows.length,
                   )}{" "}
                   of {table.getFilteredRowModel().rows.length}

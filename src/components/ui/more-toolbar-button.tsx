@@ -1,5 +1,10 @@
 import type { DropdownMenuProps } from "@radix-ui/react-dropdown-menu";
-import { KeyboardIcon, MoreHorizontalIcon, SubscriptIcon, SuperscriptIcon } from "lucide-react";
+import {
+  KeyboardIcon,
+  MoreHorizontalIcon,
+  SubscriptIcon,
+  SuperscriptIcon,
+} from "lucide-react";
 import { KEYS } from "platejs";
 import { useEditorRef } from "platejs/react";
 import * as React from "react";
@@ -20,10 +25,10 @@ export function MoreToolbarButton(props: DropdownMenuProps) {
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
-      <DropdownMenuTrigger asChild>
-        <ToolbarButton pressed={open} tooltip="Insert">
-          <MoreHorizontalIcon />
-        </ToolbarButton>
+      <DropdownMenuTrigger
+        render={<ToolbarButton pressed={open} tooltip="Insert" />}
+      >
+        <MoreHorizontalIcon />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent

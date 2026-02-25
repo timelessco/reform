@@ -1,16 +1,17 @@
 {
   "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "new-york",
+  "style": "base-nova",
   "rsc": false,
   "tsx": true,
   "tailwind": {
     "config": "",
     "css": "src/styles.css",
-    "baseColor": "zinc",
+    "baseColor": "neutral",
     "cssVariables": true,
     "prefix": ""
   },
   "iconLibrary": "lucide",
+  "rtl": true,
   "aliases": {
     "components": "@/components",
     "utils": "@/lib/utils",
@@ -18,10 +19,7 @@
     "lib": "@/lib",
     "hooks": "@/hooks"
   },
-  "registries": {
-    "@plate": "https://platejs.org/r/{name}.json",
-    "@reui": "https://reui.io/r/{name}.json",
-    "@kibo-ui": "https://www.kibo-ui.com/r/{name}.json",
-    "@intentui": "https://intentui.com/r/{name}"
-  }
+  "menuColor": "default",
+  "menuAccent": "subtle",
+  "registries": {}
 }

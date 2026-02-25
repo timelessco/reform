@@ -57,13 +57,16 @@ export function TableToolbarButton(props: DropdownMenuProps) {
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
-      <DropdownMenuTrigger asChild>
-        <ToolbarButton pressed={open} tooltip="Table" isDropdown>
-          <Table />
-        </ToolbarButton>
+      <DropdownMenuTrigger
+        render={<ToolbarButton pressed={open} tooltip="Table" isDropdown />}
+      >
+        <Table />
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="flex w-[180px] min-w-0 flex-col" align="start">
+      <DropdownMenuContent
+        className="flex w-[180px] min-w-0 flex-col"
+        align="start"
+      >
         <DropdownMenuGroup>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger className="gap-2 data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
@@ -245,7 +248,11 @@ function TablePicker() {
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
-    if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+    if (
+      event.key === "Enter" ||
+      event.key === " " ||
+      event.key === "Spacebar"
+    ) {
       event.preventDefault();
       handleInsertTable();
     }

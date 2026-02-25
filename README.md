@@ -1,11 +1,3 @@
-# Better Forms
+# TanStack Start + shadcn/ui
 
-- [x] remove unwanted stuffs routes feature and so on
-- [] left Sidebar Normal , and dragable list
-- [x] Right sidebar animationn and visual junk\
-- [x] header animation on hover similar to notion
-
-- popup issues
-- [x] height is auto adjusting
-- [x] position is not working
-- [x] show emoji picker
+This is a template for a new TanStack Start project with React, TypeScript, and shadcn/ui.

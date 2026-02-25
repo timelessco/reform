@@ -5,7 +5,7 @@ const DEBOUNCE_MS = 500;
 
 export function useFormPersistence(formId: string, enabled: boolean) {
   const storageKey = `${STORAGE_KEY_PREFIX}${formId}`;
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Load initial data from localStorage
   const loadSavedData = useCallback((): Record<string, unknown> | null => {

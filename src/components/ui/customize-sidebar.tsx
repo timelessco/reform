@@ -38,41 +38,149 @@ import {
 const FONT_OPTIONS = Object.keys(FONT_MAP);
 
 const STYLE_OPTIONS: { label: string; value: string; description: string }[] = [
-  { label: "Vega", value: "vega", description: "Classic shadcn/ui look. Clean and familiar." },
-  { label: "Nova", value: "nova", description: "Compact. Reduced spacing for efficient forms." },
-  { label: "Maia", value: "maia", description: "Soft and rounded. Generous spacing." },
-  { label: "Lyra", value: "lyra", description: "Sharp and boxy. Modern and precise." },
-  { label: "Mira", value: "mira", description: "Dense. Maximizes content per screen." },
+  {
+    label: "Vega",
+    value: "vega",
+    description: "Classic shadcn/ui look. Clean and familiar.",
+  },
+  {
+    label: "Nova",
+    value: "nova",
+    description: "Compact. Reduced spacing for efficient forms.",
+  },
+  {
+    label: "Maia",
+    value: "maia",
+    description: "Soft and rounded. Generous spacing.",
+  },
+  {
+    label: "Lyra",
+    value: "lyra",
+    description: "Sharp and boxy. Modern and precise.",
+  },
+  {
+    label: "Mira",
+    value: "mira",
+    description: "Dense. Maximizes content per screen.",
+  },
 ];
 
-const THEME_COLOR_OPTIONS: { label: string; value: string; description: string }[] = [
-  { label: "Zinc", value: "zinc", description: "Neutral gray. Understated and versatile." },
-  { label: "Rose", value: "rose", description: "Warm pink. Soft and inviting." },
-  { label: "Blue", value: "blue", description: "Classic blue. Professional and trustworthy." },
-  { label: "Green", value: "green", description: "Natural green. Fresh and reliable." },
-  { label: "Amber", value: "amber", description: "Warm amber. Friendly and approachable." },
-  { label: "Orange", value: "orange", description: "Bright orange. Energetic and bold." },
-  { label: "Violet", value: "violet", description: "Rich violet. Creative and elegant." },
-  { label: "Emerald", value: "emerald", description: "Deep emerald. Premium and lush." },
+const THEME_COLOR_OPTIONS: {
+  label: string;
+  value: string;
+  description: string;
+}[] = [
+  {
+    label: "Zinc",
+    value: "zinc",
+    description: "Neutral gray. Understated and versatile.",
+  },
+  {
+    label: "Rose",
+    value: "rose",
+    description: "Warm pink. Soft and inviting.",
+  },
+  {
+    label: "Blue",
+    value: "blue",
+    description: "Classic blue. Professional and trustworthy.",
+  },
+  {
+    label: "Green",
+    value: "green",
+    description: "Natural green. Fresh and reliable.",
+  },
+  {
+    label: "Amber",
+    value: "amber",
+    description: "Warm amber. Friendly and approachable.",
+  },
+  {
+    label: "Orange",
+    value: "orange",
+    description: "Bright orange. Energetic and bold.",
+  },
+  {
+    label: "Violet",
+    value: "violet",
+    description: "Rich violet. Creative and elegant.",
+  },
+  {
+    label: "Emerald",
+    value: "emerald",
+    description: "Deep emerald. Premium and lush.",
+  },
   { label: "Cyan", value: "cyan", description: "Cool cyan. Modern and techy." },
-  { label: "Indigo", value: "indigo", description: "Deep indigo. Focused and authoritative." },
-  { label: "Pink", value: "pink", description: "Vibrant pink. Playful and eye-catching." },
+  {
+    label: "Indigo",
+    value: "indigo",
+    description: "Deep indigo. Focused and authoritative.",
+  },
+  {
+    label: "Pink",
+    value: "pink",
+    description: "Vibrant pink. Playful and eye-catching.",
+  },
   { label: "Red", value: "red", description: "Bold red. Urgent and powerful." },
 ];
 
-const BASE_COLOR_OPTIONS: { label: string; value: string; description: string }[] = [
-  { label: "Zinc", value: "zinc", description: "Pure neutral. Works with everything." },
-  { label: "Slate", value: "slate", description: "Cool undertone. Pairs with blues." },
-  { label: "Stone", value: "stone", description: "Warm undertone. Pairs with ambers." },
-  { label: "Gray", value: "gray", description: "Slightly cool. Versatile and clean." },
-  { label: "Neutral", value: "neutral", description: "True neutral. The most balanced." },
+const BASE_COLOR_OPTIONS: {
+  label: string;
+  value: string;
+  description: string;
+}[] = [
+  {
+    label: "Zinc",
+    value: "zinc",
+    description: "Pure neutral. Works with everything.",
+  },
+  {
+    label: "Slate",
+    value: "slate",
+    description: "Cool undertone. Pairs with blues.",
+  },
+  {
+    label: "Stone",
+    value: "stone",
+    description: "Warm undertone. Pairs with ambers.",
+  },
+  {
+    label: "Gray",
+    value: "gray",
+    description: "Slightly cool. Versatile and clean.",
+  },
+  {
+    label: "Neutral",
+    value: "neutral",
+    description: "True neutral. The most balanced.",
+  },
 ];
 
-const RADIUS_OPTIONS_WITH_DESC: { label: string; value: string; description: string }[] = [
-  { label: "None", value: "none", description: "Sharp corners. Boxy and precise." },
-  { label: "Small", value: "small", description: "Subtle rounding. Clean and modern." },
-  { label: "Medium", value: "medium", description: "Standard rounding. Balanced look." },
-  { label: "Large", value: "large", description: "Generous rounding. Soft and friendly." },
+const RADIUS_OPTIONS_WITH_DESC: {
+  label: string;
+  value: string;
+  description: string;
+}[] = [
+  {
+    label: "None",
+    value: "none",
+    description: "Sharp corners. Boxy and precise.",
+  },
+  {
+    label: "Small",
+    value: "small",
+    description: "Subtle rounding. Clean and modern.",
+  },
+  {
+    label: "Medium",
+    value: "medium",
+    description: "Standard rounding. Balanced look.",
+  },
+  {
+    label: "Large",
+    value: "large",
+    description: "Generous rounding. Soft and friendly.",
+  },
 ];
 
 interface CustomizeSidebarProps {
@@ -83,7 +191,10 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
   const { closeSidebar } = useEditorSidebar();
   const { data: settings } = useFormSettings(formId);
 
-  const customization = (settings?.customization ?? {}) as Record<string, string>;
+  const customization = (settings?.customization ?? {}) as Record<
+    string,
+    string
+  >;
 
   // Resolve the active style to get fallback values
   const resolvedStyle = useMemo(() => {
@@ -154,7 +265,8 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
 
   const activePreset = customization.preset || "vega";
   const activeMode = customization.mode || "light";
-  const activeBaseColors = activeMode === "dark" ? DARK_BASE_COLORS : BASE_COLORS;
+  const activeBaseColors =
+    activeMode === "dark" ? DARK_BASE_COLORS : BASE_COLORS;
   const activeThemeColor = getValue("themeColor");
   const activeBaseColor = getValue("baseColor");
   const activeFont = getValue("font");
@@ -167,17 +279,23 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
     >
       <SidebarHeader className="px-4 h-[52px] border-b border-border/40 flex flex-row items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-[13px] font-medium tracking-[0.13px] text-foreground/80">Customize</span>
+          <span className="text-[13px] font-medium tracking-[0.13px] text-foreground/80">
+            Customize
+          </span>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => closeSidebar()} className="h-7 w-7 text-muted-foreground hover:bg-accent/50 rounded-lg transition-colors">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => closeSidebar()}
+          className="h-7 w-7 text-muted-foreground hover:bg-accent/50 rounded-lg transition-colors"
+        >
           <X className="h-3.5 w-3.5" strokeWidth={1.5} />
         </Button>
       </SidebarHeader>
 
       <SidebarContent className="p-0 overflow-y-auto custom-scrollbar">
         <div className="px-4 pt-3 pb-12">
-          <Accordion type="single" collapsible defaultValue="theme" className="w-full space-y-0">
-
+          <Accordion defaultValue={["theme"]} className="w-full space-y-0">
             {/* ── Theme ── */}
             <AccordionItem value="theme" className="border-b-0">
               <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline">
@@ -261,7 +379,8 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                 </div>
               </div>
               <p className="text-[12px] text-muted-foreground tracking-[0.13px] leading-[1.48] mb-3">
-                Preview advanced customization. BetterForms Pro is required to apply it to the published form.
+                Preview advanced customization. BetterForms Pro is required to
+                apply it to the published form.
               </p>
               <Button
                 variant="outline"
@@ -282,10 +401,42 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="space-y-2 pt-1 pb-2">
-                <StyleNumberInput label="Page Width" value={getValue("pageWidth") || "50vw"} onChange={(v) => updateWithCustomPreset("pageWidth", v)} min={30} max={100} step={5} unit="vw" />
-                <StyleNumberInput label="Cover Height" value={getValue("coverHeight") || "200px"} onChange={(v) => updateWithCustomPreset("coverHeight", v)} min={100} max={400} step={10} unit="px" />
-                <StyleNumberInput label="Logo Width" value={getValue("logoWidth") || "100px"} onChange={(v) => updateWithCustomPreset("logoWidth", v)} min={40} max={200} step={4} unit="px" />
-                <StyleNumberInput label="Input Width" value={getValue("inputWidth") || "60%"} onChange={(v) => updateWithCustomPreset("inputWidth", v)} min={20} max={100} step={5} unit="%" />
+                <StyleNumberInput
+                  label="Page Width"
+                  value={getValue("pageWidth") || "50vw"}
+                  onChange={(v) => updateWithCustomPreset("pageWidth", v)}
+                  min={30}
+                  max={100}
+                  step={5}
+                  unit="vw"
+                />
+                <StyleNumberInput
+                  label="Cover Height"
+                  value={getValue("coverHeight") || "200px"}
+                  onChange={(v) => updateWithCustomPreset("coverHeight", v)}
+                  min={100}
+                  max={400}
+                  step={10}
+                  unit="px"
+                />
+                <StyleNumberInput
+                  label="Logo Width"
+                  value={getValue("logoWidth") || "100px"}
+                  onChange={(v) => updateWithCustomPreset("logoWidth", v)}
+                  min={40}
+                  max={200}
+                  step={4}
+                  unit="px"
+                />
+                <StyleNumberInput
+                  label="Input Width"
+                  value={getValue("inputWidth") || "60%"}
+                  onChange={(v) => updateWithCustomPreset("inputWidth", v)}
+                  min={20}
+                  max={100}
+                  step={5}
+                  unit="%"
+                />
               </AccordionContent>
             </AccordionItem>
 
@@ -300,7 +451,10 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="space-y-2 pt-1 pb-2">
-                <AdvancedColorPickers customization={customization} updateField={updateWithCustomPreset} />
+                <AdvancedColorPickers
+                  customization={customization}
+                  updateField={updateWithCustomPreset}
+                />
               </AccordionContent>
             </AccordionItem>
 
@@ -315,8 +469,24 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="space-y-2 pt-1 pb-2">
-                <StyleNumberInput label="Font Size" value={getValue("baseFontSize") || "16px"} onChange={(v) => updateWithCustomPreset("baseFontSize", v)} min={12} max={24} step={1} unit="px" />
-                <StyleNumberInput label="Letter Spacing" value={getValue("letterSpacing") || "0.02em"} onChange={(v) => updateWithCustomPreset("letterSpacing", v)} min={0} max={0.2} step={0.005} unit="em" />
+                <StyleNumberInput
+                  label="Font Size"
+                  value={getValue("baseFontSize") || "16px"}
+                  onChange={(v) => updateWithCustomPreset("baseFontSize", v)}
+                  min={12}
+                  max={24}
+                  step={1}
+                  unit="px"
+                />
+                <StyleNumberInput
+                  label="Letter Spacing"
+                  value={getValue("letterSpacing") || "0.02em"}
+                  onChange={(v) => updateWithCustomPreset("letterSpacing", v)}
+                  min={0}
+                  max={0.2}
+                  step={0.005}
+                  unit="em"
+                />
               </AccordionContent>
             </AccordionItem>
 
@@ -334,7 +504,9 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                 <div className="rounded-lg overflow-hidden border border-border/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
                   <Textarea
                     value={getValue("customCss")}
-                    onChange={(e) => updateWithCustomPreset("customCss", e.target.value)}
+                    onChange={(e) =>
+                      updateWithCustomPreset("customCss", e.target.value)
+                    }
                     className="font-mono text-[11px] h-32 bg-light-gray-950 text-[#d4d4d4] border-0 rounded-none focus-visible:ring-0 p-3 leading-relaxed"
                     placeholder=".bf-themed { ... }"
                     spellCheck={false}
@@ -342,11 +514,17 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                 </div>
                 <div className="flex items-center gap-1.5 px-1">
                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-[240px] text-[11px]">
-                      Supports shadcn tokens: --bf-primary, --bf-background, --bf-foreground, etc.
+                    <TooltipTrigger
+                      render={
+                        <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                      }
+                    />
+                    <TooltipContent
+                      side="bottom"
+                      className="max-w-[240px] text-[11px]"
+                    >
+                      Supports shadcn tokens: --bf-primary, --bf-background,
+                      --bf-foreground, etc.
                     </TooltipContent>
                   </Tooltip>
                   <span className="text-[11px] text-muted-foreground/60">

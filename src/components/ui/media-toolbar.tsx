@@ -19,7 +19,11 @@ import {
 import * as React from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 
 import { CaptionButton } from "./caption";
@@ -39,9 +43,17 @@ export function MediaToolbar({
   const readOnly = useReadOnly();
   const selected = useSelected();
   const isFocusedLast = useFocusedLast();
-  const selectionCollapsed = useEditorSelector((editor) => !editor.api.isExpanded(), []);
+  const selectionCollapsed = useEditorSelector(
+    (editor) => !editor.api.isExpanded(),
+    [],
+  );
   const isImagePreviewOpen = useImagePreviewValue("isOpen", editor.id);
-  const open = isFocusedLast && !readOnly && selected && selectionCollapsed && !isImagePreviewOpen;
+  const open =
+    isFocusedLast &&
+    !readOnly &&
+    selected &&
+    selectionCollapsed &&
+    !isImagePreviewOpen;
   const isEditing = useFloatingMediaValue("isEditing");
   // Track previous open state to detect close transition
   const wasOpenRef = React.useRef(open);
@@ -63,7 +75,7 @@ export function MediaToolbar({
     <Popover open={open} modal={false}>
       <PopoverAnchor>{children}</PopoverAnchor>
 
-      <PopoverContent className="w-auto p-1" onOpenAutoFocus={(e) => e.preventDefault()}>
+      <PopoverContent className="w-auto p-1">
         {isEditing ? (
           <div className="flex w-[330px] flex-col">
             <div className="flex items-center">

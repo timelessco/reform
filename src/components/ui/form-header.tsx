@@ -31,10 +31,21 @@ import {
 } from "lucide-react";
 
 // Inline CoverUpload component using the hook
-function CoverUpload({ onFileChange }: { onFileChange: (url: string) => void }) {
+function CoverUpload({
+  onFileChange,
+}: {
+  onFileChange: (url: string) => void;
+}) {
   const [
     { isDragging, errors },
-    { handleDragEnter, handleDragLeave, handleDragOver, handleDrop, openFileDialog, getInputProps },
+    {
+      handleDragEnter,
+      handleDragLeave,
+      handleDragOver,
+      handleDrop,
+      openFileDialog,
+      getInputProps,
+    },
   ] = useFileUpload({
     maxFiles: 1,
     maxSize: 5 * 1024 * 1024, // 5MB
@@ -70,7 +81,9 @@ function CoverUpload({ onFileChange }: { onFileChange: (url: string) => void }) 
           <span className="text-xs">Max 5MB</span>
         </div>
       </button>
-      {errors.length > 0 && <div className="text-destructive text-sm">{errors[0]}</div>}
+      {errors.length > 0 && (
+        <div className="text-destructive text-sm">{errors[0]}</div>
+      )}
     </div>
   );
 }
@@ -119,7 +132,8 @@ export function FormHeader({
                 alt="Cover"
                 className={cn(
                   "w-full h-full object-cover",
-                  coverUrl.includes("tint=true") && "relative z-0 brightness-60 grayscale"
+                  coverUrl.includes("tint=true") &&
+                    "relative z-0 brightness-60 grayscale",
                 )}
               />
             </>
@@ -127,7 +141,9 @@ export function FormHeader({
             <div
               className="w-full h-full"
               style={{
-                backgroundColor: coverUrl?.startsWith("#") ? coverUrl : "#FFE4E1",
+                backgroundColor: coverUrl?.startsWith("#")
+                  ? coverUrl
+                  : "#FFE4E1",
               }}
             />
           )}
@@ -135,14 +151,16 @@ export function FormHeader({
           <div className="absolute bottom-2 right-2 opacity-0 group-hover/cover:opacity-100 transition-opacity flex gap-2">
             {/* Change Cover Dialog */}
             <Dialog>
-              <DialogTrigger asChild>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="bg-white/80 hover:bg-white text-xs h-7"
-                >
-                  Change cover
-                </Button>
+              <DialogTrigger
+                render={
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="bg-white/80 hover:bg-white text-xs h-7"
+                  />
+                }
+              >
+                Change cover
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
@@ -153,78 +171,145 @@ export function FormHeader({
                     <TabsTrigger value="gallery">Gallery</TabsTrigger>
                     <TabsTrigger value="upload">Upload</TabsTrigger>
                   </TabsList>
-                  <TabsContent value="gallery" className="grid grid-cols-4 gap-2 pt-4">
+                  <TabsContent
+                    value="gallery"
+                    className="grid grid-cols-4 gap-2 pt-4"
+                  >
                     <button
                       type="button"
-                      onClick={() => setCoverUrl("https://images.unsplash.com/photo-1604076850742-4c7221f3101b?w=800&q=80&tint=true")}
+                      onClick={() =>
+                        setCoverUrl(
+                          "https://images.unsplash.com/photo-1604076850742-4c7221f3101b?w=800&q=80&tint=true",
+                        )
+                      }
                       className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
                       aria-label="Abstract mesh"
                     >
                       <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                      <img src="https://images.unsplash.com/photo-1604076850742-4c7221f3101b?w=800&q=80&tint=true" alt="Abstract mesh" className="relative z-0 w-full h-full object-cover brightness-60 grayscale" />
+                      <img
+                        src="https://images.unsplash.com/photo-1604076850742-4c7221f3101b?w=800&q=80&tint=true"
+                        alt="Abstract mesh"
+                        className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
+                      />
                     </button>
                     <button
                       type="button"
-                      onClick={() => setCoverUrl("https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80&tint=true")}
+                      onClick={() =>
+                        setCoverUrl(
+                          "https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80&tint=true",
+                        )
+                      }
                       className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
                       aria-label="Abstract gradient"
                     >
                       <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                      <img src="https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80&tint=true" alt="Abstract gradient" className="relative z-0 w-full h-full object-cover brightness-60 grayscale" />
+                      <img
+                        src="https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80&tint=true"
+                        alt="Abstract gradient"
+                        className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
+                      />
                     </button>
                     <button
                       type="button"
-                      onClick={() => setCoverUrl("https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true")}
+                      onClick={() =>
+                        setCoverUrl(
+                          "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true",
+                        )
+                      }
                       className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
                       aria-label="Abstract geometric"
                     >
                       <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                      <img src="https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true" alt="Abstract geometric" className="relative z-0 w-full h-full object-cover brightness-60 grayscale" />
+                      <img
+                        src="https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true"
+                        alt="Abstract geometric"
+                        className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
+                      />
                     </button>
                     <button
                       type="button"
-                      onClick={() => setCoverUrl("https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80&tint=true")}
+                      onClick={() =>
+                        setCoverUrl(
+                          "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80&tint=true",
+                        )
+                      }
                       className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
                       aria-label="Abstract liquid"
                     >
                       <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                      <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80&tint=true" alt="Abstract liquid" className="relative z-0 w-full h-full object-cover brightness-60 grayscale" />
+                      <img
+                        src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80&tint=true"
+                        alt="Abstract liquid"
+                        className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
+                      />
                     </button>
                     <button
                       type="button"
-                      onClick={() => setCoverUrl("https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=800&q=80&tint=true")}
+                      onClick={() =>
+                        setCoverUrl(
+                          "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=800&q=80&tint=true",
+                        )
+                      }
                       className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
                       aria-label="3D shapes"
                     >
                       <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                      <img src="https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=800&q=80&tint=true" alt="3D shapes" className="relative z-0 w-full h-full object-cover brightness-60 grayscale" />
+                      <img
+                        src="https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=800&q=80&tint=true"
+                        alt="3D shapes"
+                        className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
+                      />
                     </button>
                     <button
                       type="button"
-                      onClick={() => setCoverUrl("https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80&tint=true")}
+                      onClick={() =>
+                        setCoverUrl(
+                          "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80&tint=true",
+                        )
+                      }
                       className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
                       aria-label="Gradient curves"
                     >
                       <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                      <img src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80&tint=true" alt="Gradient curves" className="relative z-0 w-full h-full object-cover brightness-60 grayscale" />
+                      <img
+                        src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80&tint=true"
+                        alt="Gradient curves"
+                        className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
+                      />
                     </button>
                     <button
                       type="button"
-                      onClick={() => setCoverUrl("https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80&tint=true")}
+                      onClick={() =>
+                        setCoverUrl(
+                          "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80&tint=true",
+                        )
+                      }
                       className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
                       aria-label="Geometric waves"
                     >
                       <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                      <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80&tint=true" alt="Geometric waves" className="relative z-0 w-full h-full object-cover brightness-60 grayscale" />
+                      <img
+                        src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80&tint=true"
+                        alt="Geometric waves"
+                        className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
+                      />
                     </button>
                     <button
                       type="button"
-                      onClick={() => setCoverUrl("https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&q=80&tint=true")}
+                      onClick={() =>
+                        setCoverUrl(
+                          "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&q=80&tint=true",
+                        )
+                      }
                       className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
                       aria-label="Abstract paint"
                     >
                       <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                      <img src="https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&q=80&tint=true" alt="Abstract paint" className="relative z-0 w-full h-full object-cover brightness-60 grayscale" />
+                      <img
+                        src="https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&q=80&tint=true"
+                        alt="Abstract paint"
+                        className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
+                      />
                     </button>
 
                     {/* Remove Option in Gallery */}
@@ -254,7 +339,11 @@ export function FormHeader({
       )}
 
       {/* Main Content Area */}
-      <div className={cn("relative px-4 sm:px-14 max-w-[900px] mx-auto w-full flex flex-col")}>
+      <div
+        className={cn(
+          "relative px-4 sm:px-14 max-w-[900px] mx-auto w-full flex flex-col",
+        )}
+      >
         {/* Alignment Wrapper checking Editor padding */}
         <div className="w-full  sm:px-[max(10px,calc(50%-350px))]">
           {/* Logo Element */}
@@ -267,27 +356,33 @@ export function FormHeader({
               )}
             >
               <Dialog>
-                <DialogTrigger asChild>
-                  <div className="w-[60px] h-[60px] sm:w-[80px] sm:h-[80px] rounded-full overflow-hidden shadow-sm bg-background cursor-pointer hover:ring-2 hover:ring-muted-foreground/20 transition-all group/logo">
-                    {logoUrl && logoUrl !== "default-icon" ? (
-                      <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-black flex items-center justify-center text-white">
-                        <svg
-                          className="w-6 h-6 sm:w-10 sm:h-10"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <title>Form header placeholder icon</title>
-                          <path d="M12 2l9 4.9V17L12 22l-9-4.9V7z" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
+                <DialogTrigger
+                  render={
+                    <div className="w-[60px] h-[60px] sm:w-[80px] sm:h-[80px] rounded-full overflow-hidden shadow-sm bg-background cursor-pointer hover:ring-2 hover:ring-muted-foreground/20 transition-all group/logo" />
+                  }
+                >
+                  {logoUrl && logoUrl !== "default-icon" ? (
+                    <img
+                      src={logoUrl}
+                      alt="Logo"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-black flex items-center justify-center text-white">
+                      <svg
+                        className="w-6 h-6 sm:w-10 sm:h-10"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <title>Form header placeholder icon</title>
+                        <path d="M12 2l9 4.9V17L12 22l-9-4.9V7z" />
+                      </svg>
+                    </div>
+                  )}
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
@@ -312,7 +407,10 @@ export function FormHeader({
                         <X className="mr-2 h-4 w-4" /> Remove icon
                       </Button>
                     </TabsContent>
-                    <TabsContent value="upload" className="pt-4 flex flex-col items-center">
+                    <TabsContent
+                      value="upload"
+                      className="pt-4 flex flex-col items-center"
+                    >
                       <AvatarUpload
                         onFileChange={(file) => {
                           if (file?.preview) setLogoUrl(file.preview);
@@ -401,14 +499,16 @@ export function WorkspaceHeader({
       <div className="flex items-center gap-2">
         <h1 className="text-4xl font-bold tracking-tight">{name}</h1>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
-            >
-              <MoreHorizontal className="h-5 w-5" />
-            </Button>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+              />
+            }
+          >
+            <MoreHorizontal className="h-5 w-5" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             <DropdownMenuItem onClick={onRename}>

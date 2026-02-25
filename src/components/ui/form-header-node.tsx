@@ -14,7 +14,11 @@ import {
 } from "@/components/ui/dialog";
 import { EmojiPicker } from "@/components/ui/emoji-toolbar-button";
 import { createFormButtonNode } from "@/components/ui/form-button-node";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useFileUpload } from "@/hooks/use-file-upload";
@@ -22,7 +26,8 @@ import { cn } from "@/lib/utils";
 
 function isEmoji(str: string): boolean {
   if (!str) return false;
-  const emojiRange = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
+  const emojiRange =
+    /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
   return str.length <= 4 && emojiRange.test(str);
 }
 
@@ -47,10 +52,21 @@ export function createFormHeaderNode(
   };
 }
 
-function CoverUpload({ onFileChange }: { onFileChange: (url: string) => void }) {
+function CoverUpload({
+  onFileChange,
+}: {
+  onFileChange: (url: string) => void;
+}) {
   const [
     { isDragging, errors },
-    { handleDragEnter, handleDragLeave, handleDragOver, handleDrop, openFileDialog, getInputProps },
+    {
+      handleDragEnter,
+      handleDragLeave,
+      handleDragOver,
+      handleDrop,
+      openFileDialog,
+      getInputProps,
+    },
   ] = useFileUpload({
     maxFiles: 1,
     maxSize: 5 * 1024 * 1024,
@@ -86,7 +102,9 @@ function CoverUpload({ onFileChange }: { onFileChange: (url: string) => void }) 
           <span className="text-xs">Max 5MB</span>
         </div>
       </button>
-      {errors.length > 0 && <div className="text-destructive text-sm">{errors[0]}</div>}
+      {errors.length > 0 && (
+        <div className="text-destructive text-sm">{errors[0]}</div>
+      )}
     </div>
   );
 }
@@ -140,7 +158,10 @@ export function FormHeaderElement(props: PlateElementProps) {
 
   return (
     <PlateElement {...props}>
-      <div contentEditable={false} className="group relative w-full flex flex-col mb-4 select-none">
+      <div
+        contentEditable={false}
+        className="group relative w-full flex flex-col mb-4 select-none"
+      >
         {hasCover && (
           <>
             <div className="relative w-screen left-[50%] right-[50%] -ml-[50vw] -mr-[50vw] h-[120px] sm:h-[200px] group/cover bg-muted/20">
@@ -154,7 +175,8 @@ export function FormHeaderElement(props: PlateElementProps) {
                     alt="Cover"
                     className={cn(
                       "w-full h-full object-cover border-0 rounded-none",
-                      cover.includes("tint=true") && "relative z-0 brightness-60 grayscale"
+                      cover.includes("tint=true") &&
+                        "relative z-0 brightness-60 grayscale",
                     )}
                   />
                 </>
@@ -169,15 +191,17 @@ export function FormHeaderElement(props: PlateElementProps) {
             </div>
             <div className="absolute top-2 right-4 flex gap-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
               <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="bg-white/80 hover:bg-white text-xs h-7"
-                    onMouseDown={(e) => e.preventDefault()}
-                  >
-                    Change cover
-                  </Button>
+                <DialogTrigger
+                  render={
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="bg-white/80 hover:bg-white text-xs h-7"
+                      onMouseDown={(e) => e.preventDefault()}
+                    />
+                  }
+                >
+                  Change cover
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
@@ -188,10 +212,17 @@ export function FormHeaderElement(props: PlateElementProps) {
                       <TabsTrigger value="gallery">Gallery</TabsTrigger>
                       <TabsTrigger value="upload">Upload</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="gallery" className="grid grid-cols-4 gap-2 pt-4">
+                    <TabsContent
+                      value="gallery"
+                      className="grid grid-cols-4 gap-2 pt-4"
+                    >
                       <button
                         type="button"
-                        onClick={() => handleCoverChange("https://images.unsplash.com/photo-1604076850742-4c7221f3101b?w=800&q=80&tint=true")}
+                        onClick={() =>
+                          handleCoverChange(
+                            "https://images.unsplash.com/photo-1604076850742-4c7221f3101b?w=800&q=80&tint=true",
+                          )
+                        }
                         className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
                         aria-label="Abstract mesh"
                       >
@@ -204,7 +235,11 @@ export function FormHeaderElement(props: PlateElementProps) {
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleCoverChange("https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80&tint=true")}
+                        onClick={() =>
+                          handleCoverChange(
+                            "https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80&tint=true",
+                          )
+                        }
                         className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
                         aria-label="Abstract gradient"
                       >
@@ -217,7 +252,11 @@ export function FormHeaderElement(props: PlateElementProps) {
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleCoverChange("https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true")}
+                        onClick={() =>
+                          handleCoverChange(
+                            "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true",
+                          )
+                        }
                         className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
                         aria-label="Abstract geometric"
                       >
@@ -230,7 +269,11 @@ export function FormHeaderElement(props: PlateElementProps) {
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleCoverChange("https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80&tint=true")}
+                        onClick={() =>
+                          handleCoverChange(
+                            "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80&tint=true",
+                          )
+                        }
                         className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
                         aria-label="Abstract liquid"
                       >
@@ -243,39 +286,71 @@ export function FormHeaderElement(props: PlateElementProps) {
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleCoverChange("https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=800&q=80&tint=true")}
+                        onClick={() =>
+                          handleCoverChange(
+                            "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=800&q=80&tint=true",
+                          )
+                        }
                         className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
                         aria-label="3D shapes"
                       >
                         <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                        <img src="https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=800&q=80&tint=true" alt="3D shapes" className="relative z-0 w-full h-full object-cover brightness-60 grayscale" />
+                        <img
+                          src="https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=800&q=80&tint=true"
+                          alt="3D shapes"
+                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
+                        />
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleCoverChange("https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80&tint=true")}
+                        onClick={() =>
+                          handleCoverChange(
+                            "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80&tint=true",
+                          )
+                        }
                         className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
                         aria-label="Gradient curves"
                       >
                         <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                        <img src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80&tint=true" alt="Gradient curves" className="relative z-0 w-full h-full object-cover brightness-60 grayscale" />
+                        <img
+                          src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80&tint=true"
+                          alt="Gradient curves"
+                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
+                        />
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleCoverChange("https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80&tint=true")}
+                        onClick={() =>
+                          handleCoverChange(
+                            "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80&tint=true",
+                          )
+                        }
                         className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
                         aria-label="Geometric waves"
                       >
                         <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                        <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80&tint=true" alt="Geometric waves" className="relative z-0 w-full h-full object-cover brightness-60 grayscale" />
+                        <img
+                          src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80&tint=true"
+                          alt="Geometric waves"
+                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
+                        />
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleCoverChange("https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&q=80&tint=true")}
+                        onClick={() =>
+                          handleCoverChange(
+                            "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&q=80&tint=true",
+                          )
+                        }
                         className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
                         aria-label="Abstract paint"
                       >
                         <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                        <img src="https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&q=80&tint=true" alt="Abstract paint" className="relative z-0 w-full h-full object-cover brightness-60 grayscale" />
+                        <img
+                          src="https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&q=80&tint=true"
+                          alt="Abstract paint"
+                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
+                        />
                       </button>
 
                       <button
@@ -320,42 +395,59 @@ export function FormHeaderElement(props: PlateElementProps) {
             <Popover open={iconPopoverOpen} onOpenChange={setIconPopoverOpen}>
               {hasLogo && (
                 <div
-                  className={cn("relative z-10 mb-1", hasCover ? "" : "mt-4 sm:mt-6")}
-                  data-bf-logo-emoji-container={hasCover && (!icon || icon === "default-icon" || isEmoji(icon)) ? "true" : undefined}
-                  data-bf-logo-container={hasCover && icon && icon !== "default-icon" && !isEmoji(icon) ? "true" : undefined}
+                  className={cn(
+                    "relative z-10 mb-1",
+                    hasCover ? "" : "mt-4 sm:mt-6",
+                  )}
+                  data-bf-logo-emoji-container={
+                    hasCover &&
+                    (!icon || icon === "default-icon" || isEmoji(icon))
+                      ? "true"
+                      : undefined
+                  }
+                  data-bf-logo-container={
+                    hasCover &&
+                    icon &&
+                    icon !== "default-icon" &&
+                    !isEmoji(icon)
+                      ? "true"
+                      : undefined
+                  }
                 >
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className="cursor-pointer transition-colors"
-                      onMouseDown={(e) => e.preventDefault()}
-                    >
-                      {icon && icon !== "default-icon" ? (
-                        isEmoji(icon) ? (
-                          <span
-                            className="text-[80px] sm:text-[100px] leading-none inline-block"
-                            role="img"
-                            aria-label="Form icon"
-                          >
-                            {icon}
-                          </span>
-                        ) : (
-                          <img
-                            src={icon}
-                            alt="Logo"
-                            className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-md object-cover"
-                          />
-                        )
-                      ) : (
+                  <PopoverTrigger
+                    render={
+                      <button
+                        type="button"
+                        className="cursor-pointer transition-colors"
+                        onMouseDown={(e) => e.preventDefault()}
+                      />
+                    }
+                  >
+                    {icon && icon !== "default-icon" ? (
+                      isEmoji(icon) ? (
                         <span
                           className="text-[80px] sm:text-[100px] leading-none inline-block"
                           role="img"
                           aria-label="Form icon"
                         >
-                          📄
+                          {icon}
                         </span>
-                      )}
-                    </button>
+                      ) : (
+                        <img
+                          src={icon}
+                          alt="Logo"
+                          className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-md object-cover"
+                        />
+                      )
+                    ) : (
+                      <span
+                        className="text-[80px] sm:text-[100px] leading-none inline-block"
+                        role="img"
+                        aria-label="Form icon"
+                      >
+                        📄
+                      </span>
+                    )}
                   </PopoverTrigger>
                 </div>
               )}
@@ -369,16 +461,18 @@ export function FormHeaderElement(props: PlateElementProps) {
                 )}
               >
                 {!hasLogo && (
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-muted-foreground h-6 px-2 text-xs hover:bg-muted"
-                      onMouseDown={(e) => e.preventDefault()}
-                    >
-                      <Smile className="mr-1.5 h-3.5 w-3.5" />
-                      Add icon
-                    </Button>
+                  <PopoverTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground h-6 px-2 text-xs hover:bg-muted"
+                        onMouseDown={(e) => e.preventDefault()}
+                      />
+                    }
+                  >
+                    <Smile className="mr-1.5 h-3.5 w-3.5" />
+                    Add icon
                   </PopoverTrigger>
                 )}
                 {!hasCover && (
@@ -405,7 +499,11 @@ export function FormHeaderElement(props: PlateElementProps) {
                 </Button>
               </div>
 
-              <PopoverContent align="start" side="bottom" className="w-auto p-0">
+              <PopoverContent
+                align="start"
+                side="bottom"
+                className="w-auto p-0"
+              >
                 <Tabs defaultValue="emoji" className="w-full">
                   <TabsList className="grid w-full grid-cols-2 rounded-b-none">
                     <TabsTrigger value="emoji">Emoji</TabsTrigger>
@@ -422,7 +520,10 @@ export function FormHeaderElement(props: PlateElementProps) {
                       }}
                     />
                   </TabsContent>
-                  <TabsContent value="upload" className="p-4 flex flex-col items-center">
+                  <TabsContent
+                    value="upload"
+                    className="p-4 flex flex-col items-center"
+                  >
                     <AvatarUpload
                       onFileChange={(file) => {
                         if (file?.preview) {
@@ -460,7 +561,8 @@ export function FormHeaderElement(props: PlateElementProps) {
                     e.preventDefault();
                     // Check if onboarding content is present (by type)
                     const secondBlock = editor.children[1] as any;
-                    const isOnboarding = secondBlock?.type === "onboardingContent";
+                    const isOnboarding =
+                      secondBlock?.type === "onboardingContent";
 
                     if (isOnboarding) {
                       // Clear to empty state: header + empty paragraph + submit button
@@ -475,7 +577,9 @@ export function FormHeaderElement(props: PlateElementProps) {
                       });
                       // Move cursor to first paragraph
                       const firstBlockPath = [1];
-                      const startPoint = (editor.api as any).edges(firstBlockPath)?.[0];
+                      const startPoint = (editor.api as any).edges(
+                        firstBlockPath,
+                      )?.[0];
                       if (startPoint) {
                         editor.tf.select(startPoint);
                         editor.tf.focus();
@@ -483,7 +587,9 @@ export function FormHeaderElement(props: PlateElementProps) {
                     } else {
                       // Normal behavior: move focus to first block
                       const firstBlockPath = [1];
-                      const startPoint = (editor.api as any).edges(firstBlockPath)?.[0];
+                      const startPoint = (editor.api as any).edges(
+                        firstBlockPath,
+                      )?.[0];
                       if (startPoint) {
                         editor.tf.select(startPoint);
                         editor.tf.focus();

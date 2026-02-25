@@ -1,6 +1,11 @@
 import { getCommentKey, getDraftCommentKey } from "@platejs/comment";
 import { CommentPlugin, useCommentId } from "@platejs/comment/react";
-import { differenceInDays, differenceInHours, differenceInMinutes, format } from "date-fns";
+import {
+  differenceInDays,
+  differenceInHours,
+  differenceInMinutes,
+  format,
+} from "date-fns";
 import {
   ArrowUpIcon,
   CheckIcon,
@@ -20,7 +25,10 @@ import {
 } from "platejs/react";
 import * as React from "react";
 import { BasicMarksKit } from "@/components/editor/plugins/basic-marks-kit";
-import { discussionPlugin, type TDiscussion } from "@/components/editor/plugins/discussion-kit";
+import {
+  discussionPlugin,
+  type TDiscussion,
+} from "@/components/editor/plugins/discussion-kit";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -177,7 +185,9 @@ export function Comment(props: {
         </h4>
 
         <div className="text-muted-foreground/80 text-xs leading-none">
-          <span className="mr-1">{formatCommentDate(new Date(comment.createdAt))}</span>
+          <span className="mr-1">
+            {formatCommentDate(new Date(comment.createdAt))}
+          </span>
           {comment.isEdited && <span>(edited)</span>}
         </div>
 
@@ -195,11 +205,6 @@ export function Comment(props: {
             )}
 
             <CommentMoreDropdown
-              onCloseAutoFocus={() => {
-                setTimeout(() => {
-                  commentEditor.tf.focus({ edge: "endEditor" });
-                }, 0);
-              }}
               onRemoveComment={() => {
                 if (discussionLength === 1) {
                   tf.comment.unsetMark({ id: comment.discussionId });
@@ -226,10 +231,16 @@ export function Comment(props: {
       )}
 
       <div className="relative my-1 pl-[26px]">
-        {!isLast && <div className="absolute top-0 left-3 h-full w-0.5 shrink-0 bg-muted" />}
+        {!isLast && (
+          <div className="absolute top-0 left-3 h-full w-0.5 shrink-0 bg-muted" />
+        )}
         <Plate readOnly={!isEditing} editor={commentEditor}>
           <EditorContainer variant="comment">
-            <Editor variant="comment" className="w-auto grow" onClick={() => onEditorClick?.()} />
+            <Editor
+              variant="comment"
+              className="w-auto grow"
+              onClick={() => onEditorClick?.()}
+            />
 
             {isEditing && (
               <div className="ml-auto flex shrink-0 gap-1">
@@ -273,7 +284,6 @@ function CommentMoreDropdown(props: {
   dropdownOpen: boolean;
   setDropdownOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setEditingId: React.Dispatch<React.SetStateAction<string | null>>;
-  onCloseAutoFocus?: () => void;
   onRemoveComment?: () => void;
 }) {
   const {
@@ -281,7 +291,6 @@ function CommentMoreDropdown(props: {
     dropdownOpen,
     setDropdownOpen,
     setEditingId,
-    onCloseAutoFocus,
     onRemoveComment,
   } = props;
 
@@ -290,7 +299,8 @@ function CommentMoreDropdown(props: {
   const selectedEditCommentRef = React.useRef<boolean>(false);
 
   const onDeleteComment = React.useCallback(() => {
-    if (!comment.id) return alert("You are operating too quickly, please try again later.");
+    if (!comment.id)
+      return alert("You are operating too quickly, please try again later.");
 
     // Find and update the discussion
     const updatedDiscussions = editor
@@ -300,7 +310,9 @@ function CommentMoreDropdown(props: {
           return discussion;
         }
 
-        const commentIndex = discussion.comments.findIndex((c) => c.id === comment.id);
+        const commentIndex = discussion.comments.findIndex(
+          (c) => c.id === comment.id,
+        );
         if (commentIndex === -1) {
           return discussion;
         }
@@ -322,29 +334,30 @@ function CommentMoreDropdown(props: {
   const onEditComment = React.useCallback(() => {
     selectedEditCommentRef.current = true;
 
-    if (!comment.id) return alert("You are operating too quickly, please try again later.");
+    if (!comment.id)
+      return alert("You are operating too quickly, please try again later.");
 
     setEditingId(comment.id);
   }, [comment.id, setEditingId]);
 
   return (
-    <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen} modal={false}>
-      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button variant="ghost" className={cn("h-6 p-1 text-muted-foreground")}>
-          <MoreHorizontalIcon className="size-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        className="w-48"
-        onCloseAutoFocus={(e) => {
-          if (selectedEditCommentRef.current) {
-            onCloseAutoFocus?.();
-            selectedEditCommentRef.current = false;
-          }
-
-          return e.preventDefault();
-        }}
+    <DropdownMenu
+      open={dropdownOpen}
+      onOpenChange={setDropdownOpen}
+      modal={false}
+    >
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            className={cn("h-6 p-1 text-muted-foreground")}
+          />
+        }
+        onClick={(e) => e.stopPropagation()}
       >
+        <MoreHorizontalIcon className="size-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-48">
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={onEditComment}>
             <PencilIcon className="size-4" />
@@ -397,7 +410,10 @@ export function CommentCreateForm({
   const userInfo = usePluginOption(discussionPlugin, "currentUser");
   const [commentValue, setCommentValue] = React.useState<Value | undefined>();
   const commentContent = React.useMemo(
-    () => (commentValue ? NodeApi.string({ children: commentValue, type: KEYS.p }) : ""),
+    () =>
+      commentValue
+        ? NodeApi.string({ children: commentValue, type: KEYS.p })
+        : "",
     [commentValue],
   );
   const commentEditor = useCommentEditor();
@@ -435,7 +451,10 @@ export function CommentCreateForm({
           userId: editor.getOption(discussionPlugin, "currentUserId"),
         };
 
-        editor.setOption(discussionPlugin, "discussions", [...discussions, newDiscussion]);
+        editor.setOption(discussionPlugin, "discussions", [
+          ...discussions,
+          newDiscussion,
+        ]);
         return;
       }
 
@@ -465,11 +484,15 @@ export function CommentCreateForm({
       return;
     }
 
-    const commentsNodeEntry = editor.getApi(CommentPlugin).comment.nodes({ at: [], isDraft: true });
+    const commentsNodeEntry = editor
+      .getApi(CommentPlugin)
+      .comment.nodes({ at: [], isDraft: true });
 
     if (commentsNodeEntry.length === 0) return;
 
-    const documentContent = commentsNodeEntry.map(([node]) => node.text).join("");
+    const documentContent = commentsNodeEntry
+      .map(([node]) => node.text)
+      .join("");
 
     const _discussionId = nanoid();
     // Mock creating new discussion
@@ -491,7 +514,10 @@ export function CommentCreateForm({
       userId: editor.getOption(discussionPlugin, "currentUserId"),
     };
 
-    editor.setOption(discussionPlugin, "discussions", [...discussions, newDiscussion]);
+    editor.setOption(discussionPlugin, "discussions", [
+      ...discussions,
+      newDiscussion,
+    ]);
 
     const id = newDiscussion.id;
 

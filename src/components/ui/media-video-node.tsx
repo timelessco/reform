@@ -11,11 +11,17 @@ import ReactPlayer from "react-player";
 import { cn } from "@/lib/utils";
 
 import { Caption, CaptionTextarea } from "./caption";
-import { mediaResizeHandleVariants, Resizable, ResizeHandle } from "./resize-handle";
+import {
+  mediaResizeHandleVariants,
+  Resizable,
+  ResizeHandle,
+} from "./resize-handle";
 
 export const VideoElement = withHOC(
   ResizableProvider,
-  function VideoElement(props: PlateElementProps<TVideoElement & TResizableProps>) {
+  function VideoElement(
+    props: PlateElementProps<TVideoElement & TResizableProps>,
+  ) {
     const {
       align = "center",
       embed,
@@ -63,7 +69,7 @@ export const VideoElement = withHOC(
               {!isUpload && isYoutube && (
                 <div ref={handleRef}>
                   <LiteYouTubeEmbed
-                    id={embed?.id}
+                    id={embed?.id ?? ""}
                     title="youtube"
                     wrapperClass={cn(
                       "aspect-video rounded-sm",
@@ -87,14 +93,22 @@ export const VideoElement = withHOC(
 
               {isUpload && isEditorMounted && (
                 <div ref={handleRef}>
-                  <ReactPlayer height="100%" src={unsafeUrl} width="100%" controls />
+                  <ReactPlayer
+                    height="100%"
+                    src={unsafeUrl}
+                    width="100%"
+                    controls
+                  />
                 </div>
               )}
             </div>
           </Resizable>
 
           <Caption style={{ width }} align={align}>
-            <CaptionTextarea readOnly={readOnly} placeholder="Write a caption..." />
+            <CaptionTextarea
+              readOnly={readOnly}
+              placeholder="Write a caption..."
+            />
           </Caption>
         </figure>
         {props.children}

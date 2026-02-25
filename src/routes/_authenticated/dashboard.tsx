@@ -13,7 +13,12 @@ import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   createFormLocal,
   createWorkspaceLocal,
@@ -24,7 +29,12 @@ import { useForms, useWorkspaces } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
 import { syncLocalDataToCloud } from "@/lib/sync";
 import { parseTimestampAsUTC } from "@/lib/utils";
-import { createFileRoute, Link, useLoaderData, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  useLoaderData,
+  useNavigate,
+} from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import {
   ChevronLeft,
@@ -70,12 +80,15 @@ function DashboardPage() {
 
   // Determine if Electric has synced
   const isLoading = wsLoading || formsLoading;
-  const isElectricReady = !isLoading && liveWorkspaces !== undefined && liveForms !== undefined;
+  const isElectricReady =
+    !isLoading && liveWorkspaces !== undefined && liveForms !== undefined;
 
   // Use live data directly once Electric is ready (like sidebar does)
   const orgWorkspaces = useMemo(() => {
     if (!activeOrg?.id || !isElectricReady) return [];
-    return (liveWorkspaces || []).filter((ws) => ws.organizationId === activeOrg.id);
+    return (liveWorkspaces || []).filter(
+      (ws) => ws.organizationId === activeOrg.id,
+    );
   }, [liveWorkspaces, activeOrg?.id, isElectricReady]);
 
   const orgForms = useMemo(() => {
@@ -83,7 +96,10 @@ function DashboardPage() {
     return (liveForms || [])
       .filter((form) => orgWorkspaces.some((ws) => ws.id === form.workspaceId))
       .filter((form) => form.status !== "archived")
-      .toSorted((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      .toSorted(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      );
   }, [liveForms, orgWorkspaces, isElectricReady]);
 
   // Create workspace name lookup
@@ -92,7 +108,10 @@ function DashboardPage() {
   // Pagination
   const totalPages = Math.ceil(orgForms.length / FORMS_PER_PAGE);
   const startIndex = (currentPage - 1) * FORMS_PER_PAGE;
-  const paginatedForms = orgForms.slice(startIndex, startIndex + FORMS_PER_PAGE);
+  const paginatedForms = orgForms.slice(
+    startIndex,
+    startIndex + FORMS_PER_PAGE,
+  );
 
   // Handle sync after login/signup redirect
   useEffect(() => {
@@ -262,7 +281,10 @@ function DashboardPage() {
                           ? "/workspace/$workspaceId/form-builder/$formId/submissions"
                           : "/workspace/$workspaceId/form-builder/$formId/edit"
                       }
-                      params={{ workspaceId: form.workspaceId, formId: form.id }}
+                      params={{
+                        workspaceId: form.workspaceId,
+                        formId: form.id,
+                      }}
                       preloadDelay={1000}
                       preload="intent"
                     >
@@ -281,12 +303,15 @@ function DashboardPage() {
                                     : "bg-muted/80 text-muted-foreground"
                                 } rounded-full`}
                               >
-                                {form.status === "published" ? "Published" : "Draft"}
+                                {form.status === "published"
+                                  ? "Published"
+                                  : "Draft"}
                               </Badge>
                             </div>
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 font-medium">
                               <span>
-                                {workspaceNameMap.get(form.workspaceId) || "Unknown workspace"}
+                                {workspaceNameMap.get(form.workspaceId) ||
+                                  "Unknown workspace"}
                               </span>
                               <span className="w-0.5 h-0.5 rounded-full bg-muted-foreground/30"></span>
                               <span>{formatLastEdited(form.updatedAt)}</span>
@@ -297,40 +322,44 @@ function DashboardPage() {
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <TooltipProvider>
                             <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 rounded-full hover:bg-muted"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleDuplicate(form.id);
-                                  }}
-                                >
-                                  <Copy className="h-4 w-4 text-muted-foreground" />
-                                </Button>
+                              <TooltipTrigger
+                                render={
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-full hover:bg-muted"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleDuplicate(form.id);
+                                    }}
+                                  />
+                                }
+                              >
+                                <Copy className="h-4 w-4 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent>Duplicate</TooltipContent>
                             </Tooltip>
 
                             <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleDeleteClick({
-                                      id: form.id,
-                                      title: form.title || "Untitled",
-                                    });
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4 text-muted-foreground" />
-                                </Button>
+                              <TooltipTrigger
+                                render={
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleDeleteClick({
+                                        id: form.id,
+                                        title: form.title || "Untitled",
+                                      });
+                                    }}
+                                  />
+                                }
+                              >
+                                <Trash2 className="h-4 w-4 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent>Delete</TooltipContent>
                             </Tooltip>
@@ -346,7 +375,8 @@ function DashboardPage() {
           {!isLoading && totalPages > 1 && (
             <div className="flex items-center justify-between pt-4 border-t">
               <p className="text-sm text-muted-foreground">
-                Showing {startIndex + 1}-{Math.min(startIndex + FORMS_PER_PAGE, orgForms.length)} of{" "}
+                Showing {startIndex + 1}-
+                {Math.min(startIndex + FORMS_PER_PAGE, orgForms.length)} of{" "}
                 {orgForms.length} forms
               </p>
               <div className="flex items-center gap-2">
@@ -360,22 +390,26 @@ function DashboardPage() {
                   Previous
                 </Button>
                 <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <Button
-                      key={page}
-                      variant={currentPage === page ? "default" : "ghost"}
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={() => setCurrentPage(page)}
-                    >
-                      {page}
-                    </Button>
-                  ))}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "ghost"}
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => setCurrentPage(page)}
+                      >
+                        {page}
+                      </Button>
+                    ),
+                  )}
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
                   disabled={currentPage === totalPages}
                 >
                   Next
@@ -401,7 +435,9 @@ function DashboardPage() {
                 onClick={handleCreateForm}
                 disabled={isLoading || isCreating || orgWorkspaces.length === 0}
               >
-                {isCreating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                {isCreating && (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                )}
                 Create my first form
               </Button>
             </div>
@@ -426,7 +462,8 @@ function DashboardPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete form</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{formToDelete?.title}"? This action cannot be undone.
+              Are you sure you want to delete "{formToDelete?.title}"? This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

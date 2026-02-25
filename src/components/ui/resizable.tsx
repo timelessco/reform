@@ -1,83 +1,54 @@
-import * as React from "react";
-import { GripVerticalIcon } from "lucide-react";
-import {
-  Panel,
-  PanelGroup,
-  PanelResizeHandle,
-  type PanelGroupProps,
-  type PanelProps,
-  type PanelResizeHandleProps,
-  type ImperativePanelHandle,
-  type ImperativePanelGroupHandle,
-} from "react-resizable-panels";
+"use client";
+
+import * as ResizablePrimitive from "react-resizable-panels";
 
 import { cn } from "@/lib/utils";
 
-const ResizablePanelGroup = React.forwardRef<ImperativePanelGroupHandle, PanelGroupProps>(
-  ({ className, ...props }, ref) => (
-    <PanelGroup
-      ref={ref}
+function ResizablePanelGroup({
+  className,
+  ...props
+}: ResizablePrimitive.GroupProps) {
+  return (
+    <ResizablePrimitive.Group
       data-slot="resizable-panel-group"
-      className={cn("flex h-full w-full data-[panel-group-direction=vertical]:flex-col", className)}
+      className={cn(
+        "flex h-full w-full aria-[orientation=vertical]:flex-col",
+        className,
+      )}
       {...props}
     />
-  ),
-);
-ResizablePanelGroup.displayName = "ResizablePanelGroup";
+  );
+}
 
-const ResizablePanel = React.forwardRef<ImperativePanelHandle, PanelProps>(({ ...props }, ref) => (
-  <Panel ref={ref} data-slot="resizable-panel" {...props} />
-));
-ResizablePanel.displayName = "ResizablePanel";
+function ResizablePanel({ ...props }: ResizablePrimitive.PanelProps) {
+  return <ResizablePrimitive.Panel data-slot="resizable-panel" {...props} />;
+}
 
 function ResizableHandle({
   withHandle,
   className,
-  children,
   ...props
-}: PanelResizeHandleProps & {
+}: ResizablePrimitive.SeparatorProps & {
   withHandle?: boolean;
-  children?: React.ReactNode;
 }) {
   return (
-    <PanelResizeHandle
+    <ResizablePrimitive.Separator
       data-slot="resizable-handle"
       className={cn(
-        // Base styles - subtle border
-        "relative flex w-px items-center justify-center bg-border/50",
-        // Hover area - wider for easier grabbing
-        "after:absolute after:inset-y-0 after:left-1/2 after:w-2 after:-translate-x-1/2",
-        // Hover glow effect
-        "transition-all duration-200 hover:bg-primary/30 hover:w-[2px]",
-        // Active/dragging state
-        "data-[resize-handle-state=drag]:bg-primary/50 data-[resize-handle-state=drag]:w-[2px]",
-        // Cursor
-        "cursor-col-resize",
-        // Focus visible
-        "focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:outline-hidden",
-        // Vertical direction
-        "data-[panel-group-direction=vertical]:h-px data-[panel-group-direction=vertical]:w-full data-[panel-group-direction=vertical]:cursor-row-resize",
-        "data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-2 data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:translate-x-0 data-[panel-group-direction=vertical]:after:-translate-y-1/2",
-        "data-[panel-group-direction=vertical]:hover:h-[2px]",
-        "[&[data-panel-group-direction=vertical]>div]:rotate-90",
+        "bg-border focus-visible:ring-ring ring-offset-background relative flex w-px items-center justify-center after:absolute after:inset-y-0 after:start-1/2 after:w-1 after:-translate-x-1/2 rtl:after:translate-x-1/2 focus-visible:ring-1 focus-visible:outline-hidden aria-[orientation=horizontal]:h-px aria-[orientation=horizontal]:w-full aria-[orientation=horizontal]:after:start-0 aria-[orientation=horizontal]:after:h-1 aria-[orientation=horizontal]:after:w-full aria-[orientation=horizontal]:after:translate-x-0 rtl:aria-[orientation=horizontal]:after:-translate-x-0 aria-[orientation=horizontal]:after:-translate-y-1/2 [&[aria-orientation=horizontal]>div]:rotate-90",
         className,
       )}
       {...props}
     >
-      {children}
       {withHandle && (
-        <div className="bg-border z-10 flex h-4 w-3 items-center justify-center rounded-xs border">
-          <GripVerticalIcon className="size-2.5" />
-        </div>
+        <div className="bg-border h-6 w-1 rounded-lg z-10 flex shrink-0" />
       )}
-    </PanelResizeHandle>
+    </ResizablePrimitive.Separator>
   );
 }
 
-export {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-  type ImperativePanelHandle,
-  type ImperativePanelGroupHandle,
-};
+export { ResizableHandle, ResizablePanel, ResizablePanelGroup };
+export type { ResizablePrimitive };
+
+// Re-export PanelImperativeHandle as ImperativePanelHandle for backward compat
+export type ImperativePanelHandle = ResizablePrimitive.PanelImperativeHandle;
