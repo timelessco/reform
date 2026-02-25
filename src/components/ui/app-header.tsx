@@ -3,23 +3,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toggleFavoriteLocal, updateFormStatus } from "@/db-collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
-import {
-  discardChanges,
-  publishForm,
-  useHasUnpublishedChanges,
-} from "@/hooks/use-form-versions";
+import { discardChanges, publishForm, useHasUnpublishedChanges } from "@/hooks/use-form-versions";
 import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
 import { cn, parseTimestampAsUTC } from "@/lib/utils";
 import { Link, useLocation, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
-import {
-  AlertCircle,
-  ChevronsRight,
-  Loader2,
-  MoreHorizontal,
-  Pencil
-} from "lucide-react";
+import { AlertCircle, ChevronsRight, Loader2, MoreHorizontal, Pencil } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Logo } from "./logo";
@@ -43,7 +33,7 @@ export function AppHeader({
   };
   const { state, toggleSidebar: toggleMainSidebar } = useSidebarSafe() || {
     state: "expanded",
-    toggleSidebar: () => { },
+    toggleSidebar: () => {},
   };
   const { pathname } = useLocation();
   const isDashboard = pathname === "/dashboard";
@@ -448,11 +438,17 @@ export function AppHeader({
                     : "bg-muted text-muted-foreground hover:bg-muted/80",
                 )}
                 onClick={handlePublish}
-                disabled={isPublishing || (!hasUnpublishedChanges && savedDocs?.[0]?.status === "published")}
+                disabled={
+                  isPublishing || (!hasUnpublishedChanges && savedDocs?.[0]?.status === "published")
+                }
               >
                 {isPublishing ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
-                ) : savedDocs?.[0]?.status === "published" ? "Published" : "Publish"}
+                ) : savedDocs?.[0]?.status === "published" ? (
+                  "Published"
+                ) : (
+                  "Publish"
+                )}
               </Button>
             ) : (
               workspaceId &&

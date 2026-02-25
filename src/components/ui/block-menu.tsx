@@ -77,15 +77,15 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 
   const firstNode = selectedNodes[0]?.[0] as
     | {
-      type?: string;
-      required?: boolean;
-      placeholder?: string;
-      minLength?: number;
-      maxLength?: number;
-      defaultValue?: string;
-      buttonText?: string;
-      children?: Array<{ text?: string }>;
-    }
+        type?: string;
+        required?: boolean;
+        placeholder?: string;
+        minLength?: number;
+        maxLength?: number;
+        defaultValue?: string;
+        buttonText?: string;
+        children?: Array<{ text?: string }>;
+      }
     | undefined;
   const firstPath = selectedNodes[0]?.[1];
 

@@ -8,12 +8,7 @@ import { useFormVersions, restoreVersion } from "@/hooks/use-form-versions";
 import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-} from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
 
 interface VersionHistorySidebarProps {
   formId: string;
@@ -85,7 +80,9 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
       {/* Sidebar Header */}
       <SidebarHeader className="px-4 h-[52px] border-b border-border/40 flex flex-row items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-[13px] font-medium tracking-[0.13px] text-foreground/80">Version history</span>
+          <span className="text-[13px] font-medium tracking-[0.13px] text-foreground/80">
+            Version history
+          </span>
           <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
         </div>
       </SidebarHeader>
@@ -98,7 +95,9 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
           </div>
           <div className="flex flex-col p-3 rounded-lg bg-transparent border border-border/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
             <div className="flex items-center justify-between w-full mb-2">
-              <span className="text-[13px] font-medium tracking-[0.13px] text-foreground">{currentUser?.name ?? "You"}</span>
+              <span className="text-[13px] font-medium tracking-[0.13px] text-foreground">
+                {currentUser?.name ?? "You"}
+              </span>
               <span className="text-[12px] text-muted-foreground">
                 {formatTime(new Date().toISOString())}
               </span>
@@ -138,12 +137,14 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
                   )}
 
                   {/* Horizontal Connector to Card */}
-                  <div className={cn(
-                    "absolute left-[24px] top-[14px] h-px z-[-1] transition-all duration-300",
-                    isSelected
-                      ? "w-[12px] bg-foreground/30"
-                      : "w-[6px] bg-border/60 group-hover/timeline:w-[12px] group-hover/timeline:bg-border"
-                  )} />
+                  <div
+                    className={cn(
+                      "absolute left-[24px] top-[14px] h-px z-[-1] transition-all duration-300",
+                      isSelected
+                        ? "w-[12px] bg-foreground/30"
+                        : "w-[6px] bg-border/60 group-hover/timeline:w-[12px] group-hover/timeline:bg-border",
+                    )}
+                  />
 
                   {/* Node */}
                   <div
@@ -151,7 +152,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
                       "absolute left-0 top-[2px] w-[24px] h-[24px] rounded-full flex items-center justify-center text-[10px] font-bold z-10 ring-4 ring-background transition-all duration-300",
                       isSelected
                         ? "bg-foreground text-background shadow-sm scale-110"
-                        : "bg-muted text-muted-foreground border border-border/80 group-hover/timeline:border-border group-hover/timeline:text-foreground/80 scale-100"
+                        : "bg-muted text-muted-foreground border border-border/80 group-hover/timeline:border-border group-hover/timeline:text-foreground/80 scale-100",
                     )}
                   >
                     {versionNumber}
@@ -168,10 +169,14 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
                   >
                     <div className="flex items-center justify-between w-full">
                       <div className="flex items-center gap-2">
-                        <span className={cn(
-                          "text-[13px] font-medium tracking-[0.13px]",
-                          isSelected ? "text-foreground" : "text-foreground/80 group-hover:text-foreground"
-                        )}>
+                        <span
+                          className={cn(
+                            "text-[13px] font-medium tracking-[0.13px]",
+                            isSelected
+                              ? "text-foreground"
+                              : "text-foreground/80 group-hover:text-foreground",
+                          )}
+                        >
                           Version {versionNumber}
                         </span>
                         {isLatest && (
@@ -181,7 +186,10 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
                         )}
                       </div>
                       {version.id === latestVersion?.id && (
-                        <Lock className="h-3.5 w-3.5 text-muted-foreground opacity-60" strokeWidth={1.5} />
+                        <Lock
+                          className="h-3.5 w-3.5 text-muted-foreground opacity-60"
+                          strokeWidth={1.5}
+                        />
                       )}
                     </div>
 
@@ -197,7 +205,9 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
                         </span>
                         <Avatar className="h-[18px] w-[18px] ring-1 ring-border/30">
                           <AvatarImage src={publisher.image} />
-                          <AvatarFallback className="text-[9px] bg-muted/60 text-muted-foreground">{publisher.initial}</AvatarFallback>
+                          <AvatarFallback className="text-[9px] bg-muted/60 text-muted-foreground">
+                            {publisher.initial}
+                          </AvatarFallback>
                         </Avatar>
                       </div>
                     </div>

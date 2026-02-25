@@ -9,17 +9,20 @@ export function FormInputElement({ className, children, ...props }: PlateElement
   const placeholder = element.placeholder as string | undefined;
 
   const focused = useFocused();
-  const isSelected = useEditorSelector((ed) => {
-    if (!ed.selection) return false;
-    const path = ed.api.findPath(element);
-    if (!path) return false;
-    const focusPath = ed.selection.focus.path;
-    if (focusPath.length < path.length) return false;
-    for (let i = 0; i < path.length; i++) {
-      if (focusPath[i] !== path[i]) return false;
-    }
-    return true;
-  }, [element]);
+  const isSelected = useEditorSelector(
+    (ed) => {
+      if (!ed.selection) return false;
+      const path = ed.api.findPath(element);
+      if (!path) return false;
+      const focusPath = ed.selection.focus.path;
+      if (focusPath.length < path.length) return false;
+      for (let i = 0; i < path.length; i++) {
+        if (focusPath[i] !== path[i]) return false;
+      }
+      return true;
+    },
+    [element],
+  );
 
   return (
     <PlateElement

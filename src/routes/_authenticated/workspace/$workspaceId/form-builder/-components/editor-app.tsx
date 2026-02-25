@@ -41,10 +41,7 @@ export default function EditorApp({
   const { data: formSettings } = useFormSettings(formId);
   const customization = formSettings?.customization as Record<string, string> | null;
   const hasCustomization = customization && Object.keys(customization).length > 0;
-  const themeVars = useMemo(
-    () => getThemeStyleVars(customization),
-    [customization],
-  );
+  const themeVars = useMemo(() => getThemeStyleVars(customization), [customization]);
   const skipSaveRef = useRef(false);
   const lastKnownContentRef = useRef<string | null>(null);
   const headerVisibility = useEditorHeaderVisibilitySafe();
@@ -190,7 +187,13 @@ export default function EditorApp({
   }
 
   return (
-    <div className={cn("h-screen w-full overflow-y-auto overflow-x-hidden", hasCustomization && "bf-themed")} style={hasCustomization ? themeVars : undefined}>
+    <div
+      className={cn(
+        "h-screen w-full overflow-y-auto overflow-x-hidden",
+        hasCustomization && "bf-themed",
+      )}
+      style={hasCustomization ? themeVars : undefined}
+    >
       <Plate editor={editor} readOnly={readOnly} onChange={handleChange}>
         <EditorContainer
           variant="default"

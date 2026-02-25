@@ -53,7 +53,14 @@ import {
   SidebarProvider,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { BellIcon, ChevronDownIcon, HomeIcon, SearchIcon, SettingsIcon, StarIcon } from "@/components/ui/sidebar-icons";
+import {
+  BellIcon,
+  ChevronDownIcon,
+  HomeIcon,
+  SearchIcon,
+  SettingsIcon,
+  StarIcon,
+} from "@/components/ui/sidebar-icons";
 import { UserMenuMinimal } from "@/components/user-menu-minimal";
 import { WorkspaceItemMinimal, type WorkspaceWithForms } from "@/components/workspace-item-minimal";
 import {
@@ -69,7 +76,7 @@ import {
   permanentDeleteFormLocal,
   restoreFormLocal,
   updateFormStatus,
-  updateWorkspaceName
+  updateWorkspaceName,
 } from "@/db-collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
@@ -108,11 +115,20 @@ import {
   Trash2,
   Undo2,
   Users,
-  Zap
+  Zap,
 } from "lucide-react";
 
 import type * as React from "react";
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 const LazyFormSettingsSidebar = lazy(() =>
@@ -298,10 +314,7 @@ function AuthLayoutContent() {
         <div className="relative z-20 flex-1 min-h-0 overflow-hidden">
           <ResizablePanelGroup direction="horizontal" className="h-full">
             {/* Main content panel - non-resizable */}
-            <ResizablePanel
-              defaultSize={showEditorSidebar ? 70 : 100}
-              minSize={50}
-            >
+            <ResizablePanel defaultSize={showEditorSidebar ? 70 : 100} minSize={50}>
               <div ref={leftPanelRef} className={cn("flex h-full min-w-0 flex-col z-50")}>
                 <Outlet key={formId} />
               </div>
@@ -369,10 +382,18 @@ function AuthLayoutContent() {
             >
               <div className="h-full w-full">
                 <Suspense fallback={null}>
-                  {activeSidebar === "settings" && formId && <LazyFormSettingsSidebar formId={formId} />}
-                  {activeSidebar === "share" && formId && <LazyShareSummarySidebar formId={formId} />}
-                  {activeSidebar === "history" && formId && <LazyVersionHistorySidebar formId={formId} />}
-                  {activeSidebar === "customize" && formId && <LazyCustomizeSidebar formId={formId} />}
+                  {activeSidebar === "settings" && formId && (
+                    <LazyFormSettingsSidebar formId={formId} />
+                  )}
+                  {activeSidebar === "share" && formId && (
+                    <LazyShareSummarySidebar formId={formId} />
+                  )}
+                  {activeSidebar === "history" && formId && (
+                    <LazyVersionHistorySidebar formId={formId} />
+                  )}
+                  {activeSidebar === "customize" && formId && (
+                    <LazyCustomizeSidebar formId={formId} />
+                  )}
                 </Suspense>
               </div>
             </ResizablePanel>
@@ -996,7 +1017,7 @@ function SidebarInbox() {
                           onClick={() => acceptMutation.mutate({ invitationId: invitation.id })}
                         >
                           {acceptMutation.isPending &&
-                            acceptMutation.variables?.invitationId === invitation.id
+                          acceptMutation.variables?.invitationId === invitation.id
                             ? "Accepting..."
                             : "Accept"}
                         </Button>
@@ -1008,7 +1029,7 @@ function SidebarInbox() {
                           onClick={() => rejectMutation.mutate({ invitationId: invitation.id })}
                         >
                           {rejectMutation.isPending &&
-                            rejectMutation.variables?.invitationId === invitation.id
+                          rejectMutation.variables?.invitationId === invitation.id
                             ? "Declining..."
                             : "Decline"}
                         </Button>
@@ -1041,11 +1062,7 @@ function FreePlanCard() {
     <div className="shrink-0 overflow-hidden rounded-xl bg-free-plan-card-bg p-3 mx-3 w-[204px] shadow-sm">
       <div className="flex items-center gap-2 mb-2">
         <div className="shrink-0 size-6 rounded flex items-center justify-center bg-teal-100">
-          <Zap
-            className="h-3.5 w-3.5 text-teal-700"
-            strokeWidth={2}
-            fill="currentColor"
-          />
+          <Zap className="h-3.5 w-3.5 text-teal-700" strokeWidth={2} fill="currentColor" />
         </div>
         <span className="text-[14px] font-medium text-sidebar-foreground">Free Plan</span>
       </div>

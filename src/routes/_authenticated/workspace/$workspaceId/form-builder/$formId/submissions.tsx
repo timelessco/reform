@@ -188,8 +188,8 @@ function SubmissionsPage() {
     });
 
     // Only update ref if the set actually changed
-    const prevKeys = [...orphanedFieldNamesRef.current].sort().join(",");
-    const nextKeys = [...orphaned].sort().join(",");
+    const prevKeys = [...orphanedFieldNamesRef.current].toSorted().join(",");
+    const nextKeys = [...orphaned].toSorted().join(",");
     if (prevKeys !== nextKeys) {
       orphanedFieldNamesRef.current = orphaned;
     }

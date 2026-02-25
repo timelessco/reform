@@ -5,11 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useFormSettings } from "@/hooks/use-live-hooks";
 import { formSettingsCollection } from "@/db-collections";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-} from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
 import {
   Accordion,
   AccordionContent,
@@ -22,18 +18,8 @@ import {
   StyleColorPicker,
   StyleNumberInput,
 } from "@/components/ui/style-controls";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  STYLES,
-  BASE_COLORS,
-  DARK_BASE_COLORS,
-  THEME_COLORS,
-  FONT_MAP,
-} from "@/lib/theme-presets";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { STYLES, BASE_COLORS, DARK_BASE_COLORS, THEME_COLORS, FONT_MAP } from "@/lib/theme-presets";
 
 const FONT_OPTIONS = Object.keys(FONT_MAP);
 
@@ -167,9 +153,16 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
     >
       <SidebarHeader className="px-4 h-[52px] border-b border-border/40 flex flex-row items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-[13px] font-medium tracking-[0.13px] text-foreground/80">Customize</span>
+          <span className="text-[13px] font-medium tracking-[0.13px] text-foreground/80">
+            Customize
+          </span>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => closeSidebar()} className="h-7 w-7 text-muted-foreground hover:bg-accent/50 rounded-lg transition-colors">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => closeSidebar()}
+          className="h-7 w-7 text-muted-foreground hover:bg-accent/50 rounded-lg transition-colors"
+        >
           <X className="h-3.5 w-3.5" strokeWidth={1.5} />
         </Button>
       </SidebarHeader>
@@ -177,7 +170,6 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
       <SidebarContent className="p-0 overflow-y-auto custom-scrollbar">
         <div className="px-4 pt-3 pb-12">
           <Accordion type="single" collapsible defaultValue="theme" className="w-full space-y-0">
-
             {/* ── Theme ── */}
             <AccordionItem value="theme" className="border-b-0">
               <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline">
@@ -261,7 +253,8 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                 </div>
               </div>
               <p className="text-[12px] text-muted-foreground tracking-[0.13px] leading-[1.48] mb-3">
-                Preview advanced customization. BetterForms Pro is required to apply it to the published form.
+                Preview advanced customization. BetterForms Pro is required to apply it to the
+                published form.
               </p>
               <Button
                 variant="outline"
@@ -282,10 +275,42 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="space-y-2 pt-1 pb-2">
-                <StyleNumberInput label="Page Width" value={getValue("pageWidth") || "50vw"} onChange={(v) => updateWithCustomPreset("pageWidth", v)} min={30} max={100} step={5} unit="vw" />
-                <StyleNumberInput label="Cover Height" value={getValue("coverHeight") || "200px"} onChange={(v) => updateWithCustomPreset("coverHeight", v)} min={100} max={400} step={10} unit="px" />
-                <StyleNumberInput label="Logo Width" value={getValue("logoWidth") || "100px"} onChange={(v) => updateWithCustomPreset("logoWidth", v)} min={40} max={200} step={4} unit="px" />
-                <StyleNumberInput label="Input Width" value={getValue("inputWidth") || "60%"} onChange={(v) => updateWithCustomPreset("inputWidth", v)} min={20} max={100} step={5} unit="%" />
+                <StyleNumberInput
+                  label="Page Width"
+                  value={getValue("pageWidth") || "50vw"}
+                  onChange={(v) => updateWithCustomPreset("pageWidth", v)}
+                  min={30}
+                  max={100}
+                  step={5}
+                  unit="vw"
+                />
+                <StyleNumberInput
+                  label="Cover Height"
+                  value={getValue("coverHeight") || "200px"}
+                  onChange={(v) => updateWithCustomPreset("coverHeight", v)}
+                  min={100}
+                  max={400}
+                  step={10}
+                  unit="px"
+                />
+                <StyleNumberInput
+                  label="Logo Width"
+                  value={getValue("logoWidth") || "100px"}
+                  onChange={(v) => updateWithCustomPreset("logoWidth", v)}
+                  min={40}
+                  max={200}
+                  step={4}
+                  unit="px"
+                />
+                <StyleNumberInput
+                  label="Input Width"
+                  value={getValue("inputWidth") || "60%"}
+                  onChange={(v) => updateWithCustomPreset("inputWidth", v)}
+                  min={20}
+                  max={100}
+                  step={5}
+                  unit="%"
+                />
               </AccordionContent>
             </AccordionItem>
 
@@ -300,7 +325,10 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="space-y-2 pt-1 pb-2">
-                <AdvancedColorPickers customization={customization} updateField={updateWithCustomPreset} />
+                <AdvancedColorPickers
+                  customization={customization}
+                  updateField={updateWithCustomPreset}
+                />
               </AccordionContent>
             </AccordionItem>
 
@@ -315,8 +343,24 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="space-y-2 pt-1 pb-2">
-                <StyleNumberInput label="Font Size" value={getValue("baseFontSize") || "16px"} onChange={(v) => updateWithCustomPreset("baseFontSize", v)} min={12} max={24} step={1} unit="px" />
-                <StyleNumberInput label="Letter Spacing" value={getValue("letterSpacing") || "0.02em"} onChange={(v) => updateWithCustomPreset("letterSpacing", v)} min={0} max={0.2} step={0.005} unit="em" />
+                <StyleNumberInput
+                  label="Font Size"
+                  value={getValue("baseFontSize") || "16px"}
+                  onChange={(v) => updateWithCustomPreset("baseFontSize", v)}
+                  min={12}
+                  max={24}
+                  step={1}
+                  unit="px"
+                />
+                <StyleNumberInput
+                  label="Letter Spacing"
+                  value={getValue("letterSpacing") || "0.02em"}
+                  onChange={(v) => updateWithCustomPreset("letterSpacing", v)}
+                  min={0}
+                  max={0.2}
+                  step={0.005}
+                  unit="em"
+                />
               </AccordionContent>
             </AccordionItem>
 
