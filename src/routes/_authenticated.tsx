@@ -1,6 +1,3 @@
-import { FormSettingsSidebar } from "@/components/form-builder/form-settings-sidebar";
-import { ShareSummarySidebar } from "@/components/form-builder/share-summary-sidebar";
-import { VersionHistorySidebar } from "@/components/form-builder/version-history-sidebar";
 import { SidebarItem } from "@/components/sidebar-item";
 import {
   AlertDialog,
@@ -14,7 +11,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AppHeader } from "@/components/ui/app-header";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   CommandDialog,
   CommandEmpty,
@@ -24,7 +20,6 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import { CustomizeSidebar } from "@/components/ui/customize-sidebar";
 import {
   Dialog,
   DialogContent,
@@ -101,7 +96,6 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import {
-  ChevronDown,
   ChevronsLeft,
   FileText,
   Filter,
@@ -114,12 +108,33 @@ import {
   Trash2,
   Undo2,
   Users,
-  Zap,
+  Zap
 } from "lucide-react";
 
 import type * as React from "react";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+
+const LazyFormSettingsSidebar = lazy(() =>
+  import("@/components/form-builder/form-settings-sidebar").then((m) => ({
+    default: m.FormSettingsSidebar,
+  })),
+);
+const LazyShareSummarySidebar = lazy(() =>
+  import("@/components/form-builder/share-summary-sidebar").then((m) => ({
+    default: m.ShareSummarySidebar,
+  })),
+);
+const LazyVersionHistorySidebar = lazy(() =>
+  import("@/components/form-builder/version-history-sidebar").then((m) => ({
+    default: m.VersionHistorySidebar,
+  })),
+);
+const LazyCustomizeSidebar = lazy(() =>
+  import("@/components/ui/customize-sidebar").then((m) => ({
+    default: m.CustomizeSidebar,
+  })),
+);
 
 // Route configuration
 export const Route = createFileRoute("/_authenticated")({
@@ -353,10 +368,12 @@ function AuthLayoutContent() {
               )}
             >
               <div className="h-full w-full">
-                {activeSidebar === "settings" && formId && <FormSettingsSidebar formId={formId} />}
-                {activeSidebar === "share" && formId && <ShareSummarySidebar formId={formId} />}
-                {activeSidebar === "history" && formId && <VersionHistorySidebar formId={formId} />}
-                {activeSidebar === "customize" && formId && <CustomizeSidebar formId={formId} />}
+                <Suspense fallback={null}>
+                  {activeSidebar === "settings" && formId && <LazyFormSettingsSidebar formId={formId} />}
+                  {activeSidebar === "share" && formId && <LazyShareSummarySidebar formId={formId} />}
+                  {activeSidebar === "history" && formId && <LazyVersionHistorySidebar formId={formId} />}
+                  {activeSidebar === "customize" && formId && <LazyCustomizeSidebar formId={formId} />}
+                </Suspense>
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>
