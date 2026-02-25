@@ -108,9 +108,8 @@ function DesignPage() {
   } = useVersionHistorySidebar();
 
   // Fetch version content when viewing a version
-  const { data: versionContentDataArray, isLoading: isLoadingVersionContent } = useFormVersionContent(
-    isViewingVersion ? (selectedVersionId ?? undefined) : undefined,
-  );
+  const { data: versionContentDataArray, isLoading: isLoadingVersionContent } =
+    useFormVersionContent(isViewingVersion ? (selectedVersionId ?? undefined) : undefined);
 
   const versionData = versionContentDataArray?.[0];
 

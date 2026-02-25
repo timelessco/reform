@@ -318,7 +318,7 @@ function PreviewFormHeader({
             alt="Form cover"
             className={cn(
               "w-full h-full object-cover",
-              cover.includes("tint=true") && "relative z-0 brightness-60 grayscale"
+              cover.includes("tint=true") && "relative z-0 brightness-60 grayscale",
             )}
             onError={() => setImageError(true)}
           />

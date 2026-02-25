@@ -355,4 +355,3 @@ function WorkspaceFormMinimal({
     </ContextMenu>
   );
 }
-

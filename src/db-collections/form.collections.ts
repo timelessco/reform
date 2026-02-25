@@ -1,5 +1,9 @@
 import { electricCollectionOptions } from "@tanstack/electric-db-collection";
-import { createCollection, createTransaction, localStorageCollectionOptions } from "@tanstack/react-db";
+import {
+  createCollection,
+  createTransaction,
+  localStorageCollectionOptions,
+} from "@tanstack/react-db";
 import { z } from "zod";
 import { createForm, deleteForm, updateForm } from "@/lib/fn/forms";
 import { logger } from "@/lib/utils";

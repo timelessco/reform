@@ -880,6 +880,9 @@
   --sidebar-border: var(--color-dark-gray-200);
   /* Sidebar nav label text - plan-overridable */
   --sidebar-nav-text: var(--color-dark-gray-950);
+  /* Sidebar icon fill and accent - dark mode */
+  --sidebar-icon-fill: var(--color-dark-gray-400);
+  --sidebar-icon-accent: var(--color-dark-gray-200);
   /* Sidebar nav active item bg - dark mode */
   --sidebar-nav-active-bg: var(--color-dark-gray-300);
   --sidebar-active: var(--color-dark-gray-300);

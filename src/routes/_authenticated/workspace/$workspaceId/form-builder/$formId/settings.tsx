@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +25,9 @@ import { useState } from "react";
 export const Route = createFileRoute(
   "/_authenticated/workspace/$workspaceId/form-builder/$formId/settings",
 )({
+  loader: async () => {
+    await formSettingsCollection.preload()
+  },
   component: SettingsPage,
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
@@ -105,7 +109,7 @@ export function SettingsContent({ formId }: { formId: string }) {
     },
   });
 
-  if (!settingsDoc) return null;
+  if (!settingsDoc) return <SettingsSkeleton />;
 
   return (
     <div className="space-y-8 pb-20">
@@ -600,6 +604,42 @@ function SettingItem({
         <p className="text-[13px] text-muted-foreground leading-relaxed">{description}</p>
       </div>
       <div className={cn("shrink-0 flex items-center", !vertical && "pt-1")}>{children}</div>
+    </div>
+  );
+}
+
+function SettingRowSkeleton() {
+  return (
+    <div className="flex items-start justify-between gap-8">
+      <div className="space-y-2 flex-1 max-w-xl">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-3 w-full" />
+      </div>
+      <Skeleton className="h-5 w-9 rounded-full shrink-0 mt-1" />
+    </div>
+  );
+}
+
+function SettingSectionSkeleton({ rows }: { rows: number }) {
+  return (
+    <div className="space-y-6">
+      <Skeleton className="h-6 w-40" />
+      <div className="space-y-8">
+        {Array.from({ length: rows }, (_, i) => (
+          <SettingRowSkeleton key={i} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SettingsSkeleton() {
+  return (
+    <div className="space-y-8 pb-20">
+      <SettingSectionSkeleton rows={5} />
+      <SettingSectionSkeleton rows={2} />
+      <SettingSectionSkeleton rows={3} />
+      <SettingSectionSkeleton rows={2} />
     </div>
   );
 }

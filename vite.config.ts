@@ -19,9 +19,9 @@ const config = defineConfig({
       //     );
       //   },
       // },
-      editor : {
-        name : "Antigravity",
-        open : async (path, lineNumber, columnNumber) => {
+      editor: {
+        name: "Antigravity",
+        open: async (path, lineNumber, columnNumber) => {
           const { exec } = await import("node:child_process");
           exec(
             `antigravity -g "${path.replaceAll("$", "\\$")}${lineNumber ? `:${lineNumber}` : ""}${columnNumber ? `:${columnNumber}` : ""}"`,
