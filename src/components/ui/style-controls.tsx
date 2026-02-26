@@ -607,14 +607,14 @@ export function StyleToggle({
   return (
     <div
       className={cn(
-        "flex items-center justify-between rounded-lg border border-border/60 bg-transparent h-[34px] pl-4 pr-1",
+        "flex items-center justify-between rounded-lg border border-border/60 bg-transparent h-[34px] pl-4 pr-1 transition-colors hover:bg-accent",
         className,
       )}
     >
-      <span className="font-medium text-muted-foreground text-[13px]">{label}</span>
+      <span className="font-medium text-muted-foreground text-[13px] select-none cursor-default">{label}</span>
       <div
         ref={containerRef}
-        className="relative flex rounded-md  isolation-auto h-[26px] items-center"
+        className="relative flex rounded-md isolation-auto h-[22px] items-center"
       >
         {pillStyle && (
           <motion.div
@@ -638,7 +638,7 @@ export function StyleToggle({
           type="button"
           onClick={() => onChange(false)}
           className={cn(
-            "relative z-10 px-3 h-full rounded text-[11px] font-semibold transition-colors cursor-pointer flex items-center justify-center min-w-[34px]",
+            "relative z-10 px-2.5 h-full rounded text-[11px] font-semibold transition-colors cursor-pointer flex items-center justify-center min-w-[28px]",
             !value ? "text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
         >
@@ -651,7 +651,7 @@ export function StyleToggle({
           type="button"
           onClick={() => onChange(true)}
           className={cn(
-            "relative z-10 px-3 h-full rounded text-[11px] font-semibold transition-colors cursor-pointer flex items-center justify-center min-w-[34px]",
+            "relative z-10 px-2.5 h-full rounded text-[11px] font-semibold transition-colors cursor-pointer flex items-center justify-center min-w-[28px]",
             value ? "text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
         >

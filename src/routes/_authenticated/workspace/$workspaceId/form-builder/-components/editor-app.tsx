@@ -4,6 +4,7 @@ import { createFormButtonNode } from "@/components/ui/form-button-node";
 import type { FormHeaderElementData } from "@/components/ui/form-header-node";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import { useEditorHeaderVisibilitySafe } from "@/contexts/editor-header-visibility-context";
+import { EditorThemeProvider } from "@/contexts/editor-theme-context";
 import { updateDoc, updateHeader } from "@/db-collections";
 import { useForm, useFormSettings } from "@/hooks/use-live-hooks";
 import { getThemeStyleVars } from "@/lib/generate-theme-css";
@@ -189,22 +190,29 @@ export default function EditorApp({
 		);
 	}
 
+	const themeCtx = useMemo(
+		() => ({ themeVars, hasCustomization: Boolean(hasCustomization) }),
+		[themeVars, hasCustomization],
+	);
+
 	return (
-		<div
-			className={cn(
-				"h-screen w-full overflow-y-auto overflow-x-hidden",
-				hasCustomization && "bf-themed",
-			)}
-			style={hasCustomization ? themeVars : undefined}
-		>
-			<Plate editor={editor} readOnly={readOnly} onChange={handleChange}>
-				<EditorContainer
-					variant="default"
-					className="px-0 sm:px-0 max-w-full  border-none shadow-none"
-				>
-					<Editor variant="demo" onKeyDown={handleEditorKeyDown} />
-				</EditorContainer>
-			</Plate>
-		</div>
+		<EditorThemeProvider value={themeCtx}>
+			<div
+				className={cn(
+					"h-screen w-full overflow-y-auto overflow-x-hidden",
+					hasCustomization && "bf-themed",
+				)}
+				style={hasCustomization ? themeVars : undefined}
+			>
+				<Plate editor={editor} readOnly={readOnly} onChange={handleChange}>
+					<EditorContainer
+						variant="default"
+						className="px-0 sm:px-0 max-w-full  border-none shadow-none"
+					>
+						<Editor variant="demo" onKeyDown={handleEditorKeyDown} />
+					</EditorContainer>
+				</Plate>
+			</div>
+		</EditorThemeProvider>
 	);
 }

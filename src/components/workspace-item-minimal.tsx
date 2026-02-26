@@ -86,14 +86,14 @@ export function WorkspaceItemMinimal({
         <Button
           variant="ghost"
           size="icon-sm"
-          className="h-6 w-6 hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
+          className="size-[26px] hover:bg-sidebar-active text-muted-foreground hover:text-foreground cursor-pointer"
           title="More options"
         >
           <MoreHorizontalIcon className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" sideOffset={4} className="w-[195px]">
-        <div className="text-[12px] font-medium text-muted-foreground px-2 py-1.5 tracking-[0.24px]">
+        <div className="text-xs font-[450] text-muted-foreground px-2 py-1.5 tracking-[0.15px]">
           Sort by
         </div>
         {[
@@ -105,6 +105,7 @@ export function WorkspaceItemMinimal({
           <Button
             key={option.value}
             variant="ghost"
+            size="icon-sm"
             onClick={() =>
               onSortChange(option.value as "recent" | "oldest" | "alphabetical" | "manual")
             }

@@ -89,7 +89,7 @@
 }
 
 @theme inline {
-  --tw-leading: 1rem;
+  /* --tw-leading: 1rem; */
   /* Fonts */
   --font-sans: "Inter-V", sans-serif;
   --font-serif: "Timeless Serif", ui-serif, Georgia, serif;

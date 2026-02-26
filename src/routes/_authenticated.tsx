@@ -391,7 +391,7 @@ function AuthLayoutContent() {
               collapsible
               collapsedSize={0}
               defaultSize={showEditorSidebar ? 30 : 0}
-              minSize={25}
+              minSize={22}
               maxSize={50}
               className={cn(
                 "h-full overflow-hidden bg-background",
@@ -511,7 +511,7 @@ function AppSidebar() {
           </Button>
         </SidebarHeader>
 
-        <SidebarContent>
+        <SidebarContent className="gap-0">
           <SidebarGroup className="pt-2 py-0">
             <SidebarGroupContent className="">
               {/* Nav items: Figma system-flat node 23504-5047 - pixel-perfect */}
@@ -591,7 +591,7 @@ function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          <div className="mt-[15px] px-2">
+          <div className="mt-[13px] px-2">
             <SidebarWorkspacesMinimal activeOrgId={activeOrg?.id} />
           </div>
         </SidebarContent>
@@ -1075,7 +1075,7 @@ function FreePlanCard() {
   return (
     <div className="shrink-0 overflow-hidden rounded-xl bg-free-plan-card-bg p-3 mx-3 w-[204px] shadow-sm">
       <div className="flex items-center gap-2 mb-3">
-        <div className="shrink-0 size-6 p-1 flex items-center justify-center bg-teal-100 rounded-full">
+        <div className="shrink-0 size-5 p-1 flex items-center justify-center bg-teal-100 rounded-full">
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none">
   <path d="M6.375 1.875L5.625 4.875H10.125L5.625 10.125L6.375 7.125H1.875L6.375 1.875Z" fill="#0F736B"/>
   <path fill-rule="evenodd" clip-rule="evenodd" d="M6.60448 1.43079C6.8105 1.53721 6.91632 1.77133 6.86008 1.99629L6.2654 4.37503H10.125C10.3203 4.37503 10.4977 4.4887 10.5793 4.6661C10.6609 4.8435 10.6317 5.05216 10.5046 5.20042L6.00464 10.4504C5.85372 10.6265 5.60156 10.6757 5.39554 10.5693C5.18951 10.4628 5.08369 10.2287 5.13994 10.0038L5.73462 7.62503H1.87501C1.67974 7.62503 1.50234 7.51135 1.42075 7.33395C1.33916 7.15655 1.3683 6.94789 1.49538 6.79963L5.99538 1.54963C6.14629 1.37357 6.39845 1.32437 6.60448 1.43079ZM2.96212 6.62503H6.37501C6.52898 6.62503 6.67436 6.69596 6.76911 6.81732C6.86386 6.93868 6.89742 7.09692 6.86008 7.24629L6.62378 8.1915L9.0379 5.37503H5.62501C5.47104 5.37503 5.32566 5.30409 5.2309 5.18273C5.13615 5.06137 5.10259 4.90313 5.13994 4.75376L5.37624 3.80855L2.96212 6.62503Z" fill="#0F736B"/>
@@ -1288,7 +1288,6 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
           )}
         </SidebarSection>
 
-        {/* Workspaces Section - 15px gap to match Figma mt-[15px] */}
         <div className="mt-[15px] space-y-4">
           {isLoading ? (
             ["collection-skeleton-1", "collection-skeleton-2"].map((key) => (

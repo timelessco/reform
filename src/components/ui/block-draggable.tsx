@@ -370,11 +370,12 @@ const DragHandle = React.memo(function DragHandle({
             // e.preventDefault();
             // e.stopPropagation();
 
+            const rect = e.currentTarget.getBoundingClientRect();
             const api = editor.getApi(BlockMenuPlugin);
 
             api.blockMenu.show(BLOCK_CONTEXT_MENU_ID, {
-              x: e.clientX,
-              y: e.clientY,
+              x: rect.left,
+              y: rect.top + rect.height / 2,
             });
           }}
           onMouseDown={(e) => {

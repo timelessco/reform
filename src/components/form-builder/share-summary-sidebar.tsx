@@ -48,6 +48,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
 
   return (
     <Sidebar
+      side="right"
       collapsible="none"
       className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out"
     >

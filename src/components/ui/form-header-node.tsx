@@ -1,6 +1,6 @@
 import { useEmojiDropdownMenuState } from "@platejs/emoji/react";
 import { ImageIcon, Settings, Smile, Upload, X } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorRef } from "platejs/react";
 import AvatarUpload from "@/components/file-upload/avatar-upload";
@@ -98,6 +98,20 @@ export function FormHeaderElement(props: PlateElementProps) {
       editor.tf.setNodes(updates, { at: path });
     }
   };
+
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+
+  const autoResizeTitle = useCallback(() => {
+    const el = titleRef.current;
+    if (el) {
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight}px`;
+    }
+  }, []);
+
+  useEffect(() => {
+    autoResizeTitle();
+  }, [title, autoResizeTitle]);
 
   const handleTitleChange = (newTitle: string) => {
     updateHeader({ title: newTitle });
@@ -489,12 +503,14 @@ export function FormHeaderElement(props: PlateElementProps) {
             </Popover>
 
             <div className="relative group/title">
-              <input
-                type="text"
-                className="w-full text-4xl sm:text-9xl font-serif font-light -tracking-5 leading-tight border-none outline-none bg-transparent placeholder:text-muted-foreground/50 placeholder:font-light py-1 sm:py-2 h-auto select-text placeholder:font-serif"
+              <textarea
+                ref={titleRef}
+                rows={1}
+                className="w-full text-4xl sm:text-9xl font-serif font-light -tracking-5 leading-tight border-none outline-none bg-transparent placeholder:text-muted-foreground/50 placeholder:font-light py-1 sm:py-2 h-auto select-text placeholder:font-serif resize-none overflow-hidden"
                 placeholder="Create your form."
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
+                onFocus={autoResizeTitle}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();

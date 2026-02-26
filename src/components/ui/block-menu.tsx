@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
+import { StyleToggle } from "@/components/ui/style-controls";
 import {
   CopyIcon,
   EyeOffIcon,
@@ -20,6 +20,7 @@ import {
   PlusIcon,
   TrashIcon,
 } from "@/components/ui/sidebar-icons";
+import { useEditorTheme } from "@/contexts/editor-theme-context";
 import { cn } from "@/lib/utils";
 
 type BlockFieldType = "formInput" | "formButton" | "static" | "unknown";
@@ -47,6 +48,7 @@ function extractLabelText(node: { children?: Array<{ text?: string }> }): string
 export function BlockMenu({ children }: { children: React.ReactNode }) {
   const { api, editor } = useEditorPlugin(BlockMenuPlugin);
   const openId = usePluginOption(BlockMenuPlugin, "openId");
+  const { themeVars, hasCustomization } = useEditorTheme();
   const isOpen = openId === BLOCK_CONTEXT_MENU_ID;
 
   // Retrieve position from plugin options
@@ -229,8 +231,10 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
     setButtonText(value);
 
     // Update children to sync with the renderer in form-button-node.tsx
-    editor.tf.insertNodes({ text: value }, { at: [...firstPath, 0], select: false });
-    editor.tf.removeNodes({ at: [...firstPath, 1] });
+    editor.tf.withoutNormalizing(() => {
+      editor.tf.insertNodes({ text: value }, { at: [...firstPath, 0], select: false });
+      editor.tf.removeNodes({ at: [...firstPath, 1] });
+    });
 
     // Also keep buttonText property for backward compatibility
     editor.tf.setNodes({ buttonText: value }, { at: firstPath });
@@ -244,8 +248,10 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
       labelPath[labelPath.length - 1] -= 1;
     }
     // Update the text content of the label
-    editor.tf.insertNodes({ text: fieldName.trim() }, { at: [...labelPath, 0], select: false });
-    editor.tf.removeNodes({ at: [...labelPath, 1] });
+    editor.tf.withoutNormalizing(() => {
+      editor.tf.insertNodes({ text: fieldName.trim() }, { at: [...labelPath, 0], select: false });
+      editor.tf.removeNodes({ at: [...labelPath, 1] });
+    });
     setIsEditingName(false);
   };
 
@@ -351,7 +357,13 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
             pointerEvents: "none",
           }}
         />
-        <PopoverContent className="w-[288px]" align="start" sideOffset={4}>
+        <PopoverContent
+          className={cn("w-[288px]", hasCustomization && "bf-themed")}
+          style={hasCustomization ? themeVars : undefined}
+          side="left"
+          align="center"
+          sideOffset={8}
+        >
           {showTurnInto ? (
             /* Turn Into Submenu - sidebar popover style */
             <div>
@@ -409,61 +421,65 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
               {/* Field-Specific Options */}
               {fieldType === "formInput" && (
                 <>
-                  <div className="px-2 py-1.5 space-y-2">
-                    <ToggleOption
+                  <div className="px-0 space-y-0">
+                    <StyleToggle
                       label="Required"
-                      checked={isRequired}
-                      onCheckedChange={handleToggleRequired}
+                      value={isRequired}
+                      onChange={handleToggleRequired}
+                      className="border-0 h-[26px] px-2 rounded-lg"
                     />
-                    <div className="space-y-1.5">
-                      <ToggleOption
-                        label="Default answer"
-                        checked={hasDefaultValue}
-                        onCheckedChange={handleToggleDefaultValue}
-                      />
-                      {hasDefaultValue && (
+                    <StyleToggle
+                      label="Default answer"
+                      value={hasDefaultValue}
+                      onChange={handleToggleDefaultValue}
+                      className="border-0 h-[26px] px-2 rounded-lg"
+                    />
+                    {hasDefaultValue && (
+                      <div className="px-2 py-1">
                         <Input
                           value={currentDefaultValue || ""}
                           onChange={(e) => handleUpdateDefaultValue(e.target.value)}
                           placeholder="Enter default value"
-                          className="h-8 text-[13px] rounded-lg"
+                          className="h-7 text-[13px] rounded-lg"
                         />
-                      )}
-                    </div>
-                    <div className="space-y-1.5">
-                      <ToggleOption
-                        label="Min characters"
-                        checked={hasMinLength}
-                        onCheckedChange={handleToggleMinLength}
-                      />
-                      {hasMinLength && (
+                      </div>
+                    )}
+                    <StyleToggle
+                      label="Min characters"
+                      value={hasMinLength}
+                      onChange={handleToggleMinLength}
+                      className="border-0 h-[26px] px-2 rounded-lg"
+                    />
+                    {hasMinLength && (
+                      <div className="px-2 py-1">
                         <Input
                           type="number"
                           min={1}
                           value={currentMinLength || 1}
                           onChange={(e) => handleUpdateMinLength(Number(e.target.value))}
                           placeholder="Min"
-                          className="h-8 text-[13px] rounded-lg"
+                          className="h-7 text-[13px] rounded-lg"
                         />
-                      )}
-                    </div>
-                    <div className="space-y-1.5">
-                      <ToggleOption
-                        label="Max characters"
-                        checked={hasMaxLength}
-                        onCheckedChange={handleToggleMaxLength}
-                      />
-                      {hasMaxLength && (
+                      </div>
+                    )}
+                    <StyleToggle
+                      label="Max characters"
+                      value={hasMaxLength}
+                      onChange={handleToggleMaxLength}
+                      className="border-0 h-[26px] px-2 rounded-lg"
+                    />
+                    {hasMaxLength && (
+                      <div className="px-2 py-1">
                         <Input
                           type="number"
                           min={1}
                           value={currentMaxLength || 100}
                           onChange={(e) => handleUpdateMaxLength(Number(e.target.value))}
                           placeholder="Max"
-                          className="h-8 text-[13px] rounded-lg"
+                          className="h-7 text-[13px] rounded-lg"
                         />
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                   <div className="my-1 h-px bg-border" />
                 </>
@@ -524,23 +540,6 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Reusable Toggle Option component - aligns with sidebar popover typography
-function ToggleOption({
-  label,
-  checked,
-  onCheckedChange,
-}: {
-  label: string;
-  checked: boolean;
-  onCheckedChange: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <Label className="text-[13px] font-medium text-foreground/80">{label}</Label>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} className="scale-90" />
-    </div>
-  );
-}
 
 // Reusable Menu Item component - matches sidebar popover style
 function MenuItem({
