@@ -731,7 +731,7 @@
   --sidebar-border: var(--color-light-gray-200);
   --sidebar-ring: var(--color-ring-color);
   /* Sidebar nav label text - plan-overridable, default #212121 */
-  --sidebar-nav-text: #212121;
+  --sidebar-nav-text: #303030;
   /* Sidebar nav active item bg - Figma gray/100 #f5f5f5 */
   --sidebar-nav-active-bg: #f5f5f5;
   --sidebar-active: var(--color-light-gray-100);

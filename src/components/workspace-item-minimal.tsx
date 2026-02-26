@@ -127,101 +127,94 @@ export function WorkspaceItemMinimal({
             >
               <MoreHorizontalIcon className="h-4 w-4" />
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-[195px]" sideOffset={4}>
-              <div className="text-[12px] font-medium text-muted-foreground px-2 py-1.5 tracking-[0.24px]">
-                Sort by
-              </div>
-              {[
-                { value: "recent", label: "Recent First", icon: CalendarIcon },
-                {
-                  value: "oldest",
-                  label: "Oldest First",
-                  icon: ClockRewindIcon,
-                },
-                {
-                  value: "alphabetical",
-                  label: "Alphabetical",
-                  icon: AlphabeticalIcon,
-                },
-                { value: "manual", label: "Manual", icon: CopyIcon },
-              ].map((option) => (
-                <Button
-                  key={option.value}
-                  variant="ghost"
-                  onClick={() =>
-                    onSortChange(
-                      option.value as
-                        | "recent"
-                        | "oldest"
-                        | "alphabetical"
-                        | "manual",
-                    )
-                  }
-                  className={cn(
-                    "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors",
-                    sortMode === option.value
-                      ? "bg-accent text-accent-foreground"
-                      : "text-foreground/80 hover:bg-accent hover:text-accent-foreground",
-                  )}
+            <PopoverContent align="start" className="w-48" sideOffset={4}>
+              <div className="flex flex-col">
+                <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground tracking-[0.24px] leading-tight">
+                  Sort by
+                </div>
+                {[
+                  { value: "recent", label: "Recent First", icon: CalendarIcon },
+                  {
+                    value: "oldest",
+                    label: "Oldest First",
+                    icon: ClockRewindIcon,
+                  },
+                  {
+                    value: "alphabetical",
+                    label: "Alphabetical",
+                    icon: AlphabeticalIcon,
+                  },
+                  { value: "manual", label: "Manual", icon: CopyIcon },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() =>
+                      onSortChange(
+                        option.value as
+                          | "recent"
+                          | "oldest"
+                          | "alphabetical"
+                          | "manual",
+                      )
+                    }
+                    className={cn(
+                      "h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors",
+                      sortMode === option.value
+                        ? "bg-black/5 text-foreground"
+                        : "text-foreground/80 hover:bg-accent hover:text-accent-foreground",
+                    )}
+                  >
+                    <option.icon className="size-4 shrink-0" strokeWidth={1.5} />
+                    <span className="flex-1 text-left">{option.label}</span>
+                    {sortMode === option.value && (
+                      <Check className="size-3 shrink-0" strokeWidth={2} />
+                    )}
+                  </button>
+                ))}
+                <div className="my-1 h-px bg-border" />
+                <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground tracking-[0.24px] leading-tight">
+                  Workspace
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCreateForm}
+                  disabled={isCreatingForm}
+                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none"
                 >
-                  <option.icon className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  <span className="flex-1 text-left">{option.label}</span>
-                  {sortMode === option.value && (
-                    <Check className="h-3 w-3" strokeWidth={2} />
+                  {isCreatingForm ? (
+                    <Loader2
+                      className="size-4 animate-spin shrink-0"
+                      strokeWidth={1.5}
+                    />
+                  ) : (
+                    <PlusIcon
+                      className="size-4 shrink-0"
+                      strokeWidth={1.5}
+                    />
                   )}
-                </Button>
-              ))}
-              <div className="my-1 h-px bg-border" />
-              <div className="text-[12px] font-medium text-muted-foreground px-2 py-1.5 tracking-[0.24px]">
-                Workspace
+                  <span className="flex-1 text-left">New form</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onRename}
+                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
+                >
+                  <Pencil2Icon
+                    className="size-4 shrink-0"
+                    strokeWidth={1.5}
+                  />
+                  <span className="flex-1 text-left">Rename</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-red-500/70 hover:text-red-500 hover:bg-red-500/5"
+                >
+                  <TrashIcon className="size-4 shrink-0" strokeWidth={1.5} />
+                  <span className="flex-1 text-left">Delete</span>
+                </button>
               </div>
-              <Button
-                variant="ghost"
-                onClick={handleCreateForm}
-                disabled={isCreatingForm}
-                className={cn(
-                  "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors",
-                  "text-foreground/80 hover:bg-accent hover:text-accent-foreground",
-                )}
-              >
-                {isCreatingForm ? (
-                  <Loader2
-                    className="h-3.5 w-3.5 animate-spin shrink-0"
-                    strokeWidth={1.5}
-                  />
-                ) : (
-                  <PlusIcon
-                    className="h-3.5 w-3.5 shrink-0"
-                    strokeWidth={1.5}
-                  />
-                )}
-                <span className="flex-1 text-left">New form</span>
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={onRename}
-                className={cn(
-                  "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors",
-                  "text-foreground/80 hover:bg-accent hover:text-accent-foreground",
-                )}
-              >
-                <Pencil2Icon
-                  className="h-3.5 w-3.5 shrink-0"
-                  strokeWidth={1.5}
-                />
-                <span className="flex-1 text-left">Rename</span>
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={onDelete}
-                className={cn(
-                  "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors",
-                  "text-red-500/70 hover:text-red-500 hover:bg-red-500/5",
-                )}
-              >
-                <TrashIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
-                <span className="flex-1 text-left">Delete</span>
-              </Button>
             </PopoverContent>
           </Popover>
         </div>
@@ -360,7 +353,7 @@ function WorkspaceFormMinimal({
       <ContextMenuTrigger render={<div />}>
         <SidebarItem label={label} to={to} isActive={isActive} prefix={prefix}>
           {showCount && (
-            <span className="text-[11px] tracking-[0.33px] text-muted-foreground tabular-nums shrink-0 font-medium leading-[1.15] font-case">
+            <span className="text-[11px] tracking-[0.33px] text-muted-foreground tabular-nums shrink-0 font-medium leading-tight font-case">
               {submissionCount}
             </span>
           )}

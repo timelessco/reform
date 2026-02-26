@@ -167,10 +167,10 @@ type SidebarNavLabelProps = {
 function SidebarNavLabel({ icon, label }: SidebarNavLabelProps) {
   return (
     <>
-      <div className="flex items-center justify-center size-5 shrink-0">
+      <div className="flex items-center justify-center size-[18px] shrink-0">
         {icon}
       </div>
-      <span className="text-[14px] font-medium font-var-medium-14 text-sidebar-nav-text tracking-[0.14px] leading-[16.1px] font-case truncate">
+      <span className="text-sm font-medium font-var-medium-14 text-sidebar-nav-text tracking-[0.14px] leading-[1.15] font-case truncate">
         {label}
       </span>
     </>
@@ -561,38 +561,27 @@ function AppSidebar() {
               <SidebarMenu className="gap-0">
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    render={
-                      <Link
-                        to="/dashboard"
-                        className="flex items-center gap-2 min-w-0"
-                      />
-                    }
+                    render={<Link to="/dashboard" />}
                     isActive={location.pathname === "/dashboard"}
                     tooltip="All"
-                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] gap-2 transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
+                    className="min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
                   >
-                    <Link to="/dashboard" className="flex items-center gap-2 min-w-0">
-                      <SidebarNavLabel
-                        icon={<HomeIcon className="h-[18px] w-[18px] text-muted-foreground" />}
-                        label="All"
-                      />
-                    </Link>
+                    <SidebarNavLabel
+                      icon={<HomeIcon className="size-[18px] text-muted-foreground" />}
+                      label="All"
+                    />
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={togglePalette}
                     tooltip="Search"
-                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] gap-2 transition-colors hover:bg-sidebar-active"
+                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active"
                   >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="flex items-center justify-center size-5 shrink-0">
-                        <SearchIcon className="h-[18px] w-[18px] text-muted-foreground" />
-                      </div>
-                      <span className="text-[14px] font-var-medium-14 text-sidebar-nav-text tracking-[0.14px] leading-tight font-case truncate">
-                        Search
-                      </span>
-                    </div>
+                    <SidebarNavLabel
+                      icon={<SearchIcon className="size-[18px] text-muted-foreground" />}
+                      label="Search"
+                    />
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -604,44 +593,35 @@ function AppSidebar() {
                         ? `Notifications (${pendingCount})`
                         : "Notifications"
                     }
-                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] gap-2 transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
+                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
                   >
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <div className="relative flex items-center justify-center size-5 shrink-0">
-                        <BellIcon className="h-[18px] w-[18px] text-muted-foreground" />
-                        {pendingCount > 0 && (
-                          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-background" />
-                        )}
-                      </div>
-                      <span className="text-[14px] font-medium font-var-medium-14 text-sidebar-nav-text tracking-[0.14px] leading-tight font-case truncate flex-1 min-w-0">
-                        Notifications
-                      </span>
+                    <div className="relative flex items-center justify-center size-[18px] shrink-0">
+                      <BellIcon className="size-[18px] text-muted-foreground" />
                       {pendingCount > 0 && (
-                        <span className="text-[10px] bg-blue-500 text-white  py-0.5 rounded-full font-semibold shrink-0 tabular-nums">
-                          {pendingCount}
-                        </span>
+                        <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-blue-500 ring-2 ring-background" />
                       )}
                     </div>
+                    <span className="text-sm font-medium font-var-medium-14 text-sidebar-nav-text tracking-[0.14px] leading-[1.15] font-case truncate flex-1 min-w-0">
+                      Notifications
+                    </span>
+                    {pendingCount > 0 && (
+                      <span className="text-[10px] bg-blue-500 text-white py-0.5 rounded-full font-semibold shrink-0 tabular-nums">
+                        {pendingCount}
+                      </span>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    render={
-                      <Link
-                        to="/settings/my-account"
-                        className="flex items-center gap-2 min-w-0"
-                      />
-                    }
+                    render={<Link to="/settings/my-account" />}
                     isActive={location.pathname.startsWith("/settings")}
                     tooltip="Settings"
-                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] gap-2 transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
+                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
                   >
-                    <Link to="/settings/my-account" className="flex items-center gap-2 min-w-0">
-                      <SidebarNavLabel
-                        icon={<SettingsIcon className="h-[18px] w-[18px] text-muted-foreground" />}
-                        label="Settings"
-                      />
-                    </Link>
+                    <SidebarNavLabel
+                      icon={<SettingsIcon className="size-[18px] text-muted-foreground" />}
+                      label="Settings"
+                    />
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
@@ -1163,8 +1143,8 @@ function SidebarInbox() {
 // Free Plan Card - Figma node 23504-5269 (pixel-perfect)
 function FreePlanCard() {
   return (
-    <div className="shrink-0 overflow-hidden rounded-xl bg-free-plan-card-bg p-3 mx-3 w-[204px] shadow-sm">
-      <div className="flex items-center gap-2 mb-3">
+    <div className="shrink-0 overflow-hidden rounded-xl bg-free-plan-card-bg px-3 pt-[15px] pb-3 mx-[9px] w-[204px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.10),0px_0px_1px_0px_rgba(0,0,0,0.35)]">
+      <div className="flex items-start gap-2 mb-3">
         <div className="shrink-0 size-5 p-1 flex items-center justify-center bg-teal-100 rounded-full">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -1185,18 +1165,18 @@ function FreePlanCard() {
             />
           </svg>
         </div>
-        <span className="text-[14px] font-medium text-sidebar-foreground">
+        <span className="text-[14px] font-medium text-foreground tracking-[0.14px] leading-[1.46]">
           Free Plan
         </span>
       </div>
       <p
-        className="text-[13px] font-normal leading-[1.48] tracking-[0.13px] mb-4 mr-3"
+        className="text-[13px] font-normal leading-[1.48] tracking-[0.13px] mb-4 mr-3 text-muted-foreground"
       >
         Try Booster to capture high-quality inbound and outbound leads
       </p>
       <Button
         variant="secondary"
-        className="w-full h-7 text-[13px] px-1.5 font-medium text-sidebar-foreground bg-background border border-border hover:bg-muted rounded-lg shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
+        className="w-full h-7 text-sm px-1.5 font-medium text-accent-foreground bg-background hover:bg-muted rounded-lg shadow-[0px_1px_2px_0px_rgba(0,0,0,0.10),0px_0px_1px_0px_rgba(0,0,0,0.45)]"
       >
         Try for free
       </Button>

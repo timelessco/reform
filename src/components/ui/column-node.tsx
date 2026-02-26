@@ -170,7 +170,7 @@ function ColumnFloatingToolbar({ children }: React.PropsWithChildren) {
     <Popover open={open} modal={false}>
       <PopoverAnchor>{children}</PopoverAnchor>
       <PopoverContent
-        className="w-auto border"
+        className="w-auto border p-2.5"
         align="center"
         side="top"
         sideOffset={10}

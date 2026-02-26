@@ -85,7 +85,7 @@ export function EmojiPopover({
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger render={control} />
-      <PopoverContent className="z-100">{children}</PopoverContent>
+      <PopoverContent className="z-100 p-2.5">{children}</PopoverContent>
     </Popover>
   );
 }

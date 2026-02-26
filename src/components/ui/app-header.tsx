@@ -8,7 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toggleFavoriteLocal, updateFormStatus } from "@/db-collections";
@@ -203,6 +203,51 @@ export function AppHeader({
       }
     }
   };
+
+  const menuItems = [
+    {
+      key: "favorite",
+      label: "Favorite",
+      onClick: () => {
+        handleToggleFavorite();
+      },
+    },
+    {
+      key: "analytics",
+      label: "Analytics",
+      onClick: () => {
+        if (workspaceId && formId) {
+          navigate({
+            to: "/workspace/$workspaceId/form-builder/$formId/submissions",
+            params: { workspaceId, formId },
+          });
+        }
+      },
+    },
+    {
+      key: "customization",
+      label: "Customization",
+      onClick: () => {
+        toggleCustomizeSidebar();
+        if (isSettingsSidebarOpen) toggleSettingsSidebar();
+      },
+    },
+    {
+      key: "versionHistory",
+      label: "Version History",
+      onClick: () => {
+        toggleVersionHistory();
+      },
+      show: isEditRoute,
+    },
+    {
+      key: "delete",
+      label: "Delete form",
+      onClick: () => {
+        setIsDeleteOpen(true);
+      },
+    },
+  ].filter((item) => item.show ?? true);
 
   return (
     <>
@@ -414,65 +459,21 @@ export function AppHeader({
                 </PopoverTrigger>
                 <PopoverContent
                   align="end"
-                  className="w-[151px]"
+                  className="w-36"
                   sideOffset={4}
                 >
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      handleToggleFavorite();
-                    }}
-                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
-                  >
-                    {/* <Star className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
-                    <span className="flex-1 text-left">Favorite</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() =>
-                      workspaceId &&
-                      formId &&
-                      navigate({
-                        to: "/workspace/$workspaceId/form-builder/$formId/submissions",
-                        params: { workspaceId, formId },
-                      })
-                    }
-                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
-                  >
-                    {/* <BarChart2 className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
-                    <span className="flex-1 text-left">Analytics</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      toggleCustomizeSidebar();
-                      // Also close other sidebars if needed, or maybe just close settings
-                      if (isSettingsSidebarOpen) toggleSettingsSidebar();
-                    }}
-                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
-                  >
-                    {/* <SettingsIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
-                    <span className="flex-1 text-left">Customization</span>
-                  </Button>
-                  {isEditRoute && (
-                    <Button
-                      variant="ghost"
-                      onClick={toggleVersionHistory}
-                      className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
-                    >
-                      {/* <History className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
-                      <span className="flex-1 text-left">Version History</span>
-                    </Button>
-                  )}
-                  {/* <div className="my-1 h-px bg-border" /> */}
-                  <Button
-                    variant="ghost"
-                    onClick={() => setIsDeleteOpen(true)}
-                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
-                  >
-                    {/* <Trash2 className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
-                    <span className="flex-1 text-left">Delete form</span>
-                  </Button>
+                  <div className="flex flex-col">
+                    {menuItems.map((item) => (
+                      <button
+                        key={item.key}
+                        type="button"
+                        onClick={item.onClick}
+                        className="h-6 px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground/80 text-xs leading-4 tracking-tight transition-colors hover:bg-accent hover:text-accent-foreground"
+                      >
+                        <span className="flex-1 text-left">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </PopoverContent>
               </Popover>
             </div>

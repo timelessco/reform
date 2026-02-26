@@ -358,7 +358,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
           }}
         />
         <PopoverContent
-          className={cn("w-[288px]", hasCustomization && "bf-themed")}
+          className={cn("w-[288px] p-2.5", hasCustomization && "bf-themed")}
           style={hasCustomization ? themeVars : undefined}
           side="left"
           align="center"

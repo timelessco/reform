@@ -43,9 +43,9 @@ export function SidebarSection({
 						<Button
 							variant="ghost"
 							size="icon-sm"
-							className="h-6 w-6 hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
+							className="h-[26px] w-[26px] hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
 						>
-							<MoreHorizontalIcon className="h-3.5 w-3.5" strokeWidth={1.5} />
+							<MoreHorizontalIcon className="h-4 w-4" strokeWidth={1.5} />
 						</Button>
 					)}
 				</div>
