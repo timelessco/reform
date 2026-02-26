@@ -152,8 +152,8 @@ function DesignPage() {
       <ResizablePanelGroup orientation="horizontal" className="flex-1">
         {/* Main editor panel */}
         <ResizablePanel
-          defaultSize={isVersionHistoryOpen ? 75 : 100}
-          minSize={50}
+          defaultSize={isVersionHistoryOpen ? "75%" : "100%"}
+          minSize="50%"
         >
           <main className="flex-1 overflow-y-auto overflow-x-hidden relative bg-background h-full flex flex-col">
             {/* Version viewing banner */}

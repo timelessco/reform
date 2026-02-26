@@ -3,6 +3,7 @@ import { normalizeNodeId, type TElement, type Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorKit } from "@/components/editor/editor-kit";
+import { ClientOnly } from "@/components/client-only";
 import { AppHeader } from "@/components/ui/app-header";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
@@ -37,12 +38,22 @@ export const Route = createFileRoute("/create")({
 
 function RouteComponent() {
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <AppHeader />
-      <div className="flex-1 overflow-auto relative bg-background">
-        <LocalEditorApp />
-      </div>
-    </div>
+    <ClientOnly
+      fallback={
+        <div className="flex items-center justify-center h-screen">
+          <Loader />
+        </div>
+      }
+    >
+      {() => (
+        <div className="flex flex-col h-screen overflow-hidden">
+          <AppHeader />
+          <div className="flex-1 overflow-auto relative bg-background">
+            <LocalEditorApp />
+          </div>
+        </div>
+      )}
+    </ClientOnly>
   );
 }
 

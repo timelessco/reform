@@ -15,6 +15,7 @@ import {
 import { AppHeader } from "@/components/ui/app-header";
 import { Button } from "@/components/ui/button";
 import {
+  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
@@ -313,8 +314,9 @@ function AuthLayoutContent() {
           <ResizablePanelGroup orientation="horizontal" className="h-full">
             {/* Main content panel - non-resizable */}
             <ResizablePanel
-              defaultSize={showEditorSidebar ? 70 : 100}
-              minSize={50}
+              defaultSize={showEditorSidebar ? "70%" : "100%"}
+              minSize="50%"
+              className="flex-1"
             >
               <div
                 ref={leftPanelRef}
@@ -389,10 +391,10 @@ function AuthLayoutContent() {
             <ResizablePanel
               panelRef={rightPanelRef}
               collapsible
-              collapsedSize={0}
-              defaultSize={showEditorSidebar ? 30 : 0}
-              minSize={25}
-              maxSize={50}
+              collapsedSize="0%"
+              defaultSize={showEditorSidebar ? "30%" : "0%"}
+              minSize="25%"
+              maxSize="50%"
               className={cn(
                 "h-full overflow-hidden bg-background",
                 !showEditorSidebar && "border-none",
@@ -619,105 +621,111 @@ function AppSidebar() {
         {/* <SidebarRail /> */}
       </Sidebar>
 
-      {/* Command Palette */}
-      <CommandDialog open={isPaletteOpen} onOpenChange={setIsPaletteOpen}>
-        <CommandInput placeholder="Search for forms and help articles" />
-        <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup heading="Actions">
-            <CommandItem
-              onSelect={async () => {
-                setIsPaletteOpen(false);
-                if (activeOrg && workspacesData) {
-                  const orgWorkspaces = workspacesData.filter(
-                    (ws) => ws.organizationId === activeOrg.id,
-                  );
-                  if (orgWorkspaces.length > 0) {
-                    // Use workspace from URL if available, otherwise use first workspace
-                    const workspaceMatch =
-                      location.pathname.match(/\/workspace\/([^/]+)/);
-                    const currentWorkspaceId = workspaceMatch?.[1];
-                    const targetWorkspace = currentWorkspaceId
-                      ? orgWorkspaces.find(
-                          (ws) => ws.id === currentWorkspaceId,
-                        ) || orgWorkspaces[0]
-                      : orgWorkspaces[0];
+      {/* Command Palette - rendered only on client to avoid cmdk React 19 SSR issue */}
+      {typeof window !== "undefined" && (
+        <CommandDialog open={isPaletteOpen} onOpenChange={setIsPaletteOpen}>
+          <Command>
+            <CommandInput placeholder="Search for forms and help articles" />
+            <CommandList>
+              <CommandEmpty>No results found.</CommandEmpty>
+              <CommandGroup heading="Actions">
+                <CommandItem
+                  onSelect={async () => {
+                    setIsPaletteOpen(false);
+                    if (activeOrg && workspacesData) {
+                      const orgWorkspaces = workspacesData.filter(
+                        (ws) => ws.organizationId === activeOrg.id,
+                      );
+                      if (orgWorkspaces.length > 0) {
+                        // Use workspace from URL if available, otherwise use first workspace
+                        const workspaceMatch =
+                          location.pathname.match(/\/workspace\/([^/]+)/);
+                        const currentWorkspaceId = workspaceMatch?.[1];
+                        const targetWorkspace = currentWorkspaceId
+                          ? orgWorkspaces.find(
+                              (ws) => ws.id === currentWorkspaceId,
+                            ) || orgWorkspaces[0]
+                          : orgWorkspaces[0];
 
-                    const newForm = await createFormLocal(targetWorkspace.id);
-                    router.navigate({
-                      to: "/workspace/$workspaceId/form-builder/$formId/edit",
-                      params: {
-                        workspaceId: targetWorkspace.id,
-                        formId: newForm.id,
-                      },
-                    });
-                  }
-                }
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              <span>New form</span>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                if (activeOrg) {
-                  createWorkspaceLocal(activeOrg.id, "Collection")
-                    .then((workspace) => {
-                      router.navigate({
-                        to: "/workspace/$workspaceId",
-                        params: { workspaceId: workspace.id },
-                      });
-                    })
-                    .catch(console.error);
-                }
-                setIsPaletteOpen(false);
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              <span>New workspace</span>
-            </CommandItem>
-          </CommandGroup>
-          <CommandSeparator />
-          <CommandGroup heading="Navigation">
-            <CommandItem
-              onSelect={() => {
-                router.navigate({ to: "/dashboard" });
-                setIsPaletteOpen(false);
-              }}
-            >
-              <Home className="mr-2 h-4 w-4" />
-              <span>Go to home</span>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                router.navigate({ to: "/settings" });
-                setIsPaletteOpen(false);
-              }}
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Go to settings</span>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                setTrashDialogOpen(true);
-                setIsPaletteOpen(false);
-              }}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              <span>Trash</span>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                signOutMutation.mutate({});
-                setIsPaletteOpen(false);
-              }}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Sign out</span>
-            </CommandItem>
-          </CommandGroup>
-        </CommandList>
-      </CommandDialog>
+                        const newForm = await createFormLocal(
+                          targetWorkspace.id,
+                        );
+                        router.navigate({
+                          to: "/workspace/$workspaceId/form-builder/$formId/edit",
+                          params: {
+                            workspaceId: targetWorkspace.id,
+                            formId: newForm.id,
+                          },
+                        });
+                      }
+                    }
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  <span>New form</span>
+                </CommandItem>
+                <CommandItem
+                  onSelect={() => {
+                    if (activeOrg) {
+                      createWorkspaceLocal(activeOrg.id, "Collection")
+                        .then((workspace) => {
+                          router.navigate({
+                            to: "/workspace/$workspaceId",
+                            params: { workspaceId: workspace.id },
+                          });
+                        })
+                        .catch(console.error);
+                    }
+                    setIsPaletteOpen(false);
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  <span>New workspace</span>
+                </CommandItem>
+              </CommandGroup>
+              <CommandSeparator />
+              <CommandGroup heading="Navigation">
+                <CommandItem
+                  onSelect={() => {
+                    router.navigate({ to: "/dashboard" });
+                    setIsPaletteOpen(false);
+                  }}
+                >
+                  <Home className="mr-2 h-4 w-4" />
+                  <span>Go to home</span>
+                </CommandItem>
+                <CommandItem
+                  onSelect={() => {
+                    router.navigate({ to: "/settings" });
+                    setIsPaletteOpen(false);
+                  }}
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Go to settings</span>
+                </CommandItem>
+                <CommandItem
+                  onSelect={() => {
+                    setTrashDialogOpen(true);
+                    setIsPaletteOpen(false);
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Trash</span>
+                </CommandItem>
+                <CommandItem
+                  onSelect={() => {
+                    signOutMutation.mutate({});
+                    setIsPaletteOpen(false);
+                  }}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign out</span>
+                </CommandItem>
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </CommandDialog>
+      )}
 
       {/* Trash Dialog */}
       <TrashDialog
