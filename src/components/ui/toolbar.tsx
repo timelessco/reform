@@ -6,6 +6,7 @@ import * as React from "react";
 
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuSeparator,
@@ -375,9 +376,11 @@ export function ToolbarMenuGroup({
         )}
       >
         {label && (
-          <DropdownMenuLabel className="select-none font-semibold text-muted-foreground text-xs">
-            {label}
-          </DropdownMenuLabel>
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="select-none font-semibold text-muted-foreground text-xs">
+              {label}
+            </DropdownMenuLabel>
+          </DropdownMenuGroup>
         )}
         {children}
       </DropdownMenuRadioGroup>

@@ -15,204 +15,211 @@ import type { KeyboardEvent } from "react";
 import { useCallback, useMemo, useRef, useState } from "react";
 
 interface EditorAppProps {
-	formId: string;
-	workspaceId?: string;
-	defaultValue?: ReturnType<typeof normalizeNodeId>;
-	initialForm?: any;
-	versionContent?: Value;
-	readOnly?: boolean;
+  formId: string;
+  workspaceId?: string;
+  defaultValue?: ReturnType<typeof normalizeNodeId>;
+  initialForm?: any;
+  versionContent?: Value;
+  readOnly?: boolean;
 }
 
 const DEFAULT_EDITOR_VALUE = normalizeNodeId([
-	createFormHeaderNode() as unknown as TElement,
-	{
-		children: [{ text: "" }],
-		type: "p",
-	},
-	createFormButtonNode("submit") as unknown as TElement,
+  createFormHeaderNode() as unknown as TElement,
+  {
+    children: [{ text: "" }],
+    type: "p",
+  },
+  createFormButtonNode("submit") as unknown as TElement,
 ]);
 
 export default function EditorApp({
-	formId,
-	workspaceId,
-	versionContent,
-	readOnly = false,
+  formId,
+  workspaceId,
+  versionContent,
+  readOnly = false,
 }: EditorAppProps) {
-	const { data: savedDocs } = useForm(formId);
-	const { data: formSettings } = useFormSettings(formId);
-	const customization = formSettings?.customization as Record<string, string> | null;
-	const hasCustomization = customization && Object.keys(customization).length > 0;
-	const themeVars = useMemo(() => getThemeStyleVars(customization), [customization]);
-	const skipSaveRef = useRef(false);
-	const lastKnownContentRef = useRef<string | null>(null);
-	const headerVisibility = useEditorHeaderVisibilitySafe();
-	const [resetKey, setResetKey] = useState(0);
+  const { data: savedDocs } = useForm(formId);
+  const { data: formSettings } = useFormSettings(formId);
+  const customization = formSettings?.customization as Record<
+    string,
+    string
+  > | null;
+  const hasCustomization =
+    customization && Object.keys(customization).length > 0;
+  const themeVars = useMemo(
+    () => getThemeStyleVars(customization),
+    [customization],
+  );
+  const skipSaveRef = useRef(false);
+  const lastKnownContentRef = useRef<string | null>(null);
+  const headerVisibility = useEditorHeaderVisibilitySafe();
+  const [resetKey, setResetKey] = useState(0);
 
-	// Detect external content change (discard, remote sync) and recreate editor.
-	// setState during render is a documented React pattern — React aborts this
-	// render and immediately re-renders with the new state.
-	if (!versionContent && savedDocs?.length) {
-		const contentStr = JSON.stringify(savedDocs[0]?.content);
-		if (lastKnownContentRef.current === null) {
-			lastKnownContentRef.current = contentStr;
-		} else if (lastKnownContentRef.current !== contentStr) {
-			setResetKey((k) => k + 1);
-			lastKnownContentRef.current = contentStr;
-			skipSaveRef.current = true;
-		}
-	}
+  // Detect external content change (discard, remote sync) and recreate editor.
+  // setState during render is a documented React pattern — React aborts this
+  // render and immediately re-renders with the new state.
+  if (!versionContent && savedDocs?.length) {
+    const contentStr = JSON.stringify(savedDocs[0]?.content);
+    if (lastKnownContentRef.current === null) {
+      lastKnownContentRef.current = contentStr;
+    } else if (lastKnownContentRef.current !== contentStr) {
+      setResetKey((k) => k + 1);
+      lastKnownContentRef.current = contentStr;
+      skipSaveRef.current = true;
+    }
+  }
 
-	// Compute initial content from liveQuery - single source of truth
-	const initialContent = useMemo(() => {
-		// Version content takes priority (read-only viewing)
-		if (versionContent) return versionContent;
+  // Compute initial content from liveQuery - single source of truth
+  const initialContent = useMemo(() => {
+    // Version content takes priority (read-only viewing)
+    if (versionContent) return versionContent;
 
-		const docData = savedDocs?.[0];
-		if (!docData?.content || !Array.isArray(docData.content)) {
-			return DEFAULT_EDITOR_VALUE;
-		}
+    const docData = savedDocs?.[0];
+    if (!docData?.content || !Array.isArray(docData.content)) {
+      return DEFAULT_EDITOR_VALUE;
+    }
 
-		let content: Value;
+    let content: Value;
 
-		if (
-			docData.content.length > 0 &&
-			docData.content[0]?.type === "formHeader"
-		) {
-			content = docData.content as Value;
-		} else {
-			// Add formHeader at index 0 with data from doc metadata
-			content = [
-				createFormHeaderNode({
-					title: docData.title || "",
-					icon: docData.icon || null,
-					cover: docData.cover || null,
-				}) as unknown as TElement,
-				...(docData.content as Value),
-			];
-		}
+    if (
+      docData.content.length > 0 &&
+      docData.content[0]?.type === "formHeader"
+    ) {
+      content = docData.content as Value;
+    } else {
+      // Add formHeader at index 0 with data from doc metadata
+      content = [
+        createFormHeaderNode({
+          title: docData.title || "",
+          icon: docData.icon || null,
+          cover: docData.cover || null,
+        }) as unknown as TElement,
+        ...(docData.content as Value),
+      ];
+    }
 
-		// Migration: ensure Submit button exists for existing forms
-		const hasSubmitButton = content.some(
-			(node: TElement) =>
-				node.type === "formButton" && node.buttonRole === "submit",
-		);
-		if (!hasSubmitButton) {
-			const thankYouIndex = content.findIndex(
-				(node: TElement) =>
-					node.type === "pageBreak" && node.isThankYouPage === true,
-			);
-			const insertIndex = thankYouIndex !== -1 ? thankYouIndex : content.length;
-			content = [
-				...content.slice(0, insertIndex),
-				createFormButtonNode("submit") as unknown as TElement,
-				...content.slice(insertIndex),
-			];
-		}
+    // Migration: ensure Submit button exists for existing forms
+    const hasSubmitButton = content.some(
+      (node: TElement) =>
+        node.type === "formButton" && node.buttonRole === "submit",
+    );
+    if (!hasSubmitButton) {
+      const thankYouIndex = content.findIndex(
+        (node: TElement) =>
+          node.type === "pageBreak" && node.isThankYouPage === true,
+      );
+      const insertIndex = thankYouIndex !== -1 ? thankYouIndex : content.length;
+      content = [
+        ...content.slice(0, insertIndex),
+        createFormButtonNode("submit") as unknown as TElement,
+        ...content.slice(insertIndex),
+      ];
+    }
 
-		return content;
-	}, [versionContent, savedDocs]);
+    return content;
+  }, [versionContent, savedDocs]);
 
-	const editor = usePlateEditor(
-		{
-			plugins: EditorKit,
-			value: initialContent,
-		},
-		[resetKey],
-	);
+  const editor = usePlateEditor(
+    {
+      plugins: EditorKit,
+      value: initialContent,
+    },
+    [resetKey],
+  );
 
-	const handleChange = useCallback(
-		({ value }: { value: Value }) => {
-			// Skip saving when in read-only mode (viewing a version)
-			if (readOnly) return;
+  const handleChange = useCallback(
+    ({ value }: { value: Value }) => {
+      // Skip saving when in read-only mode (viewing a version)
+      if (readOnly) return;
 
-			if (skipSaveRef.current) {
-				skipSaveRef.current = false;
-				return;
-			}
+      if (skipSaveRef.current) {
+        skipSaveRef.current = false;
+        return;
+      }
 
-			const contentStr = JSON.stringify(value);
-			if (lastKnownContentRef.current === contentStr) return;
+      const contentStr = JSON.stringify(value);
+      if (lastKnownContentRef.current === contentStr) return;
 
-			lastKnownContentRef.current = contentStr;
-			const now = new Date().toISOString();
-			const headerNode =
-				value.length > 0 && value[0]?.type === "formHeader"
-					? (value[0] as unknown as FormHeaderElementData)
-					: null;
+      lastKnownContentRef.current = contentStr;
+      const now = new Date().toISOString();
+      const headerNode =
+        value.length > 0 && value[0]?.type === "formHeader"
+          ? (value[0] as unknown as FormHeaderElementData)
+          : null;
 
-			updateDoc(formId, (draft) => {
-				draft.workspaceId = workspaceId;
-				draft.updatedAt = now;
-				draft.content = value;
-			});
+      updateDoc(formId, (draft) => {
+        draft.workspaceId = workspaceId;
+        draft.updatedAt = now;
+        draft.content = value;
+      });
 
-			if (headerNode) {
-				updateHeader(formId, {
-					title: headerNode.title,
-					icon: headerNode.icon ?? undefined,
-					cover: headerNode.cover ?? undefined,
-					workspaceId: String(workspaceId),
-					updatedAt: now,
-					createdAt: savedDocs?.[0]?.createdAt ?? "",
-				});
-			}
-		},
-		[formId, workspaceId, readOnly, savedDocs],
-	);
+      if (headerNode) {
+        updateHeader(formId, {
+          title: headerNode.title,
+          icon: headerNode.icon ?? undefined,
+          cover: headerNode.cover ?? undefined,
+          workspaceId: String(workspaceId),
+          updatedAt: now,
+          createdAt: savedDocs?.[0]?.createdAt ?? "",
+        });
+      }
+    },
+    [formId, workspaceId, readOnly, savedDocs],
+  );
 
-	const handleEditorKeyDown = useCallback(
-		(event: KeyboardEvent<HTMLDivElement>) => {
-			if (readOnly || !headerVisibility?.enabled) return;
-			if (event.metaKey || event.ctrlKey || event.altKey) return;
+  const handleEditorKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLDivElement>) => {
+      if (readOnly || !headerVisibility?.enabled) return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
 
-			const key = event.key;
-			const isPrintable = key.length === 1;
-			const isTypingIntentKey =
-				isPrintable ||
-				key === "Enter" ||
-				key === "Backspace" ||
-				key === "Delete" ||
-				key === " " ||
-				key === "Spacebar";
+      const key = event.key;
+      const isPrintable = key.length === 1;
+      const isTypingIntentKey =
+        isPrintable ||
+        key === "Enter" ||
+        key === "Backspace" ||
+        key === "Delete" ||
+        key === " " ||
+        key === "Spacebar";
 
-			if (!isTypingIntentKey) return;
-			headerVisibility.reportTyping();
-		},
-		[readOnly, headerVisibility],
-	);
+      if (!isTypingIntentKey) return;
+      headerVisibility.reportTyping();
+    },
+    [readOnly, headerVisibility],
+  );
 
-	// Form not found - show error
-	if (savedDocs !== undefined && savedDocs.length === 0 && !versionContent) {
-		return (
-			<div className="h-screen w-full flex items-center justify-center">
-				Loading editor...
-			</div>
-		);
-	}
+  const themeCtx = useMemo(
+    () => ({ themeVars, hasCustomization: Boolean(hasCustomization) }),
+    [themeVars, hasCustomization],
+  );
 
-	const themeCtx = useMemo(
-		() => ({ themeVars, hasCustomization: Boolean(hasCustomization) }),
-		[themeVars, hasCustomization],
-	);
+  // Form not found - show error
+  if (savedDocs !== undefined && savedDocs.length === 0 && !versionContent) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center">
+        Loading editor...
+      </div>
+    );
+  }
 
-	return (
-		<EditorThemeProvider value={themeCtx}>
-			<div
-				className={cn(
-					"h-screen w-full overflow-y-auto overflow-x-hidden",
-					hasCustomization && "bf-themed",
-				)}
-				style={hasCustomization ? themeVars : undefined}
-			>
-				<Plate editor={editor} readOnly={readOnly} onChange={handleChange}>
-					<EditorContainer
-						variant="default"
-						className="px-0 sm:px-0 max-w-full  border-none shadow-none"
-					>
-						<Editor variant="demo" onKeyDown={handleEditorKeyDown} />
-					</EditorContainer>
-				</Plate>
-			</div>
-		</EditorThemeProvider>
-	);
+  return (
+    <EditorThemeProvider value={themeCtx}>
+      <div
+        className={cn(
+          "h-screen w-full overflow-y-auto overflow-x-hidden",
+          hasCustomization && "bf-themed",
+        )}
+        style={hasCustomization ? themeVars : undefined}
+      >
+        <Plate editor={editor} readOnly={readOnly} onChange={handleChange}>
+          <EditorContainer
+            variant="default"
+            className="px-0 sm:px-0 max-w-full  border-none shadow-none"
+          >
+            <Editor variant="demo" onKeyDown={handleEditorKeyDown} />
+          </EditorContainer>
+        </Plate>
+      </div>
+    </EditorThemeProvider>
+  );
 }

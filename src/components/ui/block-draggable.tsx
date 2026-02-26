@@ -287,8 +287,10 @@ function Draggable(props: PlateElementProps) {
               <Tooltip>
                 <TooltipTrigger
                   render={
-                    <button
-                      className="h-auto w-auto rounded-lg has-[>svg]:px-1.5 has-[>svg]:py-1"
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-auto w-auto rounded-lg has-[>svg]:px-1.5 has-[>svg]:py-1 "
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
