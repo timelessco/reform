@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactElement } from "react";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -13,16 +13,21 @@ function DataGridColumnVisibility<TData>({
   trigger,
 }: {
   table: Table<TData>;
-  trigger: ReactNode;
+  trigger: ReactElement;
 }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+      <DropdownMenuTrigger render={trigger} />
       <DropdownMenuContent align="end" className="min-w-[150px]">
-        <DropdownMenuLabel className="font-medium">Toggle Columns</DropdownMenuLabel>
+        <DropdownMenuLabel className="font-medium">
+          Toggle Columns
+        </DropdownMenuLabel>
         {table
           .getAllColumns()
-          .filter((column) => typeof column.accessorFn !== "undefined" && column.getCanHide())
+          .filter(
+            (column) =>
+              typeof column.accessorFn !== "undefined" && column.getCanHide(),
+          )
           .map((column) => {
             return (
               <DropdownMenuCheckboxItem

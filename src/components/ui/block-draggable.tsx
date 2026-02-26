@@ -5,7 +5,13 @@ import {
   BlockMenuPlugin,
   BlockSelectionPlugin,
 } from "@platejs/selection/react";
-import { GripVertical, GripVerticalIcon, Plus, Settings, Trash2 } from "lucide-react";
+import {
+  GripVertical,
+  GripVerticalIcon,
+  Plus,
+  Settings,
+  Trash2,
+} from "lucide-react";
 import { getPluginByType, isType, KEYS, type TElement } from "platejs";
 import {
   MemoizedChildren,
@@ -20,10 +26,21 @@ import {
 import * as React from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-const UNDRAGGABLE_KEYS = [KEYS.column, KEYS.tr, KEYS.td, "formHeader", "formButton", "pageBreak"];
+const UNDRAGGABLE_KEYS = [
+  KEYS.column,
+  KEYS.tr,
+  KEYS.td,
+  "formHeader",
+  "formButton",
+  "pageBreak",
+];
 
 export const BlockDraggable: RenderNodeWrapper = (props) => {
   const { editor, element, path } = props;
@@ -69,7 +86,8 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
         // This block is "orphaned" after the button.
         isAfterButton = true;
         const node = element;
-        const isThankYou = node.type === "pageBreak" && node.isThankYouPage === true;
+        const isThankYou =
+          node.type === "pageBreak" && node.isThankYouPage === true;
 
         // Special case: PageBreak itself is valid immediately after button
         if (node.type === "pageBreak") {
@@ -88,7 +106,10 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
     let enabled = false;
     if (path.length === 1 && !isType(editor, element, UNDRAGGABLE_KEYS)) {
       enabled = true;
-    } else if (path.length === 3 && !isType(editor, element, UNDRAGGABLE_KEYS)) {
+    } else if (
+      path.length === 3 &&
+      !isType(editor, element, UNDRAGGABLE_KEYS)
+    ) {
       const block = editor.api.some({
         at: path,
         match: {
@@ -96,7 +117,10 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
         },
       });
       if (block) enabled = true;
-    } else if (path.length === 4 && !isType(editor, element, UNDRAGGABLE_KEYS)) {
+    } else if (
+      path.length === 4 &&
+      !isType(editor, element, UNDRAGGABLE_KEYS)
+    ) {
       const block = editor.api.some({
         at: path,
         match: {
@@ -123,7 +147,10 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
     // opacity:0 and pointer-events:none ensures no interaction
     // We avoid display:none to prevent potential selection issues if cursor is forced there
     return (props) => (
-      <div className="opacity-0 pointer-events-none h-0 overflow-hidden" aria-hidden="true">
+      <div
+        className="opacity-0 pointer-events-none h-0 overflow-hidden"
+        aria-hidden="true"
+      >
         {props.children}
       </div>
     );
@@ -141,12 +168,18 @@ function Draggable(props: PlateElementProps) {
   const isFormButton = element.type === "formButton";
 
   const gutterPosition = React.useMemo(() => {
-    if (element.gutterPosition) return element.gutterPosition as "center" | "top";
+    if (element.gutterPosition)
+      return element.gutterPosition as "center" | "top";
 
     const plugin = getPluginByType(editor, element.type);
-    if (plugin?.options?.gutterPosition) return plugin.options.gutterPosition as "center" | "top";
+    if (plugin?.options?.gutterPosition)
+      return plugin.options.gutterPosition as "center" | "top";
 
-    if (["formTextarea", KEYS.codeBlock, KEYS.blockquote, KEYS.table].includes(element.type)) {
+    if (
+      ["formTextarea", KEYS.codeBlock, KEYS.blockquote, KEYS.table].includes(
+        element.type,
+      )
+    ) {
       return "top";
     }
 
@@ -162,18 +195,19 @@ function Draggable(props: PlateElementProps) {
     return "clear-both";
   }, [isFormButton, element]);
 
-  const { isAboutToDrag, isDragging, nodeRef, previewRef, handleRef } = useDraggable({
-    element,
-    preview: { disable: true },
-    onDropHandler: (_, { dragItem }) => {
-      const id = (dragItem as { id: string[] | string }).id;
+  const { isAboutToDrag, isDragging, nodeRef, previewRef, handleRef } =
+    useDraggable({
+      element,
+      preview: { disable: true },
+      onDropHandler: (_, { dragItem }) => {
+        const id = (dragItem as { id: string[] | string }).id;
 
-      if (blockSelectionApi) {
-        blockSelectionApi.add(id);
-      }
-      resetPreview();
-    },
-  });
+        if (blockSelectionApi) {
+          blockSelectionApi.add(id);
+        }
+        resetPreview();
+      },
+    });
 
   const isInColumn = path.length === 3;
   const isInTable = path.length === 4;
@@ -234,7 +268,9 @@ function Draggable(props: PlateElementProps) {
         "relative",
         buttonLayoutClass,
         isDragging && "opacity-50",
-        getPluginByType(editor, element.type)?.node.isContainer ? "group/container" : "group",
+        getPluginByType(editor, element.type)?.node.isContainer
+          ? "group/container"
+          : "group",
       )}
     >
       {!isInTable && !isFormButton && (
@@ -249,29 +285,29 @@ function Draggable(props: PlateElementProps) {
             {/* Plus Button - Add after (hidden for form buttons) */}
             {!isFormButton && (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="h-auto w-auto rounded-lg ring-0 hover:bg-accent has-[>svg]:px-1 has-[>svg]:py-1.5"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      // Insert a new paragraph block after the current block
-                      const nextPath = [...path];
-                      nextPath[nextPath.length - 1] += 1;
-                      editor.tf.insertNodes(
-                        {
-                          type: KEYS.p,
-                          children: [{ text: "" }],
-                        },
-                        { at: nextPath, select: true },
-                      );
-                    }}
-                    data-plate-prevent-deselect
-                  >
-                    <Plus className="size-4 text-[#52525B] dark:text-muted-foreground" />
-                  </Button>
+                <TooltipTrigger
+                  render={
+                    <button
+                      className="h-auto w-auto rounded-lg has-[>svg]:px-1.5 has-[>svg]:py-1"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // Insert a new paragraph block after the current block
+                        const nextPath = [...path];
+                        nextPath[nextPath.length - 1] += 1;
+                        editor.tf.insertNodes(
+                          {
+                            type: KEYS.p,
+                            children: [{ text: "" }],
+                          },
+                          { at: nextPath, select: true },
+                        );
+                      }}
+                      data-plate-prevent-deselect
+                    />
+                  }
+                >
+                  <Plus className="size-4 text-[#52525B] dark:text-muted-foreground" />
                 </TooltipTrigger>
                 <TooltipContent>Add block below</TooltipContent>
               </Tooltip>
@@ -318,7 +354,10 @@ function Gutter({
 }: React.ComponentProps<"div"> & { gutterPosition?: "center" | "top" }) {
   const editor = useEditorRef();
   const element = useElement();
-  const isSelectionAreaVisible = usePluginOption(BlockSelectionPlugin, "isSelectionAreaVisible");
+  const isSelectionAreaVisible = usePluginOption(
+    BlockSelectionPlugin,
+    "isSelectionAreaVisible",
+  );
   const selected = useSelected();
 
   return (
@@ -326,8 +365,10 @@ function Gutter({
       {...props}
       className={cn(
         "slate-gutterLeft",
-        "-translate-x-full absolute h-full z-50 flex cursor-text hover:opacity-100 mr-1 ",
-        gutterPosition === "top" ? "top-0 items-start pt-1.5" : "top-0 items-center",
+        "-translate-x-full absolute h-full z-50 flex cursor-text hover:opacity-100",
+        gutterPosition === "top"
+          ? "top-0 items-start pt-1.5"
+          : "top-0 items-center",
         !selected && "sm:opacity-0",
         getPluginByType(editor, element.type)?.node.isContainer
           ? "group-hover/container:opacity-100"
@@ -361,105 +402,114 @@ const DragHandle = React.memo(function DragHandle({
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild className="">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="flex size-full items-center justify-center h-auto hover:bg-accent has-[>svg]:px-1 has-[>svg]:py-1.5"
-          onClick={(e) => {
-            // e.preventDefault();
-            // e.stopPropagation();
+      <TooltipTrigger
+        render={
+          <button
+            className="flex size-full items-center justify-center h-auto hover:bg-transparent has-[>svg]:px-1.5 has-[>svg]:py-1 px-0"
+            onClick={(e) => {
+              // e.preventDefault();
+              // e.stopPropagation();
 
-            const rect = e.currentTarget.getBoundingClientRect();
-            const api = editor.getApi(BlockMenuPlugin);
+              const api = editor.getApi(BlockMenuPlugin);
 
-            api.blockMenu.show(BLOCK_CONTEXT_MENU_ID, {
-              x: rect.left,
-              y: rect.top + rect.height / 2,
-            });
-          }}
-          onMouseDown={(e) => {
-            if (isFormButton) return;
-            resetPreview();
-
-            if ((e.button !== 0 && e.button !== 2) || e.shiftKey) return;
-
-            const blockSelection = editor
-              .getApi(BlockSelectionPlugin)
-              .blockSelection.getNodes({ sort: true });
-
-            let selectionNodes =
-              blockSelection.length > 0 ? blockSelection : editor.api.blocks({ mode: "highest" });
-
-            // If current block is not in selection, use it as the starting point
-            if (!selectionNodes.some(([node]) => node.id === element.id)) {
-              selectionNodes = [[element, editor.api.findPath(element)!]];
-            }
-
-            // Process selection nodes to include list children
-            const blocks = expandListItemsWithChildren(editor, selectionNodes).map(
-              ([node]) => node,
-            );
-
-            if (blockSelection.length === 0) {
-              editor.tf.blur();
-              editor.tf.collapse();
-            }
-
-            const elements = createDragPreviewElements(editor, blocks);
-            previewRef.current?.append(...elements);
-            previewRef.current?.classList.remove("hidden");
-            previewRef.current?.classList.add("opacity-0");
-            editor.setOption(DndPlugin, "multiplePreviewRef", previewRef);
-
-            editor
-              .getApi(BlockSelectionPlugin)
-              .blockSelection.set(blocks.map((block) => block.id as string));
-          }}
-          onMouseEnter={() => {
-            if (isDragging) return;
-
-            const blockSelection = editor
-              .getApi(BlockSelectionPlugin)
-              .blockSelection.getNodes({ sort: true });
-
-            let selectedBlocks =
-              blockSelection.length > 0 ? blockSelection : editor.api.blocks({ mode: "highest" });
-
-            // If current block is not in selection, use it as the starting point
-            if (!selectedBlocks.some(([node]) => node.id === element.id)) {
-              selectedBlocks = [[element, editor.api.findPath(element)!]];
-            }
-
-            // Process selection to include list children
-            const processedBlocks = expandListItemsWithChildren(editor, selectedBlocks);
-
-            const ids = processedBlocks.map((block) => block[0].id as string);
-
-            if (ids.length > 1 && ids.includes(element.id as string)) {
-              const previewTop = calculatePreviewTop(editor, {
-                blocks: processedBlocks.map((block) => block[0]),
-                element,
+              api.blockMenu.show(BLOCK_CONTEXT_MENU_ID, {
+                x: e.clientX,
+                y: e.clientY,
               });
-              setPreviewTop(previewTop);
-            } else {
-              setPreviewTop(0);
-            }
-          }}
-          onMouseUp={() => {
-            resetPreview();
-          }}
-          data-plate-prevent-deselect
-        >
-          {isFormButton ? (
-            <Settings className="text-muted-foreground" />
-          ) : (
-            <GripVerticalIcon className="text-[#52525B] dark:text-muted-foreground" />
-          )}
-        </Button>
+            }}
+            onMouseDown={(e) => {
+              if (isFormButton) return;
+              resetPreview();
+
+              if ((e.button !== 0 && e.button !== 2) || e.shiftKey) return;
+
+              const blockSelection = editor
+                .getApi(BlockSelectionPlugin)
+                .blockSelection.getNodes({ sort: true });
+
+              let selectionNodes =
+                blockSelection.length > 0
+                  ? blockSelection
+                  : editor.api.blocks({ mode: "highest" });
+
+              // If current block is not in selection, use it as the starting point
+              if (!selectionNodes.some(([node]) => node.id === element.id)) {
+                selectionNodes = [[element, editor.api.findPath(element)!]];
+              }
+
+              // Process selection nodes to include list children
+              const blocks = expandListItemsWithChildren(
+                editor,
+                selectionNodes,
+              ).map(([node]) => node);
+
+              if (blockSelection.length === 0) {
+                editor.tf.blur();
+                editor.tf.collapse();
+              }
+
+              const elements = createDragPreviewElements(editor, blocks);
+              previewRef.current?.append(...elements);
+              previewRef.current?.classList.remove("hidden");
+              previewRef.current?.classList.add("opacity-0");
+              editor.setOption(DndPlugin, "multiplePreviewRef", previewRef);
+
+              editor
+                .getApi(BlockSelectionPlugin)
+                .blockSelection.set(blocks.map((block) => block.id as string));
+            }}
+            onMouseEnter={() => {
+              if (isDragging) return;
+
+              const blockSelection = editor
+                .getApi(BlockSelectionPlugin)
+                .blockSelection.getNodes({ sort: true });
+
+              let selectedBlocks =
+                blockSelection.length > 0
+                  ? blockSelection
+                  : editor.api.blocks({ mode: "highest" });
+
+              // If current block is not in selection, use it as the starting point
+              if (!selectedBlocks.some(([node]) => node.id === element.id)) {
+                selectedBlocks = [[element, editor.api.findPath(element)!]];
+              }
+
+              // Process selection to include list children
+              const processedBlocks = expandListItemsWithChildren(
+                editor,
+                selectedBlocks,
+              );
+
+              const ids = processedBlocks.map((block) => block[0].id as string);
+
+              if (ids.length > 1 && ids.includes(element.id as string)) {
+                const previewTop = calculatePreviewTop(editor, {
+                  blocks: processedBlocks.map((block) => block[0]),
+                  element,
+                });
+                setPreviewTop(previewTop);
+              } else {
+                setPreviewTop(0);
+              }
+            }}
+            onMouseUp={() => {
+              resetPreview();
+            }}
+            data-plate-prevent-deselect
+          />
+        }
+      >
+        {isFormButton ? (
+          <Settings className="text-muted-foreground" />
+        ) : (
+          <GripVerticalIcon className="text-[#52525B] dark:text-muted-foreground" />
+        )}
       </TooltipTrigger>
       <TooltipContent>
-        {isFormButton ? "Click for settings" : "Drag to move, Click to open menu"}
+        {isFormButton
+          ? "Click for settings"
+          : "Drag to move, Click to open menu"}
       </TooltipContent>
     </Tooltip>
   );
@@ -489,7 +539,10 @@ const DropLine = React.memo(function DropLine({
   );
 });
 
-const createDragPreviewElements = (editor: PlateEditor, blocks: TElement[]): HTMLElement[] => {
+const createDragPreviewElements = (
+  editor: PlateEditor,
+  blocks: TElement[],
+): HTMLElement[] => {
   const elements: HTMLElement[] = [];
   const ids: string[] = [];
 
@@ -499,7 +552,10 @@ const createDragPreviewElements = (editor: PlateEditor, blocks: TElement[]): HTM
    */
   const removeDataAttributes = (element: HTMLElement) => {
     Array.from(element.attributes).forEach((attr) => {
-      if (attr.name.startsWith("data-slate") || attr.name.startsWith("data-block-id")) {
+      if (
+        attr.name.startsWith("data-slate") ||
+        attr.name.startsWith("data-block-id")
+      ) {
         element.removeAttribute(attr.name);
       }
     });
@@ -514,7 +570,10 @@ const createDragPreviewElements = (editor: PlateEditor, blocks: TElement[]): HTM
     const newDomNode = domNode.cloneNode(true) as HTMLElement;
 
     // Apply visual compensation for horizontal scroll
-    const applyScrollCompensation = (original: Element, cloned: HTMLElement) => {
+    const applyScrollCompensation = (
+      original: Element,
+      cloned: HTMLElement,
+    ) => {
       const scrollLeft = original.scrollLeft;
 
       if (scrollLeft > 0) {
@@ -598,7 +657,9 @@ const calculatePreviewTop = (
 
   const firstDomNode = editor.api.toDOMNode(firstSelectedChild)!;
   // Get editor's top padding
-  const editorPaddingTop = Number(window.getComputedStyle(editable).paddingTop.replace("px", ""));
+  const editorPaddingTop = Number(
+    window.getComputedStyle(editable).paddingTop.replace("px", ""),
+  );
 
   // Calculate distance from first selected node to editor top
   const firstNodeToEditorDistance =
@@ -612,13 +673,18 @@ const calculatePreviewTop = (
 
   // Calculate distance from current node to editor top
   const currentToEditorDistance =
-    child.getBoundingClientRect().top - editable.getBoundingClientRect().top - editorPaddingTop;
+    child.getBoundingClientRect().top -
+    editable.getBoundingClientRect().top -
+    editorPaddingTop;
 
   const currentMarginTopString = window.getComputedStyle(child).marginTop;
   const currentMarginTop = Number(currentMarginTopString.replace("px", ""));
 
   const previewElementsTopDistance =
-    currentToEditorDistance - firstNodeToEditorDistance + marginTop - currentMarginTop;
+    currentToEditorDistance -
+    firstNodeToEditorDistance +
+    marginTop -
+    currentMarginTop;
 
   return previewElementsTopDistance;
 };

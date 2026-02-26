@@ -2,7 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
@@ -16,9 +22,13 @@ export const Route = createFileRoute("/_authenticated/settings/billing")({
 });
 
 function BillingPage() {
-  const { data: customerState, isLoading } = useQuery(auth.customer.state.queryOptions());
+  const { data: customerState, isLoading } = useQuery(
+    auth.customer.state.queryOptions(),
+  );
 
-  const { data: activeOrg } = useQuery(auth.organization.getFullOrganization.queryOptions());
+  const { data: activeOrg } = useQuery(
+    auth.organization.getFullOrganization.queryOptions(),
+  );
 
   const handleUpgrade = async (planSlug: string) => {
     if (!activeOrg) {
@@ -26,18 +36,18 @@ function BillingPage() {
       return;
     }
     try {
-      const { data, error } = await authClient.checkout({
+      const { data, error } = (await authClient.checkout({
         slug: planSlug,
         referenceId: activeOrg.id,
-      });
+      })) as { data: { url: string } | null; error: Error | null };
 
       if (error) throw error;
 
       if (data?.url) {
         window.location.href = data.url;
       }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to initiate checkout");
+    } catch (error: unknown) {
+      toast.error((error as Error).message || "Failed to initiate checkout");
     }
   };
 
@@ -51,8 +61,8 @@ function BillingPage() {
   });
 
   // Handle portal redirect when data is fetched
-  if (portalData?.url && !isOpeningPortal) {
-    window.location.href = portalData.url;
+  if ((portalData as { url?: string })?.url && !isOpeningPortal) {
+    window.location.href = (portalData as { url: string }).url;
   }
 
   const handleOpenPortal = () => {

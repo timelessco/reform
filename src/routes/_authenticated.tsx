@@ -12,6 +12,7 @@ import {
 import { AppHeader } from "@/components/ui/app-header";
 import { Button } from "@/components/ui/button";
 import {
+  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
@@ -62,12 +63,18 @@ import {
   StarIcon,
 } from "@/components/ui/sidebar-icons";
 import { UserMenuMinimal } from "@/components/user-menu-minimal";
-import { WorkspaceItemMinimal, type WorkspaceWithForms } from "@/components/workspace-item-minimal";
+import {
+  WorkspaceItemMinimal,
+  type WorkspaceWithForms,
+} from "@/components/workspace-item-minimal";
 import {
   EditorHeaderVisibilityProvider,
   useEditorHeaderVisibility,
 } from "@/contexts/editor-header-visibility-context";
-import { MinimalSidebarProvider, useMinimalSidebar } from "@/contexts/minimal-sidebar-context";
+import {
+  MinimalSidebarProvider,
+  useMinimalSidebar,
+} from "@/contexts/minimal-sidebar-context";
 import {
   createFormLocal,
   createWorkspaceLocal,
@@ -206,10 +213,13 @@ const TypedResizableHandle = ResizableHandle as any;
 
 function AuthLayout() {
   const { pathname } = useLocation();
-  const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
+  const isEditRoute =
+    pathname.includes("/form-builder/") && pathname.endsWith("/edit");
 
   return (
-    <SidebarProvider style={{ "--app-header-height": "40px" } as React.CSSProperties}>
+    <SidebarProvider
+      style={{ "--app-header-height": "40px" } as React.CSSProperties}
+    >
       <EditorHeaderVisibilityProvider enabled={isEditRoute}>
         <MinimalSidebarProvider>
           <AuthLayoutContent />
@@ -222,16 +232,19 @@ function AuthLayout() {
 function AuthLayoutContent() {
   const location = useLocation();
   const { pathname } = location;
-  const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
-  const { visible: isHeaderVisible, reportPointerActivity } = useEditorHeaderVisibility();
+  const isEditRoute =
+    pathname.includes("/form-builder/") && pathname.endsWith("/edit");
+  const { visible: isHeaderVisible, reportPointerActivity } =
+    useEditorHeaderVisibility();
 
-  const { formId } = useParams({ strict: false }) as { formId?: string };
+  const { formId } = useParams({ strict: false });
 
   // Editor sidebar management
   const navigate = useNavigate();
   const search: any = useSearch({ strict: false });
   const sidebarParam = search.sidebar;
-  const { activeSidebar, setActiveSidebar, resetSidebar, closeSidebar } = useEditorSidebar();
+  const { activeSidebar, setActiveSidebar, resetSidebar, closeSidebar } =
+    useEditorSidebar();
 
   // Close sidebar and update URL to clear sidebar param
   const handleCloseSidebar = useCallback(() => {
@@ -245,7 +258,12 @@ function AuthLayoutContent() {
   const handleRef = useRef<HTMLDivElement>(null);
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
   const [handleLeft, setHandleLeft] = useState(0);
-  const handleDragRef = useRef({ dragging: false, hasDragged: false, startX: 0, startY: 0 });
+  const handleDragRef = useRef({
+    dragging: false,
+    hasDragged: false,
+    startX: 0,
+    startY: 0,
+  });
   const leftPanelRef = useRef<HTMLDivElement>(null);
 
   // Initialize sidebar state from URL params on mount only
@@ -330,10 +348,17 @@ function AuthLayoutContent() {
         </div>
 
         <div className="relative z-20 flex-1 min-h-0 overflow-hidden">
-          <ResizablePanelGroup direction="horizontal" className="h-full">
+          <ResizablePanelGroup orientation="horizontal" className="h-full">
             {/* Main content panel - non-resizable */}
-            <ResizablePanel defaultSize={showEditorSidebar ? 70 : 100} minSize={50}>
-              <div ref={leftPanelRef} className={cn("flex h-full min-w-0 flex-col z-50")}>
+            <ResizablePanel
+              defaultSize={showEditorSidebar ? "70%" : "100%"}
+              minSize="50%"
+              className="flex-1"
+            >
+              <div
+                ref={leftPanelRef}
+                className={cn("flex h-full min-w-0 flex-col z-50")}
+              >
                 <Outlet key={formId} />
               </div>
             </ResizablePanel>
@@ -347,28 +372,42 @@ function AuthLayoutContent() {
                 !showEditorSidebar && "hidden pointer-events-none",
               )}
               ref={handleRef}
-              style={{ "--handle-left": `${handleLeft}px` } as React.CSSProperties}
-              onDragging={(isDragging: boolean) => {
-                if (isDragging) {
-                  handleDragRef.current.dragging = true;
-                  handleDragRef.current.hasDragged = true;
-                } else {
-                  handleDragRef.current.dragging = false;
-                  setTimeout(() => {
-                    handleDragRef.current.hasDragged = false;
-                  }, 50);
-                }
-              }}
+              style={
+                { "--handle-left": `${handleLeft}px` } as React.CSSProperties
+              }
               onPointerDown={(e: React.PointerEvent<HTMLDivElement>) => {
                 handleDragRef.current.hasDragged = false;
+                handleDragRef.current.dragging = false;
                 handleDragRef.current.startX = e.clientX;
               }}
+              onPointerMove={(e: React.PointerEvent<HTMLDivElement>) => {
+                // Detect dragging when pointer moves beyond threshold while pressed
+                if (e.buttons > 0 && !handleDragRef.current.dragging) {
+                  const deltaX = Math.abs(
+                    e.clientX - (handleDragRef.current.startX || 0),
+                  );
+                  if (deltaX > 3) {
+                    handleDragRef.current.dragging = true;
+                    handleDragRef.current.hasDragged = true;
+                  }
+                }
+              }}
               onPointerUp={(e: React.PointerEvent<HTMLDivElement>) => {
-                const deltaX = Math.abs(e.clientX - (handleDragRef.current.startX || 0));
-                // If it was just a click (no internal drag state activated, and mouse barely moved)
-                if (!handleDragRef.current.hasDragged && deltaX < 5 && activeSidebar) {
+                const deltaX = Math.abs(
+                  e.clientX - (handleDragRef.current.startX || 0),
+                );
+                // If it was just a click (no drag detected, and mouse barely moved)
+                if (
+                  !handleDragRef.current.hasDragged &&
+                  deltaX < 5 &&
+                  activeSidebar
+                ) {
                   handleCloseSidebar();
                 }
+                handleDragRef.current.dragging = false;
+                setTimeout(() => {
+                  handleDragRef.current.hasDragged = false;
+                }, 50);
               }}
             >
               <div
@@ -387,12 +426,12 @@ function AuthLayoutContent() {
 
             {/* Right sidebar - Settings/Share/History, resizable */}
             <ResizablePanel
-              ref={rightPanelRef}
+              panelRef={rightPanelRef}
               collapsible
-              collapsedSize={0}
-              defaultSize={showEditorSidebar ? 30 : 0}
-              minSize={22}
-              maxSize={50}
+              collapsedSize="0%"
+              defaultSize={showEditorSidebar ? "30%" : "0%"}
+              minSize="25%"
+              maxSize="50%"
               className={cn(
                 "h-full overflow-hidden bg-background",
                 !showEditorSidebar && "border-none",
@@ -443,8 +482,12 @@ function AppSidebar() {
   const { activeOrg, orgsData } = Route.useLoaderData();
   const { data: workspacesData } = useWorkspaces();
 
-  const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
-  const pendingCount = (invitations ?? []).filter((inv: any) => inv.status === "pending").length;
+  const { data: invitations } = useQuery(
+    auth.organization.listUserInvitations.queryOptions(),
+  );
+  const pendingCount = (invitations ?? []).filter(
+    (inv: any) => inv.status === "pending",
+  ).length;
 
   const { data: session } = useSession();
 
@@ -518,7 +561,12 @@ function AppSidebar() {
               <SidebarMenu className="gap-0">
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    asChild
+                    render={
+                      <Link
+                        to="/dashboard"
+                        className="flex items-center gap-2 min-w-0"
+                      />
+                    }
                     isActive={location.pathname === "/dashboard"}
                     tooltip="All"
                     className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] gap-2 transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
@@ -551,7 +599,11 @@ function AppSidebar() {
                   <SidebarMenuButton
                     onClick={() => setIsInboxOpen(!isInboxOpen)}
                     isActive={isInboxOpen}
-                    tooltip={pendingCount > 0 ? `Notifications (${pendingCount})` : "Notifications"}
+                    tooltip={
+                      pendingCount > 0
+                        ? `Notifications (${pendingCount})`
+                        : "Notifications"
+                    }
                     className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] gap-2 transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -574,7 +626,12 @@ function AppSidebar() {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    asChild
+                    render={
+                      <Link
+                        to="/settings/my-account"
+                        className="flex items-center gap-2 min-w-0"
+                      />
+                    }
                     isActive={location.pathname.startsWith("/settings")}
                     tooltip="Settings"
                     className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] gap-2 transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
@@ -603,102 +660,111 @@ function AppSidebar() {
         {/* <SidebarRail /> */}
       </Sidebar>
 
-      {/* Command Palette */}
-      <CommandDialog open={isPaletteOpen} onOpenChange={setIsPaletteOpen}>
-        <CommandInput placeholder="Search for forms and help articles" />
-        <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup heading="Actions">
-            <CommandItem
-              onSelect={async () => {
-                setIsPaletteOpen(false);
-                if (activeOrg && workspacesData) {
-                  const orgWorkspaces = workspacesData.filter(
-                    (ws) => ws.organizationId === activeOrg.id,
-                  );
-                  if (orgWorkspaces.length > 0) {
-                    // Use workspace from URL if available, otherwise use first workspace
-                    const workspaceMatch = location.pathname.match(/\/workspace\/([^/]+)/);
-                    const currentWorkspaceId = workspaceMatch?.[1];
-                    const targetWorkspace = currentWorkspaceId
-                      ? orgWorkspaces.find((ws) => ws.id === currentWorkspaceId) || orgWorkspaces[0]
-                      : orgWorkspaces[0];
+      {/* Command Palette - rendered only on client to avoid cmdk React 19 SSR issue */}
+      {typeof window !== "undefined" && (
+        <CommandDialog open={isPaletteOpen} onOpenChange={setIsPaletteOpen}>
+          <Command>
+            <CommandInput placeholder="Search for forms and help articles" />
+            <CommandList>
+              <CommandEmpty>No results found.</CommandEmpty>
+              <CommandGroup heading="Actions">
+                <CommandItem
+                  onSelect={async () => {
+                    setIsPaletteOpen(false);
+                    if (activeOrg && workspacesData) {
+                      const orgWorkspaces = workspacesData.filter(
+                        (ws) => ws.organizationId === activeOrg.id,
+                      );
+                      if (orgWorkspaces.length > 0) {
+                        // Use workspace from URL if available, otherwise use first workspace
+                        const workspaceMatch =
+                          location.pathname.match(/\/workspace\/([^/]+)/);
+                        const currentWorkspaceId = workspaceMatch?.[1];
+                        const targetWorkspace = currentWorkspaceId
+                          ? orgWorkspaces.find(
+                              (ws) => ws.id === currentWorkspaceId,
+                            ) || orgWorkspaces[0]
+                          : orgWorkspaces[0];
 
-                    const newForm = await createFormLocal(targetWorkspace.id);
-                    router.navigate({
-                      to: "/workspace/$workspaceId/form-builder/$formId/edit",
-                      params: {
-                        workspaceId: targetWorkspace.id,
-                        formId: newForm.id,
-                      },
-                    });
-                  }
-                }
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              <span>New form</span>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                if (activeOrg) {
-                  createWorkspaceLocal(activeOrg.id, "Collection")
-                    .then((workspace) => {
-                      router.navigate({
-                        to: "/workspace/$workspaceId",
-                        params: { workspaceId: workspace.id },
-                      });
-                    })
-                    .catch(console.error);
-                }
-                setIsPaletteOpen(false);
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              <span>New workspace</span>
-            </CommandItem>
-          </CommandGroup>
-          <CommandSeparator />
-          <CommandGroup heading="Navigation">
-            <CommandItem
-              onSelect={() => {
-                router.navigate({ to: "/dashboard" });
-                setIsPaletteOpen(false);
-              }}
-            >
-              <Home className="mr-2 h-4 w-4" />
-              <span>Go to home</span>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                router.navigate({ to: "/settings" });
-                setIsPaletteOpen(false);
-              }}
-            >
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Go to settings</span>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                setTrashDialogOpen(true);
-                setIsPaletteOpen(false);
-              }}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              <span>Trash</span>
-            </CommandItem>
-            <CommandItem
-              onSelect={() => {
-                signOutMutation.mutate({});
-                setIsPaletteOpen(false);
-              }}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Sign out</span>
-            </CommandItem>
-          </CommandGroup>
-        </CommandList>
-      </CommandDialog>
+                        const newForm = await createFormLocal(
+                          targetWorkspace.id,
+                        );
+                        router.navigate({
+                          to: "/workspace/$workspaceId/form-builder/$formId/edit",
+                          params: {
+                            workspaceId: targetWorkspace.id,
+                            formId: newForm.id,
+                          },
+                        });
+                      }
+                    }
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  <span>New form</span>
+                </CommandItem>
+                <CommandItem
+                  onSelect={() => {
+                    if (activeOrg) {
+                      createWorkspaceLocal(activeOrg.id, "Collection")
+                        .then((workspace) => {
+                          router.navigate({
+                            to: "/workspace/$workspaceId",
+                            params: { workspaceId: workspace.id },
+                          });
+                        })
+                        .catch(console.error);
+                    }
+                    setIsPaletteOpen(false);
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  <span>New workspace</span>
+                </CommandItem>
+              </CommandGroup>
+              <CommandSeparator />
+              <CommandGroup heading="Navigation">
+                <CommandItem
+                  onSelect={() => {
+                    router.navigate({ to: "/dashboard" });
+                    setIsPaletteOpen(false);
+                  }}
+                >
+                  <Home className="mr-2 h-4 w-4" />
+                  <span>Go to home</span>
+                </CommandItem>
+                <CommandItem
+                  onSelect={() => {
+                    router.navigate({ to: "/settings" });
+                    setIsPaletteOpen(false);
+                  }}
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Go to settings</span>
+                </CommandItem>
+                <CommandItem
+                  onSelect={() => {
+                    setTrashDialogOpen(true);
+                    setIsPaletteOpen(false);
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Trash</span>
+                </CommandItem>
+                <CommandItem
+                  onSelect={() => {
+                    signOutMutation.mutate({});
+                    setIsPaletteOpen(false);
+                  }}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign out</span>
+                </CommandItem>
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </CommandDialog>
+      )}
 
       {/* Trash Dialog */}
       <TrashDialog
@@ -730,14 +796,18 @@ function TrashDialog({
 
     // Get workspace IDs belonging to active org
     const orgWorkspaceIds = new Set(
-      workspacesData.filter((ws) => ws.organizationId === activeOrgId).map((ws) => ws.id),
+      workspacesData
+        .filter((ws) => ws.organizationId === activeOrgId)
+        .map((ws) => ws.id),
     );
 
     // Filter forms that belong to org's workspaces
     return archivedFormsData
       .filter((form) => orgWorkspaceIds.has(form.workspaceId))
       .filter(
-        (form) => !searchQuery || form.title.toLowerCase().includes(searchQuery.toLowerCase()),
+        (form) =>
+          !searchQuery ||
+          form.title.toLowerCase().includes(searchQuery.toLowerCase()),
       )
       .toSorted(
         (a, b) =>
@@ -808,7 +878,8 @@ function TrashDialog({
                         {form.title || "Untitled"}
                       </p>
                       <p className="text-[11px] text-muted-foreground/60 truncate">
-                        {workspaceNames[form.workspaceId] || "Unknown workspace"}
+                        {workspaceNames[form.workspaceId] ||
+                          "Unknown workspace"}
                       </p>
                     </div>
                   </div>
@@ -902,7 +973,9 @@ function SidebarInbox() {
   }, []);
 
   // Fetch invitations received by current user
-  const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
+  const { data: invitations } = useQuery(
+    auth.organization.listUserInvitations.queryOptions(),
+  );
 
   // Helper to refetch invitations on error (stale data)
   const handleError = (error: any) => {
@@ -943,14 +1016,18 @@ function SidebarInbox() {
   if (!isInboxOpen && !isExiting && !prevOpenRef.current) return null;
 
   // Only show pending invitations
-  const pendingInvitations = (invitations ?? []).filter((inv: any) => inv.status === "pending");
+  const pendingInvitations = (invitations ?? []).filter(
+    (inv: any) => inv.status === "pending",
+  );
 
   return (
     <div
       className={cn(
         "fixed z-40 flex w-80 flex-col bg-background select-none border-r border-foreground/5 top-0 bottom-0",
         "transition-[left,opacity] duration-150 ease-out",
-        state === "expanded" ? "left-(--sidebar-width)" : "left-(--sidebar-width-icon)",
+        state === "expanded"
+          ? "left-(--sidebar-width)"
+          : "left-(--sidebar-width-icon)",
         applyExitClass && "opacity-0",
       )}
       onTransitionEnd={handleTransitionEnd}
@@ -997,7 +1074,8 @@ function SidebarInbox() {
                 {pendingInvitations.map((invitation) => {
                   const isProcessing =
                     (acceptMutation.isPending &&
-                      acceptMutation.variables?.invitationId === invitation.id) ||
+                      acceptMutation.variables?.invitationId ===
+                        invitation.id) ||
                     (rejectMutation.isPending &&
                       rejectMutation.variables?.invitationId === invitation.id);
 
@@ -1014,11 +1092,15 @@ function SidebarInbox() {
                           <p className="text-[12px] font-medium text-foreground leading-tight">
                             You've been invited to join{" "}
                             <span className="font-bold">
-                              {(invitation as any).organization?.name ?? "an organization"}
+                              {(invitation as any).organization?.name ??
+                                "an organization"}
                             </span>
                           </p>
                           <p className="text-[11px] text-muted-foreground/50 mt-0.5">
-                            Role: <span className="capitalize">{invitation.role}</span>
+                            Role:{" "}
+                            <span className="capitalize">
+                              {invitation.role}
+                            </span>
                           </p>
                         </div>
                       </div>
@@ -1028,7 +1110,11 @@ function SidebarInbox() {
                           variant="default"
                           className="h-7 text-xs px-3"
                           disabled={isProcessing}
-                          onClick={() => acceptMutation.mutate({ invitationId: invitation.id })}
+                          onClick={() =>
+                            acceptMutation.mutate({
+                              invitationId: invitation.id,
+                            })
+                          }
                         >
                           {acceptMutation.isPending &&
                           acceptMutation.variables?.invitationId === invitation.id
@@ -1040,7 +1126,11 @@ function SidebarInbox() {
                           variant="ghost"
                           className="h-7 text-xs px-3"
                           disabled={isProcessing}
-                          onClick={() => rejectMutation.mutate({ invitationId: invitation.id })}
+                          onClick={() =>
+                            rejectMutation.mutate({
+                              invitationId: invitation.id,
+                            })
+                          }
                         >
                           {rejectMutation.isPending &&
                           rejectMutation.variables?.invitationId === invitation.id
@@ -1095,7 +1185,9 @@ function FreePlanCard() {
             />
           </svg>
         </div>
-        <span className="text-[14px] font-medium text-sidebar-foreground">Free Plan</span>
+        <span className="text-[14px] font-medium text-sidebar-foreground">
+          Free Plan
+        </span>
       </div>
       <p
         className="text-[13px] font-normal leading-[1.48] tracking-[0.13px] mb-4 mr-3"
@@ -1119,7 +1211,9 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
   const { data: session } = useSession();
 
   // Sort mode state with localStorage persistence
-  const [sortMode, setSortMode] = useState<"recent" | "oldest" | "alphabetical" | "manual">(() => {
+  const [sortMode, setSortMode] = useState<
+    "recent" | "oldest" | "alphabetical" | "manual"
+  >(() => {
     if (typeof window !== "undefined") {
       return (
         (localStorage.getItem("sidebar-sort-mode") as
@@ -1131,13 +1225,16 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
     }
     return "recent";
   });
-  const handleSortChange = (mode: "recent" | "oldest" | "alphabetical" | "manual") => {
+  const handleSortChange = (
+    mode: "recent" | "oldest" | "alphabetical" | "manual",
+  ) => {
     setSortMode(mode);
     localStorage.setItem("sidebar-sort-mode", mode);
   };
 
   // Use live queries for real-time sync
-  const { data: workspacesData, isLoading: workspacesLoading } = useWorkspaces();
+  const { data: workspacesData, isLoading: workspacesLoading } =
+    useWorkspaces();
   const { data: formsData, isLoading: formsLoading } = useForms();
   const submissionCounts = useSubmissionCounts();
 
@@ -1146,7 +1243,8 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
 
   // Determine if Electric has synced
   const isLoading = workspacesLoading || formsLoading;
-  const isElectricReady = !isLoading && workspacesData !== undefined && formsData !== undefined;
+  const isElectricReady =
+    !isLoading && workspacesData !== undefined && formsData !== undefined;
 
   // Combine workspaces with their forms, filtered by active organization
   const workspaces: WorkspaceWithForms[] = useMemo(() => {
@@ -1158,7 +1256,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
         acc[form.workspaceId].push(form);
         return acc;
       },
-      {} as Record<string, typeof formsData>,
+      {} as Record<string, WorkspaceWithForms["forms"]>,
     );
 
     return (workspacesData || [])
@@ -1166,36 +1264,53 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
       .map((ws) => ({
         ...ws,
         // Sort forms by recently edited (most recent first)
-        forms: (formsByWorkspace[ws.id] || []).toSorted((a, b) => {
-          switch (sortMode) {
-            case "oldest":
-              return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
-            case "alphabetical":
-              return (a.title || "").localeCompare(b.title || "");
-            case "manual":
-              return 0;
-            case "recent":
-            default:
-              return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-          }
-        }),
+        forms: (formsByWorkspace[ws.id] || []).toSorted(
+          (
+            a: WorkspaceWithForms["forms"][0],
+            b: WorkspaceWithForms["forms"][0],
+          ) => {
+            switch (sortMode) {
+              case "oldest":
+                return (
+                  new Date(a.updatedAt).getTime() -
+                  new Date(b.updatedAt).getTime()
+                );
+              case "alphabetical":
+                return (a.title || "").localeCompare(b.title || "");
+              case "manual":
+                return 0;
+              case "recent":
+              default:
+                return (
+                  new Date(b.updatedAt).getTime() -
+                  new Date(a.updatedAt).getTime()
+                );
+            }
+          },
+        ),
       }));
   }, [workspacesData, formsData, activeOrgId, isElectricReady, sortMode]);
 
   // State for workspace dialogs
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [workspaceToDelete, setWorkspaceToDelete] = useState<WorkspaceWithForms | null>(null);
+  const [workspaceToDelete, setWorkspaceToDelete] =
+    useState<WorkspaceWithForms | null>(null);
   const [deleteConfirmName, setDeleteConfirmName] = useState("");
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
-  const [workspaceToRename, setWorkspaceToRename] = useState<WorkspaceWithForms | null>(null);
+  const [workspaceToRename, setWorkspaceToRename] =
+    useState<WorkspaceWithForms | null>(null);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
 
   // State for form delete dialog
   const [formDeleteDialogOpen, setFormDeleteDialogOpen] = useState(false);
-  const [formToDelete, setFormToDelete] = useState<{ id: string; title: string } | null>(null);
+  const [formToDelete, setFormToDelete] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
   const handleDeleteWorkspace = async () => {
-    if (!workspaceToDelete || deleteConfirmName !== workspaceToDelete.name) return;
+    if (!workspaceToDelete || deleteConfirmName !== workspaceToDelete.name)
+      return;
     try {
       await deleteWorkspaceLocal(workspaceToDelete.id);
       setDeleteDialogOpen(false);
@@ -1271,7 +1386,11 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
     <>
       <div className="flex flex-col">
         {/* Favorites Section */}
-        <SidebarSection label="Favorites" initialOpen={favoriteForms.length > 0} action={<></>}>
+        <SidebarSection
+          label="Favorites"
+          initialOpen={favoriteForms.length > 0}
+          action={<></>}
+        >
           {favoriteForms.length === 0 ? (
             <span className="text-muted-foreground/50 text-[11px] px-2 py-1 italic">
               No favorites yet
@@ -1346,27 +1465,26 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete workspace</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-4">
-                <p>
-                  This will permanently delete <strong>"{workspaceToDelete?.name}"</strong> and{" "}
-                  <strong>
-                    {workspaceToDelete?.forms?.length || 0} form
-                    {(workspaceToDelete?.forms?.length || 0) !== 1 ? "s" : ""}
-                  </strong>{" "}
-                  within it. This action cannot be undone.
+            <AlertDialogDescription render={<div className="space-y-4" />}>
+              <p>
+                This will permanently delete{" "}
+                <strong>"{workspaceToDelete?.name}"</strong> and{" "}
+                <strong>
+                  {workspaceToDelete?.forms?.length || 0} form
+                  {(workspaceToDelete?.forms?.length || 0) !== 1 ? "s" : ""}
+                </strong>{" "}
+                within it. This action cannot be undone.
+              </p>
+              <div className="space-y-2">
+                <p className="text-sm">
+                  Type <strong>{workspaceToDelete?.name}</strong> to confirm:
                 </p>
-                <div className="space-y-2">
-                  <p className="text-sm">
-                    Type <strong>{workspaceToDelete?.name}</strong> to confirm:
-                  </p>
-                  <Input
-                    value={deleteConfirmName}
-                    onChange={(e) => setDeleteConfirmName(e.target.value)}
-                    placeholder="Type workspace name to confirm"
-                    className="mt-2"
-                  />
-                </div>
+                <Input
+                  value={deleteConfirmName}
+                  onChange={(e) => setDeleteConfirmName(e.target.value)}
+                  placeholder="Type workspace name to confirm"
+                  className="mt-2"
+                />
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -1388,7 +1506,9 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Rename workspace</DialogTitle>
-            <DialogDescription>Enter a new name for this workspace.</DialogDescription>
+            <DialogDescription>
+              Enter a new name for this workspace.
+            </DialogDescription>
           </DialogHeader>
           <Input
             value={newWorkspaceName}
@@ -1401,7 +1521,10 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
             }}
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRenameDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setRenameDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button onClick={handleRenameWorkspace}>Save</Button>
@@ -1410,13 +1533,16 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
       </Dialog>
 
       {/* Form Delete Confirmation Dialog */}
-      <AlertDialog open={formDeleteDialogOpen} onOpenChange={setFormDeleteDialogOpen}>
+      <AlertDialog
+        open={formDeleteDialogOpen}
+        onOpenChange={setFormDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete form</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{formToDelete?.title}"? This action will move it to
-              trash.
+              Are you sure you want to delete "{formToDelete?.title}"? This
+              action will move it to trash.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

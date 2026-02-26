@@ -92,14 +92,16 @@ export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full text-muted-foreground/40 hover:text-foreground transition-colors mt-1"
-          >
-            <MoreHorizontal className="h-5 w-5" />
-          </Button>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full text-muted-foreground/40 hover:text-foreground transition-colors mt-1"
+            />
+          }
+        >
+          <MoreHorizontal className="h-5 w-5" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
           <DropdownMenuItem
@@ -131,7 +133,9 @@ export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Rename form</DialogTitle>
-            <DialogDescription>Enter a new title for this form.</DialogDescription>
+            <DialogDescription>
+              Enter a new title for this form.
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Input
@@ -159,8 +163,8 @@ export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete form</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this form? This action will move it to trash and
-              cannot be easily undone.
+              Are you sure you want to delete this form? This action will move
+              it to trash and cannot be easily undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

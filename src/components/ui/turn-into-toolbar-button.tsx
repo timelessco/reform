@@ -126,24 +126,29 @@ export function TurnIntoToolbarButton(props: DropdownMenuProps) {
     getProp: (node) => getBlockType(node as TElement),
   });
   const selectedItem = React.useMemo(
-    () => turnIntoItems.find((item) => item.value === (value ?? KEYS.p)) ?? turnIntoItems[0],
+    () =>
+      turnIntoItems.find((item) => item.value === (value ?? KEYS.p)) ??
+      turnIntoItems[0],
     [value],
   );
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
-      <DropdownMenuTrigger asChild>
-        <ToolbarButton className="min-w-[125px]" pressed={open} tooltip="Turn into" isDropdown>
-          {selectedItem.label}
-        </ToolbarButton>
+      <DropdownMenuTrigger
+        render={
+          <ToolbarButton
+            className="min-w-[125px]"
+            pressed={open}
+            tooltip="Turn into"
+            isDropdown
+          />
+        }
+      >
+        {selectedItem.label}
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
         className="ignore-click-outside/toolbar min-w-0"
-        onCloseAutoFocus={(e) => {
-          e.preventDefault();
-          editor.tf.focus();
-        }}
         align="start"
       >
         <ToolbarMenuGroup

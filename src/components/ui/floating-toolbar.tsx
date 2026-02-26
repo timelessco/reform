@@ -7,7 +7,11 @@ import {
 } from "@platejs/floating";
 import { useComposedRef } from "@udecode/cn";
 import { KEYS } from "platejs";
-import { useEditorId, useEventEditorValue, usePluginOption } from "platejs/react";
+import {
+  useEditorId,
+  useEventEditorValue,
+  usePluginOption,
+} from "platejs/react";
 import type * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -36,7 +40,12 @@ export function FloatingToolbar({
       middleware: [
         offset(12),
         flip({
-          fallbackPlacements: ["top-start", "top-end", "bottom-start", "bottom-end"],
+          fallbackPlacements: [
+            "top-start",
+            "top-end",
+            "bottom-start",
+            "bottom-end",
+          ],
           padding: 12,
         }),
       ],
@@ -52,7 +61,10 @@ export function FloatingToolbar({
     ref: floatingRef,
   } = useFloatingToolbar(floatingToolbarState);
 
-  const ref = useComposedRef<HTMLDivElement>(props.ref, floatingRef);
+  const ref = useComposedRef<HTMLDivElement>(
+    props.ref as React.Ref<HTMLDivElement>,
+    floatingRef as React.Ref<HTMLDivElement>,
+  );
 
   if (hidden) return null;
 

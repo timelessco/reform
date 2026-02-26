@@ -5,7 +5,11 @@ import { toast } from "sonner";
 import type * as z from "zod";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FieldDescription, FieldLegend, FieldSeparator } from "@/components/ui/field";
+import {
+  FieldDescription,
+  FieldLegend,
+  FieldSeparator,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   InputOTP,
@@ -14,7 +18,11 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
@@ -91,9 +99,14 @@ function DraftForm() {
                 <field.Field orientation="horizontal">
                   <Checkbox
                     checked={Boolean(field.state.value)}
-                    onCheckedChange={(checked) => field.handleChange(checked as boolean)}
+                    onCheckedChange={(checked) =>
+                      field.handleChange(checked as boolean)
+                    }
                     disabled={false}
-                    aria-invalid={!!field.state.meta.errors.length && field.state.meta.isTouched}
+                    aria-invalid={
+                      !!field.state.meta.errors.length &&
+                      field.state.meta.isTouched
+                    }
                   />
                   <field.FieldContent>
                     <field.FieldLabel
@@ -120,32 +133,42 @@ function DraftForm() {
                     </field.FieldLabel>
                     <Popover>
                       <PopoverTrigger
-                        asChild
                         disabled={false}
                         aria-invalid={
-                          !!field.state.meta.errors.length && field.state.meta.isTouched
+                          !!field.state.meta.errors.length &&
+                          field.state.meta.isTouched
+                        }
+                        render={
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full justify-start text-start font-normal",
+                              !date && "text-muted-foreground",
+                            )}
+                          />
                         }
                       >
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full justify-start text-start font-normal",
-                            !date && "text-muted-foreground",
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 size-4" />
-                          {date ? format(date as unknown as Date, "PPP") : <span>Pick a date</span>}
-                        </Button>
+                        <CalendarIcon className="mr-2 size-4" />
+                        {date ? (
+                          format(date as unknown as Date, "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar
                           mode="single"
-                          selected={field.state.value as unknown as Date | undefined}
+                          selected={
+                            field.state.value as unknown as Date | undefined
+                          }
                           onSelect={(newDate) => {
-                            field.handleChange(newDate?.toISOString() as string);
+                            field.handleChange(
+                              newDate?.toISOString() as string,
+                            );
                           }}
                           aria-invalid={
-                            !!field.state.meta.errors.length && field.state.meta.isTouched
+                            !!field.state.meta.errors.length &&
+                            field.state.meta.isTouched
                           }
                         />
                       </PopoverContent>
@@ -161,7 +184,9 @@ function DraftForm() {
             {(field) => (
               <field.FieldSet className="w-full">
                 <field.Field>
-                  <field.FieldLabel htmlFor={"Input_1767870051559"}>Input Field *</field.FieldLabel>
+                  <field.FieldLabel htmlFor={"Input_1767870051559"}>
+                    Input Field *
+                  </field.FieldLabel>
                   <Input
                     name={"Input_1767870051559"}
                     placeholder="Enter your text"
@@ -169,7 +194,10 @@ function DraftForm() {
                     value={(field.state.value as string | undefined) ?? ""}
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
-                    aria-invalid={!!field.state.meta.errors.length && field.state.meta.isTouched}
+                    aria-invalid={
+                      !!field.state.meta.errors.length &&
+                      field.state.meta.isTouched
+                    }
                   />
                 </field.Field>
 
@@ -191,7 +219,10 @@ function DraftForm() {
                     onChange={field.handleChange}
                     required={true}
                     disabled={false}
-                    aria-invalid={!!field.state.meta.errors.length && field.state.meta.isTouched}
+                    aria-invalid={
+                      !!field.state.meta.errors.length &&
+                      field.state.meta.isTouched
+                    }
                   >
                     <InputOTPGroup>
                       <InputOTPSlot index={0} />
@@ -229,7 +260,10 @@ function DraftForm() {
                       value={(field.state.value as string | undefined) ?? ""}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
-                      aria-invalid={!!field.state.meta.errors.length && field.state.meta.isTouched}
+                      aria-invalid={
+                        !!field.state.meta.errors.length &&
+                        field.state.meta.isTouched
+                      }
                     />
                     <field.InputGroupAddon align="inline-end">
                       <Button
@@ -237,11 +271,13 @@ function DraftForm() {
                         size="icon-sm"
                         className="cursor-pointer h-6 w-6"
                         onClick={(e) => {
-                          const input = e.currentTarget.parentElement?.parentElement?.querySelector(
-                            "input",
-                          ) as HTMLInputElement;
+                          const input =
+                            e.currentTarget.parentElement?.parentElement?.querySelector(
+                              "input",
+                            ) as HTMLInputElement;
                           if (input) {
-                            input.type = input.type === "password" ? "text" : "password";
+                            input.type =
+                              input.type === "password" ? "text" : "password";
                             const button = e.currentTarget;
                             button.setAttribute(
                               "data-show",
@@ -271,7 +307,10 @@ function DraftForm() {
               ];
               return (
                 <field.FieldSet className="flex flex-col gap-2 w-full py-1">
-                  <field.FieldLabel className="mt-0" htmlFor={"RadioGroup_1767870054549"}>
+                  <field.FieldLabel
+                    className="mt-0"
+                    htmlFor={"RadioGroup_1767870054549"}
+                  >
                     Pick one option *
                   </field.FieldLabel>
 
@@ -281,11 +320,18 @@ function DraftForm() {
                       name={"RadioGroup_1767870054549"}
                       value={(field.state.value as string | undefined) ?? ""}
                       disabled={false}
-                      aria-invalid={!!field.state.meta.errors.length && field.state.meta.isTouched}
+                      aria-invalid={
+                        !!field.state.meta.errors.length &&
+                        field.state.meta.isTouched
+                      }
                     >
                       {options.map(({ label, value }) => (
                         <div key={value} className="flex items-center gap-x-2">
-                          <RadioGroupItem value={value} id={value} required={true} />
+                          <RadioGroupItem
+                            value={value}
+                            id={value}
+                            required={true}
+                          />
                           <Label htmlFor={value}>{label}</Label>
                         </div>
                       ))}
@@ -315,10 +361,13 @@ function DraftForm() {
                   <Select
                     name={"Select_1767870055399"}
                     value={(field.state.value as string | undefined) ?? ""}
-                    onValueChange={field.handleChange}
+                    onValueChange={(value) => field.handleChange(value ?? "")}
                     defaultValue={String(field?.state.value ?? "")}
                     disabled={false}
-                    aria-invalid={!!field.state.meta.errors.length && field.state.meta.isTouched}
+                    aria-invalid={
+                      !!field.state.meta.errors.length &&
+                      field.state.meta.isTouched
+                    }
                   >
                     <field.Field>
                       <SelectTrigger className="w-full">
@@ -369,9 +418,15 @@ function DraftForm() {
                       disabled={false}
                       step={step}
                       value={sliderValue}
-                      aria-invalid={!!field.state.meta.errors.length && field.state.meta.isTouched}
-                      onValueChange={(newValue) => {
-                        field.handleChange(newValue[0]);
+                      aria-invalid={
+                        !!field.state.meta.errors.length &&
+                        field.state.meta.isTouched
+                      }
+                      onValueChange={(newValue: number | readonly number[]) => {
+                        const val = Array.isArray(newValue)
+                          ? newValue[0]
+                          : newValue;
+                        field.handleChange(val);
                         field.handleBlur();
                       }}
                     />
@@ -392,7 +447,9 @@ function DraftForm() {
                     <field.FieldLabel htmlFor={"Switch_1767870057066"}>
                       Toggle Switch
                     </field.FieldLabel>
-                    <field.FieldDescription>Turn on or off.</field.FieldDescription>
+                    <field.FieldDescription>
+                      Turn on or off.
+                    </field.FieldDescription>
                   </field.FieldContent>
                   <Switch
                     name={"Switch_1767870057066"}
@@ -402,7 +459,10 @@ function DraftForm() {
                       field.handleBlur();
                     }}
                     disabled={false}
-                    aria-invalid={!!field.state.meta.errors.length && field.state.meta.isTouched}
+                    aria-invalid={
+                      !!field.state.meta.errors.length &&
+                      field.state.meta.isTouched
+                    }
                   />
                 </field.Field>
               </field.FieldSet>
@@ -412,7 +472,9 @@ function DraftForm() {
             {(field) => (
               <field.FieldSet className="w-full">
                 <field.Field>
-                  <field.FieldLabel htmlFor={"Textarea_1767870057935"}>Textarea *</field.FieldLabel>
+                  <field.FieldLabel htmlFor={"Textarea_1767870057935"}>
+                    Textarea *
+                  </field.FieldLabel>
                   <Textarea
                     placeholder="Enter your text"
                     required={true}
@@ -422,9 +484,14 @@ function DraftForm() {
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
                     className="resize-none"
-                    aria-invalid={!!field.state.meta.errors.length && field.state.meta.isTouched}
+                    aria-invalid={
+                      !!field.state.meta.errors.length &&
+                      field.state.meta.isTouched
+                    }
                   />
-                  <field.FieldDescription>A multi-line text input field</field.FieldDescription>
+                  <field.FieldDescription>
+                    A multi-line text input field
+                  </field.FieldDescription>
                 </field.Field>
                 <field.FieldError />
               </field.FieldSet>
@@ -444,16 +511,21 @@ function DraftForm() {
               return (
                 <field.FieldSet className="flex flex-col gap-2 w-full py-1">
                   <field.Field>
-                    <field.FieldLabel className="mt-0" htmlFor={"ToggleGroup_1767870059849"}>
+                    <field.FieldLabel
+                      className="mt-0"
+                      htmlFor={"ToggleGroup_1767870059849"}
+                    >
                       Pick multiple days *
                     </field.FieldLabel>
 
                     <ToggleGroup
-                      type="multiple"
                       variant="outline"
                       onValueChange={field.handleChange}
                       className="flex justify-start items-center w-full"
-                      aria-invalid={!!field.state.meta.errors.length && field.state.meta.isTouched}
+                      aria-invalid={
+                        !!field.state.meta.errors.length &&
+                        field.state.meta.isTouched
+                      }
                     >
                       {options.map(({ label, value }) => (
                         <ToggleGroupItem

@@ -17,9 +17,21 @@ import { discardChanges, publishForm, useHasUnpublishedChanges } from "@/hooks/u
 import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
 import { cn, parseTimestampAsUTC } from "@/lib/utils";
-import { Link, useLocation, useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearch,
+} from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
-import { AlertCircle, ChevronsRight, Loader2, MoreHorizontal, Pencil } from "lucide-react";
+import {
+  AlertCircle,
+  ChevronsRight,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Logo } from "./logo";
@@ -47,7 +59,8 @@ export function AppHeader({
   };
   const { pathname } = useLocation();
   const isDashboard = pathname === "/dashboard";
-  const isFormBuilder = pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
+  const isFormBuilder =
+    pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
   const isEditRoute = pathname.endsWith("/edit");
   const { data: sessionData } = useSession();
   const session = sessionData;
@@ -63,7 +76,10 @@ export function AppHeader({
   const toggleVersionHistory = () => {
     navigate({
       to: ".",
-      search: (prev: any) => ({ ...prev, sidebar: isVersionHistoryOpen ? "" : "history" }),
+      search: (prev: any) => ({
+        ...prev,
+        sidebar: isVersionHistoryOpen ? "" : "history",
+      }),
       replace: true,
     });
   };
@@ -72,7 +88,10 @@ export function AppHeader({
     // Update URL param - the URL sync effect will handle opening/closing the sidebar
     navigate({
       to: ".",
-      search: (prev: any) => ({ ...prev, sidebar: isSettingsSidebarOpen ? "" : "settings" }),
+      search: (prev: any) => ({
+        ...prev,
+        sidebar: isSettingsSidebarOpen ? "" : "settings",
+      }),
       replace: true,
     });
   };
@@ -81,7 +100,10 @@ export function AppHeader({
   const toggleCustomizeSidebar = () => {
     navigate({
       to: ".",
-      search: (prev: any) => ({ ...prev, sidebar: isCustomizeSidebarOpen ? "" : "customize" }),
+      search: (prev: any) => ({
+        ...prev,
+        sidebar: isCustomizeSidebarOpen ? "" : "customize",
+      }),
       replace: true,
     });
   };
@@ -231,7 +253,9 @@ export function AppHeader({
               </span>
             )}
             <span className="text-muted-foreground/50">/</span>
-            <span className="text-muted-foreground">{isEditRoute ? "Editor" : "Submissions"}</span>
+            <span className="text-muted-foreground">
+              {isEditRoute ? "Editor" : "Submissions"}
+            </span>
           </div>
         )}
       </div>
@@ -243,14 +267,16 @@ export function AppHeader({
           !isEditorSidebarOpen &&
           !isLoadingSavedDocs && (
             <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="text-[11px] text-muted-foreground/70 mr-2 whitespace-nowrap rounded-md bg-muted/60 px-2 py-1">
-                  Edited{" "}
-                  {formatDistanceToNow(
-                    parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date(),
-                  )}{" "}
-                  ago
-                </span>
+              <TooltipTrigger
+                render={
+                  <span className="text-[11px] text-muted-foreground/70 mr-2 whitespace-nowrap rounded-md bg-muted/60 px-2 py-1" />
+                }
+              >
+                Edited{" "}
+                {formatDistanceToNow(
+                  parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date(),
+                )}{" "}
+                ago
               </TooltipTrigger>
               <TooltipContent side="bottom" align="end">
                 <div className="space-y-1">
@@ -260,7 +286,8 @@ export function AppHeader({
                       {session?.user?.name ?? "You"}
                     </span>{" "}
                     {formatDistanceToNow(
-                      parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date(),
+                      parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ??
+                        new Date(),
                     )}{" "}
                     ago
                   </p>
@@ -271,7 +298,8 @@ export function AppHeader({
                         {session?.user?.name ?? "You"}
                       </span>{" "}
                       {format(
-                        parseTimestampAsUTC(savedDocs?.[0]?.createdAt) ?? new Date(),
+                        parseTimestampAsUTC(savedDocs?.[0]?.createdAt) ??
+                          new Date(),
                         "MMM d, yyyy",
                       )}
                     </p>
@@ -282,14 +310,15 @@ export function AppHeader({
           )}
 
         {isDashboard && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2.5 text-muted-foreground hover:text-foreground font-normal"
-            asChild
+          <Link
+            to="/"
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" }),
+              "h-8 px-2.5 text-muted-foreground hover:text-foreground font-normal",
+            )}
           >
-            <Link to="/">About</Link>
-          </Button>
+            About
+          </Link>
         )}
 
         {isFormBuilder && (
@@ -297,20 +326,22 @@ export function AppHeader({
             {/* Changes indicator - shows when there are unpublished changes */}
             {hasUnpublishedChanges && (
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                    onClick={handleDiscardChanges}
-                    disabled={isDiscarding}
-                  >
-                    {isDiscarding ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <AlertCircle className="h-4 w-4" />
-                    )}
-                  </Button>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                      onClick={handleDiscardChanges}
+                      disabled={isDiscarding}
+                    />
+                  }
+                >
+                  {isDiscarding ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4" />
+                  )}
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="font-medium">Click to discard changes</p>
@@ -323,23 +354,22 @@ export function AppHeader({
 
             <div className="flex items-center gap-1">
               {isEditRoute && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  asChild
+                <Link
+                  to="."
+                  search={(prev: any) => ({
+                    ...prev,
+                    demo: !demo,
+                    sidebar: "",
+                  })}
+                  replace
                   className={cn(
+                    buttonVariants({ variant: "ghost", size: "sm" }),
                     "h-8 px-2.5 text-muted-foreground hover:text-foreground font-normal",
                     demo && "text-foreground bg-accent/50",
                   )}
                 >
-                  <Link
-                    to="."
-                    search={(prev: any) => ({ ...prev, demo: !demo, sidebar: "" })}
-                    replace
-                  >
-                    {demo ? "Editor" : "Preview"}
-                  </Link>
-                </Button>
+                  {demo ? "Editor" : "Preview"}
+                </Link>
               )}
 
               {savedDocs?.[0]?.status === "published" && (
@@ -368,16 +398,25 @@ export function AppHeader({
 
               {/* Three dots menu - popover button list matching workspace/sidebar style */}
               <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 rounded-lg hover:text-foreground"
-                  >
-                    <MoreHorizontal className="h-[18px] w-[18px]" strokeWidth={1.5} />
-                  </Button>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 bg-secondary rounded-lg text-muted-foreground hover:text-foreground"
+                    />
+                  }
+                >
+                  <MoreHorizontal
+                    className="h-[18px] w-[18px]"
+                    strokeWidth={1.5}
+                  />
                 </PopoverTrigger>
-                <PopoverContent align="end" className="w-[151px]" sideOffset={4}>
+                <PopoverContent
+                  align="end"
+                  className="w-[151px]"
+                  sideOffset={4}
+                >
                   <Button
                     variant="ghost"
                     onClick={() => {
@@ -444,13 +483,16 @@ export function AppHeader({
                 className={cn(
                   "h-8 pl-2 pr-2 py-1.5 ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none",
                   !isLoadingSavedDocs &&
-                    (hasUnpublishedChanges || savedDocs?.[0]?.status !== "published")
+                    (hasUnpublishedChanges ||
+                      savedDocs?.[0]?.status !== "published")
                     ? "bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
                     : "bg-muted text-muted-foreground hover:bg-muted/80",
                 )}
                 onClick={handlePublish}
                 disabled={
-                  isPublishing || (!hasUnpublishedChanges && savedDocs?.[0]?.status === "published")
+                  isPublishing ||
+                  (!hasUnpublishedChanges &&
+                    savedDocs?.[0]?.status === "published")
                 }
               >
                 {isPublishing ? (
@@ -464,20 +506,18 @@ export function AppHeader({
             ) : (
               workspaceId &&
               formId && (
-                <Button
-                  size="sm"
-                  asChild
-                  className="h-8 pl-[10px] pr-[8px] ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
+                <Link
+                  to="/workspace/$workspaceId/form-builder/$formId/edit"
+                  params={{ workspaceId, formId }}
+                  search={{ force: true }}
+                  className={cn(
+                    buttonVariants({ size: "sm" }),
+                    "h-8 pl-[10px] pr-[8px] ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200",
+                  )}
                 >
-                  <Link
-                    to="/workspace/$workspaceId/form-builder/$formId/edit"
-                    params={{ workspaceId, formId }}
-                    search={{ force: true }}
-                  >
-                    <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                    Edit
-                  </Link>
-                </Button>
+                  <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                  Edit
+                </Link>
               )
             )}
           </>
@@ -485,18 +525,23 @@ export function AppHeader({
       </div>
 
       {isSidebarOpen && typeof dividerX === "number" && (
-        <div className="pointer-events-none fixed top-0 h-10 z-1000" style={{ left: dividerX + 8 }}>
+        <div
+          className="pointer-events-none fixed top-0 h-10 z-1000"
+          style={{ left: dividerX + 8 }}
+        >
           <div className="pointer-events-auto absolute top-[6px]">
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleCloseSidebar}
-                  className="h-8 w-8 bg-muted/60 opacity-0 group-hover/header:opacity-100"
-                >
-                  <ChevronsRight className="h-4 w-4" />
-                </Button>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleCloseSidebar}
+                    className="h-8 w-8 bg-muted/60 opacity-0 group-hover/header:opacity-100"
+                  />
+                }
+              >
+                <ChevronsRight className="h-4 w-4" />
               </TooltipTrigger>
               <TooltipContent side="bottom" align="end">
                 <p className="font-medium">Close panel</p>

@@ -3,6 +3,7 @@ import { Plate, usePlateEditor } from "platejs/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorKit } from "@/components/editor/editor-kit";
 import { RightSidebar } from "@/components/footer";
+import { ClientOnly } from "@/components/client-only";
 import { LandingHeader } from "@/components/ui/landing-header";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
@@ -24,12 +25,22 @@ const onboardingValue = normalizeNodeId([
 
 export default function LandingEditor() {
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <LandingHeader />
-      <div className="flex-1 overflow-auto relative bg-background">
-        <LocalEditorApp />
-      </div>
-    </div>
+    <ClientOnly
+      fallback={
+        <div className="flex items-center justify-center h-screen">
+          <Loader />
+        </div>
+      }
+    >
+      {() => (
+        <div className="flex flex-col h-screen overflow-hidden">
+          <LandingHeader />
+          <div className="flex-1 overflow-auto relative bg-background">
+            <LocalEditorApp />
+          </div>
+        </div>
+      )}
+    </ClientOnly>
   );
 }
 

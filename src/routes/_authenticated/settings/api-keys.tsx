@@ -174,7 +174,11 @@ function APIKeysPage() {
               Create an API key to access our API and automate your tasks.
             </EmptyDescription>
           </EmptyHeader>
-          <Button onClick={() => setIsCreateDialogOpen(true)} variant="outline" className="mt-2">
+          <Button
+            onClick={() => setIsCreateDialogOpen(true)}
+            variant="outline"
+            className="mt-2"
+          >
             Create your first key
           </Button>
         </Empty>
@@ -186,7 +190,9 @@ function APIKeysPage() {
                 <TableHead className="w-[150px] text-muted-foreground font-medium py-3 px-4">
                   Name
                 </TableHead>
-                <TableHead className="text-muted-foreground font-medium py-3 px-4">Key</TableHead>
+                <TableHead className="text-muted-foreground font-medium py-3 px-4">
+                  Key
+                </TableHead>
                 <TableHead className="text-muted-foreground font-medium py-3 px-4">
                   Version
                 </TableHead>
@@ -211,13 +217,19 @@ function APIKeysPage() {
                   key={key.id}
                   className="group border-b last:border-0 hover:bg-muted/30 transition-colors"
                 >
-                  <TableCell className="font-medium py-4 px-4">{key.name}</TableCell>
+                  <TableCell className="font-medium py-4 px-4">
+                    {key.name}
+                  </TableCell>
                   <TableCell className="text-muted-foreground font-mono text-xs py-4 px-4">
                     {key.start}...{key.prefix}
                   </TableCell>
-                  <TableCell className="text-muted-foreground py-4 px-4">2025-02-01</TableCell>
+                  <TableCell className="text-muted-foreground py-4 px-4">
+                    2025-02-01
+                  </TableCell>
                   <TableCell className="py-4 px-4">
-                    <div className="text-[13px] text-foreground">Full access</div>
+                    <div className="text-[13px] text-foreground">
+                      Full access
+                    </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground py-4 px-4">
                     {(key as any).lastUsedAt
@@ -236,14 +248,16 @@ function APIKeysPage() {
                   </TableCell>
                   <TableCell className="py-4 px-4">
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:bg-muted"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:bg-muted"
+                          />
+                        }
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
                         <DropdownMenuItem
@@ -267,8 +281,13 @@ function APIKeysPage() {
       )}
 
       <div className="flex items-center gap-1 text-[13px] text-muted-foreground pt-8">
-        <span>BetterForms's API is currently in Beta. Learn more about it on</span>
-        <a href="https://developers.betterforms.so" className="text-blue-600 hover:underline">
+        <span>
+          BetterForms's API is currently in Beta. Learn more about it on
+        </span>
+        <a
+          href="https://developers.betterforms.so"
+          className="text-blue-600 hover:underline"
+        >
           https://developers.betterforms.so
         </a>
         <span>.</span>
@@ -279,7 +298,9 @@ function APIKeysPage() {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Create API key</DialogTitle>
-            <DialogDescription>Give your API key a name to identify it later.</DialogDescription>
+            <DialogDescription>
+              Give your API key a name to identify it later.
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="space-y-2">
@@ -297,7 +318,10 @@ function APIKeysPage() {
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsCreateDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -305,7 +329,9 @@ function APIKeysPage() {
               onClick={handleCreateKey}
               disabled={!newKeyName.trim() || createMutation.isPending}
             >
-              {createMutation.isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
+              {createMutation.isPending ? (
+                <Loader2 className="animate-spin mr-2 h-4 w-4" />
+              ) : null}
               Create
             </Button>
           </DialogFooter>
@@ -325,7 +351,9 @@ function APIKeysPage() {
       >
         <DialogContent className="sm:max-w-[500px] p-6">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold">View API key</DialogTitle>
+            <DialogTitle className="text-xl font-semibold">
+              View API key
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6 py-4">
@@ -337,7 +365,10 @@ function APIKeysPage() {
             </div>
 
             <div className="space-y-3">
-              <label className="text-sm font-medium text-foreground" htmlFor={apiKeyInputId}>
+              <label
+                className="text-sm font-medium text-foreground"
+                htmlFor={apiKeyInputId}
+              >
                 API key
               </label>
               <div className="relative flex items-center">
@@ -355,7 +386,11 @@ function APIKeysPage() {
                     className="h-8 w-8 text-muted-foreground"
                     onClick={() => setShowKey(!showKey)}
                   >
-                    {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showKey ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </Button>
                   <Button
                     variant="ghost"
@@ -385,13 +420,17 @@ function APIKeysPage() {
         </DialogContent>
       </Dialog>
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete your API key and any
-              applications using it will no longer be able to authenticate.
+              This action cannot be undone. This will permanently delete your
+              API key and any applications using it will no longer be able to
+              authenticate.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -401,7 +440,9 @@ function APIKeysPage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
+              {deleteMutation.isPending ? (
+                <Loader2 className="animate-spin mr-2 h-4 w-4" />
+              ) : null}
               Delete API Key
             </AlertDialogAction>
           </AlertDialogFooter>

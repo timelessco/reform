@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { ClientOnly, createFileRoute } from "@tanstack/react-router";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
@@ -30,12 +30,20 @@ import { getLocalFormId, getLocalWorkspaceId } from "@/lib/local-draft";
 
 function RouteComponent() {
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <AppHeader />
-      <div className="flex-1 overflow-auto relative bg-background">
-        <LocalEditorApp />
+    <ClientOnly
+      fallback={
+        <div className="flex items-center justify-center h-screen">
+          <Loader />
+        </div>
+      }
+    >
+      <div className="flex flex-col h-screen overflow-hidden">
+        <AppHeader />
+        <div className="flex-1 overflow-auto relative bg-background">
+          <LocalEditorApp />
+        </div>
       </div>
-    </div>
+    </ClientOnly>
   );
 }
 

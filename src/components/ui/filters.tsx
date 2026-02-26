@@ -1,7 +1,13 @@
 "use client";
 
 import type React from "react";
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import {
   Command,
   CommandEmpty,
@@ -17,9 +23,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cva, type VariantProps } from "class-variance-authority";
 import { AlertCircle, Check, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -400,41 +414,47 @@ const filterFieldValueVariants = cva(
   },
 );
 
-const filterFieldAddonVariants = cva("text-foreground shrink-0 flex items-center justify-center", {
-  variants: {
-    variant: {
-      solid: "",
-      outline: "",
+const filterFieldAddonVariants = cva(
+  "text-foreground shrink-0 flex items-center justify-center",
+  {
+    variants: {
+      variant: {
+        solid: "",
+        outline: "",
+      },
+      size: {
+        lg: "h-10 px-4 text-sm",
+        md: "h-9 px-3 text-sm",
+        sm: "h-8 px-2.5 text-xs",
+      },
     },
-    size: {
-      lg: "h-10 px-4 text-sm",
-      md: "h-9 px-3 text-sm",
-      sm: "h-8 px-2.5 text-xs",
+    defaultVariants: {
+      variant: "outline",
+      size: "md",
     },
   },
-  defaultVariants: {
-    variant: "outline",
-    size: "md",
-  },
-});
+);
 
-const filterFieldBetweenVariants = cva("text-muted-foreground shrink-0 flex items-center", {
-  variants: {
-    variant: {
-      solid: "bg-secondary",
-      outline: "bg-background border border-border border-x-0",
+const filterFieldBetweenVariants = cva(
+  "text-muted-foreground shrink-0 flex items-center",
+  {
+    variants: {
+      variant: {
+        solid: "bg-secondary",
+        outline: "bg-background border border-border border-x-0",
+      },
+      size: {
+        lg: "h-10 px-4 text-sm",
+        md: "h-9 px-3 text-sm",
+        sm: "h-8 px-2.5 text-xs",
+      },
     },
-    size: {
-      lg: "h-10 px-4 text-sm",
-      md: "h-9 px-3 text-sm",
-      sm: "h-8 px-2.5 text-xs",
+    defaultVariants: {
+      variant: "outline",
+      size: "md",
     },
   },
-  defaultVariants: {
-    variant: "outline",
-    size: "md",
-  },
-});
+);
 
 const filtersContainerVariants = cva("flex flex-wrap items-center", {
   variants: {
@@ -491,7 +511,10 @@ function FilterInput<T = unknown>({
   };
 
   // Get validation message for field type
-  const getValidationMessage = (fieldType: string, hasCustomPattern: boolean = false): string => {
+  const getValidationMessage = (
+    fieldType: string,
+    hasCustomPattern: boolean = false,
+  ): string => {
     // If it's a text or number field with a custom pattern, use the generic invalid message
     if ((fieldType === "text" || fieldType === "number") && hasCustomPattern) {
       return context.i18n.validation.invalid;
@@ -534,7 +557,9 @@ function FilterInput<T = unknown>({
 
       setIsValid(valid);
       const hasCustomPattern = !!(field?.pattern || props.pattern);
-      setValidationMessage(valid ? "" : getValidationMessage(field?.type || "", hasCustomPattern));
+      setValidationMessage(
+        valid ? "" : getValidationMessage(field?.type || "", hasCustomPattern),
+      );
     } else {
       // Reset validation state for empty values or no pattern
       setIsValid(true);
@@ -555,7 +580,15 @@ function FilterInput<T = unknown>({
     // Hide validation error when user starts typing (any key except special keys)
     if (
       !isValid &&
-      !["Tab", "Escape", "Enter", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)
+      ![
+        "Tab",
+        "Escape",
+        "Enter",
+        "ArrowUp",
+        "ArrowDown",
+        "ArrowLeft",
+        "ArrowRight",
+      ].includes(e.key)
     ) {
       setIsValid(true);
       setValidationMessage("");
@@ -588,7 +621,10 @@ function FilterInput<T = unknown>({
       {field?.prefix && (
         <div
           data-slot="filters-prefix"
-          className={filterFieldAddonVariants({ variant: context.variant, size: context.size })}
+          className={filterFieldAddonVariants({
+            variant: context.variant,
+            size: context.size,
+          })}
         >
           {field.prefix}
         </div>
@@ -599,7 +635,9 @@ function FilterInput<T = unknown>({
           className="w-full outline-none"
           aria-invalid={!isValid}
           aria-describedby={
-            !isValid && validationMessage ? `${field?.key || "input"}-error` : undefined
+            !isValid && validationMessage
+              ? `${field?.key || "input"}-error`
+              : undefined
           }
           onChange={handleChange}
           onBlur={handleBlur}
@@ -609,10 +647,12 @@ function FilterInput<T = unknown>({
         />
         {!isValid && validationMessage && (
           <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
-                <AlertCircle className="size-3.5 text-destructive" />
-              </div>
+            <TooltipTrigger
+              render={
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center" />
+              }
+            >
+              <AlertCircle className="size-3.5 text-destructive" />
             </TooltipTrigger>
             <TooltipContent>
               <p className="text-sm">{validationMessage}</p>
@@ -624,7 +664,12 @@ function FilterInput<T = unknown>({
       {field?.suffix && (
         <div
           data-slot="filters-suffix"
-          className={cn(filterFieldAddonVariants({ variant: context.variant, size: context.size }))}
+          className={cn(
+            filterFieldAddonVariants({
+              variant: context.variant,
+              size: context.size,
+            }),
+          )}
         >
           {field.suffix}
         </div>
@@ -640,7 +685,11 @@ interface FilterRemoveButtonProps
   icon?: React.ReactNode;
 }
 
-function FilterRemoveButton({ className, icon = <X />, ...props }: FilterRemoveButtonProps) {
+function FilterRemoveButton({
+  className,
+  icon = <X />,
+  ...props
+}: FilterRemoveButtonProps) {
   const context = useFilterContext();
 
   return (
@@ -691,7 +740,9 @@ export interface FilterFieldGroup<T = unknown> {
 }
 
 // Union type for both flat and grouped field configurations
-export type FilterFieldsConfig<T = unknown> = FilterFieldConfig<T>[] | FilterFieldGroup<T>[];
+export type FilterFieldsConfig<T = unknown> =
+  | FilterFieldConfig<T>[]
+  | FilterFieldGroup<T>[];
 
 export interface FilterFieldConfig<T = unknown> {
   key?: string;
@@ -720,7 +771,10 @@ export interface FilterFieldConfig<T = unknown> {
   options?: FilterOption<T>[];
   operators?: FilterOperator[];
   customRenderer?: (props: CustomRendererProps<T>) => React.ReactNode;
-  customValueRenderer?: (values: T[], options: FilterOption<T>[]) => React.ReactNode;
+  customValueRenderer?: (
+    values: T[],
+    options: FilterOption<T>[],
+  ) => React.ReactNode;
   placeholder?: string;
   searchable?: boolean;
   maxSelections?: number;
@@ -750,18 +804,22 @@ export interface FilterFieldConfig<T = unknown> {
 }
 
 // Helper functions to handle both flat and grouped field configurations
-const isFieldGroup = <T = unknown>(
+const isFieldGroup = <T = unknown,>(
   item: FilterFieldConfig<T> | FilterFieldGroup<T>,
 ): item is FilterFieldGroup<T> => {
   return "fields" in item && Array.isArray(item.fields);
 };
 
 // Helper function to check if a FilterFieldConfig is a group-level configuration
-const isGroupLevelField = <T = unknown>(field: FilterFieldConfig<T>): boolean => {
+const isGroupLevelField = <T = unknown,>(
+  field: FilterFieldConfig<T>,
+): boolean => {
   return Boolean(field.group && field.fields);
 };
 
-const flattenFields = <T = unknown>(fields: FilterFieldsConfig<T>): FilterFieldConfig<T>[] => {
+const flattenFields = <T = unknown,>(
+  fields: FilterFieldsConfig<T>,
+): FilterFieldConfig<T>[] => {
   return fields.reduce<FilterFieldConfig<T>[]>((acc, item) => {
     if (isFieldGroup(item)) {
       return [...acc, ...item.fields];
@@ -774,7 +832,7 @@ const flattenFields = <T = unknown>(fields: FilterFieldsConfig<T>): FilterFieldC
   }, []);
 };
 
-const getFieldsMap = <T = unknown>(
+const getFieldsMap = <T = unknown,>(
   fields: FilterFieldsConfig<T>,
 ): Record<string, FilterFieldConfig<T>> => {
   const flatFields = flattenFields(fields);
@@ -791,7 +849,9 @@ const getFieldsMap = <T = unknown>(
 };
 
 // Helper function to create operators from i18n config
-const createOperatorsFromI18n = (i18n: FilterI18nConfig): Record<string, FilterOperator[]> => ({
+const createOperatorsFromI18n = (
+  i18n: FilterI18nConfig,
+): Record<string, FilterOperator[]> => ({
   select: [
     { value: "is", label: i18n.operators.is },
     { value: "is_not", label: i18n.operators.isNot },
@@ -901,7 +961,7 @@ export const DEFAULT_OPERATORS: Record<string, FilterOperator[]> =
   createOperatorsFromI18n(DEFAULT_I18N);
 
 // Helper function to get operators for a field
-const getOperatorsForField = <T = unknown>(
+const getOperatorsForField = <T = unknown,>(
   field: FilterFieldConfig<T>,
   values: T[],
   i18n: FilterI18nConfig,
@@ -958,7 +1018,10 @@ function FilterOperatorDropdown<T = unknown>({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className={filterOperatorVariants({ variant: context.variant, size: context.size })}
+        className={filterOperatorVariants({
+          variant: context.variant,
+          size: context.size,
+        })}
       >
         {operatorLabel}
       </DropdownMenuTrigger>
@@ -1009,8 +1072,10 @@ function SelectOptionsPopover<T = unknown>({
   const context = useFilterContext();
 
   const isMultiSelect = field.type === "multiselect" || values.length > 1;
-  const effectiveValues = (field.value !== undefined ? (field.value as T[]) : values) || [];
-  const selectedOptions = field.options?.filter((opt) => effectiveValues.includes(opt.value)) || [];
+  const effectiveValues =
+    (field.value !== undefined ? (field.value as T[]) : values) || [];
+  const selectedOptions =
+    field.options?.filter((opt) => effectiveValues.includes(opt.value)) || [];
   const unselectedOptions =
     field.options?.filter((opt) => !effectiveValues.includes(opt.value)) || [];
 
@@ -1026,7 +1091,9 @@ function SelectOptionsPopover<T = unknown>({
         <Command>
           {field.searchable !== false && (
             <CommandInput
-              placeholder={context.i18n.placeholders.searchField(field.label || "")}
+              placeholder={context.i18n.placeholders.searchField(
+                field.label || "",
+              )}
               className="h-8.5 text-sm"
               value={searchInput}
               onValueChange={setSearchInput}
@@ -1044,7 +1111,9 @@ function SelectOptionsPopover<T = unknown>({
                     className="group flex gap-2 items-center"
                     onSelect={() => {
                       if (isMultiSelect) {
-                        const next = effectiveValues.filter((v) => v !== option.value) as T[];
+                        const next = effectiveValues.filter(
+                          (v) => v !== option.value,
+                        ) as T[];
                         if (field.onValueChange) {
                           field.onValueChange(next);
                         } else {
@@ -1060,7 +1129,9 @@ function SelectOptionsPopover<T = unknown>({
                     }}
                   >
                     {option.icon && option.icon}
-                    <span className="text-accent-foreground truncate">{option.label}</span>
+                    <span className="text-accent-foreground truncate">
+                      {option.label}
+                    </span>
                     <Check className="text-primary ms-auto" />
                   </CommandItem>
                 ))}
@@ -1079,8 +1150,14 @@ function SelectOptionsPopover<T = unknown>({
                       value={option.label}
                       onSelect={() => {
                         if (isMultiSelect) {
-                          const newValues = [...effectiveValues, option.value] as T[];
-                          if (field.maxSelections && newValues.length > field.maxSelections) {
+                          const newValues = [
+                            ...effectiveValues,
+                            option.value,
+                          ] as T[];
+                          if (
+                            field.maxSelections &&
+                            newValues.length > field.maxSelections
+                          ) {
                             return; // Don't exceed max selections
                           }
                           if (field.onValueChange) {
@@ -1100,7 +1177,9 @@ function SelectOptionsPopover<T = unknown>({
                       }}
                     >
                       {option.icon && option.icon}
-                      <span className="text-accent-foreground truncate">{option.label}</span>
+                      <span className="text-accent-foreground truncate">
+                        {option.label}
+                      </span>
                       <Check className="text-primary ms-auto opacity-0" />
                     </CommandItem>
                   ))}
@@ -1137,7 +1216,10 @@ function SelectOptionsPopover<T = unknown>({
             <>
               {selectedOptions.length > 0 && (
                 <div
-                  className={cn("-space-x-1.5 flex items-center", field.selectedOptionsClassName)}
+                  className={cn(
+                    "-space-x-1.5 flex items-center",
+                    field.selectedOptionsClassName,
+                  )}
                 >
                   {selectedOptions.slice(0, 3).map((option) => (
                     <div key={String(option.value)}>{option.icon}</div>
@@ -1153,11 +1235,16 @@ function SelectOptionsPopover<T = unknown>({
           )}
         </div>
       </PopoverTrigger>
-      <PopoverContent align="start" className={cn("w-[200px] p-0", field.className)}>
+      <PopoverContent
+        align="start"
+        className={cn("w-[200px] p-0", field.className)}
+      >
         <Command>
           {field.searchable !== false && (
             <CommandInput
-              placeholder={context.i18n.placeholders.searchField(field.label || "")}
+              placeholder={context.i18n.placeholders.searchField(
+                field.label || "",
+              )}
               className="h-9 text-sm"
               value={searchInput}
               onValueChange={setSearchInput}
@@ -1175,7 +1262,9 @@ function SelectOptionsPopover<T = unknown>({
                     className="group flex gap-2 items-center"
                     onSelect={() => {
                       if (isMultiSelect) {
-                        onChange(values.filter((v) => v !== option.value) as T[]);
+                        onChange(
+                          values.filter((v) => v !== option.value) as T[],
+                        );
                       } else {
                         onChange([] as T[]);
                       }
@@ -1186,7 +1275,9 @@ function SelectOptionsPopover<T = unknown>({
                     }}
                   >
                     {option.icon && option.icon}
-                    <span className="text-accent-foreground truncate">{option.label}</span>
+                    <span className="text-accent-foreground truncate">
+                      {option.label}
+                    </span>
                     <Check className="text-primary ms-auto" />
                   </CommandItem>
                 ))}
@@ -1206,7 +1297,10 @@ function SelectOptionsPopover<T = unknown>({
                       onSelect={() => {
                         if (isMultiSelect) {
                           const newValues = [...values, option.value] as T[];
-                          if (field.maxSelections && newValues.length > field.maxSelections) {
+                          if (
+                            field.maxSelections &&
+                            newValues.length > field.maxSelections
+                          ) {
                             return; // Don't exceed max selections
                           }
                           onChange(newValues);
@@ -1218,7 +1312,9 @@ function SelectOptionsPopover<T = unknown>({
                       }}
                     >
                       {option.icon && option.icon}
-                      <span className="text-accent-foreground truncate">{option.label}</span>
+                      <span className="text-accent-foreground truncate">
+                        {option.label}
+                      </span>
                       <Check className="text-primary ms-auto opacity-0" />
                     </CommandItem>
                   ))}
@@ -1284,7 +1380,9 @@ function FilterValueSelector<T = unknown>({
             size="sm"
           />
           {field.onLabel && field.offLabel && (
-            <span className="text-xs text-muted-foreground">{isChecked ? onLabel : offLabel}</span>
+            <span className="text-xs text-muted-foreground">
+              {isChecked ? onLabel : offLabel}
+            </span>
           )}
         </div>
       </div>
@@ -1308,7 +1406,10 @@ function FilterValueSelector<T = unknown>({
           />
           <div
             data-slot="filters-between"
-            className={filterFieldBetweenVariants({ variant: context.variant, size: context.size })}
+            className={filterFieldBetweenVariants({
+              variant: context.variant,
+              size: context.size,
+            })}
           >
             {context.i18n.to}
           </div>
@@ -1353,7 +1454,10 @@ function FilterValueSelector<T = unknown>({
           />
           <div
             data-slot="filters-between"
-            className={filterFieldBetweenVariants({ variant: context.variant, size: context.size })}
+            className={filterFieldBetweenVariants({
+              variant: context.variant,
+              size: context.size,
+            })}
           >
             {context.i18n.to}
           </div>
@@ -1415,7 +1519,8 @@ function FilterValueSelector<T = unknown>({
         onChange={(e) => onChange([e.target.value] as T[])}
         onInputChange={field.onInputChange}
         placeholder={
-          field.placeholder || context.i18n.placeholders.enterField(field.type || "text")
+          field.placeholder ||
+          context.i18n.placeholders.enterField(field.type || "text")
         }
         pattern={field.pattern || getPattern()}
         className={field.className}
@@ -1446,7 +1551,10 @@ function FilterValueSelector<T = unknown>({
         />
         <div
           data-slot="filters-between"
-          className={filterFieldBetweenVariants({ variant: context.variant, size: context.size })}
+          className={filterFieldBetweenVariants({
+            variant: context.variant,
+            size: context.size,
+          })}
         >
           {context.i18n.to}
         </div>
@@ -1485,7 +1593,10 @@ function FilterValueSelector<T = unknown>({
           />
           <div
             data-slot="filters-between"
-            className={filterFieldBetweenVariants({ variant: context.variant, size: context.size })}
+            className={filterFieldBetweenVariants({
+              variant: context.variant,
+              size: context.size,
+            })}
           >
             {context.i18n.to}
           </div>
@@ -1540,12 +1651,16 @@ function FilterValueSelector<T = unknown>({
 
   // For select and multiselect types, use the SelectOptionsPopover component
   if (field.type === "select" || field.type === "multiselect") {
-    return <SelectOptionsPopover field={field} values={values} onChange={onChange} />;
+    return (
+      <SelectOptionsPopover field={field} values={values} onChange={onChange} />
+    );
   }
 
   const isMultiSelect = values.length > 1;
-  const selectedOptions = field.options?.filter((opt) => values.includes(opt.value)) || [];
-  const unselectedOptions = field.options?.filter((opt) => !values.includes(opt.value)) || [];
+  const selectedOptions =
+    field.options?.filter((opt) => values.includes(opt.value)) || [];
+  const unselectedOptions =
+    field.options?.filter((opt) => !values.includes(opt.value)) || [];
 
   return (
     <Popover
@@ -1589,7 +1704,9 @@ function FilterValueSelector<T = unknown>({
         <Command>
           {field.searchable !== false && (
             <CommandInput
-              placeholder={context.i18n.placeholders.searchField(field.label || "")}
+              placeholder={context.i18n.placeholders.searchField(
+                field.label || "",
+              )}
               className="h-9 text-sm"
               value={searchInput}
               onValueChange={setSearchInput}
@@ -1607,7 +1724,9 @@ function FilterValueSelector<T = unknown>({
                     className="group flex gap-2 items-center"
                     onSelect={() => {
                       if (isMultiSelect) {
-                        onChange(values.filter((v) => v !== option.value) as T[]);
+                        onChange(
+                          values.filter((v) => v !== option.value) as T[],
+                        );
                       } else {
                         onChange([] as T[]);
                       }
@@ -1615,7 +1734,9 @@ function FilterValueSelector<T = unknown>({
                     }}
                   >
                     {option.icon && option.icon}
-                    <span className="text-accent-foreground truncate">{option.label}</span>
+                    <span className="text-accent-foreground truncate">
+                      {option.label}
+                    </span>
                     <Check className="text-primary ms-auto" />
                   </CommandItem>
                 ))}
@@ -1635,7 +1756,10 @@ function FilterValueSelector<T = unknown>({
                       onSelect={() => {
                         if (isMultiSelect) {
                           const newValues = [...values, option.value] as T[];
-                          if (field.maxSelections && newValues.length > field.maxSelections) {
+                          if (
+                            field.maxSelections &&
+                            newValues.length > field.maxSelections
+                          ) {
                             return; // Don't exceed max selections
                           }
                           onChange(newValues);
@@ -1646,7 +1770,9 @@ function FilterValueSelector<T = unknown>({
                       }}
                     >
                       {option.icon && option.icon}
-                      <span className="text-accent-foreground truncate">{option.label}</span>
+                      <span className="text-accent-foreground truncate">
+                        {option.label}
+                      </span>
                       <Check className="text-primary ms-auto opacity-0" />
                     </CommandItem>
                   ))}
@@ -1681,7 +1807,7 @@ interface FiltersContentProps<T = unknown> {
   onChange: (filters: Filter<T>[]) => void;
 }
 
-export const FiltersContent = <T = unknown>({
+export const FiltersContent = <T = unknown,>({
   filters,
   fields,
   onChange,
@@ -1696,7 +1822,10 @@ export const FiltersContent = <T = unknown>({
           if (filter.id === filterId) {
             const updatedFilter = { ...filter, ...updates };
             // Clear values for empty/not empty operators
-            if (updates.operator === "empty" || updates.operator === "not_empty") {
+            if (
+              updates.operator === "empty" ||
+              updates.operator === "not_empty"
+            ) {
               updatedFilter.values = [] as T[];
             }
             return updatedFilter;
@@ -1718,7 +1847,10 @@ export const FiltersContent = <T = unknown>({
   return (
     <div
       className={cn(
-        filtersContainerVariants({ variant: context.variant, size: context.size }),
+        filtersContainerVariants({
+          variant: context.variant,
+          size: context.size,
+        }),
         context.className,
       )}
     >
@@ -1842,7 +1974,10 @@ export function Filters<T = unknown>({
           if (filter.id === filterId) {
             const updatedFilter = { ...filter, ...updates };
             // Clear values for empty/not empty operators
-            if (updates.operator === "empty" || updates.operator === "not_empty") {
+            if (
+              updates.operator === "empty" ||
+              updates.operator === "not_empty"
+            ) {
               updatedFilter.values = [] as T[];
             }
             return updatedFilter;
@@ -1871,7 +2006,9 @@ export function Filters<T = unknown>({
           // For multiselect, check if there's already a filter and use its values
           const existingFilter = filters.find((f) => f.field === fieldKey);
           const initialValues =
-            field.type === "multiselect" && existingFilter ? existingFilter.values : [];
+            field.type === "multiselect" && existingFilter
+              ? existingFilter.values
+              : [];
           setTempSelectedValues(initialValues);
           return;
         }
@@ -1889,9 +2026,16 @@ export function Filters<T = unknown>({
         let defaultValues: unknown[] = [];
 
         if (
-          ["text", "number", "date", "email", "url", "tel", "time", "datetime"].includes(
-            field.type || "",
-          )
+          [
+            "text",
+            "number",
+            "date",
+            "email",
+            "url",
+            "tel",
+            "time",
+            "datetime",
+          ].includes(field.type || "")
         ) {
           defaultValues = [""] as unknown[];
         } else if (field.type === "daterange") {
@@ -1906,7 +2050,11 @@ export function Filters<T = unknown>({
           defaultValues = [""] as unknown[];
         }
 
-        const newFilter = createFilter<T>(fieldKey, defaultOperator, defaultValues as T[]);
+        const newFilter = createFilter<T>(
+          fieldKey,
+          defaultOperator,
+          defaultValues as T[],
+        );
         const newFilters = [...filters, newFilter];
         onChange(newFilters);
         setAddFilterOpen(false);
@@ -1916,14 +2064,21 @@ export function Filters<T = unknown>({
   );
 
   const addFilterWithOption = useCallback(
-    (field: FilterFieldConfig<T>, values: unknown[], closePopover: boolean = true) => {
+    (
+      field: FilterFieldConfig<T>,
+      values: unknown[],
+      closePopover: boolean = true,
+    ) => {
       if (!field.key) return;
 
       const defaultOperator =
-        field.defaultOperator || (field.type === "multiselect" ? "is_any_of" : "is");
+        field.defaultOperator ||
+        (field.type === "multiselect" ? "is_any_of" : "is");
 
       // Check if there's already a filter for this field
-      const existingFilterIndex = filters.findIndex((f) => f.field === field.key);
+      const existingFilterIndex = filters.findIndex(
+        (f) => f.field === field.key,
+      );
 
       if (existingFilterIndex >= 0) {
         // Update existing filter
@@ -1935,7 +2090,11 @@ export function Filters<T = unknown>({
         onChange(updatedFilters);
       } else {
         // Create new filter
-        const newFilter = createFilter<T>(field.key, defaultOperator, values as T[]);
+        const newFilter = createFilter<T>(
+          field.key,
+          defaultOperator,
+          values as T[],
+        );
         const newFilters = [...filters, newFilter];
         onChange(newFilters);
       }
@@ -1987,7 +2146,9 @@ export function Filters<T = unknown>({
         allowMultiple,
       }}
     >
-      <div className={cn(filtersContainerVariants({ variant, size }), className)}>
+      <div
+        className={cn(filtersContainerVariants({ variant, size }), className)}
+      >
         {showAddButton && selectableFields.length > 0 && (
           <Popover
             open={addFilterOpen}
@@ -1999,28 +2160,44 @@ export function Filters<T = unknown>({
               }
             }}
           >
-            <PopoverTrigger asChild>
-              {addButton ? (
+            <PopoverTrigger
+              render={
+                addButton &&
+                typeof addButton !== "string" &&
+                typeof addButton !== "number" ? (
+                  (addButton as React.ReactElement)
+                ) : (
+                  <button
+                    type="button"
+                    className={cn(
+                      filterAddButtonVariants({
+                        variant: variant,
+                        size: size,
+                        cursorPointer: cursorPointer,
+                        radius: radius,
+                      }),
+                      addButtonClassName,
+                    )}
+                    title={mergedI18n.addFilterTitle}
+                  />
+                )
+              }
+            >
+              {addButton &&
+              (typeof addButton === "string" ||
+                typeof addButton === "number") ? (
                 addButton
               ) : (
-                <button
-                  className={cn(
-                    filterAddButtonVariants({
-                      variant: variant,
-                      size: size,
-                      cursorPointer: cursorPointer,
-                      radius: radius,
-                    }),
-                    addButtonClassName,
-                  )}
-                  title={mergedI18n.addFilterTitle}
-                >
+                <>
                   {addButtonIcon || <Plus />}
                   {addButtonText || mergedI18n.addFilter}
-                </button>
+                </>
               )}
             </PopoverTrigger>
-            <PopoverContent className={cn("w-[200px] p-0", popoverContentClassName)} align="start">
+            <PopoverContent
+              className={cn("w-[200px] p-0", popoverContentClassName)}
+              align="start"
+            >
               <Command>
                 {selectedFieldForOptions ? (
                   // Show original select/multiselect rendering without back button
@@ -2030,7 +2207,8 @@ export function Filters<T = unknown>({
                     onChange={(values) => {
                       // For multiselect, create filter immediately but keep popover open
                       // For single select, create filter and close popover
-                      const shouldClosePopover = selectedFieldForOptions.type === "select";
+                      const shouldClosePopover =
+                        selectedFieldForOptions.type === "select";
                       addFilterWithOption(
                         selectedFieldForOptions,
                         values as unknown[],
@@ -2044,7 +2222,10 @@ export function Filters<T = unknown>({
                   // Show field selection
                   <>
                     {showSearchInput && (
-                      <CommandInput placeholder={mergedI18n.searchFields} className="h-9" />
+                      <CommandInput
+                        placeholder={mergedI18n.searchFields}
+                        className="h-9"
+                      />
                     )}
                     <CommandList>
                       <CommandEmpty>{mergedI18n.noFieldsFound}</CommandEmpty>
@@ -2061,24 +2242,35 @@ export function Filters<T = unknown>({
                               return true;
                             }
                             // Filter out fields that already have filters (default behavior)
-                            return !filters.some((filter) => filter.field === field.key);
+                            return !filters.some(
+                              (filter) => filter.field === field.key,
+                            );
                           });
 
                           if (groupFields.length === 0) return null;
 
                           return (
-                            <CommandGroup key={`group-${index}`} heading={item.group || "Fields"}>
+                            <CommandGroup
+                              key={`group-${index}`}
+                              heading={item.group || "Fields"}
+                            >
                               {groupFields.map((field, fieldIndex) => {
                                 // Handle separator
                                 if (field.type === "separator") {
-                                  return <CommandSeparator key={`separator-${fieldIndex}`} />;
+                                  return (
+                                    <CommandSeparator
+                                      key={`separator-${fieldIndex}`}
+                                    />
+                                  );
                                 }
 
                                 // Regular field
                                 return (
                                   <CommandItem
                                     key={field.key}
-                                    onSelect={() => field.key && addFilter(field.key)}
+                                    onSelect={() =>
+                                      field.key && addFilter(field.key)
+                                    }
                                   >
                                     {field.icon}
                                     <span>{field.label}</span>
@@ -2101,24 +2293,35 @@ export function Filters<T = unknown>({
                               return true;
                             }
                             // Filter out fields that already have filters (default behavior)
-                            return !filters.some((filter) => filter.field === field.key);
+                            return !filters.some(
+                              (filter) => filter.field === field.key,
+                            );
                           });
 
                           if (groupFields.length === 0) return null;
 
                           return (
-                            <CommandGroup key={`group-${index}`} heading={item.group || "Fields"}>
+                            <CommandGroup
+                              key={`group-${index}`}
+                              heading={item.group || "Fields"}
+                            >
                               {groupFields.map((field, fieldIndex) => {
                                 // Handle separator
                                 if (field.type === "separator") {
-                                  return <CommandSeparator key={`separator-${fieldIndex}`} />;
+                                  return (
+                                    <CommandSeparator
+                                      key={`separator-${fieldIndex}`}
+                                    />
+                                  );
                                 }
 
                                 // Regular field
                                 return (
                                   <CommandItem
                                     key={field.key}
-                                    onSelect={() => field.key && addFilter(field.key)}
+                                    onSelect={() =>
+                                      field.key && addFilter(field.key)
+                                    }
                                   >
                                     {field.icon}
                                     <span>{field.label}</span>
@@ -2134,7 +2337,9 @@ export function Filters<T = unknown>({
 
                         // Handle separator
                         if (field.type === "separator") {
-                          return <CommandSeparator key={`separator-${index}`} />;
+                          return (
+                            <CommandSeparator key={`separator-${index}`} />
+                          );
                         }
 
                         // Regular field
@@ -2204,7 +2409,7 @@ export function Filters<T = unknown>({
   );
 }
 
-export const createFilter = <T = unknown>(
+export const createFilter = <T = unknown,>(
   field: string,
   operator?: string,
   values: T[] = [],
@@ -2215,7 +2420,7 @@ export const createFilter = <T = unknown>(
   values,
 });
 
-export const createFilterGroup = <T = unknown>(
+export const createFilterGroup = <T = unknown,>(
   id: string,
   label: string,
   fields: FilterFieldConfig<T>[],

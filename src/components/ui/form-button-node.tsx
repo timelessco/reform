@@ -21,7 +21,11 @@ function hasPageBreaks(editor: PlateEditor): boolean {
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export type ButtonRole = "next" | "previous" | "submit";
 
@@ -32,8 +36,12 @@ export interface FormButtonElementData {
   children: [{ text: string }];
 }
 
-export function createFormButtonNode(role: ButtonRole, text?: string): FormButtonElementData {
-  const defaultText = role === "next" ? "Next" : role === "previous" ? "Previous" : "Submit";
+export function createFormButtonNode(
+  role: ButtonRole,
+  text?: string,
+): FormButtonElementData {
+  const defaultText =
+    role === "next" ? "Next" : role === "previous" ? "Previous" : "Submit";
   return {
     type: "formButton",
     buttonRole: role,
@@ -63,7 +71,11 @@ function extractTextFromChildren(children: Array<{ text?: string }>): string {
   return children.map((child) => child.text || "").join("");
 }
 
-export function FormButtonElement({ className, children, ...props }: PlateElementProps) {
+export function FormButtonElement({
+  className,
+  children,
+  ...props
+}: PlateElementProps) {
   const { element } = props;
   const editor = useEditorRef();
   const buttonRole = (element.buttonRole as ButtonRole) ?? "submit";
@@ -111,23 +123,25 @@ export function FormButtonElement({ className, children, ...props }: PlateElemen
         setIsOpen(open);
       }}
     >
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="h-7 w-7 opacity-0 group-hover:opacity-100"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setIsOpen(true);
-          }}
-        >
-          <Settings className="h-4 w-4 text-muted-foreground" />
-        </Button>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="h-7 w-7 opacity-0 group-hover:opacity-100"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsOpen(true);
+            }}
+          />
+        }
+      >
+        <Settings className="h-4 w-4 text-muted-foreground" />
       </PopoverTrigger>
       <PopoverContent
         className="w-64 p-4 border"
@@ -165,7 +179,9 @@ export function FormButtonElement({ className, children, ...props }: PlateElemen
       className={cn(
         "m-0 px-0 py-1",
         // Previous floats left, Submit on single-page floats left, otherwise floats right
-        isPrevious || isSubmitOnSinglePage ? "float-left clear-none" : "float-right clear-none",
+        isPrevious || isSubmitOnSinglePage
+          ? "float-left clear-none"
+          : "float-right clear-none",
         className,
       )}
       {...props}

@@ -1,11 +1,12 @@
 import { Copy, Share2, Rocket, ExternalLink, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useForm } from "@/hooks/use-live-hooks";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { publishForm } from "@/hooks/use-form-versions";
 import { EmbedSection } from "./embed-section";
+import { cn } from "@/lib/utils";
 import {
   Sidebar,
   SidebarContent,
@@ -80,10 +81,15 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                 <div className="space-y-2">
                   <h3 className="font-bold">Ready to go live?</h3>
                   <p className="text-xs text-muted-foreground">
-                    Your form is currently in draft. Publish it to start collecting responses.
+                    Your form is currently in draft. Publish it to start
+                    collecting responses.
                   </p>
                 </div>
-                <Button size="sm" onClick={handlePublish} className="w-full font-semibold gap-2">
+                <Button
+                  size="sm"
+                  onClick={handlePublish}
+                  className="w-full font-semibold gap-2"
+                >
                   Publish Now
                 </Button>
               </div>
@@ -103,21 +109,17 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                         Live
                       </Badge>
                     </div>
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="h-6 text-[11px] p-0 text-muted-foreground hover:text-foreground font-medium"
-                      asChild
+                    <a
+                      href={shareUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={cn(
+                        buttonVariants({ variant: "link", size: "sm" }),
+                        "h-6 text-[11px] p-0 text-muted-foreground hover:text-foreground font-medium flex items-center gap-1",
+                      )}
                     >
-                      <a
-                        href={shareUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-1"
-                      >
-                        Open <ExternalLink className="h-2.5 w-2.5" />
-                      </a>
-                    </Button>
+                      Open <ExternalLink className="h-2.5 w-2.5" />
+                    </a>
                   </div>
 
                   <div className="flex gap-1.5">
@@ -136,7 +138,10 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                   </div>
                 </div>
                 {/* Embed Section */}
-                <EmbedSection formId={doc.id} docTitle={doc.title || undefined} />
+                <EmbedSection
+                  formId={doc.id}
+                  docTitle={doc.title || undefined}
+                />
                 {/* Link Preview Mockup */}
                 <div className="space-y-3 pt-2">
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
@@ -147,7 +152,9 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                   <div className="border border-border rounded-xl p-3 bg-card shadow-[0_1px_3px_rgba(0,0,0,0.05)] space-y-2 group">
                     <div className="flex items-center gap-1.5 mb-1">
                       <div className="h-3.5 w-3.5 rounded-full bg-black flex items-center justify-center">
-                        <span className="text-[8px] text-white font-bold">*</span>
+                        <span className="text-[8px] text-white font-bold">
+                          *
+                        </span>
                       </div>
                       <span className="text-[10px] font-medium text-muted-foreground">
                         Better Forms
@@ -158,19 +165,23 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                       {doc.title || "Untitled Form"}
                     </h4>
                     <p className="text-[10px] text-muted-foreground leading-snug line-clamp-2">
-                      Made with Better Forms, the simplest way to create beautiful, high-converting
-                      forms.
+                      Made with Better Forms, the simplest way to create
+                      beautiful, high-converting forms.
                     </p>
 
                     <div className="aspect-video rounded-lg bg-muted/50 border border-muted/50 flex flex-col items-center justify-center p-4 text-center space-y-2">
                       <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center shadow-sm">
-                        <span className="text-xl font-bold text-primary">*</span>
+                        <span className="text-xl font-bold text-primary">
+                          *
+                        </span>
                       </div>
                       <div className="space-y-0.5">
                         <p className="text-[9px] font-bold text-primary uppercase tracking-widest">
                           Better Forms
                         </p>
-                        <p className="text-[8px] text-muted-foreground">Build forms in minutes.</p>
+                        <p className="text-[8px] text-muted-foreground">
+                          Build forms in minutes.
+                        </p>
                       </div>
                     </div>
                   </div>

@@ -7,9 +7,11 @@ import {
   createContext,
   type CSSProperties,
   type MouseEvent,
+  type ReactElement,
   type ReactNode,
   type RefObject,
   type SyntheticEvent,
+  cloneElement,
   useCallback,
   useContext,
   useEffect,
@@ -84,7 +86,12 @@ const getCroppedPngImage = async (
   const blob = await response.blob();
 
   if (blob.size > maxImageSize) {
-    return await getCroppedPngImage(imageSrc, scaleFactor * 0.9, pixelCrop, maxImageSize);
+    return await getCroppedPngImage(
+      imageSrc,
+      scaleFactor * 0.9,
+      pixelCrop,
+      maxImageSize,
+    );
   }
 
   return croppedImageUrl;
@@ -100,7 +107,10 @@ type ImageCropContextType = {
   onCrop?: (croppedImage: string) => void;
   reactCropProps: Omit<ReactCropProps, "onChange" | "onComplete" | "children">;
   handleChange: (pixelCrop: PixelCrop, percentCrop: PercentCrop) => void;
-  handleComplete: (pixelCrop: PixelCrop, percentCrop: PercentCrop) => Promise<void>;
+  handleComplete: (
+    pixelCrop: PixelCrop,
+    percentCrop: PercentCrop,
+  ) => Promise<void>;
   onImageLoad: (e: SyntheticEvent<HTMLImageElement>) => void;
   applyCrop: () => Promise<void>;
   resetCrop: () => void;
@@ -142,7 +152,9 @@ export const ImageCrop = ({
 
   useEffect(() => {
     const reader = new FileReader();
-    reader.addEventListener("load", () => setImgSrc(reader.result?.toString() || ""));
+    reader.addEventListener("load", () =>
+      setImgSrc(reader.result?.toString() || ""),
+    );
     reader.readAsDataURL(file);
   }, [file]);
 
@@ -162,7 +174,10 @@ export const ImageCrop = ({
   };
 
   // biome-ignore lint/suspicious/useAwait: "onComplete is async"
-  const handleComplete = async (pixelCrop: PixelCrop, percentCrop: PercentCrop) => {
+  const handleComplete = async (
+    pixelCrop: PixelCrop,
+    percentCrop: PercentCrop,
+  ) => {
     setCompletedCrop(pixelCrop);
     onComplete?.(pixelCrop, percentCrop);
   };
@@ -172,7 +187,12 @@ export const ImageCrop = ({
       return;
     }
 
-    const croppedImage = await getCroppedPngImage(imgRef.current, 1, completedCrop, maxImageSize);
+    const croppedImage = await getCroppedPngImage(
+      imgRef.current,
+      1,
+      completedCrop,
+      maxImageSize,
+    );
 
     onCrop?.(croppedImage);
   };
@@ -200,7 +220,11 @@ export const ImageCrop = ({
     resetCrop,
   };
 
-  return <ImageCropContext.Provider value={contextValue}>{children}</ImageCropContext.Provider>;
+  return (
+    <ImageCropContext.Provider value={contextValue}>
+      {children}
+    </ImageCropContext.Provider>
+  );
 };
 
 export type ImageCropContentProps = {
@@ -208,9 +232,19 @@ export type ImageCropContentProps = {
   className?: string;
 };
 
-export const ImageCropContent = ({ style, className }: ImageCropContentProps) => {
-  const { imgSrc, crop, handleChange, handleComplete, onImageLoad, imgRef, reactCropProps } =
-    useImageCrop();
+export const ImageCropContent = ({
+  style,
+  className,
+}: ImageCropContentProps) => {
+  const {
+    imgSrc,
+    crop,
+    handleChange,
+    handleComplete,
+    onImageLoad,
+    imgRef,
+    reactCropProps,
+  } = useImageCrop();
 
   const shadcnStyle = {
     "--rc-border-color": "var(--color-border)",
@@ -227,18 +261,24 @@ export const ImageCropContent = ({ style, className }: ImageCropContentProps) =>
       {...reactCropProps}
     >
       {imgSrc && (
-        <img alt="crop" className="size-full" onLoad={onImageLoad} ref={imgRef} src={imgSrc} />
+        <img
+          alt="crop"
+          className="size-full"
+          onLoad={onImageLoad}
+          ref={imgRef}
+          src={imgSrc}
+        />
       )}
     </ReactCrop>
   );
 };
 
 export type ImageCropApplyProps = ComponentProps<"button"> & {
-  asChild?: boolean;
+  render?: ReactElement;
 };
 
 export const ImageCropApply = ({
-  asChild = false,
+  render,
   children,
   onClick,
   ...props
@@ -250,10 +290,10 @@ export const ImageCropApply = ({
     onClick?.(e);
   };
 
-  if (asChild) {
+  if (render) {
     return (
-      <Slot onClick={handleClick} {...props}>
-        {children}
+      <Slot onClick={handleClick as any} {...(props as any)}>
+        {cloneElement(render as ReactElement<any>, { children })}
       </Slot>
     );
   }
@@ -266,11 +306,11 @@ export const ImageCropApply = ({
 };
 
 export type ImageCropResetProps = ComponentProps<"button"> & {
-  asChild?: boolean;
+  render?: ReactElement;
 };
 
 export const ImageCropReset = ({
-  asChild = false,
+  render,
   children,
   onClick,
   ...props
@@ -282,10 +322,10 @@ export const ImageCropReset = ({
     onClick?.(e);
   };
 
-  if (asChild) {
+  if (render) {
     return (
-      <Slot onClick={handleClick} {...props}>
-        {children}
+      <Slot onClick={handleClick as any} {...(props as any)}>
+        {cloneElement(render as ReactElement<any>, { children })}
       </Slot>
     );
   }

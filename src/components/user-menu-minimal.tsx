@@ -7,10 +7,25 @@ import { getUserMembershipsQueryOptions } from "@/lib/fn/workspaces";
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
-import { ChevronDown, LogOut, Moon, Settings, Sun, Trash2, Users } from "lucide-react";
+import {
+  ChevronDown,
+  LogOut,
+  Moon,
+  Settings,
+  Sun,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 function getInitials(name?: string | null) {
+  if (!name) return "U";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
   if (!name) return "U";
   return name
     .split(" ")
@@ -32,7 +47,9 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
 
   const { data: session } = useSession();
   const { data: orgData } = useQuery(orgDataForLayoutQueryOptions());
-  const { data: membersData } = useQuery(auth.organization.listMembers.queryOptions());
+  const { data: membersData } = useQuery(
+    auth.organization.listMembers.queryOptions(),
+  );
   const { data: membershipsData } = useQuery(getUserMembershipsQueryOptions());
 
   const activeOrg = orgData?.activeOrg ?? null;
@@ -58,33 +75,33 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
     }),
   );
 
-  const setActiveOrgMutation = useMutation(
-    auth.organization.setActive.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: ["organization", "getFullOrganization"],
-          refetchType: "all",
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["workspaces-with-forms"],
-          refetchType: "all",
-        });
-        router.navigate({ to: "/dashboard" });
-      },
-    }),
-  );
+	const setActiveOrgMutation = useMutation(
+		auth.organization.setActive.mutationOptions({
+			onSuccess: async () => {
+				await queryClient.invalidateQueries({
+					queryKey: ["organization", "getFullOrganization"],
+					refetchType: "all",
+				});
+				await queryClient.invalidateQueries({
+					queryKey: ["workspaces-with-forms"],
+					refetchType: "all",
+				});
+				router.navigate({ to: "/dashboard" });
+			},
+		}),
+	);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest(".user-menu-container")) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
+	useEffect(() => {
+		if (!isOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			const target = e.target as HTMLElement;
+			if (!target.closest(".user-menu-container")) {
+				setIsOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isOpen]);
 
   return (
     <div className="relative user-menu-container border-t border-b pt-[4.8px] pb-2 bg-background">
@@ -224,7 +241,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
                     </span>
                     {role && (
                       <Badge
-                        variant={role === "owner" ? "primary" : "outline"}
+                        variant={role === "owner" ? "default" : "outline"}
                         className="text-[9px] px-1.5 py-0 h-4 capitalize"
                       >
                         {role}

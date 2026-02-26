@@ -7,7 +7,11 @@ import {
   AlertTitle,
 } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { type FileWithPreview, formatBytes, useFileUpload } from "@/hooks/use-file-upload";
+import {
+  type FileWithPreview,
+  formatBytes,
+  useFileUpload,
+} from "@/hooks/use-file-upload";
 import { cn } from "@/lib/utils";
 
 interface AvatarUploadProps {
@@ -75,7 +79,11 @@ export default function AvatarUpload({
           <input {...getInputProps()} className="sr-only" />
 
           {previewUrl ? (
-            <img src={previewUrl} alt="Avatar" className="h-full w-full object-cover" />
+            <img
+              src={previewUrl}
+              alt="Avatar"
+              className="h-full w-full object-cover"
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
               <User className="size-6 text-muted-foreground" />
@@ -99,13 +107,17 @@ export default function AvatarUpload({
 
       {/* Upload Instructions */}
       <div className="text-center space-y-0.5">
-        <p className="text-sm font-medium">{currentFile ? "Avatar uploaded" : "Upload avatar"}</p>
-        <p className="text-xs text-muted-foreground">PNG, JPG up to {formatBytes(maxSize)}</p>
+        <p className="text-sm font-medium">
+          {currentFile ? "Avatar uploaded" : "Upload avatar"}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          PNG, JPG up to {formatBytes(maxSize)}
+        </p>
       </div>
 
       {/* Error Messages */}
       {errors.length > 0 && (
-        <Alert variant="destructive" appearance="light" className="mt-5">
+        <Alert variant="destructive" className="mt-5">
           <AlertIcon>
             <TriangleAlert />
           </AlertIcon>

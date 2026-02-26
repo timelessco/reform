@@ -1,6 +1,7 @@
 @import "tailwindcss";
-/* @import "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"; */
 @import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/inter";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -54,38 +55,38 @@
   unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
-@font-face {
-  font-family: "Timeless Serif";
-  font-weight: 100 900;
-  font-display: swap;
-  font-style: normal;
-  src: url("/fonts/timeless-serif/timeless-serif-rest.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Timeless Sans";
-  font-weight: 100 900;
-  font-display: swap;
-  font-style: normal;
-  src: url("/fonts/timeless-sans/timeless-sans-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-  font-family: "Timeless Sans";
-  font-weight: 100 900;
-  font-display: swap;
-  font-style: normal;
-  src: url("/fonts/timeless-sans/timeless-sans-latin-ext.woff2") format("woff2");
-  unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-@font-face {
-  font-family: "Timeless Sans";
-  font-weight: 100 900;
-  font-display: swap;
-  font-style: normal;
-  src: url("/fonts/timeless-sans/timeless-sans-rest.woff2") format("woff2");
+.dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.87 0.00 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.371 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --chart-1: oklch(0.809 0.105 251.813);
+    --chart-2: oklch(0.623 0.214 259.815);
+    --chart-3: oklch(0.546 0.245 262.881);
+    --chart-4: oklch(0.488 0.243 264.376);
+    --chart-5: oklch(0.424 0.199 265.638);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.556 0 0);
 }
 
 @theme inline {
@@ -1011,174 +1012,11 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    letter-spacing: var(--tracking-4);
-  }
-
+    }
   body {
-    @apply bg-background text-foreground font-sans;
-  }
-}
-
-@layer utilities {
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    /* IE and Edge */
-    scrollbar-width: none;
-    /* Firefox */
-  }
-
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-    /* Chrome, Safari and Opera */
-  }
-}
-
-@keyframes scroll-shadow-mask {
-  0% {
-    mask-image: linear-gradient(to bottom,
-        black 0%,
-        black calc(100% - 32px),
-        transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom,
-        black 0%,
-        black calc(100% - 32px),
-        transparent 100%);
-  }
-
-  1%,
-  99% {
-    mask-image: linear-gradient(to bottom,
-        transparent 0%,
-        black 32px,
-        black calc(100% - 32px),
-        transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom,
-        transparent 0%,
-        black 32px,
-        black calc(100% - 32px),
-        transparent 100%);
-  }
-
-  100% {
-    mask-image: linear-gradient(to bottom,
-        transparent 0%,
-        black 32px,
-        black 100%);
-    -webkit-mask-image: linear-gradient(to bottom,
-        transparent 0%,
-        black 32px,
-        black 100%);
-  }
-}
-
-/* ============================================================================
-   Form Theme Customization (.bf-themed)
-   Token bridge: --bf-* → standard shadcn vars within scope.
-   CSS custom properties are set via inline style from generate-theme-css.ts.
-   ============================================================================ */
-
-.bf-themed {
-  --background: var(--bf-background, var(--background));
-  --foreground: var(--bf-foreground, var(--foreground));
-  --card: var(--bf-card, var(--card));
-  --card-foreground: var(--bf-card-foreground, var(--card-foreground));
-  --popover: var(--bf-popover, var(--popover));
-  --popover-foreground: var(--bf-popover-foreground, var(--popover-foreground));
-  --primary: var(--bf-primary, var(--primary));
-  --primary-foreground: var(--bf-primary-foreground, var(--primary-foreground));
-  --secondary: var(--bf-secondary, var(--secondary));
-  --secondary-foreground: var(--bf-secondary-foreground, var(--secondary-foreground));
-  --muted: var(--bf-muted, var(--muted));
-  --muted-foreground: var(--bf-muted-foreground, var(--muted-foreground));
-  --accent: var(--bf-accent, var(--accent));
-  --accent-foreground: var(--bf-accent-foreground, var(--accent-foreground));
-  --destructive: var(--bf-destructive, var(--destructive));
-  --destructive-foreground: var(--bf-destructive-foreground, var(--destructive-foreground));
-  --border: var(--bf-border, var(--border));
-  --input: var(--bf-input, var(--input));
-  --ring: var(--bf-ring, var(--ring));
-
-  /* Radius — derive sm/md/lg from single --bf-radius */
-  --radius-sm: calc(var(--bf-radius, 0.3125rem) - 0.1875rem);
-  --radius-md: calc(var(--bf-radius, 0.3125rem) - 0.125rem);
-  --radius-lg: var(--bf-radius, 0.5rem);
-  --radius-xl: calc(var(--bf-radius, 0.5rem) + 0.125rem);
-
-  /* Typography */
-  font-family: var(--bf-font, inherit), sans-serif;
-  font-size: var(--bf-font-size, inherit);
-  letter-spacing: var(--bf-letter-spacing, inherit);
-
-  /* Field spacing */
-  --bf-field-gap: var(--bf-spacing, 1rem);
-
-  /* Apply themed background */
-  background-color: var(--background);
-  color: var(--foreground);
-}
-
-/* Field list spacing — driven by style preset */
-.bf-themed [data-bf-field-list] > * + * {
-  margin-top: var(--bf-field-gap);
-}
-
-/* Layout: page width */
-.bf-themed [data-bf-form-container] {
-  max-width: var(--bf-page-width) !important;
-}
-
-/* Layout: logo */
-.bf-themed [data-bf-logo] {
-  width: var(--bf-logo-width) !important;
-  height: var(--bf-logo-height) !important;
-}
-
-/* Layout: emoji logo — map width to font-size */
-.bf-themed [data-bf-logo-emoji] {
-  font-size: var(--bf-logo-width) !important;
-}
-
-/* Layout: logo centering */
-.bf-themed [data-bf-logo-container] {
-  margin-top: calc(var(--bf-logo-height, 100px) / -2);
-}
-@media (min-width: 640px) {
-  .bf-themed [data-bf-logo-container] {
-    margin-top: calc(var(--bf-logo-height, 120px) / -2);
-  }
-}
-
-.bf-themed [data-bf-logo-emoji-container] {
-  margin-top: calc(var(--bf-logo-width, 80px) / -2);
-}
-@media (min-width: 640px) {
-  .bf-themed [data-bf-logo-emoji-container] {
-    margin-top: calc(var(--bf-logo-width, 100px) / -2);
-  }
-}
-
-/* Layout: cover */
-.bf-themed [data-bf-cover] {
-  height: var(--bf-cover-height) !important;
-}
-
-/* Layout: input max-width */
-.bf-themed input:not([type="checkbox"]):not([type="radio"]):not([role="combobox"]),
-.bf-themed textarea,
-.bf-themed select,
-.bf-themed [data-bf-input] {
-  max-width: var(--bf-input-width, 60%) !important;
-}
-
-/* Respect user preference for reduced motion */
-@media (prefers-reduced-motion: reduce) {
-
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
+    @apply font-sans bg-background text-foreground;
+    }
+  html {
+    @apply font-sans;
+    }
 }

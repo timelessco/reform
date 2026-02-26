@@ -2,9 +2,20 @@ import * as React from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { AlignLeft, AlignCenter, AlignRight } from "lucide-react";
-import { motion, useMotionValue, useTransform, animate, AnimatePresence } from "motion/react";
+import {
+  motion,
+  useMotionValue,
+  useTransform,
+  animate,
+  AnimatePresence,
+} from "motion/react";
 
-import { Popover, PopoverContent, PopoverTrigger, PopoverAnchor } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  PopoverAnchor,
+} from "@/components/ui/popover";
 import { ColorPicker, EyeDropper } from "@/components/ui/color-picker";
 import { parseColor } from "@react-stately/color";
 import {
@@ -298,36 +309,40 @@ export function StyleColorPicker({
         if (open) updateWidth();
       }}
     >
-      <PopoverAnchor asChild>
-        <div
-          ref={anchorRef}
-          className={cn(
-            "flex items-center rounded-[8px] overflow-hidden border border-border/60 bg-transparent h-[32px] text-[13px]",
-            className,
-          )}
-        >
-          <div className="bg-transparent px-3 h-full flex items-center font-medium text-muted-foreground flex-1 select-none border-r border-border/60">
-            {label}
-          </div>
-          <div className="flex-none px-2 h-full flex items-center gap-2 relative">
-            <input
-              value={hexColor.toUpperCase()}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val.length === 7 || val.length === 4) onChange(val);
-              }}
-              className="w-[60px] text-right bg-transparent outline-none tabular-nums font-mono text-muted-foreground uppercase text-[11px]"
-              maxLength={7}
+      <PopoverAnchor
+        render={
+          <div
+            ref={anchorRef}
+            className={cn(
+              "flex items-center rounded-[8px] overflow-hidden border border-border/60 bg-transparent h-[32px] text-[13px]",
+              className,
+            )}
+          />
+        }
+      >
+        <div className="bg-transparent px-3 h-full flex items-center font-medium text-muted-foreground flex-1 select-none border-r border-border/60">
+          {label}
+        </div>
+        <div className="flex-none px-2 h-full flex items-center gap-2 relative">
+          <input
+            value={hexColor.toUpperCase()}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val.length === 7 || val.length === 4) onChange(val);
+            }}
+            className="w-[60px] text-right bg-transparent outline-none tabular-nums font-mono text-muted-foreground uppercase text-[11px]"
+            maxLength={7}
+          />
+          <PopoverTrigger
+            render={
+              <button className="w-[18px] h-[18px] rounded-[4px] border border-border/60 overflow-hidden relative shrink-0 cursor-pointer group" />
+            }
+          >
+            <div
+              className="w-full h-full pointer-events-none group-hover:opacity-90 transition-opacity"
+              style={{ backgroundColor: hexColor }}
             />
-            <PopoverTrigger asChild>
-              <button className="w-[18px] h-[18px] rounded-[4px] border border-border/60 overflow-hidden relative shrink-0 cursor-pointer group">
-                <div
-                  className="w-full h-full pointer-events-none group-hover:opacity-90 transition-opacity"
-                  style={{ backgroundColor: hexColor }}
-                />
-              </button>
-            </PopoverTrigger>
-          </div>
+          </PopoverTrigger>
         </div>
       </PopoverAnchor>
       <PopoverContent
@@ -381,13 +396,20 @@ export function StyleSelect({
   label: string;
   value: string;
   onChange: (val: string) => void;
-  options: { label: string; value: string; description?: string; swatchColor?: string }[];
+  options: {
+    label: string;
+    value: string;
+    description?: string;
+    swatchColor?: string;
+  }[];
   className?: string;
 }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
-  const [portalTarget, setPortalTarget] = React.useState<HTMLElement | null>(null);
+  const [portalTarget, setPortalTarget] = React.useState<HTMLElement | null>(
+    null,
+  );
   const [pos, setPos] = React.useState<{
     top: number;
     left: number;
@@ -472,7 +494,9 @@ export function StyleSelect({
               style={{ backgroundColor: selectedOption.swatchColor }}
             />
           )}
-          <span className="text-foreground">{selectedOption?.label ?? value}</span>
+          <span className="text-foreground">
+            {selectedOption?.label ?? value}
+          </span>
           <motion.svg
             className="w-3.5 h-3.5 text-muted-foreground"
             viewBox="0 0 24 24"
@@ -506,7 +530,10 @@ export function StyleSelect({
                   width: pos.width,
                   maxHeight: 320,
                   ...(pos.above
-                    ? { bottom: window.innerHeight - pos.top, transformOrigin: "bottom" }
+                    ? {
+                        bottom: window.innerHeight - pos.top,
+                        transformOrigin: "bottom",
+                      }
                     : { top: pos.top, transformOrigin: "top" }),
                 }}
               >
@@ -538,7 +565,10 @@ export function StyleSelect({
                           )}
                           <div className="min-w-0">
                             <div
-                              className={cn("text-[13px] capitalize", isSelected && "font-medium")}
+                              className={cn(
+                                "text-[13px] capitalize",
+                                isSelected && "font-medium",
+                              )}
                             >
                               {option.label}
                             </div>
@@ -588,7 +618,10 @@ export function StyleToggle({
 }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const buttonRefs = React.useRef<Map<boolean, HTMLButtonElement>>(new Map());
-  const [pillStyle, setPillStyle] = React.useState<{ left: number; width: number } | null>(null);
+  const [pillStyle, setPillStyle] = React.useState<{
+    left: number;
+    width: number;
+  } | null>(null);
   const hasAnimated = React.useRef(false);
 
   React.useLayoutEffect(() => {
@@ -607,14 +640,16 @@ export function StyleToggle({
   return (
     <div
       className={cn(
-        "flex items-center justify-between rounded-lg border border-border/60 bg-transparent h-[34px] pl-4 pr-1 transition-colors hover:bg-accent",
+        "flex items-center justify-between rounded-lg border border-border/60 bg-transparent h-[34px] pl-4 pr-1",
         className,
       )}
     >
-      <span className="font-medium text-muted-foreground text-[13px] select-none cursor-default">{label}</span>
+      <span className="font-medium text-muted-foreground text-[13px]">
+        {label}
+      </span>
       <div
         ref={containerRef}
-        className="relative flex rounded-md isolation-auto h-[22px] items-center"
+        className="relative flex rounded-md  isolation-auto h-[26px] items-center"
       >
         {pillStyle && (
           <motion.div
@@ -638,8 +673,10 @@ export function StyleToggle({
           type="button"
           onClick={() => onChange(false)}
           className={cn(
-            "relative z-10 px-2.5 h-full rounded text-[11px] font-semibold transition-colors cursor-pointer flex items-center justify-center min-w-[28px]",
-            !value ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+            "relative z-10 px-3 h-full rounded text-[11px] font-semibold transition-colors cursor-pointer flex items-center justify-center min-w-[34px]",
+            !value
+              ? "text-foreground"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           Off
@@ -651,8 +688,10 @@ export function StyleToggle({
           type="button"
           onClick={() => onChange(true)}
           className={cn(
-            "relative z-10 px-2.5 h-full rounded text-[11px] font-semibold transition-colors cursor-pointer flex items-center justify-center min-w-[28px]",
-            value ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+            "relative z-10 px-3 h-full rounded text-[11px] font-semibold transition-colors cursor-pointer flex items-center justify-center min-w-[34px]",
+            value
+              ? "text-foreground"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           On
@@ -675,7 +714,10 @@ export function StyleAlignToggle({
 }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const buttonRefs = React.useRef<Map<string, HTMLButtonElement>>(new Map());
-  const [pillStyle, setPillStyle] = React.useState<{ left: number; width: number } | null>(null);
+  const [pillStyle, setPillStyle] = React.useState<{
+    left: number;
+    width: number;
+  } | null>(null);
   const hasAnimated = React.useRef(false);
 
   React.useLayoutEffect(() => {
@@ -728,7 +770,9 @@ export function StyleAlignToggle({
           onClick={() => onChange("left")}
           className={cn(
             "relative z-10 p-1.5 rounded flex items-center justify-center transition-colors border border-transparent",
-            value === "left" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+            value === "left"
+              ? "text-foreground"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           <AlignLeft className="w-[14px] h-[14px]" />
@@ -741,7 +785,9 @@ export function StyleAlignToggle({
           onClick={() => onChange("center")}
           className={cn(
             "relative z-10 p-1.5 rounded flex items-center justify-center transition-colors border border-transparent",
-            value === "center" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+            value === "center"
+              ? "text-foreground"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           <AlignCenter className="w-[14px] h-[14px]" />
@@ -754,7 +800,9 @@ export function StyleAlignToggle({
           onClick={() => onChange("right")}
           className={cn(
             "relative z-10 p-1.5 rounded flex items-center justify-center transition-colors border border-transparent",
-            value === "right" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+            value === "right"
+              ? "text-foreground"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           <AlignRight className="w-[14px] h-[14px]" />

@@ -148,7 +148,10 @@ function LoginPage() {
       password: "",
     } as z.input<typeof signInUsernameSchema>,
     validationLogic: revalidateLogic(),
-    validators: { onDynamic: signInUsernameSchema, onDynamicAsyncDebounceMs: 500 },
+    validators: {
+      onDynamic: signInUsernameSchema,
+      onDynamicAsyncDebounceMs: 500,
+    },
     onSubmit: async ({ value }) => {
       signInUsernameMutation.mutate({
         username: value.username,
@@ -193,7 +196,10 @@ function LoginPage() {
     socialSignInMutation.isPending;
 
   const handleGoogleSignIn = async () => {
-    socialSignInMutation.mutate({ provider: "google", callbackURL: window.location.origin });
+    socialSignInMutation.mutate({
+      provider: "google",
+      callbackURL: window.location.origin,
+    });
   };
 
   return (
@@ -223,15 +229,22 @@ function LoginPage() {
                 aria-label="Back icon"
               >
                 <title>Back icon</title>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
               Back
             </Button>
 
             <div className="text-center space-y-2">
-              <h2 className="text-xl font-semibold text-foreground">Check your email</h2>
+              <h2 className="text-xl font-semibold text-foreground">
+                Check your email
+              </h2>
               <p className="text-sm text-muted-foreground">
-                We sent a code to <span className="font-medium text-foreground">{email}</span>
+                We sent a code to{" "}
+                <span className="font-medium text-foreground">{email}</span>
               </p>
             </div>
 
@@ -254,15 +267,33 @@ function LoginPage() {
                           disabled={isPending}
                         >
                           <InputOTPGroup>
-                            <InputOTPSlot index={0} className="w-11 h-12 text-lg" />
-                            <InputOTPSlot index={1} className="w-11 h-12 text-lg" />
-                            <InputOTPSlot index={2} className="w-11 h-12 text-lg" />
+                            <InputOTPSlot
+                              index={0}
+                              className="w-11 h-12 text-lg"
+                            />
+                            <InputOTPSlot
+                              index={1}
+                              className="w-11 h-12 text-lg"
+                            />
+                            <InputOTPSlot
+                              index={2}
+                              className="w-11 h-12 text-lg"
+                            />
                           </InputOTPGroup>
                           <InputOTPSeparator />
                           <InputOTPGroup>
-                            <InputOTPSlot index={3} className="w-11 h-12 text-lg" />
-                            <InputOTPSlot index={4} className="w-11 h-12 text-lg" />
-                            <InputOTPSlot index={5} className="w-11 h-12 text-lg" />
+                            <InputOTPSlot
+                              index={3}
+                              className="w-11 h-12 text-lg"
+                            />
+                            <InputOTPSlot
+                              index={4}
+                              className="w-11 h-12 text-lg"
+                            />
+                            <InputOTPSlot
+                              index={5}
+                              className="w-11 h-12 text-lg"
+                            />
                           </InputOTPGroup>
                         </InputOTP>
                       </div>
@@ -271,8 +302,14 @@ function LoginPage() {
                   )}
                 </otpVerifyForm.AppField>
 
-                <Button type="submit" className="w-full h-11" disabled={isPending}>
-                  {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button
+                  type="submit"
+                  className="w-full h-11"
+                  disabled={isPending}
+                >
+                  {isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Verify
                 </Button>
               </otpVerifyForm.Form>
@@ -282,7 +319,9 @@ function LoginPage() {
               Didn't receive the code?{" "}
               <Button
                 variant="link"
-                onClick={() => sendOtpMutation.mutate({ email, type: "sign-in" })}
+                onClick={() =>
+                  sendOtpMutation.mutate({ email, type: "sign-in" })
+                }
                 disabled={isPending}
                 className="p-0 h-auto font-medium"
               >
@@ -331,7 +370,9 @@ function LoginPage() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-background px-3 text-muted-foreground">or</span>
+                <span className="bg-background px-3 text-muted-foreground">
+                  or
+                </span>
               </div>
             </div>
 
@@ -340,7 +381,7 @@ function LoginPage() {
               {(["email", "username", "otp"] as const).map((method) => (
                 <Button
                   key={method}
-                  variant="tab"
+                  variant="ghost"
                   size="sm"
                   onClick={() => setSignInMethod(method)}
                   data-active={signInMethod === method}
@@ -395,8 +436,14 @@ function LoginPage() {
                     )}
                   </emailForm.AppField>
 
-                  <Button type="submit" className="w-full h-11" disabled={isPending}>
-                    {signInMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <Button
+                    type="submit"
+                    className="w-full h-11"
+                    disabled={isPending}
+                  >
+                    {signInMutation.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
                     Sign in
                   </Button>
                 </emailForm.Form>
@@ -442,7 +489,11 @@ function LoginPage() {
                     )}
                   </usernameForm.AppField>
 
-                  <Button type="submit" className="w-full h-11" disabled={isPending}>
+                  <Button
+                    type="submit"
+                    className="w-full h-11"
+                    disabled={isPending}
+                  >
                     {signInUsernameMutation.isPending && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
@@ -474,8 +525,14 @@ function LoginPage() {
                     )}
                   </otpRequestForm.AppField>
 
-                  <Button type="submit" className="w-full h-11" disabled={isPending}>
-                    {sendOtpMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <Button
+                    type="submit"
+                    className="w-full h-11"
+                    disabled={isPending}
+                  >
+                    {sendOtpMutation.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
                     Send code
                   </Button>
                 </otpRequestForm.Form>
@@ -485,7 +542,10 @@ function LoginPage() {
             {/* Switch to sign up */}
             <p className="text-center text-sm text-muted-foreground pt-2">
               Don't have an account?{" "}
-              <Link to="/signup" className="font-medium text-foreground hover:underline">
+              <Link
+                to="/signup"
+                className="font-medium text-foreground hover:underline"
+              >
                 Sign up
               </Link>
             </p>
