@@ -14,10 +14,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
   const { data: formSettings } = useFormSettings(formId);
   const customization = formSettings?.customization as Record<string, string> | null;
   const hasCustomization = customization && Object.keys(customization).length > 0;
-  const themeVars = useMemo(
-    () => getThemeStyleVars(customization),
-    [customization],
-  );
+  const themeVars = useMemo(() => getThemeStyleVars(customization), [customization]);
   const doc = savedDocs?.[0];
   const content = (doc?.content as Value) || [];
 
@@ -126,7 +123,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                       className={cn(
                         "w-full transition-all duration-500",
                         embedType === "standard"
-                          ? "bg-transparent border-2 border-dashed border-border rounded-lg"
+                          ? "bg-transparent border-2 border-dashed border-border rounded-lg overflow-hidden"
                           : "bg-background rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-border",
                       )}
                       style={{

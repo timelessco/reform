@@ -1,15 +1,11 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Info, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useFormSettings } from "@/hooks/use-live-hooks";
 import { formSettingsCollection } from "@/db-collections";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-} from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
 import {
   Accordion,
   AccordionContent,
@@ -22,18 +18,8 @@ import {
   StyleColorPicker,
   StyleNumberInput,
 } from "@/components/ui/style-controls";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  STYLES,
-  BASE_COLORS,
-  DARK_BASE_COLORS,
-  THEME_COLORS,
-  FONT_MAP,
-} from "@/lib/theme-presets";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { STYLES, BASE_COLORS, DARK_BASE_COLORS, THEME_COLORS, FONT_MAP } from "@/lib/theme-presets";
 
 const FONT_OPTIONS = Object.keys(FONT_MAP);
 
@@ -261,6 +247,24 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
     [updateFields],
   );
 
+  const modeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleModeToggle = useCallback(
+    (on: boolean) => {
+      if (modeDebounceRef.current) clearTimeout(modeDebounceRef.current);
+      modeDebounceRef.current = setTimeout(() => {
+        updateField("mode", on ? "dark" : "light");
+      }, 300);
+    },
+    [updateField],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (modeDebounceRef.current) clearTimeout(modeDebounceRef.current);
+    };
+  }, []);
+
   if (!settings) return null;
 
   const activePreset = customization.preset || "vega";
@@ -301,11 +305,11 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
               <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline">
                 Theme
               </AccordionTrigger>
-              <AccordionContent className="space-y-2 pt-1 pb-2">
+              <AccordionContent className="space-y-2 pt-1 pb-2 px-1">
                 <StyleToggle
                   label="Dark Mode"
                   value={activeMode === "dark"}
-                  onChange={(on) => updateField("mode", on ? "dark" : "light")}
+                  onChange={handleModeToggle}
                 />
                 <StyleSelect
                   label="Style"
@@ -500,7 +504,7 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                   </div>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="pt-1 pb-2 space-y-2">
+              <AccordionContent className="pt-1 pb-2 space-y-2 px-1">
                 <div className="rounded-lg overflow-hidden border border-border/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
                   <Textarea
                     value={getValue("customCss")}

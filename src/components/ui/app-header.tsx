@@ -11,11 +11,7 @@ import {
 } from "@/components/ui/tooltip";
 import { toggleFavoriteLocal, updateFormStatus } from "@/db-collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
-import {
-  discardChanges,
-  publishForm,
-  useHasUnpublishedChanges,
-} from "@/hooks/use-form-versions";
+import { discardChanges, publishForm, useHasUnpublishedChanges } from "@/hooks/use-form-versions";
 import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
 import { cn, parseTimestampAsUTC } from "@/lib/utils";
@@ -69,7 +65,7 @@ export function AppHeader({
   const navigate = useNavigate();
 
   // Editor sidebar state
-  const { activeSidebar, toggleSidebar, closeSidebar } = useEditorSidebar();
+  const { activeSidebar, closeSidebar } = useEditorSidebar();
 
   const isShareSidebarOpen = activeSidebar === "share";
   const isEditorSidebarOpen = !!activeSidebar;
@@ -145,6 +141,7 @@ export function AppHeader({
   const { data: workspace } = useWorkspace(workspaceId);
   const { data: savedDocs, isLoading: isLoadingSavedDocs } = useForm(formId);
   // Version management
+
   const hasUnpublishedChanges = useHasUnpublishedChanges(formId);
   const [isDiscarding, setIsDiscarding] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -378,7 +375,7 @@ export function AppHeader({
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    "w-17 px-2.5 text-muted-foreground hover:text-foreground font-normal",
+                    "px-2.5 text-muted-foreground hover:text-foreground font-normal",
                     isShareSidebarOpen && "text-foreground bg-accent/50",
                   )}
                   onClick={toggleShareSidebar}
@@ -453,7 +450,7 @@ export function AppHeader({
                     className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
                   >
                     {/* <SettingsIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
-                    <span className="flex-1 text-left">Customisation</span>
+                    <span className="flex-1 text-left">Customization</span>
                   </Button>
                   {isEditRoute && (
                     <Button
@@ -469,7 +466,7 @@ export function AppHeader({
                   <Button
                     variant="ghost"
                     onClick={handleDeleteForm}
-                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-red-500/70 hover:text-red-500 hover:bg-red-500/5"
+                    className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
                   >
                     {/* <Trash2 className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
                     <span className="flex-1 text-left">Delete form</span>
@@ -482,7 +479,7 @@ export function AppHeader({
               <Button
                 size="sm"
                 className={cn(
-                  "h-8 pl-[10px] pr-[8px] ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none",
+                  "h-8 pl-2 pr-2 py-1.5 ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none",
                   !isLoadingSavedDocs &&
                     (hasUnpublishedChanges ||
                       savedDocs?.[0]?.status !== "published")

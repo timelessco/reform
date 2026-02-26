@@ -1,5 +1,3 @@
-import { useMemo, useState } from "react";
-
 import { DataGrid, DataGridContainer } from "@/components/ui/data-grid";
 import { DataGridPagination } from "@/components/ui/data-grid-pagination";
 import { DataGridTable } from "@/components/ui/data-grid-table";
@@ -14,6 +12,7 @@ import {
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
+import { useMemo, useState } from "react";
 
 interface IData {
   id: string;

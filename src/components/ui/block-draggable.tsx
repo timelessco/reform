@@ -274,11 +274,11 @@ function Draggable(props: PlateElementProps) {
       )}
     >
       {!isInTable && !isFormButton && (
-        <Gutter gutterPosition={gutterPosition}>
+        <Gutter gutterPosition={gutterPosition} className="mr-1">
           <div
             className={cn(
               "slate-blockToolbarWrapper",
-              "flex items-center gap-0 pointer-events-auto",
+              "flex items-center gap-0 pointer-events-auto mr-1",
               isInColumn && "h-4",
             )}
           >
@@ -317,8 +317,7 @@ function Draggable(props: PlateElementProps) {
             <div
               ref={isFormButton ? null : handleRef}
               className={cn(
-                buttonVariants({ variant: "ghost", size: "icon" }),
-                "h-auto w-auto  rounded-lg hover:bg-transparent",
+                "h-auto w-auto  rounded-lg hover:bg-accent",
               )}
               data-plate-prevent-deselect
             >

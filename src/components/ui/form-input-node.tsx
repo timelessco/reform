@@ -9,23 +9,26 @@ export function FormInputElement({ className, children, ...props }: PlateElement
   const placeholder = element.placeholder as string | undefined;
 
   const focused = useFocused();
-  const isSelected = useEditorSelector((ed) => {
-    if (!ed.selection) return false;
-    const path = ed.api.findPath(element);
-    if (!path) return false;
-    const focusPath = ed.selection.focus.path;
-    if (focusPath.length < path.length) return false;
-    for (let i = 0; i < path.length; i++) {
-      if (focusPath[i] !== path[i]) return false;
-    }
-    return true;
-  }, [element]);
+  const isSelected = useEditorSelector(
+    (ed) => {
+      if (!ed.selection) return false;
+      const path = ed.api.findPath(element);
+      if (!path) return false;
+      const focusPath = ed.selection.focus.path;
+      if (focusPath.length < path.length) return false;
+      for (let i = 0; i < path.length; i++) {
+        if (focusPath[i] !== path[i]) return false;
+      }
+      return true;
+    },
+    [element],
+  );
 
   return (
     <PlateElement
       attributes={{ ...attributes, placeholder }}
       className={cn(
-        "relative my-1 flex h-9 w-full max-w-md items-center rounded-lg border-0 bg-card pl-[10px] pr-[8px] py-1 text-base shadow-form-input cursor-text caret-current",
+        "relative my-1 flex h-9 w-full max-w-md items-center rounded-lg border-0 bg-card pl-[10px] pr-[8px] py-1.5 text-base shadow-form-input cursor-text caret-current",
         isSelected && focused && "ring-ring/50 ring-[3px]",
         className,
       )}

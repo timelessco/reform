@@ -26,6 +26,13 @@ function getInitials(name?: string | null) {
     .join("")
     .toUpperCase()
     .slice(0, 2);
+  if (!name) return "U";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 }
 
 export interface UserMenuMinimalProps {
@@ -68,33 +75,33 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
     }),
   );
 
-  const setActiveOrgMutation = useMutation(
-    auth.organization.setActive.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: ["organization", "getFullOrganization"],
-          refetchType: "all",
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["workspaces-with-forms"],
-          refetchType: "all",
-        });
-        router.navigate({ to: "/dashboard" });
-      },
-    }),
-  );
+	const setActiveOrgMutation = useMutation(
+		auth.organization.setActive.mutationOptions({
+			onSuccess: async () => {
+				await queryClient.invalidateQueries({
+					queryKey: ["organization", "getFullOrganization"],
+					refetchType: "all",
+				});
+				await queryClient.invalidateQueries({
+					queryKey: ["workspaces-with-forms"],
+					refetchType: "all",
+				});
+				router.navigate({ to: "/dashboard" });
+			},
+		}),
+	);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest(".user-menu-container")) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
+	useEffect(() => {
+		if (!isOpen) return;
+		const handleClickOutside = (e: MouseEvent) => {
+			const target = e.target as HTMLElement;
+			if (!target.closest(".user-menu-container")) {
+				setIsOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isOpen]);
 
   return (
     <div className="relative user-menu-container border-t border-b pt-[4.8px] pb-2 bg-background">

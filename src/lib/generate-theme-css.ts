@@ -180,9 +180,7 @@ export function getLayoutOnlyVars(
  * Used for public form SSR injection. The property-consuming bridge rules
  * live in styles.css and are loaded with the page.
  */
-export function generateThemeCss(
-  customization: Record<string, string> | null | undefined,
-): string {
+export function generateThemeCss(customization: Record<string, string> | null | undefined): string {
   if (!customization || Object.keys(customization).length === 0) return "";
 
   const entries = buildThemeVarEntries(customization);

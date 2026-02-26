@@ -1,4 +1,7 @@
 import { logger } from "@/lib/utils";
+import { localFormCollection } from "@/db-collections";
+import { formCollection } from "@/db-collections/form.collections";
+import { workspaceCollection, createWorkspaceLocal } from "@/db-collections/workspace.collection";
 
 /**
  * Result type for syncLocalDataToCloud
@@ -30,12 +33,6 @@ export async function syncLocalDataToCloud(organizationId: string): Promise<Sync
       console.error("syncLocalDataToCloud: organizationId is required");
       throw new Error("Organization ID is required for sync");
     }
-
-    // Import collections
-    const { localFormCollection } = await import("@/db-collections");
-    const { formCollection } = await import("@/db-collections/form.collections");
-    const { workspaceCollection, createWorkspaceLocal } =
-      await import("@/db-collections/workspace.collection");
 
     // Get all local forms from localStorage
     const localForms = await localFormCollection.toArrayWhenReady();
@@ -122,7 +119,6 @@ export async function syncLocalDataToCloud(organizationId: string): Promise<Sync
  */
 export async function hasLocalDataToSync(): Promise<boolean> {
   try {
-    const { localFormCollection } = await import("@/db-collections");
     const forms = await localFormCollection.toArrayWhenReady();
     return forms.length > 0;
   } catch (error) {

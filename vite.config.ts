@@ -10,14 +10,24 @@ const config = defineConfig({
   plugins: [
     devtools({
       editor: {
-        name: "Antigravity",
+        name: "Cursor",
         open: async (path, lineNumber, columnNumber) => {
           const { exec } = await import("node:child_process");
           exec(
-            `antigravity -g "${path.replaceAll("$", "\\$")}${lineNumber ? `:${lineNumber}` : ""}${columnNumber ? `:${columnNumber}` : ""}"`,
+            // or windsurf/cursor/webstorm/cursor/cursor
+            `cursor -g "${path.replaceAll("$", "\\$")}${lineNumber ? `:${lineNumber}` : ""}${columnNumber ? `:${columnNumber}` : ""}"`,
           );
         },
       },
+      // editor: {
+      //   name: "Antigravity",
+      //   open: async (path, lineNumber, columnNumber) => {
+      //     const { exec } = await import("node:child_process");
+      //     exec(
+      //       `antigravity -g "${path.replaceAll("$", "\\$")}${lineNumber ? `:${lineNumber}` : ""}${columnNumber ? `:${columnNumber}` : ""}"`,
+      //     );
+      //   },
+      // },
       enhancedLogs: {
         enabled: true,
       },

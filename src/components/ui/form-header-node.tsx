@@ -1,6 +1,6 @@
 import { useEmojiDropdownMenuState } from "@platejs/emoji/react";
 import { ImageIcon, Settings, Smile, Upload, X } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorRef } from "platejs/react";
 import AvatarUpload from "@/components/file-upload/avatar-upload";
@@ -22,6 +22,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useFileUpload } from "@/hooks/use-file-upload";
+import type { FormHeaderElementData } from "@/lib/form-header-factory";
 import { cn } from "@/lib/utils";
 
 function isEmoji(str: string): boolean {
@@ -31,26 +32,7 @@ function isEmoji(str: string): boolean {
   return str.length <= 4 && emojiRange.test(str);
 }
 
-export interface FormHeaderElementData {
-  type: "formHeader";
-  id?: string;
-  title: string;
-  icon: string | null;
-  cover: string | null;
-  children: [{ text: "" }];
-}
-
-export function createFormHeaderNode(
-  data: Partial<Omit<FormHeaderElementData, "type" | "children">> = {},
-): FormHeaderElementData {
-  return {
-    type: "formHeader",
-    title: data.title ?? "",
-    icon: data.icon ?? null,
-    cover: data.cover ?? null,
-    children: [{ text: "" }],
-  };
-}
+export { createFormHeaderNode, type FormHeaderElementData } from "@/lib/form-header-factory";
 
 function CoverUpload({
   onFileChange,
@@ -135,6 +117,20 @@ export function FormHeaderElement(props: PlateElementProps) {
     }
   };
 
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+
+  const autoResizeTitle = useCallback(() => {
+    const el = titleRef.current;
+    if (el) {
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight}px`;
+    }
+  }, []);
+
+  useEffect(() => {
+    autoResizeTitle();
+  }, [title, autoResizeTitle]);
+
   const handleTitleChange = (newTitle: string) => {
     updateHeader({ title: newTitle });
   };
@@ -147,7 +143,9 @@ export function FormHeaderElement(props: PlateElementProps) {
     updateHeader({ cover: newCover });
   };
 
-  const handleAddCover = () => handleCoverChange("#FFE4E1");
+  const handleAddCover = () =>   handleCoverChange(
+    "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true",
+  )
 
   const [iconPopoverOpen, setIconPopoverOpen] = useState(false);
   const {
@@ -395,21 +393,14 @@ export function FormHeaderElement(props: PlateElementProps) {
             <Popover open={iconPopoverOpen} onOpenChange={setIconPopoverOpen}>
               {hasLogo && (
                 <div
-                  className={cn(
-                    "relative z-10 mb-1",
-                    hasCover ? "" : "mt-4 sm:mt-6",
-                  )}
+                  className={cn("relative z-10 mb-1", hasCover ? "" : "mt-4 sm:mt-6")}
                   data-bf-logo-emoji-container={
-                    hasCover &&
-                    (!icon || icon === "default-icon" || isEmoji(icon))
+                    hasCover && (!icon || icon === "default-icon" || isEmoji(icon))
                       ? "true"
                       : undefined
                   }
                   data-bf-logo-container={
-                    hasCover &&
-                    icon &&
-                    icon !== "default-icon" &&
-                    !isEmoji(icon)
+                    hasCover && icon && icon !== "default-icon" && !isEmoji(icon)
                       ? "true"
                       : undefined
                   }
@@ -550,12 +541,14 @@ export function FormHeaderElement(props: PlateElementProps) {
             </Popover>
 
             <div className="relative group/title">
-              <input
-                type="text"
-                className="w-full text-4xl sm:text-9xl font-serif font-light -tracking-5 leading-tight border-none outline-none bg-transparent placeholder:text-muted-foreground/50 placeholder:font-light py-1 sm:py-2 h-auto select-text placeholder:font-serif"
+              <textarea
+                ref={titleRef}
+                rows={1}
+                className="w-full text-4xl sm:text-9xl font-serif font-light -tracking-5 leading-tight border-none outline-none bg-transparent placeholder:text-muted-foreground/50 placeholder:font-light py-1 sm:py-2 h-auto select-text placeholder:font-serif resize-none overflow-hidden"
                 placeholder="Create your form."
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
+                onFocus={autoResizeTitle}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();

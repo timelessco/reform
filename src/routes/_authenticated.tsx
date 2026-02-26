@@ -1,6 +1,3 @@
-import { FormSettingsSidebar } from "@/components/form-builder/form-settings-sidebar";
-import { ShareSummarySidebar } from "@/components/form-builder/share-summary-sidebar";
-import { VersionHistorySidebar } from "@/components/form-builder/version-history-sidebar";
 import { SidebarItem } from "@/components/sidebar-item";
 import {
   AlertDialog,
@@ -24,7 +21,6 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import { CustomizeSidebar } from "@/components/ui/customize-sidebar";
 import {
   Dialog,
   DialogContent,
@@ -58,9 +54,9 @@ import {
   SidebarProvider,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { SidebarSection } from "@/components/ui/sidebar-section";
 import {
   BellIcon,
-  ChevronDownIcon,
   HomeIcon,
   SearchIcon,
   SettingsIcon,
@@ -131,6 +127,8 @@ import {
 
 import type * as React from "react";
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -139,6 +137,45 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
+
+const LazyFormSettingsSidebar = lazy(() =>
+  import("@/components/form-builder/form-settings-sidebar").then((m) => ({
+    default: m.FormSettingsSidebar,
+  })),
+);
+const LazyShareSummarySidebar = lazy(() =>
+  import("@/components/form-builder/share-summary-sidebar").then((m) => ({
+    default: m.ShareSummarySidebar,
+  })),
+);
+const LazyVersionHistorySidebar = lazy(() =>
+  import("@/components/form-builder/version-history-sidebar").then((m) => ({
+    default: m.VersionHistorySidebar,
+  })),
+);
+const LazyCustomizeSidebar = lazy(() =>
+  import("@/components/ui/customize-sidebar").then((m) => ({
+    default: m.CustomizeSidebar,
+  })),
+);
+
+type SidebarNavLabelProps = {
+  icon: React.ReactNode;
+  label: string;
+};
+
+function SidebarNavLabel({ icon, label }: SidebarNavLabelProps) {
+  return (
+    <>
+      <div className="flex items-center justify-center size-5 shrink-0">
+        {icon}
+      </div>
+      <span className="text-[14px] font-medium font-var-medium-14 text-sidebar-nav-text tracking-[0.14px] leading-[16.1px] font-case truncate">
+        {label}
+      </span>
+    </>
+  );
+}
 
 // Route configuration
 export const Route = createFileRoute("/_authenticated")({
@@ -401,18 +438,20 @@ function AuthLayoutContent() {
               )}
             >
               <div className="h-full w-full">
-                {activeSidebar === "settings" && formId && (
-                  <FormSettingsSidebar formId={formId} />
-                )}
-                {activeSidebar === "share" && formId && (
-                  <ShareSummarySidebar formId={formId} />
-                )}
-                {activeSidebar === "history" && formId && (
-                  <VersionHistorySidebar formId={formId} />
-                )}
-                {activeSidebar === "customize" && formId && (
-                  <CustomizeSidebar formId={formId} />
-                )}
+                <Suspense fallback={null}>
+                  {activeSidebar === "settings" && formId && (
+                    <LazyFormSettingsSidebar formId={formId} />
+                  )}
+                  {activeSidebar === "share" && formId && (
+                    <LazyShareSummarySidebar formId={formId} />
+                  )}
+                  {activeSidebar === "history" && formId && (
+                    <LazyVersionHistorySidebar formId={formId} />
+                  )}
+                  {activeSidebar === "customize" && formId && (
+                    <LazyCustomizeSidebar formId={formId} />
+                  )}
+                </Suspense>
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>
@@ -515,7 +554,7 @@ function AppSidebar() {
           </Button>
         </SidebarHeader>
 
-        <SidebarContent>
+        <SidebarContent className="gap-0">
           <SidebarGroup className="pt-2 py-0">
             <SidebarGroupContent className="">
               {/* Nav items: Figma system-flat node 23504-5047 - pixel-perfect */}
@@ -532,12 +571,12 @@ function AppSidebar() {
                     tooltip="All"
                     className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] gap-2 transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
                   >
-                    <div className="flex items-center justify-center size-5 shrink-0">
-                      <HomeIcon className="h-[18px] w-[18px] text-muted-foreground" />
-                    </div>
-                    <span className="text-[14px] font-medium font-var-medium-14 text-sidebar-nav-text tracking-[0.14px] leading-tight font-case truncate">
-                      All
-                    </span>
+                    <Link to="/dashboard" className="flex items-center gap-2 min-w-0">
+                      <SidebarNavLabel
+                        icon={<HomeIcon className="h-[18px] w-[18px] text-muted-foreground" />}
+                        label="All"
+                      />
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -597,19 +636,19 @@ function AppSidebar() {
                     tooltip="Settings"
                     className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] gap-2 transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
                   >
-                    <div className="flex items-center justify-center size-5 shrink-0">
-                      <SettingsIcon className="h-[18px] w-[18px] text-muted-foreground" />
-                    </div>
-                    <span className="text-[14px] font-medium font-var-medium-14 text-sidebar-nav-text tracking-[0.14px] leading-tight font-case truncate">
-                      Settings
-                    </span>
+                    <Link to="/settings/my-account" className="flex items-center gap-2 min-w-0">
+                      <SidebarNavLabel
+                        icon={<SettingsIcon className="h-[18px] w-[18px] text-muted-foreground" />}
+                        label="Settings"
+                      />
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
 
-          <div className="mt-[15px] px-2">
+          <div className="mt-[13px] px-2">
             <SidebarWorkspacesMinimal activeOrgId={activeOrg?.id} />
           </div>
         </SidebarContent>
@@ -1078,8 +1117,7 @@ function SidebarInbox() {
                           }
                         >
                           {acceptMutation.isPending &&
-                          acceptMutation.variables?.invitationId ===
-                            invitation.id
+                          acceptMutation.variables?.invitationId === invitation.id
                             ? "Accepting..."
                             : "Accept"}
                         </Button>
@@ -1095,8 +1133,7 @@ function SidebarInbox() {
                           }
                         >
                           {rejectMutation.isPending &&
-                          rejectMutation.variables?.invitationId ===
-                            invitation.id
+                          rejectMutation.variables?.invitationId === invitation.id
                             ? "Declining..."
                             : "Decline"}
                         </Button>
@@ -1127,80 +1164,28 @@ function SidebarInbox() {
 function FreePlanCard() {
   return (
     <div className="shrink-0 overflow-hidden rounded-xl bg-free-plan-card-bg p-3 mx-3 w-[204px] shadow-sm">
-      <div className="flex items-center gap-2 mb-2">
-        <div className="shrink-0 size-6 rounded flex items-center justify-center bg-teal-100">
-          <Zap
-            className="h-3.5 w-3.5 text-teal-700"
-            strokeWidth={2}
-            fill="currentColor"
-          />
+      <div className="flex items-center gap-2 mb-3">
+        <div className="shrink-0 size-5 p-1 flex items-center justify-center bg-teal-100 rounded-full">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none">
+  <path d="M6.375 1.875L5.625 4.875H10.125L5.625 10.125L6.375 7.125H1.875L6.375 1.875Z" fill="#0F736B"/>
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M6.60448 1.43079C6.8105 1.53721 6.91632 1.77133 6.86008 1.99629L6.2654 4.37503H10.125C10.3203 4.37503 10.4977 4.4887 10.5793 4.6661C10.6609 4.8435 10.6317 5.05216 10.5046 5.20042L6.00464 10.4504C5.85372 10.6265 5.60156 10.6757 5.39554 10.5693C5.18951 10.4628 5.08369 10.2287 5.13994 10.0038L5.73462 7.62503H1.87501C1.67974 7.62503 1.50234 7.51135 1.42075 7.33395C1.33916 7.15655 1.3683 6.94789 1.49538 6.79963L5.99538 1.54963C6.14629 1.37357 6.39845 1.32437 6.60448 1.43079ZM2.96212 6.62503H6.37501C6.52898 6.62503 6.67436 6.69596 6.76911 6.81732C6.86386 6.93868 6.89742 7.09692 6.86008 7.24629L6.62378 8.1915L9.0379 5.37503H5.62501C5.47104 5.37503 5.32566 5.30409 5.2309 5.18273C5.13615 5.06137 5.10259 4.90313 5.13994 4.75376L5.37624 3.80855L2.96212 6.62503Z" fill="#0F736B"/>
+</svg>
         </div>
         <span className="text-[14px] font-medium text-sidebar-foreground">
           Free Plan
         </span>
       </div>
-      <p className="text-[13px] text-muted-foreground tracking-[0.13px] leading-[1.48] mb-3">
+      <p
+        className="text-[13px] font-normal leading-[1.48] tracking-[0.13px] mb-4 mr-3"
+      >
         Try Booster to capture high-quality inbound and outbound leads
       </p>
       <Button
-        variant="outline"
-        className="w-full h-7 text-[13px] font-medium text-sidebar-foreground bg-background border border-border hover:bg-muted rounded-lg shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
+        variant="secondary"
+        className="w-full h-7 text-[13px] px-1.5 font-medium text-sidebar-foreground bg-background border border-border hover:bg-muted rounded-lg shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
       >
         Try for free
       </Button>
-    </div>
-  );
-}
-
-// Sidebar Section Component (Figma system-flat: External/collapsible section with chevron)
-function SidebarSection({
-  label,
-  children,
-  action,
-  initialOpen = true,
-}: {
-  label: string;
-  children: React.ReactNode;
-  action?: React.ReactNode;
-  initialOpen?: boolean;
-}) {
-  const [isOpen, setIsOpen] = useState(initialOpen);
-
-  return (
-    <div className="flex flex-col">
-      <div className="group flex items-center justify-between px-1 py-[7px] transition-colors">
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1 h-auto p-0 cursor-pointer flex-1 min-w-0 justify-start bg-transparent border-none"
-          aria-expanded={isOpen}
-        >
-          <span className="text-[13px] font-medium text-muted-foreground tracking-[0.26px] truncate">
-            {label}
-          </span>
-          <ChevronDownIcon
-            className={cn(
-              "h-2.5 w-2.5 shrink-0 text-muted-foreground transition-transform duration-200",
-              !isOpen && "-rotate-90",
-            )}
-            strokeWidth={2}
-          />
-        </button>
-
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-          {action ?? (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="h-6 w-6 hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
-            >
-              <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {isOpen && <div className="flex flex-col">{children}</div>}
     </div>
   );
 }
@@ -1422,7 +1407,6 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
           )}
         </SidebarSection>
 
-        {/* Workspaces Section - 15px gap to match Figma mt-[15px] */}
         <div className="mt-[15px] space-y-4">
           {isLoading ? (
             ["collection-skeleton-1", "collection-skeleton-2"].map((key) => (
