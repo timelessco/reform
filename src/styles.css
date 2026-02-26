@@ -734,6 +734,10 @@
   /* Sidebar nav active item bg - Figma gray/100 #f5f5f5 */
   --sidebar-nav-active-bg: #f5f5f5;
   --sidebar-active: var(--color-light-gray-100);
+  /* Sidebar nav icons: solid inner fill (light = subtle, dark = two-tone) */
+  --sidebar-icon-fill: #E0E0E0;
+  --sidebar-icon-stroke: #212121;
+  --sidebar-icon-inner: var(--sidebar);
   --form-icon-bg: var(--color-white);
   --form-icon-border: var(--color-light-gray-200);
   --workspace-text: var(--color-light-gray-600);
@@ -883,6 +887,9 @@
   /* Sidebar nav active item bg - dark mode */
   --sidebar-nav-active-bg: var(--color-dark-gray-300);
   --sidebar-active: var(--color-dark-gray-300);
+  --sidebar-icon-fill: #3D3D3D;
+  --sidebar-icon-stroke: #D1D1D1;
+  --sidebar-icon-inner: #131313;
   --form-icon-bg: var(--color-dark-gray-300);
   --form-icon-border: var(--color-dark-gray-400);
   --workspace-text: var(--color-dark-gray-600);

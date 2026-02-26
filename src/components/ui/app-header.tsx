@@ -361,7 +361,7 @@ export function AppHeader({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 bg-secondary rounded-lg text-muted-foreground hover:text-foreground"
+                    className="h-7 w-7 rounded-lg hover:text-foreground"
                   >
                     <MoreHorizontal className="h-[18px] w-[18px]" strokeWidth={1.5} />
                   </Button>

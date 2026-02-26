@@ -92,7 +92,7 @@ export function WorkspaceItemMinimal({
           <MoreHorizontalIcon className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[195px]" sideOffset={4}>
+      <PopoverContent align="start" sideOffset={4} className="w-[195px]">
         <div className="text-[12px] font-medium text-muted-foreground px-2 py-1.5 tracking-[0.24px]">
           Sort by
         </div>

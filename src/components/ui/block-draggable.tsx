@@ -238,11 +238,11 @@ function Draggable(props: PlateElementProps) {
       )}
     >
       {!isInTable && !isFormButton && (
-        <Gutter gutterPosition={gutterPosition}>
+        <Gutter gutterPosition={gutterPosition} className="mr-1">
           <div
             className={cn(
               "slate-blockToolbarWrapper",
-              "flex items-center gap-0 pointer-events-auto",
+              "flex items-center gap-0 pointer-events-auto mr-1",
               isInColumn && "h-4",
             )}
           >
@@ -253,7 +253,7 @@ function Draggable(props: PlateElementProps) {
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="h-auto w-auto rounded-lg hover:bg-transparent has-[>svg]:px-1.5 has-[>svg]:py-1"
+                    className="h-auto w-auto rounded-lg ring-0 hover:bg-accent has-[>svg]:px-1 has-[>svg]:py-1.5"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -281,8 +281,7 @@ function Draggable(props: PlateElementProps) {
             <div
               ref={isFormButton ? null : handleRef}
               className={cn(
-                buttonVariants({ variant: "ghost", size: "icon" }),
-                "h-auto w-auto  rounded-lg hover:bg-transparent px-1",
+                "h-auto w-auto  rounded-lg hover:bg-accent",
               )}
               data-plate-prevent-deselect
             >
@@ -327,7 +326,7 @@ function Gutter({
       {...props}
       className={cn(
         "slate-gutterLeft",
-        "-translate-x-full absolute h-full z-50 flex cursor-text hover:opacity-100",
+        "-translate-x-full absolute h-full z-50 flex cursor-text hover:opacity-100 mr-1 ",
         gutterPosition === "top" ? "top-0 items-start pt-1.5" : "top-0 items-center",
         !selected && "sm:opacity-0",
         getPluginByType(editor, element.type)?.node.isContainer
@@ -366,7 +365,7 @@ const DragHandle = React.memo(function DragHandle({
         <Button
           variant="ghost"
           size="icon-sm"
-          className="flex size-full items-center justify-center h-auto hover:bg-transparent has-[>svg]:px-1.5 has-[>svg]:py-1"
+          className="flex size-full items-center justify-center h-auto hover:bg-accent has-[>svg]:px-1 has-[>svg]:py-1.5"
           onClick={(e) => {
             // e.preventDefault();
             // e.stopPropagation();

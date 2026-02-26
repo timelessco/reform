@@ -111,7 +111,9 @@ export function FormHeaderElement(props: PlateElementProps) {
     updateHeader({ cover: newCover });
   };
 
-  const handleAddCover = () => handleCoverChange("#FFE4E1");
+  const handleAddCover = () =>   handleCoverChange(
+    "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true",
+  )
 
   const [iconPopoverOpen, setIconPopoverOpen] = useState(false);
   const {

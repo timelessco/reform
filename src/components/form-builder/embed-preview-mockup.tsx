@@ -89,7 +89,7 @@ function PopupPreview({ position }: { position: string }) {
               : "bottom-0 right-0",
         )}
       >
-        <BoxSkeleton className="h-24 w-[110px]" />
+        <BoxSkeleton className="w-18.5 h-24" />
       </div>
     </div>
   );
