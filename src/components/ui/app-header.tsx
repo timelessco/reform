@@ -1,3 +1,13 @@
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -115,6 +125,7 @@ export function AppHeader({
   const hasUnpublishedChanges = useHasUnpublishedChanges(formId);
   const [isDiscarding, setIsDiscarding] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   // Favorite state
   useIsFavorite(session?.user?.id, formId);
@@ -126,14 +137,12 @@ export function AppHeader({
 
   const handleDeleteForm = async () => {
     if (!formId) return;
-    if (confirm("Are you sure you want to move this form to trash?")) {
-      try {
-        await updateFormStatus(formId, "archived");
-        toast.success("Form moved to trash");
-        navigate({ to: "/" });
-      } catch {
-        toast.error("Failed to delete form");
-      }
+    try {
+      await updateFormStatus(formId, "archived");
+      toast.success("Form moved to trash");
+      navigate({ to: "/dashboard" });
+    } catch {
+      toast.error("Failed to delete form");
     }
   };
 
@@ -174,6 +183,7 @@ export function AppHeader({
   };
 
   return (
+    <>
     <header
       className={cn(
         "group/header flex h-10 w-full items-center justify-between bg-background px-3 text-[13px] -z-10 font-medium shrink-0 select-none transition-opacity duration-150",
@@ -418,7 +428,7 @@ export function AppHeader({
                   {/* <div className="my-1 h-px bg-border" /> */}
                   <Button
                     variant="ghost"
-                    onClick={handleDeleteForm}
+                    onClick={() => setIsDeleteOpen(true)}
                     className="w-full justify-start gap-1.5 rounded-lg px-2 py-[7px] h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
                   >
                     {/* <Trash2 className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} /> */}
@@ -497,5 +507,27 @@ export function AppHeader({
         </div>
       )}
     </header>
+
+    <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete form</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this form? This action will move it to trash and
+            cannot be easily undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDeleteForm}
+            className="bg-destructive text-white hover:bg-destructive/90"
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
