@@ -44,7 +44,7 @@ export function AppHeader({
   const navigate = useNavigate();
 
   // Editor sidebar state
-  const { activeSidebar, toggleSidebar, closeSidebar } = useEditorSidebar();
+  const { activeSidebar, closeSidebar } = useEditorSidebar();
 
   const isShareSidebarOpen = activeSidebar === "share";
   const isEditorSidebarOpen = !!activeSidebar;
@@ -111,6 +111,7 @@ export function AppHeader({
   const { data: workspace } = useWorkspace(workspaceId);
   const { data: savedDocs, isLoading: isLoadingSavedDocs } = useForm(formId);
   // Version management
+
   const hasUnpublishedChanges = useHasUnpublishedChanges(formId);
   const [isDiscarding, setIsDiscarding] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);

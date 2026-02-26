@@ -16,6 +16,7 @@ interface VersionHistorySidebarProps {
 
 export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
   const { data: versions } = useFormVersions(formId);
+  console.log("versions", versions ?? "no versions" , formId);
   const { selectedVersionId, selectVersion, exitVersionView } = useVersionHistorySidebar();
   const { data: sessionData } = useSession();
   const currentUser = sessionData?.user;

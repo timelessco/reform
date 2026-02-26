@@ -32,98 +32,102 @@ const serializeVersion = (version: typeof formVersions.$inferSelect) => ({
  */
 export const publishFormVersion = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ formId: z.string().uuid() }))
+  .inputValidator(
+    z.object({
+      formId: z.string().uuid(),
+    }),
+  )
   .handler(async ({ data, context }) => {
     await authForm(data.formId, context.session.user.id);
 
-    // Get current form draft
-    const [form] = await db.select().from(forms).where(eq(forms.id, data.formId));
+    return await db.transaction(async (tx) => {
+      // Get current form draft
+      const [form] = await tx.select().from(forms).where(eq(forms.id, data.formId));
 
-    if (!form) {
-      throw new Error("Form not found");
-    }
+      if (!form) {
+        throw new Error("Form not found");
+      }
 
-    // Get next version number
-    const [lastVersion] = await db
-      .select({ version: formVersions.version })
-      .from(formVersions)
-      .where(eq(formVersions.formId, data.formId))
-      .orderBy(desc(formVersions.version))
-      .limit(1);
+      // Get latest version info
+      const [lastVersion] = await tx
+        .select({ id: formVersions.id, version: formVersions.version })
+        .from(formVersions)
+        .where(eq(formVersions.formId, data.formId))
+        .orderBy(desc(formVersions.version))
+        .limit(1);
 
-    const nextVersion = (lastVersion?.version ?? 0) + 1;
+      const nextVersionNumber = (lastVersion?.version ?? 0) + 1;
+      const contentHash = computeContentHash(form.content);
+      const now = new Date();
 
-    // Compute content hash
-    const contentHash = computeContentHash(form.content);
+      // Fetch customization from form_settings to snapshot
+      const [settingsRow] = await tx
+        .select({ customization: formSettings.customization })
+        .from(formSettings)
+        .where(eq(formSettings.formId, data.formId));
 
-    // Fetch customization from form_settings to snapshot
-    const [settingsRow] = await db
-      .select({ customization: formSettings.customization })
-      .from(formSettings)
-      .where(eq(formSettings.formId, data.formId));
+      // Create version snapshot
+      const versionId = crypto.randomUUID();
 
-    // Create version snapshot
-    const versionId = crypto.randomUUID();
-    const now = new Date();
+      const [newVersion] = await tx
+        .insert(formVersions)
+        .values({
+          id: versionId,
+          formId: data.formId,
+          version: nextVersionNumber,
+          content: form.content,
+          settings: form.settings,
+          customization: settingsRow?.customization ?? {},
+          title: form.title,
+          publishedByUserId: context.session.user.id,
+          publishedAt: now,
+          createdAt: now,
+        })
+        .returning();
 
-    const [newVersion] = await db
-      .insert(formVersions)
-      .values({
-        id: versionId,
+      // Update form with new version reference, editor snapshot, and hash
+      await tx
+        .update(forms)
+        .set({
+          content: form.content,
+          title: form.title,
+          settings: form.settings,
+          status: "published",
+          lastPublishedVersionId: versionId,
+          publishedContentHash: contentHash,
+          updatedAt: now,
+        })
+        .where(eq(forms.id, data.formId));
+
+      // Delete old versions beyond limit (keep last MAX_VERSIONS_PER_FORM)
+      const allVersions = await tx
+        .select({ id: formVersions.id })
+        .from(formVersions)
+        .where(eq(formVersions.formId, data.formId))
+        .orderBy(desc(formVersions.version));
+
+      if (allVersions.length > MAX_VERSIONS_PER_FORM) {
+        const versionsToDelete = allVersions.slice(MAX_VERSIONS_PER_FORM).map((v) => v.id);
+        await tx.delete(formVersions).where(inArray(formVersions.id, versionsToDelete));
+      }
+
+      const totalInDb = Math.min(allVersions.length, MAX_VERSIONS_PER_FORM);
+      const txid = await getTxId(tx);
+
+      console.log("[publishFormVersion] SUCCESS", {
         formId: data.formId,
-        version: nextVersion,
-        content: form.content,
-        settings: form.settings,
-        customization: settingsRow?.customization ?? {},
-        title: form.title,
-        publishedByUserId: context.session.user.id,
-        publishedAt: now,
-        createdAt: now,
-      })
-      .returning();
+        versionId,
+        versionNumber: nextVersionNumber,
+        totalVersionsInDb: totalInDb,
+        txid,
+      });
 
-    // Update form with new version reference and hash
-    await db
-      .update(forms)
-      .set({
-        status: "published",
-        lastPublishedVersionId: versionId,
-        publishedContentHash: contentHash,
-        updatedAt: now,
-      })
-      .where(eq(forms.id, data.formId));
-
-    // Delete old versions beyond limit (keep last MAX_VERSIONS_PER_FORM)
-    const allVersions = await db
-      .select({ id: formVersions.id })
-      .from(formVersions)
-      .where(eq(formVersions.formId, data.formId))
-      .orderBy(desc(formVersions.version));
-
-    if (allVersions.length > MAX_VERSIONS_PER_FORM) {
-      const versionsToDelete = allVersions.slice(MAX_VERSIONS_PER_FORM).map((v) => v.id);
-
-      await db.delete(formVersions).where(inArray(formVersions.id, versionsToDelete));
-    }
-
-    // Post-cleanup count: we keep at most MAX_VERSIONS_PER_FORM
-    const totalInDb = Math.min(allVersions.length, MAX_VERSIONS_PER_FORM);
-
-    const txid = await getTxId();
-
-    console.log("[publishFormVersion] SUCCESS", {
-      formId: data.formId,
-      versionId,
-      versionNumber: nextVersion,
-      totalVersionsInDb: totalInDb,
-      txid,
+      return {
+        version: serializeVersion(newVersion),
+        versionNumber: nextVersionNumber,
+        txid,
+      };
     });
-
-    return {
-      version: serializeVersion(newVersion),
-      versionNumber: nextVersion,
-      txid,
-    };
   });
 
 /**
