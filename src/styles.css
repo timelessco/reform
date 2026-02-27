@@ -983,6 +983,98 @@
   --bf-handle-active: rgba(255, 255, 255, 0.85);
 }
 
+/* Bridge rules: map --bf-* customization tokens to standard shadcn vars */
+.bf-themed {
+  --background: var(--bf-background);
+  --foreground: var(--bf-foreground);
+  --card: var(--bf-card);
+  --card-foreground: var(--bf-card-foreground);
+  --popover: var(--bf-popover);
+  --popover-foreground: var(--bf-popover-foreground);
+  --primary: var(--bf-primary);
+  --primary-foreground: var(--bf-primary-foreground);
+  --secondary: var(--bf-secondary);
+  --secondary-foreground: var(--bf-secondary-foreground);
+  --muted: var(--bf-muted);
+  --muted-foreground: var(--bf-muted-foreground);
+  --accent: var(--bf-accent);
+  --accent-foreground: var(--bf-accent-foreground);
+  --destructive: var(--bf-destructive);
+  --destructive-foreground: var(--bf-destructive-foreground);
+  --border: var(--bf-border);
+  --input: var(--bf-input);
+  --ring: var(--bf-ring);
+  --radius: var(--bf-radius);
+  font-family: var(--bf-font);
+  color: #09090b;
+}
+
+.bf-themed.dark {
+  color: #fafafa;
+}
+
+/* Layout bridge: consume --bf-* layout vars on data-attribute targets.
+   No fallback → declaration is ignored when the var is unset, preserving Tailwind defaults. */
+.bf-themed [data-bf-form-container] {
+  max-width: var(--bf-page-width);
+}
+
+/* Editor content area: override the padding-based centering when page width is set.
+   The editor uses sm:px-[max(64px,calc(50%-350px))] for a ~700px content area.
+   We override with a calc that centers to the desired page-width. */
+.bf-themed .group\/editor {
+  padding-left: max(64px, calc(50% - var(--bf-page-width, 700px) / 2));
+  padding-right: max(64px, calc(50% - var(--bf-page-width, 700px) / 2));
+}
+
+.bf-themed [data-bf-cover] {
+  height: var(--bf-cover-height);
+}
+
+/* Logo/icon positioning: half overlapping cover, half below.
+   Uses negative margin to pull the container up by half its height. */
+.bf-themed [data-bf-logo-container="true"] {
+  margin-top: calc(var(--bf-logo-width, 120px) / -2);
+}
+
+/* Emoji container: use half of the logo width (or default ~50px for 100px emoji) */
+.bf-themed [data-bf-logo-emoji-container="true"] {
+  margin-top: calc(var(--bf-logo-width, 100px) / -2);
+}
+
+/* Logo image sizing */
+.bf-themed [data-bf-logo] {
+  width: var(--bf-logo-width);
+  height: var(--bf-logo-width);
+}
+
+/* Emoji logo sizing — scale the font-size to match --bf-logo-width */
+.bf-themed [data-bf-logo-emoji] {
+  font-size: var(--bf-logo-width);
+}
+
+/* Input width: editor input nodes */
+.bf-themed [data-bf-input] {
+  max-width: var(--bf-input-width);
+}
+
+/* Input width: preview form inputs (Input/Textarea inside .bf-themed) */
+.bf-themed [data-bf-field-list] input,
+.bf-themed [data-bf-field-list] textarea {
+  max-width: var(--bf-input-width);
+}
+
+/* Typography bridge */
+.bf-themed {
+  font-size: var(--bf-font-size);
+  letter-spacing: var(--bf-letter-spacing);
+}
+
+/* Spacing bridge: field list vertical spacing between children */
+.bf-themed [data-bf-field-list] > * + * {
+  margin-top: var(--bf-spacing);
+}
+
 @utility font-case {
   font-feature-settings: 'case';
 }

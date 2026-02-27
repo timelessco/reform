@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 import { Info, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/style-controls";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { STYLES, BASE_COLORS, DARK_BASE_COLORS, THEME_COLORS, FONT_MAP } from "@/lib/theme-presets";
+import { TOKEN_NAMES } from "@/lib/generate-theme-css";
 
 const FONT_OPTIONS = Object.keys(FONT_MAP);
 
@@ -194,10 +195,10 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
       // Resolve from style for style-derived fields
       if (field === "radius") return resolvedStyle.radius;
       if (field === "spacing") return resolvedStyle.spacing;
-      // Color/font defaults (not bundled in style)
-      if (field === "baseColor") return "zinc";
-      if (field === "themeColor") return "zinc";
-      if (field === "font") return "Inter";
+      // Color/font defaults from active style preset
+      if (field === "baseColor") return resolvedStyle.baseColor;
+      if (field === "themeColor") return resolvedStyle.themeColor;
+      if (field === "font") return resolvedStyle.font;
       return "";
     },
     [customization, resolvedStyle],
@@ -231,11 +232,24 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
     (styleName: string) => {
       const style = STYLES[styleName];
       if (!style) return;
-      updateFields({
+
+      const updates: Record<string, string> = {
         preset: styleName,
         radius: style.radius,
         spacing: style.spacing,
-      });
+        baseColor: style.baseColor,
+        themeColor: style.themeColor,
+        font: style.font,
+      };
+
+      // Clear all color token overrides so preset base/theme colors take effect
+      for (const tokenName of TOKEN_NAMES) {
+        updates[tokenName] = "";
+        updates[`light:${tokenName}`] = "";
+        updates[`dark:${tokenName}`] = "";
+      }
+
+      updateFields(updates);
     },
     [updateFields],
   );
@@ -247,23 +261,25 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
     [updateFields],
   );
 
-  const modeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const handleModeToggle = useCallback(
     (on: boolean) => {
-      if (modeDebounceRef.current) clearTimeout(modeDebounceRef.current);
-      modeDebounceRef.current = setTimeout(() => {
-        updateField("mode", on ? "dark" : "light");
-      }, 300);
-    },
-    [updateField],
-  );
+      const targetMode = on ? "dark" : "light";
+      const sourceMode = on ? "light" : "dark";
+      const updates: Record<string, string> = { mode: targetMode };
 
-  useEffect(() => {
-    return () => {
-      if (modeDebounceRef.current) clearTimeout(modeDebounceRef.current);
-    };
-  }, []);
+      // One-time migration: move unprefixed overrides to source mode's prefix
+      for (const tokenName of TOKEN_NAMES) {
+        const unprefixed = customization[tokenName];
+        if (unprefixed && !customization[`${sourceMode}:${tokenName}`]) {
+          updates[`${sourceMode}:${tokenName}`] = unprefixed;
+          updates[tokenName] = "";
+        }
+      }
+
+      updateFields(updates);
+    },
+    [updateFields, customization],
+  );
 
   if (!settings) return null;
 
@@ -290,6 +306,11 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
       </SidebarHeader>
 
       <SidebarContent className="p-0 overflow-y-auto custom-scrollbar">
+      <StyleToggle
+                  label="Dark Mode"
+                  value={activeMode === "dark"}
+                  onChange={handleModeToggle}
+                />
         <div className="px-4 pt-3 pb-12">
           <Accordion defaultValue={["theme"]} className="w-full space-y-0">
             {/* ── Theme ── */}
@@ -298,11 +319,6 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                 Theme
               </AccordionTrigger>
               <AccordionContent className="space-y-2 pt-1 pb-2 px-1">
-                <StyleToggle
-                  label="Dark Mode"
-                  value={activeMode === "dark"}
-                  onChange={handleModeToggle}
-                />
                 <StyleSelect
                   label="Style"
                   value={activePreset}
@@ -313,16 +329,10 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                   label="Accent"
                   value={activeThemeColor}
                   onChange={(v) => {
-                    const theme = THEME_COLORS[v];
-                    if (theme) {
-                      updateFields({
-                        themeColor: v,
-                        preset: "custom",
-                        primary: theme.primary,
-                        "primary-foreground": theme["primary-foreground"],
-                        ring: theme.ring,
-                      });
-                    }
+                    updateFields({
+                      themeColor: v,
+                      preset: "custom",
+                    });
                   }}
                   options={THEME_COLOR_OPTIONS.map((o) => ({
                     ...o,
@@ -333,16 +343,10 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                   label="Base"
                   value={activeBaseColor}
                   onChange={(v) => {
-                    const base = activeBaseColors[v];
-                    if (base) {
-                      updateFields({
-                        baseColor: v,
-                        preset: "custom",
-                        ...base,
-                        secondary: base.muted,
-                        "secondary-foreground": base["muted-foreground"],
-                      });
-                    }
+                    updateFields({
+                      baseColor: v,
+                      preset: "custom",
+                    });
                   }}
                   options={BASE_COLOR_OPTIONS.map((o) => ({
                     ...o,
@@ -567,6 +571,7 @@ function AdvancedColorPickers({
   const baseColorName = customization.baseColor || "zinc";
   const themeColorName = customization.themeColor || "zinc";
   const isDark = customization.mode === "dark";
+  const mode = isDark ? "dark" : "light";
   const baseColors = isDark ? DARK_BASE_COLORS : BASE_COLORS;
   const base = baseColors[baseColorName] ?? baseColors.zinc;
   const theme = THEME_COLORS[themeColorName] ?? THEME_COLORS.zinc;
@@ -583,14 +588,23 @@ function AdvancedColorPickers({
 
   return (
     <>
-      {ADVANCED_COLOR_TOKENS.map(({ key, label }) => (
-        <StyleColorPicker
-          key={key}
-          label={label}
-          value={customization[key] || resolved[key] || "#000000"}
-          onChange={(v) => updateField(key, v)}
-        />
-      ))}
+      {ADVANCED_COLOR_TOKENS.map(({ key, label }) => {
+        const prefixedKey = `${mode}:${key}`;
+        const currentValue =
+          customization[prefixedKey] ||
+          customization[key] ||
+          resolved[key] ||
+          "#000000";
+
+        return (
+          <StyleColorPicker
+            key={key}
+            label={label}
+            value={currentValue}
+            onChange={(v) => updateField(prefixedKey, v)}
+          />
+        );
+      })}
     </>
   );
 }

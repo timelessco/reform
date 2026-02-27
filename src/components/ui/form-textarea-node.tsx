@@ -26,14 +26,13 @@ export function FormTextareaElement({ className, children, ...props }: PlateElem
 
   return (
     <PlateElement
-      attributes={{ ...attributes, placeholder }}
+      attributes={{ ...attributes, placeholder, "data-bf-input": "true" }}
       className={cn(
         "relative my-1 flex min-h-24 w-full max-w-md items-start rounded-lg border-0 bg-card pl-[10px] pr-[8px] py-2 text-base shadow-form-input cursor-text caret-current",
         isSelected && focused && "ring-ring/50 ring-[3px]",
         className,
       )}
       element={element}
-      data-bf-input="true"
       {...rest}
     >
       <span className="flex-1 min-w-px outline-none text-muted-foreground/50">{children}</span>

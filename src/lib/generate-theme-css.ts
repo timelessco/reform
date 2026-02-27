@@ -27,7 +27,7 @@ const LAYOUT_FIELDS: Record<string, string> = {
 /**
  * All shadcn token names that can be overridden via --bf-* prefix.
  */
-const TOKEN_NAMES = [
+export const TOKEN_NAMES = [
   "background",
   "foreground",
   "card",
@@ -64,9 +64,9 @@ function resolveTokens(customization: Record<string, string>): Record<string, st
   const presetName = customization.preset || "vega";
   const style = STYLES[presetName] ?? STYLES.vega;
 
-  const baseColorName = customization.baseColor || "zinc";
-  const themeColorName = customization.themeColor || "zinc";
-  const fontName = customization.font || "Inter";
+  const baseColorName = customization.baseColor || style.baseColor;
+  const themeColorName = customization.themeColor || style.themeColor;
+  const fontName = customization.font || style.font;
   const radiusName = customization.radius || style.radius;
   const spacingName = customization.spacing || style.spacing;
 
@@ -101,8 +101,13 @@ function resolveTokens(customization: Record<string, string>): Record<string, st
   tokens.spacing = spacingValue;
 
   // Apply any individual token overrides from advanced Pro users
+  // Priority: mode-prefixed key (e.g. "light:primary") > unprefixed legacy key
+  const mode = isDark ? "dark" : "light";
   for (const tokenName of TOKEN_NAMES) {
-    if (customization[tokenName]) {
+    const prefixedKey = `${mode}:${tokenName}`;
+    if (customization[prefixedKey]) {
+      tokens[tokenName] = customization[prefixedKey];
+    } else if (customization[tokenName]) {
       tokens[tokenName] = customization[tokenName];
     }
   }
@@ -117,10 +122,11 @@ function buildThemeVarEntries(customization: Record<string, string>): [string, s
   const tokens = resolveTokens(customization);
   const entries: [string, string][] = [];
 
-  // Token vars: --bf-background, --bf-primary, etc.
+  // Token vars: both --bf-* (for external CSS consumers) and standard names (direct override)
   for (const tokenName of TOKEN_NAMES) {
     if (tokens[tokenName]) {
       entries.push([`--bf-${tokenName}`, tokens[tokenName]]);
+      entries.push([`--${tokenName}`, tokens[tokenName]]);
     }
   }
 

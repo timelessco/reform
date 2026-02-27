@@ -54,6 +54,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
     <div
       className={cn(
         hasCustomization && "bf-themed",
+        customization?.mode === "dark" && "dark",
         "w-full h-full flex flex-col transition-colors duration-300",
         embedType === "fullpage"
           ? cn(

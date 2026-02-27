@@ -237,14 +237,17 @@ export const SPACING_MAP: Record<string, string> = {
 export interface StyleConfig {
   radius: string;
   spacing: string;
+  baseColor: string;
+  themeColor: string;
+  font: string;
 }
 
 export const STYLES: Record<string, StyleConfig> = {
-  vega: { radius: "medium", spacing: "normal" },
-  nova: { radius: "small", spacing: "compact" },
-  maia: { radius: "large", spacing: "spacious" },
-  lyra: { radius: "none", spacing: "normal" },
-  mira: { radius: "small", spacing: "dense" },
+  vega: { radius: "medium", spacing: "normal", baseColor: "zinc", themeColor: "zinc", font: "Inter" },
+  nova: { radius: "small", spacing: "compact", baseColor: "slate", themeColor: "zinc", font: "Inter" },
+  maia: { radius: "large", spacing: "spacious", baseColor: "stone", themeColor: "zinc", font: "Inter" },
+  lyra: { radius: "none", spacing: "normal", baseColor: "gray", themeColor: "zinc", font: "Inter" },
+  mira: { radius: "small", spacing: "dense", baseColor: "neutral", themeColor: "zinc", font: "Inter" },
 };
 
 export const STYLE_NAMES = Object.keys(STYLES);

@@ -26,14 +26,13 @@ export function FormInputElement({ className, children, ...props }: PlateElement
 
   return (
     <PlateElement
-      attributes={{ ...attributes, placeholder }}
+      attributes={{ ...attributes, placeholder, "data-bf-input": "true" }}
       className={cn(
         "relative my-1 flex h-7 w-full max-w-[464px] items-center rounded-lg border-0 bg-card pl-[10px] pr-[8px] text-sm tracking-[0.28px] leading-[1.15] shadow-form-input cursor-text caret-current",
         isSelected && focused && "ring-ring/50 ring-[3px]",
         className,
       )}
       element={element}
-      data-bf-input="true"
       {...rest}
     >
       <span className="flex-1 min-w-px outline-none text-muted-foreground/50">{children}</span>

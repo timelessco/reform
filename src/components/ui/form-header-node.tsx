@@ -162,7 +162,7 @@ export function FormHeaderElement(props: PlateElementProps) {
       >
         {hasCover && (
           <>
-            <div className="relative w-screen left-[50%] right-[50%] -ml-[50vw] -mr-[50vw] h-[120px] sm:h-[200px] group/cover bg-muted/20">
+            <div className="relative w-screen left-[50%] right-[50%] -ml-[50vw] -mr-[50vw] h-[120px] sm:h-[200px] group/cover bg-muted/20" data-bf-cover>
               {cover && !cover.startsWith("#") ? (
                 <>
                   {cover.includes("tint=true") && (
@@ -420,6 +420,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                           className="text-[80px] sm:text-[100px] leading-none inline-block"
                           role="img"
                           aria-label="Form icon"
+                          data-bf-logo-emoji
                         >
                           {icon}
                         </span>
@@ -428,6 +429,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                           src={icon}
                           alt="Logo"
                           className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-md object-cover"
+                          data-bf-logo
                         />
                       )
                     ) : (
@@ -435,6 +437,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                         className="text-[80px] sm:text-[100px] leading-none inline-block"
                         role="img"
                         aria-label="Form icon"
+                        data-bf-logo-emoji
                       >
                         📄
                       </span>
