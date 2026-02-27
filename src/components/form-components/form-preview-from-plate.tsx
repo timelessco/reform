@@ -395,7 +395,7 @@ function PreviewFormHeader({
           {hasIcon && renderIcon()}
           {hasTitle && (
             <h1
-              className={`text-4xl sm:text-[48px] font-serif font-light -tracking-[0.03em] leading-[1.15] text-[#212121] dark:text-foreground ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
+              className={`text-4xl sm:text-[48px] font-serif font-light -tracking-[0.03em] leading-[1.15] text-foreground ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
             >
               {title}
             </h1>
@@ -415,7 +415,7 @@ function PreviewFormHeader({
           {hasIcon && renderIcon()}
           {hasTitle && (
             <h1
-              className={`text-4xl sm:text-[48px] font-serif font-light -tracking-[0.03em] leading-[1.15] text-[#212121] dark:text-foreground ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
+              className={`text-4xl sm:text-[48px] font-serif font-light -tracking-[0.03em] leading-[1.15] text-foreground ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
             >
               {title}
             </h1>

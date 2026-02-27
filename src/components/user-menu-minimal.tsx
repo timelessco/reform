@@ -26,13 +26,6 @@ function getInitials(name?: string | null) {
     .join("")
     .toUpperCase()
     .slice(0, 2);
-  if (!name) return "U";
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
 }
 
 export interface UserMenuMinimalProps {
@@ -103,6 +96,45 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
 		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, [isOpen]);
 
+  const accountMenuItems = [
+    {
+      key: "settings",
+      label: "Settings",
+      icon: Settings,
+      action: () => {
+        router.navigate({ to: "/settings/my-account" });
+        setIsOpen(false);
+      },
+    },
+    {
+      key: "theme",
+      label: theme === "dark" ? "Light mode" : "Dark mode",
+      icon: theme === "dark" ? Sun : Moon,
+      action: () => {
+        setTheme(theme === "dark" ? "light" : "dark");
+        setIsOpen(false);
+      },
+    },
+    {
+      key: "trash",
+      label: "Trash",
+      icon: Trash2,
+      action: () => {
+        onOpenTrash();
+        setIsOpen(false);
+      },
+    },
+    {
+      key: "members",
+      label: "Members",
+      icon: Users,
+      action: () => {
+        router.navigate({ to: "/settings/members" });
+        setIsOpen(false);
+      },
+    },
+  ];
+
   return (
     <div className="relative user-menu-container border-t border-b pt-[4.8px] pb-2 bg-background">
       <Button
@@ -164,54 +196,20 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
               Account
             </p>
             <div className="space-y-0.5">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  router.navigate({ to: "/settings/my-account" });
-                  setIsOpen(false);
-                }}
-                className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-active rounded-lg"
-              >
-                <Settings className="h-3.5 w-3.5" strokeWidth={1.5} />
-                Settings
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setTheme(theme === "dark" ? "light" : "dark");
-                  setIsOpen(false);
-                }}
-                className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-active rounded-lg"
-              >
-                {theme === "dark" ? (
-                  <Sun className="h-3.5 w-3.5" strokeWidth={1.5} />
-                ) : (
-                  <Moon className="h-3.5 w-3.5" strokeWidth={1.5} />
-                )}
-                <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  onOpenTrash();
-                  setIsOpen(false);
-                }}
-                className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-active rounded-lg"
-              >
-                <Trash2 className="h-3.5 w-3.5" strokeWidth={1.5} />
-                Trash
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  router.navigate({ to: "/settings/members" });
-                  setIsOpen(false);
-                }}
-                className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-active rounded-lg"
-              >
-                <Users className="h-3.5 w-3.5" strokeWidth={1.5} />
-                Members
-              </Button>
+              {accountMenuItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Button
+                    key={item.key}
+                    variant="ghost"
+                    onClick={item.action}
+                    className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-active rounded-lg cursor-pointer"
+                  >
+                    <Icon className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    <span>{item.label}</span>
+                  </Button>
+                );
+              })}
             </div>
           </div>
 

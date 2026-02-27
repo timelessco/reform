@@ -80,10 +80,16 @@ import {
   createWorkspaceLocal,
   deleteWorkspaceLocal,
   duplicateFormById,
+  favoriteCollection,
+  formCollection,
+  formSettingsCollection,
+  formVersionCollection,
   permanentDeleteFormLocal,
   restoreFormLocal,
+  submissionCollection,
   updateFormStatus,
   updateWorkspaceName,
+  workspaceCollection,
 } from "@/db-collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
@@ -190,16 +196,16 @@ export const Route = createFileRoute("/_authenticated")({
       revalidateIfStale: true,
     });
     // requires browser cookies for auth and server-side preload would fail
-    // if (typeof window !== "undefined") {
-    //   await Promise.all([
-    //     workspaceCollection.preload(),
-    //     formCollection.preload(),
-    //     favoriteCollection.preload(),
-    //     // submissionCollection.preload(),
-    //     // formVersionCollection.preload(),
-    //     // formSettingsCollection.preload(),
-    //   ]);
-    // }
+    if (typeof window !== "undefined") {
+      await Promise.all([
+        workspaceCollection.preload(),
+        formCollection.preload(),
+        favoriteCollection.preload(),
+        submissionCollection.preload(),
+        formVersionCollection.preload(),
+        formSettingsCollection.preload(),
+      ]);
+    }
     return { activeOrg, orgsData };
   },
   staleTime: 500000, // 500 seconds

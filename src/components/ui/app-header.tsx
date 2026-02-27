@@ -231,6 +231,7 @@ export function AppHeader({
         toggleCustomizeSidebar();
         if (isSettingsSidebarOpen) toggleSettingsSidebar();
       },
+      show: isEditRoute,
     },
     {
       key: "versionHistory",
@@ -446,7 +447,7 @@ export function AppHeader({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 bg-secondary rounded-lg text-muted-foreground hover:text-foreground"
+                      className="h-7 w-7 bg-background rounded-lg hover:text-foreground"
                     />
                   }
                 >
@@ -462,14 +463,14 @@ export function AppHeader({
                 >
                   <div className="flex flex-col">
                     {menuItems.map((item) => (
-                      <button
+                      <Button
                         key={item.key}
-                        type="button"
+                        variant="ghost"
                         onClick={item.onClick}
-                        className="h-6 px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground/80 text-xs leading-4 tracking-tight transition-colors hover:bg-accent hover:text-accent-foreground"
+                        className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-medium leading-[1.15] tracking-[0.13px] font-case transition-colors hover:bg-accent hover:text-accent-foreground"
                       >
                         <span className="flex-1 text-left">{item.label}</span>
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </PopoverContent>

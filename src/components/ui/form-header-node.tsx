@@ -544,7 +544,7 @@ export function FormHeaderElement(props: PlateElementProps) {
               <textarea
                 ref={titleRef}
                 rows={1}
-                className="w-full text-4xl sm:text-[48px] font-serif font-light -tracking-[0.03em] leading-[1.15] border-none outline-none bg-transparent text-[#212121] dark:text-foreground placeholder:text-[#212121]/50 dark:placeholder:text-foreground/50 placeholder:font-light py-1 sm:py-2 h-auto select-text placeholder:font-serif resize-none overflow-hidden"
+                className="w-full text-4xl sm:text-[48px] font-serif font-light -tracking-[0.03em] leading-[1.15] border-none outline-none bg-transparent text-foreground placeholder:text-foreground/50 placeholder:font-light py-1 sm:py-2 h-auto select-text placeholder:font-serif resize-none overflow-hidden"
                 placeholder="Create your form."
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}

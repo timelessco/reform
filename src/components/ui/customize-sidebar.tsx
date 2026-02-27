@@ -287,14 +287,6 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
             Customize
           </span>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => closeSidebar()}
-          className="h-7 w-7 text-muted-foreground hover:bg-accent/50 rounded-lg transition-colors"
-        >
-          <X className="h-3.5 w-3.5" strokeWidth={1.5} />
-        </Button>
       </SidebarHeader>
 
       <SidebarContent className="p-0 overflow-y-auto custom-scrollbar">

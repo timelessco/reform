@@ -9,6 +9,7 @@ import { updateDoc, updateHeader } from "@/db-collections";
 import { useForm, useFormSettings } from "@/hooks/use-live-hooks";
 import { getThemeStyleVars } from "@/lib/generate-theme-css";
 import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 import { normalizeNodeId, type TElement, type Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
 import type { KeyboardEvent } from "react";
@@ -32,14 +33,73 @@ const DEFAULT_EDITOR_VALUE = normalizeNodeId([
   createFormButtonNode("submit") as unknown as TElement,
 ]);
 
+/**
+ * Outer component: fetches data and guards against rendering
+ * the editor before the Electric collection has synced.
+ *
+ * This split is necessary because React hooks always execute regardless
+ * of early returns. Without it, `usePlateEditor` would be called with
+ * DEFAULT_EDITOR_VALUE on the first render (while data is loading),
+ * and the editor would never update because `resetKey` doesn't change.
+ */
 export default function EditorApp({
   formId,
   workspaceId,
   versionContent,
   readOnly = false,
 }: EditorAppProps) {
-  const { data: savedDocs } = useForm(formId);
+  const { data: savedDocs, isReady: isFormReady } = useForm(formId);
   const { data: formSettings } = useFormSettings(formId);
+
+  // Guard: don't mount the editor until we have actual form data
+  if (!versionContent && !savedDocs?.length) {
+    // Collection ready but form not found → genuinely doesn't exist
+    if (isFormReady) {
+      return (
+        <div className="h-screen w-full flex items-center justify-center">
+          Loading editor...
+        </div>
+      );
+    }
+    // Still syncing → show spinner
+    return (
+      <div className="h-screen w-full flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <EditorAppInner
+      formId={formId}
+      workspaceId={workspaceId}
+      versionContent={versionContent}
+      readOnly={readOnly}
+      savedDocs={savedDocs}
+      formSettings={formSettings}
+    />
+  );
+}
+
+/**
+ * Inner component: only mounts once data is available.
+ * `usePlateEditor` is guaranteed to receive real content from its first call.
+ */
+function EditorAppInner({
+  formId,
+  workspaceId,
+  versionContent,
+  readOnly,
+  savedDocs,
+  formSettings,
+}: {
+  formId: string;
+  workspaceId?: string;
+  versionContent?: Value;
+  readOnly: boolean;
+  savedDocs: any;
+  formSettings: any;
+}) {
   const customization = formSettings?.customization as Record<
     string,
     string
@@ -192,15 +252,6 @@ export default function EditorApp({
     () => ({ themeVars, hasCustomization: Boolean(hasCustomization) }),
     [themeVars, hasCustomization],
   );
-
-  // Form not found - show error
-  if (savedDocs !== undefined && savedDocs.length === 0 && !versionContent) {
-    return (
-      <div className="h-screen w-full flex items-center justify-center">
-        Loading editor...
-      </div>
-    );
-  }
 
   return (
     <EditorThemeProvider value={themeCtx}>
