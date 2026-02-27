@@ -1,4 +1,5 @@
 import { SidebarItem } from "@/components/sidebar-item";
+import { Button } from "@/components/ui/button";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -6,7 +7,6 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
@@ -15,13 +15,13 @@ import {
 import {
   AlphabeticalIcon,
   CalendarIcon,
-  ChevronDownIcon,
   ClockRewindIcon,
   CopyIcon,
   MoreHorizontalIcon,
   Pencil2Icon,
   PlusIcon,
 } from "@/components/ui/sidebar-icons";
+import { SidebarSection } from "@/components/ui/sidebar-section";
 import { createFormLocal } from "@/db-collections";
 import { cn } from "@/lib/utils";
 import { useLocation, useRouter } from "@tanstack/react-router";
@@ -34,7 +34,7 @@ import {
   TrashIcon,
   Zap,
 } from "lucide-react";
-import React, { useState } from "react";
+import { useState } from "react";
 
 export type WorkspaceWithForms = {
   id: string;
@@ -75,7 +75,6 @@ export function WorkspaceItemMinimal({
   onDeleteForm,
 }: WorkspaceItemMinimalProps) {
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(true);
   const [isCreatingForm, setIsCreatingForm] = useState(false);
 
   const handleCreateForm = async () => {
@@ -94,152 +93,132 @@ export function WorkspaceItemMinimal({
   };
 
   return (
-    <div className="flex flex-col">
-      <div className="group flex items-center justify-between px-1 py-[7px] transition-colors">
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1 h-auto p-0 cursor-pointer flex-1 min-w-0 justify-start bg-transparent border-none"
-          aria-expanded={isOpen}
-        >
-          <span className="text-[13px] font-medium text-muted-foreground tracking-[0.26px] truncate">
-            {workspace.name}
-          </span>
-          <ChevronDownIcon
-            className={cn(
-              "h-2.5 w-2.5 shrink-0 text-muted-foreground transition-transform duration-200",
-              !isOpen && "-rotate-90",
-            )}
-          />
-        </button>
-
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-          <Popover>
-            <PopoverTrigger
-              render={
+    <SidebarSection
+      label={workspace.name}
+      initialOpen={true}
+      action={
+        <Popover>
+          <PopoverTrigger
+            render={
+              <Button
+                variant="ghost"
+                size='icon-sm'
+                className="size-[26px] p-[5px] rounded-lg overflow-hidden hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
+                title="More options"
+              />
+            }
+          >
+            <MoreHorizontalIcon className="size-4" />
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-48" sideOffset={4}>
+            <div className="flex flex-col">
+              <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground tracking-[0.24px] leading-tight">
+                Sort by
+              </div>
+              {[
+                { value: "recent", label: "Recent First", icon: CalendarIcon },
+                {
+                  value: "oldest",
+                  label: "Oldest First",
+                  icon: ClockRewindIcon,
+                },
+                {
+                  value: "alphabetical",
+                  label: "Alphabetical",
+                  icon: AlphabeticalIcon,
+                },
+                { value: "manual", label: "Manual", icon: CopyIcon },
+              ].map((option) => (
                 <Button
+                  key={option.value}
+                  type="button"
                   variant="ghost"
-                  size="icon-sm"
-                  className="h-6 w-6 hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
-                  title="More options"
-                />
-              }
-            >
-              <MoreHorizontalIcon className="h-4 w-4" />
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-48" sideOffset={4}>
-              <div className="flex flex-col">
-                <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground tracking-[0.24px] leading-tight">
-                  Sort by
-                </div>
-                {[
-                  { value: "recent", label: "Recent First", icon: CalendarIcon },
-                  {
-                    value: "oldest",
-                    label: "Oldest First",
-                    icon: ClockRewindIcon,
-                  },
-                  {
-                    value: "alphabetical",
-                    label: "Alphabetical",
-                    icon: AlphabeticalIcon,
-                  },
-                  { value: "manual", label: "Manual", icon: CopyIcon },
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() =>
-                      onSortChange(
-                        option.value as
-                          | "recent"
-                          | "oldest"
-                          | "alphabetical"
-                          | "manual",
-                      )
-                    }
-                    className={cn(
-                      "h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors",
-                      sortMode === option.value
-                        ? "bg-black/5 text-foreground"
-                        : "text-foreground/80 hover:bg-accent hover:text-accent-foreground",
-                    )}
-                  >
-                    <option.icon className="size-4 shrink-0" strokeWidth={1.5} />
-                    <span className="flex-1 text-left">{option.label}</span>
-                    {sortMode === option.value && (
-                      <Check className="size-3 shrink-0" strokeWidth={2} />
-                    )}
-                  </button>
-                ))}
-                <div className="my-1 h-px bg-border" />
-                <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground tracking-[0.24px] leading-tight">
-                  Workspace
-                </div>
-                <button
-                  type="button"
-                  onClick={handleCreateForm}
-                  disabled={isCreatingForm}
-                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  {isCreatingForm ? (
-                    <Loader2
-                      className="size-4 animate-spin shrink-0"
-                      strokeWidth={1.5}
-                    />
-                  ) : (
-                    <PlusIcon
-                      className="size-4 shrink-0"
-                      strokeWidth={1.5}
-                    />
+                  onClick={() =>
+                    onSortChange(
+                      option.value as
+                        | "recent"
+                        | "oldest"
+                        | "alphabetical"
+                        | "manual",
+                    )
+                  }
+                  className={cn(
+                    "h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors cursor-pointer",
+                    sortMode === option.value
+                      ? "bg-black/5 text-foreground"
+                      : "text-foreground/80 hover:bg-accent hover:text-accent-foreground",
                   )}
-                  <span className="flex-1 text-left">New form</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={onRename}
-                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
                 >
-                  <Pencil2Icon
+                  <option.icon className="size-4 shrink-0" strokeWidth={1.5} />
+                  <span className="flex-1 text-left">{option.label}</span>
+                  {sortMode === option.value && (
+                    <Check className="size-3 shrink-0" strokeWidth={2} />
+                  )}
+                </Button>
+              ))}
+              <div className="my-1 h-px bg-border" />
+              <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground tracking-[0.24px] leading-tight">
+                Workspace
+              </div>
+              <button
+                type="button"
+                onClick={handleCreateForm}
+                disabled={isCreatingForm}
+                className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none"
+              >
+                {isCreatingForm ? (
+                  <Loader2
+                    className="size-4 animate-spin shrink-0"
+                    strokeWidth={1.5}
+                  />
+                ) : (
+                  <PlusIcon
                     className="size-4 shrink-0"
                     strokeWidth={1.5}
                   />
-                  <span className="flex-1 text-left">Rename</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={onDelete}
-                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-red-500/70 hover:text-red-500 hover:bg-red-500/5"
-                >
-                  <TrashIcon className="size-4 shrink-0" strokeWidth={1.5} />
-                  <span className="flex-1 text-left">Delete</span>
-                </button>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
-
-      {isOpen && (
-        <div className="flex flex-col">
-          {workspace.forms.map((form) => (
-            <WorkspaceFormMinimal
-              key={form.id}
-              form={form}
-              workspaceId={workspace.id}
-              submissionCount={submissionCounts.get(form.id) || 0}
-              onDuplicate={() => onDuplicateForm(form)}
-              onDelete={() => onDeleteForm(form)}
-            />
-          ))}
-          {workspace.forms.length === 0 && (
-            <span className="text-muted-foreground/50 text-[11px] px-8 py-1 italic">
-              No forms yet
-            </span>
-          )}
-        </div>
+                )}
+                <span className="flex-1 text-left">New form</span>
+              </button>
+              <button
+                type="button"
+                onClick={onRename}
+                className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
+              >
+                <Pencil2Icon
+                  className="size-4 shrink-0"
+                  strokeWidth={1.5}
+                />
+                <span className="flex-1 text-left">Rename</span>
+              </button>
+              <button
+                type="button"
+                onClick={onDelete}
+                className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-red-500/70 hover:text-red-500 hover:bg-red-500/5"
+              >
+                <TrashIcon className="size-4 shrink-0" strokeWidth={1.5} />
+                <span className="flex-1 text-left">Delete</span>
+              </button>
+            </div>
+          </PopoverContent>
+        </Popover>
+      }
+    >
+      {workspace.forms.map((form) => (
+        <WorkspaceFormMinimal
+          key={form.id}
+          form={form}
+          workspaceId={workspace.id}
+          submissionCount={submissionCounts.get(form.id) || 0}
+          onDuplicate={() => onDuplicateForm(form)}
+          onDelete={() => onDeleteForm(form)}
+        />
+      ))}
+      {workspace.forms.length === 0 && (
+        <span className="text-muted-foreground/50 text-[11px] px-8 py-1 italic">
+          No forms yet
+        </span>
       )}
-    </div>
+    </SidebarSection>
   );
 }
 

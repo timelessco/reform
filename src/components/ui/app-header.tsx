@@ -401,12 +401,10 @@ export function AppHeader({
               {isEditRoute && (
                 <Link
                   to="."
-                  search={(prev: any) => ({
-                    ...prev,
-                    demo: !demo,
-                    sidebar: "",
+                  search={(prev) => ({
+                      ...prev,
+                        demo: !demo,
                   })}
-                  replace
                   className={cn(
                     buttonVariants({ variant: "ghost", size: "sm" }),
                     "h-8 px-2.5 text-muted-foreground hover:text-foreground font-normal",
@@ -509,8 +507,8 @@ export function AppHeader({
               formId && (
                 <Link
                   to="/workspace/$workspaceId/form-builder/$formId/edit"
-                  params={{ workspaceId, formId }}
-                  search={{ force: true }}
+                  params={() => ({ workspaceId, formId })}
+                  search={(prev) => ({ ...prev, force: true })}
                   className={cn(
                     buttonVariants({ size: "sm" }),
                     "h-8 pl-[10px] pr-[8px] ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200",

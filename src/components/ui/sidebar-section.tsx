@@ -19,14 +19,14 @@ export function SidebarSection({
 
 	return (
 		<div className="flex flex-col">
-			<div className="group flex items-center justify-between px-1 py-[7px] transition-colors">
+			<div className="group h-7 flex items-center justify-between gap-1 px-1 py-1.5 rounded-lg overflow-hidden transition-colors">
 				<button
 					type="button"
 					onClick={() => setIsOpen(!isOpen)}
 					className="flex items-center gap-1 h-auto p-0 cursor-pointer flex-1 min-w-0 justify-start bg-transparent border-none"
 					aria-expanded={isOpen}
 				>
-					<span className="text-[13px] font-medium text-muted-foreground tracking-[0.26px] truncate">
+					<span className="text-[13px] font-medium text-muted-foreground truncate leading-[1.15] tracking-[0.26px] font-case">
 						{label}
 					</span>
 					<ChevronDownIcon
@@ -38,14 +38,13 @@ export function SidebarSection({
 					/>
 				</button>
 
-				<div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+				<div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
 					{action ?? (
 						<Button
 							variant="ghost"
-							size="icon-sm"
-							className="h-[26px] w-[26px] hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
+							className="size-[26px] p-[5px] rounded-lg overflow-hidden hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
 						>
-							<MoreHorizontalIcon className="h-4 w-4" strokeWidth={1.5} />
+							<MoreHorizontalIcon className="size-4" />
 						</Button>
 					)}
 				</div>

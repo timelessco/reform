@@ -290,7 +290,7 @@ function Draggable(props: PlateElementProps) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-auto w-auto rounded-lg has-[>svg]:px-1.5 has-[>svg]:py-1 "
+                      className="h-auto w-auto rounded-lg has-[>svg]:px-1 has-[>svg]:py-1.5"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -318,9 +318,7 @@ function Draggable(props: PlateElementProps) {
             {/* Drag Handle or Settings Gear - div to avoid nested button (Tooltip+Button inside) */}
             <div
               ref={isFormButton ? null : handleRef}
-              className={cn(
-                "h-auto w-auto  rounded-lg hover:bg-accent",
-              )}
+              className="h-auto w-auto"
               data-plate-prevent-deselect
             >
               <DragHandle
@@ -407,7 +405,7 @@ const DragHandle = React.memo(function DragHandle({
       <TooltipTrigger
         render={
           <button
-            className="flex size-full items-center justify-center h-auto hover:bg-transparent has-[>svg]:px-1.5 has-[>svg]:py-1 px-0"
+            className="flex items-center justify-center h-auto w-auto overflow-hidden rounded-lg hover:bg-accent has-[>svg]:px-1 has-[>svg]:py-1.5"
             onClick={(e) => {
               // e.preventDefault();
               // e.stopPropagation();
@@ -505,7 +503,7 @@ const DragHandle = React.memo(function DragHandle({
         {isFormButton ? (
           <Settings className="text-muted-foreground" />
         ) : (
-          <GripVerticalIcon className="text-[#52525B] dark:text-muted-foreground" />
+          <GripVerticalIcon className="size-4 text-[#52525B] dark:text-muted-foreground" />
         )}
       </TooltipTrigger>
       <TooltipContent>

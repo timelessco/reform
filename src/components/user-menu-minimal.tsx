@@ -108,7 +108,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
       <Button
         variant="ghost"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-2 py-1.5 h-8 w-full min-w-0 rounded-md hover:bg-sidebar-active justify-start"
+        className="flex items-center gap-2 px-2 py-1.5 h-8 w-full min-w-0 rounded-md hover:bg-sidebar-active justify-start cursor-pointer"
         aria-label="Toggle user menu"
       >
         <div className="h-6 w-6 rounded-full overflow-hidden bg-sidebar-active flex items-center justify-center text-[10px] font-bold shrink-0">

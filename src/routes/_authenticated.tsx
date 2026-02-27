@@ -170,7 +170,7 @@ function SidebarNavLabel({ icon, label }: SidebarNavLabelProps) {
       <div className="flex items-center justify-center size-[18px] shrink-0">
         {icon}
       </div>
-      <span className="text-sm font-medium font-var-medium-14 text-sidebar-nav-text tracking-[0.14px] leading-[1.15] font-case truncate">
+      <span className="text-sm font-[450] text-sidebar-nav-text tracking-[0.14px] leading-[1.15] font-case truncate">
         {label}
       </span>
     </>
@@ -547,7 +547,7 @@ function AppSidebar() {
             variant="ghost"
             size="icon-sm"
             onClick={() => toggleSidebar()}
-            className="hover:bg-sidebar-active text-light-gray-400 hover:text-light-gray-900 group-data-[state=collapsed]:hidden"
+            className="hover:bg-sidebar-active text-light-gray-400 hover:text-light-gray-800 group-data-[state=collapsed]:hidden"
             title="Collapse sidebar"
           >
             <ChevronsLeft className="h-4 w-4" strokeWidth={1.5} />
@@ -576,7 +576,7 @@ function AppSidebar() {
                   <SidebarMenuButton
                     onClick={togglePalette}
                     tooltip="Search"
-                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active"
+                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active cursor-pointer"
                   >
                     <SidebarNavLabel
                       icon={<SearchIcon className="size-[18px] text-muted-foreground" />}
@@ -593,7 +593,7 @@ function AppSidebar() {
                         ? `Notifications (${pendingCount})`
                         : "Notifications"
                     }
-                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
+                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active cursor-pointer"
                   >
                     <div className="relative flex items-center justify-center size-[18px] shrink-0">
                       <BellIcon className="size-[18px] text-muted-foreground" />
@@ -601,7 +601,7 @@ function AppSidebar() {
                         <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-blue-500 ring-2 ring-background" />
                       )}
                     </div>
-                    <span className="text-sm font-medium font-var-medium-14 text-sidebar-nav-text tracking-[0.14px] leading-[1.15] font-case truncate flex-1 min-w-0">
+                    <span className="text-sm font-[450] text-sidebar-nav-text tracking-[0.14px] leading-[1.15] font-case truncate flex-1 min-w-0">
                       Notifications
                     </span>
                     {pendingCount > 0 && (
@@ -616,7 +616,7 @@ function AppSidebar() {
                     render={<Link to="/settings/my-account" />}
                     isActive={location.pathname.startsWith("/settings")}
                     tooltip="Settings"
-                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
+                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active cursor-pointer"
                   >
                     <SidebarNavLabel
                       icon={<SettingsIcon className="size-[18px] text-muted-foreground" />}
@@ -1176,7 +1176,7 @@ function FreePlanCard() {
       </p>
       <Button
         variant="secondary"
-        className="w-full h-7 text-sm px-1.5 font-medium text-accent-foreground bg-background hover:bg-muted rounded-lg shadow-[0px_1px_2px_0px_rgba(0,0,0,0.10),0px_0px_1px_0px_rgba(0,0,0,0.45)]"
+        className="w-full h-7 text-sm px-1.5 font-medium text-accent-foreground bg-background hover:bg-muted rounded-lg shadow cursor-pointer"
       >
         Try for free
       </Button>

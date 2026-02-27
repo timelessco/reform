@@ -511,7 +511,7 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                     onChange={(e) =>
                       updateWithCustomPreset("customCss", e.target.value)
                     }
-                    className="font-mono text-[11px] h-32 bg-light-gray-950 text-[#d4d4d4] border-0 rounded-none focus-visible:ring-0 p-3 leading-relaxed"
+                    className="font-mono text-[11px] h-32 bg-[#1e1e1e] text-[#d4d4d4] border-0 rounded-none focus-visible:ring-0 p-3 leading-relaxed"
                     placeholder=".bf-themed { ... }"
                     spellCheck={false}
                   />
