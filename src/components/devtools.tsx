@@ -1,6 +1,7 @@
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { Agentation } from "agentation";
+import { hotkeysDevtoolsPlugin } from '@tanstack/react-hotkeys-devtools'
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 
 export function Devtools() {
@@ -17,6 +18,7 @@ export function Devtools() {
             render: <TanStackRouterDevtoolsPanel aria-label="Tanstack Router Devtools" />,
           },
           TanStackQueryDevtools,
+          hotkeysDevtoolsPlugin(),
         ]}
       />
       <Agentation aria-label="Agentation" />
