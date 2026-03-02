@@ -1,6 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
+import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
@@ -53,6 +54,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased font-sans">
+        <HotkeysProvider defaultOptions={{ hotkey: { preventDefault: true } }}>
         <ThemeProvider defaultTheme="light" storageKey="agentation-theme">
           {children}
           <Toaster richColors />
@@ -62,6 +64,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             </Suspense>
           )}
         </ThemeProvider>
+        </HotkeysProvider>
         <Scripts />
       </body>
     </html>

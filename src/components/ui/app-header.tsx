@@ -16,7 +16,9 @@ import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { discardChanges, publishForm, useHasUnpublishedChanges } from "@/hooks/use-form-versions";
 import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
+import { HOTKEYS, formatForDisplay } from "@/lib/hotkeys";
 import { cn, parseTimestampAsUTC } from "@/lib/utils";
+import { useHotkey } from "@tanstack/react-hotkeys";
 import {
   Link,
   useLocation,
@@ -204,10 +206,86 @@ export function AppHeader({
     }
   };
 
+  // Scoped hotkeys for form-builder actions
+  useHotkey(HOTKEYS.TOGGLE_SETTINGS_SIDEBAR, () => toggleSettingsSidebar(), {
+    enabled: isFormBuilder,
+  });
+
+  useHotkey(HOTKEYS.TOGGLE_CUSTOMIZE_SIDEBAR, () => toggleCustomizeSidebar(), {
+    enabled: isFormBuilder && isEditRoute,
+  });
+
+  useHotkey(HOTKEYS.TOGGLE_VERSION_HISTORY, () => toggleVersionHistory(), {
+    enabled: isFormBuilder && isEditRoute,
+  });
+
+  useHotkey(HOTKEYS.TOGGLE_FAVORITE, () => handleToggleFavorite(), {
+    enabled: isFormBuilder && !!formId,
+  });
+
+  useHotkey(HOTKEYS.PUBLISH_FORM, () => handlePublish(), {
+    enabled: isFormBuilder && isEditRoute && !isPublishing,
+  });
+
+  const handleEditForm = () => {
+    if (workspaceId && formId) {
+      navigate({
+        to: "/workspace/$workspaceId/form-builder/$formId/edit",
+        params: { workspaceId, formId },
+        search: (prev: any) => ({ ...prev, force: true }),
+      });
+    }
+  };
+
+  useHotkey(HOTKEYS.EDIT_FORM, () => handleEditForm(), {
+    enabled: isFormBuilder && !isEditRoute && !!workspaceId && !!formId,
+  });
+
+  const handleTogglePreview = () => {
+    navigate({
+      to: ".",
+      search: (prev: any) => ({ ...prev, demo: !demo }),
+      replace: true,
+    });
+  };
+
+  useHotkey(HOTKEYS.TOGGLE_PREVIEW, () => handleTogglePreview(), {
+    enabled: isFormBuilder && isEditRoute,
+  });
+
+  useHotkey(HOTKEYS.TOGGLE_SHARE_SIDEBAR, () => toggleShareSidebar(), {
+    enabled: isFormBuilder && isEditRoute && savedDocs?.[0]?.status === "published",
+  });
+
+  const isLeftSidebarOpen = state === "expanded";
+
+  const handleDismissSidebars = () => {
+    if (isEditorSidebarOpen && isLeftSidebarOpen) {
+      // Both open → close both
+      handleCloseSidebar();
+      toggleMainSidebar();
+    } else if (isEditorSidebarOpen) {
+      // Only right open → close right
+      handleCloseSidebar();
+    } else if (isLeftSidebarOpen) {
+      // Only left open → close left
+      toggleMainSidebar();
+    } else {
+      // Both closed → open left sidebar + right (share) sidebar
+      toggleMainSidebar();
+      toggleShareSidebar();
+    }
+  };
+
+  useHotkey(HOTKEYS.DISMISS_SIDEBARS, () => handleDismissSidebars(), {
+    enabled: isFormBuilder,
+  });
+
   const menuItems = [
     {
       key: "favorite",
       label: "Favorite",
+      shortcut: formatForDisplay(HOTKEYS.TOGGLE_FAVORITE),
       onClick: () => {
         handleToggleFavorite();
       },
@@ -227,6 +305,7 @@ export function AppHeader({
     {
       key: "customization",
       label: "Customization",
+      shortcut: formatForDisplay(HOTKEYS.TOGGLE_CUSTOMIZE_SIDEBAR),
       onClick: () => {
         toggleCustomizeSidebar();
         if (isSettingsSidebarOpen) toggleSettingsSidebar();
@@ -236,6 +315,7 @@ export function AppHeader({
     {
       key: "versionHistory",
       label: "Version History",
+      shortcut: formatForDisplay(HOTKEYS.TOGGLE_VERSION_HISTORY),
       onClick: () => {
         toggleVersionHistory();
       },
@@ -400,45 +480,81 @@ export function AppHeader({
 
             <div className="flex items-center gap-1">
               {isEditRoute && (
-                <Link
-                  to="."
-                  search={(prev) => ({
-                      ...prev,
-                        demo: !demo,
-                  })}
-                  className={cn(
-                    buttonVariants({ variant: "ghost", size: "sm" }),
-                    "h-8 px-2.5 text-muted-foreground hover:text-foreground font-normal",
-                    demo && "text-foreground bg-accent/50",
-                  )}
-                >
-                  {demo ? "Editor" : "Preview"}
-                </Link>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Link
+                        to="."
+                        search={(prev) => ({
+                            ...prev,
+                              demo: !demo,
+                        })}
+                        className={cn(
+                          buttonVariants({ variant: "ghost", size: "sm" }),
+                          "h-8 px-2.5 text-muted-foreground hover:text-foreground font-normal",
+                          demo && "text-foreground bg-accent/50",
+                        )}
+                      />
+                    }
+                  >
+                    {demo ? "Editor" : "Preview"}
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" align="end">
+                    <p className="font-medium">{demo ? "Back to Editor" : "Preview Form"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatForDisplay(HOTKEYS.TOGGLE_PREVIEW)}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               )}
 
               {savedDocs?.[0]?.status === "published" && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "px-2.5 text-muted-foreground hover:text-foreground font-normal",
-                    isShareSidebarOpen && "text-foreground bg-accent/50",
-                  )}
-                  onClick={toggleShareSidebar}
-                >
-                  Share
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                          "px-2.5 text-muted-foreground hover:text-foreground font-normal",
+                          isShareSidebarOpen && "text-foreground bg-accent/50",
+                        )}
+                        onClick={toggleShareSidebar}
+                      />
+                    }
+                  >
+                    Share
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" align="end">
+                    <p className="font-medium">Share</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatForDisplay(HOTKEYS.TOGGLE_SHARE_SIDEBAR)}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               )}
 
               {/* Settings icon button directly in header - toggles form settings sidebar */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                onClick={toggleSettingsSidebar}
-              >
-                <SettingsIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                      onClick={toggleSettingsSidebar}
+                    />
+                  }
+                >
+                  <SettingsIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent side="bottom" align="end">
+                  <p className="font-medium">Settings</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatForDisplay(HOTKEYS.TOGGLE_SETTINGS_SIDEBAR)}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
 
               {/* Three dots menu - popover button list matching workspace/sidebar style */}
               <Popover>
@@ -458,7 +574,7 @@ export function AppHeader({
                 </PopoverTrigger>
                 <PopoverContent
                   align="end"
-                  className="w-36"
+                  className="w-48"
                   sideOffset={4}
                 >
                   <div className="flex flex-col">
@@ -470,6 +586,11 @@ export function AppHeader({
                         className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-medium leading-[1.15] tracking-[0.13px] font-case transition-colors hover:bg-accent hover:text-accent-foreground"
                       >
                         <span className="flex-1 text-left">{item.label}</span>
+                        {item.shortcut && (
+                          <span className="text-xs text-muted-foreground ml-auto pl-3">
+                            {item.shortcut}
+                          </span>
+                        )}
                       </Button>
                     ))}
                   </div>
@@ -478,46 +599,68 @@ export function AppHeader({
             </div>
 
             {isEditRoute ? (
-              <Button
-                size="sm"
-                className={cn(
-                  "h-8 pl-2 pr-2 py-1.5 ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none",
-                  !isLoadingSavedDocs &&
-                    (hasUnpublishedChanges ||
-                      savedDocs?.[0]?.status !== "published")
-                    ? "bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80",
-                )}
-                onClick={handlePublish}
-                disabled={
-                  isPublishing ||
-                  (!hasUnpublishedChanges &&
-                    savedDocs?.[0]?.status === "published")
-                }
-              >
-                {isPublishing ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : savedDocs?.[0]?.status === "published" ? (
-                  "Published"
-                ) : (
-                  "Publish"
-                )}
-              </Button>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      size="sm"
+                      className={cn(
+                        "h-8 pl-2 pr-2 py-1.5 ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none",
+                        !isLoadingSavedDocs &&
+                          (hasUnpublishedChanges ||
+                            savedDocs?.[0]?.status !== "published")
+                          ? "bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80",
+                      )}
+                      onClick={handlePublish}
+                      disabled={
+                        isPublishing ||
+                        (!hasUnpublishedChanges &&
+                          savedDocs?.[0]?.status === "published")
+                      }
+                    />
+                  }
+                >
+                  {isPublishing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : savedDocs?.[0]?.status === "published" ? (
+                    "Published"
+                  ) : (
+                    "Publish"
+                  )}
+                </TooltipTrigger>
+                <TooltipContent side="bottom" align="end">
+                  <p className="text-xs text-muted-foreground">
+                    {formatForDisplay(HOTKEYS.PUBLISH_FORM)}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
             ) : (
               workspaceId &&
               formId && (
-                <Link
-                  to="/workspace/$workspaceId/form-builder/$formId/edit"
-                  params={() => ({ workspaceId, formId })}
-                  search={(prev) => ({ ...prev, force: true })}
-                  className={cn(
-                    buttonVariants({ size: "sm" }),
-                    "h-8 pl-[10px] pr-[8px] ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200",
-                  )}
-                >
-                  <Pencil className="h-3.5 w-3.5 mr-1.5" />
-                  Edit
-                </Link>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Link
+                        to="/workspace/$workspaceId/form-builder/$formId/edit"
+                        params={() => ({ workspaceId, formId })}
+                        search={(prev) => ({ ...prev, force: true })}
+                        className={cn(
+                          buttonVariants({ size: "sm" }),
+                          "h-8 pl-[10px] pr-[8px] ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200",
+                        )}
+                      />
+                    }
+                  >
+                    <Pencil className="h-3.5 w-3.5 mr-1.5" />
+                    Edit
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" align="end">
+                    <p className="text-xs text-muted-foreground">
+                      {formatForDisplay(HOTKEYS.EDIT_FORM)}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               )
             )}
           </>
