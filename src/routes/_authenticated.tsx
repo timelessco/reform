@@ -101,9 +101,11 @@ import {
   useWorkspaces,
 } from "@/hooks/use-live-hooks";
 import { auth, useSession } from "@/lib/auth-client";
+import { HOTKEYS } from "@/lib/hotkeys";
 import { orgDataForLayoutQueryOptions } from "@/lib/fn/org";
 import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/middleware/auth";
+import { useHotkey } from "@tanstack/react-hotkeys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createFileRoute,
@@ -533,16 +535,7 @@ function AppSidebar() {
     }
   }, [activeOrg, orgsData, session, setActiveOrgMutation]);
 
-  useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        togglePalette();
-      }
-    };
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
-  }, [togglePalette]);
+  useHotkey(HOTKEYS.TOGGLE_COMMAND_PALETTE, () => togglePalette());
 
   return (
     <>
@@ -1159,6 +1152,7 @@ function FreePlanCard() {
             viewBox="0 0 12 12"
             fill="none"
           >
+            <title>Free Plan</title>
             <path
               d="M6.375 1.875L5.625 4.875H10.125L5.625 10.125L6.375 7.125H1.875L6.375 1.875Z"
               fill="#0F736B"

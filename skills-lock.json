@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "tanstack-hotkeys": {
+      "source": "git@github.com:timelessco/skills.git",
+      "sourceType": "git",
+      "computedHash": "9eb60aa351b3f1c7af3567816427ceb13f91e9ba568fc7624ca0c91ca9657841"
+    }
+  }
+}
