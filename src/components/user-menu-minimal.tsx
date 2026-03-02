@@ -1,7 +1,12 @@
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useTheme } from "@/components/ThemeProvider";
 import { auth, useSession } from "@/lib/auth-client";
+import { settingsDialogStore } from "@/hooks/use-settings-dialog";
 import { orgDataForLayoutQueryOptions } from "@/lib/fn/org";
 import { getUserMembershipsQueryOptions } from "@/lib/fn/workspaces";
 import { cn } from "@/lib/utils";
@@ -16,7 +21,7 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 function getInitials(name?: string | null) {
   if (!name) return "U";
@@ -68,33 +73,32 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
     }),
   );
 
-	const setActiveOrgMutation = useMutation(
-		auth.organization.setActive.mutationOptions({
-			onSuccess: async () => {
-				await queryClient.invalidateQueries({
-					queryKey: ["organization", "getFullOrganization"],
-					refetchType: "all",
-				});
-				await queryClient.invalidateQueries({
-					queryKey: ["workspaces-with-forms"],
-					refetchType: "all",
-				});
-				router.navigate({ to: "/dashboard" });
-			},
-		}),
-	);
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
-	useEffect(() => {
-		if (!isOpen) return;
-		const handleClickOutside = (e: MouseEvent) => {
-			const target = e.target as HTMLElement;
-			if (!target.closest(".user-menu-container")) {
-				setIsOpen(false);
-			}
-		};
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [isOpen]);
+  const handleMouseEnter = useCallback(() => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setIsOpen(true);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    closeTimer.current = setTimeout(() => setIsOpen(false), 200);
+  }, []);
+
+  const setActiveOrgMutation = useMutation(
+    auth.organization.setActive.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: ["organization", "getFullOrganization"],
+          refetchType: "all",
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["workspaces-with-forms"],
+          refetchType: "all",
+        });
+        router.navigate({ to: "/dashboard" });
+      },
+    }),
+  );
 
   const accountMenuItems = [
     {
@@ -102,7 +106,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
       label: "Settings",
       icon: Settings,
       action: () => {
-        router.navigate({ to: "/settings/my-account" });
+        settingsDialogStore.open("account");
         setIsOpen(false);
       },
     },
@@ -129,47 +133,62 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
       label: "Members",
       icon: Users,
       action: () => {
-        router.navigate({ to: "/settings/members" });
+        settingsDialogStore.open("members");
         setIsOpen(false);
       },
     },
   ];
 
   return (
-    <div className="relative user-menu-container border-t border-b pt-[4.8px] pb-2 bg-background">
-      <Button
-        variant="ghost"
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-2 py-1.5 h-8 w-full min-w-0 rounded-md hover:bg-sidebar-active justify-start cursor-pointer"
-        aria-label="Toggle user menu"
-      >
-        <div className="h-6 w-6 rounded-full overflow-hidden bg-sidebar-active flex items-center justify-center text-[10px] font-bold shrink-0">
-          {session?.user?.image ? (
-            <img
-              src={session.user.image}
-              alt={displayName}
-              className="h-full w-full object-cover"
+    <div
+      className="border-t border-b bg-background"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger
+          render={
+            <button
+              type="button"
+              className="flex items-center gap-2 px-3 py-2 h-10 w-full min-w-0 hover:bg-sidebar-active justify-start cursor-pointer transition-colors"
+              aria-label="Toggle user menu"
             />
-          ) : (
-            getInitials(displayName)
-          )}
-        </div>
-        <span className="text-[14px] font-medium text-sidebar-foreground truncate flex-1 text-left tracking-[0.14px]">
-          {displayName}
-        </span>
-        <ChevronDown
-          className={cn(
-            "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 shrink-0",
-            isOpen && "rotate-180",
-          )}
-          strokeWidth={1.5}
-        />
-      </Button>
+          }
+        >
+          <div className="h-6 w-6 rounded-full overflow-hidden bg-sidebar-active flex items-center justify-center text-[10px] font-bold shrink-0">
+            {session?.user?.image ? (
+              <img
+                src={session.user.image}
+                alt={displayName}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              getInitials(displayName)
+            )}
+          </div>
+          <span className="text-[14px] font-medium text-sidebar-foreground truncate flex-1 text-left tracking-[0.14px]">
+            {displayName}
+          </span>
+          <ChevronDown
+            className={cn(
+              "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 shrink-0",
+              isOpen && "rotate-180",
+            )}
+            strokeWidth={1.5}
+          />
+        </PopoverTrigger>
 
-      {isOpen && (
-        <div className="absolute bottom-full left-0 right-0 mb-2 mx-2 bg-background border rounded-xl shadow-[0px_4px_16px_rgba(0,0,0,0.08)] p-1.5 z-100 animate-in fade-in slide-in-from-bottom-2 duration-200 min-w-[220px]">
-          <div className="px-3 py-2 border-b mb-1.5 flex items-start gap-3">
-            <div className="h-10 w-10 rounded-lg bg-sidebar-active flex items-center justify-center text-lg font-bold shrink-0 overflow-hidden">
+        <PopoverContent
+          side="top"
+          align="center"
+          sideOffset={8}
+          className="w-[calc(var(--anchor-width)-16px)]"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
+          {/* User info header */}
+          <div className="px-2 py-1.5 flex items-start gap-2.5">
+            <div className="h-8 w-8 rounded-lg bg-sidebar-active flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden">
               {session?.user?.image ? (
                 <img
                   src={session.user.image}
@@ -181,7 +200,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
               )}
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="text-[14px] font-bold text-sidebar-foreground truncate">
+              <span className="text-[13px] font-medium text-foreground truncate">
                 {displayName}
               </span>
               <span className="text-[11px] text-muted-foreground">
@@ -191,85 +210,85 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
             </div>
           </div>
 
-          <div className="px-2 py-1 mb-1.5">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1 mb-1">
+          <div className="my-1 h-px bg-border" />
+
+          {/* Account section */}
+          <div className="flex flex-col">
+            <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground tracking-[0.24px] leading-tight">
               Account
-            </p>
-            <div className="space-y-0.5">
-              {accountMenuItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Button
-                    key={item.key}
-                    variant="ghost"
-                    onClick={item.action}
-                    className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-active rounded-lg cursor-pointer"
-                  >
-                    <Icon className="h-3.5 w-3.5" strokeWidth={1.5} />
-                    <span>{item.label}</span>
-                  </Button>
-                );
-              })}
             </div>
+            {accountMenuItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={item.action}
+                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                >
+                  <Icon className="size-4 shrink-0" strokeWidth={1.5} />
+                  <span className="flex-1 text-left">{item.label}</span>
+                </button>
+              );
+            })}
           </div>
 
-          <div className="px-2 py-1 mb-1.5">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1 mb-1">
+          <div className="my-1 h-px bg-border" />
+
+          {/* Organizations section */}
+          <div className="flex flex-col">
+            <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground tracking-[0.24px] leading-tight truncate">
               {session?.user?.email}
-            </p>
-            <div className="space-y-0.5">
-              {orgs?.map((org: { id: string; name: string }) => {
-                const role = roleByOrgId[org.id];
-                return (
-                  <Button
-                    variant="ghost"
-                    key={org.id}
-                    onClick={() => {
-                      setActiveOrgMutation.mutate({ organizationId: org.id });
-                      setIsOpen(false);
-                    }}
-                    className="flex items-center gap-2 px-2 py-1.5 h-auto w-full justify-start text-muted-foreground hover:bg-sidebar-active rounded-lg"
-                    aria-label={`Switch to ${org.name}`}
-                  >
-                    <div className="h-5 w-5 rounded bg-sidebar-active flex items-center justify-center text-[9px] font-bold text-sidebar-foreground">
-                      {getInitials(org.name)}
-                    </div>
-                    <span className="text-[13px] font-medium text-foreground group-hover:text-sidebar-foreground flex-1 truncate">
-                      {org.name}
-                    </span>
-                    {role && (
-                      <Badge
-                        variant={role === "owner" ? "default" : "outline"}
-                        className="text-[9px] px-1.5 py-0 h-4 capitalize"
-                      >
-                        {role}
-                      </Badge>
-                    )}
-                    {org.id === activeOrg?.id && (
-                      <div className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
-                    )}
-                  </Button>
-                );
-              })}
             </div>
+            {orgs?.map((org: { id: string; name: string }) => {
+              const role = roleByOrgId[org.id];
+              return (
+                <button
+                  type="button"
+                  key={org.id}
+                  onClick={() => {
+                    setActiveOrgMutation.mutate({ organizationId: org.id });
+                    setIsOpen(false);
+                  }}
+                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                  aria-label={`Switch to ${org.name}`}
+                >
+                  <div className="h-5 w-5 rounded bg-sidebar-active flex items-center justify-center text-[9px] font-bold text-sidebar-foreground shrink-0">
+                    {getInitials(org.name)}
+                  </div>
+                  <span className="flex-1 text-left truncate">{org.name}</span>
+                  {role && (
+                    <Badge
+                      variant={role === "owner" ? "default" : "outline"}
+                      className="text-[9px] px-1.5 py-0 h-4 capitalize"
+                    >
+                      {role}
+                    </Badge>
+                  )}
+                  {org.id === activeOrg?.id && (
+                    <div className="h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
+                  )}
+                </button>
+              );
+            })}
           </div>
 
-          <div className="h-px bg-foreground/5 my-1" />
-          <div className="space-y-0.5 px-1">
-            <Button
-              variant="ghost"
-              onClick={() => {
-                signOutMutation.mutate({});
-                setIsOpen(false);
-              }}
-              className="flex items-center gap-2 w-full px-2 py-1.5 h-auto justify-start text-[13px] text-muted-foreground hover:text-sidebar-foreground hover:bg-sidebar-active rounded-lg"
-            >
-              <LogOut className="h-3.5 w-3.5" strokeWidth={1.5} />
-              Log out
-            </Button>
-          </div>
-        </div>
-      )}
+          <div className="my-1 h-px bg-border" />
+
+          {/* Logout */}
+          <button
+            type="button"
+            onClick={() => {
+              signOutMutation.mutate({});
+              setIsOpen(false);
+            }}
+            className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground cursor-pointer"
+          >
+            <LogOut className="size-4 shrink-0" strokeWidth={1.5} />
+            <span className="flex-1 text-left">Log out</span>
+          </button>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

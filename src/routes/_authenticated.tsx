@@ -92,6 +92,8 @@ import {
   workspaceCollection,
 } from "@/db-collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
+import { settingsDialogStore } from "@/hooks/use-settings-dialog";
+import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import {
   useArchivedForms,
@@ -619,8 +621,7 @@ function AppSidebar() {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    render={<Link to="/settings/my-account" />}
-                    isActive={location.pathname.startsWith("/settings")}
+                    onClick={() => settingsDialogStore.open()}
                     tooltip="Settings"
                     className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active cursor-pointer"
                   >
@@ -721,7 +722,7 @@ function AppSidebar() {
                 </CommandItem>
                 <CommandItem
                   onSelect={() => {
-                    router.navigate({ to: "/settings" });
+                    settingsDialogStore.open();
                     setIsPaletteOpen(false);
                   }}
                 >
@@ -758,6 +759,9 @@ function AppSidebar() {
         onOpenChange={setTrashDialogOpen}
         activeOrgId={activeOrg?.id}
       />
+
+      {/* Settings Dialog */}
+      <SettingsDialog />
     </>
   );
 }

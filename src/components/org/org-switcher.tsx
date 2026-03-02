@@ -18,6 +18,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { auth, useSession } from "@/lib/auth-client";
+import { settingsDialogStore } from "@/hooks/use-settings-dialog";
 import { getUserMembershipsQueryOptions } from "@/lib/fn/workspaces";
 
 function OrganizationSwitcher() {
@@ -156,22 +157,14 @@ function OrganizationSwitcher() {
               <span>Home</span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() =>
-                router.navigate({
-                  to: "/settings/members",
-                })
-              }
+              onClick={() => settingsDialogStore.open("members")}
               className="gap-2.5 py-2"
             >
               <Users className="h-4 w-4" />
               <span>Members</span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() =>
-                router.navigate({
-                  to: "/settings",
-                })
-              }
+              onClick={() => settingsDialogStore.open()}
               className="gap-2.5 py-2"
             >
               <Settings className="h-4 w-4" />
