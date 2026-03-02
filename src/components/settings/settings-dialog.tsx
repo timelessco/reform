@@ -1,17 +1,17 @@
-import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { CircleUser, Download, Sparkles, Users, X } from "lucide-react";
 import { useSettingsDialog, type SettingsTab } from "@/hooks/use-settings-dialog";
+import { cn } from "@/lib/utils";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
+import { X } from "lucide-react";
+import { CircleUserIcon, DownloadIcon, SparklesIcon, UsersIcon } from "../ui/sidebar-icons";
 import { AccountSettingsContent } from "./account-settings-content";
-import { AIFeaturesContent } from "./ai-features-content";
 import { ImportContent } from "./import-content";
 import { MembersContent } from "./members-content";
-import { cn } from "@/lib/utils";
 
-const navItems: { key: SettingsTab; label: string; icon: typeof CircleUser }[] = [
-  { key: "account", label: "Account", icon: CircleUser },
-  { key: "members", label: "Members", icon: Users },
-  { key: "ai-features", label: "AI Features", icon: Sparkles },
-  { key: "import", label: "Import", icon: Download },
+const navItems: { key: SettingsTab; label: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>> }[] = [
+  { key: "account", label: "Account", icon: CircleUserIcon },
+  { key: "members", label: "Members", icon: UsersIcon },
+  { key: "ai-features", label: "AI Features", icon: SparklesIcon },
+  { key: "import", label: "Import", icon: DownloadIcon },
 ];
 
 const tabTitles: Record<SettingsTab, string> = {
@@ -28,7 +28,7 @@ function TabContent({ tab }: { tab: SettingsTab }) {
     case "members":
       return <MembersContent />;
     case "ai-features":
-      return <AIFeaturesContent />;
+      return <SparklesIcon className="size-4 text-muted-foreground" />;
     case "import":
       return <ImportContent />;
   }

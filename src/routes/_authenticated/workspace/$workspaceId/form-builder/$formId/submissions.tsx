@@ -337,6 +337,7 @@ function SubmissionsPage() {
               size: 150,
               meta: {
                 headerClassName: config.bgColor,
+                headerTitle: field.label || field.name,
               },
             }),
           );
@@ -377,6 +378,7 @@ function SubmissionsPage() {
             size: 150,
             meta: {
               headerClassName: config.bgColor,
+              headerTitle: fieldName,
             },
           }),
         );
