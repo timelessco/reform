@@ -1,13 +1,9 @@
-import { HelpCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useRef, useState } from "react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
@@ -56,389 +52,407 @@ export const defaultEmbedOptions: EmbedOptions = {
 interface EmbedConfigPanelProps {
   embedType: EmbedType;
   form: { Field: any; Subscribe: any };
+  section: "customize" | "pro";
 }
 
-export function EmbedConfigPanel({ embedType, form }: EmbedConfigPanelProps) {
+/* ─── Layout helpers matching Figma node 24119:5595 ─── */
+
+function ConfigCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="space-y-6">
-      {/* Standard Embed Options */}
-      {embedType === "standard" && (
-        <div className="space-y-4">
-          <Label className="text-[10px] font-bold uppercase tracking-widest text-light-gray-400">
-            Appearance
-          </Label>
-
-          {/* Height */}
-          <form.Field name="height">
-            {(field: any) => (
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label className="text-[12px] font-medium">Height</Label>
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">
-                    Pixels
-                  </span>
-                </div>
-                <Input
-                  type="number"
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(Number(e.target.value))}
-                  onBlur={field.handleBlur}
-                  className="h-9 bg-muted/30 border-muted-foreground/20 rounded-lg"
-                />
-              </div>
-            )}
-          </form.Field>
-
-          {/* Toggles */}
-          <div className="space-y-3 pt-1">
-            <form.Field name="dynamicHeight">
-              {(field: any) => (
-                <ToggleRow
-                  label="Dynamic height"
-                  description="Adjust iframe to content"
-                  checked={field.state.value}
-                  onCheckedChange={(v) => field.handleChange(v)}
-                />
-              )}
-            </form.Field>
-            <form.Field name="hideTitle">
-              {(field: any) => (
-                <ToggleRow
-                  label="Hide form title"
-                  description="Removes the title"
-                  checked={field.state.value}
-                  onCheckedChange={(v) => field.handleChange(v)}
-                />
-              )}
-            </form.Field>
-            <form.Field name="alignLeft">
-              {(field: any) => (
-                <ToggleRow
-                  label="Align left"
-                  description="Left align elements"
-                  checked={field.state.value}
-                  onCheckedChange={(v) => field.handleChange(v)}
-                />
-              )}
-            </form.Field>
-            <form.Field name="transparentBackground">
-              {(field: any) => (
-                <ToggleRow
-                  label="Transparency"
-                  description="Invisible background"
-                  checked={field.state.value}
-                  onCheckedChange={(v) => field.handleChange(v)}
-                />
-              )}
-            </form.Field>
-          </div>
-        </div>
-      )}
-
-      {/* Popup Embed Options */}
-      {embedType === "popup" && (
-        <div className="space-y-6">
-          <div className="space-y-4">
-            <Label className="text-[10px] font-bold uppercase tracking-widest text-light-gray-400">
-              Trigger & Position
-            </Label>
-
-            {/* Open Trigger */}
-            <form.Field name="popupTrigger">
-              {(field: any) => (
-                <div className="space-y-2">
-                  <Label className="text-[12px] font-medium">Open when</Label>
-                  <Select
-                    value={field.state.value}
-                    onValueChange={(v: string) => field.handleChange(v)}
-                  >
-                    <SelectTrigger className="w-full h-9 bg-muted/30 border-muted-foreground/20 rounded-lg">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="button">On button click</SelectItem>
-                      <SelectItem value="auto">Automatically</SelectItem>
-                      <SelectItem value="scroll">After scrolling</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </form.Field>
-
-            {/* Position */}
-            <form.Field name="popupPosition">
-              {(field: any) => (
-                <div className="space-y-2">
-                  <Label className="text-[12px] font-medium">Position</Label>
-                  <Select
-                    value={field.state.value}
-                    onValueChange={(v: string) => field.handleChange(v)}
-                  >
-                    <SelectTrigger className="w-full h-9 bg-muted/30 border-muted-foreground/20 rounded-lg">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="bottom-right">Bottom right</SelectItem>
-                      <SelectItem value="bottom-left">Bottom left</SelectItem>
-                      <SelectItem value="center">Center Modal</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </form.Field>
-
-            {/* Width */}
-            <form.Field name="popupWidth">
-              {(field: any) => (
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <Label className="text-[12px] font-medium">Popup width</Label>
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase">
-                      Pixels
-                    </span>
-                  </div>
-                  <Input
-                    type="number"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(Number(e.target.value))}
-                    onBlur={field.handleBlur}
-                    className="h-9 bg-muted/30 border-muted-foreground/20 rounded-lg"
-                  />
-                </div>
-              )}
-            </form.Field>
-          </div>
-
-          <div className="space-y-4">
-            <Label className="text-[10px] font-bold uppercase tracking-widest text-light-gray-400">
-              Visuals
-            </Label>
-
-            <div className="space-y-3">
-              <form.Field name="darkOverlay">
-                {(field: any) => (
-                  <ToggleRow
-                    label="Dark overlay"
-                    checked={field.state.value}
-                    onCheckedChange={(v) => field.handleChange(v)}
-                  />
-                )}
-              </form.Field>
-
-              {/* Emoji Section */}
-              <form.Field name="emoji">
-                {(emojiField: any) => (
-                  <div className="space-y-2">
-                    <ToggleRow
-                      label="Show Emoji icon"
-                      checked={emojiField.state.value}
-                      onCheckedChange={(v) => emojiField.handleChange(v)}
-                    />
-
-                    {emojiField.state.value && (
-                      <div className="space-y-2.5 pl-3 py-2.5 border-l-2 border-muted bg-muted/20 rounded-r-lg">
-                        <form.Field name="emojiIcon">
-                          {(field: any) => (
-                            <div className="space-y-1">
-                              <Label className="text-[10px] text-muted-foreground font-bold uppercase">
-                                Character
-                              </Label>
-                              <Input
-                                value={field.state.value}
-                                onChange={(e) => field.handleChange(e.target.value)}
-                                onBlur={field.handleBlur}
-                                className="h-8 bg-background border-muted-foreground/20 text-lg text-center"
-                              />
-                            </div>
-                          )}
-                        </form.Field>
-                        <form.Field name="emojiAnimation">
-                          {(field: any) => (
-                            <div className="space-y-1">
-                              <Label className="text-[10px] text-muted-foreground font-bold uppercase">
-                                Animation
-                              </Label>
-                              <Select
-                                value={field.state.value}
-                                onValueChange={(v: string) => field.handleChange(v)}
-                              >
-                                <SelectTrigger className="w-full h-8 text-xs bg-background">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="wave">Wave</SelectItem>
-                                  <SelectItem value="bounce">Bounce</SelectItem>
-                                  <SelectItem value="pulse">Pulse</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          )}
-                        </form.Field>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </form.Field>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <Label className="text-[10px] font-bold uppercase tracking-widest text-light-gray-400">
-              Behavior
-            </Label>
-
-            <div className="space-y-3">
-              <form.Field name="hideOnSubmit">
-                {(hideField: any) => (
-                  <>
-                    <ToggleRow
-                      label="Hide on submit"
-                      description="Close after success"
-                      checked={hideField.state.value}
-                      onCheckedChange={(v) => hideField.handleChange(v)}
-                    />
-
-                    {hideField.state.value && (
-                      <form.Field name="hideOnSubmitDelay">
-                        {(field: any) => (
-                          <div className="space-y-2 pl-3 py-2.5 border-l-2 border-muted bg-muted/20 rounded-r-lg">
-                            <Label className="text-[10px] text-muted-foreground font-bold uppercase">
-                              Delay (seconds)
-                            </Label>
-                            <Input
-                              type="number"
-                              value={field.state.value}
-                              step={0.1}
-                              onChange={(e) => field.handleChange(Number(e.target.value))}
-                              onBlur={field.handleBlur}
-                              className="h-8 bg-background border-muted-foreground/20"
-                            />
-                          </div>
-                        )}
-                      </form.Field>
-                    )}
-                  </>
-                )}
-              </form.Field>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Full Page Options */}
-      {embedType === "fullpage" && (
-        <div className="space-y-4">
-          <Label className="text-[10px] font-bold uppercase tracking-widest text-light-gray-400">
-            Appearance
-          </Label>
-          <form.Field name="transparentBackground">
-            {(field: any) => (
-              <ToggleRow
-                label="Transparent background"
-                description="Remove page background"
-                checked={field.state.value}
-                onCheckedChange={(v) => field.handleChange(v)}
-              />
-            )}
-          </form.Field>
-        </div>
-      )}
-
-      {/* Pro Settings */}
-      <div className="space-y-4 pt-4 border-t border-muted/60">
-        <Label className="text-[10px] font-bold uppercase tracking-widest text-light-gray-400">
-          Pro Settings
-        </Label>
-
-        <div className="space-y-3">
-          <form.Field name="trackEvents">
-            {(field: any) => (
-              <div className="flex items-center justify-between group">
-                <div className="space-y-0.5">
-                  <Label className="text-[12px] font-medium flex items-center gap-1.5 cursor-pointer">
-                    Analytics tracking
-                    <HelpCircle className="h-3 w-3 text-muted-foreground/70 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </Label>
-                  <p className="text-[10px] text-muted-foreground">Record views & submissions</p>
-                </div>
-                <Switch
-                  checked={field.state.value}
-                  onCheckedChange={(v) => field.handleChange(v)}
-                />
-              </div>
-            )}
-          </form.Field>
-
-          <form.Field name="customDomain">
-            {(field: any) => (
-              <div className="flex items-center justify-between opacity-70 cursor-not-allowed">
-                <div className="space-y-0.5">
-                  <Label className="text-[12px] font-medium flex items-center gap-1.5">
-                    Custom domain
-                    <Badge
-                      variant="secondary"
-                      className="text-[8px] h-3.5 px-1 font-bold bg-purple-50 text-purple-600 border-purple-100 uppercase"
-                    >
-                      Pro
-                    </Badge>
-                  </Label>
-                  <p className="text-[10px] text-muted-foreground">Use your own domain</p>
-                </div>
-                <Switch
-                  checked={field.state.value}
-                  onCheckedChange={(v) => field.handleChange(v)}
-                  disabled
-                />
-              </div>
-            )}
-          </form.Field>
-
-          <form.Field name="branding">
-            {(field: any) => (
-              <div className="flex items-center justify-between group">
-                <div className="space-y-0.5">
-                  <Label className="text-[12px] font-medium flex items-center gap-1.5 cursor-pointer">
-                    Better Forms branding
-                    <Badge
-                      variant="secondary"
-                      className="text-[8px] h-3.5 px-1 font-bold bg-[#FFF1F2] text-[#E11D48] border-[#FFE4E6] uppercase"
-                    >
-                      Pro
-                    </Badge>
-                  </Label>
-                  <p className="text-[10px] text-muted-foreground">Show "Made with Better Forms"</p>
-                </div>
-                <Switch
-                  checked={field.state.value}
-                  onCheckedChange={(v) => field.handleChange(v)}
-                />
-              </div>
-            )}
-          </form.Field>
-        </div>
-      </div>
+    <div className="flex flex-col gap-px rounded-lg overflow-hidden">
+      {children}
     </div>
   );
 }
 
-function ToggleRow({
+/**
+ * Figma row:
+ *   Select / value rows → pl-[10px] pr-[3px] py-[7px] gap-[6px]
+ *   Switch rows          → pl-[10px] pr-[6px] py-[7px] gap-[6px]
+ */
+function ConfigRow({
   label,
-  description,
-  checked,
-  onCheckedChange,
+  children,
+  variant = "default",
 }: {
   label: string;
-  description?: string;
-  checked: boolean;
-  onCheckedChange: (v: boolean) => void;
+  children: React.ReactNode;
+  variant?: "default" | "switch";
 }) {
   return (
-    <div className="flex items-center justify-between gap-2">
-      <div className="space-y-0.5">
-        <Label className="text-[12px] font-medium cursor-pointer">{label}</Label>
-        {description && <p className="text-[10px] text-muted-foreground">{description}</p>}
-      </div>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} />
+    <div
+      className={`bg-secondary flex gap-1.5 items-center overflow-hidden pl-[10px] py-[7px] ${
+        variant === "switch" ? "pr-1.5" : "pr-[3px]"
+      }`}
+    >
+      <span className="flex-1 min-w-0 text-sm">{label}</span>
+      {children}
     </div>
+  );
+}
+
+/** Drag-to-scrub + click-to-edit, styled as Figma value button: h-6 px-2 rounded-[5px] */
+function ScrubValue({
+  value,
+  onChange,
+  min,
+  max,
+  step = 1,
+  unit = "px",
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  min: number;
+  max: number;
+  step?: number;
+  unit?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const startX = useRef(0);
+  const startVal = useRef(0);
+  const hasDragged = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const clamp = (v: number) =>
+    Math.max(min, Math.min(max, Math.round(v / step) * step));
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (editing) return;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    startX.current = e.clientX;
+    startVal.current = value;
+    hasDragged.current = false;
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!(e.target as HTMLElement).hasPointerCapture(e.pointerId)) return;
+    const dx = e.clientX - startX.current;
+    if (Math.abs(dx) > 3) hasDragged.current = true;
+    if (hasDragged.current) {
+      onChange(clamp(startVal.current + dx));
+    }
+  };
+
+  const handlePointerUp = () => {
+    if (!hasDragged.current && !editing) {
+      setDraft(String(value));
+      setEditing(true);
+      requestAnimationFrame(() => inputRef.current?.select());
+    }
+  };
+
+  const commit = () => {
+    const num = parseInt(draft);
+    if (!isNaN(num)) onChange(clamp(num));
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        autoFocus
+        value={draft}
+        onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, ""))}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          if (e.key === "Escape") setEditing(false);
+        }}
+        className="h-6 w-16 shrink-0 rounded-[5px] px-2 text-right text-[13px] font-medium bg-transparent outline-none tabular-nums"
+      />
+    );
+  }
+
+  return (
+    <span
+      className="h-6 shrink-0 inline-flex items-center rounded-[5px] px-2 text-[13px] font-medium whitespace-nowrap cursor-ew-resize select-none"
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+    >
+      {value}
+      {unit}
+    </span>
+  );
+}
+
+/* ─── Select trigger class (shared) ─── */
+const selectTriggerCls =
+  "h-6 shrink-0 border-none bg-transparent shadow-none rounded-[5px] px-2 gap-1 w-auto text-[13px] font-medium text-foreground whitespace-nowrap";
+
+/* ─── Public entry point ─── */
+
+export function EmbedConfigPanel({
+  embedType,
+  form,
+  section,
+}: EmbedConfigPanelProps) {
+  if (section === "customize") {
+    return <CustomizeSection embedType={embedType} form={form} />;
+  }
+  return <ProSection form={form} />;
+}
+
+/* ─── Label maps ─── */
+
+const triggerLabels: Record<string, string> = {
+  button: "On Button Click",
+  auto: "Automatically",
+  scroll: "After Scrolling",
+};
+
+const positionLabels: Record<string, string> = {
+  "bottom-right": "Bottom Right",
+  "bottom-left": "Bottom Left",
+  center: "Center",
+};
+
+/* ─── Sections ─── */
+
+function CustomizeSection({
+  embedType,
+  form,
+}: {
+  embedType: EmbedType;
+  form: { Field: any };
+}) {
+  if (embedType === "popup") {
+    return (
+      <ConfigCard>
+        {/* Open popup */}
+        <form.Field name="popupTrigger">
+          {(field: any) => (
+            <ConfigRow label="Open popup">
+              <Select
+                value={field.state.value}
+                onValueChange={(v: string) => field.handleChange(v)}
+              >
+                <SelectTrigger className={selectTriggerCls}>
+                  {triggerLabels[field.state.value] ?? field.state.value}
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="button">On Button Click</SelectItem>
+                  <SelectItem value="auto">Automatically</SelectItem>
+                  <SelectItem value="scroll">After Scrolling</SelectItem>
+                </SelectContent>
+              </Select>
+            </ConfigRow>
+          )}
+        </form.Field>
+
+        {/* Hide on submit */}
+        <form.Field name="hideOnSubmit">
+          {(field: any) => (
+            <ConfigRow label="Hide on submit">
+              <Select
+                value={field.state.value ? "yes" : "no"}
+                onValueChange={(v: string) =>
+                  field.handleChange(v === "yes")
+                }
+              >
+                <SelectTrigger className={selectTriggerCls}>
+                  {field.state.value ? "Yes" : "No"}
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="yes">Yes</SelectItem>
+                  <SelectItem value="no">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </ConfigRow>
+          )}
+        </form.Field>
+
+        {/* Popup Position */}
+        <form.Field name="popupPosition">
+          {(field: any) => (
+            <ConfigRow label="Popup Position">
+              <Select
+                value={field.state.value}
+                onValueChange={(v: string) => field.handleChange(v)}
+              >
+                <SelectTrigger className={selectTriggerCls}>
+                  {positionLabels[field.state.value] ?? field.state.value}
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bottom-right">Bottom Right</SelectItem>
+                  <SelectItem value="bottom-left">Bottom Left</SelectItem>
+                  <SelectItem value="center">Center</SelectItem>
+                </SelectContent>
+              </Select>
+            </ConfigRow>
+          )}
+        </form.Field>
+
+        {/* Popup Width */}
+        <form.Field name="popupWidth">
+          {(field: any) => (
+            <ConfigRow label="Popup Width">
+              <ScrubValue
+                value={field.state.value}
+                onChange={(v) => field.handleChange(v)}
+                min={200}
+                max={600}
+                unit="px"
+              />
+            </ConfigRow>
+          )}
+        </form.Field>
+
+        {/* Dark Overlay */}
+        <form.Field name="darkOverlay">
+          {(field: any) => (
+            <ConfigRow label="Dark Overlay" variant="switch">
+              <Switch
+                checked={field.state.value}
+                onCheckedChange={(v) => field.handleChange(v)}
+              />
+            </ConfigRow>
+          )}
+        </form.Field>
+
+        {/* Show Emoji */}
+        <form.Field name="emoji">
+          {(field: any) => (
+            <ConfigRow label="Show Emoji" variant="switch">
+              <Switch
+                checked={field.state.value}
+                onCheckedChange={(v) => field.handleChange(v)}
+              />
+            </ConfigRow>
+          )}
+        </form.Field>
+      </ConfigCard>
+    );
+  }
+
+  if (embedType === "standard") {
+    return (
+      <ConfigCard>
+        {/* Height */}
+        <form.Field name="height">
+          {(field: any) => (
+            <ConfigRow label="Height">
+              <ScrubValue
+                value={field.state.value}
+                onChange={(v) => field.handleChange(v)}
+                min={200}
+                max={1000}
+                unit="px"
+              />
+            </ConfigRow>
+          )}
+        </form.Field>
+
+        {/* Dynamic Height */}
+        <form.Field name="dynamicHeight">
+          {(field: any) => (
+            <ConfigRow label="Dynamic Height" variant="switch">
+              <Switch
+                checked={field.state.value}
+                onCheckedChange={(v) => field.handleChange(v)}
+              />
+            </ConfigRow>
+          )}
+        </form.Field>
+
+        {/* Hide Title */}
+        <form.Field name="hideTitle">
+          {(field: any) => (
+            <ConfigRow label="Hide Title" variant="switch">
+              <Switch
+                checked={field.state.value}
+                onCheckedChange={(v) => field.handleChange(v)}
+              />
+            </ConfigRow>
+          )}
+        </form.Field>
+
+        {/* Align Left */}
+        <form.Field name="alignLeft">
+          {(field: any) => (
+            <ConfigRow label="Align Left" variant="switch">
+              <Switch
+                checked={field.state.value}
+                onCheckedChange={(v) => field.handleChange(v)}
+              />
+            </ConfigRow>
+          )}
+        </form.Field>
+
+        {/* Transparency */}
+        <form.Field name="transparentBackground">
+          {(field: any) => (
+            <ConfigRow label="Transparency" variant="switch">
+              <Switch
+                checked={field.state.value}
+                onCheckedChange={(v) => field.handleChange(v)}
+              />
+            </ConfigRow>
+          )}
+        </form.Field>
+      </ConfigCard>
+    );
+  }
+
+  // fullpage
+  return (
+    <ConfigCard>
+      <form.Field name="transparentBackground">
+        {(field: any) => (
+          <ConfigRow label="Transparent BG" variant="switch">
+            <Switch
+              checked={field.state.value}
+              onCheckedChange={(v) => field.handleChange(v)}
+            />
+          </ConfigRow>
+        )}
+      </form.Field>
+    </ConfigCard>
+  );
+}
+
+function ProSection({ form }: { form: { Field: any } }) {
+  return (
+    <ConfigCard>
+      {/* Analytics */}
+      <form.Field name="trackEvents">
+        {(field: any) => (
+          <ConfigRow label="Analytics" variant="switch">
+            <Switch
+              checked={field.state.value}
+              onCheckedChange={(v) => field.handleChange(v)}
+            />
+          </ConfigRow>
+        )}
+      </form.Field>
+
+      {/* Reform Branding */}
+      <form.Field name="branding">
+        {(field: any) => (
+          <ConfigRow label="Reform Branding" variant="switch">
+            <Switch
+              checked={field.state.value}
+              onCheckedChange={(v) => field.handleChange(v)}
+            />
+          </ConfigRow>
+        )}
+      </form.Field>
+
+      {/* Custom Domain */}
+      <ConfigRow label="Custom Domain">
+        <Select value="varman.co" disabled>
+          <SelectTrigger
+            className={`${selectTriggerCls} opacity-50`}
+          >
+            varman.co
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="varman.co">varman.co</SelectItem>
+          </SelectContent>
+        </Select>
+      </ConfigRow>
+    </ConfigCard>
   );
 }

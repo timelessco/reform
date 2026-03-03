@@ -1,6 +1,14 @@
-import { useSyncExternalStore } from "react";
+import { createContext, useCallback, useContext, useState } from "react";
+import type { ReactNode } from "react";
+import { jsx } from "react/jsx-runtime";
 
-type SidebarType = "settings" | "share" | "history" | "customize" | null;
+type SidebarType =
+  | "settings"
+  | "share"
+  | "history"
+  | "customize"
+  | "about"
+  | null;
 export type SettingsTab = "integrations" | "settings";
 type ShareTab = "share" | "summary";
 export type EmbedType = "standard" | "popup" | "fullpage";
@@ -12,106 +20,116 @@ type EditorSidebarState = {
   selectedVersionId: string | null;
 };
 
-const listeners = new Set<() => void>();
-let state: EditorSidebarState = {
+type EditorSidebarContextValue = EditorSidebarState & {
+  setActiveSidebar: (sidebar: SidebarType) => void;
+  toggleSidebar: (sidebar: SidebarType, tab?: SettingsTab | ShareTab) => void;
+  setSettingsTab: (tab: SettingsTab) => void;
+  setShareTab: (tab: ShareTab) => void;
+  closeSidebar: () => void;
+  resetSidebar: () => void;
+  selectVersion: (versionId: string | null) => void;
+  exitVersionView: () => void;
+};
+
+const initialState: EditorSidebarState = {
   activeSidebar: null,
   settingsTab: "settings",
   shareTab: "share",
   selectedVersionId: null,
 };
 
-function notify() {
-  listeners?.forEach((l) => {
-    l();
+const EditorSidebarContext = createContext<EditorSidebarContextValue | null>(
+  null,
+);
+
+export function EditorSidebarProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<EditorSidebarState>(initialState);
+
+  const setActiveSidebar = useCallback((sidebar: SidebarType) => {
+    setState((prev) => ({ ...prev, activeSidebar: sidebar }));
+  }, []);
+
+  const toggleSidebar = useCallback(
+    (sidebar: SidebarType, tab?: SettingsTab | ShareTab) => {
+      setState((prev) => {
+        const isAlreadyOpen = prev.activeSidebar === sidebar;
+        const isSwitchingTab =
+          isAlreadyOpen &&
+          tab &&
+          ((sidebar === "settings" && prev.settingsTab !== tab) ||
+            (sidebar === "share" && prev.shareTab !== tab));
+
+        const nextSidebar = isAlreadyOpen && !isSwitchingTab ? null : sidebar;
+        const updates: Partial<EditorSidebarState> = {
+          activeSidebar: nextSidebar,
+        };
+        if (nextSidebar && tab) {
+          if (nextSidebar === "settings") {
+            updates.settingsTab = tab as SettingsTab;
+          } else if (nextSidebar === "share") {
+            updates.shareTab = tab as ShareTab;
+          }
+        }
+        return { ...prev, ...updates };
+      });
+    },
+    [],
+  );
+
+  const setSettingsTab = useCallback((tab: SettingsTab) => {
+    setState((prev) => ({
+      ...prev,
+      settingsTab: tab,
+      activeSidebar: "settings",
+    }));
+  }, []);
+
+  const setShareTab = useCallback((tab: ShareTab) => {
+    setState((prev) => ({ ...prev, shareTab: tab, activeSidebar: "share" }));
+  }, []);
+
+  const closeSidebar = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      activeSidebar: null,
+      selectedVersionId: null,
+    }));
+  }, []);
+
+  const resetSidebar = useCallback(() => {
+    setState(initialState);
+  }, []);
+
+  const selectVersion = useCallback((versionId: string | null) => {
+    setState((prev) => ({ ...prev, selectedVersionId: versionId }));
+  }, []);
+
+  const exitVersionView = useCallback(() => {
+    setState((prev) => ({ ...prev, selectedVersionId: null }));
+  }, []);
+
+  return jsx(EditorSidebarContext.Provider, {
+    value: {
+      ...state,
+      setActiveSidebar,
+      toggleSidebar,
+      setSettingsTab,
+      setShareTab,
+      closeSidebar,
+      resetSidebar,
+      selectVersion,
+      exitVersionView,
+    },
+    children,
   });
 }
 
-const store = {
-  getSnapshot: () => state,
-  subscribe: (listener: () => void) => {
-    listeners.add(listener);
-    return () => listeners.delete(listener);
-  },
-  setActiveSidebar: (sidebar: SidebarType) => {
-    state = { ...state, activeSidebar: sidebar };
-    notify();
-  },
-  toggleSidebar: (sidebar: SidebarType, tab?: SettingsTab | ShareTab) => {
-    const isAlreadyOpen = state.activeSidebar === sidebar;
-    const isSwitchingTab =
-      isAlreadyOpen &&
-      tab &&
-      ((sidebar === "settings" && state.settingsTab !== tab) ||
-        (sidebar === "share" && state.shareTab !== tab));
-
-    // If same sidebar is open on the same tab (or no tab given) → close
-    // If same sidebar but different tab → just switch tab, keep open
-    const nextSidebar = isAlreadyOpen && !isSwitchingTab ? null : sidebar;
-    const updates: Partial<EditorSidebarState> = { activeSidebar: nextSidebar };
-    if (nextSidebar && tab) {
-      if (nextSidebar === "settings") {
-        updates.settingsTab = tab as SettingsTab;
-      } else if (nextSidebar === "share") {
-        updates.shareTab = tab as ShareTab;
-      }
-    }
-    state = { ...state, ...updates };
-    notify();
-  },
-  setSettingsTab: (tab: SettingsTab) => {
-    state = { ...state, settingsTab: tab, activeSidebar: "settings" };
-    notify();
-  },
-  setShareTab: (tab: ShareTab) => {
-    state = { ...state, shareTab: tab, activeSidebar: "share" };
-    notify();
-  },
-  closeSidebar: () => {
-    state = { ...state, activeSidebar: null, selectedVersionId: null };
-    notify();
-  },
-  resetSidebar: () => {
-    state = {
-      activeSidebar: null,
-      settingsTab: "settings",
-      shareTab: "share",
-      selectedVersionId: null,
-    };
-    notify();
-  },
-  selectVersion: (versionId: string | null) => {
-    state = { ...state, selectedVersionId: versionId };
-    notify();
-  },
-  exitVersionView: () => {
-    state = { ...state, selectedVersionId: null };
-    notify();
-  },
-};
-
-const serverSnapshot: EditorSidebarState = {
-  activeSidebar: null,
-  settingsTab: "settings",
-  shareTab: "share",
-  selectedVersionId: null,
-};
-
 export function useEditorSidebar() {
-  const currentState = useSyncExternalStore(
-    store.subscribe,
-    store.getSnapshot,
-    () => serverSnapshot,
-  );
-
-  return {
-    ...currentState,
-    setActiveSidebar: store.setActiveSidebar,
-    toggleSidebar: store.toggleSidebar,
-    setSettingsTab: store.setSettingsTab,
-    setShareTab: store.setShareTab,
-    closeSidebar: store.closeSidebar,
-    resetSidebar: store.resetSidebar,
-    selectVersion: store.selectVersion,
-    exitVersionView: store.exitVersionView,
-  };
+  const context = useContext(EditorSidebarContext);
+  if (!context) {
+    throw new Error(
+      "useEditorSidebar must be used within an EditorSidebarProvider",
+    );
+  }
+  return context;
 }

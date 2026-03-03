@@ -1,10 +1,11 @@
 import { format } from "date-fns";
-import { HelpCircle, Loader2, Lock } from "lucide-react";
+import { HelpCircle, Loader2, Lock, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useFormVersions, restoreVersion } from "@/hooks/use-form-versions";
+import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ interface VersionHistorySidebarProps {
 export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
   const { data: versions } = useFormVersions(formId);
   console.log("versions", versions ?? "no versions" , formId);
+  const { closeSidebar } = useEditorSidebar();
   const { selectedVersionId, selectVersion, exitVersionView } = useVersionHistorySidebar();
   const { data: sessionData } = useSession();
   const currentUser = sessionData?.user;
@@ -86,6 +88,14 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
           </span>
           <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          onClick={closeSidebar}
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </SidebarHeader>
 
       <SidebarContent className="p-4 gap-6">

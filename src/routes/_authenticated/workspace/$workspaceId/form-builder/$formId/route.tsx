@@ -23,7 +23,6 @@ export const Route = createFileRoute(
 )({
   validateSearch: z.object({
     demo: z.boolean().optional(),
-    sidebar: z.string().optional(),
   }),
   // Redirect to appropriate child route based on form status
   beforeLoad: async ({ context, params, location }) => {

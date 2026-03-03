@@ -1,25 +1,43 @@
 import { normalizeNodeId, type TElement, type Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { EditorKit } from "@/components/editor/editor-kit";
-import { RightSidebar } from "@/components/footer";
 import { ClientOnly } from "@/components/client-only";
-import { LandingHeader } from "@/components/ui/landing-header";
+import { FormSettingsSidebar } from "@/components/form-builder/form-settings-sidebar";
+import { AboutSidebar } from "@/components/ui/about-sidebar";
+import { CustomizeSidebar } from "@/components/ui/customize-sidebar";
+import { AppHeader } from "@/components/ui/app-header";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import Loader from "@/components/ui/loader";
-import { createOnboardingContentNode } from "@/components/ui/onboarding-content-node";
+import {
+  ResizablePanel,
+  ResizablePanelGroup,
+  type ImperativePanelHandle,
+} from "@/components/ui/resizable";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 import { localFormCollection } from "@/db-collections";
+import {
+  EditorSidebarProvider,
+  useEditorSidebar,
+} from "@/hooks/use-editor-sidebar";
 import { useLocalForm } from "@/hooks/use-live-hooks";
 import { getLocalFormId, getLocalWorkspaceId } from "@/lib/local-draft";
 
-// Initial state for new forms
-const onboardingValue = normalizeNodeId([
+// Initial state — form header, a label, and a form input
+const landingValue = normalizeNodeId([
   createFormHeaderNode({ title: "" }) as unknown as TElement,
-  createOnboardingContentNode() as unknown as TElement,
   {
+    type: "formLabel",
+    required: false,
+    placeholder: "Start designing",
     children: [{ text: "" }],
-    type: "p",
+  },
+  {
+    type: "formInput",
+    placeholder: "Your form",
+    children: [{ text: "" }],
   },
 ]);
 
@@ -33,15 +51,86 @@ export default function LandingEditor() {
       }
     >
       {() => (
-        <div className="flex flex-col h-screen overflow-hidden">
-          <LandingHeader />
-          <div className="flex-1 overflow-auto relative bg-background">
-            <LocalEditorApp />
-          </div>
-        </div>
+        <EditorSidebarProvider>
+          <LandingLayout />
+        </EditorSidebarProvider>
       )}
     </ClientOnly>
   );
+}
+
+function LandingLayout() {
+  const { activeSidebar } = useEditorSidebar();
+  const showSidebar = !!activeSidebar;
+  const rightPanelRef = useRef<ImperativePanelHandle>(null);
+
+  useEffect(() => {
+    if (rightPanelRef.current) {
+      if (showSidebar) {
+        rightPanelRef.current.expand();
+      } else {
+        rightPanelRef.current.collapse();
+      }
+    }
+  }, [showSidebar]);
+
+  return (
+    <div className="flex flex-col h-screen overflow-hidden">
+      <ResizablePanelGroup orientation="horizontal" className="flex-1 [&>[data-panel]]:transition-[flex-grow] [&>[data-panel]]:duration-300 [&>[data-panel]]:ease-in-out">
+        <ResizablePanel
+          defaultSize={showSidebar ? "70%" : "100%"}
+          minSize="50%"
+          className="flex-1"
+        >
+          <div className="flex h-full min-w-0 flex-col">
+            <div className="relative z-0 shrink-0">
+              <AppHeader />
+            </div>
+            <div className="flex-1 min-h-0">
+              <LocalEditorApp />
+            </div>
+          </div>
+        </ResizablePanel>
+
+        <ResizablePanel
+          panelRef={rightPanelRef}
+          collapsible
+          collapsedSize="0%"
+          defaultSize={showSidebar ? "30%" : "0%"}
+          minSize="25%"
+          maxSize="50%"
+          className={cn(
+            "h-full overflow-hidden bg-background min-w-[280px] max-w-[420px]",
+            !showSidebar && "border-none min-w-0 max-w-none",
+          )}
+        >
+          <div className="h-full w-full">
+            <Suspense fallback={null}>
+              <SidebarProvider>
+                <LandingSidebar />
+              </SidebarProvider>
+            </Suspense>
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
+  );
+}
+
+function LandingSidebar() {
+  const localFormId = getLocalFormId();
+  const { activeSidebar, closeSidebar } = useEditorSidebar();
+
+  if (activeSidebar === "about") {
+    return <AboutSidebar onClose={() => closeSidebar()} />;
+  }
+  if (activeSidebar === "settings") {
+    return <FormSettingsSidebar formId={localFormId} />;
+  }
+  if (activeSidebar === "customize") {
+    return <CustomizeSidebar formId={localFormId} />;
+  }
+  return null;
 }
 
 function LocalEditorApp() {
@@ -71,7 +160,7 @@ function LocalEditorApp() {
     if (docData?.content && Array.isArray(docData.content)) {
       initialContent = docData.content as Value;
     } else {
-      initialContent = onboardingValue;
+      initialContent = landingValue;
     }
 
     lastSavedContentRef.current = initialContent;
@@ -132,18 +221,15 @@ function LocalEditorApp() {
   if (!isReady) return <Loader />;
 
   return (
-    <div className="flex h-screen w-full bg-background selection:bg-blue-500/20">
-      <main className="flex-1 overflow-y-auto">
-        <Plate editor={editor} readOnly={false} onChange={handleChange}>
-          <EditorContainer
-            variant="default"
-            className="px-0 sm:px-0 max-w-full mx-auto border-none shadow-none"
-          >
-            <Editor className="overflow-x-visible" />
-          </EditorContainer>
-        </Plate>
-      </main>
-      <RightSidebar />
-    </div>
+    <main className="flex-1 overflow-y-auto bg-background">
+      <Plate editor={editor} readOnly={false} onChange={handleChange}>
+        <EditorContainer
+          variant="default"
+          className="px-0 sm:px-0 max-w-full mx-auto border-none shadow-none"
+        >
+          <Editor className="overflow-x-visible" />
+        </EditorContainer>
+      </Plate>
+    </main>
   );
 }

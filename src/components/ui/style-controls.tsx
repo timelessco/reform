@@ -20,6 +20,8 @@ interface StyleNumberInputProps {
   step?: number;
   /** Force a specific unit (e.g. "px", "%"). Overrides the unit parsed from the value. */
   unit?: string;
+  /** User-facing unit label (e.g. "%" when the internal unit is "vw"). If omitted, no unit is shown. */
+  displayUnit?: string;
   className?: string;
   valueWidth?: string;
 }
@@ -32,12 +34,14 @@ export function StyleNumberInput({
   max = 100, // Used for visual fill percentage
   step = 1,
   unit: forcedUnit,
+  displayUnit,
   className,
   valueWidth = "60px",
 }: StyleNumberInputProps) {
   const match = value?.toString().match(/^(-?\d*\.?\d+)(.*)$/);
   const numValue = match ? parseFloat(match[1]) : 0;
   const unit = forcedUnit ?? (match ? match[2] : "");
+  const shownUnit = displayUnit ?? unit;
 
   const [isInteracting, setIsInteracting] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
@@ -231,8 +235,12 @@ export function StyleNumberInput({
       <div className="relative flex-none h-full z-20" style={{ width: valueWidth }}>
         <input
           ref={inputRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
+          value={`${numValue}${shownUnit}`}
+          onChange={(e) => {
+            const raw = e.target.value.replace(/[^0-9.\-]/g, "");
+            if (raw === "" || raw === "-") return;
+            onChange(`${raw}${unit}`);
+          }}
           onPointerDown={(e) => e.stopPropagation()} // Prevent dragging when clicking input
           className={cn(
             "absolute inset-0 w-full h-full text-right px-3 bg-transparent outline-none tabular-nums font-mono transition-colors",

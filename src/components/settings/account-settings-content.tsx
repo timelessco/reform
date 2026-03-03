@@ -1,22 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  AlertCircle,
-  Camera,
-  ImageIcon,
-  Loader2,
-  Mail,
-  Monitor,
-  RotateCcw,
-  TriangleAlert,
-} from "lucide-react";
-import { useId, useRef, useState } from "react";
-import { toast } from "sonner";
-import {
-  ImageCrop,
-  ImageCropApply,
-  ImageCropContent,
-  ImageCropReset,
-} from "@/components/ui/image-crop";
+import { useTheme } from "@/components/ThemeProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +8,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  ImageCrop,
+  ImageCropApply,
+  ImageCropContent,
+  ImageCropReset,
+} from "@/components/ui/image-crop";
 import { Input } from "@/components/ui/input";
 import {
   InputGroup,
@@ -44,15 +32,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAppForm } from "@/components/ui/tanstack-form";
 import { auth, useSession } from "@/lib/auth-client";
 import { uploadAvatar } from "@/lib/fn/upload";
-import { useTheme } from "@/components/ThemeProvider";
+import { useStore } from "@tanstack/react-form";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  AlertCircle,
+  Camera,
+  ImageIcon,
+  Loader2,
+  RotateCcw,
+  TriangleAlert
+} from "lucide-react";
+import { useId, useRef, useState } from "react";
+import { toast } from "sonner";
+import { MailIcon, TeleVisionIcon } from "../ui/sidebar-icons";
 
 function ThemeSelect() {
   const { theme, setTheme } = useTheme();
   return (
     <Select value={theme} onValueChange={(val) => setTheme(val as "dark" | "light" | "system")}>
-      <SelectTrigger size="sm" className="shrink-0 h-[30px] bg-[var(--gray-50)] border-0 rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.12),0px_0px_0px_0.5px_rgba(0,0,0,0.16)] pl-3 pr-[10px] text-[13px] font-medium text-[var(--gray-800)]">
+      <SelectTrigger size="sm" className="shrink-0 h-[30px] bg-[var(--gray-50)] border-0 rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] outline outline-1 outline-offset-[-1px] outline-transparent pl-3 pr-2.5 text-[13px] font-medium text-[var(--gray-800)]">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -69,9 +70,23 @@ export function AccountSettingsContent() {
   const { data: session, isPending: isSessionPending } = useSession();
   const user = session?.user;
 
-  const [firstName, setFirstName] = useState(user?.name?.split(" ")[0] || "");
-  const [lastName, setLastName] = useState(
-    user?.name?.split(" ").slice(1).join(" ") || "",
+  const profileForm = useAppForm({
+    defaultValues: {
+      displayName: user?.name || "",
+      username: user?.name?.split(" ")[0]?.toLowerCase() || "",
+      newEmail: "",
+    },
+  });
+  const displayNameChanged = useStore(
+    profileForm.store,
+    (state) =>
+      state.values.displayName !==
+      profileForm.options.defaultValues?.displayName,
+  );
+  const usernameChanged = useStore(
+    profileForm.store,
+    (state) =>
+      state.values.username !== profileForm.options.defaultValues?.username,
   );
 
   // 2FA State
@@ -81,15 +96,11 @@ export function AccountSettingsContent() {
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [otpCode, setOtpCode] = useState("");
   const [password, setPassword] = useState("");
-  const firstNameId = useId();
-  const lastNameId = useId();
-
-  // Username state
-  const [username, setUsername] = useState(user?.name?.split(" ")[0]?.toLowerCase() || "");
+  const displayNameId = useId();
+  const usernameId = useId();
 
   // Change email state
   const [isChangeEmailOpen, setIsChangeEmailOpen] = useState(false);
-  const [newEmail, setNewEmail] = useState("");
 
   // Profile picture state
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
@@ -185,7 +196,7 @@ export function AccountSettingsContent() {
     auth.changeEmail.mutationOptions({
       onSuccess: () => {
         toast.success("Verification email sent to your new address. Please check your inbox.");
-        setNewEmail("");
+        profileForm.setFieldValue("newEmail", "");
         setIsChangeEmailOpen(false);
       },
       onError: (error: any) => {
@@ -209,12 +220,6 @@ export function AccountSettingsContent() {
       toast.error(error.message || "Failed to upload image");
     },
   });
-
-  const handleUpdateProfile = async () => {
-    updateProfileMutation.mutate({
-      name: `${firstName} ${lastName}`.trim(),
-    });
-  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -265,6 +270,7 @@ export function AccountSettingsContent() {
   }
 
   return (
+    <profileForm.AppForm>
     <div className="flex flex-col gap-10">
       {/* Profile Section: Avatar + Name + Username */}
       {/* Avatar row */}
@@ -295,7 +301,7 @@ export function AccountSettingsContent() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="h-[30px] bg-[var(--gray-50)] rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.12),0px_0px_0px_0.5px_rgba(0,0,0,0.16)] px-2 text-[13px] font-medium cursor-pointer hover:bg-[var(--gray-100)] transition-colors flex items-center gap-1.5"
+            className="h-[30px] bg-[var(--gray-50)] rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] outline outline-1 outline-offset-[-1px] outline-transparent px-2 text-[13px] font-medium cursor-pointer hover:bg-[var(--gray-100)] transition-colors flex items-center gap-1.5"
           >
             <ImageIcon className="size-4" />
             Upload image
@@ -304,7 +310,7 @@ export function AccountSettingsContent() {
             <button
               type="button"
               onClick={() => updateProfileMutation.mutate({ image: "" })}
-              className="h-[30px] bg-[var(--gray-100)] rounded-lg px-2 text-[13px] font-medium text-[var(--gray-700)] cursor-pointer hover:bg-[var(--gray-200)] transition-colors"
+              className="bg-[var(--gray-100)] rounded-lg px-2.5 py-[7px] text-[13px] font-medium text-[var(--gray-700)] cursor-pointer hover:bg-[var(--gray-200)] transition-colors"
             >
               Remove
             </button>
@@ -313,122 +319,169 @@ export function AccountSettingsContent() {
       </div>
 
       {/* Display name + Username side by side */}
-      <div className="flex items-start gap-3 mt-2.5">
-        <div className="flex-1 flex flex-col gap-1.5">
-          <label
-            className="text-sm text-(--gray-600) tracking-[0.28px]"
-            htmlFor={firstNameId}
-          >
-            Display name
-          </label>
-            <InputGroup className="h-[30px] bg-(--gray-100) border-0 overflow-clip pr-[3px]">
-              <InputGroupInput
-                id={firstNameId}
-                value={`${firstName} ${lastName}`.trim()}
-                onChange={(e) => {
-                  const parts = e.target.value.split(" ");
-                  setFirstName(parts[0] || "");
-                  setLastName(parts.slice(1).join(" "));
-                }}
-                placeholder="Enter display name"
-                className="h-[30px] text-sm text-(--gray-800)"
-              />
-              <InputGroupButton
-                onClick={handleUpdateProfile}
-                disabled={updateProfileMutation.isPending}
-                className="h-[24px] rounded-[5px] px-2 bg-[var(--gray-50)] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.12),0px_0px_0px_0.5px_rgba(0,0,0,0.16)] text-[13px] text-[var(--gray-800)] hover:bg-[var(--gray-100)]"
-              >
-                Save
-              </InputGroupButton>
-            </InputGroup>
-          </div>
-          <div className="flex-1 flex flex-col gap-1.5">
-            <label
-              className="text-sm text-(--gray-600) tracking-[0.28px]"
-              htmlFor={lastNameId}
-            >
-              Username
-            </label>
-            <InputGroup className="h-[30px] bg-(--gray-100) border-0 overflow-clip pr-[3px]">
-              <InputGroupInput
-                id={lastNameId}
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter username"
-                className="h-[30px] text-sm text-(--gray-800)"
-              />
-              <InputGroupButton
-                onClick={handleUpdateProfile}
-                disabled={updateProfileMutation.isPending}
-                className="h-[24px] rounded-[5px] px-2 bg-[var(--gray-50)] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.12),0px_0px_0px_0.5px_rgba(0,0,0,0.16)] text-[13px] text-[var(--gray-800)] hover:bg-[var(--gray-100)]"
-              >
-                Save
-              </InputGroupButton>
-            </InputGroup>
-          </div>
+        <div className="flex items-start gap-3">
+          <profileForm.AppField name="displayName">
+            {(field) => (
+              <div className="flex-1 flex flex-col gap-2">
+                <label
+                  className="text-sm leading-[1.15] text-[var(--gray-600)] tracking-tight"
+                  htmlFor={displayNameId}
+                >
+                  Display name
+                </label>
+                <InputGroup
+                  className={`h-[30px] bg-(--gray-100) border-0 overflow-clip${displayNameChanged ? " pr-[3px]" : ""}`}
+                >
+                  <InputGroupInput
+                    id={displayNameId}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="Enter display name"
+                    className="h-[30px] text-sm text-(--gray-800) pl-2.5 pr-1.5"
+                  />
+                  {displayNameChanged && (
+                    <InputGroupButton
+                      onClick={() => {
+                        updateProfileMutation.mutate(
+                          { name: field.state.value },
+                          {
+                            onSuccess: () => {
+                              profileForm.update({
+                                defaultValues: {
+                                  displayName: field.state.value,
+                                  username:
+                                    profileForm.getFieldValue("username"),
+                                  newEmail: "",
+                                },
+                              });
+                            },
+                          },
+                        );
+                      }}
+                      disabled={updateProfileMutation.isPending}
+                      className="h-6 rounded-[5px] px-2 bg-[var(--gray-50)] my-[2px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] text-xs text-[var(--gray-800)] hover:bg-[var(--gray-100)]"
+                    >
+                      Save
+                    </InputGroupButton>
+                  )}
+                </InputGroup>
+              </div>
+            )}
+          </profileForm.AppField>
+          <profileForm.AppField name="username">
+            {(field) => (
+              <div className="flex-1 flex flex-col gap-2">
+                <label
+                  className="text-sm leading-[1.15] text-[var(--gray-600)] tracking-tight"
+                  htmlFor={usernameId}
+                >
+                  Username
+                </label>
+                <InputGroup
+                  className={`h-[30px] bg-(--gray-100) border-0 overflow-clip${usernameChanged ? " pr-[3px]" : ""}`}
+                >
+                  <InputGroupInput
+                    id={usernameId}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="Enter username"
+                    className="h-[30px] text-sm text-(--gray-800) pl-2.5 pr-1.5"
+                  />
+                  {usernameChanged && (
+                    <InputGroupButton
+                      onClick={() => {
+                        updateProfileMutation.mutate(
+                          {
+                            name: profileForm.getFieldValue("displayName"),
+                          },
+                          {
+                            onSuccess: () => {
+                              profileForm.update({
+                                defaultValues: {
+                                  displayName:
+                                    profileForm.getFieldValue("displayName"),
+                                  username: field.state.value,
+                                  newEmail: "",
+                                },
+                              });
+                            },
+                          },
+                        );
+                      }}
+                      disabled={updateProfileMutation.isPending}
+                      className="h-6 rounded-[5px] px-2 bg-[var(--gray-50)] my-[2px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] text-xs text-[var(--gray-800)] hover:bg-[var(--gray-100)]"
+                    >
+                      Save
+                    </InputGroupButton>
+                  )}
+                </InputGroup>
+              </div>
+            )}
+          </profileForm.AppField>
         </div>
 
       {/* Email Section */}
       <section className="flex flex-col gap-[10px]">
-        <h3 className="text-sm font-medium text-(--gray-900)">Email</h3>
-        <div className="bg-[var(--gray-100)] rounded-xl pl-2 pr-2.5 py-2 flex items-center gap-3">
-          <div className="size-[38px] rounded-lg flex items-center justify-center shrink-0">
-            <Mail className="size-[22px] text-muted-foreground" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user?.email || ""}</p>
-            <p className="text-sm text-(--gray-600)">Current email</p>
+        <h3 className="text-sm font-medium leading-[1.15] text-(--gray-900)">Email</h3>
+        <div className="bg-(--gray-100) rounded-xl pl-2 pr-2.5 py-2 flex items-center gap-3">
+          <div className="flex flex-1 gap-2 items-start min-w-0">
+            <div className="size-[38px] rounded-lg overflow-hidden flex items-center justify-center shrink-0">
+              <MailIcon className="size-[22px] text-muted-foreground" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-medium leading-[1.15] text-(--gray-900) truncate">{user?.email || ""}</p>
+              <p className="text-sm leading-[1.15] text-(--gray-600)">Current email</p>
+            </div>
           </div>
           <button
             type="button"
             onClick={() => setIsChangeEmailOpen(!isChangeEmailOpen)}
-            className="h-[30px] bg-[var(--gray-50)] rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.12),0px_0px_0px_0.5px_rgba(0,0,0,0.16)] px-3 text-[13px] font-medium cursor-pointer hover:bg-[var(--gray-100)] transition-colors shrink-0"
+            className="h-[30px] bg-(--gray-50) rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] outline outline-1 outline-offset-[-1px] outline-transparent px-3 text-[13px] font-medium cursor-pointer hover:bg-(--gray-100) transition-colors shrink-0"
           >
             Change email
           </button>
         </div>
         {isChangeEmailOpen && (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!newEmail) return;
-              changeEmailMutation.mutate({
-                newEmail,
-                callbackURL: window.location.origin,
-              });
-            }}
-            className="flex gap-3"
-          >
-            <InputGroup className="h-[30px] flex-1 bg-(--gray-100) border-0 overflow-clip pr-[3px]">
-              <InputGroupInput
-                type="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                placeholder="Enter new email address"
-                required
-                className="h-[30px] text-sm text-(--gray-800)"
-              />
-              <InputGroupButton
-                type="submit"
-                disabled={changeEmailMutation.isPending || !newEmail}
-                className="h-[24px] rounded-[5px] px-2 bg-[var(--gray-50)] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.12),0px_0px_0px_0.5px_rgba(0,0,0,0.16)] text-[13px] text-[var(--gray-800)] hover:bg-[var(--gray-100)]"
-              >
-                {changeEmailMutation.isPending ? "Sending..." : "Verify"}
-              </InputGroupButton>
-            </InputGroup>
-          </form>
+          <profileForm.AppField name="newEmail">
+            {(field) => (
+              <InputGroup className="h-7 flex-1 bg-(--gray-100) border-0 overflow-clip pr-[3px]">
+                <InputGroupInput
+                  type="email"
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  placeholder="Enter new email address"
+                  className="h-7 text-sm text-(--gray-800)"
+                />
+                <InputGroupButton
+                  onClick={() => {
+                    if (!field.state.value) return;
+                    changeEmailMutation.mutate({
+                      newEmail: field.state.value,
+                      callbackURL: window.location.origin,
+                    });
+                  }}
+                  disabled={changeEmailMutation.isPending || !field.state.value}
+                  className="h-6 rounded-[5px] px-2 bg-[var(--gray-50)] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] text-xs text-[var(--gray-800)] hover:bg-[var(--gray-100)]"
+                >
+                  {changeEmailMutation.isPending ? "Sending..." : "Verify"}
+                </InputGroupButton>
+              </InputGroup>
+            )}
+          </profileForm.AppField>
         )}
       </section>
 
       {/* Appearance Section */}
       <section className="flex flex-col gap-[10px]">
-        <h3 className="text-sm font-medium text-(--gray-900)">Appearance</h3>
-        <div className="bg-[var(--gray-100)] rounded-xl pl-2 pr-2.5 py-2 flex items-center gap-3">
-          <div className="size-[38px] rounded-lg flex items-center justify-center shrink-0">
-            <Monitor className="size-[22px] text-muted-foreground" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium">Choose light/dark mode</p>
+        <h3 className="text-sm font-medium leading-[1.15] text-(--gray-900)">Appearance</h3>
+        <div className="bg-(--gray-100) rounded-xl pl-2 pr-2.5 py-2 flex items-center gap-3">
+          <div className="flex flex-1 gap-2 items-center min-w-0">
+            <div className="size-[38px] rounded-lg overflow-hidden flex items-center justify-center shrink-0">
+              <TeleVisionIcon className="size-[22px] text-muted-foreground" />
+            </div>
+            <div className="flex flex-col justify-center">
+              <p className="text-sm font-medium leading-[1.15] text-(--gray-900)">Choose light/dark mode</p>
+            </div>
           </div>
           <ThemeSelect />
         </div>
@@ -436,44 +489,46 @@ export function AccountSettingsContent() {
 
       {/* Connected Account Section */}
       <section className="flex flex-col gap-[10px]">
-        <h3 className="text-sm font-medium text-(--gray-900)">Connected account</h3>
-        <div className="bg-[var(--gray-100)] rounded-xl pl-2 pr-2.5 py-2 flex items-center gap-3">
-          <div className="size-[38px] rounded-lg flex items-center justify-center shrink-0">
-            <svg viewBox="0 0 24 24" className="size-[22px]">
-              <title>Google logo</title>
-              <path
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                fill="#4285F4"
-              />
-              <path
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                fill="#34A853"
-              />
-              <path
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
-                fill="#FBBC05"
-              />
-              <path
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                fill="#EA4335"
-              />
-            </svg>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">
-              {accounts.find((a) => a.providerId === "google")
-                ? user?.email || "Google account"
-                : "Google"}
-            </p>
-            <p className="text-sm text-(--gray-600)">
-              {accounts.find((a) => a.providerId === "google") ? "Current email" : "Not connected"}
-            </p>
+        <h3 className="text-sm font-medium leading-[1.15] text-(--gray-900)">Connected account</h3>
+        <div className="bg-(--gray-100) rounded-xl pl-2 pr-2.5 py-2 flex items-center gap-3">
+          <div className="flex flex-1 gap-2 items-start min-w-0">
+            <div className="size-[38px] rounded-lg overflow-hidden flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" className="size-5">
+                <title>Google logo</title>
+                <path
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  fill="#4285F4"
+                />
+                <path
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853"
+                />
+                <path
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+                  fill="#FBBC05"
+                />
+                <path
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  fill="#EA4335"
+                />
+              </svg>
+            </div>
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-medium leading-[1.15] text-(--gray-900) truncate">
+                {accounts.find((a) => a.providerId === "google")
+                  ? user?.email || "Google account"
+                  : "Google"}
+              </p>
+              <p className="text-sm leading-[1.15] text-(--gray-600)">
+                {accounts.find((a) => a.providerId === "google") ? "Current email" : "Not connected"}
+              </p>
+            </div>
           </div>
           {accounts.find((a) => a.providerId === "google") ? (
             <button
               type="button"
               onClick={() => handleDisconnectAccount("google")}
-              className="h-[30px] bg-[var(--gray-50)] rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.12),0px_0px_0px_0.5px_rgba(0,0,0,0.16)] px-3 text-[13px] font-medium cursor-pointer hover:bg-[var(--gray-100)] transition-colors shrink-0"
+              className="h-[30px] bg-(--gray-50) rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] outline outline-1 outline-offset-[-1px] outline-transparent px-3 text-[13px] font-medium cursor-pointer hover:bg-(--gray-100) transition-colors shrink-0"
             >
               Disconnect
             </button>
@@ -481,7 +536,7 @@ export function AccountSettingsContent() {
             <button
               type="button"
               onClick={handleGoogleSignIn}
-              className="h-[30px] bg-[var(--gray-50)] rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.12),0px_0px_0px_0.5px_rgba(0,0,0,0.16)] px-3 text-[13px] font-medium cursor-pointer hover:bg-[var(--gray-100)] transition-colors shrink-0"
+              className="h-[30px] bg-(--gray-50) rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] outline outline-1 outline-offset-[-1px] outline-transparent px-3 text-[13px] font-medium cursor-pointer hover:bg-(--gray-100) transition-colors shrink-0"
             >
               Connect
             </button>
@@ -499,23 +554,23 @@ export function AccountSettingsContent() {
 
       {/* Delete Account Section */}
       <section className="flex flex-col gap-[10px]">
-              <h3 className="text-sm font-medium text-(--gray-900)">Delete account</h3>
+        <h3 className="text-sm font-medium leading-[1.15] text-(--gray-900)">Delete Account</h3>
         <p className="text-sm text-(--gray-800) leading-[1.5]">
-          This will permanently delete your entire account. All your forms,
-          submissions and workspaces will be deleted.
+          If you no longer wish to use recollect, you can permanently delete your
+          account.
         </p>
         <button
           type="button"
           onClick={handleDeleteAccount}
           disabled={deleteAccountMutation.isPending}
-            className="w-full bg-(--gray-100) rounded-lg px-2.5 py-[7px] flex items-center gap-1.5 cursor-pointer hover:bg-(--gray-200) transition-colors disabled:opacity-50"
+          className="w-full bg-(--gray-100) rounded-lg px-2.5 py-[7px] flex items-center justify-center gap-1.5 cursor-pointer hover:bg-(--gray-200) transition-colors disabled:opacity-50"
         >
           {deleteAccountMutation.isPending ? (
-              <Loader2 className="animate-spin size-3 text-(--red-500)" />
+            <Loader2 className="animate-spin size-3 text-destructive" />
           ) : (
-            <TriangleAlert className="size-3 text-(--red-500)" />
+            <TriangleAlert className="size-3 text-destructive" />
           )}
-          <span className="text-(--red-500) text-sm font-medium">
+          <span className="text-destructive text-sm font-medium">
             Delete my account
           </span>
         </button>
@@ -699,5 +754,6 @@ export function AccountSettingsContent() {
         </DialogContent>
       </Dialog>
     </div>
+    </profileForm.AppForm>
   );
 }

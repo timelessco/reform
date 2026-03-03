@@ -1,6 +1,6 @@
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useFormSettingsSidebar } from "@/hooks/use-form-settings-sidebar";
-import { cn } from "@/lib/utils";
+import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { SettingsContent } from "@/routes/_authenticated/workspace/$workspaceId/form-builder/$formId/settings";
 import {
   Sidebar,
@@ -15,31 +15,23 @@ interface FormSettingsSidebarProps {
 }
 
 export function FormSettingsSidebar({ formId }: FormSettingsSidebarProps) {
-  const { activeTab, setActiveTab } = useFormSettingsSidebar();
+  const { closeSidebar } = useEditorSidebar();
 
   return (
     <Sidebar
       collapsible="none"
       className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out"
     >
-      {/* Header with tabs */}
-      <SidebarHeader className="p-0 shrink-0 border-b">
-        {/* Tab Navigation - underline style like the image */}
-        <div className="px-4 pt-4 flex items-center gap-6">
-          <Button
-            variant="ghost"
-            onClick={() => setActiveTab("settings")}
-            data-active={activeTab === "settings"}
-            className={cn(
-              "pb-3 h-auto rounded-none px-0 text-sm font-medium relative hover:bg-transparent",
-              activeTab === "settings"
-                ? "text-foreground after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-foreground"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            Settings
-          </Button>
-        </div>
+      <SidebarHeader className="px-4 py-3 shrink-0 border-b flex flex-row items-center justify-between">
+        <h2 className="text-sm font-semibold text-foreground">Settings</h2>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          onClick={closeSidebar}
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </SidebarHeader>
 
       {/* Tab Content */}

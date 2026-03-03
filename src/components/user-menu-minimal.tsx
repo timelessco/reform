@@ -150,7 +150,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
           render={
             <button
               type="button"
-              className="flex items-center gap-2 px-3 py-2 h-10 w-full min-w-0 hover:bg-sidebar-active justify-start cursor-pointer transition-colors"
+              className="flex items-center gap-2 px-1 py-[7px] w-full min-w-0 hover:bg-sidebar-active justify-start cursor-pointer transition-colors rounded-lg overflow-hidden"
               aria-label="Toggle user menu"
             />
           }
@@ -166,12 +166,12 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
               getInitials(displayName)
             )}
           </div>
-          <span className="text-[14px] font-medium text-sidebar-foreground truncate flex-1 text-left tracking-[0.14px]">
+          <span className="text-[14px] font-medium text-sidebar-foreground truncate flex-1 text-left leading-[1.15] font-case">
             {displayName}
           </span>
           <ChevronDown
             className={cn(
-              "h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 shrink-0",
+              "size-3 text-muted-foreground transition-transform duration-200 shrink-0",
               isOpen && "rotate-180",
             )}
             strokeWidth={1.5}

@@ -303,6 +303,14 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
             Customize
           </span>
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          onClick={closeSidebar}
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </SidebarHeader>
 
       <SidebarContent className="p-0 overflow-y-auto custom-scrollbar">
@@ -403,12 +411,12 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
               <AccordionContent className="space-y-2 pt-1 pb-2">
                 <StyleNumberInput
                   label="Page Width"
-                  value={getValue("pageWidth") || "50vw"}
+                  value={getValue("pageWidth") || "50%"}
                   onChange={(v) => updateWithCustomPreset("pageWidth", v)}
                   min={30}
                   max={100}
                   step={5}
-                  unit="vw"
+                  unit="%"
                 />
                 <StyleNumberInput
                   label="Cover Height"
@@ -418,6 +426,7 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                   max={400}
                   step={10}
                   unit="px"
+                  displayUnit=""
                 />
                 <StyleNumberInput
                   label="Logo Width"
@@ -427,6 +436,7 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                   max={200}
                   step={4}
                   unit="px"
+                  displayUnit=""
                 />
                 <StyleNumberInput
                   label="Input Width"
@@ -477,6 +487,7 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                   max={24}
                   step={1}
                   unit="px"
+                  displayUnit=""
                 />
                 <StyleNumberInput
                   label="Letter Spacing"
@@ -486,6 +497,7 @@ export function CustomizeSidebar({ formId }: CustomizeSidebarProps) {
                   max={0.2}
                   step={0.005}
                   unit="em"
+                  displayUnit=""
                 />
               </AccordionContent>
             </AccordionItem>

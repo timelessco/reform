@@ -29,7 +29,6 @@ import {
 import { format, formatDistanceToNow } from "date-fns";
 import {
   AlertCircle,
-  ChevronsRight,
   Loader2,
   MoreHorizontal,
   Pencil,
@@ -41,14 +40,10 @@ import { useSidebarSafe } from "./sidebar";
 import { SettingsIcon } from "./sidebar-icons";
 
 interface AppHeaderProps {
-  dividerX?: number;
-  isSidebarOpen?: boolean;
   isDistractionHidden?: boolean;
 }
 
 export function AppHeader({
-  dividerX,
-  isSidebarOpen,
   isDistractionHidden = false,
 }: AppHeaderProps) {
   const { formId, workspaceId } = useParams({ strict: false }) as {
@@ -61,6 +56,7 @@ export function AppHeader({
   };
   const { pathname } = useLocation();
   const isDashboard = pathname === "/dashboard";
+  const isLandingPage = pathname === "/";
   const isFormBuilder =
     pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
   const isEditRoute = pathname.endsWith("/edit");
@@ -69,73 +65,31 @@ export function AppHeader({
   const navigate = useNavigate();
 
   // Editor sidebar state
-  const { activeSidebar, closeSidebar } = useEditorSidebar();
+  const { activeSidebar, closeSidebar, toggleSidebar: toggleEditorSidebar } = useEditorSidebar();
 
   const isShareSidebarOpen = activeSidebar === "share";
   const isEditorSidebarOpen = !!activeSidebar;
 
   const isVersionHistoryOpen = activeSidebar === "history";
   const toggleVersionHistory = () => {
-    navigate({
-      to: ".",
-      search: (prev: any) => ({
-        ...prev,
-        sidebar: isVersionHistoryOpen ? "" : "history",
-      }),
-      replace: true,
-    });
+    toggleEditorSidebar("history");
   };
   const isSettingsSidebarOpen = activeSidebar === "settings";
   const toggleSettingsSidebar = () => {
-    // Update URL param - the URL sync effect will handle opening/closing the sidebar
-    navigate({
-      to: ".",
-      search: (prev: any) => ({
-        ...prev,
-        sidebar: isSettingsSidebarOpen ? "" : "settings",
-      }),
-      replace: true,
-    });
+    toggleEditorSidebar("settings");
   };
 
   const isCustomizeSidebarOpen = activeSidebar === "customize";
   const toggleCustomizeSidebar = () => {
-    navigate({
-      to: ".",
-      search: (prev: any) => ({
-        ...prev,
-        sidebar: isCustomizeSidebarOpen ? "" : "customize",
-      }),
-      replace: true,
-    });
+    toggleEditorSidebar("customize");
   };
 
-  // Close sidebar and update URL to clear sidebar param
   const handleCloseSidebar = () => {
     closeSidebar();
-    if (workspaceId && formId) {
-      navigate({
-        to: ".",
-        search: (prev: any) => ({ ...prev, sidebar: "" }),
-        replace: true,
-      });
-    }
   };
 
   const toggleShareSidebar = () => {
-    // Only navigate - the URL param sync effect will handle opening/closing the sidebar
-    if (workspaceId && formId) {
-      navigate({
-        to: "/workspace/$workspaceId/form-builder/$formId/edit",
-        params: { workspaceId: workspaceId, formId: formId },
-        search: {
-          demo: !isShareSidebarOpen,
-          force: true,
-          sidebar: isShareSidebarOpen ? "" : "share",
-          embedType: "fullpage",
-        },
-      });
-    }
+    toggleEditorSidebar("share");
   };
 
   const searchParams: any = useSearch({ strict: false });
@@ -208,11 +162,11 @@ export function AppHeader({
 
   // Scoped hotkeys for form-builder actions
   useHotkey(HOTKEYS.TOGGLE_SETTINGS_SIDEBAR, () => toggleSettingsSidebar(), {
-    enabled: isFormBuilder,
+    enabled: isFormBuilder || isLandingPage,
   });
 
   useHotkey(HOTKEYS.TOGGLE_CUSTOMIZE_SIDEBAR, () => toggleCustomizeSidebar(), {
-    enabled: isFormBuilder && isEditRoute,
+    enabled: (isFormBuilder && isEditRoute) || isLandingPage,
   });
 
   useHotkey(HOTKEYS.TOGGLE_VERSION_HISTORY, () => toggleVersionHistory(), {
@@ -340,12 +294,14 @@ export function AppHeader({
     >
       {/* Left Section: Breadcrumbs */}
       <div className="flex items-center gap-2 min-w-0 flex-1">
-        {state === "collapsed" && (
+        {(isLandingPage || state === "collapsed") && (
           <Button
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-muted-foreground -ml-1 group relative flex items-center justify-center transition-all duration-300"
-            onClick={() => toggleMainSidebar()}
+            onClick={() => {
+              if (!isLandingPage) toggleMainSidebar();
+            }}
           >
             <Logo className="h-6 w-6 text-sidebar-nav-text" />
           </Button>
@@ -445,6 +401,64 @@ export function AppHeader({
           >
             About
           </Link>
+        )}
+
+        {isLandingPage && (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-8 px-2.5 text-muted-foreground hover:text-foreground font-normal",
+                activeSidebar === "about" && "text-foreground bg-accent/50",
+              )}
+              onClick={() => toggleEditorSidebar("about")}
+            >
+              About
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={() => toggleEditorSidebar("settings")}
+            >
+              <SettingsIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
+            </Button>
+            <Popover>
+              <PopoverTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  />
+                }
+              >
+                <MoreHorizontal className="h-[18px] w-[18px]" strokeWidth={1.5} />
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-48" sideOffset={4}>
+                <div className="flex flex-col">
+                  <Button
+                    variant="ghost"
+                    onClick={() => toggleEditorSidebar("customize")}
+                    className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-medium leading-[1.15] tracking-[0.13px] font-case transition-colors hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <span className="flex-1 text-left">Customization</span>
+                    <span className="text-xs text-muted-foreground ml-auto pl-3">
+                      {formatForDisplay(HOTKEYS.TOGGLE_CUSTOMIZE_SIDEBAR)}
+                    </span>
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+            <Button
+              size="sm"
+              className="h-8 pl-2 pr-2 py-1.5 ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
+              onClick={() => navigate({ to: "/signup" })}
+            >
+              Publish
+            </Button>
+          </>
         )}
 
         {isFormBuilder && (
@@ -667,33 +681,6 @@ export function AppHeader({
         )}
       </div>
 
-      {isSidebarOpen && typeof dividerX === "number" && (
-        <div
-          className="pointer-events-none fixed top-0 h-10 z-1000"
-          style={{ left: dividerX + 8 }}
-        >
-          <div className="pointer-events-auto absolute top-[6px]">
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleCloseSidebar}
-                    className="h-8 w-8 bg-muted/60 opacity-0 group-hover/header:opacity-100"
-                  />
-                }
-              >
-                <ChevronsRight className="h-4 w-4" />
-              </TooltipTrigger>
-              <TooltipContent side="bottom" align="end">
-                <p className="font-medium">Close panel</p>
-                <p className="text-xs text-muted-foreground">⌘⇧\\</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-      )}
     </header>
 
     <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>

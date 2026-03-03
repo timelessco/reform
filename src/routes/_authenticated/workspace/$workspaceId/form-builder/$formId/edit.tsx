@@ -22,7 +22,6 @@ export const Route = createFileRoute(
   validateSearch: z.object({
     demo: z.boolean().optional(),
     force: z.boolean().optional(), // When true, skip redirect for published forms
-    sidebar: z.string().optional(),
     // Embed config params — synced from sidebar, read by PreviewMode
     embedType: z
       .enum(["standard", "popup", "fullpage"])

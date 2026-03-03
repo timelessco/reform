@@ -24,6 +24,11 @@ const LAYOUT_FIELDS: Record<string, string> = {
   letterSpacing: "--bf-letter-spacing",
 };
 
+/** Migrates legacy "vw" page-width values to "%" (same numeric range 30-100). */
+function migratePageWidth(value: string): string {
+  return value.endsWith("vw") ? value.replace(/vw$/, "%") : value;
+}
+
 /**
  * All shadcn token names that can be overridden via --bf-* prefix.
  */
@@ -138,7 +143,8 @@ function buildThemeVarEntries(customization: Record<string, string>): [string, s
   // Layout vars
   for (const [field, cssVar] of Object.entries(LAYOUT_FIELDS)) {
     if (customization[field]) {
-      entries.push([cssVar, customization[field]]);
+      const val = field === "pageWidth" ? migratePageWidth(customization[field]) : customization[field];
+      entries.push([cssVar, val]);
     }
   }
 
@@ -175,7 +181,7 @@ export function getLayoutOnlyVars(
   const vars: Record<string, string> = {};
   for (const [field, cssVar] of Object.entries(LAYOUT_FIELDS)) {
     if (customization[field]) {
-      vars[cssVar] = customization[field];
+      vars[cssVar] = field === "pageWidth" ? migratePageWidth(customization[field]) : customization[field];
     }
   }
   return vars as CSSProperties;

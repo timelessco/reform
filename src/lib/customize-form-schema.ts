@@ -9,7 +9,7 @@ export const customizeFormSchema = z.object({
   accentColor: z.string().default("#000000"),
 
   // Layout
-  pageWidth: z.string().default("50vw"),
+  pageWidth: z.string().default("50%"),
   baseFontSize: z.string().default("16px"),
   logoWidth: z.string().default("100px"),
   logoHeight: z.string().default("100px"),

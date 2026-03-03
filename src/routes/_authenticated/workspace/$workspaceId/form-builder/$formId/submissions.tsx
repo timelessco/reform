@@ -91,7 +91,6 @@ export const Route = createFileRoute(
   "/_authenticated/workspace/$workspaceId/form-builder/$formId/submissions",
 )({
   validateSearch: z.object({
-    sidebar: z.string().optional(),
     demo: z.boolean().optional(),
   }),
   component: SubmissionsPage,

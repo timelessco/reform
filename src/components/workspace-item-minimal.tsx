@@ -1,6 +1,11 @@
 import { SidebarItem } from "@/components/sidebar-item";
 import { Button } from "@/components/ui/button";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
@@ -27,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { useLocation, useRouter } from "@tanstack/react-router";
 import {
   Check,
+  ChevronRight,
   Feather,
   Github,
   Loader2,
@@ -76,6 +82,17 @@ export function WorkspaceItemMinimal({
 }: WorkspaceItemMinimalProps) {
   const router = useRouter();
   const [isCreatingForm, setIsCreatingForm] = useState(false);
+  const [sortExpanded, setSortExpanded] = useState(false);
+
+  const sortOptions = [
+    { value: "recent", label: "Recent First", icon: CalendarIcon },
+    { value: "oldest", label: "Oldest First", icon: ClockRewindIcon },
+    { value: "alphabetical", label: "Alphabetical", icon: AlphabeticalIcon },
+    { value: "manual", label: "Manual", icon: CopyIcon },
+  ] as const;
+
+  const currentSort =
+    sortOptions.find((o) => o.value === sortMode) || sortOptions[0];
 
   const handleCreateForm = async () => {
     setIsCreatingForm(true);
@@ -97,12 +114,16 @@ export function WorkspaceItemMinimal({
       label={workspace.name}
       initialOpen={true}
       action={
-        <Popover>
+        <Popover
+          onOpenChange={(open) => {
+            if (!open) setSortExpanded(false);
+          }}
+        >
           <PopoverTrigger
             render={
               <Button
                 variant="ghost"
-                size='icon-sm'
+                size="icon-sm"
                 className="size-[26px] p-[5px] rounded-lg overflow-hidden hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
                 title="More options"
               />
@@ -112,50 +133,67 @@ export function WorkspaceItemMinimal({
           </PopoverTrigger>
           <PopoverContent align="start" className="w-48" sideOffset={4}>
             <div className="flex flex-col">
-              <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground tracking-[0.24px] leading-tight">
-                Sort by
-              </div>
-              {[
-                { value: "recent", label: "Recent First", icon: CalendarIcon },
-                {
-                  value: "oldest",
-                  label: "Oldest First",
-                  icon: ClockRewindIcon,
-                },
-                {
-                  value: "alphabetical",
-                  label: "Alphabetical",
-                  icon: AlphabeticalIcon,
-                },
-                { value: "manual", label: "Manual", icon: CopyIcon },
-              ].map((option) => (
-                <Button
-                  key={option.value}
-                  type="button"
-                  variant="ghost"
-                  onClick={() =>
-                    onSortChange(
-                      option.value as
-                        | "recent"
-                        | "oldest"
-                        | "alphabetical"
-                        | "manual",
-                    )
-                  }
-                  className={cn(
-                    "h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors cursor-pointer",
-                    sortMode === option.value
-                      ? "bg-black/5 text-foreground"
-                      : "text-foreground/80 hover:bg-accent hover:text-accent-foreground",
-                  )}
+              <Collapsible
+                open={sortExpanded}
+                onOpenChange={setSortExpanded}
+              >
+                <CollapsibleTrigger
+                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 w-full overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors cursor-pointer text-foreground/80 hover:bg-accent hover:text-accent-foreground"
                 >
-                  <option.icon className="size-4 shrink-0" strokeWidth={1.5} />
-                  <span className="flex-1 text-left">{option.label}</span>
-                  {sortMode === option.value && (
-                    <Check className="size-3 shrink-0" strokeWidth={2} />
-                  )}
-                </Button>
-              ))}
+                  <currentSort.icon
+                    className="size-4 shrink-0"
+                    strokeWidth={1.5}
+                  />
+                  <span className="flex-1 text-left">
+                    {currentSort.label}
+                  </span>
+                  <ChevronRight
+                    className={cn(
+                      "size-3 shrink-0 transition-transform duration-200",
+                      sortExpanded && "rotate-90",
+                    )}
+                    strokeWidth={2}
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="overflow-hidden h-(--collapsible-panel-height) transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0">
+                  <div className="flex flex-col pt-1">
+                    <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground tracking-[0.24px] leading-tight">
+                      Sort by
+                    </div>
+                    {sortOptions.map((option) => (
+                      <Button
+                        key={option.value}
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          onSortChange(option.value);
+                          setSortExpanded(false);
+                        }}
+                        className={cn(
+                          "h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors cursor-pointer",
+                          sortMode === option.value
+                            ? "bg-black/5 text-foreground"
+                            : "text-foreground/80 hover:bg-accent hover:text-accent-foreground",
+                        )}
+                      >
+                        <option.icon
+                          className="size-4 shrink-0"
+                          strokeWidth={1.5}
+                        />
+                        <span className="flex-1 text-left">
+                          {option.label}
+                        </span>
+                        {sortMode === option.value && (
+                          <Check
+                            className="size-3 shrink-0"
+                            strokeWidth={2}
+                          />
+                        )}
+                      </Button>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
               <div className="my-1 h-px bg-border" />
               <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground tracking-[0.24px] leading-tight">
                 Workspace

@@ -1,6 +1,7 @@
+import { useStore } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Clock, Mail, Plus, Trash2, X } from "lucide-react";
-import { useId, useState } from "react";
+import { useId } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -8,11 +9,14 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { useAppForm } from "@/components/ui/tanstack-form";
 import { auth } from "@/lib/auth-client";
 
 export function MembersContent() {
   const queryClient = useQueryClient();
-  const [email, setEmail] = useState("");
+  const inviteForm = useAppForm({
+    defaultValues: { email: "" },
+  });
   const emailInputId = useId();
 
   const { data, isLoading: isLoadingMembers } = useQuery(
@@ -28,7 +32,7 @@ export function MembersContent() {
   const inviteMutation = useMutation(
     auth.organization.inviteMember.mutationOptions({
       onSuccess: () => {
-        setEmail("");
+        inviteForm.setFieldValue("email", "");
         queryClient.invalidateQueries({
           queryKey: auth.organization.listMembers.queryKey(),
         });
@@ -68,13 +72,8 @@ export function MembersContent() {
     }),
   );
 
-  const handleInvite = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-    inviteMutation.mutate({ email, role: "member" });
-  };
-
   return (
+    <inviteForm.AppForm>
     <div className="flex flex-col gap-8">
       {/* Invite Section */}
       <section className="flex flex-col gap-3">
@@ -82,28 +81,35 @@ export function MembersContent() {
         <p className="text-[13px] text-[var(--gray-600)] leading-[1.5]">
           Invite a new member to join your organization.
         </p>
-        <form onSubmit={handleInvite}>
-          <InputGroup className="h-[30px]">
-            <InputGroupInput
-              id={emailInputId}
-              type="email"
-              placeholder="colleague@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              aria-label="Email"
-              className="h-[30px]"
-            />
-            <InputGroupButton
-              type="submit"
-              disabled={inviteMutation.isPending}
-              className="mr-1 gap-1.5"
-            >
-              <Plus className="size-3.5" />
-              {inviteMutation.isPending ? "Inviting..." : "Invite"}
-            </InputGroupButton>
-          </InputGroup>
-        </form>
+        <inviteForm.AppField name="email">
+          {(field) => (
+            <InputGroup className="h-[30px]">
+              <InputGroupInput
+                id={emailInputId}
+                type="email"
+                placeholder="colleague@example.com"
+                value={field.state.value}
+                onChange={(e) => field.handleChange(e.target.value)}
+                aria-label="Email"
+                className="h-[30px]"
+              />
+              <InputGroupButton
+                onClick={() => {
+                  if (!field.state.value) return;
+                  inviteMutation.mutate({
+                    email: field.state.value,
+                    role: "member",
+                  });
+                }}
+                disabled={inviteMutation.isPending || !field.state.value}
+                className="mr-1 gap-1.5"
+              >
+                <Plus className="size-3.5" />
+                {inviteMutation.isPending ? "Inviting..." : "Invite"}
+              </InputGroupButton>
+            </InputGroup>
+          )}
+        </inviteForm.AppField>
       </section>
 
       {/* Pending Invitations */}
@@ -202,5 +208,6 @@ export function MembersContent() {
         </div>
       </section>
     </div>
+    </inviteForm.AppForm>
   );
 }

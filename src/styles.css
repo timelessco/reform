@@ -1046,6 +1046,7 @@
    No fallback → declaration is ignored when the var is unset, preserving Tailwind defaults. */
 .bf-themed [data-bf-form-container] {
   max-width: var(--bf-page-width);
+  margin-inline: auto;
 }
 
 /* Editor content area: override the padding-based centering when page width is set.
@@ -1085,12 +1086,14 @@
 /* Input width: editor input nodes */
 .bf-themed [data-bf-input] {
   max-width: var(--bf-input-width);
+  margin-inline: auto;
 }
 
 /* Input width: preview form inputs (Input/Textarea inside .bf-themed) */
 .bf-themed [data-bf-field-list] input,
 .bf-themed [data-bf-field-list] textarea {
   max-width: var(--bf-input-width);
+  margin-inline: auto;
 }
 
 /* Typography bridge */

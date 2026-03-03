@@ -94,7 +94,10 @@ import {
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { settingsDialogStore } from "@/hooks/use-settings-dialog";
 import { SettingsDialog } from "@/components/settings/settings-dialog";
-import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
+import {
+  EditorSidebarProvider,
+  useEditorSidebar,
+} from "@/hooks/use-editor-sidebar";
 import {
   useArchivedForms,
   useFavoriteForms,
@@ -107,20 +110,19 @@ import { HOTKEYS } from "@/lib/hotkeys";
 import { orgDataForLayoutQueryOptions } from "@/lib/fn/org";
 import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/middleware/auth";
-import { useHotkey } from "@tanstack/react-hotkeys";
+import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createFileRoute,
   Link,
   Outlet,
   useLocation,
-  useNavigate,
   useParams,
   useRouter,
-  useSearch,
 } from "@tanstack/react-router";
 import {
   ChevronsLeft,
+  ChevronsRight,
   FileText,
   Filter,
   HelpCircle,
@@ -147,6 +149,8 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ChartTooltipContent } from "@/components/ui/chart";
 
 const LazyFormSettingsSidebar = lazy(() =>
   import("@/components/form-builder/form-settings-sidebar").then((m) => ({
@@ -230,11 +234,13 @@ function AuthLayout() {
     <SidebarProvider
       style={{ "--app-header-height": "40px" } as React.CSSProperties}
     >
-      <EditorHeaderVisibilityProvider enabled={isEditRoute}>
-        <MinimalSidebarProvider>
-          <AuthLayoutContent />
-        </MinimalSidebarProvider>
-      </EditorHeaderVisibilityProvider>
+      <EditorSidebarProvider>
+        <EditorHeaderVisibilityProvider enabled={isEditRoute}>
+          <MinimalSidebarProvider>
+            <AuthLayoutContent />
+          </MinimalSidebarProvider>
+        </EditorHeaderVisibilityProvider>
+      </EditorSidebarProvider>
     </SidebarProvider>
   );
 }
@@ -250,21 +256,8 @@ function AuthLayoutContent() {
   const { formId } = useParams({ strict: false });
 
   // Editor sidebar management
-  const navigate = useNavigate();
-  const search: any = useSearch({ strict: false });
-  const sidebarParam = search.sidebar;
-  const { activeSidebar, setActiveSidebar, resetSidebar, closeSidebar } =
-    useEditorSidebar();
+  const { activeSidebar } = useEditorSidebar();
 
-  // Close sidebar and update URL to clear sidebar param
-  const handleCloseSidebar = useCallback(() => {
-    closeSidebar();
-    navigate({
-      to: ".",
-      search: (prev: any) => ({ ...prev, sidebar: "" }),
-      replace: true,
-    });
-  }, [closeSidebar, navigate]);
   const handleRef = useRef<HTMLDivElement>(null);
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
   const [handleLeft, setHandleLeft] = useState(0);
@@ -275,18 +268,6 @@ function AuthLayoutContent() {
     startY: 0,
   });
   const leftPanelRef = useRef<HTMLDivElement>(null);
-
-  // Initialize sidebar state from URL params on mount only
-  // Changes should be handled via event handlers (router navigation)
-  const initializedRef = useRef(false);
-  if (!initializedRef.current) {
-    initializedRef.current = true;
-    if (sidebarParam) {
-      setActiveSidebar(sidebarParam);
-    } else {
-      resetSidebar();
-    }
-  }
 
   const isFormBuilder = pathname.includes("/form-builder/");
   const showEditorSidebar = !!(activeSidebar && isFormBuilder && formId);
@@ -327,15 +308,6 @@ function AuthLayoutContent() {
     }
   }, [showEditorSidebar]);
 
-  // Bug 2 fix: Sync sidebar state with URL param changes
-  useEffect(() => {
-    if (sidebarParam && sidebarParam !== activeSidebar) {
-      setActiveSidebar(sidebarParam);
-    } else if (!sidebarParam && activeSidebar) {
-      closeSidebar();
-    }
-  }, [sidebarParam, activeSidebar, setActiveSidebar, closeSidebar]);
-
   return (
     <>
       <AppSidebar />
@@ -349,19 +321,11 @@ function AuthLayoutContent() {
             aria-hidden="true"
           />
         )}
-        <div className="relative z-0">
-          <AppHeader
-            dividerX={handleLeft}
-            isSidebarOpen={showEditorSidebar}
-            isDistractionHidden={isDistractionHeaderHidden}
-          />
-        </div>
-
         <div className="relative z-20 flex-1 min-h-0 overflow-hidden">
           <ResizablePanelGroup orientation="horizontal" className="h-full">
             {/* Main content panel - non-resizable */}
             <ResizablePanel
-              defaultSize={showEditorSidebar ? "70%" : "100%"}
+              defaultSize={showEditorSidebar ? "73%" : "100%"}
               minSize="50%"
               className="flex-1"
             >
@@ -369,7 +333,12 @@ function AuthLayoutContent() {
                 ref={leftPanelRef}
                 className={cn("flex h-full min-w-0 flex-col z-50")}
               >
-                <Outlet key={formId} />
+                <div className="relative z-0 shrink-0">
+                  <AppHeader isDistractionHidden={isDistractionHeaderHidden} />
+                </div>
+                <div className="flex-1 min-h-0">
+                  <Outlet key={formId} />
+                </div>
               </div>
             </ResizablePanel>
 
@@ -402,18 +371,7 @@ function AuthLayoutContent() {
                   }
                 }
               }}
-              onPointerUp={(e: React.PointerEvent<HTMLDivElement>) => {
-                const deltaX = Math.abs(
-                  e.clientX - (handleDragRef.current.startX || 0),
-                );
-                // If it was just a click (no drag detected, and mouse barely moved)
-                if (
-                  !handleDragRef.current.hasDragged &&
-                  deltaX < 5 &&
-                  activeSidebar
-                ) {
-                  handleCloseSidebar();
-                }
+              onPointerUp={() => {
                 handleDragRef.current.dragging = false;
                 setTimeout(() => {
                   handleDragRef.current.hasDragged = false;
@@ -428,8 +386,7 @@ function AuthLayoutContent() {
                 )}
               >
                 <div className="leading-4 whitespace-nowrap">
-                  <div>Close Click</div>
-                  <div>Resize Drag</div>
+                  Resize
                 </div>
               </div>
             </TypedResizableHandle>
@@ -437,14 +394,14 @@ function AuthLayoutContent() {
             {/* Right sidebar - Settings/Share/History, resizable */}
             <ResizablePanel
               panelRef={rightPanelRef}
-              collapsible
+              collapsible={!showEditorSidebar}
               collapsedSize="0%"
-              defaultSize={showEditorSidebar ? "30%" : "0%"}
-              minSize="25%"
-              maxSize="50%"
+              defaultSize={showEditorSidebar ? "27%" : "0%"}
+              minSize="20%"
+              maxSize="35%"
               className={cn(
-                "h-full overflow-hidden bg-background",
-                !showEditorSidebar && "border-none",
+                "h-full overflow-hidden bg-background min-w-[280px] max-w-[420px]",
+                !showEditorSidebar && "border-none min-w-0 max-w-none",
               )}
             >
               <div className="h-full w-full">
@@ -544,15 +501,24 @@ function AppSidebar() {
       <Sidebar className="border-r-[0.5px] bg-background h-screen">
         <SidebarHeader className="h-12 pl-3.5 pr-2 pt-2 pb-0 flex flex-row items-center justify-between group/logo">
           <Logo className="h-5.5 w-5.5 text-sidebar-foreground" />
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => toggleSidebar()}
-            className="hover:bg-sidebar-active text-light-gray-400 hover:text-light-gray-800 group-data-[state=collapsed]:hidden"
-            title="Collapse sidebar"
-          >
-            <ChevronsLeft className="h-4 w-4" strokeWidth={1.5} />
-          </Button>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => toggleSidebar()}
+                    className="h-8 w-8 bg-muted/60 opacity-0 group-hover/header:opacity-100"
+                  />
+                }
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="end">
+                <p className="font-medium">Collapse sidebar</p>
+                <p className="text-xs text-muted-foreground">{formatForDisplay(HOTKEYS.DISMISS_SIDEBARS)}</p>
+              </TooltipContent>
+            </Tooltip>
         </SidebarHeader>
 
         <SidebarContent className="gap-0">
@@ -1007,7 +973,7 @@ function SidebarInbox() {
     <div
       className={cn(
         "fixed z-40 flex w-80 flex-col bg-background select-none border-r border-foreground/5 top-0 bottom-0",
-        "transition-[left,opacity] duration-150 ease-out",
+        "transition-[left,opacity] duration-150 ease-out [[data-resizing]_&]:transition-none",
         state === "expanded"
           ? "left-(--sidebar-width)"
           : "left-(--sidebar-width-icon)",
