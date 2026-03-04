@@ -1,20 +1,17 @@
 import { Link, useSearch } from "@tanstack/react-router";
 import { Sparkles, X } from "lucide-react";
-import { useMemo } from "react";
 import type { Value } from "platejs";
 import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
 import { Button } from "@/components/ui/button";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
+import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useForm } from "@/hooks/use-live-hooks";
-import { getThemeStyleVars } from "@/lib/generate-theme-css";
 import { cn } from "@/lib/utils";
 
 export function PreviewMode({ formId, workspaceId }: { formId: string; workspaceId: string }) {
   const { data: savedDocs, isLoading } = useForm(formId);
   const doc = savedDocs?.[0];
-  const customization = (doc?.customization ?? null) as Record<string, string> | null;
-  const hasCustomization = customization && Object.keys(customization).length > 0;
-  const themeVars = useMemo(() => getThemeStyleVars(customization), [customization]);
+  const { hasCustomization, themeVars } = useFormCustomization(doc);
   const content = (doc?.content as Value) || [];
 
   // Read embed config from search params

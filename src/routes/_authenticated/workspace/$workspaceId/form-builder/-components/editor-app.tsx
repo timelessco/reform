@@ -6,8 +6,8 @@ import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import { useEditorHeaderVisibilitySafe } from "@/contexts/editor-header-visibility-context";
 import { EditorThemeProvider } from "@/contexts/editor-theme-context";
 import { updateDoc, updateHeader } from "@/db-collections";
+import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useForm } from "@/hooks/use-live-hooks";
-import { getThemeStyleVars } from "@/lib/generate-theme-css";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { normalizeNodeId, type TElement, type Value } from "platejs";
@@ -96,16 +96,7 @@ function EditorAppInner({
   readOnly: boolean;
   savedDocs: any;
 }) {
-  const customization = savedDocs?.[0]?.customization as Record<
-    string,
-    string
-  > | null;
-  const hasCustomization =
-    customization && Object.keys(customization).length > 0;
-  const themeVars = useMemo(
-    () => getThemeStyleVars(customization),
-    [customization],
-  );
+  const { customization, hasCustomization, themeVars } = useFormCustomization(savedDocs?.[0]);
   const skipSaveRef = useRef(false);
   const lastKnownContentRef = useRef<string | null>(null);
   const headerVisibility = useEditorHeaderVisibilitySafe();

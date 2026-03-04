@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { formCollection, localFormCollection } from "@/db-collections";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
 import { cn } from "@/lib/utils";
+import { defaultFormSettings } from "@/types/form-settings";
 import { createFileRoute } from "@tanstack/react-router";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
@@ -43,92 +44,24 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
   const formDoc = formResult.data?.[0] ?? null;
   const collection = isLocal ? localFormCollection : formCollection;
 
+  // Pick settings fields from formDoc, falling back to canonical defaults
+  const { customization: _c, ...settingsDefaults } = defaultFormSettings;
+
   const form = useAppForm({
-    defaultValues: formDoc ? {
-      language: formDoc.language ?? "English",
-      redirectOnCompletion: formDoc.redirectOnCompletion ?? false,
-      redirectUrl: formDoc.redirectUrl ?? null,
-      redirectDelay: formDoc.redirectDelay ?? 0,
-      progressBar: formDoc.progressBar ?? false,
-      branding: formDoc.branding ?? true,
-      dataRetention: formDoc.dataRetention ?? false,
-      dataRetentionDays: formDoc.dataRetentionDays ?? null,
-      selfEmailNotifications: formDoc.selfEmailNotifications ?? false,
-      notificationEmail: formDoc.notificationEmail ?? null,
-      respondentEmailNotifications: formDoc.respondentEmailNotifications ?? false,
-      respondentEmailSubject: formDoc.respondentEmailSubject ?? null,
-      respondentEmailBody: formDoc.respondentEmailBody ?? null,
-      passwordProtect: formDoc.passwordProtect ?? false,
-      password: formDoc.password ?? null,
-      closeForm: formDoc.closeForm ?? false,
-      closedFormMessage: formDoc.closedFormMessage ?? null,
-      closeOnDate: formDoc.closeOnDate ?? false,
-      closeDate: formDoc.closeDate ?? null,
-      limitSubmissions: formDoc.limitSubmissions ?? false,
-      maxSubmissions: formDoc.maxSubmissions ?? null,
-      preventDuplicateSubmissions: formDoc.preventDuplicateSubmissions ?? false,
-      autoJump: formDoc.autoJump ?? false,
-      saveAnswersForLater: formDoc.saveAnswersForLater ?? true,
-    } : {
-      language: "English",
-      redirectOnCompletion: false,
-      redirectUrl: null,
-      redirectDelay: 0,
-      progressBar: false,
-      branding: true,
-      dataRetention: false,
-      dataRetentionDays: null,
-      selfEmailNotifications: false,
-      notificationEmail: null,
-      respondentEmailNotifications: false,
-      respondentEmailSubject: null,
-      respondentEmailBody: null,
-      passwordProtect: false,
-      password: null,
-      closeForm: false,
-      closedFormMessage: null,
-      closeOnDate: false,
-      closeDate: null,
-      limitSubmissions: false,
-      maxSubmissions: null,
-      preventDuplicateSubmissions: false,
-      autoJump: false,
-      saveAnswersForLater: true,
-    },
+    defaultValues: formDoc
+      ? Object.fromEntries(
+          Object.keys(settingsDefaults).map((key) => [
+            key,
+            (formDoc as Record<string, unknown>)[key] ?? (settingsDefaults as Record<string, unknown>)[key],
+          ]),
+        ) as typeof settingsDefaults
+      : settingsDefaults,
     validationLogic: revalidateLogic(),
     listeners: {
       onChange: ({ formApi }) => {
-        const values = formApi.state.values;
-        const settingsFields = {
-          language: values.language,
-          redirectOnCompletion: values.redirectOnCompletion,
-          redirectUrl: values.redirectUrl,
-          redirectDelay: values.redirectDelay,
-          progressBar: values.progressBar,
-          branding: values.branding,
-          dataRetention: values.dataRetention,
-          dataRetentionDays: values.dataRetentionDays,
-          selfEmailNotifications: values.selfEmailNotifications,
-          notificationEmail: values.notificationEmail,
-          respondentEmailNotifications: values.respondentEmailNotifications,
-          respondentEmailSubject: values.respondentEmailSubject,
-          respondentEmailBody: values.respondentEmailBody,
-          passwordProtect: values.passwordProtect,
-          password: values.password,
-          closeForm: values.closeForm,
-          closedFormMessage: values.closedFormMessage,
-          closeOnDate: values.closeOnDate,
-          closeDate: values.closeDate,
-          limitSubmissions: values.limitSubmissions,
-          maxSubmissions: values.maxSubmissions,
-          preventDuplicateSubmissions: values.preventDuplicateSubmissions,
-          autoJump: values.autoJump,
-          saveAnswersForLater: values.saveAnswersForLater,
-        };
-
         if (formDoc?.id) {
           collection.update(formDoc.id, (draft) => {
-            Object.assign(draft, settingsFields);
+            Object.assign(draft, formApi.state.values);
             draft.updatedAt = new Date().toISOString();
           });
         }

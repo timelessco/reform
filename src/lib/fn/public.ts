@@ -264,15 +264,14 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
     });
 
     // Fire-and-forget email notifications
-    const settingsForEmail: Record<string, unknown> = {
-      selfEmailNotifications: form.selfEmailNotifications,
-      notificationEmail: form.notificationEmail,
-      respondentEmailNotifications: form.respondentEmailNotifications,
-      respondentEmailSubject: form.respondentEmailSubject,
-      respondentEmailBody: form.respondentEmailBody,
-    };
     sendEmailNotifications(
-      settingsForEmail,
+      {
+        selfEmailNotifications: form.selfEmailNotifications,
+        notificationEmail: form.notificationEmail,
+        respondentEmailNotifications: form.respondentEmailNotifications,
+        respondentEmailSubject: form.respondentEmailSubject,
+        respondentEmailBody: form.respondentEmailBody,
+      },
       form.createdByUserId,
       data.formId,
       id,
@@ -306,8 +305,16 @@ function findRespondentEmail(data: Record<string, unknown>): string | null {
 /**
  * Send email notifications after form submission (fire-and-forget)
  */
+interface EmailNotificationSettings {
+  selfEmailNotifications: boolean;
+  notificationEmail: string | null;
+  respondentEmailNotifications: boolean;
+  respondentEmailSubject: string | null;
+  respondentEmailBody: string | null;
+}
+
 async function sendEmailNotifications(
-  settings: Record<string, unknown>,
+  settings: EmailNotificationSettings,
   createdByUserId: string,
   formId: string,
   submissionId: string,
@@ -317,8 +324,8 @@ async function sendEmailNotifications(
     await import("@/lib/email");
 
   // Self email notification
-  if (settings.selfEmailNotifications === true) {
-    let toEmail = settings.notificationEmail as string | null;
+  if (settings.selfEmailNotifications) {
+    let toEmail = settings.notificationEmail;
 
     // Fallback to form owner's email
     if (!toEmail) {
@@ -345,13 +352,13 @@ async function sendEmailNotifications(
   }
 
   // Respondent email notification
-  if (settings.respondentEmailNotifications === true) {
+  if (settings.respondentEmailNotifications) {
     const respondentEmail = findRespondentEmail(submissionData);
     if (respondentEmail) {
       const subject =
-        (settings.respondentEmailSubject as string) || "Thank you for your submission";
+        settings.respondentEmailSubject || "Thank you for your submission";
       const body =
-        (settings.respondentEmailBody as string) ||
+        settings.respondentEmailBody ||
         "Thank you for filling out our form. We have received your response.";
       sendRespondentConfirmation(respondentEmail, subject, body).catch((err) =>
         console.error("[Email] Respondent notification error:", err),

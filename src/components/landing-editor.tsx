@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { useSearch } from "@tanstack/react-router";
 import { EditorThemeProvider } from "@/contexts/editor-theme-context";
 import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
-import { getThemeStyleVars } from "@/lib/generate-theme-css";
+import { useFormCustomization } from "@/hooks/use-form-customization";
 import { EditorKit } from "@/components/editor/editor-kit";
 import { ClientOnly } from "@/components/client-only";
 import { FormSettingsSidebar } from "@/components/form-builder/form-settings-sidebar";
@@ -160,11 +160,9 @@ function LocalEditorApp() {
   const localWorkspaceId = getLocalWorkspaceId();
   const { data: savedDocs } = useLocalForm(localFormId);
 
-  const customization = (savedDocs?.[0]?.customization ?? null) as Record<string, string> | null;
-  const hasCustomization = customization && Object.keys(customization).length > 0;
-  const themeVars = useMemo(() => getThemeStyleVars(customization), [customization]);
+  const { customization, hasCustomization, themeVars } = useFormCustomization(savedDocs?.[0]);
   const themeCtx = useMemo(
-    () => ({ themeVars, hasCustomization: Boolean(hasCustomization) }),
+    () => ({ themeVars, hasCustomization }),
     [themeVars, hasCustomization],
   );
 
@@ -277,11 +275,8 @@ function LocalPreviewMode() {
   const localFormId = getLocalFormId();
   const { data: savedDocs } = useLocalForm(localFormId);
 
-  const customization = (savedDocs?.[0]?.customization ?? null) as Record<string, string> | null;
-  const hasCustomization = customization && Object.keys(customization).length > 0;
-  const themeVars = useMemo(() => getThemeStyleVars(customization), [customization]);
-
   const doc = savedDocs?.[0];
+  const { hasCustomization, themeVars } = useFormCustomization(doc);
   const content = (doc?.content as Value) || [];
 
   if (savedDocs === undefined) return <Loader />;

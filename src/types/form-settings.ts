@@ -11,7 +11,7 @@ export type PopupAnimation = "fade" | "slide" | "scale";
 export type EmbedType = "standard" | "popup" | "fullPage";
 
 // ============================================================================
-// Form Settings Interface (matches form_settings table)
+// Form Settings Interface (matches settings fields on forms table)
 // ============================================================================
 export interface FormSettings {
   // General
@@ -113,7 +113,7 @@ export const defaultPublicFormSettings: PublicFormSettings = {
 // ============================================================================
 // Default Settings Values
 // ============================================================================
-export const defaultFormSettings: Omit<FormSettings, "id" | "formId" | "createdAt" | "updatedAt"> =
+export const defaultFormSettings: Omit<FormSettings, "createdAt" | "updatedAt"> =
   {
     language: "English",
     redirectOnCompletion: false,
@@ -138,6 +138,6 @@ export const defaultFormSettings: Omit<FormSettings, "id" | "formId" | "createdA
     maxSubmissions: null,
     preventDuplicateSubmissions: false,
     autoJump: false,
-    saveAnswersForLater: false,
+    saveAnswersForLater: true,
     customization: null,
   };
