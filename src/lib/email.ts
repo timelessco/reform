@@ -1,8 +1,9 @@
 import { Resend } from "resend";
+import { APP_NAME } from "@/lib/app-config";
 import { logger } from "@/lib/utils";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM_EMAIL = "Better Forms <noreply@share.recollect.so>";
+const FROM_EMAIL = `${APP_NAME} <noreply@share.recollect.so>`;
 
 export async function sendOTPEmail(email: string, otp: string, type: string) {
   // type: "sign-in" | "email-verification" | "forget-password"
@@ -11,7 +12,7 @@ export async function sendOTPEmail(email: string, otp: string, type: string) {
       ? "Verify your email"
       : type === "forget-password"
         ? "Reset your password"
-        : "Sign in to Better Forms";
+        : `Sign in to ${APP_NAME}`;
 
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
@@ -48,7 +49,7 @@ export async function sendOrgInvitationEmail(
 			<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
 				<h2 style="color: #333;">You're invited!</h2>
 				<p style="font-size: 16px; color: #555;">
-					<strong>${inviterName}</strong> has invited you to join <strong>${orgName}</strong> on Better Forms.
+					<strong>${inviterName}</strong> has invited you to join <strong>${orgName}</strong> on ${APP_NAME}.
 				</p>
 				<p style="font-size: 16px; color: #555; margin-top: 24px;">
 					<a href="${inviteLink}" style="display: inline-block; background-color: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 16px;">Accept Invitation</a>
@@ -114,7 +115,7 @@ export async function sendRespondentConfirmation(to: string, subject: string, bo
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
         <p style="font-size: 16px; color: #333; line-height: 1.6; white-space: pre-wrap;">${escapeHtml(body)}</p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-        <p style="font-size: 12px; color: #999;">This email was sent via Better Forms.</p>
+        <p style="font-size: 12px; color: #999;">This email was sent via ${APP_NAME}.</p>
       </div>
     `,
   });

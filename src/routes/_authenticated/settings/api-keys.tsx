@@ -58,6 +58,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { APP_NAME, APP_API_DOCS_URL } from "@/lib/app-config";
 import { auth, useSession } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_authenticated/settings/api-keys")({
@@ -282,13 +283,13 @@ function APIKeysPage() {
 
       <div className="flex items-center gap-1 text-[13px] text-muted-foreground pt-8">
         <span>
-          BetterForms's API is currently in Beta. Learn more about it on
+          {APP_NAME}'s API is currently in Beta. Learn more about it on
         </span>
         <a
-          href="https://developers.betterforms.so"
+          href={APP_API_DOCS_URL}
           className="text-blue-600 hover:underline"
         >
-          https://developers.betterforms.so
+          {APP_API_DOCS_URL}
         </a>
         <span>.</span>
       </div>

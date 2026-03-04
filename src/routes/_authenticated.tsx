@@ -284,7 +284,10 @@ function AuthLayoutContent() {
       <AppSidebar />
       <SidebarInbox />
 
-      <SidebarInset className="overflow-hidden relative flex flex-col h-screen">
+      <SidebarInset
+        className="overflow-hidden relative flex flex-col h-screen"
+        data-resizing={isRightResizing ? "" : undefined}
+      >
         {isDistractionHeaderHidden && (
           <div
             className="fixed inset-x-0 top-0 z-1200 h-3 bg-transparent"
@@ -292,56 +295,58 @@ function AuthLayoutContent() {
             aria-hidden="true"
           />
         )}
-        <div
-          data-resizing={isRightResizing ? "" : undefined}
-          className="relative z-20 flex-1 min-h-0 overflow-hidden flex"
-        >
+        <div className="relative z-20 flex-1 min-h-0 overflow-hidden flex">
           {/* Main content - flex-1 auto fills available space */}
           <div className={cn("flex-1 min-w-0 flex flex-col z-50")}>
             <div className="relative z-0 shrink-0">
               <AppHeader isDistractionHidden={isDistractionHeaderHidden} />
             </div>
-            <div className="flex-1 min-h-0">
+            <div
+              className={cn("flex-1 min-h-0", !isRightResizing && "transition-[padding] duration-200 ease-linear")}
+              style={{ paddingRight: showEditorSidebar ? rightSidebarWidth : 0 }}
+            >
               <Outlet key={formId} />
             </div>
           </div>
+        </div>
 
-          {/* Right sidebar resize handle */}
-          {showEditorSidebar && (
-            <RightSidebarResizeHandle
-              sidebarWidth={rightSidebarWidth}
-              setSidebarWidth={setRightSidebarWidth}
-              setIsResizing={setIsRightResizing}
-            />
+        {/* Right sidebar resize handle - fixed overlay */}
+        {showEditorSidebar && (
+          <RightSidebarResizeHandle
+            sidebarWidth={rightSidebarWidth}
+            setSidebarWidth={setRightSidebarWidth}
+            setIsResizing={setIsRightResizing}
+          />
+        )}
+
+        {/* Right sidebar - fixed overlay */}
+        <div
+          className={cn(
+            "fixed top-0 bottom-0 right-0 z-40 overflow-hidden bg-background",
+            !isRightResizing && "transition-[width] duration-200 ease-linear",
+            "[[data-resizing]_&]:transition-none",
+            showEditorSidebar && "border-l border-border/60",
+            !showEditorSidebar && "pointer-events-none",
           )}
-
-          {/* Right sidebar - Settings/Share/History */}
-          <div
-            className={cn(
-              "h-full overflow-hidden bg-background shrink-0",
-              !isRightResizing && "transition-[width] duration-200 ease-linear",
-              showEditorSidebar && "border-l border-border/60",
-            )}
-            style={{
-              width: showEditorSidebar ? `${rightSidebarWidth}px` : 0,
-            }}
-          >
-            <div className="h-full w-full">
-              <Suspense fallback={null}>
-                {activeSidebar === "settings" && formId && (
-                  <LazyFormSettingsSidebar formId={formId} />
-                )}
-                {activeSidebar === "share" && formId && (
-                  <LazyShareSummarySidebar formId={formId} />
-                )}
-                {activeSidebar === "history" && formId && (
-                  <LazyVersionHistorySidebar formId={formId} />
-                )}
-                {activeSidebar === "customize" && formId && (
-                  <LazyCustomizeSidebar formId={formId} />
-                )}
-              </Suspense>
-            </div>
+          style={{
+            width: showEditorSidebar ? `${rightSidebarWidth}px` : 0,
+          }}
+        >
+          <div className="h-full w-full">
+            <Suspense fallback={null}>
+              {activeSidebar === "settings" && formId && (
+                <LazyFormSettingsSidebar formId={formId} />
+              )}
+              {activeSidebar === "share" && formId && (
+                <LazyShareSummarySidebar formId={formId} />
+              )}
+              {activeSidebar === "history" && formId && (
+                <LazyVersionHistorySidebar formId={formId} />
+              )}
+              {activeSidebar === "customize" && formId && (
+                <LazyCustomizeSidebar formId={formId} />
+              )}
+            </Suspense>
           </div>
         </div>
       </SidebarInset>

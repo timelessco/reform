@@ -91,48 +91,53 @@ function LandingLayout() {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <div
-        data-resizing={isRightResizing ? "" : undefined}
-        className="flex-1 min-h-0 overflow-hidden flex"
-      >
+    <div
+      className="flex flex-col h-screen overflow-hidden"
+      data-resizing={isRightResizing ? "" : undefined}
+    >
+      <div className="flex-1 min-h-0 overflow-hidden flex">
         {/* Main content - flex-1 auto fills available space */}
         <div className={cn("flex-1 min-w-0 flex flex-col")}>
           <div className="relative z-0 shrink-0">
             <AppHeader />
           </div>
-          <div className="flex-1 min-h-0">
+          <div
+            className={cn("flex-1 min-h-0", !isRightResizing && "transition-[padding] duration-200 ease-linear")}
+            style={{ paddingRight: showSidebar ? rightSidebarWidth : 0 }}
+          >
             {demo ? <LocalPreviewMode /> : <LocalEditorApp />}
           </div>
         </div>
+      </div>
 
-        {/* Right sidebar resize handle */}
-        {showSidebar && (
-          <RightSidebarResizeHandle
-            sidebarWidth={rightSidebarWidth}
-            setSidebarWidth={setRightSidebarWidth}
-            setIsResizing={setIsRightResizing}
-          />
+      {/* Right sidebar resize handle - fixed overlay */}
+      {showSidebar && (
+        <RightSidebarResizeHandle
+          sidebarWidth={rightSidebarWidth}
+          setSidebarWidth={setRightSidebarWidth}
+          setIsResizing={setIsRightResizing}
+        />
+      )}
+
+      {/* Right sidebar - fixed overlay */}
+      <div
+        className={cn(
+          "fixed top-0 bottom-0 right-0 z-40 overflow-hidden bg-background",
+          !isRightResizing && "transition-[width] duration-200 ease-linear",
+          "[[data-resizing]_&]:transition-none",
+          showSidebar && "border-l border-border/60",
+          !showSidebar && "pointer-events-none",
         )}
-
-        {/* Right sidebar - Settings/Customize/About */}
-        <div
-          className={cn(
-            "h-full overflow-hidden bg-background shrink-0",
-            !isRightResizing && "transition-[width] duration-200 ease-linear",
-            showSidebar && "border-l border-border/60",
-          )}
-          style={{
-            width: showSidebar ? `${rightSidebarWidth}px` : 0,
-          }}
-        >
-          <div className="h-full w-full">
-            <Suspense fallback={null}>
-              <SidebarProvider className="min-h-0 h-full">
-                <LandingSidebar />
-              </SidebarProvider>
-            </Suspense>
-          </div>
+        style={{
+          width: showSidebar ? `${rightSidebarWidth}px` : 0,
+        }}
+      >
+        <div className="h-full w-full">
+          <Suspense fallback={null}>
+            <SidebarProvider className="min-h-0 h-full">
+              <LandingSidebar />
+            </SidebarProvider>
+          </Suspense>
         </div>
       </div>
     </div>
@@ -276,7 +281,7 @@ function LocalPreviewMode() {
   const { data: savedDocs } = useLocalForm(localFormId);
 
   const doc = savedDocs?.[0];
-  const { hasCustomization, themeVars } = useFormCustomization(doc);
+  const { customization, hasCustomization, themeVars } = useFormCustomization(doc);
   const content = (doc?.content as Value) || [];
 
   if (savedDocs === undefined) return <Loader />;

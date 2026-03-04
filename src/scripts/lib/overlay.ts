@@ -1,5 +1,5 @@
 /**
- * Better Forms Popup Embed - Overlay & Container Management
+ * Reform Popup Embed - Overlay & Container Management
  */
 
 import type { PopupOptions } from "./types";

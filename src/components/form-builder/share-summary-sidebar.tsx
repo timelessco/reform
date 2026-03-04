@@ -87,7 +87,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
       {/* Header */}
       <SidebarHeader className="pt-2 pb-1 pl-1 shrink-0  space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">Share</h2>
+          <h2 className="text-sm font-semibold text-foreground px-2.5">Share</h2>
           <Button
             variant="ghost"
             size="icon"

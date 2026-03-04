@@ -1,5 +1,5 @@
 /**
- * Better Forms Popup Embed - Type Definitions
+ * Reform Popup Embed - Type Definitions
  */
 
 export type PopupPosition = "bottom-right" | "bottom-left" | "center";
@@ -57,24 +57,24 @@ export interface PopupInstance {
 
 /** Events sent from iframe to parent */
 export type IframeEvent =
-  | { event: "BetterForms.FormLoaded"; formId: string }
-  | { event: "BetterForms.Resize"; height: number }
+  | { event: "Reform.FormLoaded"; formId: string }
+  | { event: "Reform.Resize"; height: number }
   | {
-      event: "BetterForms.FormSubmitted";
+      event: "Reform.FormSubmitted";
       formId: string;
       payload: FormSubmitPayload;
     }
-  | { event: "BetterForms.PageView"; formId: string; page: number }
-  | { event: "BetterForms.Close"; formId: string };
+  | { event: "Reform.PageView"; formId: string; page: number }
+  | { event: "Reform.Close"; formId: string };
 
 /** Global API exposed on window */
-interface BetterFormsAPI {
+interface ReformAPI {
   openPopup: (formId: string, options?: PopupOptions) => void;
   closePopup: (formId: string) => void;
 }
 
 declare global {
   interface Window {
-    BetterForms: BetterFormsAPI;
+    Reform: ReformAPI;
   }
 }

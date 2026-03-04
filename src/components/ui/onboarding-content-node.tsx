@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/lib/app-config";
 import {
   Calculator,
   CreditCard,
@@ -92,7 +93,7 @@ export function OnboardingContentElement(props: PlateElementProps) {
 
             <div className="py-6 space-y-1">
               <p className="text-lg text-muted-foreground/80 leading-relaxed">
-                BetterForms is a form builder that{" "}
+                {APP_NAME} is a form builder that{" "}
                 <span className="text-fuchsia-500 font-semibold px-1">works like a doc</span>.
               </p>
               <p className="text-lg text-muted-foreground/80 leading-relaxed">
@@ -118,7 +119,7 @@ export function OnboardingContentElement(props: PlateElementProps) {
                   <OnboardingItem icon={Layout} label="Get started with templates" />
                   <OnboardingItem icon={LinkIcon} label="Embed your form" />
                   <OnboardingItem icon={HelpCircle} label="Help center" />
-                  <OnboardingItem icon={Zap} label="Learn about BetterForms Pro" />
+                  <OnboardingItem icon={Zap} label={`Learn about ${APP_NAME} Pro`} />
                 </div>
               </div>
 

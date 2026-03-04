@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { Info, X } from "lucide-react";
+import { APP_NAME } from "@/lib/app-config";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
@@ -392,7 +393,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
                 </div>
               </div>
               <p className="text-[12px] text-muted-foreground tracking-[0.13px] leading-[1.48] mb-3">
-                Preview advanced customization. BetterForms Pro is required to
+                Preview advanced customization. {APP_NAME} Pro is required to
                 apply it to the published form.
               </p>
               <Button

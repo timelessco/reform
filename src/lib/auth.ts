@@ -2,6 +2,7 @@ import * as schema from "@/db/schema";
 import { db } from "@/lib/db";
 import { sendOrgInvitationEmail, sendOTPEmail } from "@/lib/email";
 import { logger } from "@/lib/utils";
+import { APP_NAME } from "@/lib/app-config";
 import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { betterAuth } from "better-auth";
@@ -16,7 +17,7 @@ const polarClient = new Polar({
 });
 
 export const auth = betterAuth({
-  appName: "Better Forms",
+  appName: APP_NAME,
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,

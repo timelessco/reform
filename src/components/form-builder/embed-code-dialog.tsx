@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/lib/app-config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Check, ChevronDown, Copy } from "lucide-react";
@@ -68,10 +69,10 @@ function generateEmbedCode(
   if (embedType === "standard") {
     const baseUrl = `${window.location.origin}/widgets/embed.js`;
     const dynamicHeightScript = options.dynamicHeight
-      ? `window.addEventListener("message",function(e){try{var d=JSON.parse(e.data);if(d.event==="BetterForms.Resize"){var f=document.querySelector('iframe[data-better-forms-src]');if(f&&typeof d.height==="number")f.style.height=d.height+"px"}}catch{}});`
+      ? `window.addEventListener("message",function(e){try{var d=JSON.parse(e.data);if(d.event==="Reform.Resize"){var f=document.querySelector('iframe[data-reform-src]');if(f&&typeof d.height==="number")f.style.height=d.height+"px"}}catch{}});`
       : "";
     return `<iframe
-  data-better-forms-src="${embedUrl}"
+  data-reform-src="${embedUrl}"
   loading="lazy"
   width="100%"
   height="${options.height}"
@@ -80,11 +81,11 @@ function generateEmbedCode(
   marginwidth="0"
   title="${docTitle || "Form"}"
 ></iframe>
-<script>${dynamicHeightScript}var d=document,w="${baseUrl}",v=function(){"undefined"!=typeof BetterForms?BetterForms.loadEmbeds():d.querySelectorAll("iframe[data-better-forms-src]:not([src])").forEach((function(e){e.src=e.dataset.betterFormsSrc}))};if("undefined"!=typeof BetterForms)v();else if(d.querySelector('script[src="'+w+'"]')==null){var s=d.createElement("script");s.src=w,s.onload=v,s.onerror=v,d.body.appendChild(s);}</script>`;
+<script>${dynamicHeightScript}var d=document,w="${baseUrl}",v=function(){"undefined"!=typeof Reform?Reform.loadEmbeds():d.querySelectorAll("iframe[data-reform-src]:not([src])").forEach((function(e){e.src=e.dataset.reformSrc}))};if("undefined"!=typeof Reform)v();else if(d.querySelector('script[src="'+w+'"]')==null){var s=d.createElement("script");s.src=w,s.onload=v,s.onerror=v,d.body.appendChild(s);}</script>`;
   }
 
   if (embedType === "popup") {
-    return `<!-- Better Forms Popup Embed -->
+    return `<!-- ${APP_NAME} Popup Embed -->
 <script>
   (function() {
     var script = document.createElement('script');
@@ -225,7 +226,7 @@ export function EmbedCodeDialog({
             </DialogTitle>
             <p className="text-muted-foreground text-[13px] leading-relaxed mt-1.5">
               {embedType === "popup"
-                ? "Enable the Better Forms popup on your site with a single script and trigger via button attributes or direct JS."
+                ? `Enable the ${APP_NAME} popup on your site with a single script and trigger via button attributes or direct JS.`
                 : "Integrate this form seamlessly into your website using the snippet below."}
             </p>
           </DialogHeader>
@@ -405,14 +406,14 @@ export function EmbedCodeDialog({
 
                     {embedType === "standard" ? (
                       <CodeBlock
-                        code={`// Include the Better Forms widget script
+                        code={`// Include the ${APP_NAME} widget script
 <script src="${window.location.origin}/widgets/embed.js"></script>
 
 // Add the embed in your HTML
-<iframe data-better-forms-src="${embedUrl}" loading="lazy" width="100%" height="${options.height}" frameborder="0" title="${docTitle || "Form"}"></iframe>
+<iframe data-reform-src="${embedUrl}" loading="lazy" width="100%" height="${options.height}" frameborder="0" title="${docTitle || "Form"}"></iframe>
 
 // Load all embeds
-BetterForms.loadEmbeds();`}
+Reform.loadEmbeds();`}
                         language="javascript"
                       />
                     ) : (
@@ -420,7 +421,7 @@ BetterForms.loadEmbeds();`}
                         <p className="leading-relaxed">
                           Open and close popups via{" "}
                           <code className="text-foreground font-mono bg-muted px-1 rounded">
-                            window.BetterForms
+                            window.Reform
                           </code>
                           .
                         </p>
@@ -429,10 +430,10 @@ BetterForms.loadEmbeds();`}
 <script src="${window.location.origin}/widgets/embed.js"></script>
 
 // Open popup
-BetterForms.openPopup('${formId}', options);
+Reform.openPopup('${formId}', options);
 
 // Close popup
-BetterForms.closePopup('${formId}');`}
+Reform.closePopup('${formId}');`}
                           language="javascript"
                         />
                       </div>
@@ -474,7 +475,7 @@ BetterForms.closePopup('${formId}');`}
                           1. Open as centered modal with delay
                         </p>
                         <CodeBlock
-                          code={`BetterForms.openPopup('${formId}', {
+                          code={`Reform.openPopup('${formId}', {
   layout: 'modal',
   width: ${options.popupWidth},
   autoClose: 5000,
@@ -487,7 +488,7 @@ BetterForms.closePopup('${formId}');`}
                           2. Set custom hidden fields
                         </p>
                         <CodeBlock
-                          code={`BetterForms.openPopup('${formId}', {
+                          code={`Reform.openPopup('${formId}', {
   hiddenFields: {
     ref: 'downloads',
     email: 'alice@example.com'
@@ -501,7 +502,7 @@ BetterForms.closePopup('${formId}');`}
                           3. Handle events
                         </p>
                         <CodeBlock
-                          code={`BetterForms.openPopup('${formId}', {
+                          code={`Reform.openPopup('${formId}', {
   onOpen: () => console.log('Opened'),
   onSubmit: (payload) => console.log('Submitted', payload)
 });`}

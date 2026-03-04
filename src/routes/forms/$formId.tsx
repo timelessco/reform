@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/lib/app-config";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
 import z from "zod";
@@ -19,8 +20,8 @@ export const Route = createFileRoute("/forms/$formId")({
     meta: [
       {
         title: loaderData?.form?.title
-          ? `${loaderData.form.title} | Better Forms`
-          : "Form | Better Forms",
+          ? `${loaderData.form.title} | ${APP_NAME}`
+          : `Form | ${APP_NAME}`,
       },
       {
         name: "description",

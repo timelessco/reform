@@ -17,6 +17,7 @@ import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
 import { formCollection, localFormCollection } from "@/db-collections";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
+import { APP_NAME } from "@/lib/app-config";
 import { cn } from "@/lib/utils";
 import { defaultFormSettings } from "@/types/form-settings";
 import { createFileRoute } from "@tanstack/react-router";
@@ -32,6 +33,10 @@ export const Route = createFileRoute(
   notFoundComponent: NotFound,
 });
 
+// Settings defaults (module-scope, computed once)
+const { customization: _c, ...settingsDefaults } = defaultFormSettings;
+const settingsKeys = Object.keys(settingsDefaults);
+
 function SettingsPage() {
   const { formId } = Route.useParams();
   return <SettingsContent formId={formId} />;
@@ -44,13 +49,10 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
   const formDoc = formResult.data?.[0] ?? null;
   const collection = isLocal ? localFormCollection : formCollection;
 
-  // Pick settings fields from formDoc, falling back to canonical defaults
-  const { customization: _c, ...settingsDefaults } = defaultFormSettings;
-
   const form = useAppForm({
     defaultValues: formDoc
       ? Object.fromEntries(
-          Object.keys(settingsDefaults).map((key) => [
+          settingsKeys.map((key) => [
             key,
             (formDoc as Record<string, unknown>)[key] ?? (settingsDefaults as Record<string, unknown>)[key],
           ]),
@@ -170,7 +172,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
             <SettingItem
               title={
                 <span>
-                  BetterForms branding{" "}
+                  {APP_NAME} branding{" "}
                   <Badge
                     variant="secondary"
                     className="bg-pink-100 text-pink-600 border-none text-[10px] h-4 px-1.5 ml-1"
@@ -179,7 +181,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                   </Badge>
                 </span>
               }
-              description='Show "Made with BetterForms" on your form.'
+              description={`Show "Made with ${APP_NAME}" on your form.`}
             >
               <form.AppField name="branding">
                 {(field) => (

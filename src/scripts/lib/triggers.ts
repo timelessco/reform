@@ -1,5 +1,5 @@
 /**
- * Better Forms Popup Embed - Trigger Handlers
+ * Reform Popup Embed - Trigger Handlers
  * Handles click events on data-form-id elements and URL hash triggers
  */
 

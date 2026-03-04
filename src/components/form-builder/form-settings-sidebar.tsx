@@ -23,22 +23,25 @@ export function FormSettingsSidebar({ formId, isLocal }: FormSettingsSidebarProp
       collapsible="none"
       className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out"
     >
-      <SidebarHeader className="px-4 py-3 shrink-0 border-b flex flex-row items-center justify-between">
-        <h2 className="text-sm font-semibold text-foreground">Settings</h2>
+      <SidebarHeader className="pt-2 pb-1 pl-1 shrink-0  space-y-2">
+        <div className="flex items-center justify-between">
+
+        <h2 className="text-sm font-semibold text-foreground px-2.5">Settings</h2>
         <Button
           variant="ghost"
           size="icon"
           className="h-8 w-8 text-muted-foreground hover:text-foreground"
           onClick={closeSidebar}
-        >
+          >
           <X className="h-4 w-4" />
         </Button>
+          </div>
       </SidebarHeader>
 
       {/* Tab Content */}
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupContent className="p-4">
+          <SidebarGroupContent>
             <SettingsContent formId={formId} isLocal={isLocal} />
           </SidebarGroupContent>
         </SidebarGroup>

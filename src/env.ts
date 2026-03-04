@@ -1,7 +1,7 @@
 import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
 
-const env = createEnv({
+export const env = createEnv({
   server: {
     SERVER_URL: z.string().url().optional(),
     // Database
@@ -22,6 +22,10 @@ const env = createEnv({
 
   client: {
     VITE_APP_TITLE: z.string().min(1).optional(),
+    VITE_APP_NAME: z.string().min(1).optional(),
+    VITE_APP_WEBSITE_URL: z.string().url().optional(),
+    VITE_APP_DOCS_URL: z.string().url().optional(),
+    VITE_APP_API_DOCS_URL: z.string().url().optional(),
   },
 
   /**

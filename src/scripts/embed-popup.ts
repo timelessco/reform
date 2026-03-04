@@ -1,14 +1,12 @@
 /**
- * Better Forms Popup Embed Script
+ * Reform Popup Embed Script
  *
- * This script provides the ability to embed Better Forms as popups on external websites.
+ * This script provides the ability to embed Reform as popups on external websites.
  *
  * Usage:
  * 1. Include this script: <script async src="https://yoursite.com/embed/popup.js"></script>
  * 2. Add trigger elements: <button data-form-id="your-form-id">Open Form</button>
- * 3. Or use the JS API: BetterForms.openPopup('your-form-id', options)
- *
- * @see https://docs.betterforms.com/embed for full documentation
+ * 3. Or use the JS API: Reform.openPopup('your-form-id', options)
  */
 
 import { createIframe, destroyIframe, updateIframeHeight } from "./lib/iframe";
@@ -32,7 +30,7 @@ const activePopups = new Map<string, PopupInstance>();
 function openPopup(formId: string, options: PopupOptions = {}): void {
   // Don't open if already open
   if (activePopups.has(formId)) {
-    console.warn(`[BetterForms] Popup for form ${formId} is already open`);
+    console.warn(`[Reform] Popup for form ${formId} is already open`);
     return;
   }
 
@@ -62,7 +60,7 @@ function openPopup(formId: string, options: PopupOptions = {}): void {
     try {
       options.onOpen();
     } catch (e) {
-      console.error("[BetterForms] onOpen callback error:", e);
+      console.error("[Reform] onOpen callback error:", e);
     }
   }
 }
@@ -92,7 +90,7 @@ function closePopup(formId: string): void {
     try {
       instance.options.onClose();
     } catch (e) {
-      console.error("[BetterForms] onClose callback error:", e);
+      console.error("[Reform] onClose callback error:", e);
     }
   }
 }
@@ -111,8 +109,8 @@ function handleMessage(event: MessageEvent): void {
     return;
   }
 
-  // Only handle BetterForms events
-  if (!data?.event?.startsWith("BetterForms.")) {
+  // Only handle Reform events
+  if (!data?.event?.startsWith("Reform.")) {
     return;
   }
 
@@ -130,11 +128,11 @@ function handleMessage(event: MessageEvent): void {
   }
 
   switch (data.event) {
-    case "BetterForms.FormLoaded":
+    case "Reform.FormLoaded":
       // Form has loaded, hide loading indicator is already handled by iframe load event
       break;
 
-    case "BetterForms.Resize":
+    case "Reform.Resize":
       // Update iframe and popup height
       if (typeof data.height === "number") {
         updateIframeHeight(instance.iframe, data.height);
@@ -142,13 +140,13 @@ function handleMessage(event: MessageEvent): void {
       }
       break;
 
-    case "BetterForms.FormSubmitted":
+    case "Reform.FormSubmitted":
       // Handle form submission
       if (instance.options.onSubmit) {
         try {
           instance.options.onSubmit(data.payload);
         } catch (e) {
-          console.error("[BetterForms] onSubmit callback error:", e);
+          console.error("[Reform] onSubmit callback error:", e);
         }
       }
 
@@ -163,13 +161,13 @@ function handleMessage(event: MessageEvent): void {
       // Forward to dataLayer/fbq if available
       break;
 
-    case "BetterForms.PageView":
+    case "Reform.PageView":
       // Multi-step form page change
       if (instance.options.onPageView && "page" in data) {
         try {
           instance.options.onPageView(data.page);
         } catch (e) {
-          console.error("[BetterForms] onPageView callback error:", e);
+          console.error("[Reform] onPageView callback error:", e);
         }
       }
 
@@ -185,7 +183,7 @@ function handleMessage(event: MessageEvent): void {
       }
       break;
 
-    case "BetterForms.Close":
+    case "Reform.Close":
       // Close requested from iframe
       closePopup(instance.formId);
       break;
@@ -213,7 +211,7 @@ function init(): void {
 }
 
 // Create global API
-window.BetterForms = {
+window.Reform = {
   openPopup,
   closePopup,
 };

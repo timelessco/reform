@@ -1,5 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import * as React from "react";
+import { APP_NAME } from "@/lib/app-config";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -70,7 +71,7 @@ export function RightSidebar() {
             answer="Workspaces allow you to group forms by project or team. You can switch between them using the workspace selector in the head margin."
           />
           <FAQItem
-            question="Does Agentation support multi-step forms like BetterForms or Typeform?"
+            question={`Does Agentation support multi-step forms like ${APP_NAME} or Typeform?`}
             answer="Yes, you can add 'Page' blocks to create immersive multi-step experiences with conditional logic support coming soon."
           />
         </div>

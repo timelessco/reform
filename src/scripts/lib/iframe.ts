@@ -1,5 +1,5 @@
 /**
- * Better Forms Popup Embed - Iframe Management
+ * Reform Popup Embed - Iframe Management
  */
 
 import type { PopupOptions } from "./types";
@@ -82,7 +82,7 @@ export function createIframe(
 ): HTMLIFrameElement {
   const iframe = document.createElement("iframe");
   iframe.className = "bf-iframe";
-  iframe.setAttribute("title", "Better Forms");
+  iframe.setAttribute("title", "Reform");
   iframe.setAttribute("frameborder", "0");
   iframe.setAttribute("allow", "fullscreen");
   iframe.setAttribute("data-bf-form-id", formId);

@@ -60,7 +60,7 @@ function sendToParent(event: string, payload?: Record<string, unknown>): void {
   try {
     window.parent.postMessage(JSON.stringify({ event, ...payload }), "*");
   } catch (e) {
-    console.error("[BetterForms] Failed to send message to parent:", e);
+    console.error("[Reform] Failed to send message to parent:", e);
   }
 }
 
@@ -149,7 +149,7 @@ export function PublicFormPage({
       return;
 
     // Notify parent that form has loaded
-    sendToParent("BetterForms.FormLoaded", { formId });
+    sendToParent("Reform.FormLoaded", { formId });
 
     // Track last sent height to avoid redundant messages
     let lastHeight = 0;
@@ -165,7 +165,7 @@ export function PublicFormPage({
       // Only send if height actually changed (with small tolerance)
       if (Math.abs(height - lastHeight) > 2) {
         lastHeight = height;
-        sendToParent("BetterForms.Resize", { height });
+        sendToParent("Reform.Resize", { height });
       }
     };
 
@@ -213,7 +213,7 @@ export function PublicFormPage({
 
         // Notify parent of submission (for popup embeds)
         if (isPopup) {
-          sendToParent("BetterForms.FormSubmitted", {
+          sendToParent("Reform.FormSubmitted", {
             formId,
             payload: {
               formId,

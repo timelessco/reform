@@ -348,8 +348,8 @@ export function AppHeader({
         )}
       </div>
 
-      {/* Right Section: Actions */}
-      <div className="flex items-center gap-1">
+      {/* Right Section: Actions — hidden when any editor sidebar is open */}
+      <div className={cn("flex items-center gap-1", isEditorSidebarOpen && "hidden")}>
         {isFormBuilder &&
           savedDocs?.[0]?.updatedAt &&
           !isEditorSidebarOpen &&

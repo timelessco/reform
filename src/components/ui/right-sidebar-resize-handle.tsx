@@ -64,7 +64,8 @@ export function RightSidebarResizeHandle({
       aria-label="Resize sidebar"
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
-      className="relative shrink-0 w-0 cursor-col-resize z-20 after:absolute after:inset-y-0 after:-left-[2px] after:w-[5px] after:content-[''] hover:after:bg-border/50 active:after:bg-border"
+      className="fixed top-0 bottom-0 z-50 w-0 cursor-col-resize after:absolute after:inset-y-0 after:-left-[2px] after:w-[5px] after:content-[''] hover:after:bg-border/50 active:after:bg-border"
+      style={{ right: `${sidebarWidth}px` }}
     />
   );
 }
