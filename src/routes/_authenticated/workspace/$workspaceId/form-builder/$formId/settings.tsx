@@ -15,9 +15,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
-import { formSettingsCollection } from "@/db-collections/form-settings.collection";
-import { useFormSettings } from "@/hooks/use-live-hooks";
+import { formSettingsCollection, localFormSettingsCollection } from "@/db-collections/form-settings.collection";
+import { useFormSettings, useLocalFormSettings } from "@/hooks/use-live-hooks";
 import { cn } from "@/lib/utils";
+import { getLocalFormSettingsId } from "@/lib/local-draft";
 import { createFileRoute } from "@tanstack/react-router";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
@@ -39,8 +40,11 @@ function SettingsPage() {
   return <SettingsContent formId={formId} />;
 }
 
-export function SettingsContent({ formId }: { formId: string }) {
-  const { data: settingsDoc } = useFormSettings(formId);
+export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?: boolean }) {
+  const cloudSettings = useFormSettings(isLocal ? undefined : formId);
+  const localSettings = useLocalFormSettings(isLocal ? formId : undefined);
+  const { data: settingsDoc } = isLocal ? localSettings : cloudSettings;
+  const collection = isLocal ? localFormSettingsCollection : formSettingsCollection;
 
   const form = useAppForm({
     defaultValues: settingsDoc ?? {
@@ -72,44 +76,54 @@ export function SettingsContent({ formId }: { formId: string }) {
     validationLogic: revalidateLogic(),
     listeners: {
       onChange: ({ formApi }) => {
-        console.log("formApi.state.values", formApi.state.values);
-        if (!settingsDoc?.id) return;
         const values = formApi.state.values;
-        formSettingsCollection.update(settingsDoc.id, (draft) => {
-          Object.assign(draft, {
-            language: values.language,
-            redirectOnCompletion: values.redirectOnCompletion,
-            redirectUrl: values.redirectUrl,
-            redirectDelay: values.redirectDelay,
-            progressBar: values.progressBar,
-            branding: values.branding,
-            dataRetention: values.dataRetention,
-            dataRetentionDays: values.dataRetentionDays,
-            selfEmailNotifications: values.selfEmailNotifications,
-            notificationEmail: values.notificationEmail,
-            respondentEmailNotifications: values.respondentEmailNotifications,
-            respondentEmailSubject: values.respondentEmailSubject,
-            respondentEmailBody: values.respondentEmailBody,
-            passwordProtect: values.passwordProtect,
-            password: values.password,
-            closeForm: values.closeForm,
-            closedFormMessage: values.closedFormMessage,
-            closeOnDate: values.closeOnDate,
-            closeDate: values.closeDate,
-            limitSubmissions: values.limitSubmissions,
-            maxSubmissions: values.maxSubmissions,
-            preventDuplicateSubmissions: values.preventDuplicateSubmissions,
-            autoJump: values.autoJump,
-            saveAnswersForLater: values.saveAnswersForLater,
+        const settingsFields = {
+          language: values.language,
+          redirectOnCompletion: values.redirectOnCompletion,
+          redirectUrl: values.redirectUrl,
+          redirectDelay: values.redirectDelay,
+          progressBar: values.progressBar,
+          branding: values.branding,
+          dataRetention: values.dataRetention,
+          dataRetentionDays: values.dataRetentionDays,
+          selfEmailNotifications: values.selfEmailNotifications,
+          notificationEmail: values.notificationEmail,
+          respondentEmailNotifications: values.respondentEmailNotifications,
+          respondentEmailSubject: values.respondentEmailSubject,
+          respondentEmailBody: values.respondentEmailBody,
+          passwordProtect: values.passwordProtect,
+          password: values.password,
+          closeForm: values.closeForm,
+          closedFormMessage: values.closedFormMessage,
+          closeOnDate: values.closeOnDate,
+          closeDate: values.closeDate,
+          limitSubmissions: values.limitSubmissions,
+          maxSubmissions: values.maxSubmissions,
+          preventDuplicateSubmissions: values.preventDuplicateSubmissions,
+          autoJump: values.autoJump,
+          saveAnswersForLater: values.saveAnswersForLater,
+        };
+
+        if (settingsDoc?.id) {
+          collection.update(settingsDoc.id, (draft) => {
+            Object.assign(draft, settingsFields);
+            draft.updatedAt = new Date().toISOString();
           });
-          draft.updatedAt = new Date().toISOString();
-        });
+        } else if (isLocal) {
+          const now = new Date().toISOString();
+          collection.insert({
+            id: getLocalFormSettingsId(),
+            formId,
+            ...settingsFields,
+            customization: {},
+            createdAt: now,
+            updatedAt: now,
+          });
+        }
       },
       onChangeDebounceMs: 500,
     },
   });
-
-  if (!settingsDoc) return <SettingsSkeleton />;
 
   return (
     <div className="space-y-8 pb-20">

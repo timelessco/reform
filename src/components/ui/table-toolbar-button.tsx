@@ -1,6 +1,5 @@
 import { TablePlugin, useTableMergeState } from "@platejs/table/react";
 
-import type { DropdownMenuProps } from "@radix-ui/react-dropdown-menu";
 import {
   ArrowDown,
   ArrowLeft,
@@ -45,7 +44,9 @@ const createInitialTableGrid = () =>
     })),
   );
 
-export function TableToolbarButton(props: DropdownMenuProps) {
+export function TableToolbarButton(
+  props: React.ComponentProps<typeof DropdownMenu>,
+) {
   const tableSelected = useEditorSelector(
     (editor) => editor.api.some({ match: { type: KEYS.table } }),
     [],

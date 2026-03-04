@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
+import { z } from "zod";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
@@ -10,6 +11,18 @@ const LandingEditor = lazy(() => import("@/components/landing-editor"));
 export const Route = createFileRoute("/")({
   server: {
     middleware: [guestMiddleware],
+  },
+  validateSearch: z.object({
+    demo: z.boolean().optional(),
+  }),
+  loader: async () => {
+    if (typeof window !== "undefined") {
+      const { localFormCollection, localFormSettingsCollection } = await import("@/db-collections");
+      await Promise.all([
+        localFormCollection.preload(),
+        localFormSettingsCollection.preload(),
+      ]);
+    }
   },
   component: RouteComponent,
   pendingComponent: Loader,

@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Slot } from "@radix-ui/react-slot";
 import { CropIcon, RotateCcwIcon } from "lucide-react";
 import {
   type ComponentProps,
@@ -291,11 +290,11 @@ export const ImageCropApply = ({
   };
 
   if (render) {
-    return (
-      <Slot onClick={handleClick as any} {...(props as any)}>
-        {cloneElement(render as ReactElement<any>, { children })}
-      </Slot>
-    );
+    return cloneElement(render as ReactElement<any>, {
+      onClick: handleClick,
+      children,
+      ...props,
+    });
   }
 
   return (
@@ -323,11 +322,11 @@ export const ImageCropReset = ({
   };
 
   if (render) {
-    return (
-      <Slot onClick={handleClick as any} {...(props as any)}>
-        {cloneElement(render as ReactElement<any>, { children })}
-      </Slot>
-    );
+    return cloneElement(render as ReactElement<any>, {
+      onClick: handleClick,
+      children,
+      ...props,
+    });
   }
 
   return (

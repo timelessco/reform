@@ -59,7 +59,7 @@ interface EmbedConfigPanelProps {
 
 function ConfigCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-px rounded-lg overflow-hidden">
+    <div className="flex flex-col gap-px [&>:first-child]:rounded-t-[8px] [&>:last-child]:rounded-b-[8px]">
       {children}
     </div>
   );
@@ -81,11 +81,11 @@ function ConfigRow({
 }) {
   return (
     <div
-      className={`bg-secondary flex gap-1.5 items-center overflow-hidden pl-[10px] py-[7px] ${
-        variant === "switch" ? "pr-1.5" : "pr-[3px]"
+      className={`bg-secondary flex gap-[6px] items-center overflow-clip pl-[10px] py-[7px] ${
+        variant === "switch" ? "pr-[6px]" : "pr-[3px]"
       }`}
     >
-      <span className="flex-1 min-w-0 text-sm">{label}</span>
+      <span className="flex-1 min-w-0 text-sm leading-[1.15]">{label}</span>
       {children}
     </div>
   );
@@ -179,8 +179,13 @@ function ScrubValue({
 }
 
 /* ─── Select trigger class (shared) ─── */
+/**
+ * Figma button: h-[24px] px-[8px] py-[5.5px] rounded-[5px] gap-[4px]
+ * Must override SelectTrigger defaults: data-[size=default]:h-8, py-2, pe-2, ps-2.5, rounded-lg
+ * Use data-[size=default]:h-[24px] to match specificity of the default variant class.
+ */
 const selectTriggerCls =
-  "h-6 shrink-0 border-none bg-transparent shadow-none rounded-[5px] px-2 gap-1 w-auto text-[13px] font-medium text-foreground whitespace-nowrap";
+  "data-[size=default]:h-[24px] shrink-0 border-none bg-transparent shadow-none rounded-[5px] px-2 py-0 gap-1 w-auto text-[13px] leading-[1.15] font-medium text-foreground whitespace-nowrap [&_svg]:size-3";
 
 /* ─── Public entry point ─── */
 
@@ -248,8 +253,8 @@ function CustomizeSection({
             <ConfigRow label="Hide on submit">
               <Select
                 value={field.state.value ? "yes" : "no"}
-                onValueChange={(v: string) =>
-                  field.handleChange(v === "yes")
+                onValueChange={(value: string | null) =>
+                  field.handleChange(value === "yes")
                 }
               >
                 <SelectTrigger className={selectTriggerCls}>

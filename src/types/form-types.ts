@@ -1,13 +1,10 @@
 // form-type.ts
-import type { CheckboxProps } from "@radix-ui/react-checkbox";
-import type { RadioGroupProps } from "@radix-ui/react-radio-group";
-import type { SeparatorProps } from "@radix-ui/react-separator";
-import type { SliderProps } from "@radix-ui/react-slider";
-import type { SwitchProps } from "@radix-ui/react-switch";
-import type {
-  ToggleGroupMultipleProps,
-  ToggleGroupSingleProps,
-} from "@radix-ui/react-toggle-group";
+import type { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
+import type { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group";
+import type { Separator as SeparatorPrimitive } from "@base-ui/react/separator";
+import type { Slider as SliderPrimitive } from "@base-ui/react/slider";
+import type { Switch as SwitchPrimitive } from "@base-ui/react/switch";
+import type { ToggleGroup as ToggleGroupPrimitive } from "@base-ui/react/toggle-group";
 import type { OTPInputProps } from "input-otp";
 import type { Label } from "@/components/ui/label";
 
@@ -49,13 +46,13 @@ type Textarea = {
 
 type Checkbox = {
   fieldType: "Checkbox";
-} & CheckboxProps &
+} & CheckboxPrimitive.Root.Props &
   SharedFormProps;
 
 type RadioGroup = {
   fieldType: "RadioGroup";
   options: Option[];
-} & RadioGroupProps &
+} & RadioGroupPrimitive.Props &
   SharedFormProps;
 //------------------------------
 type ToggleGroupBaseProps = {
@@ -64,12 +61,12 @@ type ToggleGroupBaseProps = {
 };
 
 type ToggleGroupSingle = ToggleGroupBaseProps &
-  ToggleGroupSingleProps & {
+  ToggleGroupPrimitive.Props & {
     type: "single";
   };
 
 type ToggleGroupMultiple = ToggleGroupBaseProps &
-  ToggleGroupMultipleProps & {
+  ToggleGroupPrimitive.Props & {
     type: "multiple";
   };
 
@@ -78,12 +75,12 @@ type ToggleGroup = (ToggleGroupSingle | ToggleGroupMultiple) & SharedFormProps;
 
 type Switch = {
   fieldType: "Switch";
-} & SwitchProps &
+} & SwitchPrimitive.Root.Props &
   SharedFormProps;
 
 type Slider = {
   fieldType: "Slider";
-} & SliderProps &
+} & SliderPrimitive.Root.Props &
   SharedFormProps;
 
 type Select = {
@@ -145,7 +142,7 @@ type Divider = {
    */
   name: string;
   static: true;
-} & SeparatorProps;
+} & SeparatorPrimitive.Props;
 
 type PageBreak = {
   fieldType: "PageBreak";

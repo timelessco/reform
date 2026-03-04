@@ -1,5 +1,5 @@
 import { electricCollectionOptions } from "@tanstack/electric-db-collection";
-import { createCollection } from "@tanstack/react-db";
+import { createCollection, localStorageCollectionOptions } from "@tanstack/react-db";
 import { z } from "zod";
 import { electricFetchClient, getElectricUrl, type ServerTxResult, timestampField } from "./shared";
 
@@ -7,7 +7,7 @@ import { electricFetchClient, getElectricUrl, type ServerTxResult, timestampFiel
 // Form Settings Schema
 // ============================================================================
 
-const FormSettingsSchema = z.object({
+export const FormSettingsSchema = z.object({
   id: z.string(),
   formId: z.string(),
   language: z.string().default("English"),
@@ -56,6 +56,13 @@ export const formSettingsCollection = createCollection(
     },
     getKey: (item) => item.id,
     startSync: false,
+    syncMode: "eager",
+    onInsert: async ({ transaction }) => {
+      const { createFormSettings } = await import("@/lib/fn/form-settings");
+      const newItem = transaction.mutations[0].modified;
+      const result = await createFormSettings({ data: newItem });
+      return { txid: (result as ServerTxResult).txid };
+    },
     onUpdate: async ({ transaction }) => {
       const { updateFormSettings } = await import("@/lib/fn/form-settings");
       const { original, changes } = transaction.mutations[0];
@@ -64,5 +71,18 @@ export const formSettingsCollection = createCollection(
       });
       return { txid: (result as ServerTxResult).txid };
     },
+  }),
+);
+
+// ============================================================================
+// Local (localStorage-backed) Form Settings Collection
+// ============================================================================
+
+export const localFormSettingsCollection = createCollection(
+  localStorageCollectionOptions({
+    id: "draft-form-settings",
+    storageKey: "draft-form-settings",
+    schema: FormSettingsSchema,
+    getKey: (item) => item.id,
   }),
 );

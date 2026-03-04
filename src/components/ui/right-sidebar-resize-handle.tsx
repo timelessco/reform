@@ -1,0 +1,70 @@
+import type * as React from "react";
+import { useCallback, useEffect, useRef } from "react";
+
+export const RIGHT_SIDEBAR_WIDTH_MIN = 280;
+export const RIGHT_SIDEBAR_WIDTH_DEFAULT = 340;
+export const RIGHT_SIDEBAR_WIDTH_MAX = 420;
+export const RIGHT_SIDEBAR_WIDTH_KEY = "right_sidebar_width";
+
+export function RightSidebarResizeHandle({
+  sidebarWidth,
+  setSidebarWidth,
+  setIsResizing,
+}: {
+  sidebarWidth: number;
+  setSidebarWidth: (width: number) => void;
+  setIsResizing: (v: boolean) => void;
+}) {
+  const startXRef = useRef(0);
+  const startWidthRef = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, []);
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      startXRef.current = e.clientX;
+      startWidthRef.current = sidebarWidth;
+      setIsResizing(true);
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+
+      const handleMouseMove = (e: MouseEvent) => {
+        // For right sidebar, dragging left increases width
+        const delta = startXRef.current - e.clientX;
+        setSidebarWidth(startWidthRef.current + delta);
+      };
+
+      const handleMouseUp = () => {
+        setIsResizing(false);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    },
+    [sidebarWidth, setSidebarWidth, setIsResizing],
+  );
+
+  const handleDoubleClick = useCallback(() => {
+    setSidebarWidth(RIGHT_SIDEBAR_WIDTH_DEFAULT);
+  }, [setSidebarWidth]);
+
+  return (
+    <div
+      role="separator"
+      aria-label="Resize sidebar"
+      onMouseDown={handleMouseDown}
+      onDoubleClick={handleDoubleClick}
+      className="relative shrink-0 w-0 cursor-col-resize z-20 after:absolute after:inset-y-0 after:-left-[2px] after:w-[5px] after:content-[''] hover:after:bg-border/50 active:after:bg-border"
+    />
+  );
+}

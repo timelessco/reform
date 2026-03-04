@@ -28,10 +28,10 @@ import {
 } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
 import {
-  AlertCircle,
   Loader2,
   MoreHorizontal,
   Pencil,
+  RotateCcw,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -104,6 +104,7 @@ export function AppHeader({
   const [isDiscarding, setIsDiscarding] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
 
   // Favorite state
   useIsFavorite(session?.user?.id, formId);
@@ -204,7 +205,7 @@ export function AppHeader({
   };
 
   useHotkey(HOTKEYS.TOGGLE_PREVIEW, () => handleTogglePreview(), {
-    enabled: isFormBuilder && isEditRoute,
+    enabled: (isFormBuilder && isEditRoute) || isLandingPage,
   });
 
   useHotkey(HOTKEYS.TOGGLE_SHARE_SIDEBAR, () => toggleShareSidebar(), {
@@ -288,7 +289,7 @@ export function AppHeader({
     <>
     <header
       className={cn(
-        "group/header flex h-10 w-full items-center justify-between bg-background px-3 text-[13px] -z-10 font-medium shrink-0 select-none transition-opacity duration-150",
+        "group/header flex h-10 w-full items-center justify-between bg-background px-2 pl-4 text-[13px] -z-10 font-medium shrink-0 select-none transition-opacity duration-150",
         isDistractionHidden && "opacity-0 pointer-events-none",
       )}
     >
@@ -302,14 +303,19 @@ export function AppHeader({
             onClick={() => {
               if (!isLandingPage) toggleMainSidebar();
             }}
-          >
-            <Logo className="h-6 w-6 text-sidebar-nav-text" />
-          </Button>
-        )}
-
+            render={
+              () => (
+<svg width="16" height="21" viewBox="0 0 16 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M13.6723 16.4565C13.281 16.4565 12.9477 16.3188 12.6723 16.0434C12.397 15.7681 12.2593 15.4347 12.2593 15.0434C12.2593 14.6376 12.397 14.3043 12.6723 14.0434C12.9477 13.7681 13.281 13.6304 13.6723 13.6304C14.0781 13.6304 14.4115 13.7681 14.6723 14.0434C14.9477 14.3043 15.0854 14.6376 15.0854 15.0434C15.0854 15.4347 14.9477 15.7681 14.6723 16.0434C14.4115 16.3188 14.0781 16.4565 13.6723 16.4565Z" fill="#303030"/>
+<path d="M7.21152 7.17391C7.25499 7 7.24775 6.86232 7.18978 6.76087C7.13181 6.65942 7.01586 6.58696 6.84195 6.54348C6.66804 6.5 6.42891 6.47826 6.12456 6.47826H5.49412L5.68978 5.54348H7.58108L7.73325 4.93478C8.09557 3.51449 8.70427 2.34058 9.55934 1.41304C10.4289 0.471014 11.4869 0 12.7333 0C13.4869 0 14.0666 0.166667 14.4724 0.500001C14.8782 0.833334 15.0304 1.24638 14.9289 1.73913C14.8564 2.04348 14.7115 2.28986 14.4941 2.47826C14.2912 2.65217 14.0376 2.73913 13.7333 2.73913C13.4579 2.73913 13.2695 2.65942 13.168 2.5C13.0666 2.34058 12.9796 2.0942 12.9072 1.76087C12.8347 1.42754 12.7405 1.17391 12.6246 1C12.5086 0.826087 12.3057 0.739131 12.0159 0.739131C11.4072 0.739131 10.9362 1.06522 10.6028 1.71739C10.284 2.35507 10.0086 3.16667 9.77673 4.15217C9.74775 4.23913 9.71876 4.36232 9.68978 4.52174L9.42891 5.54348H12.2115L12.0159 6.47826H10.4941C10.1753 6.47826 9.92166 6.5 9.73325 6.54348C9.54485 6.58696 9.39268 6.66667 9.27673 6.78261C9.17528 6.88406 9.10282 7.03623 9.05934 7.23913L7.21152 15.4783C7.02311 16.3623 6.69702 17.1739 6.23325 17.913C5.78398 18.6667 5.21876 19.2681 4.5376 19.7174C3.84195 20.1812 3.06659 20.413 2.21152 20.413C1.47239 20.413 0.899922 20.2464 0.494124 19.913C0.0738346 19.5942 -0.0783392 19.1812 0.0376028 18.6739C0.110067 18.3696 0.254994 18.1232 0.472385 17.9348C0.675284 17.7609 0.921661 17.6739 1.21152 17.6739C1.50137 17.6739 1.69702 17.7536 1.79847 17.913C1.89992 18.0725 1.98688 18.3188 2.05934 18.6522C2.13181 18.9855 2.22601 19.2391 2.34195 19.413C2.4434 19.587 2.6463 19.6739 2.95065 19.6739C3.53036 19.6739 3.99412 19.3406 4.34195 18.6739C4.68978 18.0072 5.00137 17.0797 5.27673 15.8913L7.21152 7.17391Z" fill="#303030"/>
+</svg>
+              )
+            }
+          />
+        )}  
         {/* Breadcrumb: Workspace / Form Name / Page */}
         {isFormBuilder && savedDocs?.[0] && (
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-2 text-sm ml-2">
             {workspace && (
               <>
                 <Link
@@ -405,6 +411,29 @@ export function AppHeader({
 
         {isLandingPage && (
           <>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "h-8 px-2.5 text-muted-foreground hover:text-foreground font-normal",
+                      demo && "text-foreground bg-accent/50",
+                    )}
+                    onClick={handleTogglePreview}
+                  />
+                }
+              >
+                {demo ? "Editor" : "Preview"}
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="end">
+                <p className="font-medium">{demo ? "Back to Editor" : "Preview Form"}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatForDisplay(HOTKEYS.TOGGLE_PREVIEW)}
+                </p>
+              </TooltipContent>
+            </Tooltip>
             <Button
               variant="ghost"
               size="sm"
@@ -448,6 +477,21 @@ export function AppHeader({
                       {formatForDisplay(HOTKEYS.TOGGLE_CUSTOMIZE_SIDEBAR)}
                     </span>
                   </Button>
+                  <div className="my-1 h-px bg-border" />
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate({ to: "/signin" })}
+                    className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-medium leading-[1.15] tracking-[0.13px] font-case transition-colors hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <span className="flex-1 text-left">Sign in</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate({ to: "/signup" })}
+                    className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-medium leading-[1.15] tracking-[0.13px] font-case transition-colors hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <span className="flex-1 text-left">Sign up</span>
+                  </Button>
                 </div>
               </PopoverContent>
             </Popover>
@@ -463,7 +507,7 @@ export function AppHeader({
 
         {isFormBuilder && (
           <>
-            {/* Changes indicator - shows when there are unpublished changes */}
+            {/* Reset to last published version */}
             {hasUnpublishedChanges && (
               <Tooltip>
                 <TooltipTrigger
@@ -471,8 +515,8 @@ export function AppHeader({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                      onClick={handleDiscardChanges}
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                      onClick={() => setIsDiscardDialogOpen(true)}
                       disabled={isDiscarding}
                     />
                   }
@@ -480,14 +524,11 @@ export function AppHeader({
                   {isDiscarding ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <AlertCircle className="h-4 w-4" />
+                    <RotateCcw className="h-4 w-4" />
                   )}
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="font-medium">Click to discard changes</p>
-                  <p className="text-xs text-muted-foreground">
-                    Changes are auto-saved, but not published yet
-                  </p>
+                  <p className="font-medium">Reset to last published version</p>
                 </TooltipContent>
               </Tooltip>
             )}
@@ -699,6 +740,29 @@ export function AppHeader({
             className="bg-destructive text-white hover:bg-destructive/90"
           >
             Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <AlertDialog open={isDiscardDialogOpen} onOpenChange={setIsDiscardDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Discard unpublished changes?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will revert the form to the last published version. Any unsaved changes will be lost.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              handleDiscardChanges();
+              setIsDiscardDialogOpen(false);
+            }}
+            className="bg-destructive text-white hover:bg-destructive/90"
+          >
+            Discard changes
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

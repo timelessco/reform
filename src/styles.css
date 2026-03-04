@@ -1043,7 +1043,7 @@
 }
 
 /* Layout bridge: consume --bf-* layout vars on data-attribute targets.
-   No fallback → declaration is ignored when the var is unset, preserving Tailwind defaults. */
+   Fallback values match the Tailwind defaults so overrides are safe when vars are unset. */
 .bf-themed [data-bf-form-container] {
   max-width: var(--bf-page-width);
   margin-inline: auto;
@@ -1058,7 +1058,7 @@
 }
 
 .bf-themed [data-bf-cover] {
-  height: var(--bf-cover-height);
+  height: var(--bf-cover-height, 200px);
 }
 
 /* Logo/icon positioning: half overlapping cover, half below.
@@ -1074,26 +1074,24 @@
 
 /* Logo image sizing */
 .bf-themed [data-bf-logo] {
-  width: var(--bf-logo-width);
-  height: var(--bf-logo-width);
+  width: var(--bf-logo-width, 120px);
+  height: var(--bf-logo-width, 120px);
 }
 
 /* Emoji logo sizing — scale the font-size to match --bf-logo-width */
 .bf-themed [data-bf-logo-emoji] {
-  font-size: var(--bf-logo-width);
+  font-size: var(--bf-logo-width, 100px);
 }
 
 /* Input width: editor input nodes */
 .bf-themed [data-bf-input] {
   max-width: var(--bf-input-width);
-  margin-inline: auto;
 }
 
 /* Input width: preview form inputs (Input/Textarea inside .bf-themed) */
 .bf-themed [data-bf-field-list] input,
 .bf-themed [data-bf-field-list] textarea {
   max-width: var(--bf-input-width);
-  margin-inline: auto;
 }
 
 /* Typography bridge */

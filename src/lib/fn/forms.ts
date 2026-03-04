@@ -30,6 +30,8 @@ export const createForm = createServerFn({ method: "POST" })
       cover: z.string().nullable().optional(),
       isMultiStep: z.boolean().optional(),
       status: z.enum(["draft", "published", "archived"]).optional(),
+      settingsId: z.string().uuid().optional(),
+      settingsData: z.record(z.string(), z.any()).optional(),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -54,17 +56,19 @@ export const createForm = createServerFn({ method: "POST" })
       })
       .returning();
 
-    // Create default form_settings row
+    // Create form_settings row with optional overrides in one transaction
+    const settingsId = data.settingsId ?? crypto.randomUUID();
     await db.insert(formSettings).values({
-      id: crypto.randomUUID(),
+      id: settingsId,
       formId: form.id,
+      ...data.settingsData,
       createdAt: now,
       updatedAt: now,
     });
 
     const txid = await getTxId();
 
-    return { form: serializeForm(form), txid };
+    return { form: serializeForm(form), settingsId, txid };
   });
 
 export const updateForm = createServerFn({ method: "POST" })

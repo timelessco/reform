@@ -1,9 +1,5 @@
 import { SuggestionPlugin } from "@platejs/suggestion/react";
-import {
-  DropdownMenuItemIndicator,
-  type DropdownMenuProps,
-} from "@radix-ui/react-dropdown-menu";
-import { CheckIcon, EyeIcon, PencilLineIcon, PenIcon } from "lucide-react";
+import { EyeIcon, PencilLineIcon, PenIcon } from "lucide-react";
 import { useEditorRef, usePlateState, usePluginOption } from "platejs/react";
 import * as React from "react";
 
@@ -17,7 +13,9 @@ import {
 
 import { ToolbarButton } from "./toolbar";
 
-export function ModeToolbarButton(props: DropdownMenuProps) {
+export function ModeToolbarButton(
+  props: React.ComponentProps<typeof DropdownMenu>,
+) {
   const editor = useEditorRef();
   const [readOnly, setReadOnly] = usePlateState("readOnly");
   const [open, setOpen] = React.useState(false);
@@ -82,28 +80,25 @@ export function ModeToolbarButton(props: DropdownMenuProps) {
           }}
         >
           <DropdownMenuRadioItem
-            className="pl-2 *:first:[span]:hidden *:[svg]:text-muted-foreground"
+            className="pl-2 *:[svg]:text-muted-foreground"
             value="editing"
           >
-            <Indicator />
             {item.editing.icon}
             {item.editing.label}
           </DropdownMenuRadioItem>
 
           <DropdownMenuRadioItem
-            className="pl-2 *:first:[span]:hidden *:[svg]:text-muted-foreground"
+            className="pl-2 *:[svg]:text-muted-foreground"
             value="viewing"
           >
-            <Indicator />
             {item.viewing.icon}
             {item.viewing.label}
           </DropdownMenuRadioItem>
 
           <DropdownMenuRadioItem
-            className="pl-2 *:first:[span]:hidden *:[svg]:text-muted-foreground"
+            className="pl-2 *:[svg]:text-muted-foreground"
             value="suggestion"
           >
-            <Indicator />
             {item.suggestion.icon}
             {item.suggestion.label}
           </DropdownMenuRadioItem>
@@ -113,12 +108,3 @@ export function ModeToolbarButton(props: DropdownMenuProps) {
   );
 }
 
-function Indicator() {
-  return (
-    <span className="pointer-events-none absolute right-2 flex size-3.5 items-center justify-center">
-      <DropdownMenuItemIndicator>
-        <CheckIcon />
-      </DropdownMenuItemIndicator>
-    </span>
-  );
-}

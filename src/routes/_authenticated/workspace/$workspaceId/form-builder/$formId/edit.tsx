@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { NotFound } from "@/components/ui/not-found";
-import { ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { useFormVersionContent } from "@/hooks/use-form-versions";
 import { formCollection } from "@/db-collections/form.collections";
 import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
@@ -148,12 +147,6 @@ function DesignPage() {
 
   return (
     <div className="flex flex-1 h-full overflow-hidden">
-      <ResizablePanelGroup orientation="horizontal" className="flex-1">
-        {/* Main editor panel */}
-        <ResizablePanel
-          defaultSize={isVersionHistoryOpen ? "75%" : "100%"}
-          minSize="50%"
-        >
           <main className="flex-1 overflow-y-auto overflow-x-hidden relative bg-background h-full flex flex-col">
             {/* Version viewing banner */}
             {isViewingVersion && (
@@ -206,10 +199,6 @@ function DesignPage() {
               )}
             </div>
           </main>
-        </ResizablePanel>
-
-        {/* Version history sidebar is now handled in AuthLayout */}
-      </ResizablePanelGroup>
     </div>
   );
 }

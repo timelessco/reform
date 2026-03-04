@@ -1,6 +1,5 @@
 import { PlaceholderPlugin } from "@platejs/media/react";
 
-import type { DropdownMenuProps } from "@radix-ui/react-dropdown-menu";
 import {
   AudioLinesIcon,
   FileUpIcon,
@@ -77,7 +76,7 @@ const MEDIA_CONFIG: Record<
 export function MediaToolbarButton({
   nodeType,
   ...props
-}: DropdownMenuProps & { nodeType: string }) {
+}: React.ComponentProps<typeof DropdownMenu> & { nodeType: string }) {
   const currentConfig = MEDIA_CONFIG[nodeType];
 
   const editor = useEditorRef();

@@ -9,17 +9,19 @@ export function SidebarSection({
 	children,
 	action,
 	initialOpen = true,
+	className,
 }: {
 	label: string;
 	children: React.ReactNode;
 	action?: React.ReactNode;
 	initialOpen?: boolean;
+	className?: string;
 }) {
 	const [isOpen, setIsOpen] = useState(initialOpen);
 
 	return (
 		<div className="flex flex-col">
-			<div className="group h-7 flex items-center justify-between gap-1 px-1 py-1.5 rounded-lg overflow-hidden transition-colors">
+			<div className={cn("group h-7 flex items-center justify-between gap-1 px-1 py-1.5 rounded-lg overflow-hidden transition-colors", className)}>
 				<button
 					type="button"
 					onClick={() => setIsOpen(!isOpen)}
@@ -50,7 +52,7 @@ export function SidebarSection({
 				</div>
 			</div>
 
-			{isOpen && <div className="flex flex-col">{children}</div>}
+			{isOpen && <div className={cn("flex flex-col", className)}>{children}</div>}
 		</div>
 	);
 }

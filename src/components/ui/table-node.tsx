@@ -13,7 +13,7 @@ import {
   useTableElement,
   useTableMergeState,
 } from "@platejs/table/react";
-import { PopoverAnchor } from "@radix-ui/react-popover";
+import { PopoverAnchor } from "@/components/ui/popover";
 import { cva } from "class-variance-authority";
 import {
   ArrowDown,

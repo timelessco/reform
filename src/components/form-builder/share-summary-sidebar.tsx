@@ -1,9 +1,14 @@
 import { useForm as useTanstackForm } from "@tanstack/react-form";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { Copy, Rocket, X } from "lucide-react";
+import { Rocket, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { CopyButton } from "@/components/copy-button/copy-button";
 import { Button } from "@/components/ui/button";
+import {
+  ButtonGroup,
+  ButtonGroupText,
+} from "@/components/ui/button-group";
 import {
   Sidebar,
   SidebarContent,
@@ -72,10 +77,6 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
     }
   };
 
-  const handleCopyUrl = () => {
-    navigator.clipboard.writeText(shareUrl);
-    toast.success("Link copied to clipboard");
-  };
 
   return (
     <Sidebar
@@ -84,7 +85,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
       className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out"
     >
       {/* Header */}
-      <SidebarHeader className="pt-3 pb-2 shrink-0 border-b space-y-2">
+      <SidebarHeader className="pt-2 pb-1 pl-1 shrink-0  space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground">Share</h2>
           <Button
@@ -101,9 +102,9 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
         {!isDraft && (
           <form.Field name="embedType">
             {(field) => (
-              <div className="bg-secondary rounded-[10px] p-px w-full flex">
+              <div className="bg-secondary rounded-[10px] p-px w-full flex gap-1.5SidebarSection">
                 {tabs.map((tab) => (
-                  <button
+                    <button
                     key={tab.value}
                     type="button"
                     onClick={() => field.handleChange(tab.value)}
@@ -179,7 +180,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                     />
 
                     {/* Customise section */}
-                    <SidebarSection label="Customise" action={<></>}>
+                    <SidebarSection label="Customise" className="pb-2.75" action={<></>}>
                       <EmbedConfigPanel
                         form={form}
                         embedType={embedType}
@@ -199,7 +200,8 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                     {/* Get Code button — inside scrollable content, after Pro Features */}
                     <Button
                       onClick={() => setCodeDialogOpen(true)}
-                      className="w-full h-9 rounded-xl bg-foreground text-background font-semibold text-xs hover:bg-foreground/90"
+                      variant="default"
+                      className="w-full h-9 rounded-xl font-semibold text-xs hover:bg-foreground/90"
                     >
                       Get Code
                     </Button>
@@ -223,20 +225,23 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
 
       {/* Sticky footer — URL bar only, when published */}
       {!isDraft && (
-        <SidebarFooter className="border-t">
-          <div className="flex items-center bg-muted rounded-lg px-3 h-8 gap-2">
-            <span className="text-[11px] text-muted-foreground truncate flex-1">
-              {shareUrl}
-            </span>
-            <button
-              type="button"
-              onClick={handleCopyUrl}
-              className="flex items-center gap-1 text-xs font-medium text-foreground shrink-0 cursor-pointer hover:opacity-70 transition-opacity"
+        <SidebarFooter className="px-2 py-2.25">
+          <ButtonGroup className="w-full">
+            <ButtonGroupText className="flex-1 min-w-0 h-8 rounded-lg">
+              <span className="text-[11px] text-muted-foreground truncate">
+                {shareUrl}
+              </span>
+            </ButtonGroupText>
+            <CopyButton
+              text={shareUrl}
+              variant="outline"
+              size="sm"
+              className="h-8 shrink-0 rounded-lg"
+              onCopySuccess={() => toast.success("Link copied to clipboard")}
             >
-              <Copy className="h-3 w-3" />
               Copy
-            </button>
-          </div>
+            </CopyButton>
+          </ButtonGroup>
         </SidebarFooter>
       )}
     </Sidebar>

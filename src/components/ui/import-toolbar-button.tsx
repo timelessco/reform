@@ -1,6 +1,5 @@
 import { MarkdownPlugin } from "@platejs/markdown";
 
-import type { DropdownMenuProps } from "@radix-ui/react-dropdown-menu";
 import { ArrowUpToLineIcon } from "lucide-react";
 import { useEditorRef } from "platejs/react";
 import { getEditorDOMFromHtmlString } from "platejs/static";
@@ -19,7 +18,9 @@ import { ToolbarButton } from "./toolbar";
 
 type ImportType = "html" | "markdown";
 
-export function ImportToolbarButton(props: DropdownMenuProps) {
+export function ImportToolbarButton(
+  props: React.ComponentProps<typeof DropdownMenu>,
+) {
   const editor = useEditorRef();
   const [open, setOpen] = React.useState(false);
 

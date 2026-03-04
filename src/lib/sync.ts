@@ -1,7 +1,10 @@
+import { createTransaction } from "@tanstack/react-db";
 import { logger } from "@/lib/utils";
-import { localFormCollection } from "@/db-collections";
+import { localFormCollection, localFormSettingsCollection } from "@/db-collections";
 import { formCollection } from "@/db-collections/form.collections";
+import { formSettingsCollection } from "@/db-collections/form-settings.collection";
 import { workspaceCollection, createWorkspaceLocal } from "@/db-collections/workspace.collection";
+import { createForm } from "@/lib/fn/forms";
 
 /**
  * Result type for syncLocalDataToCloud
@@ -12,23 +15,23 @@ type SyncResult = {
 };
 
 /**
- * Client-side function that syncs local forms to the cloud via Electric collections.
+ * Client-side function that syncs local forms to the cloud using createTransaction.
  *
- * Instead of inserting directly into PostgreSQL (which causes 409 Conflict errors
- * when Electric shapes have stale handles), this uses formCollection.insert() which:
- * 1. Inserts locally into the Electric collection
- * 2. Triggers onInsert callback that calls createForm() server function
- * 3. Server writes to PostgreSQL with proper auth context
- * 4. Electric tracks the txid and syncs automatically
+ * For each local form, creates a transaction that:
+ * - mutationFn: calls createForm() (creates form + default settings server-side),
+ *   then updateFormSettings() with all local settings overrides using the returned settingsId.
+ * - tx.mutate(): optimistically inserts form into formCollection, deletes from local collections.
+ *
+ * This eliminates the race condition (settings are updated via settingsId returned from createForm),
+ * syncs all 23 settings fields (not a hardcoded subset), and rolls back on error.
  *
  * @param organizationId - The organization ID to sync forms to
  */
 export async function syncLocalDataToCloud(organizationId: string): Promise<SyncResult | null> {
   try {
-    logger("Starting local data sync to cloud via Electric collections...");
+    logger("Starting local data sync to cloud via createTransaction...");
     logger(`Organization ID: ${organizationId}`);
 
-    // Validate organizationId
     if (!organizationId) {
       console.error("syncLocalDataToCloud: organizationId is required");
       throw new Error("Organization ID is required for sync");
@@ -43,15 +46,13 @@ export async function syncLocalDataToCloud(organizationId: string): Promise<Sync
       return null;
     }
 
-    // Get existing workspaces or create one via Electric collection
+    // Get existing workspaces or create one
     const existingWorkspaces = await workspaceCollection.toArrayWhenReady();
     const orgWorkspaces = existingWorkspaces.filter((ws) => ws.organizationId === organizationId);
 
     let targetWorkspaceId: string;
     if (orgWorkspaces.length === 0) {
-      // Create workspace via Electric collection (triggers onInsert → createWorkspace server fn)
       logger("No workspace found, creating via Electric collection...");
-      logger(`Creating workspace with organizationId: ${organizationId}`);
       try {
         const newWorkspace = await createWorkspaceLocal(organizationId, "My workspace");
         targetWorkspaceId = newWorkspace.id;
@@ -65,15 +66,18 @@ export async function syncLocalDataToCloud(organizationId: string): Promise<Sync
       logger(`Using existing workspace ${targetWorkspaceId}`);
     }
 
-    // Sync each local form via Electric collection
+    // Build a map of local form settings keyed by formId
+    const localSettings = await localFormSettingsCollection.toArrayWhenReady();
+    const localSettingsMap = new Map(localSettings.map((s) => [s.formId, s]));
+
+    // Sync each local form via createTransaction
     const syncedForms: string[] = [];
     for (const localForm of localForms) {
       try {
         const newFormId = crypto.randomUUID();
         const now = new Date().toISOString();
 
-        // Insert via Electric collection (triggers onInsert → createForm server fn)
-        await formCollection.insert({
+        const newFormData = {
           id: newFormId,
           workspaceId: targetWorkspaceId,
           createdByUserId: "", // Server will use context.session.user.id
@@ -85,25 +89,80 @@ export async function syncLocalDataToCloud(organizationId: string): Promise<Sync
           icon: localForm.icon,
           cover: localForm.cover,
           isMultiStep: localForm.isMultiStep ?? false,
-          status: localForm.status || "draft",
+          status: (localForm.status || "draft") as "draft" | "published" | "archived",
           createdAt: now,
           updatedAt: now,
+        };
+
+        const formLocalSettings = localSettingsMap.get(localForm.id);
+        const newSettingsId = crypto.randomUUID();
+
+        // Extract settings overrides once (used in both mutationFn and tx.mutate)
+        let settingsOverrides: Record<string, unknown> | null = null;
+        if (formLocalSettings) {
+          const {
+            id: _localId,
+            formId: _localFormId,
+            createdAt: _ca,
+            updatedAt: _ua,
+            ...overrides
+          } = formLocalSettings;
+          settingsOverrides = overrides;
+        }
+
+        const tx = createTransaction({
+          mutationFn: async () => {
+            // Create form + settings with overrides in a single server transaction (one txid)
+            const createResult = await createForm({
+              data: {
+                ...newFormData,
+                settingsId: newSettingsId,
+                settingsData: settingsOverrides ?? undefined,
+              },
+            });
+            const txid = (createResult as { txid: number }).txid;
+
+            // Keep optimistic overlay alive until Electric sync confirms the data.
+            // Without this, the transaction completes and the optimistic overlay is removed
+            // before the sync stream delivers the real data, causing a ~5s skeleton flash.
+            await Promise.all([
+              formCollection.utils.awaitTxId(txid),
+              formSettingsCollection.utils.awaitTxId(txid),
+            ]);
+          },
+        });
+
+        tx.mutate(() => {
+          formCollection.insert(newFormData);
+
+          // Always optimistically insert settings so UI never shows skeleton.
+          // Server's createForm() always creates a default settings row,
+          // so we mirror that here with any local overrides applied.
+          formSettingsCollection.insert({
+            id: newSettingsId,
+            formId: newFormId,
+            ...(settingsOverrides ?? {}),
+            createdAt: now,
+            updatedAt: now,
+          });
+
+          localFormCollection.delete(localForm.id);
+          if (formLocalSettings) {
+            localFormSettingsCollection.delete(formLocalSettings.id);
+          }
         });
 
         syncedForms.push(newFormId);
         logger(
-          `Synced form "${localForm.title || "Untitled"}" as ${newFormId} via Electric collection`,
+          `Synced form "${localForm.title || "Untitled"}" as ${newFormId} via createTransaction`,
         );
-
-        // Delete from localStorage after successful sync
-        await localFormCollection.delete(localForm.id);
       } catch (error) {
         console.error(`Failed to sync form "${localForm.title || "Untitled"}":`, error);
         // Continue with other forms
       }
     }
 
-    logger(`Successfully synced ${syncedForms.length} forms via Electric collections`);
+    logger(`Successfully synced ${syncedForms.length} forms via createTransaction`);
     return {
       success: true,
       syncedForms,

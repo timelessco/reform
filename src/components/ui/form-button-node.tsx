@@ -203,7 +203,7 @@ export function FormButtonElement({
         {!(isPrevious || isSubmitOnSinglePage) && GearIcon}
         <span
           className={cn(
-            "inline-flex h-9 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors cursor-default select-none gap-2",
+            "inline-flex h-8 items-center justify-center rounded-lg px-2.5 text-sm font-medium transition-colors cursor-default select-none gap-1.5",
             isPrevious
               ? "border border-input bg-background shadow-xs text-foreground"
               : "bg-primary text-primary-foreground ",

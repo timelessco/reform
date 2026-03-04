@@ -5,6 +5,7 @@ import {
   formCollection,
   formSettingsCollection,
   localFormCollection,
+  localFormSettingsCollection,
   submissionCollection,
   workspaceCollection,
 } from "@/db-collections";
@@ -31,10 +32,9 @@ export const useWorkspaces = () => {
 export const useWorkspace = (workspaceId?: string) => {
   const result = useLiveQuery(
     (q) => {
+      if (!workspaceId) return null as any;
       let query = q.from({ ws: workspaceCollection });
-      if (workspaceId) {
-        query = query.where(({ ws }) => eq(ws.id, workspaceId));
-      }
+      query = query.where(({ ws }) => eq(ws.id, workspaceId));
       return query.select(({ ws }) => ({
         id: ws.id,
         organizationId: ws.organizationId,
@@ -125,10 +125,9 @@ export const useLocalForm = (formId?: string) => {
 const useFavorites = (userId?: string) => {
   return useLiveQuery(
     (q) => {
+      if (!userId) return null as any;
       let query = q.from({ fav: favoriteCollection });
-      if (userId) {
-        query = query.where(({ fav }) => eq(fav.userId, userId));
-      }
+      query = query.where(({ fav }) => eq(fav.userId, userId));
       return query.select(({ fav }) => ({
         id: fav.id,
         userId: fav.userId,
@@ -193,6 +192,21 @@ export const useFormSettings = (formId?: string) => {
     (q) => {
       if (!formId) return null as any;
       return q.from({ s: formSettingsCollection }).where(({ s }) => eq(s.formId, formId));
+    },
+    [formId],
+  );
+  return { ...result, data: result.data?.[0] ?? null };
+};
+
+/**
+ * Custom hook for real-time local form settings sync by formId.
+ * localStorage-backed equivalent of useFormSettings for unauthenticated landing page.
+ */
+export const useLocalFormSettings = (formId?: string) => {
+  const result = useLiveQuery(
+    (q) => {
+      if (!formId) return null as any;
+      return q.from({ s: localFormSettingsCollection }).where(({ s }) => eq(s.formId, formId));
     },
     [formId],
   );

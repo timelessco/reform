@@ -27,6 +27,7 @@ import {
 } from "@/db-collections";
 import { useForms, useWorkspaces } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
+import { clearLocalDraftIds } from "@/lib/local-draft";
 import { syncLocalDataToCloud } from "@/lib/sync";
 import { parseTimestampAsUTC } from "@/lib/utils";
 import {
@@ -132,6 +133,7 @@ function DashboardPage() {
         // means sync only starts after _authenticated loader calls preload()
         const result = await syncLocalDataToCloud(activeOrg.id);
         if (result?.syncedForms && result.syncedForms.length > 0) {
+          clearLocalDraftIds();
           toast.success("Local data synced!");
         }
       } catch (error) {

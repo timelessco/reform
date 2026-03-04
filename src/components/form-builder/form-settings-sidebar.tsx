@@ -12,9 +12,10 @@ import {
 
 interface FormSettingsSidebarProps {
   formId: string;
+  isLocal?: boolean;
 }
 
-export function FormSettingsSidebar({ formId }: FormSettingsSidebarProps) {
+export function FormSettingsSidebar({ formId, isLocal }: FormSettingsSidebarProps) {
   const { closeSidebar } = useEditorSidebar();
 
   return (
@@ -38,7 +39,7 @@ export function FormSettingsSidebar({ formId }: FormSettingsSidebarProps) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent className="p-4">
-            <SettingsContent formId={formId} />
+            <SettingsContent formId={formId} isLocal={isLocal} />
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

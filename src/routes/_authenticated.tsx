@@ -35,11 +35,12 @@ import Loader from "@/components/ui/loader";
 import { Logo } from "@/components/ui/logo";
 import { NotFound } from "@/components/ui/not-found";
 import {
-  type ImperativePanelHandle,
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+  RIGHT_SIDEBAR_WIDTH_DEFAULT,
+  RIGHT_SIDEBAR_WIDTH_KEY,
+  RIGHT_SIDEBAR_WIDTH_MAX,
+  RIGHT_SIDEBAR_WIDTH_MIN,
+  RightSidebarResizeHandle,
+} from "@/components/ui/right-sidebar-resize-handle";
 import {
   Sidebar,
   SidebarContent,
@@ -208,10 +209,10 @@ export const Route = createFileRoute("/_authenticated")({
       await Promise.all([
         workspaceCollection.preload(),
         formCollection.preload(),
+        formSettingsCollection.preload(),
         favoriteCollection.preload(),
         submissionCollection.preload(),
         formVersionCollection.preload(),
-        formSettingsCollection.preload(),
       ]);
     }
     return { activeOrg, orgsData };
@@ -222,8 +223,6 @@ export const Route = createFileRoute("/_authenticated")({
   notFoundComponent: NotFound,
   ssr: "data-only",
 });
-
-const TypedResizableHandle = ResizableHandle as any;
 
 function AuthLayout() {
   const { pathname } = useLocation();
@@ -258,55 +257,29 @@ function AuthLayoutContent() {
   // Editor sidebar management
   const { activeSidebar } = useEditorSidebar();
 
-  const handleRef = useRef<HTMLDivElement>(null);
-  const rightPanelRef = useRef<ImperativePanelHandle>(null);
-  const [handleLeft, setHandleLeft] = useState(0);
-  const handleDragRef = useRef({
-    dragging: false,
-    hasDragged: false,
-    startX: 0,
-    startY: 0,
-  });
-  const leftPanelRef = useRef<HTMLDivElement>(null);
-
   const isFormBuilder = pathname.includes("/form-builder/");
   const showEditorSidebar = !!(activeSidebar && isFormBuilder && formId);
   const isDistractionHeaderHidden = isEditRoute && !isHeaderVisible;
 
-  const updateHandleLeft = useCallback(() => {
-    const node = leftPanelRef.current;
-    if (!node) return;
-    const rect = node.getBoundingClientRect();
-    setHandleLeft(rect.right);
-  }, []);
-
-  useLayoutEffect(() => {
-    updateHandleLeft();
-  }, [updateHandleLeft]);
-
-  useEffect(() => {
-    const onResize = () => updateHandleLeft();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [updateHandleLeft]);
-
-  useEffect(() => {
-    if (!leftPanelRef.current) return;
-    const observer = new ResizeObserver(() => updateHandleLeft());
-    observer.observe(leftPanelRef.current);
-    return () => observer.disconnect();
-  }, [updateHandleLeft]);
-
-  // Imperatively control right panel expand/collapse
-  useEffect(() => {
-    if (rightPanelRef.current) {
-      if (showEditorSidebar) {
-        rightPanelRef.current.expand();
-      } else {
-        rightPanelRef.current.collapse();
+  // Right sidebar width state (persisted, like left sidebar)
+  const [rightSidebarWidth, _setRightSidebarWidth] = useState(() => {
+    if (typeof window === "undefined") return RIGHT_SIDEBAR_WIDTH_DEFAULT;
+    const stored = localStorage.getItem(RIGHT_SIDEBAR_WIDTH_KEY);
+    if (stored) {
+      const parsed = Number(stored);
+      if (!Number.isNaN(parsed) && parsed >= RIGHT_SIDEBAR_WIDTH_MIN && parsed <= RIGHT_SIDEBAR_WIDTH_MAX) {
+        return parsed;
       }
     }
-  }, [showEditorSidebar]);
+    return RIGHT_SIDEBAR_WIDTH_DEFAULT;
+  });
+  const [isRightResizing, setIsRightResizing] = useState(false);
+
+  const setRightSidebarWidth = useCallback((width: number) => {
+    const clamped = Math.round(Math.min(RIGHT_SIDEBAR_WIDTH_MAX, Math.max(RIGHT_SIDEBAR_WIDTH_MIN, width)));
+    _setRightSidebarWidth(clamped);
+    localStorage.setItem(RIGHT_SIDEBAR_WIDTH_KEY, String(clamped));
+  }, []);
 
   return (
     <>
@@ -321,107 +294,57 @@ function AuthLayoutContent() {
             aria-hidden="true"
           />
         )}
-        <div className="relative z-20 flex-1 min-h-0 overflow-hidden">
-          <ResizablePanelGroup orientation="horizontal" className="h-full">
-            {/* Main content panel - non-resizable */}
-            <ResizablePanel
-              defaultSize={showEditorSidebar ? "73%" : "100%"}
-              minSize="50%"
-              className="flex-1"
-            >
-              <div
-                ref={leftPanelRef}
-                className={cn("flex h-full min-w-0 flex-col z-50")}
-              >
-                <div className="relative z-0 shrink-0">
-                  <AppHeader isDistractionHidden={isDistractionHeaderHidden} />
-                </div>
-                <div className="flex-1 min-h-0">
-                  <Outlet key={formId} />
-                </div>
-              </div>
-            </ResizablePanel>
+        <div
+          data-resizing={isRightResizing ? "" : undefined}
+          className="relative z-20 flex-1 min-h-0 overflow-hidden flex"
+        >
+          {/* Main content - flex-1 auto fills available space */}
+          <div className={cn("flex-1 min-w-0 flex flex-col z-50")}>
+            <div className="relative z-0 shrink-0">
+              <AppHeader isDistractionHidden={isDistractionHeaderHidden} />
+            </div>
+            <div className="flex-1 min-h-0">
+              <Outlet key={formId} />
+            </div>
+          </div>
 
-            {/* Resize handle - draggable, click to close */}
-            <TypedResizableHandle
-              className={cn(
-                "group fixed top-0 bottom-0 left-(--handle-left) -translate-x-1/2 w-px flex items-center h-full",
-                "bg-border/60 z-[999] pointer-events-auto",
-                "transition-none duration-0 hover:w-px data-[resize-handle-state=drag]:w-px",
-                !showEditorSidebar && "hidden pointer-events-none",
-              )}
-              ref={handleRef}
-              style={
-                { "--handle-left": `${handleLeft}px` } as React.CSSProperties
-              }
-              onPointerDown={(e: React.PointerEvent<HTMLDivElement>) => {
-                handleDragRef.current.hasDragged = false;
-                handleDragRef.current.dragging = false;
-                handleDragRef.current.startX = e.clientX;
-              }}
-              onPointerMove={(e: React.PointerEvent<HTMLDivElement>) => {
-                // Detect dragging when pointer moves beyond threshold while pressed
-                if (e.buttons > 0 && !handleDragRef.current.dragging) {
-                  const deltaX = Math.abs(
-                    e.clientX - (handleDragRef.current.startX || 0),
-                  );
-                  if (deltaX > 3) {
-                    handleDragRef.current.dragging = true;
-                    handleDragRef.current.hasDragged = true;
-                  }
-                }
-              }}
-              onPointerUp={() => {
-                handleDragRef.current.dragging = false;
-                setTimeout(() => {
-                  handleDragRef.current.hasDragged = false;
-                }, 50);
-              }}
-            >
-              <div
-                className={cn(
-                  "pointer-events-none absolute -left-3 -translate-x-full",
-                  "rounded-md border border-foreground/10 bg-background/90 px-2 py-1 text-[11px] text-muted-foreground shadow-lg",
-                  "opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-data-[resize-handle-state=drag]:opacity-0",
+          {/* Right sidebar resize handle */}
+          {showEditorSidebar && (
+            <RightSidebarResizeHandle
+              sidebarWidth={rightSidebarWidth}
+              setSidebarWidth={setRightSidebarWidth}
+              setIsResizing={setIsRightResizing}
+            />
+          )}
+
+          {/* Right sidebar - Settings/Share/History */}
+          <div
+            className={cn(
+              "h-full overflow-hidden bg-background shrink-0",
+              !isRightResizing && "transition-[width] duration-200 ease-linear",
+              showEditorSidebar && "border-l border-border/60",
+            )}
+            style={{
+              width: showEditorSidebar ? `${rightSidebarWidth}px` : 0,
+            }}
+          >
+            <div className="h-full w-full">
+              <Suspense fallback={null}>
+                {activeSidebar === "settings" && formId && (
+                  <LazyFormSettingsSidebar formId={formId} />
                 )}
-              >
-                <div className="leading-4 whitespace-nowrap">
-                  Resize
-                </div>
-              </div>
-            </TypedResizableHandle>
-
-            {/* Right sidebar - Settings/Share/History, resizable */}
-            <ResizablePanel
-              panelRef={rightPanelRef}
-              collapsible={!showEditorSidebar}
-              collapsedSize="0%"
-              defaultSize={showEditorSidebar ? "27%" : "0%"}
-              minSize="20%"
-              maxSize="35%"
-              className={cn(
-                "h-full overflow-hidden bg-background min-w-[280px] max-w-[420px]",
-                !showEditorSidebar && "border-none min-w-0 max-w-none",
-              )}
-            >
-              <div className="h-full w-full">
-                <Suspense fallback={null}>
-                  {activeSidebar === "settings" && formId && (
-                    <LazyFormSettingsSidebar formId={formId} />
-                  )}
-                  {activeSidebar === "share" && formId && (
-                    <LazyShareSummarySidebar formId={formId} />
-                  )}
-                  {activeSidebar === "history" && formId && (
-                    <LazyVersionHistorySidebar formId={formId} />
-                  )}
-                  {activeSidebar === "customize" && formId && (
-                    <LazyCustomizeSidebar formId={formId} />
-                  )}
-                </Suspense>
-              </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
+                {activeSidebar === "share" && formId && (
+                  <LazyShareSummarySidebar formId={formId} />
+                )}
+                {activeSidebar === "history" && formId && (
+                  <LazyVersionHistorySidebar formId={formId} />
+                )}
+                {activeSidebar === "customize" && formId && (
+                  <LazyCustomizeSidebar formId={formId} />
+                )}
+              </Suspense>
+            </div>
+          </div>
         </div>
       </SidebarInset>
     </>

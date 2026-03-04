@@ -13,7 +13,7 @@ export function EmbedPreviewMockup({
   return (
     <div className="rounded-[12px] border border-border bg-[#f5f5f5] dark:bg-muted/30 overflow-hidden">
       {/* Browser Chrome */}
-      <div className="flex items-center gap-1 px-3 py-2.5">
+      <div className="flex items-center gap-1 px-2.25 pt-2.5 pb-2">
         <div className="flex gap-1.5">
           <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/20" />
           <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/20" />
