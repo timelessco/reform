@@ -6,7 +6,7 @@ import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import { useEditorHeaderVisibilitySafe } from "@/contexts/editor-header-visibility-context";
 import { EditorThemeProvider } from "@/contexts/editor-theme-context";
 import { updateDoc, updateHeader } from "@/db-collections";
-import { useForm, useFormSettings } from "@/hooks/use-live-hooks";
+import { useForm } from "@/hooks/use-live-hooks";
 import { getThemeStyleVars } from "@/lib/generate-theme-css";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
@@ -49,7 +49,6 @@ export default function EditorApp({
   readOnly = false,
 }: EditorAppProps) {
   const { data: savedDocs, isReady: isFormReady } = useForm(formId);
-  const { data: formSettings } = useFormSettings(formId);
 
   // Guard: don't mount the editor until we have actual form data
   if (!versionContent && !savedDocs?.length) {
@@ -76,7 +75,6 @@ export default function EditorApp({
       versionContent={versionContent}
       readOnly={readOnly}
       savedDocs={savedDocs}
-      formSettings={formSettings}
     />
   );
 }
@@ -91,16 +89,14 @@ function EditorAppInner({
   versionContent,
   readOnly,
   savedDocs,
-  formSettings,
 }: {
   formId: string;
   workspaceId?: string;
   versionContent?: Value;
   readOnly: boolean;
   savedDocs: any;
-  formSettings: any;
 }) {
-  const customization = formSettings?.customization as Record<
+  const customization = savedDocs?.[0]?.customization as Record<
     string,
     string
   > | null;

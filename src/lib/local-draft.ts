@@ -5,7 +5,6 @@
 
 const LOCAL_FORM_ID_KEY = "local-draft-form-id";
 const LOCAL_WORKSPACE_ID_KEY = "local-draft-workspace-id";
-const LOCAL_SETTINGS_ID_KEY = "local-draft-form-settings-id";
 
 /**
  * Gets or creates a unique local form ID for this browser session.
@@ -41,22 +40,6 @@ export function getLocalWorkspaceId(): string {
 }
 
 /**
- * Gets or creates a unique local form settings ID for this browser session.
- */
-export function getLocalFormSettingsId(): string {
-  if (typeof window === "undefined") {
-    return crypto.randomUUID();
-  }
-
-  let id = localStorage.getItem(LOCAL_SETTINGS_ID_KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(LOCAL_SETTINGS_ID_KEY, id);
-  }
-  return id;
-}
-
-/**
  * Clears local draft IDs after successful sync.
  * Should be called after forms are synced to cloud to allow fresh drafts.
  */
@@ -64,7 +47,6 @@ export function clearLocalDraftIds(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(LOCAL_FORM_ID_KEY);
   localStorage.removeItem(LOCAL_WORKSPACE_ID_KEY);
-  localStorage.removeItem(LOCAL_SETTINGS_ID_KEY);
 }
 
 /**

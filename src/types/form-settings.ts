@@ -14,9 +14,6 @@ export type EmbedType = "standard" | "popup" | "fullPage";
 // Form Settings Interface (matches form_settings table)
 // ============================================================================
 export interface FormSettings {
-  id: string;
-  formId: string;
-
   // General
   language: string;
   redirectOnCompletion: boolean;

@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { forms, formSettings } from "@/db/schema";
+import { forms } from "@/db/schema";
 import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
 import { authForm, getTxId } from "./helpers";
@@ -30,8 +30,32 @@ export const createForm = createServerFn({ method: "POST" })
       cover: z.string().nullable().optional(),
       isMultiStep: z.boolean().optional(),
       status: z.enum(["draft", "published", "archived"]).optional(),
-      settingsId: z.string().uuid().optional(),
-      settingsData: z.record(z.string(), z.any()).optional(),
+      // Form settings fields (all optional with defaults)
+      language: z.string().optional(),
+      redirectOnCompletion: z.boolean().optional(),
+      redirectUrl: z.string().nullable().optional(),
+      redirectDelay: z.number().optional(),
+      progressBar: z.boolean().optional(),
+      branding: z.boolean().optional(),
+      autoJump: z.boolean().optional(),
+      saveAnswersForLater: z.boolean().optional(),
+      selfEmailNotifications: z.boolean().optional(),
+      notificationEmail: z.string().nullable().optional(),
+      respondentEmailNotifications: z.boolean().optional(),
+      respondentEmailSubject: z.string().nullable().optional(),
+      respondentEmailBody: z.string().nullable().optional(),
+      passwordProtect: z.boolean().optional(),
+      password: z.string().nullable().optional(),
+      closeForm: z.boolean().optional(),
+      closedFormMessage: z.string().nullable().optional(),
+      closeOnDate: z.boolean().optional(),
+      closeDate: z.string().nullable().optional(),
+      limitSubmissions: z.boolean().optional(),
+      maxSubmissions: z.number().nullable().optional(),
+      preventDuplicateSubmissions: z.boolean().optional(),
+      dataRetention: z.boolean().optional(),
+      dataRetentionDays: z.number().nullable().optional(),
+      customization: z.record(z.string(), z.any()).optional(),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -51,24 +75,40 @@ export const createForm = createServerFn({ method: "POST" })
         cover: data.cover,
         isMultiStep: data.isMultiStep ?? false,
         status: data.status ?? "draft",
+        // Form settings fields
+        language: data.language,
+        redirectOnCompletion: data.redirectOnCompletion,
+        redirectUrl: data.redirectUrl,
+        redirectDelay: data.redirectDelay,
+        progressBar: data.progressBar,
+        branding: data.branding,
+        autoJump: data.autoJump,
+        saveAnswersForLater: data.saveAnswersForLater,
+        selfEmailNotifications: data.selfEmailNotifications,
+        notificationEmail: data.notificationEmail,
+        respondentEmailNotifications: data.respondentEmailNotifications,
+        respondentEmailSubject: data.respondentEmailSubject,
+        respondentEmailBody: data.respondentEmailBody,
+        passwordProtect: data.passwordProtect,
+        password: data.password,
+        closeForm: data.closeForm,
+        closedFormMessage: data.closedFormMessage,
+        closeOnDate: data.closeOnDate,
+        closeDate: data.closeDate,
+        limitSubmissions: data.limitSubmissions,
+        maxSubmissions: data.maxSubmissions,
+        preventDuplicateSubmissions: data.preventDuplicateSubmissions,
+        dataRetention: data.dataRetention,
+        dataRetentionDays: data.dataRetentionDays,
+        customization: data.customization,
         createdAt: now,
         updatedAt: now,
       })
       .returning();
 
-    // Create form_settings row with optional overrides in one transaction
-    const settingsId = data.settingsId ?? crypto.randomUUID();
-    await db.insert(formSettings).values({
-      id: settingsId,
-      formId: form.id,
-      ...data.settingsData,
-      createdAt: now,
-      updatedAt: now,
-    });
-
     const txid = await getTxId();
 
-    return { form: serializeForm(form), settingsId, txid };
+    return { form: serializeForm(form), txid };
   });
 
 export const updateForm = createServerFn({ method: "POST" })
@@ -87,6 +127,32 @@ export const updateForm = createServerFn({ method: "POST" })
       isMultiStep: z.boolean().optional(),
       status: z.enum(["draft", "published", "archived"]).optional(),
       updatedAt: z.string().optional(),
+      // Form settings fields
+      language: z.string().optional(),
+      redirectOnCompletion: z.boolean().optional(),
+      redirectUrl: z.string().nullable().optional(),
+      redirectDelay: z.number().optional(),
+      progressBar: z.boolean().optional(),
+      branding: z.boolean().optional(),
+      autoJump: z.boolean().optional(),
+      saveAnswersForLater: z.boolean().optional(),
+      selfEmailNotifications: z.boolean().optional(),
+      notificationEmail: z.string().nullable().optional(),
+      respondentEmailNotifications: z.boolean().optional(),
+      respondentEmailSubject: z.string().nullable().optional(),
+      respondentEmailBody: z.string().nullable().optional(),
+      passwordProtect: z.boolean().optional(),
+      password: z.string().nullable().optional(),
+      closeForm: z.boolean().optional(),
+      closedFormMessage: z.string().nullable().optional(),
+      closeOnDate: z.boolean().optional(),
+      closeDate: z.string().nullable().optional(),
+      limitSubmissions: z.boolean().optional(),
+      maxSubmissions: z.number().nullable().optional(),
+      preventDuplicateSubmissions: z.boolean().optional(),
+      dataRetention: z.boolean().optional(),
+      dataRetentionDays: z.number().nullable().optional(),
+      customization: z.record(z.string(), z.any()).optional(),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -170,41 +236,36 @@ export const duplicateForm = createServerFn({ method: "POST" })
         cover: originalForm.cover,
         isMultiStep: originalForm.isMultiStep,
         status: originalForm.status,
+        // Copy form settings fields from original
+        language: originalForm.language,
+        redirectOnCompletion: originalForm.redirectOnCompletion,
+        redirectUrl: originalForm.redirectUrl,
+        redirectDelay: originalForm.redirectDelay,
+        progressBar: originalForm.progressBar,
+        branding: originalForm.branding,
+        autoJump: originalForm.autoJump,
+        saveAnswersForLater: originalForm.saveAnswersForLater,
+        selfEmailNotifications: originalForm.selfEmailNotifications,
+        notificationEmail: originalForm.notificationEmail,
+        respondentEmailNotifications: originalForm.respondentEmailNotifications,
+        respondentEmailSubject: originalForm.respondentEmailSubject,
+        respondentEmailBody: originalForm.respondentEmailBody,
+        passwordProtect: originalForm.passwordProtect,
+        password: originalForm.password,
+        closeForm: originalForm.closeForm,
+        closedFormMessage: originalForm.closedFormMessage,
+        closeOnDate: originalForm.closeOnDate,
+        closeDate: originalForm.closeDate,
+        limitSubmissions: originalForm.limitSubmissions,
+        maxSubmissions: originalForm.maxSubmissions,
+        preventDuplicateSubmissions: originalForm.preventDuplicateSubmissions,
+        dataRetention: originalForm.dataRetention,
+        dataRetentionDays: originalForm.dataRetentionDays,
+        customization: originalForm.customization,
         createdAt: now,
         updatedAt: now,
       })
       .returning();
-
-    // Duplicate form_settings from source form
-    const [sourceSettings] = await db
-      .select()
-      .from(formSettings)
-      .where(eq(formSettings.formId, data.id));
-
-    if (sourceSettings) {
-      const {
-        id: _oldId,
-        formId: _oldFormId,
-        createdAt: _ca,
-        updatedAt: _ua,
-        ...settingsData
-      } = sourceSettings;
-      await db.insert(formSettings).values({
-        ...settingsData,
-        id: crypto.randomUUID(),
-        formId: newId,
-        createdAt: now,
-        updatedAt: now,
-      });
-    } else {
-      // Create default settings if source had none
-      await db.insert(formSettings).values({
-        id: crypto.randomUUID(),
-        formId: newId,
-        createdAt: now,
-        updatedAt: now,
-      });
-    }
 
     const txid = await getTxId();
 

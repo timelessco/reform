@@ -83,7 +83,6 @@ import {
   duplicateFormById,
   favoriteCollection,
   formCollection,
-  formSettingsCollection,
   formVersionCollection,
   permanentDeleteFormLocal,
   restoreFormLocal,
@@ -209,7 +208,6 @@ export const Route = createFileRoute("/_authenticated")({
       await Promise.all([
         workspaceCollection.preload(),
         formCollection.preload(),
-        formSettingsCollection.preload(),
         favoriteCollection.preload(),
         submissionCollection.preload(),
         formVersionCollection.preload(),

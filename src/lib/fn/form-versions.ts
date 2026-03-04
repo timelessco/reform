@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { createServerFn } from "@tanstack/react-start";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { forms, formSettings, formVersions, user } from "@/db/schema";
+import { forms, formVersions, user } from "@/db/schema";
 import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
 import { authForm, getTxId } from "./helpers";
@@ -60,12 +60,6 @@ export const publishFormVersion = createServerFn({ method: "POST" })
       const contentHash = computeContentHash(form.content);
       const now = new Date();
 
-      // Fetch customization from form_settings to snapshot
-      const [settingsRow] = await tx
-        .select({ customization: formSettings.customization })
-        .from(formSettings)
-        .where(eq(formSettings.formId, data.formId));
-
       // Create version snapshot
       const versionId = crypto.randomUUID();
 
@@ -77,7 +71,7 @@ export const publishFormVersion = createServerFn({ method: "POST" })
           version: nextVersionNumber,
           content: form.content,
           settings: form.settings,
-          customization: settingsRow?.customization ?? {},
+          customization: form.customization ?? {},
           title: form.title,
           publishedByUserId: context.session.user.id,
           publishedAt: now,
@@ -217,22 +211,17 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
       throw new Error("Version not found");
     }
 
-    // Update form draft with version content
+    // Update form draft with version content + customization
     // Note: We don't update publishedContentHash so the form shows "has changes"
     await db
       .update(forms)
       .set({
         content: version.content,
         title: version.title,
+        customization: version.customization ?? {},
         updatedAt: new Date(),
       })
       .where(eq(forms.id, data.formId));
-
-    // Restore customization from the version
-    await db
-      .update(formSettings)
-      .set({ customization: version.customization ?? {} })
-      .where(eq(formSettings.formId, data.formId));
 
     const txid = await getTxId();
 
@@ -279,22 +268,17 @@ export const discardFormChanges = createServerFn({ method: "POST" })
     // Compute hash of the version content
     const contentHash = computeContentHash(version.content);
 
-    // Update form draft with version content AND hash (so no "changes" indicator)
+    // Update form draft with version content, customization, AND hash (so no "changes" indicator)
     await db
       .update(forms)
       .set({
         content: version.content,
         title: version.title,
+        customization: version.customization ?? {},
         publishedContentHash: contentHash,
         updatedAt: new Date(),
       })
       .where(eq(forms.id, data.formId));
-
-    // Revert customization to published version's customization
-    await db
-      .update(formSettings)
-      .set({ customization: version.customization ?? {} })
-      .where(eq(formSettings.formId, data.formId));
 
     const txid = await getTxId();
 

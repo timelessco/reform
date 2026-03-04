@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
-import { forms, formSettings, formVersions, submissions, user } from "@/db/schema";
+import { forms, formVersions, submissions, user } from "@/db/schema";
 import { db } from "@/lib/db";
 import { type PublicFormSettings, defaultPublicFormSettings } from "@/types/form-settings";
 
@@ -18,7 +18,7 @@ import { type PublicFormSettings, defaultPublicFormSettings } from "@/types/form
 export const getPublishedFormById = createServerFn({ method: "GET" })
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data }) => {
-    // Get form with its current published version
+    // Get form with its current published version and settings
     const [form] = await db
       .select({
         id: forms.id,
@@ -29,6 +29,23 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
         // Fallback fields for forms without versions (backward compatibility)
         draftTitle: forms.title,
         draftContent: forms.content,
+        // Settings fields (now on forms table)
+        progressBar: forms.progressBar,
+        branding: forms.branding,
+        autoJump: forms.autoJump,
+        saveAnswersForLater: forms.saveAnswersForLater,
+        redirectOnCompletion: forms.redirectOnCompletion,
+        redirectUrl: forms.redirectUrl,
+        redirectDelay: forms.redirectDelay,
+        language: forms.language,
+        passwordProtect: forms.passwordProtect,
+        closeForm: forms.closeForm,
+        closedFormMessage: forms.closedFormMessage,
+        closeOnDate: forms.closeOnDate,
+        closeDate: forms.closeDate,
+        limitSubmissions: forms.limitSubmissions,
+        maxSubmissions: forms.maxSubmissions,
+        preventDuplicateSubmissions: forms.preventDuplicateSubmissions,
       })
       .from(forms)
       .where(and(eq(forms.id, data.id), eq(forms.status, "published")));
@@ -37,32 +54,25 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
       return { form: null, error: "not_found" as const, gated: null };
     }
 
-    // Fetch live settings from form_settings table (source of truth)
-    const [settingsRow] = await db
-      .select()
-      .from(formSettings)
-      .where(eq(formSettings.formId, data.id));
-
-    const settings: PublicFormSettings = settingsRow
-      ? {
-          progressBar: settingsRow.progressBar,
-          branding: settingsRow.branding,
-          autoJump: settingsRow.autoJump,
-          saveAnswersForLater: settingsRow.saveAnswersForLater,
-          redirectOnCompletion: settingsRow.redirectOnCompletion,
-          redirectUrl: settingsRow.redirectUrl,
-          redirectDelay: settingsRow.redirectDelay,
-          language: settingsRow.language,
-          passwordProtect: settingsRow.passwordProtect,
-          closeForm: settingsRow.closeForm,
-          closedFormMessage: settingsRow.closedFormMessage,
-          closeOnDate: settingsRow.closeOnDate,
-          closeDate: settingsRow.closeDate,
-          limitSubmissions: settingsRow.limitSubmissions,
-          maxSubmissions: settingsRow.maxSubmissions,
-          preventDuplicateSubmissions: settingsRow.preventDuplicateSubmissions,
-        }
-      : defaultPublicFormSettings;
+    // Read settings directly from the form row
+    const settings: PublicFormSettings = {
+      progressBar: form.progressBar,
+      branding: form.branding,
+      autoJump: form.autoJump,
+      saveAnswersForLater: form.saveAnswersForLater,
+      redirectOnCompletion: form.redirectOnCompletion,
+      redirectUrl: form.redirectUrl,
+      redirectDelay: form.redirectDelay,
+      language: form.language,
+      passwordProtect: form.passwordProtect,
+      closeForm: form.closeForm,
+      closedFormMessage: form.closedFormMessage,
+      closeOnDate: form.closeOnDate,
+      closeDate: form.closeDate,
+      limitSubmissions: form.limitSubmissions,
+      maxSubmissions: form.maxSubmissions,
+      preventDuplicateSubmissions: form.preventDuplicateSubmissions,
+    };
 
     // --- Gating checks ---
     // 1. Form manually closed
@@ -161,17 +171,17 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
 export const verifyFormPassword = createServerFn({ method: "POST" })
   .inputValidator(z.object({ formId: z.string().uuid(), password: z.string() }))
   .handler(async ({ data }) => {
-    // Read password from form_settings table (live, not version snapshot)
-    const [settingsRow] = await db
-      .select({ password: formSettings.password })
-      .from(formSettings)
-      .where(eq(formSettings.formId, data.formId));
+    // Read password from forms table (live, not version snapshot)
+    const [formRow] = await db
+      .select({ password: forms.password })
+      .from(forms)
+      .where(eq(forms.id, data.formId));
 
-    if (!settingsRow) {
+    if (!formRow) {
       return { valid: false };
     }
 
-    return { valid: settingsRow.password === data.password };
+    return { valid: formRow.password === data.password };
   });
 
 /**
@@ -187,12 +197,23 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-    // Verify form exists and is published, get the current published version ID
+    // Verify form exists and is published, get the current published version ID + settings
     const [form] = await db
       .select({
         status: forms.status,
         lastPublishedVersionId: forms.lastPublishedVersionId,
         createdByUserId: forms.createdByUserId,
+        // Settings fields for gating + email
+        closeForm: forms.closeForm,
+        closeOnDate: forms.closeOnDate,
+        closeDate: forms.closeDate,
+        limitSubmissions: forms.limitSubmissions,
+        maxSubmissions: forms.maxSubmissions,
+        selfEmailNotifications: forms.selfEmailNotifications,
+        notificationEmail: forms.notificationEmail,
+        respondentEmailNotifications: forms.respondentEmailNotifications,
+        respondentEmailSubject: forms.respondentEmailSubject,
+        respondentEmailBody: forms.respondentEmailBody,
       })
       .from(forms)
       .where(eq(forms.id, data.formId));
@@ -205,35 +226,27 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
       throw new Error("Form is not accepting submissions");
     }
 
-    // Fetch live settings from form_settings table for gating + email
-    const [settingsRow] = await db
-      .select()
-      .from(formSettings)
-      .where(eq(formSettings.formId, data.formId));
-
     // --- Server-side gating (prevent client-side bypass) ---
-    if (settingsRow) {
-      // Close form
-      if (settingsRow.closeForm) {
-        throw new Error("This form is closed");
-      }
-      // Close on date
-      if (
-        settingsRow.closeOnDate &&
-        settingsRow.closeDate &&
-        new Date(settingsRow.closeDate) < new Date()
-      ) {
-        throw new Error("This form is no longer accepting responses");
-      }
-      // Submission limit
-      if (settingsRow.limitSubmissions && settingsRow.maxSubmissions) {
-        const [{ value: submissionCount }] = await db
-          .select({ value: count() })
-          .from(submissions)
-          .where(eq(submissions.formId, data.formId));
-        if (submissionCount >= settingsRow.maxSubmissions) {
-          throw new Error("This form has reached its maximum number of submissions");
-        }
+    // Close form
+    if (form.closeForm) {
+      throw new Error("This form is closed");
+    }
+    // Close on date
+    if (
+      form.closeOnDate &&
+      form.closeDate &&
+      new Date(form.closeDate) < new Date()
+    ) {
+      throw new Error("This form is no longer accepting responses");
+    }
+    // Submission limit
+    if (form.limitSubmissions && form.maxSubmissions) {
+      const [{ value: submissionCount }] = await db
+        .select({ value: count() })
+        .from(submissions)
+        .where(eq(submissions.formId, data.formId));
+      if (submissionCount >= form.maxSubmissions) {
+        throw new Error("This form has reached its maximum number of submissions");
       }
     }
 
@@ -251,22 +264,20 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
     });
 
     // Fire-and-forget email notifications
-    if (settingsRow) {
-      const settingsForEmail: Record<string, unknown> = {
-        selfEmailNotifications: settingsRow.selfEmailNotifications,
-        notificationEmail: settingsRow.notificationEmail,
-        respondentEmailNotifications: settingsRow.respondentEmailNotifications,
-        respondentEmailSubject: settingsRow.respondentEmailSubject,
-        respondentEmailBody: settingsRow.respondentEmailBody,
-      };
-      sendEmailNotifications(
-        settingsForEmail,
-        form.createdByUserId,
-        data.formId,
-        id,
-        data.data,
-      ).catch((err) => console.error("[Email] Notification error:", err));
-    }
+    const settingsForEmail: Record<string, unknown> = {
+      selfEmailNotifications: form.selfEmailNotifications,
+      notificationEmail: form.notificationEmail,
+      respondentEmailNotifications: form.respondentEmailNotifications,
+      respondentEmailSubject: form.respondentEmailSubject,
+      respondentEmailBody: form.respondentEmailBody,
+    };
+    sendEmailNotifications(
+      settingsForEmail,
+      form.createdByUserId,
+      data.formId,
+      id,
+      data.data,
+    ).catch((err) => console.error("[Email] Notification error:", err));
 
     return { submissionId: id, success: true };
   });

@@ -153,6 +153,32 @@ export const forms = pgTable("forms", {
   // Version history fields
   lastPublishedVersionId: text(), // FK to formVersions.id
   publishedContentHash: text(), // Hash for fast change detection
+  // --- Public form settings (merged from form_settings) ---
+  language: text().default("English").notNull(),
+  redirectOnCompletion: boolean().default(false).notNull(),
+  redirectUrl: text(),
+  redirectDelay: integer().default(0).notNull(),
+  progressBar: boolean().default(false).notNull(),
+  branding: boolean().default(true).notNull(),
+  autoJump: boolean().default(false).notNull(),
+  saveAnswersForLater: boolean().default(true).notNull(),
+  selfEmailNotifications: boolean().default(false).notNull(),
+  notificationEmail: text(),
+  respondentEmailNotifications: boolean().default(false).notNull(),
+  respondentEmailSubject: text(),
+  respondentEmailBody: text(),
+  passwordProtect: boolean().default(false).notNull(),
+  password: text(),
+  closeForm: boolean().default(false).notNull(),
+  closedFormMessage: text().default("This form is now closed."),
+  closeOnDate: boolean().default(false).notNull(),
+  closeDate: text(),
+  limitSubmissions: boolean().default(false).notNull(),
+  maxSubmissions: integer(),
+  preventDuplicateSubmissions: boolean().default(false).notNull(),
+  dataRetention: boolean().default(false).notNull(),
+  dataRetentionDays: integer(),
+  customization: jsonb().default({}),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
@@ -178,47 +204,6 @@ export const submissions = pgTable("submissions", {
   formVersionId: text(), // Links to the form version this submission was created against
   data: jsonb().notNull().default({}),
   isCompleted: boolean().notNull().default(true),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-});
-
-// Form Settings table for public form settings (separate from builder UI settings)
-export const formSettings = pgTable("form_settings", {
-  id: text().primaryKey(),
-  formId: text()
-    .notNull()
-    .references(() => forms.id, { onDelete: "cascade" }),
-  // Public form behavior
-  language: text().default("English").notNull(),
-  redirectOnCompletion: boolean().default(false).notNull(),
-  redirectUrl: text(),
-  redirectDelay: integer().default(0).notNull(),
-  progressBar: boolean().default(false).notNull(),
-  branding: boolean().default(true).notNull(),
-  autoJump: boolean().default(false).notNull(),
-  saveAnswersForLater: boolean().default(true).notNull(),
-  // Email notifications
-  selfEmailNotifications: boolean().default(false).notNull(),
-  notificationEmail: text(),
-  respondentEmailNotifications: boolean().default(false).notNull(),
-  respondentEmailSubject: text(),
-  respondentEmailBody: text(),
-  // Access control
-  passwordProtect: boolean().default(false).notNull(),
-  password: text(),
-  closeForm: boolean().default(false).notNull(),
-  closedFormMessage: text().default("This form is now closed."),
-  closeOnDate: boolean().default(false).notNull(),
-  closeDate: text(),
-  limitSubmissions: boolean().default(false).notNull(),
-  maxSubmissions: integer(),
-  preventDuplicateSubmissions: boolean().default(false).notNull(),
-  // Data retention (UI only for now)
-  dataRetention: boolean().default(false).notNull(),
-  dataRetentionDays: integer(),
-  // Theme customization (draft/working copy — snapshotted into form_versions on publish)
-  customization: jsonb().default({}),
-  // Timestamps
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
@@ -385,7 +370,6 @@ export const relations = defineRelations(
     formQuestionProgress,
     formAnalyticsDaily,
     formDropoffDaily,
-    formSettings,
     formFavorites,
   },
   (r) => ({
@@ -554,11 +538,6 @@ export const relations = defineRelations(
         from: r.forms.id,
         to: r.formFavorites.formId,
       }),
-      // Form settings (public form behavior, separate from builder UI settings)
-      formSettings: r.one.formSettings({
-        from: r.forms.id,
-        to: r.formSettings.formId,
-      }),
     },
     // Form Version belongs to one form and one user (publisher)
     formVersions: {
@@ -618,13 +597,6 @@ export const relations = defineRelations(
         to: r.forms.id,
       }),
     },
-    // Form Settings belongs to one form
-    formSettings: {
-      form: r.one.forms({
-        from: r.formSettings.formId,
-        to: r.forms.id,
-      }),
-    },
     // Form Favorites belongs to user and form
     formFavorites: {
       user: r.one.user({
@@ -656,9 +628,6 @@ export const FormDropoffDailyZod = createSelectSchema(formDropoffDaily);
 export const OrganizationZod = createSelectSchema(organization);
 export const MemberZod = createSelectSchema(member);
 export const InvitationZod = createSelectSchema(invitation);
-
-// Form Settings schema
-export const FormSettingsZod = createSelectSchema(formSettings);
 
 // Form Favorites schema
 export const FormFavoriteZod = createSelectSchema(formFavorites);

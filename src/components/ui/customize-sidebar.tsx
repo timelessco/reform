@@ -3,8 +3,8 @@ import { Info, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
-import { useFormSettings, useLocalFormSettings } from "@/hooks/use-live-hooks";
-import { formSettingsCollection, localFormSettingsCollection } from "@/db-collections";
+import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
+import { formCollection, localFormCollection } from "@/db-collections";
 import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
 import {
   Accordion,
@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/style-controls";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { STYLES, BASE_COLORS, DARK_BASE_COLORS, THEME_COLORS, FONT_MAP } from "@/lib/theme-presets";
-import { getLocalFormSettingsId } from "@/lib/local-draft";
 import { TOKEN_NAMES } from "@/lib/generate-theme-css";
 
 const FONT_OPTIONS = Object.keys(FONT_MAP);
@@ -178,12 +177,13 @@ interface CustomizeSidebarProps {
 
 export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
   const { closeSidebar } = useEditorSidebar();
-  const cloudSettings = useFormSettings(isLocal ? undefined : formId);
-  const localSettings = useLocalFormSettings(isLocal ? formId : undefined);
-  const { data: settings } = isLocal ? localSettings : cloudSettings;
-  const collection = isLocal ? localFormSettingsCollection : formSettingsCollection;
+  const cloudForm = useForm(isLocal ? undefined : formId);
+  const localFormResult = useLocalForm(isLocal ? formId : undefined);
+  const formResult = isLocal ? localFormResult : cloudForm;
+  const formDoc = formResult.data?.[0] ?? null;
+  const collection = isLocal ? localFormCollection : formCollection;
 
-  const customization = (settings?.customization ?? {}) as Record<
+  const customization = (formDoc?.customization ?? {}) as Record<
     string,
     string
   >;
@@ -211,94 +211,28 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
 
   const updateField = useCallback(
     (field: string, value: string) => {
-      if (settings?.id) {
-        collection.update(settings.id, (draft) => {
+      if (formDoc?.id) {
+        collection.update(formDoc.id, (draft) => {
           const current = (draft.customization ?? {}) as Record<string, string>;
           draft.customization = { ...current, [field]: value };
           draft.updatedAt = new Date().toISOString();
         });
-      } else if (isLocal) {
-        const now = new Date().toISOString();
-        collection.insert({
-          id: getLocalFormSettingsId(),
-          formId,
-          language: "English",
-          redirectOnCompletion: false,
-          redirectUrl: null,
-          redirectDelay: 0,
-          progressBar: false,
-          branding: true,
-          autoJump: false,
-          saveAnswersForLater: true,
-          selfEmailNotifications: false,
-          notificationEmail: null,
-          respondentEmailNotifications: false,
-          respondentEmailSubject: null,
-          respondentEmailBody: null,
-          passwordProtect: false,
-          password: null,
-          closeForm: false,
-          closedFormMessage: "This form is now closed.",
-          closeOnDate: false,
-          closeDate: null,
-          limitSubmissions: false,
-          maxSubmissions: null,
-          preventDuplicateSubmissions: false,
-          dataRetention: false,
-          dataRetentionDays: null,
-          customization: { [field]: value },
-          createdAt: now,
-          updatedAt: now,
-        });
       }
     },
-    [settings?.id, collection, isLocal, formId],
+    [formDoc?.id, collection],
   );
 
   const updateFields = useCallback(
     (fields: Record<string, string>) => {
-      if (settings?.id) {
-        collection.update(settings.id, (draft) => {
+      if (formDoc?.id) {
+        collection.update(formDoc.id, (draft) => {
           const current = (draft.customization ?? {}) as Record<string, string>;
           draft.customization = { ...current, ...fields };
           draft.updatedAt = new Date().toISOString();
         });
-      } else if (isLocal) {
-        const now = new Date().toISOString();
-        collection.insert({
-          id: getLocalFormSettingsId(),
-          formId,
-          language: "English",
-          redirectOnCompletion: false,
-          redirectUrl: null,
-          redirectDelay: 0,
-          progressBar: false,
-          branding: true,
-          autoJump: false,
-          saveAnswersForLater: true,
-          selfEmailNotifications: false,
-          notificationEmail: null,
-          respondentEmailNotifications: false,
-          respondentEmailSubject: null,
-          respondentEmailBody: null,
-          passwordProtect: false,
-          password: null,
-          closeForm: false,
-          closedFormMessage: "This form is now closed.",
-          closeOnDate: false,
-          closeDate: null,
-          limitSubmissions: false,
-          maxSubmissions: null,
-          preventDuplicateSubmissions: false,
-          dataRetention: false,
-          dataRetentionDays: null,
-          customization: { ...fields },
-          createdAt: now,
-          updatedAt: now,
-        });
       }
     },
-    [settings?.id, collection, isLocal, formId],
+    [formDoc?.id, collection],
   );
 
   const selectStyle = useCallback(

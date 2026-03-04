@@ -15,10 +15,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
-import { formSettingsCollection, localFormSettingsCollection } from "@/db-collections/form-settings.collection";
-import { useFormSettings, useLocalFormSettings } from "@/hooks/use-live-hooks";
+import { formCollection, localFormCollection } from "@/db-collections";
+import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
 import { cn } from "@/lib/utils";
-import { getLocalFormSettingsId } from "@/lib/local-draft";
 import { createFileRoute } from "@tanstack/react-router";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
@@ -26,9 +25,6 @@ import { useState } from "react";
 export const Route = createFileRoute(
   "/_authenticated/workspace/$workspaceId/form-builder/$formId/settings",
 )({
-  loader: async () => {
-    await formSettingsCollection.preload()
-  },
   component: SettingsPage,
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
@@ -41,13 +37,39 @@ function SettingsPage() {
 }
 
 export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?: boolean }) {
-  const cloudSettings = useFormSettings(isLocal ? undefined : formId);
-  const localSettings = useLocalFormSettings(isLocal ? formId : undefined);
-  const { data: settingsDoc } = isLocal ? localSettings : cloudSettings;
-  const collection = isLocal ? localFormSettingsCollection : formSettingsCollection;
+  const cloudForm = useForm(isLocal ? undefined : formId);
+  const localFormResult = useLocalForm(isLocal ? formId : undefined);
+  const formResult = isLocal ? localFormResult : cloudForm;
+  const formDoc = formResult.data?.[0] ?? null;
+  const collection = isLocal ? localFormCollection : formCollection;
 
   const form = useAppForm({
-    defaultValues: settingsDoc ?? {
+    defaultValues: formDoc ? {
+      language: formDoc.language ?? "English",
+      redirectOnCompletion: formDoc.redirectOnCompletion ?? false,
+      redirectUrl: formDoc.redirectUrl ?? null,
+      redirectDelay: formDoc.redirectDelay ?? 0,
+      progressBar: formDoc.progressBar ?? false,
+      branding: formDoc.branding ?? true,
+      dataRetention: formDoc.dataRetention ?? false,
+      dataRetentionDays: formDoc.dataRetentionDays ?? null,
+      selfEmailNotifications: formDoc.selfEmailNotifications ?? false,
+      notificationEmail: formDoc.notificationEmail ?? null,
+      respondentEmailNotifications: formDoc.respondentEmailNotifications ?? false,
+      respondentEmailSubject: formDoc.respondentEmailSubject ?? null,
+      respondentEmailBody: formDoc.respondentEmailBody ?? null,
+      passwordProtect: formDoc.passwordProtect ?? false,
+      password: formDoc.password ?? null,
+      closeForm: formDoc.closeForm ?? false,
+      closedFormMessage: formDoc.closedFormMessage ?? null,
+      closeOnDate: formDoc.closeOnDate ?? false,
+      closeDate: formDoc.closeDate ?? null,
+      limitSubmissions: formDoc.limitSubmissions ?? false,
+      maxSubmissions: formDoc.maxSubmissions ?? null,
+      preventDuplicateSubmissions: formDoc.preventDuplicateSubmissions ?? false,
+      autoJump: formDoc.autoJump ?? false,
+      saveAnswersForLater: formDoc.saveAnswersForLater ?? true,
+    } : {
       language: "English",
       redirectOnCompletion: false,
       redirectUrl: null,
@@ -104,20 +126,10 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
           saveAnswersForLater: values.saveAnswersForLater,
         };
 
-        if (settingsDoc?.id) {
-          collection.update(settingsDoc.id, (draft) => {
+        if (formDoc?.id) {
+          collection.update(formDoc.id, (draft) => {
             Object.assign(draft, settingsFields);
             draft.updatedAt = new Date().toISOString();
-          });
-        } else if (isLocal) {
-          const now = new Date().toISOString();
-          collection.insert({
-            id: getLocalFormSettingsId(),
-            formId,
-            ...settingsFields,
-            customization: {},
-            createdAt: now,
-            updatedAt: now,
           });
         }
       },

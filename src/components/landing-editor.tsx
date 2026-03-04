@@ -28,7 +28,7 @@ import {
   EditorSidebarProvider,
   useEditorSidebar,
 } from "@/hooks/use-editor-sidebar";
-import { useLocalForm, useLocalFormSettings } from "@/hooks/use-live-hooks";
+import { useLocalForm } from "@/hooks/use-live-hooks";
 import { getLocalFormId, getLocalWorkspaceId } from "@/lib/local-draft";
 
 // Initial state — form header, a label, and a form input
@@ -159,9 +159,8 @@ function LocalEditorApp() {
   const localFormId = getLocalFormId();
   const localWorkspaceId = getLocalWorkspaceId();
   const { data: savedDocs } = useLocalForm(localFormId);
-  const { data: localFormSettings } = useLocalFormSettings(localFormId);
 
-  const customization = localFormSettings?.customization as Record<string, string> | null;
+  const customization = (savedDocs?.[0]?.customization ?? null) as Record<string, string> | null;
   const hasCustomization = customization && Object.keys(customization).length > 0;
   const themeVars = useMemo(() => getThemeStyleVars(customization), [customization]);
   const themeCtx = useMemo(
@@ -277,9 +276,8 @@ function LocalEditorApp() {
 function LocalPreviewMode() {
   const localFormId = getLocalFormId();
   const { data: savedDocs } = useLocalForm(localFormId);
-  const { data: localFormSettings } = useLocalFormSettings(localFormId);
 
-  const customization = localFormSettings?.customization as Record<string, string> | null;
+  const customization = (savedDocs?.[0]?.customization ?? null) as Record<string, string> | null;
   const hasCustomization = customization && Object.keys(customization).length > 0;
   const themeVars = useMemo(() => getThemeStyleVars(customization), [customization]);
 

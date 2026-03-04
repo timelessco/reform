@@ -17,11 +17,8 @@ export const Route = createFileRoute("/")({
   }),
   loader: async () => {
     if (typeof window !== "undefined") {
-      const { localFormCollection, localFormSettingsCollection } = await import("@/db-collections");
-      await Promise.all([
-        localFormCollection.preload(),
-        localFormSettingsCollection.preload(),
-      ]);
+      const { localFormCollection } = await import("@/db-collections");
+      await localFormCollection.preload();
     }
   },
   component: RouteComponent,

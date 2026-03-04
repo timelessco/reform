@@ -1,8 +1,7 @@
 import { createTransaction } from "@tanstack/react-db";
 import { logger } from "@/lib/utils";
-import { localFormCollection, localFormSettingsCollection } from "@/db-collections";
+import { localFormCollection } from "@/db-collections";
 import { formCollection } from "@/db-collections/form.collections";
-import { formSettingsCollection } from "@/db-collections/form-settings.collection";
 import { workspaceCollection, createWorkspaceLocal } from "@/db-collections/workspace.collection";
 import { createForm } from "@/lib/fn/forms";
 
@@ -18,12 +17,9 @@ type SyncResult = {
  * Client-side function that syncs local forms to the cloud using createTransaction.
  *
  * For each local form, creates a transaction that:
- * - mutationFn: calls createForm() (creates form + default settings server-side),
- *   then updateFormSettings() with all local settings overrides using the returned settingsId.
- * - tx.mutate(): optimistically inserts form into formCollection, deletes from local collections.
- *
- * This eliminates the race condition (settings are updated via settingsId returned from createForm),
- * syncs all 23 settings fields (not a hardcoded subset), and rolls back on error.
+ * - mutationFn: calls createForm() (creates form with all settings in a single row),
+ *   then awaits txid for Electric sync.
+ * - tx.mutate(): optimistically inserts form into formCollection, deletes from local collection.
  *
  * @param organizationId - The organization ID to sync forms to
  */
@@ -66,10 +62,6 @@ export async function syncLocalDataToCloud(organizationId: string): Promise<Sync
       logger(`Using existing workspace ${targetWorkspaceId}`);
     }
 
-    // Build a map of local form settings keyed by formId
-    const localSettings = await localFormSettingsCollection.toArrayWhenReady();
-    const localSettingsMap = new Map(localSettings.map((s) => [s.formId, s]));
-
     // Sync each local form via createTransaction
     const syncedForms: string[] = [];
     for (const localForm of localForms) {
@@ -90,66 +82,51 @@ export async function syncLocalDataToCloud(organizationId: string): Promise<Sync
           cover: localForm.cover,
           isMultiStep: localForm.isMultiStep ?? false,
           status: (localForm.status || "draft") as "draft" | "published" | "archived",
+          // Include settings fields from local form (they're now part of the form)
+          language: localForm.language,
+          redirectOnCompletion: localForm.redirectOnCompletion,
+          redirectUrl: localForm.redirectUrl,
+          redirectDelay: localForm.redirectDelay,
+          progressBar: localForm.progressBar,
+          branding: localForm.branding,
+          autoJump: localForm.autoJump,
+          saveAnswersForLater: localForm.saveAnswersForLater,
+          selfEmailNotifications: localForm.selfEmailNotifications,
+          notificationEmail: localForm.notificationEmail,
+          respondentEmailNotifications: localForm.respondentEmailNotifications,
+          respondentEmailSubject: localForm.respondentEmailSubject,
+          respondentEmailBody: localForm.respondentEmailBody,
+          passwordProtect: localForm.passwordProtect,
+          password: localForm.password,
+          closeForm: localForm.closeForm,
+          closedFormMessage: localForm.closedFormMessage,
+          closeOnDate: localForm.closeOnDate,
+          closeDate: localForm.closeDate,
+          limitSubmissions: localForm.limitSubmissions,
+          maxSubmissions: localForm.maxSubmissions,
+          preventDuplicateSubmissions: localForm.preventDuplicateSubmissions,
+          dataRetention: localForm.dataRetention,
+          dataRetentionDays: localForm.dataRetentionDays,
+          customization: localForm.customization,
           createdAt: now,
           updatedAt: now,
         };
 
-        const formLocalSettings = localSettingsMap.get(localForm.id);
-        const newSettingsId = crypto.randomUUID();
-
-        // Extract settings overrides once (used in both mutationFn and tx.mutate)
-        let settingsOverrides: Record<string, unknown> | null = null;
-        if (formLocalSettings) {
-          const {
-            id: _localId,
-            formId: _localFormId,
-            createdAt: _ca,
-            updatedAt: _ua,
-            ...overrides
-          } = formLocalSettings;
-          settingsOverrides = overrides;
-        }
-
         const tx = createTransaction({
           mutationFn: async () => {
-            // Create form + settings with overrides in a single server transaction (one txid)
             const createResult = await createForm({
-              data: {
-                ...newFormData,
-                settingsId: newSettingsId,
-                settingsData: settingsOverrides ?? undefined,
-              },
+              data: newFormData,
             });
             const txid = (createResult as { txid: number }).txid;
 
             // Keep optimistic overlay alive until Electric sync confirms the data.
-            // Without this, the transaction completes and the optimistic overlay is removed
-            // before the sync stream delivers the real data, causing a ~5s skeleton flash.
-            await Promise.all([
-              formCollection.utils.awaitTxId(txid),
-              formSettingsCollection.utils.awaitTxId(txid),
-            ]);
+            await formCollection.utils.awaitTxId(txid);
           },
         });
 
         tx.mutate(() => {
           formCollection.insert(newFormData);
-
-          // Always optimistically insert settings so UI never shows skeleton.
-          // Server's createForm() always creates a default settings row,
-          // so we mirror that here with any local overrides applied.
-          formSettingsCollection.insert({
-            id: newSettingsId,
-            formId: newFormId,
-            ...(settingsOverrides ?? {}),
-            createdAt: now,
-            updatedAt: now,
-          });
-
           localFormCollection.delete(localForm.id);
-          if (formLocalSettings) {
-            localFormSettingsCollection.delete(formLocalSettings.id);
-          }
         });
 
         syncedForms.push(newFormId);
