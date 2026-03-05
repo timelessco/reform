@@ -58,6 +58,7 @@ import {
 import { SidebarSection } from "@/components/ui/sidebar-section";
 import {
   BellIcon,
+  ChevronsLeftIcon,
   HomeIcon,
   SearchIcon,
   SettingsIcon,
@@ -425,7 +426,7 @@ function AppSidebar() {
   return (
     <>
       <Sidebar className="border-r-[0.5px] bg-background h-screen">
-        <SidebarHeader className="h-12 pl-3.5 pr-2 pt-2 pb-0 flex flex-row items-center justify-between group/logo">
+        <SidebarHeader className="h-12 pl-3.5 pr-2 pt-2 pb-0 flex flex-row items-center justify-between group/header">
           <Logo className="h-5.5 w-5.5 text-sidebar-foreground" />
             <Tooltip>
               <TooltipTrigger
@@ -434,12 +435,11 @@ function AppSidebar() {
                     variant="ghost"
                     size="icon"
                     onClick={() => toggleSidebar()}
-                    className="h-8 w-8 bg-muted/60 opacity-0 group-hover/header:opacity-100"
+                    className="bg-muted/60 opacity-0 group-hover/header:opacity-100"
+                    render={<ChevronsLeftIcon className="h-4 w-4" />}
                   />
                 }
-              >
-                <ChevronsLeft className="h-4 w-4" />
-              </TooltipTrigger>
+              />
               <TooltipContent side="bottom" align="end">
                 <p className="font-medium">Collapse sidebar</p>
                 <p className="text-xs text-muted-foreground">{formatForDisplay(HOTKEYS.DISMISS_SIDEBARS)}</p>

@@ -1,15 +1,160 @@
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { X } from "lucide-react";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
-import { cn } from "@/lib/utils";
 
 interface EmbedPreviewMockupProps {
   embedType: EmbedType;
   popupPosition?: "bottom-right" | "bottom-left" | "center";
+  darkOverlay?: boolean;
+  emoji?: boolean;
+  emojiIcon?: string;
+  alignLeft?: boolean;
+}
+
+const MORPH_SPRING = { type: "spring" as const, stiffness: 400, damping: 30 };
+const INSTANT = { duration: 0 };
+const FADE_TRANSITION = { duration: 0.2 };
+
+const PAD = 16;
+
+function getTargetStyle(
+  embedType: EmbedType,
+  popupPosition: string,
+  isPopupExpanded: boolean,
+  cw: number,
+  ch: number,
+  alignLeft?: boolean,
+) {
+  switch (embedType) {
+    case "standard": {
+      const w = alignLeft ? cw * 0.65 : cw - 16;
+      return {
+        left: PAD + 8,
+        top: PAD + (ch - 64) / 2,
+        width: w,
+        height: 64,
+        borderRadius: 12,
+      };
+    }
+    case "fullpage":
+      return {
+        left: PAD + (cw - 180) / 2,
+        top: PAD + (ch - 120) / 2,
+        width: 180,
+        height: 120,
+        borderRadius: 12,
+      };
+    case "popup": {
+      if (isPopupExpanded) {
+        const w = 74;
+        const h = 96;
+        const pos = getCornerPos(popupPosition, cw, ch, w, h);
+        return { ...pos, width: w, height: h, borderRadius: 12 };
+      }
+      const size = 28;
+      const pos = getCornerPos(popupPosition, cw, ch, size, size);
+      return { ...pos, width: size, height: size, borderRadius: size / 2 };
+    }
+  }
+}
+
+function getCornerPos(
+  position: string,
+  cw: number,
+  ch: number,
+  w: number,
+  h: number,
+) {
+  switch (position) {
+    case "bottom-left":
+      return { left: PAD, top: PAD + ch - h };
+    case "center":
+      return { left: PAD + (cw - w) / 2, top: PAD + (ch - h) / 2 };
+    case "bottom-right":
+    default:
+      return { left: PAD + cw - w, top: PAD + ch - h };
+  }
+}
+
+// Get the bubble position (always in the corner, even when popup is expanded at center)
+function getBubblePos(
+  position: string,
+  cw: number,
+  ch: number,
+) {
+  const size = 28;
+  switch (position) {
+    case "bottom-left":
+      return { left: PAD, top: PAD + ch - size };
+    case "center":
+      return { left: PAD + cw - size, top: PAD + ch - size }; // default to bottom-right for bubble
+    case "bottom-right":
+    default:
+      return { left: PAD + cw - size, top: PAD + ch - size };
+  }
 }
 
 export function EmbedPreviewMockup({
   embedType = "fullpage",
   popupPosition = "bottom-right",
+  darkOverlay = false,
+  emoji = true,
+  emojiIcon = "👋",
+  alignLeft = false,
 }: EmbedPreviewMockupProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  const [isPopupExpanded, setIsPopupExpanded] = useState(false);
+  const hasAnimated = useRef(false);
+  const isResizing = useRef(false);
+
+  // Measure content area and keep in sync on resize
+  useLayoutEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    let initialMeasure = true;
+    const measure = () => {
+      if (!initialMeasure) {
+        isResizing.current = true;
+      }
+      initialMeasure = false;
+      setSize({
+        w: el.clientWidth - 32,
+        h: el.clientHeight - 32,
+      });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Reset popup expanded state when leaving popup tab
+  useEffect(() => {
+    if (embedType !== "popup") setIsPopupExpanded(false);
+  }, [embedType]);
+
+  const target =
+    size.w > 0
+      ? getTargetStyle(embedType, popupPosition, isPopupExpanded, size.w, size.h, alignLeft)
+      : null;
+
+  let transition;
+  if (!hasAnimated.current || isResizing.current) {
+    transition = INSTANT;
+  } else {
+    transition = MORPH_SPRING;
+  }
+
+  const handleAnimationComplete = useCallback(() => {
+    hasAnimated.current = true;
+    isResizing.current = false;
+  }, []);
+
+  const bubblePos = size.w > 0 ? getBubblePos(popupPosition, size.w, size.h) : null;
+  const isPopup = embedType === "popup";
+
   return (
     <div className="rounded-[12px] border border-border bg-[#f5f5f5] dark:bg-muted/30 overflow-hidden">
       {/* Browser Chrome */}
@@ -22,83 +167,117 @@ export function EmbedPreviewMockup({
       </div>
 
       {/* Content Area */}
-      <div className="relative h-[160px] overflow-hidden p-4">
-        {embedType === "standard" && <StandardPreview />}
-        {embedType === "popup" && <PopupPreview position={popupPosition} />}
-        {embedType === "fullpage" && <FullPagePreview />}
-      </div>
-    </div>
-  );
-}
+      <div ref={contentRef} className="relative h-[160px] overflow-hidden p-4">
+        {/* Background context lines */}
+        <AnimatePresence mode="sync">
+          {embedType === "standard" && (
+            <motion.div
+              key="standard-bg"
+              className="absolute inset-4 flex flex-col justify-center gap-4 py-2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={FADE_TRANSITION}
+            >
+              <div className="space-y-2 opacity-30 px-2">
+                <div className="h-2 bg-muted rounded-full w-1/4" />
+                <div className="h-1.5 bg-muted rounded-full w-full" />
+                <div className="h-1.5 bg-muted rounded-full w-4/5" />
+              </div>
+              <div className="h-16" />
+              <div className="space-y-2 opacity-10 px-2">
+                <div className="h-1.5 bg-muted rounded-full w-full" />
+                <div className="h-1.5 bg-muted rounded-full w-11/12" />
+              </div>
+            </motion.div>
+          )}
+          {embedType === "popup" && (
+            <motion.div
+              key="popup-bg"
+              className="absolute inset-4 space-y-3 pt-2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.2 }}
+              exit={{ opacity: 0 }}
+              transition={FADE_TRANSITION}
+            >
+              <div className="h-2.5 bg-muted rounded-full w-1/5" />
+              <div className="space-y-2">
+                <div className="h-2 bg-muted rounded-full w-full" />
+                <div className="h-2 bg-muted rounded-full w-full" />
+                <div className="h-2 bg-muted rounded-full w-3/4" />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-function BoxSkeleton({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn(
-        "rounded-xl bg-[#e0e0e0] dark:bg-card shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-border/50",
-        className,
-      )}
-    />
-  );
-}
+        {/* Dark overlay for popup */}
+        <AnimatePresence>
+          {isPopup && darkOverlay && isPopupExpanded && (
+            <motion.div
+              key="dark-overlay"
+              className="absolute inset-0 bg-black/30 z-10"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={FADE_TRANSITION}
+            />
+          )}
+        </AnimatePresence>
 
-function StandardPreview() {
-  return (
-    <div className="h-full flex flex-col justify-center gap-4 py-2">
-      {/* Abstract Background context */}
-      <div className="space-y-2 opacity-30 px-2">
-        <div className="h-2 bg-muted rounded-full w-1/4" />
-        <div className="h-1.5 bg-muted rounded-full w-full" />
-        <div className="h-1.5 bg-muted rounded-full w-4/5" />
-      </div>
+        {/* The single morphing box */}
+        {target && (
+          <motion.div
+            className="absolute bg-[#e0e0e0] dark:bg-card shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-border/50 z-20 overflow-hidden"
+            animate={target}
+            transition={transition}
+            onAnimationComplete={handleAnimationComplete}
+            onMouseEnter={() => {
+              if (isPopup && !isPopupExpanded) setIsPopupExpanded(true);
+            }}
+            onMouseLeave={() => {
+              if (isPopup) setIsPopupExpanded(false);
+            }}
+          >
+            {/* Close button inside expanded popup */}
+            {isPopup && isPopupExpanded && (
+              <button
+                type="button"
+                className="absolute top-1 right-1 z-30 h-3.5 w-3.5 rounded-full bg-muted-foreground/10 flex items-center justify-center hover:bg-muted-foreground/20 transition-colors cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsPopupExpanded(false);
+                }}
+              >
+                <X className="h-2 w-2 text-muted-foreground" />
+              </button>
+            )}
 
-      {/* The centered "Embed" box */}
-      <div className="px-2">
-        <BoxSkeleton className="h-16 w-full" />
-      </div>
-
-      <div className="space-y-2 opacity-10 px-2">
-        <div className="h-1.5 bg-muted rounded-full w-full" />
-        <div className="h-1.5 bg-muted rounded-full w-11/12" />
-      </div>
-    </div>
-  );
-}
-
-function PopupPreview({ position }: { position: string }) {
-  return (
-    <div className="relative h-full w-full">
-      {/* Abstract Page Background */}
-      <div className="space-y-3 opacity-20 pt-2">
-        <div className="h-2.5 bg-muted rounded-full w-1/5" />
-        <div className="space-y-2">
-          <div className="h-2 bg-muted rounded-full w-full" />
-          <div className="h-2 bg-muted rounded-full w-full" />
-          <div className="h-2 bg-muted rounded-full w-3/4" />
-        </div>
-      </div>
-
-      {/* The "Popup" box */}
-      <div
-        className={cn(
-          "absolute transition-all duration-500",
-          position === "center"
-            ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-            : position === "bottom-left"
-              ? "bottom-0 left-0"
-              : "bottom-0 right-0",
+            {/* Emoji inside the collapsed circle */}
+            <AnimatePresence>
+              {isPopup && !isPopupExpanded && emoji && (
+                <motion.span
+                  className="absolute inset-0 flex items-center justify-center text-[14px] leading-none"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  {emojiIcon}
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.div>
         )}
-      >
-        <BoxSkeleton className="w-18.5 h-24" />
-      </div>
-    </div>
-  );
-}
 
-function FullPagePreview() {
-  return (
-    <div className="h-full flex items-center justify-center pt-2">
-      <BoxSkeleton className="h-[120px] w-[180px]" />
+        {/* Separate bubble trigger (visible when popup is collapsed & no emoji) */}
+        {isPopup && !isPopupExpanded && !emoji && bubblePos && (
+          <div
+            className="absolute w-[28px] h-[28px] rounded-full bg-[#e0e0e0] dark:bg-card shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-border/50 z-20 cursor-pointer"
+            style={{ left: bubblePos.left, top: bubblePos.top }}
+            onMouseEnter={() => setIsPopupExpanded(true)}
+          />
+        )}
+      </div>
     </div>
   );
 }

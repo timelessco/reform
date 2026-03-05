@@ -104,7 +104,7 @@ export const formCollection = createCollection(
     },
     onUpdate: async ({ transaction }) => {
       const { original, changes } = transaction.mutations[0];
-      logger("changes", changes.content);
+      logger("changes", Object.keys(changes));
       const result = await updateForm({
         data: { ...changes, id: original.id },
       });
@@ -196,8 +196,7 @@ export async function updateHeader(
  */
 export async function updateSettings(id: string, settings: Partial<typeof DEFAULT_FORM_SETTINGS>) {
   return formCollection.update(id, (draft) => {
-    console.log("settings", settings);
-    console.log("draft.settings", draft.settings);
+    logger("updateSettings", id, Object.keys(settings));
     draft.settings = { ...draft.settings, ...settings };
     draft.updatedAt = new Date().toISOString();
   });
@@ -208,7 +207,7 @@ export async function updateSettings(id: string, settings: Partial<typeof DEFAUL
  */
 export async function updateDoc(id: string, updater: (draft: any) => void) {
   return formCollection.update(id, (draft) => {
-    logger(draft, "draft");
+    logger("updateDoc", id);
     updater(draft);
     draft.updatedAt = new Date().toISOString();
   });

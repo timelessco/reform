@@ -1012,7 +1012,10 @@
   --bf-handle-active: rgba(255, 255, 255, 0.85);
 }
 
-/* Bridge rules: map --bf-* customization tokens to standard shadcn vars */
+/* Bridge rules: map --bf-* customization tokens to standard shadcn vars.
+   We must also override --color-* (Tailwind v4 theme tokens) because they are
+   resolved at :root level and inherited as computed values — overriding --background
+   on a nested element does NOT update the inherited --color-background. */
 .bf-themed {
   --background: var(--bf-background);
   --foreground: var(--bf-foreground);
@@ -1034,12 +1037,32 @@
   --input: var(--bf-input);
   --ring: var(--bf-ring);
   --radius: var(--bf-radius);
+
+  /* Tailwind v4 --color-* overrides (needed for bg-background, text-foreground, etc.) */
+  --color-background: var(--bf-background);
+  --color-foreground: var(--bf-foreground);
+  --color-card: var(--bf-card);
+  --color-card-foreground: var(--bf-card-foreground);
+  --color-primary: var(--bf-primary);
+  --color-primary-foreground: var(--bf-primary-foreground);
+  --color-secondary: var(--bf-secondary);
+  --color-secondary-foreground: var(--bf-secondary-foreground);
+  --color-muted: var(--bf-muted);
+  --color-muted-foreground: var(--bf-muted-foreground);
+  --color-accent: var(--bf-accent);
+  --color-accent-foreground: var(--bf-accent-foreground);
+  --color-destructive: var(--bf-destructive);
+  --color-destructive-foreground: var(--bf-destructive-foreground);
+  --color-border: var(--bf-border);
+  --color-input: var(--bf-input);
+  --color-ring: var(--bf-ring);
+
   font-family: var(--bf-font);
   color: #09090b;
 }
 
 .bf-themed.dark {
-  color: #fafafa;
+  color: var(--bf-foreground, #fafafa);
 }
 
 /* Layout bridge: consume --bf-* layout vars on data-attribute targets.

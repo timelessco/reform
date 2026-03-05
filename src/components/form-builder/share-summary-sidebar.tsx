@@ -31,6 +31,46 @@ import {
 } from "./embed-section";
 import { EmbedPreviewMockup } from "./embed-preview-mockup";
 
+function EmbedTabBar({
+  tabs: items,
+  value,
+  onChange,
+}: {
+  tabs: { value: string; label: string }[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const activeIndex = items.findIndex((t) => t.value === value);
+  const count = items.length;
+  // Percentage-based: pill always tracks 1/N width at index/N offset
+  const pillLeft = `calc(${(activeIndex / count) * 100}% + 3px)`;
+  const pillWidth = `calc(${100 / count}% - ${6 / count}px)`;
+
+  return (
+    <div className="relative bg-secondary rounded-[10px] p-[3px] w-full flex">
+      <div
+        className="absolute top-[3px] bottom-[3px] rounded-[8px] bg-white shadow-[0px_0px_1.5px_0px_rgba(0,0,0,0.16),0px_2px_5px_0px_rgba(0,0,0,0.14)] dark:bg-background z-0 transition-[left,width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+        style={{ left: pillLeft, width: pillWidth }}
+      />
+      {items.map((tab) => (
+        <button
+          key={tab.value}
+          type="button"
+          onClick={() => onChange(tab.value)}
+          className={cn(
+            "relative z-10 flex-1 h-7 rounded-[8px] text-sm font-medium text-center transition-colors",
+            value === tab.value
+              ? "text-foreground"
+              : "text-muted-foreground",
+          )}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 interface ShareSummarySidebarProps {
   formId: string;
 }
@@ -102,23 +142,11 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
         {!isDraft && (
           <form.Field name="embedType">
             {(field) => (
-              <div className="bg-secondary rounded-[10px] p-px w-full flex gap-1.5SidebarSection">
-                {tabs.map((tab) => (
-                    <button
-                    key={tab.value}
-                    type="button"
-                    onClick={() => field.handleChange(tab.value)}
-                    className={cn(
-                      "flex-1 h-7 rounded-[9px] text-sm font-medium text-center transition-all",
-                      field.state.value === tab.value
-                        ? "bg-white shadow-[0px_0px_1.5px_0px_rgba(0,0,0,0.16),0px_2px_5px_0px_rgba(0,0,0,0.14)] text-foreground dark:bg-background"
-                        : "text-muted-foreground",
-                    )}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+              <EmbedTabBar
+                tabs={tabs}
+                value={field.state.value}
+                onChange={(v) => field.handleChange(v)}
+              />
             )}
           </form.Field>
         )}
@@ -177,6 +205,10 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                     <EmbedPreviewMockup
                       embedType={embedType}
                       popupPosition={options.popupPosition}
+                      darkOverlay={options.darkOverlay}
+                      emoji={options.emoji}
+                      emojiIcon={options.emojiIcon}
+                      alignLeft={options.alignLeft}
                     />
 
                     {/* Customise section */}

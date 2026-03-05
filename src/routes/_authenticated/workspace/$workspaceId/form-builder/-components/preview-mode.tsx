@@ -1,6 +1,7 @@
 import { APP_NAME } from "@/lib/app-config";
 import { Link, useSearch } from "@tanstack/react-router";
 import { Sparkles, X } from "lucide-react";
+import { useState, useEffect } from "react";
 import type { Value } from "platejs";
 import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,15 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
   const popupPosition = (search.embedPopupPosition as string) ?? "bottom-right";
   const popupWidth = (search.embedPopupWidth as number) ?? 376;
   const darkOverlay = (search.embedDarkOverlay as boolean) ?? false;
+  const showEmoji = (search.embedEmoji as boolean) ?? true;
+  const alignLeft = (search.embedAlignLeft as boolean) ?? false;
+
+  const [isPopupOpen, setIsPopupOpen] = useState(true);
+
+  // Re-open popup when switching to popup mode
+  useEffect(() => {
+    if (embedType === "popup") setIsPopupOpen(true);
+  }, [embedType]);
 
   if (!isLoading && savedDocs !== undefined && savedDocs.length === 0) {
     return (
@@ -52,13 +62,10 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
       className={cn(
         hasCustomization && "bf-themed",
         customization?.mode === "dark" && "dark",
-        "w-full h-full flex flex-col transition-colors duration-300",
+        "w-full h-full flex flex-col transition-colors duration-300 bg-background text-foreground",
         embedType === "fullpage"
-          ? cn(
-              transparentBackground ? "bg-transparent" : "bg-background",
-              "overflow-y-auto overflow-x-hidden",
-            )
-          : "bg-background text-foreground overflow-hidden",
+          ? "overflow-y-auto overflow-x-hidden"
+          : "overflow-hidden",
       )}
       style={hasCustomization ? themeVars : undefined}
     >
@@ -108,45 +115,44 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                     </div>
                   </div>
 
-                  {/* The form itself */}
-                  <div className="relative group/embed">
-                    {/* Minimal indicator */}
-                    {embedType === "standard" && (
+                  {/* The form itself — only for standard embed */}
+                  {embedType === "standard" && (
+                    <div className="relative group/embed">
                       <div className="absolute -top-5 right-0 text-[8px] font-bold text-muted-foreground/30 uppercase tracking-widest pointer-events-none">
                         Embedded State
                       </div>
-                    )}
 
-                    <div
-                      className={cn(
-                        "w-full transition-all duration-500",
-                        embedType === "standard" || embedType === "popup"
-                          ? "bg-transparent border-2 border-dashed border-border rounded-lg overflow-hidden"
-                          : "bg-background rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-border",
-                      )}
-                      style={{
-                        height: dynamicHeight ? "auto" : height,
-                      }}
-                    >
                       <div
                         className={cn(
-                          "w-full h-full",
-                          !dynamicHeight
-                            ? "overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 p-8"
-                            : "p-8 md:p-12",
+                          "w-full transition-all duration-500 border-2 border-dashed border-border rounded-lg overflow-hidden",
+                          transparentBackground
+                            ? "bg-[repeating-conic-gradient(#e8e8e8_0%_25%,white_0%_50%)] bg-[length:12px_12px]"
+                            : "bg-background",
                         )}
+                        style={{
+                          height: dynamicHeight ? "auto" : height,
+                        }}
                       >
-                        <FormPreviewFromPlate
-                          content={content}
-                          title={hideTitle ? "" : doc.title}
-                          icon={doc.icon ?? undefined}
-                          cover={doc.cover ?? undefined}
-                          onSubmit={async () => {}}
-                          hideTitle={hideTitle}
-                        />
+                        <div
+                          className={cn(
+                            "w-full h-full",
+                            !dynamicHeight &&
+                              "overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20",
+                            alignLeft ? "max-w-[600px]" : "",
+                          )}
+                        >
+                          <FormPreviewFromPlate
+                            content={content}
+                            title={hideTitle ? "" : doc.title}
+                            icon={showEmoji ? (doc.icon ?? undefined) : undefined}
+                            cover={doc.cover ?? undefined}
+                            onSubmit={async () => {}}
+                            hideTitle={hideTitle}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="space-y-2 pt-4 opacity-20">
                     <div className="w-full h-1.5 bg-muted/50 rounded-full" />
@@ -159,58 +165,88 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
               </div>
             </div>
 
-            {/* Popup overlay and floating popup */}
+            {/* Popup overlay, floating popup, and trigger bubble */}
             {embedType === "popup" && (
               <div className="absolute inset-0 flex flex-col pointer-events-none">
-                {darkOverlay && (
-                  <div className="absolute inset-0 bg-black/40 z-10 transition-opacity duration-300 pointer-events-auto" />
+                {/* Dark overlay — only when popup is open */}
+                {darkOverlay && isPopupOpen && (
+                  <div
+                    className="absolute inset-0 bg-black/40 z-10 transition-opacity duration-300 pointer-events-auto"
+                    onClick={() => setIsPopupOpen(false)}
+                  />
                 )}
 
-                <div
-                  className={cn(
-                    "absolute bg-background rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.15)] border border-border overflow-hidden flex flex-col transition-all duration-300 z-20 pointer-events-auto",
-                    popupPosition === "center"
-                      ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-                      : popupPosition === "bottom-left"
-                        ? "bottom-12 left-12"
-                        : "bottom-12 right-12",
-                  )}
-                  style={{ width: popupWidth }}
-                >
-                  {/* Close button */}
-                  <div className="absolute top-4 right-4 z-30 pointer-events-auto">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 hover:bg-muted text-muted-foreground bg-background/50 backdrop-blur-sm rounded-full shadow-sm"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  {/* Popup form content */}
-                  <div className="overflow-y-auto max-h-[650px]">
-                    <FormPreviewFromPlate
-                      content={content}
-                      title={hideTitle ? "" : doc.title}
-                      icon={doc.icon ?? undefined}
-                      cover={doc.cover ?? undefined}
-                      onSubmit={async () => {}}
-                      hideTitle={hideTitle}
-                    />
-                  </div>
-
-                  {/* Popup branding */}
-                  {branding && (
-                    <div className="py-3 flex justify-center bg-primary/10 border-t border-border shrink-0">
-                      <div className="flex items-center gap-1.5 text-[12px] font-semibold text-primary">
-                        <span>Made with</span>
-                        <Sparkles className="h-3 w-3 fill-primary text-primary" />
-                        <span>{APP_NAME}</span>
-                      </div>
+                {/* Popup panel */}
+                {isPopupOpen && (
+                  <div
+                    className={cn(
+                      "absolute bg-background rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.15)] border border-border overflow-hidden flex flex-col transition-all duration-300 z-20 pointer-events-auto",
+                      popupPosition === "center"
+                        ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                        : popupPosition === "bottom-left"
+                          ? "bottom-12 left-12"
+                          : "bottom-12 right-12",
+                    )}
+                    style={{ width: popupWidth }}
+                  >
+                    {/* Close button */}
+                    <div className="absolute top-4 right-4 z-30 pointer-events-auto">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-muted text-muted-foreground bg-background/50 backdrop-blur-sm rounded-full shadow-sm"
+                        onClick={() => setIsPopupOpen(false)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
-                  )}
-                </div>
+
+                    {/* Popup form content */}
+                    <div className="overflow-y-auto max-h-[650px]">
+                      <FormPreviewFromPlate
+                        content={content}
+                        title={hideTitle ? "" : doc.title}
+                        icon={showEmoji ? (doc.icon ?? undefined) : undefined}
+                        cover={doc.cover ?? undefined}
+                        onSubmit={async () => {}}
+                        hideTitle={hideTitle}
+                      />
+                    </div>
+
+                    {/* Popup branding */}
+                    {branding && (
+                      <div className="py-3 flex justify-center bg-primary/10 border-t border-border shrink-0">
+                        <div className="flex items-center gap-1.5 text-[12px] font-semibold text-primary">
+                          <span>Made with</span>
+                          <Sparkles className="h-3 w-3 fill-primary text-primary" />
+                          <span>{APP_NAME}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Trigger bubble — shown when popup is closed */}
+                {!isPopupOpen && (
+                  <button
+                    type="button"
+                    onClick={() => setIsPopupOpen(true)}
+                    className={cn(
+                      "absolute z-20 pointer-events-auto w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer",
+                      popupPosition === "bottom-left"
+                        ? "bottom-6 left-6"
+                        : "bottom-6 right-6",
+                    )}
+                  >
+                    {showEmoji && doc.icon ? (
+                      <span className="text-2xl leading-none">{doc.icon}</span>
+                    ) : (
+                      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                      </svg>
+                    )}
+                  </button>
+                )}
               </div>
             )}
           </div>

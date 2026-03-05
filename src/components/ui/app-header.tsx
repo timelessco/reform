@@ -28,6 +28,7 @@ import {
 } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
 import {
+  ChevronsRight,
   Loader2,
   MoreHorizontal,
   Pencil,
@@ -295,14 +296,11 @@ export function AppHeader({
     >
       {/* Left Section: Breadcrumbs */}
       <div className="flex items-center gap-2 min-w-0 flex-1">
-        {(isLandingPage || state === "collapsed") && (
+        {isLandingPage && (
           <Button
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-muted-foreground -ml-1 group relative flex items-center justify-center transition-all duration-300"
-            onClick={() => {
-              if (!isLandingPage) toggleMainSidebar();
-            }}
             render={
               () => (
 <svg width="16" height="21" viewBox="0 0 16 21" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -312,6 +310,26 @@ export function AppHeader({
               )
             }
           />
+        )}
+        {!isLandingPage && state === "collapsed" && (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground -ml-1"
+                  onClick={() => toggleMainSidebar()}
+                />
+              }
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p className="font-medium">Expand sidebar</p>
+              <p className="text-xs text-muted-foreground">{formatForDisplay(HOTKEYS.DISMISS_SIDEBARS)}</p>
+            </TooltipContent>
+          </Tooltip>
         )}  
         {/* Breadcrumb: Workspace / Form Name / Page */}
         {isFormBuilder && savedDocs?.[0] && (
@@ -448,7 +466,7 @@ export function AppHeader({
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground rounded-lg"
               onClick={() => toggleEditorSidebar("settings")}
             >
               <SettingsIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />

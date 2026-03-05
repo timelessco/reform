@@ -2,20 +2,16 @@ import { useCallback, useMemo } from "react";
 import { Info, X } from "lucide-react";
 import { APP_NAME } from "@/lib/app-config";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
 import { formCollection, localFormCollection } from "@/db-collections";
 import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { SidebarSection } from "@/components/ui/sidebar-section";
+import { ConfigCard, ConfigRow } from "@/components/form-builder/embed-config-panel";
 import {
   StyleSelect,
-  StyleToggle,
   StyleColorPicker,
   StyleNumberInput,
 } from "@/components/ui/style-controls";
@@ -171,6 +167,18 @@ const RADIUS_OPTIONS_WITH_DESC: {
   },
 ];
 
+const CONFIG_INPUT_CLS = "!rounded-none !border-0 !bg-secondary !h-[34px]";
+const CONFIG_SELECT_CLS =
+  "!bg-secondary !rounded-none [&>button]:!rounded-none [&>button]:!border-0 [&>button]:!bg-secondary [&>button]:!h-[34px]";
+
+function ProBadge() {
+  return (
+    <div className="bg-teal-100 dark:bg-teal-700/20 text-teal-700 dark:text-teal-400 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
+      Pro
+    </div>
+  );
+}
+
 interface CustomizeSidebarProps {
   formId: string;
   isLocal?: boolean;
@@ -300,258 +308,246 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
 
   return (
     <Sidebar
+      side="right"
       collapsible="none"
       className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out"
     >
-      <SidebarHeader className="px-4 h-[52px] border-b border-border/40 flex flex-row items-center justify-between shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="text-[13px] font-medium tracking-[0.13px] text-foreground/80">
-            Customize
-          </span>
+      {/* Header — matches share sidebar */}
+      <SidebarHeader className="pt-2 pb-1 pl-1 shrink-0">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground px-2.5">Customize</h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            onClick={closeSidebar}
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-          onClick={closeSidebar}
-        >
-          <X className="h-4 w-4" />
-        </Button>
       </SidebarHeader>
 
-      <SidebarContent className="p-0 overflow-y-auto custom-scrollbar">
-      <StyleToggle
-                  label="Dark Mode"
-                  value={activeMode === "dark"}
-                  onChange={handleModeToggle}
-                />
-        <div className="px-4 pt-3 pb-12">
-          <Accordion defaultValue={["theme"]} className="w-full space-y-0">
-            {/* ── Theme ── */}
-            <AccordionItem value="theme" className="border-b-0">
-              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline">
-                Theme
-              </AccordionTrigger>
-              <AccordionContent className="space-y-2 pt-1 pb-2 px-1">
-                <StyleSelect
-                  label="Style"
-                  value={activePreset}
-                  onChange={(v) => selectStyle(v)}
-                  options={STYLE_OPTIONS}
-                />
-                <StyleSelect
-                  label="Accent"
-                  value={activeThemeColor}
-                  onChange={(v) => {
-                    updateFields({
-                      themeColor: v,
-                      preset: "custom",
-                    });
-                  }}
-                  options={THEME_COLOR_OPTIONS.map((o) => ({
-                    ...o,
-                    swatchColor: THEME_COLORS[o.value]?.primary,
-                  }))}
-                />
-                <StyleSelect
-                  label="Base"
-                  value={activeBaseColor}
-                  onChange={(v) => {
-                    updateFields({
-                      baseColor: v,
-                      preset: "custom",
-                    });
-                  }}
-                  options={BASE_COLOR_OPTIONS.map((o) => ({
-                    ...o,
-                    swatchColor: activeBaseColors[o.value]?.muted,
-                  }))}
-                />
-                <StyleSelect
-                  label="Font"
-                  value={activeFont}
-                  onChange={(v) => updateWithCustomPreset("font", v)}
-                  options={FONT_OPTIONS.map((f) => ({ label: f, value: f }))}
-                />
-                <StyleSelect
-                  label="Radius"
-                  value={activeRadius}
-                  onChange={(v) => updateWithCustomPreset("radius", v)}
-                  options={RADIUS_OPTIONS_WITH_DESC}
-                />
-              </AccordionContent>
-            </AccordionItem>
+      {/* Scrollable content */}
+      <SidebarContent>
+        <div className="p-2 space-y-3">
+          {/* Dark Mode */}
+          <ConfigCard>
+            <ConfigRow label="Dark Mode" variant="switch">
+              <Switch
+                checked={activeMode === "dark"}
+                onCheckedChange={handleModeToggle}
+              />
+            </ConfigRow>
+          </ConfigCard>
 
-            {/* ── Advanced Banner ── */}
-            <div className="mx-0 mt-4 mb-2 shrink-0 overflow-hidden rounded-xl bg-free-plan-card-bg p-3 shadow-sm border border-border/40">
-              <div className="flex items-center gap-2 mb-2 justify-between">
-                <span className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider">
-                  Advanced
-                </span>
-                <div className="bg-teal-100 dark:bg-teal-700/20 text-teal-700 dark:text-teal-400 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
-                  Pro
-                </div>
-              </div>
-              <p className="text-[12px] text-muted-foreground tracking-[0.13px] leading-[1.48] mb-3">
-                Preview advanced customization. {APP_NAME} Pro is required to
-                apply it to the published form.
-              </p>
-              <Button
-                variant="outline"
-                className="w-full h-7 text-[13px] font-medium text-sidebar-foreground bg-background border border-border hover:bg-muted rounded-lg shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
-              >
-                Upgrade to Pro
-              </Button>
+          {/* Theme section */}
+          <SidebarSection label="Theme" className="pb-2.75" action={<></>}>
+            <ConfigCard>
+              <StyleSelect
+                label="Style"
+                value={activePreset}
+                onChange={(v) => selectStyle(v)}
+                options={STYLE_OPTIONS}
+                className={CONFIG_SELECT_CLS}
+              />
+              <StyleSelect
+                label="Accent"
+                value={activeThemeColor}
+                onChange={(v) => {
+                  updateFields({
+                    themeColor: v,
+                    preset: "custom",
+                  });
+                }}
+                options={THEME_COLOR_OPTIONS.map((o) => ({
+                  ...o,
+                  swatchColor: THEME_COLORS[o.value]?.primary,
+                }))}
+                className={CONFIG_SELECT_CLS}
+              />
+              <StyleSelect
+                label="Base"
+                value={activeBaseColor}
+                onChange={(v) => {
+                  updateFields({
+                    baseColor: v,
+                    preset: "custom",
+                  });
+                }}
+                options={BASE_COLOR_OPTIONS.map((o) => ({
+                  ...o,
+                  swatchColor: activeBaseColors[o.value]?.muted,
+                }))}
+                className={CONFIG_SELECT_CLS}
+              />
+              <StyleSelect
+                label="Font"
+                value={activeFont}
+                onChange={(v) => updateWithCustomPreset("font", v)}
+                options={FONT_OPTIONS.map((f) => ({ label: f, value: f }))}
+                className={CONFIG_SELECT_CLS}
+              />
+              <StyleSelect
+                label="Radius"
+                value={activeRadius}
+                onChange={(v) => updateWithCustomPreset("radius", v)}
+                options={RADIUS_OPTIONS_WITH_DESC}
+                className={CONFIG_SELECT_CLS}
+              />
+            </ConfigCard>
+          </SidebarSection>
+
+          {/* Advanced Banner */}
+          <div className="shrink-0 overflow-hidden rounded-xl bg-free-plan-card-bg p-3 shadow-sm border border-border/40">
+            <div className="flex items-center gap-2 mb-2 justify-between">
+              <span className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider">
+                Advanced
+              </span>
+              <ProBadge />
             </div>
+            <p className="text-[12px] text-muted-foreground tracking-[0.13px] leading-[1.48] mb-3">
+              Preview advanced customization. {APP_NAME} Pro is required to
+              apply it to the published form.
+            </p>
+            <Button
+              variant="outline"
+              className="w-full h-7 text-[13px] font-medium text-sidebar-foreground bg-background border border-border hover:bg-muted rounded-lg shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
+            >
+              Upgrade to Pro
+            </Button>
+          </div>
 
-            {/* Layout */}
-            <AccordionItem value="layout" className="border-b-0">
-              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline">
-                <div className="flex items-center gap-2">
-                  Layout
-                  <div className="bg-teal-100 text-teal-700 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
-                    Pro
-                  </div>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="space-y-2 pt-1 pb-2">
-                <StyleNumberInput
-                  label="Page Width"
-                  value={getValue("pageWidth") || "50%"}
-                  onChange={(v) => updateWithCustomPreset("pageWidth", v)}
-                  min={30}
-                  max={100}
-                  step={5}
-                  unit="%"
-                />
-                <StyleNumberInput
-                  label="Cover Height"
-                  value={getValue("coverHeight") || "200px"}
-                  onChange={(v) => updateWithCustomPreset("coverHeight", v)}
-                  min={100}
-                  max={400}
-                  step={10}
-                  unit="px"
-                  displayUnit=""
-                />
-                <StyleNumberInput
-                  label="Logo Width"
-                  value={getValue("logoWidth") || "100px"}
-                  onChange={(v) => updateWithCustomPreset("logoWidth", v)}
-                  min={40}
-                  max={200}
-                  step={4}
-                  unit="px"
-                  displayUnit=""
-                />
-                <StyleNumberInput
-                  label="Input Width"
-                  value={getValue("inputWidth") || "60%"}
-                  onChange={(v) => updateWithCustomPreset("inputWidth", v)}
-                  min={20}
-                  max={100}
-                  step={5}
-                  unit="%"
-                />
-              </AccordionContent>
-            </AccordionItem>
+          {/* Layout */}
+          <SidebarSection
+            label="Layout"
+            action={<ProBadge />}
+          >
+            <ConfigCard>
+              <StyleNumberInput
+                label="Page Width"
+                value={getValue("pageWidth") || "50%"}
+                onChange={(v) => updateWithCustomPreset("pageWidth", v)}
+                min={30}
+                max={100}
+                step={5}
+                unit="%"
+                className={CONFIG_INPUT_CLS}
+              />
+              <StyleNumberInput
+                label="Cover Height"
+                value={getValue("coverHeight") || "200px"}
+                onChange={(v) => updateWithCustomPreset("coverHeight", v)}
+                min={100}
+                max={400}
+                step={10}
+                unit="px"
+                displayUnit=""
+                className={CONFIG_INPUT_CLS}
+              />
+              <StyleNumberInput
+                label="Logo Width"
+                value={getValue("logoWidth") || "100px"}
+                onChange={(v) => updateWithCustomPreset("logoWidth", v)}
+                min={40}
+                max={200}
+                step={4}
+                unit="px"
+                displayUnit=""
+                className={CONFIG_INPUT_CLS}
+              />
+              <StyleNumberInput
+                label="Input Width"
+                value={getValue("inputWidth") || "60%"}
+                onChange={(v) => updateWithCustomPreset("inputWidth", v)}
+                min={20}
+                max={100}
+                step={5}
+                unit="%"
+                className={CONFIG_INPUT_CLS}
+              />
+            </ConfigCard>
+          </SidebarSection>
 
-            {/* Colors */}
-            <AccordionItem value="colors" className="border-b-0">
-              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline">
-                <div className="flex items-center gap-2">
-                  Colors
-                  <div className="bg-teal-100 text-teal-700 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
-                    Pro
-                  </div>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="space-y-2 pt-1 pb-2">
-                <AdvancedColorPickers
-                  customization={customization}
-                  updateField={updateWithCustomPreset}
-                />
-              </AccordionContent>
-            </AccordionItem>
+          {/* Colors */}
+          <SidebarSection
+            label="Colors"
+            action={<ProBadge />}
+          >
+            <ConfigCard>
+              <AdvancedColorPickers
+                customization={customization}
+                updateField={updateWithCustomPreset}
+              />
+            </ConfigCard>
+          </SidebarSection>
 
-            {/* Typography */}
-            <AccordionItem value="typography" className="border-b-0">
-              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline">
-                <div className="flex items-center gap-2">
-                  Typography
-                  <div className="bg-teal-100 text-teal-700 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
-                    Pro
-                  </div>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="space-y-2 pt-1 pb-2">
-                <StyleNumberInput
-                  label="Font Size"
-                  value={getValue("baseFontSize") || "16px"}
-                  onChange={(v) => updateWithCustomPreset("baseFontSize", v)}
-                  min={12}
-                  max={24}
-                  step={1}
-                  unit="px"
-                  displayUnit=""
-                />
-                <StyleNumberInput
-                  label="Letter Spacing"
-                  value={getValue("letterSpacing") || "0.02em"}
-                  onChange={(v) => updateWithCustomPreset("letterSpacing", v)}
-                  min={0}
-                  max={0.2}
-                  step={0.005}
-                  unit="em"
-                  displayUnit=""
-                />
-              </AccordionContent>
-            </AccordionItem>
+          {/* Typography */}
+          <SidebarSection
+            label="Typography"
+            action={<ProBadge />}
+          >
+            <ConfigCard>
+              <StyleNumberInput
+                label="Font Size"
+                value={getValue("baseFontSize") || "16px"}
+                onChange={(v) => updateWithCustomPreset("baseFontSize", v)}
+                min={12}
+                max={24}
+                step={1}
+                unit="px"
+                displayUnit=""
+                className={CONFIG_INPUT_CLS}
+              />
+              <StyleNumberInput
+                label="Letter Spacing"
+                value={getValue("letterSpacing") || "0.02em"}
+                onChange={(v) => updateWithCustomPreset("letterSpacing", v)}
+                min={0}
+                max={0.2}
+                step={0.005}
+                unit="em"
+                displayUnit=""
+                className={CONFIG_INPUT_CLS}
+              />
+            </ConfigCard>
+          </SidebarSection>
 
-            {/* Custom CSS */}
-            <AccordionItem value="css" className="border-b-0">
-              <AccordionTrigger className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider py-2 hover:no-underline">
-                <div className="flex items-center gap-2">
-                  Custom CSS
-                  <div className="bg-teal-100 text-teal-700 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
-                    Pro
-                  </div>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="pt-1 pb-2 space-y-2 px-1">
-                <div className="rounded-lg overflow-hidden border border-border/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                  <Textarea
-                    value={getValue("customCss")}
-                    onChange={(e) =>
-                      updateWithCustomPreset("customCss", e.target.value)
-                    }
-                    className="font-mono text-[11px] h-32 bg-[#1e1e1e] text-[#d4d4d4] border-0 rounded-none focus-visible:ring-0 p-3 leading-relaxed"
-                    placeholder=".bf-themed { ... }"
-                    spellCheck={false}
-                  />
-                </div>
-                <div className="flex items-center gap-1.5 px-1">
-                  <Tooltip>
-                    <TooltipTrigger
-                      render={
-                        <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
-                      }
-                    />
-                    <TooltipContent
-                      side="bottom"
-                      className="max-w-[240px] text-[11px]"
-                    >
-                      Supports shadcn tokens: --bf-primary, --bf-background,
-                      --bf-foreground, etc.
-                    </TooltipContent>
-                  </Tooltip>
-                  <span className="text-[11px] text-muted-foreground/60">
-                    Use --bf-* tokens for overrides
-                  </span>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+          {/* Custom CSS */}
+          <SidebarSection
+            label="Custom CSS"
+            action={<ProBadge />}
+          >
+            <div className="rounded-lg overflow-hidden border border-border/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+              <Textarea
+                value={getValue("customCss")}
+                onChange={(e) =>
+                  updateWithCustomPreset("customCss", e.target.value)
+                }
+                className="font-mono text-[11px] h-32 bg-[#1e1e1e] text-[#d4d4d4] border-0 rounded-none focus-visible:ring-0 p-3 leading-relaxed"
+                placeholder=".bf-themed { ... }"
+                spellCheck={false}
+              />
+            </div>
+            <div className="flex items-center gap-1.5 px-1 pt-2">
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                  }
+                />
+                <TooltipContent
+                  side="bottom"
+                  className="max-w-[240px] text-[11px]"
+                >
+                  Supports shadcn tokens: --bf-primary, --bf-background,
+                  --bf-foreground, etc.
+                </TooltipContent>
+              </Tooltip>
+              <span className="text-[11px] text-muted-foreground/60">
+                Use --bf-* tokens for overrides
+              </span>
+            </div>
+          </SidebarSection>
         </div>
       </SidebarContent>
     </Sidebar>
@@ -620,6 +616,7 @@ function AdvancedColorPickers({
             label={label}
             value={currentValue}
             onChange={(v) => updateField(prefixedKey, v)}
+            className="!rounded-none !border-0 !bg-secondary !h-[34px]"
           />
         );
       })}

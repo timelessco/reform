@@ -6,6 +6,7 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { StyleNumberInput } from "@/components/ui/style-controls";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 
 export interface EmbedOptions {
@@ -57,7 +58,7 @@ interface EmbedConfigPanelProps {
 
 /* ─── Layout helpers matching Figma node 24119:5595 ─── */
 
-function ConfigCard({ children }: { children: React.ReactNode }) {
+export function ConfigCard({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-px [&>:first-child]:rounded-t-[8px] [&>:last-child]:rounded-b-[8px]">
       {children}
@@ -70,7 +71,7 @@ function ConfigCard({ children }: { children: React.ReactNode }) {
  *   Select / value rows → pl-[10px] pr-[3px] py-[7px] gap-[6px]
  *   Switch rows          → pl-[10px] pr-[6px] py-[7px] gap-[6px]
  */
-function ConfigRow({
+export function ConfigRow({
   label,
   children,
   variant = "default",
@@ -251,20 +252,12 @@ function CustomizeSection({
         <form.Field name="hideOnSubmit">
           {(field: any) => (
             <ConfigRow label="Hide on submit">
-              <Select
-                value={field.state.value ? "yes" : "no"}
-                onValueChange={(value: string | null) =>
-                  field.handleChange(value === "yes")
+              <Switch
+                checked={field.state.value}
+                onCheckedChange={(checked: boolean) =>
+                  field.handleChange(checked)
                 }
-              >
-                <SelectTrigger className={selectTriggerCls}>
-                  {field.state.value ? "Yes" : "No"}
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="yes">Yes</SelectItem>
-                  <SelectItem value="no">No</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </ConfigRow>
           )}
         </form.Field>
@@ -293,15 +286,19 @@ function CustomizeSection({
         {/* Popup Width */}
         <form.Field name="popupWidth">
           {(field: any) => (
-            <ConfigRow label="Popup Width">
-              <ScrubValue
-                value={field.state.value}
-                onChange={(v) => field.handleChange(v)}
-                min={200}
-                max={600}
-                unit="px"
-              />
-            </ConfigRow>
+            <StyleNumberInput
+              label="Popup Width"
+              value={`${field.state.value}px`}
+              onChange={(v) => {
+                const num = parseInt(v);
+                if (!isNaN(num)) field.handleChange(num);
+              }}
+              min={200}
+              max={600}
+              step={1}
+              unit="px"
+              className="!rounded-none !border-0 !bg-secondary !h-[34px]"
+            />
           )}
         </form.Field>
 
@@ -335,20 +332,30 @@ function CustomizeSection({
   if (embedType === "standard") {
     return (
       <ConfigCard>
-        {/* Height */}
-        <form.Field name="height">
-          {(field: any) => (
-            <ConfigRow label="Height">
-              <ScrubValue
-                value={field.state.value}
-                onChange={(v) => field.handleChange(v)}
-                min={200}
-                max={1000}
-                unit="px"
-              />
-            </ConfigRow>
+        {/* Height — disabled when Dynamic Height is on */}
+        <form.Subscribe selector={(s: any) => s.values.dynamicHeight}>
+          {(dynamicHeight: boolean) => (
+            <form.Field name="height">
+              {(field: any) => (
+                <div className={dynamicHeight ? "opacity-40 pointer-events-none" : ""}>
+                  <StyleNumberInput
+                    label="Height"
+                    value={`${field.state.value}px`}
+                    onChange={(v) => {
+                      const num = parseInt(v);
+                      if (!isNaN(num)) field.handleChange(num);
+                    }}
+                    min={200}
+                    max={1000}
+                    step={1}
+                    unit="px"
+                    className="!rounded-none !border-0 !bg-secondary !h-[34px]"
+                  />
+                </div>
+              )}
+            </form.Field>
           )}
-        </form.Field>
+        </form.Subscribe>
 
         {/* Dynamic Height */}
         <form.Field name="dynamicHeight">
