@@ -1,6 +1,6 @@
 import { useEquationElement, useEquationInput } from "@platejs/math/react";
 import { BlockSelectionPlugin } from "@platejs/selection/react";
-import { CornerDownLeftIcon, RadicalIcon } from "lucide-react";
+import { CornerDownLeftIcon, RadicalIcon } from "@/components/ui/icons";
 import type { TEquationElement } from "platejs";
 import type { PlateElementProps } from "platejs/react";
 import {

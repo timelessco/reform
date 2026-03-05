@@ -1,26 +1,28 @@
 import {
-  CalendarIcon,
-  ChevronRightIcon,
   Columns3Icon,
-  FileCodeIcon,
-  FilmIcon,
   Heading1Icon,
   Heading2Icon,
   Heading3Icon,
-  ImageIcon,
   Link2Icon,
-  ListIcon,
-  ListOrderedIcon,
-  MinusIcon,
   PenToolIcon,
   PilcrowIcon,
-  PlusIcon,
   QuoteIcon,
-  RadicalIcon,
   SquareIcon,
   TableIcon,
   TableOfContentsIcon,
 } from "lucide-react";
+import {
+  CalendarIcon,
+  ChevronRightIcon,
+  FileCodeIcon,
+  FilmIcon,
+  ImageIcon,
+  ListIcon,
+  ListOrderedIcon,
+  MinusIcon,
+  PlusIcon,
+  RadicalIcon,
+} from "@/components/ui/icons";
 import { KEYS } from "platejs";
 import { type PlateEditor, useEditorRef } from "platejs/react";
 import * as React from "react";

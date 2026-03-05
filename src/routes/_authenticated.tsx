@@ -32,7 +32,7 @@ import {
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { Input } from "@/components/ui/input";
 import Loader from "@/components/ui/loader";
-import { Logo } from "@/components/ui/logo";
+import { Logo, LogoToggle } from "@/components/ui/logo";
 import { NotFound } from "@/components/ui/not-found";
 import {
   RIGHT_SIDEBAR_WIDTH_DEFAULT,
@@ -59,11 +59,20 @@ import { SidebarSection } from "@/components/ui/sidebar-section";
 import {
   BellIcon,
   ChevronsLeftIcon,
+  ChevronsRightIcon,
+  FileTextIcon,
+  FilterIcon,
+  HelpCircleIcon,
   HomeIcon,
+  LogOutIcon,
+  MoreHorizontalIcon,
+  PlusIcon,
   SearchIcon,
   SettingsIcon,
   StarIcon,
-} from "@/components/ui/sidebar-icons";
+  Trash2Icon,
+  UsersIcon,
+} from "@/components/ui/icons";
 import { UserMenuMinimal } from "@/components/user-menu-minimal";
 import {
   WorkspaceItemMinimal,
@@ -121,22 +130,8 @@ import {
   useParams,
   useRouter,
 } from "@tanstack/react-router";
-import {
-  ChevronsLeft,
-  ChevronsRight,
-  FileText,
-  Filter,
-  HelpCircle,
-  Home,
-  LogOut,
-  MoreHorizontal,
-  Plus,
-  Settings,
-  Trash2,
-  Undo2,
-  Users,
-  Zap,
-} from "lucide-react";
+import { Zap } from "lucide-react";
+import { Undo2Icon } from "@/components/ui/icons";
 
 import type * as React from "react";
 import {
@@ -426,25 +421,21 @@ function AppSidebar() {
   return (
     <>
       <Sidebar className="border-r-[0.5px] bg-background h-screen">
-        <SidebarHeader className="h-12 pl-3.5 pr-2 pt-2 pb-0 flex flex-row items-center justify-between group/header">
-          <Logo className="h-5.5 w-5.5 text-sidebar-foreground" />
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => toggleSidebar()}
-                    className="bg-muted/60 opacity-0 group-hover/header:opacity-100"
-                    render={<ChevronsLeftIcon className="h-4 w-4" />}
-                  />
-                }
-              />
-              <TooltipContent side="bottom" align="end">
-                <p className="font-medium">Collapse sidebar</p>
-                <p className="text-xs text-muted-foreground">{formatForDisplay(HOTKEYS.DISMISS_SIDEBARS)}</p>
-              </TooltipContent>
-            </Tooltip>
+        <SidebarHeader className="h-12 pl-2 pr-2 pt-2 pb-0 flex flex-row items-center">
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <LogoToggle
+                  direction="left"
+                  onClick={() => toggleSidebar()}
+                />
+              }
+            />
+            <TooltipContent side="bottom" align="start">
+              <p className="font-medium">Collapse sidebar</p>
+              <p className="text-xs text-muted-foreground">{formatForDisplay(HOTKEYS.DISMISS_SIDEBARS)}</p>
+            </TooltipContent>
+          </Tooltip>
         </SidebarHeader>
 
         <SidebarContent className="gap-0">
@@ -526,7 +517,6 @@ function AppSidebar() {
         </SidebarContent>
 
         <SidebarFooter className="p-0 pt-2 pb-2 flex shrink-0 flex-col gap-4">
-          <FreePlanCard />
           <UserMenuMinimal onOpenTrash={() => setTrashDialogOpen(true)} />
         </SidebarFooter>
         {/* <SidebarRail /> */}
@@ -572,7 +562,7 @@ function AppSidebar() {
                     }
                   }}
                 >
-                  <Plus className="mr-2 h-4 w-4" />
+                  <PlusIcon className="mr-2 h-4 w-4" />
                   <span>New form</span>
                 </CommandItem>
                 <CommandItem
@@ -590,7 +580,7 @@ function AppSidebar() {
                     setIsPaletteOpen(false);
                   }}
                 >
-                  <Plus className="mr-2 h-4 w-4" />
+                  <PlusIcon className="mr-2 h-4 w-4" />
                   <span>New workspace</span>
                 </CommandItem>
               </CommandGroup>
@@ -602,7 +592,7 @@ function AppSidebar() {
                     setIsPaletteOpen(false);
                   }}
                 >
-                  <Home className="mr-2 h-4 w-4" />
+                  <HomeIcon className="mr-2 h-4 w-4" />
                   <span>Go to home</span>
                 </CommandItem>
                 <CommandItem
@@ -611,7 +601,7 @@ function AppSidebar() {
                     setIsPaletteOpen(false);
                   }}
                 >
-                  <Settings className="mr-2 h-4 w-4" />
+                  <SettingsIcon className="mr-2 h-4 w-4" />
                   <span>Go to settings</span>
                 </CommandItem>
                 <CommandItem
@@ -620,7 +610,7 @@ function AppSidebar() {
                     setIsPaletteOpen(false);
                   }}
                 >
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2Icon className="mr-2 h-4 w-4" />
                   <span>Trash</span>
                 </CommandItem>
                 <CommandItem
@@ -629,7 +619,7 @@ function AppSidebar() {
                     setIsPaletteOpen(false);
                   }}
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
+                  <LogOutIcon className="mr-2 h-4 w-4" />
                   <span>Sign out</span>
                 </CommandItem>
               </CommandGroup>
@@ -736,7 +726,7 @@ function TrashDialog({
         <div className="max-h-[400px] overflow-y-auto">
           {archivedForms.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-              <Trash2 className="h-10 w-10 mb-3 opacity-30" />
+              <Trash2Icon className="h-10 w-10 mb-3 opacity-30" />
               <p className="text-sm">Trash is empty</p>
             </div>
           ) : (
@@ -747,7 +737,7 @@ function TrashDialog({
                   className="group flex items-center justify-between px-3 py-2 hover:bg-muted/50 rounded-md transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <FileTextIcon className="h-4 w-4 text-muted-foreground shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="text-[13px] font-medium text-foreground truncate">
                         {form.title || "Untitled"}
@@ -766,7 +756,7 @@ function TrashDialog({
                       className="h-7 w-7"
                       title="Restore"
                     >
-                      <Undo2 className="h-4 w-4" />
+                      <Undo2Icon className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -775,7 +765,7 @@ function TrashDialog({
                       className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
                       title="Delete permanently"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2Icon className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -794,7 +784,7 @@ function TrashDialog({
             size="icon-sm"
             className="h-7 w-7 text-muted-foreground/40 hover:text-muted-foreground"
           >
-            <HelpCircle className="h-4 w-4" />
+            <HelpCircleIcon className="h-4 w-4" />
           </Button>
         </div>
       </DialogContent>
@@ -925,13 +915,13 @@ function SidebarInbox() {
             className="h-6 w-7 mr-1"
             title="Collapse"
           >
-            <ChevronsLeft className="h-3.5 w-3.5" />
+            <ChevronsLeftIcon className="h-3.5 w-3.5" />
           </Button>
           <Button variant="ghost" size="icon-sm" className="h-6 w-6">
-            <Filter className="h-3.5 w-3.5" />
+            <FilterIcon className="h-3.5 w-3.5" />
           </Button>
           <Button variant="ghost" size="icon-sm" className="h-6 w-6">
-            <MoreHorizontal className="h-3.5 w-3.5" />
+            <MoreHorizontalIcon className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
@@ -961,7 +951,7 @@ function SidebarInbox() {
                     >
                       <div className="flex items-start gap-3">
                         <div className="h-8 w-8 rounded bg-foreground/5 flex items-center justify-center shrink-0">
-                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <UsersIcon className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-[12px] font-medium text-foreground leading-tight">
@@ -1031,51 +1021,6 @@ function SidebarInbox() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-// Free Plan Card - Figma node 23504-5269 (pixel-perfect)
-function FreePlanCard() {
-  return (
-    <div className="shrink-0 overflow-hidden rounded-xl bg-free-plan-card-bg px-3 pt-[15px] pb-3 mx-[9px] w-[204px] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.10),0px_0px_1px_0px_rgba(0,0,0,0.35)]">
-      <div className="flex items-start gap-2 mb-3">
-        <div className="shrink-0 size-5 p-1 flex items-center justify-center bg-teal-100 rounded-full">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            fill="none"
-          >
-            <title>Free Plan</title>
-            <path
-              d="M6.375 1.875L5.625 4.875H10.125L5.625 10.125L6.375 7.125H1.875L6.375 1.875Z"
-              fill="#0F736B"
-            />
-            <path
-              fillRule="evenodd"
-              clipRule="evenodd"
-              d="M6.60448 1.43079C6.8105 1.53721 6.91632 1.77133 6.86008 1.99629L6.2654 4.37503H10.125C10.3203 4.37503 10.4977 4.4887 10.5793 4.6661C10.6609 4.8435 10.6317 5.05216 10.5046 5.20042L6.00464 10.4504C5.85372 10.6265 5.60156 10.6757 5.39554 10.5693C5.18951 10.4628 5.08369 10.2287 5.13994 10.0038L5.73462 7.62503H1.87501C1.67974 7.62503 1.50234 7.51135 1.42075 7.33395C1.33916 7.15655 1.3683 6.94789 1.49538 6.79963L5.99538 1.54963C6.14629 1.37357 6.39845 1.32437 6.60448 1.43079ZM2.96212 6.62503H6.37501C6.52898 6.62503 6.67436 6.69596 6.76911 6.81732C6.86386 6.93868 6.89742 7.09692 6.86008 7.24629L6.62378 8.1915L9.0379 5.37503H5.62501C5.47104 5.37503 5.32566 5.30409 5.2309 5.18273C5.13615 5.06137 5.10259 4.90313 5.13994 4.75376L5.37624 3.80855L2.96212 6.62503Z"
-              fill="#0F736B"
-            />
-          </svg>
-        </div>
-        <span className="text-[14px] font-medium text-foreground tracking-[0.14px] leading-[1.46]">
-          Free Plan
-        </span>
-      </div>
-      <p
-        className="text-[13px] font-normal leading-[1.48] tracking-[0.13px] mb-4 mr-3 text-muted-foreground"
-      >
-        Try Booster to capture high-quality inbound and outbound leads
-      </p>
-      <Button
-        variant="secondary"
-        className="w-full h-7 text-sm px-1.5 font-medium text-accent-foreground bg-background hover:bg-muted rounded-lg shadow cursor-pointer"
-      >
-        Try for free
-      </Button>
     </div>
   );
 }

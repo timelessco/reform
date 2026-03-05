@@ -1,5 +1,5 @@
 import { useToggleButton, useToggleButtonState } from "@platejs/toggle/react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRightIcon } from "@/components/ui/icons";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement } from "platejs/react";
 
@@ -19,7 +19,7 @@ export function ToggleElement(props: PlateElementProps) {
         contentEditable={false}
         {...buttonProps}
       >
-        <ChevronRight
+        <ChevronRightIcon
           className={
             open
               ? "rotate-90 transition-transform duration-75"

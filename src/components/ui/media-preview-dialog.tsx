@@ -5,7 +5,7 @@ import {
   useScaleInput,
 } from "@platejs/media/react";
 import { cva } from "class-variance-authority";
-import { ArrowLeft, ArrowRight, Download, Minus, Plus, X } from "lucide-react";
+import { ArrowLeftIcon, ArrowRightIcon, DownloadIcon, MinusIcon, PlusIcon, XIcon } from "@/components/ui/icons";
 import { useEditorRef } from "platejs/react";
 import * as React from "react";
 
@@ -99,7 +99,7 @@ export function MediaPreviewDialog() {
                   "h-auto",
                 )}
               >
-                <ArrowLeft />
+                <ArrowLeftIcon />
               </Button>
               {(currentUrlIndex ?? 0) + 1}
               <Button
@@ -112,7 +112,7 @@ export function MediaPreviewDialog() {
                   "h-auto",
                 )}
               >
-                <ArrowRight />
+                <ArrowRightIcon />
               </Button>
             </div>
             <div className="flex">
@@ -126,7 +126,7 @@ export function MediaPreviewDialog() {
                 )}
                 {...zommOutProps}
               >
-                <Minus className="size-4" />
+                <MinusIcon className="size-4" />
               </Button>
               <div className="mx-px">
                 {isEditingScale ? (
@@ -148,15 +148,15 @@ export function MediaPreviewDialog() {
                 )}
                 {...zoomInProps}
               >
-                <Plus className="size-4" />
+                <PlusIcon className="size-4" />
               </Button>
             </div>
             {/* TODO: downLoad the image */}
             <Button variant="ghost" className={cn(buttonVariants(), "h-auto")}>
-              <Download className="size-4" />
+              <DownloadIcon className="size-4" />
             </Button>
             <Button variant="ghost" {...closeProps} className={cn(buttonVariants(), "h-auto")}>
-              <X className="size-4" />
+              <XIcon className="size-4" />
             </Button>
           </section>
         </div>

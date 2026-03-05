@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckIcon, CircleXIcon, CopyIcon } from "lucide-react"
+import { CheckIcon, CircleXIcon, CopyIcon } from "@/components/ui/icons"
 import type { HTMLMotionProps, Variants } from "motion/react"
 import { AnimatePresence, motion } from "motion/react"
 import type { ComponentProps } from "react"

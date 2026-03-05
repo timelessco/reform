@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 import { useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useStepForm } from "@/contexts/step-form-context";
@@ -265,7 +265,7 @@ function RenderStepButton({
         onClick={onPrevious}
         className="inline-flex items-center gap-2"
       >
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeftIcon className="h-4 w-4" />
         {buttonText}
       </Button>
     );
@@ -285,7 +285,7 @@ function RenderStepButton({
         disabled={isSubmitting}
       >
         {buttonText}
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRightIcon className="h-4 w-4" />
       </Button>
     );
     return grouped ? button : <div className="flex justify-end">{button}</div>;
@@ -299,7 +299,7 @@ function RenderStepButton({
       disabled={isSubmitting}
     >
       {isSubmitting ? t("submitting") : buttonText}
-      {layout !== "editor" && <ChevronRight className="h-4 w-4" />}
+      {layout !== "editor" && <ChevronRightIcon className="h-4 w-4" />}
     </Button>
   );
   return grouped ? (

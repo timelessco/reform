@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { Loader2Icon } from "@/components/ui/icons";
 import * as React from "react";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -211,7 +211,7 @@ function VerifyEmailPage() {
           >
             {signInOtpMutation.isPending || verifyEmailMutation.isPending ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" aria-label="Loading" />
+                <Loader2Icon className="h-4 w-4 animate-spin mr-2" aria-label="Loading" />
                 Verifying...
               </>
             ) : (

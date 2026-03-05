@@ -1,5 +1,5 @@
 import { insertInlineEquation } from "@platejs/math";
-import { RadicalIcon } from "lucide-react";
+import { RadicalIcon } from "@/components/ui/icons";
 import { useEditorRef } from "platejs/react";
 import type * as React from "react";
 

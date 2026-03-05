@@ -1,4 +1,4 @@
-import { Eye, EyeOff, Lock } from "lucide-react";
+import { EyeIcon, EyeOffIcon, LockIcon } from "@/components/ui/icons";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,7 +81,7 @@ export function PasswordGate({ formId, children }: PasswordGateProps) {
           <div className="space-y-4">
             <div className="flex justify-center">
               <div className="rounded-full bg-muted p-3">
-                <Lock className="h-8 w-8 text-muted-foreground" />
+                <LockIcon className="h-8 w-8 text-muted-foreground" />
               </div>
             </div>
             <div className="text-center space-y-1">
@@ -109,7 +109,7 @@ export function PasswordGate({ formId, children }: PasswordGateProps) {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
                 </button>
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}

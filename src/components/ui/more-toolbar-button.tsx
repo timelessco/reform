@@ -1,9 +1,8 @@
 import {
-  KeyboardIcon,
-  MoreHorizontalIcon,
   SubscriptIcon,
   SuperscriptIcon,
 } from "lucide-react";
+import { KeyboardIcon, MoreHorizontalIcon } from "@/components/ui/icons";
 import { KEYS } from "platejs";
 import { useEditorRef } from "platejs/react";
 import * as React from "react";

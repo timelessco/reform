@@ -12,19 +12,21 @@ import {
   Album,
   BadgeHelp,
   BookOpenCheck,
-  Check,
   CornerUpLeft,
   FeatherIcon,
   ListEnd,
   ListMinus,
   ListPlus,
-  Loader2Icon,
   PauseIcon,
   PenLine,
-  SmileIcon,
   Wand,
-  X,
 } from "lucide-react";
+import {
+  CheckIcon,
+  Loader2Icon,
+  SmileIcon,
+  XIcon,
+} from "@/components/ui/icons";
 import {
   isHotkey,
   KEYS,
@@ -283,7 +285,7 @@ const AICommentIcon = () => (
 
 const aiChatItems = {
   accept: {
-    icon: <Check />,
+    icon: <CheckIcon />,
     label: "Accept",
     value: "accept",
     onSelect: ({ aiEditor, editor }) => {
@@ -336,7 +338,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
     },
   },
   discard: {
-    icon: <X />,
+    icon: <XIcon />,
     label: "Discard",
     shortcut: "Escape",
     value: "discard",
@@ -371,7 +373,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
     },
   },
   fixSpelling: {
-    icon: <Check />,
+    icon: <CheckIcon />,
     label: "Fix spelling & grammar",
     value: "fixSpelling",
     onSelect: ({ editor, input }) => {
@@ -448,7 +450,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
     },
   },
   replace: {
-    icon: <Check />,
+    icon: <CheckIcon />,
     label: "Replace selection",
     value: "replace",
     onSelect: ({ aiEditor, editor }) => {

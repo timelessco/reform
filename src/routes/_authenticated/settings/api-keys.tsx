@@ -2,16 +2,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import {
-  AlertCircle,
-  Check,
-  Copy,
-  Eye,
-  EyeOff,
-  Loader2,
-  MoreHorizontal,
-  Plus,
-  Trash2,
-} from "lucide-react";
+  AlertCircleIcon,
+  CheckIcon,
+  CopyIcon,
+  EyeIcon,
+  EyeOffIcon,
+  Loader2Icon,
+  MoreHorizontalIcon,
+  PlusIcon,
+  Trash2Icon,
+} from "@/components/ui/icons";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -159,7 +159,7 @@ function APIKeysPage() {
           onClick={() => setIsCreateDialogOpen(true)}
           className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
         >
-          <Plus className="h-4 w-4" />
+          <PlusIcon className="h-4 w-4" />
           Create API key
         </Button>
       </div>
@@ -167,7 +167,7 @@ function APIKeysPage() {
       {apiKeys.length === 0 ? (
         <Empty className="border-border/50 bg-muted/5 mt-4">
           <EmptyMedia variant="icon" className="bg-muted">
-            <Plus className="h-6 w-6 text-muted-foreground" />
+            <PlusIcon className="h-6 w-6 text-muted-foreground" />
           </EmptyMedia>
           <EmptyHeader>
             <EmptyTitle>No API keys yet</EmptyTitle>
@@ -258,7 +258,7 @@ function APIKeysPage() {
                           />
                         }
                       >
-                        <MoreHorizontal className="h-4 w-4" />
+                        <MoreHorizontalIcon className="h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
                         <DropdownMenuItem
@@ -268,7 +268,7 @@ function APIKeysPage() {
                             setIsDeleteDialogOpen(true);
                           }}
                         >
-                          <Trash2 className="h-4 w-4 mr-2" />
+                          <Trash2Icon className="h-4 w-4 mr-2" />
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -331,7 +331,7 @@ function APIKeysPage() {
               disabled={!newKeyName.trim() || createMutation.isPending}
             >
               {createMutation.isPending ? (
-                <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                <Loader2Icon className="animate-spin mr-2 h-4 w-4" />
               ) : null}
               Create
             </Button>
@@ -359,7 +359,7 @@ function APIKeysPage() {
 
           <div className="space-y-6 py-4">
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex gap-3 text-amber-800">
-              <AlertCircle className="h-5 w-5 shrink-0" />
+              <AlertCircleIcon className="h-5 w-5 shrink-0" />
               <p className="text-[13px] font-medium">
                 You will only be able to see this key once, store it safely.
               </p>
@@ -388,9 +388,9 @@ function APIKeysPage() {
                     onClick={() => setShowKey(!showKey)}
                   >
                     {showKey ? (
-                      <EyeOff className="h-4 w-4" />
+                      <EyeOffIcon className="h-4 w-4" />
                     ) : (
-                      <Eye className="h-4 w-4" />
+                      <EyeIcon className="h-4 w-4" />
                     )}
                   </Button>
                   <Button
@@ -400,9 +400,9 @@ function APIKeysPage() {
                     onClick={() => createdKey && copyToClipboard(createdKey)}
                   >
                     {copied ? (
-                      <Check className="h-4 w-4 text-green-600" />
+                      <CheckIcon className="h-4 w-4 text-green-600" />
                     ) : (
-                      <Copy className="h-4 w-4" />
+                      <CopyIcon className="h-4 w-4" />
                     )}
                   </Button>
                 </div>
@@ -442,7 +442,7 @@ function APIKeysPage() {
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending ? (
-                <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                <Loader2Icon className="animate-spin mr-2 h-4 w-4" />
               ) : null}
               Delete API Key
             </AlertDialogAction>

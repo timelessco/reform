@@ -3,7 +3,7 @@ import { setColumns } from "@platejs/layout";
 import { ResizableProvider } from "@platejs/resizable";
 import { BlockSelectionPlugin } from "@platejs/selection/react";
 import { useComposedRef } from "@udecode/cn";
-import { GripHorizontal, type LucideProps, Trash2Icon } from "lucide-react";
+import { GripHorizontalIcon, Trash2Icon, type LucideProps } from "@/components/ui/icons";
 import type { TColumnElement } from "platejs";
 import { PathApi } from "platejs";
 import type { PlateElementProps } from "platejs/react";
@@ -101,7 +101,7 @@ const ColumnDragHandle = React.memo(function ColumnDragHandle() {
         <TooltipTrigger
           render={<Button variant="ghost" className="!px-1 h-5" />}
         >
-          <GripHorizontal
+          <GripHorizontalIcon
             className="text-muted-foreground"
             onClick={(event) => {
               event.stopPropagation();

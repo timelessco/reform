@@ -7,8 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { useSettingsDialog, type SettingsTab } from "@/hooks/use-settings-dialog";
 import { cn } from "@/lib/utils";
-import { X } from "lucide-react";
-import { CircleUserIcon, DownloadIcon, SparklesIcon } from "../ui/sidebar-icons";
+import { CircleUserIcon, DownloadIcon, SparklesIcon, XIcon } from "../ui/icons";
 import { AccountSettingsContent } from "./account-settings-content";
 import { ImportContent } from "./import-content";
 import { MembersContent } from "./members-content";
@@ -96,7 +95,7 @@ export function SettingsDialog() {
               <DialogClose
                 className="size-7 rounded-lg flex items-center justify-center hover:bg-[var(--gray-100)] transition-colors cursor-pointer"
               >
-                <X className="size-4 text-muted-foreground" />
+                <XIcon className="size-4 text-muted-foreground" />
                 <span className="sr-only">Close</span>
               </DialogClose>
             </div>

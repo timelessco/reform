@@ -1,5 +1,5 @@
 import { useEmojiDropdownMenuState } from "@platejs/emoji/react";
-import { ImageIcon, Settings, Smile, Upload, X } from "lucide-react";
+import { ImageIcon, SettingsIcon, SmileIcon, UploadIcon, XIcon } from "@/components/ui/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorRef } from "platejs/react";
@@ -79,7 +79,7 @@ function CoverUpload({
       >
         <input {...getInputProps()} className="sr-only" />
         <div className="flex flex-col items-center gap-2 text-muted-foreground">
-          <Upload className="h-8 w-8" />
+          <UploadIcon className="h-8 w-8" />
           <span className="text-sm font-medium">Upload cover image</span>
           <span className="text-xs">Max 5MB</span>
         </div>
@@ -158,7 +158,7 @@ export function FormHeaderElement(props: PlateElementProps) {
     <PlateElement {...props}>
       <div
         contentEditable={false}
-        className="group relative w-full flex flex-col mb-4 select-none"
+        className="group relative w-full flex flex-col mb-4 select-none rounded-none"
       >
         {hasCover && (
           <>
@@ -172,7 +172,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                     src={cover}
                     alt="Cover"
                     className={cn(
-                      "w-full h-full object-cover border-0 rounded-none",
+                      "w-full h-full object-cover border-0 ",
                       cover.includes("tint=true") &&
                         "relative z-0 brightness-60 grayscale",
                     )}
@@ -357,7 +357,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                         onMouseDown={(e) => e.preventDefault()}
                         className="col-span-4 mt-2 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-2 border rounded-md hover:bg-muted/50"
                       >
-                        <X className="h-4 w-4" /> Remove cover
+                        <XIcon className="h-4 w-4" /> Remove cover
                       </button>
                     </TabsContent>
                     <TabsContent value="upload" className="pt-4">
@@ -368,7 +368,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                         onMouseDown={(e) => e.preventDefault()}
                         className="w-full mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-2 border rounded-md hover:bg-muted/50"
                       >
-                        <X className="h-4 w-4" /> Remove cover
+                        <XIcon className="h-4 w-4" /> Remove cover
                       </button>
                     </TabsContent>
                   </Tabs>
@@ -465,7 +465,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                       />
                     }
                   >
-                    <Smile className="mr-1.5 h-3.5 w-3.5" />
+                    <SmileIcon className="mr-1.5 h-3.5 w-3.5" />
                     Add icon
                   </PopoverTrigger>
                 )}
@@ -488,7 +488,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                   onClick={toggleCustomize}
                   onMouseDown={(e) => e.preventDefault()}
                 >
-                  <Settings className="mr-1.5 h-3.5 w-3.5" />
+                  <SettingsIcon className="mr-1.5 h-3.5 w-3.5" />
                   Customize
                 </Button>
               </div>

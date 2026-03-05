@@ -20,15 +20,15 @@ import { useFileUpload } from "@/hooks/use-file-upload";
 import { cn } from "@/lib/utils";
 import {
   ImageIcon,
-  Loader2,
-  MoreHorizontal,
-  Pencil,
-  Plus,
-  Smile,
-  Trash2,
-  Upload,
-  X,
-} from "lucide-react";
+  Loader2Icon,
+  MoreHorizontalIcon,
+  PencilIcon,
+  PlusIcon,
+  SmileIcon,
+  Trash2Icon,
+  UploadIcon,
+  XIcon,
+} from "@/components/ui/icons";
 
 // Inline CoverUpload component using the hook
 function CoverUpload({
@@ -76,7 +76,7 @@ function CoverUpload({
       >
         <input {...getInputProps()} className="sr-only" />
         <div className="flex flex-col items-center gap-2 text-muted-foreground">
-          <Upload className="h-8 w-8" />
+          <UploadIcon className="h-8 w-8" />
           <span className="text-sm font-medium">Upload cover image</span>
           <span className="text-xs">Max 5MB</span>
         </div>
@@ -318,7 +318,7 @@ export function FormHeader({
                       onClick={() => setCoverUrl(null)}
                       className="col-span-4 mt-2 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-2 border rounded-md hover:bg-muted/50"
                     >
-                      <X className="h-4 w-4" /> Remove cover
+                      <XIcon className="h-4 w-4" /> Remove cover
                     </button>
                   </TabsContent>
                   <TabsContent value="upload" className="pt-4">
@@ -328,7 +328,7 @@ export function FormHeader({
                       onClick={() => setCoverUrl(null)}
                       className="w-full mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-2 border rounded-md hover:bg-muted/50"
                     >
-                      <X className="h-4 w-4" /> Remove cover
+                      <XIcon className="h-4 w-4" /> Remove cover
                     </button>
                   </TabsContent>
                 </Tabs>
@@ -404,7 +404,7 @@ export function FormHeader({
                         onClick={() => setLogoUrl(null)}
                         className="text-destructive hover:text-destructive"
                       >
-                        <X className="mr-2 h-4 w-4" /> Remove icon
+                        <XIcon className="mr-2 h-4 w-4" /> Remove icon
                       </Button>
                     </TabsContent>
                     <TabsContent
@@ -447,7 +447,7 @@ export function FormHeader({
                 className="text-muted-foreground h-6 px-2 text-xs hover:bg-muted"
                 onClick={handleAddIcon}
               >
-                <Smile className="mr-1.5 h-3.5 w-3.5" />
+                <SmileIcon className="mr-1.5 h-3.5 w-3.5" />
                 Add icon
               </Button>
             )}
@@ -508,11 +508,11 @@ export function WorkspaceHeader({
               />
             }
           >
-            <MoreHorizontal className="h-5 w-5" />
+            <MoreHorizontalIcon className="h-5 w-5" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             <DropdownMenuItem onClick={onRename}>
-              <Pencil className="mr-2 h-4 w-4 text-muted-foreground" />
+              <PencilIcon className="mr-2 h-4 w-4 text-muted-foreground" />
               <span>Rename workspace</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -520,7 +520,7 @@ export function WorkspaceHeader({
               onClick={onDelete}
               className="text-destructive focus:text-destructive"
             >
-              <Trash2 className="mr-2 h-4 w-4" />
+              <Trash2Icon className="mr-2 h-4 w-4" />
               <span>Delete workspace</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -535,9 +535,9 @@ export function WorkspaceHeader({
             disabled={isCreatingForm}
           >
             {isCreatingForm ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2Icon className="h-4 w-4 animate-spin" />
             ) : (
-              <Plus className="h-4 w-4" />
+              <PlusIcon className="h-4 w-4" />
             )}
             New form
           </Button>

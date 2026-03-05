@@ -1,6 +1,6 @@
 import { toUnitLess } from "@platejs/basic-styles";
 import { FontSizePlugin } from "@platejs/basic-styles/react";
-import { Minus, Plus } from "lucide-react";
+import { MinusIcon, PlusIcon } from "@/components/ui/icons";
 import type { TElement } from "platejs";
 import { KEYS } from "platejs";
 import { useEditorPlugin, useEditorSelector } from "platejs/react";
@@ -91,7 +91,7 @@ export function FontSizeToolbarButton() {
   return (
     <div className="flex h-7 items-center gap-1 rounded-md bg-muted/60 p-0">
       <ToolbarButton onClick={() => handleFontSizeChange(-1)}>
-        <Minus />
+        <MinusIcon />
       </ToolbarButton>
 
       <Popover open={isFocused} modal={false}>
@@ -143,7 +143,7 @@ export function FontSizeToolbarButton() {
       </Popover>
 
       <ToolbarButton onClick={() => handleFontSizeChange(1)}>
-        <Plus />
+        <PlusIcon />
       </ToolbarButton>
     </div>
   );

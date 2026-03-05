@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { CropIcon, RotateCcwIcon } from "lucide-react";
+import { CropIcon, RotateCcwIcon } from "@/components/ui/icons";
 import {
   type ComponentProps,
   createContext,

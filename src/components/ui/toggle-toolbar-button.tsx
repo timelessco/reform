@@ -1,5 +1,5 @@
 import { useToggleToolbarButton, useToggleToolbarButtonState } from "@platejs/toggle/react";
-import { ListCollapseIcon } from "lucide-react";
+import { ListCollapseIcon } from "@/components/ui/icons";
 import type * as React from "react";
 
 import { ToolbarButton } from "./toolbar";

@@ -6,12 +6,10 @@ import {
   BlockSelectionPlugin,
 } from "@platejs/selection/react";
 import {
-  GripVertical,
   GripVerticalIcon,
-  Plus,
-  Settings,
-  Trash2,
-} from "lucide-react";
+  PlusIcon,
+  SettingsIcon,
+} from "@/components/ui/icons";
 import { getPluginByType, isType, KEYS, type TElement } from "platejs";
 import {
   MemoizedChildren,
@@ -25,7 +23,7 @@ import {
 } from "platejs/react";
 import * as React from "react";
 
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
@@ -309,7 +307,7 @@ function Draggable(props: PlateElementProps) {
                     />
                   }
                 >
-                  <Plus className="size-4 text-[#52525B] dark:text-muted-foreground" />
+                  <PlusIcon className="size-4 text-[#52525B] dark:text-muted-foreground" />
                 </TooltipTrigger>
                 <TooltipContent>Add block below</TooltipContent>
               </Tooltip>
@@ -317,8 +315,8 @@ function Draggable(props: PlateElementProps) {
 
             {/* Drag Handle or Settings Gear - div to avoid nested button (Tooltip+Button inside) */}
             <div
-              ref={isFormButton ? null : handleRef}
-              className="h-auto w-auto"
+              ref={isFormButton ? undefined : handleRef}
+              className="h-auto w-auto cursor-grab"
               data-plate-prevent-deselect
             >
               <DragHandle
@@ -405,10 +403,12 @@ const DragHandle = React.memo(function DragHandle({
       <TooltipTrigger
         render={
           <button
+            type="button"
             className="flex items-center justify-center h-auto w-auto overflow-hidden rounded-lg hover:bg-accent has-[>svg]:px-1 has-[>svg]:py-1.5"
             onClick={(e) => {
-              // e.preventDefault();
-              // e.stopPropagation();
+              e.preventDefault();
+              e.stopPropagation();
+              if (isDragging) return;
 
               const api = editor.getApi(BlockMenuPlugin);
 
@@ -434,7 +434,9 @@ const DragHandle = React.memo(function DragHandle({
 
               // If current block is not in selection, use it as the starting point
               if (!selectionNodes.some(([node]) => node.id === element.id)) {
-                selectionNodes = [[element, editor.api.findPath(element)!]];
+                const currentPath = editor.api.findPath(element);
+                if (!currentPath) return;
+                selectionNodes = [[element, currentPath]];
               }
 
               // Process selection nodes to include list children
@@ -472,7 +474,9 @@ const DragHandle = React.memo(function DragHandle({
 
               // If current block is not in selection, use it as the starting point
               if (!selectedBlocks.some(([node]) => node.id === element.id)) {
-                selectedBlocks = [[element, editor.api.findPath(element)!]];
+                const currentPath = editor.api.findPath(element);
+                if (!currentPath) return;
+                selectedBlocks = [[element, currentPath]];
               }
 
               // Process selection to include list children
@@ -501,7 +505,7 @@ const DragHandle = React.memo(function DragHandle({
         }
       >
         {isFormButton ? (
-          <Settings className="text-muted-foreground" />
+          <SettingsIcon className="text-muted-foreground" />
         ) : (
           <GripVerticalIcon className="size-4 text-[#52525B] dark:text-muted-foreground" />
         )}
@@ -529,7 +533,7 @@ const DropLine = React.memo(function DropLine({
       className={cn(
         "slate-dropLine",
         "absolute inset-x-0 h-1 opacity-100",
-        "bg-brand rounded-full",
+        "bg-primary rounded-full",
         "animate-[drop-line-pulse_1s_ease-in-out_infinite]",
         dropLine === "top" && "-top-0.5",
         dropLine === "bottom" && "-bottom-0.5",

@@ -1,23 +1,25 @@
 import {
-  AlignLeftIcon,
-  CalendarIcon,
-  ChevronRightIcon,
   Code2,
   Columns3Icon,
-  FileIcon,
   Heading1Icon,
   Heading2Icon,
   Heading3Icon,
   LightbulbIcon,
-  ListIcon,
-  ListOrdered,
   PilcrowIcon,
   Quote,
-  SmileIcon,
   Square,
   Table,
   TextCursorInputIcon,
 } from "lucide-react";
+import {
+  AlignLeftIcon,
+  CalendarIcon,
+  ChevronRightIcon,
+  FileIcon,
+  ListIcon,
+  ListOrderedIcon,
+  SmileIcon,
+} from "@/components/ui/icons";
 import { KEYS, type TComboboxInputElement } from "platejs";
 import type { PlateEditor, PlateElementProps } from "platejs/react";
 import { PlateElement } from "platejs/react";
@@ -83,7 +85,7 @@ const groups: Group[] = [
         value: KEYS.ul,
       },
       {
-        icon: <ListOrdered />,
+        icon: <ListOrderedIcon />,
         keywords: ["ordered", "ol", "1"],
         label: "Numbered list",
         value: KEYS.ol,

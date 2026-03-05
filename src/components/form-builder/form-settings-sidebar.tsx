@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { XIcon } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { SettingsContent } from "@/routes/_authenticated/workspace/$workspaceId/form-builder/$formId/settings";
@@ -33,7 +33,7 @@ export function FormSettingsSidebar({ formId, isLocal }: FormSettingsSidebarProp
           className="h-8 w-8 text-muted-foreground hover:text-foreground"
           onClick={closeSidebar}
           >
-          <X className="h-4 w-4" />
+          <XIcon className="h-4 w-4" />
         </Button>
           </div>
       </SidebarHeader>

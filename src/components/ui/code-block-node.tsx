@@ -1,5 +1,5 @@
 import { formatCodeBlock, isLangSupported } from "@platejs/code-block";
-import { BracesIcon, Check, CheckIcon, CopyIcon } from "lucide-react";
+import { BracesIcon, CheckIcon, CopyIcon } from "@/components/ui/icons";
 import { NodeApi, type TCodeBlockElement, type TCodeSyntaxLeaf } from "platejs";
 import {
   PlateElement,
@@ -143,7 +143,7 @@ function CodeBlockCombobox() {
                     setOpen(false);
                   }}
                 >
-                  <Check
+                  <CheckIcon
                     className={cn(
                       value === language.value ? "opacity-100" : "opacity-0",
                     )}

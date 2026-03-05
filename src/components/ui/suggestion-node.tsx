@@ -1,5 +1,5 @@
 import { cva } from "class-variance-authority";
-import { CornerDownLeftIcon } from "lucide-react";
+import { CornerDownLeftIcon } from "@/components/ui/icons";
 import type { TSuggestionData, TSuggestionText } from "platejs";
 import type { PlateLeafProps, RenderNodeWrapper } from "platejs/react";
 import { PlateLeaf, useEditorPlugin, usePluginOption } from "platejs/react";

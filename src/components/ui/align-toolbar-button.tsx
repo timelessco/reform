@@ -1,11 +1,11 @@
 import type { Alignment } from "@platejs/basic-styles";
 import { TextAlignPlugin } from "@platejs/basic-styles/react";
+import { AlignJustifyIcon } from "lucide-react";
 import {
   AlignCenterIcon,
-  AlignJustifyIcon,
   AlignLeftIcon,
   AlignRightIcon,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { useEditorPlugin, useSelectionFragmentProp } from "platejs/react";
 import * as React from "react";
 

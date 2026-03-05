@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { HelpCircle, Loader2, Lock, X } from "lucide-react";
+import { HelpCircleIcon, Loader2Icon, LockIcon, XIcon } from "@/components/ui/icons";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -86,7 +86,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
           <span className="text-[13px] font-medium tracking-[0.13px] text-foreground/80">
             Version history
           </span>
-          <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
+          <HelpCircleIcon className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
         </div>
         <Button
           variant="ghost"
@@ -94,7 +94,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
           className="h-7 w-7 text-muted-foreground hover:text-foreground"
           onClick={closeSidebar}
         >
-          <X className="h-4 w-4" />
+          <XIcon className="h-4 w-4" />
         </Button>
       </SidebarHeader>
 
@@ -197,7 +197,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
                         )}
                       </div>
                       {version.id === latestVersion?.id && (
-                        <Lock
+                        <LockIcon
                           className="h-3.5 w-3.5 text-muted-foreground opacity-60"
                           strokeWidth={1.5}
                         />
@@ -237,7 +237,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
           disabled={!effectiveVersionId || isRestoring}
           className="w-full h-8 px-4 text-[13px] font-medium tracking-[0.13px] bg-foreground text-background hover:bg-foreground/90 shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-lg transition-all"
         >
-          {isRestoring ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : null}
+          {isRestoring ? <Loader2Icon className="h-3.5 w-3.5 mr-2 animate-spin" /> : null}
           Restore version
         </Button>
       </SidebarFooter>

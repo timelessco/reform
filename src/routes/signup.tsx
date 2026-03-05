@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { Loader2Icon } from "@/components/ui/icons";
 import * as React from "react";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -227,7 +227,7 @@ function SignUpPage() {
 
                 <Button type="submit" className="w-full h-11" disabled={isPending}>
                   {verifyEmailMutation.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-label="Loading" />
+                    <Loader2Icon className="mr-2 h-4 w-4 animate-spin" aria-label="Loading" />
                   )}
                   Verify
                 </Button>
@@ -256,7 +256,7 @@ function SignUpPage() {
               disabled={isPending}
             >
               {socialSignInMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-label="Loading" />
+                <Loader2Icon className="mr-2 h-4 w-4 animate-spin" aria-label="Loading" />
               ) : (
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                   <title>Google</title>
@@ -369,7 +369,7 @@ function SignUpPage() {
 
                 <Button type="submit" className="w-full h-11" disabled={isPending}>
                   {signUpMutation.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-label="Loading" />
+                    <Loader2Icon className="mr-2 h-4 w-4 animate-spin" aria-label="Loading" />
                   )}
                   Create account
                 </Button>

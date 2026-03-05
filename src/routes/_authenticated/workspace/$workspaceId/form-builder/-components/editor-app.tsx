@@ -9,7 +9,7 @@ import { updateDoc, updateHeader } from "@/db-collections";
 import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useForm } from "@/hooks/use-live-hooks";
 import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+import { Loader2Icon } from "@/components/ui/icons";
 import { normalizeNodeId, type TElement, type Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
 import type { KeyboardEvent } from "react";
@@ -63,7 +63,7 @@ export default function EditorApp({
     // Still syncing → show spinner
     return (
       <div className="h-screen w-full flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -255,7 +255,11 @@ function EditorAppInner({
             variant="default"
             className="px-0 sm:px-0 max-w-full  border-none shadow-none"
           >
-            <Editor variant="demo" onKeyDown={handleEditorKeyDown} />
+            <Editor
+              variant="demo"
+              className="rounded-none"
+              onKeyDown={handleEditorKeyDown}
+            />
           </EditorContainer>
         </Plate>
       </div>

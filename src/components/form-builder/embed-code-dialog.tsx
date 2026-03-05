@@ -1,7 +1,7 @@
 import { APP_NAME } from "@/lib/app-config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, ChevronDown, Copy } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, CopyIcon } from "@/components/ui/icons";
 import { useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
@@ -125,7 +125,7 @@ function CopyButton({ text }: { text: string }) {
       onClick={handleCopy}
       className="absolute top-3 right-3 h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
     >
-      {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+      {copied ? <CheckIcon className="w-3.5 h-3.5" /> : <CopyIcon className="w-3.5 h-3.5" />}
     </Button>
   );
 }
@@ -146,9 +146,9 @@ function InlineCopyBar({ value }: { value: string }) {
       />
       <Button size="icon" className="h-9 w-9 shrink-0" onClick={handleCopy}>
         {copied ? (
-          <Check className="h-3.5 w-3.5 text-green-500" />
+          <CheckIcon className="h-3.5 w-3.5 text-green-500" />
         ) : (
-          <Copy className="h-3.5 w-3.5" />
+          <CopyIcon className="h-3.5 w-3.5" />
         )}
       </Button>
     </div>
@@ -350,7 +350,7 @@ export function EmbedCodeDialog({
                   <span className="text-[14px] font-semibold text-foreground group-hover:text-brand transition-colors">
                     Save website page and query parameters
                   </span>
-                  <ChevronDown
+                  <ChevronDownIcon
                     className={cn(
                       "w-4 h-4 text-muted-foreground/50 transition-transform group-hover:text-brand",
                       sections.save && "rotate-180",
@@ -391,7 +391,7 @@ export function EmbedCodeDialog({
                   <span className="text-[14px] font-semibold text-foreground group-hover:text-brand transition-colors">
                     Use JavaScript
                   </span>
-                  <ChevronDown
+                  <ChevronDownIcon
                     className={cn(
                       "w-4 h-4 text-muted-foreground/50 transition-transform group-hover:text-brand",
                       sections.js && "rotate-180",

@@ -1,4 +1,4 @@
-import { TriangleAlert, User, X } from "lucide-react";
+import { TriangleAlertIcon, UserIcon, XIcon } from "@/components/ui/icons";
 import {
   Alert,
   AlertContent,
@@ -86,7 +86,7 @@ export default function AvatarUpload({
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
-              <User className="size-6 text-muted-foreground" />
+              <UserIcon className="size-6 text-muted-foreground" />
             </div>
           )}
         </Button>
@@ -100,7 +100,7 @@ export default function AvatarUpload({
             className="size-6 absolute end-0 top-0 rounded-full"
             aria-label="Remove avatar"
           >
-            <X className="size-3.5" />
+            <XIcon className="size-3.5" />
           </Button>
         )}
       </div>
@@ -119,7 +119,7 @@ export default function AvatarUpload({
       {errors.length > 0 && (
         <Alert variant="destructive" className="mt-5">
           <AlertIcon>
-            <TriangleAlert />
+            <TriangleAlertIcon />
           </AlertIcon>
           <AlertContent>
             <AlertTitle>File upload error(s)</AlertTitle>

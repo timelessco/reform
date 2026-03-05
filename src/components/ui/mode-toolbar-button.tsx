@@ -1,5 +1,5 @@
 import { SuggestionPlugin } from "@platejs/suggestion/react";
-import { EyeIcon, PencilLineIcon, PenIcon } from "lucide-react";
+import { EyeIcon, PencilLineIcon, PenIcon } from "@/components/ui/icons";
 import { useEditorRef, usePlateState, usePluginOption } from "platejs/react";
 import * as React from "react";
 

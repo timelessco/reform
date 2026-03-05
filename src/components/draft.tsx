@@ -1,6 +1,6 @@
 import { revalidateLogic, useStore } from "@tanstack/react-form";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, EyeIcon, EyeOffIcon } from "lucide-react";
+import { CalendarIcon, EyeIcon, EyeOffIcon } from "@/components/ui/icons";
 import { toast } from "sonner";
 import type * as z from "zod";
 import { Calendar } from "@/components/ui/calendar";

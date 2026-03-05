@@ -5,7 +5,7 @@ import {
   useImagePreviewValue,
 } from "@platejs/media/react";
 import { cva } from "class-variance-authority";
-import { Link as LinkIcon, Trash2Icon } from "lucide-react";
+import { LinkIcon, Trash2Icon } from "@/components/ui/icons";
 import type { WithRequiredKey } from "platejs";
 import {
   useEditorRef,

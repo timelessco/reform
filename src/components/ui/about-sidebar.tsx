@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { XIcon } from "@/components/ui/icons";
 import { APP_NAME } from "@/lib/app-config";
 import { Button } from "@/components/ui/button";
 import { FAQItem } from "@/components/footer";
@@ -18,7 +18,7 @@ export function AboutSidebar({ onClose }: AboutSidebarProps) {
           className="h-7 w-7 text-muted-foreground hover:text-foreground"
           onClick={onClose}
         >
-          <X className="h-4 w-4" />
+          <XIcon className="h-4 w-4" />
         </Button>
       </div>
       <div className="flex-1 overflow-y-auto p-6">

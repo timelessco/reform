@@ -6,7 +6,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { useTranslation } from "@/contexts/translation-context";
-import { Ban } from "lucide-react";
+import { BanIcon } from "@/components/ui/icons";
 
 interface FormClosedProps {
   message?: string | null;
@@ -19,7 +19,7 @@ export function FormClosed({ message }: FormClosedProps) {
       <Empty className="border-none">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <Ban />
+            <BanIcon />
           </EmptyMedia>
           <EmptyTitle>{t("formClosed")}</EmptyTitle>
           <EmptyDescription>{message || t("formClosedDescription")}</EmptyDescription>
@@ -36,7 +36,7 @@ export function AlreadySubmitted() {
       <Empty className="border-none">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <Ban />
+            <BanIcon />
           </EmptyMedia>
           <EmptyTitle>{t("alreadySubmitted")}</EmptyTitle>
           <EmptyDescription>{t("alreadySubmittedDescription")}</EmptyDescription>

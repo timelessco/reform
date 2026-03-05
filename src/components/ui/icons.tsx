@@ -1,4 +1,105 @@
-import { LogOut } from "lucide-react";
+import type { LucideProps } from "lucide-react";
+import {
+  AlertCircle as LucideAlertCircle,
+  AlignCenter as LucideAlignCenter,
+  AlignLeft as LucideAlignLeft,
+  AlignRight as LucideAlignRight,
+  ArrowDownToLine as LucideArrowDownToLine,
+  ArrowLeft as LucideArrowLeft,
+  ArrowRight as LucideArrowRight,
+  ArrowUpToLine as LucideArrowUpToLine,
+  AudioLines as LucideAudioLines,
+  Ban as LucideBan,
+  Bluetooth as LucideBluetooth,
+  Bold as LucideBold,
+  Braces as LucideBraces,
+  Check as LucideCheck,
+  CheckCircle2 as LucideCheckCircle2,
+  ChevronLeft as LucideChevronLeft,
+  ChevronRight as LucideChevronRight,
+  ChevronUp as LucideChevronUp,
+  ChevronsRight as LucideChevronsRight,
+  CircleCheck as LucideCircleCheck,
+  CirclePlus as LucideCirclePlus,
+  CircleUserRound as LucideCircleUserRound,
+  CircleX as LucideCircleX,
+  Clock as LucideClock,
+  CornerDownLeft as LucideCornerDownLeft,
+  CreditCard as LucideCreditCard,
+  Crop as LucideCrop,
+  Eraser as LucideEraser,
+  ExternalLink as LucideExternalLink,
+  Eye as LucideEye,
+  EyeOff as LucideEyeOff,
+  File as LucideFile,
+  FileCode as LucideFileCode,
+  FileQuestion as LucideFileQuestion,
+  FileText as LucideFileText,
+  FileUp as LucideFileUp,
+  Film as LucideFilm,
+  Filter as LucideFilter,
+  Folder as LucideFolder,
+  FolderOpen as LucideFolderOpen,
+  FolderSearch as LucideFolderSearch,
+  GripHorizontal as LucideGripHorizontal,
+  GripVertical as LucideGripVertical,
+  HelpCircle as LucideHelpCircle,
+  Image as LucideImage,
+  Indent as LucideIndent,
+  Info as LucideInfo,
+  Italic as LucideItalic,
+  Keyboard as LucideKeyboard,
+  Languages as LucideLanguages,
+  Layout as LucideLayout,
+  Link as LucideLink,
+  List as LucideList,
+  ListCollapse as LucideListCollapse,
+  ListOrdered as LucideListOrdered,
+  ListTodo as LucideListTodo,
+  Loader2 as LucideLoader2,
+  Lock as LucideLock,
+  LogOut as LucideLogOut,
+  MessageSquareText as LucideMessageSquareText,
+  Minus as LucideMinus,
+  Monitor as LucideMonitor,
+  Moon as LucideMoon,
+  MoreVertical as LucideMoreVertical,
+  OctagonX as LucideOctagonX,
+  Outdent as LucideOutdent,
+  Palette as LucidePalette,
+  PanelLeft as LucidePanelLeft,
+  Pen as LucidePen,
+  Pencil as LucidePencil,
+  PencilLine as LucidePencilLine,
+  Radical as LucideRadical,
+  Redo2 as LucideRedo2,
+  RefreshCw as LucideRefreshCw,
+  Rocket as LucideRocket,
+  RotateCcw as LucideRotateCcw,
+  Save as LucideSave,
+  Shield as LucideShield,
+  Smile as LucideSmile,
+  Strikethrough as LucideStrikethrough,
+  Sun as LucideSun,
+  Tag as LucideTag,
+  Text as LucideText,
+  Trash2 as LucideTrash2,
+  TriangleAlert as LucideTriangleAlert,
+  Underline as LucideUnderline,
+  Undo2 as LucideUndo2,
+  Unlink as LucideUnlink,
+  Upload as LucideUpload,
+  User as LucideUser,
+  WrapText as LucideWrapText,
+  X as LucideX,
+} from "lucide-react";
+
+// Re-export LucideProps type for components that need it
+export type { LucideProps };
+
+// ============================================================================
+// Custom SVG Icons (already replaced with custom designs)
+// ============================================================================
 
 export function HomeIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -67,12 +168,14 @@ export function BellIcon(props: React.SVGProps<SVGSVGElement>) {
         d="M13.6066 7.14722C13.6066 5.9968 13.1496 4.89351 12.3362 4.08004C11.5227 3.26657 10.4194 2.80957 9.26898 2.80957C8.11857 2.80957 7.01527 3.26657 6.2018 4.08004C5.38833 4.89351 4.93133 5.9968 4.93133 7.14722C4.93133 9.38124 4.36778 10.9108 3.73824 11.9225C3.20721 12.776 2.94169 13.2027 2.95143 13.3217C2.96221 13.4535 2.99013 13.5038 3.09634 13.5825C3.19227 13.6537 3.62468 13.6537 4.48951 13.6537H14.0485C14.9133 13.6537 15.3457 13.6537 15.4416 13.5825C15.5478 13.5038 15.5758 13.4535 15.5865 13.3217C15.5963 13.2027 15.3308 12.776 14.7997 11.9225C14.1702 10.9108 13.6066 9.38124 13.6066 7.14722Z"
         fill="var(--sidebar-icon-stroke)"
         opacity="0.12"
+        strokeWidth="var(--stroke-width)"
       />
       <path
         d="M7.35621 13.6537C7.35621 14.5261 7.3562 16.0881 9.26898 16.0881C11.1818 16.0881 11.1818 14.489 11.1818 13.6537M13.6066 7.14722C13.6066 5.9968 13.1496 4.89351 12.3362 4.08004C11.5227 3.26657 10.4194 2.80957 9.26898 2.80957C8.11857 2.80957 7.01527 3.26657 6.2018 4.08004C5.38833 4.89351 4.93133 5.9968 4.93133 7.14722C4.93133 9.38124 4.36778 10.9108 3.73824 11.9225C3.20721 12.776 2.94169 13.2027 2.95143 13.3217C2.96221 13.4535 2.99013 13.5038 3.09634 13.5825C3.19227 13.6537 3.62468 13.6537 4.48951 13.6537H14.0485C14.9133 13.6537 15.3457 13.6537 15.4416 13.5825C15.5478 13.5038 15.5758 13.4535 15.5865 13.3217C15.5963 13.2027 15.3308 12.776 14.7997 11.9225C14.1702 10.9108 13.6066 9.38124 13.6066 7.14722Z"
         stroke="var(--sidebar-icon-stroke)"
         strokeLinecap="round"
         strokeLinejoin="round"
+        strokeWidth="var(--stroke-width)"
       />
     </svg>
   );
@@ -152,6 +255,9 @@ export function ChevronDownIcon(props: React.SVGProps<SVGSVGElement>) {
       <path
         d="M7.65024 3.3054C7.89561 3.04367 8.30727 3.03007 8.56918 3.27512C8.83097 3.52055 8.84466 3.93216 8.59946 4.19407L5.47446 7.52805C5.35158 7.65911 5.1795 7.73313 4.99985 7.73313C4.82025 7.73309 4.64808 7.65908 4.52524 7.52805L1.40024 4.19407C1.15518 3.93216 1.16878 3.5205 1.43051 3.27512C1.69237 3.02996 2.10402 3.04376 2.34946 3.3054L4.99985 6.13157L7.65024 3.3054Z"
         fill="currentColor"
+        strokeWidth="var(--stroke-width)"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
@@ -175,6 +281,7 @@ export function CalendarIcon(props: React.SVGProps<SVGSVGElement>) {
       <path
         d="M14 6.66658H2M10.6667 1.33325V3.99992M5.33333 1.33325V3.99992M5.2 14.6666H10.8C11.9201 14.6666 12.4802 14.6666 12.908 14.4486C13.2843 14.2569 13.5903 13.9509 13.782 13.5746C14 13.1467 14 12.5867 14 11.4666V5.86659C14 4.74648 14 4.18643 13.782 3.7586C13.5903 3.38228 13.2843 3.07632 12.908 2.88457C12.4802 2.66659 11.9201 2.66659 10.8 2.66659H5.2C4.0799 2.66659 3.51984 2.66659 3.09202 2.88457C2.71569 3.07632 2.40973 3.38228 2.21799 3.7586C2 4.18643 2 4.74648 2 5.86658V11.4666C2 12.5867 2 13.1467 2.21799 13.5746C2.40973 13.9509 2.71569 14.2569 3.09202 14.4486C3.51984 14.6666 4.0799 14.6666 5.2 14.6666Z"
         stroke="currentColor"
+        strokeWidth="var(--stroke-width)"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -200,6 +307,7 @@ export function ClockRewindIcon(props: React.SVGProps<SVGSVGElement>) {
       <path
         d="M15.1333 9L13.8004 7.66667L12.4666 9M14 8C14 11.3137 11.3137 14 8 14C4.68629 14 2 11.3137 2 8C2 4.68629 4.68629 2 8 2C10.2013 2 12.1257 3.18542 13.1697 4.95273M8 4.66667V8L10 9.33333"
         stroke="currentColor"
+        strokeWidth="var(--stroke-width)"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -225,7 +333,7 @@ export function ClockFastForwardIcon(props: React.SVGProps<SVGSVGElement>) {
       <path
         d="M22.7 11.5L20.7005 13.5L18.7 11.5M20.9451 13C20.9814 12.6717 21 12.338 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21C14.8273 21 17.35 19.6963 19 17.6573M12 7V12L15 14"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="var(--stroke-width)"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -246,6 +354,7 @@ export function AlphabeticalIcon(props: React.SVGProps<SVGSVGElement>) {
       <path
         d="M13 3V9"
         stroke="currentColor"
+        strokeWidth="var(--stroke-width)"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -253,6 +362,7 @@ export function AlphabeticalIcon(props: React.SVGProps<SVGSVGElement>) {
       <path
         d="M3.6 8.50203L8.4 8.50203M2 12L5.41736 3.78174C5.60246 3.33661 5.69501 3.11405 5.82326 3.045C5.93469 2.985 6.06531 2.985 6.17674 3.045C6.30499 3.11405 6.39754 3.33661 6.58263 3.78174L10 12"
         stroke="currentColor"
+        strokeWidth="var(--stroke-width)"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -279,6 +389,7 @@ export function CopyIcon(props: React.SVGProps<SVGSVGElement>) {
         <path
           d="M3.33337 9.99992C2.71212 9.99992 2.40149 9.99992 2.15646 9.89842C1.82976 9.7631 1.57019 9.50353 1.43487 9.17683C1.33337 8.9318 1.33337 8.62117 1.33337 7.99992V3.46659C1.33337 2.71985 1.33337 2.34648 1.4787 2.06126C1.60653 1.81038 1.8105 1.60641 2.06139 1.47858C2.3466 1.33325 2.71997 1.33325 3.46671 1.33325H8.00004C8.6213 1.33325 8.93192 1.33325 9.17695 1.43475C9.50366 1.57007 9.76322 1.82964 9.89855 2.15634C10 2.40137 10 2.712 10 3.33325M8.13337 14.6666H12.5334C13.2801 14.6666 13.6535 14.6666 13.9387 14.5213C14.1896 14.3934 14.3936 14.1895 14.5214 13.9386C14.6667 13.6534 14.6667 13.28 14.6667 12.5333V8.13325C14.6667 7.38651 14.6667 7.01315 14.5214 6.72793C14.3936 6.47705 14.1896 6.27307 13.9387 6.14524C13.6535 5.99992 13.2801 5.99992 12.5334 5.99992H8.13337C7.38664 5.99992 7.01327 5.99992 6.72805 6.14524C6.47717 6.27307 6.2732 6.47705 6.14537 6.72793C6.00004 7.01315 6.00004 7.38651 6.00004 8.13325V12.5333C6.00004 13.28 6.00004 13.6534 6.14537 13.9386C6.2732 14.1895 6.47717 14.3934 6.72805 14.5213C7.01327 14.6666 7.38664 14.6666 8.13337 14.6666Z"
           stroke="currentColor"
+          strokeWidth="var(--stroke-width)"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
@@ -305,7 +416,7 @@ export function PlusIcon(props: React.SVGProps<SVGSVGElement>) {
       <path
         d="M12 5V19M5 12H19"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="var(--stroke-width)"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -331,7 +442,7 @@ export function Pencil2Icon(props: React.SVGProps<SVGSVGElement>) {
       <path
         d="M18 2L22 6M2 22L3.2764 17.3199C3.35968 17.0145 3.40131 16.8619 3.46523 16.7195C3.52199 16.5931 3.59172 16.4729 3.67332 16.3609C3.76521 16.2348 3.87711 16.1229 4.1009 15.8991L14.4343 5.56569C14.6323 5.36768 14.7313 5.26867 14.8455 5.23158C14.9459 5.19895 15.0541 5.19895 15.1545 5.23158C15.2687 5.26867 15.3677 5.36768 15.5657 5.56569L18.4343 8.43431C18.6323 8.63232 18.7313 8.73133 18.7684 8.84549C18.8011 8.94591 18.8011 9.05409 18.7684 9.15451C18.7313 9.26867 18.6323 9.36768 18.4343 9.56569L8.1009 19.8991C7.87711 20.1229 7.76521 20.2348 7.63908 20.3267C7.52709 20.4083 7.40692 20.478 7.28052 20.5348C7.13815 20.5987 6.98548 20.6403 6.68014 20.7236L2 22Z"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="var(--stroke-width)"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -357,7 +468,7 @@ export function TrashIcon(props: React.SVGProps<SVGSVGElement>) {
       <path
         d="M16 6V5.2C16 4.0799 16 3.51984 15.782 3.09202C15.5903 2.71569 15.2843 2.40973 14.908 2.21799C14.4802 2 13.9201 2 12.8 2H11.2C10.0799 2 9.51984 2 9.09202 2.21799C8.71569 2.40973 8.40973 2.71569 8.21799 3.09202C8 3.51984 8 4.0799 8 5.2V6M10 11.5V16.5M14 11.5V16.5M3 6H21M19 6V17.2C19 18.8802 19 19.7202 18.673 20.362C18.3854 20.9265 17.9265 21.3854 17.362 21.673C16.7202 22 15.8802 22 14.2 22H9.8C8.11984 22 7.27976 22 6.63803 21.673C6.07354 21.3854 5.6146 20.9265 5.32698 20.362C5 19.7202 5 18.8802 5 17.2V6"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="var(--stroke-width)"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -383,7 +494,7 @@ export function EyeOffIcon(props: React.SVGProps<SVGSVGElement>) {
       <path
         d="M10.7425 5.09232C11.1489 5.03223 11.5682 5 12 5C17.105 5 20.4549 9.50484 21.5803 11.2868C21.7165 11.5025 21.7846 11.6103 21.8227 11.7767C21.8513 11.9016 21.8513 12.0987 21.8227 12.2236C21.7845 12.3899 21.7159 12.4985 21.5788 12.7156C21.2789 13.1901 20.8217 13.8571 20.2161 14.5805M6.72389 6.71504C4.56182 8.1817 3.09402 10.2194 2.42068 11.2853C2.28386 11.5019 2.21545 11.6102 2.17731 11.7765C2.14867 11.9014 2.14866 12.0984 2.17729 12.2234C2.2154 12.3897 2.2835 12.4975 2.41971 12.7132C3.54511 14.4952 6.89499 19 12 19C14.0584 19 15.8315 18.2676 17.2884 17.2766M2.99999 3L21 21M9.87867 9.87868C9.33577 10.4216 8.99999 11.1716 8.99999 12C8.99999 13.6569 10.3431 15 12 15C12.8284 15 13.5784 14.6642 14.1213 14.1213"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="var(--stroke-width)"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -414,7 +525,7 @@ export function CircleUserIcon(props: React.SVGProps<SVGSVGElement>) {
       <path
         d="M5.3163 19.4384C5.92462 18.0052 7.34492 17 9 17H15C16.6551 17 18.0754 18.0052 18.6837 19.4384M16 9.5C16 11.7091 14.2091 13.5 12 13.5C9.79086 13.5 8 11.7091 8 9.5C8 7.29086 9.79086 5.5 12 5.5C14.2091 5.5 16 7.29086 16 9.5ZM22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="var(--stroke-width)"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -496,6 +607,7 @@ export function DownloadIcon(props: React.SVGProps<SVGSVGElement>) {
       <path
         d="M6 9L9 12M9 12L12 9M9 12V6M16.5 9C16.5 13.1421 13.1421 16.5 9 16.5C4.85786 16.5 1.5 13.1421 1.5 9C1.5 4.85786 4.85786 1.5 9 1.5C13.1421 1.5 16.5 4.85786 16.5 9Z"
         stroke="currentColor"
+        strokeWidth="var(--stroke-width)"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -511,6 +623,7 @@ export function MailIcon(props: React.SVGProps<SVGSVGElement>) {
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      {...props}
     >
       <path
         opacity="0.12"
@@ -520,6 +633,7 @@ export function MailIcon(props: React.SVGProps<SVGSVGElement>) {
       <path
         d="M2 7L10.1649 12.7154C10.8261 13.1783 11.1567 13.4097 11.5163 13.4993C11.8339 13.5785 12.1661 13.5785 12.4837 13.4993C12.8433 13.4097 13.1739 13.1783 13.8351 12.7154L22 7M6.8 20H17.2C18.8802 20 19.7202 20 20.362 19.673C20.9265 19.3854 21.3854 18.9265 21.673 18.362C22 17.7202 22 16.8802 22 15.2V8.8C22 7.11984 22 6.27976 21.673 5.63803C21.3854 5.07354 20.9265 4.6146 20.362 4.32698C19.7202 4 18.8802 4 17.2 4H6.8C5.11984 4 4.27976 4 3.63803 4.32698C3.07354 4.6146 2.6146 5.07354 2.32698 5.63803C2 6.27976 2 7.11984 2 8.8V15.2C2 16.8802 2 17.7202 2.32698 18.362C2.6146 18.9265 3.07354 19.3854 3.63803 19.673C4.27976 20 5.11984 20 6.8 20Z"
         stroke="currentColor"
+        strokeWidth="var(--stroke-width)"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -540,7 +654,7 @@ export function TeleVisionIcon(props: React.SVGProps<SVGSVGElement>) {
       <path
         d="M2.52075 6.1875C2.52075 4.66872 3.75197 3.4375 5.27075 3.4375H16.7291C18.2479 3.4375 19.4791 4.66872 19.4791 6.1875V12.1458C19.4791 13.6647 18.2479 14.8958 16.7291 14.8958H5.27075C3.75197 14.8958 2.52075 13.6647 2.52075 12.1458V6.1875Z"
         stroke="currentColor"
-        strokeWidth="1.125"
+        strokeWidth="var(--stroke-width)"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -568,7 +682,7 @@ export function ChevronsLeftIcon(props: React.SVGProps<SVGSVGElement>) {
       <path
         d="M18 17L13 12L18 7M11 17L6 12L11 7"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="var(--stroke-width)"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -576,8 +690,213 @@ export function ChevronsLeftIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-// Example of Shell Component
+// ============================================================================
+// Common Icons (app UI: routes, sidebar, settings, form-builder, etc.)
+// ============================================================================
+
+const createConsistentLucideIcon = (Icon: React.ComponentType<LucideProps>) => {
+  return function ConsistentLucideIcon(props: React.SVGProps<SVGSVGElement>) {
+    return <Icon strokeWidth={1.5} absoluteStrokeWidth {...props} />;
+  };
+};
+
+export const BanIcon = createConsistentLucideIcon(LucideBan);
+export const BluetoothIcon = createConsistentLucideIcon(LucideBluetooth);
+export const CheckIcon = createConsistentLucideIcon(LucideCheck);
+export const CheckCircle2Icon = createConsistentLucideIcon(LucideCheckCircle2);
+export const ChevronLeftIcon = createConsistentLucideIcon(LucideChevronLeft);
+export const ChevronRightIcon = createConsistentLucideIcon(LucideChevronRight);
+export const ChevronUpIcon = createConsistentLucideIcon(LucideChevronUp);
+export const ChevronsRightIcon =
+  createConsistentLucideIcon(LucideChevronsRight);
+export const CircleCheckIcon = createConsistentLucideIcon(LucideCircleCheck);
+export const CirclePlusIcon = createConsistentLucideIcon(LucideCirclePlus);
+export const CircleUserRoundIcon = createConsistentLucideIcon(
+  LucideCircleUserRound,
+);
+export const CircleXIcon = createConsistentLucideIcon(LucideCircleX);
+export const ClockIcon = createConsistentLucideIcon(LucideClock);
+export const CreditCardIcon = createConsistentLucideIcon(LucideCreditCard);
+export const EyeIcon = createConsistentLucideIcon(LucideEye);
+export const EyeOffLucideIcon = createConsistentLucideIcon(LucideEyeOff);
+export const FileCodeIcon = createConsistentLucideIcon(LucideFileCode);
+export const FileIcon = createConsistentLucideIcon(LucideFile);
+export const FileQuestionIcon = createConsistentLucideIcon(LucideFileQuestion);
+export const FileTextIcon = createConsistentLucideIcon(LucideFileText);
+export const FilterIcon = createConsistentLucideIcon(LucideFilter);
+export const FolderIcon = createConsistentLucideIcon(LucideFolder);
+export const FolderOpenIcon = createConsistentLucideIcon(LucideFolderOpen);
+export const FolderSearchIcon = createConsistentLucideIcon(LucideFolderSearch);
+export const HelpCircleIcon = createConsistentLucideIcon(LucideHelpCircle);
+export const ImageIcon = createConsistentLucideIcon(LucideImage);
+export const InfoIcon = createConsistentLucideIcon(LucideInfo);
+export const KeyboardIcon = createConsistentLucideIcon(LucideKeyboard);
+export const LanguagesIcon = createConsistentLucideIcon(LucideLanguages);
+export const LayoutIcon = createConsistentLucideIcon(LucideLayout);
+export const Loader2Icon = createConsistentLucideIcon(LucideLoader2);
+export const LockIcon = createConsistentLucideIcon(LucideLock);
 export function LogOutIcon(props: React.SVGProps<SVGSVGElement>) {
-  // Later this will be replaced with a custom SVG
-  return <LogOut className="size-4 shrink-0" strokeWidth={1.5} />;
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path
+        opacity="0.12"
+        d="M21 16.2V7.8C21 6.11985 21 5.27976 20.673 4.63803C20.3854 4.07354 19.9265 3.6146 19.362 3.32698C18.7202 3 17.8802 3 16.2 3H15V21H16.2C17.8802 21 18.7202 21 19.362 20.673C19.9265 20.3854 20.3854 19.9265 20.673 19.362C21 18.7202 21 17.8802 21 16.2Z"
+        fill="currentColor"
+      />
+      <path
+        d="M15 3H16.2C17.8802 3 18.7202 3 19.362 3.32698C19.9265 3.6146 20.3854 4.07354 20.673 4.63803C21 5.27976 21 6.11985 21 7.8V16.2C21 17.8802 21 18.7202 20.673 19.362C20.3854 19.9265 19.9265 20.3854 19.362 20.673C18.7202 21 17.8802 21 16.2 21H15M10 7L15 12M15 12L10 17M15 12L3 12"
+        stroke="currentColor"
+        strokeWidth="var(--stroke-width)"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
+export const MinusIcon = createConsistentLucideIcon(LucideMinus);
+export const MonitorIcon = createConsistentLucideIcon(LucideMonitor);
+export function MoonIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path
+        opacity="0.12"
+        d="M22 15.8442C20.6866 16.4382 19.2286 16.7688 17.6935 16.7688C11.9153 16.7688 7.23116 12.0847 7.23116 6.30654C7.23116 4.77135 7.5618 3.3134 8.15577 2C4.52576 3.64163 2 7.2947 2 11.5377C2 17.3159 6.68414 22 12.4623 22C16.7053 22 20.3584 19.4742 22 15.8442Z"
+        fill="currentColor"
+      />
+      <path
+        d="M22 15.8442C20.6866 16.4382 19.2286 16.7688 17.6935 16.7688C11.9153 16.7688 7.23116 12.0847 7.23116 6.30654C7.23116 4.77135 7.5618 3.3134 8.15577 2C4.52576 3.64163 2 7.2947 2 11.5377C2 17.3159 6.68414 22 12.4623 22C16.7053 22 20.3584 19.4742 22 15.8442Z"
+        stroke="currentColor"
+        strokeWidth="var(--stroke-width)"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+export const MoreVerticalIcon = createConsistentLucideIcon(LucideMoreVertical);
+export const OctagonXIcon = createConsistentLucideIcon(LucideOctagonX);
+export const PaletteIcon = createConsistentLucideIcon(LucidePalette);
+export const PanelLeftIcon = createConsistentLucideIcon(LucidePanelLeft);
+export const PencilIcon = createConsistentLucideIcon(LucidePencil);
+export const RefreshCwIcon = createConsistentLucideIcon(LucideRefreshCw);
+export const RocketIcon = createConsistentLucideIcon(LucideRocket);
+export const RotateCcwIcon = createConsistentLucideIcon(LucideRotateCcw);
+export const SaveIcon = createConsistentLucideIcon(LucideSave);
+export const ShieldIcon = createConsistentLucideIcon(LucideShield);
+export function SmileIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path
+        opacity="0.12"
+        d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+        fill="currentColor"
+      />
+      <path
+        d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14M15 9H15.01M9 9H9.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM15.5 9C15.5 9.27614 15.2761 9.5 15 9.5C14.7239 9.5 14.5 9.27614 14.5 9C14.5 8.72386 14.7239 8.5 15 8.5C15.2761 8.5 15.5 8.72386 15.5 9ZM9.5 9C9.5 9.27614 9.27614 9.5 9 9.5C8.72386 9.5 8.5 9.27614 8.5 9C8.5 8.72386 8.72386 8.5 9 8.5C9.27614 8.5 9.5 8.72386 9.5 9Z"
+        stroke="currentColor"
+        strokeWidth="var(--stroke-width)"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+export function SunIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 22 22"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path
+        d="M11 1V3M11 19V21M3 11H1M5.31412 5.31412L3.8999 3.8999M16.6859 5.31412L18.1001 3.8999M5.31412 16.69L3.8999 18.1042M16.6859 16.69L18.1001 18.1042M21 11H19M16 11C16 13.7614 13.7614 16 11 16C8.23858 16 6 13.7614 6 11C6 8.23858 8.23858 6 11 6C13.7614 6 16 8.23858 16 11Z"
+        stroke="var(--sidebar-icon-stroke)"
+        strokeWidth="var(--stroke-width)"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+export const TagIcon = createConsistentLucideIcon(LucideTag);
+export const Trash2Icon = createConsistentLucideIcon(LucideTrash2);
+export const TriangleAlertIcon =
+  createConsistentLucideIcon(LucideTriangleAlert);
+export const UploadIcon = createConsistentLucideIcon(LucideUpload);
+export const UserIcon = createConsistentLucideIcon(LucideUser);
+export const XIcon = createConsistentLucideIcon(LucideX);
+
+// ============================================================================
+// Plate.js Editor Icons (toolbar buttons, editor nodes, block menus, etc.)
+// ============================================================================
+
+export const AlignCenterIcon = createConsistentLucideIcon(LucideAlignCenter);
+export const AlignLeftIcon = createConsistentLucideIcon(LucideAlignLeft);
+export const AlignRightIcon = createConsistentLucideIcon(LucideAlignRight);
+export const ArrowDownToLineIcon = createConsistentLucideIcon(
+  LucideArrowDownToLine,
+);
+export const ArrowLeftIcon = createConsistentLucideIcon(LucideArrowLeft);
+export const ArrowRightIcon = createConsistentLucideIcon(LucideArrowRight);
+export const ArrowUpToLineIcon =
+  createConsistentLucideIcon(LucideArrowUpToLine);
+export const AudioLinesIcon = createConsistentLucideIcon(LucideAudioLines);
+export const BoldIcon = createConsistentLucideIcon(LucideBold);
+export const BracesIcon = createConsistentLucideIcon(LucideBraces);
+export const CornerDownLeftIcon =
+  createConsistentLucideIcon(LucideCornerDownLeft);
+export const CropIcon = createConsistentLucideIcon(LucideCrop);
+export const EraserIcon = createConsistentLucideIcon(LucideEraser);
+export const ExternalLinkIcon = createConsistentLucideIcon(LucideExternalLink);
+export const FileUpIcon = createConsistentLucideIcon(LucideFileUp);
+export const FilmIcon = createConsistentLucideIcon(LucideFilm);
+export const GripHorizontalIcon =
+  createConsistentLucideIcon(LucideGripHorizontal);
+export const GripVerticalIcon = createConsistentLucideIcon(LucideGripVertical);
+export const IndentIcon = createConsistentLucideIcon(LucideIndent);
+export const ItalicIcon = createConsistentLucideIcon(LucideItalic);
+export const LinkIcon = createConsistentLucideIcon(LucideLink);
+export const ListIcon = createConsistentLucideIcon(LucideList);
+export const ListCollapseIcon = createConsistentLucideIcon(LucideListCollapse);
+export const ListOrderedIcon = createConsistentLucideIcon(LucideListOrdered);
+export const ListTodoIcon = createConsistentLucideIcon(LucideListTodo);
+export const MessageSquareTextIcon = createConsistentLucideIcon(
+  LucideMessageSquareText,
+);
+export const OutdentIcon = createConsistentLucideIcon(LucideOutdent);
+export const PencilLineIcon = createConsistentLucideIcon(LucidePencilLine);
+export const PenIcon = createConsistentLucideIcon(LucidePen);
+export const RadicalIcon = createConsistentLucideIcon(LucideRadical);
+export const Redo2Icon = createConsistentLucideIcon(LucideRedo2);
+export const StrikethroughIcon =
+  createConsistentLucideIcon(LucideStrikethrough);
+export const TextIcon = createConsistentLucideIcon(LucideText);
+export const UnderlineIcon = createConsistentLucideIcon(LucideUnderline);
+export const Undo2Icon = createConsistentLucideIcon(LucideUndo2);
+export const UnlinkIcon = createConsistentLucideIcon(LucideUnlink);
+export const WrapTextIcon = createConsistentLucideIcon(LucideWrapText);
+export const AlertCircleIcon = createConsistentLucideIcon(LucideAlertCircle);

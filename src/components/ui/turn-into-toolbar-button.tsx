@@ -1,19 +1,16 @@
 import {
-  ChevronRightIcon,
   Columns3Icon,
-  FileCodeIcon,
   Heading1Icon,
   Heading2Icon,
   Heading3Icon,
   Heading4Icon,
   Heading5Icon,
   Heading6Icon,
-  ListIcon,
-  ListOrderedIcon,
   PilcrowIcon,
   QuoteIcon,
   SquareIcon,
 } from "lucide-react";
+import { ChevronRightIcon, FileCodeIcon, ListIcon, ListOrderedIcon } from "@/components/ui/icons";
 import type { TElement } from "platejs";
 import { KEYS } from "platejs";
 import { useEditorRef, useSelectionFragmentProp } from "platejs/react";

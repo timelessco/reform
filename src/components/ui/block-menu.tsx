@@ -3,7 +3,7 @@ import {
   BlockMenuPlugin,
   BlockSelectionPlugin,
 } from "@platejs/selection/react";
-import { ChevronRight, GripVertical } from "lucide-react";
+import { ChevronRightIcon, GripVerticalIcon } from "@/components/ui/icons";
 import { KEYS } from "platejs";
 import { useEditorPlugin, useEditorSelector, useHotkeys, usePluginOption } from "platejs/react";
 import * as React from "react";
@@ -11,15 +11,15 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
-import { StyleToggle } from "@/components/ui/style-controls";
+import { Popover, PopoverContent } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import {
   CopyIcon,
   EyeOffIcon,
   Pencil2Icon,
   PlusIcon,
   TrashIcon,
-} from "@/components/ui/sidebar-icons";
+} from "@/components/ui/icons";
 import { useEditorTheme } from "@/contexts/editor-theme-context";
 import { cn } from "@/lib/utils";
 
@@ -342,23 +342,32 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
   const currentMaxLength = inputNode?.maxLength;
   const currentDefaultValue = inputNode?.defaultValue;
 
+  // Virtual anchor for positioning the popover at the click coordinates
+  const virtualAnchor = React.useMemo(() => {
+    if (!isOpen) return undefined;
+    return {
+      getBoundingClientRect: () => ({
+        x,
+        y,
+        width: 0,
+        height: 0,
+        top: y,
+        left: x,
+        right: x,
+        bottom: y,
+        toJSON: () => ({}),
+      }),
+    };
+  }, [isOpen, x, y]);
+
   return (
     <>
       <div ref={blockMenuTriggerRef}>{children}</div>
 
       <Popover open={isOpen} onOpenChange={(open) => !open && api.blockMenu.hide()}>
-        <PopoverAnchor
-          style={{
-            position: "fixed",
-            left: `${x}px`,
-            top: `${y}px`,
-            width: 1,
-            height: 1,
-            pointerEvents: "none",
-          }}
-        />
         <PopoverContent
-          className={cn("w-[288px] p-2.5", hasCustomization && "bf-themed")}
+          anchor={virtualAnchor}
+          className={cn("w-[288px] p-1", hasCustomization && "bf-themed")}
           style={hasCustomization ? themeVars : undefined}
           side="left"
           align="center"
@@ -386,7 +395,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
             <div>
               {/* Field Name Header */}
               <div className="flex items-center gap-2 px-2 py-1.5">
-                <GripVertical
+                <GripVerticalIcon
                   className="h-3.5 w-3.5 text-muted-foreground shrink-0"
                   strokeWidth={1.5}
                 />
@@ -421,65 +430,63 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
               {/* Field-Specific Options */}
               {fieldType === "formInput" && (
                 <>
-                  <div className="px-0 space-y-0">
-                    <StyleToggle
-                      label="Required"
-                      value={isRequired}
-                      onChange={handleToggleRequired}
-                      className="border-0 h-[26px] px-2 rounded-lg"
-                    />
-                    <StyleToggle
-                      label="Default answer"
-                      value={hasDefaultValue}
-                      onChange={handleToggleDefaultValue}
-                      className="border-0 h-[26px] px-2 rounded-lg"
-                    />
-                    {hasDefaultValue && (
-                      <div className="px-2 py-1">
-                        <Input
-                          value={currentDefaultValue || ""}
-                          onChange={(e) => handleUpdateDefaultValue(e.target.value)}
-                          placeholder="Enter default value"
-                          className="h-7 text-[13px] rounded-lg"
-                        />
+                  <div className="flex flex-col gap-px [&>div]:bg-secondary [&>:first-child]:rounded-t-[8px] [&>:last-child]:rounded-b-[8px]">
+                    <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
+                      <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">Required</span>
+                      <Switch size="sm" checked={isRequired} onCheckedChange={handleToggleRequired} />
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
+                        <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">Default answer</span>
+                        <Switch size="sm" checked={hasDefaultValue} onCheckedChange={handleToggleDefaultValue} />
                       </div>
-                    )}
-                    <StyleToggle
-                      label="Min characters"
-                      value={hasMinLength}
-                      onChange={handleToggleMinLength}
-                      className="border-0 h-[26px] px-2 rounded-lg"
-                    />
-                    {hasMinLength && (
-                      <div className="px-2 py-1">
-                        <Input
-                          type="number"
-                          min={1}
-                          value={currentMinLength || 1}
-                          onChange={(e) => handleUpdateMinLength(Number(e.target.value))}
-                          placeholder="Min"
-                          className="h-7 text-[13px] rounded-lg"
-                        />
+                      {hasDefaultValue && (
+                        <div className="px-2 pb-2">
+                          <Input
+                            value={currentDefaultValue || ""}
+                            onChange={(e) => handleUpdateDefaultValue(e.target.value)}
+                            placeholder="Enter default value"
+                            className="h-7 text-[13px] rounded-lg"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
+                        <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">Min characters</span>
+                        <Switch size="sm" checked={hasMinLength} onCheckedChange={handleToggleMinLength} />
                       </div>
-                    )}
-                    <StyleToggle
-                      label="Max characters"
-                      value={hasMaxLength}
-                      onChange={handleToggleMaxLength}
-                      className="border-0 h-[26px] px-2 rounded-lg"
-                    />
-                    {hasMaxLength && (
-                      <div className="px-2 py-1">
-                        <Input
-                          type="number"
-                          min={1}
-                          value={currentMaxLength || 100}
-                          onChange={(e) => handleUpdateMaxLength(Number(e.target.value))}
-                          placeholder="Max"
-                          className="h-7 text-[13px] rounded-lg"
-                        />
+                      {hasMinLength && (
+                        <div className="px-2 pb-2">
+                          <Input
+                            type="number"
+                            min={1}
+                            value={currentMinLength || 1}
+                            onChange={(e) => handleUpdateMinLength(Number(e.target.value))}
+                            placeholder="Min"
+                            className="h-7 text-[13px] rounded-lg"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
+                        <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">Max characters</span>
+                        <Switch size="sm" checked={hasMaxLength} onCheckedChange={handleToggleMaxLength} />
                       </div>
-                    )}
+                      {hasMaxLength && (
+                        <div className="px-2 pb-2">
+                          <Input
+                            type="number"
+                            min={1}
+                            value={currentMaxLength || 100}
+                            onChange={(e) => handleUpdateMaxLength(Number(e.target.value))}
+                            placeholder="Max"
+                            className="h-7 text-[13px] rounded-lg"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="my-1 h-px bg-border" />
                 </>
@@ -529,7 +536,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                 <MenuItem onClick={() => setShowTurnInto(true)}>
                   <span className="text-[13px]">↺</span>
                   <span className="flex-1 text-left">Turn into</span>
-                  <ChevronRight className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                  <ChevronRightIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
                 </MenuItem>
               </div>
             </div>

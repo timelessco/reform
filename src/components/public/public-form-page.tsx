@@ -1,4 +1,4 @@
-import { FileQuestion, Lock } from "lucide-react";
+import { FileQuestionIcon, LockIcon } from "@/components/ui/icons";
 import type { Value } from "platejs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -71,7 +71,7 @@ function FormNotFound() {
       <Empty className="border-none">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <FileQuestion />
+            <FileQuestionIcon />
           </EmptyMedia>
           <EmptyTitle>{t("formNotFound")}</EmptyTitle>
           <EmptyDescription>{t("formNotFoundDescription")}</EmptyDescription>
@@ -88,7 +88,7 @@ function FormNotPublished() {
       <Empty className="border-none">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <Lock />
+            <LockIcon />
           </EmptyMedia>
           <EmptyTitle>{t("formNotAvailable")}</EmptyTitle>
           <EmptyDescription>{t("formNotAvailableDescription")}</EmptyDescription>

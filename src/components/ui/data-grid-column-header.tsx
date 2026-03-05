@@ -18,13 +18,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Column } from "@tanstack/react-table";
 import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  CheckIcon,
+} from "@/components/ui/icons";
+import {
   ArrowDown,
-  ArrowLeft,
   ArrowLeftToLine,
-  ArrowRight,
   ArrowRightToLine,
   ArrowUp,
-  Check,
   ChevronsUpDown,
   PinOff,
   Settings2,
@@ -184,7 +186,7 @@ function DataGridColumnHeader<TData, TValue>({
                   <ArrowUp className="size-3.5!" />
                   <span className="grow">Asc</span>
                   {column.getIsSorted() === "asc" && (
-                    <Check className="size-4 opacity-100! text-primary" />
+                    <CheckIcon className="size-4 opacity-100! text-primary" />
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -200,7 +202,7 @@ function DataGridColumnHeader<TData, TValue>({
                   <ArrowDown className="size-3.5!" />
                   <span className="grow">Desc</span>
                   {column.getIsSorted() === "desc" && (
-                    <Check className="size-4 opacity-100! text-primary" />
+                    <CheckIcon className="size-4 opacity-100! text-primary" />
                   )}
                 </DropdownMenuItem>
               </>
@@ -221,7 +223,7 @@ function DataGridColumnHeader<TData, TValue>({
                   <ArrowLeftToLine className="size-3.5!" aria-hidden="true" />
                   <span className="grow">Pin to left</span>
                   {column.getIsPinned() === "left" && (
-                    <Check className="size-4 opacity-100! text-primary" />
+                    <CheckIcon className="size-4 opacity-100! text-primary" />
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -234,7 +236,7 @@ function DataGridColumnHeader<TData, TValue>({
                   <ArrowRightToLine className="size-3.5!" aria-hidden="true" />
                   <span className="grow">Pin to right</span>
                   {column.getIsPinned() === "right" && (
-                    <Check className="size-4 opacity-100! text-primary" />
+                    <CheckIcon className="size-4 opacity-100! text-primary" />
                   )}
                 </DropdownMenuItem>
               </>
@@ -247,14 +249,14 @@ function DataGridColumnHeader<TData, TValue>({
                   onClick={() => moveColumn("left")}
                   disabled={!canMove("left") || column.getIsPinned() !== false}
                 >
-                  <ArrowLeft className="size-3.5!" aria-hidden="true" />
+                  <ArrowLeftIcon className="size-3.5!" aria-hidden="true" />
                   <span>Move to Left</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => moveColumn("right")}
                   disabled={!canMove("right") || column.getIsPinned() !== false}
                 >
-                  <ArrowRight className="size-3.5!" aria-hidden="true" />
+                  <ArrowRightIcon className="size-3.5!" aria-hidden="true" />
                   <span>Move to Right</span>
                 </DropdownMenuItem>
               </>

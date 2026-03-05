@@ -1,7 +1,7 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
-import { AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from "@/components/ui/icons";
 import {
   motion,
   useMotionValue,
@@ -715,7 +715,7 @@ export function StyleAlignToggle({
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          <AlignLeft className="w-[14px] h-[14px]" />
+          <AlignLeftIcon className="w-[14px] h-[14px]" />
         </button>
         <button
           ref={(el) => {
@@ -730,7 +730,7 @@ export function StyleAlignToggle({
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          <AlignCenter className="w-[14px] h-[14px]" />
+          <AlignCenterIcon className="w-[14px] h-[14px]" />
         </button>
         <button
           ref={(el) => {
@@ -745,7 +745,7 @@ export function StyleAlignToggle({
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          <AlignRight className="w-[14px] h-[14px]" />
+          <AlignRightIcon className="w-[14px] h-[14px]" />
         </button>
       </div>
     </div>

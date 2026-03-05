@@ -2,16 +2,13 @@ import { TablePlugin, useTableMergeState } from "@platejs/table/react";
 
 import {
   ArrowDown,
-  ArrowLeft,
-  ArrowRight,
   ArrowUp,
   Combine,
   Grid3x3Icon,
   Table,
-  Trash2Icon,
   Ungroup,
-  XIcon,
 } from "lucide-react";
+import { ArrowLeftIcon, ArrowRightIcon, Trash2Icon, XIcon } from "@/components/ui/icons";
 import { KEYS } from "platejs";
 import { useEditorPlugin, useEditorSelector } from "platejs/react";
 import * as React from "react";
@@ -175,7 +172,7 @@ export function TableToolbarButton(
                   editor.tf.focus();
                 }}
               >
-                <ArrowLeft />
+                <ArrowLeftIcon />
                 Insert column before
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -186,7 +183,7 @@ export function TableToolbarButton(
                   editor.tf.focus();
                 }}
               >
-                <ArrowRight />
+                <ArrowRightIcon />
                 Insert column after
               </DropdownMenuItem>
               <DropdownMenuItem

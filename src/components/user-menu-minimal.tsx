@@ -13,14 +13,14 @@ import { cn } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import {
-  ChevronDown,
-  LogOut,
-  Moon,
-  Settings,
-  Sun,
-  Trash2,
-  Users,
-} from "lucide-react";
+  ChevronDownIcon,
+  LogOutIcon,
+  MoonIcon,
+  SettingsIcon,
+  SunIcon,
+  Trash2Icon,
+  UsersIcon,
+} from "@/components/ui/icons";
 import { useCallback, useMemo, useRef, useState } from "react";
 
 function getInitials(name?: string | null) {
@@ -104,7 +104,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
     {
       key: "settings",
       label: "Settings",
-      icon: Settings,
+      icon: SettingsIcon,
       action: () => {
         settingsDialogStore.open("account");
         setIsOpen(false);
@@ -113,7 +113,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
     {
       key: "theme",
       label: theme === "dark" ? "Light mode" : "Dark mode",
-      icon: theme === "dark" ? Sun : Moon,
+      icon: theme === "dark" ? SunIcon : MoonIcon,
       action: () => {
         setTheme(theme === "dark" ? "light" : "dark");
         setIsOpen(false);
@@ -122,7 +122,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
     {
       key: "trash",
       label: "Trash",
-      icon: Trash2,
+      icon: Trash2Icon,
       action: () => {
         onOpenTrash();
         setIsOpen(false);
@@ -131,7 +131,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
     {
       key: "members",
       label: "Members",
-      icon: Users,
+      icon: UsersIcon,
       action: () => {
         settingsDialogStore.open("members");
         setIsOpen(false);
@@ -139,9 +139,12 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
     },
   ];
 
+  const menuItemIconClass =
+    "size-4 shrink-0 text-foreground/80 [&_path]:stroke-[1.6] [&_path]:stroke-current";
+
   return (
     <div
-      className="border-t border-b bg-background"
+      className="border-t border-b bg-background px-2"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -150,12 +153,12 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
           render={
             <button
               type="button"
-              className="flex items-center gap-2 px-1 py-[7px] w-full min-w-0 hover:bg-sidebar-active justify-start cursor-pointer transition-colors rounded-lg overflow-hidden"
+              className="flex w-full min-w-0 items-center gap-2 rounded-lg overflow-hidden px-1 py-[7px] transition-colors hover:bg-sidebar-active cursor-pointer"
               aria-label="Toggle user menu"
             />
           }
         >
-          <div className="h-6 w-6 rounded-full overflow-hidden bg-sidebar-active flex items-center justify-center text-[10px] font-bold shrink-0">
+          <div className="size-6 rounded-full overflow-hidden bg-sidebar-active flex items-center justify-center text-[10px] font-bold shrink-0">
             {session?.user?.image ? (
               <img
                 src={session.user.image}
@@ -166,16 +169,18 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
               getInitials(displayName)
             )}
           </div>
-          <span className="text-[14px] font-medium text-sidebar-foreground truncate flex-1 text-left leading-[1.15] font-case">
+          <p className="min-w-0 truncate text-left text-sm font-medium leading-[1.15] text-sidebar-foreground font-case">
             {displayName}
-          </span>
-          <ChevronDown
-            className={cn(
-              "size-3 text-muted-foreground transition-transform duration-200 shrink-0",
-              isOpen && "rotate-180",
-            )}
-            strokeWidth={1.5}
-          />
+          </p>
+          <div className="shrink-0 flex items-center">
+            <ChevronDownIcon
+              className={cn(
+                "size-3 text-muted-foreground transition-transform duration-200",
+                isOpen && "rotate-180",
+              )}
+              strokeWidth={1.5}
+            />
+          </div>
         </PopoverTrigger>
 
         <PopoverContent
@@ -226,7 +231,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
                   onClick={item.action}
                   className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground cursor-pointer"
                 >
-                  <Icon className="size-4 shrink-0" strokeWidth={1.5} />
+                  <Icon className={menuItemIconClass} />
                   <span className="flex-1 text-left">{item.label}</span>
                 </button>
               );
@@ -284,7 +289,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
             }}
             className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground cursor-pointer"
           >
-            <LogOut className="size-4 shrink-0" strokeWidth={1.5} />
+            <LogOutIcon className={menuItemIconClass} />
             <span className="flex-1 text-left">Log out</span>
           </button>
         </PopoverContent>

@@ -1,18 +1,20 @@
 import { APP_NAME } from "@/lib/app-config";
 import {
   Calculator,
-  CreditCard,
-  EyeOff,
-  FileText,
-  HelpCircle,
-  Layout,
-  Link as LinkIcon,
   MessageSquare,
   MousePointer2,
-  Sparkles,
   Split,
   Zap,
 } from "lucide-react";
+import {
+  CreditCardIcon,
+  EyeOffLucideIcon,
+  FileTextIcon,
+  HelpCircleIcon,
+  LayoutIcon,
+  LinkIcon,
+  SparklesIcon,
+} from "@/components/ui/icons";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement } from "platejs/react";
 import { useState } from "react";
@@ -62,7 +64,7 @@ export function OnboardingContentElement(props: PlateElementProps) {
           {/* Landing Hero Section */}
           <div className="flex flex-col items-center text-center mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-background border border-border text-sm text-muted-foreground mb-4">
-              <Sparkles className="h-4 w-4" />
+              <SparklesIcon className="h-4 w-4" />
               <span>The next generation of forms</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2 tracking-tight">
@@ -73,7 +75,7 @@ export function OnboardingContentElement(props: PlateElementProps) {
           <div className="space-y-8">
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-3 text-muted-foreground/60 text-lg">
-                <FileText className="h-5 w-5" />
+                <FileTextIcon className="h-5 w-5" />
                 <span>
                   Press <span className="font-medium text-foreground/80">Enter</span> to start from
                   scratch
@@ -86,7 +88,7 @@ export function OnboardingContentElement(props: PlateElementProps) {
                 onClick={() => setTemplateModalOpen(true)}
                 onMouseDown={(e) => e.preventDefault()}
               >
-                <Layout className="h-4 w-4" />
+                <LayoutIcon className="h-4 w-4" />
                 Use a template
               </Button>
             </div>
@@ -116,9 +118,9 @@ export function OnboardingContentElement(props: PlateElementProps) {
                 </h3>
                 <div className="flex flex-col gap-3">
                   <OnboardingItem icon={MousePointer2} label="Create your first form" />
-                  <OnboardingItem icon={Layout} label="Get started with templates" />
+                  <OnboardingItem icon={LayoutIcon} label="Get started with templates" />
                   <OnboardingItem icon={LinkIcon} label="Embed your form" />
-                  <OnboardingItem icon={HelpCircle} label="Help center" />
+                  <OnboardingItem icon={HelpCircleIcon} label="Help center" />
                   <OnboardingItem icon={Zap} label={`Learn about ${APP_NAME} Pro`} />
                 </div>
               </div>
@@ -130,9 +132,9 @@ export function OnboardingContentElement(props: PlateElementProps) {
                 <div className="flex flex-col gap-3">
                   <OnboardingItem icon={Split} label="Conditional logic" />
                   <OnboardingItem icon={Calculator} label="Calculator" />
-                  <OnboardingItem icon={EyeOff} label="Hidden fields" />
+                  <OnboardingItem icon={EyeOffLucideIcon} label="Hidden fields" />
                   <OnboardingItem icon={MessageSquare} label="Mentions" />
-                  <OnboardingItem icon={CreditCard} label="Collect payments" />
+                  <OnboardingItem icon={CreditCardIcon} label="Collect payments" />
                 </div>
               </div>
             </div>
@@ -147,7 +149,7 @@ export function OnboardingContentElement(props: PlateElementProps) {
             <DialogTitle>Templates</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center py-12 text-muted-foreground">
-            <Layout className="h-12 w-12 mb-4 opacity-50" />
+            <LayoutIcon className="h-12 w-12 mb-4 opacity-50" />
             <p className="text-lg font-medium">Coming soon</p>
             <p className="text-sm mt-2">We're working on some great templates for you.</p>
           </div>

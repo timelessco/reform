@@ -1,5 +1,5 @@
 import type { ErrorComponentProps } from "@tanstack/react-router";
-import { RefreshCw } from "lucide-react";
+import { RefreshCwIcon } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 
 export function ErrorBoundary({ error, reset }: ErrorComponentProps) {
@@ -63,7 +63,7 @@ ${error.stack || "No stack trace available"}
         </div>
         <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
           <Button onClick={reset} className="gap-2">
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCwIcon className="h-4 w-4" />
             Reset and Try Again
           </Button>
           <Button onClick={createGithubIssue} variant="outline" className="gap-2">

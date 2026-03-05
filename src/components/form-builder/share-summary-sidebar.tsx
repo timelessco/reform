@@ -1,6 +1,6 @@
 import { useForm as useTanstackForm } from "@tanstack/react-form";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { Rocket, X } from "lucide-react";
+import { RocketIcon, XIcon } from "@/components/ui/icons";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CopyButton } from "@/components/copy-button/copy-button";
@@ -134,7 +134,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
             className="h-7 w-7 text-muted-foreground hover:text-foreground"
             onClick={closeSidebar}
           >
-            <X className="h-4 w-4" />
+            <XIcon className="h-4 w-4" />
           </Button>
         </div>
 
@@ -158,7 +158,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
           {isDraft ? (
             <div className="flex flex-col items-center justify-center py-10 px-4 text-center space-y-6 bg-muted/20 border-2 border-dashed rounded-2xl">
               <div className="p-3 bg-primary/10 rounded-full text-primary">
-                <Rocket className="h-8 w-8 animate-bounce-subtle" />
+                <RocketIcon className="h-8 w-8 animate-bounce-subtle" />
               </div>
               <div className="space-y-2">
                 <h3 className="font-bold">Ready to go live?</h3>

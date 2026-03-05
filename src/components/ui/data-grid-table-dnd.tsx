@@ -40,7 +40,7 @@ import {
   HeaderGroup,
   Row,
 } from "@tanstack/react-table";
-import { GripVertical } from "lucide-react";
+import { GripVerticalIcon } from "@/components/ui/icons";
 
 function DataGridTableDndHeader<TData>({
   header,
@@ -86,7 +86,7 @@ function DataGridTableDndHeader<TData>({
           {...listeners}
           aria-label="Drag to reorder"
         >
-          <GripVertical className="opacity-50" aria-hidden="true" />
+          <GripVerticalIcon className="opacity-50" aria-hidden="true" />
         </Button>
         {header.isPlaceholder
           ? null

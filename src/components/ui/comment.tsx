@@ -7,13 +7,13 @@ import {
   format,
 } from "date-fns";
 import {
-  ArrowUpIcon,
   CheckIcon,
   MoreHorizontalIcon,
   PencilIcon,
   TrashIcon,
   XIcon,
-} from "lucide-react";
+} from "@/components/ui/icons";
+import { ArrowUpIcon } from "lucide-react";
 import { KEYS, NodeApi, nanoid, type Value } from "platejs";
 import type { CreatePlateEditorOptions } from "platejs/react";
 import {

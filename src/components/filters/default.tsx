@@ -10,24 +10,26 @@ import {
   type FilterFieldConfig,
 } from "@/components/ui/filters";
 import {
-  AlertCircle,
-  Ban,
+  AlertCircleIcon,
+  BanIcon,
+  CalendarIcon,
+  ClockIcon,
+  MailIcon,
+  StarIcon,
+  UsersIcon,
+} from "@/components/ui/icons";
+import {
   Bell,
   Building,
-  Calendar,
   CheckCircle,
-  Clock,
   FunnelX,
   Globe,
-  Mail,
   Phone,
   SlidersHorizontal,
-  Star,
   Timer,
   TrendingUp,
   Type,
   UserRoundCheck,
-  Users,
   Wallet,
 } from "lucide-react";
 
@@ -64,7 +66,7 @@ export default function FiltersDemo() {
           key: "email",
           label: "Email",
           type: "email",
-          icon: <Mail />,
+          icon: <MailIcon />,
           placeholder: "user@example.com",
         },
         {
@@ -102,11 +104,11 @@ export default function FiltersDemo() {
           searchable: false,
           className: "w-[200px]",
           options: [
-            { value: "todo", label: "To Do", icon: <Clock className="size-3 text-primary" /> },
+            { value: "todo", label: "To Do", icon: <ClockIcon className="size-3 text-primary" /> },
             {
               value: "in-progress",
               label: "In Progress",
-              icon: <AlertCircle className="size-3 text-yellow-500" />,
+              icon: <AlertCircleIcon className="size-3 text-yellow-500" />,
             },
             {
               value: "done",
@@ -116,7 +118,7 @@ export default function FiltersDemo() {
             {
               value: "cancelled",
               label: "Cancelled",
-              icon: <Ban className="size-3 text-destructive" />,
+              icon: <BanIcon className="size-3 text-destructive" />,
             },
           ],
         },
@@ -167,7 +169,7 @@ export default function FiltersDemo() {
         {
           key: "userType",
           label: "User Type",
-          icon: <Users />,
+          icon: <UsersIcon />,
           type: "select",
           searchable: false,
           className: "w-[200px]",
@@ -175,14 +177,14 @@ export default function FiltersDemo() {
             {
               value: "premium",
               label: "Premium",
-              icon: <Star className="size-3 text-yellow-500" />,
+              icon: <StarIcon className="size-3 text-yellow-500" />,
             },
             {
               value: "standard",
               label: "Standard",
               icon: <Building className="size-3 text-blue-500" />,
             },
-            { value: "trial", label: "Trial", icon: <Clock className="size-3 text-gray-500" /> },
+            { value: "trial", label: "Trial", icon: <ClockIcon className="size-3 text-gray-500" /> },
           ],
         },
       ],
@@ -193,14 +195,14 @@ export default function FiltersDemo() {
         {
           key: "dueDate",
           label: "Due Date",
-          icon: <Calendar />,
+          icon: <CalendarIcon />,
           type: "date",
           className: "w-36",
         },
         {
           key: "orderDate",
           label: "Order Date",
-          icon: <Calendar />,
+          icon: <CalendarIcon />,
           type: "select",
           searchable: false,
           className: "w-[200px]",
@@ -216,13 +218,13 @@ export default function FiltersDemo() {
         {
           key: "dateRange",
           label: "Date Range",
-          icon: <Calendar />,
+          icon: <CalendarIcon />,
           type: "daterange",
         },
         {
           key: "createdAt",
           label: "Created At",
-          icon: <Clock />,
+          icon: <ClockIcon />,
           type: "datetime",
         },
         {
@@ -239,7 +241,7 @@ export default function FiltersDemo() {
         {
           key: "score",
           label: "Score",
-          icon: <Star />,
+          icon: <StarIcon />,
           type: "number",
           min: 0,
           max: 100,

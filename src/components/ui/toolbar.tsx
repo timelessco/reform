@@ -1,6 +1,6 @@
 import { Toolbar as ToolbarPrimitive } from "@base-ui/react/toolbar";
 import { cva, type VariantProps } from "class-variance-authority";
-import { ChevronDown } from "lucide-react";
+import { ChevronDownIcon } from "@/components/ui/icons";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -148,7 +148,7 @@ export const ToolbarButton = withTooltip(function ToolbarButton({
               {children}
             </div>
             <div>
-              <ChevronDown
+              <ChevronDownIcon
                 className="size-3.5 text-muted-foreground"
                 data-icon
               />
@@ -240,7 +240,7 @@ export function ToolbarSplitButtonSecondary({
       onClick={(e) => e.stopPropagation()}
       {...props}
     >
-      <ChevronDown className="size-3.5 text-muted-foreground" data-icon />
+      <ChevronDownIcon className="size-3.5 text-muted-foreground" data-icon />
     </Button>
   );
 }

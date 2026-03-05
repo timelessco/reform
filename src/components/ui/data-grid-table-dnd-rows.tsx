@@ -34,7 +34,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Cell, flexRender, HeaderGroup, Row } from "@tanstack/react-table";
-import { GripHorizontal } from "lucide-react";
+import { GripHorizontalIcon } from "@/components/ui/icons";
 
 function DataGridTableDndRowHandle({ rowId }: { rowId: string }) {
   const { attributes, listeners } = useSortable({
@@ -49,7 +49,7 @@ function DataGridTableDndRowHandle({ rowId }: { rowId: string }) {
       {...attributes}
       {...listeners}
     >
-      <GripHorizontal />
+      <GripHorizontalIcon />
     </Button>
   );
 }

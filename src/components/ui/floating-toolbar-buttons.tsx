@@ -1,4 +1,4 @@
-import { BoldIcon, ItalicIcon, StrikethroughIcon, UnderlineIcon } from "lucide-react";
+import { BoldIcon, ItalicIcon, StrikethroughIcon, UnderlineIcon } from "@/components/ui/icons";
 import { KEYS } from "platejs";
 import { useEditorReadOnly } from "platejs/react";
 

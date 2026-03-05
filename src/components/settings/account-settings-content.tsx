@@ -37,17 +37,17 @@ import { auth, useSession } from "@/lib/auth-client";
 import { uploadAvatar } from "@/lib/fn/upload";
 import { useStore } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Camera } from "lucide-react";
 import {
-  AlertCircle,
-  Camera,
+  AlertCircleIcon,
   ImageIcon,
-  Loader2,
-  RotateCcw,
-  TriangleAlert
-} from "lucide-react";
+  Loader2Icon,
+  RotateCcwIcon,
+  TriangleAlertIcon,
+} from "@/components/ui/icons";
 import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
-import { MailIcon, TeleVisionIcon } from "../ui/sidebar-icons";
+import { MailIcon, TeleVisionIcon } from "../ui/icons";
 
 function ThemeSelect() {
   const { theme, setTheme } = useTheme();
@@ -264,7 +264,7 @@ export function AccountSettingsContent() {
   if (isSessionPending) {
     return (
       <div className="flex items-center justify-center p-12">
-        <Loader2 className="animate-spin h-8 w-8 text-muted-foreground" />
+        <Loader2Icon className="animate-spin h-8 w-8 text-muted-foreground" />
       </div>
     );
   }
@@ -544,7 +544,7 @@ export function AccountSettingsContent() {
         </div>
         {accounts.find((a) => a.providerId === "google") && (
           <div className="flex items-center gap-2">
-            <AlertCircle className="size-[18px] text-(--gray-600) shrink-0" />
+            <AlertCircleIcon className="size-[18px] text-(--gray-600) shrink-0" />
               <p className="text-[13px] text-(--gray-600) leading-[1.5]">
               You have logged in with your Google account.
             </p>
@@ -566,9 +566,9 @@ export function AccountSettingsContent() {
           className="w-full bg-(--gray-100) rounded-lg px-2.5 py-[7px] flex items-center justify-center gap-1.5 cursor-pointer hover:bg-(--gray-200) transition-colors disabled:opacity-50"
         >
           {deleteAccountMutation.isPending ? (
-            <Loader2 className="animate-spin size-3 text-destructive" />
+            <Loader2Icon className="animate-spin size-3 text-destructive" />
           ) : (
-            <TriangleAlert className="size-3 text-destructive" />
+            <TriangleAlertIcon className="size-3 text-destructive" />
           )}
           <span className="text-destructive text-sm font-medium">
             Delete my account
@@ -614,7 +614,7 @@ export function AccountSettingsContent() {
                   disabled={!password || setup2faMutation.isPending}
                 >
                   {setup2faMutation.isPending ? (
-                    <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                    <Loader2Icon className="animate-spin mr-2 h-4 w-4" />
                   ) : null}
                   Next
                 </Button>
@@ -686,7 +686,7 @@ export function AccountSettingsContent() {
                   }
                 >
                   {verifyTotpMutation.isPending ? (
-                    <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                    <Loader2Icon className="animate-spin mr-2 h-4 w-4" />
                   ) : null}
                   Enable 2FA
                 </Button>
@@ -726,7 +726,7 @@ export function AccountSettingsContent() {
                   <ImageCropReset
                     render={<Button variant="outline" size="sm" />}
                   >
-                    <RotateCcw className="h-4 w-4 mr-2" />
+                    <RotateCcwIcon className="h-4 w-4 mr-2" />
                     Reset
                   </ImageCropReset>
 
@@ -740,7 +740,7 @@ export function AccountSettingsContent() {
                   >
                     {uploadAvatarMutation.isPending ? (
                       <>
-                        <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                        <Loader2Icon className="animate-spin mr-2 h-4 w-4" />
                         Uploading...
                       </>
                     ) : (

@@ -38,16 +38,16 @@ import {
 } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import {
-  ChevronLeft,
-  ChevronRight,
-  Copy,
-  FileText,
-  FolderPlus,
-  HelpCircle,
-  Loader2,
-  Plus,
-  Trash2,
-} from "lucide-react";
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CopyIcon,
+  FileTextIcon,
+  HelpCircleIcon,
+  Loader2Icon,
+  PlusIcon,
+  Trash2Icon,
+} from "@/components/ui/icons";
+import { FolderPlus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -244,9 +244,9 @@ function DashboardPage() {
               className=" font-medium"
             >
               {isCreating ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2Icon className="h-4 w-4 animate-spin mr-2" />
               ) : (
-                <Plus className="h-4 w-4 mr-2" />
+                <PlusIcon className="h-4 w-4 mr-2" />
               )}
               New form
             </Button>
@@ -338,7 +338,7 @@ function DashboardPage() {
                                   />
                                 }
                               >
-                                <Copy className="h-4 w-4 text-muted-foreground" />
+                                <CopyIcon className="h-4 w-4 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent>Duplicate</TooltipContent>
                             </Tooltip>
@@ -361,7 +361,7 @@ function DashboardPage() {
                                   />
                                 }
                               >
-                                <Trash2 className="h-4 w-4 text-muted-foreground" />
+                                <Trash2Icon className="h-4 w-4 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent>Delete</TooltipContent>
                             </Tooltip>
@@ -388,7 +388,7 @@ function DashboardPage() {
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeftIcon className="h-4 w-4" />
                   Previous
                 </Button>
                 <div className="flex items-center gap-1">
@@ -415,7 +415,7 @@ function DashboardPage() {
                   disabled={currentPage === totalPages}
                 >
                   Next
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRightIcon className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -424,7 +424,7 @@ function DashboardPage() {
           {!isLoading && orgForms.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 border-2 border-dashed rounded-2xl bg-muted/20">
               <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                <FileText className="h-6 w-6 text-muted-foreground" />
+                <FileTextIcon className="h-6 w-6 text-muted-foreground" />
               </div>
               <div className="space-y-1">
                 <p className="font-medium">No forms yet</p>
@@ -438,7 +438,7 @@ function DashboardPage() {
                 disabled={isLoading || isCreating || orgWorkspaces.length === 0}
               >
                 {isCreating && (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2Icon className="h-4 w-4 animate-spin mr-2" />
                 )}
                 Create my first form
               </Button>
@@ -454,7 +454,7 @@ function DashboardPage() {
           size="icon"
           className="h-10 w-10 rounded-full bg-muted/50 hover:bg-muted shadow-sm border"
         >
-          <HelpCircle className="h-5 w-5 text-muted-foreground" />
+          <HelpCircleIcon className="h-5 w-5 text-muted-foreground" />
         </Button>
       </div>
 

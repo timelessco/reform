@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X } from "lucide-react";
+import { XIcon } from "@/components/ui/icons";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 
 interface EmbedPreviewMockupProps {
@@ -248,7 +248,7 @@ export function EmbedPreviewMockup({
                   setIsPopupExpanded(false);
                 }}
               >
-                <X className="h-2 w-2 text-muted-foreground" />
+                <XIcon className="h-2 w-2 text-muted-foreground" />
               </button>
             )}
 

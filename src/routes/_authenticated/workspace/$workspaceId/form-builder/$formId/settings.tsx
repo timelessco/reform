@@ -21,7 +21,7 @@ import { APP_NAME } from "@/lib/app-config";
 import { cn } from "@/lib/utils";
 import { defaultFormSettings } from "@/types/form-settings";
 import { createFileRoute } from "@tanstack/react-router";
-import { Eye, EyeOff } from "lucide-react";
+import { EyeIcon, EyeOffIcon } from "@/components/ui/icons";
 import { useState } from "react";
 
 export const Route = createFileRoute(
@@ -621,7 +621,7 @@ function PasswordInput({ value, onChange }: { value: string; onChange: (val: str
         onClick={() => setShow(!show)}
         className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
       >
-        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        {show ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
       </button>
     </div>
   );

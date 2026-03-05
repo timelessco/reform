@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { Info, X } from "lucide-react";
+import { InfoIcon, XIcon } from "@/components/ui/icons";
 import { APP_NAME } from "@/lib/app-config";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -322,7 +322,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
             className="h-7 w-7 text-muted-foreground hover:text-foreground"
             onClick={closeSidebar}
           >
-            <X className="h-4 w-4" />
+            <XIcon className="h-4 w-4" />
           </Button>
         </div>
       </SidebarHeader>
@@ -532,7 +532,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
               <Tooltip>
                 <TooltipTrigger
                   render={
-                    <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                    <InfoIcon className="h-3 w-3 text-muted-foreground/60 cursor-help" />
                   }
                 />
                 <TooltipContent

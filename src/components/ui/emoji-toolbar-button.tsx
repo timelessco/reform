@@ -19,17 +19,19 @@ import {
 } from "@/components/ui/popover";
 import {
   AppleIcon,
-  ClockIcon,
   CompassIcon,
   FlagIcon,
   LeafIcon,
   LightbulbIcon,
   MusicIcon,
+} from "lucide-react";
+import {
+  ClockIcon,
   SearchIcon,
   SmileIcon,
   StarIcon,
   XIcon,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";

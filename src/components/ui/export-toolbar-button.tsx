@@ -1,6 +1,6 @@
 import { MarkdownPlugin } from "@platejs/markdown";
 
-import { ArrowDownToLineIcon } from "lucide-react";
+import { ArrowDownToLineIcon } from "@/components/ui/icons";
 import { createSlateEditor } from "platejs";
 import { useEditorRef } from "platejs/react";
 import { serializeHtml } from "platejs/static";

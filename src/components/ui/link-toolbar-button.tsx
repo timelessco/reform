@@ -1,5 +1,5 @@
 import { useLinkToolbarButton, useLinkToolbarButtonState } from "@platejs/link/react";
-import { Link as LinkIcon } from "lucide-react";
+import { LinkIcon } from "@/components/ui/icons";
 import type * as React from "react";
 
 import { ToolbarButton } from "./toolbar";

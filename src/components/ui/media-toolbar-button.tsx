@@ -6,7 +6,7 @@ import {
   FilmIcon,
   ImageIcon,
   LinkIcon,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { isUrl, KEYS } from "platejs";
 import { useEditorRef } from "platejs/react";
 import * as React from "react";

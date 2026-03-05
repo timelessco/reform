@@ -24,7 +24,7 @@ import {
 } from "@/lib/transform-plate-to-form";
 import { cn } from "@/lib/utils";
 import type { PublicFormSettings } from "@/types/form-settings";
-import { ChevronRightIcon } from "lucide-react";
+import { ChevronRightIcon } from "@/components/ui/icons";
 import { AnimatePresence, motion } from "motion/react";
 import type { Value } from "platejs";
 import { useEffect, useState } from "react";

@@ -1,6 +1,6 @@
 import { useStore } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Clock, Mail, Plus, Trash2, X } from "lucide-react";
+import { ClockIcon, MailIcon, PlusIcon, Trash2Icon, XIcon } from "@/components/ui/icons";
 import { useId } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -104,7 +104,7 @@ export function MembersContent() {
                 disabled={inviteMutation.isPending || !field.state.value}
                 className="mr-1 gap-1.5"
               >
-                <Plus className="size-3.5" />
+                <PlusIcon className="size-3.5" />
                 {inviteMutation.isPending ? "Inviting..." : "Invite"}
               </InputGroupButton>
             </InputGroup>
@@ -123,7 +123,7 @@ export function MembersContent() {
                 className="bg-[var(--gray-100)] rounded-xl pl-2 pr-2.5 py-2 flex items-center gap-3"
               >
                 <div className="size-[38px] rounded-lg bg-background flex items-center justify-center">
-                  <Mail className="size-[22px] text-muted-foreground" />
+                  <MailIcon className="size-[22px] text-muted-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{invitation.email}</p>
@@ -133,7 +133,7 @@ export function MembersContent() {
                       variant={invitation.status === "pending" ? "secondary" : "outline"}
                       className="text-[10px] px-1.5 py-0 h-4 capitalize"
                     >
-                      {invitation.status === "pending" && <Clock className="mr-1 h-2.5 w-2.5" />}
+                      {invitation.status === "pending" && <ClockIcon className="mr-1 h-2.5 w-2.5" />}
                       {invitation.status}
                     </Badge>
                   </div>
@@ -149,7 +149,7 @@ export function MembersContent() {
                     disabled={cancelInvitationMutation.isPending}
                     className="h-[30px] bg-white rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] px-3 text-[13px] font-medium cursor-pointer hover:bg-gray-50 transition-colors shrink-0 text-destructive"
                   >
-                    <X className="size-3.5" />
+                    <XIcon className="size-3.5" />
                   </button>
                 )}
               </div>
@@ -199,7 +199,7 @@ export function MembersContent() {
                     disabled={removeMemberMutation.isPending}
                     className="h-[30px] bg-white rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] px-3 text-[13px] font-medium cursor-pointer hover:bg-gray-50 transition-colors shrink-0"
                   >
-                    <Trash2 className="size-3.5 text-destructive" />
+                    <Trash2Icon className="size-3.5 text-destructive" />
                   </button>
                 )}
               </div>

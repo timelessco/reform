@@ -35,7 +35,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cva, type VariantProps } from "class-variance-authority";
-import { AlertCircle, Check, Plus, X } from "lucide-react";
+import { AlertCircleIcon, CheckIcon, PlusIcon, XIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
 // i18n Configuration Interface
@@ -652,7 +652,7 @@ function FilterInput<T = unknown>({
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center" />
               }
             >
-              <AlertCircle className="size-3.5 text-destructive" />
+              <AlertCircleIcon className="size-3.5 text-destructive" />
             </TooltipTrigger>
             <TooltipContent>
               <p className="text-sm">{validationMessage}</p>
@@ -687,7 +687,7 @@ interface FilterRemoveButtonProps
 
 function FilterRemoveButton({
   className,
-  icon = <X />,
+  icon = <XIcon />,
   ...props
 }: FilterRemoveButtonProps) {
   const context = useFilterContext();
@@ -1132,7 +1132,7 @@ function SelectOptionsPopover<T = unknown>({
                     <span className="text-accent-foreground truncate">
                       {option.label}
                     </span>
-                    <Check className="text-primary ms-auto" />
+                    <CheckIcon className="text-primary ms-auto" />
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -1180,7 +1180,7 @@ function SelectOptionsPopover<T = unknown>({
                       <span className="text-accent-foreground truncate">
                         {option.label}
                       </span>
-                      <Check className="text-primary ms-auto opacity-0" />
+                      <CheckIcon className="text-primary ms-auto opacity-0" />
                     </CommandItem>
                   ))}
                 </CommandGroup>
@@ -1278,7 +1278,7 @@ function SelectOptionsPopover<T = unknown>({
                     <span className="text-accent-foreground truncate">
                       {option.label}
                     </span>
-                    <Check className="text-primary ms-auto" />
+                    <CheckIcon className="text-primary ms-auto" />
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -1315,7 +1315,7 @@ function SelectOptionsPopover<T = unknown>({
                       <span className="text-accent-foreground truncate">
                         {option.label}
                       </span>
-                      <Check className="text-primary ms-auto opacity-0" />
+                      <CheckIcon className="text-primary ms-auto opacity-0" />
                     </CommandItem>
                   ))}
                 </CommandGroup>
@@ -1737,7 +1737,7 @@ function FilterValueSelector<T = unknown>({
                     <span className="text-accent-foreground truncate">
                       {option.label}
                     </span>
-                    <Check className="text-primary ms-auto" />
+                    <CheckIcon className="text-primary ms-auto" />
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -1773,7 +1773,7 @@ function FilterValueSelector<T = unknown>({
                       <span className="text-accent-foreground truncate">
                         {option.label}
                       </span>
-                      <Check className="text-primary ms-auto opacity-0" />
+                      <CheckIcon className="text-primary ms-auto opacity-0" />
                     </CommandItem>
                   ))}
                 </CommandGroup>
@@ -2189,7 +2189,7 @@ export function Filters<T = unknown>({
                 addButton
               ) : (
                 <>
-                  {addButtonIcon || <Plus />}
+                  {addButtonIcon || <PlusIcon />}
                   {addButtonText || mergedI18n.addFilter}
                 </>
               )}

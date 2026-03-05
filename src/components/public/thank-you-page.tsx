@@ -1,4 +1,4 @@
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2Icon } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 
 interface ThankYouPageProps {
@@ -13,7 +13,7 @@ function ThankYouPage({ formTitle, onSubmitAnother }: ThankYouPageProps) {
         {/* Success Icon */}
         <div className="flex justify-center">
           <div className="rounded-full bg-green-100 p-3">
-            <CheckCircle2 className="h-12 w-12 text-green-600" />
+            <CheckCircle2Icon className="h-12 w-12 text-green-600" />
           </div>
         </div>
 

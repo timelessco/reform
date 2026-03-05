@@ -1,4 +1,4 @@
-import { Redo2Icon, Undo2Icon } from "lucide-react";
+import { Redo2Icon, Undo2Icon } from "@/components/ui/icons";
 import { useEditorRef, useEditorSelector } from "platejs/react";
 import type * as React from "react";
 

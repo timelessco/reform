@@ -8,7 +8,7 @@ import { getFormbyIdQueryOption } from "@/lib/fn/forms";
 import { cn } from "@/lib/utils";
 import { createFileRoute, redirect, useLocation } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { Loader2 } from "lucide-react";
+import { Loader2Icon } from "@/components/ui/icons";
 import type { Value } from "platejs";
 import { useEffect } from "react";
 import { z } from "zod";
@@ -154,7 +154,7 @@ function DesignPage() {
                 <span className="text-sm text-amber-800">
                   {isLoadingVersionContent ? (
                     <span className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2Icon className="h-4 w-4 animate-spin" />
                       Loading version...
                     </span>
                   ) : versionData?.publishedAt ? (
@@ -184,7 +184,7 @@ function DesignPage() {
                 <PreviewMode formId={formId} workspaceId={workspaceId} />
               ) : isViewingVersion && isLoadingVersionContent ? (
                 <div className="h-full w-full flex items-center justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : (
                 <EditorApp

@@ -1,10 +1,9 @@
-import { DndPlugin } from "@platejs/dnd";
 import { useBlockSelected } from "@platejs/selection/react";
 import { cva } from "class-variance-authority";
-import { type PlateElementProps, usePluginOption } from "platejs/react";
+import { type PlateElementProps } from "platejs/react";
 
 export const blockSelectionVariants = cva(
-  "pointer-events-none absolute inset-0 z-1 bg-brand/[.13] transition-opacity",
+  "pointer-events-none absolute inset-0 z-1 bg-primary/[.13] transition-opacity",
   {
     defaultVariants: {
       active: true,
@@ -20,14 +19,13 @@ export const blockSelectionVariants = cva(
 
 export function BlockSelection(props: PlateElementProps) {
   const isBlockSelected = useBlockSelected();
-  const isDragging = usePluginOption(DndPlugin, "isDragging");
 
   if (!isBlockSelected || props.plugin.key === "tr" || props.plugin.key === "table") return null;
 
   return (
     <div
       className={blockSelectionVariants({
-        active: isBlockSelected && !isDragging,
+        active: isBlockSelected,
       })}
       data-slot="block-selection"
     />

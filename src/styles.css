@@ -1128,6 +1128,11 @@
   margin-top: var(--bf-spacing);
 }
 
+@keyframes drop-line-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 @utility font-case {
   font-feature-settings: 'case';
 }

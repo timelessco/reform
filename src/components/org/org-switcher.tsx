@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
-import { ChevronDown, Home, LogOut, Settings, Users } from "lucide-react";
+import { ChevronDownIcon, HomeIcon, LogOutIcon, SettingsIcon, UsersIcon } from "@/components/ui/icons";
 import { useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -106,7 +106,7 @@ function OrganizationSwitcher() {
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-semibold">{displayName}</span>
             </div>
-            <ChevronDown className="ml-auto h-4 w-4 text-muted-foreground" />
+            <ChevronDownIcon className="ml-auto h-4 w-4 text-muted-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-[--radix-dropdown-menu-trigger-width] min-w-48 rounded-lg"
@@ -153,26 +153,26 @@ function OrganizationSwitcher() {
               onClick={() => router.navigate({ to: "/dashboard" })}
               className="gap-2.5 py-2"
             >
-              <Home className="h-4 w-4" />
+              <HomeIcon className="h-4 w-4" />
               <span>Home</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => settingsDialogStore.open("members")}
               className="gap-2.5 py-2"
             >
-              <Users className="h-4 w-4" />
+              <UsersIcon className="h-4 w-4" />
               <span>Members</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => settingsDialogStore.open()}
               className="gap-2.5 py-2"
             >
-              <Settings className="h-4 w-4" />
+              <SettingsIcon className="h-4 w-4" />
               <span>Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="gap-2.5 py-2">
-              <LogOut className="h-4 w-4" />
+              <LogOutIcon className="h-4 w-4" />
               <span>Log out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>

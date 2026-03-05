@@ -1,6 +1,6 @@
 import { APP_NAME } from "@/lib/app-config";
 import { Link, useSearch } from "@tanstack/react-router";
-import { Sparkles, X } from "lucide-react";
+import { SparklesIcon, XIcon } from "@/components/ui/icons";
 import { useState, useEffect } from "react";
 import type { Value } from "platejs";
 import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
@@ -197,7 +197,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                         className="h-8 w-8 hover:bg-muted text-muted-foreground bg-background/50 backdrop-blur-sm rounded-full shadow-sm"
                         onClick={() => setIsPopupOpen(false)}
                       >
-                        <X className="h-4 w-4" />
+                        <XIcon className="h-4 w-4" />
                       </Button>
                     </div>
 
@@ -218,7 +218,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                       <div className="py-3 flex justify-center bg-primary/10 border-t border-border shrink-0">
                         <div className="flex items-center gap-1.5 text-[12px] font-semibold text-primary">
                           <span>Made with</span>
-                          <Sparkles className="h-3 w-3 fill-primary text-primary" />
+                          <SparklesIcon className="h-3 w-3 fill-primary text-primary" />
                           <span>{APP_NAME}</span>
                         </div>
                       </div>
@@ -289,7 +289,7 @@ function BrandingBadge() {
     <div className="flex justify-end pt-6">
       <div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted/50 rounded-full text-[10px] font-bold text-muted-foreground hover:text-foreground transition-colors cursor-default border border-border/50">
         <span>Made with</span>
-        <Sparkles className="h-3 w-3 fill-muted-foreground/50 text-muted-foreground/50" />
+        <SparklesIcon className="h-3 w-3 fill-muted-foreground/50 text-muted-foreground/50" />
         <span>{APP_NAME}</span>
       </div>
     </div>

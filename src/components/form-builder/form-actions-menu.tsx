@@ -27,7 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { duplicateForm, updateDoc, updateFormStatus } from "@/db-collections";
 import { useNavigate } from "@tanstack/react-router";
-import { Copy, MoreHorizontal, Tag, Trash2 } from "lucide-react";
+import { CopyIcon, MoreHorizontalIcon, TagIcon, Trash2Icon } from "@/components/ui/icons";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -101,7 +101,7 @@ export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
             />
           }
         >
-          <MoreHorizontal className="h-5 w-5" />
+          <MoreHorizontalIcon className="h-5 w-5" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
           <DropdownMenuItem
@@ -110,11 +110,11 @@ export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
               setIsRenameOpen(true);
             }}
           >
-            <Tag className="mr-2 h-4 w-4 text-muted-foreground" />
+            <TagIcon className="mr-2 h-4 w-4 text-muted-foreground" />
             <span>Rename</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleDuplicate}>
-            <Copy className="mr-2 h-4 w-4 text-muted-foreground" />
+            <CopyIcon className="mr-2 h-4 w-4 text-muted-foreground" />
             <span>Duplicate</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -122,7 +122,7 @@ export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
             onClick={() => setIsDeleteOpen(true)}
             className="text-destructive focus:text-destructive"
           >
-            <Trash2 className="mr-2 h-4 w-4" />
+            <Trash2Icon className="mr-2 h-4 w-4" />
             <span>Delete</span>
           </DropdownMenuItem>
         </DropdownMenuContent>

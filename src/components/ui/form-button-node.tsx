@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Settings } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, SettingsIcon } from "@/components/ui/icons";
 import type { PlateEditor, PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorRef } from "platejs/react";
 import * as React from "react";
@@ -141,7 +141,7 @@ export function FormButtonElement({
           />
         }
       >
-        <Settings className="h-4 w-4 text-muted-foreground" />
+        <SettingsIcon className="h-4 w-4 text-muted-foreground" />
       </PopoverTrigger>
       <PopoverContent
         className="w-64 p-4 border"
@@ -209,9 +209,9 @@ export function FormButtonElement({
               : "bg-primary text-primary-foreground ",
           )}
         >
-          {isPrevious && <ChevronLeft className="h-4 w-4" />}
+          {isPrevious && <ChevronLeftIcon className="h-4 w-4" />}
           <span>{displayText}</span>
-          {buttonRole === "next" && <ChevronRight className="h-4 w-4" />}
+          {buttonRole === "next" && <ChevronRightIcon className="h-4 w-4" />}
         </span>
         {/* Gear icon on right when button floats left (so button touches left edge) */}
         {(isPrevious || isSubmitOnSinglePage) && GearIcon}

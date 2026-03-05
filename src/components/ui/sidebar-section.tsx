@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ChevronDownIcon, MoreHorizontalIcon } from "@/components/ui/sidebar-icons";
+import { ChevronDownIcon, MoreHorizontalIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 

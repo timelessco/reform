@@ -3,7 +3,7 @@
 import { useComposedRef } from "@udecode/cn";
 // @ts-ignore - lodash debounce types issue
 import debounce from "lodash/debounce";
-import { EraserIcon, PlusIcon } from "lucide-react";
+import { EraserIcon, PlusIcon } from "@/components/ui/icons";
 import { useEditorRef, useEditorSelector } from "platejs/react";
 import React from "react";
 

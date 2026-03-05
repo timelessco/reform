@@ -1,6 +1,6 @@
 import { LineHeightPlugin } from "@platejs/basic-styles/react";
 
-import { WrapText } from "lucide-react";
+import { WrapTextIcon } from "@/components/ui/icons";
 import { useEditorRef, useSelectionFragmentProp } from "platejs/react";
 import * as React from "react";
 
@@ -35,7 +35,7 @@ export function LineHeightToolbarButton(
           <ToolbarButton pressed={open} tooltip="Line height" isDropdown />
         }
       >
-        <WrapText />
+        <WrapTextIcon />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent className="min-w-0" align="start">

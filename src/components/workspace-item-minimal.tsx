@@ -25,19 +25,21 @@ import {
   MoreHorizontalIcon,
   Pencil2Icon,
   PlusIcon,
-} from "@/components/ui/sidebar-icons";
+} from "@/components/ui/icons";
 import { SidebarSection } from "@/components/ui/sidebar-section";
 import { createFormLocal } from "@/db-collections";
 import { cn } from "@/lib/utils";
 import { useLocation, useRouter } from "@tanstack/react-router";
 import {
-  Check,
-  ChevronRight,
+  CheckIcon,
+  ChevronRightIcon,
+  Loader2Icon,
+  StarIcon,
+  TrashIcon,
+} from "@/components/ui/icons";
+import {
   Feather,
   Github,
-  Loader2,
-  Star,
-  TrashIcon,
   Zap,
 } from "lucide-react";
 import { useState } from "react";
@@ -147,7 +149,7 @@ export function WorkspaceItemMinimal({
                   <span className="flex-1 text-left">
                     {currentSort.label}
                   </span>
-                  <ChevronRight
+                  <ChevronRightIcon
                     className={cn(
                       "size-3 shrink-0 transition-transform duration-200",
                       sortExpanded && "rotate-90",
@@ -184,7 +186,7 @@ export function WorkspaceItemMinimal({
                           {option.label}
                         </span>
                         {sortMode === option.value && (
-                          <Check
+                          <CheckIcon
                             className="size-3 shrink-0"
                             strokeWidth={2}
                           />
@@ -205,7 +207,7 @@ export function WorkspaceItemMinimal({
                 className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none"
               >
                 {isCreatingForm ? (
-                  <Loader2
+                  <Loader2Icon
                     className="size-4 animate-spin shrink-0"
                     strokeWidth={1.5}
                   />
@@ -277,7 +279,7 @@ const getFormIcon = (title: string, icon?: string | null) => {
   if (lowerTitle.includes("contact"))
     return (
       <div className={`bg-form-icon-bg shadow-sm ${iconWrapper}`}>
-        <Star className="h-3 w-3 fill-foreground text-foreground" />
+        <StarIcon className="h-3 w-3 fill-foreground text-foreground" />
       </div>
     );
 

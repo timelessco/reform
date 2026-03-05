@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { Loader2Icon } from "@/components/ui/icons";
 import * as React from "react";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -308,7 +308,7 @@ function LoginPage() {
                   disabled={isPending}
                 >
                   {isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
                   )}
                   Verify
                 </Button>
@@ -339,7 +339,7 @@ function LoginPage() {
               disabled={isPending}
             >
               {socialSignInMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                   <title>Google</title>
@@ -442,7 +442,7 @@ function LoginPage() {
                     disabled={isPending}
                   >
                     {signInMutation.isPending && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
                     )}
                     Sign in
                   </Button>
@@ -495,7 +495,7 @@ function LoginPage() {
                     disabled={isPending}
                   >
                     {signInUsernameMutation.isPending && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
                     )}
                     Sign in
                   </Button>
@@ -531,7 +531,7 @@ function LoginPage() {
                     disabled={isPending}
                   >
                     {sendOtpMutation.isPending && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
                     )}
                     Send code
                   </Button>

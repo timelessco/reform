@@ -1,5 +1,5 @@
 import { useIndentButton, useOutdentButton } from "@platejs/indent/react";
-import { IndentIcon, OutdentIcon } from "lucide-react";
+import { IndentIcon, OutdentIcon } from "@/components/ui/icons";
 import type * as React from "react";
 
 import { ToolbarButton } from "./toolbar";

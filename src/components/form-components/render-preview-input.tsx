@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 import type { NavigationHandlers } from "@/components/form-components/form-preview-from-plate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,7 +78,7 @@ export function RenderPreviewInput({
           onClick={navigation?.onPrevious}
           className="inline-flex items-center gap-2"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeftIcon className="h-4 w-4" />
           {buttonText}
         </Button>
       );
@@ -95,7 +95,7 @@ export function RenderPreviewInput({
           className="inline-flex items-center gap-2"
         >
           {buttonText}
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRightIcon className="h-4 w-4" />
         </Button>
       );
       // When grouped, parent handles layout; otherwise wrap with justify-end
@@ -110,7 +110,7 @@ export function RenderPreviewInput({
         disabled={navigation?.isSubmitting}
       >
         {navigation?.isSubmitting ? "Submitting..." : buttonText}
-        {layout !== "editor" && <ChevronRight className="h-4 w-4" />}
+        {layout !== "editor" && <ChevronRightIcon className="h-4 w-4" />}
       </Button>
     );
     // When grouped, parent handles layout; single-page aligns left, multi-page aligns right

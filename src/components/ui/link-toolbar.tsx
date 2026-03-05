@@ -9,7 +9,7 @@ import {
   useFloatingLinkInsertState,
 } from "@platejs/link/react";
 import { cva } from "class-variance-authority";
-import { ExternalLink, Link as LinkIcon, Text, Unlink } from "lucide-react";
+import { ExternalLinkIcon, LinkIcon, TextIcon, UnlinkIcon } from "@/components/ui/icons";
 import type { TLinkElement } from "platejs";
 import { KEYS } from "platejs";
 import { useEditorRef, useFormInputProps, usePluginOption } from "platejs/react";
@@ -93,7 +93,7 @@ export function LinkFloatingToolbar({ state }: { state?: LinkFloatingToolbarStat
       <Separator className="my-1" />
       <div className="flex items-center">
         <div className="flex items-center pr-1 pl-2 text-muted-foreground">
-          <Text className="size-4" />
+          <TextIcon className="size-4" />
         </div>
         <input
           className={inputVariants()}
@@ -120,7 +120,7 @@ export function LinkFloatingToolbar({ state }: { state?: LinkFloatingToolbarStat
       <Separator orientation="vertical" />
 
       <Button variant="ghost" size="sm" {...unlinkButtonProps}>
-        <Unlink width={18} />
+        <UnlinkIcon width={18} />
       </Button>
     </div>
   );
@@ -179,7 +179,7 @@ function LinkOpenButton() {
       onFocus={stopPropagationInteraction}
       aria-label="Open link in a new tab"
     >
-      <ExternalLink width={18} />
+      <ExternalLinkIcon width={18} />
     </Button>
   );
 }

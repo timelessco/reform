@@ -1,4 +1,4 @@
-import { CircleUserRoundIcon } from "lucide-react";
+import { CircleUserRoundIcon } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { useFileUpload } from "@/hooks/use-file-upload";
 

@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDownIcon } from "@/components/ui/icons";
 import * as React from "react";
 import { APP_NAME } from "@/lib/app-config";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ export function FAQItem({ question, answer }: { question: string; answer: string
         <span className="text-[13px] text-muted-foreground group-hover:text-foreground font-normal pr-4 leading-snug text-left whitespace-normal flex-1">
           {question}
         </span>
-        <ChevronDown
+        <ChevronDownIcon
           className={cn(
             "h-3 w-3 text-muted-foreground/30 group-hover:text-foreground transition-transform duration-200 shrink-0 mt-1",
             isOpen && "rotate-180 text-foreground",

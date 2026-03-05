@@ -32,7 +32,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { HOTKEYS } from "@/lib/hotkeys";
 import { cn } from "@/lib/utils";
 import { useHotkey } from "@tanstack/react-hotkeys";
-import { PanelLeftIcon } from "lucide-react";
+import { PanelLeftIcon } from "@/components/ui/icons";
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -198,7 +198,7 @@ function Sidebar({
   variant?: "sidebar" | "floating" | "inset";
   collapsible?: "offcanvas" | "icon" | "none";
 }) {
-  const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+  const sidebar = useSidebarSafe();
 
   if (collapsible === "none") {
     return (
@@ -214,6 +214,12 @@ function Sidebar({
       </div>
     );
   }
+
+  if (!sidebar) {
+    throw new Error("useSidebar must be used within a SidebarProvider.");
+  }
+
+  const { isMobile, state, openMobile, setOpenMobile } = sidebar;
 
   if (isMobile) {
     return (

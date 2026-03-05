@@ -17,18 +17,20 @@ import { PopoverAnchor } from "@/components/ui/popover";
 import { cva } from "class-variance-authority";
 import {
   ArrowDown,
-  ArrowLeft,
-  ArrowRight,
   ArrowUp,
   CombineIcon,
-  EraserIcon,
   Grid2X2Icon,
-  GripVertical,
   PaintBucketIcon,
   SquareSplitHorizontalIcon,
+} from "lucide-react";
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  EraserIcon,
+  GripVerticalIcon,
   Trash2Icon,
   XIcon,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import {
   KEYS,
   PathApi,
@@ -260,7 +262,7 @@ function TableFloatingToolbar({
               onMouseDown={(e) => e.preventDefault()}
               tooltip="Insert column before"
             >
-              <ArrowLeft />
+              <ArrowLeftIcon />
             </ToolbarButton>
             <ToolbarButton
               onClick={() => {
@@ -269,7 +271,7 @@ function TableFloatingToolbar({
               onMouseDown={(e) => e.preventDefault()}
               tooltip="Insert column after"
             >
-              <ArrowRight />
+              <ArrowRightIcon />
             </ToolbarButton>
             <ToolbarButton
               onClick={() => {
@@ -483,7 +485,7 @@ function RowDragHandle({ dragRef }: { dragRef: React.Ref<any> }) {
         editor.tf.select(element);
       }}
     >
-      <GripVertical className="text-muted-foreground" />
+      <GripVerticalIcon className="text-muted-foreground" />
     </Button>
   );
 }
