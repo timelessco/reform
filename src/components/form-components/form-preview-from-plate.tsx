@@ -22,9 +22,10 @@ import {
   type TransformedElement,
   transformPlateStateToFormElements,
 } from "@/lib/transform-plate-to-form";
-import { cn } from "@/lib/utils";
+import { cn, isValidUrl, DEFAULT_ICON } from "@/lib/utils";
 import type { PublicFormSettings } from "@/types/form-settings";
 import { ChevronRightIcon } from "@/components/ui/icons";
+import { IconPickerPreview } from "@/components/icon-picker";
 import { AnimatePresence, motion } from "motion/react";
 import type { Value } from "platejs";
 import { useEffect, useState } from "react";
@@ -50,47 +51,15 @@ interface FormPreviewFromPlateProps {
   formId?: string;
 }
 
-/**
- * Checks if a string is likely an emoji (starts with emoji unicode range)
- */
-function isEmoji(str: string): boolean {
-  if (!str) return false;
-  // Check if it's a short string that's likely an emoji
-  const emojiRange = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
-  return str.length <= 4 && emojiRange.test(str);
-}
-
-/**
- * Checks if a string is a hex color code
- */
 function isHexColor(str: string): boolean {
   return /^#([0-9A-Fa-f]{3}){1,2}$/.test(str);
 }
 
-/**
- * Checks if a string is a valid URL
- */
-function isValidUrl(str: string): boolean {
-  if (!str) return false;
-  try {
-    new URL(str);
-    return true;
-  } catch {
-    // Also check for relative paths starting with /
-    return str.startsWith("/") || str.startsWith("http") || str.startsWith("blob:");
-  }
-}
+const PAGE_MAX_WIDTH = {
+  editor: 'var(--bf-page-width, 700px)',
+  public: 'var(--bf-page-width, 42rem)',
+} as const;
 
-/**
- * Default icon (matches the editor's form-header-node.tsx)
- */
-function DefaultIcon() {
-  return (
-    <span className="text-[80px] sm:text-[100px] leading-none" role="img" aria-label="Form icon">
-      📄
-    </span>
-  );
-}
 
 /**
  * Navigation handlers for buttons
@@ -271,12 +240,14 @@ function RenderPreviewElement({
 function PreviewFormHeader({
   title,
   icon,
+  iconColor,
   cover,
   hideTitle,
   layout,
 }: {
   title?: string;
   icon?: string;
+  iconColor?: string | null;
   cover?: string;
   hideTitle?: boolean;
   layout: "public" | "editor";
@@ -329,37 +300,24 @@ function PreviewFormHeader({
     return null;
   };
 
-  // Render icon - can be default-icon, emoji, or image URL
+  // Render icon - can be default-icon, sprite icon name, or image URL
   const renderIcon = () => {
     if (!icon) return null;
 
-    // Handle 'default-icon' - render hexagon
-    if (icon === "default-icon") {
+    // Handle 'default-icon'
+    if (icon === DEFAULT_ICON) {
       return (
         <div
           className={hasCover ? "relative z-10" : ""}
-          data-bf-logo-container={hasCover ? "true" : undefined}
-        >
-          <DefaultIcon />
-        </div>
-      );
-    }
-
-    // Handle emoji
-    if (isEmoji(icon)) {
-      return (
-        <div
-          className={hasCover ? "relative z-10 block" : ""}
           data-bf-logo-emoji-container={hasCover ? "true" : undefined}
         >
-          <span
-            className="text-[80px] sm:text-[100px] block leading-none"
-            role="img"
-            aria-label="Form icon"
-            data-bf-logo-emoji
-          >
-            {icon}
-          </span>
+          <IconPickerPreview
+            icon={null}
+            iconColor={undefined}
+            useThemeColor
+            iconSize="48"
+            size="100"
+          />
         </div>
       );
     }
@@ -382,7 +340,21 @@ function PreviewFormHeader({
       );
     }
 
-    return null;
+    // Handle sprite icon name
+    return (
+      <div
+        className={hasCover ? "relative z-10 block" : ""}
+        data-bf-logo-emoji-container={hasCover ? "true" : undefined}
+      >
+        <IconPickerPreview
+          icon={icon}
+          iconColor={iconColor || undefined}
+          useThemeColor={!iconColor}
+          iconSize="48"
+          size="100"
+        />
+      </div>
+    );
   };
 
   if (layout === "editor") {
@@ -391,7 +363,7 @@ function PreviewFormHeader({
         {hasCover && renderCover()}
 
         {/* Match editor's left-aligned layout */}
-        <div className="max-w-[700px] mx-auto w-full px-4" data-bf-form-container>
+        <div className="mx-auto w-full px-4" style={{ maxWidth: PAGE_MAX_WIDTH.editor }} data-bf-form-container>
           {hasIcon && renderIcon()}
           {hasTitle && (
             <h1
@@ -410,7 +382,7 @@ function PreviewFormHeader({
     <div className="mb-4 sm:mb-8 w-full">
       {hasCover && renderCover()}
 
-      <div className="max-w-2xl mx-auto px-4 sm:px-0" data-bf-form-container>
+      <div className="mx-auto px-4 sm:px-0" style={{ maxWidth: PAGE_MAX_WIDTH.public }} data-bf-form-container>
         <div className="flex flex-col">
           {hasIcon && renderIcon()}
           {hasTitle && (
@@ -522,6 +494,7 @@ export function FormPreviewFromPlate({
 
   const title = hideTitle ? "" : hasHeaderNode ? headerFromContent.title : legacyTitle;
   const icon = hasHeaderNode ? (headerFromContent.icon ?? legacyIcon) : legacyIcon;
+  const iconColor = hasHeaderNode ? headerFromContent.iconColor : null;
   const cover = hasHeaderNode ? (headerFromContent.cover ?? legacyCover) : legacyCover;
 
   const elements = transformPlateStateToFormElements(content);
@@ -575,6 +548,7 @@ export function FormPreviewFromPlate({
         thankYouContent={thankYouContent}
         title={title}
         icon={icon}
+        iconColor={iconColor}
         cover={cover}
         hideTitle={hideTitle}
         layout={layout}
@@ -612,6 +586,7 @@ function FormPreviewContent({
   thankYouContent,
   title,
   icon,
+  iconColor,
   cover,
   hideTitle,
   layout,
@@ -621,6 +596,7 @@ function FormPreviewContent({
   thankYouContent: TransformedElement[] | null;
   title?: string;
   icon?: string;
+  iconColor?: string | null;
   cover?: string;
   hideTitle?: boolean;
   layout: "public" | "editor";
@@ -672,15 +648,17 @@ function FormPreviewContent({
         <PreviewFormHeader
           title={title}
           icon={icon}
+          iconColor={iconColor}
           cover={cover}
           hideTitle={hideTitle}
           layout={layout}
         />
         <div
           className={cn(
-            "w-full",
-            layout === "editor" ? "max-w-[700px] mx-auto px-4" : "max-w-2xl mx-auto px-4 sm:px-0",
+            "w-full mx-auto",
+            layout === "editor" ? "px-4" : "px-4 sm:px-0",
           )}
+          style={{ maxWidth: PAGE_MAX_WIDTH[layout] }}
           data-bf-form-container
         >
           <motion.div
@@ -730,9 +708,10 @@ function FormPreviewContent({
       {settings?.progressBar && totalSteps > 1 && (
         <div
           className={cn(
-            "mb-6",
-            layout === "editor" ? "max-w-[700px] mx-auto w-full px-4" : "max-w-2xl mx-auto px-4",
+            "mb-6 mx-auto",
+            layout === "editor" ? "w-full px-4" : "px-4",
           )}
+          style={{ maxWidth: PAGE_MAX_WIDTH[layout] }}
           data-bf-form-container
         >
           <ProgressBar currentStep={currentStep} totalSteps={totalSteps} />
@@ -742,9 +721,10 @@ function FormPreviewContent({
       {/* Step Form */}
       <div
         className={cn(
-          "overflow-hidden",
-          layout === "editor" ? "max-w-[700px] mx-auto w-full px-4" : "max-w-2xl mx-auto px-4",
+          "overflow-hidden mx-auto",
+          layout === "editor" ? "w-full px-4" : "px-4",
         )}
+        style={{ maxWidth: PAGE_MAX_WIDTH[layout] }}
         data-bf-form-container
       >
         <AnimatePresence mode="wait" custom={direction}>

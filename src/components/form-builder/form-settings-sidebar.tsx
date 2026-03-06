@@ -5,8 +5,6 @@ import { SettingsContent } from "@/routes/_authenticated/workspace/$workspaceId/
 import {
   Sidebar,
   SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
   SidebarHeader,
 } from "@/components/ui/sidebar";
 
@@ -20,31 +18,28 @@ export function FormSettingsSidebar({ formId, isLocal }: FormSettingsSidebarProp
 
   return (
     <Sidebar
+      side="right"
       collapsible="none"
       className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out"
     >
-      <SidebarHeader className="pt-2 pb-1 pl-1 shrink-0  space-y-2">
+      <SidebarHeader className="pt-2 pb-1 pl-1 shrink-0">
         <div className="flex items-center justify-between">
-
-        <h2 className="text-sm font-semibold text-foreground px-2.5">Settings</h2>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
-          onClick={closeSidebar}
+          <h2 className="text-sm font-semibold text-foreground px-2.5">Settings</h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            onClick={closeSidebar}
           >
-          <XIcon className="h-4 w-4" />
-        </Button>
-          </div>
+            <XIcon className="h-4 w-4" />
+          </Button>
+        </div>
       </SidebarHeader>
 
-      {/* Tab Content */}
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SettingsContent formId={formId} isLocal={isLocal} />
-          </SidebarGroupContent>
-        </SidebarGroup>
+        <div className="p-2">
+          <SettingsContent formId={formId} isLocal={isLocal} />
+        </div>
       </SidebarContent>
     </Sidebar>
   );

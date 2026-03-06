@@ -144,7 +144,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
 
   return (
     <div
-      className="border-t border-b bg-background px-2"
+      className="border-t border-b bg-background transition-colors hover:bg-sidebar-active"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
@@ -153,7 +153,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
           render={
             <button
               type="button"
-              className="flex w-full min-w-0 items-center gap-2 rounded-lg overflow-hidden px-1 py-[7px] transition-colors hover:bg-sidebar-active cursor-pointer"
+              className="flex w-full min-w-0 items-center gap-2 rounded-lg overflow-hidden px-1 py-[7px] transition-colors cursor-pointer"
               aria-label="Toggle user menu"
             />
           }

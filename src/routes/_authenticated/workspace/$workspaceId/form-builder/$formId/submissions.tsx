@@ -43,20 +43,20 @@ import {
 } from "@tanstack/react-table";
 import { format } from "date-fns";
 import {
-  CalendarIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   DownloadIcon,
   FilterIcon,
-  MinusIcon,
   SearchIcon,
   Trash2Icon,
   XIcon,
 } from "@/components/ui/icons";
-import { AlignLeft, Circle, Columns } from "lucide-react";
+import { Circle, Columns } from "lucide-react";
 import type { Value } from "platejs";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useHotkey } from "@tanstack/react-hotkeys";
+import { HOTKEYS, formatForDisplay } from "@/lib/hotkeys";
 import { z } from "zod";
 
 // Field status types for color coding
@@ -263,12 +263,11 @@ function SubmissionsPage() {
           <DataGridColumnHeader
             column={column}
             title="Submitted at"
-            icon={<CalendarIcon className="h-3.5 w-3.5" />}
           />
         ),
         cell: (info) => (
           <div className="flex items-center justify-between gap-2 group/row min-w-0">
-            <span className="text-sm truncate min-w-0">
+            <span className="text-[13px] truncate min-w-0">
               {format(new Date(info.getValue()), "MMM d, h:mm a")}
             </span>
             <div className="flex shrink-0 items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
@@ -303,13 +302,11 @@ function SubmissionsPage() {
       );
 
       inputFields.forEach((field) => {
-        const Icon = field.fieldType === "Input" ? MinusIcon : AlignLeft;
         const status: FieldStatus = "current";
         counts.current++;
 
         // Only add if status filter includes this status
         if (fieldStatusFilter.has(status)) {
-          const config = FIELD_STATUS_CONFIG[status];
           baseColumns.push(
             columnHelper.accessor((row) => row.data?.[field.name], {
               id: field.name,
@@ -317,24 +314,16 @@ function SubmissionsPage() {
                 <DataGridColumnHeader
                   column={column}
                   title={field.label || field.name}
-                  icon={
-                    <div
-                      className={cn("flex items-center gap-1.5", config.color)}
-                    >
-                      <Circle className={cn("h-2 w-2", config.dotColor)} />
-                      <Icon className="h-3.5 w-3.5" />
-                    </div>
-                  }
+                  icon={<Circle className="h-1.5 w-1.5 fill-emerald-500 text-emerald-500" />}
                 />
               ),
               cell: (info) => (
-                <span className="text-sm truncate max-w-[300px] block">
+                <span className="text-[13px] truncate max-w-[300px] block">
                   {info.getValue() || "-"}
                 </span>
               ),
               size: 150,
               meta: {
-                headerClassName: config.bgColor,
                 headerTitle: field.label || field.name,
               },
             }),
@@ -350,7 +339,6 @@ function SubmissionsPage() {
 
       // Only add if status filter includes this status
       if (fieldStatusFilter.has(status)) {
-        const config = FIELD_STATUS_CONFIG[status];
         baseColumns.push(
           columnHelper.accessor((row) => row.data?.[fieldName], {
             id: fieldName,
@@ -358,24 +346,16 @@ function SubmissionsPage() {
               <DataGridColumnHeader
                 column={column}
                 title={fieldName}
-                icon={
-                  <div
-                    className={cn("flex items-center gap-1.5", config.color)}
-                  >
-                    <Circle className={cn("h-2 w-2", config.dotColor)} />
-                    <MinusIcon className="h-3.5 w-3.5" />
-                  </div>
-                }
+                icon={<Circle className="h-1.5 w-1.5 fill-red-500 text-red-500" />}
               />
             ),
             cell: (info) => (
-              <span className="text-sm truncate max-w-[300px] block text-muted-foreground italic">
+              <span className="text-[13px] truncate max-w-[300px] block text-muted-foreground">
                 {info.getValue() || "-"}
               </span>
             ),
             size: 150,
             meta: {
-              headerClassName: config.bgColor,
               headerTitle: fieldName,
             },
           }),
@@ -493,19 +473,39 @@ function SubmissionsPage() {
     downloadCSV(table.getRowModel().rows as any, `submissions-${formId}.csv`);
   }, [downloadCSV, formId, table]);
 
+  // Keyboard shortcuts (scoped to submissions page)
+  const hasSelection = Object.keys(rowSelection).length > 0;
+
+  useHotkey(HOTKEYS.SUBMISSIONS_SELECT_ALL, () => {
+    table.toggleAllPageRowsSelected(!table.getIsAllPageRowsSelected());
+  }, { conflictBehavior: "replace" });
+
+  useHotkey(HOTKEYS.SUBMISSIONS_EXPORT, () => handleExportSelected(), {
+    enabled: hasSelection,
+    conflictBehavior: "replace",
+  });
+
+  useHotkey(HOTKEYS.SUBMISSIONS_DELETE, () => handleBulkDelete(), {
+    enabled: hasSelection,
+  });
+
+  useHotkey(HOTKEYS.SUBMISSIONS_CLEAR_SELECTION, () => setRowSelection({}), {
+    enabled: hasSelection,
+  });
+
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0 bg-background">
       {/* Filter Controls Row */}
-      <div className="shrink-0 px-4 pt-3 pb-2">
+      <div className="shrink-0 px-3 py-4  border-border">
         <div className="flex items-center justify-between">
           {/* Status filter dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="h-7 gap-1.5 text-[11px] font-medium"
+                  className="h-7 gap-1.5 text-[11px] font-medium bg-accent/60 hover:bg-accent"
                 />
               }
             >
@@ -555,9 +555,9 @@ function SubmissionsPage() {
           </DropdownMenu>
 
           {/* Right side: Search and filters */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
             <ButtonGroup className="w-[180px] focus-within:w-[240px] transition-all">
-              <ButtonGroupText className="h-7 w-full rounded-lg border-input bg-transparent px-2 gap-1.5 focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-3">
+              <ButtonGroupText className="h-7 w-full rounded-lg bg-accent/60 hover:bg-accent px-2 gap-1.5 ">
                 <SearchIcon className="h-4 w-4 shrink-0 text-muted-foreground/50" />
                 <input
                   placeholder="Search responses..."
@@ -567,121 +567,68 @@ function SubmissionsPage() {
                 />
               </ButtonGroupText>
             </ButtonGroup>
-
-            {/* Field Status Filter */}
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 gap-1.5 text-[11px] font-medium"
-                  />
-                }
-              >
-                <FilterIcon className="h-3 w-3" />
-                Fields
-                {fieldStatusFilter.size < 2 && (
-                  <span className="ml-1 px-1.5 py-0.5 bg-primary text-primary-foreground rounded text-[10px]">
-                    {fieldStatusFilter.size}
-                  </span>
-                )}
-                <ChevronDownIcon className="h-2.5 w-2.5 shrink-0 text-muted-foreground transition-transform duration-200" strokeWidth="2" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel className="text-xs">
-                    Filter by field status
-                  </DropdownMenuLabel>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                {(Object.keys(FIELD_STATUS_CONFIG) as FieldStatus[]).map(
-                  (status) => {
-                    const config = FIELD_STATUS_CONFIG[status];
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={status}
-                        checked={fieldStatusFilter.has(status)}
-                        onCheckedChange={() => toggleFieldStatus(status)}
-                        className="gap-2"
-                      >
-                        <Circle className={cn("h-2 w-2", config.dotColor)} />
-                        <span>{config.label}</span>
-                        <span className="ml-auto text-xs text-muted-foreground">
-                          {fieldCounts[status]}
-                        </span>
-                      </DropdownMenuCheckboxItem>
-                    );
-                  },
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
             {/* Column Visibility Toggle */}
             <DataGridColumnVisibility
               table={table}
               trigger={
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 gap-1.5 text-[11px] font-medium"
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11px] font-medium bg-accent/60 hover:bg-accent text-foreground transition-colors cursor-pointer"
                 >
                   <Columns className="h-3 w-3" />
                   Columns
-                </Button>
+                </button>
               }
             />
 
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 gap-1.5 text-muted-foreground hover:text-foreground text-[11px] font-semibold uppercase tracking-tight"
+            <button
+              type="button"
+              className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11px] font-medium bg-accent/60 hover:bg-accent text-foreground transition-colors cursor-pointer"
               onClick={handleDownloadCSV}
             >
               <DownloadIcon className="h-3 w-3" />
               Download CSV
-            </Button>
+            </button>
           </div>
         </div>
       </div>
 
       {/* Table Container with DataGrid */}
-      <div className="flex-1 flex flex-col min-h-0 min-w-0 pb-2">
-        {/* Bulk Action Toolbar */}
+      <div className="flex-1 flex flex-col min-h-0 min-w-0">
+        {/* Floating Bulk Action Bar */}
         {Object.keys(rowSelection).length > 0 && (
-          <div className="mb-3 flex items-center justify-between px-4 py-2.5 bg-primary/5 border border-primary/20 rounded-lg backdrop-blur-sm animate-in slide-in-from-top-2 duration-200">
-            <div className="flex items-center gap-3">
-              <Checkbox checked={true} className="border-primary" />
-              <span className="text-sm font-medium">
-                {Object.keys(rowSelection).length} selected
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportSelected}
-              >
-                <DownloadIcon className="h-3.5 w-3.5 mr-1.5" />
-                Export
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleBulkDelete}
-              >
-                <Trash2Icon className="h-3.5 w-3.5 mr-1.5" />
-                Delete
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setRowSelection({})}
-                className="text-muted-foreground"
-              >
-                <XIcon className="h-3.5 w-3.5 mr-1" />
-                Clear
-              </Button>
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[min(560px,90vw)] animate-in slide-in-from-bottom-4 fade-in duration-300">
+            <div className="flex items-center justify-between px-2.75 py-2.25 bg-background rounded-xl shadow-md">
+              <div className="flex items-center gap-2.5">
+                <Checkbox checked={true} className="border-foreground data-[state=checked]:bg-foreground data-[state=checked]:border-foreground size-5" />
+                <span className="text-sm font-medium">
+                  {Object.keys(rowSelection).length} selected
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" onClick={handleExportSelected}>
+                    <DownloadIcon className="h-3.5 w-3.5" />
+                    Export
+                    <span className="text-xs text-muted-foreground ml-1">{formatForDisplay(HOTKEYS.SUBMISSIONS_EXPORT)}</span>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleBulkDelete}
+                  >
+                    Delete
+                    <span className="text-xs text-muted-foreground ml-1">{formatForDisplay(HOTKEYS.SUBMISSIONS_DELETE)}</span>
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setRowSelection({})}
+                  >
+                    <XIcon className="h-3.5 w-3.5" />
+                    Clear
+                    <span className="text-xs text-muted-foreground ml-1">{formatForDisplay(HOTKEYS.SUBMISSIONS_CLEAR_SELECTION)}</span>
+                  </Button>
+              </div>
             </div>
           </div>
         )}
@@ -690,11 +637,14 @@ function SubmissionsPage() {
           table={table}
           recordCount={allSubmissions.length}
           tableLayout={{
+            dense: true,
             columnsResizable: true,
             columnsPinnable: true,
             columnsVisibility: true,
             columnsMovable: true,
             headerSticky: true,
+            headerBackground: false,
+            headerBorder: true,
             rowBorder: true,
           }}
           emptyMessage={
@@ -716,13 +666,13 @@ function SubmissionsPage() {
           <div className="w-full flex-1 flex flex-col min-h-0 overflow-hidden">
             <DataGridContainer
               border={false}
-              className="flex-1 min-h-0 border-y border-border overflow-auto content-start"
+              className="flex-1 min-h-0 border-b border-border overflow-auto content-start"
             >
               <DataGridTable />
             </DataGridContainer>
 
             {/* Custom Pagination - 20/50/80 style */}
-            <div className="shrink-0 flex items-center justify-between px-2 py-0.75 border-b border-border">
+            <div className="shrink-0 flex items-center justify-between px-2 py-0.75 -mt-px border-b border-border">
               {/* Left: Page size tabs */}
               <Tabs
                 value={String(pagination.pageSize)}

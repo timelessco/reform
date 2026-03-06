@@ -6,6 +6,7 @@ type PreviewElement = FormElement | StaticFormElement;
 type FormHeaderData = {
   title: string;
   icon: string | null;
+  iconColor: string | null;
   cover: string | null;
 };
 
@@ -15,6 +16,7 @@ export function extractFormHeader(value: Value): FormHeaderData | null {
     return {
       title: (node.title as string) || "",
       icon: (node.icon as string | null) || null,
+      iconColor: (node.iconColor as string | null) || null,
       cover: (node.cover as string | null) || null,
     };
   }

@@ -105,6 +105,10 @@ export function AppHeader({
   const [isPublishing, setIsPublishing] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLocalMenuOpen, setIsLocalMenuOpen] = useState(false);
+  const [shareTooltipOpen, setShareTooltipOpen] = useState(false);
+  const [settingsTooltipOpen, setSettingsTooltipOpen] = useState(false);
 
   // Favorite state
   useIsFavorite(session?.user?.id, formId);
@@ -241,9 +245,7 @@ export function AppHeader({
       key: "favorite",
       label: "Favorite",
       shortcut: formatForDisplay(HOTKEYS.TOGGLE_FAVORITE),
-      onClick: () => {
-        handleToggleFavorite();
-      },
+      onClick: () => handleToggleFavorite(),
     },
     {
       key: "analytics",
@@ -271,17 +273,13 @@ export function AppHeader({
       key: "versionHistory",
       label: "Version History",
       shortcut: formatForDisplay(HOTKEYS.TOGGLE_VERSION_HISTORY),
-      onClick: () => {
-        toggleVersionHistory();
-      },
+      onClick: () => toggleVersionHistory(),
       show: isEditRoute,
     },
     {
       key: "delete",
       label: "Delete form",
-      onClick: () => {
-        setIsDeleteOpen(true);
-      },
+      onClick: () => setIsDeleteOpen(true),
     },
   ].filter((item) => item.show ?? true);
 
@@ -455,7 +453,7 @@ export function AppHeader({
             >
               <SettingsIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
             </Button>
-            <Popover>
+            <Popover open={isLocalMenuOpen} onOpenChange={setIsLocalMenuOpen}>
               <PopoverTrigger
                 render={
                   <Button
@@ -471,7 +469,10 @@ export function AppHeader({
                 <div className="flex flex-col">
                   <Button
                     variant="ghost"
-                    onClick={() => toggleEditorSidebar("customize")}
+                    onClick={() => {
+                      setIsLocalMenuOpen(false);
+                      setTimeout(() => toggleEditorSidebar("customize"), 150);
+                    }}
                     className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-medium leading-[1.15] tracking-[0.13px] font-case transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
                     <span className="flex-1 text-left">Customization</span>
@@ -482,14 +483,20 @@ export function AppHeader({
                   <div className="my-1 h-px bg-border" />
                   <Button
                     variant="ghost"
-                    onClick={() => navigate({ to: "/login" })}
+                    onClick={() => {
+                      setIsLocalMenuOpen(false);
+                      setTimeout(() => navigate({ to: "/login" }), 150);
+                    }}
                     className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-medium leading-[1.15] tracking-[0.13px] font-case transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
                     <span className="flex-1 text-left">Sign in</span>
                   </Button>
                   <Button
                     variant="ghost"
-                    onClick={() => navigate({ to: "/signup" })}
+                    onClick={() => {
+                      setIsLocalMenuOpen(false);
+                      setTimeout(() => navigate({ to: "/signup" }), 150);
+                    }}
                     className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-medium leading-[1.15] tracking-[0.13px] font-case transition-colors hover:bg-accent hover:text-accent-foreground"
                   >
                     <span className="flex-1 text-left">Sign up</span>
@@ -566,7 +573,7 @@ export function AppHeader({
               )}
 
               {savedDocs?.[0]?.status === "published" && (
-                <Tooltip>
+                <Tooltip open={shareTooltipOpen} onOpenChange={setShareTooltipOpen}>
                   <TooltipTrigger
                     render={
                       <Button
@@ -576,7 +583,10 @@ export function AppHeader({
                           "px-2.5 text-muted-foreground hover:text-foreground font-normal",
                           isShareSidebarOpen && "text-foreground bg-accent/50",
                         )}
-                        onClick={toggleShareSidebar}
+                        onClick={() => {
+                          setShareTooltipOpen(false);
+                          requestAnimationFrame(() => toggleShareSidebar());
+                        }}
                       />
                     }
                   >
@@ -592,14 +602,17 @@ export function AppHeader({
               )}
 
               {/* Settings icon button directly in header - toggles form settings sidebar */}
-              <Tooltip>
+              <Tooltip open={settingsTooltipOpen} onOpenChange={setSettingsTooltipOpen}>
                 <TooltipTrigger
                   render={
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                      onClick={toggleSettingsSidebar}
+                      onClick={() => {
+                        setSettingsTooltipOpen(false);
+                        requestAnimationFrame(() => toggleSettingsSidebar());
+                      }}
                     />
                   }
                 >
@@ -614,7 +627,7 @@ export function AppHeader({
               </Tooltip>
 
               {/* Three dots menu - popover button list matching workspace/sidebar style */}
-              <Popover>
+              <Popover open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                 <PopoverTrigger
                   render={
                     <Button
@@ -639,7 +652,11 @@ export function AppHeader({
                       <Button
                         key={item.key}
                         variant="ghost"
-                        onClick={item.onClick}
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          // Defer action so popover fully closes before any layout shift
+                          setTimeout(() => item.onClick(), 150);
+                        }}
                         className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-medium leading-[1.15] tracking-[0.13px] font-case transition-colors hover:bg-accent hover:text-accent-foreground"
                       >
                         <span className="flex-1 text-left">{item.label}</span>

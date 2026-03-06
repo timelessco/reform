@@ -39,10 +39,10 @@ function getTargetStyle(
     }
     case "fullpage":
       return {
-        left: PAD + (cw - 180) / 2,
-        top: PAD + (ch - 120) / 2,
-        width: 180,
-        height: 120,
+        left: PAD,
+        top: PAD,
+        width: cw,
+        height: ch,
         borderRadius: 12,
       };
     case "popup": {

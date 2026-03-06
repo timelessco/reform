@@ -5,7 +5,7 @@ import type { FormHeaderElementData } from "@/components/ui/form-header-node";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import { useEditorHeaderVisibilitySafe } from "@/contexts/editor-header-visibility-context";
 import { EditorThemeProvider } from "@/contexts/editor-theme-context";
-import { updateDoc, updateHeader } from "@/db-collections";
+import { formCollection, updateDoc, updateHeader } from "@/db-collections";
 import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useForm } from "@/hooks/use-live-hooks";
 import { cn } from "@/lib/utils";
@@ -235,9 +235,27 @@ function EditorAppInner({
     [readOnly, headerVisibility],
   );
 
+  const updateThemeColor = useCallback(
+    (themeColor: string) => {
+      if (formId) {
+        formCollection.update(formId, (draft) => {
+          const current = (draft.customization ?? {}) as Record<string, string>;
+          draft.customization = { ...current, themeColor, preset: "custom" };
+          draft.updatedAt = new Date().toISOString();
+        });
+      }
+    },
+    [formId],
+  );
+
   const themeCtx = useMemo(
-    () => ({ themeVars, hasCustomization: Boolean(hasCustomization) }),
-    [themeVars, hasCustomization],
+    () => ({
+      themeVars,
+      hasCustomization: Boolean(hasCustomization),
+      customization,
+      updateThemeColor: hasCustomization ? updateThemeColor : undefined,
+    }),
+    [themeVars, hasCustomization, customization, updateThemeColor],
   );
 
   return (

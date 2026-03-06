@@ -87,6 +87,7 @@ export const useForms = () => {
         status: form.status,
         updatedAt: form.updatedAt,
         icon: form.icon,
+        customization: form.customization,
       })),
   );
 };

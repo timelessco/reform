@@ -73,6 +73,7 @@ import {
   Trash2Icon,
   UsersIcon,
 } from "@/components/ui/icons";
+import { ThemedFormIcon } from "@/components/icon-picker";
 import { UserMenuMinimal } from "@/components/user-menu-minimal";
 import {
   WorkspaceItemMinimal,
@@ -516,7 +517,7 @@ function AppSidebar() {
           </div>
         </SidebarContent>
 
-        <SidebarFooter className="p-0 pt-2 pb-2 flex shrink-0 flex-col gap-4">
+        <SidebarFooter className="p-0 flex shrink-0 flex-col gap-4">
           <UserMenuMinimal onOpenTrash={() => setTrashDialogOpen(true)} />
         </SidebarFooter>
         {/* <SidebarRail /> */}
@@ -1232,9 +1233,10 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
                   to={favTo}
                   isActive={isFavActive}
                   prefix={
-                    <div className="bg-form-icon-bg rounded-full size-[18px] flex items-center justify-center border-[0.5px] border-form-icon-border shrink-0">
-                      <StarIcon className="h-4.5 w-4.5 fill-foreground text-foreground" />
-                    </div>
+                    <ThemedFormIcon
+                      icon={form.icon}
+                      customization={form.customization as Record<string, string> | null | undefined}
+                    />
                   }
                 />
               );

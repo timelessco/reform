@@ -1,9 +1,8 @@
-import { useEmojiDropdownMenuState } from "@platejs/emoji/react";
-import { ImageIcon, SettingsIcon, SmileIcon, UploadIcon, XIcon } from "@/components/ui/icons";
+import { ImageIcon, SettingsIcon, UploadIcon, XIcon } from "@/components/ui/icons";
+import { IconPickerContent, IconPickerPreview } from "@/components/icon-picker";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorRef } from "platejs/react";
-import AvatarUpload from "@/components/file-upload/avatar-upload";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,7 +11,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { EmojiPicker } from "@/components/ui/emoji-toolbar-button";
 import { createFormButtonNode } from "@/components/ui/form-button-node";
 import {
   Popover,
@@ -20,19 +18,21 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEditorTheme } from "@/contexts/editor-theme-context";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useFileUpload } from "@/hooks/use-file-upload";
+import { ImageCrop, ImageCropContent, ImageCropApply, ImageCropReset } from "@/components/ui/image-crop";
 import type { FormHeaderElementData } from "@/lib/form-header-factory";
-import { cn } from "@/lib/utils";
-
-function isEmoji(str: string): boolean {
-  if (!str) return false;
-  const emojiRange =
-    /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
-  return str.length <= 4 && emojiRange.test(str);
-}
+import { THEME_COLORS } from "@/lib/theme-presets";
+import { cn, isValidUrl, DEFAULT_ICON } from "@/lib/utils";
 
 export { createFormHeaderNode, type FormHeaderElementData } from "@/lib/form-header-factory";
+
+// Static derivations from THEME_COLORS — hoisted to module scope to avoid re-computing on every render
+const ACCENT_COLORS = Object.values(THEME_COLORS).map((t) => t.primary);
+const PRIMARY_TO_THEME_NAME = new Map(
+  Object.entries(THEME_COLORS).map(([name, t]) => [t.primary, name]),
+);
 
 function CoverUpload({
   onFileChange,
@@ -91,9 +91,218 @@ function CoverUpload({
   );
 }
 
+function IconUploadTab({
+  currentIcon,
+  onUpload,
+  onRemove,
+}: {
+  currentIcon: string | null;
+  onUpload: (url: string) => void;
+  onRemove: () => void;
+}) {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [
+    { isDragging, errors },
+    {
+      handleDragEnter,
+      handleDragLeave,
+      handleDragOver,
+      handleDrop,
+      openFileDialog,
+      getInputProps,
+    },
+  ] = useFileUpload({
+    maxFiles: 1,
+    maxSize: 5 * 1024 * 1024,
+    accept: "image/*",
+    multiple: false,
+    onFilesChange: (files) => {
+      if (files[0]?.file) {
+        setSelectedFile(files[0].file);
+      }
+    },
+  });
+
+  // Crop view
+  if (selectedFile) {
+    return (
+      <div className="h-[368px] w-[310px] bg-muted/50 px-3 flex flex-col">
+        <div className="flex items-center justify-between border-b border-b-border py-3">
+          <span className="text-sm leading-4 font-medium text-foreground">
+            Crop image
+          </span>
+          <button
+            type="button"
+            onClick={() => setSelectedFile(null)}
+            className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+        <ImageCrop
+          file={selectedFile}
+          aspect={1}
+          onCrop={(croppedImage) => {
+            onUpload(croppedImage);
+            setSelectedFile(null);
+          }}
+        >
+          <div className="flex-1 flex items-center justify-center py-3 overflow-hidden">
+            <ImageCropContent className="max-h-[250px] max-w-full rounded-lg" />
+          </div>
+          <div className="flex items-center justify-between pb-3 pt-1">
+            <ImageCropReset
+              render={
+                <button
+                  type="button"
+                  className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1 rounded-lg hover:bg-muted"
+                />
+              }
+            >
+              Reset
+            </ImageCropReset>
+            <ImageCropApply
+              render={
+                <button
+                  type="button"
+                  className="text-[13px] font-medium text-primary hover:text-primary/80 transition-colors px-4 py-1 rounded-lg bg-primary/10 hover:bg-primary/15"
+                />
+              }
+            >
+              Apply
+            </ImageCropApply>
+          </div>
+        </ImageCrop>
+      </div>
+    );
+  }
+
+  // Upload view
+  return (
+    <div className="h-[368px] w-[310px] bg-muted/50 px-3 flex flex-col">
+      <div className="flex items-center border-b border-b-border py-3">
+        <span className="text-sm leading-4 font-medium text-foreground">
+          Upload an image
+        </span>
+      </div>
+
+      <div className="flex-1 flex items-center justify-center py-4">
+        <button
+          type="button"
+          className={cn(
+            "group/upload w-full h-full rounded-xl border border-dashed flex flex-col items-center justify-center gap-1 transition-all cursor-pointer relative overflow-hidden",
+            isDragging
+              ? "border-primary bg-primary/5 scale-[0.98]"
+              : "border-muted-foreground/25 hover:border-muted-foreground/40 bg-background hover:bg-muted/50",
+          )}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          onClick={openFileDialog}
+        >
+          <input {...getInputProps()} className="sr-only" />
+          {currentIcon ? (
+            <div className="w-full h-full p-3 flex flex-col items-center justify-center gap-3">
+              <img
+                src={currentIcon}
+                alt="Current icon"
+                className="max-w-[180px] max-h-[180px] rounded-lg object-contain"
+              />
+              <span className="text-xs text-muted-foreground group-hover/upload:text-foreground transition-colors">
+                Click to replace
+              </span>
+            </div>
+          ) : (
+            <>
+              <div className={cn(
+                "w-10 h-10 rounded-lg flex items-center justify-center mb-2 transition-colors",
+                isDragging ? "bg-primary/15" : "bg-primary/10 group-hover/upload:bg-primary/15",
+              )}>
+                <UploadIcon className={cn(
+                  "h-[18px] w-[18px] transition-colors",
+                  isDragging ? "text-primary" : "text-primary/70 group-hover/upload:text-primary",
+                )} />
+              </div>
+              <p className="text-[13px] font-medium text-foreground">
+                Drop your image here
+              </p>
+              <p className="text-xs text-muted-foreground">
+                or click to browse
+              </p>
+              <p className="text-[10px] text-muted-foreground/60 mt-2 tracking-wide uppercase">
+                PNG, JPG, SVG · Max 5MB
+              </p>
+            </>
+          )}
+        </button>
+      </div>
+
+      {errors.length > 0 && (
+        <p className="text-destructive text-xs pb-2 text-center">{errors[0]}</p>
+      )}
+
+      <div className="flex justify-center pb-3 pt-1">
+        <button
+          type="button"
+          onClick={onRemove}
+          onMouseDown={(e) => e.preventDefault()}
+          className="text-[13px] font-medium text-muted-foreground hover:text-destructive transition-colors px-3 py-1 rounded-lg hover:bg-muted"
+        >
+          Remove icon
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const iconTabs = [
+  { value: "icon", label: "Icon" },
+  { value: "upload", label: "Upload" },
+] as const;
+
+function IconTabBar({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const items = iconTabs;
+  const activeIndex = items.findIndex((t) => t.value === value);
+  const count = items.length;
+  const pillLeft = `calc(${(activeIndex / count) * 100}% + 3px)`;
+  const pillWidth = `calc(${100 / count}% - ${6 / count}px)`;
+
+  return (
+    <div className="relative bg-secondary rounded-[10px] p-[3px] w-full flex">
+      <div
+        className="absolute top-[3px] bottom-[3px] rounded-[8px] bg-white shadow-[0px_0px_1.5px_0px_rgba(0,0,0,0.16),0px_2px_5px_0px_rgba(0,0,0,0.14)] dark:bg-background z-0 transition-[left,width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+        style={{ left: pillLeft, width: pillWidth }}
+      />
+      {items.map((tab) => (
+        <button
+          key={tab.value}
+          type="button"
+          onClick={() => onChange(tab.value)}
+          className={cn(
+            "relative z-10 flex-1 h-7 rounded-[8px] text-sm font-medium text-center transition-colors",
+            value === tab.value
+              ? "text-foreground"
+              : "text-muted-foreground",
+          )}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function FormHeaderElement(props: PlateElementProps) {
   const { element, children } = props;
   const editor = useEditorRef();
+  const { hasCustomization, themeVars, customization: editorCustomization, updateThemeColor } = useEditorTheme();
   const { activeSidebar, setActiveSidebar, closeSidebar } = useEditorSidebar();
   const toggleCustomize = () => {
     if (activeSidebar === "customize") {
@@ -105,6 +314,7 @@ export function FormHeaderElement(props: PlateElementProps) {
 
   const title = (element.title as string) || "";
   const icon = (element.icon as string | null) || null;
+  const iconColor = (element.iconColor as string | null) || null;
   const cover = (element.cover as string | null) || null;
 
   const hasCover = !!cover;
@@ -139,6 +349,10 @@ export function FormHeaderElement(props: PlateElementProps) {
     updateHeader({ icon: newIcon });
   };
 
+  const handleIconColorChange = (newColor: string) => {
+    updateHeader({ iconColor: newColor });
+  };
+
   const handleCoverChange = (newCover: string | null) => {
     updateHeader({ cover: newCover });
   };
@@ -147,12 +361,12 @@ export function FormHeaderElement(props: PlateElementProps) {
     "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true",
   )
 
+  const accentColors = hasCustomization ? ACCENT_COLORS : undefined;
+  const activeThemeColorName = editorCustomization?.themeColor || "zinc";
+  const activeAccentColor = THEME_COLORS[activeThemeColorName]?.primary || THEME_COLORS.zinc.primary;
+
   const [iconPopoverOpen, setIconPopoverOpen] = useState(false);
-  const {
-    emojiPickerState,
-    isOpen: emojiIsOpen,
-    setIsOpen: setEmojiIsOpen,
-  } = useEmojiDropdownMenuState();
+  const [iconTab, setIconTab] = useState("icon");
 
   return (
     <PlateElement {...props}>
@@ -395,12 +609,12 @@ export function FormHeaderElement(props: PlateElementProps) {
                 <div
                   className={cn("relative z-10 mb-1", hasCover ? "" : "mt-4 sm:mt-6")}
                   data-bf-logo-emoji-container={
-                    hasCover && (!icon || icon === "default-icon" || isEmoji(icon))
+                    hasCover && icon && !isValidUrl(icon)
                       ? "true"
                       : undefined
                   }
                   data-bf-logo-container={
-                    hasCover && icon && icon !== "default-icon" && !isEmoji(icon)
+                    hasCover && icon && isValidUrl(icon)
                       ? "true"
                       : undefined
                   }
@@ -414,33 +628,31 @@ export function FormHeaderElement(props: PlateElementProps) {
                       />
                     }
                   >
-                    {icon && icon !== "default-icon" ? (
-                      isEmoji(icon) ? (
-                        <span
-                          className="text-[80px] sm:text-[100px] leading-none inline-block"
-                          role="img"
-                          aria-label="Form icon"
-                          data-bf-logo-emoji
-                        >
-                          {icon}
-                        </span>
-                      ) : (
+                    {icon && icon !== DEFAULT_ICON ? (
+                      isValidUrl(icon) ? (
                         <img
                           src={icon}
                           alt="Logo"
                           className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-md object-cover"
                           data-bf-logo
                         />
+                      ) : (
+                        <IconPickerPreview
+                          icon={icon}
+                          iconColor={hasCustomization ? undefined : (iconColor || undefined)}
+                          useThemeColor={hasCustomization || !iconColor}
+                          iconSize="48"
+                          size="100"
+                        />
                       )
                     ) : (
-                      <span
-                        className="text-[80px] sm:text-[100px] leading-none inline-block"
-                        role="img"
-                        aria-label="Form icon"
-                        data-bf-logo-emoji
-                      >
-                        📄
-                      </span>
+                      <IconPickerPreview
+                        icon={null}
+                        iconColor={undefined}
+                        useThemeColor
+                        iconSize="48"
+                        size="100"
+                      />
                     )}
                   </PopoverTrigger>
                 </div>
@@ -465,7 +677,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                       />
                     }
                   >
-                    <SmileIcon className="mr-1.5 h-3.5 w-3.5" />
+                    <ImageIcon className="mr-1.5 h-3.5 w-3.5" />
                     Add icon
                   </PopoverTrigger>
                 )}
@@ -496,50 +708,49 @@ export function FormHeaderElement(props: PlateElementProps) {
               <PopoverContent
                 align="start"
                 side="bottom"
-                className="w-auto p-0"
+                className={cn(
+                  "w-[310px] p-0",
+                  hasCustomization && "bf-themed",
+                  hasCustomization && editorCustomization?.mode === "dark" && "dark",
+                )}
+                style={hasCustomization ? themeVars : undefined}
               >
-                <Tabs defaultValue="emoji" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 rounded-b-none">
-                    <TabsTrigger value="emoji">Emoji</TabsTrigger>
-                    <TabsTrigger value="upload">Upload</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="emoji" className="mt-0">
-                    <EmojiPicker
-                      {...emojiPickerState}
-                      isOpen={emojiIsOpen}
-                      setIsOpen={setEmojiIsOpen}
-                      onSelectEmoji={(emoji) => {
-                        handleIconChange(emoji.skins[0].native);
+                <div className="w-full">
+                  <div className="px-3 pt-2 pb-1">
+                    <IconTabBar value={iconTab} onChange={setIconTab} />
+                  </div>
+                  {iconTab === "icon" ? (
+                    <IconPickerContent
+                      iconValue={icon && icon !== DEFAULT_ICON && !isValidUrl(icon) ? icon : null}
+                      iconColor={hasCustomization ? activeAccentColor : (iconColor || "#000000")}
+                      onIconChange={(newIcon) => {
+                        handleIconChange(newIcon);
                         setIconPopoverOpen(false);
                       }}
-                    />
-                  </TabsContent>
-                  <TabsContent
-                    value="upload"
-                    className="p-4 flex flex-col items-center"
-                  >
-                    <AvatarUpload
-                      onFileChange={(file) => {
-                        if (file?.preview) {
-                          handleIconChange(file.preview);
-                          setIconPopoverOpen(false);
+                      onColorChange={(color) => {
+                        if (hasCustomization && updateThemeColor) {
+                          const themeName = PRIMARY_TO_THEME_NAME.get(color);
+                          if (themeName) updateThemeColor(themeName);
+                        } else {
+                          handleIconColorChange(color);
                         }
                       }}
+                      colors={accentColors}
                     />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
+                  ) : (
+                    <IconUploadTab
+                      currentIcon={icon && isValidUrl(icon) ? icon : null}
+                      onUpload={(url) => {
+                        handleIconChange(url);
+                        setIconPopoverOpen(false);
+                      }}
+                      onRemove={() => {
                         handleIconChange(null);
                         setIconPopoverOpen(false);
                       }}
-                      onMouseDown={(e) => e.preventDefault()}
-                      className="mt-4 text-destructive hover:text-destructive hover:bg-destructive/10"
-                    >
-                      Remove icon
-                    </Button>
-                  </TabsContent>
-                </Tabs>
+                    />
+                  )}
+                </div>
               </PopoverContent>
             </Popover>
 

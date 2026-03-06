@@ -16,6 +16,11 @@ export const HOTKEYS = {
 	TOGGLE_PREVIEW: "Mod+Shift+E",
 	TOGGLE_SHARE_SIDEBAR: "Mod+Shift+S",
 	DISMISS_SIDEBARS: "Mod+.",
+	// Submissions page — scoped
+	SUBMISSIONS_SELECT_ALL: "Mod+A",
+	SUBMISSIONS_EXPORT: "Mod+E",
+	SUBMISSIONS_DELETE: "Delete",
+	SUBMISSIONS_CLEAR_SELECTION: "Escape",
 } as const satisfies Record<string, Hotkey>;
 
 // Re-export display utilities for use in tooltips, menus, etc.

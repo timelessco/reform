@@ -5,6 +5,7 @@ export interface FormHeaderElementData {
   id?: string;
   title: string;
   icon: string | null;
+  iconColor: string | null;
   cover: string | null;
   children: [{ text: "" }];
 }
@@ -16,6 +17,7 @@ export function createFormHeaderNode(
     type: "formHeader",
     title: data.title ?? "",
     icon: data.icon ?? null,
+    iconColor: data.iconColor ?? null,
     cover: data.cover ?? null,
     children: [{ text: "" }],
   };

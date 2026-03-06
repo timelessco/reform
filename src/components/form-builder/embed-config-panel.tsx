@@ -73,20 +73,27 @@ export function ConfigCard({ children }: { children: React.ReactNode }) {
  */
 export function ConfigRow({
   label,
+  description,
   children,
   variant = "default",
 }: {
   label: string;
+  description?: string;
   children: React.ReactNode;
   variant?: "default" | "switch";
 }) {
   return (
     <div
-      className={`bg-secondary flex gap-[6px] items-center overflow-clip pl-[10px] py-[7px] ${
+      className={`bg-secondary flex gap-3 items-center overflow-clip pl-2 py-2 ${
         variant === "switch" ? "pr-[6px]" : "pr-[3px]"
       }`}
     >
-      <span className="flex-1 min-w-0 text-sm leading-[1.15]">{label}</span>
+      <div className="flex-1 min-w-0 flex flex-col gap-1">
+        <span className="text-sm font-medium leading-[1.15]">{label}</span>
+        {description && (
+          <p className="text-sm font-normal leading-[1.15] text-muted-foreground">{description}</p>
+        )}
+      </div>
       {children}
     </div>
   );

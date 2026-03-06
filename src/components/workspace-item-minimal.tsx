@@ -34,15 +34,10 @@ import {
   CheckIcon,
   ChevronRightIcon,
   Loader2Icon,
-  StarIcon,
   TrashIcon,
 } from "@/components/ui/icons";
-import {
-  Feather,
-  Github,
-  Zap,
-} from "lucide-react";
 import { useState } from "react";
+import { ThemedFormIcon } from "@/components/icon-picker";
 
 export type WorkspaceWithForms = {
   id: string;
@@ -58,6 +53,7 @@ export type WorkspaceWithForms = {
     workspaceId: string;
     icon?: string | null;
     status: string;
+    customization?: Record<string, string> | null;
   }>;
 };
 
@@ -262,74 +258,10 @@ export function WorkspaceItemMinimal({
   );
 }
 
-const getFormIcon = (title: string, icon?: string | null) => {
-  const iconWrapper =
-    "rounded-full size-[18px] flex items-center justify-center border-[0.5px] border-form-icon-border shrink-0";
-  const iconFill = "text-foreground fill-foreground";
 
-  if (icon && isEmoji(icon))
-    return (
-      <div className={`bg-form-icon-bg ${iconWrapper}`}>
-        <span className="text-xs leading-none">{icon}</span>
-      </div>
-    );
-
-  const lowerTitle = title.toLowerCase();
-
-  if (lowerTitle.includes("contact"))
-    return (
-      <div className={`bg-form-icon-bg shadow-sm ${iconWrapper}`}>
-        <StarIcon className="h-3 w-3 fill-foreground text-foreground" />
-      </div>
-    );
-
-  if (lowerTitle.includes("employee intake"))
-    return (
-      <div className={`bg-secondary ${iconWrapper}`}>
-        <div
-          className="size-2 bg-foreground rounded-full"
-          style={{ clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)" }}
-        />
-      </div>
-    );
-
-  if (lowerTitle.includes("onboarding") && !lowerTitle.includes("client"))
-    return (
-      <div className={`bg-secondary ${iconWrapper}`}>
-        <Zap className={`h-3 w-3 ${iconFill}`} strokeWidth={1} />
-      </div>
-    );
-
-  if (
-    lowerTitle.includes("client onboarding") ||
-    lowerTitle.includes("feedback")
-  )
-    return (
-      <div className={`bg-secondary ${iconWrapper}`}>
-        <Feather className="h-3 w-3 text-foreground" strokeWidth={1.5} />
-      </div>
-    );
-
-  if (lowerTitle.includes("open source"))
-    return (
-      <div className={`bg-secondary ${iconWrapper}`}>
-        <Github className={`h-3 w-3 ${iconFill}`} strokeWidth={1} />
-      </div>
-    );
-
-  return (
-    <div className={`bg-form-icon-bg ${iconWrapper}`}>
-      <span className="text-xs leading-none">✨</span>
-    </div>
-  );
+const getFormIcon = (_title: string, icon?: string | null, customization?: Record<string, string> | null) => {
+  return <ThemedFormIcon icon={icon} customization={customization} />;
 };
-
-function isEmoji(str: string): boolean {
-  if (!str) return false;
-  const emojiRange =
-    /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
-  return str.length <= 4 && emojiRange.test(str);
-}
 
 interface WorkspaceFormMinimalProps {
   form: {
@@ -338,6 +270,7 @@ interface WorkspaceFormMinimalProps {
     icon?: string | null;
     workspaceId: string;
     status: string;
+    customization?: Record<string, string> | null;
   };
   workspaceId: string;
   submissionCount: number;
@@ -362,7 +295,7 @@ function WorkspaceFormMinimal({
   );
   const label = form.title || "Untitled";
 
-  const prefix = getFormIcon(label, form.icon);
+  const prefix = getFormIcon(label, form.icon, form.customization);
 
   const isPublished = form.status === "published";
   const showCount = isPublished && submissionCount > 0;
