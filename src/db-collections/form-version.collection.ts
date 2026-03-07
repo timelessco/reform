@@ -34,6 +34,10 @@ export const formVersionCollection = createCollection(
       url: getElectricUrl(),
       params: { table: "form_versions" },
       fetchClient: electricFetchClient,
+      parser: {
+        timestamptz: (date: string) => date,
+        timestamp: (date: string) => date,
+      },
     },
     getKey: (item) => item.id,
     startSync: false,

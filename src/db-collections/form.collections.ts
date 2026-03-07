@@ -93,6 +93,10 @@ export const formCollection = createCollection(
       url: getElectricUrl(),
       params: { table: "forms" },
       fetchClient: electricFetchClient,
+      parser: {
+        timestamptz: (date: string) => date,
+        timestamp: (date: string) => date,
+      },
     },
     getKey: (item) => item.id,
     startSync: false, // Sync starts in _authenticated.tsx loader after auth is confirmed

@@ -54,6 +54,9 @@ const config = defineConfig({
     tanstackStart(),
     viteReact(),
   ],
+  resolve: {
+    dedupe: ["@platejs/core"],
+  },
   build: {
     rollupOptions: {
       output: {

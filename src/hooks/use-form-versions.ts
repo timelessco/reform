@@ -10,7 +10,7 @@ import { useForm } from "./use-live-hooks";
 export function useFormVersions(formId: string | undefined) {
 	return useLiveQuery(
 		(q) => {
-			if (!formId) return null as any;
+			if (!formId) return undefined;
 			return q
 				.from({ v: formVersionCollection })
 				.where(({ v }) => eq(v.formId, formId))
@@ -26,7 +26,7 @@ export function useFormVersions(formId: string | undefined) {
 export function useFormVersionContent(versionId: string | undefined) {
 	return useLiveQuery(
 		(q) => {
-			if (!versionId) return null as any;
+			if (!versionId) return undefined;
 			return q
 				.from({ v: formVersionCollection })
 				.where(({ v }) => eq(v.id, versionId));
