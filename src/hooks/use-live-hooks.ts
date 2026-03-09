@@ -9,18 +9,25 @@ import {
 } from "@/db-collections";
 
 /**
- * Custom hook for real-time workspaces sync.
+ * Custom hook for real-time workspaces sync filtered by organization ID.
  */
-export const useWorkspaces = () => {
-  return useLiveQuery((q) =>
-    q.from({ ws: workspaceCollection }).select(({ ws }) => ({
-      id: ws.id,
-      organizationId: ws.organizationId,
-      createdByUserId: ws.createdByUserId,
-      name: ws.name,
-      createdAt: ws.createdAt,
-      updatedAt: ws.updatedAt,
-    })),
+export const useOrgWorkspaces = (organizationId?: string) => {
+  return useLiveQuery(
+    (q) => {
+      if (!organizationId) return undefined;
+      return q
+        .from({ ws: workspaceCollection })
+        .where(({ ws }) => eq(ws.organizationId, organizationId))
+        .select(({ ws }) => ({
+          id: ws.id,
+          organizationId: ws.organizationId,
+          createdByUserId: ws.createdByUserId,
+          name: ws.name,
+          createdAt: ws.createdAt,
+          updatedAt: ws.updatedAt,
+        }));
+    },
+    [organizationId],
   );
 };
 
@@ -71,22 +78,32 @@ export const useFormsForWorkspace = (workspaceId?: string) => {
 };
 
 /**
- * Custom hook for real-time forms sync.
+ * Custom hook for real-time forms sync filtered by organization.
  */
-export const useForms = () => {
-  return useLiveQuery((q) =>
-    q
-      .from({ form: formCollection })
-      .where(({ form }) => or(eq(form.status, "draft"), eq(form.status, "published")))
-      .select(({ form }) => ({
-        id: form.id,
-        title: form.title,
-        workspaceId: form.workspaceId,
-        status: form.status,
-        updatedAt: form.updatedAt,
-        icon: form.icon,
-        customization: form.customization,
-      })),
+export const useOrgForms = (organizationId?: string) => {
+  return useLiveQuery(
+    (q) => {
+      if (!organizationId) return undefined;
+      return q
+        .from({ form: formCollection })
+        .innerJoin({ ws: workspaceCollection }, ({ form, ws }) =>
+          eq(form.workspaceId, ws.id),
+        )
+        .where(({ ws }) => eq(ws.organizationId, organizationId))
+        .where(({ form }) =>
+          or(eq(form.status, "draft"), eq(form.status, "published")),
+        )
+        .select(({ form }) => ({
+          id: form.id,
+          title: form.title,
+          workspaceId: form.workspaceId,
+          status: form.status,
+          updatedAt: form.updatedAt,
+          icon: form.icon,
+          customization: form.customization,
+        }));
+    },
+    [organizationId],
   );
 };
 
@@ -141,16 +158,22 @@ const useFavorites = (userId?: string) => {
  * Check if a specific form is favorited by the user.
  */
 export const useIsFavorite = (userId?: string, formId?: string) => {
-  const { data: favorites } = useFavorites(userId);
-  return useMemo(() => {
-    if (!userId || !formId || !favorites) return false;
-    return favorites.some((f) => f.formId === formId);
-  }, [favorites, userId, formId]);
+  const { data } = useLiveQuery(
+    (q) => {
+      if (!userId || !formId) return undefined;
+      return q
+        .from({ fav: favoriteCollection })
+        .where(({ fav }) => eq(fav.userId, userId))
+        .where(({ fav }) => eq(fav.formId, formId))
+        .select(({ fav }) => ({ id: fav.id }));
+    },
+    [userId, formId],
+  );
+  return data !== undefined && data.length > 0;
 };
 
 /**
  * Get user's favorite forms with full form data.
- * Uses a join for incremental view maintenance instead of JS filtering.
  */
 export const useFavoriteForms = (userId?: string) => {
   const { data } = useLiveQuery(
@@ -201,7 +224,6 @@ export const useArchivedForms = () => {
 
 /**
  * Custom hook for real-time submission counts by formId.
- * Uses groupBy/count for incremental view maintenance.
  * Returns a Map<formId, count> for efficient lookups.
  */
 export const useSubmissionCounts = () => {

@@ -1375,9 +1375,10 @@ function FilterValueSelector<T = unknown>({
       >
         <div className="flex items-center gap-2">
           <Switch
+            aria-label={field.onLabel || field.offLabel || "Toggle"}
             checked={isChecked}
             onCheckedChange={(checked) => onChange([checked as T])}
-            size="sm"
+            size="small"
           />
           {field.onLabel && field.offLabel && (
             <span className="text-xs text-muted-foreground">

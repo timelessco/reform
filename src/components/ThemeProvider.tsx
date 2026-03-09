@@ -38,6 +38,11 @@ export function ThemeProvider({
   React.useEffect(() => {
     const root = window.document.documentElement;
 
+    // Disable all transitions during theme switch so everything flips instantly
+    const style = document.createElement("style");
+    style.textContent = "*, *::before, *::after { transition: none !important; }";
+    document.head.appendChild(style);
+
     root.classList.remove("light", "dark");
 
     const resolved =
@@ -49,6 +54,19 @@ export function ThemeProvider({
 
     root.classList.add(resolved);
     root.style.colorScheme = resolved;
+
+    // Force a reflow so the browser applies all new styles without transitions
+    void root.offsetHeight;
+
+    // Re-enable transitions on the next frame
+    const rafId = requestAnimationFrame(() => {
+      if (style.parentNode) document.head.removeChild(style);
+    });
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      if (style.parentNode) style.parentNode.removeChild(style);
+    };
   }, [theme]);
 
   const handleSetTheme = React.useCallback(

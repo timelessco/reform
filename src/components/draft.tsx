@@ -453,12 +453,14 @@ function DraftForm() {
                   </field.FieldContent>
                   <Switch
                     name={"Switch_1767870057066"}
+                    aria-label="Toggle Switch"
                     checked={Boolean(field.state.value)}
-                    onCheckedChange={(checked) => {
+                    onCheckedChange={(checked: boolean) => {
                       field.handleChange(checked);
                       field.handleBlur();
                     }}
                     disabled={false}
+                    size="small"
                     aria-invalid={
                       !!field.state.meta.errors.length &&
                       field.state.meta.isTouched

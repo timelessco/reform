@@ -248,7 +248,7 @@ const InlineComboboxContent: typeof ComboboxPopover = ({ className, ...props }) 
     <Portal>
       <ComboboxPopover
         className={cn(
-          "z-500 max-h-[288px] w-[300px] overflow-y-auto rounded-md bg-popover shadow-md",
+          "z-500 max-h-[288px] w-[300px] overflow-y-auto rounded-xl bg-popover p-1 shadow-md ring-1 ring-foreground/10",
           className,
         )}
         {...props}
@@ -258,7 +258,7 @@ const InlineComboboxContent: typeof ComboboxPopover = ({ className, ...props }) 
 };
 
 const comboboxItemVariants = cva(
-  "relative mx-1 flex h-[28px] select-none items-center rounded-sm px-2 text-foreground text-sm outline-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "relative flex h-[26px] select-none items-center rounded-lg px-2 py-[5.5px] text-[13px] font-medium tracking-[0.13px] leading-tight text-foreground/80 outline-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     defaultVariants: {
       interactive: true,
@@ -360,7 +360,7 @@ function InlineComboboxGroupLabel({
   return (
     <ComboboxGroupLabel
       {...props}
-      className={cn("mt-1.5 mb-2 px-3 font-medium text-muted-foreground text-xs", className)}
+      className={cn("px-2 py-1.5 text-[12px] font-medium text-muted-foreground tracking-[0.24px] leading-tight", className)}
     />
   );
 }

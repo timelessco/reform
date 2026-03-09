@@ -6,16 +6,11 @@ function parseAsUTC(val: string): string {
   return new Date(val.replace(" ", "T") + "Z").toISOString();
 }
 
-// Helper to transform timestamp strings from Electric
-// Postgres returns "YYYY-MM-DD HH:mm:ss" without timezone - treat as UTC
 export const timestampField = z
   .string()
   .optional()
   .transform((val) => (val ? parseAsUTC(val) : new Date().toISOString()));
 
-// ============================================================================
-// Electric URL Helper
-// ============================================================================
 
 export const getElectricUrl = () => {
   if (typeof window !== "undefined") {
@@ -27,16 +22,15 @@ export const getElectricUrl = () => {
     : "http://localhost:3000/api/electric";
 };
 
-// Type for server function responses
 export type ServerTxResult = { txid: number };
 
-// ============================================================================
-// Electric Fetch Client with Credentials
-// ============================================================================
+let redirecting = false;
 
-/**
- * Custom fetch client that includes credentials (cookies) with requests.
- * Required for Electric sync to work with cookie-based authentication.
- */
-export const electricFetchClient: typeof fetch = (url, init) =>
-  fetch(url, { ...init, credentials: "include" });
+export const electricFetchClient: typeof fetch = async (url, init) => {
+  const response = await fetch(url, { ...init, credentials: "include" });
+  if (response.status === 401 && !redirecting) {
+    redirecting = true;
+    window.location.href = "/login";
+  }
+  return response;
+};

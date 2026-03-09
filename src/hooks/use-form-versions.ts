@@ -43,10 +43,9 @@ export function useHasUnpublishedChanges(formId: string | undefined) {
 	const { data: formData } = useForm(formId);
 	const { data: versions } = useFormVersions(formId);
 
-	const form = useMemo(() => {
-		if (!formId || !formData) return undefined;
-		return formData.find((f: any) => f.id === formId);
-	}, [formData, formId]);
+	// useForm already filters by formId via .where(eq(form.id, formId)),
+	// so the result is at most one item — no need for JS .find().
+	const form = formData?.[0];
 
 	const latestVersion = versions?.[0];
 

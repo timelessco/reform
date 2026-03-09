@@ -26,28 +26,30 @@ export const createWorkspace = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const now = new Date();
 
-    const [workspace] = await db
-      .insert(workspaces)
-      .values({
-        id: data.id ?? crypto.randomUUID(),
-        organizationId: data.organizationId,
-        createdByUserId: context.session.user.id,
-        name: data.name,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
+    return await db.transaction(async (tx) => {
+      const [workspace] = await tx
+        .insert(workspaces)
+        .values({
+          id: data.id ?? crypto.randomUUID(),
+          organizationId: data.organizationId,
+          createdByUserId: context.session.user.id,
+          name: data.name,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
 
-    const txid = await getTxId();
+      const txid = await getTxId(tx);
 
-    return {
-      workspace: {
-        ...workspace,
-        createdAt: workspace.createdAt.toISOString(),
-        updatedAt: workspace.updatedAt.toISOString(),
-      },
-      txid,
-    };
+      return {
+        workspace: {
+          ...workspace,
+          createdAt: workspace.createdAt.toISOString(),
+          updatedAt: workspace.updatedAt.toISOString(),
+        },
+        txid,
+      };
+    });
   });
 
 export const updateWorkspace = createServerFn({ method: "POST" })
@@ -57,25 +59,27 @@ export const updateWorkspace = createServerFn({ method: "POST" })
     const { id, ...updateData } = data;
     await authWorkspace(id, context.session.user.id);
 
-    const [workspace] = await db
-      .update(workspaces)
-      .set({
-        ...updateData,
-        updatedAt: new Date(),
-      })
-      .where(eq(workspaces.id, id))
-      .returning();
+    return await db.transaction(async (tx) => {
+      const [workspace] = await tx
+        .update(workspaces)
+        .set({
+          ...updateData,
+          updatedAt: new Date(),
+        })
+        .where(eq(workspaces.id, id))
+        .returning();
 
-    const txid = await getTxId();
+      const txid = await getTxId(tx);
 
-    return {
-      workspace: {
-        ...workspace,
-        createdAt: workspace.createdAt.toISOString(),
-        updatedAt: workspace.updatedAt.toISOString(),
-      },
-      txid,
-    };
+      return {
+        workspace: {
+          ...workspace,
+          createdAt: workspace.createdAt.toISOString(),
+          updatedAt: workspace.updatedAt.toISOString(),
+        },
+        txid,
+      };
+    });
   });
 
 export const deleteWorkspace = createServerFn({ method: "POST" })
@@ -84,18 +88,20 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await authWorkspace(data.id, context.session.user.id);
 
-    const [workspace] = await db.delete(workspaces).where(eq(workspaces.id, data.id)).returning();
+    return await db.transaction(async (tx) => {
+      const [workspace] = await tx.delete(workspaces).where(eq(workspaces.id, data.id)).returning();
 
-    const txid = await getTxId();
+      const txid = await getTxId(tx);
 
-    return {
-      workspace: {
-        ...workspace,
-        createdAt: workspace.createdAt.toISOString(),
-        updatedAt: workspace.updatedAt.toISOString(),
-      },
-      txid,
-    };
+      return {
+        workspace: {
+          ...workspace,
+          createdAt: workspace.createdAt.toISOString(),
+          updatedAt: workspace.updatedAt.toISOString(),
+        },
+        txid,
+      };
+    });
   });
 
 const getWorkspaceById = createServerFn({ method: "GET" })

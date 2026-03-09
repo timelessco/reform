@@ -334,8 +334,10 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
           <ConfigCard>
             <ConfigRow label="Dark Mode" variant="switch">
               <Switch
+                aria-label="Dark Mode"
                 checked={activeMode === "dark"}
                 onCheckedChange={handleModeToggle}
+                size="small"
               />
             </ConfigRow>
           </ConfigCard>

@@ -99,6 +99,8 @@ function EditorAppInner({
   const { customization, hasCustomization, themeVars } = useFormCustomization(savedDocs?.[0]);
   const skipSaveRef = useRef(false);
   const lastKnownContentRef = useRef<string | null>(null);
+  const savedDocsRef = useRef(savedDocs);
+  savedDocsRef.current = savedDocs;
   const headerVisibility = useEditorHeaderVisibilitySafe();
   const [resetKey, setResetKey] = useState(0);
 
@@ -164,7 +166,10 @@ function EditorAppInner({
     }
 
     return content;
-  }, [versionContent, savedDocs]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- savedDocs is intentionally
+  // excluded: initialContent only needs to recompute on resetKey change (via editor dep array).
+  // Including savedDocs would cause unnecessary recalculation on every Electric sync.
+  }, [versionContent, resetKey]);
 
   const editor = usePlateEditor(
     {
@@ -176,7 +181,6 @@ function EditorAppInner({
 
   const handleChange = useCallback(
     ({ value }: { value: Value }) => {
-      // Skip saving when in read-only mode (viewing a version)
       if (readOnly) return;
 
       if (skipSaveRef.current) {
@@ -207,11 +211,11 @@ function EditorAppInner({
           cover: headerNode.cover ?? undefined,
           workspaceId: String(workspaceId),
           updatedAt: now,
-          createdAt: savedDocs?.[0]?.createdAt ?? "",
+          createdAt: savedDocsRef.current?.[0]?.createdAt ?? "",
         });
       }
     },
-    [formId, workspaceId, readOnly, savedDocs],
+    [formId, workspaceId, readOnly],
   );
 
   const handleEditorKeyDown = useCallback(

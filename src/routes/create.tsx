@@ -8,6 +8,7 @@ export const Route = createFileRoute("/create")({
   server: {
     middleware: [guestMiddleware],
   },
+  ssr: false,
   component: RouteComponent,
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,

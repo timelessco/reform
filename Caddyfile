@@ -7,14 +7,24 @@
 # Access app at: https://localhost:3001
 
 localhost:{$CADDY_PORT:3001} {
-	reverse_proxy localhost:{$PORT:3000} {
-		flush_interval -1
+	# Electric SQL shape endpoint — no caching, no buffering, no compression
+	handle /api/electric* {
+		reverse_proxy localhost:{$PORT:3000} {
+			flush_interval -1
+		}
+		header Cache-Control "no-store"
+		header X-Accel-Buffering "no"
 	}
 
-	encode gzip
-
-	header {
-		Cache-Control "no-cache, no-transform"
-		X-Accel-Buffering "no"
+	# Everything else
+	handle {
+		reverse_proxy localhost:{$PORT:3000} {
+			flush_interval -1
+		}
+		encode gzip
+		header {
+			Cache-Control "no-cache, no-transform"
+			X-Accel-Buffering "no"
+		}
 	}
 }

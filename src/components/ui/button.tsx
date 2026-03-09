@@ -3,8 +3,22 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
+const buttonBaseClasses = [
+  "relative inline-flex shrink-0 cursor-pointer appearance-none items-center justify-center",
+  "align-middle whitespace-nowrap transition select-none",
+  "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
+  "hover:not-data-disabled:-translate-y-px",
+  "active:not-data-disabled:translate-y-0",
+  "data-disabled:cursor-not-allowed data-disabled:opacity-50",
+  "rounded-lg border border-transparent bg-clip-padding",
+  "text-sm font-medium",
+  "aria-invalid:border-destructive aria-invalid:ring-destructive/20",
+  "group/button",
+];
+
 const buttonVariants = cva(
-  "focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 rounded-lg border border-transparent bg-clip-padding text-sm font-medium focus-visible:ring-3 aria-invalid:ring-3 [&_svg:not([class*='size-'])]:size-4 inline-flex items-center justify-center whitespace-nowrap transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none shrink-0 [&_svg]:shrink-0 outline-none group/button select-none",
+  buttonBaseClasses.join(" "),
   {
     variants: {
       variant: {
@@ -49,4 +63,4 @@ function Button({
   )
 }
 
-export { Button, buttonVariants }
+export { Button, buttonBaseClasses, buttonVariants }

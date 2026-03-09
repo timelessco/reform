@@ -2,51 +2,71 @@ import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
 
 import { cn } from "@/lib/utils";
 
+type ScrollAreaProps = ScrollAreaPrimitive.Root.Props & {
+	scrollFade?: boolean;
+	scrollbarGutter?: boolean;
+	hideScrollbar?: boolean;
+	scrollHeight?: number;
+};
+
 function ScrollArea({
-  className,
-  children,
-  ...props
-}: ScrollAreaPrimitive.Root.Props) {
-  return (
-    <ScrollAreaPrimitive.Root
-      data-slot="scroll-area"
-      className={cn("relative", className)}
-      {...props}
-    >
-      <ScrollAreaPrimitive.Viewport
-        data-slot="scroll-area-viewport"
-        className="focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1"
-      >
-        {children}
-      </ScrollAreaPrimitive.Viewport>
-      <ScrollBar />
-      <ScrollAreaPrimitive.Corner />
-    </ScrollAreaPrimitive.Root>
-  );
+	className,
+	children,
+	scrollFade = false,
+	scrollbarGutter = false,
+	hideScrollbar = false,
+	scrollHeight,
+	...props
+}: ScrollAreaProps) {
+	return (
+		<ScrollAreaPrimitive.Root
+			className={cn("size-full min-h-0", className)}
+			{...props}
+		>
+			<ScrollAreaPrimitive.Viewport
+				className={cn(
+					"h-full overscroll-contain rounded-[inherit] transition-shadow outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
+					scrollFade &&
+						"mask-t-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-y-start)))] mask-r-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-end)))] mask-b-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-y-end)))] mask-l-from-[calc(100%-min(var(--fade-size),var(--scroll-area-overflow-x-start)))] [--fade-size:2rem]",
+					scrollbarGutter && "data-has-overflow-x:pb-2.5",
+				)}
+				style={{ maxHeight: scrollHeight }}
+				data-slot="scroll-area-viewport"
+			>
+				{children}
+			</ScrollAreaPrimitive.Viewport>
+			{!hideScrollbar && (
+				<>
+					<ScrollBar orientation="vertical" />
+					<ScrollBar orientation="horizontal" />
+					<ScrollAreaPrimitive.Corner data-slot="scroll-area-corner" />
+				</>
+			)}
+		</ScrollAreaPrimitive.Root>
+	);
 }
 
 function ScrollBar({
-  className,
-  orientation = "vertical",
-  ...props
+	className,
+	orientation = "vertical",
+	...props
 }: ScrollAreaPrimitive.Scrollbar.Props) {
-  return (
-    <ScrollAreaPrimitive.Scrollbar
-      data-slot="scroll-area-scrollbar"
-      data-orientation={orientation}
-      orientation={orientation}
-      className={cn(
-        "data-horizontal:h-2.5 data-horizontal:flex-col data-horizontal:border-t data-horizontal:border-t-transparent data-vertical:h-full data-vertical:w-2.5 data-vertical:border-s data-vertical:border-s-transparent flex touch-none p-px transition-colors select-none",
-        className,
-      )}
-      {...props}
-    >
-      <ScrollAreaPrimitive.Thumb
-        data-slot="scroll-area-thumb"
-        className="rounded-full bg-border relative flex-1"
-      />
-    </ScrollAreaPrimitive.Scrollbar>
-  );
+	return (
+		<ScrollAreaPrimitive.Scrollbar
+			className={cn(
+				"m-1 flex opacity-0 transition-opacity delay-300 data-hovering:opacity-100 data-hovering:delay-0 data-hovering:duration-100 data-scrolling:opacity-100 data-scrolling:delay-0 data-scrolling:duration-100 data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:flex-col data-[orientation=vertical]:w-1.5",
+				className,
+			)}
+			data-slot="scroll-area-scrollbar"
+			orientation={orientation}
+			{...props}
+		>
+			<ScrollAreaPrimitive.Thumb
+				className="relative flex-1 rounded-full bg-gray-alpha-400"
+				data-slot="scroll-area-thumb"
+			/>
+		</ScrollAreaPrimitive.Scrollbar>
+	);
 }
 
-export { ScrollArea, ScrollBar };
+export { ScrollArea, type ScrollAreaProps, ScrollBar };

@@ -14,19 +14,13 @@ import * as React from "react";
 
 import { Button } from "@/components/ui/button";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 
 export function CodeBlockElement(props: PlateElementProps<TCodeBlockElement>) {
   const { editor, element } = props;
@@ -72,90 +66,42 @@ export function CodeBlockElement(props: PlateElementProps<TCodeBlockElement>) {
 }
 
 function CodeBlockCombobox() {
-  const [open, setOpen] = React.useState(false);
   const readOnly = useReadOnly();
   const editor = useEditorRef();
   const element = useElement<TCodeBlockElement>();
   const value = element.lang || "plaintext";
-  const [searchValue, setSearchValue] = React.useState("");
-
-  const items = React.useMemo(
-    () =>
-      languages.filter(
-        (language) =>
-          !searchValue ||
-          language.label.toLowerCase().includes(searchValue.toLowerCase()),
-      ),
-    [searchValue],
-  );
 
   if (readOnly) return null;
 
   return (
-    <Popover
-      open={open}
-      onOpenChange={(newOpen) => {
-        setOpen(newOpen);
-        if (!newOpen) setSearchValue("");
+    <Combobox
+      items={languages}
+      value={value}
+      onValueChange={(val) => {
+        if (val) {
+          editor.tf.setNodes<TCodeBlockElement>(
+            { lang: val as string },
+            { at: element },
+          );
+        }
       }}
     >
-      <PopoverTrigger
-        render={
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-6 select-none justify-between gap-1 px-2 text-muted-foreground text-xs"
-            aria-expanded={open}
-            aria-controls="language-listbox"
-            role="combobox"
-          />
-        }
-      >
-        {languages.find((language) => language.value === value)?.label ??
-          "Plain Text"}
-      </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0">
-        <Command shouldFilter={false}>
-          <CommandInput
-            className="h-9"
-            value={searchValue}
-            onValueChange={(value) => setSearchValue(value)}
-            placeholder="Search language..."
-          />
-          <CommandEmpty>No language found.</CommandEmpty>
-
-          <CommandList
-            id="language-listbox"
-            className="h-[344px] overflow-y-auto"
-          >
-            <CommandGroup>
-              {items.map((language) => (
-                <CommandItem
-                  key={language.label}
-                  className="cursor-pointer"
-                  value={language.value}
-                  onSelect={(value) => {
-                    editor.tf.setNodes<TCodeBlockElement>(
-                      { lang: value },
-                      { at: element },
-                    );
-                    setSearchValue(value);
-                    setOpen(false);
-                  }}
-                >
-                  <CheckIcon
-                    className={cn(
-                      value === language.value ? "opacity-100" : "opacity-0",
-                    )}
-                  />
-                  {language.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+      <ComboboxInput
+        showTrigger={false}
+        placeholder="Search language..."
+        className="h-6 w-[120px] border-0 bg-transparent shadow-none"
+      />
+      <ComboboxContent className="w-[200px]">
+        <ComboboxEmpty>No language found.</ComboboxEmpty>
+        <ComboboxList className="max-h-[344px] overflow-y-auto">
+          {(language) => (
+            <ComboboxItem key={language.value} value={language.value}>
+              {language.label}
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
   );
 }
 

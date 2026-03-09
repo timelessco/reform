@@ -410,6 +410,16 @@ const DragHandle = React.memo(function DragHandle({
               e.stopPropagation();
               if (isDragging) return;
 
+              // Ensure the current block is selected before showing the menu
+              const blockSelectionApi = editor.getApi(BlockSelectionPlugin);
+              const currentSelection = blockSelectionApi.blockSelection.getNodes();
+              if (
+                currentSelection.length === 0 ||
+                !currentSelection.some(([node]) => node.id === element.id)
+              ) {
+                blockSelectionApi.blockSelection.set([element.id as string]);
+              }
+
               const api = editor.getApi(BlockMenuPlugin);
 
               api.blockMenu.show(BLOCK_CONTEXT_MENU_ID, {

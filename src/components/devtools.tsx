@@ -3,6 +3,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { Agentation } from "agentation";
 import { hotkeysDevtoolsPlugin } from '@tanstack/react-hotkeys-devtools'
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
+import { TailwindIndicator } from "./ui/tailwind-indicator";
 
 export function Devtools() {
   return (
@@ -22,6 +23,7 @@ export function Devtools() {
         ]}
       />
       <Agentation aria-label="Agentation" />
+      <TailwindIndicator key="tailwind-indicator" />
     </>
   );
 }
