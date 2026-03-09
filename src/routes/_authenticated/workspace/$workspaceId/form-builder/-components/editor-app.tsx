@@ -275,7 +275,7 @@ function EditorAppInner({
         <Plate editor={editor} readOnly={readOnly} onChange={handleChange}>
           <EditorContainer
             variant="default"
-            className="px-0 sm:px-0 max-w-full  border-none shadow-none"
+            className="px-0 sm:px-0 max-w-full border-none shadow-none overflow-y-visible"
           >
             <Editor
               variant="demo"
