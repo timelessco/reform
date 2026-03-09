@@ -9,9 +9,6 @@ import { createForm, deleteForm, updateForm } from "@/lib/fn/forms";
 import { logger } from "@/lib/utils";
 import { electricFetchClient, getElectricUrl, type ServerTxResult, timestampField } from "./shared";
 
-// ============================================================================
-// Form Builder Settings Schema
-// ============================================================================
 
 const SettingsSchema = z.object({
   defaultRequiredValidation: z.boolean().default(true),
@@ -28,13 +25,10 @@ const SettingsSchema = z.object({
 
 export type FormBuilderSettings = z.infer<typeof SettingsSchema>;
 
-// ============================================================================
-// Form Schema
-// ============================================================================
 
 export const FormSchema = z.object({
   id: z.string().uuid(),
-  createdByUserId: z.string().optional(), // Injected by server
+  createdByUserId: z.string().optional(),
   workspaceId: z.string().uuid(),
   title: z.string().default("Untitled"),
   formName: z.string().default("draft"),
@@ -45,11 +39,9 @@ export const FormSchema = z.object({
   cover: z.string().nullable().optional(),
   isMultiStep: z.boolean().default(false),
   status: z.enum(["draft", "published", "archived"]).default("draft"),
-  deletedAt: timestampField.nullable().optional(), // Soft delete timestamp
-  // Version history fields
+  deletedAt: timestampField.nullable().optional(),
   lastPublishedVersionId: z.string().nullable().optional(),
   publishedContentHash: z.string().nullable().optional(),
-  // --- Public form settings (merged from form_settings) ---
   language: z.string().default("English"),
   redirectOnCompletion: z.coerce.boolean().default(false),
   redirectUrl: z.string().nullable().optional(),
@@ -81,9 +73,6 @@ export const FormSchema = z.object({
 
 export type Form = z.infer<typeof FormSchema>;
 
-// ============================================================================
-// Collections with ElectricSQL sync
-// ============================================================================
 
 export const formCollection = createCollection(
   electricCollectionOptions({
@@ -134,9 +123,6 @@ export const localFormCollection = createCollection(
   }),
 );
 
-// ============================================================================
-// Form Service Functions
-// ============================================================================
 
 import { createFormHeaderNode } from "@/lib/form-header-factory";
 
@@ -250,8 +236,6 @@ export async function createFormLocal(workspaceId: string, title = "Untitled"): 
   };
 
   await formCollection.insert(newForm);
-  // form_settings row is created server-side via createForm and synced back via Electric
-
   return newForm;
 }
 

@@ -38,3 +38,10 @@ export const logger = createIsomorphicFn()
   .server((...args: any[]) => {
     console.log("[Server Log] :", ...args);
   });
+
+
+
+export function isNullable(value: unknown): value is null | undefined {
+	// eslint-disable-next-line no-eq-null, eqeqeq
+	return value == null;
+}

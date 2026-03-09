@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ExampleRouteImport } from './routes/example'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
@@ -47,6 +48,11 @@ const SignupRoute = SignupRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExampleRoute = ExampleRouteImport.update({
+  id: '/example',
+  path: '/example',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreateRoute = CreateRouteImport.update({
@@ -174,6 +180,7 @@ const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/create': typeof CreateRoute
+  '/example': typeof ExampleRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -199,6 +206,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/create': typeof CreateRoute
+  '/example': typeof ExampleRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -226,6 +234,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/create': typeof CreateRoute
+  '/example': typeof ExampleRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -253,6 +262,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/create'
+    | '/example'
     | '/login'
     | '/signup'
     | '/verify-email'
@@ -278,6 +288,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/create'
+    | '/example'
     | '/login'
     | '/signup'
     | '/verify-email'
@@ -304,6 +315,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/create'
+    | '/example'
     | '/login'
     | '/signup'
     | '/verify-email'
@@ -331,6 +343,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   CreateRoute: typeof CreateRoute
+  ExampleRoute: typeof ExampleRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
@@ -362,6 +375,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/example': {
+      id: '/example'
+      path: '/example'
+      fullPath: '/example'
+      preLoaderRoute: typeof ExampleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/create': {
@@ -596,6 +616,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   CreateRoute: CreateRoute,
+  ExampleRoute: ExampleRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   VerifyEmailRoute: VerifyEmailRoute,

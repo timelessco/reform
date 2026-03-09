@@ -433,12 +433,12 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                   <div className="flex flex-col gap-px [&>div]:bg-secondary [&>:first-child]:rounded-t-[8px] [&>:last-child]:rounded-b-[8px]">
                     <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
                       <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">Required</span>
-                      <Switch size="sm" checked={isRequired} onCheckedChange={handleToggleRequired} />
+                      <Switch aria-label="Required" size="small" checked={isRequired} onCheckedChange={handleToggleRequired} />
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
                         <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">Default answer</span>
-                        <Switch size="sm" checked={hasDefaultValue} onCheckedChange={handleToggleDefaultValue} />
+                        <Switch aria-label="Default answer" size="small" checked={hasDefaultValue} onCheckedChange={handleToggleDefaultValue} />
                       </div>
                       {hasDefaultValue && (
                         <div className="px-2 pb-2">
@@ -454,7 +454,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                     <div className="flex flex-col">
                       <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
                         <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">Min characters</span>
-                        <Switch size="sm" checked={hasMinLength} onCheckedChange={handleToggleMinLength} />
+                        <Switch aria-label="Min characters" size="small" checked={hasMinLength} onCheckedChange={handleToggleMinLength} />
                       </div>
                       {hasMinLength && (
                         <div className="px-2 pb-2">
@@ -472,7 +472,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                     <div className="flex flex-col">
                       <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
                         <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">Max characters</span>
-                        <Switch size="sm" checked={hasMaxLength} onCheckedChange={handleToggleMaxLength} />
+                        <Switch aria-label="Max characters" size="small" checked={hasMaxLength} onCheckedChange={handleToggleMaxLength} />
                       </div>
                       {hasMaxLength && (
                         <div className="px-2 pb-2">

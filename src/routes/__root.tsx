@@ -55,7 +55,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased font-sans">
         <HotkeysProvider defaultOptions={{ hotkey: { preventDefault: true } }}>
-        <ThemeProvider defaultTheme="light" storageKey="agentation-theme">
+        <ThemeProvider defaultTheme="light">
           {children}
           <Toaster richColors />
           {process.env.NODE_ENV === "development" && (

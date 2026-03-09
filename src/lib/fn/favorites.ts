@@ -13,18 +13,20 @@ export const addFavorite = createServerFn({ method: "POST" })
     const userId = context.session.user.id;
     const id = `${userId}:${data.formId}`;
 
-    await db
-      .insert(formFavorites)
-      .values({
-        id,
-        userId,
-        formId: data.formId,
-        createdAt: new Date(),
-      })
-      .onConflictDoNothing();
+    return await db.transaction(async (tx) => {
+      await tx
+        .insert(formFavorites)
+        .values({
+          id,
+          userId,
+          formId: data.formId,
+          createdAt: new Date(),
+        })
+        .onConflictDoNothing();
 
-    const txid = await getTxId();
-    return { txid };
+      const txid = await getTxId(tx);
+      return { txid };
+    });
   });
 
 export const removeFavorite = createServerFn({ method: "POST" })
@@ -33,10 +35,12 @@ export const removeFavorite = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const userId = context.session.user.id;
 
-    await db
-      .delete(formFavorites)
-      .where(and(eq(formFavorites.userId, userId), eq(formFavorites.formId, data.formId)));
+    return await db.transaction(async (tx) => {
+      await tx
+        .delete(formFavorites)
+        .where(and(eq(formFavorites.userId, userId), eq(formFavorites.formId, data.formId)));
 
-    const txid = await getTxId();
-    return { txid };
+      const txid = await getTxId(tx);
+      return { txid };
+    });
   });

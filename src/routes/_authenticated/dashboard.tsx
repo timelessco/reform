@@ -25,7 +25,7 @@ import {
   duplicateFormById,
   updateFormStatus,
 } from "@/db-collections";
-import { useForms, useWorkspaces } from "@/hooks/use-live-hooks";
+import { useOrgForms, useOrgWorkspaces } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
 import { clearLocalDraftIds } from "@/lib/local-draft";
 import { syncLocalDataToCloud } from "@/lib/sync";
@@ -72,41 +72,30 @@ function DashboardPage() {
   } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Get current session/user
   const { data: session } = useSession();
 
-  // Live queries for real-time sync - single source of truth
-  const { data: liveWorkspaces, isLoading: wsLoading } = useWorkspaces();
-  const { data: liveForms, isLoading: formsLoading } = useForms();
+  const { data: liveWorkspaces, isLoading: wsLoading } = useOrgWorkspaces(activeOrg?.id);
+  const { data: liveForms, isLoading: formsLoading } = useOrgForms(activeOrg?.id);
 
-  // Determine if Electric has synced
   const isLoading = wsLoading || formsLoading;
   const isElectricReady =
     !isLoading && liveWorkspaces !== undefined && liveForms !== undefined;
 
-  // Use live data directly once Electric is ready (like sidebar does)
-  const orgWorkspaces = useMemo(() => {
-    if (!activeOrg?.id || !isElectricReady) return [];
-    return (liveWorkspaces || []).filter(
-      (ws) => ws.organizationId === activeOrg.id,
-    );
-  }, [liveWorkspaces, activeOrg?.id, isElectricReady]);
+  const orgWorkspaces = isElectricReady ? (liveWorkspaces || []) : [];
 
   const orgForms = useMemo(() => {
     if (!isElectricReady) return [];
-    return (liveForms || [])
-      .filter((form) => orgWorkspaces.some((ws) => ws.id === form.workspaceId))
-      .filter((form) => form.status !== "archived")
-      .toSorted(
-        (a, b) =>
-          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-      );
-  }, [liveForms, orgWorkspaces, isElectricReady]);
+    return (liveForms || []).toSorted(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    );
+  }, [liveForms, isElectricReady]);
 
-  // Create workspace name lookup
-  const workspaceNameMap = new Map(orgWorkspaces.map((ws) => [ws.id, ws.name]));
+  const workspaceNameMap = useMemo(
+    () => new Map(orgWorkspaces.map((ws) => [ws.id, ws.name])),
+    [orgWorkspaces],
+  );
 
-  // Pagination
   const totalPages = Math.ceil(orgForms.length / FORMS_PER_PAGE);
   const startIndex = (currentPage - 1) * FORMS_PER_PAGE;
   const paginatedForms = orgForms.slice(
@@ -114,7 +103,6 @@ function DashboardPage() {
     startIndex + FORMS_PER_PAGE,
   );
 
-  // Handle sync after login/signup redirect
   useEffect(() => {
     const syncData = async () => {
       const shouldSync =
@@ -123,14 +111,10 @@ function DashboardPage() {
 
       if (!shouldSync || !session?.user || !activeOrg?.id) return;
 
-      // Clear flags immediately to prevent multiple syncs
       sessionStorage.removeItem("shouldSyncAfterSocialLogin");
       sessionStorage.removeItem("shouldSyncAfterLogin");
 
       try {
-        // Sync via Electric collections
-        // Shapes now have proper auth context because startSync: false
-        // means sync only starts after _authenticated loader calls preload()
         const result = await syncLocalDataToCloud(activeOrg.id);
         if (result?.syncedForms && result.syncedForms.length > 0) {
           clearLocalDraftIds();
@@ -149,7 +133,6 @@ function DashboardPage() {
     try {
       await createWorkspaceLocal(activeOrg.id, "New Collection");
       toast.success("Workspace created");
-      // Live queries will pick up the new workspace
     } catch (error) {
       console.error("Failed to create workspace:", error);
       toast.error("Failed to create workspace");
@@ -163,7 +146,6 @@ function DashboardPage() {
     try {
       const defaultWorkspace = orgWorkspaces[0];
       const newForm = await createFormLocal(defaultWorkspace.id);
-      // Live queries will automatically pick up the new form
       navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
         params: { workspaceId: defaultWorkspace.id, formId: newForm.id },
@@ -184,7 +166,6 @@ function DashboardPage() {
     if (formToDelete) {
       try {
         await updateFormStatus(formToDelete.id, "archived");
-        // Live queries will automatically pick up the archived form
         setDeleteDialogOpen(false);
         setFormToDelete(null);
       } catch (error) {
@@ -197,7 +178,6 @@ function DashboardPage() {
     try {
       const newForm = await duplicateFormById(formId);
       toast.success("Form duplicated");
-      // Navigate to the duplicated form
       navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
         params: { workspaceId: newForm.workspaceId, formId: newForm.id },
@@ -214,9 +194,7 @@ function DashboardPage() {
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-background text-foreground">
-      {/* Main Content */}
       <main className="flex-1 p-6 md:p-12 lg:p-20 max-w-6xl mx-auto w-full">
-        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Home</h1>
@@ -253,7 +231,6 @@ function DashboardPage() {
           </div>
         </div>
 
-        {/* Forms List */}
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-4">
             {isLoading
@@ -373,7 +350,6 @@ function DashboardPage() {
                 ))}
           </div>
 
-          {/* Pagination */}
           {!isLoading && totalPages > 1 && (
             <div className="flex items-center justify-between pt-4 border-t">
               <p className="text-sm text-muted-foreground">
@@ -447,7 +423,6 @@ function DashboardPage() {
         </div>
       </main>
 
-      {/* Help Circle */}
       <div className="fixed bottom-6 right-6">
         <Button
           variant="ghost"
@@ -458,7 +433,6 @@ function DashboardPage() {
         </Button>
       </div>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

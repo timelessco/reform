@@ -13,6 +13,7 @@ const serializeForm = (form: typeof forms.$inferSelect) => ({
   updatedAt: form.updatedAt.toISOString(),
   content: form.content as any,
   settings: form.settings as any,
+  customization: (form.customization ?? {}) as Record<string, any>,
 });
 
 export const createForm = createServerFn({ method: "POST" })
@@ -60,55 +61,57 @@ export const createForm = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const now = new Date();
-    const [form] = await db
-      .insert(forms)
-      .values({
-        id: data.id,
-        createdByUserId: context.session.user.id,
-        workspaceId: data.workspaceId,
-        title: data.title ?? "Untitled",
-        formName: data.formName ?? "draft",
-        schemaName: data.schemaName ?? "draftFormSchema",
-        content: data.content ?? [],
-        settings: data.settings ?? {},
-        icon: data.icon,
-        cover: data.cover,
-        isMultiStep: data.isMultiStep ?? false,
-        status: data.status ?? "draft",
-        // Form settings fields
-        language: data.language,
-        redirectOnCompletion: data.redirectOnCompletion,
-        redirectUrl: data.redirectUrl,
-        redirectDelay: data.redirectDelay,
-        progressBar: data.progressBar,
-        branding: data.branding,
-        autoJump: data.autoJump,
-        saveAnswersForLater: data.saveAnswersForLater,
-        selfEmailNotifications: data.selfEmailNotifications,
-        notificationEmail: data.notificationEmail,
-        respondentEmailNotifications: data.respondentEmailNotifications,
-        respondentEmailSubject: data.respondentEmailSubject,
-        respondentEmailBody: data.respondentEmailBody,
-        passwordProtect: data.passwordProtect,
-        password: data.password,
-        closeForm: data.closeForm,
-        closedFormMessage: data.closedFormMessage,
-        closeOnDate: data.closeOnDate,
-        closeDate: data.closeDate,
-        limitSubmissions: data.limitSubmissions,
-        maxSubmissions: data.maxSubmissions,
-        preventDuplicateSubmissions: data.preventDuplicateSubmissions,
-        dataRetention: data.dataRetention,
-        dataRetentionDays: data.dataRetentionDays,
-        customization: data.customization,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
+    return await db.transaction(async (tx) => {
+      const [form] = await tx
+        .insert(forms)
+        .values({
+          id: data.id,
+          createdByUserId: context.session.user.id,
+          workspaceId: data.workspaceId,
+          title: data.title ?? "Untitled",
+          formName: data.formName ?? "draft",
+          schemaName: data.schemaName ?? "draftFormSchema",
+          content: data.content ?? [],
+          settings: data.settings ?? {},
+          icon: data.icon,
+          cover: data.cover,
+          isMultiStep: data.isMultiStep ?? false,
+          status: data.status ?? "draft",
+          // Form settings fields
+          language: data.language,
+          redirectOnCompletion: data.redirectOnCompletion,
+          redirectUrl: data.redirectUrl,
+          redirectDelay: data.redirectDelay,
+          progressBar: data.progressBar,
+          branding: data.branding,
+          autoJump: data.autoJump,
+          saveAnswersForLater: data.saveAnswersForLater,
+          selfEmailNotifications: data.selfEmailNotifications,
+          notificationEmail: data.notificationEmail,
+          respondentEmailNotifications: data.respondentEmailNotifications,
+          respondentEmailSubject: data.respondentEmailSubject,
+          respondentEmailBody: data.respondentEmailBody,
+          passwordProtect: data.passwordProtect,
+          password: data.password,
+          closeForm: data.closeForm,
+          closedFormMessage: data.closedFormMessage,
+          closeOnDate: data.closeOnDate,
+          closeDate: data.closeDate,
+          limitSubmissions: data.limitSubmissions,
+          maxSubmissions: data.maxSubmissions,
+          preventDuplicateSubmissions: data.preventDuplicateSubmissions,
+          dataRetention: data.dataRetention,
+          dataRetentionDays: data.dataRetentionDays,
+          customization: data.customization,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
 
-    const txid = await getTxId();
+      const txid = await getTxId(tx);
 
-    return { form: serializeForm(form), txid };
+      return { form: serializeForm(form), txid };
+    });
   });
 
 export const updateForm = createServerFn({ method: "POST" })
@@ -159,18 +162,20 @@ export const updateForm = createServerFn({ method: "POST" })
     const { id, updatedAt: clientUpdatedAt, ...updateData } = data;
     await authForm(id, context.session.user.id);
 
-    const [form] = await db
-      .update(forms)
-      .set({
-        ...updateData,
-        updatedAt: clientUpdatedAt ? new Date(clientUpdatedAt) : new Date(),
-      })
-      .where(eq(forms.id, id))
-      .returning();
+    return await db.transaction(async (tx) => {
+      const [form] = await tx
+        .update(forms)
+        .set({
+          ...updateData,
+          updatedAt: clientUpdatedAt ? new Date(clientUpdatedAt) : new Date(),
+        })
+        .where(eq(forms.id, id))
+        .returning();
 
-    const txid = await getTxId();
+      const txid = await getTxId(tx);
 
-    return { form: serializeForm(form), txid };
+      return { form: serializeForm(form), txid };
+    });
   });
 
 export const deleteForm = createServerFn({ method: "POST" })
@@ -179,11 +184,13 @@ export const deleteForm = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await authForm(data.id, context.session.user.id);
 
-    const [form] = await db.delete(forms).where(eq(forms.id, data.id)).returning();
+    return await db.transaction(async (tx) => {
+      const [form] = await tx.delete(forms).where(eq(forms.id, data.id)).returning();
 
-    const txid = await getTxId();
+      const txid = await getTxId(tx);
 
-    return { form: serializeForm(form), txid };
+      return { form: serializeForm(form), txid };
+    });
   });
 
 const getFormsByWorkspace = createServerFn({ method: "GET" })
@@ -221,55 +228,57 @@ export const duplicateForm = createServerFn({ method: "POST" })
     const newId = crypto.randomUUID();
     const title = originalForm.title ? `${originalForm.title} copy` : "Untitled copy";
 
-    const [newForm] = await db
-      .insert(forms)
-      .values({
-        id: newId,
-        createdByUserId: context.session.user.id,
-        workspaceId: originalForm.workspaceId,
-        title,
-        formName: originalForm.formName,
-        schemaName: originalForm.schemaName,
-        content: originalForm.content,
-        settings: originalForm.settings,
-        icon: originalForm.icon,
-        cover: originalForm.cover,
-        isMultiStep: originalForm.isMultiStep,
-        status: originalForm.status,
-        // Copy form settings fields from original
-        language: originalForm.language,
-        redirectOnCompletion: originalForm.redirectOnCompletion,
-        redirectUrl: originalForm.redirectUrl,
-        redirectDelay: originalForm.redirectDelay,
-        progressBar: originalForm.progressBar,
-        branding: originalForm.branding,
-        autoJump: originalForm.autoJump,
-        saveAnswersForLater: originalForm.saveAnswersForLater,
-        selfEmailNotifications: originalForm.selfEmailNotifications,
-        notificationEmail: originalForm.notificationEmail,
-        respondentEmailNotifications: originalForm.respondentEmailNotifications,
-        respondentEmailSubject: originalForm.respondentEmailSubject,
-        respondentEmailBody: originalForm.respondentEmailBody,
-        passwordProtect: originalForm.passwordProtect,
-        password: originalForm.password,
-        closeForm: originalForm.closeForm,
-        closedFormMessage: originalForm.closedFormMessage,
-        closeOnDate: originalForm.closeOnDate,
-        closeDate: originalForm.closeDate,
-        limitSubmissions: originalForm.limitSubmissions,
-        maxSubmissions: originalForm.maxSubmissions,
-        preventDuplicateSubmissions: originalForm.preventDuplicateSubmissions,
-        dataRetention: originalForm.dataRetention,
-        dataRetentionDays: originalForm.dataRetentionDays,
-        customization: originalForm.customization,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
+    return await db.transaction(async (tx) => {
+      const [newForm] = await tx
+        .insert(forms)
+        .values({
+          id: newId,
+          createdByUserId: context.session.user.id,
+          workspaceId: originalForm.workspaceId,
+          title,
+          formName: originalForm.formName,
+          schemaName: originalForm.schemaName,
+          content: originalForm.content,
+          settings: originalForm.settings,
+          icon: originalForm.icon,
+          cover: originalForm.cover,
+          isMultiStep: originalForm.isMultiStep,
+          status: originalForm.status,
+          // Copy form settings fields from original
+          language: originalForm.language,
+          redirectOnCompletion: originalForm.redirectOnCompletion,
+          redirectUrl: originalForm.redirectUrl,
+          redirectDelay: originalForm.redirectDelay,
+          progressBar: originalForm.progressBar,
+          branding: originalForm.branding,
+          autoJump: originalForm.autoJump,
+          saveAnswersForLater: originalForm.saveAnswersForLater,
+          selfEmailNotifications: originalForm.selfEmailNotifications,
+          notificationEmail: originalForm.notificationEmail,
+          respondentEmailNotifications: originalForm.respondentEmailNotifications,
+          respondentEmailSubject: originalForm.respondentEmailSubject,
+          respondentEmailBody: originalForm.respondentEmailBody,
+          passwordProtect: originalForm.passwordProtect,
+          password: originalForm.password,
+          closeForm: originalForm.closeForm,
+          closedFormMessage: originalForm.closedFormMessage,
+          closeOnDate: originalForm.closeOnDate,
+          closeDate: originalForm.closeDate,
+          limitSubmissions: originalForm.limitSubmissions,
+          maxSubmissions: originalForm.maxSubmissions,
+          preventDuplicateSubmissions: originalForm.preventDuplicateSubmissions,
+          dataRetention: originalForm.dataRetention,
+          dataRetentionDays: originalForm.dataRetentionDays,
+          customization: originalForm.customization,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
 
-    const txid = await getTxId();
+      const txid = await getTxId(tx);
 
-    return { form: serializeForm(newForm), txid };
+      return { form: serializeForm(newForm), txid };
+    });
   });
 
 const moveFormToWorkspace = createServerFn({ method: "POST" })
@@ -283,18 +292,20 @@ const moveFormToWorkspace = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await authForm(data.formId, context.session.user.id);
 
-    const [form] = await db
-      .update(forms)
-      .set({
-        workspaceId: data.targetWorkspaceId,
-        updatedAt: new Date(),
-      })
-      .where(eq(forms.id, data.formId))
-      .returning();
+    return await db.transaction(async (tx) => {
+      const [form] = await tx
+        .update(forms)
+        .set({
+          workspaceId: data.targetWorkspaceId,
+          updatedAt: new Date(),
+        })
+        .where(eq(forms.id, data.formId))
+        .returning();
 
-    const txid = await getTxId();
+      const txid = await getTxId(tx);
 
-    return { form: serializeForm(form), txid };
+      return { form: serializeForm(form), txid };
+    });
   });
 
 const getFormById = createServerFn({ method: "GET" })

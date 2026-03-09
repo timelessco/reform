@@ -80,6 +80,52 @@ function findNextNonButtonPath(editor: PlateEditor, currentPath: Path): Path | n
 /**
  * Find the previous block before the given path, skipping form buttons, page breaks, and headers.
  */
+/**
+ * If the block at `blockPath` is the only content block after a preceding pageBreak,
+ * delete both the block and the pageBreak, then move the cursor to the previous content block.
+ * Returns true if it handled the deletion.
+ */
+function tryDeletePageBreakWithEmptyBlock(editor: PlateEditor, blockPath: Path): boolean {
+  const children = editor.children as TElement[];
+  const currentIndex = blockPath[0];
+
+  let pageBreakIndex = -1;
+  for (let i = currentIndex - 1; i >= 0; i--) {
+    const prev = children[i];
+    if (prev.type === "formButton") continue;
+    if (prev.type === "pageBreak") {
+      pageBreakIndex = i;
+    }
+    break;
+  }
+
+  if (pageBreakIndex === -1) return false;
+
+  let hasOtherContent = false;
+  for (let i = pageBreakIndex + 1; i < children.length; i++) {
+    if (i === currentIndex) continue;
+    const n = children[i];
+    if (n.type === "pageBreak" || n.type === "formButton") break;
+    hasOtherContent = true;
+    break;
+  }
+
+  if (hasOtherContent) return false;
+
+  const prevPath = findPrevNonButtonPath(editor, [pageBreakIndex]);
+  editor.tf.withoutNormalizing(() => {
+    editor.tf.removeNodes({ at: blockPath });
+    editor.tf.removeNodes({ at: [pageBreakIndex] });
+  });
+  if (prevPath) {
+    const edges = editor.api.edges(prevPath);
+    if (edges?.[1]) {
+      editor.tf.select(edges[1]);
+    }
+  }
+  return true;
+}
+
 function findPrevNonButtonPath(editor: PlateEditor, currentPath: Path): Path | null {
   const children = editor.children as TElement[];
   const currentIndex = currentPath[0];
@@ -257,14 +303,19 @@ function handleFormBlockKeyDown(editor: PlateEditor, event: React.KeyboardEvent)
     return;
   }
 
-  // Backspace on empty → delete current block (but NOT protected buttons)
   if (event.key === "Backspace" && editor.api.isEmpty(node)) {
-    // Prevent deletion of protected button types
     if (PROTECTED_BUTTON_TYPES.includes(node.type)) {
       event.preventDefault();
       event.stopPropagation();
-      return; // Don't delete, just prevent the action
+      return;
     }
+
+    if (tryDeletePageBreakWithEmptyBlock(editor, path)) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
     event.preventDefault();
     event.stopPropagation();
     editor.tf.removeNodes({ at: path });
@@ -351,30 +402,37 @@ export const FormButtonPlugin = createPlatePlugin({
     const editorRef = editor as any;
     const { deleteBackward, deleteForward, deleteFragment } = editorRef;
 
-    // ... (delete overrides remain the same, kept for brevity in this prompt context if unchanged)
-    // Re-implementing delete overrides as they are inside the function I am replacing.
-
-    // Prevent backspace from deleting any form button
+    // Prevent backspace from deleting any form button + handle pageBreak cleanup
     editorRef.deleteBackward = (unit: any) => {
       const block = editorRef.api.block();
       if (block) {
-        const [_node, path] = block;
-        if (path && path[0] > 0) {
-          const prevIndex = path[0] - 1;
-          const prevNode = editorRef.children[prevIndex] as TElement;
+        const [node, path] = block;
+        const selection = editorRef.selection;
+        const isAtStart =
+          selection &&
+          editorRef.api.isCollapsed(selection) &&
+          (() => {
+            const edges = editorRef.api.edges(path) as any;
+            const start = edges?.[0];
+            return (
+              start &&
+              PathApi.equals(selection.anchor.path, start.path) &&
+              selection.anchor.offset === start.offset
+            );
+          })();
+
+        if (isAtStart && path && path[0] > 0) {
+          const children = editorRef.children as TElement[];
+          const currentIndex = path[0];
+          const prevNode = children[currentIndex - 1];
+
+          // Block backspace from merging into a formButton
           if (prevNode && isFormButton(prevNode)) {
-            const selection = editorRef.selection;
-            if (selection && editorRef.api.isCollapsed(selection)) {
-              const edges = editorRef.api.edges(path) as any;
-              const start = edges?.[0];
-              if (
-                start &&
-                PathApi.equals(selection.anchor.path, start.path) &&
-                selection.anchor.offset === start.offset
-              ) {
-                return;
-              }
-            }
+            return;
+          }
+
+          if (editorRef.api.isEmpty(node) && tryDeletePageBreakWithEmptyBlock(editorRef, path)) {
+            return;
           }
         }
       }
@@ -439,14 +497,6 @@ export const FormButtonPlugin = createPlatePlugin({
 
     const originalInsertText = editorRef.tf.insertText.bind(editorRef.tf);
     editorRef.tf.insertText = (text: string, options?: any) => {
-      // Basic protection: don't insert if cursor is strictly after the last button of a page
-      // For now, simpler validation relies on Normalizer to cleanup bad states.
-      // But for immediate UI feedback:
-      // Basic protection: don't insert if cursor is strictly after the last button of a page
-      // For now, simpler validation relies on Normalizer to cleanup bad states.
-      // But for immediate UI feedback:
-      // We can't easily check "after button" without knowing WHICH button.
-      // Rely on normalization for structure enforcement.
       return originalInsertText(text, options);
     };
 
@@ -860,6 +910,15 @@ function handleGlobalKeyDown(editor: PlateEditor, event: React.KeyboardEvent): v
   if (!block) return;
 
   const [_node, path] = block;
+
+  if (event.key === "Backspace" && editor.api.isEmpty(_node)) {
+    if (tryDeletePageBreakWithEmptyBlock(editor, path)) {
+      event.preventDefault();
+      event.stopPropagation();
+      (event as any).__formBlockHandled = true;
+      return;
+    }
+  }
 
   // Only handle Tab and Arrow keys for navigation
   if (event.key === "Tab" && !event.shiftKey) {

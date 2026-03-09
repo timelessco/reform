@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { createFileRoute } from "@tanstack/react-router";
 import { eq, inArray } from "drizzle-orm";
 import { authMiddleware } from "@/middleware/auth";
+import { ELECTRIC_PROTOCOL_QUERY_PARAMS } from "@electric-sql/client";
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -39,6 +40,7 @@ export const Route = createFileRoute("/api/electric")({
         }
 
         let whereSql: string;
+        let whereParams: Record<string, string> = {};
 
         switch (table) {
           case "forms": {
@@ -64,8 +66,11 @@ export const Route = createFileRoute("/api/electric")({
               if (workspaceList.length === 0) {
                 whereSql = `1 = 0`;
               } else {
-                const workspaceIds = workspaceList.map((ws) => `'${ws.id}'`).join(", ");
-                whereSql = `"workspaceId" IN (${workspaceIds})`;
+                const placeholders = workspaceList.map((_, i) => `$${i + 1}`).join(", ");
+                whereSql = `"workspaceId" IN (${placeholders})`;
+                for (let i = 0; i < workspaceList.length; i++) {
+                  whereParams[`params[${i + 1}]`] = workspaceList[i].id;
+                }
               }
             }
             break;
@@ -81,8 +86,11 @@ export const Route = createFileRoute("/api/electric")({
             if (userMemberships.length === 0) {
               whereSql = `1 = 0`;
             } else {
-              const orgIds = userMemberships.map((m) => `'${m.organizationId}'`);
-              whereSql = `"organizationId" IN (${orgIds})`;
+              const placeholders = userMemberships.map((_, i) => `$${i + 1}`).join(", ");
+              whereSql = `"organizationId" IN (${placeholders})`;
+              for (let i = 0; i < userMemberships.length; i++) {
+                whereParams[`params[${i + 1}]`] = userMemberships[i].organizationId;
+              }
             }
             break;
           }
@@ -125,8 +133,11 @@ export const Route = createFileRoute("/api/electric")({
                 if (formList.length === 0) {
                   whereSql = `1 = 0`;
                 } else {
-                  const formIds = formList.map((f) => `'${f.id}'`).join(", ");
-                  whereSql = `"formId" IN (${formIds})`;
+                  const placeholders = formList.map((_, i) => `$${i + 1}`).join(", ");
+                  whereSql = `"formId" IN (${placeholders})`;
+                  for (let i = 0; i < formList.length; i++) {
+                    whereParams[`params[${i + 1}]`] = formList[i].id;
+                  }
                 }
               }
             }
@@ -170,8 +181,11 @@ export const Route = createFileRoute("/api/electric")({
                 if (formListVersions.length === 0) {
                   whereSql = `1 = 0`;
                 } else {
-                  const formIds = formListVersions.map((f) => `'${f.id}'`).join(", ");
-                  whereSql = `"formId" IN (${formIds})`;
+                  const placeholders = formListVersions.map((_, i) => `$${i + 1}`).join(", ");
+                  whereSql = `"formId" IN (${placeholders})`;
+                  for (let i = 0; i < formListVersions.length; i++) {
+                    whereParams[`params[${i + 1}]`] = formListVersions[i].id;
+                  }
                 }
               }
             }
@@ -180,7 +194,8 @@ export const Route = createFileRoute("/api/electric")({
 
           case "form_favorites": {
             // Users can only see their own favorites
-            whereSql = `"userId" = '${userId}'`;
+            whereSql = `"userId" = $1`;
+            whereParams[`params[1]`] = userId;
             break;
           }
 
@@ -199,13 +214,18 @@ export const Route = createFileRoute("/api/electric")({
           upstreamUrl.searchParams.set("source_secret", sourceSecret);
         }
 
-        // Forward all query parameters (including cache busters)
+        // Forward only Electric protocol query parameters
         for (const [key, value] of url.searchParams.entries()) {
-          upstreamUrl.searchParams.set(key, value);
+          if (ELECTRIC_PROTOCOL_QUERY_PARAMS.includes(key)) {
+            upstreamUrl.searchParams.set(key, value);
+          }
         }
 
         upstreamUrl.searchParams.set("table", table);
         upstreamUrl.searchParams.set("where", whereSql);
+        for (const [key, value] of Object.entries(whereParams)) {
+          upstreamUrl.searchParams.set(key, value);
+        }
 
         // logger("electric-proxy", {
         //   userId,
@@ -234,6 +254,11 @@ export const Route = createFileRoute("/api/electric")({
             }
             responseHeaders.set(key, value);
           }
+
+          responseHeaders.set(
+            "Access-Control-Expose-Headers",
+            "electric-offset, electric-handle, electric-schema, electric-cursor",
+          );
 
           // Override cache control
           responseHeaders.set(

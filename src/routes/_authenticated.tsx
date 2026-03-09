@@ -1,3 +1,5 @@
+import { ThemedFormIcon } from "@/components/icon-picker";
+import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { SidebarItem } from "@/components/sidebar-item";
 import {
   AlertDialog,
@@ -30,9 +32,25 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import {
+  BellIcon,
+  ChevronsLeftIcon,
+  FileTextIcon,
+  FilterIcon,
+  HelpCircleIcon,
+  HomeIcon,
+  LogOutIcon,
+  MoreHorizontalIcon,
+  PlusIcon,
+  SearchIcon,
+  SettingsIcon,
+  Trash2Icon,
+  Undo2Icon,
+  UsersIcon
+} from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import Loader from "@/components/ui/loader";
-import { Logo, LogoToggle } from "@/components/ui/logo";
+import { LogoToggle } from "@/components/ui/logo";
 import { NotFound } from "@/components/ui/not-found";
 import {
   RIGHT_SIDEBAR_WIDTH_DEFAULT,
@@ -56,24 +74,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { SidebarSection } from "@/components/ui/sidebar-section";
-import {
-  BellIcon,
-  ChevronsLeftIcon,
-  ChevronsRightIcon,
-  FileTextIcon,
-  FilterIcon,
-  HelpCircleIcon,
-  HomeIcon,
-  LogOutIcon,
-  MoreHorizontalIcon,
-  PlusIcon,
-  SearchIcon,
-  SettingsIcon,
-  StarIcon,
-  Trash2Icon,
-  UsersIcon,
-} from "@/components/ui/icons";
-import { ThemedFormIcon } from "@/components/icon-picker";
 import { UserMenuMinimal } from "@/components/user-menu-minimal";
 import {
   WorkspaceItemMinimal,
@@ -103,8 +103,6 @@ import {
   workspaceCollection,
 } from "@/db-collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
-import { settingsDialogStore } from "@/hooks/use-settings-dialog";
-import { SettingsDialog } from "@/components/settings/settings-dialog";
 import {
   EditorSidebarProvider,
   useEditorSidebar,
@@ -112,13 +110,14 @@ import {
 import {
   useArchivedForms,
   useFavoriteForms,
-  useForms,
+  useOrgForms,
+  useOrgWorkspaces,
   useSubmissionCounts,
-  useWorkspaces,
 } from "@/hooks/use-live-hooks";
+import { settingsDialogStore } from "@/hooks/use-settings-dialog";
 import { auth, useSession } from "@/lib/auth-client";
-import { HOTKEYS } from "@/lib/hotkeys";
 import { orgDataForLayoutQueryOptions } from "@/lib/fn/org";
+import { HOTKEYS } from "@/lib/hotkeys";
 import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/middleware/auth";
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
@@ -131,9 +130,8 @@ import {
   useParams,
   useRouter,
 } from "@tanstack/react-router";
-import { Zap } from "lucide-react";
-import { Undo2Icon } from "@/components/ui/icons";
 
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type * as React from "react";
 import {
   lazy,
@@ -146,8 +144,6 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ChartTooltipContent } from "@/components/ui/chart";
 
 const LazyFormSettingsSidebar = lazy(() =>
   import("@/components/form-builder/form-settings-sidebar").then((m) => ({
@@ -370,7 +366,7 @@ function AppSidebar() {
 
   // Get pre-fetched data from route loader for immediate render
   const { activeOrg, orgsData } = Route.useLoaderData();
-  const { data: workspacesData } = useWorkspaces();
+  const { data: workspacesData } = useOrgWorkspaces(activeOrg?.id);
 
   const { data: invitations } = useQuery(
     auth.organization.listUserInvitations.queryOptions(),
@@ -535,9 +531,7 @@ function AppSidebar() {
                   onSelect={async () => {
                     setIsPaletteOpen(false);
                     if (activeOrg && workspacesData) {
-                      const orgWorkspaces = workspacesData.filter(
-                        (ws) => ws.organizationId === activeOrg.id,
-                      );
+                      const orgWorkspaces = workspacesData;
                       if (orgWorkspaces.length > 0) {
                         // Use workspace from URL if available, otherwise use first workspace
                         const workspaceMatch =
@@ -654,20 +648,16 @@ function TrashDialog({
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const { data: archivedFormsData } = useArchivedForms();
-  const { data: workspacesData } = useWorkspaces();
+  const { data: orgWorkspacesData } = useOrgWorkspaces(activeOrgId);
 
   // Get archived forms filtered by active organization
   const archivedForms = useMemo(() => {
-    if (!activeOrgId || !archivedFormsData || !workspacesData) return [];
+    if (!activeOrgId || !archivedFormsData || !orgWorkspacesData) return [];
 
-    // Get workspace IDs belonging to active org
     const orgWorkspaceIds = new Set(
-      workspacesData
-        .filter((ws) => ws.organizationId === activeOrgId)
-        .map((ws) => ws.id),
+      orgWorkspacesData.map((ws) => ws.id),
     );
 
-    // Filter forms that belong to org's workspaces
     return archivedFormsData
       .filter((form) => orgWorkspaceIds.has(form.workspaceId))
       .filter(
@@ -680,19 +670,19 @@ function TrashDialog({
           new Date(b.deletedAt || b.updatedAt).getTime() -
           new Date(a.deletedAt || a.updatedAt).getTime(),
       );
-  }, [archivedFormsData, workspacesData, activeOrgId, searchQuery]);
+  }, [archivedFormsData, orgWorkspacesData, activeOrgId, searchQuery]);
 
   // Create a map of workspace names
   const workspaceNames = useMemo(() => {
-    if (!workspacesData) return {};
-    return workspacesData.reduce(
+    if (!orgWorkspacesData) return {};
+    return orgWorkspacesData.reduce(
       (acc, ws) => {
         acc[ws.id] = ws.name;
         return acc;
       },
       {} as Record<string, string>,
     );
-  }, [workspacesData]);
+  }, [orgWorkspacesData]);
 
   const handleRestore = async (formId: string) => {
     try {
@@ -1054,10 +1044,9 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
     localStorage.setItem("sidebar-sort-mode", mode);
   };
 
-  // Use live queries for real-time sync
   const { data: workspacesData, isLoading: workspacesLoading } =
-    useWorkspaces();
-  const { data: formsData, isLoading: formsLoading } = useForms();
+    useOrgWorkspaces(activeOrgId);
+  const { data: formsData, isLoading: formsLoading } = useOrgForms(activeOrgId);
   const submissionCounts = useSubmissionCounts();
 
   // Get user's favorite forms
@@ -1075,14 +1064,16 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
     const formsByWorkspace = (formsData || []).reduce(
       (acc, form) => {
         if (!acc[form.workspaceId]) acc[form.workspaceId] = [];
-        acc[form.workspaceId].push(form);
+        acc[form.workspaceId].push({
+          ...form,
+          customization: form.customization as Record<string, string> | null | undefined,
+        });
         return acc;
       },
       {} as Record<string, WorkspaceWithForms["forms"]>,
     );
 
     return (workspacesData || [])
-      .filter((ws) => ws.organizationId === activeOrgId)
       .map((ws) => ({
         ...ws,
         // Sort forms by recently edited (most recent first)

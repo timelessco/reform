@@ -234,7 +234,6 @@ function CustomizeSection({
   if (embedType === "popup") {
     return (
       <ConfigCard>
-        {/* Open popup */}
         <form.Field name="popupTrigger">
           {(field: any) => (
             <ConfigRow label="Open popup">
@@ -255,21 +254,21 @@ function CustomizeSection({
           )}
         </form.Field>
 
-        {/* Hide on submit */}
         <form.Field name="hideOnSubmit">
           {(field: any) => (
             <ConfigRow label="Hide on submit">
               <Switch
+                aria-label="Hide on submit"
                 checked={field.state.value}
                 onCheckedChange={(checked: boolean) =>
                   field.handleChange(checked)
                 }
+                size="small"
               />
             </ConfigRow>
           )}
         </form.Field>
 
-        {/* Popup Position */}
         <form.Field name="popupPosition">
           {(field: any) => (
             <ConfigRow label="Popup Position">
@@ -290,7 +289,6 @@ function CustomizeSection({
           )}
         </form.Field>
 
-        {/* Popup Width */}
         <form.Field name="popupWidth">
           {(field: any) => (
             <StyleNumberInput
@@ -309,25 +307,27 @@ function CustomizeSection({
           )}
         </form.Field>
 
-        {/* Dark Overlay */}
         <form.Field name="darkOverlay">
           {(field: any) => (
             <ConfigRow label="Dark Overlay" variant="switch">
               <Switch
+                aria-label="Dark Overlay"
                 checked={field.state.value}
                 onCheckedChange={(v) => field.handleChange(v)}
+                size="small"
               />
             </ConfigRow>
           )}
         </form.Field>
 
-        {/* Show Emoji */}
         <form.Field name="emoji">
           {(field: any) => (
             <ConfigRow label="Show Emoji" variant="switch">
               <Switch
+                aria-label="Show Emoji"
                 checked={field.state.value}
                 onCheckedChange={(v) => field.handleChange(v)}
+                size="small"
               />
             </ConfigRow>
           )}
@@ -339,7 +339,6 @@ function CustomizeSection({
   if (embedType === "standard") {
     return (
       <ConfigCard>
-        {/* Height — disabled when Dynamic Height is on */}
         <form.Subscribe selector={(s: any) => s.values.dynamicHeight}>
           {(dynamicHeight: boolean) => (
             <form.Field name="height">
@@ -364,49 +363,53 @@ function CustomizeSection({
           )}
         </form.Subscribe>
 
-        {/* Dynamic Height */}
         <form.Field name="dynamicHeight">
           {(field: any) => (
             <ConfigRow label="Dynamic Height" variant="switch">
               <Switch
+                aria-label="Dynamic Height"
                 checked={field.state.value}
                 onCheckedChange={(v) => field.handleChange(v)}
+                size="small"
               />
             </ConfigRow>
           )}
         </form.Field>
 
-        {/* Hide Title */}
         <form.Field name="hideTitle">
           {(field: any) => (
             <ConfigRow label="Hide Title" variant="switch">
               <Switch
+                aria-label="Hide Title"
                 checked={field.state.value}
                 onCheckedChange={(v) => field.handleChange(v)}
+                size="small"
               />
             </ConfigRow>
           )}
         </form.Field>
 
-        {/* Align Left */}
         <form.Field name="alignLeft">
           {(field: any) => (
             <ConfigRow label="Align Left" variant="switch">
               <Switch
+                aria-label="Align Left"
                 checked={field.state.value}
                 onCheckedChange={(v) => field.handleChange(v)}
+                size="small"
               />
             </ConfigRow>
           )}
         </form.Field>
 
-        {/* Transparency */}
         <form.Field name="transparentBackground">
           {(field: any) => (
             <ConfigRow label="Transparency" variant="switch">
               <Switch
+                aria-label="Transparency"
                 checked={field.state.value}
                 onCheckedChange={(v) => field.handleChange(v)}
+                size="small"
               />
             </ConfigRow>
           )}
@@ -418,12 +421,14 @@ function CustomizeSection({
   // fullpage
   return (
     <ConfigCard>
-      <form.Field name="transparentBackground">
+          <form.Field name="transparentBackground">
         {(field: any) => (
           <ConfigRow label="Transparent BG" variant="switch">
             <Switch
+              aria-label="Transparent BG"
               checked={field.state.value}
               onCheckedChange={(v) => field.handleChange(v)}
+              size="small"
             />
           </ConfigRow>
         )}
@@ -435,31 +440,32 @@ function CustomizeSection({
 function ProSection({ form }: { form: { Field: any } }) {
   return (
     <ConfigCard>
-      {/* Analytics */}
-      <form.Field name="trackEvents">
+          <form.Field name="trackEvents">
         {(field: any) => (
           <ConfigRow label="Analytics" variant="switch">
             <Switch
+              aria-label="Analytics"
               checked={field.state.value}
               onCheckedChange={(v) => field.handleChange(v)}
+              size="small"
             />
           </ConfigRow>
         )}
       </form.Field>
 
-      {/* Reform Branding */}
-      <form.Field name="branding">
+          <form.Field name="branding">
         {(field: any) => (
           <ConfigRow label="Reform Branding" variant="switch">
             <Switch
+              aria-label="Reform Branding"
               checked={field.state.value}
               onCheckedChange={(v) => field.handleChange(v)}
+              size="small"
             />
           </ConfigRow>
         )}
       </form.Field>
 
-      {/* Custom Domain */}
       <ConfigRow label="Custom Domain">
         <Select value="varman.co" disabled>
           <SelectTrigger

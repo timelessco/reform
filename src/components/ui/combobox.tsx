@@ -63,7 +63,12 @@ function ComboboxInput({
   return (
     <InputGroup className={cn("w-auto", className)}>
       <ComboboxPrimitive.Input
-        render={<InputGroupInput disabled={disabled} />}
+        render={
+          <InputGroupInput
+            disabled={disabled}
+            className="min-w-[80px] flex-1 bg-transparent px-2.5 text-13 leading-[115%] tracking-[0.13px] outline-none placeholder:font-medium placeholder:text-gray-alpha-600"
+          />
+        }
         {...props}
       />
       <InputGroupAddon align="inline-end">
@@ -87,7 +92,7 @@ function ComboboxInput({
 function ComboboxContent({
   className,
   side = "bottom",
-  sideOffset = 6,
+  sideOffset = 4,
   align = "start",
   alignOffset = 0,
   anchor,
@@ -105,12 +110,15 @@ function ComboboxContent({
         align={align}
         alignOffset={alignOffset}
         anchor={anchor}
-        className="isolate z-50"
+        className="isolate z-50 select-none"
       >
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"
           data-chips={!!anchor}
-          className={cn("bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 ring-foreground/10 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:border-input/30 overflow-hidden rounded-lg shadow-md ring-1 duration-100 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:shadow-none data-[side=inline-start]:slide-in-from-end-2 data-[side=inline-end]:slide-in-from-start-2 group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] origin-(--transform-origin) data-[chips=true]:min-w-(--anchor-width)", className )}
+          className={cn(
+            "w-(--anchor-width) origin-(--transform-origin) rounded-xl bg-white shadow-custom-7 transition-[scale,opacity,shadow] data-starting-style:scale-98 data-starting-style:opacity-0",
+            className
+          )}
           {...props}
         />
       </ComboboxPrimitive.Positioner>
@@ -122,10 +130,7 @@ function ComboboxList({ className, ...props }: ComboboxPrimitive.List.Props) {
   return (
     <ComboboxPrimitive.List
       data-slot="combobox-list"
-      className={cn(
-        "no-scrollbar max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 p-1 data-empty:p-0 overflow-y-auto overscroll-contain",
-        className
-      )}
+      className={cn("p-1 empty:hidden", className)}
       {...props}
     />
   )
@@ -140,16 +145,19 @@ function ComboboxItem({
     <ComboboxPrimitive.Item
       data-slot="combobox-item"
       className={cn(
-        "data-highlighted:bg-accent data-highlighted:text-accent-foreground not-data-[variant=destructive]:data-highlighted:**:text-accent-foreground gap-2 rounded-md py-1 pe-8 ps-1.5 text-sm [&_svg:not([class*='size-'])]:size-4 relative flex w-full cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+        "group flex cursor-pointer items-center gap-2 rounded-lg px-2 py-[5.5px] text-13 leading-[15px] font-450 tracking-[0.01em] text-gray-900 transition-colors select-none data-highlighted:bg-gray-200 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className
       )}
       {...props}
     >
       {children}
       <ComboboxPrimitive.ItemIndicator
-        render={<span className="pointer-events-none absolute end-2 flex size-4 items-center justify-center" />}
+        keepMounted
+        render={
+          <span className="ml-auto flex size-4 shrink-0 items-center justify-center text-plain opacity-0 data-selected:text-plain data-selected:opacity-100" />
+        }
       >
-        <CheckIcon className="pointer-events-none" />
+        <CheckIcon className="pointer-events-none text-gray-800" />
       </ComboboxPrimitive.ItemIndicator>
     </ComboboxPrimitive.Item>
   )
@@ -188,7 +196,10 @@ function ComboboxEmpty({ className, ...props }: ComboboxPrimitive.Empty.Props) {
   return (
     <ComboboxPrimitive.Empty
       data-slot="combobox-empty"
-      className={cn("text-muted-foreground hidden w-full justify-center py-2 text-center text-sm group-data-empty/combobox-content:flex", className)}
+      className={cn(
+        "hidden w-full justify-center px-2 py-[5px] text-13 text-gray-500 group-data-empty/combobox-content:flex",
+        className
+      )}
       {...props}
     />
   )
@@ -215,7 +226,10 @@ function ComboboxChips({
   return (
     <ComboboxPrimitive.Chips
       data-slot="combobox-chips"
-      className={cn("dark:bg-input/30 border-input focus-within:border-ring focus-within:ring-ring/50 has-aria-invalid:ring-destructive/20 dark:has-aria-invalid:ring-destructive/40 has-aria-invalid:border-destructive dark:has-aria-invalid:border-destructive/50 flex min-h-8 flex-wrap items-center gap-1 rounded-lg border bg-transparent bg-clip-padding px-2.5 py-1 text-sm transition-colors focus-within:ring-3 has-aria-invalid:ring-3 has-data-[slot=combobox-chip]:px-1", className)}
+      className={cn(
+        "relative flex min-h-[30px] w-full flex-wrap items-center gap-1 rounded-lg bg-gray-alpha-100 px-[3px] py-[3px] focus-within:ring-2 focus-within:ring-gray-200",
+        className
+      )}
       {...props}
     />
   )
@@ -233,7 +247,7 @@ function ComboboxChip({
     <ComboboxPrimitive.Chip
       data-slot="combobox-chip"
       className={cn(
-        "bg-muted text-foreground flex h-[calc(--spacing(5.25))] w-fit items-center justify-center gap-1 rounded-sm px-1.5 text-xs font-medium whitespace-nowrap has-data-[slot=combobox-chip-remove]:pe-0 has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50",
+        "flex cursor-pointer items-center gap-1.5 rounded-[6px] bg-gray-100 px-2 py-[4.5px] text-xs leading-[15px] font-450 tracking-[0.01em] text-gray-800 transition-colors outline-none hover:bg-gray-200 focus-visible:ring-2 focus-visible:ring-gray-200 has-data-[slot=combobox-chip-remove]:pe-0 has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50",
         className
       )}
       {...props}
@@ -260,7 +274,7 @@ function ComboboxChipsInput({
     <ComboboxPrimitive.Input
       data-slot="combobox-chip-input"
       className={cn(
-        "min-w-16 flex-1 outline-none",
+        "min-w-[80px] flex-1 bg-transparent px-2.5 text-13 leading-[115%] tracking-[0.13px] outline-none placeholder:font-medium placeholder:text-gray-alpha-600",
         className
       )}
       {...props}

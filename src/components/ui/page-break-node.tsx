@@ -121,9 +121,11 @@ export function PageBreakElement(props: PlateElementProps) {
               </Label>
               <Switch
                 id={`thank-you-toggle-${element.id || pageNumber}`}
+                aria-label="Thank you page"
                 checked={isThankYouPage}
                 onCheckedChange={handleThankYouToggle}
                 disabled={readOnly}
+                size="small"
                 onMouseDown={(e) => e.stopPropagation()}
               />
             </div>
