@@ -266,7 +266,7 @@ function EditorAppInner({
     <EditorThemeProvider value={themeCtx}>
       <div
         className={cn(
-          "min-h-full w-full overflow-y-auto overflow-x-hidden bg-background text-foreground",
+          "min-h-full w-full overflow-x-hidden bg-background text-foreground",
           hasCustomization && "bf-themed",
           customization?.mode === "dark" && "dark",
         )}
