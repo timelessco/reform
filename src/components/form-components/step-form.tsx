@@ -244,9 +244,7 @@ function RenderStepButton({
   grouped?: boolean;
   layout?: "public" | "editor";
 }) {
-  const { totalSteps } = useStepForm();
   const { t } = useTranslation();
-  const isSinglePage = totalSteps === 1;
   const buttonRole = field.buttonRole || "submit";
   const defaultText =
     buttonRole === "next"
@@ -305,7 +303,7 @@ function RenderStepButton({
   return grouped ? (
     submitButton
   ) : (
-    <div className={`flex ${isSinglePage ? "justify-start" : "justify-end"}`}>
+    <div className="flex justify-end">
       {submitButton}
     </div>
   );

@@ -167,9 +167,9 @@ const RADIUS_OPTIONS_WITH_DESC: {
   },
 ];
 
-const CONFIG_INPUT_CLS = "!rounded-none !border-0 !bg-secondary !h-[34px]";
+const CONFIG_INPUT_CLS = "!rounded-none !border-0 bg-secondary !h-[34px]";
 const CONFIG_SELECT_CLS =
-  "!bg-secondary !rounded-none [&>button]:!rounded-none [&>button]:!border-0 [&>button]:!bg-secondary [&>button]:!h-[34px]";
+  "bg-secondary !rounded-none [&>button]:!rounded-none [&>button]:!border-0 [&>button]:bg-secondary [&>button]:!h-[34px]";
 
 function ProBadge() {
   return (

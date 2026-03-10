@@ -60,7 +60,7 @@ interface EmbedConfigPanelProps {
 
 export function ConfigCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-px [&>:first-child]:rounded-t-[8px] [&>:last-child]:rounded-b-[8px]">
+    <div className="flex flex-col gap-px overflow-hidden rounded-lg">
       {children}
     </div>
   );
