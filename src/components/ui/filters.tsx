@@ -1033,7 +1033,7 @@ function FilterOperatorDropdown<T = unknown>({
             className="flex items-center justify-between"
           >
             <span>{op.label}</span>
-            <Check
+            <CheckIcon
               className={`text-primary ms-auto ${op.value === operator ? "opacity-100" : "opacity-0"}`}
             />
           </DropdownMenuItem>

@@ -71,12 +71,12 @@ export function SettingsDialog() {
                     className={cn(
                       "h-[30px] w-full px-2 py-[7px] rounded-lg flex items-center gap-2 overflow-hidden cursor-pointer transition-colors",
                       isActive
-                        ? "bg-[var(--gray-100)]"
-                        : "hover:bg-[var(--gray-100)]/50",
+                        ? "bg-accent text-accent-foreground"
+                        : "hover:bg-accent/50",
                     )}
                   >
                     <Icon className="size-[18px] shrink-0 text-muted-foreground" />
-                    <span className="text-sm font-medium leading-[1.15] text-[var(--gray-800)] tracking-tight">
+                    <span className="text-sm font-medium leading-[1.15] text-(--gray-800) tracking-tight">
                       {item.label}
                     </span>
                   </button>
@@ -89,11 +89,11 @@ export function SettingsDialog() {
           <div className="flex-1 flex flex-col min-h-0">
             {/* Header with title and close button */}
             <div className="flex items-center justify-between px-12 pt-8 pb-2 shrink-0">
-              <DialogTitle className="text-lg font-semibold leading-[1.15] text-[var(--gray-900)]">
+              <DialogTitle className="text-lg font-semibold leading-[1.15] text-(--gray-900)">
                 {tabTitles[activeTab]}
               </DialogTitle>
               <DialogClose
-                className="size-7 rounded-lg flex items-center justify-center hover:bg-[var(--gray-100)] transition-colors cursor-pointer"
+                className="size-7 rounded-lg flex items-center justify-center hover:bg-(--gray-100) transition-colors cursor-pointer"
               >
                 <XIcon className="size-4 text-muted-foreground" />
                 <span className="sr-only">Close</span>

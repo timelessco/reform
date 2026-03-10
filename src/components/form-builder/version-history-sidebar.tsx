@@ -1,5 +1,5 @@
-import { format } from "date-fns";
-import { HelpCircleIcon, Loader2Icon, LockIcon, XIcon } from "@/components/ui/icons";
+import { formatDistanceToNow } from "date-fns";
+import { Loader2Icon, MoreHorizontalIcon, XIcon } from "@/components/ui/icons";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,7 +9,13 @@ import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface VersionHistorySidebarProps {
   formId: string;
@@ -17,7 +23,6 @@ interface VersionHistorySidebarProps {
 
 export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
   const { data: versions } = useFormVersions(formId);
-  console.log("versions", versions ?? "no versions" , formId);
   const { closeSidebar } = useEditorSidebar();
   const { selectedVersionId, selectVersion, exitVersionView } = useVersionHistorySidebar();
   const { data: sessionData } = useSession();
@@ -25,20 +30,17 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
   const [isRestoring, setIsRestoring] = useState(false);
 
   const versionList = versions ?? [];
-  const latestVersion = versionList[0];
 
-  // Derive effective selection: user selection or first version
   const effectiveVersionId = selectedVersionId ?? versionList[0]?.id ?? null;
 
   const handleSelectVersion = (versionId: string) => {
     selectVersion(versionId);
   };
 
-  const handleRestore = async () => {
-    if (!effectiveVersionId) return;
+  const handleRestore = async (versionId: string) => {
     setIsRestoring(true);
     try {
-      const tx = restoreVersion(formId, effectiveVersionId);
+      const tx = restoreVersion(formId, versionId);
       await tx.isPersisted.promise;
       toast.success("Version restored. Publish again to make it live.");
       exitVersionView();
@@ -49,17 +51,6 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
     }
   };
 
-  // Format time for display (e.g., "03:44 PM")
-  const formatTime = (dateString: string) => {
-    return format(new Date(dateString), "hh:mm a");
-  };
-
-  // Format date for display (e.g., "Jan 21, 12:49 PM")
-  const formatDateTime = (dateString: string) => {
-    return format(new Date(dateString), "MMM d, h:mm a");
-  };
-
-  // Get publisher display info — use session data for current user, initial for others
   const getPublisherInfo = (publishedByUserId: string) => {
     if (currentUser && publishedByUserId === currentUser.id) {
       return {
@@ -75,172 +66,140 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
     };
   };
 
+  const formatRelativeTime = (dateString: string) => {
+    const distance = formatDistanceToNow(new Date(dateString), { addSuffix: false });
+    if (distance.includes("less than") || distance.includes("second")) return "Now";
+    return distance
+      .replace(/ minutes?/, "m")
+      .replace(/ hours?/, "h")
+      .replace(/ days?/, "d")
+      .replace(/ months?/, "mo")
+      .replace(/ years?/, "y")
+      .replace(/about /, "")
+      .replace(/over /, "")
+      .replace(/almost /, "")
+      + " ago";
+  };
+
   return (
     <Sidebar
       collapsible="none"
       className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out"
     >
-      {/* Sidebar Header */}
-      <SidebarHeader className="px-4 h-[52px] border-b border-border/40 flex flex-row items-center justify-between shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="text-[13px] font-medium tracking-[0.13px] text-foreground/80">
-            Version history
-          </span>
-          <HelpCircleIcon className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
-        </div>
+      <SidebarHeader className="pr-1 pt-2 border-b border-border/40 flex flex-row items-center justify-between shrink-0">
+        <p className="text-sm font-medium leading-[1.15] text-muted-foreground tracking-[0.14px] pl-2.5 pr-2 py-1.5">
+          Version History
+        </p>
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          className="size-7 text-muted-foreground hover:text-foreground rounded-lg"
           onClick={closeSidebar}
         >
-          <XIcon className="h-4 w-4" />
+          <XIcon className="size-3.5" />
         </Button>
       </SidebarHeader>
 
-      <SidebarContent className="p-4 gap-6">
-        {/* Current Version */}
-        <div className="shrink-0 flex flex-col gap-2">
-          <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-[0.24px] px-1">
-            Current version
-          </div>
-          <div className="flex flex-col p-3 rounded-lg bg-transparent border border-border/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-            <div className="flex items-center justify-between w-full mb-2">
-              <span className="text-[13px] font-medium tracking-[0.13px] text-foreground">
-                {currentUser?.name ?? "You"}
-              </span>
-              <span className="text-[12px] text-muted-foreground">
-                {formatTime(new Date().toISOString())}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Avatar className="h-5 w-5 ring-1 ring-border/20">
-                <AvatarImage src={currentUser?.image ?? undefined} alt={currentUser?.name} />
-                <AvatarFallback className="text-[10px] bg-muted/50 text-muted-foreground">
-                  {currentUser?.name?.charAt(0) ?? "?"}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-[12px] text-muted-foreground truncate">
-                {currentUser?.email ?? "Current session"}
-              </span>
-            </div>
-          </div>
-        </div>
+      <SidebarContent className="px-2 pt-[10px] relative">
+        {/* Vertical timeline line */}
+        {versionList.length > 1 && (
+          <div
+            className="absolute left-[26px] w-px bg-border/60"
+            style={{
+              top: `${10 + 8 + 10}px`,
+              height: `${(versionList.length - 1) * 55}px`,
+            }}
+          />
+        )}
 
-        {/* Version List */}
-        <div className="flex flex-col gap-2 relative mt-4">
-          <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-[0.24px] px-1 mb-2">
-            {versionList.length} published version{versionList.length !== 1 ? "s" : ""}
-          </div>
+        <div className="flex flex-col gap-1">
+          {versionList.map((version, index) => {
+            const publisher = getPublisherInfo(version.publishedByUserId);
+            const isSelected = effectiveVersionId === version.id;
+            const isCurrent = index === 0;
 
-          <div className="pl-1 flex flex-col gap-4">
-            {versionList.map((version, index) => {
-              const publisher = getPublisherInfo(version.publishedByUserId);
-              const isSelected = effectiveVersionId === version.id;
-              const versionNumber = versionList.length - index;
-              const isLatest = index === 0;
-
-              return (
-                <div key={version.id} className="relative pl-[36px] z-10 group/timeline">
-                  {/* Vertical Timeline connector */}
-                  {index !== versionList.length - 1 && (
-                    <div className="absolute left-[11.5px] top-[26px] -bottom-[20px] w-px bg-border/60 z-[-1] group-hover/timeline:bg-border transition-colors" />
-                  )}
-
-                  {/* Horizontal Connector to Card */}
-                  <div
-                    className={cn(
-                      "absolute left-[24px] top-[14px] h-px z-[-1] transition-all duration-300",
-                      isSelected
-                        ? "w-[12px] bg-foreground/30"
-                        : "w-[6px] bg-border/60 group-hover/timeline:w-[12px] group-hover/timeline:bg-border",
-                    )}
-                  />
-
-                  {/* Node */}
-                  <div
-                    className={cn(
-                      "absolute left-0 top-[2px] w-[24px] h-[24px] rounded-full flex items-center justify-center text-[10px] font-bold z-10 ring-4 ring-background transition-all duration-300",
-                      isSelected
-                        ? "bg-foreground text-background shadow-sm scale-110"
-                        : "bg-muted text-muted-foreground border border-border/80 group-hover/timeline:border-border group-hover/timeline:text-foreground/80 scale-100",
-                    )}
-                  >
-                    {versionNumber}
-                  </div>
-
-                  <button
-                    onClick={() => handleSelectVersion(version.id)}
-                    className={cn(
-                      "w-full px-3 py-2.5 rounded-lg flex flex-col items-start justify-start group text-left transition-all relative",
-                      isSelected
-                        ? "bg-accent/70 border border-border/40 shadow-[0_1px_3px_rgba(0,0,0,0.03)]"
-                        : "bg-transparent border border-transparent hover:bg-accent/40",
-                    )}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={cn(
-                            "text-[13px] font-medium tracking-[0.13px]",
-                            isSelected
-                              ? "text-foreground"
-                              : "text-foreground/80 group-hover:text-foreground",
-                          )}
-                        >
-                          Version {versionNumber}
-                        </span>
-                        {isLatest && (
-                          <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-[4px] bg-teal-100 dark:bg-teal-700/20 text-teal-700 dark:text-teal-400">
-                            Latest
-                          </span>
-                        )}
-                      </div>
-                      {version.id === latestVersion?.id && (
-                        <LockIcon
-                          className="h-3.5 w-3.5 text-muted-foreground opacity-60"
-                          strokeWidth={1.5}
-                        />
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between w-full mt-2">
-                      <span className="text-[11px] text-muted-foreground/80 font-medium">
-                        {isLatest
-                          ? formatTime(version.publishedAt)
-                          : formatDateTime(version.publishedAt)}
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] text-muted-foreground group-hover:text-foreground/80 transition-colors">
-                          {publisher.name}
-                        </span>
-                        <Avatar className="h-[18px] w-[18px] ring-1 ring-border/30">
-                          <AvatarImage src={publisher.image} />
-                          <AvatarFallback className="text-[9px] bg-muted/60 text-muted-foreground">
-                            {publisher.initial}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-                    </div>
-                  </button>
+            return (
+              <button
+                key={version.id}
+                onClick={() => handleSelectVersion(version.id)}
+                className={cn(
+                  "flex gap-1.5 items-start pl-2 py-2 rounded-lg w-full text-left relative",
+                  isSelected ? "bg-accent" : "hover:bg-accent/50",
+                )}
+              >
+                {/* Avatar */}
+                <div className="shrink-0">
+                  <Avatar className="size-5 rounded-full">
+                    <AvatarImage src={publisher.image} alt={publisher.name} />
+                    <AvatarFallback className="text-[13px] font-medium bg-muted text-muted-foreground rounded-full">
+                      {publisher.initial}
+                    </AvatarFallback>
+                  </Avatar>
                 </div>
-              );
-            })}
-          </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0 flex flex-col gap-1">
+                  <p className="text-sm font-medium leading-[1.15] text-foreground truncate">
+                    {publisher.name}
+                  </p>
+                  <p className="text-[13px] leading-[1.15] text-muted-foreground tracking-[0.13px]">
+                    {version.version} change{version.version !== 1 ? "s" : ""} · {isCurrent ? "Current" : "Published"}
+                  </p>
+                </div>
+
+                {/* Suffix: timestamp or menu */}
+                {isSelected ? (
+                  <div className="shrink-0 self-center">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-[26px] rounded-lg"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        }
+                      >
+                        <MoreHorizontalIcon className="size-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        side="bottom"
+                        align="end"
+                        sideOffset={4}
+                        className="min-w-[151px] rounded-xl p-1 flex flex-col gap-0.5"
+                      >
+                        <DropdownMenuItem
+                          className="h-[26px] px-2 rounded-lg text-[13px] tracking-[0.13px]"
+                          disabled={isRestoring}
+                          onClick={() => handleRestore(version.id)}
+                        >
+                          {isRestoring ? (
+                            <Loader2Icon className="size-3.5 mr-1.5 animate-spin" />
+                          ) : null}
+                          Restore this version
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="h-[26px] px-2 rounded-lg text-[13px] tracking-[0.13px]">
+                          Publish this version
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="h-[26px] px-2 rounded-lg text-[13px] tracking-[0.13px]">
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                ) : (
+                  <div className="shrink-0 pt-0.5">
+                    <span className="text-[13px] font-medium leading-[1.15] text-muted-foreground tracking-[0.13px] px-2">
+                      {formatRelativeTime(version.publishedAt)}
+                    </span>
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
       </SidebarContent>
-
-      {/* Restore Action */}
-      <SidebarFooter className="p-4 border-t border-border/40 bg-background">
-        <Button
-          onClick={handleRestore}
-          disabled={!effectiveVersionId || isRestoring}
-          className="w-full h-8 px-4 text-[13px] font-medium tracking-[0.13px] bg-foreground text-background hover:bg-foreground/90 shadow-[0_1px_2px_rgba(0,0,0,0.05)] rounded-lg transition-all"
-        >
-          {isRestoring ? <Loader2Icon className="h-3.5 w-3.5 mr-2 animate-spin" /> : null}
-          Restore version
-        </Button>
-      </SidebarFooter>
     </Sidebar>
   );
 }

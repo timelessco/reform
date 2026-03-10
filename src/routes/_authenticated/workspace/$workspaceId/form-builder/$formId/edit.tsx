@@ -151,8 +151,8 @@ function DesignPage() {
           <main className="flex-1 overflow-y-auto overflow-x-hidden relative bg-background h-full flex flex-col">
             {/* Version viewing banner */}
             {isViewingVersion && (
-              <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between shrink-0">
-                <span className="text-sm text-amber-800">
+              <div className="bg-accent/50 border-b border-accent/20 px-4 py-2 flex items-center justify-between shrink-0">
+                <span className="text-sm text-accent-800">
                   {isLoadingVersionContent ? (
                     <span className="flex items-center gap-2">
                       <Loader2Icon className="h-4 w-4 animate-spin" />
