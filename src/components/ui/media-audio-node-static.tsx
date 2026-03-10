@@ -9,14 +9,19 @@ const createCaptionTrackUrl = (text: string) => {
   return URL.createObjectURL(blob);
 };
 
-export function AudioElementStatic(props: SlateElementProps<TAudioElement & TCaptionElement>) {
+export function AudioElementStatic(
+  props: SlateElementProps<TAudioElement & TCaptionElement>,
+) {
   const { caption } = props.element;
   const captionText = React.useMemo(() => {
     if (!caption?.length) return "";
     return NodeApi.string(caption[0]).trim();
   }, [caption]);
 
-  const placeholderTrackUrl = React.useMemo(() => createCaptionTrackUrl(""), []);
+  const placeholderTrackUrl = React.useMemo(
+    () => createCaptionTrackUrl(""),
+    [],
+  );
   const [trackUrl, setTrackUrl] = React.useState(placeholderTrackUrl);
   const trackUrlRef = React.useRef(placeholderTrackUrl);
 
@@ -40,11 +45,19 @@ export function AudioElementStatic(props: SlateElementProps<TAudioElement & TCap
       <figure className="group relative cursor-default">
         <div className="h-16">
           <audio className="size-full" src={props.element.url} controls>
-            <track kind="captions" srcLang="en" label="Transcript" src={trackUrl} default />
+            <track
+              kind="captions"
+              srcLang="en"
+              label="Transcript"
+              src={trackUrl}
+              default
+            />
           </audio>
         </div>
         {captionText && (
-          <figcaption className="mt-2 text-sm text-muted-foreground">{captionText}</figcaption>
+          <figcaption className="mt-2 text-sm text-muted-foreground">
+            {captionText}
+          </figcaption>
         )}
       </figure>
       {props.children}

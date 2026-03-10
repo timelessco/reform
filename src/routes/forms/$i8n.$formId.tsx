@@ -71,7 +71,8 @@ function PublicFormRoute() {
   }, []);
 
   // Support both transparentBackground and transparent params
-  const isTransparent = search.transparentBackground || search.transparent || false;
+  const isTransparent =
+    search.transparentBackground || search.transparent || false;
 
   return (
     <PublicFormPage

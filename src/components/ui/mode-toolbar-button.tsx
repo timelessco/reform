@@ -107,4 +107,3 @@ export function ModeToolbarButton(
     </DropdownMenu>
   );
 }
-

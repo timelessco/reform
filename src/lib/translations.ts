@@ -42,7 +42,8 @@ const en: Translations = {
   formNotFound: "Form not found",
   formNotFoundDescription: "This form doesn't exist or is no longer available.",
   formNotAvailable: "Form not available",
-  formNotAvailableDescription: "This form is not currently accepting responses.",
+  formNotAvailableDescription:
+    "This form is not currently accepting responses.",
   formClosed: "Form closed",
   formClosedDescription: "This form is no longer accepting responses.",
   alreadySubmitted: "Already submitted",
@@ -72,7 +73,8 @@ const es: Translations = {
   formNotFound: "Formulario no encontrado",
   formNotFoundDescription: "Este formulario no existe o ya no está disponible.",
   formNotAvailable: "Formulario no disponible",
-  formNotAvailableDescription: "Este formulario no está aceptando respuestas actualmente.",
+  formNotAvailableDescription:
+    "Este formulario no está aceptando respuestas actualmente.",
   formClosed: "Formulario cerrado",
   formClosedDescription: "Este formulario ya no acepta respuestas.",
   alreadySubmitted: "Ya enviado",
@@ -100,9 +102,11 @@ const fr: Translations = {
   submit: "Soumettre",
   submitting: "Envoi en cours...",
   formNotFound: "Formulaire introuvable",
-  formNotFoundDescription: "Ce formulaire n'existe pas ou n'est plus disponible.",
+  formNotFoundDescription:
+    "Ce formulaire n'existe pas ou n'est plus disponible.",
   formNotAvailable: "Formulaire non disponible",
-  formNotAvailableDescription: "Ce formulaire n'accepte pas de réponses actuellement.",
+  formNotAvailableDescription:
+    "Ce formulaire n'accepte pas de réponses actuellement.",
   formClosed: "Formulaire fermé",
   formClosedDescription: "Ce formulaire n'accepte plus de réponses.",
   alreadySubmitted: "Déjà soumis",

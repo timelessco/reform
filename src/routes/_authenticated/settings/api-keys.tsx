@@ -285,10 +285,7 @@ function APIKeysPage() {
         <span>
           {APP_NAME}'s API is currently in Beta. Learn more about it on
         </span>
-        <a
-          href={APP_API_DOCS_URL}
-          className="text-blue-600 hover:underline"
-        >
+        <a href={APP_API_DOCS_URL} className="text-blue-600 hover:underline">
           {APP_API_DOCS_URL}
         </a>
         <span>.</span>

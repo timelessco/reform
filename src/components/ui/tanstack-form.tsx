@@ -20,7 +20,11 @@ import {
   FieldTitle,
   type fieldVariants,
 } from "@/components/ui/field";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
@@ -92,9 +96,15 @@ type FormItemContextValue = {
   id: string;
 };
 
-const FormItemContext = React.createContext<FormItemContextValue>({} as FormItemContextValue);
+const FormItemContext = React.createContext<FormItemContextValue>(
+  {} as FormItemContextValue,
+);
 
-function FieldSet({ className, children, ...props }: React.ComponentProps<"fieldset">) {
+function FieldSet({
+  className,
+  children,
+  ...props
+}: React.ComponentProps<"fieldset">) {
   const id = React.useId();
 
   return (
@@ -152,8 +162,14 @@ function Field({
   children,
   ...props
 }: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) {
-  const { errors, isTouched, formItemId, formDescriptionId, formMessageId, handleBlur } =
-    useFieldContext();
+  const {
+    errors,
+    isTouched,
+    formItemId,
+    formDescriptionId,
+    formMessageId,
+    handleBlur,
+  } = useFieldContext();
   const hasVisibleErrors = !!errors.length && isTouched;
 
   return (
@@ -162,7 +178,9 @@ function Field({
       id={formItemId}
       onBlur={handleBlur}
       aria-describedby={
-        !hasVisibleErrors ? `${formDescriptionId}` : `${formDescriptionId} ${formMessageId}`
+        !hasVisibleErrors
+          ? `${formDescriptionId}`
+          : `${formDescriptionId} ${formMessageId}`
       }
       aria-invalid={hasVisibleErrors}
       {...props}
@@ -200,7 +218,13 @@ function SubmitButton({
   return (
     <form.Subscribe selector={(state) => state.isSubmitting}>
       {(isSubmitting) => (
-        <Button className={className} size={size} type="submit" disabled={isSubmitting} {...props}>
+        <Button
+          className={className}
+          size={size}
+          type="submit"
+          disabled={isSubmitting}
+          {...props}
+        >
           {isSubmitting && <Spinner />}
           {label}
         </Button>
@@ -219,10 +243,23 @@ function StepButton({
     handleMovement: () => void;
   }) {
   return (
-    <Button size="sm" variant="ghost" type="button" onClick={handleMovement} {...props}>
+    <Button
+      size="sm"
+      variant="ghost"
+      type="button"
+      onClick={handleMovement}
+      {...props}
+    >
       {label}
     </Button>
   );
 }
 
-export { revalidateLogic, useAppForm, useFieldContext, useFormContext, withFieldGroup, withForm };
+export {
+  revalidateLogic,
+  useAppForm,
+  useFieldContext,
+  useFormContext,
+  withFieldGroup,
+  withForm,
+};

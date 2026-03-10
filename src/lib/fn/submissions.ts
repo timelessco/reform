@@ -41,7 +41,9 @@ const getSubmissionsByFormId = createServerFn({ method: "GET" })
 // DELETE submission
 export const deleteSubmission = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ id: z.string().uuid(), formId: z.string().uuid() }))
+  .inputValidator(
+    z.object({ id: z.string().uuid(), formId: z.string().uuid() }),
+  )
   .handler(async ({ data, context }) => {
     await authForm(data.formId, context.session.user.id);
     await db.delete(submissions).where(eq(submissions.id, data.id));
@@ -62,7 +64,9 @@ export const deleteSubmissionsBulk = createServerFn({ method: "POST" })
     if (data.submissionIds.length === 0) {
       return { success: true, deleted: 0 };
     }
-    await db.delete(submissions).where(inArray(submissions.id, data.submissionIds));
+    await db
+      .delete(submissions)
+      .where(inArray(submissions.id, data.submissionIds));
     return { success: true, deleted: data.submissionIds.length };
   });
 

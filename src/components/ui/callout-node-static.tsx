@@ -3,7 +3,11 @@ import { SlateElement } from "platejs/static";
 
 import { cn } from "@/lib/utils";
 
-export function CalloutElementStatic({ children, className, ...props }: SlateElementProps) {
+export function CalloutElementStatic({
+  children,
+  className,
+  ...props
+}: SlateElementProps) {
   return (
     <SlateElement
       className={cn("my-1 flex rounded-sm bg-muted p-4 pl-3", className)}
@@ -20,7 +24,9 @@ export function CalloutElementStatic({ children, className, ...props }: SlateEle
               '"Apple Color Emoji", "Segoe UI Emoji", NotoColorEmoji, "Noto Color Emoji", "Segoe UI Symbol", "Android Emoji", EmojiSymbols',
           }}
         >
-          <span data-plate-prevent-deserialization>{(props.element.icon as any) || "💡"}</span>
+          <span data-plate-prevent-deserialization>
+            {(props.element.icon as any) || "💡"}
+          </span>
         </div>
         <div className="w-full">{children}</div>
       </div>

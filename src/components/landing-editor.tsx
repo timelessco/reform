@@ -1,6 +1,13 @@
 import { normalizeNodeId, type TElement, type Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useSearch } from "@tanstack/react-router";
 import { EditorThemeProvider } from "@/contexts/editor-theme-context";
 import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
@@ -76,7 +83,11 @@ function LandingLayout() {
     const stored = localStorage.getItem(RIGHT_SIDEBAR_WIDTH_KEY);
     if (stored) {
       const parsed = Number(stored);
-      if (!Number.isNaN(parsed) && parsed >= RIGHT_SIDEBAR_WIDTH_MIN && parsed <= RIGHT_SIDEBAR_WIDTH_MAX) {
+      if (
+        !Number.isNaN(parsed) &&
+        parsed >= RIGHT_SIDEBAR_WIDTH_MIN &&
+        parsed <= RIGHT_SIDEBAR_WIDTH_MAX
+      ) {
         return parsed;
       }
     }
@@ -85,7 +96,12 @@ function LandingLayout() {
   const [isRightResizing, setIsRightResizing] = useState(false);
 
   const setRightSidebarWidth = useCallback((width: number) => {
-    const clamped = Math.round(Math.min(RIGHT_SIDEBAR_WIDTH_MAX, Math.max(RIGHT_SIDEBAR_WIDTH_MIN, width)));
+    const clamped = Math.round(
+      Math.min(
+        RIGHT_SIDEBAR_WIDTH_MAX,
+        Math.max(RIGHT_SIDEBAR_WIDTH_MIN, width),
+      ),
+    );
     _setRightSidebarWidth(clamped);
     localStorage.setItem(RIGHT_SIDEBAR_WIDTH_KEY, String(clamped));
   }, []);
@@ -102,7 +118,11 @@ function LandingLayout() {
             <AppHeader />
           </div>
           <div
-            className={cn("flex-1 min-h-0", !isRightResizing && "transition-[padding] duration-200 ease-linear")}
+            className={cn(
+              "flex-1 min-h-0",
+              !isRightResizing &&
+                "transition-[padding] duration-200 ease-linear",
+            )}
             style={{ paddingRight: showSidebar ? rightSidebarWidth : 0 }}
           >
             {demo ? <LocalPreviewMode /> : <LocalEditorApp />}
@@ -165,7 +185,9 @@ function LocalEditorApp() {
   const localWorkspaceId = getLocalWorkspaceId();
   const { data: savedDocs } = useLocalForm(localFormId);
 
-  const { customization, hasCustomization, themeVars } = useFormCustomization(savedDocs?.[0]);
+  const { customization, hasCustomization, themeVars } = useFormCustomization(
+    savedDocs?.[0],
+  );
   const themeCtx = useMemo(
     () => ({ themeVars, hasCustomization }),
     [themeVars, hasCustomization],
@@ -281,7 +303,8 @@ function LocalPreviewMode() {
   const { data: savedDocs } = useLocalForm(localFormId);
 
   const doc = savedDocs?.[0];
-  const { customization, hasCustomization, themeVars } = useFormCustomization(doc);
+  const { customization, hasCustomization, themeVars } =
+    useFormCustomization(doc);
   const content = (doc?.content as Value) || [];
 
   if (savedDocs === undefined) return <Loader />;

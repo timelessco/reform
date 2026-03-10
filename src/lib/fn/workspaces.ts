@@ -54,7 +54,9 @@ export const createWorkspace = createServerFn({ method: "POST" })
 
 export const updateWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(workspaceSchema.pick({ id: true, name: true }).partial({ name: true }))
+  .inputValidator(
+    workspaceSchema.pick({ id: true, name: true }).partial({ name: true }),
+  )
   .handler(async ({ data, context }) => {
     const { id, ...updateData } = data;
     await authWorkspace(id, context.session.user.id);
@@ -89,7 +91,10 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
     await authWorkspace(data.id, context.session.user.id);
 
     return await db.transaction(async (tx) => {
-      const [workspace] = await tx.delete(workspaces).where(eq(workspaces.id, data.id)).returning();
+      const [workspace] = await tx
+        .delete(workspaces)
+        .where(eq(workspaces.id, data.id))
+        .returning();
 
       const txid = await getTxId(tx);
 
@@ -110,7 +115,10 @@ const getWorkspaceById = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     await authWorkspace(data.id, context.session.user.id);
 
-    const [workspace] = await db.select().from(workspaces).where(eq(workspaces.id, data.id));
+    const [workspace] = await db
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.id, data.id));
 
     if (!workspace) {
       throw new Error("Workspace not found");
@@ -187,7 +195,12 @@ const getWorkspacesWithForms = createServerFn({ method: "GET" })
         workspaceId: forms.workspaceId,
       })
       .from(forms)
-      .where(and(inArray(forms.workspaceId, workspaceIds), not(eq(forms.status, "archived"))))
+      .where(
+        and(
+          inArray(forms.workspaceId, workspaceIds),
+          not(eq(forms.status, "archived")),
+        ),
+      )
       .orderBy(desc(forms.updatedAt));
 
     // Group forms by workspaceId

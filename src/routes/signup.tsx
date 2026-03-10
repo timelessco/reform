@@ -29,7 +29,10 @@ const signUpSchema = z.object({
     .string()
     .min(3, "Username must be at least 3 characters")
     .max(30, "Username must be at most 30 characters")
-    .regex(/^[a-zA-Z0-9._]+$/, "Username can only contain letters, numbers, dots, and underscores"),
+    .regex(
+      /^[a-zA-Z0-9._]+$/,
+      "Username can only contain letters, numbers, dots, and underscores",
+    ),
   email: z.string().email("Please enter a valid email address"),
   name: z.string().min(2, "Name must be at least 2 characters"),
   password: z
@@ -157,7 +160,6 @@ function SignUpPage() {
           <Logo />
         </div>
 
-
         {/* OTP verification step */}
         {step === "otp" ? (
           <div className="space-y-6">
@@ -177,15 +179,22 @@ function SignUpPage() {
                 aria-label="Back icon"
               >
                 <title>Back icon</title>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
               Back
             </Button>
 
             <div className="text-center space-y-2">
-              <h2 className="text-xl font-semibold text-foreground">Verify your email</h2>
+              <h2 className="text-xl font-semibold text-foreground">
+                Verify your email
+              </h2>
               <p className="text-sm text-muted-foreground">
-                We sent a code to <span className="font-medium text-foreground">{email}</span>
+                We sent a code to{" "}
+                <span className="font-medium text-foreground">{email}</span>
               </p>
             </div>
 
@@ -208,15 +217,33 @@ function SignUpPage() {
                           disabled={isPending}
                         >
                           <InputOTPGroup>
-                            <InputOTPSlot index={0} className="w-11 h-12 text-lg" />
-                            <InputOTPSlot index={1} className="w-11 h-12 text-lg" />
-                            <InputOTPSlot index={2} className="w-11 h-12 text-lg" />
+                            <InputOTPSlot
+                              index={0}
+                              className="w-11 h-12 text-lg"
+                            />
+                            <InputOTPSlot
+                              index={1}
+                              className="w-11 h-12 text-lg"
+                            />
+                            <InputOTPSlot
+                              index={2}
+                              className="w-11 h-12 text-lg"
+                            />
                           </InputOTPGroup>
                           <InputOTPSeparator />
                           <InputOTPGroup>
-                            <InputOTPSlot index={3} className="w-11 h-12 text-lg" />
-                            <InputOTPSlot index={4} className="w-11 h-12 text-lg" />
-                            <InputOTPSlot index={5} className="w-11 h-12 text-lg" />
+                            <InputOTPSlot
+                              index={3}
+                              className="w-11 h-12 text-lg"
+                            />
+                            <InputOTPSlot
+                              index={4}
+                              className="w-11 h-12 text-lg"
+                            />
+                            <InputOTPSlot
+                              index={5}
+                              className="w-11 h-12 text-lg"
+                            />
                           </InputOTPGroup>
                         </InputOTP>
                       </div>
@@ -225,9 +252,16 @@ function SignUpPage() {
                   )}
                 </otpForm.AppField>
 
-                <Button type="submit" className="w-full h-11" disabled={isPending}>
+                <Button
+                  type="submit"
+                  className="w-full h-11"
+                  disabled={isPending}
+                >
                   {verifyEmailMutation.isPending && (
-                    <Loader2Icon className="mr-2 h-4 w-4 animate-spin" aria-label="Loading" />
+                    <Loader2Icon
+                      className="mr-2 h-4 w-4 animate-spin"
+                      aria-label="Loading"
+                    />
                   )}
                   Verify
                 </Button>
@@ -238,7 +272,9 @@ function SignUpPage() {
               Didn't receive the code?{" "}
               <Button
                 variant="link"
-                onClick={() => sendOtpMutation.mutate({ email, type: "email-verification" })}
+                onClick={() =>
+                  sendOtpMutation.mutate({ email, type: "email-verification" })
+                }
                 disabled={isPending}
                 className="p-0 h-auto font-medium"
               >
@@ -256,7 +292,10 @@ function SignUpPage() {
               disabled={isPending}
             >
               {socialSignInMutation.isPending ? (
-                <Loader2Icon className="mr-2 h-4 w-4 animate-spin" aria-label="Loading" />
+                <Loader2Icon
+                  className="mr-2 h-4 w-4 animate-spin"
+                  aria-label="Loading"
+                />
               ) : (
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                   <title>Google</title>
@@ -287,7 +326,9 @@ function SignUpPage() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-background px-3 text-muted-foreground">or</span>
+                <span className="bg-background px-3 text-muted-foreground">
+                  or
+                </span>
               </div>
             </div>
 
@@ -367,9 +408,16 @@ function SignUpPage() {
                   )}
                 </signUpForm.AppField>
 
-                <Button type="submit" className="w-full h-11" disabled={isPending}>
+                <Button
+                  type="submit"
+                  className="w-full h-11"
+                  disabled={isPending}
+                >
                   {signUpMutation.isPending && (
-                    <Loader2Icon className="mr-2 h-4 w-4 animate-spin" aria-label="Loading" />
+                    <Loader2Icon
+                      className="mr-2 h-4 w-4 animate-spin"
+                      aria-label="Loading"
+                    />
                   )}
                   Create account
                 </Button>
@@ -379,7 +427,10 @@ function SignUpPage() {
             {/* Switch to sign in */}
             <p className="text-center text-sm text-muted-foreground pt-2">
               Already have an account?{" "}
-              <Link to="/login" className="font-medium text-foreground hover:underline">
+              <Link
+                to="/login"
+                className="font-medium text-foreground hover:underline"
+              >
                 Sign in
               </Link>
             </p>

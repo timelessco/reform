@@ -12,7 +12,9 @@ import {
 import { cn } from "@/lib/utils";
 
 const suggestionVariants = cva(
-  cn("bg-emerald-100 text-emerald-700 no-underline transition-colors duration-200"),
+  cn(
+    "bg-emerald-100 text-emerald-700 no-underline transition-colors duration-200",
+  ),
   {
     defaultVariants: {
       insertActive: false,
@@ -51,7 +53,9 @@ export function SuggestionLeaf(props: PlateLeafProps<TSuggestionText>) {
 
   const diffOperation = { type: hasRemove ? "delete" : "insert" } as const;
 
-  const Component = ({ delete: "del", insert: "ins", update: "span" } as const)[diffOperation.type];
+  const Component = ({ delete: "del", insert: "ins", update: "span" } as const)[
+    diffOperation.type
+  ];
 
   return (
     <PlateLeaf
@@ -74,7 +78,10 @@ export function SuggestionLeaf(props: PlateLeafProps<TSuggestionText>) {
     </PlateLeaf>
   );
 }
-export const SuggestionLineBreak: RenderNodeWrapper<SuggestionConfig> = ({ api, element }) => {
+export const SuggestionLineBreak: RenderNodeWrapper<SuggestionConfig> = ({
+  api,
+  element,
+}) => {
   if (!api.suggestion.isBlockSuggestion(element)) return;
 
   const suggestionData = element.suggestion;

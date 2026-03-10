@@ -66,7 +66,9 @@ export const Route = createFileRoute("/api/electric")({
               if (workspaceList.length === 0) {
                 whereSql = `1 = 0`;
               } else {
-                const placeholders = workspaceList.map((_, i) => `$${i + 1}`).join(", ");
+                const placeholders = workspaceList
+                  .map((_, i) => `$${i + 1}`)
+                  .join(", ");
                 whereSql = `"workspaceId" IN (${placeholders})`;
                 for (let i = 0; i < workspaceList.length; i++) {
                   whereParams[`params[${i + 1}]`] = workspaceList[i].id;
@@ -86,10 +88,13 @@ export const Route = createFileRoute("/api/electric")({
             if (userMemberships.length === 0) {
               whereSql = `1 = 0`;
             } else {
-              const placeholders = userMemberships.map((_, i) => `$${i + 1}`).join(", ");
+              const placeholders = userMemberships
+                .map((_, i) => `$${i + 1}`)
+                .join(", ");
               whereSql = `"organizationId" IN (${placeholders})`;
               for (let i = 0; i < userMemberships.length; i++) {
-                whereParams[`params[${i + 1}]`] = userMemberships[i].organizationId;
+                whereParams[`params[${i + 1}]`] =
+                  userMemberships[i].organizationId;
               }
             }
             break;
@@ -133,7 +138,9 @@ export const Route = createFileRoute("/api/electric")({
                 if (formList.length === 0) {
                   whereSql = `1 = 0`;
                 } else {
-                  const placeholders = formList.map((_, i) => `$${i + 1}`).join(", ");
+                  const placeholders = formList
+                    .map((_, i) => `$${i + 1}`)
+                    .join(", ");
                   whereSql = `"formId" IN (${placeholders})`;
                   for (let i = 0; i < formList.length; i++) {
                     whereParams[`params[${i + 1}]`] = formList[i].id;
@@ -181,7 +188,9 @@ export const Route = createFileRoute("/api/electric")({
                 if (formListVersions.length === 0) {
                   whereSql = `1 = 0`;
                 } else {
-                  const placeholders = formListVersions.map((_, i) => `$${i + 1}`).join(", ");
+                  const placeholders = formListVersions
+                    .map((_, i) => `$${i + 1}`)
+                    .join(", ");
                   whereSql = `"formId" IN (${placeholders})`;
                   for (let i = 0; i < formListVersions.length; i++) {
                     whereParams[`params[${i + 1}]`] = formListVersions[i].id;
@@ -203,7 +212,8 @@ export const Route = createFileRoute("/api/electric")({
             throw new Error("Invalid table");
         }
 
-        const electricUrl = process.env.ELECTRIC_URL || "https://api.electric-sql.cloud";
+        const electricUrl =
+          process.env.ELECTRIC_URL || "https://api.electric-sql.cloud";
         const upstreamUrl = new URL("/v1/shape", electricUrl);
 
         const sourceId = process.env.ELECTRIC_SQL_CLOUD_SOURCE_ID;

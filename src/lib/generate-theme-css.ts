@@ -65,7 +65,9 @@ export const TOKEN_NAMES = [
  * 5. Apply font + radius
  * 6. Apply any individual token overrides (advanced Pro keys)
  */
-function resolveTokens(customization: Record<string, string>): Record<string, string> {
+function resolveTokens(
+  customization: Record<string, string>,
+): Record<string, string> {
   const presetName = customization.preset || "vega";
   const style = STYLES[presetName] ?? STYLES.vega;
 
@@ -123,7 +125,9 @@ function resolveTokens(customization: Record<string, string>): Record<string, st
 /**
  * Builds --bf-* CSS variable entries from resolved tokens + layout fields.
  */
-function buildThemeVarEntries(customization: Record<string, string>): [string, string][] {
+function buildThemeVarEntries(
+  customization: Record<string, string>,
+): [string, string][] {
   const tokens = resolveTokens(customization);
   const entries: [string, string][] = [];
 
@@ -143,7 +147,10 @@ function buildThemeVarEntries(customization: Record<string, string>): [string, s
   // Layout vars
   for (const [field, cssVar] of Object.entries(LAYOUT_FIELDS)) {
     if (customization[field]) {
-      const val = field === "pageWidth" ? migratePageWidth(customization[field]) : customization[field];
+      const val =
+        field === "pageWidth"
+          ? migratePageWidth(customization[field])
+          : customization[field];
       entries.push([cssVar, val]);
     }
   }
@@ -181,7 +188,10 @@ export function getLayoutOnlyVars(
   const vars: Record<string, string> = {};
   for (const [field, cssVar] of Object.entries(LAYOUT_FIELDS)) {
     if (customization[field]) {
-      vars[cssVar] = field === "pageWidth" ? migratePageWidth(customization[field]) : customization[field];
+      vars[cssVar] =
+        field === "pageWidth"
+          ? migratePageWidth(customization[field])
+          : customization[field];
     }
   }
   return vars as CSSProperties;
@@ -192,13 +202,17 @@ export function getLayoutOnlyVars(
  * Used for public form SSR injection. The property-consuming bridge rules
  * live in styles.css and are loaded with the page.
  */
-export function generateThemeCss(customization: Record<string, string> | null | undefined): string {
+export function generateThemeCss(
+  customization: Record<string, string> | null | undefined,
+): string {
   if (!customization || Object.keys(customization).length === 0) return "";
 
   const entries = buildThemeVarEntries(customization);
   if (entries.length === 0) return "";
 
-  const varLines = entries.map(([prop, val]) => `  ${prop}: ${val};`).join("\n");
+  const varLines = entries
+    .map(([prop, val]) => `  ${prop}: ${val};`)
+    .join("\n");
 
   let css = `.bf-themed {\n${varLines}\n}`;
 

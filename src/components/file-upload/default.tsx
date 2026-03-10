@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { useFileUpload } from "@/hooks/use-file-upload";
 
 function Component() {
-  const [{ files }, { removeFile, openFileDialog, getInputProps }] = useFileUpload({
-    accept: "image/*",
-  });
+  const [{ files }, { removeFile, openFileDialog, getInputProps }] =
+    useFileUpload({
+      accept: "image/*",
+    });
 
   const previewUrl = files[0]?.preview || null;
   const fileName = files[0]?.file.name || null;
@@ -15,7 +16,9 @@ function Component() {
       <div className="inline-flex items-center gap-2 align-top">
         <div
           role="img"
-          aria-label={previewUrl ? "Preview of uploaded image" : "Default user avatar"}
+          aria-label={
+            previewUrl ? "Preview of uploaded image" : "Default user avatar"
+          }
           className="border-input relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md border"
         >
           {previewUrl ? (

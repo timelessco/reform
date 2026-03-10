@@ -3,7 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CheckIcon, ChevronDownIcon, CopyIcon } from "@/components/ui/icons";
 import { useMemo, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 import { cn } from "@/lib/utils";
 import type { EmbedOptions } from "./embed-config-panel";
@@ -25,7 +30,9 @@ function escapeHtml(value: string) {
 
 function renderHighlighted(code: string, language?: string) {
   try {
-    const tree = language ? lowlight.highlight(language, code) : lowlight.highlightAuto(code);
+    const tree = language
+      ? lowlight.highlight(language, code)
+      : lowlight.highlightAuto(code);
     return toHtml(tree);
   } catch {
     try {
@@ -46,7 +53,10 @@ interface EmbedCodeDialogProps {
   docTitle?: string;
 }
 
-export function generateEmbedUrl(formId: string, options: EmbedOptions): string {
+export function generateEmbedUrl(
+  formId: string,
+  options: EmbedOptions,
+): string {
   const baseUrl = `${window.location.origin}/forms/${formId}`;
   const params = new URLSearchParams();
   if (options.hideTitle) params.append("hideTitle", "true");
@@ -125,7 +135,11 @@ function CopyButton({ text }: { text: string }) {
       onClick={handleCopy}
       className="absolute top-3 right-3 h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
     >
-      {copied ? <CheckIcon className="w-3.5 h-3.5" /> : <CopyIcon className="w-3.5 h-3.5" />}
+      {copied ? (
+        <CheckIcon className="w-3.5 h-3.5" />
+      ) : (
+        <CopyIcon className="w-3.5 h-3.5" />
+      )}
     </Button>
   );
 }
@@ -164,7 +178,10 @@ function CodeBlock({
   language?: string;
   inline?: boolean;
 }) {
-  const highlighted = useMemo(() => renderHighlighted(code, language), [code, language]);
+  const highlighted = useMemo(
+    () => renderHighlighted(code, language),
+    [code, language],
+  );
   const isInline = inline ?? !code.includes("\n");
 
   if (isInline) {
@@ -205,7 +222,10 @@ export function EmbedCodeDialog({
     setSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const embedUrl = useMemo(() => generateEmbedUrl(formId, options), [formId, options]);
+  const embedUrl = useMemo(
+    () => generateEmbedUrl(formId, options),
+    [formId, options],
+  );
   const embedCode = useMemo(
     () => generateEmbedCode(embedType, options, formId, docTitle),
     [embedType, options, formId, docTitle],
@@ -235,17 +255,23 @@ export function EmbedCodeDialog({
             {embedType === "standard" ? (
               <div className="space-y-10">
                 <div>
-                  <h3 className="text-foreground font-semibold text-[13px] mb-2.5">Embed code</h3>
+                  <h3 className="text-foreground font-semibold text-[13px] mb-2.5">
+                    Embed code
+                  </h3>
                   <p className="text-muted-foreground text-[12px] mb-3.5">
-                    Paste this HTML code snippet on the page where you want the embed to appear.
+                    Paste this HTML code snippet on the page where you want the
+                    embed to appear.
                   </p>
                   <CodeBlock code={embedCode} language="html" />
                 </div>
 
                 <div>
-                  <h3 className="text-foreground font-semibold text-[13px] mb-2.5">Direct link</h3>
+                  <h3 className="text-foreground font-semibold text-[13px] mb-2.5">
+                    Direct link
+                  </h3>
                   <p className="text-muted-foreground text-[12px] mb-3.5">
-                    Alternatively, paste this link in a no-code tool (Notion, Ghost, Canva, etc).
+                    Alternatively, paste this link in a no-code tool (Notion,
+                    Ghost, Canva, etc).
                   </p>
                   <div className="mb-4">
                     <InlineCopyBar value={embedUrl} />
@@ -279,9 +305,12 @@ export function EmbedCodeDialog({
                   </p>
                   <div className="bg-brand/5 border-l-4 border-brand rounded-r-lg p-4 mb-4">
                     <div className="text-[11px] text-foreground/80 font-mono space-y-1">
-                      <div className="text-muted-foreground/60">{"// Data attributes"}</div>
+                      <div className="text-muted-foreground/60">
+                        {"// Data attributes"}
+                      </div>
                       <div className="break-all leading-relaxed">
-                        data-form-id="{formId}"{` data-position="${options.popupPosition}"`}
+                        data-form-id="{formId}"
+                        {` data-position="${options.popupPosition}"`}
                         {options.alignLeft && ` data-align-left="1"`}
                         {options.hideTitle && ` data-hide-title="1"`}
                         {options.darkOverlay && ` data-overlay="1"`}
@@ -307,12 +336,16 @@ export function EmbedCodeDialog({
                 <div>
                   <p className="text-muted-foreground text-[12px] mt-8 mb-4">
                     Alternatively,{" "}
-                    <strong className="text-foreground font-semibold">open via a link</strong> with
-                    a custom URL hash.
+                    <strong className="text-foreground font-semibold">
+                      open via a link
+                    </strong>{" "}
+                    with a custom URL hash.
                   </p>
                   <div className="bg-brand/5 border-l-4 border-brand rounded-r-lg p-4 mb-4">
                     <div className="text-[11px] text-foreground/80 font-mono space-y-1">
-                      <div className="text-muted-foreground/60">{"// Link href"}</div>
+                      <div className="text-muted-foreground/60">
+                        {"// Link href"}
+                      </div>
                       <div className="break-all leading-relaxed">{hashUrl}</div>
                     </div>
                   </div>
@@ -329,7 +362,8 @@ export function EmbedCodeDialog({
                   Full page redirect
                 </h3>
                 <p className="text-muted-foreground text-[12px] mb-3.5">
-                  Use a meta redirect or link to send visitors directly to your form.
+                  Use a meta redirect or link to send visitors directly to your
+                  form.
                 </p>
                 <CodeBlock code={embedCode} language="html" />
                 <div className="mt-5">
@@ -360,8 +394,10 @@ export function EmbedCodeDialog({
                 {sections.save && (
                   <div className="pb-8 space-y-4 text-muted-foreground text-[12px]">
                     <p className="leading-relaxed">
-                      Your page's URL and query parameters are automatically forwarded to the{" "}
-                      {embedType === "popup" ? "popup" : "form"} and saved via hidden fields.
+                      Your page's URL and query parameters are automatically
+                      forwarded to the{" "}
+                      {embedType === "popup" ? "popup" : "form"} and saved via
+                      hidden fields.
                     </p>
                     <div className="bg-muted p-3.5 rounded-lg border border-border/50 text-[11px] break-all font-mono">
                       https://company.com/register?ref=downloads&email=alice@example.com
@@ -369,7 +405,8 @@ export function EmbedCodeDialog({
                     {embedType === "popup" && (
                       <div className="pt-2">
                         <p className="leading-relaxed mb-3">
-                          Data attributes on triggers become hidden fields automatically.
+                          Data attributes on triggers become hidden fields
+                          automatically.
                         </p>
                         <CodeBlock
                           code={`<button type="button" data-form-id="${formId}" data-ref="downloads" data-email="alice@example.com">Click me</button>`}

@@ -303,8 +303,6 @@ function RenderStepButton({
   return grouped ? (
     submitButton
   ) : (
-    <div className="flex justify-end">
-      {submitButton}
-    </div>
+    <div className="flex justify-end">{submitButton}</div>
   );
 }

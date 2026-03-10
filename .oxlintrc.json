@@ -1,6 +1,14 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "react-hooks", "typescript", "jsx-a11y", "import", "unicorn", "promise"],
+  "plugins": [
+    "react",
+    "react-hooks",
+    "typescript",
+    "jsx-a11y",
+    "import",
+    "unicorn",
+    "promise"
+  ],
   "categories": {
     "correctness": "error",
     "suspicious": "warn",
@@ -80,7 +88,12 @@
   ],
   "overrides": [
     {
-      "files": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
+      "files": [
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.spec.ts",
+        "**/*.spec.tsx"
+      ],
       "plugins": ["vitest"],
       "env": {
         "vitest": true

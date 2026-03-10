@@ -2,7 +2,11 @@ import { RenderPreviewInput } from "@/components/form-components/render-preview-
 import { StepForm } from "@/components/form-components/step-form";
 import { ProgressBar } from "@/components/public/progress-bar";
 import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -56,10 +60,9 @@ function isHexColor(str: string): boolean {
 }
 
 const PAGE_MAX_WIDTH = {
-  editor: 'var(--bf-page-width, 700px)',
-  public: 'var(--bf-page-width, 42rem)',
+  editor: "var(--bf-page-width, 700px)",
+  public: "var(--bf-page-width, 42rem)",
 } as const;
-
 
 /**
  * Navigation handlers for buttons
@@ -97,7 +100,12 @@ function ToggleRenderer({
       </CollapsibleTrigger>
       <CollapsibleContent className="pl-6 space-y-2">
         {items.map((child) => (
-          <RenderPreviewElement key={child.id} element={child} form={form} layout={layout} />
+          <RenderPreviewElement
+            key={child.id}
+            element={child}
+            form={form}
+            layout={layout}
+          />
         ))}
       </CollapsibleContent>
     </Collapsible>
@@ -124,17 +132,29 @@ function RenderPreviewElement({
   if ("static" in element && element.static) {
     switch (element.fieldType) {
       case "H1":
-        return <h1 className="text-3xl font-bold mt-6 mb-4">{element.content}</h1>;
+        return (
+          <h1 className="text-3xl font-bold mt-6 mb-4">{element.content}</h1>
+        );
       case "H2":
-        return <h2 className="text-2xl font-semibold mt-5 mb-3">{element.content}</h2>;
+        return (
+          <h2 className="text-2xl font-semibold mt-5 mb-3">
+            {element.content}
+          </h2>
+        );
       case "H3":
-        return <h3 className="text-xl font-medium mt-4 mb-2">{element.content}</h3>;
+        return (
+          <h3 className="text-xl font-medium mt-4 mb-2">{element.content}</h3>
+        );
       case "Separator":
         return <Separator className="my-4" />;
       case "EmptyBlock":
         return <div className="-mt-2 h-2" aria-hidden="true" />; // Minimal spacer, offset space-y-4
       case "FieldDescription":
-        return <p className="text-muted-foreground text-sm my-2">{element.content}</p>;
+        return (
+          <p className="text-muted-foreground text-sm my-2">
+            {element.content}
+          </p>
+        );
       case "UnorderedList":
         return (
           <ul className="my-2 ml-6 space-y-1 list-disc">
@@ -175,7 +195,9 @@ function RenderPreviewElement({
                     .map((row, rowIdx) => (
                       <TableRow key={`${element.id}-header-${rowIdx}`}>
                         {row.cells.map((cell, cellIdx) => (
-                          <TableHead key={`${element.id}-header-${rowIdx}-${cellIdx}`}>
+                          <TableHead
+                            key={`${element.id}-header-${rowIdx}-${cellIdx}`}
+                          >
                             {cell}
                           </TableHead>
                         ))}
@@ -189,7 +211,11 @@ function RenderPreviewElement({
                   .map((row, rowIdx) => (
                     <TableRow key={`${element.id}-row-${rowIdx}`}>
                       {row.cells.map((cell, cellIdx) => (
-                        <TableCell key={`${element.id}-row-${rowIdx}-${cellIdx}`}>{cell}</TableCell>
+                        <TableCell
+                          key={`${element.id}-row-${rowIdx}-${cellIdx}`}
+                        >
+                          {cell}
+                        </TableCell>
                       ))}
                     </TableRow>
                   ))}
@@ -256,7 +282,8 @@ function PreviewFormHeader({
   const [iconError, setIconError] = useState(false);
 
   // Check if we have valid cover (URL or hex color)
-  const hasCover = cover && (isHexColor(cover) || isValidUrl(cover)) && !imageError;
+  const hasCover =
+    cover && (isHexColor(cover) || isValidUrl(cover)) && !imageError;
   const hasIcon = !!icon && !iconError;
   const hasTitle = title && title.trim().length > 0 && !hideTitle;
 
@@ -274,13 +301,22 @@ function PreviewFormHeader({
 
     if (isHexColor(cover)) {
       // Render as solid color background
-      return <div className={coverClass} data-bf-cover style={{ backgroundColor: cover }} />;
+      return (
+        <div
+          className={coverClass}
+          data-bf-cover
+          style={{ backgroundColor: cover }}
+        />
+      );
     }
 
     if (isValidUrl(cover) && !imageError) {
       // Render as image
       return (
-        <div className={cn(coverClass, "overflow-hidden bg-muted")} data-bf-cover>
+        <div
+          className={cn(coverClass, "overflow-hidden bg-muted")}
+          data-bf-cover
+        >
           {cover.includes("tint=true") && (
             <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
           )}
@@ -289,7 +325,8 @@ function PreviewFormHeader({
             alt="Form cover"
             className={cn(
               "w-full h-full object-cover",
-              cover.includes("tint=true") && "relative z-0 brightness-60 grayscale",
+              cover.includes("tint=true") &&
+                "relative z-0 brightness-60 grayscale",
             )}
             onError={() => setImageError(true)}
           />
@@ -363,7 +400,11 @@ function PreviewFormHeader({
         {hasCover && renderCover()}
 
         {/* Match editor's left-aligned layout */}
-        <div className="mx-auto w-full px-4" style={{ maxWidth: PAGE_MAX_WIDTH.editor }} data-bf-form-container>
+        <div
+          className="mx-auto w-full px-4"
+          style={{ maxWidth: PAGE_MAX_WIDTH.editor }}
+          data-bf-form-container
+        >
           {hasIcon && renderIcon()}
           {hasTitle && (
             <h1
@@ -382,7 +423,11 @@ function PreviewFormHeader({
     <div className="mb-4 sm:mb-8 w-full">
       {hasCover && renderCover()}
 
-      <div className="mx-auto px-4 sm:px-0" style={{ maxWidth: PAGE_MAX_WIDTH.public }} data-bf-form-container>
+      <div
+        className="mx-auto px-4 sm:px-0"
+        style={{ maxWidth: PAGE_MAX_WIDTH.public }}
+        data-bf-form-container
+      >
         <div className="flex flex-col">
           {hasIcon && renderIcon()}
           {hasTitle && (
@@ -465,7 +510,13 @@ function DefaultThankYou({ onReset }: { onReset?: () => void }) {
       <h2 className="text-2xl font-bold mb-2">{t("thankYou")}</h2>
       <p className="text-muted-foreground mb-6">{t("responseSubmitted")}</p>
       {onReset && (
-        <Button type="button" onClick={onReset} variant="outline" size="sm" className="rounded-lg">
+        <Button
+          type="button"
+          onClick={onReset}
+          variant="outline"
+          size="sm"
+          className="rounded-lg"
+        >
           {t("submitAnother")}
         </Button>
       )}
@@ -492,10 +543,18 @@ export function FormPreviewFromPlate({
   const headerFromContent = extractFormHeader(content);
   const hasHeaderNode = headerFromContent !== null;
 
-  const title = hideTitle ? "" : hasHeaderNode ? headerFromContent.title : legacyTitle;
-  const icon = hasHeaderNode ? (headerFromContent.icon ?? legacyIcon) : legacyIcon;
+  const title = hideTitle
+    ? ""
+    : hasHeaderNode
+      ? headerFromContent.title
+      : legacyTitle;
+  const icon = hasHeaderNode
+    ? (headerFromContent.icon ?? legacyIcon)
+    : legacyIcon;
   const iconColor = hasHeaderNode ? headerFromContent.iconColor : null;
-  const cover = hasHeaderNode ? (headerFromContent.cover ?? legacyCover) : legacyCover;
+  const cover = hasHeaderNode
+    ? (headerFromContent.cover ?? legacyCover)
+    : legacyCover;
 
   const elements = transformPlateStateToFormElements(content);
 
@@ -602,9 +661,12 @@ function FormPreviewContent({
   layout: "public" | "editor";
   settings?: PublicFormSettings;
 }) {
-  const { currentStep, totalSteps, isSubmitted, direction, reset } = useStepForm();
+  const { currentStep, totalSteps, isSubmitted, direction, reset } =
+    useStepForm();
   const { t } = useTranslation();
-  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(
+    null,
+  );
 
   // Create a dummy form for thank you content rendering (static elements only)
   const { form } = usePreviewForm({ fields: [] });
@@ -639,7 +701,12 @@ function FormPreviewContent({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isSubmitted, settings?.redirectOnCompletion, settings?.redirectUrl, settings?.redirectDelay]);
+  }, [
+    isSubmitted,
+    settings?.redirectOnCompletion,
+    settings?.redirectUrl,
+    settings?.redirectDelay,
+  ]);
 
   // Show thank you content after submission
   if (isSubmitted) {

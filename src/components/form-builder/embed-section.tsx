@@ -19,15 +19,22 @@ export function searchToFormValues(
 ): EmbedFormValues {
   return {
     embedType:
-      (search.embedType as EmbedType) ?? ((search.demo as boolean) ? "standard" : "fullpage"),
+      (search.embedType as EmbedType) ??
+      ((search.demo as boolean) ? "standard" : "fullpage"),
     height: (search.embedHeight as number) ?? defaultEmbedOptions.height,
-    dynamicHeight: (search.embedDynamicHeight as boolean) ?? defaultEmbedOptions.dynamicHeight,
-    hideTitle: (search.embedHideTitle as boolean) ?? defaultEmbedOptions.hideTitle,
-    alignLeft: (search.embedAlignLeft as boolean) ?? defaultEmbedOptions.alignLeft,
+    dynamicHeight:
+      (search.embedDynamicHeight as boolean) ??
+      defaultEmbedOptions.dynamicHeight,
+    hideTitle:
+      (search.embedHideTitle as boolean) ?? defaultEmbedOptions.hideTitle,
+    alignLeft:
+      (search.embedAlignLeft as boolean) ?? defaultEmbedOptions.alignLeft,
     transparentBackground:
-      (search.embedTransparent as boolean) ?? defaultEmbedOptions.transparentBackground,
+      (search.embedTransparent as boolean) ??
+      defaultEmbedOptions.transparentBackground,
     branding: (search.embedBranding as boolean) ?? defaultEmbedOptions.branding,
-    trackEvents: (search.embedTrackEvents as boolean) ?? defaultEmbedOptions.trackEvents,
+    trackEvents:
+      (search.embedTrackEvents as boolean) ?? defaultEmbedOptions.trackEvents,
     customDomain: defaultEmbedOptions.customDomain,
     popupTrigger:
       (search.embedPopupTrigger as EmbedOptions["popupTrigger"]) ??
@@ -35,16 +42,22 @@ export function searchToFormValues(
     popupPosition:
       (search.embedPopupPosition as EmbedOptions["popupPosition"]) ??
       defaultEmbedOptions.popupPosition,
-    popupWidth: (search.embedPopupWidth as number) ?? defaultEmbedOptions.popupWidth,
-    darkOverlay: (search.embedDarkOverlay as boolean) ?? defaultEmbedOptions.darkOverlay,
+    popupWidth:
+      (search.embedPopupWidth as number) ?? defaultEmbedOptions.popupWidth,
+    darkOverlay:
+      (search.embedDarkOverlay as boolean) ?? defaultEmbedOptions.darkOverlay,
     emoji: (search.embedEmoji as boolean) ?? defaultEmbedOptions.emoji,
-    emojiIcon: (search.embedEmojiIcon as string) ?? (formIcon || defaultEmbedOptions.emojiIcon),
+    emojiIcon:
+      (search.embedEmojiIcon as string) ??
+      (formIcon || defaultEmbedOptions.emojiIcon),
     emojiAnimation:
       (search.embedEmojiAnimation as EmbedOptions["emojiAnimation"]) ??
       defaultEmbedOptions.emojiAnimation,
-    hideOnSubmit: (search.embedHideOnSubmit as boolean) ?? defaultEmbedOptions.hideOnSubmit,
+    hideOnSubmit:
+      (search.embedHideOnSubmit as boolean) ?? defaultEmbedOptions.hideOnSubmit,
     hideOnSubmitDelay:
-      (search.embedHideOnSubmitDelay as number) ?? defaultEmbedOptions.hideOnSubmitDelay,
+      (search.embedHideOnSubmitDelay as number) ??
+      defaultEmbedOptions.hideOnSubmitDelay,
   };
 }
 

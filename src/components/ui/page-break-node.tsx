@@ -1,5 +1,11 @@
 import type { PlateElementProps } from "platejs/react";
-import { PlateElement, useEditorRef, useFocused, useReadOnly, useSelected } from "platejs/react";
+import {
+  PlateElement,
+  useEditorRef,
+  useFocused,
+  useReadOnly,
+  useSelected,
+} from "platejs/react";
 
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";

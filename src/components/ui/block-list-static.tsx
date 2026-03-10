@@ -32,7 +32,11 @@ function List(props: SlateRenderElementProps) {
   const List = isOrderedList(props.element) ? "ol" : "ul";
 
   return (
-    <List className="relative m-0 p-0" style={{ listStyleType }} start={listStart}>
+    <List
+      className="relative m-0 p-0"
+      style={{ listStyleType }}
+      start={listStart}
+    >
       {Marker && <Marker {...props} />}
       {Li ? <Li {...props} /> : <li>{props.children}</li>}
     </List>
@@ -65,7 +69,8 @@ function TodoLiStatic(props: SlateRenderElementProps) {
     <li
       className={cn(
         "list-none",
-        (props.element.checked as boolean) && "text-muted-foreground line-through",
+        (props.element.checked as boolean) &&
+          "text-muted-foreground line-through",
       )}
     >
       {props.children}

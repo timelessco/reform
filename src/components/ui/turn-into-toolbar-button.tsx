@@ -10,7 +10,12 @@ import {
   QuoteIcon,
   SquareIcon,
 } from "lucide-react";
-import { ChevronRightIcon, FileCodeIcon, ListIcon, ListOrderedIcon } from "@/components/ui/icons";
+import {
+  ChevronRightIcon,
+  FileCodeIcon,
+  ListIcon,
+  ListOrderedIcon,
+} from "@/components/ui/icons";
 import type { TElement } from "platejs";
 import { KEYS } from "platejs";
 import { useEditorRef, useSelectionFragmentProp } from "platejs/react";

@@ -19,7 +19,12 @@ import type { PlateElementProps } from "platejs/react";
 import { PlateElement } from "platejs/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export interface OnboardingContentElementData {
   type: "onboardingContent";
@@ -77,8 +82,9 @@ export function OnboardingContentElement(props: PlateElementProps) {
               <div className="flex items-center gap-3 text-muted-foreground/60 text-lg">
                 <FileTextIcon className="h-5 w-5" />
                 <span>
-                  Press <span className="font-medium text-foreground/80">Enter</span> to start from
-                  scratch
+                  Press{" "}
+                  <span className="font-medium text-foreground/80">Enter</span>{" "}
+                  to start from scratch
                 </span>
               </div>
 
@@ -96,7 +102,10 @@ export function OnboardingContentElement(props: PlateElementProps) {
             <div className="py-6 space-y-1">
               <p className="text-lg text-muted-foreground/80 leading-relaxed">
                 {APP_NAME} is a form builder that{" "}
-                <span className="text-fuchsia-500 font-semibold px-1">works like a doc</span>.
+                <span className="text-fuchsia-500 font-semibold px-1">
+                  works like a doc
+                </span>
+                .
               </p>
               <p className="text-lg text-muted-foreground/80 leading-relaxed">
                 Just type{" "}
@@ -117,11 +126,20 @@ export function OnboardingContentElement(props: PlateElementProps) {
                   Get started
                 </h3>
                 <div className="flex flex-col gap-3">
-                  <OnboardingItem icon={MousePointer2} label="Create your first form" />
-                  <OnboardingItem icon={LayoutIcon} label="Get started with templates" />
+                  <OnboardingItem
+                    icon={MousePointer2}
+                    label="Create your first form"
+                  />
+                  <OnboardingItem
+                    icon={LayoutIcon}
+                    label="Get started with templates"
+                  />
                   <OnboardingItem icon={LinkIcon} label="Embed your form" />
                   <OnboardingItem icon={HelpCircleIcon} label="Help center" />
-                  <OnboardingItem icon={Zap} label={`Learn about ${APP_NAME} Pro`} />
+                  <OnboardingItem
+                    icon={Zap}
+                    label={`Learn about ${APP_NAME} Pro`}
+                  />
                 </div>
               </div>
 
@@ -132,9 +150,15 @@ export function OnboardingContentElement(props: PlateElementProps) {
                 <div className="flex flex-col gap-3">
                   <OnboardingItem icon={Split} label="Conditional logic" />
                   <OnboardingItem icon={Calculator} label="Calculator" />
-                  <OnboardingItem icon={EyeOffLucideIcon} label="Hidden fields" />
+                  <OnboardingItem
+                    icon={EyeOffLucideIcon}
+                    label="Hidden fields"
+                  />
                   <OnboardingItem icon={MessageSquare} label="Mentions" />
-                  <OnboardingItem icon={CreditCardIcon} label="Collect payments" />
+                  <OnboardingItem
+                    icon={CreditCardIcon}
+                    label="Collect payments"
+                  />
                 </div>
               </div>
             </div>
@@ -151,7 +175,9 @@ export function OnboardingContentElement(props: PlateElementProps) {
           <div className="flex flex-col items-center py-12 text-muted-foreground">
             <LayoutIcon className="h-12 w-12 mb-4 opacity-50" />
             <p className="text-lg font-medium">Coming soon</p>
-            <p className="text-sm mt-2">We're working on some great templates for you.</p>
+            <p className="text-sm mt-2">
+              We're working on some great templates for you.
+            </p>
           </div>
         </DialogContent>
       </Dialog>

@@ -27,7 +27,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { duplicateForm, updateDoc, updateFormStatus } from "@/db-collections";
 import { useNavigate } from "@tanstack/react-router";
-import { CopyIcon, MoreHorizontalIcon, TagIcon, Trash2Icon } from "@/components/ui/icons";
+import {
+  CopyIcon,
+  MoreHorizontalIcon,
+  TagIcon,
+  Trash2Icon,
+} from "@/components/ui/icons";
 import { useState } from "react";
 import { toast } from "sonner";
 

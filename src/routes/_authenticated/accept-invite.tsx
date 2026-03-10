@@ -2,7 +2,13 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
@@ -74,7 +80,11 @@ function AcceptInvitePage() {
   );
 
   if (isLoading) {
-    return <div className="flex flex-1 items-center justify-center">Loading invitation...</div>;
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        Loading invitation...
+      </div>
+    );
   }
 
   if (error) {
@@ -89,7 +99,9 @@ function AcceptInvitePage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => router.navigate({ to: "/dashboard" })}>Go to Dashboard</Button>
+            <Button onClick={() => router.navigate({ to: "/dashboard" })}>
+              Go to Dashboard
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -102,10 +114,14 @@ function AcceptInvitePage() {
         <Card className="w-full max-w-md text-center">
           <CardHeader>
             <CardTitle>Invitation Not Found</CardTitle>
-            <CardDescription>The invitation link may be invalid or has expired.</CardDescription>
+            <CardDescription>
+              The invitation link may be invalid or has expired.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => router.navigate({ to: "/dashboard" })}>Go to Dashboard</Button>
+            <Button onClick={() => router.navigate({ to: "/dashboard" })}>
+              Go to Dashboard
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -119,8 +135,10 @@ function AcceptInvitePage() {
           <CardTitle>Organization Invitation</CardTitle>
           <CardDescription>
             You have been invited to join{" "}
-            <strong>{(invitation as any).organization?.name ?? "this organization"}</strong> as a{" "}
-            <strong>{invitation.role}</strong>.
+            <strong>
+              {(invitation as any).organization?.name ?? "this organization"}
+            </strong>{" "}
+            as a <strong>{invitation.role}</strong>.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">

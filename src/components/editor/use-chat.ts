@@ -125,7 +125,8 @@ export const useChat = () => {
 
         if (!range) return console.warn("No range found for AI comment");
 
-        const discussions = editor.getOption(discussionPlugin, "discussions") || [];
+        const discussions =
+          editor.getOption(discussionPlugin, "discussions") || [];
 
         // Generate a new discussion ID
         const discussionId = nanoid();
@@ -331,7 +332,9 @@ const fakeStreamText = ({
         }
 
         // Send end events
-        controller.enqueue(encoder.encode(`data: {"type":"text-end","id":"${messageId}"}\n\n`));
+        controller.enqueue(
+          encoder.encode(`data: {"type":"text-end","id":"${messageId}"}\n\n`),
+        );
         await new Promise((resolve) => setTimeout(resolve, 10));
 
         controller.enqueue(encoder.encode('data: {"type":"finish-step"}\n\n'));
@@ -1383,7 +1386,8 @@ const mdxChunks = [
     },
     {
       delay,
-      texts: 'src="https://samplelib.com/lib/preview/mp3/sample-3s.mp3" width="80%" />\n\n',
+      texts:
+        'src="https://samplelib.com/lib/preview/mp3/sample-3s.mp3" width="80%" />\n\n',
     },
     {
       delay,
@@ -1459,7 +1463,10 @@ const createCommentChunks = (editor: PlateEditor) => {
     })
     .map(([block]) => block);
 
-  const isSelectingSome = editor.getOption(BlockSelectionPlugin, "isSelectingSome");
+  const isSelectingSome = editor.getOption(
+    BlockSelectionPlugin,
+    "isSelectingSome",
+  );
 
   const blocks =
     selectedBlocks.length > 0 && (editor.api.isExpanded() || isSelectingSome)
@@ -1488,7 +1495,8 @@ const createCommentChunks = (editor: PlateEditor) => {
 
       const blockString = NodeApi.string(block);
       const endIndex = blockString.indexOf(".");
-      const content = endIndex === -1 ? blockString : blockString.slice(0, endIndex);
+      const content =
+        endIndex === -1 ? blockString : blockString.slice(0, endIndex);
 
       return [
         {

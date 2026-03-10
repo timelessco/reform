@@ -19,12 +19,16 @@ const useUploadErrorToast = () => {
 
     switch (code) {
       case UploadErrorCode.INVALID_FILE_SIZE: {
-        toast.error(`The size of files ${data.files.map((f) => f.name).join(", ")} is invalid`);
+        toast.error(
+          `The size of files ${data.files.map((f) => f.name).join(", ")} is invalid`,
+        );
 
         break;
       }
       case UploadErrorCode.INVALID_FILE_TYPE: {
-        toast.error(`The type of files ${data.files.map((f) => f.name).join(", ")} is invalid`);
+        toast.error(
+          `The type of files ${data.files.map((f) => f.name).join(", ")} is invalid`,
+        );
 
         break;
       }
@@ -38,7 +42,9 @@ const useUploadErrorToast = () => {
         break;
       }
       case UploadErrorCode.TOO_LESS_FILES: {
-        toast.error(`The mini um number of files is ${data.minFileCount} for ${data.fileType}`);
+        toast.error(
+          `The mini um number of files is ${data.minFileCount} for ${data.fileType}`,
+        );
 
         break;
       }

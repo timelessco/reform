@@ -18,7 +18,11 @@ import {
   updatePopupHeight,
 } from "./lib/overlay";
 import { injectStyles } from "./lib/styles";
-import { checkHashTrigger, setupClickTriggers, setupHashChangeListener } from "./lib/triggers";
+import {
+  checkHashTrigger,
+  setupClickTriggers,
+  setupHashChangeListener,
+} from "./lib/triggers";
 import type { IframeEvent, PopupInstance, PopupOptions } from "./lib/types";
 
 // Registry of active popup instances
@@ -175,7 +179,9 @@ function handleMessage(event: MessageEvent): void {
       if ("page" in data && data.page > 1) {
         const overlayEl = instance.overlay;
         if (overlayEl) {
-          const emojiEl = overlayEl.querySelector(".bf-emoji") as HTMLElement | null;
+          const emojiEl = overlayEl.querySelector(
+            ".bf-emoji",
+          ) as HTMLElement | null;
           if (emojiEl) {
             hideEmoji(emojiEl);
           }

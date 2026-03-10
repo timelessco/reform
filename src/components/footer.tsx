@@ -4,7 +4,13 @@ import { APP_NAME } from "@/lib/app-config";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export function FAQItem({ question, answer }: { question: string; answer: string }) {
+export function FAQItem({
+  question,
+  answer,
+}: {
+  question: string;
+  answer: string;
+}) {
   const [isOpen, setIsOpen] = React.useState(false);
 
   return (
@@ -36,7 +42,13 @@ export function FAQItem({ question, answer }: { question: string; answer: string
   );
 }
 
-function SocialButton({ label, icon }: { label: string; icon: React.ReactNode }) {
+function SocialButton({
+  label,
+  icon,
+}: {
+  label: string;
+  icon: React.ReactNode;
+}) {
   return (
     <Button
       variant="secondary"
@@ -82,12 +94,21 @@ export function RightSidebar() {
           Subscribe to our product updates & news:
         </h3>
         <div className="space-y-3">
-          <SocialButton label="Threads" icon={<span className="text-lg">@</span>} />
-          <SocialButton label="x.com" icon={<span className="font-serif italic text-lg">X</span>} />
+          <SocialButton
+            label="Threads"
+            icon={<span className="text-lg">@</span>}
+          />
+          <SocialButton
+            label="x.com"
+            icon={<span className="font-serif italic text-lg">X</span>}
+          />
         </div>
       </div>
 
-      <nav aria-label="Sidebar links" className="mt-auto grid grid-cols-2 gap-y-3 gap-x-4">
+      <nav
+        aria-label="Sidebar links"
+        className="mt-auto grid grid-cols-2 gap-y-3 gap-x-4"
+      >
         <FooterLink label="Features" />
         <FooterLink label="Printable" />
         <FooterLink label="Workflow" />

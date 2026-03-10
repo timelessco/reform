@@ -9,7 +9,11 @@ import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
-import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+} from "@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +28,8 @@ interface VersionHistorySidebarProps {
 export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
   const { data: versions } = useFormVersions(formId);
   const { closeSidebar } = useEditorSidebar();
-  const { selectedVersionId, selectVersion, exitVersionView } = useVersionHistorySidebar();
+  const { selectedVersionId, selectVersion, exitVersionView } =
+    useVersionHistorySidebar();
   const { data: sessionData } = useSession();
   const currentUser = sessionData?.user;
   const [isRestoring, setIsRestoring] = useState(false);
@@ -67,18 +72,22 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
   };
 
   const formatRelativeTime = (dateString: string) => {
-    const distance = formatDistanceToNow(new Date(dateString), { addSuffix: false });
-    if (distance.includes("less than") || distance.includes("second")) return "Now";
-    return distance
-      .replace(/ minutes?/, "m")
-      .replace(/ hours?/, "h")
-      .replace(/ days?/, "d")
-      .replace(/ months?/, "mo")
-      .replace(/ years?/, "y")
-      .replace(/about /, "")
-      .replace(/over /, "")
-      .replace(/almost /, "")
-      + " ago";
+    const distance = formatDistanceToNow(new Date(dateString), {
+      addSuffix: false,
+    });
+    if (distance.includes("less than") || distance.includes("second"))
+      return "Now";
+    return (
+      distance
+        .replace(/ minutes?/, "m")
+        .replace(/ hours?/, "h")
+        .replace(/ days?/, "d")
+        .replace(/ months?/, "mo")
+        .replace(/ years?/, "y")
+        .replace(/about /, "")
+        .replace(/over /, "")
+        .replace(/almost /, "") + " ago"
+    );
   };
 
   return (
@@ -143,7 +152,8 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
                     {publisher.name}
                   </p>
                   <p className="text-[13px] leading-[1.15] text-muted-foreground tracking-[0.13px]">
-                    {version.version} change{version.version !== 1 ? "s" : ""} · {isCurrent ? "Current" : "Published"}
+                    {version.version} change{version.version !== 1 ? "s" : ""} ·{" "}
+                    {isCurrent ? "Current" : "Published"}
                   </p>
                 </div>
 

@@ -19,7 +19,10 @@ export const AudioElement = withHOC(
 
     return (
       <PlateElement {...props} className="mb-1">
-        <figure className="group relative cursor-default" contentEditable={false}>
+        <figure
+          className="group relative cursor-default"
+          contentEditable={false}
+        >
           <div className="h-16">
             <audio className="size-full" src={unsafeUrl} controls>
               <track

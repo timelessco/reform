@@ -7,16 +7,33 @@ import { Textarea } from "@/components/ui/textarea";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
 import { formCollection, localFormCollection } from "@/db-collections";
-import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarHeader,
+} from "@/components/ui/sidebar";
 import { SidebarSection } from "@/components/ui/sidebar-section";
-import { ConfigCard, ConfigRow } from "@/components/form-builder/embed-config-panel";
+import {
+  ConfigCard,
+  ConfigRow,
+} from "@/components/form-builder/embed-config-panel";
 import {
   StyleSelect,
   StyleColorPicker,
   StyleNumberInput,
 } from "@/components/ui/style-controls";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { STYLES, BASE_COLORS, DARK_BASE_COLORS, THEME_COLORS, FONT_MAP } from "@/lib/theme-presets";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  STYLES,
+  BASE_COLORS,
+  DARK_BASE_COLORS,
+  THEME_COLORS,
+  FONT_MAP,
+} from "@/lib/theme-presets";
 import { TOKEN_NAMES } from "@/lib/generate-theme-css";
 
 const FONT_OPTIONS = Object.keys(FONT_MAP);
@@ -315,7 +332,9 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
       {/* Header — matches share sidebar */}
       <SidebarHeader className="pt-2 pb-1 pl-1 shrink-0">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground px-2.5">Customize</h2>
+          <h2 className="text-sm font-semibold text-foreground px-2.5">
+            Customize
+          </h2>
           <Button
             variant="ghost"
             size="icon"
@@ -420,10 +439,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
           </div>
 
           {/* Layout */}
-          <SidebarSection
-            label="Layout"
-            action={<ProBadge />}
-          >
+          <SidebarSection label="Layout" action={<ProBadge />}>
             <ConfigCard>
               <StyleNumberInput
                 label="Page Width"
@@ -471,10 +487,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
           </SidebarSection>
 
           {/* Colors */}
-          <SidebarSection
-            label="Colors"
-            action={<ProBadge />}
-          >
+          <SidebarSection label="Colors" action={<ProBadge />}>
             <ConfigCard>
               <AdvancedColorPickers
                 customization={customization}
@@ -484,10 +497,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
           </SidebarSection>
 
           {/* Typography */}
-          <SidebarSection
-            label="Typography"
-            action={<ProBadge />}
-          >
+          <SidebarSection label="Typography" action={<ProBadge />}>
             <ConfigCard>
               <StyleNumberInput
                 label="Font Size"
@@ -515,10 +525,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
           </SidebarSection>
 
           {/* Custom CSS */}
-          <SidebarSection
-            label="Custom CSS"
-            action={<ProBadge />}
-          >
+          <SidebarSection label="Custom CSS" action={<ProBadge />}>
             <div className="rounded-lg overflow-hidden border border-border/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
               <Textarea
                 value={getValue("customCss")}

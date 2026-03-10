@@ -250,18 +250,18 @@ const ICON_NAMES = [
 ] as const;
 
 export const iconOptions: IconOption[] = ICON_NAMES.map((name) => ({
-	label: name,
-	icon: (iconColor: string, size: string = "16", className: string = "") => (
-		<svg
-			className={className}
-			fill={iconColor}
-			height={size}
-			viewBox="0 0 18 18"
-			width={size}
-		>
-			<use href={`${SPRITE_PATH}#${name}`} />
-		</svg>
-	),
+  label: name,
+  icon: (iconColor: string, size: string = "16", className: string = "") => (
+    <svg
+      className={className}
+      fill={iconColor}
+      height={size}
+      viewBox="0 0 18 18"
+      width={size}
+    >
+      <use href={`${SPRITE_PATH}#${name}`} />
+    </svg>
+  ),
 }));
 
 /**

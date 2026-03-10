@@ -8,7 +8,12 @@ import {
   Table,
   Ungroup,
 } from "lucide-react";
-import { ArrowLeftIcon, ArrowRightIcon, Trash2Icon, XIcon } from "@/components/ui/icons";
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  Trash2Icon,
+  XIcon,
+} from "@/components/ui/icons";
 import { KEYS } from "platejs";
 import { useEditorPlugin, useEditorSelector } from "platejs/react";
 import * as React from "react";

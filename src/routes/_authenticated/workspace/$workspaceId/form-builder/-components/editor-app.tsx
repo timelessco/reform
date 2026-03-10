@@ -96,7 +96,9 @@ function EditorAppInner({
   readOnly: boolean;
   savedDocs: any;
 }) {
-  const { customization, hasCustomization, themeVars } = useFormCustomization(savedDocs?.[0]);
+  const { customization, hasCustomization, themeVars } = useFormCustomization(
+    savedDocs?.[0],
+  );
   const skipSaveRef = useRef(false);
   const lastKnownContentRef = useRef<string | null>(null);
   const savedDocsRef = useRef(savedDocs);
@@ -166,9 +168,9 @@ function EditorAppInner({
     }
 
     return content;
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- savedDocs is intentionally
-  // excluded: initialContent only needs to recompute on resetKey change (via editor dep array).
-  // Including savedDocs would cause unnecessary recalculation on every Electric sync.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- savedDocs is intentionally
+    // excluded: initialContent only needs to recompute on resetKey change (via editor dep array).
+    // Including savedDocs would cause unnecessary recalculation on every Electric sync.
   }, [versionContent, resetKey]);
 
   const editor = usePlateEditor(

@@ -1,6 +1,10 @@
 import { ChevronRightIcon } from "@/components/ui/icons";
 import { useState } from "react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -81,22 +85,37 @@ function ToggleRenderer({
  * Handles static elements and form fields (Input, Textarea).
  * Buttons are handled separately in StepForm.
  */
-export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInputProps) {
+export function RenderStepPreviewInput({
+  element,
+  form,
+}: RenderStepPreviewInputProps) {
   // Static elements
   if ("static" in element && element.static) {
     switch (element.fieldType) {
       case "H1":
-        return <h1 className="text-3xl font-bold mt-6 mb-4">{element.content}</h1>;
+        return (
+          <h1 className="text-3xl font-bold mt-6 mb-4">{element.content}</h1>
+        );
       case "H2":
-        return <h2 className="text-2xl font-semibold mt-5 mb-3">{element.content}</h2>;
+        return (
+          <h2 className="text-2xl font-semibold mt-5 mb-3">
+            {element.content}
+          </h2>
+        );
       case "H3":
-        return <h3 className="text-xl font-medium mt-4 mb-2">{element.content}</h3>;
+        return (
+          <h3 className="text-xl font-medium mt-4 mb-2">{element.content}</h3>
+        );
       case "Separator":
         return <Separator className="my-4" />;
       case "EmptyBlock":
         return <div className="h-6" aria-hidden="true" />;
       case "FieldDescription":
-        return <p className="text-muted-foreground text-sm my-2">{element.content}</p>;
+        return (
+          <p className="text-muted-foreground text-sm my-2">
+            {element.content}
+          </p>
+        );
       case "UnorderedList":
         return (
           <ul className="my-2 ml-6 space-y-1 list-disc">
@@ -118,7 +137,13 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
           </ol>
         );
       case "Toggle":
-        return <ToggleRenderer title={element.title} items={element.children} form={form} />;
+        return (
+          <ToggleRenderer
+            title={element.title}
+            items={element.children}
+            form={form}
+          />
+        );
       case "Table":
         return (
           <div className="my-4 border rounded-md overflow-hidden">
@@ -130,7 +155,9 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
                     .map((row, rowIdx) => (
                       <TableRow key={`${element.id}-header-${rowIdx}`}>
                         {row.cells.map((cell, cellIdx) => (
-                          <TableHead key={`${element.id}-header-${rowIdx}-${cellIdx}`}>
+                          <TableHead
+                            key={`${element.id}-header-${rowIdx}-${cellIdx}`}
+                          >
                             {cell}
                           </TableHead>
                         ))}
@@ -144,7 +171,11 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
                   .map((row, rowIdx) => (
                     <TableRow key={`${element.id}-row-${rowIdx}`}>
                       {row.cells.map((cell, cellIdx) => (
-                        <TableCell key={`${element.id}-row-${rowIdx}-${cellIdx}`}>{cell}</TableCell>
+                        <TableCell
+                          key={`${element.id}-row-${rowIdx}-${cellIdx}`}
+                        >
+                          {cell}
+                        </TableCell>
                       ))}
                     </TableRow>
                   ))}
@@ -174,8 +205,11 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
     return (
       <form.AppField name={element.name}>
         {(f) => {
-          const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
-          const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
+          const hasErrors =
+            f.state.meta.errors.length > 0 && f.state.meta.isTouched;
+          const errorMessage = hasErrors
+            ? extractErrorMessage(f.state.meta.errors[0])
+            : "";
 
           return (
             <div className="space-y-2">
@@ -202,7 +236,9 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
                   hasErrors && "ring-destructive/20 ring-[3px]",
                 )}
               />
-              {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
+              {hasErrors && (
+                <p className="text-sm text-destructive">{errorMessage}</p>
+              )}
             </div>
           );
         }}
@@ -216,8 +252,11 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
     return (
       <form.AppField name={element.name}>
         {(f) => {
-          const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
-          const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
+          const hasErrors =
+            f.state.meta.errors.length > 0 && f.state.meta.isTouched;
+          const errorMessage = hasErrors
+            ? extractErrorMessage(f.state.meta.errors[0])
+            : "";
 
           return (
             <div className="space-y-2">
@@ -244,7 +283,9 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
                   hasErrors && "ring-destructive/20 ring-[3px]",
                 )}
               />
-              {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
+              {hasErrors && (
+                <p className="text-sm text-destructive">{errorMessage}</p>
+              )}
             </div>
           );
         }}

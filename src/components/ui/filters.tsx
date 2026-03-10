@@ -35,7 +35,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cva, type VariantProps } from "class-variance-authority";
-import { AlertCircleIcon, CheckIcon, PlusIcon, XIcon } from "@/components/ui/icons";
+import {
+  AlertCircleIcon,
+  CheckIcon,
+  PlusIcon,
+  XIcon,
+} from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
 // i18n Configuration Interface

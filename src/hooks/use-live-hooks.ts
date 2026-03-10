@@ -64,7 +64,9 @@ export const useFormsForWorkspace = (workspaceId?: string) => {
       return q
         .from({ form: formCollection })
         .where(({ form }) => eq(form.workspaceId, workspaceId))
-        .where(({ form }) => or(eq(form.status, "draft"), eq(form.status, "published")))
+        .where(({ form }) =>
+          or(eq(form.status, "draft"), eq(form.status, "published")),
+        )
         .select(({ form }) => ({
           id: form.id,
           title: form.title,
@@ -114,7 +116,9 @@ export const useForm = (formId?: string) => {
   return useLiveQuery(
     (q) => {
       if (!formId) return undefined;
-      return q.from({ form: formCollection }).where(({ form }) => eq(form.id, formId));
+      return q
+        .from({ form: formCollection })
+        .where(({ form }) => eq(form.id, formId));
     },
     [formId],
   );
@@ -127,7 +131,9 @@ export const useLocalForm = (formId?: string) => {
   return useLiveQuery(
     (q) => {
       if (!formId) return undefined;
-      return q.from({ doc: localFormCollection }).where(({ doc }) => eq(doc.id, formId));
+      return q
+        .from({ doc: localFormCollection })
+        .where(({ doc }) => eq(doc.id, formId));
     },
     [formId],
   );

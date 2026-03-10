@@ -3,7 +3,10 @@ import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { forms, formVersions, submissions, user } from "@/db/schema";
 import { db } from "@/lib/db";
-import { type PublicFormSettings, defaultPublicFormSettings } from "@/types/form-settings";
+import {
+  type PublicFormSettings,
+  defaultPublicFormSettings,
+} from "@/types/form-settings";
 
 /**
  * Public server functions - NO authentication required
@@ -88,13 +91,19 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
     }
 
     // 2. Close on scheduled date
-    if (settings.closeOnDate && settings.closeDate && new Date(settings.closeDate) < new Date()) {
+    if (
+      settings.closeOnDate &&
+      settings.closeDate &&
+      new Date(settings.closeDate) < new Date()
+    ) {
       return {
         form: null,
         error: null,
         gated: {
           type: "date_expired" as const,
-          message: settings.closedFormMessage || "This form is no longer accepting responses.",
+          message:
+            settings.closedFormMessage ||
+            "This form is no longer accepting responses.",
         },
       };
     }
@@ -136,7 +145,10 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
             id: form.id,
             title: version.title,
             content: version.content as object[],
-            customization: (version.customization ?? {}) as Record<string, string>,
+            customization: (version.customization ?? {}) as Record<
+              string,
+              string
+            >,
             icon: form.icon,
             cover: form.cover,
             status: form.status,
@@ -246,7 +258,9 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
         .from(submissions)
         .where(eq(submissions.formId, data.formId));
       if (submissionCount >= form.maxSubmissions) {
-        throw new Error("This form has reached its maximum number of submissions");
+        throw new Error(
+          "This form has reached its maximum number of submissions",
+        );
       }
     }
 
@@ -288,7 +302,11 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
 function findRespondentEmail(data: Record<string, unknown>): string | null {
   // First pass: look for keys containing "email"
   for (const [key, value] of Object.entries(data)) {
-    if (key.toLowerCase().includes("email") && typeof value === "string" && value.includes("@")) {
+    if (
+      key.toLowerCase().includes("email") &&
+      typeof value === "string" &&
+      value.includes("@")
+    ) {
       return value;
     }
   }

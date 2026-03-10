@@ -38,7 +38,12 @@ export const removeFavorite = createServerFn({ method: "POST" })
     return await db.transaction(async (tx) => {
       await tx
         .delete(formFavorites)
-        .where(and(eq(formFavorites.userId, userId), eq(formFavorites.formId, data.formId)));
+        .where(
+          and(
+            eq(formFavorites.userId, userId),
+            eq(formFavorites.formId, data.formId),
+          ),
+        );
 
       const txid = await getTxId(tx);
       return { txid };

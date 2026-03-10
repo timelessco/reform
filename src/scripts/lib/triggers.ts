@@ -21,7 +21,11 @@ function parseDataAttributes(element: HTMLElement): PopupOptions {
 
   // Position
   const position = element.dataset.position;
-  if (position === "bottom-right" || position === "bottom-left" || position === "center") {
+  if (
+    position === "bottom-right" ||
+    position === "bottom-left" ||
+    position === "center"
+  ) {
     options.position = position;
   }
 
@@ -44,7 +48,9 @@ function parseDataAttributes(element: HTMLElement): PopupOptions {
 
   // Emoji
   const emojiText = element.dataset.emojiText;
-  const emojiAnimation = element.dataset.emojiAnimation as EmojiAnimation | undefined;
+  const emojiAnimation = element.dataset.emojiAnimation as
+    | EmojiAnimation
+    | undefined;
   if (emojiText) {
     options.emoji = {
       text: emojiText,
@@ -103,7 +109,11 @@ function parseHashParams(hash: string): {
 
   // Position
   const position = params.get("position");
-  if (position === "bottom-right" || position === "bottom-left" || position === "center") {
+  if (
+    position === "bottom-right" ||
+    position === "bottom-left" ||
+    position === "center"
+  ) {
     options.position = position;
   }
 

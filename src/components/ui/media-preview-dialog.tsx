@@ -5,7 +5,14 @@ import {
   useScaleInput,
 } from "@platejs/media/react";
 import { cva } from "class-variance-authority";
-import { ArrowLeftIcon, ArrowRightIcon, DownloadIcon, MinusIcon, PlusIcon, XIcon } from "@/components/ui/icons";
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  DownloadIcon,
+  MinusIcon,
+  PlusIcon,
+  XIcon,
+} from "@/components/ui/icons";
 import { useEditorRef } from "platejs/react";
 import * as React from "react";
 
@@ -65,7 +72,10 @@ export function MediaPreviewDialog() {
   return (
     <div
       ref={previewMaskRef}
-      className={cn("fixed top-0 left-0 z-50 h-screen w-screen select-none", !isOpen && "hidden")}
+      className={cn(
+        "fixed top-0 left-0 z-50 h-screen w-screen select-none",
+        !isOpen && "hidden",
+      )}
     >
       <div className="absolute inset-0 size-full bg-black opacity-30" />
       <div className="absolute inset-0 size-full bg-black opacity-30" />
@@ -155,7 +165,11 @@ export function MediaPreviewDialog() {
             <Button variant="ghost" className={cn(buttonVariants(), "h-auto")}>
               <DownloadIcon className="size-4" />
             </Button>
-            <Button variant="ghost" {...closeProps} className={cn(buttonVariants(), "h-auto")}>
+            <Button
+              variant="ghost"
+              {...closeProps}
+              className={cn(buttonVariants(), "h-auto")}
+            >
               <XIcon className="size-4" />
             </Button>
           </section>

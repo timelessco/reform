@@ -1,4 +1,8 @@
-import { flip, offset, type UseVirtualFloatingOptions } from "@platejs/floating";
+import {
+  flip,
+  offset,
+  type UseVirtualFloatingOptions,
+} from "@platejs/floating";
 import { getLinkAttributes } from "@platejs/link";
 import {
   FloatingLinkUrlInput,
@@ -9,10 +13,19 @@ import {
   useFloatingLinkInsertState,
 } from "@platejs/link/react";
 import { cva } from "class-variance-authority";
-import { ExternalLinkIcon, LinkIcon, TextIcon, UnlinkIcon } from "@/components/ui/icons";
+import {
+  ExternalLinkIcon,
+  LinkIcon,
+  TextIcon,
+  UnlinkIcon,
+} from "@/components/ui/icons";
 import type { TLinkElement } from "platejs";
 import { KEYS } from "platejs";
-import { useEditorRef, useFormInputProps, usePluginOption } from "platejs/react";
+import {
+  useEditorRef,
+  useFormInputProps,
+  usePluginOption,
+} from "platejs/react";
 import * as React from "react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -26,9 +39,16 @@ const inputVariants = cva(
   "flex h-[28px] w-full rounded-md border-none bg-transparent px-1.5 py-1 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-transparent md:text-sm",
 );
 
-export function LinkFloatingToolbar({ state }: { state?: LinkFloatingToolbarState }) {
+export function LinkFloatingToolbar({
+  state,
+}: {
+  state?: LinkFloatingToolbarState;
+}) {
   const activeCommentId = usePluginOption({ key: KEYS.comment }, "activeId");
-  const activeSuggestionId = usePluginOption({ key: KEYS.suggestion }, "activeId");
+  const activeSuggestionId = usePluginOption(
+    { key: KEYS.suggestion },
+    "activeId",
+  );
 
   const floatingOptions: UseVirtualFloatingOptions = React.useMemo(
     () => ({
@@ -39,7 +59,8 @@ export function LinkFloatingToolbar({ state }: { state?: LinkFloatingToolbarStat
           padding: 12,
         }),
       ],
-      placement: activeSuggestionId || activeCommentId ? "top-start" : "bottom-start",
+      placement:
+        activeSuggestionId || activeCommentId ? "top-start" : "bottom-start",
     }),
     [activeCommentId, activeSuggestionId],
   );
@@ -166,9 +187,12 @@ function LinkOpenButton() {
     }
   }, [href, safeTarget]);
 
-  const stopPropagationInteraction = React.useCallback((event: React.SyntheticEvent) => {
-    event.stopPropagation();
-  }, []);
+  const stopPropagationInteraction = React.useCallback(
+    (event: React.SyntheticEvent) => {
+      event.stopPropagation();
+    },
+    [],
+  );
 
   return (
     <Button

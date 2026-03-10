@@ -1,5 +1,9 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
+import {
+  createRootRouteWithContext,
+  HeadContent,
+  Scripts,
+} from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -55,15 +59,15 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased font-sans">
         <HotkeysProvider defaultOptions={{ hotkey: { preventDefault: true } }}>
-        <ThemeProvider defaultTheme="light">
-          {children}
-          <Toaster richColors />
-          {process.env.NODE_ENV === "development" && (
-            <Suspense>
-              <LazyDevtools />
-            </Suspense>
-          )}
-        </ThemeProvider>
+          <ThemeProvider defaultTheme="light">
+            {children}
+            <Toaster richColors />
+            {process.env.NODE_ENV === "development" && (
+              <Suspense>
+                <LazyDevtools />
+              </Suspense>
+            )}
+          </ThemeProvider>
         </HotkeysProvider>
         <Scripts />
       </body>

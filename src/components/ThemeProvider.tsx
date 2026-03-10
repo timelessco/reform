@@ -18,7 +18,8 @@ const initialState: ThemeProviderState = {
   setTheme: () => null,
 };
 
-const ThemeProviderContext = React.createContext<ThemeProviderState>(initialState);
+const ThemeProviderContext =
+  React.createContext<ThemeProviderState>(initialState);
 
 export function ThemeProvider({
   children,
@@ -40,7 +41,8 @@ export function ThemeProvider({
 
     // Disable all transitions during theme switch so everything flips instantly
     const style = document.createElement("style");
-    style.textContent = "*, *::before, *::after { transition: none !important; }";
+    style.textContent =
+      "*, *::before, *::after { transition: none !important; }";
     document.head.appendChild(style);
 
     root.classList.remove("light", "dark");
@@ -94,7 +96,8 @@ export function ThemeProvider({
 export const useTheme = () => {
   const context = React.useContext(ThemeProviderContext);
 
-  if (context === undefined) throw new Error("useTheme must be used within a ThemeProvider");
+  if (context === undefined)
+    throw new Error("useTheme must be used within a ThemeProvider");
 
   return context;
 };

@@ -148,58 +148,56 @@ function DesignPage() {
 
   return (
     <div className="flex flex-1 h-full overflow-hidden">
-          <main className="flex-1 overflow-y-auto overflow-x-hidden relative bg-background h-full flex flex-col">
-            {/* Version viewing banner */}
-            {isViewingVersion && (
-              <div className="bg-accent/50 border-b border-accent/20 px-4 py-2 flex items-center justify-between shrink-0">
-                <span className="text-sm text-accent-800">
-                  {isLoadingVersionContent ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2Icon className="h-4 w-4 animate-spin" />
-                      Loading version...
-                    </span>
-                  ) : versionData?.publishedAt ? (
-                    <>
-                      Viewing version from{" "}
-                      <span className="font-semibold">
-                        {formatDateTime(versionData.publishedAt)}
-                      </span>
-                    </>
-                  ) : (
-                    "Viewing version..."
-                  )}
+      <main className="flex-1 overflow-y-auto overflow-x-hidden relative bg-background h-full flex flex-col">
+        {/* Version viewing banner */}
+        {isViewingVersion && (
+          <div className="bg-accent/50 border-b border-accent/20 px-4 py-2 flex items-center justify-between shrink-0">
+            <span className="text-sm text-accent-800">
+              {isLoadingVersionContent ? (
+                <span className="flex items-center gap-2">
+                  <Loader2Icon className="h-4 w-4 animate-spin" />
+                  Loading version...
                 </span>
-                <Button variant="outline" size="sm" onClick={exitVersionView}>
-                  Return to editing
-                </Button>
-              </div>
-            )}
-
-            <div
-              className={cn(
-                "flex-1 overflow-x-hidden",
-                demo ? "h-full overflow-hidden" : "overflow-y-auto",
-              )}
-            >
-              {demo ? (
-                <PreviewMode formId={formId} workspaceId={workspaceId} />
-              ) : isViewingVersion && isLoadingVersionContent ? (
-                <div className="h-full w-full flex items-center justify-center">
-                  <Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
+              ) : versionData?.publishedAt ? (
+                <>
+                  Viewing version from{" "}
+                  <span className="font-semibold">
+                    {formatDateTime(versionData.publishedAt)}
+                  </span>
+                </>
               ) : (
-                <EditorApp
-                  key={
-                    isViewingVersion ? `version-${selectedVersionId}` : formId
-                  }
-                  formId={formId}
-                  workspaceId={workspaceId}
-                  versionContent={isViewingVersion ? versionContent : undefined}
-                  readOnly={isViewingVersion}
-                />
+                "Viewing version..."
               )}
+            </span>
+            <Button variant="outline" size="sm" onClick={exitVersionView}>
+              Return to editing
+            </Button>
+          </div>
+        )}
+
+        <div
+          className={cn(
+            "flex-1 overflow-x-hidden",
+            demo ? "h-full overflow-hidden" : "overflow-y-auto",
+          )}
+        >
+          {demo ? (
+            <PreviewMode formId={formId} workspaceId={workspaceId} />
+          ) : isViewingVersion && isLoadingVersionContent ? (
+            <div className="h-full w-full flex items-center justify-center">
+              <Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          </main>
+          ) : (
+            <EditorApp
+              key={isViewingVersion ? `version-${selectedVersionId}` : formId}
+              formId={formId}
+              workspaceId={workspaceId}
+              versionContent={isViewingVersion ? versionContent : undefined}
+              readOnly={isViewingVersion}
+            />
+          )}
+        </div>
+      </main>
     </div>
   );
 }

@@ -6,7 +6,10 @@ import { FormPreviewFromPlate } from "@/components/form-components/form-preview-
 import { BrandingFooter } from "@/components/public/branding-footer";
 import { AlreadySubmitted, FormClosed } from "@/components/public/form-closed";
 import { PasswordGate } from "@/components/public/password-gate";
-import { TranslationProvider, useTranslation } from "@/contexts/translation-context";
+import {
+  TranslationProvider,
+  useTranslation,
+} from "@/contexts/translation-context";
 import { createPublicSubmission } from "@/lib/fn/public";
 import { getTranslations } from "@/lib/translations";
 import { cn } from "@/lib/utils";
@@ -17,7 +20,10 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { type PublicFormSettings, defaultPublicFormSettings } from "@/types/form-settings";
+import {
+  type PublicFormSettings,
+  defaultPublicFormSettings,
+} from "@/types/form-settings";
 
 interface PublicForm {
   id: string;
@@ -91,7 +97,9 @@ function FormNotPublished() {
             <LockIcon />
           </EmptyMedia>
           <EmptyTitle>{t("formNotAvailable")}</EmptyTitle>
-          <EmptyDescription>{t("formNotAvailableDescription")}</EmptyDescription>
+          <EmptyDescription>
+            {t("formNotAvailableDescription")}
+          </EmptyDescription>
         </EmptyHeader>
       </Empty>
     </div>
@@ -145,7 +153,11 @@ export function PublicFormPage({
 
   // Setup height communication for popup embeds and standard embeds with dynamicHeight
   useEffect(() => {
-    if ((!isPopup && !dynamicHeight) || typeof window === "undefined" || window.parent === window)
+    if (
+      (!isPopup && !dynamicHeight) ||
+      typeof window === "undefined" ||
+      window.parent === window
+    )
       return;
 
     // Notify parent that form has loaded
@@ -228,7 +240,13 @@ export function PublicFormPage({
         throw err; // Re-throw so the form knows it failed
       }
     },
-    [formId, isPopup, form?.title, form?.settings?.preventDuplicateSubmissions, resolvedLanguage],
+    [
+      formId,
+      isPopup,
+      form?.title,
+      form?.settings?.preventDuplicateSubmissions,
+      resolvedLanguage,
+    ],
   );
 
   // Handle error states
@@ -276,7 +294,9 @@ export function PublicFormPage({
       ref={containerRef}
       className={cn(
         "pb-8 overflow-x-hidden",
-        form.customization && Object.keys(form.customization).length > 0 && "bf-themed",
+        form.customization &&
+          Object.keys(form.customization).length > 0 &&
+          "bf-themed",
         // Don't use min-h-screen for popup mode - it causes resize loop
         !isPopup && "min-h-screen",
         transparentBackground || isPopup ? "bg-transparent" : "bg-white",
@@ -306,5 +326,9 @@ export function PublicFormPage({
     );
   }
 
-  return <TranslationProvider language={resolvedLanguage}>{formContent}</TranslationProvider>;
+  return (
+    <TranslationProvider language={resolvedLanguage}>
+      {formContent}
+    </TranslationProvider>
+  );
 }

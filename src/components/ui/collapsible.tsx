@@ -1,6 +1,6 @@
-import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible"
+import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 function Collapsible({ className, ...props }: CollapsiblePrimitive.Root.Props) {
   return (
@@ -9,7 +9,7 @@ function Collapsible({ className, ...props }: CollapsiblePrimitive.Root.Props) {
       className={cn("contents", className)}
       {...props}
     />
-  )
+  );
 }
 
 function CollapsibleTrigger({
@@ -26,7 +26,7 @@ function CollapsibleTrigger({
       )}
       {...props}
     />
-  )
+  );
 }
 
 function CollapsibleContent({
@@ -43,7 +43,7 @@ function CollapsibleContent({
       )}
       {...props}
     />
-  )
+  );
 }
 
-export { Collapsible, CollapsibleTrigger, CollapsibleContent }
+export { Collapsible, CollapsibleTrigger, CollapsibleContent };

@@ -100,9 +100,13 @@ const discussionsData: TDiscussion[] = [
   },
 ];
 
-const avatarUrl = (seed: string) => `https://api.dicebear.com/9.x/glass/svg?seed=${seed}`;
+const avatarUrl = (seed: string) =>
+  `https://api.dicebear.com/9.x/glass/svg?seed=${seed}`;
 
-const usersData: Record<string, { id: string; avatarUrl: string; name: string; hue?: number }> = {
+const usersData: Record<
+  string,
+  { id: string; avatarUrl: string; name: string; hue?: number }
+> = {
   alice: {
     id: "alice",
     avatarUrl: avatarUrl("alice6"),

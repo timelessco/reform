@@ -43,10 +43,17 @@ const InlineComboboxContext = React.createContext<InlineComboboxContextValue>(
   null as unknown as InlineComboboxContextValue,
 );
 
-const defaultFilter: FilterFn = ({ group, keywords = [], label, value }, search) => {
-  const uniqueTerms = new Set([value, ...keywords, group, label].filter(Boolean));
+const defaultFilter: FilterFn = (
+  { group, keywords = [], label, value },
+  search,
+) => {
+  const uniqueTerms = new Set(
+    [value, ...keywords, group, label].filter(Boolean),
+  );
 
-  return Array.from(uniqueTerms).some((keyword) => filterWords(keyword ?? "", search));
+  return Array.from(uniqueTerms).some((keyword) =>
+    filterWords(keyword ?? "", search),
+  );
 };
 
 type InlineComboboxProps = {
@@ -178,7 +185,10 @@ const InlineCombobox = ({
   return (
     <span contentEditable={false}>
       <ComboboxProvider
-        open={(items.length > 0 || hasEmpty) && (!hideWhenNoValue || value.length > 0)}
+        open={
+          (items.length > 0 || hasEmpty) &&
+          (!hideWhenNoValue || value.length > 0)
+        }
         store={store}
       >
         <InlineComboboxContext.Provider value={contextValue}>
@@ -205,7 +215,9 @@ const InlineComboboxInput = ({
 
   const store = useComboboxContext();
   if (!store) {
-    throw new Error("InlineComboboxInput must be used within an InlineCombobox");
+    throw new Error(
+      "InlineComboboxInput must be used within an InlineCombobox",
+    );
   }
   const value = store.useState("value");
 
@@ -223,13 +235,19 @@ const InlineComboboxInput = ({
       {showTrigger && trigger}
 
       <span className="relative min-h-[1lh]">
-        <span className="invisible overflow-hidden text-nowrap" aria-hidden="true">
+        <span
+          className="invisible overflow-hidden text-nowrap"
+          aria-hidden="true"
+        >
           {value || "\u200B"}
         </span>
 
         <Combobox
           ref={ref}
-          className={cn("absolute top-0 left-0 size-full bg-transparent outline-none", className)}
+          className={cn(
+            "absolute top-0 left-0 size-full bg-transparent outline-none",
+            className,
+          )}
           value={value}
           autoSelect
           {...inputProps}
@@ -242,7 +260,10 @@ const InlineComboboxInput = ({
 
 InlineComboboxInput.displayName = "InlineComboboxInput";
 
-const InlineComboboxContent: typeof ComboboxPopover = ({ className, ...props }) => {
+const InlineComboboxContent: typeof ComboboxPopover = ({
+  className,
+  ...props
+}) => {
   // Portal prevents CSS from leaking into popover
   return (
     <Portal>
@@ -319,11 +340,16 @@ const InlineComboboxItem = ({
   );
 };
 
-const InlineComboboxEmpty = ({ children, className }: React.HTMLAttributes<HTMLDivElement>) => {
+const InlineComboboxEmpty = ({
+  children,
+  className,
+}: React.HTMLAttributes<HTMLDivElement>) => {
   const { setHasEmpty } = React.useContext(InlineComboboxContext);
   const store = useComboboxContext();
   if (!store) {
-    throw new Error("InlineComboboxEmpty must be used within an InlineCombobox");
+    throw new Error(
+      "InlineComboboxEmpty must be used within an InlineCombobox",
+    );
   }
   const items = store.useState("items");
 
@@ -338,17 +364,27 @@ const InlineComboboxEmpty = ({ children, className }: React.HTMLAttributes<HTMLD
   if (items.length > 0) return null;
 
   return (
-    <div className={cn(comboboxItemVariants({ interactive: false }), className)}>{children}</div>
+    <div
+      className={cn(comboboxItemVariants({ interactive: false }), className)}
+    >
+      {children}
+    </div>
   );
 };
 
 const InlineComboboxRow = ComboboxRow;
 
-function InlineComboboxGroup({ className, ...props }: React.ComponentProps<typeof ComboboxGroup>) {
+function InlineComboboxGroup({
+  className,
+  ...props
+}: React.ComponentProps<typeof ComboboxGroup>) {
   return (
     <ComboboxGroup
       {...props}
-      className={cn("hidden not-last:border-b py-1.5 [&:has([role=option])]:block", className)}
+      className={cn(
+        "hidden not-last:border-b py-1.5 [&:has([role=option])]:block",
+        className,
+      )}
     />
   );
 }
@@ -360,7 +396,10 @@ function InlineComboboxGroupLabel({
   return (
     <ComboboxGroupLabel
       {...props}
-      className={cn("px-2 py-1.5 text-[12px] font-medium text-muted-foreground tracking-[0.24px] leading-tight", className)}
+      className={cn(
+        "px-2 py-1.5 text-[12px] font-medium text-muted-foreground tracking-[0.24px] leading-tight",
+        className,
+      )}
     />
   );
 }

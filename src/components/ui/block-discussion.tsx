@@ -3,10 +3,7 @@ import { CommentPlugin } from "@platejs/comment/react";
 import { getTransientSuggestionKey } from "@platejs/suggestion";
 import { SuggestionPlugin } from "@platejs/suggestion/react";
 import { MessagesSquareIcon } from "lucide-react";
-import {
-  MessageSquareTextIcon,
-  PencilLineIcon,
-} from "@/components/ui/icons";
+import { MessageSquareTextIcon, PencilLineIcon } from "@/components/ui/icons";
 import {
   type AnyPluginConfig,
   type NodeEntry,

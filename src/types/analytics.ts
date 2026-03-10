@@ -4,9 +4,21 @@
 
 export type DeviceType = "desktop" | "tablet" | "mobile";
 
-export type BrowserType = "Chrome" | "Firefox" | "Safari" | "Edge" | "Opera" | "Other";
+export type BrowserType =
+  | "Chrome"
+  | "Firefox"
+  | "Safari"
+  | "Edge"
+  | "Opera"
+  | "Other";
 
-export type OSType = "Windows" | "macOS" | "iOS" | "Android" | "Linux" | "Other";
+export type OSType =
+  | "Windows"
+  | "macOS"
+  | "iOS"
+  | "Android"
+  | "Linux"
+  | "Other";
 
 // ============================================================================
 // Form Visit Interface

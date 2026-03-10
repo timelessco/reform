@@ -85,8 +85,12 @@ export function PasswordGate({ formId, children }: PasswordGateProps) {
               </div>
             </div>
             <div className="text-center space-y-1">
-              <h2 className="text-lg font-semibold">{t("passwordProtected")}</h2>
-              <p className="text-sm text-muted-foreground">{t("passwordDescription")}</p>
+              <h2 className="text-lg font-semibold">
+                {t("passwordProtected")}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {t("passwordDescription")}
+              </p>
             </div>
             <div className="space-y-3">
               <div className="relative">
@@ -109,11 +113,19 @@ export function PasswordGate({ formId, children }: PasswordGateProps) {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                  {showPassword ? (
+                    <EyeOffIcon className="h-4 w-4" />
+                  ) : (
+                    <EyeIcon className="h-4 w-4" />
+                  )}
                 </button>
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button onClick={handleUnlock} disabled={loading} className="w-full">
+              <Button
+                onClick={handleUnlock}
+                disabled={loading}
+                className="w-full"
+              >
                 {loading ? t("verifying") : t("unlock")}
               </Button>
             </div>

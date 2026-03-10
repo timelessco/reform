@@ -1,38 +1,42 @@
 import { createTransaction, eq, useLiveQuery } from "@tanstack/react-db";
 import { useMemo } from "react";
 import { formCollection, formVersionCollection } from "@/db-collections";
-import { discardFormChanges, publishFormVersion, restoreFormVersion } from "@/lib/fn/form-versions";
+import {
+  discardFormChanges,
+  publishFormVersion,
+  restoreFormVersion,
+} from "@/lib/fn/form-versions";
 import { useForm } from "./use-live-hooks";
 
 /**
  * Hook to get list of published versions for a form (Electric-synced)
  */
 export function useFormVersions(formId: string | undefined) {
-	return useLiveQuery(
-		(q) => {
-			if (!formId) return undefined;
-			return q
-				.from({ v: formVersionCollection })
-				.where(({ v }) => eq(v.formId, formId))
-				.orderBy(({ v }) => v.version, "desc");
-		},
-		[formId],
-	);
+  return useLiveQuery(
+    (q) => {
+      if (!formId) return undefined;
+      return q
+        .from({ v: formVersionCollection })
+        .where(({ v }) => eq(v.formId, formId))
+        .orderBy(({ v }) => v.version, "desc");
+    },
+    [formId],
+  );
 }
 
 /**
  * Hook to get full content of a specific version (Electric-synced)
  */
 export function useFormVersionContent(versionId: string | undefined) {
-	return useLiveQuery(
-		(q) => {
-			if (!versionId) return undefined;
-			return q
-				.from({ v: formVersionCollection })
-				.where(({ v }) => eq(v.id, versionId));
-		},
-		[versionId],
-	);
+  return useLiveQuery(
+    (q) => {
+      if (!versionId) return undefined;
+      return q
+        .from({ v: formVersionCollection })
+        .where(({ v }) => eq(v.id, versionId));
+    },
+    [versionId],
+  );
 }
 
 /**
@@ -40,37 +44,39 @@ export function useFormVersionContent(versionId: string | undefined) {
  * Compares current content hash with the last published hash.
  */
 export function useHasUnpublishedChanges(formId: string | undefined) {
-	const { data: formData } = useForm(formId);
-	const { data: versions } = useFormVersions(formId);
+  const { data: formData } = useForm(formId);
+  const { data: versions } = useFormVersions(formId);
 
-	// useForm already filters by formId via .where(eq(form.id, formId)),
-	// so the result is at most one item — no need for JS .find().
-	const form = formData?.[0];
+  // useForm already filters by formId via .where(eq(form.id, formId)),
+  // so the result is at most one item — no need for JS .find().
+  const form = formData?.[0];
 
-	const latestVersion = versions?.[0];
+  const latestVersion = versions?.[0];
 
-	return useMemo(() => {
-		if (!form || !formId) return false;
-		if (!form.publishedContentHash) return false;
+  return useMemo(() => {
+    if (!form || !formId) return false;
+    if (!form.publishedContentHash) return false;
 
-		// Never published — no "unpublished changes" indicator
-		if (!form.lastPublishedVersionId) return false;
+    // Never published — no "unpublished changes" indicator
+    if (!form.lastPublishedVersionId) return false;
 
-		// Published but version collection hasn't synced yet — can't compare
-		if (!latestVersion) return false;
+    // Published but version collection hasn't synced yet — can't compare
+    if (!latestVersion) return false;
 
-		// Compare current content with published version content
-		const currentContent = JSON.stringify(form.content);
-		const publishedContent = JSON.stringify(latestVersion.content);
+    // Compare current content with published version content
+    const currentContent = JSON.stringify(form.content);
+    const publishedContent = JSON.stringify(latestVersion.content);
 
-		if (currentContent !== publishedContent) return true;
+    if (currentContent !== publishedContent) return true;
 
-		// Compare current customization with published version customization
-		const currentCustomization = JSON.stringify(form.customization ?? {});
-		const publishedCustomization = JSON.stringify(latestVersion.customization ?? {});
+    // Compare current customization with published version customization
+    const currentCustomization = JSON.stringify(form.customization ?? {});
+    const publishedCustomization = JSON.stringify(
+      latestVersion.customization ?? {},
+    );
 
-		return currentCustomization !== publishedCustomization;
-	}, [form, latestVersion]);
+    return currentCustomization !== publishedCustomization;
+  }, [form, latestVersion]);
 }
 
 // ============================================================================
@@ -133,7 +139,8 @@ export function restoreVersion(formId: string, versionId: string) {
  */
 export function discardChanges(formId: string) {
   const form = formCollection.state.get(formId);
-  if (!form?.lastPublishedVersionId) throw new Error("No published version to revert to");
+  if (!form?.lastPublishedVersionId)
+    throw new Error("No published version to revert to");
 
   const version = formVersionCollection.state.get(form.lastPublishedVersionId);
   if (!version) throw new Error("Published version not found in local state");

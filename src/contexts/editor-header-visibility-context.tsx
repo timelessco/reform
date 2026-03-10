@@ -1,5 +1,12 @@
 import type React from "react";
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 interface EditorHeaderVisibilityContextType {
   enabled: boolean;
@@ -11,9 +18,9 @@ interface EditorHeaderVisibilityContextType {
 
 const HIDE_DELAY_MS = 0;
 
-const EditorHeaderVisibilityContext = createContext<EditorHeaderVisibilityContextType | undefined>(
-  undefined,
-);
+const EditorHeaderVisibilityContext = createContext<
+  EditorHeaderVisibilityContextType | undefined
+>(undefined);
 
 export function EditorHeaderVisibilityProvider({
   enabled,

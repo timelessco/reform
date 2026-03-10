@@ -2,7 +2,12 @@
 
 import { createContext, ReactNode, useContext } from "react";
 import { cn } from "@/lib/utils";
-import { ColumnFiltersState, RowData, SortingState, Table } from "@tanstack/react-table";
+import {
+  ColumnFiltersState,
+  RowData,
+  SortingState,
+  Table,
+} from "@tanstack/react-table";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -117,7 +122,11 @@ function DataGridProvider<TData extends object>({
   );
 }
 
-function DataGrid<TData extends object>({ children, table, ...props }: DataGridProps<TData>) {
+function DataGrid<TData extends object>({
+  children,
+  table,
+  ...props
+}: DataGridProps<TData>) {
   const defaultProps: Partial<DataGridProps<TData>> = {
     loadingMode: "skeleton",
     tableLayout: {
@@ -186,7 +195,11 @@ function DataGridContainer({
   return (
     <div
       data-slot="data-grid"
-      className={cn("grid w-full", border && "border border-border rounded-lg", className)}
+      className={cn(
+        "grid w-full",
+        border && "border border-border rounded-lg",
+        className,
+      )}
     >
       {children}
     </div>

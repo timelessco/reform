@@ -41,7 +41,8 @@ export function ResizeHandle({
   className,
   options,
   ...props
-}: React.ComponentProps<typeof ResizeHandlePrimitive> & VariantProps<typeof resizeHandleVariants>) {
+}: React.ComponentProps<typeof ResizeHandlePrimitive> &
+  VariantProps<typeof resizeHandleVariants>) {
   const state = useResizeHandleState(options ?? {});
   const resizeHandle = useResizeHandle(state);
 
@@ -49,7 +50,10 @@ export function ResizeHandle({
 
   return (
     <div
-      className={cn(resizeHandleVariants({ direction: options?.direction }), className)}
+      className={cn(
+        resizeHandleVariants({ direction: options?.direction }),
+        className,
+      )}
       data-resizing={state.isResizing}
       {...resizeHandle.props}
       {...props}
@@ -71,6 +75,12 @@ export function Resizable({
   align,
   className,
   ...props
-}: React.ComponentProps<typeof ResizablePrimitive> & VariantProps<typeof resizableVariants>) {
-  return <ResizablePrimitive {...props} className={cn(resizableVariants({ align }), className)} />;
+}: React.ComponentProps<typeof ResizablePrimitive> &
+  VariantProps<typeof resizableVariants>) {
+  return (
+    <ResizablePrimitive
+      {...props}
+      className={cn(resizableVariants({ align }), className)}
+    />
+  );
 }

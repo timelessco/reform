@@ -12,73 +12,80 @@ const DEFAULT_COLORS = [
 ];
 
 type ColorPickerProps = {
-	onChange: (value: string) => void;
-	selectedColor: string;
-	colors?: string[];
+  onChange: (value: string) => void;
+  selectedColor: string;
+  colors?: string[];
 };
 
-export function ColorPicker({ onChange, selectedColor, colors }: ColorPickerProps) {
-	const ref = useRef<HTMLDivElement>(null);
-	const isDark = ref.current?.closest(".dark") != null;
+export function ColorPicker({
+  onChange,
+  selectedColor,
+  colors,
+}: ColorPickerProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isDark = ref.current?.closest(".dark") != null;
 
-	const COLORS = colors || DEFAULT_COLORS;
+  const COLORS = colors || DEFAULT_COLORS;
 
-	// Swap first two colors (white/black) in dark mode for better visibility (only for default palette)
-	const displayColors =
-		!colors && isDark && COLORS.length >= 2
-			? [COLORS[1], COLORS[0], ...COLORS.slice(2)]
-			: COLORS;
+  // Swap first two colors (white/black) in dark mode for better visibility (only for default palette)
+  const displayColors =
+    !colors && isDark && COLORS.length >= 2
+      ? [COLORS[1], COLORS[0], ...COLORS.slice(2)]
+      : COLORS;
 
-	const swapFirstTwo = (color: string) => {
-		if (colors || !isDark || COLORS.length < 2) {
-			return color;
-		}
+  const swapFirstTwo = (color: string) => {
+    if (colors || !isDark || COLORS.length < 2) {
+      return color;
+    }
 
-		if (color === COLORS[0]) {
-			return COLORS[1];
-		}
+    if (color === COLORS[0]) {
+      return COLORS[1];
+    }
 
-		if (color === COLORS[1]) {
-			return COLORS[0];
-		}
+    if (color === COLORS[1]) {
+      return COLORS[0];
+    }
 
-		return color;
-	};
+    return color;
+  };
 
-	const mappedSelected = swapFirstTwo(selectedColor);
-	const baseLightColor = !colors ? COLORS[0] : null;
+  const mappedSelected = swapFirstTwo(selectedColor);
+  const baseLightColor = !colors ? COLORS[0] : null;
 
-	return (
-		<div ref={ref} className={cn("flex", "cursor-pointer", "items-center", "space-x-1")}>
-			{displayColors.map((colorItem) => (
-				<div
-					className={cn("rounded-md", "p-1", "hover:bg-muted", {
-						"bg-muted": colorItem === mappedSelected,
-					})}
-					key={colorItem}
-				>
-					<button
-						aria-label={`Select ${colorItem} color`}
-						aria-pressed={colorItem === mappedSelected}
-						className={cn(
-							"h-4",
-							"w-4",
-							"rounded-full",
-							"border",
-							"p-1",
-							{
-								"border-foreground": colorItem === baseLightColor,
-							},
-							{
-								"border-transparent": colorItem !== baseLightColor,
-							},
-						)}
-						onClick={() => onChange(swapFirstTwo(colorItem))}
-						style={{ backgroundColor: colorItem }}
-						type="button"
-					/>
-				</div>
-			))}
-		</div>
-	);
+  return (
+    <div
+      ref={ref}
+      className={cn("flex", "cursor-pointer", "items-center", "space-x-1")}
+    >
+      {displayColors.map((colorItem) => (
+        <div
+          className={cn("rounded-md", "p-1", "hover:bg-muted", {
+            "bg-muted": colorItem === mappedSelected,
+          })}
+          key={colorItem}
+        >
+          <button
+            aria-label={`Select ${colorItem} color`}
+            aria-pressed={colorItem === mappedSelected}
+            className={cn(
+              "h-4",
+              "w-4",
+              "rounded-full",
+              "border",
+              "p-1",
+              {
+                "border-foreground": colorItem === baseLightColor,
+              },
+              {
+                "border-transparent": colorItem !== baseLightColor,
+              },
+            )}
+            onClick={() => onChange(swapFirstTwo(colorItem))}
+            style={{ backgroundColor: colorItem }}
+            type="button"
+          />
+        </div>
+      ))}
+    </div>
+  );
 }

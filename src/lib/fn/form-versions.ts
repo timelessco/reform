@@ -42,7 +42,10 @@ export const publishFormVersion = createServerFn({ method: "POST" })
 
     return await db.transaction(async (tx) => {
       // Get current form draft
-      const [form] = await tx.select().from(forms).where(eq(forms.id, data.formId));
+      const [form] = await tx
+        .select()
+        .from(forms)
+        .where(eq(forms.id, data.formId));
 
       if (!form) {
         throw new Error("Form not found");
@@ -101,8 +104,12 @@ export const publishFormVersion = createServerFn({ method: "POST" })
         .orderBy(desc(formVersions.version));
 
       if (allVersions.length > MAX_VERSIONS_PER_FORM) {
-        const versionsToDelete = allVersions.slice(MAX_VERSIONS_PER_FORM).map((v) => v.id);
-        await tx.delete(formVersions).where(inArray(formVersions.id, versionsToDelete));
+        const versionsToDelete = allVersions
+          .slice(MAX_VERSIONS_PER_FORM)
+          .map((v) => v.id);
+        await tx
+          .delete(formVersions)
+          .where(inArray(formVersions.id, versionsToDelete));
       }
 
       const totalInDb = Math.min(allVersions.length, MAX_VERSIONS_PER_FORM);
@@ -205,7 +212,12 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
     const [version] = await db
       .select()
       .from(formVersions)
-      .where(and(eq(formVersions.id, data.versionId), eq(formVersions.formId, data.formId)));
+      .where(
+        and(
+          eq(formVersions.id, data.versionId),
+          eq(formVersions.formId, data.formId),
+        ),
+      );
 
     if (!version) {
       throw new Error("Version not found");

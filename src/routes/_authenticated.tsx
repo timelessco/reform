@@ -46,7 +46,7 @@ import {
   SettingsIcon,
   Trash2Icon,
   Undo2Icon,
-  UsersIcon
+  UsersIcon,
 } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import Loader from "@/components/ui/loader";
@@ -131,7 +131,11 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type * as React from "react";
 import {
   lazy,
@@ -258,7 +262,11 @@ function AuthLayoutContent() {
     const stored = localStorage.getItem(RIGHT_SIDEBAR_WIDTH_KEY);
     if (stored) {
       const parsed = Number(stored);
-      if (!Number.isNaN(parsed) && parsed >= RIGHT_SIDEBAR_WIDTH_MIN && parsed <= RIGHT_SIDEBAR_WIDTH_MAX) {
+      if (
+        !Number.isNaN(parsed) &&
+        parsed >= RIGHT_SIDEBAR_WIDTH_MIN &&
+        parsed <= RIGHT_SIDEBAR_WIDTH_MAX
+      ) {
         return parsed;
       }
     }
@@ -267,7 +275,12 @@ function AuthLayoutContent() {
   const [isRightResizing, setIsRightResizing] = useState(false);
 
   const setRightSidebarWidth = useCallback((width: number) => {
-    const clamped = Math.round(Math.min(RIGHT_SIDEBAR_WIDTH_MAX, Math.max(RIGHT_SIDEBAR_WIDTH_MIN, width)));
+    const clamped = Math.round(
+      Math.min(
+        RIGHT_SIDEBAR_WIDTH_MAX,
+        Math.max(RIGHT_SIDEBAR_WIDTH_MIN, width),
+      ),
+    );
     _setRightSidebarWidth(clamped);
     localStorage.setItem(RIGHT_SIDEBAR_WIDTH_KEY, String(clamped));
   }, []);
@@ -295,8 +308,14 @@ function AuthLayoutContent() {
               <AppHeader isDistractionHidden={isDistractionHeaderHidden} />
             </div>
             <div
-              className={cn("flex-1 min-h-0", !isRightResizing && "transition-[padding] duration-200 ease-linear")}
-              style={{ paddingRight: showEditorSidebar ? rightSidebarWidth : 0 }}
+              className={cn(
+                "flex-1 min-h-0",
+                !isRightResizing &&
+                  "transition-[padding] duration-200 ease-linear",
+              )}
+              style={{
+                paddingRight: showEditorSidebar ? rightSidebarWidth : 0,
+              }}
             >
               <Outlet key={formId} />
             </div>
@@ -422,15 +441,14 @@ function AppSidebar() {
           <Tooltip>
             <TooltipTrigger
               render={
-                <LogoToggle
-                  direction="left"
-                  onClick={() => toggleSidebar()}
-                />
+                <LogoToggle direction="left" onClick={() => toggleSidebar()} />
               }
             />
             <TooltipContent side="bottom" align="start">
               <p className="font-medium">Collapse sidebar</p>
-              <p className="text-xs text-muted-foreground">{formatForDisplay(HOTKEYS.DISMISS_SIDEBARS)}</p>
+              <p className="text-xs text-muted-foreground">
+                {formatForDisplay(HOTKEYS.DISMISS_SIDEBARS)}
+              </p>
             </TooltipContent>
           </Tooltip>
         </SidebarHeader>
@@ -448,7 +466,9 @@ function AppSidebar() {
                     className="min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
                   >
                     <SidebarNavLabel
-                      icon={<HomeIcon className="size-[18px] text-muted-foreground" />}
+                      icon={
+                        <HomeIcon className="size-[18px] text-muted-foreground" />
+                      }
                       label="All"
                     />
                   </SidebarMenuButton>
@@ -460,7 +480,9 @@ function AppSidebar() {
                     className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active cursor-pointer"
                   >
                     <SidebarNavLabel
-                      icon={<SearchIcon className="size-[18px] text-muted-foreground" />}
+                      icon={
+                        <SearchIcon className="size-[18px] text-muted-foreground" />
+                      }
                       label="Search"
                     />
                   </SidebarMenuButton>
@@ -499,7 +521,9 @@ function AppSidebar() {
                     className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active cursor-pointer"
                   >
                     <SidebarNavLabel
-                      icon={<SettingsIcon className="size-[18px] text-muted-foreground" />}
+                      icon={
+                        <SettingsIcon className="size-[18px] text-muted-foreground" />
+                      }
                       label="Settings"
                     />
                   </SidebarMenuButton>
@@ -654,9 +678,7 @@ function TrashDialog({
   const archivedForms = useMemo(() => {
     if (!activeOrgId || !archivedFormsData || !orgWorkspacesData) return [];
 
-    const orgWorkspaceIds = new Set(
-      orgWorkspacesData.map((ws) => ws.id),
-    );
+    const orgWorkspaceIds = new Set(orgWorkspacesData.map((ws) => ws.id));
 
     return archivedFormsData
       .filter((form) => orgWorkspaceIds.has(form.workspaceId))
@@ -973,7 +995,8 @@ function SidebarInbox() {
                           }
                         >
                           {acceptMutation.isPending &&
-                          acceptMutation.variables?.invitationId === invitation.id
+                          acceptMutation.variables?.invitationId ===
+                            invitation.id
                             ? "Accepting..."
                             : "Accept"}
                         </Button>
@@ -989,7 +1012,8 @@ function SidebarInbox() {
                           }
                         >
                           {rejectMutation.isPending &&
-                          rejectMutation.variables?.invitationId === invitation.id
+                          rejectMutation.variables?.invitationId ===
+                            invitation.id
                             ? "Declining..."
                             : "Decline"}
                         </Button>
@@ -1066,42 +1090,44 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
         if (!acc[form.workspaceId]) acc[form.workspaceId] = [];
         acc[form.workspaceId].push({
           ...form,
-          customization: form.customization as Record<string, string> | null | undefined,
+          customization: form.customization as
+            | Record<string, string>
+            | null
+            | undefined,
         });
         return acc;
       },
       {} as Record<string, WorkspaceWithForms["forms"]>,
     );
 
-    return (workspacesData || [])
-      .map((ws) => ({
-        ...ws,
-        // Sort forms by recently edited (most recent first)
-        forms: (formsByWorkspace[ws.id] || []).toSorted(
-          (
-            a: WorkspaceWithForms["forms"][0],
-            b: WorkspaceWithForms["forms"][0],
-          ) => {
-            switch (sortMode) {
-              case "oldest":
-                return (
-                  new Date(a.updatedAt).getTime() -
-                  new Date(b.updatedAt).getTime()
-                );
-              case "alphabetical":
-                return (a.title || "").localeCompare(b.title || "");
-              case "manual":
-                return 0;
-              case "recent":
-              default:
-                return (
-                  new Date(b.updatedAt).getTime() -
-                  new Date(a.updatedAt).getTime()
-                );
-            }
-          },
-        ),
-      }));
+    return (workspacesData || []).map((ws) => ({
+      ...ws,
+      // Sort forms by recently edited (most recent first)
+      forms: (formsByWorkspace[ws.id] || []).toSorted(
+        (
+          a: WorkspaceWithForms["forms"][0],
+          b: WorkspaceWithForms["forms"][0],
+        ) => {
+          switch (sortMode) {
+            case "oldest":
+              return (
+                new Date(a.updatedAt).getTime() -
+                new Date(b.updatedAt).getTime()
+              );
+            case "alphabetical":
+              return (a.title || "").localeCompare(b.title || "");
+            case "manual":
+              return 0;
+            case "recent":
+            default:
+              return (
+                new Date(b.updatedAt).getTime() -
+                new Date(a.updatedAt).getTime()
+              );
+          }
+        },
+      ),
+    }));
   }, [workspacesData, formsData, activeOrgId, isElectricReady, sortMode]);
 
   // State for workspace dialogs
@@ -1226,7 +1252,12 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
                   prefix={
                     <ThemedFormIcon
                       icon={form.icon}
-                      customization={form.customization as Record<string, string> | null | undefined}
+                      customization={
+                        form.customization as
+                          | Record<string, string>
+                          | null
+                          | undefined
+                      }
                     />
                   }
                 />

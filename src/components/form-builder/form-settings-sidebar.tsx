@@ -13,7 +13,10 @@ interface FormSettingsSidebarProps {
   isLocal?: boolean;
 }
 
-export function FormSettingsSidebar({ formId, isLocal }: FormSettingsSidebarProps) {
+export function FormSettingsSidebar({
+  formId,
+  isLocal,
+}: FormSettingsSidebarProps) {
   const { closeSidebar } = useEditorSidebar();
 
   return (
@@ -24,7 +27,9 @@ export function FormSettingsSidebar({ formId, isLocal }: FormSettingsSidebarProp
     >
       <SidebarHeader className="pt-2 pb-1 pl-1 shrink-0">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground px-2.5">Settings</h2>
+          <h2 className="text-sm font-semibold text-foreground px-2.5">
+            Settings
+          </h2>
           <Button
             variant="ghost"
             size="icon"

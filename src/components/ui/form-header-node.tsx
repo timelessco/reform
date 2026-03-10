@@ -1,4 +1,9 @@
-import { ImageIcon, SettingsIcon, UploadIcon, XIcon } from "@/components/ui/icons";
+import {
+  ImageIcon,
+  SettingsIcon,
+  UploadIcon,
+  XIcon,
+} from "@/components/ui/icons";
 import { IconPickerContent, IconPickerPreview } from "@/components/icon-picker";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PlateElementProps } from "platejs/react";
@@ -21,12 +26,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEditorTheme } from "@/contexts/editor-theme-context";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useFileUpload } from "@/hooks/use-file-upload";
-import { ImageCrop, ImageCropContent, ImageCropApply, ImageCropReset } from "@/components/ui/image-crop";
+import {
+  ImageCrop,
+  ImageCropContent,
+  ImageCropApply,
+  ImageCropReset,
+} from "@/components/ui/image-crop";
 import type { FormHeaderElementData } from "@/lib/form-header-factory";
 import { THEME_COLORS } from "@/lib/theme-presets";
 import { cn, isValidUrl, DEFAULT_ICON } from "@/lib/utils";
 
-export { createFormHeaderNode, type FormHeaderElementData } from "@/lib/form-header-factory";
+export {
+  createFormHeaderNode,
+  type FormHeaderElementData,
+} from "@/lib/form-header-factory";
 
 // Static derivations from THEME_COLORS — hoisted to module scope to avoid re-computing on every render
 const ACCENT_COLORS = Object.values(THEME_COLORS).map((t) => t.primary);
@@ -215,14 +228,22 @@ function IconUploadTab({
             </div>
           ) : (
             <>
-              <div className={cn(
-                "w-10 h-10 rounded-lg flex items-center justify-center mb-2 transition-colors",
-                isDragging ? "bg-primary/15" : "bg-primary/10 group-hover/upload:bg-primary/15",
-              )}>
-                <UploadIcon className={cn(
-                  "h-[18px] w-[18px] transition-colors",
-                  isDragging ? "text-primary" : "text-primary/70 group-hover/upload:text-primary",
-                )} />
+              <div
+                className={cn(
+                  "w-10 h-10 rounded-lg flex items-center justify-center mb-2 transition-colors",
+                  isDragging
+                    ? "bg-primary/15"
+                    : "bg-primary/10 group-hover/upload:bg-primary/15",
+                )}
+              >
+                <UploadIcon
+                  className={cn(
+                    "h-[18px] w-[18px] transition-colors",
+                    isDragging
+                      ? "text-primary"
+                      : "text-primary/70 group-hover/upload:text-primary",
+                  )}
+                />
               </div>
               <p className="text-[13px] font-medium text-foreground">
                 Drop your image here
@@ -287,9 +308,7 @@ function IconTabBar({
           onClick={() => onChange(tab.value)}
           className={cn(
             "relative z-10 flex-1 h-7 rounded-[8px] text-sm font-medium text-center transition-colors",
-            value === tab.value
-              ? "text-foreground"
-              : "text-muted-foreground",
+            value === tab.value ? "text-foreground" : "text-muted-foreground",
           )}
         >
           {tab.label}
@@ -302,7 +321,12 @@ function IconTabBar({
 export function FormHeaderElement(props: PlateElementProps) {
   const { element, children } = props;
   const editor = useEditorRef();
-  const { hasCustomization, themeVars, customization: editorCustomization, updateThemeColor } = useEditorTheme();
+  const {
+    hasCustomization,
+    themeVars,
+    customization: editorCustomization,
+    updateThemeColor,
+  } = useEditorTheme();
   const { activeSidebar, setActiveSidebar, closeSidebar } = useEditorSidebar();
   const toggleCustomize = () => {
     if (activeSidebar === "customize") {
@@ -357,13 +381,15 @@ export function FormHeaderElement(props: PlateElementProps) {
     updateHeader({ cover: newCover });
   };
 
-  const handleAddCover = () =>   handleCoverChange(
-    "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true",
-  )
+  const handleAddCover = () =>
+    handleCoverChange(
+      "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true",
+    );
 
   const accentColors = hasCustomization ? ACCENT_COLORS : undefined;
   const activeThemeColorName = editorCustomization?.themeColor || "zinc";
-  const activeAccentColor = THEME_COLORS[activeThemeColorName]?.primary || THEME_COLORS.zinc.primary;
+  const activeAccentColor =
+    THEME_COLORS[activeThemeColorName]?.primary || THEME_COLORS.zinc.primary;
 
   const [iconPopoverOpen, setIconPopoverOpen] = useState(false);
   const [iconTab, setIconTab] = useState("icon");
@@ -376,7 +402,10 @@ export function FormHeaderElement(props: PlateElementProps) {
       >
         {hasCover && (
           <>
-            <div className="relative w-screen left-[50%] right-[50%] -ml-[50vw] -mr-[50vw] h-[120px] sm:h-[200px] group/cover bg-muted/20" data-bf-cover>
+            <div
+              className="relative w-screen left-[50%] right-[50%] -ml-[50vw] -mr-[50vw] h-[120px] sm:h-[200px] group/cover bg-muted/20"
+              data-bf-cover
+            >
               {cover && !cover.startsWith("#") ? (
                 <>
                   {cover.includes("tint=true") && (
@@ -607,16 +636,15 @@ export function FormHeaderElement(props: PlateElementProps) {
             <Popover open={iconPopoverOpen} onOpenChange={setIconPopoverOpen}>
               {hasLogo && (
                 <div
-                  className={cn("relative z-10 mb-1", hasCover ? "" : "mt-4 sm:mt-6")}
+                  className={cn(
+                    "relative z-10 mb-1",
+                    hasCover ? "" : "mt-4 sm:mt-6",
+                  )}
                   data-bf-logo-emoji-container={
-                    hasCover && icon && !isValidUrl(icon)
-                      ? "true"
-                      : undefined
+                    hasCover && icon && !isValidUrl(icon) ? "true" : undefined
                   }
                   data-bf-logo-container={
-                    hasCover && icon && isValidUrl(icon)
-                      ? "true"
-                      : undefined
+                    hasCover && icon && isValidUrl(icon) ? "true" : undefined
                   }
                 >
                   <PopoverTrigger
@@ -639,7 +667,11 @@ export function FormHeaderElement(props: PlateElementProps) {
                       ) : (
                         <IconPickerPreview
                           icon={icon}
-                          iconColor={hasCustomization ? undefined : (iconColor || undefined)}
+                          iconColor={
+                            hasCustomization
+                              ? undefined
+                              : iconColor || undefined
+                          }
                           useThemeColor={hasCustomization || !iconColor}
                           iconSize="48"
                           size="100"
@@ -711,7 +743,9 @@ export function FormHeaderElement(props: PlateElementProps) {
                 className={cn(
                   "w-[310px] p-0",
                   hasCustomization && "bf-themed",
-                  hasCustomization && editorCustomization?.mode === "dark" && "dark",
+                  hasCustomization &&
+                    editorCustomization?.mode === "dark" &&
+                    "dark",
                 )}
                 style={hasCustomization ? themeVars : undefined}
               >
@@ -721,8 +755,16 @@ export function FormHeaderElement(props: PlateElementProps) {
                   </div>
                   {iconTab === "icon" ? (
                     <IconPickerContent
-                      iconValue={icon && icon !== DEFAULT_ICON && !isValidUrl(icon) ? icon : null}
-                      iconColor={hasCustomization ? activeAccentColor : (iconColor || "#000000")}
+                      iconValue={
+                        icon && icon !== DEFAULT_ICON && !isValidUrl(icon)
+                          ? icon
+                          : null
+                      }
+                      iconColor={
+                        hasCustomization
+                          ? activeAccentColor
+                          : iconColor || "#000000"
+                      }
                       onIconChange={(newIcon) => {
                         handleIconChange(newIcon);
                         setIconPopoverOpen(false);

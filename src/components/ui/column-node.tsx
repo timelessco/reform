@@ -3,7 +3,11 @@ import { setColumns } from "@platejs/layout";
 import { ResizableProvider } from "@platejs/resizable";
 import { BlockSelectionPlugin } from "@platejs/selection/react";
 import { useComposedRef } from "@udecode/cn";
-import { GripHorizontalIcon, Trash2Icon, type LucideProps } from "@/components/ui/icons";
+import {
+  GripHorizontalIcon,
+  Trash2Icon,
+  type LucideProps,
+} from "@/components/ui/icons";
 import type { TColumnElement } from "platejs";
 import { PathApi } from "platejs";
 import type { PlateElementProps } from "platejs/react";

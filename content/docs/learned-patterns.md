@@ -81,11 +81,17 @@ Three-tab structure for field configuration:
     <TabsTrigger value="appearance">Appearance</TabsTrigger>
   </TabsList>
 
-  <TabsContent value="general">{/* Label, Name, Options (for select/radio) */}</TabsContent>
+  <TabsContent value="general">
+    {/* Label, Name, Options (for select/radio) */}
+  </TabsContent>
 
-  <TabsContent value="validation">{/* Required, Min/Max Length, Pattern */}</TabsContent>
+  <TabsContent value="validation">
+    {/* Required, Min/Max Length, Pattern */}
+  </TabsContent>
 
-  <TabsContent value="appearance">{/* Placeholder, Help Text, Width */}</TabsContent>
+  <TabsContent value="appearance">
+    {/* Placeholder, Help Text, Width */}
+  </TabsContent>
 </Tabs>
 ```
 
@@ -102,7 +108,11 @@ import { Reorder } from "motion/react";
 
 <Reorder.Group axis="y" onReorder={handleReorder} values={localOptions}>
   {localOptions.map((option, index) => (
-    <Reorder.Item key={option.value} value={option} className="cursor-grab active:cursor-grabbing">
+    <Reorder.Item
+      key={option.value}
+      value={option}
+      className="cursor-grab active:cursor-grabbing"
+    >
       <GripVertical className="h-4 w-4" />
       {editingIndex === index ? (
         // Edit mode with inline inputs

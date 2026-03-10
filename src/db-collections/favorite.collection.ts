@@ -2,7 +2,12 @@ import { electricCollectionOptions } from "@tanstack/electric-db-collection";
 import { createCollection } from "@tanstack/react-db";
 import { z } from "zod";
 import { addFavorite, removeFavorite } from "@/lib/fn/favorites";
-import { electricFetchClient, getElectricUrl, type ServerTxResult, timestampField } from "./shared";
+import {
+  electricFetchClient,
+  getElectricUrl,
+  type ServerTxResult,
+  timestampField,
+} from "./shared";
 
 const FormFavoriteSchema = z.object({
   id: z.string(), // Format: ${userId}:${formId}
@@ -45,7 +50,10 @@ export const favoriteCollection = createCollection(
   }),
 );
 
-export async function toggleFavoriteLocal(userId: string, formId: string): Promise<void> {
+export async function toggleFavoriteLocal(
+  userId: string,
+  formId: string,
+): Promise<void> {
   const id = `${userId}:${formId}`;
   const existing = favoriteCollection.state.get(id);
 
@@ -71,7 +79,10 @@ async function addFavoriteLocal(userId: string, formId: string): Promise<void> {
   });
 }
 
-async function removeFavoriteLocal(userId: string, formId: string): Promise<void> {
+async function removeFavoriteLocal(
+  userId: string,
+  formId: string,
+): Promise<void> {
   await favoriteCollection.delete(`${userId}:${formId}`);
 }
 

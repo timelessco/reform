@@ -7,24 +7,35 @@ import {
 import { z } from "zod";
 import { createForm, deleteForm, updateForm } from "@/lib/fn/forms";
 import { logger } from "@/lib/utils";
-import { electricFetchClient, getElectricUrl, type ServerTxResult, timestampField } from "./shared";
-
+import {
+  electricFetchClient,
+  getElectricUrl,
+  type ServerTxResult,
+  timestampField,
+} from "./shared";
 
 const SettingsSchema = z.object({
   defaultRequiredValidation: z.boolean().default(true),
   numericInput: z.boolean().default(false),
   focusOnError: z.boolean().default(true),
-  validationMethod: z.enum(["onChange", "onBlur", "onDynamic"]).default("onDynamic"),
+  validationMethod: z
+    .enum(["onChange", "onBlur", "onDynamic"])
+    .default("onDynamic"),
   asyncValidation: z.number().min(0).max(10000).default(500),
-  activeTab: z.enum(["builder", "template", "settings", "generate"]).default("builder"),
+  activeTab: z
+    .enum(["builder", "template", "settings", "generate"])
+    .default("builder"),
   preferredSchema: z.enum(["zod", "valibot", "arktype"]).default("zod"),
-  preferredFramework: z.enum(["react", "vue", "angular", "solid"]).default("react"),
-  preferredPackageManager: z.enum(["pnpm", "npm", "yarn", "bun"]).default("pnpm"),
+  preferredFramework: z
+    .enum(["react", "vue", "angular", "solid"])
+    .default("react"),
+  preferredPackageManager: z
+    .enum(["pnpm", "npm", "yarn", "bun"])
+    .default("pnpm"),
   isCodeSidebarOpen: z.boolean().default(false),
 });
 
 export type FormBuilderSettings = z.infer<typeof SettingsSchema>;
-
 
 export const FormSchema = z.object({
   id: z.string().uuid(),
@@ -72,7 +83,6 @@ export const FormSchema = z.object({
 });
 
 export type Form = z.infer<typeof FormSchema>;
-
 
 export const formCollection = createCollection(
   electricCollectionOptions({
@@ -122,7 +132,6 @@ export const localFormCollection = createCollection(
     getKey: (item) => item.id,
   }),
 );
-
 
 import { createFormHeaderNode } from "@/lib/form-header-factory";
 
@@ -175,7 +184,8 @@ export async function updateHeader(
     if (header.title !== undefined) draft.title = header.title;
     if (header.icon !== undefined) draft.icon = header.icon;
     if (header.cover !== undefined) draft.cover = header.cover;
-    if (header.workspaceId !== undefined) draft.workspaceId = header.workspaceId;
+    if (header.workspaceId !== undefined)
+      draft.workspaceId = header.workspaceId;
     if (header.createdAt !== undefined) draft.createdAt = header.createdAt;
     if (header.updatedAt !== undefined) draft.updatedAt = header.updatedAt;
   });
@@ -184,7 +194,10 @@ export async function updateHeader(
 /**
  * Updates general form settings.
  */
-export async function updateSettings(id: string, settings: Partial<typeof DEFAULT_FORM_SETTINGS>) {
+export async function updateSettings(
+  id: string,
+  settings: Partial<typeof DEFAULT_FORM_SETTINGS>,
+) {
   return formCollection.update(id, (draft) => {
     logger("updateSettings", id, Object.keys(settings));
     draft.settings = { ...draft.settings, ...settings };
@@ -206,7 +219,10 @@ export async function updateDoc(id: string, updater: (draft: any) => void) {
 /**
  * Updates the form status (draft, published, archived).
  */
-export async function updateFormStatus(id: string, status: "draft" | "published" | "archived") {
+export async function updateFormStatus(
+  id: string,
+  status: "draft" | "published" | "archived",
+) {
   return formCollection.update(id, (draft) => {
     draft.status = status;
     draft.updatedAt = new Date().toISOString();
@@ -216,7 +232,10 @@ export async function updateFormStatus(id: string, status: "draft" | "published"
 /**
  * Creates a new form with default values and returns the new document.
  */
-export async function createFormLocal(workspaceId: string, title = "Untitled"): Promise<Form> {
+export async function createFormLocal(
+  workspaceId: string,
+  title = "Untitled",
+): Promise<Form> {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const newForm: Form = {
@@ -301,7 +320,10 @@ export function duplicateForm(sourceForm: Form): Form {
 /**
  * Moves a form to a different workspace.
  */
-async function moveFormToWorkspace(formId: string, targetWorkspaceId: string): Promise<void> {
+async function moveFormToWorkspace(
+  formId: string,
+  targetWorkspaceId: string,
+): Promise<void> {
   await formCollection.update(formId, (draft) => {
     draft.workspaceId = targetWorkspaceId;
     draft.updatedAt = new Date().toISOString();

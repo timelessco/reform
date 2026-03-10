@@ -1,7 +1,11 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
-import { AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from "@/components/ui/icons";
+import {
+  AlignLeftIcon,
+  AlignCenterIcon,
+  AlignRightIcon,
+} from "@/components/ui/icons";
 import {
   motion,
   useMotionValue,
@@ -9,7 +13,6 @@ import {
   animate,
   AnimatePresence,
 } from "motion/react";
-
 
 interface StyleNumberInputProps {
   label: string;
@@ -66,7 +69,10 @@ export function StyleNumberInput({
   // Motion values for imperative animation
   const fillPercent = useMotionValue(percentage);
   const fillWidth = useTransform(fillPercent, (pct) => `${pct}%`);
-  const handleLeft = useTransform(fillPercent, (pct) => `max(3px, calc(${pct}% - 2.5px))`);
+  const handleLeft = useTransform(
+    fillPercent,
+    (pct) => `max(3px, calc(${pct}% - 2.5px))`,
+  );
 
   // Sync fill from props when not interacting
   React.useEffect(() => {
@@ -166,7 +172,13 @@ export function StyleNumberInput({
   // Dodge text on the left/right edges to avoid overlapping the label or value
   const valueDodge = percentage < 25 || percentage > 75;
 
-  const handleOpacity = !isActive ? 0 : valueDodge ? 0.1 : isDragging ? 0.9 : 0.5;
+  const handleOpacity = !isActive
+    ? 0
+    : valueDodge
+      ? 0.1
+      : isDragging
+        ? 0.9
+        : 0.5;
 
   return (
     <div
@@ -186,7 +198,9 @@ export function StyleNumberInput({
         className="absolute left-0 top-0 bottom-0 bg-primary/10 pointer-events-none"
         style={{ width: fillWidth }}
         animate={{
-          backgroundColor: isActive ? "hsl(var(--primary) / 0.15)" : "hsl(var(--primary) / 0.1)",
+          backgroundColor: isActive
+            ? "hsl(var(--primary) / 0.15)"
+            : "hsl(var(--primary) / 0.1)",
         }}
         transition={{ duration: 0.15 }}
       />
@@ -232,7 +246,10 @@ export function StyleNumberInput({
         {label}
       </div>
 
-      <div className="relative flex-none h-full z-20" style={{ width: valueWidth }}>
+      <div
+        className="relative flex-none h-full z-20"
+        style={{ width: valueWidth }}
+      >
         <input
           ref={inputRef}
           value={`${numValue}${shownUnit}`}
@@ -281,7 +298,10 @@ export function StyleColorPicker({
 
   // Sync text input from prop changes (without stealing focus)
   React.useEffect(() => {
-    if (textInputRef.current && textInputRef.current !== document.activeElement) {
+    if (
+      textInputRef.current &&
+      textInputRef.current !== document.activeElement
+    ) {
       textInputRef.current.value = hexColor.toUpperCase();
     }
   }, [hexColor]);

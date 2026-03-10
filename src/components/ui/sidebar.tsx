@@ -95,7 +95,11 @@ function SidebarProvider({
     const stored = localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY);
     if (stored) {
       const parsed = Number(stored);
-      if (!Number.isNaN(parsed) && parsed >= SIDEBAR_WIDTH_MIN && parsed <= SIDEBAR_WIDTH_MAX) {
+      if (
+        !Number.isNaN(parsed) &&
+        parsed >= SIDEBAR_WIDTH_MIN &&
+        parsed <= SIDEBAR_WIDTH_MAX
+      ) {
         return parsed;
       }
     }
@@ -103,7 +107,9 @@ function SidebarProvider({
   });
 
   const setSidebarWidth = useCallback((width: number) => {
-    const clamped = Math.round(Math.min(SIDEBAR_WIDTH_MAX, Math.max(SIDEBAR_WIDTH_MIN, width)));
+    const clamped = Math.round(
+      Math.min(SIDEBAR_WIDTH_MAX, Math.max(SIDEBAR_WIDTH_MIN, width)),
+    );
     _setSidebarWidth(clamped);
     localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(clamped));
   }, []);
@@ -153,7 +159,17 @@ function SidebarProvider({
       isResizing,
       setIsResizing,
     }),
-    [state, open, setOpen, isMobile, openMobile, toggleSidebar, sidebarWidth, setSidebarWidth, isResizing],
+    [
+      state,
+      open,
+      setOpen,
+      isMobile,
+      openMobile,
+      toggleSidebar,
+      sidebarWidth,
+      setSidebarWidth,
+      isResizing,
+    ],
   );
 
   return (
@@ -295,7 +311,8 @@ function Sidebar({
 }
 
 function SidebarResizeHandle() {
-  const { state, isMobile, sidebarWidth, setSidebarWidth, setIsResizing } = useSidebar();
+  const { state, isMobile, sidebarWidth, setSidebarWidth, setIsResizing } =
+    useSidebar();
   const startXRef = useRef(0);
   const startWidthRef = useRef(0);
 
@@ -823,6 +840,5 @@ export {
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,
-  useSidebarSafe
+  useSidebarSafe,
 };
-

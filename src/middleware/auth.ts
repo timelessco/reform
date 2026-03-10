@@ -26,7 +26,8 @@ export const guestMiddleware = createMiddleware().server(async ({ next }) => {
   // O(1) cookie check instead of DB round-trip (~1.97s saving)
   // authMiddleware on /dashboard will do full session validation + email verification
   const hasSession =
-    getCookie("better-auth.session_token") || getCookie("__Secure-better-auth.session_token");
+    getCookie("better-auth.session_token") ||
+    getCookie("__Secure-better-auth.session_token");
 
   if (hasSession) {
     throw redirect({ to: "/dashboard" });

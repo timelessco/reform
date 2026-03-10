@@ -9,7 +9,8 @@ export function cn(...inputs: ClassValue[]) {
 /** Parse timestamp from DB/Electric as UTC. Postgres returns "YYYY-MM-DD HH:mm:ss" without timezone; treat as UTC. */
 export function parseTimestampAsUTC(value: string | undefined): Date | null {
   if (!value) return null;
-  if (value.endsWith("Z") || /[+-]\d{2}(:\d{2})?$/.test(value)) return new Date(value);
+  if (value.endsWith("Z") || /[+-]\d{2}(:\d{2})?$/.test(value))
+    return new Date(value);
   return new Date(value.replace(" ", "T") + "Z");
 }
 
@@ -25,7 +26,12 @@ export function isValidUrl(str: string): boolean {
     new URL(str);
     return true;
   } catch {
-    return str.startsWith("/") || str.startsWith("http") || str.startsWith("blob:") || str.startsWith("data:");
+    return (
+      str.startsWith("/") ||
+      str.startsWith("http") ||
+      str.startsWith("blob:") ||
+      str.startsWith("data:")
+    );
   }
 }
 
@@ -39,9 +45,7 @@ export const logger = createIsomorphicFn()
     console.log("[Server Log] :", ...args);
   });
 
-
-
 export function isNullable(value: unknown): value is null | undefined {
-	// eslint-disable-next-line no-eq-null, eqeqeq
-	return value == null;
+  // eslint-disable-next-line no-eq-null, eqeqeq
+  return value == null;
 }

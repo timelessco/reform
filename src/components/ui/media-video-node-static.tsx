@@ -19,7 +19,10 @@ export function VideoElementStatic(
     return NodeApi.string(caption[0]).trim();
   }, [caption]);
 
-  const placeholderTrackUrl = React.useMemo(() => createCaptionTrackUrl(""), []);
+  const placeholderTrackUrl = React.useMemo(
+    () => createCaptionTrackUrl(""),
+    [],
+  );
   const [trackUrl, setTrackUrl] = React.useState(placeholderTrackUrl);
   const trackUrlRef = React.useRef(placeholderTrackUrl);
 
@@ -41,9 +44,22 @@ export function VideoElementStatic(
   return (
     <SlateElement className="py-2.5" {...props}>
       <div style={{ textAlign: align }}>
-        <figure className="group relative m-0 inline-block cursor-default" style={{ width }}>
-          <video className="w-full max-w-full rounded-sm object-cover px-0" src={url} controls>
-            <track kind="captions" srcLang="en" label="Transcript" src={trackUrl} default />
+        <figure
+          className="group relative m-0 inline-block cursor-default"
+          style={{ width }}
+        >
+          <video
+            className="w-full max-w-full rounded-sm object-cover px-0"
+            src={url}
+            controls
+          >
+            <track
+              kind="captions"
+              srcLang="en"
+              label="Transcript"
+              src={trackUrl}
+              default
+            />
           </video>
           {caption && <figcaption>{NodeApi.string(caption[0])}</figcaption>}
         </figure>

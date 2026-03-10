@@ -4,7 +4,11 @@ import { PlateElement, useEditorSelector, useFocused } from "platejs/react";
 
 import { cn } from "@/lib/utils";
 
-export function FormInputElement({ className, children, ...props }: PlateElementProps) {
+export function FormInputElement({
+  className,
+  children,
+  ...props
+}: PlateElementProps) {
   const { attributes, element, ...rest } = props;
   const placeholder = element.placeholder as string | undefined;
 
@@ -35,7 +39,9 @@ export function FormInputElement({ className, children, ...props }: PlateElement
       element={element}
       {...rest}
     >
-      <span className="flex-1 min-w-px outline-none text-muted-foreground/50">{children}</span>
+      <span className="flex-1 min-w-px outline-none text-muted-foreground/50">
+        {children}
+      </span>
     </PlateElement>
   );
 }

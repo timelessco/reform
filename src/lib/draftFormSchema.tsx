@@ -7,8 +7,13 @@ export const draftFormSchema = z.object({
   Password_1767870053602: z.string().min(1, "This field is required"),
   RadioGroup_1767870054549: z.string().min(1, "This field is required"),
   Select_1767870055399: z.string().min(1, "This field is required"),
-  Slider_1767870056191: z.number().min(1, "Must be at least 1").max(100, "Must be at most 100"),
+  Slider_1767870056191: z
+    .number()
+    .min(1, "Must be at least 1")
+    .max(100, "Must be at most 100"),
   Switch_1767870057066: z.boolean(),
   Textarea_1767870057935: z.string().min(1, "This field is required"),
-  ToggleGroup_1767870059849: z.array(z.string().min(1, "This field is required")),
+  ToggleGroup_1767870059849: z.array(
+    z.string().min(1, "This field is required"),
+  ),
 });

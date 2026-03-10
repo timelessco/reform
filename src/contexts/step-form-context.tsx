@@ -144,5 +144,9 @@ export function StepFormProvider({
     ],
   );
 
-  return <StepFormContext.Provider value={value}>{children}</StepFormContext.Provider>;
+  return (
+    <StepFormContext.Provider value={value}>
+      {children}
+    </StepFormContext.Provider>
+  );
 }

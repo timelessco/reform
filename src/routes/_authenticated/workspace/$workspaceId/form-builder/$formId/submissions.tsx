@@ -155,7 +155,10 @@ function SubmissionsPage() {
     for (const s of allSubmissions) {
       if (s.isCompleted) completed++;
     }
-    return { completedCount: completed, partialCount: allSubmissions.length - completed };
+    return {
+      completedCount: completed,
+      partialCount: allSubmissions.length - completed,
+    };
   }, [allSubmissions]);
   const submissions = useMemo(() => {
     if (activeTab === "completed")
@@ -260,10 +263,7 @@ function SubmissionsPage() {
       // Submission Date column - minSize prevents action buttons from truncating into select column
       columnHelper.accessor("createdAt", {
         header: ({ column }) => (
-          <DataGridColumnHeader
-            column={column}
-            title="Submitted at"
-          />
+          <DataGridColumnHeader column={column} title="Submitted at" />
         ),
         cell: (info) => (
           <div className="flex items-center justify-between gap-2 group/row min-w-0">
@@ -314,7 +314,9 @@ function SubmissionsPage() {
                 <DataGridColumnHeader
                   column={column}
                   title={field.label || field.name}
-                  icon={<Circle className="h-1.5 w-1.5 fill-emerald-500 text-emerald-500" />}
+                  icon={
+                    <Circle className="h-1.5 w-1.5 fill-emerald-500 text-emerald-500" />
+                  }
                 />
               ),
               cell: (info) => (
@@ -346,7 +348,9 @@ function SubmissionsPage() {
               <DataGridColumnHeader
                 column={column}
                 title={fieldName}
-                icon={<Circle className="h-1.5 w-1.5 fill-red-500 text-red-500" />}
+                icon={
+                  <Circle className="h-1.5 w-1.5 fill-red-500 text-red-500" />
+                }
               />
             ),
             cell: (info) => (
@@ -426,47 +430,58 @@ function SubmissionsPage() {
   }, [formId, queryClient, rowSelection]);
 
   // Shared CSV download helper
-  const downloadCSV = useCallback((rows: typeof table extends { getRowModel: () => { rows: infer R } } ? R : never, filename: string) => {
-    if ((rows as any[]).length === 0) return;
+  const downloadCSV = useCallback(
+    (
+      rows: typeof table extends { getRowModel: () => { rows: infer R } }
+        ? R
+        : never,
+      filename: string,
+    ) => {
+      if ((rows as any[]).length === 0) return;
 
-    const headers = columns
-      .filter((col) => col.id !== "select")
-      .map((col) => {
-        if (typeof col.header === "string") return col.header;
-        if (col.id === "submitted_at") return "Submitted At";
-        return col.id || "Field";
-      })
-      .join(",");
+      const headers = columns
+        .filter((col) => col.id !== "select")
+        .map((col) => {
+          if (typeof col.header === "string") return col.header;
+          if (col.id === "submitted_at") return "Submitted At";
+          return col.id || "Field";
+        })
+        .join(",");
 
-    const csvRows = (rows as any[])
-      .map((row) => {
-        return row
-          .getVisibleCells()
-          .filter((cell: any) => cell.column.id !== "select")
-          .map((cell: any) => {
-            const val = cell.getValue();
-            return `"${val ?? ""}"`;
-          })
-          .join(",");
-      })
-      .join("\n");
+      const csvRows = (rows as any[])
+        .map((row) => {
+          return row
+            .getVisibleCells()
+            .filter((cell: any) => cell.column.id !== "select")
+            .map((cell: any) => {
+              const val = cell.getValue();
+              return `"${val ?? ""}"`;
+            })
+            .join(",");
+        })
+        .join("\n");
 
-    const csv = `${headers}\n${csvRows}`;
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.setAttribute("hidden", "");
-    a.setAttribute("href", url);
-    a.setAttribute("download", filename);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  }, [columns]);
+      const csv = `${headers}\n${csvRows}`;
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.setAttribute("hidden", "");
+      a.setAttribute("href", url);
+      a.setAttribute("download", filename);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    },
+    [columns],
+  );
 
   // Export selected rows as CSV
   const handleExportSelected = useCallback(() => {
-    downloadCSV(table.getSelectedRowModel().rows as any, `submissions-selected-${formId}.csv`);
+    downloadCSV(
+      table.getSelectedRowModel().rows as any,
+      `submissions-selected-${formId}.csv`,
+    );
   }, [downloadCSV, formId, table]);
 
   const handleDownloadCSV = useCallback(() => {
@@ -476,9 +491,13 @@ function SubmissionsPage() {
   // Keyboard shortcuts (scoped to submissions page)
   const hasSelection = Object.keys(rowSelection).length > 0;
 
-  useHotkey(HOTKEYS.SUBMISSIONS_SELECT_ALL, () => {
-    table.toggleAllPageRowsSelected(!table.getIsAllPageRowsSelected());
-  }, { conflictBehavior: "replace" });
+  useHotkey(
+    HOTKEYS.SUBMISSIONS_SELECT_ALL,
+    () => {
+      table.toggleAllPageRowsSelected(!table.getIsAllPageRowsSelected());
+    },
+    { conflictBehavior: "replace" },
+  );
 
   useHotkey(HOTKEYS.SUBMISSIONS_EXPORT, () => handleExportSelected(), {
     enabled: hasSelection,
@@ -521,7 +540,10 @@ function SubmissionsPage() {
                     ? completedCount
                     : partialCount}
               </span>
-              <ChevronDownIcon className="h-2.5 w-2.5 shrink-0 text-muted-foreground transition-transform duration-200" strokeWidth="2" />
+              <ChevronDownIcon
+                className="h-2.5 w-2.5 shrink-0 text-muted-foreground transition-transform duration-200"
+                strokeWidth="2"
+              />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-36">
               <DropdownMenuItem
@@ -600,34 +622,43 @@ function SubmissionsPage() {
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[min(560px,90vw)] animate-in slide-in-from-bottom-4 fade-in duration-300">
             <div className="flex items-center justify-between px-2.75 py-2.25 bg-background rounded-xl shadow-md">
               <div className="flex items-center gap-2.5">
-                <Checkbox checked={true} className="border-foreground data-[state=checked]:bg-foreground data-[state=checked]:border-foreground size-5" />
+                <Checkbox
+                  checked={true}
+                  className="border-foreground data-[state=checked]:bg-foreground data-[state=checked]:border-foreground size-5"
+                />
                 <span className="text-sm font-medium">
                   {Object.keys(rowSelection).length} selected
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" onClick={handleExportSelected}>
-                    <DownloadIcon className="h-3.5 w-3.5" />
-                    Export
-                    <span className="text-xs text-muted-foreground ml-1">{formatForDisplay(HOTKEYS.SUBMISSIONS_EXPORT)}</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleBulkDelete}
-                  >
-                    Delete
-                    <span className="text-xs text-muted-foreground ml-1">{formatForDisplay(HOTKEYS.SUBMISSIONS_DELETE)}</span>
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setRowSelection({})}
-                  >
-                    <XIcon className="h-3.5 w-3.5" />
-                    Clear
-                    <span className="text-xs text-muted-foreground ml-1">{formatForDisplay(HOTKEYS.SUBMISSIONS_CLEAR_SELECTION)}</span>
-                  </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleExportSelected}
+                >
+                  <DownloadIcon className="h-3.5 w-3.5" />
+                  Export
+                  <span className="text-xs text-muted-foreground ml-1">
+                    {formatForDisplay(HOTKEYS.SUBMISSIONS_EXPORT)}
+                  </span>
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleBulkDelete}>
+                  Delete
+                  <span className="text-xs text-muted-foreground ml-1">
+                    {formatForDisplay(HOTKEYS.SUBMISSIONS_DELETE)}
+                  </span>
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setRowSelection({})}
+                >
+                  <XIcon className="h-3.5 w-3.5" />
+                  Clear
+                  <span className="text-xs text-muted-foreground ml-1">
+                    {formatForDisplay(HOTKEYS.SUBMISSIONS_CLEAR_SELECTION)}
+                  </span>
+                </Button>
               </div>
             </div>
           </div>

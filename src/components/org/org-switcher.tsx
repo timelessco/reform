@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
-import { ChevronDownIcon, HomeIcon, LogOutIcon, SettingsIcon, UsersIcon } from "@/components/ui/icons";
+import {
+  ChevronDownIcon,
+  HomeIcon,
+  LogOutIcon,
+  SettingsIcon,
+  UsersIcon,
+} from "@/components/ui/icons";
 import { useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";

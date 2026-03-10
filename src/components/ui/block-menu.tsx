@@ -5,7 +5,12 @@ import {
 } from "@platejs/selection/react";
 import { ChevronRightIcon, GripVerticalIcon } from "@/components/ui/icons";
 import { KEYS } from "platejs";
-import { useEditorPlugin, useEditorSelector, useHotkeys, usePluginOption } from "platejs/react";
+import {
+  useEditorPlugin,
+  useEditorSelector,
+  useHotkeys,
+  usePluginOption,
+} from "platejs/react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -28,14 +33,18 @@ type BlockFieldType = "formInput" | "formButton" | "static" | "unknown";
 // Get field type category for the menu
 function getFieldType(nodeType: string | undefined): BlockFieldType {
   if (!nodeType) return "unknown";
-  if (["formLabel", "formInput", "formTextarea"].includes(nodeType)) return "formInput";
+  if (["formLabel", "formInput", "formTextarea"].includes(nodeType))
+    return "formInput";
   if (nodeType === "formButton") return "formButton";
-  if (["h1", "h2", "h3", "p", "blockquote", "hr"].includes(nodeType)) return "static";
+  if (["h1", "h2", "h3", "p", "blockquote", "hr"].includes(nodeType))
+    return "static";
   return "unknown";
 }
 
 // Get label text from node
-function extractLabelText(node: { children?: Array<{ text?: string }> }): string {
+function extractLabelText(node: {
+  children?: Array<{ text?: string }>;
+}): string {
   if (!node.children) return "Untitled";
   return (
     node.children
@@ -115,14 +124,18 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 
   // Get input node (for formLabel, look at next sibling)
   const inputNode = React.useMemo(() => {
-    if (["formInput", "formTextarea"].includes(nodeType ?? "")) return firstNode;
+    if (["formInput", "formTextarea"].includes(nodeType ?? ""))
+      return firstNode;
     if (nodeType === "formLabel" && firstPath) {
       // Look at next sibling for input or textarea
       const nextPath = [...firstPath];
       nextPath[nextPath.length - 1] += 1;
       try {
         const next = editor.api.node(nextPath);
-        if (next && ["formInput", "formTextarea"].includes(next[0]?.type as string)) {
+        if (
+          next &&
+          ["formInput", "formTextarea"].includes(next[0]?.type as string)
+        ) {
           return next[0] as typeof firstNode;
         }
       } catch {
@@ -135,7 +148,8 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
   // Helper to get the input path
   const getInputPath = React.useCallback(() => {
     if (!firstPath) return null;
-    if (["formInput", "formTextarea"].includes(nodeType ?? "")) return firstPath;
+    if (["formInput", "formTextarea"].includes(nodeType ?? ""))
+      return firstPath;
     if (nodeType === "formLabel") {
       const inputPath = [...firstPath];
       inputPath[inputPath.length - 1] += 1;
@@ -232,7 +246,10 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
 
     // Update children to sync with the renderer in form-button-node.tsx
     editor.tf.withoutNormalizing(() => {
-      editor.tf.insertNodes({ text: value }, { at: [...firstPath, 0], select: false });
+      editor.tf.insertNodes(
+        { text: value },
+        { at: [...firstPath, 0], select: false },
+      );
       editor.tf.removeNodes({ at: [...firstPath, 1] });
     });
 
@@ -243,13 +260,18 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
   const handleUpdateFieldName = () => {
     if (!labelNode || !firstPath || !fieldName.trim()) return;
     const labelPath =
-      nodeType === "formLabel" || nodeType === "formButton" ? firstPath : [...firstPath];
+      nodeType === "formLabel" || nodeType === "formButton"
+        ? firstPath
+        : [...firstPath];
     if (["formInput", "formTextarea"].includes(nodeType ?? "")) {
       labelPath[labelPath.length - 1] -= 1;
     }
     // Update the text content of the label
     editor.tf.withoutNormalizing(() => {
-      editor.tf.insertNodes({ text: fieldName.trim() }, { at: [...labelPath, 0], select: false });
+      editor.tf.insertNodes(
+        { text: fieldName.trim() },
+        { at: [...labelPath, 0], select: false },
+      );
       editor.tf.removeNodes({ at: [...labelPath, 1] });
     });
     setIsEditingName(false);
@@ -364,7 +386,10 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
     <>
       <div ref={blockMenuTriggerRef}>{children}</div>
 
-      <Popover open={isOpen} onOpenChange={(open) => !open && api.blockMenu.hide()}>
+      <Popover
+        open={isOpen}
+        onOpenChange={(open) => !open && api.blockMenu.hide()}
+      >
         <PopoverContent
           anchor={virtualAnchor}
           className={cn("w-[288px] p-1", hasCustomization && "bf-themed")}
@@ -384,11 +409,21 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                 ← Back
               </Button>
               <div className="my-1 h-px bg-border" />
-              <MenuItem onClick={() => handleTurnInto(KEYS.p)}>Paragraph</MenuItem>
-              <MenuItem onClick={() => handleTurnInto(KEYS.h1)}>Heading 1</MenuItem>
-              <MenuItem onClick={() => handleTurnInto(KEYS.h2)}>Heading 2</MenuItem>
-              <MenuItem onClick={() => handleTurnInto(KEYS.h3)}>Heading 3</MenuItem>
-              <MenuItem onClick={() => handleTurnInto(KEYS.blockquote)}>Blockquote</MenuItem>
+              <MenuItem onClick={() => handleTurnInto(KEYS.p)}>
+                Paragraph
+              </MenuItem>
+              <MenuItem onClick={() => handleTurnInto(KEYS.h1)}>
+                Heading 1
+              </MenuItem>
+              <MenuItem onClick={() => handleTurnInto(KEYS.h2)}>
+                Heading 2
+              </MenuItem>
+              <MenuItem onClick={() => handleTurnInto(KEYS.h3)}>
+                Heading 3
+              </MenuItem>
+              <MenuItem onClick={() => handleTurnInto(KEYS.blockquote)}>
+                Blockquote
+              </MenuItem>
             </div>
           ) : (
             /* Main Menu - sidebar popover style */
@@ -432,19 +467,35 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                 <>
                   <div className="flex flex-col gap-px [&>div]:bg-secondary [&>:first-child]:rounded-t-[8px] [&>:last-child]:rounded-b-[8px]">
                     <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
-                      <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">Required</span>
-                      <Switch aria-label="Required" size="small" checked={isRequired} onCheckedChange={handleToggleRequired} />
+                      <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">
+                        Required
+                      </span>
+                      <Switch
+                        aria-label="Required"
+                        size="small"
+                        checked={isRequired}
+                        onCheckedChange={handleToggleRequired}
+                      />
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
-                        <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">Default answer</span>
-                        <Switch aria-label="Default answer" size="small" checked={hasDefaultValue} onCheckedChange={handleToggleDefaultValue} />
+                        <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">
+                          Default answer
+                        </span>
+                        <Switch
+                          aria-label="Default answer"
+                          size="small"
+                          checked={hasDefaultValue}
+                          onCheckedChange={handleToggleDefaultValue}
+                        />
                       </div>
                       {hasDefaultValue && (
                         <div className="px-2 pb-2">
                           <Input
                             value={currentDefaultValue || ""}
-                            onChange={(e) => handleUpdateDefaultValue(e.target.value)}
+                            onChange={(e) =>
+                              handleUpdateDefaultValue(e.target.value)
+                            }
                             placeholder="Enter default value"
                             className="h-7 text-[13px] rounded-lg"
                           />
@@ -453,8 +504,15 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
-                        <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">Min characters</span>
-                        <Switch aria-label="Min characters" size="small" checked={hasMinLength} onCheckedChange={handleToggleMinLength} />
+                        <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">
+                          Min characters
+                        </span>
+                        <Switch
+                          aria-label="Min characters"
+                          size="small"
+                          checked={hasMinLength}
+                          onCheckedChange={handleToggleMinLength}
+                        />
                       </div>
                       {hasMinLength && (
                         <div className="px-2 pb-2">
@@ -462,7 +520,9 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                             type="number"
                             min={1}
                             value={currentMinLength || 1}
-                            onChange={(e) => handleUpdateMinLength(Number(e.target.value))}
+                            onChange={(e) =>
+                              handleUpdateMinLength(Number(e.target.value))
+                            }
                             placeholder="Min"
                             className="h-7 text-[13px] rounded-lg"
                           />
@@ -471,8 +531,15 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
-                        <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">Max characters</span>
-                        <Switch aria-label="Max characters" size="small" checked={hasMaxLength} onCheckedChange={handleToggleMaxLength} />
+                        <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">
+                          Max characters
+                        </span>
+                        <Switch
+                          aria-label="Max characters"
+                          size="small"
+                          checked={hasMaxLength}
+                          onCheckedChange={handleToggleMaxLength}
+                        />
                       </div>
                       {hasMaxLength && (
                         <div className="px-2 pb-2">
@@ -480,7 +547,9 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                             type="number"
                             min={1}
                             value={currentMaxLength || 100}
-                            onChange={(e) => handleUpdateMaxLength(Number(e.target.value))}
+                            onChange={(e) =>
+                              handleUpdateMaxLength(Number(e.target.value))
+                            }
                             placeholder="Max"
                             className="h-7 text-[13px] rounded-lg"
                           />
@@ -529,14 +598,19 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                 </MenuItem>
                 <MenuItem onClick={() => api.blockMenu.hide()}>
                   <PlusIcon className="h-3.5 w-3.5 shrink-0" />
-                  <span className="flex-1 text-left">Add conditional logic</span>
+                  <span className="flex-1 text-left">
+                    Add conditional logic
+                  </span>
                   <span className="text-xs text-muted-foreground">⌘⌥L</span>
                 </MenuItem>
                 <div className="my-1 h-px bg-border mx-0" />
                 <MenuItem onClick={() => setShowTurnInto(true)}>
                   <span className="text-[13px]">↺</span>
                   <span className="flex-1 text-left">Turn into</span>
-                  <ChevronRightIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                  <ChevronRightIcon
+                    className="h-3.5 w-3.5 shrink-0"
+                    strokeWidth={1.5}
+                  />
                 </MenuItem>
               </div>
             </div>
@@ -546,7 +620,6 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
     </>
   );
 }
-
 
 // Reusable Menu Item component - matches sidebar popover style
 function MenuItem({

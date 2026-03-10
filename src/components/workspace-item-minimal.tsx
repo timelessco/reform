@@ -131,20 +131,13 @@ export function WorkspaceItemMinimal({
           </PopoverTrigger>
           <PopoverContent align="start" className="w-48" sideOffset={4}>
             <div className="flex flex-col">
-              <Collapsible
-                open={sortExpanded}
-                onOpenChange={setSortExpanded}
-              >
-                <CollapsibleTrigger
-                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 w-full overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors cursor-pointer text-foreground/80 hover:bg-accent hover:text-accent-foreground"
-                >
+              <Collapsible open={sortExpanded} onOpenChange={setSortExpanded}>
+                <CollapsibleTrigger className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 w-full overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors cursor-pointer text-foreground/80 hover:bg-accent hover:text-accent-foreground">
                   <currentSort.icon
                     className="size-4 shrink-0"
                     strokeWidth={1.5}
                   />
-                  <span className="flex-1 text-left">
-                    {currentSort.label}
-                  </span>
+                  <span className="flex-1 text-left">{currentSort.label}</span>
                   <ChevronRightIcon
                     className={cn(
                       "size-3 shrink-0 transition-transform duration-200",
@@ -178,9 +171,7 @@ export function WorkspaceItemMinimal({
                           className="size-4 shrink-0"
                           strokeWidth={1.5}
                         />
-                        <span className="flex-1 text-left">
-                          {option.label}
-                        </span>
+                        <span className="flex-1 text-left">{option.label}</span>
                         {sortMode === option.value && (
                           <CheckIcon
                             className="size-3 shrink-0"
@@ -208,10 +199,7 @@ export function WorkspaceItemMinimal({
                     strokeWidth={1.5}
                   />
                 ) : (
-                  <PlusIcon
-                    className="size-4 shrink-0"
-                    strokeWidth={1.5}
-                  />
+                  <PlusIcon className="size-4 shrink-0" strokeWidth={1.5} />
                 )}
                 <span className="flex-1 text-left">New form</span>
               </button>
@@ -220,10 +208,7 @@ export function WorkspaceItemMinimal({
                 onClick={onRename}
                 className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
               >
-                <Pencil2Icon
-                  className="size-4 shrink-0"
-                  strokeWidth={1.5}
-                />
+                <Pencil2Icon className="size-4 shrink-0" strokeWidth={1.5} />
                 <span className="flex-1 text-left">Rename</span>
               </button>
               <button
@@ -258,8 +243,11 @@ export function WorkspaceItemMinimal({
   );
 }
 
-
-const getFormIcon = (_title: string, icon?: string | null, customization?: Record<string, string> | null) => {
+const getFormIcon = (
+  _title: string,
+  icon?: string | null,
+  customization?: Record<string, string> | null,
+) => {
   return <ThemedFormIcon icon={icon} customization={customization} />;
 };
 

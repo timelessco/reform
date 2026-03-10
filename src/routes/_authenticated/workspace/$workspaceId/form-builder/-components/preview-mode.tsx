@@ -10,10 +10,17 @@ import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useForm } from "@/hooks/use-live-hooks";
 import { cn } from "@/lib/utils";
 
-export function PreviewMode({ formId, workspaceId }: { formId: string; workspaceId: string }) {
+export function PreviewMode({
+  formId,
+  workspaceId,
+}: {
+  formId: string;
+  workspaceId: string;
+}) {
   const { data: savedDocs, isLoading } = useForm(formId);
   const doc = savedDocs?.[0];
-  const { customization, hasCustomization, themeVars } = useFormCustomization(doc);
+  const { customization, hasCustomization, themeVars } =
+    useFormCustomization(doc);
   const content = (doc?.content as Value) || [];
 
   // Read embed config from search params
@@ -54,7 +61,11 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
   }
 
   if (isLoading || !doc) {
-    return <div className="h-full w-full flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   return (
@@ -144,7 +155,9 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                           <FormPreviewFromPlate
                             content={content}
                             title={hideTitle ? "" : doc.title}
-                            icon={showEmoji ? (doc.icon ?? undefined) : undefined}
+                            icon={
+                              showEmoji ? (doc.icon ?? undefined) : undefined
+                            }
                             cover={doc.cover ?? undefined}
                             onSubmit={async () => {}}
                             hideTitle={hideTitle}
@@ -241,7 +254,15 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                     {showEmoji && doc.icon ? (
                       <span className="text-2xl leading-none">{doc.icon}</span>
                     ) : (
-                      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg
+                        className="w-6 h-6"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                       </svg>
                     )}

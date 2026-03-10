@@ -24,8 +24,14 @@ interface MyBlockElement extends TElement, TListProps {
   id?: string;
 }
 
-interface MyTextBlockElement extends TElement, TLineHeightProps, TTextAlignProps {
-  children: (MyLinkElement | MyMentionElement | MyMentionInputElement | RichText)[];
+interface MyTextBlockElement
+  extends TElement, TLineHeightProps, TTextAlignProps {
+  children: (
+    | MyLinkElement
+    | MyMentionElement
+    | MyMentionInputElement
+    | RichText
+  )[];
 }
 
 interface MyBlockquoteElement extends MyTextBlockElement {
@@ -73,7 +79,8 @@ interface MyHrElement extends MyBlockElement {
   type: typeof KEYS.hr;
 }
 
-interface MyImageElement extends MyBlockElement, TCaptionProps, TImageElement, TResizableProps {
+interface MyImageElement
+  extends MyBlockElement, TCaptionProps, TImageElement, TResizableProps {
   children: [EmptyText];
   type: typeof KEYS.img;
 }

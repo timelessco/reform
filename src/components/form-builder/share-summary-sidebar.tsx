@@ -5,10 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { CopyButton } from "@/components/copy-button/copy-button";
 import { Button } from "@/components/ui/button";
-import {
-  ButtonGroup,
-  ButtonGroupText,
-} from "@/components/ui/button-group";
+import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import {
   Sidebar,
   SidebarContent,
@@ -59,9 +56,7 @@ function EmbedTabBar({
           onClick={() => onChange(tab.value)}
           className={cn(
             "relative z-10 flex-1 h-7 rounded-[8px] text-sm font-medium text-center transition-colors",
-            value === tab.value
-              ? "text-foreground"
-              : "text-muted-foreground",
+            value === tab.value ? "text-foreground" : "text-muted-foreground",
           )}
         >
           {tab.label}
@@ -117,7 +112,6 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
     }
   };
 
-
   return (
     <Sidebar
       side="right"
@@ -127,7 +121,9 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
       {/* Header */}
       <SidebarHeader className="pt-2 pb-1 pl-1 shrink-0  space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground px-2.5">Share</h2>
+          <h2 className="text-sm font-semibold text-foreground px-2.5">
+            Share
+          </h2>
           <Button
             variant="ghost"
             size="icon"
@@ -212,7 +208,11 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                     />
 
                     {/* Customise section */}
-                    <SidebarSection label="Customise" className="pb-2.75" action={<></>}>
+                    <SidebarSection
+                      label="Customise"
+                      className="pb-2.75"
+                      action={<></>}
+                    >
                       <EmbedConfigPanel
                         form={form}
                         embedType={embedType}

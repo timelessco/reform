@@ -72,10 +72,14 @@ function PublicFormRoute() {
   }, []);
 
   // Support both transparentBackground and transparent params
-  const isTransparent = search.transparentBackground || search.transparent || false;
+  const isTransparent =
+    search.transparentBackground || search.transparent || false;
 
   const customization = loaderData?.form?.customization ?? null;
-  const themeCss = useMemo(() => generateThemeCss(customization), [customization]);
+  const themeCss = useMemo(
+    () => generateThemeCss(customization),
+    [customization],
+  );
 
   return (
     <>

@@ -1,5 +1,13 @@
 import { defineRelations } from "drizzle-orm";
-import { boolean, integer, jsonb, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { createSelectSchema } from "drizzle-zod";
 
 // ============================================================================

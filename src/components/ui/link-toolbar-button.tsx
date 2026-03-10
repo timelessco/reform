@@ -1,10 +1,15 @@
-import { useLinkToolbarButton, useLinkToolbarButtonState } from "@platejs/link/react";
+import {
+  useLinkToolbarButton,
+  useLinkToolbarButtonState,
+} from "@platejs/link/react";
 import { LinkIcon } from "@/components/ui/icons";
 import type * as React from "react";
 
 import { ToolbarButton } from "./toolbar";
 
-export function LinkToolbarButton(props: React.ComponentProps<typeof ToolbarButton>) {
+export function LinkToolbarButton(
+  props: React.ComponentProps<typeof ToolbarButton>,
+) {
   const state = useLinkToolbarButtonState();
   const { props: buttonProps } = useLinkToolbarButton(state);
 

@@ -91,7 +91,9 @@ export function ConfigRow({
       <div className="flex-1 min-w-0 flex flex-col gap-1">
         <span className="text-sm font-medium leading-[1.15]">{label}</span>
         {description && (
-          <p className="text-sm font-normal leading-[1.15] text-muted-foreground">{description}</p>
+          <p className="text-sm font-normal leading-[1.15] text-muted-foreground">
+            {description}
+          </p>
         )}
       </div>
       {children}
@@ -343,7 +345,11 @@ function CustomizeSection({
           {(dynamicHeight: boolean) => (
             <form.Field name="height">
               {(field: any) => (
-                <div className={dynamicHeight ? "opacity-40 pointer-events-none" : ""}>
+                <div
+                  className={
+                    dynamicHeight ? "opacity-40 pointer-events-none" : ""
+                  }
+                >
                   <StyleNumberInput
                     label="Height"
                     value={`${field.state.value}px`}
@@ -421,7 +427,7 @@ function CustomizeSection({
   // fullpage
   return (
     <ConfigCard>
-          <form.Field name="transparentBackground">
+      <form.Field name="transparentBackground">
         {(field: any) => (
           <ConfigRow label="Transparent BG" variant="switch">
             <Switch
@@ -440,7 +446,7 @@ function CustomizeSection({
 function ProSection({ form }: { form: { Field: any } }) {
   return (
     <ConfigCard>
-          <form.Field name="trackEvents">
+      <form.Field name="trackEvents">
         {(field: any) => (
           <ConfigRow label="Analytics" variant="switch">
             <Switch
@@ -453,7 +459,7 @@ function ProSection({ form }: { form: { Field: any } }) {
         )}
       </form.Field>
 
-          <form.Field name="branding">
+      <form.Field name="branding">
         {(field: any) => (
           <ConfigRow label="Reform Branding" variant="switch">
             <Switch
@@ -468,9 +474,7 @@ function ProSection({ form }: { form: { Field: any } }) {
 
       <ConfigRow label="Custom Domain">
         <Select value="varman.co" disabled>
-          <SelectTrigger
-            className={`${selectTriggerCls} opacity-50`}
-          >
+          <SelectTrigger className={`${selectTriggerCls} opacity-50`}>
             varman.co
           </SelectTrigger>
           <SelectContent>

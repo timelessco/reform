@@ -1,8 +1,17 @@
 import { electricCollectionOptions } from "@tanstack/electric-db-collection";
 import { createCollection } from "@tanstack/react-db";
 import { z } from "zod";
-import { createWorkspace, deleteWorkspace, updateWorkspace } from "@/lib/fn/workspaces";
-import { electricFetchClient, getElectricUrl, type ServerTxResult, timestampField } from "./shared";
+import {
+  createWorkspace,
+  deleteWorkspace,
+  updateWorkspace,
+} from "@/lib/fn/workspaces";
+import {
+  electricFetchClient,
+  getElectricUrl,
+  type ServerTxResult,
+  timestampField,
+} from "./shared";
 
 const WorkspaceSchema = z.object({
   id: z.string().uuid(),
@@ -79,14 +88,20 @@ export async function createWorkspaceLocal(
   return newWorkspace;
 }
 
-export async function updateWorkspaceName(id: string, name: string): Promise<void> {
+export async function updateWorkspaceName(
+  id: string,
+  name: string,
+): Promise<void> {
   await workspaceCollection.update(id, (draft) => {
     draft.name = name;
     draft.updatedAt = new Date().toISOString();
   });
 }
 
-async function updateWorkspaceLocal(id: string, updater: (draft: any) => void): Promise<void> {
+async function updateWorkspaceLocal(
+  id: string,
+  updater: (draft: any) => void,
+): Promise<void> {
   await workspaceCollection.update(id, (draft) => {
     updater(draft);
     draft.updatedAt = new Date().toISOString();

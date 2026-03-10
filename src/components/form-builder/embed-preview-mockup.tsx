@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { XIcon } from "@/components/ui/icons";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
@@ -78,11 +84,7 @@ function getCornerPos(
 }
 
 // Get the bubble position (always in the corner, even when popup is expanded at center)
-function getBubblePos(
-  position: string,
-  cw: number,
-  ch: number,
-) {
+function getBubblePos(position: string, cw: number, ch: number) {
   const size = 28;
   switch (position) {
     case "bottom-left":
@@ -137,7 +139,14 @@ export function EmbedPreviewMockup({
 
   const target =
     size.w > 0
-      ? getTargetStyle(embedType, popupPosition, isPopupExpanded, size.w, size.h, alignLeft)
+      ? getTargetStyle(
+          embedType,
+          popupPosition,
+          isPopupExpanded,
+          size.w,
+          size.h,
+          alignLeft,
+        )
       : null;
 
   let transition;
@@ -152,7 +161,8 @@ export function EmbedPreviewMockup({
     isResizing.current = false;
   }, []);
 
-  const bubblePos = size.w > 0 ? getBubblePos(popupPosition, size.w, size.h) : null;
+  const bubblePos =
+    size.w > 0 ? getBubblePos(popupPosition, size.w, size.h) : null;
   const isPopup = embedType === "popup";
 
   return (

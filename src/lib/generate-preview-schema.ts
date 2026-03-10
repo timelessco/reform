@@ -28,12 +28,18 @@ export function generateZodSchemaFromFields(
 
     // Apply minLength constraint
     if (field.minLength !== undefined && field.minLength > 0) {
-      schema = schema.min(field.minLength, `Minimum ${field.minLength} characters required`);
+      schema = schema.min(
+        field.minLength,
+        `Minimum ${field.minLength} characters required`,
+      );
     }
 
     // Apply maxLength constraint
     if (field.maxLength !== undefined && field.maxLength > 0) {
-      schema = schema.max(field.maxLength, `Maximum ${field.maxLength} characters allowed`);
+      schema = schema.max(
+        field.maxLength,
+        `Maximum ${field.maxLength} characters allowed`,
+      );
     }
 
     // Required fields must have at least 1 character
@@ -58,7 +64,9 @@ export function generateZodSchemaFromFields(
  * @param fields - Array of form fields
  * @returns Object with field names as keys and default values
  */
-export function generateDefaultValuesFromFields(fields: PlateFormField[]): Record<string, unknown> {
+export function generateDefaultValuesFromFields(
+  fields: PlateFormField[],
+): Record<string, unknown> {
   const defaults: Record<string, unknown> = {};
 
   for (const field of fields) {

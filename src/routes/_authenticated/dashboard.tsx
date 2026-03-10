@@ -74,14 +74,18 @@ function DashboardPage() {
 
   const { data: session } = useSession();
 
-  const { data: liveWorkspaces, isLoading: wsLoading } = useOrgWorkspaces(activeOrg?.id);
-  const { data: liveForms, isLoading: formsLoading } = useOrgForms(activeOrg?.id);
+  const { data: liveWorkspaces, isLoading: wsLoading } = useOrgWorkspaces(
+    activeOrg?.id,
+  );
+  const { data: liveForms, isLoading: formsLoading } = useOrgForms(
+    activeOrg?.id,
+  );
 
   const isLoading = wsLoading || formsLoading;
   const isElectricReady =
     !isLoading && liveWorkspaces !== undefined && liveForms !== undefined;
 
-  const orgWorkspaces = isElectricReady ? (liveWorkspaces || []) : [];
+  const orgWorkspaces = isElectricReady ? liveWorkspaces || [] : [];
 
   const orgForms = useMemo(() => {
     if (!isElectricReady) return [];
@@ -216,15 +220,15 @@ function DashboardPage() {
               New workspace
             </Button>
             <Button
+              variant="default"
               size="sm"
               onClick={handleCreateForm}
               disabled={isLoading || isCreating || orgWorkspaces.length === 0}
-              className=" font-medium"
             >
               {isCreating ? (
-                <Loader2Icon className="h-4 w-4 animate-spin mr-2" />
+                <Loader2Icon className="h-4 w-4 animate-spin" />
               ) : (
-                <PlusIcon className="h-4 w-4 mr-2" />
+                <PlusIcon className="h-4 w-4" />
               )}
               New form
             </Button>
@@ -413,9 +417,7 @@ function DashboardPage() {
                 onClick={handleCreateForm}
                 disabled={isLoading || isCreating || orgWorkspaces.length === 0}
               >
-                {isCreating && (
-                  <Loader2Icon className="h-4 w-4 animate-spin mr-2" />
-                )}
+                {isCreating && <Loader2Icon className="h-4 w-4 animate-spin" />}
                 Create my first form
               </Button>
             </div>

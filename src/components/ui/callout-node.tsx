@@ -18,10 +18,11 @@ export function CalloutElement({
     closeOnSelect: true,
   });
 
-  const { emojiToolbarDropdownProps, props: calloutProps } = useCalloutEmojiPicker({
-    isOpen,
-    setIsOpen,
-  });
+  const { emojiToolbarDropdownProps, props: calloutProps } =
+    useCalloutEmojiPicker({
+      isOpen,
+      setIsOpen,
+    });
 
   return (
     <PlateElement

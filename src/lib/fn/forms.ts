@@ -185,7 +185,10 @@ export const deleteForm = createServerFn({ method: "POST" })
     await authForm(data.id, context.session.user.id);
 
     return await db.transaction(async (tx) => {
-      const [form] = await tx.delete(forms).where(eq(forms.id, data.id)).returning();
+      const [form] = await tx
+        .delete(forms)
+        .where(eq(forms.id, data.id))
+        .returning();
 
       const txid = await getTxId(tx);
 
@@ -218,7 +221,10 @@ export const duplicateForm = createServerFn({ method: "POST" })
     await authForm(data.id, context.session.user.id);
 
     // Get the original form
-    const [originalForm] = await db.select().from(forms).where(eq(forms.id, data.id));
+    const [originalForm] = await db
+      .select()
+      .from(forms)
+      .where(eq(forms.id, data.id));
 
     if (!originalForm) {
       throw new Error("Form not found");
@@ -226,7 +232,9 @@ export const duplicateForm = createServerFn({ method: "POST" })
 
     const now = new Date();
     const newId = crypto.randomUUID();
-    const title = originalForm.title ? `${originalForm.title} copy` : "Untitled copy";
+    const title = originalForm.title
+      ? `${originalForm.title} copy`
+      : "Untitled copy";
 
     return await db.transaction(async (tx) => {
       const [newForm] = await tx
@@ -255,7 +263,8 @@ export const duplicateForm = createServerFn({ method: "POST" })
           saveAnswersForLater: originalForm.saveAnswersForLater,
           selfEmailNotifications: originalForm.selfEmailNotifications,
           notificationEmail: originalForm.notificationEmail,
-          respondentEmailNotifications: originalForm.respondentEmailNotifications,
+          respondentEmailNotifications:
+            originalForm.respondentEmailNotifications,
           respondentEmailSubject: originalForm.respondentEmailSubject,
           respondentEmailBody: originalForm.respondentEmailBody,
           passwordProtect: originalForm.passwordProtect,
