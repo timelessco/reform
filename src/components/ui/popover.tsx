@@ -8,13 +8,7 @@ function Popover({ ...props }: PopoverPrimitive.Root.Props) {
 }
 
 function PopoverTrigger({ render, ...props }: PopoverPrimitive.Trigger.Props) {
-  return (
-    <PopoverPrimitive.Trigger
-      data-slot="popover-trigger"
-      render={render}
-      {...props}
-    />
-  );
+  return <PopoverPrimitive.Trigger data-slot="popover-trigger" render={render} {...props} />;
 }
 
 function PopoverAnchor({
@@ -102,10 +96,7 @@ function PopoverTitle({ className, ...props }: PopoverPrimitive.Title.Props) {
   );
 }
 
-function PopoverDescription({
-  className,
-  ...props
-}: PopoverPrimitive.Description.Props) {
+function PopoverDescription({ className, ...props }: PopoverPrimitive.Description.Props) {
   return (
     <PopoverPrimitive.Description
       data-slot="popover-description"

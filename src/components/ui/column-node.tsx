@@ -3,7 +3,8 @@ import { setColumns } from "@platejs/layout";
 import { ResizableProvider } from "@platejs/resizable";
 import { BlockSelectionPlugin } from "@platejs/selection/react";
 import { useComposedRef } from "@udecode/cn";
-import { GripHorizontalIcon, Trash2Icon, type LucideProps } from "@/components/ui/icons";
+import { GripHorizontalIcon, Trash2Icon } from "@/components/ui/icons";
+import type { LucideProps } from "@/components/ui/icons";
 import type { TColumnElement } from "platejs";
 import { PathApi } from "platejs";
 import type { PlateElementProps } from "platejs/react";
@@ -22,18 +23,9 @@ import {
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
-} from "@/components/ui/popover";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export const ColumnElement = withHOC(
@@ -41,20 +33,14 @@ export const ColumnElement = withHOC(
   function ColumnElement(props: PlateElementProps<TColumnElement>) {
     const { width } = props.element;
     const readOnly = useReadOnly();
-    const isSelectionAreaVisible = usePluginOption(
-      BlockSelectionPlugin,
-      "isSelectionAreaVisible",
-    );
+    const isSelectionAreaVisible = usePluginOption(BlockSelectionPlugin, "isSelectionAreaVisible");
 
     const { isDragging, previewRef, handleRef } = useDraggable({
       element: props.element,
       orientation: "horizontal",
       type: "column",
       canDropNode: ({ dragEntry, dropEntry }) =>
-        PathApi.equals(
-          PathApi.parent(dragEntry[1]),
-          PathApi.parent(dropEntry[1]),
-        ),
+        PathApi.equals(PathApi.parent(dragEntry[1]), PathApi.parent(dropEntry[1])),
     });
 
     return (
@@ -98,9 +84,7 @@ const ColumnDragHandle = React.memo(function ColumnDragHandle() {
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger
-          render={<Button variant="ghost" className="!px-1 h-5" />}
-        >
+        <TooltipTrigger render={<Button variant="ghost" className="!px-1 h-5" />}>
           <GripHorizontalIcon
             className="text-muted-foreground"
             onClick={(event) => {
@@ -126,10 +110,8 @@ function DropLine() {
       className={cn(
         "slate-dropLine",
         "absolute bg-brand/50",
-        dropLine === "left" &&
-          "group-first/column:-left-1 inset-y-0 left-[-10.5px] w-1",
-        dropLine === "right" &&
-          "group-last/column:-right-1 inset-y-0 right-[-11px] w-1",
+        dropLine === "left" && "group-first/column:-left-1 inset-y-0 left-[-10.5px] w-1",
+        dropLine === "right" && "group-last/column:-right-1 inset-y-0 right-[-11px] w-1",
       )}
     />
   );
@@ -151,10 +133,7 @@ function ColumnFloatingToolbar({ children }: React.PropsWithChildren) {
   const element = useElement<TColumnElement>();
   const { props: buttonProps } = useRemoveNodeButton({ element });
   const selected = useSelected();
-  const isCollapsed = useEditorSelector(
-    (editor) => editor.api.isCollapsed(),
-    [],
-  );
+  const isCollapsed = useEditorSelector((editor) => editor.api.isCollapsed(), []);
   const isFocusedLast = useFocusedLast();
 
   const open = isFocusedLast && !readOnly && selected && isCollapsed;
@@ -169,18 +148,9 @@ function ColumnFloatingToolbar({ children }: React.PropsWithChildren) {
   return (
     <Popover open={open} modal={false}>
       <PopoverAnchor>{children}</PopoverAnchor>
-      <PopoverContent
-        className="w-auto border p-2.5"
-        align="center"
-        side="top"
-        sideOffset={10}
-      >
+      <PopoverContent className="w-auto border p-2.5" align="center" side="top" sideOffset={10}>
         <div className="box-content flex h-8 items-center">
-          <Button
-            variant="ghost"
-            className="size-8"
-            onClick={() => onColumnChange(["50%", "50%"])}
-          >
+          <Button variant="ghost" className="size-8" onClick={() => onColumnChange(["50%", "50%"])}>
             <DoubleColumnOutlined />
           </Button>
           <Button
@@ -190,18 +160,10 @@ function ColumnFloatingToolbar({ children }: React.PropsWithChildren) {
           >
             <ThreeColumnOutlined />
           </Button>
-          <Button
-            variant="ghost"
-            className="size-8"
-            onClick={() => onColumnChange(["70%", "30%"])}
-          >
+          <Button variant="ghost" className="size-8" onClick={() => onColumnChange(["70%", "30%"])}>
             <RightSideDoubleColumnOutlined />
           </Button>
-          <Button
-            variant="ghost"
-            className="size-8"
-            onClick={() => onColumnChange(["30%", "70%"])}
-          >
+          <Button variant="ghost" className="size-8" onClick={() => onColumnChange(["30%", "70%"])}>
             <LeftSideDoubleColumnOutlined />
           </Button>
           <Button

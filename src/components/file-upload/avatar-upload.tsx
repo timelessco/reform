@@ -7,11 +7,8 @@ import {
   AlertTitle,
 } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  type FileWithPreview,
-  formatBytes,
-  useFileUpload,
-} from "@/hooks/use-file-upload";
+import { formatBytes, useFileUpload } from "@/hooks/use-file-upload";
+import type { FileWithPreview } from "@/hooks/use-file-upload";
 import { cn } from "@/lib/utils";
 
 interface AvatarUploadProps {
@@ -82,6 +79,8 @@ export default function AvatarUpload({
             <img
               src={previewUrl}
               alt="Avatar"
+              width={96}
+              height={96}
               className="h-full w-full object-cover"
             />
           ) : (
@@ -107,12 +106,8 @@ export default function AvatarUpload({
 
       {/* Upload Instructions */}
       <div className="text-center space-y-0.5">
-        <p className="text-sm font-medium">
-          {currentFile ? "Avatar uploaded" : "Upload avatar"}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          PNG, JPG up to {formatBytes(maxSize)}
-        </p>
+        <p className="text-sm font-medium">{currentFile ? "Avatar uploaded" : "Upload avatar"}</p>
+        <p className="text-xs text-muted-foreground">PNG, JPG up to {formatBytes(maxSize)}</p>
       </div>
 
       {/* Error Messages */}

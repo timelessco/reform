@@ -63,9 +63,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
         hasCustomization && "bf-themed",
         customization?.mode === "dark" && "dark",
         "w-full h-full flex flex-col transition-colors duration-300 bg-background text-foreground",
-        embedType === "fullpage"
-          ? "overflow-y-auto overflow-x-hidden"
-          : "overflow-hidden",
+        embedType === "fullpage" ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden",
       )}
       style={hasCustomization ? themeVars : undefined}
     >
@@ -173,6 +171,15 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                   <div
                     className="absolute inset-0 bg-black/40 z-10 transition-opacity duration-300 pointer-events-auto"
                     onClick={() => setIsPopupOpen(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setIsPopupOpen(false);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Close preview"
                   />
                 )}
 
@@ -196,6 +203,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                         size="icon"
                         className="h-8 w-8 hover:bg-muted text-muted-foreground bg-background/50 backdrop-blur-sm rounded-full shadow-sm"
                         onClick={() => setIsPopupOpen(false)}
+                        aria-label="Close"
                       >
                         <XIcon className="h-4 w-4" />
                       </Button>
@@ -231,17 +239,25 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                   <button
                     type="button"
                     onClick={() => setIsPopupOpen(true)}
+                    aria-label="Open form preview"
                     className={cn(
                       "absolute z-20 pointer-events-auto w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer",
-                      popupPosition === "bottom-left"
-                        ? "bottom-6 left-6"
-                        : "bottom-6 right-6",
+                      popupPosition === "bottom-left" ? "bottom-6 left-6" : "bottom-6 right-6",
                     )}
                   >
                     {showEmoji && doc.icon ? (
                       <span className="text-2xl leading-none">{doc.icon}</span>
                     ) : (
-                      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg
+                        className="w-6 h-6"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
                         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                       </svg>
                     )}

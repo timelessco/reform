@@ -1,29 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CropIcon, RotateCcwIcon } from "@/components/ui/icons";
-import {
-  type ComponentProps,
-  createContext,
-  type CSSProperties,
-  type MouseEvent,
-  type ReactElement,
-  type ReactNode,
-  type RefObject,
-  type SyntheticEvent,
-  cloneElement,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
+import { createContext, cloneElement, use, useCallback, useEffect, useRef, useState } from "react";
+import type {
+  ComponentProps,
+  CSSProperties,
+  MouseEvent,
+  ReactElement,
+  ReactNode,
+  RefObject,
+  SyntheticEvent,
 } from "react";
-import ReactCrop, {
-  centerCrop,
-  makeAspectCrop,
-  type PercentCrop,
-  type PixelCrop,
-  type ReactCropProps,
-} from "react-image-crop";
+import ReactCrop, { centerCrop, makeAspectCrop } from "react-image-crop";
+import type { PercentCrop, PixelCrop, ReactCropProps } from "react-image-crop";
 
 import "react-image-crop/dist/ReactCrop.css";
 
@@ -85,12 +74,7 @@ const getCroppedPngImage = async (
   const blob = await response.blob();
 
   if (blob.size > maxImageSize) {
-    return await getCroppedPngImage(
-      imageSrc,
-      scaleFactor * 0.9,
-      pixelCrop,
-      maxImageSize,
-    );
+    return await getCroppedPngImage(imageSrc, scaleFactor * 0.9, pixelCrop, maxImageSize);
   }
 
   return croppedImageUrl;
@@ -106,10 +90,7 @@ type ImageCropContextType = {
   onCrop?: (croppedImage: string) => void;
   reactCropProps: Omit<ReactCropProps, "onChange" | "onComplete" | "children">;
   handleChange: (pixelCrop: PixelCrop, percentCrop: PercentCrop) => void;
-  handleComplete: (
-    pixelCrop: PixelCrop,
-    percentCrop: PercentCrop,
-  ) => Promise<void>;
+  handleComplete: (pixelCrop: PixelCrop, percentCrop: PercentCrop) => Promise<void>;
   onImageLoad: (e: SyntheticEvent<HTMLImageElement>) => void;
   applyCrop: () => Promise<void>;
   resetCrop: () => void;
@@ -118,7 +99,7 @@ type ImageCropContextType = {
 const ImageCropContext = createContext<ImageCropContextType | null>(null);
 
 const useImageCrop = () => {
-  const context = useContext(ImageCropContext);
+  const context = use(ImageCropContext);
   if (!context) {
     throw new Error("ImageCrop components must be used within ImageCrop");
   }
@@ -151,9 +132,7 @@ export const ImageCrop = ({
 
   useEffect(() => {
     const reader = new FileReader();
-    reader.addEventListener("load", () =>
-      setImgSrc(reader.result?.toString() || ""),
-    );
+    reader.addEventListener("load", () => setImgSrc(reader.result?.toString() || ""));
     reader.readAsDataURL(file);
   }, [file]);
 
@@ -173,10 +152,7 @@ export const ImageCrop = ({
   };
 
   // biome-ignore lint/suspicious/useAwait: "onComplete is async"
-  const handleComplete = async (
-    pixelCrop: PixelCrop,
-    percentCrop: PercentCrop,
-  ) => {
+  const handleComplete = async (pixelCrop: PixelCrop, percentCrop: PercentCrop) => {
     setCompletedCrop(pixelCrop);
     onComplete?.(pixelCrop, percentCrop);
   };
@@ -186,12 +162,7 @@ export const ImageCrop = ({
       return;
     }
 
-    const croppedImage = await getCroppedPngImage(
-      imgRef.current,
-      1,
-      completedCrop,
-      maxImageSize,
-    );
+    const croppedImage = await getCroppedPngImage(imgRef.current, 1, completedCrop, maxImageSize);
 
     onCrop?.(croppedImage);
   };
@@ -219,11 +190,7 @@ export const ImageCrop = ({
     resetCrop,
   };
 
-  return (
-    <ImageCropContext.Provider value={contextValue}>
-      {children}
-    </ImageCropContext.Provider>
-  );
+  return <ImageCropContext.Provider value={contextValue}>{children}</ImageCropContext.Provider>;
 };
 
 export type ImageCropContentProps = {
@@ -231,19 +198,9 @@ export type ImageCropContentProps = {
   className?: string;
 };
 
-export const ImageCropContent = ({
-  style,
-  className,
-}: ImageCropContentProps) => {
-  const {
-    imgSrc,
-    crop,
-    handleChange,
-    handleComplete,
-    onImageLoad,
-    imgRef,
-    reactCropProps,
-  } = useImageCrop();
+export const ImageCropContent = ({ style, className }: ImageCropContentProps) => {
+  const { imgSrc, crop, handleChange, handleComplete, onImageLoad, imgRef, reactCropProps } =
+    useImageCrop();
 
   const shadcnStyle = {
     "--rc-border-color": "var(--color-border)",
@@ -260,13 +217,7 @@ export const ImageCropContent = ({
       {...reactCropProps}
     >
       {imgSrc && (
-        <img
-          alt="crop"
-          className="size-full"
-          onLoad={onImageLoad}
-          ref={imgRef}
-          src={imgSrc}
-        />
+        <img alt="crop" className="size-full" onLoad={onImageLoad} ref={imgRef} src={imgSrc} />
       )}
     </ReactCrop>
   );
@@ -276,12 +227,7 @@ export type ImageCropApplyProps = ComponentProps<"button"> & {
   render?: ReactElement;
 };
 
-export const ImageCropApply = ({
-  render,
-  children,
-  onClick,
-  ...props
-}: ImageCropApplyProps) => {
+export const ImageCropApply = ({ render, children, onClick, ...props }: ImageCropApplyProps) => {
   const { applyCrop } = useImageCrop();
 
   const handleClick = async (e: MouseEvent<HTMLButtonElement>) => {
@@ -298,7 +244,7 @@ export const ImageCropApply = ({
   }
 
   return (
-    <Button onClick={handleClick} size="icon" variant="ghost" {...props}>
+    <Button onClick={handleClick} size="icon" variant="ghost" aria-label="Apply crop" {...props}>
       {children ?? <CropIcon className="size-4" />}
     </Button>
   );
@@ -308,12 +254,7 @@ export type ImageCropResetProps = ComponentProps<"button"> & {
   render?: ReactElement;
 };
 
-export const ImageCropReset = ({
-  render,
-  children,
-  onClick,
-  ...props
-}: ImageCropResetProps) => {
+export const ImageCropReset = ({ render, children, onClick, ...props }: ImageCropResetProps) => {
   const { resetCrop } = useImageCrop();
 
   const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
@@ -330,7 +271,7 @@ export const ImageCropReset = ({
   }
 
   return (
-    <Button onClick={handleClick} size="icon" variant="ghost" {...props}>
+    <Button onClick={handleClick} size="icon" variant="ghost" aria-label="Reset crop" {...props}>
       {children ?? <RotateCcwIcon className="size-4" />}
     </Button>
   );

@@ -184,17 +184,61 @@ export interface ThemeColorTokens {
 }
 
 export const THEME_COLORS: Record<string, ThemeColorTokens> = {
-  zinc: { primary: "#18181b", "primary-foreground": "#fafafa", ring: "#18181b" },
-  rose: { primary: "#e11d48", "primary-foreground": "#fff1f2", ring: "#e11d48" },
-  blue: { primary: "#2563eb", "primary-foreground": "#eff6ff", ring: "#2563eb" },
-  green: { primary: "#16a34a", "primary-foreground": "#f0fdf4", ring: "#16a34a" },
-  amber: { primary: "#d97706", "primary-foreground": "#fffbeb", ring: "#d97706" },
-  orange: { primary: "#ea580c", "primary-foreground": "#fff7ed", ring: "#ea580c" },
-  violet: { primary: "#7c3aed", "primary-foreground": "#f5f3ff", ring: "#7c3aed" },
-  emerald: { primary: "#059669", "primary-foreground": "#ecfdf5", ring: "#059669" },
-  cyan: { primary: "#0891b2", "primary-foreground": "#ecfeff", ring: "#0891b2" },
-  indigo: { primary: "#4f46e5", "primary-foreground": "#eef2ff", ring: "#4f46e5" },
-  pink: { primary: "#db2777", "primary-foreground": "#fdf2f8", ring: "#db2777" },
+  zinc: {
+    primary: "#18181b",
+    "primary-foreground": "#fafafa",
+    ring: "#18181b",
+  },
+  rose: {
+    primary: "#e11d48",
+    "primary-foreground": "#fff1f2",
+    ring: "#e11d48",
+  },
+  blue: {
+    primary: "#2563eb",
+    "primary-foreground": "#eff6ff",
+    ring: "#2563eb",
+  },
+  green: {
+    primary: "#16a34a",
+    "primary-foreground": "#f0fdf4",
+    ring: "#16a34a",
+  },
+  amber: {
+    primary: "#d97706",
+    "primary-foreground": "#fffbeb",
+    ring: "#d97706",
+  },
+  orange: {
+    primary: "#ea580c",
+    "primary-foreground": "#fff7ed",
+    ring: "#ea580c",
+  },
+  violet: {
+    primary: "#7c3aed",
+    "primary-foreground": "#f5f3ff",
+    ring: "#7c3aed",
+  },
+  emerald: {
+    primary: "#059669",
+    "primary-foreground": "#ecfdf5",
+    ring: "#059669",
+  },
+  cyan: {
+    primary: "#0891b2",
+    "primary-foreground": "#ecfeff",
+    ring: "#0891b2",
+  },
+  indigo: {
+    primary: "#4f46e5",
+    "primary-foreground": "#eef2ff",
+    ring: "#4f46e5",
+  },
+  pink: {
+    primary: "#db2777",
+    "primary-foreground": "#fdf2f8",
+    ring: "#db2777",
+  },
   red: { primary: "#dc2626", "primary-foreground": "#fef2f2", ring: "#dc2626" },
 };
 
@@ -243,11 +287,41 @@ export interface StyleConfig {
 }
 
 export const STYLES: Record<string, StyleConfig> = {
-  vega: { radius: "medium", spacing: "normal", baseColor: "zinc", themeColor: "zinc", font: "Inter" },
-  nova: { radius: "small", spacing: "compact", baseColor: "slate", themeColor: "zinc", font: "Inter" },
-  maia: { radius: "large", spacing: "spacious", baseColor: "stone", themeColor: "zinc", font: "Inter" },
-  lyra: { radius: "none", spacing: "normal", baseColor: "gray", themeColor: "zinc", font: "Inter" },
-  mira: { radius: "small", spacing: "dense", baseColor: "neutral", themeColor: "zinc", font: "Inter" },
+  vega: {
+    radius: "medium",
+    spacing: "normal",
+    baseColor: "zinc",
+    themeColor: "zinc",
+    font: "Inter",
+  },
+  nova: {
+    radius: "small",
+    spacing: "compact",
+    baseColor: "slate",
+    themeColor: "zinc",
+    font: "Inter",
+  },
+  maia: {
+    radius: "large",
+    spacing: "spacious",
+    baseColor: "stone",
+    themeColor: "zinc",
+    font: "Inter",
+  },
+  lyra: {
+    radius: "none",
+    spacing: "normal",
+    baseColor: "gray",
+    themeColor: "zinc",
+    font: "Inter",
+  },
+  mira: {
+    radius: "small",
+    spacing: "dense",
+    baseColor: "neutral",
+    themeColor: "zinc",
+    font: "Inter",
+  },
 };
 
 export const STYLE_NAMES = Object.keys(STYLES);

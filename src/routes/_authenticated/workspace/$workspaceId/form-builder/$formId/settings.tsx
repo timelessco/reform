@@ -13,7 +13,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
-import { formCollection, localFormCollection } from "@/db-collections";
+import { formCollection, localFormCollection } from "@/db-collections/form.collections";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
 import { APP_NAME } from "@/lib/app-config";
 import { defaultFormSettings } from "@/types/form-settings";
@@ -50,12 +50,13 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
 
   const form = useAppForm({
     defaultValues: formDoc
-      ? Object.fromEntries(
+      ? (Object.fromEntries(
           settingsKeys.map((key) => [
             key,
-            (formDoc as Record<string, unknown>)[key] ?? (settingsDefaults as Record<string, unknown>)[key],
+            (formDoc as Record<string, unknown>)[key] ??
+              (settingsDefaults as Record<string, unknown>)[key],
           ]),
-        ) as typeof settingsDefaults
+        ) as typeof settingsDefaults)
       : settingsDefaults,
     validationLogic: revalidateLogic(),
     listeners: {
@@ -100,10 +101,19 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 </form.AppField>
               </ConfigRow>
 
-              <ConfigRow label="Redirect on completion" description="Redirect to a custom URL when the form is submitted." variant="switch">
+              <ConfigRow
+                label="Redirect on completion"
+                description="Redirect to a custom URL when the form is submitted."
+                variant="switch"
+              >
                 <form.AppField name="redirectOnCompletion">
                   {(field) => (
-                    <Switch aria-label="Redirect on completion" checked={!!field.state.value} onCheckedChange={field.handleChange} size="small" />
+                    <Switch
+                      aria-label="Redirect on completion"
+                      checked={!!field.state.value}
+                      onCheckedChange={field.handleChange}
+                      size="small"
+                    />
                   )}
                 </form.AppField>
               </ConfigRow>
@@ -121,6 +131,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                               value={(field.state.value as string) || ""}
                               onChange={(e) => field.handleChange(e.target.value || null)}
                               className={`w-[160px] text-sm ${CONFIG_INPUT_CLS}`}
+                              aria-label="Redirect URL"
                             />
                           )}
                         </form.AppField>
@@ -136,6 +147,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                               value={(field.state.value as number) || 0}
                               onChange={(e) => field.handleChange(Number(e.target.value) || 0)}
                               className={`w-[70px] text-sm ${CONFIG_INPUT_CLS}`}
+                              aria-label="Redirect delay"
                             />
                           )}
                         </form.AppField>
@@ -145,10 +157,19 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 }
               </form.Subscribe>
 
-              <ConfigRow label="Progress bar" description="Show respondents how much of the form they have completed." variant="switch">
+              <ConfigRow
+                label="Progress bar"
+                description="Show respondents how much of the form they have completed."
+                variant="switch"
+              >
                 <form.AppField name="progressBar">
                   {(field) => (
-                    <Switch aria-label="Progress bar" checked={!!field.state.value} onCheckedChange={field.handleChange} size="small" />
+                    <Switch
+                      aria-label="Progress bar"
+                      checked={!!field.state.value}
+                      onCheckedChange={field.handleChange}
+                      size="small"
+                    />
                   )}
                 </form.AppField>
               </ConfigRow>
@@ -167,7 +188,12 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                   </Badge>
                   <form.AppField name="branding">
                     {(field) => (
-                      <Switch aria-label="Branding" checked={!!field.state.value} onCheckedChange={field.handleChange} size="small" />
+                      <Switch
+                        aria-label="Branding"
+                        checked={!!field.state.value}
+                        onCheckedChange={field.handleChange}
+                        size="small"
+                      />
                     )}
                   </form.AppField>
                 </div>
@@ -187,7 +213,12 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                   </Badge>
                   <form.AppField name="dataRetention">
                     {(field) => (
-                      <Switch aria-label="Data retention" checked={!!field.state.value} onCheckedChange={field.handleChange} size="small" />
+                      <Switch
+                        aria-label="Data retention"
+                        checked={!!field.state.value}
+                        onCheckedChange={field.handleChange}
+                        size="small"
+                      />
                     )}
                   </form.AppField>
                 </div>
@@ -208,6 +239,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                               field.handleChange(e.target.value ? Number(e.target.value) : null)
                             }
                             className={`w-[70px] text-sm ${CONFIG_INPUT_CLS}`}
+                            aria-label="Retention days"
                           />
                         )}
                       </form.AppField>
@@ -221,10 +253,19 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
           {/* Email Notifications Section */}
           <SidebarSection label="Email Notifications" className="pb-2.75" action={<></>}>
             <ConfigCard>
-              <ConfigRow label="Self notifications" description="Get an email for new form submissions." variant="switch">
+              <ConfigRow
+                label="Self notifications"
+                description="Get an email for new form submissions."
+                variant="switch"
+              >
                 <form.AppField name="selfEmailNotifications">
                   {(field) => (
-                    <Switch aria-label="Self notifications" checked={!!field.state.value} onCheckedChange={field.handleChange} size="small" />
+                    <Switch
+                      aria-label="Self notifications"
+                      checked={!!field.state.value}
+                      onCheckedChange={field.handleChange}
+                      size="small"
+                    />
                   )}
                 </form.AppField>
               </ConfigRow>
@@ -241,6 +282,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                             value={(field.state.value as string) || ""}
                             onChange={(e) => field.handleChange(e.target.value || null)}
                             className={`w-[160px] text-sm ${CONFIG_INPUT_CLS}`}
+                            aria-label="Notification email"
                           />
                         )}
                       </form.AppField>
@@ -263,7 +305,12 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                   </Badge>
                   <form.AppField name="respondentEmailNotifications">
                     {(field) => (
-                      <Switch aria-label="Respondent email notifications" checked={!!field.state.value} onCheckedChange={field.handleChange} size="small" />
+                      <Switch
+                        aria-label="Respondent email notifications"
+                        checked={!!field.state.value}
+                        onCheckedChange={field.handleChange}
+                        size="small"
+                      />
                     )}
                   </form.AppField>
                 </div>
@@ -282,6 +329,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                               value={(field.state.value as string) || ""}
                               onChange={(e) => field.handleChange(e.target.value || null)}
                               className={`w-[160px] text-sm ${CONFIG_INPUT_CLS}`}
+                              aria-label="Email subject"
                             />
                           )}
                         </form.AppField>
@@ -295,6 +343,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                               value={(field.state.value as string) || ""}
                               onChange={(e) => field.handleChange(e.target.value || null)}
                               className="w-full min-h-[60px] text-sm !rounded-md !bg-background border-border/60"
+                              aria-label="Email body"
                             />
                           )}
                         </form.AppField>
@@ -309,10 +358,19 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
           {/* Access Section */}
           <SidebarSection label="Access" className="pb-2.75" action={<></>}>
             <ConfigCard>
-              <ConfigRow label="Password protect" description="Require a password before respondents can access the form." variant="switch">
+              <ConfigRow
+                label="Password protect"
+                description="Require a password before respondents can access the form."
+                variant="switch"
+              >
                 <form.AppField name="passwordProtect">
                   {(field) => (
-                    <Switch aria-label="Password protect" checked={!!field.state.value} onCheckedChange={field.handleChange} size="small" />
+                    <Switch
+                      aria-label="Password protect"
+                      checked={!!field.state.value}
+                      onCheckedChange={field.handleChange}
+                      size="small"
+                    />
                   )}
                 </form.AppField>
               </ConfigRow>
@@ -334,10 +392,19 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 }
               </form.Subscribe>
 
-              <ConfigRow label="Close form" description="People won't be able to respond to this form anymore." variant="switch">
+              <ConfigRow
+                label="Close form"
+                description="People won't be able to respond to this form anymore."
+                variant="switch"
+              >
                 <form.AppField name="closeForm">
                   {(field) => (
-                    <Switch aria-label="Close form" checked={!!field.state.value} onCheckedChange={field.handleChange} size="small" />
+                    <Switch
+                      aria-label="Close form"
+                      checked={!!field.state.value}
+                      onCheckedChange={field.handleChange}
+                      size="small"
+                    />
                   )}
                 </form.AppField>
               </ConfigRow>
@@ -356,6 +423,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                               field.handleChange(e.target.value || "This form is now closed.")
                             }
                             className="w-full min-h-[50px] text-sm !rounded-md !bg-background border-border/60"
+                            aria-label="Closed message"
                           />
                         )}
                       </form.AppField>
@@ -364,10 +432,19 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 }
               </form.Subscribe>
 
-              <ConfigRow label="Close on date" description="Schedule a date to close the form for new submissions." variant="switch">
+              <ConfigRow
+                label="Close on date"
+                description="Schedule a date to close the form for new submissions."
+                variant="switch"
+              >
                 <form.AppField name="closeOnDate">
                   {(field) => (
-                    <Switch aria-label="Close on date" checked={!!field.state.value} onCheckedChange={field.handleChange} size="small" />
+                    <Switch
+                      aria-label="Close on date"
+                      checked={!!field.state.value}
+                      onCheckedChange={field.handleChange}
+                      size="small"
+                    />
                   )}
                 </form.AppField>
               </ConfigRow>
@@ -383,6 +460,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                             value={(field.state.value as string) || ""}
                             onChange={(e) => field.handleChange(e.target.value || null)}
                             className={`w-[160px] text-sm ${CONFIG_INPUT_CLS}`}
+                            aria-label="Close date"
                           />
                         )}
                       </form.AppField>
@@ -391,10 +469,19 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 }
               </form.Subscribe>
 
-              <ConfigRow label="Limit submissions" description="Set the maximum number of submissions to receive." variant="switch">
+              <ConfigRow
+                label="Limit submissions"
+                description="Set the maximum number of submissions to receive."
+                variant="switch"
+              >
                 <form.AppField name="limitSubmissions">
                   {(field) => (
-                    <Switch aria-label="Limit submissions" checked={!!field.state.value} onCheckedChange={field.handleChange} size="small" />
+                    <Switch
+                      aria-label="Limit submissions"
+                      checked={!!field.state.value}
+                      onCheckedChange={field.handleChange}
+                      size="small"
+                    />
                   )}
                 </form.AppField>
               </ConfigRow>
@@ -414,6 +501,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                               field.handleChange(e.target.value ? Number(e.target.value) : null)
                             }
                             className={`w-[70px] text-sm ${CONFIG_INPUT_CLS}`}
+                            aria-label="Max submissions"
                           />
                         )}
                       </form.AppField>
@@ -422,10 +510,19 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 }
               </form.Subscribe>
 
-              <ConfigRow label="Prevent duplicates" description="Ensure each respondent can only submit the form once." variant="switch">
+              <ConfigRow
+                label="Prevent duplicates"
+                description="Ensure each respondent can only submit the form once."
+                variant="switch"
+              >
                 <form.AppField name="preventDuplicateSubmissions">
                   {(field) => (
-                    <Switch aria-label="Prevent duplicates" checked={!!field.state.value} onCheckedChange={field.handleChange} size="small" />
+                    <Switch
+                      aria-label="Prevent duplicates"
+                      checked={!!field.state.value}
+                      onCheckedChange={field.handleChange}
+                      size="small"
+                    />
                   )}
                 </form.AppField>
               </ConfigRow>
@@ -435,18 +532,36 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
           {/* Behavior Section */}
           <SidebarSection label="Behavior" className="pb-2.75" action={<></>}>
             <ConfigCard>
-              <ConfigRow label="Auto-jump" description="Auto-advance to the next page when a question is answered." variant="switch">
+              <ConfigRow
+                label="Auto-jump"
+                description="Auto-advance to the next page when a question is answered."
+                variant="switch"
+              >
                 <form.AppField name="autoJump">
                   {(field) => (
-                    <Switch aria-label="Auto-jump" checked={!!field.state.value} onCheckedChange={field.handleChange} size="small" />
+                    <Switch
+                      aria-label="Auto-jump"
+                      checked={!!field.state.value}
+                      onCheckedChange={field.handleChange}
+                      size="small"
+                    />
                   )}
                 </form.AppField>
               </ConfigRow>
 
-              <ConfigRow label="Save for later" description="Save answers so respondents can continue where they left off." variant="switch">
+              <ConfigRow
+                label="Save for later"
+                description="Save answers so respondents can continue where they left off."
+                variant="switch"
+              >
                 <form.AppField name="saveAnswersForLater">
                   {(field) => (
-                    <Switch aria-label="Save for later" checked={field.state.value} onCheckedChange={field.handleChange} size="small" />
+                    <Switch
+                      aria-label="Save for later"
+                      checked={field.state.value}
+                      onCheckedChange={field.handleChange}
+                      size="small"
+                    />
                   )}
                 </form.AppField>
               </ConfigRow>
@@ -468,11 +583,13 @@ function PasswordInput({ value, onChange }: { value: string; onChange: (val: str
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="!rounded-none !border-0 !bg-secondary !h-[34px] text-sm pr-8"
+        aria-label="Form password"
       />
       <button
         type="button"
         onClick={() => setShow(!show)}
         className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+        aria-label="Toggle password visibility"
       >
         {show ? <EyeOffIcon className="h-3.5 w-3.5" /> : <EyeIcon className="h-3.5 w-3.5" />}
       </button>

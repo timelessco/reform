@@ -41,6 +41,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
     setIsRestoring(true);
     try {
       const tx = restoreVersion(formId, versionId);
+      if (!tx) return;
       await tx.isPersisted.promise;
       toast.success("Version restored. Publish again to make it live.");
       exitVersionView();
@@ -67,18 +68,21 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
   };
 
   const formatRelativeTime = (dateString: string) => {
-    const distance = formatDistanceToNow(new Date(dateString), { addSuffix: false });
+    const distance = formatDistanceToNow(new Date(dateString), {
+      addSuffix: false,
+    });
     if (distance.includes("less than") || distance.includes("second")) return "Now";
-    return distance
-      .replace(/ minutes?/, "m")
-      .replace(/ hours?/, "h")
-      .replace(/ days?/, "d")
-      .replace(/ months?/, "mo")
-      .replace(/ years?/, "y")
-      .replace(/about /, "")
-      .replace(/over /, "")
-      .replace(/almost /, "")
-      + " ago";
+    return (
+      distance
+        .replace(/ minutes?/, "m")
+        .replace(/ hours?/, "h")
+        .replace(/ days?/, "d")
+        .replace(/ months?/, "mo")
+        .replace(/ years?/, "y")
+        .replace(/about /, "")
+        .replace(/over /, "")
+        .replace(/almost /, "") + " ago"
+    );
   };
 
   return (
@@ -95,6 +99,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
           size="icon"
           className="size-7 text-muted-foreground hover:text-foreground rounded-lg"
           onClick={closeSidebar}
+          aria-label="Close version history"
         >
           <XIcon className="size-3.5" />
         </Button>
@@ -143,7 +148,8 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
                     {publisher.name}
                   </p>
                   <p className="text-[13px] leading-[1.15] text-muted-foreground tracking-[0.13px]">
-                    {version.version} change{version.version !== 1 ? "s" : ""} · {isCurrent ? "Current" : "Published"}
+                    {version.version} change{version.version !== 1 ? "s" : ""} ·{" "}
+                    {isCurrent ? "Current" : "Published"}
                   </p>
                 </div>
 
@@ -158,6 +164,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
                             size="icon"
                             className="size-[26px] rounded-lg"
                             onClick={(e) => e.stopPropagation()}
+                            aria-label="Version actions"
                           />
                         }
                       >

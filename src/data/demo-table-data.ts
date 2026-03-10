@@ -1,5 +1,3 @@
-import { faker } from "@faker-js/faker";
-
 type Person = {
   id: number;
   firstName: string;
@@ -19,7 +17,8 @@ const range = (len: number) => {
   return arr;
 };
 
-const newPerson = (num: number): Person => {
+const newPerson = async (num: number): Promise<Person> => {
+  const { faker } = await import("@faker-js/faker");
   return {
     id: num,
     firstName: faker.person.firstName(),
@@ -31,15 +30,17 @@ const newPerson = (num: number): Person => {
   };
 };
 
-function makeData(...lens: number[]) {
-  const makeDataLevel = (depth = 0): Person[] => {
+async function makeData(...lens: number[]) {
+  const makeDataLevel = async (depth = 0): Promise<Person[]> => {
     const len = lens[depth]!;
-    return range(len).map((index): Person => {
-      return {
-        ...newPerson(index),
-        subRows: lens[depth + 1] ? makeDataLevel(depth + 1) : undefined,
-      };
-    });
+    return Promise.all(
+      range(len).map(
+        async (index): Promise<Person> => ({
+          ...(await newPerson(index)),
+          subRows: lens[depth + 1] ? await makeDataLevel(depth + 1) : undefined,
+        }),
+      ),
+    );
   };
 
   return makeDataLevel();

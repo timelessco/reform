@@ -79,10 +79,7 @@ export function ThemeProvider({
     [storageKey],
   );
 
-  const value = React.useMemo(
-    () => ({ theme, setTheme: handleSetTheme }),
-    [theme, handleSetTheme],
-  );
+  const value = React.useMemo(() => ({ theme, setTheme: handleSetTheme }), [theme, handleSetTheme]);
 
   return (
     <ThemeProviderContext.Provider {...props} value={value}>
@@ -92,7 +89,7 @@ export function ThemeProvider({
 }
 
 export const useTheme = () => {
-  const context = React.useContext(ThemeProviderContext);
+  const context = React.use(ThemeProviderContext);
 
   if (context === undefined) throw new Error("useTheme must be used within a ThemeProvider");
 

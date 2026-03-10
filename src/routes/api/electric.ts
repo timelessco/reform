@@ -1,5 +1,4 @@
 import { member, workspaces } from "@/db/schema";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { createFileRoute } from "@tanstack/react-router";
 import { eq, inArray } from "drizzle-orm";
@@ -16,14 +15,19 @@ export const Route = createFileRoute("/api/electric")({
   server: {
     middleware: [authMiddleware],
     handlers: {
-      GET: async ({ request }: { request: Request }) => {
-        const session = await auth.api.getSession({ headers: request.headers });
-
-        if (!session?.user?.id) {
+      GET: async ({
+        request,
+        context,
+      }: {
+        request: Request;
+        context: { session: { user: { id: string } } };
+      }) => {
+        // Use session from authMiddleware instead of re-fetching
+        if (!context?.session?.user?.id) {
           return json({ error: "Not authenticated" }, 401);
         }
 
-        const userId = session.user.id;
+        const userId = context.session.user.id;
         const url = new URL(request.url);
 
         const table = url.searchParams.get("table")?.trim();
@@ -42,18 +46,22 @@ export const Route = createFileRoute("/api/electric")({
         let whereSql: string;
         let whereParams: Record<string, string> = {};
 
-        switch (table) {
-          case "forms": {
-            // Get all workspaces owned by the user's organizations
-            const userMemberships = await db
+        // Hoist membership query before switch - shared by forms, workspaces, submissions, form_versions
+        const needsMembership = ["forms", "workspaces", "submissions", "form_versions"].includes(
+          table,
+        );
+        const userMemberships = needsMembership
+          ? await db
               .select({ organizationId: member.organizationId })
               .from(member)
-              .where(eq(member.userId, userId));
+              .where(eq(member.userId, userId))
+          : [];
 
-            if (userMemberships.length === 0) {
-              whereSql = `1 = 0`;
-            } else {
-              const workspaceList = await db
+        // Hoist workspace query - shared by forms, submissions, form_versions
+        const needsWorkspaces = ["forms", "submissions", "form_versions"].includes(table);
+        const workspaceList =
+          needsWorkspaces && userMemberships.length > 0
+            ? await db
                 .select({ id: workspaces.id })
                 .from(workspaces)
                 .where(
@@ -61,28 +69,26 @@ export const Route = createFileRoute("/api/electric")({
                     workspaces.organizationId,
                     userMemberships.map((m) => m.organizationId),
                   ),
-                );
+                )
+            : [];
 
-              if (workspaceList.length === 0) {
-                whereSql = `1 = 0`;
-              } else {
-                const placeholders = workspaceList.map((_, i) => `$${i + 1}`).join(", ");
-                whereSql = `"workspaceId" IN (${placeholders})`;
-                for (let i = 0; i < workspaceList.length; i++) {
-                  whereParams[`params[${i + 1}]`] = workspaceList[i].id;
-                }
+        switch (table) {
+          case "forms": {
+            if (userMemberships.length === 0) {
+              whereSql = `1 = 0`;
+            } else if (workspaceList.length === 0) {
+              whereSql = `1 = 0`;
+            } else {
+              const placeholders = workspaceList.map((_, i) => `$${i + 1}`).join(", ");
+              whereSql = `"workspaceId" IN (${placeholders})`;
+              for (let i = 0; i < workspaceList.length; i++) {
+                whereParams[`params[${i + 1}]`] = workspaceList[i].id;
               }
             }
             break;
           }
 
           case "workspaces": {
-            // Get organizations the user is a member of
-            const userMemberships = await db
-              .select({ organizationId: member.organizationId })
-              .from(member)
-              .where(eq(member.userId, userId));
-
             if (userMemberships.length === 0) {
               whereSql = `1 = 0`;
             } else {
@@ -96,48 +102,27 @@ export const Route = createFileRoute("/api/electric")({
           }
 
           case "submissions": {
-            // Get all forms the user has access to via their organizations
-            const userMemberships = await db
-              .select({ organizationId: member.organizationId })
-              .from(member)
-              .where(eq(member.userId, userId));
-
-            if (userMemberships.length === 0) {
+            if (userMemberships.length === 0 || workspaceList.length === 0) {
               whereSql = `1 = 0`;
             } else {
-              const workspaceList = await db
-                .select({ id: workspaces.id })
-                .from(workspaces)
+              const { forms } = await import("@/db/schema");
+              const formList = await db
+                .select({ id: forms.id })
+                .from(forms)
                 .where(
                   inArray(
-                    workspaces.organizationId,
-                    userMemberships.map((m) => m.organizationId),
+                    forms.workspaceId,
+                    workspaceList.map((ws) => ws.id),
                   ),
                 );
 
-              if (workspaceList.length === 0) {
+              if (formList.length === 0) {
                 whereSql = `1 = 0`;
               } else {
-                // Import forms table
-                const { forms } = await import("@/db/schema");
-                const formList = await db
-                  .select({ id: forms.id })
-                  .from(forms)
-                  .where(
-                    inArray(
-                      forms.workspaceId,
-                      workspaceList.map((ws) => ws.id),
-                    ),
-                  );
-
-                if (formList.length === 0) {
-                  whereSql = `1 = 0`;
-                } else {
-                  const placeholders = formList.map((_, i) => `$${i + 1}`).join(", ");
-                  whereSql = `"formId" IN (${placeholders})`;
-                  for (let i = 0; i < formList.length; i++) {
-                    whereParams[`params[${i + 1}]`] = formList[i].id;
-                  }
+                const placeholders = formList.map((_, i) => `$${i + 1}`).join(", ");
+                whereSql = `"formId" IN (${placeholders})`;
+                for (let i = 0; i < formList.length; i++) {
+                  whereParams[`params[${i + 1}]`] = formList[i].id;
                 }
               }
             }
@@ -145,47 +130,27 @@ export const Route = createFileRoute("/api/electric")({
           }
 
           case "form_versions": {
-            // Get all forms the user has access to via their organizations
-            const userMembershipsVersions = await db
-              .select({ organizationId: member.organizationId })
-              .from(member)
-              .where(eq(member.userId, userId));
-
-            if (userMembershipsVersions.length === 0) {
+            if (userMemberships.length === 0 || workspaceList.length === 0) {
               whereSql = `1 = 0`;
             } else {
-              const workspaceListVersions = await db
-                .select({ id: workspaces.id })
-                .from(workspaces)
+              const { forms } = await import("@/db/schema");
+              const formListVersions = await db
+                .select({ id: forms.id })
+                .from(forms)
                 .where(
                   inArray(
-                    workspaces.organizationId,
-                    userMembershipsVersions.map((m) => m.organizationId),
+                    forms.workspaceId,
+                    workspaceList.map((ws) => ws.id),
                   ),
                 );
 
-              if (workspaceListVersions.length === 0) {
+              if (formListVersions.length === 0) {
                 whereSql = `1 = 0`;
               } else {
-                const { forms } = await import("@/db/schema");
-                const formListVersions = await db
-                  .select({ id: forms.id })
-                  .from(forms)
-                  .where(
-                    inArray(
-                      forms.workspaceId,
-                      workspaceListVersions.map((ws) => ws.id),
-                    ),
-                  );
-
-                if (formListVersions.length === 0) {
-                  whereSql = `1 = 0`;
-                } else {
-                  const placeholders = formListVersions.map((_, i) => `$${i + 1}`).join(", ");
-                  whereSql = `"formId" IN (${placeholders})`;
-                  for (let i = 0; i < formListVersions.length; i++) {
-                    whereParams[`params[${i + 1}]`] = formListVersions[i].id;
-                  }
+                const placeholders = formListVersions.map((_, i) => `$${i + 1}`).join(", ");
+                whereSql = `"formId" IN (${placeholders})`;
+                for (let i = 0; i < formListVersions.length; i++) {
+                  whereParams[`params[${i + 1}]`] = formListVersions[i].id;
                 }
               }
             }

@@ -1,13 +1,14 @@
-import { flip, offset, type UseVirtualFloatingOptions } from "@platejs/floating";
+import { flip, offset } from "@platejs/floating";
+import type { UseVirtualFloatingOptions } from "@platejs/floating";
 import { getLinkAttributes } from "@platejs/link";
 import {
   FloatingLinkUrlInput,
-  type LinkFloatingToolbarState,
   useFloatingLinkEdit,
   useFloatingLinkEditState,
   useFloatingLinkInsert,
   useFloatingLinkInsertState,
 } from "@platejs/link/react";
+import type { LinkFloatingToolbarState } from "@platejs/link/react";
 import { cva } from "class-variance-authority";
 import { ExternalLinkIcon, LinkIcon, TextIcon, UnlinkIcon } from "@/components/ui/icons";
 import type { TLinkElement } from "platejs";
@@ -88,6 +89,7 @@ export function LinkFloatingToolbar({ state }: { state?: LinkFloatingToolbarStat
           className={inputVariants()}
           placeholder="Paste link"
           data-plate-focus
+          aria-label="Link URL"
         />
       </div>
       <Separator className="my-1" />
@@ -99,6 +101,7 @@ export function LinkFloatingToolbar({ state }: { state?: LinkFloatingToolbarStat
           className={inputVariants()}
           placeholder="Text to display"
           data-plate-focus
+          aria-label="Link text"
           {...textInputProps}
         />
       </div>
@@ -119,7 +122,7 @@ export function LinkFloatingToolbar({ state }: { state?: LinkFloatingToolbarStat
 
       <Separator orientation="vertical" />
 
-      <Button variant="ghost" size="sm" {...unlinkButtonProps}>
+      <Button variant="ghost" size="sm" aria-label="Remove link" {...unlinkButtonProps}>
         <UnlinkIcon width={18} />
       </Button>
     </div>

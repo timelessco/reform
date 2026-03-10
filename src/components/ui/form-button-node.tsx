@@ -7,11 +7,7 @@ import { cn } from "@/lib/utils";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export type ButtonRole = "next" | "previous" | "submit";
 
@@ -22,12 +18,8 @@ export interface FormButtonElementData {
   children: [{ text: string }];
 }
 
-export function createFormButtonNode(
-  role: ButtonRole,
-  text?: string,
-): FormButtonElementData {
-  const defaultText =
-    role === "next" ? "Next" : role === "previous" ? "Previous" : "Submit";
+export function createFormButtonNode(role: ButtonRole, text?: string): FormButtonElementData {
+  const defaultText = role === "next" ? "Next" : role === "previous" ? "Previous" : "Submit";
   return {
     type: "formButton",
     buttonRole: role,
@@ -57,11 +49,7 @@ function extractTextFromChildren(children: Array<{ text?: string }>): string {
   return children.map((child) => child.text || "").join("");
 }
 
-export function FormButtonElement({
-  className,
-  children,
-  ...props
-}: PlateElementProps) {
+export function FormButtonElement({ className, children, ...props }: PlateElementProps) {
   const { element } = props;
   const editor = useEditorRef();
   const buttonRole = (element.buttonRole as ButtonRole) ?? "submit";
@@ -112,6 +100,7 @@ export function FormButtonElement({
             variant="ghost"
             size="icon-sm"
             className="h-7 w-7 opacity-0 group-hover:opacity-100"
+            aria-label="Button settings"
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -162,9 +151,7 @@ export function FormButtonElement({
       className={cn(
         "m-0 px-0 py-1",
         // Previous floats left, Submit on single-page floats left, otherwise floats right
-        isPrevious
-          ? "float-left clear-none"
-          : "float-right clear-none",
+        isPrevious ? "float-left clear-none" : "float-right clear-none",
         className,
       )}
       {...props}
@@ -183,7 +170,7 @@ export function FormButtonElement({
         }}
       >
         {/* Gear icon on left when button floats right (so button touches right edge) */}
-        {!(isPrevious) && GearIcon}
+        {!isPrevious && GearIcon}
         <span
           className={cn(
             "inline-flex h-8 items-center justify-center rounded-lg px-2.5 text-sm font-medium transition-colors cursor-default select-none gap-1.5",
@@ -197,7 +184,7 @@ export function FormButtonElement({
           {buttonRole === "next" && <ChevronRightIcon className="h-4 w-4" />}
         </span>
         {/* Gear icon on right when button floats left (so button touches left edge) */}
-        {(isPrevious) && GearIcon}
+        {isPrevious && GearIcon}
       </div>
     </PlateElement>
   );

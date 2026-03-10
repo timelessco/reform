@@ -157,7 +157,6 @@ function SignUpPage() {
           <Logo />
         </div>
 
-
         {/* OTP verification step */}
         {step === "otp" ? (
           <div className="space-y-6">
@@ -235,7 +234,7 @@ function SignUpPage() {
             </otpForm.AppForm>
 
             <p className="text-center text-sm text-muted-foreground">
-              Didn't receive the code?{" "}
+              Didn{"\u2019"}t receive the code?{" "}
               <Button
                 variant="link"
                 onClick={() => sendOtpMutation.mutate({ email, type: "email-verification" })}
@@ -300,6 +299,9 @@ function SignUpPage() {
                       <field.Field>
                         <Input
                           placeholder="Name"
+                          aria-label="Name"
+                          autoComplete="name"
+                          name="name"
                           className="h-11"
                           value={(field.state.value as string) ?? ""}
                           onBlur={field.handleBlur}
@@ -317,6 +319,9 @@ function SignUpPage() {
                       <field.Field>
                         <Input
                           placeholder="Username"
+                          aria-label="Username"
+                          autoComplete="username"
+                          name="username"
                           className="h-11"
                           value={(field.state.value as string) ?? ""}
                           onBlur={field.handleBlur}
@@ -335,6 +340,9 @@ function SignUpPage() {
                         <Input
                           type="email"
                           placeholder="Email"
+                          aria-label="Email address"
+                          autoComplete="email"
+                          name="email"
                           className="h-11"
                           value={(field.state.value as string) ?? ""}
                           onBlur={field.handleBlur}
@@ -353,6 +361,9 @@ function SignUpPage() {
                         <Input
                           type="password"
                           placeholder="Password"
+                          aria-label="Password"
+                          autoComplete="new-password"
+                          name="password"
                           className="h-11"
                           value={(field.state.value as string) ?? ""}
                           onBlur={field.handleBlur}

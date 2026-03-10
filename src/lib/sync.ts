@@ -1,6 +1,6 @@
 import { createTransaction } from "@tanstack/react-db";
 import { logger } from "@/lib/utils";
-import { localFormCollection } from "@/db-collections";
+import { localFormCollection } from "@/db-collections/form.collections";
 import { formCollection } from "@/db-collections/form.collections";
 import { workspaceCollection, createWorkspaceLocal } from "@/db-collections/workspace.collection";
 import { createForm } from "@/lib/fn/forms";

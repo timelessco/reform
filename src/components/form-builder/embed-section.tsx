@@ -1,10 +1,10 @@
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
-import type { EmbedOptions } from "./embed-config-panel";
-import { defaultEmbedOptions } from "./embed-config-panel";
+import type { EmbedFormFields } from "./embed-config-panel";
+import { defaultEmbedFormFields } from "./embed-config-panel";
 
 export { EmbedCodeDialog, generateEmbedUrl } from "./embed-code-dialog";
 
-export type EmbedFormValues = EmbedOptions & { embedType: EmbedType };
+export type EmbedFormValues = EmbedFormFields & { embedType: EmbedType };
 
 export const tabs: { value: EmbedType; label: string }[] = [
   { value: "standard", label: "Embed" },
@@ -20,31 +20,31 @@ export function searchToFormValues(
   return {
     embedType:
       (search.embedType as EmbedType) ?? ((search.demo as boolean) ? "standard" : "fullpage"),
-    height: (search.embedHeight as number) ?? defaultEmbedOptions.height,
-    dynamicHeight: (search.embedDynamicHeight as boolean) ?? defaultEmbedOptions.dynamicHeight,
-    hideTitle: (search.embedHideTitle as boolean) ?? defaultEmbedOptions.hideTitle,
-    alignLeft: (search.embedAlignLeft as boolean) ?? defaultEmbedOptions.alignLeft,
+    height: (search.embedHeight as number) ?? defaultEmbedFormFields.height,
+    dynamicHeight: (search.embedDynamicHeight as boolean) ?? defaultEmbedFormFields.dynamicHeight,
+    hideTitle: (search.embedHideTitle as boolean) ?? defaultEmbedFormFields.hideTitle,
+    alignLeft: (search.embedAlignLeft as boolean) ?? defaultEmbedFormFields.alignLeft,
     transparentBackground:
-      (search.embedTransparent as boolean) ?? defaultEmbedOptions.transparentBackground,
-    branding: (search.embedBranding as boolean) ?? defaultEmbedOptions.branding,
-    trackEvents: (search.embedTrackEvents as boolean) ?? defaultEmbedOptions.trackEvents,
-    customDomain: defaultEmbedOptions.customDomain,
+      (search.embedTransparent as boolean) ?? defaultEmbedFormFields.transparentBackground,
+    branding: (search.embedBranding as boolean) ?? defaultEmbedFormFields.branding,
+    trackEvents: (search.embedTrackEvents as boolean) ?? defaultEmbedFormFields.trackEvents,
+    customDomain: defaultEmbedFormFields.customDomain,
     popupTrigger:
-      (search.embedPopupTrigger as EmbedOptions["popupTrigger"]) ??
-      defaultEmbedOptions.popupTrigger,
+      (search.embedPopupTrigger as EmbedFormFields["popupTrigger"]) ??
+      defaultEmbedFormFields.popupTrigger,
     popupPosition:
-      (search.embedPopupPosition as EmbedOptions["popupPosition"]) ??
-      defaultEmbedOptions.popupPosition,
-    popupWidth: (search.embedPopupWidth as number) ?? defaultEmbedOptions.popupWidth,
-    darkOverlay: (search.embedDarkOverlay as boolean) ?? defaultEmbedOptions.darkOverlay,
-    emoji: (search.embedEmoji as boolean) ?? defaultEmbedOptions.emoji,
-    emojiIcon: (search.embedEmojiIcon as string) ?? (formIcon || defaultEmbedOptions.emojiIcon),
+      (search.embedPopupPosition as EmbedFormFields["popupPosition"]) ??
+      defaultEmbedFormFields.popupPosition,
+    popupWidth: (search.embedPopupWidth as number) ?? defaultEmbedFormFields.popupWidth,
+    darkOverlay: (search.embedDarkOverlay as boolean) ?? defaultEmbedFormFields.darkOverlay,
+    emoji: (search.embedEmoji as boolean) ?? defaultEmbedFormFields.emoji,
+    emojiIcon: (search.embedEmojiIcon as string) ?? (formIcon || defaultEmbedFormFields.emojiIcon),
     emojiAnimation:
-      (search.embedEmojiAnimation as EmbedOptions["emojiAnimation"]) ??
-      defaultEmbedOptions.emojiAnimation,
-    hideOnSubmit: (search.embedHideOnSubmit as boolean) ?? defaultEmbedOptions.hideOnSubmit,
+      (search.embedEmojiAnimation as EmbedFormFields["emojiAnimation"]) ??
+      defaultEmbedFormFields.emojiAnimation,
+    hideOnSubmit: (search.embedHideOnSubmit as boolean) ?? defaultEmbedFormFields.hideOnSubmit,
     hideOnSubmitDelay:
-      (search.embedHideOnSubmitDelay as number) ?? defaultEmbedOptions.hideOnSubmitDelay,
+      (search.embedHideOnSubmitDelay as number) ?? defaultEmbedFormFields.hideOnSubmitDelay,
   };
 }
 

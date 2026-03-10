@@ -16,6 +16,17 @@ const serializeForm = (form: typeof forms.$inferSelect) => ({
   customization: (form.customization ?? {}) as Record<string, any>,
 });
 
+const serializeFormListing = (form: typeof forms.$inferSelect) => ({
+  id: form.id,
+  title: form.title,
+  status: form.status,
+  updatedAt: form.updatedAt.toISOString(),
+  createdAt: form.createdAt.toISOString(),
+  workspaceId: form.workspaceId,
+  icon: form.icon,
+  formName: form.formName,
+});
+
 export const createForm = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
@@ -160,7 +171,8 @@ export const updateForm = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { id, updatedAt: clientUpdatedAt, ...updateData } = data;
-    await authForm(id, context.session.user.id);
+    const authPromise = authForm(id, context.session.user.id);
+    await authPromise;
 
     return await db.transaction(async (tx) => {
       const [form] = await tx
@@ -182,7 +194,8 @@ export const deleteForm = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data, context }) => {
-    await authForm(data.id, context.session.user.id);
+    const authPromise = authForm(data.id, context.session.user.id);
+    await authPromise;
 
     return await db.transaction(async (tx) => {
       const [form] = await tx.delete(forms).where(eq(forms.id, data.id)).returning();
@@ -208,17 +221,18 @@ const getFormsByWorkspace = createServerFn({ method: "GET" })
       )
       .orderBy(forms.updatedAt);
 
-    return { forms: formList.map(serializeForm) };
+    return { forms: formList.map(serializeFormListing) };
   });
 
 export const duplicateForm = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data, context }) => {
-    await authForm(data.id, context.session.user.id);
+    const authPromise = authForm(data.id, context.session.user.id);
 
-    // Get the original form
+    // Get the original form (start fetch in parallel with auth)
     const [originalForm] = await db.select().from(forms).where(eq(forms.id, data.id));
+    await authPromise;
 
     if (!originalForm) {
       throw new Error("Form not found");
@@ -290,7 +304,8 @@ const moveFormToWorkspace = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
-    await authForm(data.formId, context.session.user.id);
+    const authPromise = authForm(data.formId, context.session.user.id);
+    await authPromise;
 
     return await db.transaction(async (tx) => {
       const [form] = await tx
@@ -312,9 +327,10 @@ const getFormById = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data, context }) => {
-    await authForm(data.id, context.session.user.id);
-
-    const [form] = await db.select().from(forms).where(eq(forms.id, data.id));
+    const [_, [form]] = await Promise.all([
+      authForm(data.id, context.session.user.id),
+      db.select().from(forms).where(eq(forms.id, data.id)),
+    ]);
 
     if (!form) {
       throw new Error("Form not found");

@@ -41,6 +41,7 @@ SESSION=$(basename $(git rev-parse --show-toplevel 2>/dev/null) || basename $PWD
 ```
 
 For multiple processes in one project, use windows not separate sessions:
+
 - Session: `myapp`
 - Windows: `server`, `tests`, `logs`
 
@@ -143,16 +144,16 @@ tmux send-keys -t "$SESSION:server" C-c
 
 ## When to Use tmux
 
-| Scenario | Use tmux? |
-|----------|-----------|
-| `tilt up` | Yes, always |
-| Dev server (`npm run dev`, `rails s`) | Yes |
-| File watcher (`npm run watch`) | Yes |
-| Test watcher (`npm run test:watch`) | Yes |
-| Database server | Yes |
-| One-shot build (`npm run build`) | No |
-| Quick command (<10s) | No |
-| Need stdout directly in conversation | No |
+| Scenario                              | Use tmux?   |
+| ------------------------------------- | ----------- |
+| `tilt up`                             | Yes, always |
+| Dev server (`npm run dev`, `rails s`) | Yes         |
+| File watcher (`npm run watch`)        | Yes         |
+| Test watcher (`npm run test:watch`)   | Yes         |
+| Database server                       | Yes         |
+| One-shot build (`npm run build`)      | No          |
+| Quick command (<10s)                  | No          |
+| Need stdout directly in conversation  | No          |
 
 ## Checking Process Status
 

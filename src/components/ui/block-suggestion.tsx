@@ -7,24 +7,18 @@ import {
 } from "@platejs/suggestion";
 import { SuggestionPlugin } from "@platejs/suggestion/react";
 import { CheckIcon, XIcon } from "@/components/ui/icons";
-import {
-  ElementApi,
-  KEYS,
-  type NodeEntry,
-  type Path,
-  PathApi,
-  type TElement,
-  TextApi,
-  type TSuggestionText,
-} from "platejs";
+import { ElementApi, KEYS, PathApi, TextApi } from "platejs";
+import type { NodeEntry, Path, TElement, TSuggestionText } from "platejs";
 import { useEditorPlugin, usePluginOption } from "platejs/react";
 import * as React from "react";
-import { discussionPlugin, type TDiscussion } from "@/components/editor/plugins/discussion-kit";
+import { discussionPlugin } from "@/components/editor/plugins/discussion-kit";
+import type { TDiscussion } from "@/components/editor/plugins/discussion-kit";
 import { suggestionPlugin } from "@/components/editor/plugins/suggestion-kit";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
-import { Comment, CommentCreateForm, formatCommentDate, type TComment } from "./comment";
+import { Comment, CommentCreateForm, formatCommentDate } from "./comment";
+import type { TComment } from "./comment";
 
 export interface ResolvedSuggestion extends TResolvedSuggestion {
   comments: TComment[];
@@ -244,6 +238,7 @@ export function BlockSuggestionCard({
             <Button
               variant="ghost"
               className="size-6 p-1 text-muted-foreground"
+              aria-label="Accept suggestion"
               onClick={() => accept(suggestion)}
             >
               <CheckIcon className="size-4" />
@@ -252,6 +247,7 @@ export function BlockSuggestionCard({
             <Button
               variant="ghost"
               className="size-6 p-1 text-muted-foreground"
+              aria-label="Reject suggestion"
               onClick={() => reject(suggestion)}
             >
               <XIcon className="size-4" />

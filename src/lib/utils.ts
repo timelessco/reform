@@ -1,5 +1,6 @@
 import { createIsomorphicFn } from "@tanstack/react-start";
-import { type ClassValue, clsx } from "clsx";
+import { clsx } from "clsx";
+import type { ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -25,7 +26,12 @@ export function isValidUrl(str: string): boolean {
     new URL(str);
     return true;
   } catch {
-    return str.startsWith("/") || str.startsWith("http") || str.startsWith("blob:") || str.startsWith("data:");
+    return (
+      str.startsWith("/") ||
+      str.startsWith("http") ||
+      str.startsWith("blob:") ||
+      str.startsWith("data:")
+    );
   }
 }
 
@@ -39,9 +45,7 @@ export const logger = createIsomorphicFn()
     console.log("[Server Log] :", ...args);
   });
 
-
-
 export function isNullable(value: unknown): value is null | undefined {
-	// eslint-disable-next-line no-eq-null, eqeqeq
-	return value == null;
+  // eslint-disable-next-line no-eq-null, eqeqeq
+  return value == null;
 }

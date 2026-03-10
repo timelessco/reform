@@ -1,7 +1,4 @@
-import {
-  SubscriptIcon,
-  SuperscriptIcon,
-} from "lucide-react";
+import { SubscriptIcon, SuperscriptIcon } from "lucide-react";
 import { KeyboardIcon, MoreHorizontalIcon } from "@/components/ui/icons";
 import { KEYS } from "platejs";
 import { useEditorRef } from "platejs/react";
@@ -17,17 +14,13 @@ import {
 
 import { ToolbarButton } from "./toolbar";
 
-export function MoreToolbarButton(
-  props: React.ComponentProps<typeof DropdownMenu>,
-) {
+export function MoreToolbarButton(props: React.ComponentProps<typeof DropdownMenu>) {
   const editor = useEditorRef();
   const [open, setOpen] = React.useState(false);
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
-      <DropdownMenuTrigger
-        render={<ToolbarButton pressed={open} tooltip="Insert" />}
-      >
+      <DropdownMenuTrigger render={<ToolbarButton pressed={open} tooltip="Insert" />}>
         <MoreHorizontalIcon />
       </DropdownMenuTrigger>
 

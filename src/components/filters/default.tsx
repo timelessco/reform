@@ -3,12 +3,8 @@
 import { useCallback, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  createFilter,
-  Filters,
-  type Filter,
-  type FilterFieldConfig,
-} from "@/components/ui/filters";
+import { createFilter, Filters } from "@/components/ui/filters";
+import type { Filter, FilterFieldConfig } from "@/components/ui/filters";
 import {
   AlertCircleIcon,
   BanIcon,
@@ -104,7 +100,11 @@ export default function FiltersDemo() {
           searchable: false,
           className: "w-[200px]",
           options: [
-            { value: "todo", label: "To Do", icon: <ClockIcon className="size-3 text-primary" /> },
+            {
+              value: "todo",
+              label: "To Do",
+              icon: <ClockIcon className="size-3 text-primary" />,
+            },
             {
               value: "in-progress",
               label: "In Progress",
@@ -130,11 +130,31 @@ export default function FiltersDemo() {
           className: "w-[180px]",
           selectedOptionsClassName: "-space-x-1",
           options: [
-            { value: "low", label: "Low", icon: <PriorityIcon priority="low" /> },
-            { value: "medium", label: "Medium", icon: <PriorityIcon priority="medium" /> },
-            { value: "high", label: "High", icon: <PriorityIcon priority="high" /> },
-            { value: "urgent", label: "Urgent", icon: <PriorityIcon priority="urgent" /> },
-            { value: "critical", label: "Critical", icon: <PriorityIcon priority="critical" /> },
+            {
+              value: "low",
+              label: "Low",
+              icon: <PriorityIcon priority="low" />,
+            },
+            {
+              value: "medium",
+              label: "Medium",
+              icon: <PriorityIcon priority="medium" />,
+            },
+            {
+              value: "high",
+              label: "High",
+              icon: <PriorityIcon priority="high" />,
+            },
+            {
+              value: "urgent",
+              label: "Urgent",
+              icon: <PriorityIcon priority="urgent" />,
+            },
+            {
+              value: "critical",
+              label: "Critical",
+              icon: <PriorityIcon priority="critical" />,
+            },
           ],
         },
         {
@@ -184,7 +204,11 @@ export default function FiltersDemo() {
               label: "Standard",
               icon: <Building className="size-3 text-blue-500" />,
             },
-            { value: "trial", label: "Trial", icon: <ClockIcon className="size-3 text-gray-500" /> },
+            {
+              value: "trial",
+              label: "Trial",
+              icon: <ClockIcon className="size-3 text-gray-500" />,
+            },
           ],
         },
       ],

@@ -1,9 +1,9 @@
 import {
   Resizable as ResizablePrimitive,
-  type ResizeHandle as ResizeHandlePrimitive,
   useResizeHandle,
   useResizeHandleState,
 } from "@platejs/resizable";
+import type { ResizeHandle as ResizeHandlePrimitive } from "@platejs/resizable";
 
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";

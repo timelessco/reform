@@ -694,11 +694,10 @@ export function ChevronsLeftIcon(props: React.SVGProps<SVGSVGElement>) {
 // Common Icons (app UI: routes, sidebar, settings, form-builder, etc.)
 // ============================================================================
 
-const createConsistentLucideIcon = (Icon: React.ComponentType<LucideProps>) => {
-  return function ConsistentLucideIcon(props: React.SVGProps<SVGSVGElement>) {
+const createConsistentLucideIcon = (Icon: React.ComponentType<LucideProps>) =>
+  function ConsistentLucideIcon(props: React.SVGProps<SVGSVGElement>) {
     return <Icon strokeWidth={1.5} absoluteStrokeWidth {...props} />;
   };
-};
 
 export const BanIcon = createConsistentLucideIcon(LucideBan);
 export const BluetoothIcon = createConsistentLucideIcon(LucideBluetooth);
@@ -707,13 +706,10 @@ export const CheckCircle2Icon = createConsistentLucideIcon(LucideCheckCircle2);
 export const ChevronLeftIcon = createConsistentLucideIcon(LucideChevronLeft);
 export const ChevronRightIcon = createConsistentLucideIcon(LucideChevronRight);
 export const ChevronUpIcon = createConsistentLucideIcon(LucideChevronUp);
-export const ChevronsRightIcon =
-  createConsistentLucideIcon(LucideChevronsRight);
+export const ChevronsRightIcon = createConsistentLucideIcon(LucideChevronsRight);
 export const CircleCheckIcon = createConsistentLucideIcon(LucideCircleCheck);
 export const CirclePlusIcon = createConsistentLucideIcon(LucideCirclePlus);
-export const CircleUserRoundIcon = createConsistentLucideIcon(
-  LucideCircleUserRound,
-);
+export const CircleUserRoundIcon = createConsistentLucideIcon(LucideCircleUserRound);
 export const CircleXIcon = createConsistentLucideIcon(LucideCircleX);
 export const ClockIcon = createConsistentLucideIcon(LucideClock);
 export const CreditCardIcon = createConsistentLucideIcon(LucideCreditCard);
@@ -844,8 +840,7 @@ export function SunIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 export const TagIcon = createConsistentLucideIcon(LucideTag);
 export const Trash2Icon = createConsistentLucideIcon(LucideTrash2);
-export const TriangleAlertIcon =
-  createConsistentLucideIcon(LucideTriangleAlert);
+export const TriangleAlertIcon = createConsistentLucideIcon(LucideTriangleAlert);
 export const UploadIcon = createConsistentLucideIcon(LucideUpload);
 export const UserIcon = createConsistentLucideIcon(LucideUser);
 export const XIcon = createConsistentLucideIcon(LucideX);
@@ -857,25 +852,20 @@ export const XIcon = createConsistentLucideIcon(LucideX);
 export const AlignCenterIcon = createConsistentLucideIcon(LucideAlignCenter);
 export const AlignLeftIcon = createConsistentLucideIcon(LucideAlignLeft);
 export const AlignRightIcon = createConsistentLucideIcon(LucideAlignRight);
-export const ArrowDownToLineIcon = createConsistentLucideIcon(
-  LucideArrowDownToLine,
-);
+export const ArrowDownToLineIcon = createConsistentLucideIcon(LucideArrowDownToLine);
 export const ArrowLeftIcon = createConsistentLucideIcon(LucideArrowLeft);
 export const ArrowRightIcon = createConsistentLucideIcon(LucideArrowRight);
-export const ArrowUpToLineIcon =
-  createConsistentLucideIcon(LucideArrowUpToLine);
+export const ArrowUpToLineIcon = createConsistentLucideIcon(LucideArrowUpToLine);
 export const AudioLinesIcon = createConsistentLucideIcon(LucideAudioLines);
 export const BoldIcon = createConsistentLucideIcon(LucideBold);
 export const BracesIcon = createConsistentLucideIcon(LucideBraces);
-export const CornerDownLeftIcon =
-  createConsistentLucideIcon(LucideCornerDownLeft);
+export const CornerDownLeftIcon = createConsistentLucideIcon(LucideCornerDownLeft);
 export const CropIcon = createConsistentLucideIcon(LucideCrop);
 export const EraserIcon = createConsistentLucideIcon(LucideEraser);
 export const ExternalLinkIcon = createConsistentLucideIcon(LucideExternalLink);
 export const FileUpIcon = createConsistentLucideIcon(LucideFileUp);
 export const FilmIcon = createConsistentLucideIcon(LucideFilm);
-export const GripHorizontalIcon =
-  createConsistentLucideIcon(LucideGripHorizontal);
+export const GripHorizontalIcon = createConsistentLucideIcon(LucideGripHorizontal);
 export const GripVerticalIcon = createConsistentLucideIcon(LucideGripVertical);
 export const IndentIcon = createConsistentLucideIcon(LucideIndent);
 export const ItalicIcon = createConsistentLucideIcon(LucideItalic);
@@ -884,16 +874,13 @@ export const ListIcon = createConsistentLucideIcon(LucideList);
 export const ListCollapseIcon = createConsistentLucideIcon(LucideListCollapse);
 export const ListOrderedIcon = createConsistentLucideIcon(LucideListOrdered);
 export const ListTodoIcon = createConsistentLucideIcon(LucideListTodo);
-export const MessageSquareTextIcon = createConsistentLucideIcon(
-  LucideMessageSquareText,
-);
+export const MessageSquareTextIcon = createConsistentLucideIcon(LucideMessageSquareText);
 export const OutdentIcon = createConsistentLucideIcon(LucideOutdent);
 export const PencilLineIcon = createConsistentLucideIcon(LucidePencilLine);
 export const PenIcon = createConsistentLucideIcon(LucidePen);
 export const RadicalIcon = createConsistentLucideIcon(LucideRadical);
 export const Redo2Icon = createConsistentLucideIcon(LucideRedo2);
-export const StrikethroughIcon =
-  createConsistentLucideIcon(LucideStrikethrough);
+export const StrikethroughIcon = createConsistentLucideIcon(LucideStrikethrough);
 export const TextIcon = createConsistentLucideIcon(LucideText);
 export const UnderlineIcon = createConsistentLucideIcon(LucideUnderline);
 export const Undo2Icon = createConsistentLucideIcon(LucideUndo2);

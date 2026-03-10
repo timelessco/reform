@@ -7,11 +7,7 @@ import { useEditorPlugin, useEditorSelector } from "platejs/react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 import { ToolbarButton } from "./toolbar";
@@ -65,10 +61,7 @@ export function FontSizeToolbarButton() {
   const handleInputChange = () => {
     const newSize = toUnitLess(inputValue);
 
-    if (
-      Number.parseInt(newSize, 10) < 1 ||
-      Number.parseInt(newSize, 10) > 100
-    ) {
+    if (Number.parseInt(newSize, 10) < 1 || Number.parseInt(newSize, 10) > 100) {
       editor.tf.focus();
 
       return;

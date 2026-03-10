@@ -1,4 +1,5 @@
-import { type Path, PathApi, type TElement } from "platejs";
+import { PathApi } from "platejs";
+import type { Path, TElement } from "platejs";
 import { createPlatePlugin } from "platejs/react";
 import { FormHeaderElement } from "@/components/ui/form-header-node";
 

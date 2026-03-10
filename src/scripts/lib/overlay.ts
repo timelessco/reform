@@ -52,8 +52,10 @@ export function createOverlay(
   // Create popup container
   const popup = document.createElement("div");
   popup.className = `bf-popup bf-popup--${isModal ? "center" : position}`;
-  popup.style.width = `${width}px`;
-  popup.style.maxHeight = `${DEFAULT_MAX_HEIGHT}px`;
+  Object.assign(popup.style, {
+    width: `${width}px`,
+    maxHeight: `${DEFAULT_MAX_HEIGHT}px`,
+  });
 
   // Create close button
   const closeBtn = document.createElement("button");

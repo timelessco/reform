@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { XIcon } from "@/components/ui/icons";
+import { iconMap, SPRITE_PATH } from "@/components/icon-picker/icon-data";
+import { isValidUrl } from "@/lib/utils";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 
 interface EmbedPreviewMockupProps {
@@ -17,6 +19,56 @@ const INSTANT = { duration: 0 };
 const FADE_TRANSITION = { duration: 0.2 };
 
 const PAD = 16;
+
+type IconDisplay =
+  | { type: "image"; value: string }
+  | { type: "emoji"; value: string }
+  | { type: "sprite"; value: string }
+  | null;
+
+function resolveIconDisplay(emoji: boolean, emojiIcon: string | undefined): IconDisplay {
+  if (!emoji) return null;
+  const icon = (emojiIcon || "").trim();
+  if (!icon) return null;
+  if (isValidUrl(icon)) return { type: "image", value: icon };
+  if (iconMap.has(icon)) return { type: "sprite", value: icon };
+  // Short string likely emoji (e.g. 👋)
+  if (icon.length <= 4) return { type: "emoji", value: icon };
+  return null;
+}
+
+function PopupIconContent({ display }: { display: IconDisplay }) {
+  const [imageError, setImageError] = useState(false);
+  if (!display) return null;
+  if (display.type === "image") {
+    if (imageError) return null;
+    return (
+      <img
+        src={display.value}
+        alt=""
+        className="absolute inset-0 size-full object-contain"
+        onError={() => setImageError(true)}
+      />
+    );
+  }
+  if (display.type === "emoji") {
+    return (
+      <span className="absolute inset-0 flex items-center justify-center text-[14px] leading-none">
+        {display.value}
+      </span>
+    );
+  }
+  if (display.type === "sprite") {
+    return (
+      <span className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+        <svg className="size-[14px]" fill="currentColor" viewBox="0 0 24 24">
+          <use href={`${SPRITE_PATH}#${display.value}`} />
+        </svg>
+      </span>
+    );
+  }
+  return null;
+}
 
 function getTargetStyle(
   embedType: EmbedType,
@@ -59,13 +111,7 @@ function getTargetStyle(
   }
 }
 
-function getCornerPos(
-  position: string,
-  cw: number,
-  ch: number,
-  w: number,
-  h: number,
-) {
+function getCornerPos(position: string, cw: number, ch: number, w: number, h: number) {
   switch (position) {
     case "bottom-left":
       return { left: PAD, top: PAD + ch - h };
@@ -78,11 +124,7 @@ function getCornerPos(
 }
 
 // Get the bubble position (always in the corner, even when popup is expanded at center)
-function getBubblePos(
-  position: string,
-  cw: number,
-  ch: number,
-) {
+function getBubblePos(position: string, cw: number, ch: number) {
   const size = 28;
   switch (position) {
     case "bottom-left":
@@ -154,6 +196,7 @@ export function EmbedPreviewMockup({
 
   const bubblePos = size.w > 0 ? getBubblePos(popupPosition, size.w, size.h) : null;
   const isPopup = embedType === "popup";
+  const popupIconDisplay = resolveIconDisplay(emoji, emojiIcon);
 
   return (
     <div className="rounded-[12px] border border-border bg-[#f5f5f5] dark:bg-muted/30 overflow-hidden">
@@ -242,6 +285,7 @@ export function EmbedPreviewMockup({
             {isPopup && isPopupExpanded && (
               <button
                 type="button"
+                aria-label="Close preview"
                 className="absolute top-1 right-1 z-30 h-3.5 w-3.5 rounded-full bg-muted-foreground/10 flex items-center justify-center hover:bg-muted-foreground/20 transition-colors cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -252,17 +296,17 @@ export function EmbedPreviewMockup({
               </button>
             )}
 
-            {/* Emoji inside the collapsed circle */}
+            {/* Icon/emoji inside the collapsed circle */}
             <AnimatePresence>
-              {isPopup && !isPopupExpanded && emoji && (
+              {isPopup && !isPopupExpanded && popupIconDisplay && (
                 <motion.span
-                  className="absolute inset-0 flex items-center justify-center text-[14px] leading-none"
+                  className="absolute inset-0 flex items-center justify-center"
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.5 }}
                   transition={{ duration: 0.15 }}
                 >
-                  {emojiIcon}
+                  <PopupIconContent display={popupIconDisplay} />
                 </motion.span>
               )}
             </AnimatePresence>
@@ -271,10 +315,13 @@ export function EmbedPreviewMockup({
 
         {/* Separate bubble trigger (visible when popup is collapsed & no emoji) */}
         {isPopup && !isPopupExpanded && !emoji && bubblePos && (
-          <div
-            className="absolute w-[28px] h-[28px] rounded-full bg-[#e0e0e0] dark:bg-card shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-border/50 z-20 cursor-pointer"
+          <button
+            type="button"
+            aria-label="Open popup preview"
+            className="absolute w-[28px] h-[28px] rounded-full bg-[#e0e0e0] dark:bg-card shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-border/50 z-20 cursor-pointer p-0"
             style={{ left: bubblePos.left, top: bubblePos.top }}
             onMouseEnter={() => setIsPopupExpanded(true)}
+            onClick={() => setIsPopupExpanded(true)}
           />
         )}
       </div>

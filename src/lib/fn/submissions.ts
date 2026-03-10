@@ -29,12 +29,14 @@ const getSubmissionsByFormId = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ formId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
-    await authForm(data.formId, context.session.user.id);
-    const list = await db
-      .select()
-      .from(submissions)
-      .where(eq(submissions.formId, data.formId))
-      .orderBy(desc(submissions.createdAt));
+    const [_, list] = await Promise.all([
+      authForm(data.formId, context.session.user.id),
+      db
+        .select()
+        .from(submissions)
+        .where(eq(submissions.formId, data.formId))
+        .orderBy(desc(submissions.createdAt)),
+    ]);
     return { submissions: list.map(serializeSubmission) };
   });
 
@@ -43,7 +45,8 @@ export const deleteSubmission = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid(), formId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
-    await authForm(data.formId, context.session.user.id);
+    const authPromise = authForm(data.formId, context.session.user.id);
+    await authPromise;
     await db.delete(submissions).where(eq(submissions.id, data.id));
     return { success: true };
   });
@@ -58,7 +61,8 @@ export const deleteSubmissionsBulk = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
-    await authForm(data.formId, context.session.user.id);
+    const authPromise = authForm(data.formId, context.session.user.id);
+    await authPromise;
     if (data.submissionIds.length === 0) {
       return { success: true, deleted: 0 };
     }

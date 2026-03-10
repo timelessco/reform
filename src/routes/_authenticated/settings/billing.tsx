@@ -2,13 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
@@ -22,13 +16,9 @@ export const Route = createFileRoute("/_authenticated/settings/billing")({
 });
 
 function BillingPage() {
-  const { data: customerState, isLoading } = useQuery(
-    auth.customer.state.queryOptions(),
-  );
+  const { data: customerState, isLoading } = useQuery(auth.customer.state.queryOptions());
 
-  const { data: activeOrg } = useQuery(
-    auth.organization.getFullOrganization.queryOptions(),
-  );
+  const { data: activeOrg } = useQuery(auth.organization.getFullOrganization.queryOptions());
 
   const handleUpgrade = async (planSlug: string) => {
     if (!activeOrg) {

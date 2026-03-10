@@ -6,15 +6,11 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
-import { formCollection, localFormCollection } from "@/db-collections";
+import { formCollection, localFormCollection } from "@/db-collections/form.collections";
 import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
 import { SidebarSection } from "@/components/ui/sidebar-section";
 import { ConfigCard, ConfigRow } from "@/components/form-builder/embed-config-panel";
-import {
-  StyleSelect,
-  StyleColorPicker,
-  StyleNumberInput,
-} from "@/components/ui/style-controls";
+import { StyleSelect, StyleColorPicker, StyleNumberInput } from "@/components/ui/style-controls";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { STYLES, BASE_COLORS, DARK_BASE_COLORS, THEME_COLORS, FONT_MAP } from "@/lib/theme-presets";
 import { TOKEN_NAMES } from "@/lib/generate-theme-css";
@@ -192,10 +188,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
   const formDoc = formResult.data?.[0] ?? null;
   const collection = isLocal ? localFormCollection : formCollection;
 
-  const customization = (formDoc?.customization ?? {}) as Record<
-    string,
-    string
-  >;
+  const customization = (formDoc?.customization ?? {}) as Record<string, string>;
 
   // Resolve the active style to get fallback values
   const resolvedStyle = useMemo(() => {
@@ -299,8 +292,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
 
   const activePreset = customization.preset || "vega";
   const activeMode = customization.mode || "light";
-  const activeBaseColors =
-    activeMode === "dark" ? DARK_BASE_COLORS : BASE_COLORS;
+  const activeBaseColors = activeMode === "dark" ? DARK_BASE_COLORS : BASE_COLORS;
   const activeThemeColor = getValue("themeColor");
   const activeBaseColor = getValue("baseColor");
   const activeFont = getValue("font");
@@ -321,6 +313,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
             size="icon"
             className="h-7 w-7 text-muted-foreground hover:text-foreground"
             onClick={closeSidebar}
+            aria-label="Close customize panel"
           >
             <XIcon className="h-4 w-4" />
           </Button>
@@ -408,8 +401,8 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
               <ProBadge />
             </div>
             <p className="text-[12px] text-muted-foreground tracking-[0.13px] leading-[1.48] mb-3">
-              Preview advanced customization. {APP_NAME} Pro is required to
-              apply it to the published form.
+              Preview advanced customization. {APP_NAME} Pro is required to apply it to the
+              published form.
             </p>
             <Button
               variant="outline"
@@ -420,10 +413,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
           </div>
 
           {/* Layout */}
-          <SidebarSection
-            label="Layout"
-            action={<ProBadge />}
-          >
+          <SidebarSection label="Layout" action={<ProBadge />}>
             <ConfigCard>
               <StyleNumberInput
                 label="Page Width"
@@ -471,10 +461,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
           </SidebarSection>
 
           {/* Colors */}
-          <SidebarSection
-            label="Colors"
-            action={<ProBadge />}
-          >
+          <SidebarSection label="Colors" action={<ProBadge />}>
             <ConfigCard>
               <AdvancedColorPickers
                 customization={customization}
@@ -484,10 +471,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
           </SidebarSection>
 
           {/* Typography */}
-          <SidebarSection
-            label="Typography"
-            action={<ProBadge />}
-          >
+          <SidebarSection label="Typography" action={<ProBadge />}>
             <ConfigCard>
               <StyleNumberInput
                 label="Font Size"
@@ -515,17 +499,13 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
           </SidebarSection>
 
           {/* Custom CSS */}
-          <SidebarSection
-            label="Custom CSS"
-            action={<ProBadge />}
-          >
+          <SidebarSection label="Custom CSS" action={<ProBadge />}>
             <div className="rounded-lg overflow-hidden border border-border/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
               <Textarea
                 value={getValue("customCss")}
-                onChange={(e) =>
-                  updateWithCustomPreset("customCss", e.target.value)
-                }
-                className="font-mono text-[11px] h-32 bg-[#1e1e1e] text-[#d4d4d4] border-0 rounded-none focus-visible:ring-0 p-3 leading-relaxed"
+                onChange={(e) => updateWithCustomPreset("customCss", e.target.value)}
+                aria-label="Custom CSS"
+                className="font-mono text-[11px] h-32 bg-[#1e1e1e] text-[#d4d4d4] border-0 rounded-none focus-visible:ring-2 focus-visible:ring-ring p-3 leading-relaxed"
                 placeholder=".bf-themed { ... }"
                 spellCheck={false}
               />
@@ -533,16 +513,10 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
             <div className="flex items-center gap-1.5 px-1 pt-2">
               <Tooltip>
                 <TooltipTrigger
-                  render={
-                    <InfoIcon className="h-3 w-3 text-muted-foreground/60 cursor-help" />
-                  }
+                  render={<InfoIcon className="h-3 w-3 text-muted-foreground/60 cursor-help" />}
                 />
-                <TooltipContent
-                  side="bottom"
-                  className="max-w-[240px] text-[11px]"
-                >
-                  Supports shadcn tokens: --bf-primary, --bf-background,
-                  --bf-foreground, etc.
+                <TooltipContent side="bottom" className="max-w-[240px] text-[11px]">
+                  Supports shadcn tokens: --bf-primary, --bf-background, --bf-foreground, etc.
                 </TooltipContent>
               </Tooltip>
               <span className="text-[11px] text-muted-foreground/60">
@@ -607,10 +581,7 @@ function AdvancedColorPickers({
       {ADVANCED_COLOR_TOKENS.map(({ key, label }) => {
         const prefixedKey = `${mode}:${key}`;
         const currentValue =
-          customization[prefixedKey] ||
-          customization[key] ||
-          resolved[key] ||
-          "#000000";
+          customization[prefixedKey] || customization[key] || resolved[key] || "#000000";
 
         return (
           <StyleColorPicker

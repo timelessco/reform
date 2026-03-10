@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useMemo } from "react";
-import { getTranslations, languageToCode, type TranslationKey } from "@/lib/translations";
+import { createContext, use, useCallback, useMemo } from "react";
+import { getTranslations, languageToCode } from "@/lib/translations";
+import type { TranslationKey } from "@/lib/translations";
 
 interface TranslationContextValue {
   t: (key: TranslationKey, params?: Record<string, string | number>) => string;
@@ -16,10 +17,7 @@ interface TranslationProviderProps {
 
 export function TranslationProvider({ language, children }: TranslationProviderProps) {
   const translations = useMemo(() => getTranslations(language), [language]);
-  const code = useMemo(
-    () => (language.length <= 3 ? language : languageToCode(language)),
-    [language],
-  );
+  const code = language.length <= 3 ? language : languageToCode(language);
 
   const t = useCallback(
     (key: TranslationKey, params?: Record<string, string | number>) => {
@@ -40,7 +38,7 @@ export function TranslationProvider({ language, children }: TranslationProviderP
 }
 
 export function useTranslation(): TranslationContextValue {
-  const ctx = useContext(TranslationContext);
+  const ctx = use(TranslationContext);
   if (!ctx) {
     // Fallback to English if no provider
     return {

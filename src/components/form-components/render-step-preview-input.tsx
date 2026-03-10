@@ -196,6 +196,7 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
                 onBlur={f.handleBlur}
                 minLength={element.minLength}
                 maxLength={element.maxLength}
+                autoComplete="off"
                 aria-invalid={hasErrors}
                 className={cn(
                   "max-w-md min-h-24 rounded-lg border-0 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
@@ -238,6 +239,7 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
                 onBlur={f.handleBlur}
                 minLength={element.minLength}
                 maxLength={element.maxLength}
+                autoComplete="off"
                 aria-invalid={hasErrors}
                 className={cn(
                   "max-w-md rounded-lg border-0 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",

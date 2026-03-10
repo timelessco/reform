@@ -5,30 +5,16 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { CopyButton } from "@/components/copy-button/copy-button";
 import { Button } from "@/components/ui/button";
-import {
-  ButtonGroup,
-  ButtonGroupText,
-} from "@/components/ui/button-group";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-} from "@/components/ui/sidebar";
+import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
 import { SidebarSection } from "@/components/ui/sidebar-section";
 import { useForm } from "@/hooks/use-live-hooks";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { publishForm } from "@/hooks/use-form-versions";
 import { cn } from "@/lib/utils";
-import type { EmbedOptions } from "./embed-config-panel";
-import { defaultEmbedOptions } from "./embed-config-panel";
+import { formFieldsToEmbedOptions } from "./embed-config-panel";
 import { EmbedConfigPanel } from "./embed-config-panel";
-import {
-  EmbedCodeDialog,
-  searchToFormValues,
-  formValuesToSearch,
-  tabs,
-} from "./embed-section";
+import { EmbedCodeDialog, searchToFormValues, formValuesToSearch, tabs } from "./embed-section";
 import { EmbedPreviewMockup } from "./embed-preview-mockup";
 
 function EmbedTabBar({
@@ -59,9 +45,7 @@ function EmbedTabBar({
           onClick={() => onChange(tab.value)}
           className={cn(
             "relative z-10 flex-1 h-7 rounded-[8px] text-sm font-medium text-center transition-colors",
-            value === tab.value
-              ? "text-foreground"
-              : "text-muted-foreground",
+            value === tab.value ? "text-foreground" : "text-muted-foreground",
           )}
         >
           {tab.label}
@@ -117,7 +101,6 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
     }
   };
 
-
   return (
     <Sidebar
       side="right"
@@ -133,6 +116,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
             size="icon"
             className="h-7 w-7 text-muted-foreground hover:text-foreground"
             onClick={closeSidebar}
+            aria-label="Close"
           >
             <XIcon className="h-4 w-4" />
           </Button>
@@ -163,15 +147,10 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
               <div className="space-y-2">
                 <h3 className="font-bold">Ready to go live?</h3>
                 <p className="text-xs text-muted-foreground">
-                  Your form is currently in draft. Publish it to start
-                  collecting responses.
+                  Your form is currently in draft. Publish it to start collecting responses.
                 </p>
               </div>
-              <Button
-                size="sm"
-                onClick={handlePublish}
-                className="w-full font-semibold gap-2"
-              >
+              <Button size="sm" onClick={handlePublish} className="w-full font-semibold gap-2">
                 Publish Now
               </Button>
             </div>
@@ -179,54 +158,28 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
             <form.Subscribe selector={(state) => state.values}>
               {(values) => {
                 const embedType = values.embedType;
-                const options: EmbedOptions = {
-                  height: values.height,
-                  dynamicHeight: values.dynamicHeight,
-                  hideTitle: values.hideTitle,
-                  alignLeft: values.alignLeft,
-                  transparentBackground: values.transparentBackground,
-                  branding: values.branding,
-                  trackEvents: values.trackEvents,
-                  customDomain: defaultEmbedOptions.customDomain,
-                  popupTrigger: values.popupTrigger,
-                  popupPosition: values.popupPosition,
-                  popupWidth: values.popupWidth,
-                  darkOverlay: values.darkOverlay,
-                  emoji: values.emoji,
-                  emojiIcon: values.emojiIcon,
-                  emojiAnimation: values.emojiAnimation,
-                  hideOnSubmit: values.hideOnSubmit,
-                  hideOnSubmitDelay: values.hideOnSubmitDelay,
-                };
-
+                const options = formFieldsToEmbedOptions(values);
+                console.log(options, "options");
                 return (
                   <div className="space-y-3">
                     {/* Preview mockup */}
                     <EmbedPreviewMockup
                       embedType={embedType}
-                      popupPosition={options.popupPosition}
-                      darkOverlay={options.darkOverlay}
-                      emoji={options.emoji}
-                      emojiIcon={options.emojiIcon}
-                      alignLeft={options.alignLeft}
+                      popupPosition={options.popup.position}
+                      darkOverlay={options.popup.overlay === "dark"}
+                      emoji={options.popup.emoji}
+                      emojiIcon={options.popup.emojiIcon}
+                      alignLeft={options.display.alignment === "left"}
                     />
 
                     {/* Customise section */}
                     <SidebarSection label="Customise" className="pb-2.75" action={<></>}>
-                      <EmbedConfigPanel
-                        form={form}
-                        embedType={embedType}
-                        section="customize"
-                      />
+                      <EmbedConfigPanel form={form} embedType={embedType} section="customize" />
                     </SidebarSection>
 
                     {/* Pro Features section */}
                     <SidebarSection label="Pro Features" action={<></>}>
-                      <EmbedConfigPanel
-                        form={form}
-                        embedType={embedType}
-                        section="pro"
-                      />
+                      <EmbedConfigPanel form={form} embedType={embedType} section="pro" />
                     </SidebarSection>
 
                     {/* Get Code button — inside scrollable content, after Pro Features */}
@@ -260,9 +213,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
         <SidebarFooter className="px-2 py-2.25">
           <ButtonGroup className="w-full">
             <ButtonGroupText className="flex-1 min-w-0 h-8 rounded-lg">
-              <span className="text-[11px] text-muted-foreground truncate">
-                {shareUrl}
-              </span>
+              <span className="text-[11px] text-muted-foreground truncate">{shareUrl}</span>
             </ButtonGroupText>
             <CopyButton
               text={shareUrl}

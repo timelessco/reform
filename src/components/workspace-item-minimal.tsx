@@ -1,10 +1,6 @@
 import { SidebarItem } from "@/components/sidebar-item";
 import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -12,11 +8,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   AlphabeticalIcon,
   CalendarIcon,
@@ -27,15 +19,10 @@ import {
   PlusIcon,
 } from "@/components/ui/icons";
 import { SidebarSection } from "@/components/ui/sidebar-section";
-import { createFormLocal } from "@/db-collections";
+import { createFormLocal } from "@/db-collections/form.collections";
 import { cn } from "@/lib/utils";
 import { useLocation, useRouter } from "@tanstack/react-router";
-import {
-  CheckIcon,
-  ChevronRightIcon,
-  Loader2Icon,
-  TrashIcon,
-} from "@/components/ui/icons";
+import { CheckIcon, ChevronRightIcon, Loader2Icon, TrashIcon } from "@/components/ui/icons";
 import { useState } from "react";
 import { ThemedFormIcon } from "@/components/icon-picker";
 
@@ -89,8 +76,7 @@ export function WorkspaceItemMinimal({
     { value: "manual", label: "Manual", icon: CopyIcon },
   ] as const;
 
-  const currentSort =
-    sortOptions.find((o) => o.value === sortMode) || sortOptions[0];
+  const currentSort = sortOptions.find((o) => o.value === sortMode) || sortOptions[0];
 
   const handleCreateForm = async () => {
     setIsCreatingForm(true);
@@ -131,20 +117,10 @@ export function WorkspaceItemMinimal({
           </PopoverTrigger>
           <PopoverContent align="start" className="w-48" sideOffset={4}>
             <div className="flex flex-col">
-              <Collapsible
-                open={sortExpanded}
-                onOpenChange={setSortExpanded}
-              >
-                <CollapsibleTrigger
-                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 w-full overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors cursor-pointer text-foreground/80 hover:bg-accent hover:text-accent-foreground"
-                >
-                  <currentSort.icon
-                    className="size-4 shrink-0"
-                    strokeWidth={1.5}
-                  />
-                  <span className="flex-1 text-left">
-                    {currentSort.label}
-                  </span>
+              <Collapsible open={sortExpanded} onOpenChange={setSortExpanded}>
+                <CollapsibleTrigger className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 w-full overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors cursor-pointer text-foreground/80 hover:bg-accent hover:text-accent-foreground">
+                  <currentSort.icon className="size-4 shrink-0" strokeWidth={1.5} />
+                  <span className="flex-1 text-left">{currentSort.label}</span>
                   <ChevronRightIcon
                     className={cn(
                       "size-3 shrink-0 transition-transform duration-200",
@@ -174,18 +150,10 @@ export function WorkspaceItemMinimal({
                             : "text-foreground/80 hover:bg-accent hover:text-accent-foreground",
                         )}
                       >
-                        <option.icon
-                          className="size-4 shrink-0"
-                          strokeWidth={1.5}
-                        />
-                        <span className="flex-1 text-left">
-                          {option.label}
-                        </span>
+                        <option.icon className="size-4 shrink-0" strokeWidth={1.5} />
+                        <span className="flex-1 text-left">{option.label}</span>
                         {sortMode === option.value && (
-                          <CheckIcon
-                            className="size-3 shrink-0"
-                            strokeWidth={2}
-                          />
+                          <CheckIcon className="size-3 shrink-0" strokeWidth={2} />
                         )}
                       </Button>
                     ))}
@@ -203,15 +171,9 @@ export function WorkspaceItemMinimal({
                 className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none"
               >
                 {isCreatingForm ? (
-                  <Loader2Icon
-                    className="size-4 animate-spin shrink-0"
-                    strokeWidth={1.5}
-                  />
+                  <Loader2Icon className="size-4 animate-spin shrink-0" strokeWidth={1.5} />
                 ) : (
-                  <PlusIcon
-                    className="size-4 shrink-0"
-                    strokeWidth={1.5}
-                  />
+                  <PlusIcon className="size-4 shrink-0" strokeWidth={1.5} />
                 )}
                 <span className="flex-1 text-left">New form</span>
               </button>
@@ -220,10 +182,7 @@ export function WorkspaceItemMinimal({
                 onClick={onRename}
                 className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
               >
-                <Pencil2Icon
-                  className="size-4 shrink-0"
-                  strokeWidth={1.5}
-                />
+                <Pencil2Icon className="size-4 shrink-0" strokeWidth={1.5} />
                 <span className="flex-1 text-left">Rename</span>
               </button>
               <button
@@ -250,18 +209,17 @@ export function WorkspaceItemMinimal({
         />
       ))}
       {workspace.forms.length === 0 && (
-        <span className="text-muted-foreground/50 text-[11px] px-8 py-1 italic">
-          No forms yet
-        </span>
+        <span className="text-muted-foreground/50 text-[11px] px-8 py-1 italic">No forms yet</span>
       )}
     </SidebarSection>
   );
 }
 
-
-const getFormIcon = (_title: string, icon?: string | null, customization?: Record<string, string> | null) => {
-  return <ThemedFormIcon icon={icon} customization={customization} />;
-};
+const getFormIcon = (
+  _title: string,
+  icon?: string | null,
+  customization?: Record<string, string> | null,
+) => <ThemedFormIcon icon={icon} customization={customization} />;
 
 interface WorkspaceFormMinimalProps {
   form: {

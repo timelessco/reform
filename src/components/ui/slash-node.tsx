@@ -20,7 +20,8 @@ import {
   ListOrderedIcon,
   SmileIcon,
 } from "@/components/ui/icons";
-import { KEYS, type TComboboxInputElement } from "platejs";
+import { KEYS } from "platejs";
+import type { TComboboxInputElement } from "platejs";
 import type { PlateEditor, PlateElementProps } from "platejs/react";
 import { PlateElement } from "platejs/react";
 import type * as React from "react";

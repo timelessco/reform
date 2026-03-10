@@ -20,8 +20,8 @@ import {
   deleteSubmission,
   deleteSubmissionsBulk,
   getSubmissionsByFormIdQueryOption,
-  type SerializedSubmission,
 } from "@/lib/fn/submissions";
+import type { SerializedSubmission } from "@/lib/fn/submissions";
 import {
   getEditableFields,
   transformPlateStateToFormElements,
@@ -36,12 +36,14 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-  type ColumnDef,
-  type ColumnPinningState,
-  type RowSelectionState,
-  type VisibilityState,
 } from "@tanstack/react-table";
-import { format } from "date-fns";
+import type {
+  ColumnDef,
+  ColumnPinningState,
+  RowSelectionState,
+  VisibilityState,
+} from "@tanstack/react-table";
+
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -97,8 +99,7 @@ export const Route = createFileRoute(
     const [publishedData, submissionsData] = await Promise.all([
       context.queryClient.ensureQueryData({
         queryKey: ["publishedFormVersion", params.formId],
-        queryFn: () =>
-          getLatestPublishedVersion({ data: { formId: params.formId } }),
+        queryFn: () => getLatestPublishedVersion({ data: { formId: params.formId } }),
         revalidateIfStale: true,
       }),
       context.queryClient.ensureQueryData({
@@ -116,13 +117,9 @@ export const Route = createFileRoute(
 function SubmissionsPage() {
   const { formId } = Route.useParams();
   const queryClient = useQueryClient();
-  const {
-    publishedData: initialPublishedData,
-    submissionsData: initialSubmissionsData,
-  } = Route.useLoaderData();
-  const [activeTab, setActiveTab] = useState<"all" | "completed" | "partial">(
-    "all",
-  );
+  const { publishedData: initialPublishedData, submissionsData: initialSubmissionsData } =
+    Route.useLoaderData();
+  const [activeTab, setActiveTab] = useState<"all" | "completed" | "partial">("all");
   const [sorting, setSorting] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
@@ -155,7 +152,10 @@ function SubmissionsPage() {
     for (const s of allSubmissions) {
       if (s.isCompleted) completed++;
     }
-    return { completedCount: completed, partialCount: allSubmissions.length - completed };
+    return {
+      completedCount: completed,
+      partialCount: allSubmissions.length - completed,
+    };
   }, [allSubmissions]);
   const submissions = useMemo(() => {
     if (activeTab === "completed")
@@ -188,23 +188,18 @@ function SubmissionsPage() {
     if (formElements) {
       const editableFields = getEditableFields(formElements);
       editableFields
-        .filter(
-          (field) =>
-            field.fieldType === "Input" || field.fieldType === "Textarea",
-        )
+        .filter((field) => field.fieldType === "Input" || field.fieldType === "Textarea")
         .forEach((field) => currentFieldNames.add(field.name));
     }
 
     const orphaned = new Set<string>();
     allSubmissions.forEach((submission) => {
       if (submission.data && typeof submission.data === "object") {
-        Object.keys(submission.data as Record<string, unknown>).forEach(
-          (key) => {
-            if (!currentFieldNames.has(key)) {
-              orphaned.add(key);
-            }
-          },
-        );
+        Object.keys(submission.data as Record<string, unknown>).forEach((key) => {
+          if (!currentFieldNames.has(key)) {
+            orphaned.add(key);
+          }
+        });
       }
     });
 
@@ -230,13 +225,8 @@ function SubmissionsPage() {
         header: ({ table }) => (
           <Checkbox
             checked={table.getIsAllPageRowsSelected()}
-            indeterminate={
-              table.getIsSomePageRowsSelected() &&
-              !table.getIsAllPageRowsSelected()
-            }
-            onCheckedChange={(value) =>
-              table.toggleAllPageRowsSelected(!!value)
-            }
+            indeterminate={table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected()}
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
             aria-label="Select all"
             className="translate-y-[2px]"
           />
@@ -259,22 +249,23 @@ function SubmissionsPage() {
       },
       // Submission Date column - minSize prevents action buttons from truncating into select column
       columnHelper.accessor("createdAt", {
-        header: ({ column }) => (
-          <DataGridColumnHeader
-            column={column}
-            title="Submitted at"
-          />
-        ),
+        header: ({ column }) => <DataGridColumnHeader column={column} title="Submitted at" />,
         cell: (info) => (
           <div className="flex items-center justify-between gap-2 group/row min-w-0">
             <span className="text-[13px] truncate min-w-0">
-              {format(new Date(info.getValue()), "MMM d, h:mm a")}
+              {new Intl.DateTimeFormat(undefined, {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "numeric",
+              }).format(new Date(info.getValue()))}
             </span>
             <div className="flex shrink-0 items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                aria-label="Delete submission"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDelete(info.row.original.id);
@@ -297,8 +288,7 @@ function SubmissionsPage() {
 
       // Only include Input and Textarea fields (not Button)
       const inputFields = editableFields.filter(
-        (field) =>
-          field.fieldType === "Input" || field.fieldType === "Textarea",
+        (field) => field.fieldType === "Input" || field.fieldType === "Textarea",
       );
 
       inputFields.forEach((field) => {
@@ -426,43 +416,49 @@ function SubmissionsPage() {
   }, [formId, queryClient, rowSelection]);
 
   // Shared CSV download helper
-  const downloadCSV = useCallback((rows: typeof table extends { getRowModel: () => { rows: infer R } } ? R : never, filename: string) => {
-    if ((rows as any[]).length === 0) return;
+  const downloadCSV = useCallback(
+    (
+      rows: typeof table extends { getRowModel: () => { rows: infer R } } ? R : never,
+      filename: string,
+    ) => {
+      if ((rows as any[]).length === 0) return;
 
-    const headers = columns
-      .filter((col) => col.id !== "select")
-      .map((col) => {
-        if (typeof col.header === "string") return col.header;
-        if (col.id === "submitted_at") return "Submitted At";
-        return col.id || "Field";
-      })
-      .join(",");
+      const headers = columns
+        .filter((col) => col.id !== "select")
+        .map((col) => {
+          if (typeof col.header === "string") return col.header;
+          if (col.id === "submitted_at") return "Submitted At";
+          return col.id || "Field";
+        })
+        .join(",");
 
-    const csvRows = (rows as any[])
-      .map((row) => {
-        return row
-          .getVisibleCells()
-          .filter((cell: any) => cell.column.id !== "select")
-          .map((cell: any) => {
-            const val = cell.getValue();
-            return `"${val ?? ""}"`;
-          })
-          .join(",");
-      })
-      .join("\n");
+      const csvRows = (rows as any[])
+        .map((row) =>
+          row
+            .getVisibleCells()
+            .filter((cell: any) => cell.column.id !== "select")
+            .map((cell: any) => {
+              const val = cell.getValue();
+              return `"${val ?? ""}"`;
+            })
+            .join(","),
+        )
+        .join("\n");
 
-    const csv = `${headers}\n${csvRows}`;
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.setAttribute("hidden", "");
-    a.setAttribute("href", url);
-    a.setAttribute("download", filename);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  }, [columns]);
+      const csv = `${headers}\n${csvRows}`;
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.setAttribute("hidden", "");
+      a.setAttribute("href", url);
+      a.setAttribute("download", filename);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    },
+    [columns],
+  );
 
   // Export selected rows as CSV
   const handleExportSelected = useCallback(() => {
@@ -476,9 +472,13 @@ function SubmissionsPage() {
   // Keyboard shortcuts (scoped to submissions page)
   const hasSelection = Object.keys(rowSelection).length > 0;
 
-  useHotkey(HOTKEYS.SUBMISSIONS_SELECT_ALL, () => {
-    table.toggleAllPageRowsSelected(!table.getIsAllPageRowsSelected());
-  }, { conflictBehavior: "replace" });
+  useHotkey(
+    HOTKEYS.SUBMISSIONS_SELECT_ALL,
+    () => {
+      table.toggleAllPageRowsSelected(!table.getIsAllPageRowsSelected());
+    },
+    { conflictBehavior: "replace" },
+  );
 
   useHotkey(HOTKEYS.SUBMISSIONS_EXPORT, () => handleExportSelected(), {
     enabled: hasSelection,
@@ -509,11 +509,7 @@ function SubmissionsPage() {
                 />
               }
             >
-              {activeTab === "all"
-                ? "All"
-                : activeTab === "completed"
-                  ? "Completed"
-                  : "Partial"}
+              {activeTab === "all" ? "All" : activeTab === "completed" ? "Completed" : "Partial"}
               <span className="opacity-60">
                 {activeTab === "all"
                   ? allSubmissions.length
@@ -521,35 +517,25 @@ function SubmissionsPage() {
                     ? completedCount
                     : partialCount}
               </span>
-              <ChevronDownIcon className="h-2.5 w-2.5 shrink-0 text-muted-foreground transition-transform duration-200" strokeWidth="2" />
+              <ChevronDownIcon
+                className="h-2.5 w-2.5 shrink-0 text-muted-foreground transition-transform duration-200"
+                strokeWidth="2"
+              />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-36">
-              <DropdownMenuItem
-                onClick={() => setActiveTab("all")}
-                className="gap-2"
-              >
+              <DropdownMenuItem onClick={() => setActiveTab("all")} className="gap-2">
                 All
                 <span className="ml-auto text-xs text-muted-foreground">
                   {allSubmissions.length}
                 </span>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setActiveTab("completed")}
-                className="gap-2"
-              >
+              <DropdownMenuItem onClick={() => setActiveTab("completed")} className="gap-2">
                 Completed
-                <span className="ml-auto text-xs text-muted-foreground">
-                  {completedCount}
-                </span>
+                <span className="ml-auto text-xs text-muted-foreground">{completedCount}</span>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setActiveTab("partial")}
-                className="gap-2"
-              >
+              <DropdownMenuItem onClick={() => setActiveTab("partial")} className="gap-2">
                 Partial
-                <span className="ml-auto text-xs text-muted-foreground">
-                  {partialCount}
-                </span>
+                <span className="ml-auto text-xs text-muted-foreground">{partialCount}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -564,6 +550,8 @@ function SubmissionsPage() {
                   className="h-full min-w-0 flex-1 bg-transparent border-0 p-0 outline-none text-[13px] placeholder:text-muted-foreground/40"
                   value={globalFilter}
                   onChange={(e) => setGlobalFilter(e.target.value)}
+                  aria-label="Search responses"
+                  name="search"
                 />
               </ButtonGroupText>
             </ButtonGroup>
@@ -600,34 +588,35 @@ function SubmissionsPage() {
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[min(560px,90vw)] animate-in slide-in-from-bottom-4 fade-in duration-300">
             <div className="flex items-center justify-between px-2.75 py-2.25 bg-background rounded-xl shadow-md">
               <div className="flex items-center gap-2.5">
-                <Checkbox checked={true} className="border-foreground data-[state=checked]:bg-foreground data-[state=checked]:border-foreground size-5" />
+                <Checkbox
+                  checked={true}
+                  className="border-foreground data-[state=checked]:bg-foreground data-[state=checked]:border-foreground size-5"
+                />
                 <span className="text-sm font-medium">
                   {Object.keys(rowSelection).length} selected
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" onClick={handleExportSelected}>
-                    <DownloadIcon className="h-3.5 w-3.5" />
-                    Export
-                    <span className="text-xs text-muted-foreground ml-1">{formatForDisplay(HOTKEYS.SUBMISSIONS_EXPORT)}</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleBulkDelete}
-                  >
-                    Delete
-                    <span className="text-xs text-muted-foreground ml-1">{formatForDisplay(HOTKEYS.SUBMISSIONS_DELETE)}</span>
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setRowSelection({})}
-                  >
-                    <XIcon className="h-3.5 w-3.5" />
-                    Clear
-                    <span className="text-xs text-muted-foreground ml-1">{formatForDisplay(HOTKEYS.SUBMISSIONS_CLEAR_SELECTION)}</span>
-                  </Button>
+                <Button variant="ghost" size="sm" onClick={handleExportSelected}>
+                  <DownloadIcon className="h-3.5 w-3.5" />
+                  Export
+                  <span className="text-xs text-muted-foreground ml-1">
+                    {formatForDisplay(HOTKEYS.SUBMISSIONS_EXPORT)}
+                  </span>
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleBulkDelete}>
+                  Delete
+                  <span className="text-xs text-muted-foreground ml-1">
+                    {formatForDisplay(HOTKEYS.SUBMISSIONS_DELETE)}
+                  </span>
+                </Button>
+                <Button variant="secondary" size="sm" onClick={() => setRowSelection({})}>
+                  <XIcon className="h-3.5 w-3.5" />
+                  Clear
+                  <span className="text-xs text-muted-foreground ml-1">
+                    {formatForDisplay(HOTKEYS.SUBMISSIONS_CLEAR_SELECTION)}
+                  </span>
+                </Button>
               </div>
             </div>
           </div>
@@ -710,12 +699,9 @@ function SubmissionsPage() {
               {/* Right: Page info and navigation */}
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span>
-                  {table.getState().pagination.pageIndex * pagination.pageSize +
-                    1}{" "}
-                  -{" "}
+                  {table.getState().pagination.pageIndex * pagination.pageSize + 1} -{" "}
                   {Math.min(
-                    (table.getState().pagination.pageIndex + 1) *
-                      pagination.pageSize,
+                    (table.getState().pagination.pageIndex + 1) * pagination.pageSize,
                     table.getFilteredRowModel().rows.length,
                   )}{" "}
                   of {table.getFilteredRowModel().rows.length}
@@ -727,6 +713,7 @@ function SubmissionsPage() {
                     className="h-7 w-7"
                     onClick={() => table.previousPage()}
                     disabled={!table.getCanPreviousPage()}
+                    aria-label="Previous page"
                   >
                     <ChevronLeftIcon className="h-4 w-4" />
                   </Button>
@@ -736,6 +723,7 @@ function SubmissionsPage() {
                     className="h-7 w-7"
                     onClick={() => table.nextPage()}
                     disabled={!table.getCanNextPage()}
+                    aria-label="Next page"
                   >
                     <ChevronRightIcon className="h-4 w-4" />
                   </Button>

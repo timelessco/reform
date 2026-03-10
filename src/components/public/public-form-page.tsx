@@ -35,20 +35,30 @@ interface GatedState {
   message?: string | null;
 }
 
+/** Embed display configuration for the public form page */
+export interface PublicFormEmbedConfig {
+  title: "visible" | "hidden";
+  background: "transparent" | "solid";
+  alignment: "center" | "left";
+  dynamicHeight: boolean;
+}
+
+export const defaultPublicFormEmbedConfig: PublicFormEmbedConfig = {
+  title: "visible",
+  background: "solid",
+  alignment: "center",
+  dynamicHeight: false,
+};
+
 interface PublicFormPageProps {
   form: PublicForm | null;
   error: "not_found" | null;
   formId: string;
   gated?: GatedState | null;
-  transparentBackground?: boolean;
   /** Whether this form is loaded in a popup iframe */
   isPopup?: boolean;
-  /** Hide the form title */
-  hideTitle?: boolean;
-  /** Align form content to the left */
-  alignLeft?: boolean;
-  /** Enable dynamic height communication for standard iframe embeds */
-  dynamicHeight?: boolean;
+  /** Embed display configuration */
+  embedConfig?: PublicFormEmbedConfig;
 }
 
 /**
@@ -103,12 +113,13 @@ export function PublicFormPage({
   error,
   formId,
   gated,
-  transparentBackground,
   isPopup = false,
-  hideTitle = false,
-  alignLeft = false,
-  dynamicHeight = false,
+  embedConfig = defaultPublicFormEmbedConfig,
 }: PublicFormPageProps) {
+  const transparentBackground = embedConfig.background === "transparent";
+  const hideTitle = embedConfig.title === "hidden";
+  const alignLeft = embedConfig.alignment === "left";
+  const dynamicHeight = embedConfig.dynamicHeight;
   const containerRef = useRef<HTMLDivElement>(null);
   const [submitted, setSubmitted] = useState(false);
 
@@ -282,6 +293,7 @@ export function PublicFormPage({
         transparentBackground || isPopup ? "bg-transparent" : "bg-white",
         alignLeft && "text-left",
       )}
+      aria-live="polite"
     >
       <FormPreviewFromPlate
         content={form.content as Value}

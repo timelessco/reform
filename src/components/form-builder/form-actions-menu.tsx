@@ -25,7 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { duplicateForm, updateDoc, updateFormStatus } from "@/db-collections";
+import { duplicateForm, updateDoc, updateFormStatus } from "@/db-collections/form.collections";
 import { useNavigate } from "@tanstack/react-router";
 import { CopyIcon, MoreHorizontalIcon, TagIcon, Trash2Icon } from "@/components/ui/icons";
 import { useState } from "react";
@@ -98,6 +98,7 @@ export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
               variant="ghost"
               size="icon"
               className="h-8 w-8 rounded-full text-muted-foreground/40 hover:text-foreground transition-colors mt-1"
+              aria-label="More actions"
             />
           }
         >
@@ -133,15 +134,15 @@ export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Rename form</DialogTitle>
-            <DialogDescription>
-              Enter a new title for this form.
-            </DialogDescription>
+            <DialogDescription>Enter a new title for this form.</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Input
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               placeholder="Form title"
+              aria-label="Form name"
+              autoComplete="off"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleRename();
@@ -163,8 +164,8 @@ export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete form</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this form? This action will move
-              it to trash and cannot be easily undone.
+              Are you sure you want to delete this form? This action will move it to trash and
+              cannot be easily undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

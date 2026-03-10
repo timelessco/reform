@@ -39,14 +39,10 @@ export function usePreviewForm({
   formName: string;
 } {
   // Generate Zod schema from field validation properties
-  const validationSchema = useMemo(() => {
-    return generateZodSchemaFromFields(fields);
-  }, [fields]);
+  const validationSchema = useMemo(() => generateZodSchemaFromFields(fields), [fields]);
 
   // Generate default values from fields (uses defaultValue if specified)
-  const defaultValues = useMemo(() => {
-    return generateDefaultValuesFromFields(fields);
-  }, [fields]);
+  const defaultValues = useMemo(() => generateDefaultValuesFromFields(fields), [fields]);
 
   const form = useAppForm({
     defaultValues,
@@ -120,9 +116,7 @@ export function useStepPreviewForm({
   const { formData, goToNextStep, submitForm } = useStepForm();
 
   // Generate Zod schema from step's field validation properties
-  const validationSchema = useMemo(() => {
-    return generateZodSchemaFromFields(fields);
-  }, [fields]);
+  const validationSchema = useMemo(() => generateZodSchemaFromFields(fields), [fields]);
 
   // Generate default values, merging with existing formData from context
   const defaultValues = useMemo(() => {

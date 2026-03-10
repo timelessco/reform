@@ -13,13 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
-import {
-  CopyIcon,
-  EyeOffIcon,
-  Pencil2Icon,
-  PlusIcon,
-  TrashIcon,
-} from "@/components/ui/icons";
+import { CopyIcon, EyeOffIcon, Pencil2Icon, PlusIcon, TrashIcon } from "@/components/ui/icons";
 import { useEditorTheme } from "@/contexts/editor-theme-context";
 import { cn } from "@/lib/utils";
 
@@ -398,6 +392,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                 <GripVerticalIcon
                   className="h-3.5 w-3.5 text-muted-foreground shrink-0"
                   strokeWidth={1.5}
+                  aria-hidden="true"
                 />
                 {isEditingName ? (
                   <Input
@@ -409,6 +404,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                       if (e.key === "Escape") setIsEditingName(false);
                     }}
                     className="h-7 text-[13px] flex-1 rounded-lg"
+                    aria-label="Field name"
                     autoFocus
                   />
                 ) : (
@@ -421,8 +417,9 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                   size="icon"
                   className="h-6 w-6 shrink-0 rounded-lg hover:bg-black/5"
                   onClick={() => setIsEditingName(!isEditingName)}
+                  aria-label="Edit field"
                 >
-                  <Pencil2Icon className="h-3.5 w-3.5" />
+                  <Pencil2Icon className="h-3.5 w-3.5" aria-hidden="true" />
                 </Button>
               </div>
               <div className="my-1 h-px bg-border" />
@@ -432,13 +429,27 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                 <>
                   <div className="flex flex-col gap-px [&>div]:bg-secondary [&>:first-child]:rounded-t-[8px] [&>:last-child]:rounded-b-[8px]">
                     <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
-                      <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">Required</span>
-                      <Switch aria-label="Required" size="small" checked={isRequired} onCheckedChange={handleToggleRequired} />
+                      <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">
+                        Required
+                      </span>
+                      <Switch
+                        aria-label="Required"
+                        size="small"
+                        checked={isRequired}
+                        onCheckedChange={handleToggleRequired}
+                      />
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
-                        <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">Default answer</span>
-                        <Switch aria-label="Default answer" size="small" checked={hasDefaultValue} onCheckedChange={handleToggleDefaultValue} />
+                        <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">
+                          Default answer
+                        </span>
+                        <Switch
+                          aria-label="Default answer"
+                          size="small"
+                          checked={hasDefaultValue}
+                          onCheckedChange={handleToggleDefaultValue}
+                        />
                       </div>
                       {hasDefaultValue && (
                         <div className="px-2 pb-2">
@@ -447,14 +458,22 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                             onChange={(e) => handleUpdateDefaultValue(e.target.value)}
                             placeholder="Enter default value"
                             className="h-7 text-[13px] rounded-lg"
+                            aria-label="Default value"
                           />
                         </div>
                       )}
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
-                        <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">Min characters</span>
-                        <Switch aria-label="Min characters" size="small" checked={hasMinLength} onCheckedChange={handleToggleMinLength} />
+                        <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">
+                          Min characters
+                        </span>
+                        <Switch
+                          aria-label="Min characters"
+                          size="small"
+                          checked={hasMinLength}
+                          onCheckedChange={handleToggleMinLength}
+                        />
                       </div>
                       {hasMinLength && (
                         <div className="px-2 pb-2">
@@ -465,14 +484,22 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                             onChange={(e) => handleUpdateMinLength(Number(e.target.value))}
                             placeholder="Min"
                             className="h-7 text-[13px] rounded-lg"
+                            aria-label="Minimum length"
                           />
                         </div>
                       )}
                     </div>
                     <div className="flex flex-col">
                       <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
-                        <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">Max characters</span>
-                        <Switch aria-label="Max characters" size="small" checked={hasMaxLength} onCheckedChange={handleToggleMaxLength} />
+                        <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">
+                          Max characters
+                        </span>
+                        <Switch
+                          aria-label="Max characters"
+                          size="small"
+                          checked={hasMaxLength}
+                          onCheckedChange={handleToggleMaxLength}
+                        />
                       </div>
                       {hasMaxLength && (
                         <div className="px-2 pb-2">
@@ -483,6 +510,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                             onChange={(e) => handleUpdateMaxLength(Number(e.target.value))}
                             placeholder="Max"
                             className="h-7 text-[13px] rounded-lg"
+                            aria-label="Maximum length"
                           />
                         </div>
                       )}
@@ -546,7 +574,6 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
     </>
   );
 }
-
 
 // Reusable Menu Item component - matches sidebar popover style
 function MenuItem({

@@ -142,7 +142,7 @@ function parseHashParams(hash: string): {
 
   // Collect other params as hidden fields
   const hiddenFields: Record<string, string> = {};
-  const knownParams = [
+  const knownParams = new Set([
     "form-open",
     "position",
     "align-left",
@@ -152,9 +152,9 @@ function parseHashParams(hash: string): {
     "emoji-text",
     "emoji-animation",
     "auto-close",
-  ];
+  ]);
   params.forEach((value, key) => {
-    if (!knownParams.includes(key)) {
+    if (!knownParams.has(key)) {
       hiddenFields[key] = value;
     }
   });

@@ -132,13 +132,11 @@ function extractTextContent(children: Array<{ text?: string }>): string {
  * Generates a slugified name from a label string.
  * Example: "Email Address" -> "email_address"
  */
+const NON_ALNUM_RE = /[^a-z0-9]+/g;
+const TRIM_UNDERSCORES_RE = /^_|_$/g;
+
 function slugify(str: string): string {
-  return (
-    str
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_|_$/g, "") || "field"
-  );
+  return str.toLowerCase().replace(NON_ALNUM_RE, "_").replace(TRIM_UNDERSCORES_RE, "") || "field";
 }
 
 /**

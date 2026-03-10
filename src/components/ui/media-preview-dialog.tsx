@@ -5,7 +5,14 @@ import {
   useScaleInput,
 } from "@platejs/media/react";
 import { cva } from "class-variance-authority";
-import { ArrowLeftIcon, ArrowRightIcon, DownloadIcon, MinusIcon, PlusIcon, XIcon } from "@/components/ui/icons";
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  DownloadIcon,
+  MinusIcon,
+  PlusIcon,
+  XIcon,
+} from "@/components/ui/icons";
 import { useEditorRef } from "platejs/react";
 import * as React from "react";
 
@@ -65,7 +72,10 @@ export function MediaPreviewDialog() {
   return (
     <div
       ref={previewMaskRef}
-      className={cn("fixed top-0 left-0 z-50 h-screen w-screen select-none", !isOpen && "hidden")}
+      className={cn(
+        "fixed top-0 left-0 z-50 h-screen w-screen select-none overscroll-contain",
+        !isOpen && "hidden",
+      )}
     >
       <div className="absolute inset-0 size-full bg-black opacity-30" />
       <div className="absolute inset-0 size-full bg-black opacity-30" />
@@ -98,6 +108,7 @@ export function MediaPreviewDialog() {
                   }),
                   "h-auto",
                 )}
+                aria-label="Previous image"
               >
                 <ArrowLeftIcon />
               </Button>
@@ -111,6 +122,7 @@ export function MediaPreviewDialog() {
                   }),
                   "h-auto",
                 )}
+                aria-label="Next image"
               >
                 <ArrowRightIcon />
               </Button>
@@ -124,6 +136,7 @@ export function MediaPreviewDialog() {
                   }),
                   "h-auto",
                 )}
+                aria-label="Zoom out"
                 {...zommOutProps}
               >
                 <MinusIcon className="size-4" />
@@ -131,7 +144,10 @@ export function MediaPreviewDialog() {
               <div className="mx-px">
                 {isEditingScale ? (
                   <>
-                    <ScaleInput className="w-10 rounded px-1 text-slate-500 outline" />{" "}
+                    <ScaleInput
+                      className="w-10 rounded px-1 text-slate-500 outline"
+                      aria-label="Zoom level"
+                    />{" "}
                     <span>%</span>
                   </>
                 ) : (
@@ -146,16 +162,26 @@ export function MediaPreviewDialog() {
                   }),
                   "h-auto",
                 )}
+                aria-label="Zoom in"
                 {...zoomInProps}
               >
                 <PlusIcon className="size-4" />
               </Button>
             </div>
             {/* TODO: downLoad the image */}
-            <Button variant="ghost" className={cn(buttonVariants(), "h-auto")}>
+            <Button
+              variant="ghost"
+              className={cn(buttonVariants(), "h-auto")}
+              aria-label="Download"
+            >
               <DownloadIcon className="size-4" />
             </Button>
-            <Button variant="ghost" {...closeProps} className={cn(buttonVariants(), "h-auto")}>
+            <Button
+              variant="ghost"
+              {...closeProps}
+              className={cn(buttonVariants(), "h-auto")}
+              aria-label="Close preview"
+            >
               <XIcon className="size-4" />
             </Button>
           </section>

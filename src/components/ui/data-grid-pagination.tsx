@@ -44,7 +44,7 @@ function DataGridPagination(props: DataGridPaginationProps) {
     rowsPerPageLabel: "Rows per page",
     previousPageLabel: "Go to previous page",
     nextPageLabel: "Go to next page",
-    ellipsisText: "...",
+    ellipsisText: "\u2026",
   };
 
   const mergedProps: DataGridPaginationProps = { ...defaultProps, ...props };
@@ -69,12 +69,8 @@ function DataGridPagination(props: DataGridPaginationProps) {
   const paginationMoreLimit = mergedProps?.moreLimit || 5;
 
   // Determine the start and end of the pagination group
-  const currentGroupStart =
-    Math.floor(pageIndex / paginationMoreLimit) * paginationMoreLimit;
-  const currentGroupEnd = Math.min(
-    currentGroupStart + paginationMoreLimit,
-    pageCount,
-  );
+  const currentGroupStart = Math.floor(pageIndex / paginationMoreLimit) * paginationMoreLimit;
+  const currentGroupEnd = Math.min(currentGroupStart + paginationMoreLimit, pageCount);
 
   // Render page buttons based on the current group
   const renderPageButtons = () => {
@@ -148,9 +144,7 @@ function DataGridPagination(props: DataGridPaginationProps) {
           mergedProps?.sizesSkeleton
         ) : (
           <>
-            <div className="text-sm text-muted-foreground">
-              {mergedProps.rowsPerPageLabel}
-            </div>
+            <div className="text-sm text-muted-foreground">{mergedProps.rowsPerPageLabel}</div>
             <Select
               value={`${pageSize}`}
               onValueChange={(value) => {
@@ -189,9 +183,7 @@ function DataGridPagination(props: DataGridPaginationProps) {
                   onClick={() => table.previousPage()}
                   disabled={!table.getCanPreviousPage()}
                 >
-                  <span className="sr-only">
-                    {mergedProps.previousPageLabel}
-                  </span>
+                  <span className="sr-only">{mergedProps.previousPageLabel}</span>
                   <ChevronLeftIcon className="size-4" />
                 </Button>
 

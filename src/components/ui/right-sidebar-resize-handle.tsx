@@ -18,12 +18,13 @@ export function RightSidebarResizeHandle({
   const startXRef = useRef(0);
   const startWidthRef = useRef(0);
 
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
-    };
-  }, []);
+    },
+    [],
+  );
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -58,11 +59,27 @@ export function RightSidebarResizeHandle({
     setSidebarWidth(RIGHT_SIDEBAR_WIDTH_DEFAULT);
   }, [setSidebarWidth]);
 
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const step = e.shiftKey ? 50 : 10;
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setSidebarWidth(sidebarWidth + step);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        setSidebarWidth(sidebarWidth - step);
+      }
+    },
+    [sidebarWidth, setSidebarWidth],
+  );
+
   return (
     <div
       role="separator"
       aria-label="Resize sidebar"
+      tabIndex={0}
       onMouseDown={handleMouseDown}
+      onKeyDown={handleKeyDown}
       onDoubleClick={handleDoubleClick}
       className="fixed top-0 bottom-0 z-50 w-0 cursor-col-resize after:absolute after:inset-y-0 after:-left-[2px] after:w-[5px] after:content-[''] hover:after:bg-border/50 active:after:bg-border"
       style={{ right: `${sidebarWidth}px` }}

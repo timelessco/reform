@@ -17,8 +17,14 @@ export function useAutoJump(enabled: boolean, onAdvance: () => void) {
       // Only auto-jump for single-select field types
       const singleSelectTypes = ["RadioGroup", "Select", "ToggleGroup"];
       if (singleSelectTypes.includes(fieldType)) {
-        // Small delay for visual feedback before advancing
-        setTimeout(onAdvance, 300);
+        // Respect prefers-reduced-motion: skip delay if user prefers reduced motion
+        const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const delay = prefersReducedMotion ? 0 : 300;
+        if (delay === 0) {
+          onAdvance();
+        } else {
+          setTimeout(onAdvance, delay);
+        }
       }
     },
     [enabled, onAdvance],

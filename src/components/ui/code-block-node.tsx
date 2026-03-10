@@ -1,15 +1,9 @@
 import { formatCodeBlock, isLangSupported } from "@platejs/code-block";
 import { BracesIcon, CheckIcon, CopyIcon } from "@/components/ui/icons";
-import { NodeApi, type TCodeBlockElement, type TCodeSyntaxLeaf } from "platejs";
-import {
-  PlateElement,
-  type PlateElementProps,
-  PlateLeaf,
-  type PlateLeafProps,
-  useEditorRef,
-  useElement,
-  useReadOnly,
-} from "platejs/react";
+import { NodeApi } from "platejs";
+import type { TCodeBlockElement, TCodeSyntaxLeaf } from "platejs";
+import { PlateElement, PlateLeaf, useEditorRef, useElement, useReadOnly } from "platejs/react";
+import type { PlateElementProps, PlateLeafProps } from "platejs/react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -79,10 +73,7 @@ function CodeBlockCombobox() {
       value={value}
       onValueChange={(val) => {
         if (val) {
-          editor.tf.setNodes<TCodeBlockElement>(
-            { lang: val as string },
-            { at: element },
-          );
+          editor.tf.setNodes<TCodeBlockElement>({ lang: val as string }, { at: element });
         }
       }}
     >
@@ -108,10 +99,7 @@ function CodeBlockCombobox() {
 function CopyButton({
   value,
   ...props
-}: { value: (() => string) | string } & Omit<
-  React.ComponentProps<typeof Button>,
-  "value"
->) {
+}: { value: (() => string) | string } & Omit<React.ComponentProps<typeof Button>, "value">) {
   const [hasCopied, setHasCopied] = React.useState(false);
 
   React.useEffect(() => {
@@ -123,19 +111,13 @@ function CopyButton({
   return (
     <Button
       onClick={() => {
-        void navigator.clipboard.writeText(
-          typeof value === "function" ? value() : value,
-        );
+        void navigator.clipboard.writeText(typeof value === "function" ? value() : value);
         setHasCopied(true);
       }}
       {...props}
     >
       <span className="sr-only">Copy</span>
-      {hasCopied ? (
-        <CheckIcon className="!size-3" />
-      ) : (
-        <CopyIcon className="!size-3" />
-      )}
+      {hasCopied ? <CheckIcon className="!size-3" /> : <CopyIcon className="!size-3" />}
     </Button>
   );
 }

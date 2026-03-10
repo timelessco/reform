@@ -10,11 +10,9 @@ import { auth, authClient } from "@/lib/auth-client";
 import { logger } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/accept-invite")({
-  validateSearch: (search: Record<string, unknown>) => {
-    return {
-      invitationId: search.invitationId as string,
-    };
-  },
+  validateSearch: (search: Record<string, unknown>) => ({
+    invitationId: search.invitationId as string,
+  }),
   component: AcceptInvitePage,
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,

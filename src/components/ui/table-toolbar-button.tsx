@@ -1,13 +1,6 @@
 import { TablePlugin, useTableMergeState } from "@platejs/table/react";
 
-import {
-  ArrowDown,
-  ArrowUp,
-  Combine,
-  Grid3x3Icon,
-  Table,
-  Ungroup,
-} from "lucide-react";
+import { ArrowDown, ArrowUp, Combine, Grid3x3Icon, Table, Ungroup } from "lucide-react";
 import { ArrowLeftIcon, ArrowRightIcon, Trash2Icon, XIcon } from "@/components/ui/icons";
 import { KEYS } from "platejs";
 import { useEditorPlugin, useEditorSelector } from "platejs/react";
@@ -41,9 +34,7 @@ const createInitialTableGrid = () =>
     })),
   );
 
-export function TableToolbarButton(
-  props: React.ComponentProps<typeof DropdownMenu>,
-) {
+export function TableToolbarButton(props: React.ComponentProps<typeof DropdownMenu>) {
   const tableSelected = useEditorSelector(
     (editor) => editor.api.some({ match: { type: KEYS.table } }),
     [],
@@ -55,16 +46,11 @@ export function TableToolbarButton(
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
-      <DropdownMenuTrigger
-        render={<ToolbarButton pressed={open} tooltip="Table" isDropdown />}
-      >
+      <DropdownMenuTrigger render={<ToolbarButton pressed={open} tooltip="Table" isDropdown />}>
         <Table />
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent
-        className="flex w-[180px] min-w-0 flex-col"
-        align="start"
-      >
+      <DropdownMenuContent className="flex w-[180px] min-w-0 flex-col" align="start">
         <DropdownMenuGroup>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger className="gap-2 data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
@@ -246,11 +232,7 @@ function TablePicker() {
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
-    if (
-      event.key === "Enter" ||
-      event.key === " " ||
-      event.key === "Spacebar"
-    ) {
+    if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
       event.preventDefault();
       handleInsertTable();
     }

@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
-import { ChevronDownIcon, HomeIcon, LogOutIcon, SettingsIcon, UsersIcon } from "@/components/ui/icons";
+import {
+  ChevronDownIcon,
+  HomeIcon,
+  LogOutIcon,
+  SettingsIcon,
+  UsersIcon,
+} from "@/components/ui/icons";
 import { useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -28,9 +34,7 @@ function OrganizationSwitcher() {
   const { data: session } = useSession();
   const user = session?.user;
 
-  const { data: activeOrg } = useQuery(
-    auth.organization.getFullOrganization.queryOptions(),
-  );
+  const { data: activeOrg } = useQuery(auth.organization.getFullOrganization.queryOptions());
 
   const { data: orgs } = useQuery(auth.organization.list.queryOptions());
 
@@ -123,15 +127,11 @@ function OrganizationSwitcher() {
               return (
                 <DropdownMenuItem
                   key={org.id}
-                  onClick={() =>
-                    setActiveOrgMutation.mutate({ organizationId: org.id })
-                  }
+                  onClick={() => setActiveOrgMutation.mutate({ organizationId: org.id })}
                   className="gap-2.5 py-2"
                 >
                   <Avatar className="h-4 w-4 rounded-full">
-                    <AvatarFallback className="text-[8px]">
-                      {getInitials(org.name)}
-                    </AvatarFallback>
+                    <AvatarFallback className="text-[8px]">{getInitials(org.name)}</AvatarFallback>
                   </Avatar>
                   <span className="flex-1 truncate">{org.name}</span>
                   {role && (
@@ -142,9 +142,7 @@ function OrganizationSwitcher() {
                       {role}
                     </Badge>
                   )}
-                  {org.id === activeOrg?.id && (
-                    <div className="h-2 w-2 rounded-full bg-primary" />
-                  )}
+                  {org.id === activeOrg?.id && <div className="h-2 w-2 rounded-full bg-primary" />}
                 </DropdownMenuItem>
               );
             })}
@@ -163,10 +161,7 @@ function OrganizationSwitcher() {
               <UsersIcon className="h-4 w-4" />
               <span>Members</span>
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => settingsDialogStore.open()}
-              className="gap-2.5 py-2"
-            >
+            <DropdownMenuItem onClick={() => settingsDialogStore.open()} className="gap-2.5 py-2">
               <SettingsIcon className="h-4 w-4" />
               <span>Settings</span>
             </DropdownMenuItem>

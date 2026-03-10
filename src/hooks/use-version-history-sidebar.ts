@@ -5,7 +5,8 @@ export function useVersionHistorySidebar() {
   const {
     activeSidebar,
     toggleSidebar,
-    setActiveSidebar,
+    openVersionHistory,
+    closeSidebar,
     selectedVersionId,
     selectVersion,
     exitVersionView,
@@ -19,12 +20,14 @@ export function useVersionHistorySidebar() {
   // Wrapper that resets state when closing
   const handleSetIsOpen = useCallback(
     (open: boolean) => {
-      if (!open) {
+      if (open) {
+        openVersionHistory();
+      } else {
         exitVersionView();
+        closeSidebar();
       }
-      setActiveSidebar(open ? "history" : null);
     },
-    [setActiveSidebar, exitVersionView],
+    [openVersionHistory, closeSidebar, exitVersionView],
   );
 
   return {

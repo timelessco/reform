@@ -50,22 +50,14 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
 
   const handleAlign = React.useCallback(
     (align: "center" | "left" | "right") => {
-      editor
-        .getTransforms(BlockSelectionPlugin)
-        .blockSelection.setNodes({ align });
+      editor.getTransforms(BlockSelectionPlugin).blockSelection.setNodes({ align });
     },
     [editor],
   );
 
-  const selectedNodes = editor
-    .getApi(BlockSelectionPlugin)
-    .blockSelection.getNodes();
-  const hasFormLabel = selectedNodes.some(
-    ([node]) => node.type === "formLabel",
-  );
-  const isRequired = selectedNodes.some(
-    ([node]) => node.type === "formLabel" && node.required,
-  );
+  const selectedNodes = editor.getApi(BlockSelectionPlugin).blockSelection.getNodes();
+  const hasFormLabel = selectedNodes.some(([node]) => node.type === "formLabel");
+  const isRequired = selectedNodes.some(([node]) => node.type === "formLabel" && node.required);
 
   const handleRequiredToggle = React.useCallback(() => {
     editor
@@ -128,9 +120,7 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
             )}
             <ContextMenuItem
               onClick={() => {
-                editor
-                  .getTransforms(BlockSelectionPlugin)
-                  .blockSelection.removeNodes();
+                editor.getTransforms(BlockSelectionPlugin).blockSelection.removeNodes();
                 editor.tf.focus();
               }}
             >
@@ -138,9 +128,7 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() => {
-                editor
-                  .getTransforms(BlockSelectionPlugin)
-                  .blockSelection.duplicate();
+                editor.getTransforms(BlockSelectionPlugin).blockSelection.duplicate();
               }}
             >
               Duplicate
@@ -149,22 +137,12 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
             <ContextMenuSub>
               <ContextMenuSubTrigger>Turn into</ContextMenuSubTrigger>
               <ContextMenuSubContent className="w-48">
-                <ContextMenuItem onClick={() => handleTurnInto(KEYS.p)}>
-                  Paragraph
-                </ContextMenuItem>
+                <ContextMenuItem onClick={() => handleTurnInto(KEYS.p)}>Paragraph</ContextMenuItem>
 
-                <ContextMenuItem onClick={() => handleTurnInto(KEYS.h1)}>
-                  Heading 1
-                </ContextMenuItem>
-                <ContextMenuItem onClick={() => handleTurnInto(KEYS.h2)}>
-                  Heading 2
-                </ContextMenuItem>
-                <ContextMenuItem onClick={() => handleTurnInto(KEYS.h3)}>
-                  Heading 3
-                </ContextMenuItem>
-                <ContextMenuItem
-                  onClick={() => handleTurnInto(KEYS.blockquote)}
-                >
+                <ContextMenuItem onClick={() => handleTurnInto(KEYS.h1)}>Heading 1</ContextMenuItem>
+                <ContextMenuItem onClick={() => handleTurnInto(KEYS.h2)}>Heading 2</ContextMenuItem>
+                <ContextMenuItem onClick={() => handleTurnInto(KEYS.h3)}>Heading 3</ContextMenuItem>
+                <ContextMenuItem onClick={() => handleTurnInto(KEYS.blockquote)}>
                   Blockquote
                 </ContextMenuItem>
               </ContextMenuSubContent>
@@ -173,19 +151,13 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
 
           <ContextMenuGroup>
             <ContextMenuItem
-              onClick={() =>
-                editor
-                  .getTransforms(BlockSelectionPlugin)
-                  .blockSelection.setIndent(1)
-              }
+              onClick={() => editor.getTransforms(BlockSelectionPlugin).blockSelection.setIndent(1)}
             >
               Indent
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() =>
-                editor
-                  .getTransforms(BlockSelectionPlugin)
-                  .blockSelection.setIndent(-1)
+                editor.getTransforms(BlockSelectionPlugin).blockSelection.setIndent(-1)
               }
             >
               Outdent
@@ -193,15 +165,9 @@ export function BlockContextMenu({ children }: { children: React.ReactNode }) {
             <ContextMenuSub>
               <ContextMenuSubTrigger>Align</ContextMenuSubTrigger>
               <ContextMenuSubContent className="w-48">
-                <ContextMenuItem onClick={() => handleAlign("left")}>
-                  Left
-                </ContextMenuItem>
-                <ContextMenuItem onClick={() => handleAlign("center")}>
-                  Center
-                </ContextMenuItem>
-                <ContextMenuItem onClick={() => handleAlign("right")}>
-                  Right
-                </ContextMenuItem>
+                <ContextMenuItem onClick={() => handleAlign("left")}>Left</ContextMenuItem>
+                <ContextMenuItem onClick={() => handleAlign("center")}>Center</ContextMenuItem>
+                <ContextMenuItem onClick={() => handleAlign("right")}>Right</ContextMenuItem>
               </ContextMenuSubContent>
             </ContextMenuSub>
           </ContextMenuGroup>

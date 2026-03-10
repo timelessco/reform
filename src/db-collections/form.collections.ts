@@ -7,8 +7,8 @@ import {
 import { z } from "zod";
 import { createForm, deleteForm, updateForm } from "@/lib/fn/forms";
 import { logger } from "@/lib/utils";
-import { electricFetchClient, getElectricUrl, type ServerTxResult, timestampField } from "./shared";
-
+import { electricFetchClient, getElectricUrl, timestampField } from "./shared";
+import type { ServerTxResult } from "./shared";
 
 const SettingsSchema = z.object({
   defaultRequiredValidation: z.boolean().default(true),
@@ -24,7 +24,6 @@ const SettingsSchema = z.object({
 });
 
 export type FormBuilderSettings = z.infer<typeof SettingsSchema>;
-
 
 export const FormSchema = z.object({
   id: z.string().uuid(),
@@ -72,7 +71,6 @@ export const FormSchema = z.object({
 });
 
 export type Form = z.infer<typeof FormSchema>;
-
 
 export const formCollection = createCollection(
   electricCollectionOptions({
@@ -122,7 +120,6 @@ export const localFormCollection = createCollection(
     getKey: (item) => item.id,
   }),
 );
-
 
 import { createFormHeaderNode } from "@/lib/form-header-factory";
 

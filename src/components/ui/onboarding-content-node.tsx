@@ -1,11 +1,5 @@
 import { APP_NAME } from "@/lib/app-config";
-import {
-  Calculator,
-  MessageSquare,
-  MousePointer2,
-  Split,
-  Zap,
-} from "lucide-react";
+import { Calculator, MessageSquare, MousePointer2, Split, Zap } from "lucide-react";
 import {
   CreditCardIcon,
   EyeOffLucideIcon,

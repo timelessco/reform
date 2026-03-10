@@ -10,6 +10,16 @@
       "source": "git@github.com:timelessco/skills.git",
       "sourceType": "git",
       "computedHash": "9eb60aa351b3f1c7af3567816427ceb13f91e9ba568fc7624ca0c91ca9657841"
+    },
+    "vercel-react-best-practices": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "computedHash": "3462ec83f862abb2d532953df33a4dbf87f4616849da5d4b5cc7c13601aaf997"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "computedHash": "a6a44d5498f7e8f68289902f3dedfc6f38ae0cee1e96527c80724cf27f727c2a"
     }
   }
 }

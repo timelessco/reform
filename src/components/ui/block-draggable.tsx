@@ -5,40 +5,24 @@ import {
   BlockMenuPlugin,
   BlockSelectionPlugin,
 } from "@platejs/selection/react";
-import {
-  GripVerticalIcon,
-  PlusIcon,
-  SettingsIcon,
-} from "@/components/ui/icons";
-import { getPluginByType, isType, KEYS, type TElement } from "platejs";
+import { GripVerticalIcon, PlusIcon, SettingsIcon } from "@/components/ui/icons";
+import { getPluginByType, isType, KEYS } from "platejs";
+import type { TElement } from "platejs";
 import {
   MemoizedChildren,
-  type PlateEditor,
-  type PlateElementProps,
-  type RenderNodeWrapper,
   useEditorRef,
   useElement,
   usePluginOption,
   useSelected,
 } from "platejs/react";
+import type { PlateEditor, PlateElementProps, RenderNodeWrapper } from "platejs/react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-const UNDRAGGABLE_KEYS = [
-  KEYS.column,
-  KEYS.tr,
-  KEYS.td,
-  "formHeader",
-  "formButton",
-  "pageBreak",
-];
+const UNDRAGGABLE_KEYS = [KEYS.column, KEYS.tr, KEYS.td, "formHeader", "formButton", "pageBreak"];
 
 export const BlockDraggable: RenderNodeWrapper = (props) => {
   const { editor, element, path } = props;
@@ -84,8 +68,7 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
         // This block is "orphaned" after the button.
         isAfterButton = true;
         const node = element;
-        const isThankYou =
-          node.type === "pageBreak" && node.isThankYouPage === true;
+        const isThankYou = node.type === "pageBreak" && node.isThankYouPage === true;
 
         // Special case: PageBreak itself is valid immediately after button
         if (node.type === "pageBreak") {
@@ -104,10 +87,7 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
     let enabled = false;
     if (path.length === 1 && !isType(editor, element, UNDRAGGABLE_KEYS)) {
       enabled = true;
-    } else if (
-      path.length === 3 &&
-      !isType(editor, element, UNDRAGGABLE_KEYS)
-    ) {
+    } else if (path.length === 3 && !isType(editor, element, UNDRAGGABLE_KEYS)) {
       const block = editor.api.some({
         at: path,
         match: {
@@ -115,10 +95,7 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
         },
       });
       if (block) enabled = true;
-    } else if (
-      path.length === 4 &&
-      !isType(editor, element, UNDRAGGABLE_KEYS)
-    ) {
+    } else if (path.length === 4 && !isType(editor, element, UNDRAGGABLE_KEYS)) {
       const block = editor.api.some({
         at: path,
         match: {
@@ -145,10 +122,7 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
     // opacity:0 and pointer-events:none ensures no interaction
     // We avoid display:none to prevent potential selection issues if cursor is forced there
     return (props) => (
-      <div
-        className="opacity-0 pointer-events-none h-0 overflow-hidden"
-        aria-hidden="true"
-      >
+      <div className="opacity-0 pointer-events-none h-0 overflow-hidden" aria-hidden="true">
         {props.children}
       </div>
     );
@@ -166,18 +140,12 @@ function Draggable(props: PlateElementProps) {
   const isFormButton = element.type === "formButton";
 
   const gutterPosition = React.useMemo(() => {
-    if (element.gutterPosition)
-      return element.gutterPosition as "center" | "top";
+    if (element.gutterPosition) return element.gutterPosition as "center" | "top";
 
     const plugin = getPluginByType(editor, element.type);
-    if (plugin?.options?.gutterPosition)
-      return plugin.options.gutterPosition as "center" | "top";
+    if (plugin?.options?.gutterPosition) return plugin.options.gutterPosition as "center" | "top";
 
-    if (
-      ["formTextarea", KEYS.codeBlock, KEYS.blockquote, KEYS.table].includes(
-        element.type,
-      )
-    ) {
+    if (["formTextarea", KEYS.codeBlock, KEYS.blockquote, KEYS.table].includes(element.type)) {
       return "top";
     }
 
@@ -193,19 +161,18 @@ function Draggable(props: PlateElementProps) {
     return "clear-both";
   }, [isFormButton, element]);
 
-  const { isAboutToDrag, isDragging, nodeRef, previewRef, handleRef } =
-    useDraggable({
-      element,
-      preview: { disable: true },
-      onDropHandler: (_, { dragItem }) => {
-        const id = (dragItem as { id: string[] | string }).id;
+  const { isAboutToDrag, isDragging, nodeRef, previewRef, handleRef } = useDraggable({
+    element,
+    preview: { disable: true },
+    onDropHandler: (_, { dragItem }) => {
+      const id = (dragItem as { id: string[] | string }).id;
 
-        if (blockSelectionApi) {
-          blockSelectionApi.add(id);
-        }
-        resetPreview();
-      },
-    });
+      if (blockSelectionApi) {
+        blockSelectionApi.add(id);
+      }
+      resetPreview();
+    },
+  });
 
   const isInColumn = path.length === 3;
   const isInTable = path.length === 4;
@@ -266,9 +233,7 @@ function Draggable(props: PlateElementProps) {
         "relative",
         buttonLayoutClass,
         isDragging && "opacity-50",
-        getPluginByType(editor, element.type)?.node.isContainer
-          ? "group/container"
-          : "group",
+        getPluginByType(editor, element.type)?.node.isContainer ? "group/container" : "group",
       )}
     >
       {!isInTable && !isFormButton && (
@@ -352,10 +317,7 @@ function Gutter({
 }: React.ComponentProps<"div"> & { gutterPosition?: "center" | "top" }) {
   const editor = useEditorRef();
   const element = useElement();
-  const isSelectionAreaVisible = usePluginOption(
-    BlockSelectionPlugin,
-    "isSelectionAreaVisible",
-  );
+  const isSelectionAreaVisible = usePluginOption(BlockSelectionPlugin, "isSelectionAreaVisible");
   const selected = useSelected();
 
   return (
@@ -364,9 +326,7 @@ function Gutter({
       className={cn(
         "slate-gutterLeft",
         "-translate-x-full absolute h-full z-50 flex cursor-text hover:opacity-100",
-        gutterPosition === "top"
-          ? "top-0 items-start pt-1.5"
-          : "top-0 items-center",
+        gutterPosition === "top" ? "top-0 items-start pt-1.5" : "top-0 items-center",
         !selected && "sm:opacity-0",
         getPluginByType(editor, element.type)?.node.isContainer
           ? "group-hover/container:opacity-100"
@@ -438,9 +398,7 @@ const DragHandle = React.memo(function DragHandle({
                 .blockSelection.getNodes({ sort: true });
 
               let selectionNodes =
-                blockSelection.length > 0
-                  ? blockSelection
-                  : editor.api.blocks({ mode: "highest" });
+                blockSelection.length > 0 ? blockSelection : editor.api.blocks({ mode: "highest" });
 
               // If current block is not in selection, use it as the starting point
               if (!selectionNodes.some(([node]) => node.id === element.id)) {
@@ -450,10 +408,9 @@ const DragHandle = React.memo(function DragHandle({
               }
 
               // Process selection nodes to include list children
-              const blocks = expandListItemsWithChildren(
-                editor,
-                selectionNodes,
-              ).map(([node]) => node);
+              const blocks = expandListItemsWithChildren(editor, selectionNodes).map(
+                ([node]) => node,
+              );
 
               if (blockSelection.length === 0) {
                 editor.tf.blur();
@@ -478,9 +435,7 @@ const DragHandle = React.memo(function DragHandle({
                 .blockSelection.getNodes({ sort: true });
 
               let selectedBlocks =
-                blockSelection.length > 0
-                  ? blockSelection
-                  : editor.api.blocks({ mode: "highest" });
+                blockSelection.length > 0 ? blockSelection : editor.api.blocks({ mode: "highest" });
 
               // If current block is not in selection, use it as the starting point
               if (!selectedBlocks.some(([node]) => node.id === element.id)) {
@@ -490,10 +445,7 @@ const DragHandle = React.memo(function DragHandle({
               }
 
               // Process selection to include list children
-              const processedBlocks = expandListItemsWithChildren(
-                editor,
-                selectedBlocks,
-              );
+              const processedBlocks = expandListItemsWithChildren(editor, selectedBlocks);
 
               const ids = processedBlocks.map((block) => block[0].id as string);
 
@@ -521,9 +473,7 @@ const DragHandle = React.memo(function DragHandle({
         )}
       </TooltipTrigger>
       <TooltipContent>
-        {isFormButton
-          ? "Click for settings"
-          : "Drag to move, Click to open menu"}
+        {isFormButton ? "Click for settings" : "Drag to move, Click to open menu"}
       </TooltipContent>
     </Tooltip>
   );
@@ -553,10 +503,7 @@ const DropLine = React.memo(function DropLine({
   );
 });
 
-const createDragPreviewElements = (
-  editor: PlateEditor,
-  blocks: TElement[],
-): HTMLElement[] => {
+const createDragPreviewElements = (editor: PlateEditor, blocks: TElement[]): HTMLElement[] => {
   const elements: HTMLElement[] = [];
   const ids: string[] = [];
 
@@ -566,10 +513,7 @@ const createDragPreviewElements = (
    */
   const removeDataAttributes = (element: HTMLElement) => {
     Array.from(element.attributes).forEach((attr) => {
-      if (
-        attr.name.startsWith("data-slate") ||
-        attr.name.startsWith("data-block-id")
-      ) {
+      if (attr.name.startsWith("data-slate") || attr.name.startsWith("data-block-id")) {
         element.removeAttribute(attr.name);
       }
     });
@@ -584,22 +528,23 @@ const createDragPreviewElements = (
     const newDomNode = domNode.cloneNode(true) as HTMLElement;
 
     // Apply visual compensation for horizontal scroll
-    const applyScrollCompensation = (
-      original: Element,
-      cloned: HTMLElement,
-    ) => {
+    const applyScrollCompensation = (original: Element, cloned: HTMLElement) => {
       const scrollLeft = original.scrollLeft;
 
       if (scrollLeft > 0) {
         // Create a wrapper to handle the scroll offset
         const scrollWrapper = document.createElement("div");
-        scrollWrapper.style.overflow = "hidden";
-        scrollWrapper.style.width = `${original.clientWidth}px`;
+        Object.assign(scrollWrapper.style, {
+          overflow: "hidden",
+          width: `${original.clientWidth}px`,
+        });
 
         // Create inner container with the full content
         const innerContainer = document.createElement("div");
-        innerContainer.style.transform = `translateX(-${scrollLeft}px)`;
-        innerContainer.style.width = `${original.scrollWidth}px`;
+        Object.assign(innerContainer.style, {
+          transform: `translateX(-${scrollLeft}px)`,
+          width: `${original.scrollWidth}px`,
+        });
 
         // Move all children to the inner container
         while (cloned.firstChild) {
@@ -671,9 +616,7 @@ const calculatePreviewTop = (
 
   const firstDomNode = editor.api.toDOMNode(firstSelectedChild)!;
   // Get editor's top padding
-  const editorPaddingTop = Number(
-    window.getComputedStyle(editable).paddingTop.replace("px", ""),
-  );
+  const editorPaddingTop = Number(window.getComputedStyle(editable).paddingTop.replace("px", ""));
 
   // Calculate distance from first selected node to editor top
   const firstNodeToEditorDistance =
@@ -687,18 +630,13 @@ const calculatePreviewTop = (
 
   // Calculate distance from current node to editor top
   const currentToEditorDistance =
-    child.getBoundingClientRect().top -
-    editable.getBoundingClientRect().top -
-    editorPaddingTop;
+    child.getBoundingClientRect().top - editable.getBoundingClientRect().top - editorPaddingTop;
 
   const currentMarginTopString = window.getComputedStyle(child).marginTop;
   const currentMarginTop = Number(currentMarginTopString.replace("px", ""));
 
   const previewElementsTopDistance =
-    currentToEditorDistance -
-    firstNodeToEditorDistance +
-    marginTop -
-    currentMarginTop;
+    currentToEditorDistance - firstNodeToEditorDistance + marginTop - currentMarginTop;
 
   return previewElementsTopDistance;
 };

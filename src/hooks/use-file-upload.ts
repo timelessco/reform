@@ -1,12 +1,6 @@
 import type React from "react";
-import {
-  type ChangeEvent,
-  type DragEvent,
-  type InputHTMLAttributes,
-  useCallback,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useRef, useState } from "react";
+import type { ChangeEvent, DragEvent, InputHTMLAttributes } from "react";
 
 export type FileMetadata = {
   name: string;
@@ -71,7 +65,7 @@ export const useFileUpload = (
     onError,
   } = options;
 
-  const [state, setState] = useState<FileUploadState>({
+  const [state, setState] = useState<FileUploadState>(() => ({
     files: initialFiles.map((file) => ({
       file,
       id: file.id,
@@ -79,7 +73,7 @@ export const useFileUpload = (
     })),
     isDragging: false,
     errors: [],
-  });
+  }));
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -360,16 +354,14 @@ export const useFileUpload = (
   }, []);
 
   const getInputProps = useCallback(
-    (props: InputHTMLAttributes<HTMLInputElement> = {}) => {
-      return {
-        ...props,
-        type: "file" as const,
-        onChange: handleFileChange,
-        accept: props.accept || accept,
-        multiple: props.multiple !== undefined ? props.multiple : multiple,
-        ref: inputRef,
-      };
-    },
+    (props: InputHTMLAttributes<HTMLInputElement> = {}) => ({
+      ...props,
+      type: "file" as const,
+      onChange: handleFileChange,
+      accept: props.accept || accept,
+      multiple: props.multiple !== undefined ? props.multiple : multiple,
+      ref: inputRef,
+    }),
     [accept, multiple, handleFileChange],
   );
 
@@ -392,14 +384,12 @@ export const useFileUpload = (
 };
 
 // Helper function to format bytes to human-readable format
-export const formatBytes = (bytes: number, decimals = 2): string => {
-  if (bytes === 0) return "0 Bytes";
+export const formatBytes = (bytes: number): string => {
+  if (bytes === 0) return "0 B";
 
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
+  const units = ["B", "KB", "MB", "GB", "TB"] as const;
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  const value = bytes / Math.pow(1024, i);
 
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-  return Number.parseFloat((bytes / k ** i).toFixed(dm)) + sizes[i];
+  return `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(value)}\u00a0${units[i]}`;
 };

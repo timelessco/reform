@@ -1,6 +1,10 @@
 import * as schema from "@/db/schema";
 import { db } from "@/lib/db";
-import { sendChangeEmailConfirmationEmail, sendOrgInvitationEmail, sendOTPEmail } from "@/lib/email";
+import {
+  sendChangeEmailConfirmationEmail,
+  sendOrgInvitationEmail,
+  sendOTPEmail,
+} from "@/lib/email";
 import { logger } from "@/lib/utils";
 import { APP_NAME } from "@/lib/app-config";
 import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
@@ -31,8 +35,8 @@ export const auth = betterAuth({
   //   joins: true,
   // },
   user: {
-    changeEmail : {
-      enabled : true,
+    changeEmail: {
+      enabled: true,
       sendChangeEmailConfirmation: async (data) => {
         logger(`[Auth] Sending change email confirmation to ${data.user.email} → ${data.newEmail}`);
         if (import.meta.env.DEV) {
@@ -41,7 +45,7 @@ export const auth = betterAuth({
           void sendChangeEmailConfirmationEmail(data.user.email, data.newEmail, data.url);
         }
       },
-    }
+    },
   },
   emailVerification: {
     autoSignInAfterVerification: true,
@@ -68,24 +72,24 @@ export const auth = betterAuth({
               })
               .returning();
 
-            // Add user as owner/admin of the organization
-            await db.insert(schema.member).values({
-              id: crypto.randomUUID(),
-              userId: user.id,
-              organizationId: org.id,
-              role: "owner",
-              createdAt: now,
-            });
-
-            // Create default workspace for the organization
-            await db.insert(schema.workspaces).values({
-              id: crypto.randomUUID(),
-              organizationId: org.id,
-              createdByUserId: user.id,
-              name: "My workspace",
-              createdAt: now,
-              updatedAt: now,
-            });
+            // Add user as owner and create default workspace in parallel
+            await Promise.all([
+              db.insert(schema.member).values({
+                id: crypto.randomUUID(),
+                userId: user.id,
+                organizationId: org.id,
+                role: "owner",
+                createdAt: now,
+              }),
+              db.insert(schema.workspaces).values({
+                id: crypto.randomUUID(),
+                organizationId: org.id,
+                createdByUserId: user.id,
+                name: "My workspace",
+                createdAt: now,
+                updatedAt: now,
+              }),
+            ]);
 
             logger(
               `[Auth] Created organization "${user.name}" with default workspace for user ${user.email}`,

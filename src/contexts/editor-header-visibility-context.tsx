@@ -1,5 +1,5 @@
 import type React from "react";
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface EditorHeaderVisibilityContextType {
   enabled: boolean;
@@ -63,29 +63,33 @@ export function EditorHeaderVisibilityProvider({
     return () => window.removeEventListener("mousemove", onMouseMove);
   }, [enabled, visible, reportPointerActivity]);
 
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       clearHideTimer();
-    };
-  }, [clearHideTimer]);
+    },
+    [clearHideTimer],
+  );
+
+  const value = useMemo(
+    () => ({
+      enabled,
+      visible: effectiveVisible,
+      reportTyping,
+      reportPointerActivity,
+      resetVisibility,
+    }),
+    [enabled, effectiveVisible, reportTyping, reportPointerActivity, resetVisibility],
+  );
 
   return (
-    <EditorHeaderVisibilityContext.Provider
-      value={{
-        enabled,
-        visible: effectiveVisible,
-        reportTyping,
-        reportPointerActivity,
-        resetVisibility,
-      }}
-    >
+    <EditorHeaderVisibilityContext.Provider value={value}>
       {children}
     </EditorHeaderVisibilityContext.Provider>
   );
 }
 
 export function useEditorHeaderVisibility() {
-  const context = useContext(EditorHeaderVisibilityContext);
+  const context = use(EditorHeaderVisibilityContext);
   if (!context) {
     throw new Error(
       "useEditorHeaderVisibility must be used within a EditorHeaderVisibilityProvider",
@@ -95,5 +99,5 @@ export function useEditorHeaderVisibility() {
 }
 
 export function useEditorHeaderVisibilitySafe() {
-  return useContext(EditorHeaderVisibilityContext);
+  return use(EditorHeaderVisibilityContext);
 }

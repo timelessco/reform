@@ -1,4 +1,5 @@
-import { type BaseSuggestionConfig, BaseSuggestionPlugin } from "@platejs/suggestion";
+import { BaseSuggestionPlugin } from "@platejs/suggestion";
+import type { BaseSuggestionConfig } from "@platejs/suggestion";
 import type { ExtendConfig, Path } from "platejs";
 import { isSlateEditor, isSlateString } from "platejs";
 import { toTPlatePlugin } from "platejs/react";

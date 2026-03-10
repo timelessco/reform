@@ -12,16 +12,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { createFormButtonNode } from "@/components/ui/form-button-node";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEditorTheme } from "@/contexts/editor-theme-context";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useFileUpload } from "@/hooks/use-file-upload";
-import { ImageCrop, ImageCropContent, ImageCropApply, ImageCropReset } from "@/components/ui/image-crop";
+import {
+  ImageCrop,
+  ImageCropContent,
+  ImageCropApply,
+  ImageCropReset,
+} from "@/components/ui/image-crop";
 import type { FormHeaderElementData } from "@/lib/form-header-factory";
 import { THEME_COLORS } from "@/lib/theme-presets";
 import { cn, isValidUrl, DEFAULT_ICON } from "@/lib/utils";
@@ -34,21 +35,10 @@ const PRIMARY_TO_THEME_NAME = new Map(
   Object.entries(THEME_COLORS).map(([name, t]) => [t.primary, name]),
 );
 
-function CoverUpload({
-  onFileChange,
-}: {
-  onFileChange: (url: string) => void;
-}) {
+function CoverUpload({ onFileChange }: { onFileChange: (url: string) => void }) {
   const [
     { isDragging, errors },
-    {
-      handleDragEnter,
-      handleDragLeave,
-      handleDragOver,
-      handleDrop,
-      openFileDialog,
-      getInputProps,
-    },
+    { handleDragEnter, handleDragLeave, handleDragOver, handleDrop, openFileDialog, getInputProps },
   ] = useFileUpload({
     maxFiles: 1,
     maxSize: 5 * 1024 * 1024,
@@ -84,9 +74,7 @@ function CoverUpload({
           <span className="text-xs">Max 5MB</span>
         </div>
       </button>
-      {errors.length > 0 && (
-        <div className="text-destructive text-sm">{errors[0]}</div>
-      )}
+      {errors.length > 0 && <div className="text-destructive text-sm">{errors[0]}</div>}
     </div>
   );
 }
@@ -103,14 +91,7 @@ function IconUploadTab({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [
     { isDragging, errors },
-    {
-      handleDragEnter,
-      handleDragLeave,
-      handleDragOver,
-      handleDrop,
-      openFileDialog,
-      getInputProps,
-    },
+    { handleDragEnter, handleDragLeave, handleDragOver, handleDrop, openFileDialog, getInputProps },
   ] = useFileUpload({
     maxFiles: 1,
     maxSize: 5 * 1024 * 1024,
@@ -128,9 +109,7 @@ function IconUploadTab({
     return (
       <div className="h-[368px] w-[310px] bg-muted/50 px-3 flex flex-col">
         <div className="flex items-center justify-between border-b border-b-border py-3">
-          <span className="text-sm leading-4 font-medium text-foreground">
-            Crop image
-          </span>
+          <span className="text-sm leading-4 font-medium text-foreground">Crop image</span>
           <button
             type="button"
             onClick={() => setSelectedFile(null)}
@@ -181,9 +160,7 @@ function IconUploadTab({
   return (
     <div className="h-[368px] w-[310px] bg-muted/50 px-3 flex flex-col">
       <div className="flex items-center border-b border-b-border py-3">
-        <span className="text-sm leading-4 font-medium text-foreground">
-          Upload an image
-        </span>
+        <span className="text-sm leading-4 font-medium text-foreground">Upload an image</span>
       </div>
 
       <div className="flex-1 flex items-center justify-center py-4">
@@ -207,6 +184,8 @@ function IconUploadTab({
               <img
                 src={currentIcon}
                 alt="Current icon"
+                width={180}
+                height={180}
                 className="max-w-[180px] max-h-[180px] rounded-lg object-contain"
               />
               <span className="text-xs text-muted-foreground group-hover/upload:text-foreground transition-colors">
@@ -215,21 +194,21 @@ function IconUploadTab({
             </div>
           ) : (
             <>
-              <div className={cn(
-                "w-10 h-10 rounded-lg flex items-center justify-center mb-2 transition-colors",
-                isDragging ? "bg-primary/15" : "bg-primary/10 group-hover/upload:bg-primary/15",
-              )}>
-                <UploadIcon className={cn(
-                  "h-[18px] w-[18px] transition-colors",
-                  isDragging ? "text-primary" : "text-primary/70 group-hover/upload:text-primary",
-                )} />
+              <div
+                className={cn(
+                  "w-10 h-10 rounded-lg flex items-center justify-center mb-2 transition-colors",
+                  isDragging ? "bg-primary/15" : "bg-primary/10 group-hover/upload:bg-primary/15",
+                )}
+              >
+                <UploadIcon
+                  className={cn(
+                    "h-[18px] w-[18px] transition-colors",
+                    isDragging ? "text-primary" : "text-primary/70 group-hover/upload:text-primary",
+                  )}
+                />
               </div>
-              <p className="text-[13px] font-medium text-foreground">
-                Drop your image here
-              </p>
-              <p className="text-xs text-muted-foreground">
-                or click to browse
-              </p>
+              <p className="text-[13px] font-medium text-foreground">Drop your image here</p>
+              <p className="text-xs text-muted-foreground">or click to browse</p>
               <p className="text-[10px] text-muted-foreground/60 mt-2 tracking-wide uppercase">
                 PNG, JPG, SVG · Max 5MB
               </p>
@@ -261,13 +240,7 @@ const iconTabs = [
   { value: "upload", label: "Upload" },
 ] as const;
 
-function IconTabBar({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
+function IconTabBar({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const items = iconTabs;
   const activeIndex = items.findIndex((t) => t.value === value);
   const count = items.length;
@@ -287,9 +260,7 @@ function IconTabBar({
           onClick={() => onChange(tab.value)}
           className={cn(
             "relative z-10 flex-1 h-7 rounded-[8px] text-sm font-medium text-center transition-colors",
-            value === tab.value
-              ? "text-foreground"
-              : "text-muted-foreground",
+            value === tab.value ? "text-foreground" : "text-muted-foreground",
           )}
         >
           {tab.label}
@@ -302,13 +273,18 @@ function IconTabBar({
 export function FormHeaderElement(props: PlateElementProps) {
   const { element, children } = props;
   const editor = useEditorRef();
-  const { hasCustomization, themeVars, customization: editorCustomization, updateThemeColor } = useEditorTheme();
-  const { activeSidebar, setActiveSidebar, closeSidebar } = useEditorSidebar();
+  const {
+    hasCustomization,
+    themeVars,
+    customization: editorCustomization,
+    updateThemeColor,
+  } = useEditorTheme();
+  const { activeSidebar, closeSidebar, openCustomize } = useEditorSidebar();
   const toggleCustomize = () => {
     if (activeSidebar === "customize") {
       closeSidebar();
     } else {
-      setActiveSidebar("customize");
+      openCustomize();
     }
   };
 
@@ -357,13 +333,15 @@ export function FormHeaderElement(props: PlateElementProps) {
     updateHeader({ cover: newCover });
   };
 
-  const handleAddCover = () =>   handleCoverChange(
-    "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true",
-  )
+  const handleAddCover = () =>
+    handleCoverChange(
+      "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true",
+    );
 
   const accentColors = hasCustomization ? ACCENT_COLORS : undefined;
   const activeThemeColorName = editorCustomization?.themeColor || "zinc";
-  const activeAccentColor = THEME_COLORS[activeThemeColorName]?.primary || THEME_COLORS.zinc.primary;
+  const activeAccentColor =
+    THEME_COLORS[activeThemeColorName]?.primary || THEME_COLORS.zinc.primary;
 
   const [iconPopoverOpen, setIconPopoverOpen] = useState(false);
   const [iconTab, setIconTab] = useState("icon");
@@ -376,7 +354,10 @@ export function FormHeaderElement(props: PlateElementProps) {
       >
         {hasCover && (
           <>
-            <div className="relative w-screen left-[50%] right-[50%] -ml-[50vw] -mr-[50vw] h-[120px] sm:h-[200px] group/cover bg-muted/20" data-bf-cover>
+            <div
+              className="relative w-screen left-[50%] right-[50%] -ml-[50vw] -mr-[50vw] h-[120px] sm:h-[200px] group/cover bg-muted/20"
+              data-bf-cover
+            >
               {cover && !cover.startsWith("#") ? (
                 <>
                   {cover.includes("tint=true") && (
@@ -385,10 +366,11 @@ export function FormHeaderElement(props: PlateElementProps) {
                   <img
                     src={cover}
                     alt="Cover"
+                    width={800}
+                    height={200}
                     className={cn(
                       "w-full h-full object-cover border-0 ",
-                      cover.includes("tint=true") &&
-                        "relative z-0 brightness-60 grayscale",
+                      cover.includes("tint=true") && "relative z-0 brightness-60 grayscale",
                     )}
                   />
                 </>
@@ -424,10 +406,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                       <TabsTrigger value="gallery">Gallery</TabsTrigger>
                       <TabsTrigger value="upload">Upload</TabsTrigger>
                     </TabsList>
-                    <TabsContent
-                      value="gallery"
-                      className="grid grid-cols-4 gap-2 pt-4"
-                    >
+                    <TabsContent value="gallery" className="grid grid-cols-4 gap-2 pt-4">
                       <button
                         type="button"
                         onClick={() =>
@@ -435,13 +414,15 @@ export function FormHeaderElement(props: PlateElementProps) {
                             "https://images.unsplash.com/photo-1604076850742-4c7221f3101b?w=800&q=80&tint=true",
                           )
                         }
-                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-[opacity,transform]"
                         aria-label="Abstract mesh"
                       >
                         <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
                         <img
                           src="https://images.unsplash.com/photo-1604076850742-4c7221f3101b?w=800&q=80&tint=true"
                           alt="Abstract mesh"
+                          width={200}
+                          height={64}
                           className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
                         />
                       </button>
@@ -452,13 +433,15 @@ export function FormHeaderElement(props: PlateElementProps) {
                             "https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80&tint=true",
                           )
                         }
-                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-[opacity,transform]"
                         aria-label="Abstract gradient"
                       >
                         <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
                         <img
                           src="https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80&tint=true"
                           alt="Abstract gradient"
+                          width={200}
+                          height={64}
                           className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
                         />
                       </button>
@@ -469,13 +452,15 @@ export function FormHeaderElement(props: PlateElementProps) {
                             "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true",
                           )
                         }
-                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-[opacity,transform]"
                         aria-label="Abstract geometric"
                       >
                         <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
                         <img
                           src="https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true"
                           alt="Abstract geometric"
+                          width={200}
+                          height={64}
                           className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
                         />
                       </button>
@@ -486,13 +471,15 @@ export function FormHeaderElement(props: PlateElementProps) {
                             "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80&tint=true",
                           )
                         }
-                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-[opacity,transform]"
                         aria-label="Abstract liquid"
                       >
                         <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
                         <img
                           src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80&tint=true"
                           alt="Abstract liquid"
+                          width={200}
+                          height={64}
                           className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
                         />
                       </button>
@@ -503,13 +490,15 @@ export function FormHeaderElement(props: PlateElementProps) {
                             "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=800&q=80&tint=true",
                           )
                         }
-                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-[opacity,transform]"
                         aria-label="3D shapes"
                       >
                         <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
                         <img
                           src="https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=800&q=80&tint=true"
                           alt="3D shapes"
+                          width={200}
+                          height={64}
                           className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
                         />
                       </button>
@@ -520,13 +509,15 @@ export function FormHeaderElement(props: PlateElementProps) {
                             "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80&tint=true",
                           )
                         }
-                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-[opacity,transform]"
                         aria-label="Gradient curves"
                       >
                         <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
                         <img
                           src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80&tint=true"
                           alt="Gradient curves"
+                          width={200}
+                          height={64}
                           className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
                         />
                       </button>
@@ -537,13 +528,15 @@ export function FormHeaderElement(props: PlateElementProps) {
                             "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80&tint=true",
                           )
                         }
-                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-[opacity,transform]"
                         aria-label="Geometric waves"
                       >
                         <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
                         <img
                           src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80&tint=true"
                           alt="Geometric waves"
+                          width={200}
+                          height={64}
                           className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
                         />
                       </button>
@@ -554,13 +547,15 @@ export function FormHeaderElement(props: PlateElementProps) {
                             "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&q=80&tint=true",
                           )
                         }
-                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-all"
+                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-[opacity,transform]"
                         aria-label="Abstract paint"
                       >
                         <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
                         <img
                           src="https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&q=80&tint=true"
                           alt="Abstract paint"
+                          width={200}
+                          height={64}
                           className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
                         />
                       </button>
@@ -609,15 +604,9 @@ export function FormHeaderElement(props: PlateElementProps) {
                 <div
                   className={cn("relative z-10 mb-1", hasCover ? "" : "mt-4 sm:mt-6")}
                   data-bf-logo-emoji-container={
-                    hasCover && icon && !isValidUrl(icon)
-                      ? "true"
-                      : undefined
+                    hasCover && icon && !isValidUrl(icon) ? "true" : undefined
                   }
-                  data-bf-logo-container={
-                    hasCover && icon && isValidUrl(icon)
-                      ? "true"
-                      : undefined
-                  }
+                  data-bf-logo-container={hasCover && icon && isValidUrl(icon) ? "true" : undefined}
                 >
                   <PopoverTrigger
                     render={
@@ -625,6 +614,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                         type="button"
                         className="cursor-pointer transition-colors"
                         onMouseDown={(e) => e.preventDefault()}
+                        aria-label="Change icon"
                       />
                     }
                   >
@@ -633,13 +623,15 @@ export function FormHeaderElement(props: PlateElementProps) {
                         <img
                           src={icon}
                           alt="Logo"
+                          width={120}
+                          height={120}
                           className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-md object-cover"
                           data-bf-logo
                         />
                       ) : (
                         <IconPickerPreview
                           icon={icon}
-                          iconColor={hasCustomization ? undefined : (iconColor || undefined)}
+                          iconColor={hasCustomization ? undefined : iconColor || undefined}
                           useThemeColor={hasCustomization || !iconColor}
                           iconSize="48"
                           size="100"
@@ -722,7 +714,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                   {iconTab === "icon" ? (
                     <IconPickerContent
                       iconValue={icon && icon !== DEFAULT_ICON && !isValidUrl(icon) ? icon : null}
-                      iconColor={hasCustomization ? activeAccentColor : (iconColor || "#000000")}
+                      iconColor={hasCustomization ? activeAccentColor : iconColor || "#000000"}
                       onIconChange={(newIcon) => {
                         handleIconChange(newIcon);
                         setIconPopoverOpen(false);
@@ -758,6 +750,7 @@ export function FormHeaderElement(props: PlateElementProps) {
               <textarea
                 ref={titleRef}
                 rows={1}
+                aria-label="Form title"
                 className="w-full text-4xl sm:text-[48px] font-serif font-light -tracking-[0.03em] leading-[1.15] border-none outline-none bg-transparent text-foreground placeholder:text-foreground/50 placeholder:font-light py-1 sm:py-2 h-auto select-text placeholder:font-serif resize-none overflow-hidden"
                 placeholder="Create your form."
                 value={title}
@@ -768,8 +761,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                     e.preventDefault();
                     // Check if onboarding content is present (by type)
                     const secondBlock = editor.children[1] as any;
-                    const isOnboarding =
-                      secondBlock?.type === "onboardingContent";
+                    const isOnboarding = secondBlock?.type === "onboardingContent";
 
                     if (isOnboarding) {
                       // Clear to empty state: header + empty paragraph + submit button
@@ -784,9 +776,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                       });
                       // Move cursor to first paragraph
                       const firstBlockPath = [1];
-                      const startPoint = (editor.api as any).edges(
-                        firstBlockPath,
-                      )?.[0];
+                      const startPoint = (editor.api as any).edges(firstBlockPath)?.[0];
                       if (startPoint) {
                         editor.tf.select(startPoint);
                         editor.tf.focus();
@@ -794,9 +784,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                     } else {
                       // Normal behavior: move focus to first block
                       const firstBlockPath = [1];
-                      const startPoint = (editor.api as any).edges(
-                        firstBlockPath,
-                      )?.[0];
+                      const startPoint = (editor.api as any).edges(firstBlockPath)?.[0];
                       if (startPoint) {
                         editor.tf.select(startPoint);
                         editor.tf.focus();

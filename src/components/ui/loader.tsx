@@ -3,7 +3,7 @@ import { Loader2Icon } from "@/components/ui/icons";
 export default function Loader() {
   return (
     <div className="flex h-full items-center justify-center pt-8">
-      <Loader2Icon className="animate-spin text-muted-foreground" size={48} />
+      <Loader2Icon aria-hidden="true" className="animate-spin text-muted-foreground" size={48} />
       {/* <svg
 				width="352"
 				height="367"

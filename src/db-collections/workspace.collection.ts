@@ -2,7 +2,8 @@ import { electricCollectionOptions } from "@tanstack/electric-db-collection";
 import { createCollection } from "@tanstack/react-db";
 import { z } from "zod";
 import { createWorkspace, deleteWorkspace, updateWorkspace } from "@/lib/fn/workspaces";
-import { electricFetchClient, getElectricUrl, type ServerTxResult, timestampField } from "./shared";
+import { electricFetchClient, getElectricUrl, timestampField } from "./shared";
+import type { ServerTxResult } from "./shared";
 
 const WorkspaceSchema = z.object({
   id: z.string().uuid(),

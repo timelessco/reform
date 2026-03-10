@@ -4,7 +4,8 @@
  * This utility creates a Zod schema object from the validation properties
  * stored in the Plate editor nodes, enabling runtime form validation in preview mode.
  */
-import { type ZodType, z } from "zod";
+import { z } from "zod";
+import type { ZodType } from "zod";
 import type { PlateFormField } from "./transform-plate-to-form";
 
 /**

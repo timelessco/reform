@@ -6,7 +6,8 @@ import {
 } from "@tanstack/react-form";
 import type { VariantProps } from "class-variance-authority";
 import * as React from "react";
-import { Button, type buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import type { buttonVariants } from "@/components/ui/button";
 import {
   Field as DefaultField,
   FieldError as DefaultFieldError,
@@ -18,8 +19,8 @@ import {
   FieldLegend,
   FieldSeparator,
   FieldTitle,
-  type fieldVariants,
 } from "@/components/ui/field";
+import type { fieldVariants } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
@@ -31,12 +32,15 @@ const {
   useFormContext,
 } = createFormHookContexts();
 
-const Form = React.forwardRef<
-  HTMLFormElement,
-  Omit<React.ComponentPropsWithoutRef<"form">, "onSubmit"> & {
-    children?: React.ReactNode;
-  }
->(({ children, className, ...props }, ref) => {
+const Form = ({
+  children,
+  className,
+  ref,
+  ...props
+}: Omit<React.ComponentPropsWithoutRef<"form">, "onSubmit"> & {
+  children?: React.ReactNode;
+  ref?: React.Ref<HTMLFormElement>;
+}) => {
   const form = useFormContext();
   const handleSubmit = React.useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
@@ -57,8 +61,7 @@ const Form = React.forwardRef<
       {children}
     </form>
   );
-});
-Form.displayName = "Form";
+};
 
 const { useAppForm, withForm, withFieldGroup } = createFormHook({
   fieldContext,
@@ -113,7 +116,7 @@ const fieldStateSelector = (state: any) => ({
 });
 
 const useFieldContext = () => {
-  const { id } = React.useContext(FormItemContext);
+  const { id } = React.use(FormItemContext);
 
   // Always call _useFieldContext() unconditionally - it's a hook and must be called
   // This hook may conditionally call hooks internally, but we must always call it

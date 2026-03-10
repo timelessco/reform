@@ -32,11 +32,10 @@ const store = {
 export type { SettingsTab };
 
 export function useSettingsDialog() {
-  const current = useSyncExternalStore(
-    store.subscribe,
-    store.getSnapshot,
-    () => ({ isOpen: false, activeTab: "account" as SettingsTab }),
-  );
+  const current = useSyncExternalStore(store.subscribe, store.getSnapshot, () => ({
+    isOpen: false,
+    activeTab: "account" as SettingsTab,
+  }));
   return {
     ...current,
     open: store.open,

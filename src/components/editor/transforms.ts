@@ -3,7 +3,6 @@ import { insertCodeBlock, toggleCodeBlock } from "@platejs/code-block";
 import { insertDate } from "@platejs/date";
 import { insertColumnGroup, toggleColumnGroup } from "@platejs/layout";
 import { triggerFloatingLink } from "@platejs/link/react";
-import { insertEquation, insertInlineEquation } from "@platejs/math";
 import {
   insertAudioPlaceholder,
   insertFilePlaceholder,
@@ -13,7 +12,8 @@ import {
 import { SuggestionPlugin } from "@platejs/suggestion/react";
 import { TablePlugin } from "@platejs/table/react";
 import { insertToc } from "@platejs/toc";
-import { KEYS, type NodeEntry, type Path, PathApi, type TElement } from "platejs";
+import { KEYS, PathApi } from "platejs";
+import type { NodeEntry, Path, TElement } from "platejs";
 import type { PlateEditor } from "platejs/react";
 
 const ACTION_THREE_COLUMNS = "action_three_columns";
@@ -36,7 +36,10 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
   [KEYS.audio]: (editor) => insertAudioPlaceholder(editor, { select: true }),
   [KEYS.callout]: (editor) => insertCallout(editor, { select: true }),
   [KEYS.codeBlock]: (editor) => insertCodeBlock(editor, { select: true }),
-  [KEYS.equation]: (editor) => insertEquation(editor, { select: true }),
+  [KEYS.equation]: async (editor) => {
+    const { insertEquation } = await import("@platejs/math");
+    insertEquation(editor, { select: true });
+  },
   [KEYS.file]: (editor) => insertFilePlaceholder(editor, { select: true }),
   [KEYS.img]: (editor) =>
     insertMedia(editor, {
@@ -314,7 +317,10 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
 
 const insertInlineMap: Record<string, (editor: PlateEditor, type: string) => void> = {
   [KEYS.date]: (editor) => insertDate(editor, { select: true }),
-  [KEYS.inlineEquation]: (editor) => insertInlineEquation(editor, "", { select: true }),
+  [KEYS.inlineEquation]: async (editor) => {
+    const { insertInlineEquation } = await import("@platejs/math");
+    insertInlineEquation(editor, "", { select: true });
+  },
   [KEYS.link]: (editor) => triggerFloatingLink(editor, { focused: true }),
 };
 

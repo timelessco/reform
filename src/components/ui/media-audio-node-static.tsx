@@ -1,4 +1,5 @@
-import { NodeApi, type TAudioElement, type TCaptionElement } from "platejs";
+import { NodeApi } from "platejs";
+import type { TAudioElement, TCaptionElement } from "platejs";
 import type { SlateElementProps } from "platejs/static";
 import { SlateElement } from "platejs/static";
 import * as React from "react";

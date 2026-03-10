@@ -11,7 +11,6 @@ export const timestampField = z
   .optional()
   .transform((val) => (val ? parseAsUTC(val) : new Date().toISOString()));
 
-
 export const getElectricUrl = () => {
   if (typeof window !== "undefined") {
     return `${window.location.origin}/api/electric`;

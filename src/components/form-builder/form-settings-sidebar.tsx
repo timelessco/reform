@@ -2,11 +2,7 @@ import { XIcon } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { SettingsContent } from "@/routes/_authenticated/workspace/$workspaceId/form-builder/$formId/settings";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-} from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
 
 interface FormSettingsSidebarProps {
   formId: string;
@@ -30,6 +26,7 @@ export function FormSettingsSidebar({ formId, isLocal }: FormSettingsSidebarProp
             size="icon"
             className="h-7 w-7 text-muted-foreground hover:text-foreground"
             onClick={closeSidebar}
+            aria-label="Close settings"
           >
             <XIcon className="h-4 w-4" />
           </Button>

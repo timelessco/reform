@@ -3,7 +3,8 @@ import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { forms, formVersions, submissions, user } from "@/db/schema";
 import { db } from "@/lib/db";
-import { type PublicFormSettings, defaultPublicFormSettings } from "@/types/form-settings";
+import { defaultPublicFormSettings } from "@/types/form-settings";
+import type { PublicFormSettings } from "@/types/form-settings";
 
 /**
  * Public server functions - NO authentication required
@@ -232,11 +233,7 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
       throw new Error("This form is closed");
     }
     // Close on date
-    if (
-      form.closeOnDate &&
-      form.closeDate &&
-      new Date(form.closeDate) < new Date()
-    ) {
+    if (form.closeOnDate && form.closeDate && new Date(form.closeDate) < new Date()) {
       throw new Error("This form is no longer accepting responses");
     }
     // Submission limit
@@ -281,6 +278,8 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
     return { submissionId: id, success: true };
   });
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /**
  * Find a respondent's email from submission data.
  * Priority: keys containing "email" first, then any email-like string value.
@@ -293,9 +292,8 @@ function findRespondentEmail(data: Record<string, unknown>): string | null {
     }
   }
   // Second pass: look for any email-like value
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   for (const value of Object.values(data)) {
-    if (typeof value === "string" && emailRegex.test(value)) {
+    if (typeof value === "string" && EMAIL_REGEX.test(value)) {
       return value;
     }
   }
@@ -355,8 +353,7 @@ async function sendEmailNotifications(
   if (settings.respondentEmailNotifications) {
     const respondentEmail = findRespondentEmail(submissionData);
     if (respondentEmail) {
-      const subject =
-        settings.respondentEmailSubject || "Thank you for your submission";
+      const subject = settings.respondentEmailSubject || "Thank you for your submission";
       const body =
         settings.respondentEmailBody ||
         "Thank you for filling out our form. We have received your response.";

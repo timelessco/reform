@@ -11,17 +11,17 @@ Adding a new field type to the form builder requires changes across 9 files. The
 
 ## File Locations
 
-| Purpose | File Path |
-|---------|-----------|
-| Editor UI Component | `src/components/ui/form-{type}-node.tsx` |
-| Plate Plugin | `src/components/editor/plugins/form-blocks-kit.tsx` |
-| Slash Command Menu | `src/components/ui/slash-node.tsx` |
-| Insert Transforms | `src/components/editor/transforms.ts` |
-| Block Menu Options | `src/components/ui/block-menu.tsx` |
-| Transformation | `src/lib/transform-plate-to-form.ts` |
+| Purpose                | File Path                                                    |
+| ---------------------- | ------------------------------------------------------------ |
+| Editor UI Component    | `src/components/ui/form-{type}-node.tsx`                     |
+| Plate Plugin           | `src/components/editor/plugins/form-blocks-kit.tsx`          |
+| Slash Command Menu     | `src/components/ui/slash-node.tsx`                           |
+| Insert Transforms      | `src/components/editor/transforms.ts`                        |
+| Block Menu Options     | `src/components/ui/block-menu.tsx`                           |
+| Transformation         | `src/lib/transform-plate-to-form.ts`                         |
 | Preview Element Router | `src/components/form-components/form-preview-from-plate.tsx` |
-| Preview Renderer | `src/components/form-components/render-preview-input.tsx` |
-| Zod Schema | `src/lib/generate-zod-schema.ts` |
+| Preview Renderer       | `src/components/form-components/render-preview-input.tsx`    |
+| Zod Schema             | `src/lib/generate-zod-schema.ts`                             |
 
 ## Implementation Checklist
 
@@ -34,28 +34,24 @@ import type { PlateElementProps } from "platejs/react";
 import { PlateElement } from "platejs/react";
 import { cn } from "@/lib/utils";
 
-export function FormEmailElement({
-  className,
-  children,
-  ...props
-}: PlateElementProps) {
+export function FormEmailElement({ className, children, ...props }: PlateElementProps) {
   const placeholder = props.element.placeholder as string | undefined;
   const isEmpty = props.editor.api.isEmpty(props.element);
 
   return (
     <PlateElement className={cn("m-0 px-0 py-1", className)} {...props}>
-      <div className={cn(
-        "relative flex h-9 w-full max-w-md items-center rounded-md border border-input bg-transparent px-3 py-1",
-        "focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]",
-      )}>
+      <div
+        className={cn(
+          "relative flex h-9 w-full max-w-md items-center rounded-md border border-input bg-transparent px-3 py-1",
+          "focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]",
+        )}
+      >
         {isEmpty && placeholder && (
           <span className="absolute text-muted-foreground pointer-events-none select-none">
             {placeholder}
           </span>
         )}
-        <span className={cn(isEmpty ? "text-transparent" : "")}>
-          {children}
-        </span>
+        <span className={cn(isEmpty ? "text-transparent" : "")}>{children}</span>
       </div>
     </PlateElement>
   );
@@ -291,7 +287,11 @@ In `src/components/form-components/form-preview-from-plate.tsx`:
 ```tsx
 // In RenderPreviewElement function, update the condition to include new field type
 // Form fields (Input, Textarea, Button)
-if (element.fieldType === "Input" || element.fieldType === "Textarea" || element.fieldType === "Button") {
+if (
+  element.fieldType === "Input" ||
+  element.fieldType === "Textarea" ||
+  element.fieldType === "Button"
+) {
   return <RenderPreviewInput field={element as PlateFormField} form={form} />;
 }
 ```
@@ -321,14 +321,14 @@ Note: If "Textarea" already exists in the map (check first!), you may not need c
 
 ## Quick Reference: Node Properties
 
-| Property | Location | Purpose |
-|----------|----------|---------|
-| `type` | Node type key | Plate node identifier (e.g., "formEmail") |
-| `placeholder` | `element.placeholder` | Shown when field is empty |
-| `required` | `element.required` on label node | Validation flag |
-| `minLength` | `element.minLength` on input node | Min character validation |
-| `maxLength` | `element.maxLength` on input node | Max character validation |
-| `defaultValue` | `element.defaultValue` on input node | Pre-filled value |
+| Property       | Location                             | Purpose                                   |
+| -------------- | ------------------------------------ | ----------------------------------------- |
+| `type`         | Node type key                        | Plate node identifier (e.g., "formEmail") |
+| `placeholder`  | `element.placeholder`                | Shown when field is empty                 |
+| `required`     | `element.required` on label node     | Validation flag                           |
+| `minLength`    | `element.minLength` on input node    | Min character validation                  |
+| `maxLength`    | `element.maxLength` on input node    | Max character validation                  |
+| `defaultValue` | `element.defaultValue` on input node | Pre-filled value                          |
 
 ## Testing the Field Type
 
@@ -342,15 +342,15 @@ Note: If "Textarea" already exists in the map (check first!), you may not need c
 
 ## Common Mistakes
 
-| Mistake | Fix |
-|---------|-----|
-| Field not in slash menu | Add entry to `groups` array in `slash-node.tsx` |
-| Slash command doesn't insert | Add handler to `insertBlockMap` in `transforms.ts` |
-| Plugin not rendering | Add component to `FormBlocksKit` array |
-| Tab navigation broken | Check `onKeyDown` handler and node type check |
-| **Tab/Enter skips to wrong block** | **Add `event.stopPropagation()` after `event.preventDefault()` - prevents other handlers from firing** |
-| **Enter at start doesn't create block above** | **Check cursor position with `editor.api.edges(path)` and compare with `selection.anchor.offset`** |
-| Block menu doesn't show options | Update `getFieldType()` AND node lookup functions in `block-menu.tsx` |
-| Field missing in preview | Add case to `transformPlateStateToFormElements()` |
-| **Field not rendering in preview** | **Add fieldType to condition in `RenderPreviewElement` in `form-preview-from-plate.tsx`** |
-| No validation | Add generator to `FIELD_SCHEMA_MAP` in `generate-zod-schema.ts` |
+| Mistake                                       | Fix                                                                                                    |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Field not in slash menu                       | Add entry to `groups` array in `slash-node.tsx`                                                        |
+| Slash command doesn't insert                  | Add handler to `insertBlockMap` in `transforms.ts`                                                     |
+| Plugin not rendering                          | Add component to `FormBlocksKit` array                                                                 |
+| Tab navigation broken                         | Check `onKeyDown` handler and node type check                                                          |
+| **Tab/Enter skips to wrong block**            | **Add `event.stopPropagation()` after `event.preventDefault()` - prevents other handlers from firing** |
+| **Enter at start doesn't create block above** | **Check cursor position with `editor.api.edges(path)` and compare with `selection.anchor.offset`**     |
+| Block menu doesn't show options               | Update `getFieldType()` AND node lookup functions in `block-menu.tsx`                                  |
+| Field missing in preview                      | Add case to `transformPlateStateToFormElements()`                                                      |
+| **Field not rendering in preview**            | **Add fieldType to condition in `RenderPreviewElement` in `form-preview-from-plate.tsx`**              |
+| No validation                                 | Add generator to `FIELD_SCHEMA_MAP` in `generate-zod-schema.ts`                                        |

@@ -111,9 +111,7 @@ export const turnIntoItems = [
   },
 ];
 
-export function TurnIntoToolbarButton(
-  props: React.ComponentProps<typeof DropdownMenu>,
-) {
+export function TurnIntoToolbarButton(props: React.ComponentProps<typeof DropdownMenu>) {
   const editor = useEditorRef();
   const [open, setOpen] = React.useState(false);
 
@@ -122,9 +120,7 @@ export function TurnIntoToolbarButton(
     getProp: (node) => getBlockType(node as TElement),
   });
   const selectedItem = React.useMemo(
-    () =>
-      turnIntoItems.find((item) => item.value === (value ?? KEYS.p)) ??
-      turnIntoItems[0],
+    () => turnIntoItems.find((item) => item.value === (value ?? KEYS.p)) ?? turnIntoItems[0],
     [value],
   );
 
@@ -132,21 +128,13 @@ export function TurnIntoToolbarButton(
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
       <DropdownMenuTrigger
         render={
-          <ToolbarButton
-            className="min-w-[125px]"
-            pressed={open}
-            tooltip="Turn into"
-            isDropdown
-          />
+          <ToolbarButton className="min-w-[125px]" pressed={open} tooltip="Turn into" isDropdown />
         }
       >
         {selectedItem.label}
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent
-        className="ignore-click-outside/toolbar min-w-0"
-        align="start"
-      >
+      <DropdownMenuContent className="ignore-click-outside/toolbar min-w-0" align="start">
         <ToolbarMenuGroup
           value={value}
           onValueChange={(type) => {
@@ -155,11 +143,7 @@ export function TurnIntoToolbarButton(
           label="Turn into"
         >
           {turnIntoItems.map(({ icon, label, value: itemValue }) => (
-            <DropdownMenuRadioItem
-              key={itemValue}
-              className="min-w-[180px] pl-2"
-              value={itemValue}
-            >
+            <DropdownMenuRadioItem key={itemValue} className="min-w-[180px] pl-2" value={itemValue}>
               {icon}
               {label}
             </DropdownMenuRadioItem>

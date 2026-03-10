@@ -14,9 +14,7 @@ import {
 
 import { ToolbarButton } from "./toolbar";
 
-export function LineHeightToolbarButton(
-  props: React.ComponentProps<typeof DropdownMenu>,
-) {
+export function LineHeightToolbarButton(props: React.ComponentProps<typeof DropdownMenu>) {
   const editor = useEditorRef();
   const { defaultNodeValue, validNodeValues: values = [] } =
     editor.getInjectProps(LineHeightPlugin);
@@ -31,9 +29,7 @@ export function LineHeightToolbarButton(
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
       <DropdownMenuTrigger
-        render={
-          <ToolbarButton pressed={open} tooltip="Line height" isDropdown />
-        }
+        render={<ToolbarButton pressed={open} tooltip="Line height" isDropdown />}
       >
         <WrapTextIcon />
       </DropdownMenuTrigger>
@@ -42,18 +38,12 @@ export function LineHeightToolbarButton(
         <DropdownMenuRadioGroup
           value={value}
           onValueChange={(newValue) => {
-            editor
-              .getTransforms(LineHeightPlugin)
-              .lineHeight.setNodes(Number(newValue));
+            editor.getTransforms(LineHeightPlugin).lineHeight.setNodes(Number(newValue));
             editor.tf.focus();
           }}
         >
           {values.map((value) => (
-            <DropdownMenuRadioItem
-              key={value}
-              className="min-w-[180px] pl-2"
-              value={value}
-            >
+            <DropdownMenuRadioItem key={value} className="min-w-[180px] pl-2" value={value}>
               {value}
             </DropdownMenuRadioItem>
           ))}

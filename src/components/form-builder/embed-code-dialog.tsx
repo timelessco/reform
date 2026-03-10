@@ -49,11 +49,11 @@ interface EmbedCodeDialogProps {
 export function generateEmbedUrl(formId: string, options: EmbedOptions): string {
   const baseUrl = `${window.location.origin}/forms/${formId}`;
   const params = new URLSearchParams();
-  if (options.hideTitle) params.append("hideTitle", "true");
-  if (options.transparentBackground) params.append("transparent", "true");
-  if (options.alignLeft) params.append("align", "left");
-  if (!options.branding) params.append("branding", "false");
-  if (options.dynamicHeight) params.append("dynamicHeight", "true");
+  if (options.display.title === "hidden") params.append("hideTitle", "true");
+  if (options.display.background === "transparent") params.append("transparent", "true");
+  if (options.display.alignment === "left") params.append("align", "left");
+  if (!options.display.branding) params.append("branding", "false");
+  if (options.display.dynamicHeight) params.append("dynamicHeight", "true");
   const queryString = params.toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 }
@@ -68,7 +68,7 @@ function generateEmbedCode(
 
   if (embedType === "standard") {
     const baseUrl = `${window.location.origin}/widgets/embed.js`;
-    const dynamicHeightScript = options.dynamicHeight
+    const dynamicHeightScript = options.display.dynamicHeight
       ? `window.addEventListener("message",function(e){try{var d=JSON.parse(e.data);if(d.event==="Reform.Resize"){var f=document.querySelector('iframe[data-reform-src]');if(f&&typeof d.height==="number")f.style.height=d.height+"px"}}catch{}});`
       : "";
     return `<iframe
@@ -85,17 +85,18 @@ function generateEmbedCode(
   }
 
   if (embedType === "popup") {
+    const isDarkOverlay = options.popup.overlay === "dark";
     return `<!-- ${APP_NAME} Popup Embed -->
 <script>
   (function() {
     var script = document.createElement('script');
     script.src = "${window.location.origin}/embed/popup.js";
     script.setAttribute('data-form-id', '${formId}');
-    script.setAttribute('data-position', '${options.popupPosition}');
-    script.setAttribute('data-width', '${options.popupWidth}');
-    script.setAttribute('data-trigger', '${options.popupTrigger}');
-    ${options.darkOverlay ? "script.setAttribute('data-dark-overlay', 'true');" : ""}
-    ${options.emoji ? `script.setAttribute('data-emoji', '${options.emojiIcon}');` : ""}
+    script.setAttribute('data-position', '${options.popup.position}');
+    script.setAttribute('data-width', '${options.popup.width}');
+    script.setAttribute('data-trigger', '${options.popup.trigger}');
+    ${isDarkOverlay ? "script.setAttribute('data-dark-overlay', 'true');" : ""}
+    ${options.popup.emoji ? `script.setAttribute('data-emoji', '${options.popup.emojiIcon}');` : ""}
     script.async = true;
     document.head.appendChild(script);
   })();
@@ -123,6 +124,7 @@ function CopyButton({ text }: { text: string }) {
       variant="ghost"
       size="icon"
       onClick={handleCopy}
+      aria-label="Copy to clipboard"
       className="absolute top-3 right-3 h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
     >
       {copied ? <CheckIcon className="w-3.5 h-3.5" /> : <CopyIcon className="w-3.5 h-3.5" />}
@@ -142,9 +144,15 @@ function InlineCopyBar({ value }: { value: string }) {
       <Input
         value={value}
         readOnly
+        aria-label="Embed URL"
         className="h-9 text-[11px] bg-muted/30 focus-visible:ring-primary border-transparent focus:border-primary transition-all pr-2 font-mono"
       />
-      <Button size="icon" className="h-9 w-9 shrink-0" onClick={handleCopy}>
+      <Button
+        size="icon"
+        className="h-9 w-9 shrink-0"
+        onClick={handleCopy}
+        aria-label="Copy to clipboard"
+      >
         {copied ? (
           <CheckIcon className="h-3.5 w-3.5 text-green-500" />
         ) : (
@@ -211,10 +219,13 @@ export function EmbedCodeDialog({
     [embedType, options, formId, docTitle],
   );
 
-  const emojiParams = options.emoji
-    ? `&emoji-text=${encodeURIComponent(options.emojiIcon)}&emoji-animation=${options.emojiAnimation}`
+  const emojiParams = options.popup.emoji
+    ? `&emoji-text=${encodeURIComponent(options.popup.emojiIcon)}&emoji-animation=${options.popup.emojiAnimation}`
     : "";
-  const hashUrl = `#form-open=${formId}&position=${options.popupPosition}&align-left=${options.alignLeft ? 1 : 0}&hide-title=${options.hideTitle ? 1 : 0}&overlay=${options.darkOverlay ? 1 : 0}${emojiParams}&auto-close=${options.hideOnSubmit ? options.hideOnSubmitDelay * 1000 : 0}`;
+  const isAlignLeft = options.display.alignment === "left";
+  const isHideTitle = options.display.title === "hidden";
+  const isDarkOverlay = options.popup.overlay === "dark";
+  const hashUrl = `#form-open=${formId}&position=${options.popup.position}&align-left=${isAlignLeft ? 1 : 0}&hide-title=${isHideTitle ? 1 : 0}&overlay=${isDarkOverlay ? 1 : 0}${emojiParams}&auto-close=${options.popup.hideOnSubmit ? options.popup.hideOnSubmitDelay * 1000 : 0}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -281,14 +292,14 @@ export function EmbedCodeDialog({
                     <div className="text-[11px] text-foreground/80 font-mono space-y-1">
                       <div className="text-muted-foreground/60">{"// Data attributes"}</div>
                       <div className="break-all leading-relaxed">
-                        data-form-id="{formId}"{` data-position="${options.popupPosition}"`}
-                        {options.alignLeft && ` data-align-left="1"`}
-                        {options.hideTitle && ` data-hide-title="1"`}
-                        {options.darkOverlay && ` data-overlay="1"`}
-                        {options.emoji &&
-                          ` data-emoji-text="${options.emojiIcon}" data-emoji-animation="${options.emojiAnimation}"`}
-                        {options.hideOnSubmit &&
-                          ` data-auto-close="${options.hideOnSubmitDelay * 1000}"`}
+                        data-form-id="{formId}"{` data-position="${options.popup.position}"`}
+                        {isAlignLeft && ` data-align-left="1"`}
+                        {isHideTitle && ` data-hide-title="1"`}
+                        {isDarkOverlay && ` data-overlay="1"`}
+                        {options.popup.emoji &&
+                          ` data-emoji-text="${options.popup.emojiIcon}" data-emoji-animation="${options.popup.emojiAnimation}"`}
+                        {options.popup.hideOnSubmit &&
+                          ` data-auto-close="${options.popup.hideOnSubmitDelay * 1000}"`}
                       </div>
                     </div>
                   </div>
@@ -296,7 +307,7 @@ export function EmbedCodeDialog({
                     code={`// Example
 <button type="button"
   data-form-id="${formId}"
-  data-position="${options.popupPosition}"${options.alignLeft ? `\n  data-align-left="1"` : ""}${options.hideTitle ? `\n  data-hide-title="1"` : ""}${options.darkOverlay ? `\n  data-overlay="1"` : ""}${options.emoji ? `\n  data-emoji-text="${options.emojiIcon}"\n  data-emoji-animation="${options.emojiAnimation}"` : ""}${options.hideOnSubmit ? `\n  data-auto-close="${options.hideOnSubmitDelay * 1000}"` : ""}
+  data-position="${options.popup.position}"${isAlignLeft ? `\n  data-align-left="1"` : ""}${isHideTitle ? `\n  data-hide-title="1"` : ""}${isDarkOverlay ? `\n  data-overlay="1"` : ""}${options.popup.emoji ? `\n  data-emoji-text="${options.popup.emojiIcon}"\n  data-emoji-animation="${options.popup.emojiAnimation}"` : ""}${options.popup.hideOnSubmit ? `\n  data-auto-close="${options.popup.hideOnSubmitDelay * 1000}"` : ""}
 >
   Click me
 </button>`}
@@ -477,7 +488,7 @@ Reform.closePopup('${formId}');`}
                         <CodeBlock
                           code={`Reform.openPopup('${formId}', {
   layout: 'modal',
-  width: ${options.popupWidth},
+  width: ${options.popup.width},
   autoClose: 5000,
 });`}
                           language="javascript"

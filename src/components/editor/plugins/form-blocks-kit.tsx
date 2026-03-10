@@ -1,4 +1,5 @@
-import { type Path, PathApi, type TElement } from "platejs";
+import { PathApi } from "platejs";
+import type { Path, TElement } from "platejs";
 import type { PlateEditor } from "platejs/react";
 import { createPlatePlugin } from "platejs/react";
 import { FormButtonElement } from "@/components/ui/form-button-node";
@@ -7,10 +8,16 @@ import { FormLabelElement } from "@/components/ui/form-label-node";
 import { FormTextareaElement } from "@/components/ui/form-textarea-node";
 import { PageBreakElement } from "@/components/ui/page-break-node";
 
-const FORM_FIELD_TYPES = ["formInput", "formTextarea", "formButton", "formLabel", "pageBreak"];
+const FORM_FIELD_TYPES = new Set([
+  "formInput",
+  "formTextarea",
+  "formButton",
+  "formLabel",
+  "pageBreak",
+]);
 
 // Button types that should not be deleted
-const PROTECTED_BUTTON_TYPES = ["formButton"];
+const PROTECTED_BUTTON_TYPES = new Set(["formButton"]);
 
 function moveToPath(editor: PlateEditor, path: Path): boolean {
   const node = editor.api.node(path);
@@ -154,7 +161,7 @@ function handleFormBlockKeyDown(editor: PlateEditor, event: React.KeyboardEvent)
   if ((event as any).__formBlockHandled) return;
 
   const block = editor.api.block();
-  if (!block || !FORM_FIELD_TYPES.includes(block[0].type)) return;
+  if (!block || !FORM_FIELD_TYPES.has(block[0].type)) return;
 
   // Mark as handled before any action
   (event as any).__formBlockHandled = true;
@@ -304,7 +311,7 @@ function handleFormBlockKeyDown(editor: PlateEditor, event: React.KeyboardEvent)
   }
 
   if (event.key === "Backspace" && editor.api.isEmpty(node)) {
-    if (PROTECTED_BUTTON_TYPES.includes(node.type)) {
+    if (PROTECTED_BUTTON_TYPES.has(node.type)) {
       event.preventDefault();
       event.stopPropagation();
       return;
@@ -496,9 +503,7 @@ export const FormButtonPlugin = createPlatePlugin({
     };
 
     const originalInsertText = editorRef.tf.insertText.bind(editorRef.tf);
-    editorRef.tf.insertText = (text: string, options?: any) => {
-      return originalInsertText(text, options);
-    };
+    editorRef.tf.insertText = (text: string, options?: any) => originalInsertText(text, options);
 
     const originalSelect = editorRef.tf.select.bind(editorRef.tf);
     editorRef.tf.select = (target: any) => {

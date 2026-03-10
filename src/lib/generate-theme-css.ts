@@ -143,7 +143,8 @@ function buildThemeVarEntries(customization: Record<string, string>): [string, s
   // Layout vars
   for (const [field, cssVar] of Object.entries(LAYOUT_FIELDS)) {
     if (customization[field]) {
-      const val = field === "pageWidth" ? migratePageWidth(customization[field]) : customization[field];
+      const val =
+        field === "pageWidth" ? migratePageWidth(customization[field]) : customization[field];
       entries.push([cssVar, val]);
     }
   }
@@ -181,7 +182,8 @@ export function getLayoutOnlyVars(
   const vars: Record<string, string> = {};
   for (const [field, cssVar] of Object.entries(LAYOUT_FIELDS)) {
     if (customization[field]) {
-      vars[cssVar] = field === "pageWidth" ? migratePageWidth(customization[field]) : customization[field];
+      vars[cssVar] =
+        field === "pageWidth" ? migratePageWidth(customization[field]) : customization[field];
     }
   }
   return vars as CSSProperties;

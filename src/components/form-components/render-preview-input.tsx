@@ -148,6 +148,7 @@ export function RenderPreviewInput({
                 onBlur={f.handleBlur}
                 minLength={field.minLength}
                 maxLength={field.maxLength}
+                autoComplete="off"
                 aria-invalid={hasErrors}
                 className={cn(
                   "max-w-md min-h-24 rounded-lg border-0 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
@@ -188,6 +189,7 @@ export function RenderPreviewInput({
               onBlur={f.handleBlur}
               minLength={field.minLength}
               maxLength={field.maxLength}
+              autoComplete="off"
               aria-invalid={hasErrors}
               className={cn(
                 "max-w-md rounded-lg border-0 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
