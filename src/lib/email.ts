@@ -125,6 +125,37 @@ export async function sendRespondentConfirmation(to: string, subject: string, bo
   }
 }
 
+export async function sendChangeEmailConfirmationEmail(
+  email: string,
+  newEmail: string,
+  url: string,
+) {
+  const { error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: email,
+    subject: `Confirm your email change`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">Confirm your email change</h2>
+        <p style="font-size: 16px; color: #555;">
+          You requested to change your email to <strong>${escapeHtml(newEmail)}</strong>.
+        </p>
+        <p style="font-size: 16px; color: #555; margin-top: 24px;">
+          <a href="${url}" style="display: inline-block; background-color: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Confirm Email Change</a>
+        </p>
+        <p style="font-size: 14px; color: #666; margin-top: 16px;">Or copy this link:</p>
+        <p style="font-size: 14px; color: #0066cc; word-break: break-all;">${url}</p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+        <p style="font-size: 12px; color: #999;">If you didn't request this change, you can safely ignore this email.</p>
+      </div>
+    `,
+  });
+
+  if (error) {
+    logger("[Email] Failed to send change email confirmation:", error);
+  }
+}
+
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")

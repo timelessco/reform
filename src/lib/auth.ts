@@ -1,6 +1,6 @@
 import * as schema from "@/db/schema";
 import { db } from "@/lib/db";
-import { sendOrgInvitationEmail, sendOTPEmail } from "@/lib/email";
+import { sendChangeEmailConfirmationEmail, sendOrgInvitationEmail, sendOTPEmail } from "@/lib/email";
 import { logger } from "@/lib/utils";
 import { APP_NAME } from "@/lib/app-config";
 import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
@@ -26,6 +26,22 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: true,
     autoSignIn: true,
+  },
+  // experimental : {
+  //   joins: true,
+  // },
+  user: {
+    changeEmail : {
+      enabled : true,
+      sendChangeEmailConfirmation: async (data) => {
+        logger(`[Auth] Sending change email confirmation to ${data.user.email} → ${data.newEmail}`);
+        if (import.meta.env.DEV) {
+          logger(`[Auth] Change email URL: ${data.url}`);
+        } else {
+          void sendChangeEmailConfirmationEmail(data.user.email, data.newEmail, data.url);
+        }
+      },
+    }
   },
   emailVerification: {
     autoSignInAfterVerification: true,
