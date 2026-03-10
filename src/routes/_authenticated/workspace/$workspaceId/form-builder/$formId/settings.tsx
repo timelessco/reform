@@ -86,7 +86,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                   {(field) => (
                     <Select
                       value={(field.state.value as string) || "English"}
-                      onValueChange={field.handleChange}
+                      onValueChange={(value) => field.handleChange(value ?? "English")}
                     >
                       <SelectTrigger className="w-[120px] h-[34px] !rounded-none !border-0 !bg-secondary text-sm">
                         <SelectValue placeholder="Select language" />
@@ -182,7 +182,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 <div className="flex items-center gap-1.5">
                   <Badge
                     variant="secondary"
-                    className="bg-pink-100 text-pink-600 border-none text-[9px] h-4 px-1.5"
+                    className="bg-teal-100 text-teal-600 border-none text-[9px] h-4 px-1.5"
                   >
                     Pro
                   </Badge>
@@ -207,7 +207,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 <div className="flex items-center gap-1.5">
                   <Badge
                     variant="secondary"
-                    className="bg-blue-100 text-blue-600 border-none text-[9px] h-4 px-1.5 uppercase"
+                    className="bg-teal-100 text-teal-600 border-none text-[9px] h-4 px-1.5 uppercase"
                   >
                     Biz
                   </Badge>
@@ -299,7 +299,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 <div className="flex items-center gap-1.5">
                   <Badge
                     variant="secondary"
-                    className="bg-pink-100 text-pink-600 border-none text-[9px] h-4 px-1.5"
+                    className="bg-teal-100 text-teal-600 border-none text-[9px] h-4 px-1.5"
                   >
                     Pro
                   </Badge>

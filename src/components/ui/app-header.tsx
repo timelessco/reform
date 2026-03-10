@@ -93,6 +93,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
   // Version management
 
   const hasUnpublishedChanges = useHasUnpublishedChanges(formId);
+  const hasPublishedVersion = !!savedDocs?.[0]?.lastPublishedVersionId;
 
   // Consolidated state: workflow, dialogs, menus, tooltips
   type WorkflowState = "idle" | "publishing" | "discarding";
@@ -174,7 +175,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
   });
 
   useHotkey(HOTKEYS.TOGGLE_VERSION_HISTORY, () => toggleVersionHistory(), {
-    enabled: isFormBuilder && isEditRoute,
+    enabled: isFormBuilder && isEditRoute && hasPublishedVersion,
   });
 
   useHotkey(HOTKEYS.TOGGLE_FAVORITE, () => handleToggleFavorite(), {
@@ -273,7 +274,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
       label: "Version History",
       shortcut: formatForDisplay(HOTKEYS.TOGGLE_VERSION_HISTORY),
       onClick: () => toggleVersionHistory(),
-      show: isEditRoute,
+      show: isEditRoute && hasPublishedVersion,
     },
     {
       key: "delete",
@@ -576,7 +577,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
 
                 {savedDocs?.[0]?.status === "published" && (
                   <Tooltip
-                    open={activeTooltip === "share"}
+                    open={activeTooltip === "share" && !isShareSidebarOpen}
                     onOpenChange={(open) => setActiveTooltip(open ? "share" : null)}
                   >
                     <TooltipTrigger
@@ -608,7 +609,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
 
                 {/* Settings icon button directly in header - toggles form settings sidebar */}
                 <Tooltip
-                  open={activeTooltip === "settings"}
+                  open={activeTooltip === "settings" && !isSettingsSidebarOpen}
                   onOpenChange={(open) => setActiveTooltip(open ? "settings" : null)}
                 >
                   <TooltipTrigger

@@ -2,6 +2,16 @@ import { formatDistanceToNow } from "date-fns";
 import { Loader2Icon, MoreHorizontalIcon, XIcon } from "@/components/ui/icons";
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useFormVersions, restoreVersion } from "@/hooks/use-form-versions";
@@ -28,20 +38,16 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
   const { data: sessionData } = useSession();
   const currentUser = sessionData?.user;
   const [isRestoring, setIsRestoring] = useState(false);
+  const [restoreConfirmVersionId, setRestoreConfirmVersionId] = useState<string | null>(null);
 
   const versionList = versions ?? [];
 
   const effectiveVersionId = selectedVersionId ?? versionList[0]?.id ?? null;
 
-  const handleSelectVersion = (versionId: string) => {
-    selectVersion(versionId);
-  };
-
   const handleRestore = async (versionId: string) => {
     setIsRestoring(true);
     try {
       const tx = restoreVersion(formId, versionId);
-      if (!tx) return;
       await tx.isPersisted.promise;
       toast.success("Version restored. Publish again to make it live.");
       exitVersionView();
@@ -126,7 +132,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
             return (
               <button
                 key={version.id}
-                onClick={() => handleSelectVersion(version.id)}
+                onClick={() => selectVersion(version.id)}
                 className={cn(
                   "flex gap-1.5 items-start pl-2 py-2 rounded-lg w-full text-left relative",
                   isSelected ? "bg-accent" : "hover:bg-accent/50",
@@ -179,7 +185,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
                         <DropdownMenuItem
                           className="h-[26px] px-2 rounded-lg text-[13px] tracking-[0.13px]"
                           disabled={isRestoring}
-                          onClick={() => handleRestore(version.id)}
+                          onClick={() => setRestoreConfirmVersionId(version.id)}
                         >
                           {isRestoring ? (
                             <Loader2Icon className="size-3.5 mr-1.5 animate-spin" />
@@ -207,6 +213,35 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
           })}
         </div>
       </SidebarContent>
+
+      <AlertDialog
+        open={!!restoreConfirmVersionId}
+        onOpenChange={(open) => {
+          if (!open) setRestoreConfirmVersionId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restore this version?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Current draft will be overwritten. You can publish again to make it live.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (restoreConfirmVersionId) {
+                  handleRestore(restoreConfirmVersionId);
+                }
+                setRestoreConfirmVersionId(null);
+              }}
+            >
+              Restore
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sidebar>
   );
 }

@@ -54,7 +54,7 @@ import {
   Trash2Icon,
   XIcon,
 } from "@/components/ui/icons";
-import { Circle, Columns } from "lucide-react";
+import { Columns } from "lucide-react";
 import type { Value } from "platejs";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useHotkey } from "@tanstack/react-hotkeys";
@@ -304,7 +304,9 @@ function SubmissionsPage() {
                 <DataGridColumnHeader
                   column={column}
                   title={field.label || field.name}
-                  icon={<Circle className="h-1.5 w-1.5 fill-emerald-500 text-emerald-500" />}
+                  icon={
+                    <span className="block h-2.5 w-2.5 rounded-full border-[1.5px] border-emerald-500" />
+                  }
                 />
               ),
               cell: (info) => (
@@ -336,7 +338,9 @@ function SubmissionsPage() {
               <DataGridColumnHeader
                 column={column}
                 title={fieldName}
-                icon={<Circle className="h-1.5 w-1.5 fill-red-500 text-red-500" />}
+                icon={
+                  <span className="block h-2.5 w-2.5 rounded-full border-[1.5px] border-red-500" />
+                }
               />
             ),
             cell: (info) => (

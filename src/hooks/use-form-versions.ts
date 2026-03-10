@@ -107,10 +107,6 @@ export function publishForm(formId: string) {
  * Optimistically updates content/title/customization from the local version data.
  */
 export function restoreVersion(formId: string, versionId: string) {
-  if (!window.confirm("Restore this version? Current draft will be overwritten.")) {
-    return null;
-  }
-
   const version = formVersionCollection.state.get(versionId);
   if (!version) throw new Error("Version not found in local state");
 
@@ -137,10 +133,6 @@ export function restoreVersion(formId: string, versionId: string) {
  * Optimistically updates content/title/customization from the published version.
  */
 export function discardChanges(formId: string) {
-  if (!window.confirm("Discard all unpublished changes?")) {
-    return null;
-  }
-
   const form = formCollection.state.get(formId);
   if (!form?.lastPublishedVersionId) throw new Error("No published version to revert to");
 
