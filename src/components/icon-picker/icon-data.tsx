@@ -1,4 +1,4 @@
-import { type IconOption } from "./types";
+import type { IconOption } from "./types";
 
 /**
  * Path to the SVG sprite file.
@@ -252,13 +252,7 @@ const ICON_NAMES = [
 export const iconOptions: IconOption[] = ICON_NAMES.map((name) => ({
   label: name,
   icon: (iconColor: string, size: string = "16", className: string = "") => (
-    <svg
-      className={className}
-      fill={iconColor}
-      height={size}
-      viewBox="0 0 18 18"
-      width={size}
-    >
+    <svg className={className} fill={iconColor} height={size} viewBox="0 0 18 18" width={size}>
       <use href={`${SPRITE_PATH}#${name}`} />
     </svg>
   ),

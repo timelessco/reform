@@ -2,8 +2,7 @@ import { z } from "zod";
 
 /** Parse Postgres timestamp (no TZ) as UTC before converting to ISO. Avoids local-time misparse. */
 function parseAsUTC(val: string): string {
-  if (val.endsWith("Z") || /[+-]\d{2}(:\d{2})?$/.test(val))
-    return new Date(val).toISOString();
+  if (val.endsWith("Z") || /[+-]\d{2}(:\d{2})?$/.test(val)) return new Date(val).toISOString();
   return new Date(val.replace(" ", "T") + "Z").toISOString();
 }
 

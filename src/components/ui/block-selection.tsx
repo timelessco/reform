@@ -1,6 +1,6 @@
 import { useBlockSelected } from "@platejs/selection/react";
 import { cva } from "class-variance-authority";
-import { type PlateElementProps } from "platejs/react";
+import type { PlateElementProps } from "platejs/react";
 
 export const blockSelectionVariants = cva(
   "pointer-events-none absolute inset-0 z-1 bg-primary/[.13] transition-opacity",
@@ -20,12 +20,7 @@ export const blockSelectionVariants = cva(
 export function BlockSelection(props: PlateElementProps) {
   const isBlockSelected = useBlockSelected();
 
-  if (
-    !isBlockSelected ||
-    props.plugin.key === "tr" ||
-    props.plugin.key === "table"
-  )
-    return null;
+  if (!isBlockSelected || props.plugin.key === "tr" || props.plugin.key === "table") return null;
 
   return (
     <div

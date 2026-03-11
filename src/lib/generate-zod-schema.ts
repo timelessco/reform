@@ -1,20 +1,19 @@
-import { type ZodType, z } from "zod";
+import { z } from "zod";
+import type { ZodType } from "zod";
 import type { FormArray, FormElement, FormStep } from "@/types/form-types";
+
+const WHITESPACE_RE = /\s/;
+const STARTS_WITH_DIGIT_RE = /^\d/;
 
 // Static field types that don't need schema validation
 const STATIC_FIELD_TYPES = new Set(["H1", "H2", "H3", "Separator"]);
 
-const isStatic = (fieldType: string): boolean =>
-  STATIC_FIELD_TYPES.has(fieldType);
+const isStatic = (fieldType: string): boolean => STATIC_FIELD_TYPES.has(fieldType);
 
 // Flatten multi-step form into a flat array of elements
 const flattenFormSteps = (steps: FormStep[]): (FormElement | FormArray)[][] =>
   steps.map(
-    (step) =>
-      step.stepFields.flat().filter((f) => "fieldType" in f) as (
-        | FormElement
-        | FormArray
-      )[],
+    (step) => step.stepFields.flat().filter((f) => "fieldType" in f) as (FormElement | FormArray)[],
   );
 
 // Get field names for each step (used for generating step-specific schemas)
@@ -25,33 +24,31 @@ const getStepFields = (steps: FormStep[]): Record<string, string[]> => {
       | FormElement
       | FormArray
     )[];
-    result[index.toString()] = fields
-      .filter((field) => "name" in field && !isStatic(field.fieldType))
-      .map((field) => (field as FormElement).name);
+    const names: string[] = [];
+    for (const field of fields) {
+      if ("name" in field && !isStatic(field.fieldType)) {
+        names.push((field as FormElement).name);
+      }
+    }
+    result[index.toString()] = names;
   });
   return result;
 };
 
 // Type guard to check if an element is a FormArray
-const isFormArray = (element: unknown): element is FormArray => {
-  return (
-    typeof element === "object" &&
-    element !== null &&
-    "arrayField" in element &&
-    "fieldType" in element &&
-    element.fieldType === "FormArray"
-  );
-};
+const isFormArray = (element: unknown): element is FormArray =>
+  typeof element === "object" &&
+  element !== null &&
+  "arrayField" in element &&
+  "fieldType" in element &&
+  element.fieldType === "FormArray";
 
 // Type guard to check if an element is a FormElement
-const isFormElement = (element: unknown): element is FormElement => {
-  return (
-    typeof element === "object" &&
-    element !== null &&
-    "fieldType" in element &&
-    element.fieldType !== "FormArray"
-  );
-};
+const isFormElement = (element: unknown): element is FormElement =>
+  typeof element === "object" &&
+  element !== null &&
+  "fieldType" in element &&
+  element.fieldType !== "FormArray";
 
 // Helper function to sanitize field names
 const sanitizeFieldName = (name: string): string => name.replace(/-/g, "_");
@@ -60,29 +57,19 @@ const sanitizeFieldName = (name: string): string => name.replace(/-/g, "_");
 type FieldSchemaGenerator = (element: FormElement) => ZodType;
 
 // Type guards for specific field types
-const hasTypeProperty = (
-  element: FormElement,
-): element is FormElement & { type: string } => {
-  return "type" in element && typeof element.type === "string";
-};
+const hasTypeProperty = (element: FormElement): element is FormElement & { type: string } =>
+  "type" in element && typeof element.type === "string";
 
 const hasMaxLengthProperty = (
   element: FormElement,
-): element is FormElement & { maxLength?: number } => {
-  return "maxLength" in element;
-};
+): element is FormElement & { maxLength?: number } => "maxLength" in element;
 
 const hasMinMaxProperties = (
   element: FormElement,
-): element is FormElement & { min?: number; max?: number } => {
-  return "min" in element || "max" in element;
-};
+): element is FormElement & { min?: number; max?: number } => "min" in element || "max" in element;
 
 // Field type to schema generator mapping using Map
-const FIELD_SCHEMA_MAP = new Map<
-  FormElement["fieldType"],
-  FieldSchemaGenerator
->([
+const FIELD_SCHEMA_MAP = new Map<FormElement["fieldType"], FieldSchemaGenerator>([
   [
     "Input",
     (element) => {
@@ -114,9 +101,7 @@ const FIELD_SCHEMA_MAP = new Map<
   [
     "OTP",
     (element) => {
-      const maxLength = hasMaxLengthProperty(element)
-        ? element.maxLength || 6
-        : 6;
+      const maxLength = hasMaxLengthProperty(element) ? element.maxLength || 6 : 6;
       return z
         .string({ error: "This field is required" })
         .min(maxLength, `OTP must be at least ${maxLength} characters`);
@@ -140,20 +125,12 @@ const FIELD_SCHEMA_MAP = new Map<
     },
   ],
   ["Switch", () => z.boolean()],
-  [
-    "Select",
-    () =>
-      z
-        .string({ error: "This field is required" })
-        .min(1, "Please Select an item"),
-  ],
+  ["Select", () => z.string({ error: "This field is required" }).min(1, "Please Select an item")],
   [
     "ToggleGroup",
     (element) => {
       if (hasTypeProperty(element) && element.type === "single") {
-        return z
-          .string({ error: "This field is required" })
-          .min(1, "Please select an item");
+        return z.string({ error: "This field is required" }).min(1, "Please select an item");
       }
       return z
         .array(z.string({ error: "This field is required" }))
@@ -169,10 +146,7 @@ const FIELD_SCHEMA_MAP = new Map<
   ],
   [
     "RadioGroup",
-    () =>
-      z
-        .string({ error: "Please select an item" })
-        .min(1, "Please select an item"),
+    () => z.string({ error: "Please select an item" }).min(1, "Please select an item"),
   ],
   [
     "Textarea",
@@ -320,11 +294,7 @@ const generateZodSchemaString = (schema: ZodType): string => {
           }
         }
         // Fallback for older Zod versions or different structures
-        else if (
-          typeof check === "object" &&
-          check !== null &&
-          "kind" in check
-        ) {
+        else if (typeof check === "object" && check !== null && "kind" in check) {
           if (check.kind === "min" && "value" in check) {
             result += `.min(${check.value}, "Must be at least ${check.value}")`;
           } else if (check.kind === "max" && "value" in check) {
@@ -353,11 +323,7 @@ const generateZodSchemaString = (schema: ZodType): string => {
           if (check.kind === "min" && "value" in check && "message" in check) {
             result += `.min(${check.value}, "${check.message || ""}")`;
             hasMinConstraint = true;
-          } else if (
-            check.kind === "max" &&
-            "value" in check &&
-            "message" in check
-          ) {
+          } else if (check.kind === "max" && "value" in check && "message" in check) {
             result += `.max(${check.value}, "${check.message || ""}")`;
           } else if (check.kind === "nonempty" && "message" in check) {
             result += `.nonempty("${check.message || ""}")`;
@@ -419,7 +385,7 @@ const generateZodSchemaString = (schema: ZodType): string => {
     const shape = schema.shape;
     const shapeStrs = Object.entries(shape).map(([key, value]) => {
       // Quote keys that need it (contain spaces or start with number)
-      const needsQuotes = /\s/.test(key) || /^\d/.test(key);
+      const needsQuotes = WHITESPACE_RE.test(key) || STARTS_WITH_DIGIT_RE.test(key);
       const quotedKey = needsQuotes ? `"${key}"` : key;
       return `${quotedKey}: ${generateZodSchemaString(value as ZodType)}`;
     });
@@ -449,7 +415,7 @@ const getZodSchemaString = (
   const schemaEntries = Object.entries(schema.shape)
     .map(([key, value]) => {
       // Quote keys that need it (contain spaces or start with number)
-      const needsQuotes = /\s/.test(key) || /^\d/.test(key);
+      const needsQuotes = WHITESPACE_RE.test(key) || STARTS_WITH_DIGIT_RE.test(key);
       const quotedKey = needsQuotes ? `"${key}"` : key;
       return `${quotedKey}: ${generateZodSchemaString(value as ZodType)}`;
     })

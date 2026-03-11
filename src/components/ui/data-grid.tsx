@@ -1,13 +1,8 @@
 "use client";
 
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, use, ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import {
-  ColumnFiltersState,
-  RowData,
-  SortingState,
-  Table,
-} from "@tanstack/react-table";
+import { ColumnFiltersState, RowData, SortingState, Table } from "@tanstack/react-table";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -96,7 +91,7 @@ const DataGridContext = createContext<
 >(undefined);
 
 function useDataGrid() {
-  const context = useContext(DataGridContext);
+  const context = use(DataGridContext);
   if (!context) {
     throw new Error("useDataGrid must be used within a DataGridProvider");
   }
@@ -122,11 +117,7 @@ function DataGridProvider<TData extends object>({
   );
 }
 
-function DataGrid<TData extends object>({
-  children,
-  table,
-  ...props
-}: DataGridProps<TData>) {
+function DataGrid<TData extends object>({ children, table, ...props }: DataGridProps<TData>) {
   const defaultProps: Partial<DataGridProps<TData>> = {
     loadingMode: "skeleton",
     tableLayout: {
@@ -195,11 +186,7 @@ function DataGridContainer({
   return (
     <div
       data-slot="data-grid"
-      className={cn(
-        "grid w-full",
-        border && "border border-border rounded-lg",
-        className,
-      )}
+      className={cn("grid w-full", border && "border border-border rounded-lg", className)}
     >
       {children}
     </div>

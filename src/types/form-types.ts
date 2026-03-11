@@ -199,14 +199,7 @@ type FormFieldElement =
  * StaticFormElement is a type that represents a static form element
  * that is not editable by the user
  */
-export type StaticFormElement =
-  | H1
-  | H2
-  | H3
-  | Divider
-  | PageBreak
-  | Description
-  | Legend;
+export type StaticFormElement = H1 | H2 | H3 | Divider | PageBreak | Description | Legend;
 
 export type FormElement =
   | (FormFieldElement & { id: string })

@@ -17,7 +17,8 @@ export const Route = createFileRoute("/create")({
 
 // ---- Everything below is code-split by autoCodeSplitting ----
 
-import { normalizeNodeId, type TElement, type Value } from "platejs";
+import { normalizeNodeId } from "platejs";
+import type { TElement, Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { EditorKit } from "@/components/editor/editor-kit";
@@ -25,7 +26,7 @@ import { AppHeader } from "@/components/ui/app-header";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import { createOnboardingContentNode } from "@/components/ui/onboarding-content-node";
-import { localFormCollection } from "@/db-collections";
+import { localFormCollection } from "@/db-collections/form.collections";
 import { useLocalForm } from "@/hooks/use-live-hooks";
 import { getLocalFormId, getLocalWorkspaceId } from "@/lib/local-draft";
 

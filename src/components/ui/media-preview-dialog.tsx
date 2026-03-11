@@ -73,7 +73,7 @@ export function MediaPreviewDialog() {
     <div
       ref={previewMaskRef}
       className={cn(
-        "fixed top-0 left-0 z-50 h-screen w-screen select-none",
+        "fixed top-0 left-0 z-50 h-screen w-screen select-none overscroll-contain",
         !isOpen && "hidden",
       )}
     >
@@ -108,6 +108,7 @@ export function MediaPreviewDialog() {
                   }),
                   "h-auto",
                 )}
+                aria-label="Previous image"
               >
                 <ArrowLeftIcon />
               </Button>
@@ -121,6 +122,7 @@ export function MediaPreviewDialog() {
                   }),
                   "h-auto",
                 )}
+                aria-label="Next image"
               >
                 <ArrowRightIcon />
               </Button>
@@ -134,6 +136,7 @@ export function MediaPreviewDialog() {
                   }),
                   "h-auto",
                 )}
+                aria-label="Zoom out"
                 {...zommOutProps}
               >
                 <MinusIcon className="size-4" />
@@ -141,7 +144,10 @@ export function MediaPreviewDialog() {
               <div className="mx-px">
                 {isEditingScale ? (
                   <>
-                    <ScaleInput className="w-10 rounded px-1 text-slate-500 outline" />{" "}
+                    <ScaleInput
+                      className="w-10 rounded px-1 text-slate-500 outline"
+                      aria-label="Zoom level"
+                    />{" "}
                     <span>%</span>
                   </>
                 ) : (
@@ -156,19 +162,25 @@ export function MediaPreviewDialog() {
                   }),
                   "h-auto",
                 )}
+                aria-label="Zoom in"
                 {...zoomInProps}
               >
                 <PlusIcon className="size-4" />
               </Button>
             </div>
             {/* TODO: downLoad the image */}
-            <Button variant="ghost" className={cn(buttonVariants(), "h-auto")}>
+            <Button
+              variant="ghost"
+              className={cn(buttonVariants(), "h-auto")}
+              aria-label="Download"
+            >
               <DownloadIcon className="size-4" />
             </Button>
             <Button
               variant="ghost"
               {...closeProps}
               className={cn(buttonVariants(), "h-auto")}
+              aria-label="Close preview"
             >
               <XIcon className="size-4" />
             </Button>

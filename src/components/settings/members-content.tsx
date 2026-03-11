@@ -1,20 +1,10 @@
 import { useStore } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  ClockIcon,
-  MailIcon,
-  PlusIcon,
-  Trash2Icon,
-  XIcon,
-} from "@/components/ui/icons";
+import { ClockIcon, MailIcon, PlusIcon, Trash2Icon, XIcon } from "@/components/ui/icons";
 import { useId } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import {
-  InputGroup,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group";
+import { InputGroup, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { useAppForm } from "@/components/ui/tanstack-form";
 import { auth } from "@/lib/auth-client";
 
@@ -30,9 +20,7 @@ export function MembersContent() {
   );
   const members = data?.members ?? [];
 
-  const { data: invitationsData } = useQuery(
-    auth.organization.listInvitations.queryOptions(),
-  );
+  const { data: invitationsData } = useQuery(auth.organization.listInvitations.queryOptions());
   const invitations = invitationsData ?? [];
 
   const inviteMutation = useMutation(
@@ -83,9 +71,7 @@ export function MembersContent() {
       <div className="flex flex-col gap-8">
         {/* Invite Section */}
         <section className="flex flex-col gap-3">
-          <h3 className="text-sm font-medium text-[var(--gray-900)]">
-            Invite member
-          </h3>
+          <h3 className="text-sm font-medium text-[var(--gray-900)]">Invite member</h3>
           <p className="text-[13px] text-[var(--gray-600)] leading-[1.5]">
             Invite a new member to join your organization.
           </p>
@@ -123,9 +109,7 @@ export function MembersContent() {
         {/* Pending Invitations */}
         {invitations.length > 0 && (
           <section className="flex flex-col gap-3">
-            <h3 className="text-sm font-medium text-[var(--gray-900)]">
-              Pending invitations
-            </h3>
+            <h3 className="text-sm font-medium text-[var(--gray-900)]">Pending invitations</h3>
             <div className="flex flex-col gap-2">
               {invitations.map((invitation: any) => (
                 <div
@@ -136,19 +120,13 @@ export function MembersContent() {
                     <MailIcon className="size-[22px] text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {invitation.email}
-                    </p>
+                    <p className="text-sm font-medium truncate">{invitation.email}</p>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-[var(--gray-600)] capitalize">
                         {invitation.role}
                       </span>
                       <Badge
-                        variant={
-                          invitation.status === "pending"
-                            ? "secondary"
-                            : "outline"
-                        }
+                        variant={invitation.status === "pending" ? "secondary" : "outline"}
                         className="text-[10px] px-1.5 py-0 h-4 capitalize"
                       >
                         {invitation.status === "pending" && (
@@ -167,6 +145,7 @@ export function MembersContent() {
                         })
                       }
                       disabled={cancelInvitationMutation.isPending}
+                      aria-label="Cancel invitation"
                       className="h-[30px] bg-white rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] px-3 text-[13px] font-medium cursor-pointer hover:bg-gray-50 transition-colors shrink-0 text-destructive"
                     >
                       <XIcon className="size-3.5" />
@@ -180,21 +159,15 @@ export function MembersContent() {
 
         {/* Members List */}
         <section className="flex flex-col gap-3">
-          <h3 className="text-sm font-medium text-[var(--gray-900)]">
-            Members
-          </h3>
+          <h3 className="text-sm font-medium text-[var(--gray-900)]">Members</h3>
           <p className="text-[13px] text-[var(--gray-600)] leading-[1.5]">
             Manage members of your organization.
           </p>
           <div className="flex flex-col gap-2">
             {isLoadingMembers ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">
-                Loading members...
-              </p>
+              <p className="text-sm text-muted-foreground py-4 text-center">Loading members...</p>
             ) : members.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">
-                No members yet
-              </p>
+              <p className="text-sm text-muted-foreground py-4 text-center">No members yet</p>
             ) : (
               members.map((member: any) => (
                 <div
@@ -205,12 +178,8 @@ export function MembersContent() {
                     {member.user.name?.charAt(0)?.toUpperCase() || "U"}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {member.user.name}
-                    </p>
-                    <p className="text-sm text-[var(--gray-600)] truncate">
-                      {member.user.email}
-                    </p>
+                    <p className="text-sm font-medium truncate">{member.user.name}</p>
+                    <p className="text-sm text-[var(--gray-600)] truncate">{member.user.email}</p>
                   </div>
                   <Badge
                     variant={member.role === "owner" ? "default" : "outline"}
@@ -227,6 +196,7 @@ export function MembersContent() {
                         })
                       }
                       disabled={removeMemberMutation.isPending}
+                      aria-label="Remove member"
                       className="h-[30px] bg-white rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] px-3 text-[13px] font-medium cursor-pointer hover:bg-gray-50 transition-colors shrink-0"
                     >
                       <Trash2Icon className="size-3.5 text-destructive" />

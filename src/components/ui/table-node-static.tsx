@@ -7,19 +7,12 @@ import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-export function TableElementStatic({
-  children,
-  ...props
-}: SlateElementProps<TTableElement>) {
+export function TableElementStatic({ children, ...props }: SlateElementProps<TTableElement>) {
   const { disableMarginLeft } = props.editor.getOptions(BaseTablePlugin);
   const marginLeft = disableMarginLeft ? 0 : props.element.marginLeft;
 
   return (
-    <SlateElement
-      {...props}
-      className="overflow-x-auto py-5"
-      style={{ paddingLeft: marginLeft }}
-    >
+    <SlateElement {...props} className="overflow-x-auto py-5" style={{ paddingLeft: marginLeft }}>
       <div className="group/table relative w-fit">
         <table className="mr-0 ml-px table h-px table-fixed border-collapse">
           <tbody className="min-w-full">{children}</tbody>
@@ -80,18 +73,13 @@ export function TableCellElementStatic({
         rowSpan: api.table.getRowSpan(element),
       }}
     >
-      <div
-        className="relative z-20 box-border h-full px-4 py-2"
-        style={{ minHeight }}
-      >
+      <div className="relative z-20 box-border h-full px-4 py-2" style={{ minHeight }}>
         {props.children}
       </div>
     </SlateElement>
   );
 }
 
-export function TableCellHeaderElementStatic(
-  props: SlateElementProps<TTableCellElement>,
-) {
+export function TableCellHeaderElementStatic(props: SlateElementProps<TTableCellElement>) {
   return <TableCellElementStatic {...props} isHeader />;
 }

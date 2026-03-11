@@ -10,9 +10,10 @@ import { createFileRoute, redirect, useLocation } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { Loader2Icon } from "@/components/ui/icons";
 import type { Value } from "platejs";
-import { useEffect } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { z } from "zod";
-import EditorApp from "../-components/editor-app";
+
+const EditorApp = lazy(() => import("../-components/editor-app"));
 import { PreviewMode } from "../-components/preview-mode";
 
 export const Route = createFileRoute(
@@ -22,10 +23,7 @@ export const Route = createFileRoute(
     demo: z.boolean().optional(),
     force: z.boolean().optional(), // When true, skip redirect for published forms
     // Embed config params — synced from sidebar, read by PreviewMode
-    embedType: z
-      .enum(["standard", "popup", "fullpage"])
-      .catch("standard")
-      .optional(),
+    embedType: z.enum(["standard", "popup", "fullpage"]).catch("standard").optional(),
     embedHeight: z.coerce.number().catch(558).optional(),
     embedDynamicHeight: z.coerce.boolean().catch(true).optional(),
     embedHideTitle: z.coerce.boolean().catch(false).optional(),
@@ -40,14 +38,8 @@ export const Route = createFileRoute(
     embedDarkOverlay: z.coerce.boolean().catch(false).optional(),
     embedEmoji: z.coerce.boolean().catch(true).optional(),
     embedEmojiIcon: z.string().catch("👋").optional(),
-    embedEmojiAnimation: z
-      .enum(["wave", "bounce", "pulse"])
-      .catch("wave")
-      .optional(),
-    embedPopupTrigger: z
-      .enum(["button", "auto", "scroll"])
-      .catch("button")
-      .optional(),
+    embedEmojiAnimation: z.enum(["wave", "bounce", "pulse"]).catch("wave").optional(),
+    embedPopupTrigger: z.enum(["button", "auto", "scroll"]).catch("button").optional(),
     embedHideOnSubmit: z.coerce.boolean().catch(false).optional(),
     embedHideOnSubmitDelay: z.coerce.number().catch(0).optional(),
     embedTrackEvents: z.coerce.boolean().catch(false).optional(),
@@ -59,11 +51,7 @@ export const Route = createFileRoute(
     try {
       // Try collection cache first (instant, no network)
       const cachedForm = formCollection.state.get(params.formId);
-      let status = cachedForm?.status as
-        | "draft"
-        | "published"
-        | "archived"
-        | undefined;
+      let status = cachedForm?.status as "draft" | "published" | "archived" | undefined;
 
       // Fall back to server fetch if not in collection yet
       if (!status) {
@@ -71,11 +59,7 @@ export const Route = createFileRoute(
           ...getFormbyIdQueryOption(params.formId),
           revalidateIfStale: true,
         });
-        status = result?.form?.status as
-          | "draft"
-          | "published"
-          | "archived"
-          | undefined;
+        status = result?.form?.status as "draft" | "published" | "archived" | undefined;
       }
 
       if (status === "published") {
@@ -110,8 +94,7 @@ export const Route = createFileRoute(
 function DesignPage() {
   const { pathname } = useLocation();
   // Extract formId from pathname to ensure it's always current
-  const formIdFromPath =
-    pathname.split("/form-builder/")[1]?.split("/")[0] || "";
+  const formIdFromPath = pathname.split("/form-builder/")[1]?.split("/")[0] || "";
   const params = Route.useParams();
   const { workspaceId } = params;
   const formId = formIdFromPath || params.formId;
@@ -126,9 +109,7 @@ function DesignPage() {
 
   // Fetch version content when viewing a version
   const { data: versionContentDataArray, isLoading: isLoadingVersionContent } =
-    useFormVersionContent(
-      isViewingVersion ? (selectedVersionId ?? undefined) : undefined,
-    );
+    useFormVersionContent(isViewingVersion ? (selectedVersionId ?? undefined) : undefined);
 
   const versionData = versionContentDataArray?.[0];
 
@@ -140,15 +121,13 @@ function DesignPage() {
       exitVersionView();
     }
   }, [isVersionHistoryOpen, isViewingVersion, exitVersionView]);
-  const formatDateTime = (dateString: string) => {
-    return format(new Date(dateString), "MMM d, h:mm a");
-  };
+  const formatDateTime = (dateString: string) => format(new Date(dateString), "MMM d, h:mm a");
 
   const versionContent = versionData?.content as Value | undefined;
 
   return (
-    <div className="flex flex-1 h-full overflow-hidden">
-      <main className="flex-1 overflow-y-auto overflow-x-hidden relative bg-background h-full flex flex-col">
+    <div className="flex flex-1 min-h-0 overflow-hidden">
+      <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative bg-background flex flex-col">
         {/* Version viewing banner */}
         {isViewingVersion && (
           <div className="bg-accent/50 border-b border-accent/20 px-4 py-2 flex items-center justify-between shrink-0">
@@ -161,9 +140,7 @@ function DesignPage() {
               ) : versionData?.publishedAt ? (
                 <>
                   Viewing version from{" "}
-                  <span className="font-semibold">
-                    {formatDateTime(versionData.publishedAt)}
-                  </span>
+                  <span className="font-semibold">{formatDateTime(versionData.publishedAt)}</span>
                 </>
               ) : (
                 "Viewing version..."
@@ -188,13 +165,21 @@ function DesignPage() {
               <Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <EditorApp
-              key={isViewingVersion ? `version-${selectedVersionId}` : formId}
-              formId={formId}
-              workspaceId={workspaceId}
-              versionContent={isViewingVersion ? versionContent : undefined}
-              readOnly={isViewingVersion}
-            />
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center h-full">
+                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+                </div>
+              }
+            >
+              <EditorApp
+                key={isViewingVersion ? `version-${selectedVersionId}` : formId}
+                formId={formId}
+                workspaceId={workspaceId}
+                versionContent={isViewingVersion ? versionContent : undefined}
+                readOnly={isViewingVersion}
+              />
+            </Suspense>
           )}
         </div>
       </main>

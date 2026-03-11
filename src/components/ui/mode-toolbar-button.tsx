@@ -13,9 +13,7 @@ import {
 
 import { ToolbarButton } from "./toolbar";
 
-export function ModeToolbarButton(
-  props: React.ComponentProps<typeof DropdownMenu>,
-) {
+export function ModeToolbarButton(props: React.ComponentProps<typeof DropdownMenu>) {
   const editor = useEditorRef();
   const [readOnly, setReadOnly] = usePlateState("readOnly");
   const [open, setOpen] = React.useState(false);
@@ -46,9 +44,7 @@ export function ModeToolbarButton(
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
       <DropdownMenuTrigger
-        render={
-          <ToolbarButton pressed={open} tooltip="Editing mode" isDropdown />
-        }
+        render={<ToolbarButton pressed={open} tooltip="Editing mode" isDropdown />}
       >
         {item[value].icon}
         <span className="hidden lg:inline">{item[value].label}</span>
@@ -79,26 +75,17 @@ export function ModeToolbarButton(
             }
           }}
         >
-          <DropdownMenuRadioItem
-            className="pl-2 *:[svg]:text-muted-foreground"
-            value="editing"
-          >
+          <DropdownMenuRadioItem className="pl-2 *:[svg]:text-muted-foreground" value="editing">
             {item.editing.icon}
             {item.editing.label}
           </DropdownMenuRadioItem>
 
-          <DropdownMenuRadioItem
-            className="pl-2 *:[svg]:text-muted-foreground"
-            value="viewing"
-          >
+          <DropdownMenuRadioItem className="pl-2 *:[svg]:text-muted-foreground" value="viewing">
             {item.viewing.icon}
             {item.viewing.label}
           </DropdownMenuRadioItem>
 
-          <DropdownMenuRadioItem
-            className="pl-2 *:[svg]:text-muted-foreground"
-            value="suggestion"
-          >
+          <DropdownMenuRadioItem className="pl-2 *:[svg]:text-muted-foreground" value="suggestion">
             {item.suggestion.icon}
             {item.suggestion.label}
           </DropdownMenuRadioItem>

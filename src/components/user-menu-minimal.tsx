@@ -1,9 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTheme } from "@/components/ThemeProvider";
 import { auth, useSession } from "@/lib/auth-client";
 import { settingsDialogStore } from "@/hooks/use-settings-dialog";
@@ -45,9 +41,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
 
   const { data: session } = useSession();
   const { data: orgData } = useQuery(orgDataForLayoutQueryOptions());
-  const { data: membersData } = useQuery(
-    auth.organization.listMembers.queryOptions(),
-  );
+  const { data: membersData } = useQuery(auth.organization.listMembers.queryOptions());
   const { data: membershipsData } = useQuery(getUserMembershipsQueryOptions());
 
   const activeOrg = orgData?.activeOrg ?? null;
@@ -66,7 +60,6 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
     auth.signOut.mutationOptions({
       onSuccess: () => {
         localStorage.removeItem("electricAuthToken");
-        localStorage.clear();
         router.invalidate();
         router.navigate({ to: "/" });
       },

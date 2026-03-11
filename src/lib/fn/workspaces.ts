@@ -54,12 +54,11 @@ export const createWorkspace = createServerFn({ method: "POST" })
 
 export const updateWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(
-    workspaceSchema.pick({ id: true, name: true }).partial({ name: true }),
-  )
+  .inputValidator(workspaceSchema.pick({ id: true, name: true }).partial({ name: true }))
   .handler(async ({ data, context }) => {
     const { id, ...updateData } = data;
-    await authWorkspace(id, context.session.user.id);
+    const authPromise = authWorkspace(id, context.session.user.id);
+    await authPromise;
 
     return await db.transaction(async (tx) => {
       const [workspace] = await tx
@@ -88,13 +87,11 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(workspaceSchema.pick({ id: true }))
   .handler(async ({ data, context }) => {
-    await authWorkspace(data.id, context.session.user.id);
+    const authPromise = authWorkspace(data.id, context.session.user.id);
+    await authPromise;
 
     return await db.transaction(async (tx) => {
-      const [workspace] = await tx
-        .delete(workspaces)
-        .where(eq(workspaces.id, data.id))
-        .returning();
+      const [workspace] = await tx.delete(workspaces).where(eq(workspaces.id, data.id)).returning();
 
       const txid = await getTxId(tx);
 
@@ -109,16 +106,14 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
     });
   });
 
-const getWorkspaceById = createServerFn({ method: "GET" })
+export const getWorkspaceById = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data, context }) => {
-    await authWorkspace(data.id, context.session.user.id);
-
-    const [workspace] = await db
-      .select()
-      .from(workspaces)
-      .where(eq(workspaces.id, data.id));
+    const [_, [workspace]] = await Promise.all([
+      authWorkspace(data.id, context.session.user.id),
+      db.select().from(workspaces).where(eq(workspaces.id, data.id)),
+    ]);
 
     if (!workspace) {
       throw new Error("Workspace not found");
@@ -133,25 +128,22 @@ const getWorkspaceById = createServerFn({ method: "GET" })
     };
   });
 
-const getWorkspaces = createServerFn({ method: "GET" })
+export const getWorkspaces = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
-    // Get organizations the user is a member of
-    const userMemberships = await db
-      .select({ organizationId: member.organizationId })
-      .from(member)
-      .where(eq(member.userId, context.session.user.id));
-
-    if (userMemberships.length === 0) {
-      return { workspaces: [] };
-    }
-
-    const orgIds = userMemberships.map((m) => m.organizationId);
-
+    // Use a single JOIN query instead of membership -> workspaces waterfall
     const workspaceList = await db
-      .select()
+      .select({
+        id: workspaces.id,
+        name: workspaces.name,
+        organizationId: workspaces.organizationId,
+        createdByUserId: workspaces.createdByUserId,
+        createdAt: workspaces.createdAt,
+        updatedAt: workspaces.updatedAt,
+      })
       .from(workspaces)
-      .where(inArray(workspaces.organizationId, orgIds))
+      .innerJoin(member, eq(workspaces.organizationId, member.organizationId))
+      .where(eq(member.userId, context.session.user.id))
       .orderBy(workspaces.createdAt);
 
     return {
@@ -178,30 +170,24 @@ const getWorkspacesWithForms = createServerFn({ method: "GET" })
 
     const orgIds = userMemberships.map((m) => m.organizationId);
 
-    // Get workspaces for the user's organizations
-    const workspaceList = await db
-      .select()
-      .from(workspaces)
-      .where(inArray(workspaces.organizationId, orgIds))
-      .orderBy(workspaces.createdAt);
-
-    // Get all forms for the user's workspaces
-    const workspaceIds = workspaceList.map((ws) => ws.id);
-    const formsList = await db
-      .select({
-        id: forms.id,
-        title: forms.title,
-        updatedAt: forms.updatedAt,
-        workspaceId: forms.workspaceId,
-      })
-      .from(forms)
-      .where(
-        and(
-          inArray(forms.workspaceId, workspaceIds),
-          not(eq(forms.status, "archived")),
-        ),
-      )
-      .orderBy(desc(forms.updatedAt));
+    // Run workspace + forms queries in parallel
+    const [workspaceList, formsList] = await Promise.all([
+      db
+        .select()
+        .from(workspaces)
+        .where(inArray(workspaces.organizationId, orgIds))
+        .orderBy(workspaces.createdAt),
+      db
+        .select({
+          id: forms.id,
+          title: forms.title,
+          updatedAt: forms.updatedAt,
+          workspaceId: forms.workspaceId,
+        })
+        .from(forms)
+        .where(not(eq(forms.status, "archived")))
+        .orderBy(desc(forms.updatedAt)),
+    ]);
 
     // Group forms by workspaceId
     const formsByWorkspace = formsList.reduce(

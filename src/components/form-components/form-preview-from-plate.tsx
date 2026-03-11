@@ -2,11 +2,7 @@ import { RenderPreviewInput } from "@/components/form-components/render-preview-
 import { StepForm } from "@/components/form-components/step-form";
 import { ProgressBar } from "@/components/public/progress-bar";
 import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -21,11 +17,10 @@ import { useTranslation } from "@/contexts/translation-context";
 import { usePreviewForm } from "@/hooks/use-preview-form";
 import {
   extractFormHeader,
-  type PlateFormField,
   splitElementsIntoSteps,
-  type TransformedElement,
   transformPlateStateToFormElements,
 } from "@/lib/transform-plate-to-form";
+import type { PlateFormField, TransformedElement } from "@/lib/transform-plate-to-form";
 import { cn, isValidUrl, DEFAULT_ICON } from "@/lib/utils";
 import type { PublicFormSettings } from "@/types/form-settings";
 import { ChevronRightIcon } from "@/components/ui/icons";
@@ -33,6 +28,47 @@ import { IconPickerPreview } from "@/components/icon-picker";
 import { AnimatePresence, motion } from "motion/react";
 import type { Value } from "platejs";
 import { useEffect, useState } from "react";
+
+const SuccessCheckmarkIcon = (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="32"
+    height="32"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="text-green-600"
+  >
+    <title>Success checkmark</title>
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+    <polyline points="22 4 12 14.01 9 11.01" />
+  </svg>
+);
+
+const NoContentPlaceholderIcon = (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="48"
+    height="48"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="mx-auto mb-4 opacity-50"
+  >
+    <title>No content placeholder</title>
+    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="16" x2="8" y1="13" y2="13" />
+    <line x1="16" x2="8" y1="17" y2="17" />
+    <line x1="10" x2="8" y1="9" y2="9" />
+  </svg>
+);
 
 interface FormPreviewFromPlateProps {
   /** Plate editor content array */
@@ -100,12 +136,7 @@ function ToggleRenderer({
       </CollapsibleTrigger>
       <CollapsibleContent className="pl-6 space-y-2">
         {items.map((child) => (
-          <RenderPreviewElement
-            key={child.id}
-            element={child}
-            form={form}
-            layout={layout}
-          />
+          <RenderPreviewElement key={child.id} element={child} form={form} layout={layout} />
         ))}
       </CollapsibleContent>
     </Collapsible>
@@ -132,29 +163,17 @@ function RenderPreviewElement({
   if ("static" in element && element.static) {
     switch (element.fieldType) {
       case "H1":
-        return (
-          <h1 className="text-3xl font-bold mt-6 mb-4">{element.content}</h1>
-        );
+        return <h1 className="text-3xl font-bold mt-6 mb-4">{element.content}</h1>;
       case "H2":
-        return (
-          <h2 className="text-2xl font-semibold mt-5 mb-3">
-            {element.content}
-          </h2>
-        );
+        return <h2 className="text-2xl font-semibold mt-5 mb-3">{element.content}</h2>;
       case "H3":
-        return (
-          <h3 className="text-xl font-medium mt-4 mb-2">{element.content}</h3>
-        );
+        return <h3 className="text-xl font-medium mt-4 mb-2">{element.content}</h3>;
       case "Separator":
         return <Separator className="my-4" />;
       case "EmptyBlock":
         return <div className="-mt-2 h-2" aria-hidden="true" />; // Minimal spacer, offset space-y-4
       case "FieldDescription":
-        return (
-          <p className="text-muted-foreground text-sm my-2">
-            {element.content}
-          </p>
-        );
+        return <p className="text-muted-foreground text-sm my-2">{element.content}</p>;
       case "UnorderedList":
         return (
           <ul className="my-2 ml-6 space-y-1 list-disc">
@@ -188,38 +207,41 @@ function RenderPreviewElement({
         return (
           <div className="my-4 border rounded-md overflow-hidden">
             <Table>
-              {element.rows.some((row) => row.isHeader) && (
-                <TableHeader>
-                  {element.rows
-                    .filter((row) => row.isHeader)
-                    .map((row, rowIdx) => (
-                      <TableRow key={`${element.id}-header-${rowIdx}`}>
-                        {row.cells.map((cell, cellIdx) => (
-                          <TableHead
-                            key={`${element.id}-header-${rowIdx}-${cellIdx}`}
-                          >
-                            {cell}
-                          </TableHead>
+              {(() => {
+                const headerRows: typeof element.rows = [];
+                const bodyRows: typeof element.rows = [];
+                for (const row of element.rows) {
+                  (row.isHeader ? headerRows : bodyRows).push(row);
+                }
+                return (
+                  <>
+                    {headerRows.length > 0 && (
+                      <TableHeader>
+                        {headerRows.map((row, rowIdx) => (
+                          <TableRow key={`${element.id}-header-${rowIdx}`}>
+                            {row.cells.map((cell, cellIdx) => (
+                              <TableHead key={`${element.id}-header-${rowIdx}-${cellIdx}`}>
+                                {cell}
+                              </TableHead>
+                            ))}
+                          </TableRow>
                         ))}
-                      </TableRow>
-                    ))}
-                </TableHeader>
-              )}
-              <TableBody>
-                {element.rows
-                  .filter((row) => !row.isHeader)
-                  .map((row, rowIdx) => (
-                    <TableRow key={`${element.id}-row-${rowIdx}`}>
-                      {row.cells.map((cell, cellIdx) => (
-                        <TableCell
-                          key={`${element.id}-row-${rowIdx}-${cellIdx}`}
-                        >
-                          {cell}
-                        </TableCell>
+                      </TableHeader>
+                    )}
+                    <TableBody>
+                      {bodyRows.map((row, rowIdx) => (
+                        <TableRow key={`${element.id}-row-${rowIdx}`}>
+                          {row.cells.map((cell, cellIdx) => (
+                            <TableCell key={`${element.id}-row-${rowIdx}-${cellIdx}`}>
+                              {cell}
+                            </TableCell>
+                          ))}
+                        </TableRow>
                       ))}
-                    </TableRow>
-                  ))}
-              </TableBody>
+                    </TableBody>
+                  </>
+                );
+              })()}
             </Table>
           </div>
         );
@@ -282,8 +304,7 @@ function PreviewFormHeader({
   const [iconError, setIconError] = useState(false);
 
   // Check if we have valid cover (URL or hex color)
-  const hasCover =
-    cover && (isHexColor(cover) || isValidUrl(cover)) && !imageError;
+  const hasCover = cover && (isHexColor(cover) || isValidUrl(cover)) && !imageError;
   const hasIcon = !!icon && !iconError;
   const hasTitle = title && title.trim().length > 0 && !hideTitle;
 
@@ -301,32 +322,24 @@ function PreviewFormHeader({
 
     if (isHexColor(cover)) {
       // Render as solid color background
-      return (
-        <div
-          className={coverClass}
-          data-bf-cover
-          style={{ backgroundColor: cover }}
-        />
-      );
+      return <div className={coverClass} data-bf-cover style={{ backgroundColor: cover }} />;
     }
 
     if (isValidUrl(cover) && !imageError) {
       // Render as image
       return (
-        <div
-          className={cn(coverClass, "overflow-hidden bg-muted")}
-          data-bf-cover
-        >
+        <div className={cn(coverClass, "overflow-hidden bg-muted")} data-bf-cover>
           {cover.includes("tint=true") && (
             <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
           )}
           <img
             src={cover}
             alt="Form cover"
+            width={1200}
+            height={200}
             className={cn(
               "w-full h-full object-cover",
-              cover.includes("tint=true") &&
-                "relative z-0 brightness-60 grayscale",
+              cover.includes("tint=true") && "relative z-0 brightness-60 grayscale",
             )}
             onError={() => setImageError(true)}
           />
@@ -369,6 +382,8 @@ function PreviewFormHeader({
           <img
             src={icon}
             alt="Form icon"
+            width={120}
+            height={120}
             className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-md object-cover"
             data-bf-logo
             onError={() => setIconError(true)}
@@ -490,33 +505,12 @@ function DefaultThankYou({ onReset }: { onReset?: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="32"
-          height="32"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="text-green-600"
-        >
-          <title>Success checkmark</title>
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-          <polyline points="22 4 12 14.01 9 11.01" />
-        </svg>
+        {SuccessCheckmarkIcon}
       </div>
       <h2 className="text-2xl font-bold mb-2">{t("thankYou")}</h2>
       <p className="text-muted-foreground mb-6">{t("responseSubmitted")}</p>
       {onReset && (
-        <Button
-          type="button"
-          onClick={onReset}
-          variant="outline"
-          size="sm"
-          className="rounded-lg"
-        >
+        <Button type="button" onClick={onReset} variant="outline" size="sm" className="rounded-lg">
           {t("submitAnother")}
         </Button>
       )}
@@ -543,18 +537,10 @@ export function FormPreviewFromPlate({
   const headerFromContent = extractFormHeader(content);
   const hasHeaderNode = headerFromContent !== null;
 
-  const title = hideTitle
-    ? ""
-    : hasHeaderNode
-      ? headerFromContent.title
-      : legacyTitle;
-  const icon = hasHeaderNode
-    ? (headerFromContent.icon ?? legacyIcon)
-    : legacyIcon;
+  const title = hideTitle ? "" : hasHeaderNode ? headerFromContent.title : legacyTitle;
+  const icon = hasHeaderNode ? (headerFromContent.icon ?? legacyIcon) : legacyIcon;
   const iconColor = hasHeaderNode ? headerFromContent.iconColor : null;
-  const cover = hasHeaderNode
-    ? (headerFromContent.cover ?? legacyCover)
-    : legacyCover;
+  const cover = hasHeaderNode ? (headerFromContent.cover ?? legacyCover) : legacyCover;
 
   const elements = transformPlateStateToFormElements(content);
 
@@ -565,27 +551,7 @@ export function FormPreviewFromPlate({
   if (steps.length === 0 || steps.flat().length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] text-center p-8">
-        <div className="text-muted-foreground mb-4">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="48"
-            height="48"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="mx-auto mb-4 opacity-50"
-          >
-            <title>No content placeholder</title>
-            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="16" x2="8" y1="13" y2="13" />
-            <line x1="16" x2="8" y1="17" y2="17" />
-            <line x1="10" x2="8" y1="9" y2="9" />
-          </svg>
-        </div>
+        <div className="text-muted-foreground mb-4">{NoContentPlaceholderIcon}</div>
         <h3 className="text-lg font-medium mb-2">No Content Yet</h3>
         <p className="text-sm text-muted-foreground max-w-md">
           Add content to the editor to see the preview.
@@ -661,12 +627,9 @@ function FormPreviewContent({
   layout: "public" | "editor";
   settings?: PublicFormSettings;
 }) {
-  const { currentStep, totalSteps, isSubmitted, direction, reset } =
-    useStepForm();
+  const { currentStep, totalSteps, isSubmitted, direction, reset } = useStepForm();
   const { t } = useTranslation();
-  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(
-    null,
-  );
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
 
   // Create a dummy form for thank you content rendering (static elements only)
   const { form } = usePreviewForm({ fields: [] });
@@ -701,12 +664,7 @@ function FormPreviewContent({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [
-    isSubmitted,
-    settings?.redirectOnCompletion,
-    settings?.redirectUrl,
-    settings?.redirectDelay,
-  ]);
+  }, [isSubmitted, settings?.redirectOnCompletion, settings?.redirectUrl, settings?.redirectDelay]);
 
   // Show thank you content after submission
   if (isSubmitted) {
@@ -721,10 +679,7 @@ function FormPreviewContent({
           layout={layout}
         />
         <div
-          className={cn(
-            "w-full mx-auto",
-            layout === "editor" ? "px-4" : "px-4 sm:px-0",
-          )}
+          className={cn("w-full mx-auto", layout === "editor" ? "px-4" : "px-4 sm:px-0")}
           style={{ maxWidth: PAGE_MAX_WIDTH[layout] }}
           data-bf-form-container
         >
@@ -774,10 +729,7 @@ function FormPreviewContent({
       {/* Progress Bar */}
       {settings?.progressBar && totalSteps > 1 && (
         <div
-          className={cn(
-            "mb-6 mx-auto",
-            layout === "editor" ? "w-full px-4" : "px-4",
-          )}
+          className={cn("mb-6 mx-auto", layout === "editor" ? "w-full px-4" : "px-4")}
           style={{ maxWidth: PAGE_MAX_WIDTH[layout] }}
           data-bf-form-container
         >
@@ -787,10 +739,7 @@ function FormPreviewContent({
 
       {/* Step Form */}
       <div
-        className={cn(
-          "overflow-hidden mx-auto",
-          layout === "editor" ? "w-full px-4" : "px-4",
-        )}
+        className={cn("overflow-hidden mx-auto", layout === "editor" ? "w-full px-4" : "px-4")}
         style={{ maxWidth: PAGE_MAX_WIDTH[layout] }}
         data-bf-form-container
       >

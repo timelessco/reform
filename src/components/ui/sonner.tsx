@@ -1,5 +1,6 @@
 import { useTheme } from "@/components/ThemeProvider";
-import { Toaster as Sonner, type ToasterProps } from "sonner";
+import { Toaster as Sonner } from "sonner";
+import type { ToasterProps } from "sonner";
 import {
   CircleCheckIcon,
   InfoIcon,

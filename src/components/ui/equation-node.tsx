@@ -13,16 +13,11 @@ import {
   useSelected,
 } from "platejs/react";
 import * as React from "react";
-import TextareaAutosize, {
-  type TextareaAutosizeProps,
-} from "react-textarea-autosize";
+import TextareaAutosize from "react-textarea-autosize";
+import type { TextareaAutosizeProps } from "react-textarea-autosize";
 
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 export function EquationElement(props: PlateElementProps<TEquationElement>) {
@@ -55,9 +50,7 @@ export function EquationElement(props: PlateElementProps<TEquationElement>) {
               variant="ghost"
               className={cn(
                 "group flex cursor-pointer select-none items-center justify-center rounded-sm hover:bg-primary/10 data-[selected=true]:bg-primary/10 h-auto",
-                props.element.texExpression.length === 0
-                  ? "bg-muted p-3 pr-9"
-                  : "px-2 py-1",
+                props.element.texExpression.length === 0 ? "bg-muted p-3 pr-9" : "px-2 py-1",
               )}
               data-selected={selected}
             />
@@ -88,16 +81,11 @@ export function EquationElement(props: PlateElementProps<TEquationElement>) {
   );
 }
 
-export function InlineEquationElement(
-  props: PlateElementProps<TEquationElement>,
-) {
+export function InlineEquationElement(props: PlateElementProps<TEquationElement>) {
   const element = props.element;
   const katexRef = React.useRef<HTMLDivElement | null>(null);
   const selected = useSelected();
-  const isCollapsed = useEditorSelector(
-    (editor) => editor.api.isCollapsed(),
-    [],
-  );
+  const isCollapsed = useEditorSelector((editor) => editor.api.isCollapsed(), []);
   const [open, setOpen] = React.useState(selected && isCollapsed);
 
   React.useEffect(() => {
@@ -125,9 +113,7 @@ export function InlineEquationElement(
   return (
     <PlateElement
       {...props}
-      className={cn(
-        "mx-1 inline-block select-none rounded-sm [&_.katex-display]:my-0!",
-      )}
+      className={cn("mx-1 inline-block select-none rounded-sm [&_.katex-display]:my-0!")}
     >
       <Popover open={open} onOpenChange={setOpen} modal={false}>
         <PopoverTrigger
@@ -136,8 +122,7 @@ export function InlineEquationElement(
               className={cn(
                 'after:-top-0.5 after:-left-1 after:absolute after:inset-0 after:z-1 after:h-[calc(100%+4px)] after:w-[calc(100%+8px)] after:rounded-sm after:content-[""]',
                 "h-6",
-                ((element.texExpression.length > 0 && open) || selected) &&
-                  "after:bg-brand/15",
+                ((element.texExpression.length > 0 && open) || selected) && "after:bg-brand/15",
                 element.texExpression.length === 0 &&
                   "text-muted-foreground after:bg-neutral-500/10",
               )}
@@ -147,10 +132,7 @@ export function InlineEquationElement(
         >
           <span
             ref={katexRef}
-            className={cn(
-              element.texExpression.length === 0 && "hidden",
-              "font-mono leading-none",
-            )}
+            className={cn(element.texExpression.length === 0 && "hidden", "font-mono leading-none")}
           />
           {element.texExpression.length === 0 && (
             <span>
@@ -207,17 +189,12 @@ const EquationPopoverContent = ({
     if (isInline) {
       editor.tf.select(element, { focus: true, next: true });
     } else {
-      editor
-        .getApi(BlockSelectionPlugin)
-        .blockSelection.set(element.id as string);
+      editor.getApi(BlockSelectionPlugin).blockSelection.set(element.id as string);
     }
   };
 
   return (
-    <PopoverContent
-      className="flex gap-2 w-72 p-4 border"
-      contentEditable={false}
-    >
+    <PopoverContent className="flex gap-2 w-72 p-4 border" contentEditable={false}>
       <EquationInput
         className={cn("max-h-[50vh] grow resize-none p-2 text-sm", className)}
         state={{ isInline, open, onClose }}

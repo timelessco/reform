@@ -75,38 +75,32 @@ import {
 } from "@/components/ui/sidebar";
 import { SidebarSection } from "@/components/ui/sidebar-section";
 import { UserMenuMinimal } from "@/components/user-menu-minimal";
-import {
-  WorkspaceItemMinimal,
-  type WorkspaceWithForms,
-} from "@/components/workspace-item-minimal";
+import { WorkspaceItemMinimal } from "@/components/workspace-item-minimal";
+import type { WorkspaceWithForms } from "@/components/workspace-item-minimal";
 import {
   EditorHeaderVisibilityProvider,
   useEditorHeaderVisibility,
 } from "@/contexts/editor-header-visibility-context";
-import {
-  MinimalSidebarProvider,
-  useMinimalSidebar,
-} from "@/contexts/minimal-sidebar-context";
+import { MinimalSidebarProvider, useMinimalSidebar } from "@/contexts/minimal-sidebar-context";
+import { favoriteCollection } from "@/db-collections/favorite.collection";
 import {
   createFormLocal,
-  createWorkspaceLocal,
-  deleteWorkspaceLocal,
   duplicateFormById,
-  favoriteCollection,
   formCollection,
-  formVersionCollection,
   permanentDeleteFormLocal,
   restoreFormLocal,
-  submissionCollection,
   updateFormStatus,
+} from "@/db-collections/form.collections";
+import { formVersionCollection } from "@/db-collections/form-version.collection";
+import { submissionCollection } from "@/db-collections/submission.collections";
+import {
+  createWorkspaceLocal,
+  deleteWorkspaceLocal,
   updateWorkspaceName,
   workspaceCollection,
-} from "@/db-collections";
+} from "@/db-collections/workspace.collection";
 import { useCommandPalette } from "@/hooks/use-command-palette";
-import {
-  EditorSidebarProvider,
-  useEditorSidebar,
-} from "@/hooks/use-editor-sidebar";
+import { EditorSidebarProvider, useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import {
   useArchivedForms,
   useFavoriteForms,
@@ -131,11 +125,7 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type * as React from "react";
 import {
   lazy,
@@ -178,9 +168,7 @@ type SidebarNavLabelProps = {
 function SidebarNavLabel({ icon, label }: SidebarNavLabelProps) {
   return (
     <>
-      <div className="flex items-center justify-center size-[18px] shrink-0">
-        {icon}
-      </div>
+      <div className="flex items-center justify-center size-[18px] shrink-0">{icon}</div>
       <span className="text-sm font-[450] text-sidebar-nav-text tracking-[0.14px] leading-[1.15] font-case truncate">
         {label}
       </span>
@@ -221,13 +209,10 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthLayout() {
   const { pathname } = useLocation();
-  const isEditRoute =
-    pathname.includes("/form-builder/") && pathname.endsWith("/edit");
+  const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
 
   return (
-    <SidebarProvider
-      style={{ "--app-header-height": "40px" } as React.CSSProperties}
-    >
+    <SidebarProvider style={{ "--app-header-height": "40px" } as React.CSSProperties}>
       <EditorSidebarProvider>
         <EditorHeaderVisibilityProvider enabled={isEditRoute}>
           <MinimalSidebarProvider>
@@ -242,10 +227,8 @@ function AuthLayout() {
 function AuthLayoutContent() {
   const location = useLocation();
   const { pathname } = location;
-  const isEditRoute =
-    pathname.includes("/form-builder/") && pathname.endsWith("/edit");
-  const { visible: isHeaderVisible, reportPointerActivity } =
-    useEditorHeaderVisibility();
+  const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
+  const { visible: isHeaderVisible, reportPointerActivity } = useEditorHeaderVisibility();
 
   const { formId } = useParams({ strict: false });
 
@@ -276,10 +259,7 @@ function AuthLayoutContent() {
 
   const setRightSidebarWidth = useCallback((width: number) => {
     const clamped = Math.round(
-      Math.min(
-        RIGHT_SIDEBAR_WIDTH_MAX,
-        Math.max(RIGHT_SIDEBAR_WIDTH_MIN, width),
-      ),
+      Math.min(RIGHT_SIDEBAR_WIDTH_MAX, Math.max(RIGHT_SIDEBAR_WIDTH_MIN, width)),
     );
     _setRightSidebarWidth(clamped);
     localStorage.setItem(RIGHT_SIDEBAR_WIDTH_KEY, String(clamped));
@@ -309,9 +289,8 @@ function AuthLayoutContent() {
             </div>
             <div
               className={cn(
-                "flex-1 min-h-0",
-                !isRightResizing &&
-                  "transition-[padding] duration-200 ease-linear",
+                "flex-1 min-h-0 flex flex-col",
+                !isRightResizing && "transition-[padding] duration-200 ease-linear",
               )}
               style={{
                 paddingRight: showEditorSidebar ? rightSidebarWidth : 0,
@@ -349,15 +328,11 @@ function AuthLayoutContent() {
               {activeSidebar === "settings" && formId && (
                 <LazyFormSettingsSidebar formId={formId} />
               )}
-              {activeSidebar === "share" && formId && (
-                <LazyShareSummarySidebar formId={formId} />
-              )}
+              {activeSidebar === "share" && formId && <LazyShareSummarySidebar formId={formId} />}
               {activeSidebar === "history" && formId && (
                 <LazyVersionHistorySidebar formId={formId} />
               )}
-              {activeSidebar === "customize" && formId && (
-                <LazyCustomizeSidebar formId={formId} />
-              )}
+              {activeSidebar === "customize" && formId && <LazyCustomizeSidebar formId={formId} />}
             </Suspense>
           </div>
         </div>
@@ -370,7 +345,7 @@ function AuthLayoutContent() {
 // App Sidebar Component using shadcn/ui
 function AppSidebar() {
   const { toggleSidebar } = useSidebar();
-  const { isInboxOpen, setIsInboxOpen } = useMinimalSidebar();
+  const { isInboxOpen, toggleInbox } = useMinimalSidebar();
   const location = useLocation();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -387,12 +362,8 @@ function AppSidebar() {
   const { activeOrg, orgsData } = Route.useLoaderData();
   const { data: workspacesData } = useOrgWorkspaces(activeOrg?.id);
 
-  const { data: invitations } = useQuery(
-    auth.organization.listUserInvitations.queryOptions(),
-  );
-  const pendingCount = (invitations ?? []).filter(
-    (inv: any) => inv.status === "pending",
-  ).length;
+  const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
+  const pendingCount = (invitations ?? []).filter((inv: any) => inv.status === "pending").length;
 
   const { data: session } = useSession();
 
@@ -400,7 +371,6 @@ function AppSidebar() {
     auth.signOut.mutationOptions({
       onSuccess: () => {
         localStorage.removeItem("electricAuthToken");
-        localStorage.clear();
         router.invalidate();
         router.navigate({ to: "/" });
       },
@@ -440,9 +410,7 @@ function AppSidebar() {
         <SidebarHeader className="h-12 pl-2 pr-2 pt-2 pb-0 flex flex-row items-center">
           <Tooltip>
             <TooltipTrigger
-              render={
-                <LogoToggle direction="left" onClick={() => toggleSidebar()} />
-              }
+              render={<LogoToggle direction="left" onClick={() => toggleSidebar()} />}
             />
             <TooltipContent side="bottom" align="start">
               <p className="font-medium">Collapse sidebar</p>
@@ -466,9 +434,7 @@ function AppSidebar() {
                     className="min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
                   >
                     <SidebarNavLabel
-                      icon={
-                        <HomeIcon className="size-[18px] text-muted-foreground" />
-                      }
+                      icon={<HomeIcon className="size-[18px] text-muted-foreground" />}
                       label="All"
                     />
                   </SidebarMenuButton>
@@ -480,22 +446,16 @@ function AppSidebar() {
                     className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active cursor-pointer"
                   >
                     <SidebarNavLabel
-                      icon={
-                        <SearchIcon className="size-[18px] text-muted-foreground" />
-                      }
+                      icon={<SearchIcon className="size-[18px] text-muted-foreground" />}
                       label="Search"
                     />
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    onClick={() => setIsInboxOpen(!isInboxOpen)}
+                    onClick={toggleInbox}
                     isActive={isInboxOpen}
-                    tooltip={
-                      pendingCount > 0
-                        ? `Notifications (${pendingCount})`
-                        : "Notifications"
-                    }
+                    tooltip={pendingCount > 0 ? `Notifications (${pendingCount})` : "Notifications"}
                     className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active cursor-pointer"
                   >
                     <div className="relative flex items-center justify-center size-[18px] shrink-0">
@@ -521,9 +481,7 @@ function AppSidebar() {
                     className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active cursor-pointer"
                   >
                     <SidebarNavLabel
-                      icon={
-                        <SettingsIcon className="size-[18px] text-muted-foreground" />
-                      }
+                      icon={<SettingsIcon className="size-[18px] text-muted-foreground" />}
                       label="Settings"
                     />
                   </SidebarMenuButton>
@@ -558,18 +516,14 @@ function AppSidebar() {
                       const orgWorkspaces = workspacesData;
                       if (orgWorkspaces.length > 0) {
                         // Use workspace from URL if available, otherwise use first workspace
-                        const workspaceMatch =
-                          location.pathname.match(/\/workspace\/([^/]+)/);
+                        const workspaceMatch = location.pathname.match(/\/workspace\/([^/]+)/);
                         const currentWorkspaceId = workspaceMatch?.[1];
                         const targetWorkspace = currentWorkspaceId
-                          ? orgWorkspaces.find(
-                              (ws) => ws.id === currentWorkspaceId,
-                            ) || orgWorkspaces[0]
+                          ? orgWorkspaces.find((ws) => ws.id === currentWorkspaceId) ||
+                            orgWorkspaces[0]
                           : orgWorkspaces[0];
 
-                        const newForm = await createFormLocal(
-                          targetWorkspace.id,
-                        );
+                        const newForm = await createFormLocal(targetWorkspace.id);
                         router.navigate({
                           to: "/workspace/$workspaceId/form-builder/$formId/edit",
                           params: {
@@ -683,9 +637,7 @@ function TrashDialog({
     return archivedFormsData
       .filter((form) => orgWorkspaceIds.has(form.workspaceId))
       .filter(
-        (form) =>
-          !searchQuery ||
-          form.title.toLowerCase().includes(searchQuery.toLowerCase()),
+        (form) => !searchQuery || form.title.toLowerCase().includes(searchQuery.toLowerCase()),
       )
       .toSorted(
         (a, b) =>
@@ -732,6 +684,7 @@ function TrashDialog({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="h-9 bg-muted/30 border-0 focus-visible:ring-1 focus-visible:ring-foreground/20"
+            aria-label="Search trash"
           />
         </div>
 
@@ -756,8 +709,7 @@ function TrashDialog({
                         {form.title || "Untitled"}
                       </p>
                       <p className="text-[11px] text-muted-foreground/60 truncate">
-                        {workspaceNames[form.workspaceId] ||
-                          "Unknown workspace"}
+                        {workspaceNames[form.workspaceId] || "Unknown workspace"}
                       </p>
                     </div>
                   </div>
@@ -768,6 +720,7 @@ function TrashDialog({
                       onClick={() => handleRestore(form.id)}
                       className="h-7 w-7"
                       title="Restore"
+                      aria-label="Restore"
                     >
                       <Undo2Icon className="h-4 w-4" />
                     </Button>
@@ -777,6 +730,7 @@ function TrashDialog({
                       onClick={() => handlePermanentDelete(form.id)}
                       className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
                       title="Delete permanently"
+                      aria-label="Delete permanently"
                     >
                       <Trash2Icon className="h-4 w-4" />
                     </Button>
@@ -796,6 +750,7 @@ function TrashDialog({
             variant="ghost"
             size="icon-sm"
             className="h-7 w-7 text-muted-foreground/40 hover:text-muted-foreground"
+            aria-label="Help"
           >
             <HelpCircleIcon className="h-4 w-4" />
           </Button>
@@ -807,7 +762,7 @@ function TrashDialog({
 
 // Sidebar Inbox Panel Component
 function SidebarInbox() {
-  const { isInboxOpen, setIsInboxOpen } = useMinimalSidebar();
+  const { isInboxOpen, closeInbox } = useMinimalSidebar();
   const { state } = useSidebar();
   const queryClient = useQueryClient();
   const prevOpenRef = useRef(isInboxOpen);
@@ -851,9 +806,7 @@ function SidebarInbox() {
   }, []);
 
   // Fetch invitations received by current user
-  const { data: invitations } = useQuery(
-    auth.organization.listUserInvitations.queryOptions(),
-  );
+  const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
 
   // Helper to refetch invitations on error (stale data)
   const handleError = (error: any) => {
@@ -894,18 +847,14 @@ function SidebarInbox() {
   if (!isInboxOpen && !isExiting && !prevOpenRef.current) return null;
 
   // Only show pending invitations
-  const pendingInvitations = (invitations ?? []).filter(
-    (inv: any) => inv.status === "pending",
-  );
+  const pendingInvitations = (invitations ?? []).filter((inv: any) => inv.status === "pending");
 
   return (
     <div
       className={cn(
         "fixed z-40 flex w-80 flex-col bg-background select-none border-r border-foreground/5 top-0 bottom-0",
         "transition-[left,opacity] duration-150 ease-out [[data-resizing]_&]:transition-none",
-        state === "expanded"
-          ? "left-(--sidebar-width)"
-          : "left-(--sidebar-width-icon)",
+        state === "expanded" ? "left-(--sidebar-width)" : "left-(--sidebar-width-icon)",
         applyExitClass && "opacity-0",
       )}
       onTransitionEnd={handleTransitionEnd}
@@ -924,16 +873,17 @@ function SidebarInbox() {
           <Button
             variant="ghost"
             size="icon-sm"
-            onClick={() => setIsInboxOpen(false)}
+            onClick={closeInbox}
             className="h-6 w-7 mr-1"
             title="Collapse"
+            aria-label="Collapse inbox"
           >
             <ChevronsLeftIcon className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="icon-sm" className="h-6 w-6">
+          <Button variant="ghost" size="icon-sm" className="h-6 w-6" aria-label="Filter">
             <FilterIcon className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="icon-sm" className="h-6 w-6">
+          <Button variant="ghost" size="icon-sm" className="h-6 w-6" aria-label="More options">
             <MoreHorizontalIcon className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -952,8 +902,7 @@ function SidebarInbox() {
                 {pendingInvitations.map((invitation) => {
                   const isProcessing =
                     (acceptMutation.isPending &&
-                      acceptMutation.variables?.invitationId ===
-                        invitation.id) ||
+                      acceptMutation.variables?.invitationId === invitation.id) ||
                     (rejectMutation.isPending &&
                       rejectMutation.variables?.invitationId === invitation.id);
 
@@ -970,15 +919,11 @@ function SidebarInbox() {
                           <p className="text-[12px] font-medium text-foreground leading-tight">
                             You've been invited to join{" "}
                             <span className="font-bold">
-                              {(invitation as any).organization?.name ??
-                                "an organization"}
+                              {(invitation as any).organization?.name ?? "an organization"}
                             </span>
                           </p>
                           <p className="text-[11px] text-muted-foreground/50 mt-0.5">
-                            Role:{" "}
-                            <span className="capitalize">
-                              {invitation.role}
-                            </span>
+                            Role: <span className="capitalize">{invitation.role}</span>
                           </p>
                         </div>
                       </div>
@@ -995,8 +940,7 @@ function SidebarInbox() {
                           }
                         >
                           {acceptMutation.isPending &&
-                          acceptMutation.variables?.invitationId ===
-                            invitation.id
+                          acceptMutation.variables?.invitationId === invitation.id
                             ? "Accepting..."
                             : "Accept"}
                         </Button>
@@ -1012,8 +956,7 @@ function SidebarInbox() {
                           }
                         >
                           {rejectMutation.isPending &&
-                          rejectMutation.variables?.invitationId ===
-                            invitation.id
+                          rejectMutation.variables?.invitationId === invitation.id
                             ? "Declining..."
                             : "Decline"}
                         </Button>
@@ -1047,9 +990,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
   const { data: session } = useSession();
 
   // Sort mode state with localStorage persistence
-  const [sortMode, setSortMode] = useState<
-    "recent" | "oldest" | "alphabetical" | "manual"
-  >(() => {
+  const [sortMode, setSortMode] = useState<"recent" | "oldest" | "alphabetical" | "manual">(() => {
     if (typeof window !== "undefined") {
       return (
         (localStorage.getItem("sidebar-sort-mode") as
@@ -1061,15 +1002,12 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
     }
     return "recent";
   });
-  const handleSortChange = (
-    mode: "recent" | "oldest" | "alphabetical" | "manual",
-  ) => {
+  const handleSortChange = (mode: "recent" | "oldest" | "alphabetical" | "manual") => {
     setSortMode(mode);
     localStorage.setItem("sidebar-sort-mode", mode);
   };
 
-  const { data: workspacesData, isLoading: workspacesLoading } =
-    useOrgWorkspaces(activeOrgId);
+  const { data: workspacesData, isLoading: workspacesLoading } = useOrgWorkspaces(activeOrgId);
   const { data: formsData, isLoading: formsLoading } = useOrgForms(activeOrgId);
   const submissionCounts = useSubmissionCounts();
 
@@ -1078,8 +1016,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
 
   // Determine if Electric has synced
   const isLoading = workspacesLoading || formsLoading;
-  const isElectricReady =
-    !isLoading && workspacesData !== undefined && formsData !== undefined;
+  const isElectricReady = !isLoading && workspacesData !== undefined && formsData !== undefined;
 
   // Combine workspaces with their forms, filtered by active organization
   const workspaces: WorkspaceWithForms[] = useMemo(() => {
@@ -1090,10 +1027,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
         if (!acc[form.workspaceId]) acc[form.workspaceId] = [];
         acc[form.workspaceId].push({
           ...form,
-          customization: form.customization as
-            | Record<string, string>
-            | null
-            | undefined,
+          customization: form.customization as Record<string, string> | null | undefined,
         });
         return acc;
       },
@@ -1104,26 +1038,17 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
       ...ws,
       // Sort forms by recently edited (most recent first)
       forms: (formsByWorkspace[ws.id] || []).toSorted(
-        (
-          a: WorkspaceWithForms["forms"][0],
-          b: WorkspaceWithForms["forms"][0],
-        ) => {
+        (a: WorkspaceWithForms["forms"][0], b: WorkspaceWithForms["forms"][0]) => {
           switch (sortMode) {
             case "oldest":
-              return (
-                new Date(a.updatedAt).getTime() -
-                new Date(b.updatedAt).getTime()
-              );
+              return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
             case "alphabetical":
               return (a.title || "").localeCompare(b.title || "");
             case "manual":
               return 0;
             case "recent":
             default:
-              return (
-                new Date(b.updatedAt).getTime() -
-                new Date(a.updatedAt).getTime()
-              );
+              return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
           }
         },
       ),
@@ -1132,12 +1057,10 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
 
   // State for workspace dialogs
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [workspaceToDelete, setWorkspaceToDelete] =
-    useState<WorkspaceWithForms | null>(null);
+  const [workspaceToDelete, setWorkspaceToDelete] = useState<WorkspaceWithForms | null>(null);
   const [deleteConfirmName, setDeleteConfirmName] = useState("");
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
-  const [workspaceToRename, setWorkspaceToRename] =
-    useState<WorkspaceWithForms | null>(null);
+  const [workspaceToRename, setWorkspaceToRename] = useState<WorkspaceWithForms | null>(null);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
 
   // State for form delete dialog
@@ -1148,8 +1071,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
   } | null>(null);
 
   const handleDeleteWorkspace = async () => {
-    if (!workspaceToDelete || deleteConfirmName !== workspaceToDelete.name)
-      return;
+    if (!workspaceToDelete || deleteConfirmName !== workspaceToDelete.name) return;
     try {
       await deleteWorkspaceLocal(workspaceToDelete.id);
       setDeleteDialogOpen(false);
@@ -1225,11 +1147,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
     <>
       <div className="flex flex-col">
         {/* Favorites Section */}
-        <SidebarSection
-          label="Favorites"
-          initialOpen={favoriteForms.length > 0}
-          action={<></>}
-        >
+        <SidebarSection label="Favorites" initialOpen={favoriteForms.length > 0} action={<></>}>
           {favoriteForms.length === 0 ? (
             <span className="text-muted-foreground/50 text-[11px] px-2 py-1 italic">
               No favorites yet
@@ -1253,10 +1171,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
                     <ThemedFormIcon
                       icon={form.icon}
                       customization={
-                        form.customization as
-                          | Record<string, string>
-                          | null
-                          | undefined
+                        form.customization as Record<string, string> | null | undefined
                       }
                     />
                   }
@@ -1312,8 +1227,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
             <AlertDialogTitle>Delete workspace</AlertDialogTitle>
             <AlertDialogDescription render={<div className="space-y-4" />}>
               <p>
-                This will permanently delete{" "}
-                <strong>"{workspaceToDelete?.name}"</strong> and{" "}
+                This will permanently delete <strong>"{workspaceToDelete?.name}"</strong> and{" "}
                 <strong>
                   {workspaceToDelete?.forms?.length || 0} form
                   {(workspaceToDelete?.forms?.length || 0) !== 1 ? "s" : ""}
@@ -1328,6 +1242,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
                   value={deleteConfirmName}
                   onChange={(e) => setDeleteConfirmName(e.target.value)}
                   placeholder="Type workspace name to confirm"
+                  aria-label="Type to confirm deletion"
                   className="mt-2"
                 />
               </div>
@@ -1351,14 +1266,13 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Rename workspace</DialogTitle>
-            <DialogDescription>
-              Enter a new name for this workspace.
-            </DialogDescription>
+            <DialogDescription>Enter a new name for this workspace.</DialogDescription>
           </DialogHeader>
           <Input
             value={newWorkspaceName}
             onChange={(e) => setNewWorkspaceName(e.target.value)}
             placeholder="Workspace name"
+            aria-label="Workspace name"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 handleRenameWorkspace();
@@ -1366,10 +1280,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
             }}
           />
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setRenameDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setRenameDialogOpen(false)}>
               Cancel
             </Button>
             <Button onClick={handleRenameWorkspace}>Save</Button>
@@ -1378,16 +1289,13 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
       </Dialog>
 
       {/* Form Delete Confirmation Dialog */}
-      <AlertDialog
-        open={formDeleteDialogOpen}
-        onOpenChange={setFormDeleteDialogOpen}
-      >
+      <AlertDialog open={formDeleteDialogOpen} onOpenChange={setFormDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete form</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{formToDelete?.title}"? This
-              action will move it to trash.
+              Are you sure you want to delete "{formToDelete?.title}"? This action will move it to
+              trash.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -3,7 +3,7 @@ import { useRef } from "react";
 import { getThemeStyleVars } from "@/lib/generate-theme-css";
 import { cn, isValidUrl, DEFAULT_ICON, DEFAULT_ICON_NAME } from "@/lib/utils";
 import { BLACK_COLOR, iconMap, WHITE_COLOR } from "./icon-data";
-import { type IconPickerPreviewProps } from "./types";
+import type { IconPickerPreviewProps } from "./types";
 
 /**
  * Swap white/black in dark mode for visibility
@@ -104,10 +104,7 @@ export function ThemedFormIcon({
   const isDark = customization?.mode === "dark";
 
   return (
-    <div
-      style={themeVars}
-      className={cn(themeVars && "bf-themed", themeVars && isDark && "dark")}
-    >
+    <div style={themeVars} className={cn(themeVars && "bf-themed", themeVars && isDark && "dark")}>
       <IconPickerPreview
         icon={iconName}
         iconColor={undefined}

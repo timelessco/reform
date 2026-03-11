@@ -5,10 +5,8 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  useSettingsDialog,
-  type SettingsTab,
-} from "@/hooks/use-settings-dialog";
+import { useSettingsDialog } from "@/hooks/use-settings-dialog";
+import type { SettingsTab } from "@/hooks/use-settings-dialog";
 import { cn } from "@/lib/utils";
 import { CircleUserIcon, DownloadIcon, SparklesIcon, XIcon } from "../ui/icons";
 import { AccountSettingsContent } from "./account-settings-content";
@@ -77,9 +75,7 @@ export function SettingsDialog() {
                   onClick={() => setTab(item.key)}
                   className={cn(
                     "h-[30px] w-full px-2 py-[7px] rounded-lg flex items-center gap-2 overflow-hidden cursor-pointer transition-colors",
-                    isActive
-                      ? "bg-accent text-accent-foreground"
-                      : "hover:bg-accent/50",
+                    isActive ? "bg-accent text-accent-foreground" : "hover:bg-accent/50",
                   )}
                 >
                   <Icon className="size-[18px] shrink-0 text-muted-foreground" />
@@ -106,14 +102,12 @@ export function SettingsDialog() {
           </div>
 
           {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto px-12 pb-8">
+          <div className="flex-1 overflow-y-auto overscroll-contain px-12 pb-8">
             <TabContent tab={activeTab} />
           </div>
         </div>
 
-        <DialogDescription className="sr-only">
-          Settings dialog
-        </DialogDescription>
+        <DialogDescription className="sr-only">Settings dialog</DialogDescription>
       </DialogContent>
     </Dialog>
   );

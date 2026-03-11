@@ -64,17 +64,11 @@ type TransformFunction<
         : TParams extends HasRequiredKeys<TParams>
           ? (
               input: TParams,
-              options?: Omit<
-                QueryOptions<TData, TError, TData, Path>,
-                "queryKey" | "queryFn"
-              >,
+              options?: Omit<QueryOptions<TData, TError, TData, Path>, "queryKey" | "queryFn">,
             ) => InferQueryOptions<TFn, Path>
           : (
               input?: TParams,
-              options?: Omit<
-                QueryOptions<TData, TError, TData, Path>,
-                "queryKey" | "queryFn"
-              >,
+              options?: Omit<QueryOptions<TData, TError, TData, Path>, "queryKey" | "queryFn">,
             ) => InferQueryOptions<TFn, Path>;
       queryKey: TParams extends undefined
         ? () => Path
@@ -92,13 +86,12 @@ type TransformFunction<
 type BuiltinFunctionKeys = keyof ((...args: any[]) => any);
 
 // Helper: check if T has any meaningful keys beyond built-in function properties
-type HasExtraKeys<T> =
-  Exclude<keyof T, BuiltinFunctionKeys> extends never ? false : true;
+type HasExtraKeys<T> = Exclude<keyof T, BuiltinFunctionKeys> extends never ? false : true;
 
 type AuthClientToQuery<T, Path extends string[] = []> = {
-  [K in keyof T as K extends OMIT_BETTER_AUTH_CLIENT_KEYS
-    ? never
-    : K]: T[K] extends (...args: any[]) => any
+  [K in keyof T as K extends OMIT_BETTER_AUTH_CLIENT_KEYS ? never : K]: T[K] extends (
+    ...args: any[]
+  ) => any
     ? // Check if this callable also has extra properties (intersection from plugins)
       HasExtraKeys<T[K]> extends true
       ? TransformFunction<T[K], [...Path, K & string]> &
@@ -128,8 +121,7 @@ export function createAuthQueryClient<TClient extends Record<string, any>>(
       const getTarget = () => path.reduce((acc, k) => acc?.[k], client as any);
 
       if (key === "queryKey") {
-        return (input?: unknown) =>
-          input !== undefined ? [...path, input] : path;
+        return (input?: unknown) => (input !== undefined ? [...path, input] : path);
       }
 
       if (key === "queryOptions") {

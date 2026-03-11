@@ -1,5 +1,6 @@
 import { Toolbar as ToolbarPrimitive } from "@base-ui/react/toolbar";
-import { cva, type VariantProps } from "class-variance-authority";
+import { cva } from "class-variance-authority";
+import type { VariantProps } from "class-variance-authority";
 import { ChevronDownIcon } from "@/components/ui/icons";
 import * as React from "react";
 
@@ -11,11 +12,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export function Toolbar({
@@ -34,12 +31,7 @@ export function ToolbarToggleGroup({
   className,
   ...props
 }: React.ComponentProps<typeof ToolbarPrimitive.Group>) {
-  return (
-    <ToolbarPrimitive.Group
-      className={cn("flex items-center", className)}
-      {...props}
-    />
-  );
+  return <ToolbarPrimitive.Group className={cn("flex items-center", className)} {...props} />;
 }
 
 export function ToolbarLink({
@@ -145,13 +137,12 @@ export const ToolbarButton = withTooltip(function ToolbarButton({
       >
         {isDropdown ? (
           <>
-            <div className="flex flex-1 items-center gap-2 whitespace-nowrap">
-              {children}
-            </div>
+            <div className="flex flex-1 items-center gap-2 whitespace-nowrap">{children}</div>
             <div>
               <ChevronDownIcon
                 className="size-3.5 text-muted-foreground"
                 data-icon
+                aria-hidden="true"
               />
             </div>
           </>
@@ -189,9 +180,7 @@ export function ToolbarSplitButton({
   );
 }
 
-type ToolbarSplitButtonPrimaryProps = React.ComponentPropsWithoutRef<
-  typeof ToolbarToggleItem
-> &
+type ToolbarSplitButtonPrimaryProps = React.ComponentPropsWithoutRef<typeof ToolbarToggleItem> &
   VariantProps<typeof toolbarButtonVariants>;
 
 export function ToolbarSplitButtonPrimary({
@@ -225,8 +214,7 @@ export function ToolbarSplitButtonSecondary({
   size,
   variant,
   ...props
-}: React.ComponentPropsWithoutRef<typeof Button> &
-  VariantProps<typeof dropdownArrowVariants>) {
+}: React.ComponentPropsWithoutRef<typeof Button> & VariantProps<typeof dropdownArrowVariants>) {
   return (
     <Button
       variant="ghost"
@@ -241,7 +229,7 @@ export function ToolbarSplitButtonSecondary({
       onClick={(e) => e.stopPropagation()}
       {...props}
     >
-      <ChevronDownIcon className="size-3.5 text-muted-foreground" data-icon />
+      <ChevronDownIcon className="size-3.5 text-muted-foreground" data-icon aria-hidden="true" />
     </Button>
   );
 }
@@ -261,18 +249,9 @@ export function ToolbarToggleItem({
   );
 }
 
-export function ToolbarGroup({
-  children,
-  className,
-}: React.ComponentProps<"div">) {
+export function ToolbarGroup({ children, className }: React.ComponentProps<"div">) {
   return (
-    <div
-      className={cn(
-        "group/toolbar-group",
-        "relative hidden has-[button]:flex",
-        className,
-      )}
-    >
+    <div className={cn("group/toolbar-group", "relative hidden has-[button]:flex", className)}>
       <div className="flex items-center">{children}</div>
 
       <div className="group-last/toolbar-group:hidden! mx-1.5 py-0.5">
@@ -284,14 +263,8 @@ export function ToolbarGroup({
 
 type TooltipProps<T extends React.ElementType> = {
   tooltip?: React.ReactNode;
-  tooltipContentProps?: Omit<
-    React.ComponentPropsWithoutRef<typeof TooltipContent>,
-    "children"
-  >;
-  tooltipProps?: Omit<
-    React.ComponentPropsWithoutRef<typeof Tooltip>,
-    "children"
-  >;
+  tooltipContentProps?: Omit<React.ComponentPropsWithoutRef<typeof TooltipContent>, "children">;
+  tooltipProps?: Omit<React.ComponentPropsWithoutRef<typeof Tooltip>, "children">;
   tooltipTriggerProps?: React.ComponentPropsWithoutRef<typeof TooltipTrigger>;
 } & React.ComponentProps<T>;
 

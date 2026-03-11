@@ -24,12 +24,10 @@ import {
   RadicalIcon,
 } from "@/components/ui/icons";
 import { KEYS } from "platejs";
-import { type PlateEditor, useEditorRef } from "platejs/react";
+import { useEditorRef } from "platejs/react";
+import type { PlateEditor } from "platejs/react";
 import * as React from "react";
-import {
-  insertBlock,
-  insertInlineElement,
-} from "@/components/editor/transforms";
+import { insertBlock, insertInlineElement } from "@/components/editor/transforms";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -213,17 +211,13 @@ const groups: Group[] = [
   },
 ];
 
-export function InsertToolbarButton(
-  props: React.ComponentProps<typeof DropdownMenu>,
-) {
+export function InsertToolbarButton(props: React.ComponentProps<typeof DropdownMenu>) {
   const editor = useEditorRef();
   const [open, setOpen] = React.useState(false);
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
-      <DropdownMenuTrigger
-        render={<ToolbarButton pressed={open} tooltip="Insert" isDropdown />}
-      >
+      <DropdownMenuTrigger render={<ToolbarButton pressed={open} tooltip="Insert" isDropdown />}>
         <PlusIcon />
       </DropdownMenuTrigger>
 

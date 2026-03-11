@@ -19,10 +19,7 @@ function ScrollArea({
   ...props
 }: ScrollAreaProps) {
   return (
-    <ScrollAreaPrimitive.Root
-      className={cn("size-full min-h-0", className)}
-      {...props}
-    >
+    <ScrollAreaPrimitive.Root className={cn("size-full min-h-0", className)} {...props}>
       <ScrollAreaPrimitive.Viewport
         className={cn(
           "h-full overscroll-contain rounded-[inherit] transition-shadow outline-none focus-visible:ring-2 focus-visible:ring-blue-500",

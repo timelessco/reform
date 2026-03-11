@@ -1,4 +1,5 @@
-import { type Path, PathApi, type TElement } from "platejs";
+import { PathApi } from "platejs";
+import type { Path, TElement } from "platejs";
 import { createPlatePlugin } from "platejs/react";
 import { FormHeaderElement } from "@/components/ui/form-header-node";
 
@@ -12,8 +13,7 @@ export const FormHeaderPlugin = createPlatePlugin({
   },
   extendEditor: ({ editor }: any) => {
     const editorRef = editor as any;
-    const { normalizeNode, deleteBackward, deleteForward, deleteFragment } =
-      editorRef;
+    const { normalizeNode, deleteBackward, deleteForward, deleteFragment } = editorRef;
 
     editorRef.normalizeNode = (entry: any) => {
       const path = entry[1];
@@ -24,9 +24,7 @@ export const FormHeaderPlugin = createPlatePlugin({
 
         // Ensure first child is formHeader
         if (children.length > 0 && children[0].type !== "formHeader") {
-          const headerIndex = children.findIndex(
-            (n) => n.type === "formHeader",
-          );
+          const headerIndex = children.findIndex((n) => n.type === "formHeader");
 
           if (headerIndex !== -1) {
             // Move existing header to top
@@ -40,12 +38,9 @@ export const FormHeaderPlugin = createPlatePlugin({
 
         // Ensure at least one paragraph after header
         if (children.length === 1 && children[0].type === "formHeader") {
-          editorRef.tf.insertNodes(
-            { type: "p", children: [{ text: "" }] } as TElement,
-            {
-              at: [1],
-            },
-          );
+          editorRef.tf.insertNodes({ type: "p", children: [{ text: "" }] } as TElement, {
+            at: [1],
+          });
           return;
         }
       }
@@ -112,12 +107,9 @@ export const FormHeaderPlugin = createPlatePlugin({
           });
 
           if (editorRef.children.length === 1) {
-            editorRef.tf.insertNodes(
-              { type: "p", children: [{ text: "" }] } as TElement,
-              {
-                at: [1],
-              },
-            );
+            editorRef.tf.insertNodes({ type: "p", children: [{ text: "" }] } as TElement, {
+              at: [1],
+            });
             editorRef.tf.select((editorRef.api.edges([1]) as any)[0]);
           }
           return;

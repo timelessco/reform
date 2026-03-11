@@ -3,12 +3,7 @@ import { getMentionOnSelectItem } from "@platejs/mention";
 import type { TComboboxInputElement, TMentionElement } from "platejs";
 import { IS_APPLE, KEYS } from "platejs";
 import type { PlateElementProps } from "platejs/react";
-import {
-  PlateElement,
-  useFocused,
-  useReadOnly,
-  useSelected,
-} from "platejs/react";
+import { PlateElement, useFocused, useReadOnly, useSelected } from "platejs/react";
 import * as React from "react";
 import { useMounted } from "@/hooks/use-mounted";
 import { cn } from "@/lib/utils";
@@ -73,9 +68,7 @@ export function MentionElement(
 
 const onSelectItem = getMentionOnSelectItem();
 
-export function MentionInputElement(
-  props: PlateElementProps<TComboboxInputElement>,
-) {
+export function MentionInputElement(props: PlateElementProps<TComboboxInputElement>) {
   const { editor, element } = props;
   const [search, setSearch] = React.useState("");
 

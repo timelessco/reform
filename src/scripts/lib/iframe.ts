@@ -103,10 +103,7 @@ export function createIframe(
 /**
  * Update iframe height
  */
-export function updateIframeHeight(
-  iframe: HTMLIFrameElement,
-  height: number,
-): void {
+export function updateIframeHeight(iframe: HTMLIFrameElement, height: number): void {
   // Add some padding to prevent scrollbars
   const adjustedHeight = height + 2;
   iframe.style.height = `${adjustedHeight}px`;

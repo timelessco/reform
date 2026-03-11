@@ -67,11 +67,7 @@ export function RenderPreviewInput({
     const buttonRole = field.buttonRole || "submit";
     const buttonText =
       field.buttonText ||
-      (buttonRole === "next"
-        ? "Next"
-        : buttonRole === "previous"
-          ? "Previous"
-          : "Submit");
+      (buttonRole === "next" ? "Next" : buttonRole === "previous" ? "Previous" : "Submit");
 
     // Previous button - secondary style
     if (buttonRole === "previous") {
@@ -87,11 +83,7 @@ export function RenderPreviewInput({
         </Button>
       );
       // When grouped, parent handles layout; otherwise wrap with justify-start
-      return grouped ? (
-        button
-      ) : (
-        <div className="flex justify-start">{button}</div>
-      );
+      return grouped ? button : <div className="flex justify-start">{button}</div>;
     }
 
     // Next button - primary style, moves to next step
@@ -107,11 +99,7 @@ export function RenderPreviewInput({
         </Button>
       );
       // When grouped, parent handles layout; otherwise wrap with justify-end
-      return grouped ? (
-        button
-      ) : (
-        <div className="flex justify-end">{button}</div>
-      );
+      return grouped ? button : <div className="flex justify-end">{button}</div>;
     }
 
     // Submit button - primary style, submits form
@@ -129,9 +117,7 @@ export function RenderPreviewInput({
     return grouped ? (
       submitButton
     ) : (
-      <div className={`flex ${isMultiPage ? "justify-end" : "justify-start"}`}>
-        {submitButton}
-      </div>
+      <div className={`flex ${isMultiPage ? "justify-end" : "justify-start"}`}>{submitButton}</div>
     );
   }
 
@@ -140,11 +126,8 @@ export function RenderPreviewInput({
     return (
       <form.AppField name={field.name}>
         {(f) => {
-          const hasErrors =
-            f.state.meta.errors.length > 0 && f.state.meta.isTouched;
-          const errorMessage = hasErrors
-            ? extractErrorMessage(f.state.meta.errors[0])
-            : "";
+          const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
+          const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
 
           return (
             <div className="space-y-2">
@@ -165,15 +148,14 @@ export function RenderPreviewInput({
                 onBlur={f.handleBlur}
                 minLength={field.minLength}
                 maxLength={field.maxLength}
+                autoComplete="off"
                 aria-invalid={hasErrors}
                 className={cn(
                   "max-w-md min-h-24 rounded-lg border-0 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
                   hasErrors && "ring-destructive/20 ring-[3px]",
                 )}
               />
-              {hasErrors && (
-                <p className="text-sm text-destructive">{errorMessage}</p>
-              )}
+              {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
             </div>
           );
         }}
@@ -185,11 +167,8 @@ export function RenderPreviewInput({
   return (
     <form.AppField name={field.name}>
       {(f) => {
-        const hasErrors =
-          f.state.meta.errors.length > 0 && f.state.meta.isTouched;
-        const errorMessage = hasErrors
-          ? extractErrorMessage(f.state.meta.errors[0])
-          : "";
+        const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
+        const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
 
         return (
           <div className="space-y-2">
@@ -210,15 +189,14 @@ export function RenderPreviewInput({
               onBlur={f.handleBlur}
               minLength={field.minLength}
               maxLength={field.maxLength}
+              autoComplete="off"
               aria-invalid={hasErrors}
               className={cn(
                 "max-w-md rounded-lg border-0 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
                 hasErrors && "ring-destructive/20 ring-[3px]",
               )}
             />
-            {hasErrors && (
-              <p className="text-sm text-destructive">{errorMessage}</p>
-            )}
+            {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
           </div>
         );
       }}

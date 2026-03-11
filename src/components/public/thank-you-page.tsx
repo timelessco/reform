@@ -20,15 +20,11 @@ function ThankYouPage({ formTitle, onSubmitAnother }: ThankYouPageProps) {
         {/* Message */}
         <div className="space-y-2">
           <h1 className="text-2xl font-bold tracking-tight">Thank you!</h1>
-          <p className="text-muted-foreground">
-            Your response has been submitted successfully.
-          </p>
+          <p className="text-muted-foreground">Your response has been submitted successfully.</p>
         </div>
 
         {/* Form title context */}
-        {formTitle && (
-          <p className="text-sm text-muted-foreground">Form: {formTitle}</p>
-        )}
+        {formTitle && <p className="text-sm text-muted-foreground">Form: {formTitle}</p>}
 
         {/* Submit another button */}
         {onSubmitAnother && (

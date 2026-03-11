@@ -18,7 +18,7 @@ type StepFormContextValue = {
 const StepFormContext = React.createContext<StepFormContextValue | null>(null);
 
 export function useStepForm() {
-  const context = React.useContext(StepFormContext);
+  const context = React.use(StepFormContext);
   if (!context) {
     throw new Error("useStepForm must be used within a StepFormProvider.");
   }
@@ -26,7 +26,7 @@ export function useStepForm() {
 }
 
 function useStepFormSafe() {
-  return React.useContext(StepFormContext);
+  return React.use(StepFormContext);
 }
 
 interface StepFormProviderProps {
@@ -54,21 +54,15 @@ export function StepFormProvider({
 
   const [currentStep, setCurrentStep] = React.useState(0);
   const [direction, setDirection] = React.useState(0);
-  const [formData, setFormData] = React.useState<Record<string, unknown>>({});
+  const [formData, setFormData] = React.useState<Record<string, unknown>>(() => {
+    if (saveAnswersForLater) {
+      return loadSavedData() ?? {};
+    }
+    return {};
+  });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSubmitted, setIsSubmitted] = React.useState(false);
-  const [isInitialized, setIsInitialized] = React.useState(false);
-
-  // Load saved data on mount
-  React.useEffect(() => {
-    if (!isInitialized) {
-      const savedData = loadSavedData();
-      if (savedData) {
-        setFormData(savedData);
-      }
-      setIsInitialized(true);
-    }
-  }, [loadSavedData, isInitialized]);
+  const isInitialized = true;
 
   // Save data whenever formData changes (after initialization)
   React.useEffect(() => {
@@ -91,9 +85,12 @@ export function StepFormProvider({
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   }, []);
 
+  const formDataRef = React.useRef(formData);
+  formDataRef.current = formData;
+
   const submitForm = React.useCallback(
     async (finalStepData: Record<string, unknown>) => {
-      const allData = { ...formData, ...finalStepData };
+      const allData = { ...formDataRef.current, ...finalStepData };
       setIsSubmitting(true);
       try {
         if (onSubmit) {
@@ -106,7 +103,7 @@ export function StepFormProvider({
         setIsSubmitting(false);
       }
     },
-    [formData, onSubmit, clearSavedData],
+    [onSubmit, clearSavedData],
   );
 
   const reset = React.useCallback(() => {
@@ -144,9 +141,5 @@ export function StepFormProvider({
     ],
   );
 
-  return (
-    <StepFormContext.Provider value={value}>
-      {children}
-    </StepFormContext.Provider>
-  );
+  return <StepFormContext.Provider value={value}>{children}</StepFormContext.Provider>;
 }

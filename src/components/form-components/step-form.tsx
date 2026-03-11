@@ -4,10 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useStepForm } from "@/contexts/step-form-context";
 import { useTranslation } from "@/contexts/translation-context";
 import { useStepPreviewForm } from "@/hooks/use-preview-form";
-import {
-  getEditableFields,
-  type TransformedElement,
-} from "@/lib/transform-plate-to-form";
+import { getEditableFields } from "@/lib/transform-plate-to-form";
+import type { TransformedElement } from "@/lib/transform-plate-to-form";
 import { RenderStepPreviewInput } from "./render-step-preview-input";
 
 interface StepFormProps {
@@ -63,8 +61,7 @@ export function StepForm({
 
   // Auto-jump: check if all required fields are filled and auto-submit
   const checkAutoJump = useCallback(() => {
-    if (!autoJump || isLastStep || autoJumpTriggered.current || isSubmitting)
-      return;
+    if (!autoJump || isLastStep || autoJumpTriggered.current || isSubmitting) return;
 
     // Check if all required fields have values
     const allRequiredFilled = fields.every((field) => {
@@ -91,7 +88,7 @@ export function StepForm({
         ref={formRef}
         noValidate
         data-bf-field-list
-        className="space-y-4 outline-none"
+        className="space-y-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {/* Auto-jump watcher */}
         {autoJump && !isLastStep && (
@@ -105,9 +102,9 @@ export function StepForm({
         {groupedElements.map((item) => {
           // Handle button groups (Previous + Next/Submit on same line)
           if ("type" in item && item.type === "buttonGroup") {
-            const prevButton = item.buttons.find((b) => {
-              return b.fieldType === "Button" && b.buttonRole === "previous";
-            });
+            const prevButton = item.buttons.find(
+              (b) => b.fieldType === "Button" && b.buttonRole === "previous",
+            );
             const actionButton = item.buttons.find((b) => {
               if (b.fieldType !== "Button") return false;
               const role = b.buttonRole;
@@ -177,12 +174,9 @@ export function StepForm({
  */
 function groupElementsForRendering(
   elements: TransformedElement[],
-): Array<
-  TransformedElement | { type: "buttonGroup"; buttons: TransformedElement[] }
-> {
-  const result: Array<
-    TransformedElement | { type: "buttonGroup"; buttons: TransformedElement[] }
-  > = [];
+): Array<TransformedElement | { type: "buttonGroup"; buttons: TransformedElement[] }> {
+  const result: Array<TransformedElement | { type: "buttonGroup"; buttons: TransformedElement[] }> =
+    [];
   let i = 0;
 
   while (i < elements.length) {
@@ -193,10 +187,7 @@ function groupElementsForRendering(
       const buttons: TransformedElement[] = [element];
 
       // Collect consecutive buttons
-      while (
-        i + 1 < elements.length &&
-        elements[i + 1].fieldType === "Button"
-      ) {
+      while (i + 1 < elements.length && elements[i + 1].fieldType === "Button") {
         i++;
         buttons.push(elements[i]);
       }
@@ -247,11 +238,7 @@ function RenderStepButton({
   const { t } = useTranslation();
   const buttonRole = field.buttonRole || "submit";
   const defaultText =
-    buttonRole === "next"
-      ? t("next")
-      : buttonRole === "previous"
-        ? t("previous")
-        : t("submit");
+    buttonRole === "next" ? t("next") : buttonRole === "previous" ? t("previous") : t("submit");
   const buttonText = field.buttonText || defaultText;
 
   // Previous button - onClick handler from context
@@ -267,21 +254,13 @@ function RenderStepButton({
         {buttonText}
       </Button>
     );
-    return grouped ? (
-      button
-    ) : (
-      <div className="flex justify-start">{button}</div>
-    );
+    return grouped ? button : <div className="flex justify-start">{button}</div>;
   }
 
   // Next button - type="submit" triggers form validation and onSubmit
   if (buttonRole === "next") {
     const button = (
-      <Button
-        type="submit"
-        className="inline-flex items-center gap-2"
-        disabled={isSubmitting}
-      >
+      <Button type="submit" className="inline-flex items-center gap-2" disabled={isSubmitting}>
         {buttonText}
         <ChevronRightIcon className="h-4 w-4" />
       </Button>
@@ -291,18 +270,10 @@ function RenderStepButton({
 
   // Submit button - type="submit" triggers form validation and final submit
   const submitButton = (
-    <Button
-      type="submit"
-      className="inline-flex items-center gap-2"
-      disabled={isSubmitting}
-    >
+    <Button type="submit" className="inline-flex items-center gap-2" disabled={isSubmitting}>
       {isSubmitting ? t("submitting") : buttonText}
       {layout !== "editor" && <ChevronRightIcon className="h-4 w-4" />}
     </Button>
   );
-  return grouped ? (
-    submitButton
-  ) : (
-    <div className="flex justify-end">{submitButton}</div>
-  );
+  return grouped ? submitButton : <div className="flex justify-end">{submitButton}</div>;
 }

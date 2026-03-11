@@ -1,8 +1,4 @@
-import {
-  BaseCodeBlockPlugin,
-  BaseCodeLinePlugin,
-  BaseCodeSyntaxPlugin,
-} from "@platejs/code-block";
+import { BaseCodeBlockPlugin, BaseCodeLinePlugin, BaseCodeSyntaxPlugin } from "@platejs/code-block";
 import { all, createLowlight } from "lowlight";
 
 import {

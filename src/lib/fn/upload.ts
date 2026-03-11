@@ -28,8 +28,7 @@ export const uploadAvatar = createServerFn({ method: "POST" })
 
     // Generate filename with user ID for uniqueness
     const extension = contentType.split("/")[1] || "png";
-    const filename =
-      data.filename || `avatar-${userId}-${Date.now()}.${extension}`;
+    const filename = data.filename || `avatar-${userId}-${Date.now()}.${extension}`;
 
     // Upload to Vercel Blob
     const blob = await put(`avatars/${filename}`, buffer, {

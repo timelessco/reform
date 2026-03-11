@@ -1,4 +1,5 @@
-import { createLink, type LinkComponent } from "@tanstack/react-router";
+import { createLink } from "@tanstack/react-router";
+import type { LinkComponent } from "@tanstack/react-router";
 import * as React from "react";
 
 import { cn, isNullable } from "@/lib/utils";
@@ -9,11 +10,8 @@ interface AnchorLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> 
   hasImageChildren?: boolean;
 }
 
-const AnchorLinkComponent = React.forwardRef<
-  HTMLAnchorElement,
-  AnchorLinkProps
->((props, ref) => {
-  const { hasImageChildren, className, children, ...rest } = props;
+const AnchorLinkComponent = (props: AnchorLinkProps & { ref?: React.Ref<HTMLAnchorElement> }) => {
+  const { hasImageChildren, className, children, ref, ...rest } = props;
   const restRecord = rest as Record<string, unknown>;
   const isTransitioning = restRecord["data-transitioning"] === "transitioning";
 
@@ -24,8 +22,7 @@ const AnchorLinkComponent = React.forwardRef<
         data-slot="aria-current-link"
         className={cn(
           "rounded-xs underline transition data-disabled:cursor-default data-disabled:no-underline",
-          !hasImageChildren &&
-            "outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
+          !hasImageChildren && "outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
           hasImageChildren && "group",
           className,
         )}
@@ -36,9 +33,7 @@ const AnchorLinkComponent = React.forwardRef<
       </a>
     </LinkTransitionContext.Provider>
   );
-});
-
-AnchorLinkComponent.displayName = "AnchorLink";
+};
 
 const CreatedLinkComponent = createLink(AnchorLinkComponent);
 
@@ -51,12 +46,9 @@ export type LinkProps = React.ComponentProps<typeof CreatedLinkComponent> & {
 export const Link: LinkComponent<typeof AnchorLinkComponent> = (props) => {
   const { to, ...rest } = props;
   const destination = to;
-  const isExternal =
-    typeof destination === "string" && isExternalUrl(destination);
+  const isExternal = typeof destination === "string" && isExternalUrl(destination);
 
-  const linkProps = isExternal
-    ? { ...rest, href: destination }
-    : { ...rest, to: destination };
+  const linkProps = isExternal ? { ...rest, href: destination } : { ...rest, to: destination };
 
   return (
     <CreatedLinkComponent
@@ -86,7 +78,7 @@ function ImageFocusRing(props: ImageFocusRingProps) {
 }
 
 export function LinkHint() {
-  const pending = React.useContext(LinkTransitionContext);
+  const pending = React.use(LinkTransitionContext);
 
   return (
     <span

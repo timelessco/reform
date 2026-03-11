@@ -1,47 +1,18 @@
 /* eslint-disable react-hooks/refs */
 
 import type { Emoji } from "@emoji-mart/data";
-import {
-  type EmojiCategoryList,
-  type EmojiIconList,
-  EmojiSettings,
-  type GridRow,
-} from "@platejs/emoji";
-import {
-  type EmojiDropdownMenuOptions,
-  type UseEmojiPickerType,
-  useEmojiDropdownMenuState,
-} from "@platejs/emoji/react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  AppleIcon,
-  CompassIcon,
-  FlagIcon,
-  LeafIcon,
-  LightbulbIcon,
-  MusicIcon,
-} from "lucide-react";
-import {
-  ClockIcon,
-  SearchIcon,
-  SmileIcon,
-  StarIcon,
-  XIcon,
-} from "@/components/ui/icons";
+import { EmojiSettings } from "@platejs/emoji";
+import type { EmojiCategoryList, EmojiIconList, GridRow } from "@platejs/emoji";
+import { useEmojiDropdownMenuState } from "@platejs/emoji/react";
+import type { EmojiDropdownMenuOptions, UseEmojiPickerType } from "@platejs/emoji/react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AppleIcon, CompassIcon, FlagIcon, LeafIcon, LightbulbIcon, MusicIcon } from "lucide-react";
+import { ClockIcon, SearchIcon, SmileIcon, StarIcon, XIcon } from "@/components/ui/icons";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
 import { ToolbarButton } from "@/components/ui/toolbar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export function EmojiToolbarButton({
@@ -50,8 +21,7 @@ export function EmojiToolbarButton({
 }: {
   options?: EmojiDropdownMenuOptions;
 } & React.ComponentPropsWithoutRef<typeof ToolbarButton>) {
-  const { emojiPickerState, isOpen, setIsOpen } =
-    useEmojiDropdownMenuState(options);
+  const { emojiPickerState, isOpen, setIsOpen } = useEmojiDropdownMenuState(options);
 
   return (
     <EmojiPopover
@@ -130,11 +100,7 @@ export function EmojiPicker({
         i18n={i18n}
         icons={icons}
       />
-      <EmojiPickerSearchBar
-        i18n={i18n}
-        searchValue={searchValue}
-        setSearch={setSearch}
-      >
+      <EmojiPickerSearchBar i18n={i18n} searchValue={searchValue} setSearch={setSearch}>
         <EmojiPickerSearchAndClear
           clearSearch={clearSearch}
           i18n={i18n}
@@ -152,12 +118,7 @@ export function EmojiPicker({
         settings={settings}
         visibleCategories={visibleCategories}
       />
-      <EmojiPickerPreview
-        emoji={emoji}
-        hasFound={hasFound}
-        i18n={i18n}
-        isSearching={isSearching}
-      />
+      <EmojiPickerPreview emoji={emoji} hasFound={hasFound} i18n={i18n} isSearching={isSearching} />
     </div>
   );
 }
@@ -209,10 +170,7 @@ const RowOfButtons = React.memo(function RowOfButtons({
   onSelectEmoji,
 }: {
   row: GridRow;
-} & Pick<
-  UseEmojiPickerType,
-  "emojiLibrary" | "onMouseOver" | "onSelectEmoji"
->) {
+} & Pick<UseEmojiPickerType, "emojiLibrary" | "onMouseOver" | "onSelectEmoji">) {
   return (
     <div key={row.id} className="flex" data-index={row.id}>
       {row.elements.map((emojiId, index) => (
@@ -331,14 +289,7 @@ function EmojiPickerContent({
         </div>
       </div>
     ),
-    [
-      emojiLibrary,
-      getRowWidth,
-      i18n.searchResult,
-      searchResult,
-      onSelectEmoji,
-      onMouseOver,
-    ],
+    [emojiLibrary, getRowWidth, i18n.searchResult, searchResult, onSelectEmoji, onMouseOver],
   );
 
   return (
@@ -422,9 +373,7 @@ function EmojiPickerSearchAndClear({
 function EmojiPreview({ emoji }: Pick<UseEmojiPickerType, "emoji">) {
   return (
     <div className="flex h-14 max-h-14 min-h-14 items-center border-muted border-t p-2">
-      <div className="flex items-center justify-center text-2xl">
-        {emoji?.skins[0].native}
-      </div>
+      <div className="flex items-center justify-center text-2xl">{emoji?.skins[0].native}</div>
       <div className="overflow-hidden pl-2">
         <div className="truncate font-semibold text-sm">{emoji?.name}</div>
         <div className="truncate text-sm">{`:${emoji?.id}:`}</div>
@@ -438,9 +387,7 @@ function NoEmoji({ i18n }: Pick<UseEmojiPickerType, "i18n">) {
     <div className="flex h-14 max-h-14 min-h-14 items-center border-muted border-t p-2">
       <div className="flex items-center justify-center text-2xl">😢</div>
       <div className="overflow-hidden pl-2">
-        <div className="truncate font-bold text-sm">
-          {i18n.searchNoResultsTitle}
-        </div>
+        <div className="truncate font-bold text-sm">{i18n.searchNoResultsTitle}</div>
         <div className="truncate text-sm">{i18n.searchNoResultsSubtitle}</div>
       </div>
     </div>
@@ -486,10 +433,7 @@ function EmojiPickerNavigation({
   onClick,
 }: {
   onClick: (id: EmojiCategoryList) => void;
-} & Pick<
-  UseEmojiPickerType,
-  "emojiLibrary" | "focusedCategory" | "i18n" | "icons"
->) {
+} & Pick<UseEmojiPickerType, "emojiLibrary" | "focusedCategory" | "i18n" | "icons">) {
   const navigationId = React.useId();
   return (
     <TooltipProvider delay={500}>
@@ -525,9 +469,7 @@ function EmojiPickerNavigation({
                     {icons.categories[id].outline}
                   </span>
                 </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  {i18n.categories[id]}
-                </TooltipContent>
+                <TooltipContent side="bottom">{i18n.categories[id]}</TooltipContent>
               </Tooltip>
             ))}
         </div>

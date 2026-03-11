@@ -1,4 +1,5 @@
-import { Icon, type IconProps } from "./icon";
+import { Icon } from "./icon";
+import type { IconProps } from "./icon";
 import { cn } from "@/lib/utils";
 
 export const Spinner = (props: IconProps) => {

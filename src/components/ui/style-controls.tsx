@@ -1,18 +1,8 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
-import {
-  AlignLeftIcon,
-  AlignCenterIcon,
-  AlignRightIcon,
-} from "@/components/ui/icons";
-import {
-  motion,
-  useMotionValue,
-  useTransform,
-  animate,
-  AnimatePresence,
-} from "motion/react";
+import { AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from "@/components/ui/icons";
+import { motion, useMotionValue, useTransform, animate, AnimatePresence } from "motion/react";
 
 interface StyleNumberInputProps {
   label: string;
@@ -69,10 +59,7 @@ export function StyleNumberInput({
   // Motion values for imperative animation
   const fillPercent = useMotionValue(percentage);
   const fillWidth = useTransform(fillPercent, (pct) => `${pct}%`);
-  const handleLeft = useTransform(
-    fillPercent,
-    (pct) => `max(3px, calc(${pct}% - 2.5px))`,
-  );
+  const handleLeft = useTransform(fillPercent, (pct) => `max(3px, calc(${pct}% - 2.5px))`);
 
   // Sync fill from props when not interacting
   React.useEffect(() => {
@@ -172,13 +159,7 @@ export function StyleNumberInput({
   // Dodge text on the left/right edges to avoid overlapping the label or value
   const valueDodge = percentage < 25 || percentage > 75;
 
-  const handleOpacity = !isActive
-    ? 0
-    : valueDodge
-      ? 0.1
-      : isDragging
-        ? 0.9
-        : 0.5;
+  const handleOpacity = !isActive ? 0 : valueDodge ? 0.1 : isDragging ? 0.9 : 0.5;
 
   return (
     <div
@@ -198,9 +179,7 @@ export function StyleNumberInput({
         className="absolute left-0 top-0 bottom-0 bg-primary/10 pointer-events-none"
         style={{ width: fillWidth }}
         animate={{
-          backgroundColor: isActive
-            ? "hsl(var(--primary) / 0.15)"
-            : "hsl(var(--primary) / 0.1)",
+          backgroundColor: isActive ? "hsl(var(--primary) / 0.15)" : "hsl(var(--primary) / 0.1)",
         }}
         transition={{ duration: 0.15 }}
       />
@@ -246,15 +225,13 @@ export function StyleNumberInput({
         {label}
       </div>
 
-      <div
-        className="relative flex-none h-full z-20"
-        style={{ width: valueWidth }}
-      >
+      <div className="relative flex-none h-full z-20" style={{ width: valueWidth }}>
         <input
           ref={inputRef}
           value={`${numValue}${shownUnit}`}
+          aria-label={label}
           onChange={(e) => {
-            const raw = e.target.value.replace(/[^0-9.\-]/g, "");
+            const raw = e.target.value.replace(/[^0-9.-]/g, "");
             if (raw === "" || raw === "-") return;
             onChange(`${raw}${unit}`);
           }}
@@ -298,10 +275,7 @@ export function StyleColorPicker({
 
   // Sync text input from prop changes (without stealing focus)
   React.useEffect(() => {
-    if (
-      textInputRef.current &&
-      textInputRef.current !== document.activeElement
-    ) {
+    if (textInputRef.current && textInputRef.current !== document.activeElement) {
       textInputRef.current.value = hexColor.toUpperCase();
     }
   }, [hexColor]);
@@ -321,6 +295,7 @@ export function StyleColorPicker({
           ref={textInputRef}
           type="text"
           defaultValue={hexColor.toUpperCase()}
+          aria-label={`${label} hex value`}
           onChange={(e) => {
             const val = e.target.value.trim();
             if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(val)) {
@@ -337,6 +312,7 @@ export function StyleColorPicker({
           <input
             type="color"
             value={hexColor}
+            aria-label={`${label} color picker`}
             onChange={(e) => onChange(e.target.value)}
             className="absolute inset-0 w-full h-full cursor-pointer opacity-0"
           />
@@ -367,9 +343,7 @@ export function StyleSelect({
   const [isOpen, setIsOpen] = React.useState(false);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
-  const [portalTarget, setPortalTarget] = React.useState<HTMLElement | null>(
-    null,
-  );
+  const [portalTarget, setPortalTarget] = React.useState<HTMLElement | null>(null);
   const [pos, setPos] = React.useState<{
     top: number;
     left: number;
@@ -408,10 +382,13 @@ export function StyleSelect({
 
     // Optional: Update position on scroll/resize
     const handleScroll = () => updatePos();
-    window.addEventListener("scroll", handleScroll, true);
-    window.addEventListener("resize", handleScroll);
+    window.addEventListener("scroll", handleScroll, {
+      capture: true,
+      passive: true,
+    });
+    window.addEventListener("resize", handleScroll, { passive: true });
     return () => {
-      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("scroll", handleScroll, { capture: true });
       window.removeEventListener("resize", handleScroll);
     };
   }, [isOpen, updatePos]);
@@ -454,9 +431,7 @@ export function StyleSelect({
               style={{ backgroundColor: selectedOption.swatchColor }}
             />
           )}
-          <span className="text-foreground">
-            {selectedOption?.label ?? value}
-          </span>
+          <span className="text-foreground">{selectedOption?.label ?? value}</span>
           <motion.svg
             className="w-3.5 h-3.5 text-muted-foreground"
             viewBox="0 0 24 24"
@@ -465,6 +440,7 @@ export function StyleSelect({
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
+            aria-hidden="true"
             animate={{ rotate: isOpen ? 180 : 0 }}
             transition={{ type: "spring", visualDuration: 0.2, bounce: 0.15 }}
           >
@@ -525,10 +501,7 @@ export function StyleSelect({
                           )}
                           <div className="min-w-0">
                             <div
-                              className={cn(
-                                "text-[13px] capitalize",
-                                isSelected && "font-medium",
-                              )}
+                              className={cn("text-[13px] capitalize", isSelected && "font-medium")}
                             >
                               {option.label}
                             </div>
@@ -548,6 +521,7 @@ export function StyleSelect({
                             strokeWidth="2.5"
                             strokeLinecap="round"
                             strokeLinejoin="round"
+                            aria-hidden="true"
                           >
                             <polyline points="20 6 9 17 4 12" />
                           </svg>
@@ -604,9 +578,7 @@ export function StyleToggle({
         className,
       )}
     >
-      <span className="font-medium text-muted-foreground text-[13px]">
-        {label}
-      </span>
+      <span className="font-medium text-muted-foreground text-[13px]">{label}</span>
       <div
         ref={containerRef}
         className="relative flex rounded-md  isolation-auto h-[26px] items-center"
@@ -634,9 +606,7 @@ export function StyleToggle({
           onClick={() => onChange(false)}
           className={cn(
             "relative z-10 px-3 h-full rounded text-[11px] font-semibold transition-colors cursor-pointer flex items-center justify-center min-w-[34px]",
-            !value
-              ? "text-foreground"
-              : "text-muted-foreground hover:text-foreground",
+            !value ? "text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
         >
           Off
@@ -649,9 +619,7 @@ export function StyleToggle({
           onClick={() => onChange(true)}
           className={cn(
             "relative z-10 px-3 h-full rounded text-[11px] font-semibold transition-colors cursor-pointer flex items-center justify-center min-w-[34px]",
-            value
-              ? "text-foreground"
-              : "text-muted-foreground hover:text-foreground",
+            value ? "text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
         >
           On
@@ -728,11 +696,10 @@ export function StyleAlignToggle({
           }}
           type="button"
           onClick={() => onChange("left")}
+          aria-label="Align left"
           className={cn(
             "relative z-10 p-1.5 rounded flex items-center justify-center transition-colors border border-transparent",
-            value === "left"
-              ? "text-foreground"
-              : "text-muted-foreground hover:text-foreground",
+            value === "left" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
         >
           <AlignLeftIcon className="w-[14px] h-[14px]" />
@@ -743,11 +710,10 @@ export function StyleAlignToggle({
           }}
           type="button"
           onClick={() => onChange("center")}
+          aria-label="Align center"
           className={cn(
             "relative z-10 p-1.5 rounded flex items-center justify-center transition-colors border border-transparent",
-            value === "center"
-              ? "text-foreground"
-              : "text-muted-foreground hover:text-foreground",
+            value === "center" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
         >
           <AlignCenterIcon className="w-[14px] h-[14px]" />
@@ -758,11 +724,10 @@ export function StyleAlignToggle({
           }}
           type="button"
           onClick={() => onChange("right")}
+          aria-label="Align right"
           className={cn(
             "relative z-10 p-1.5 rounded flex items-center justify-center transition-colors border border-transparent",
-            value === "right"
-              ? "text-foreground"
-              : "text-muted-foreground hover:text-foreground",
+            value === "right" ? "text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
         >
           <AlignRightIcon className="w-[14px] h-[14px]" />

@@ -1,18 +1,15 @@
 import { count, eq, or, useLiveQuery } from "@tanstack/react-db";
 import { useMemo } from "react";
-import {
-  favoriteCollection,
-  formCollection,
-  localFormCollection,
-  submissionCollection,
-  workspaceCollection,
-} from "@/db-collections";
+import { favoriteCollection } from "@/db-collections/favorite.collection";
+import { formCollection, localFormCollection } from "@/db-collections/form.collections";
+import { submissionCollection } from "@/db-collections/submission.collections";
+import { workspaceCollection } from "@/db-collections/workspace.collection";
 
 /**
  * Custom hook for real-time workspaces sync filtered by organization ID.
  */
-export const useOrgWorkspaces = (organizationId?: string) => {
-  return useLiveQuery(
+export const useOrgWorkspaces = (organizationId?: string) =>
+  useLiveQuery(
     (q) => {
       if (!organizationId) return undefined;
       return q
@@ -29,7 +26,6 @@ export const useOrgWorkspaces = (organizationId?: string) => {
     },
     [organizationId],
   );
-};
 
 /**
  * Custom hook for real-time workspace sync by ID.
@@ -57,16 +53,14 @@ export const useWorkspace = (workspaceId?: string) => {
 /**
  * Custom hook for real-time forms sync filtered by workspace ID.
  */
-export const useFormsForWorkspace = (workspaceId?: string) => {
-  return useLiveQuery(
+export const useFormsForWorkspace = (workspaceId?: string) =>
+  useLiveQuery(
     (q) => {
       if (!workspaceId) return undefined;
       return q
         .from({ form: formCollection })
         .where(({ form }) => eq(form.workspaceId, workspaceId))
-        .where(({ form }) =>
-          or(eq(form.status, "draft"), eq(form.status, "published")),
-        )
+        .where(({ form }) => or(eq(form.status, "draft"), eq(form.status, "published")))
         .select(({ form }) => ({
           id: form.id,
           title: form.title,
@@ -77,24 +71,19 @@ export const useFormsForWorkspace = (workspaceId?: string) => {
     },
     [workspaceId],
   );
-};
 
 /**
  * Custom hook for real-time forms sync filtered by organization.
  */
-export const useOrgForms = (organizationId?: string) => {
-  return useLiveQuery(
+export const useOrgForms = (organizationId?: string) =>
+  useLiveQuery(
     (q) => {
       if (!organizationId) return undefined;
       return q
         .from({ form: formCollection })
-        .innerJoin({ ws: workspaceCollection }, ({ form, ws }) =>
-          eq(form.workspaceId, ws.id),
-        )
+        .innerJoin({ ws: workspaceCollection }, ({ form, ws }) => eq(form.workspaceId, ws.id))
         .where(({ ws }) => eq(ws.organizationId, organizationId))
-        .where(({ form }) =>
-          or(eq(form.status, "draft"), eq(form.status, "published")),
-        )
+        .where(({ form }) => or(eq(form.status, "draft"), eq(form.status, "published")))
         .select(({ form }) => ({
           id: form.id,
           title: form.title,
@@ -107,43 +96,36 @@ export const useOrgForms = (organizationId?: string) => {
     },
     [organizationId],
   );
-};
 
 /**
  * Custom hook for real-time form sync by ID.
  */
-export const useForm = (formId?: string) => {
-  return useLiveQuery(
+export const useForm = (formId?: string) =>
+  useLiveQuery(
     (q) => {
       if (!formId) return undefined;
-      return q
-        .from({ form: formCollection })
-        .where(({ form }) => eq(form.id, formId));
+      return q.from({ form: formCollection }).where(({ form }) => eq(form.id, formId));
     },
     [formId],
   );
-};
 
 /**
  * Custom hook for real-time local form draft sync by ID.
  */
-export const useLocalForm = (formId?: string) => {
-  return useLiveQuery(
+export const useLocalForm = (formId?: string) =>
+  useLiveQuery(
     (q) => {
       if (!formId) return undefined;
-      return q
-        .from({ doc: localFormCollection })
-        .where(({ doc }) => eq(doc.id, formId));
+      return q.from({ doc: localFormCollection }).where(({ doc }) => eq(doc.id, formId));
     },
     [formId],
   );
-};
 
 /**
  * Custom hook for real-time favorites sync for current user.
  */
-const useFavorites = (userId?: string) => {
-  return useLiveQuery(
+export const useFavorites = (userId?: string) =>
+  useLiveQuery(
     (q) => {
       if (!userId) return undefined;
       return q
@@ -158,7 +140,6 @@ const useFavorites = (userId?: string) => {
     },
     [userId],
   );
-};
 
 /**
  * Check if a specific form is favorited by the user.
@@ -187,13 +168,9 @@ export const useFavoriteForms = (userId?: string) => {
       if (!userId) return undefined;
       return q
         .from({ fav: favoriteCollection })
-        .innerJoin({ form: formCollection }, ({ fav, form }) =>
-          eq(fav.formId, form.id),
-        )
+        .innerJoin({ form: formCollection }, ({ fav, form }) => eq(fav.formId, form.id))
         .where(({ fav }) => eq(fav.userId, userId))
-        .where(({ form }) =>
-          or(eq(form.status, "draft"), eq(form.status, "published")),
-        )
+        .where(({ form }) => or(eq(form.status, "draft"), eq(form.status, "published")))
         .select(({ form }) => ({
           id: form.id,
           title: form.title,
@@ -212,8 +189,8 @@ export const useFavoriteForms = (userId?: string) => {
 /**
  * Custom hook for archived (trashed) forms with deletedAt field.
  */
-export const useArchivedForms = () => {
-  return useLiveQuery((q) =>
+export const useArchivedForms = () =>
+  useLiveQuery((q) =>
     q
       .from({ form: formCollection })
       .where(({ form }) => eq(form.status, "archived"))
@@ -226,7 +203,6 @@ export const useArchivedForms = () => {
         deletedAt: form.deletedAt,
       })),
   );
-};
 
 /**
  * Custom hook for real-time submission counts by formId.

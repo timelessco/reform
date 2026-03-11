@@ -11,13 +11,7 @@ import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import {
-  apiKey,
-  emailOTP,
-  organization,
-  twoFactor,
-  username,
-} from "better-auth/plugins";
+import { apiKey, emailOTP, organization, twoFactor, username } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { eq } from "drizzle-orm";
 
@@ -44,17 +38,11 @@ export const auth = betterAuth({
     changeEmail: {
       enabled: true,
       sendChangeEmailConfirmation: async (data) => {
-        logger(
-          `[Auth] Sending change email confirmation to ${data.user.email} → ${data.newEmail}`,
-        );
+        logger(`[Auth] Sending change email confirmation to ${data.user.email} → ${data.newEmail}`);
         if (import.meta.env.DEV) {
           logger(`[Auth] Change email URL: ${data.url}`);
         } else {
-          void sendChangeEmailConfirmationEmail(
-            data.user.email,
-            data.newEmail,
-            data.url,
-          );
+          void sendChangeEmailConfirmationEmail(data.user.email, data.newEmail, data.url);
         }
       },
     },
@@ -84,33 +72,30 @@ export const auth = betterAuth({
               })
               .returning();
 
-            // Add user as owner/admin of the organization
-            await db.insert(schema.member).values({
-              id: crypto.randomUUID(),
-              userId: user.id,
-              organizationId: org.id,
-              role: "owner",
-              createdAt: now,
-            });
-
-            // Create default workspace for the organization
-            await db.insert(schema.workspaces).values({
-              id: crypto.randomUUID(),
-              organizationId: org.id,
-              createdByUserId: user.id,
-              name: "My workspace",
-              createdAt: now,
-              updatedAt: now,
-            });
+            // Add user as owner and create default workspace in parallel
+            await Promise.all([
+              db.insert(schema.member).values({
+                id: crypto.randomUUID(),
+                userId: user.id,
+                organizationId: org.id,
+                role: "owner",
+                createdAt: now,
+              }),
+              db.insert(schema.workspaces).values({
+                id: crypto.randomUUID(),
+                organizationId: org.id,
+                createdByUserId: user.id,
+                name: "My workspace",
+                createdAt: now,
+                updatedAt: now,
+              }),
+            ]);
 
             logger(
               `[Auth] Created organization "${user.name}" with default workspace for user ${user.email}`,
             );
           } catch (error) {
-            logger(
-              `[Auth] Failed to create organization for user ${user.email}:`,
-              error,
-            );
+            logger(`[Auth] Failed to create organization for user ${user.email}:`, error);
           }
         },
       },

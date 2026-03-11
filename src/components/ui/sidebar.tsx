@@ -1,15 +1,8 @@
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
-import { cva, type VariantProps } from "class-variance-authority";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { cva } from "class-variance-authority";
+import type { VariantProps } from "class-variance-authority";
+import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,12 +15,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { HOTKEYS } from "@/lib/hotkeys";
 import { cn } from "@/lib/utils";
@@ -61,7 +49,7 @@ type SidebarContextProps = {
 const SidebarContext = createContext<SidebarContextProps | null>(null);
 
 function useSidebar() {
-  const context = useContext(SidebarContext);
+  const context = use(SidebarContext);
   if (!context) {
     throw new Error("useSidebar must be used within a SidebarProvider.");
   }
@@ -70,7 +58,7 @@ function useSidebar() {
 }
 
 function useSidebarSafe() {
-  return useContext(SidebarContext);
+  return use(SidebarContext);
 }
 
 function SidebarProvider({
@@ -95,11 +83,7 @@ function SidebarProvider({
     const stored = localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY);
     if (stored) {
       const parsed = Number(stored);
-      if (
-        !Number.isNaN(parsed) &&
-        parsed >= SIDEBAR_WIDTH_MIN &&
-        parsed <= SIDEBAR_WIDTH_MAX
-      ) {
+      if (!Number.isNaN(parsed) && parsed >= SIDEBAR_WIDTH_MIN && parsed <= SIDEBAR_WIDTH_MAX) {
         return parsed;
       }
     }
@@ -107,9 +91,7 @@ function SidebarProvider({
   });
 
   const setSidebarWidth = useCallback((width: number) => {
-    const clamped = Math.round(
-      Math.min(SIDEBAR_WIDTH_MAX, Math.max(SIDEBAR_WIDTH_MIN, width)),
-    );
+    const clamped = Math.round(Math.min(SIDEBAR_WIDTH_MAX, Math.max(SIDEBAR_WIDTH_MIN, width)));
     _setSidebarWidth(clamped);
     localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(clamped));
   }, []);
@@ -134,9 +116,10 @@ function SidebarProvider({
   );
 
   // Helper to toggle the sidebar.
-  const toggleSidebar = useCallback(() => {
-    return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open);
-  }, [isMobile, setOpen]);
+  const toggleSidebar = useCallback(
+    () => (isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)),
+    [isMobile, setOpen],
+  );
 
   // Adds a keyboard shortcut to toggle the sidebar.
   useHotkey(HOTKEYS.TOGGLE_SIDEBAR, () => toggleSidebar());
@@ -311,19 +294,20 @@ function Sidebar({
 }
 
 function SidebarResizeHandle() {
-  const { state, isMobile, sidebarWidth, setSidebarWidth, setIsResizing } =
-    useSidebar();
+  const { state, isMobile, sidebarWidth, setSidebarWidth, setIsResizing } = useSidebar();
   const startXRef = useRef(0);
   const startWidthRef = useRef(0);
 
-  useEffect(() => {
-    // Cleanup on unmount
-    return () => {
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-      document.body.style.pointerEvents = "";
-    };
-  }, []);
+  useEffect(
+    () => () => {
+      Object.assign(document.body.style, {
+        cursor: "",
+        userSelect: "",
+        pointerEvents: "",
+      });
+    },
+    [],
+  );
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -331,8 +315,10 @@ function SidebarResizeHandle() {
       startXRef.current = e.clientX;
       startWidthRef.current = sidebarWidth;
       setIsResizing(true);
-      document.body.style.cursor = "col-resize";
-      document.body.style.userSelect = "none";
+      Object.assign(document.body.style, {
+        cursor: "col-resize",
+        userSelect: "none",
+      });
 
       const handleMouseMove = (e: MouseEvent) => {
         const delta = e.clientX - startXRef.current;
@@ -341,8 +327,7 @@ function SidebarResizeHandle() {
 
       const handleMouseUp = () => {
         setIsResizing(false);
-        document.body.style.cursor = "";
-        document.body.style.userSelect = "";
+        Object.assign(document.body.style, { cursor: "", userSelect: "" });
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", handleMouseUp);
       };
@@ -371,11 +356,7 @@ function SidebarResizeHandle() {
   );
 }
 
-function SidebarTrigger({
-  className,
-  onClick,
-  ...props
-}: React.ComponentProps<typeof Button>) {
+function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<typeof Button>) {
   const { toggleSidebar } = useSidebar();
 
   return (
@@ -435,10 +416,7 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
   );
 }
 
-function SidebarInput({
-  className,
-  ...props
-}: React.ComponentProps<typeof Input>) {
+function SidebarInput({ className, ...props }: React.ComponentProps<typeof Input>) {
   return (
     <Input
       data-slot="sidebar-input"
@@ -471,10 +449,7 @@ function SidebarFooter({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function SidebarSeparator({
-  className,
-  ...props
-}: React.ComponentProps<typeof Separator>) {
+function SidebarSeparator({ className, ...props }: React.ComponentProps<typeof Separator>) {
   return (
     <Separator
       data-slot="sidebar-separator"
@@ -558,10 +533,7 @@ function SidebarGroupAction({
   });
 }
 
-function SidebarGroupContent({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+function SidebarGroupContent({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="sidebar-group-content"
@@ -700,10 +672,7 @@ function SidebarMenuAction({
   });
 }
 
-function SidebarMenuBadge({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+function SidebarMenuBadge({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="sidebar-menu-badge"
@@ -725,9 +694,7 @@ function SidebarMenuSkeleton({
   showIcon?: boolean;
 }) {
   // Random width between 50 to 90%.
-  const [width] = React.useState(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`;
-  });
+  const [width] = React.useState(() => `${Math.floor(Math.random() * 40) + 50}%`);
 
   return (
     <div
@@ -736,12 +703,7 @@ function SidebarMenuSkeleton({
       className={cn("h-8 gap-2 rounded-md px-2 flex items-center", className)}
       {...props}
     >
-      {showIcon && (
-        <Skeleton
-          className="size-4 rounded-md"
-          data-sidebar="menu-skeleton-icon"
-        />
-      )}
+      {showIcon && <Skeleton className="size-4 rounded-md" data-sidebar="menu-skeleton-icon" />}
       <Skeleton
         className="h-4 max-w-(--skeleton-width) flex-1"
         data-sidebar="menu-skeleton-text"
@@ -769,10 +731,7 @@ function SidebarMenuSub({ className, ...props }: React.ComponentProps<"ul">) {
   );
 }
 
-function SidebarMenuSubItem({
-  className,
-  ...props
-}: React.ComponentProps<"li">) {
+function SidebarMenuSubItem({ className, ...props }: React.ComponentProps<"li">) {
   return (
     <li
       data-slot="sidebar-menu-sub-item"

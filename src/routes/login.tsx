@@ -229,22 +229,15 @@ function LoginPage() {
                 aria-label="Back icon"
               >
                 <title>Back icon</title>
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 19l-7-7 7-7"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
               Back
             </Button>
 
             <div className="text-center space-y-2">
-              <h2 className="text-xl font-semibold text-foreground">
-                Check your email
-              </h2>
+              <h2 className="text-xl font-semibold text-foreground">Check your email</h2>
               <p className="text-sm text-muted-foreground">
-                We sent a code to{" "}
-                <span className="font-medium text-foreground">{email}</span>
+                We sent a code to <span className="font-medium text-foreground">{email}</span>
               </p>
             </div>
 
@@ -267,33 +260,15 @@ function LoginPage() {
                           disabled={isPending}
                         >
                           <InputOTPGroup>
-                            <InputOTPSlot
-                              index={0}
-                              className="w-11 h-12 text-lg"
-                            />
-                            <InputOTPSlot
-                              index={1}
-                              className="w-11 h-12 text-lg"
-                            />
-                            <InputOTPSlot
-                              index={2}
-                              className="w-11 h-12 text-lg"
-                            />
+                            <InputOTPSlot index={0} className="w-11 h-12 text-lg" />
+                            <InputOTPSlot index={1} className="w-11 h-12 text-lg" />
+                            <InputOTPSlot index={2} className="w-11 h-12 text-lg" />
                           </InputOTPGroup>
                           <InputOTPSeparator />
                           <InputOTPGroup>
-                            <InputOTPSlot
-                              index={3}
-                              className="w-11 h-12 text-lg"
-                            />
-                            <InputOTPSlot
-                              index={4}
-                              className="w-11 h-12 text-lg"
-                            />
-                            <InputOTPSlot
-                              index={5}
-                              className="w-11 h-12 text-lg"
-                            />
+                            <InputOTPSlot index={3} className="w-11 h-12 text-lg" />
+                            <InputOTPSlot index={4} className="w-11 h-12 text-lg" />
+                            <InputOTPSlot index={5} className="w-11 h-12 text-lg" />
                           </InputOTPGroup>
                         </InputOTP>
                       </div>
@@ -302,26 +277,18 @@ function LoginPage() {
                   )}
                 </otpVerifyForm.AppField>
 
-                <Button
-                  type="submit"
-                  className="w-full h-11"
-                  disabled={isPending}
-                >
-                  {isPending && (
-                    <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-                  )}
+                <Button type="submit" className="w-full h-11" disabled={isPending}>
+                  {isPending && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
                   Verify
                 </Button>
               </otpVerifyForm.Form>
             </otpVerifyForm.AppForm>
 
             <p className="text-center text-sm text-muted-foreground">
-              Didn't receive the code?{" "}
+              Didn\u2019t receive the code?{" "}
               <Button
                 variant="link"
-                onClick={() =>
-                  sendOtpMutation.mutate({ email, type: "sign-in" })
-                }
+                onClick={() => sendOtpMutation.mutate({ email, type: "sign-in" })}
                 disabled={isPending}
                 className="p-0 h-auto font-medium"
               >
@@ -370,9 +337,7 @@ function LoginPage() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-background px-3 text-muted-foreground">
-                  or
-                </span>
+                <span className="bg-background px-3 text-muted-foreground">or</span>
               </div>
             </div>
 
@@ -407,6 +372,9 @@ function LoginPage() {
                           <Input
                             type="email"
                             placeholder="Email"
+                            aria-label="Email address"
+                            autoComplete="email"
+                            name="email"
                             className="h-11"
                             value={(field.state.value as string) ?? ""}
                             onBlur={field.handleBlur}
@@ -425,6 +393,9 @@ function LoginPage() {
                           <Input
                             type="password"
                             placeholder="Password"
+                            aria-label="Password"
+                            autoComplete="current-password"
+                            name="password"
                             className="h-11"
                             value={(field.state.value as string) ?? ""}
                             onBlur={field.handleBlur}
@@ -436,11 +407,7 @@ function LoginPage() {
                     )}
                   </emailForm.AppField>
 
-                  <Button
-                    type="submit"
-                    className="w-full h-11"
-                    disabled={isPending}
-                  >
+                  <Button type="submit" className="w-full h-11" disabled={isPending}>
                     {signInMutation.isPending && (
                       <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
                     )}
@@ -460,6 +427,9 @@ function LoginPage() {
                         <field.Field>
                           <Input
                             placeholder="Username"
+                            aria-label="Username"
+                            autoComplete="username"
+                            name="username"
                             className="h-11"
                             value={(field.state.value as string) ?? ""}
                             onBlur={field.handleBlur}
@@ -478,6 +448,9 @@ function LoginPage() {
                           <Input
                             type="password"
                             placeholder="Password"
+                            aria-label="Password"
+                            autoComplete="current-password"
+                            name="password"
                             className="h-11"
                             value={(field.state.value as string) ?? ""}
                             onBlur={field.handleBlur}
@@ -489,11 +462,7 @@ function LoginPage() {
                     )}
                   </usernameForm.AppField>
 
-                  <Button
-                    type="submit"
-                    className="w-full h-11"
-                    disabled={isPending}
-                  >
+                  <Button type="submit" className="w-full h-11" disabled={isPending}>
                     {signInUsernameMutation.isPending && (
                       <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
                     )}
@@ -514,6 +483,9 @@ function LoginPage() {
                           <Input
                             type="email"
                             placeholder="Email"
+                            aria-label="Email address"
+                            autoComplete="email"
+                            name="email"
                             className="h-11"
                             value={(field.state.value as string) ?? ""}
                             onBlur={field.handleBlur}
@@ -525,11 +497,7 @@ function LoginPage() {
                     )}
                   </otpRequestForm.AppField>
 
-                  <Button
-                    type="submit"
-                    className="w-full h-11"
-                    disabled={isPending}
-                  >
+                  <Button type="submit" className="w-full h-11" disabled={isPending}>
                     {sendOtpMutation.isPending && (
                       <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
                     )}
@@ -541,11 +509,8 @@ function LoginPage() {
 
             {/* Switch to sign up */}
             <p className="text-center text-sm text-muted-foreground pt-2">
-              Don't have an account?{" "}
-              <Link
-                to="/signup"
-                className="font-medium text-foreground hover:underline"
-              >
+              Don\u2019t have an account?{" "}
+              <Link to="/signup" className="font-medium text-foreground hover:underline">
                 Sign up
               </Link>
             </p>

@@ -1,8 +1,5 @@
-import {
-  type BaseCommentConfig,
-  BaseCommentPlugin,
-  getDraftCommentKey,
-} from "@platejs/comment";
+import { BaseCommentPlugin, getDraftCommentKey } from "@platejs/comment";
+import type { BaseCommentConfig } from "@platejs/comment";
 import type { ExtendConfig, Path } from "platejs";
 import { isSlateString } from "platejs";
 import { toTPlatePlugin } from "platejs/react";
@@ -80,10 +77,7 @@ export const commentPlugin = toTPlatePlugin<CommentConfig>(BaseCommentPlugin, {
 
         editor.tf.collapse();
         setOption("activeId", getDraftCommentKey());
-        setOption(
-          "commentingBlock",
-          editor.selection?.focus.path.slice(0, 1) ?? null,
-        );
+        setOption("commentingBlock", editor.selection?.focus.path.slice(0, 1) ?? null);
       },
     }),
   )

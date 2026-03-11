@@ -21,11 +21,7 @@ function parseDataAttributes(element: HTMLElement): PopupOptions {
 
   // Position
   const position = element.dataset.position;
-  if (
-    position === "bottom-right" ||
-    position === "bottom-left" ||
-    position === "center"
-  ) {
+  if (position === "bottom-right" || position === "bottom-left" || position === "center") {
     options.position = position;
   }
 
@@ -48,9 +44,7 @@ function parseDataAttributes(element: HTMLElement): PopupOptions {
 
   // Emoji
   const emojiText = element.dataset.emojiText;
-  const emojiAnimation = element.dataset.emojiAnimation as
-    | EmojiAnimation
-    | undefined;
+  const emojiAnimation = element.dataset.emojiAnimation as EmojiAnimation | undefined;
   if (emojiText) {
     options.emoji = {
       text: emojiText,
@@ -109,11 +103,7 @@ function parseHashParams(hash: string): {
 
   // Position
   const position = params.get("position");
-  if (
-    position === "bottom-right" ||
-    position === "bottom-left" ||
-    position === "center"
-  ) {
+  if (position === "bottom-right" || position === "bottom-left" || position === "center") {
     options.position = position;
   }
 
@@ -152,7 +142,7 @@ function parseHashParams(hash: string): {
 
   // Collect other params as hidden fields
   const hiddenFields: Record<string, string> = {};
-  const knownParams = [
+  const knownParams = new Set([
     "form-open",
     "position",
     "align-left",
@@ -162,9 +152,9 @@ function parseHashParams(hash: string): {
     "emoji-text",
     "emoji-animation",
     "auto-close",
-  ];
+  ]);
   params.forEach((value, key) => {
-    if (!knownParams.includes(key)) {
+    if (!knownParams.has(key)) {
       hiddenFields[key] = value;
     }
   });

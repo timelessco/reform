@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/refs -- Ref usage for color picker component refs */
 
 import { useComposedRef } from "@udecode/cn";
-// @ts-ignore - lodash debounce types issue
+// @ts-expect-error - lodash debounce types issue
 import debounce from "lodash/debounce";
 import { EraserIcon, PlusIcon } from "@/components/ui/icons";
 import { useEditorRef, useEditorSelector } from "platejs/react";
@@ -14,12 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { ToolbarButton, ToolbarMenuGroup } from "./toolbar";
@@ -34,15 +29,9 @@ export function FontColorToolbarButton({
 } & React.ComponentProps<typeof DropdownMenu>) {
   const editor = useEditorRef();
 
-  const selectionDefined = useEditorSelector(
-    (editor) => !!editor.selection,
-    [],
-  );
+  const selectionDefined = useEditorSelector((editor) => !!editor.selection, []);
 
-  const color = useEditorSelector(
-    (editor) => editor.api.mark(nodeType) as string,
-    [nodeType],
-  );
+  const color = useEditorSelector((editor) => editor.api.mark(nodeType) as string, [nodeType]);
 
   const [selectedColor, setSelectedColor] = React.useState<string>();
   const [open, setOpen] = React.useState(false);
@@ -103,9 +92,7 @@ export function FontColorToolbarButton({
       }}
       modal={false}
     >
-      <DropdownMenuTrigger
-        render={<ToolbarButton pressed={open} tooltip={tooltip} />}
-      >
+      <DropdownMenuTrigger render={<ToolbarButton pressed={open} tooltip={tooltip} />}>
         {children}
       </DropdownMenuTrigger>
 
@@ -226,18 +213,11 @@ function ColorCustom({
   );
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const updateCustomColorDebounced = React.useCallback(
-    debounce(updateCustomColor, 100),
-    [],
-  );
+  const updateCustomColorDebounced = React.useCallback(debounce(updateCustomColor, 100), []);
 
   return (
     <div className={cn("relative flex flex-col gap-4", className)} {...props}>
-      <ColorDropdownMenuItems
-        color={color}
-        colors={computedColors}
-        updateColor={updateColor}
-      >
+      <ColorDropdownMenuItems color={color} colors={computedColors} updateColor={updateColor}>
         <ColorInput
           value={value}
           onChange={(e) => {
@@ -333,7 +313,7 @@ function ColorDropdownMenuItem({
         className,
       )}
       style={{ backgroundColor: value }}
-      // @ts-ignore - Base UI event type mismatch
+      // @ts-expect-error - Base UI event type mismatch
       onSelect={(e: any) => {
         e.preventDefault();
         updateColor(value);
@@ -365,10 +345,7 @@ export function ColorDropdownMenuItems({
 } & React.ComponentProps<"div">) {
   return (
     <div
-      className={cn(
-        "grid grid-cols-[repeat(10,1fr)] place-items-center gap-x-1",
-        className,
-      )}
+      className={cn("grid grid-cols-[repeat(10,1fr)] place-items-center gap-x-1", className)}
       {...props}
     >
       <TooltipProvider>

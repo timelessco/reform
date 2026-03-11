@@ -13,29 +13,19 @@ import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   createFormLocal,
-  createWorkspaceLocal,
   duplicateFormById,
   updateFormStatus,
-} from "@/db-collections";
+} from "@/db-collections/form.collections";
+import { createWorkspaceLocal } from "@/db-collections/workspace.collection";
 import { useOrgForms, useOrgWorkspaces } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
 import { clearLocalDraftIds } from "@/lib/local-draft";
 import { syncLocalDataToCloud } from "@/lib/sync";
 import { parseTimestampAsUTC } from "@/lib/utils";
-import {
-  createFileRoute,
-  Link,
-  useLoaderData,
-  useNavigate,
-} from "@tanstack/react-router";
+import { createFileRoute, Link, useLoaderData, useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import {
   ChevronLeftIcon,
@@ -74,24 +64,18 @@ function DashboardPage() {
 
   const { data: session } = useSession();
 
-  const { data: liveWorkspaces, isLoading: wsLoading } = useOrgWorkspaces(
-    activeOrg?.id,
-  );
-  const { data: liveForms, isLoading: formsLoading } = useOrgForms(
-    activeOrg?.id,
-  );
+  const { data: liveWorkspaces, isLoading: wsLoading } = useOrgWorkspaces(activeOrg?.id);
+  const { data: liveForms, isLoading: formsLoading } = useOrgForms(activeOrg?.id);
 
   const isLoading = wsLoading || formsLoading;
-  const isElectricReady =
-    !isLoading && liveWorkspaces !== undefined && liveForms !== undefined;
+  const isElectricReady = !isLoading && liveWorkspaces !== undefined && liveForms !== undefined;
 
   const orgWorkspaces = isElectricReady ? liveWorkspaces || [] : [];
 
   const orgForms = useMemo(() => {
     if (!isElectricReady) return [];
     return (liveForms || []).toSorted(
-      (a, b) =>
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
     );
   }, [liveForms, isElectricReady]);
 
@@ -102,21 +86,18 @@ function DashboardPage() {
 
   const totalPages = Math.ceil(orgForms.length / FORMS_PER_PAGE);
   const startIndex = (currentPage - 1) * FORMS_PER_PAGE;
-  const paginatedForms = orgForms.slice(
-    startIndex,
-    startIndex + FORMS_PER_PAGE,
-  );
+  const paginatedForms = orgForms.slice(startIndex, startIndex + FORMS_PER_PAGE);
 
   useEffect(() => {
     const syncData = async () => {
-      const shouldSync =
-        sessionStorage.getItem("shouldSyncAfterSocialLogin") === "true" ||
-        sessionStorage.getItem("shouldSyncAfterLogin") === "true";
+      const shouldSyncSocial = sessionStorage.getItem("shouldSyncAfterSocialLogin") === "true";
+      const shouldSyncLogin = sessionStorage.getItem("shouldSyncAfterLogin") === "true";
+      const shouldSync = shouldSyncSocial || shouldSyncLogin;
 
       if (!shouldSync || !session?.user || !activeOrg?.id) return;
 
-      sessionStorage.removeItem("shouldSyncAfterSocialLogin");
-      sessionStorage.removeItem("shouldSyncAfterLogin");
+      if (shouldSyncSocial) sessionStorage.removeItem("shouldSyncAfterSocialLogin");
+      if (shouldSyncLogin) sessionStorage.removeItem("shouldSyncAfterLogin");
 
       try {
         const result = await syncLocalDataToCloud(activeOrg.id);
@@ -192,9 +173,8 @@ function DashboardPage() {
     }
   };
 
-  const formatLastEdited = (timestamp: string) => {
-    return `Edited ${formatDistanceToNow(parseTimestampAsUTC(timestamp) ?? new Date())} ago`;
-  };
+  const formatLastEdited = (timestamp: string) =>
+    `Edited ${formatDistanceToNow(parseTimestampAsUTC(timestamp) ?? new Date())} ago`;
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-background text-foreground">
@@ -220,15 +200,15 @@ function DashboardPage() {
               New workspace
             </Button>
             <Button
-              variant="default"
               size="sm"
               onClick={handleCreateForm}
               disabled={isLoading || isCreating || orgWorkspaces.length === 0}
+              className=" font-medium"
             >
               {isCreating ? (
-                <Loader2Icon className="h-4 w-4 animate-spin" />
+                <Loader2Icon className="h-4 w-4 animate-spin mr-2" />
               ) : (
-                <PlusIcon className="h-4 w-4" />
+                <PlusIcon className="h-4 w-4 mr-2" />
               )}
               New form
             </Button>
@@ -256,7 +236,7 @@ function DashboardPage() {
               : paginatedForms.map((form) => (
                   <div
                     key={form.id}
-                    className="group flex flex-col p-2 -mx-2 rounded-xl hover:bg-muted/30 transition-all duration-200 cursor-pointer"
+                    className="group flex flex-col p-2 -mx-2 rounded-xl hover:bg-muted/30 transition-[background-color] duration-200 cursor-pointer"
                   >
                     <Link
                       to={
@@ -286,15 +266,12 @@ function DashboardPage() {
                                     : "bg-muted/80 text-muted-foreground"
                                 } rounded-full`}
                               >
-                                {form.status === "published"
-                                  ? "Published"
-                                  : "Draft"}
+                                {form.status === "published" ? "Published" : "Draft"}
                               </Badge>
                             </div>
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 font-medium">
                               <span>
-                                {workspaceNameMap.get(form.workspaceId) ||
-                                  "Unknown workspace"}
+                                {workspaceNameMap.get(form.workspaceId) || "Unknown workspace"}
                               </span>
                               <span className="w-0.5 h-0.5 rounded-full bg-muted-foreground/30"></span>
                               <span>{formatLastEdited(form.updatedAt)}</span>
@@ -311,6 +288,7 @@ function DashboardPage() {
                                     variant="ghost"
                                     size="icon"
                                     className="h-8 w-8 rounded-full hover:bg-muted"
+                                    aria-label="Duplicate form"
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
@@ -331,6 +309,7 @@ function DashboardPage() {
                                     variant="ghost"
                                     size="icon"
                                     className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive"
+                                    aria-label="Delete form"
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
@@ -357,8 +336,7 @@ function DashboardPage() {
           {!isLoading && totalPages > 1 && (
             <div className="flex items-center justify-between pt-4 border-t">
               <p className="text-sm text-muted-foreground">
-                Showing {startIndex + 1}-
-                {Math.min(startIndex + FORMS_PER_PAGE, orgForms.length)} of{" "}
+                Showing {startIndex + 1}-{Math.min(startIndex + FORMS_PER_PAGE, orgForms.length)} of{" "}
                 {orgForms.length} forms
               </p>
               <div className="flex items-center gap-2">
@@ -372,26 +350,22 @@ function DashboardPage() {
                   Previous
                 </Button>
                 <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (page) => (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "ghost"}
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => setCurrentPage(page)}
-                      >
-                        {page}
-                      </Button>
-                    ),
-                  )}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "ghost"}
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </Button>
+                  ))}
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
                 >
                   Next
@@ -417,7 +391,7 @@ function DashboardPage() {
                 onClick={handleCreateForm}
                 disabled={isLoading || isCreating || orgWorkspaces.length === 0}
               >
-                {isCreating && <Loader2Icon className="h-4 w-4 animate-spin" />}
+                {isCreating && <Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
                 Create my first form
               </Button>
             </div>
@@ -430,6 +404,7 @@ function DashboardPage() {
           variant="ghost"
           size="icon"
           className="h-10 w-10 rounded-full bg-muted/50 hover:bg-muted shadow-sm border"
+          aria-label="Help"
         >
           <HelpCircleIcon className="h-5 w-5 text-muted-foreground" />
         </Button>
@@ -440,8 +415,7 @@ function DashboardPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete form</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{formToDelete?.title}"? This
-              action cannot be undone.
+              Are you sure you want to delete "{formToDelete?.title}"? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

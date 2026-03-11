@@ -1,9 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
-import {
-  createRootRouteWithContext,
-  HeadContent,
-  Scripts,
-} from "@tanstack/react-router";
+import { createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -51,13 +47,19 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   notFoundComponent: NotFound,
 });
 
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("vite-ui-theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme:dark)").matches)){document.documentElement.classList.add("dark");document.documentElement.style.colorScheme="dark"}}catch(e){}})()`;
+
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>
-      <body className="min-h-screen bg-background text-foreground antialiased font-sans">
+      <body
+        suppressHydrationWarning
+        className="min-h-screen bg-background text-foreground antialiased font-sans"
+      >
         <HotkeysProvider defaultOptions={{ hotkey: { preventDefault: true } }}>
           <ThemeProvider defaultTheme="light">
             {children}

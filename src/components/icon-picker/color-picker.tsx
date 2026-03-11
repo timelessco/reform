@@ -17,11 +17,7 @@ type ColorPickerProps = {
   colors?: string[];
 };
 
-export function ColorPicker({
-  onChange,
-  selectedColor,
-  colors,
-}: ColorPickerProps) {
+export function ColorPicker({ onChange, selectedColor, colors }: ColorPickerProps) {
   const ref = useRef<HTMLDivElement>(null);
   const isDark = ref.current?.closest(".dark") != null;
 
@@ -29,9 +25,7 @@ export function ColorPicker({
 
   // Swap first two colors (white/black) in dark mode for better visibility (only for default palette)
   const displayColors =
-    !colors && isDark && COLORS.length >= 2
-      ? [COLORS[1], COLORS[0], ...COLORS.slice(2)]
-      : COLORS;
+    !colors && isDark && COLORS.length >= 2 ? [COLORS[1], COLORS[0], ...COLORS.slice(2)] : COLORS;
 
   const swapFirstTwo = (color: string) => {
     if (colors || !isDark || COLORS.length < 2) {
@@ -53,10 +47,7 @@ export function ColorPicker({
   const baseLightColor = !colors ? COLORS[0] : null;
 
   return (
-    <div
-      ref={ref}
-      className={cn("flex", "cursor-pointer", "items-center", "space-x-1")}
-    >
+    <div ref={ref} className={cn("flex", "cursor-pointer", "items-center", "space-x-1")}>
       {displayColors.map((colorItem) => (
         <div
           className={cn("rounded-md", "p-1", "hover:bg-muted", {

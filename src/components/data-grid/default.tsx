@@ -205,18 +205,14 @@ export default function DataGridDemo() {
     pageIndex: 0,
     pageSize: 5,
   });
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: "name", desc: true },
-  ]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: "name", desc: true }]);
 
   const columns = useMemo<ColumnDef<IData>[]>(
     () => [
       {
         accessorKey: "name",
         header: "Name",
-        cell: (info) => (
-          <span className="font-medium">{info.getValue() as string}</span>
-        ),
+        cell: (info) => <span className="font-medium">{info.getValue() as string}</span>,
         size: 175,
         meta: {
           headerClassName: "",
@@ -254,10 +250,7 @@ export default function DataGridDemo() {
         accessorKey: "balance",
         header: "Balance ($)",
         cell: (info) => (
-          <a
-            href={`mailto:${info.getValue()}`}
-            className="hover:text-primary hover:underline"
-          >
+          <a href={`mailto:${info.getValue()}`} className="hover:text-primary hover:underline">
             {info.getValue() as string}
           </a>
         ),

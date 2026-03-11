@@ -13,7 +13,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
-import { formCollection, localFormCollection } from "@/db-collections";
+import { formCollection, localFormCollection } from "@/db-collections/form.collections";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
 import { APP_NAME } from "@/lib/app-config";
 import { defaultFormSettings } from "@/types/form-settings";
@@ -21,10 +21,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "@/components/ui/icons";
 import { useState } from "react";
 import { SidebarSection } from "@/components/ui/sidebar-section";
-import {
-  ConfigCard,
-  ConfigRow,
-} from "@/components/form-builder/embed-config-panel";
+import { ConfigCard, ConfigRow } from "@/components/form-builder/embed-config-panel";
 
 export const Route = createFileRoute(
   "/_authenticated/workspace/$workspaceId/form-builder/$formId/settings",
@@ -44,13 +41,7 @@ function SettingsPage() {
   return <SettingsContent formId={formId} />;
 }
 
-export function SettingsContent({
-  formId,
-  isLocal,
-}: {
-  formId: string;
-  isLocal?: boolean;
-}) {
+export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?: boolean }) {
   const cloudForm = useForm(isLocal ? undefined : formId);
   const localFormResult = useLocalForm(isLocal ? formId : undefined);
   const formResult = isLocal ? localFormResult : cloudForm;
@@ -90,15 +81,12 @@ export function SettingsContent({
           {/* General Section */}
           <SidebarSection label="General" className="pb-2.75" action={<></>}>
             <ConfigCard>
-              <ConfigRow
-                label="Language"
-                description="Language for default buttons, errors, etc."
-              >
+              <ConfigRow label="Language" description="Language for default buttons, errors, etc.">
                 <form.AppField name="language">
                   {(field) => (
                     <Select
                       value={(field.state.value as string) || "English"}
-                      onValueChange={field.handleChange}
+                      onValueChange={(value) => field.handleChange(value ?? "English")}
                     >
                       <SelectTrigger className="w-[120px] h-[34px] !rounded-none !border-0 !bg-secondary text-sm">
                         <SelectValue placeholder="Select language" />
@@ -130,9 +118,7 @@ export function SettingsContent({
                 </form.AppField>
               </ConfigRow>
 
-              <form.Subscribe
-                selector={(state) => state.values.redirectOnCompletion}
-              >
+              <form.Subscribe selector={(state) => state.values.redirectOnCompletion}>
                 {(redirectOnCompletion) =>
                   redirectOnCompletion ? (
                     <>
@@ -143,10 +129,9 @@ export function SettingsContent({
                               type="url"
                               placeholder="https://example.com"
                               value={(field.state.value as string) || ""}
-                              onChange={(e) =>
-                                field.handleChange(e.target.value || null)
-                              }
+                              onChange={(e) => field.handleChange(e.target.value || null)}
                               className={`w-[160px] text-sm ${CONFIG_INPUT_CLS}`}
+                              aria-label="Redirect URL"
                             />
                           )}
                         </form.AppField>
@@ -160,10 +145,9 @@ export function SettingsContent({
                               max={60}
                               placeholder="0"
                               value={(field.state.value as number) || 0}
-                              onChange={(e) =>
-                                field.handleChange(Number(e.target.value) || 0)
-                              }
+                              onChange={(e) => field.handleChange(Number(e.target.value) || 0)}
                               className={`w-[70px] text-sm ${CONFIG_INPUT_CLS}`}
+                              aria-label="Redirect delay"
                             />
                           )}
                         </form.AppField>
@@ -198,7 +182,7 @@ export function SettingsContent({
                 <div className="flex items-center gap-1.5">
                   <Badge
                     variant="secondary"
-                    className="bg-pink-100 text-pink-600 border-none text-[9px] h-4 px-1.5"
+                    className="bg-teal-100 text-teal-600 border-none text-[9px] h-4 px-1.5"
                   >
                     Pro
                   </Badge>
@@ -223,7 +207,7 @@ export function SettingsContent({
                 <div className="flex items-center gap-1.5">
                   <Badge
                     variant="secondary"
-                    className="bg-blue-100 text-blue-600 border-none text-[9px] h-4 px-1.5 uppercase"
+                    className="bg-teal-100 text-teal-600 border-none text-[9px] h-4 px-1.5 uppercase"
                   >
                     Biz
                   </Badge>
@@ -252,11 +236,10 @@ export function SettingsContent({
                             placeholder="30"
                             value={(field.state.value as number) || ""}
                             onChange={(e) =>
-                              field.handleChange(
-                                e.target.value ? Number(e.target.value) : null,
-                              )
+                              field.handleChange(e.target.value ? Number(e.target.value) : null)
                             }
                             className={`w-[70px] text-sm ${CONFIG_INPUT_CLS}`}
+                            aria-label="Retention days"
                           />
                         )}
                       </form.AppField>
@@ -268,11 +251,7 @@ export function SettingsContent({
           </SidebarSection>
 
           {/* Email Notifications Section */}
-          <SidebarSection
-            label="Email Notifications"
-            className="pb-2.75"
-            action={<></>}
-          >
+          <SidebarSection label="Email Notifications" className="pb-2.75" action={<></>}>
             <ConfigCard>
               <ConfigRow
                 label="Self notifications"
@@ -291,9 +270,7 @@ export function SettingsContent({
                 </form.AppField>
               </ConfigRow>
 
-              <form.Subscribe
-                selector={(state) => state.values.selfEmailNotifications}
-              >
+              <form.Subscribe selector={(state) => state.values.selfEmailNotifications}>
                 {(selfEmailNotifications) =>
                   selfEmailNotifications ? (
                     <ConfigRow label="Email">
@@ -303,10 +280,9 @@ export function SettingsContent({
                             type="email"
                             placeholder="you@example.com"
                             value={(field.state.value as string) || ""}
-                            onChange={(e) =>
-                              field.handleChange(e.target.value || null)
-                            }
+                            onChange={(e) => field.handleChange(e.target.value || null)}
                             className={`w-[160px] text-sm ${CONFIG_INPUT_CLS}`}
+                            aria-label="Notification email"
                           />
                         )}
                       </form.AppField>
@@ -323,7 +299,7 @@ export function SettingsContent({
                 <div className="flex items-center gap-1.5">
                   <Badge
                     variant="secondary"
-                    className="bg-pink-100 text-pink-600 border-none text-[9px] h-4 px-1.5"
+                    className="bg-teal-100 text-teal-600 border-none text-[9px] h-4 px-1.5"
                   >
                     Pro
                   </Badge>
@@ -340,9 +316,7 @@ export function SettingsContent({
                 </div>
               </ConfigRow>
 
-              <form.Subscribe
-                selector={(state) => state.values.respondentEmailNotifications}
-              >
+              <form.Subscribe selector={(state) => state.values.respondentEmailNotifications}>
                 {(respondentEmailNotifications) =>
                   respondentEmailNotifications ? (
                     <>
@@ -353,27 +327,23 @@ export function SettingsContent({
                               type="text"
                               placeholder="Thank you for your submission"
                               value={(field.state.value as string) || ""}
-                              onChange={(e) =>
-                                field.handleChange(e.target.value || null)
-                              }
+                              onChange={(e) => field.handleChange(e.target.value || null)}
                               className={`w-[160px] text-sm ${CONFIG_INPUT_CLS}`}
+                              aria-label="Email subject"
                             />
                           )}
                         </form.AppField>
                       </ConfigRow>
                       <div className="bg-secondary px-[10px] py-[7px]">
-                        <span className="text-sm leading-[1.15] mb-1.5 block">
-                          Body
-                        </span>
+                        <span className="text-sm leading-[1.15] mb-1.5 block">Body</span>
                         <form.AppField name="respondentEmailBody">
                           {(field) => (
                             <Textarea
                               placeholder="Thank you for filling out our form."
                               value={(field.state.value as string) || ""}
-                              onChange={(e) =>
-                                field.handleChange(e.target.value || null)
-                              }
+                              onChange={(e) => field.handleChange(e.target.value || null)}
                               className="w-full min-h-[60px] text-sm !rounded-md !bg-background border-border/60"
+                              aria-label="Email body"
                             />
                           )}
                         </form.AppField>
@@ -405,9 +375,7 @@ export function SettingsContent({
                 </form.AppField>
               </ConfigRow>
 
-              <form.Subscribe
-                selector={(state) => state.values.passwordProtect}
-              >
+              <form.Subscribe selector={(state) => state.values.passwordProtect}>
                 {(passwordProtect) =>
                   passwordProtect ? (
                     <ConfigRow label="Password">
@@ -445,20 +413,17 @@ export function SettingsContent({
                 {(closeForm) =>
                   closeForm ? (
                     <div className="bg-secondary px-[10px] py-[7px]">
-                      <span className="text-sm leading-[1.15] mb-1.5 block">
-                        Closed message
-                      </span>
+                      <span className="text-sm leading-[1.15] mb-1.5 block">Closed message</span>
                       <form.AppField name="closedFormMessage">
                         {(field) => (
                           <Textarea
                             placeholder="This form is now closed."
                             value={(field.state.value as string) || ""}
                             onChange={(e) =>
-                              field.handleChange(
-                                e.target.value || "This form is now closed.",
-                              )
+                              field.handleChange(e.target.value || "This form is now closed.")
                             }
                             className="w-full min-h-[50px] text-sm !rounded-md !bg-background border-border/60"
+                            aria-label="Closed message"
                           />
                         )}
                       </form.AppField>
@@ -493,10 +458,9 @@ export function SettingsContent({
                           <Input
                             type="datetime-local"
                             value={(field.state.value as string) || ""}
-                            onChange={(e) =>
-                              field.handleChange(e.target.value || null)
-                            }
+                            onChange={(e) => field.handleChange(e.target.value || null)}
                             className={`w-[160px] text-sm ${CONFIG_INPUT_CLS}`}
+                            aria-label="Close date"
                           />
                         )}
                       </form.AppField>
@@ -522,9 +486,7 @@ export function SettingsContent({
                 </form.AppField>
               </ConfigRow>
 
-              <form.Subscribe
-                selector={(state) => state.values.limitSubmissions}
-              >
+              <form.Subscribe selector={(state) => state.values.limitSubmissions}>
                 {(limitSubmissions) =>
                   limitSubmissions ? (
                     <ConfigRow label="Max submissions">
@@ -536,11 +498,10 @@ export function SettingsContent({
                             placeholder="100"
                             value={(field.state.value as number) || ""}
                             onChange={(e) =>
-                              field.handleChange(
-                                e.target.value ? Number(e.target.value) : null,
-                              )
+                              field.handleChange(e.target.value ? Number(e.target.value) : null)
                             }
                             className={`w-[70px] text-sm ${CONFIG_INPUT_CLS}`}
+                            aria-label="Max submissions"
                           />
                         )}
                       </form.AppField>
@@ -612,13 +573,7 @@ export function SettingsContent({
   );
 }
 
-function PasswordInput({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (val: string) => void;
-}) {
+function PasswordInput({ value, onChange }: { value: string; onChange: (val: string) => void }) {
   const [show, setShow] = useState(false);
   return (
     <div className="relative w-[140px]">
@@ -628,17 +583,15 @@ function PasswordInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="!rounded-none !border-0 !bg-secondary !h-[34px] text-sm pr-8"
+        aria-label="Form password"
       />
       <button
         type="button"
         onClick={() => setShow(!show)}
         className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+        aria-label="Toggle password visibility"
       >
-        {show ? (
-          <EyeOffIcon className="h-3.5 w-3.5" />
-        ) : (
-          <EyeIcon className="h-3.5 w-3.5" />
-        )}
+        {show ? <EyeOffIcon className="h-3.5 w-3.5" /> : <EyeIcon className="h-3.5 w-3.5" />}
       </button>
     </div>
   );

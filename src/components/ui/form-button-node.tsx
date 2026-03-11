@@ -1,8 +1,4 @@
-import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  SettingsIcon,
-} from "@/components/ui/icons";
+import { ChevronLeftIcon, ChevronRightIcon, SettingsIcon } from "@/components/ui/icons";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorRef } from "platejs/react";
 import * as React from "react";
@@ -11,11 +7,7 @@ import { cn } from "@/lib/utils";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export type ButtonRole = "next" | "previous" | "submit";
 
@@ -26,12 +18,8 @@ export interface FormButtonElementData {
   children: [{ text: string }];
 }
 
-export function createFormButtonNode(
-  role: ButtonRole,
-  text?: string,
-): FormButtonElementData {
-  const defaultText =
-    role === "next" ? "Next" : role === "previous" ? "Previous" : "Submit";
+export function createFormButtonNode(role: ButtonRole, text?: string): FormButtonElementData {
+  const defaultText = role === "next" ? "Next" : role === "previous" ? "Previous" : "Submit";
   return {
     type: "formButton",
     buttonRole: role,
@@ -61,11 +49,7 @@ function extractTextFromChildren(children: Array<{ text?: string }>): string {
   return children.map((child) => child.text || "").join("");
 }
 
-export function FormButtonElement({
-  className,
-  children,
-  ...props
-}: PlateElementProps) {
+export function FormButtonElement({ className, children, ...props }: PlateElementProps) {
   const { element } = props;
   const editor = useEditorRef();
   const buttonRole = (element.buttonRole as ButtonRole) ?? "submit";
@@ -116,6 +100,7 @@ export function FormButtonElement({
             variant="ghost"
             size="icon-sm"
             className="h-7 w-7 opacity-0 group-hover:opacity-100"
+            aria-label="Button settings"
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();

@@ -1,12 +1,6 @@
 import { PlaceholderPlugin } from "@platejs/media/react";
 
-import {
-  AudioLinesIcon,
-  FileUpIcon,
-  FilmIcon,
-  ImageIcon,
-  LinkIcon,
-} from "@/components/ui/icons";
+import { AudioLinesIcon, FileUpIcon, FilmIcon, ImageIcon, LinkIcon } from "@/components/ui/icons";
 import { isUrl, KEYS } from "platejs";
 import { useEditorRef } from "platejs/react";
 import * as React from "react";
@@ -105,23 +99,12 @@ export function MediaToolbarButton({
         }}
         pressed={open}
       >
-        <ToolbarSplitButtonPrimary>
-          {currentConfig.icon}
-        </ToolbarSplitButtonPrimary>
+        <ToolbarSplitButtonPrimary>{currentConfig.icon}</ToolbarSplitButtonPrimary>
 
-        <DropdownMenu
-          open={open}
-          onOpenChange={setOpen}
-          modal={false}
-          {...props}
-        >
+        <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
           <DropdownMenuTrigger render={<ToolbarSplitButtonSecondary />} />
 
-          <DropdownMenuContent
-            onClick={(e) => e.stopPropagation()}
-            align="start"
-            alignOffset={-32}
-          >
+          <DropdownMenuContent onClick={(e) => e.stopPropagation()} align="start" alignOffset={-32}>
             <DropdownMenuGroup>
               <DropdownMenuItem onSelect={() => openFilePicker()}>
                 {currentConfig.icon}

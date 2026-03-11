@@ -11,17 +11,14 @@ export const slashCommandValue: any = (
     </hh2>
     <hp>
       <htext>
-        The slash menu provides quick access to various formatting options and
-        content types.
+        The slash menu provides quick access to various formatting options and content types.
       </htext>
     </hp>
     <hp indent={1} listStyleType="disc">
       <htext>Type '/' anywhere in your document to open the slash menu.</htext>
     </hp>
     <hp indent={1} listStyleType="disc">
-      <htext>
-        Start typing to filter options or use arrow keys to navigate.
-      </htext>
+      <htext>Start typing to filter options or use arrow keys to navigate.</htext>
     </hp>
     <hp indent={1} listStyleType="disc">
       <htext>Press Enter or click to select an option.</htext>

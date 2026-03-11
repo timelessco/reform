@@ -1,9 +1,4 @@
-import {
-  AIChatPlugin,
-  AIPlugin,
-  useEditorChat,
-  useLastAssistantMessage,
-} from "@platejs/ai/react";
+import { AIChatPlugin, AIPlugin, useEditorChat, useLastAssistantMessage } from "@platejs/ai/react";
 import { getTransientCommentKey } from "@platejs/comment";
 import { BlockSelectionPlugin, useIsSelecting } from "@platejs/selection/react";
 import { getTransientSuggestionKey } from "@platejs/suggestion";
@@ -21,42 +16,22 @@ import {
   PenLine,
   Wand,
 } from "lucide-react";
+import { CheckIcon, Loader2Icon, SmileIcon, XIcon } from "@/components/ui/icons";
+import { isHotkey, KEYS, NodeApi, TextApi } from "platejs";
+import type { NodeEntry, SlateEditor } from "platejs";
 import {
-  CheckIcon,
-  Loader2Icon,
-  SmileIcon,
-  XIcon,
-} from "@/components/ui/icons";
-import {
-  isHotkey,
-  KEYS,
-  NodeApi,
-  type NodeEntry,
-  type SlateEditor,
-  TextApi,
-} from "platejs";
-import {
-  type PlateEditor,
   useEditorPlugin,
   useEditorRef,
   useFocusedLast,
   useHotkeys,
   usePluginOption,
 } from "platejs/react";
+import type { PlateEditor } from "platejs/react";
 import * as React from "react";
 import { commentPlugin } from "@/components/editor/plugins/comment-kit";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
-} from "@/components/ui/popover";
+import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 import { AIChatEditor } from "./ai-chat-editor";
@@ -77,13 +52,9 @@ export function AIMenu() {
   const chat = usePluginOption(AIChatPlugin, "chat");
 
   const { messages, status } = chat;
-  const [anchorElement, setAnchorElement] = React.useState<HTMLElement | null>(
-    null,
-  );
+  const [anchorElement, setAnchorElement] = React.useState<HTMLElement | null>(null);
 
-  const content = useLastAssistantMessage()?.parts.find(
-    (part) => part.type === "text",
-  )?.text;
+  const content = useLastAssistantMessage()?.parts.find((part) => part.type === "text")?.text;
 
   React.useEffect(() => {
     if (!streaming) return;
@@ -132,9 +103,7 @@ export function AIMenu() {
       const [ancestor] = editor.api.block({ highest: true })!;
 
       if (!editor.api.isAt({ end: true }) && !editor.api.isEmpty(ancestor)) {
-        editor
-          .getApi(BlockSelectionPlugin)
-          .blockSelection.set(ancestor.id as string);
+        editor.getApi(BlockSelectionPlugin).blockSelection.set(ancestor.id as string);
       }
 
       show(editor.api.toDOMNode(ancestor)!);
@@ -205,10 +174,9 @@ export function AIMenu() {
           value={value}
           onValueChange={setValue}
         >
-          {mode === "chat" &&
-            isSelecting &&
-            content &&
-            toolName === "generate" && <AIChatEditor content={content} />}
+          {mode === "chat" && isSelecting && content && toolName === "generate" && (
+            <AIChatEditor content={content} />
+          )}
 
           {isLoading ? (
             <div className="flex grow select-none items-center gap-2 p-2 text-muted-foreground text-sm">
@@ -236,6 +204,7 @@ export function AIMenu() {
               }}
               onValueChange={setInput}
               placeholder="Ask AI anything..."
+              aria-label="AI command"
               data-plate-focus
               autoFocus
             />
@@ -243,11 +212,7 @@ export function AIMenu() {
 
           {!isLoading && (
             <CommandList>
-              <AIMenuItems
-                input={input}
-                setInput={setInput}
-                setValue={setValue}
-              />
+              <AIMenuItems input={input} setInput={setInput} setValue={setValue} />
             </CommandList>
           )}
         </Command>
@@ -292,9 +257,7 @@ const aiChatItems = {
       const { mode, toolName } = editor.getOptions(AIChatPlugin);
 
       if (mode === "chat" && toolName === "generate") {
-        return editor
-          .getTransforms(AIChatPlugin)
-          .aiChat.replaceSelection(aiEditor);
+        return editor.getTransforms(AIChatPlugin).aiChat.replaceSelection(aiEditor);
       }
 
       editor.getTransforms(AIChatPlugin).aiChat.accept();
@@ -422,9 +385,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
     value: "insertBelow",
     onSelect: ({ aiEditor, editor }) => {
       /** Format: 'none' Fix insert table */
-      void editor
-        .getTransforms(AIChatPlugin)
-        .aiChat.insertBelow(aiEditor, { format: "none" });
+      void editor.getTransforms(AIChatPlugin).aiChat.insertBelow(aiEditor, { format: "none" });
     },
   },
   makeLonger: {
@@ -600,8 +561,7 @@ export const AIMenuItems = ({
     <>
       {menuGroups.map((group) => {
         const groupKey =
-          group.heading ??
-          `${menuState}-${group.items.map((item) => item.value).join("-")}`;
+          group.heading ?? `${menuState}-${group.items.map((item) => item.value).join("-")}`;
 
         return (
           <CommandGroup key={groupKey} heading={group.heading}>
@@ -652,9 +612,7 @@ export function AILoadingBar() {
     }
 
     if (type === "reject") {
-      editor
-        .getTransforms(commentPlugin)
-        .comment.unsetMark({ transient: true });
+      editor.getTransforms(commentPlugin).comment.unsetMark({ transient: true });
     }
 
     api.aiChat.hide();
@@ -669,14 +627,12 @@ export function AILoadingBar() {
 
   if (
     isLoading &&
-    (mode === "insert" ||
-      toolName === "comment" ||
-      (toolName === "edit" && mode === "chat"))
+    (mode === "insert" || toolName === "comment" || (toolName === "edit" && mode === "chat"))
   ) {
     return (
       <div
         className={cn(
-          "-translate-x-1/2 absolute bottom-4 left-1/2 z-20 flex items-center gap-3 rounded-md border border-border bg-muted px-3 py-1.5 text-muted-foreground text-sm shadow-md transition-all duration-300",
+          "-translate-x-1/2 absolute bottom-4 left-1/2 z-20 flex items-center gap-3 rounded-md border border-border bg-muted px-3 py-1.5 text-muted-foreground text-sm shadow-md transition-[opacity,transform] duration-300",
         )}
       >
         <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
@@ -708,19 +664,11 @@ export function AILoadingBar() {
         {/* Header with controls */}
         <div className="flex w-full items-center justify-between gap-3">
           <div className="flex items-center gap-5">
-            <Button
-              size="sm"
-              disabled={isLoading}
-              onClick={() => handleComments("accept")}
-            >
+            <Button size="sm" disabled={isLoading} onClick={() => handleComments("accept")}>
               Accept
             </Button>
 
-            <Button
-              size="sm"
-              disabled={isLoading}
-              onClick={() => handleComments("reject")}
-            >
+            <Button size="sm" disabled={isLoading} onClick={() => handleComments("reject")}>
               Reject
             </Button>
           </div>

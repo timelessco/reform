@@ -1,5 +1,6 @@
 import { Switch as SwitchPrimitive } from "@base-ui/react/switch";
-import { cva, type VariantProps } from "class-variance-authority";
+import { cva } from "class-variance-authority";
+import type { VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
@@ -27,15 +28,11 @@ const thumbVariants = cva(
   },
 );
 
-type SwitchProps = Required<VariantProps<typeof rootVariants>> &
-  SwitchPrimitive.Root.Props;
+type SwitchProps = Required<VariantProps<typeof rootVariants>> & SwitchPrimitive.Root.Props;
 
 export function Switch({ size, className, ...props }: SwitchProps) {
   return (
-    <SwitchPrimitive.Root
-      className={cn(rootVariants({ size }), className)}
-      {...props}
-    >
+    <SwitchPrimitive.Root className={cn(rootVariants({ size }), className)} {...props}>
       <SwitchPrimitive.Thumb className={thumbVariants({ size })} />
     </SwitchPrimitive.Root>
   );

@@ -74,8 +74,7 @@
     let f = document.createElement("div");
     f.className = "bf-iframe-container";
     let d = document.createElement("div");
-    ((d.className = "bf-loading"),
-      (d.innerHTML = '<div class="bf-loading-spinner"></div>'));
+    ((d.className = "bf-loading"), (d.innerHTML = '<div class="bf-loading-spinner"></div>'));
     let c;
     return (
       e.emoji?.text &&
@@ -338,17 +337,14 @@
   function T() {
     if (document.getElementById("bf-popup-styles")) return;
     let t = document.createElement("style");
-    ((t.id = "bf-popup-styles"),
-      (t.textContent = S),
-      document.head.appendChild(t));
+    ((t.id = "bf-popup-styles"), (t.textContent = S), document.head.appendChild(t));
   }
   function F(t) {
     let e = {},
       n = t.dataset.layout;
     (n === "modal" || n === "default") && (e.layout = n);
     let o = t.dataset.position;
-    (o === "bottom-right" || o === "bottom-left" || o === "center") &&
-      (e.position = o);
+    (o === "bottom-right" || o === "bottom-left" || o === "center") && (e.position = o);
     let i = t.dataset.width;
     (i && (e.width = parseInt(i, 10)),
       t.dataset.alignLeft === "1" && (e.alignLeft = !0),
@@ -381,8 +377,7 @@
       n = e.get("form-open"),
       o = {},
       i = e.get("position");
-    ((i === "bottom-right" || i === "bottom-left" || i === "center") &&
-      (o.position = i),
+    ((i === "bottom-right" || i === "bottom-left" || i === "center") && (o.position = i),
       e.get("align-left") === "1" && (o.alignLeft = !0),
       e.get("hide-title") === "1" && (o.hideTitle = !0),
       e.get("overlay") === "1" && (o.overlay = !0));
@@ -487,10 +482,7 @@
   }
   function b(t) {
     let e = m.get(t);
-    if (
-      e &&
-      (x(e.iframe), e.overlay && w(e.overlay), m.delete(t), e.options.onClose)
-    )
+    if (e && (x(e.iframe), e.overlay && w(e.overlay), m.delete(t), e.options.onClose))
       try {
         e.options.onClose();
       } catch (n) {
@@ -516,8 +508,7 @@
         case "Reform.FormLoaded":
           break;
         case "Reform.Resize":
-          typeof e.height == "number" &&
-            (y(n.iframe, e.height), E(n.container, e.height));
+          typeof e.height == "number" && (y(n.iframe, e.height), E(n.container, e.height));
           break;
         case "Reform.FormSubmitted":
           if (n.options.onSubmit)
@@ -556,7 +547,5 @@
     (T(), k(u), C(u), H(u), window.addEventListener("message", U));
   }
   window.Reform = { openPopup: u, closePopup: b };
-  document.readyState === "loading"
-    ? document.addEventListener("DOMContentLoaded", P)
-    : P();
+  document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", P) : P();
 })();

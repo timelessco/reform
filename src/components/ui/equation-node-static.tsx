@@ -7,9 +7,7 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-export function EquationElementStatic(
-  props: SlateElementProps<TEquationElement>,
-) {
+export function EquationElementStatic(props: SlateElementProps<TEquationElement>) {
   const { element } = props;
 
   const html = getEquationHtml({
@@ -33,9 +31,7 @@ export function EquationElementStatic(
       <div
         className={cn(
           "group flex select-none items-center justify-center rounded-sm hover:bg-primary/10 data-[selected=true]:bg-primary/10",
-          element.texExpression.length === 0
-            ? "bg-muted p-3 pr-9"
-            : "px-2 py-1",
+          element.texExpression.length === 0 ? "bg-muted p-3 pr-9" : "px-2 py-1",
         )}
       >
         {element.texExpression.length > 0 ? (
@@ -54,9 +50,7 @@ export function EquationElementStatic(
   );
 }
 
-export function InlineEquationElementStatic(
-  props: SlateElementProps<TEquationElement>,
-) {
+export function InlineEquationElementStatic(props: SlateElementProps<TEquationElement>) {
   const html = getEquationHtml({
     element: props.element,
     options: {
@@ -120,10 +114,7 @@ function parseMathHtml(html: string): React.ReactNode[] | null {
   return nodes.length ? nodes : null;
 }
 
-function convertNodeToReact(
-  node: ChildNode,
-  key: string,
-): React.ReactNode | null {
+function convertNodeToReact(node: ChildNode, key: string): React.ReactNode | null {
   if (node.nodeType === 3) {
     return node.textContent;
   }
@@ -138,17 +129,9 @@ function convertNodeToReact(
     .map((child, index) => convertNodeToReact(child, `${key}-${index}`))
     .filter((child): child is React.ReactNode => child !== null);
   const content =
-    children.length === 0
-      ? undefined
-      : children.length === 1
-        ? children[0]
-        : children;
+    children.length === 0 ? undefined : children.length === 1 ? children[0] : children;
 
-  return React.createElement(
-    element.tagName.toLowerCase(),
-    { ...props, key },
-    content,
-  );
+  return React.createElement(element.tagName.toLowerCase(), { ...props, key }, content);
 }
 
 function convertAttributes(element: Element): Record<string, unknown> {
@@ -188,9 +171,7 @@ function parseStyleString(style: string): Record<string, string> {
       return acc;
     }
 
-    const camelCased = property
-      .trim()
-      .replace(/-([a-z])/g, (_, char) => char.toUpperCase());
+    const camelCased = property.trim().replace(/-([a-z])/g, (_, char) => char.toUpperCase());
 
     acc[camelCased] = value;
     return acc;

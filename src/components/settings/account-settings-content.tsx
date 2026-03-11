@@ -15,16 +15,8 @@ import {
   ImageCropReset,
 } from "@/components/ui/image-crop";
 import { Input } from "@/components/ui/input";
-import {
-  InputGroup,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
+import { InputGroup, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import {
   Select,
   SelectContent,
@@ -49,86 +41,37 @@ import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { MailIcon, TeleVisionIcon } from "../ui/icons";
 
-function ThemeSelect() {
-  const { theme, setTheme } = useTheme();
-  return (
-    <Select
-      value={theme}
-      onValueChange={(val) => setTheme(val as "dark" | "light" | "system")}
-    >
-      <SelectTrigger
-        size="sm"
-        className="shrink-0 h-[30px] bg-[var(--gray-50)] border-0 rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] outline outline-1 outline-offset-[-1px] outline-transparent pl-3 pr-2.5 text-[13px] font-medium text-[var(--gray-800)]"
-      >
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="system">System</SelectItem>
-        <SelectItem value="light">Light</SelectItem>
-        <SelectItem value="dark">Dark</SelectItem>
-      </SelectContent>
-    </Select>
-  );
+// --- Custom Hooks ---
+
+type TwoFactorStep = 1 | 2;
+
+interface TwoFactorSetupApi {
+  step: TwoFactorStep;
+  totpUri: string;
+  backupCodes: string[];
+  otpCode: string;
+  setOtpCode: (code: string) => void;
+  password: string;
+  setPassword: (password: string) => void;
+  enable2fa: () => void;
+  verify2fa: () => void;
+  isDialogOpen: boolean;
+  openDialog: () => void;
+  closeDialog: () => void;
+  setDialogOpen: (open: boolean) => void;
+  isEnabling: boolean;
+  isVerifying: boolean;
+  qrCodeUrl: string;
 }
 
-export function AccountSettingsContent() {
+const useTwoFactorSetup = (): TwoFactorSetupApi => {
   const queryClient = useQueryClient();
-  const { data: session, isPending: isSessionPending } = useSession();
-  const user = session?.user;
-
-  const profileForm = useAppForm({
-    defaultValues: {
-      displayName: user?.name || "",
-      username: user?.name?.split(" ")[0]?.toLowerCase() || "",
-      newEmail: "",
-    },
-  });
-  const displayNameChanged = useStore(
-    profileForm.store,
-    (state) =>
-      state.values.displayName !==
-      profileForm.options.defaultValues?.displayName,
-  );
-  const usernameChanged = useStore(
-    profileForm.store,
-    (state) =>
-      state.values.username !== profileForm.options.defaultValues?.username,
-  );
-
-  // 2FA State
   const [is2faDialogOpen, setIs2faDialogOpen] = useState(false);
-  const [twoFaStep, setTwoFaStep] = useState(1);
+  const [twoFaStep, setTwoFaStep] = useState<TwoFactorStep>(1);
   const [totpUri, setTotpUri] = useState("");
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [otpCode, setOtpCode] = useState("");
   const [password, setPassword] = useState("");
-  const displayNameId = useId();
-  const usernameId = useId();
-
-  // Change email state
-  const [isChangeEmailOpen, setIsChangeEmailOpen] = useState(false);
-
-  // Profile picture state
-  const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Accounts Query
-  const { data: accounts = [] } = useQuery({
-    ...auth.listAccounts.queryOptions(),
-  });
-
-  const updateProfileMutation = useMutation(
-    auth.updateUser.mutationOptions({
-      onSuccess: () => {
-        toast.success("Profile updated successfully");
-        queryClient.invalidateQueries({ queryKey: auth.getSession.queryKey() });
-      },
-      onError: (error) => {
-        toast.error(error.message || "Failed to update profile");
-      },
-    }),
-  );
 
   const setup2faMutation = useMutation(
     auth.twoFactor.enable.mutationOptions({
@@ -157,6 +100,216 @@ export function AccountSettingsContent() {
       },
       onError: (error) => {
         toast.error(error.message || "Invalid OTP code. Please try again.");
+      },
+    }),
+  );
+
+  const qrCodeUrl = totpUri
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(totpUri)}`
+    : "";
+
+  const setDialogOpen = (open: boolean) => {
+    setIs2faDialogOpen(open);
+    if (!open) setTwoFaStep(1);
+  };
+
+  return {
+    step: twoFaStep,
+    totpUri,
+    backupCodes,
+    otpCode,
+    setOtpCode,
+    password,
+    setPassword,
+    enable2fa: () => setup2faMutation.mutate({ password }),
+    verify2fa: () => verifyTotpMutation.mutate({ code: otpCode }),
+    isDialogOpen: is2faDialogOpen,
+    openDialog: () => setIs2faDialogOpen(true),
+    closeDialog: () => setDialogOpen(false),
+    setDialogOpen,
+    isEnabling: setup2faMutation.isPending,
+    isVerifying: verifyTotpMutation.isPending,
+    qrCodeUrl,
+  };
+};
+
+interface EmailChangeApi {
+  isOpen: boolean;
+  toggle: () => void;
+  close: () => void;
+  submit: (newEmail: string) => void;
+  isPending: boolean;
+}
+
+const useEmailChange = (onSuccess: (fieldName: string, value: string) => void): EmailChangeApi => {
+  const [isChangeEmailOpen, setIsChangeEmailOpen] = useState(false);
+
+  const changeEmailMutation = useMutation(
+    auth.changeEmail.mutationOptions({
+      onSuccess: () => {
+        toast.success("Verification email sent to your new address. Please check your inbox.");
+        onSuccess("newEmail", "");
+        setIsChangeEmailOpen(false);
+      },
+      onError: (error: any) => {
+        toast.error(error.message || "Failed to change email");
+      },
+    }),
+  );
+
+  return {
+    isOpen: isChangeEmailOpen,
+    toggle: () => setIsChangeEmailOpen((prev) => !prev),
+    close: () => setIsChangeEmailOpen(false),
+    submit: (newEmail: string) => {
+      changeEmailMutation.mutate({
+        newEmail,
+        callbackURL: window.location.origin,
+      });
+    },
+    isPending: changeEmailMutation.isPending,
+  };
+};
+
+interface AvatarUploadApi {
+  isDialogOpen: boolean;
+  selectedFile: File | null;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  handleFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleCroppedImage: (croppedImage: string) => Promise<void>;
+  setDialogOpen: (open: boolean) => void;
+  isUploading: boolean;
+}
+
+const useAvatarUpload = (): AvatarUploadApi => {
+  const queryClient = useQueryClient();
+  const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const updateImageMutation = useMutation(
+    auth.updateUser.mutationOptions({
+      onSuccess: () => {
+        toast.success("Profile updated successfully");
+        queryClient.invalidateQueries({ queryKey: auth.getSession.queryKey() });
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to update profile");
+      },
+    }),
+  );
+
+  const uploadAvatarMutation = useMutation({
+    mutationFn: async (base64: string) => {
+      const { url } = await uploadAvatar({ data: { base64 } });
+      await updateImageMutation.mutateAsync({ image: url });
+      return url;
+    },
+    onSuccess: () => {
+      setIsAvatarDialogOpen(false);
+      setSelectedFile(null);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to upload image");
+    },
+  });
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setIsAvatarDialogOpen(true);
+    }
+    e.target.value = "";
+  };
+
+  const handleCroppedImage = async (croppedImage: string) => {
+    await uploadAvatarMutation.mutateAsync(croppedImage);
+  };
+
+  const setDialogOpen = (open: boolean) => {
+    setIsAvatarDialogOpen(open);
+    if (!open) setSelectedFile(null);
+  };
+
+  return {
+    isDialogOpen: isAvatarDialogOpen,
+    selectedFile,
+    fileInputRef,
+    handleFileSelect,
+    handleCroppedImage,
+    setDialogOpen,
+    isUploading: uploadAvatarMutation.isPending,
+  };
+};
+
+// --- Sub-components ---
+
+function ThemeSelect() {
+  const { theme, setTheme } = useTheme();
+  return (
+    <Select value={theme} onValueChange={(val) => setTheme(val as "dark" | "light" | "system")}>
+      <SelectTrigger
+        size="sm"
+        className="shrink-0 h-[30px] bg-[var(--gray-50)] border-0 rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] outline outline-1 outline-offset-[-1px] outline-transparent pl-3 pr-2.5 text-[13px] font-medium text-[var(--gray-800)]"
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="system">System</SelectItem>
+        <SelectItem value="light">Light</SelectItem>
+        <SelectItem value="dark">Dark</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+
+// --- Main Component ---
+
+export function AccountSettingsContent() {
+  const queryClient = useQueryClient();
+  const { data: session, isPending: isSessionPending } = useSession();
+  const user = session?.user;
+
+  const profileForm = useAppForm({
+    defaultValues: {
+      displayName: user?.name || "",
+      username: user?.name?.split(" ")[0]?.toLowerCase() || "",
+      newEmail: "",
+    },
+  });
+  const displayNameChanged = useStore(
+    profileForm.store,
+    (state) => state.values.displayName !== profileForm.options.defaultValues?.displayName,
+  );
+  const usernameChanged = useStore(
+    profileForm.store,
+    (state) => state.values.username !== profileForm.options.defaultValues?.username,
+  );
+
+  const displayNameId = useId();
+  const usernameId = useId();
+
+  // Custom hooks for extracted concerns
+  const twoFa = useTwoFactorSetup();
+  const emailChange = useEmailChange((fieldName, value) => {
+    profileForm.setFieldValue(fieldName as "newEmail", value);
+  });
+  const avatarUpload = useAvatarUpload();
+
+  // Accounts Query
+  const { data: accounts = [] } = useQuery({
+    ...auth.listAccounts.queryOptions(),
+  });
+
+  const updateProfileMutation = useMutation(
+    auth.updateUser.mutationOptions({
+      onSuccess: () => {
+        toast.success("Profile updated successfully");
+        queryClient.invalidateQueries({ queryKey: auth.getSession.queryKey() });
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to update profile");
       },
     }),
   );
@@ -198,81 +351,26 @@ export function AccountSettingsContent() {
     }),
   );
 
-  const changeEmailMutation = useMutation(
-    auth.changeEmail.mutationOptions({
-      onSuccess: () => {
-        toast.success(
-          "Verification email sent to your new address. Please check your inbox.",
-        );
-        profileForm.setFieldValue("newEmail", "");
-        setIsChangeEmailOpen(false);
-      },
-      onError: (error: any) => {
-        toast.error(error.message || "Failed to change email");
-      },
-    }),
-  );
-
-  // Profile picture upload mutation
-  const uploadAvatarMutation = useMutation({
-    mutationFn: async (base64: string) => {
-      const { url } = await uploadAvatar({ data: { base64 } });
-      await updateProfileMutation.mutateAsync({ image: url });
-      return url;
-    },
-    onSuccess: () => {
-      setIsAvatarDialogOpen(false);
-      setSelectedFile(null);
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to upload image");
-    },
-  });
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setIsAvatarDialogOpen(true);
-    }
-    e.target.value = "";
-  };
-
-  const handleCroppedImage = async (croppedImage: string) => {
-    await uploadAvatarMutation.mutateAsync(croppedImage);
-  };
-
-  const handleVerifyAndEnable2fa = async () => {
-    verifyTotpMutation.mutate({ code: otpCode });
-  };
-
-  const handleDisconnectAccount = async (providerId: string) => {
+  const handleDisconnectAccount = (providerId: string) => {
     unlinkAccountMutation.mutate({ providerId });
   };
 
-  const handleDeleteAccount = async () => {
-    if (
-      !window.confirm("Are you absolutely sure? This action cannot be undone.")
-    )
-      return;
+  const handleDeleteAccount = () => {
+    if (!window.confirm("Are you absolutely sure? This action cannot be undone.")) return;
     deleteAccountMutation.mutate({});
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = () => {
     socialSignInMutation.mutate({
       provider: "google",
       callbackURL: window.location.origin,
     });
   };
 
-  const qrCodeUrl = totpUri
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(totpUri)}`
-    : "";
-
   if (isSessionPending) {
     return (
       <div className="flex items-center justify-center p-12">
-        <Loader2Icon className="animate-spin h-8 w-8 text-muted-foreground" />
+        <Loader2Icon aria-hidden="true" className="animate-spin h-8 w-8 text-muted-foreground" />
       </div>
     );
   }
@@ -285,7 +383,8 @@ export function AccountSettingsContent() {
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => avatarUpload.fileInputRef.current?.click()}
+            aria-label="Change avatar"
             className="relative group cursor-pointer p-0 h-auto rounded-full"
           >
             <Avatar className="size-[46px]">
@@ -299,16 +398,17 @@ export function AccountSettingsContent() {
             </div>
           </Button>
           <input
-            ref={fileInputRef}
+            ref={avatarUpload.fileInputRef}
             type="file"
             accept="image/*"
-            onChange={handleFileSelect}
+            onChange={avatarUpload.handleFileSelect}
+            aria-label="Upload avatar image"
             className="hidden"
           />
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => avatarUpload.fileInputRef.current?.click()}
               className="h-[30px] bg-[var(--gray-50)] rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] outline outline-1 outline-offset-[-1px] outline-transparent px-2 text-[13px] font-medium cursor-pointer hover:bg-[var(--gray-100)] transition-colors flex items-center gap-1.5"
             >
               <ImageIcon className="size-4" />
@@ -357,8 +457,7 @@ export function AccountSettingsContent() {
                               profileForm.update({
                                 defaultValues: {
                                   displayName: field.state.value,
-                                  username:
-                                    profileForm.getFieldValue("username"),
+                                  username: profileForm.getFieldValue("username"),
                                   newEmail: "",
                                 },
                               });
@@ -406,8 +505,7 @@ export function AccountSettingsContent() {
                             onSuccess: () => {
                               profileForm.update({
                                 defaultValues: {
-                                  displayName:
-                                    profileForm.getFieldValue("displayName"),
+                                  displayName: profileForm.getFieldValue("displayName"),
                                   username: field.state.value,
                                   newEmail: "",
                                 },
@@ -430,9 +528,7 @@ export function AccountSettingsContent() {
 
         {/* Email Section */}
         <section className="flex flex-col gap-[10px]">
-          <h3 className="text-sm font-medium leading-[1.15] text-(--gray-900)">
-            Email
-          </h3>
+          <h3 className="text-sm font-medium leading-[1.15] text-(--gray-900)">Email</h3>
           <div className="bg-(--gray-100) rounded-xl pl-2 pr-2.5 py-2 flex items-center gap-3">
             <div className="flex flex-1 gap-2 items-start min-w-0">
               <div className="size-[38px] rounded-lg overflow-hidden flex items-center justify-center shrink-0">
@@ -442,20 +538,18 @@ export function AccountSettingsContent() {
                 <p className="text-sm font-medium leading-[1.15] text-(--gray-900) truncate">
                   {user?.email || ""}
                 </p>
-                <p className="text-sm leading-[1.15] text-(--gray-600)">
-                  Current email
-                </p>
+                <p className="text-sm leading-[1.15] text-(--gray-600)">Current email</p>
               </div>
             </div>
             <button
               type="button"
-              onClick={() => setIsChangeEmailOpen(!isChangeEmailOpen)}
+              onClick={emailChange.toggle}
               className="h-[30px] bg-(--gray-50) rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] outline outline-1 outline-offset-[-1px] outline-transparent px-3 text-[13px] font-medium cursor-pointer hover:bg-(--gray-100) transition-colors shrink-0"
             >
               Change email
             </button>
           </div>
-          {isChangeEmailOpen && (
+          {emailChange.isOpen && (
             <profileForm.AppField name="newEmail">
               {(field) => (
                 <InputGroup className="h-7 flex-1 bg-(--gray-100) border-0 overflow-clip pr-[3px]">
@@ -464,22 +558,18 @@ export function AccountSettingsContent() {
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="Enter new email address"
+                    aria-label="New email address"
                     className="h-7 text-sm text-(--gray-800)"
                   />
                   <InputGroupButton
                     onClick={() => {
                       if (!field.state.value) return;
-                      changeEmailMutation.mutate({
-                        newEmail: field.state.value,
-                        callbackURL: window.location.origin,
-                      });
+                      emailChange.submit(field.state.value);
                     }}
-                    disabled={
-                      changeEmailMutation.isPending || !field.state.value
-                    }
+                    disabled={emailChange.isPending || !field.state.value}
                     className="h-6 rounded-[5px] px-2 bg-[var(--gray-50)] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] text-xs text-[var(--gray-800)] hover:bg-[var(--gray-100)]"
                   >
-                    {changeEmailMutation.isPending ? "Sending..." : "Verify"}
+                    {emailChange.isPending ? "Sending..." : "Verify"}
                   </InputGroupButton>
                 </InputGroup>
               )}
@@ -489,9 +579,7 @@ export function AccountSettingsContent() {
 
         {/* Appearance Section */}
         <section className="flex flex-col gap-[10px]">
-          <h3 className="text-sm font-medium leading-[1.15] text-(--gray-900)">
-            Appearance
-          </h3>
+          <h3 className="text-sm font-medium leading-[1.15] text-(--gray-900)">Appearance</h3>
           <div className="bg-(--gray-100) rounded-xl pl-2 pr-2.5 py-2 flex items-center gap-3">
             <div className="flex flex-1 gap-2 items-center min-w-0">
               <div className="size-[38px] rounded-lg overflow-hidden flex items-center justify-center shrink-0">
@@ -578,12 +666,9 @@ export function AccountSettingsContent() {
 
         {/* Delete Account Section */}
         <section className="flex flex-col gap-[10px]">
-          <h3 className="text-sm font-medium leading-[1.15] text-(--gray-900)">
-            Delete Account
-          </h3>
+          <h3 className="text-sm font-medium leading-[1.15] text-(--gray-900)">Delete Account</h3>
           <p className="text-sm text-(--gray-800) leading-[1.5]">
-            If you no longer wish to use recollect, you can permanently delete
-            your account.
+            If you no longer wish to use recollect, you can permanently delete your account.
           </p>
           <button
             type="button"
@@ -596,48 +681,38 @@ export function AccountSettingsContent() {
             ) : (
               <TriangleAlertIcon className="size-3 text-destructive" />
             )}
-            <span className="text-destructive text-sm font-medium">
-              Delete my account
-            </span>
+            <span className="text-destructive text-sm font-medium">Delete my account</span>
           </button>
         </section>
 
         {/* 2FA Dialog */}
-        <Dialog
-          open={is2faDialogOpen}
-          onOpenChange={(open) => {
-            setIs2faDialogOpen(open);
-            if (!open) setTwoFaStep(1);
-          }}
-        >
+        <Dialog open={twoFa.isDialogOpen} onOpenChange={twoFa.setDialogOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Set up two-factor authentication</DialogTitle>
-              <DialogDescription>
-                Follow the steps below to secure your account.
-              </DialogDescription>
+              <DialogDescription>Follow the steps below to secure your account.</DialogDescription>
             </DialogHeader>
 
             <div className="py-4 space-y-6">
-              {twoFaStep === 1 && (
+              {twoFa.step === 1 && (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <p className="text-sm font-medium">
-                      1. Confirm your password to continue
-                    </p>
+                    <p className="text-sm font-medium">1. Confirm your password to continue</p>
                     <Input
                       type="password"
                       placeholder="Your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      value={twoFa.password}
+                      onChange={(e) => twoFa.setPassword(e.target.value)}
+                      aria-label="Current password"
+                      autoComplete="current-password"
                     />
                   </div>
                   <Button
                     className="w-full bg-black text-white hover:bg-black/90"
-                    onClick={() => setup2faMutation.mutate({ password })}
-                    disabled={!password || setup2faMutation.isPending}
+                    onClick={twoFa.enable2fa}
+                    disabled={!twoFa.password || twoFa.isEnabling}
                   >
-                    {setup2faMutation.isPending ? (
+                    {twoFa.isEnabling ? (
                       <Loader2Icon className="animate-spin mr-2 h-4 w-4" />
                     ) : null}
                     Next
@@ -645,17 +720,19 @@ export function AccountSettingsContent() {
                 </div>
               )}
 
-              {twoFaStep === 2 && (
+              {twoFa.step === 2 && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                   <div className="space-y-2">
                     <p className="text-sm font-medium">
                       2. Scan the QR code with your authenticator app
                     </p>
                     <div className="flex justify-center p-4 bg-white rounded-lg border border-border shadow-sm">
-                      {qrCodeUrl ? (
+                      {twoFa.qrCodeUrl ? (
                         <img
-                          src={qrCodeUrl}
+                          src={twoFa.qrCodeUrl}
                           alt="QR Code"
+                          width={160}
+                          height={160}
                           className="w-40 h-40"
                         />
                       ) : (
@@ -665,15 +742,13 @@ export function AccountSettingsContent() {
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-amber-600">
-                      Backup codes
-                    </p>
+                    <p className="text-sm font-medium text-amber-600">Backup codes</p>
                     <p className="text-xs text-muted-foreground">
-                      Save these codes securely. Each code can be used once to
-                      access your account if you lose your authenticator.
+                      Save these codes securely. Each code can be used once to access your account
+                      if you lose your authenticator.
                     </p>
                     <div className="grid grid-cols-2 gap-2 p-3 bg-muted/50 rounded-lg border border-border">
-                      {backupCodes.map((code) => (
+                      {twoFa.backupCodes.map((code) => (
                         <code key={code} className="text-sm font-mono">
                           {code}
                         </code>
@@ -682,15 +757,9 @@ export function AccountSettingsContent() {
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-sm font-medium">
-                      3. Enter the code from your app
-                    </p>
+                    <p className="text-sm font-medium">3. Enter the code from your app</p>
                     <div className="flex justify-center">
-                      <InputOTP
-                        maxLength={6}
-                        value={otpCode}
-                        onChange={setOtpCode}
-                      >
+                      <InputOTP maxLength={6} value={twoFa.otpCode} onChange={twoFa.setOtpCode}>
                         <InputOTPGroup>
                           <InputOTPSlot index={0} />
                           <InputOTPSlot index={1} />
@@ -704,12 +773,10 @@ export function AccountSettingsContent() {
                   </div>
                   <Button
                     className="w-full bg-black text-white hover:bg-black/90"
-                    onClick={handleVerifyAndEnable2fa}
-                    disabled={
-                      otpCode.length < 6 || verifyTotpMutation.isPending
-                    }
+                    onClick={twoFa.verify2fa}
+                    disabled={twoFa.otpCode.length < 6 || twoFa.isVerifying}
                   >
-                    {verifyTotpMutation.isPending ? (
+                    {twoFa.isVerifying ? (
                       <Loader2Icon className="animate-spin mr-2 h-4 w-4" />
                     ) : null}
                     Enable 2FA
@@ -721,13 +788,7 @@ export function AccountSettingsContent() {
         </Dialog>
 
         {/* Avatar Crop Dialog */}
-        <Dialog
-          open={isAvatarDialogOpen}
-          onOpenChange={(open) => {
-            setIsAvatarDialogOpen(open);
-            if (!open) setSelectedFile(null);
-          }}
-        >
+        <Dialog open={avatarUpload.isDialogOpen} onOpenChange={avatarUpload.setDialogOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Crop your photo</DialogTitle>
@@ -736,20 +797,18 @@ export function AccountSettingsContent() {
               </DialogDescription>
             </DialogHeader>
 
-            {selectedFile && (
+            {avatarUpload.selectedFile && (
               <ImageCrop
-                file={selectedFile}
+                file={avatarUpload.selectedFile}
                 aspect={1}
                 circularCrop
-                onCrop={handleCroppedImage}
+                onCrop={avatarUpload.handleCroppedImage}
               >
                 <div className="space-y-4">
                   <ImageCropContent className="max-h-[300px]" />
 
                   <div className="flex justify-between">
-                    <ImageCropReset
-                      render={<Button variant="outline" size="sm" />}
-                    >
+                    <ImageCropReset render={<Button variant="outline" size="sm" />}>
                       <RotateCcwIcon className="h-4 w-4 mr-2" />
                       Reset
                     </ImageCropReset>
@@ -757,12 +816,12 @@ export function AccountSettingsContent() {
                     <ImageCropApply
                       render={
                         <Button
-                          disabled={uploadAvatarMutation.isPending}
+                          disabled={avatarUpload.isUploading}
                           className="bg-black text-white hover:bg-black/90"
                         />
                       }
                     >
-                      {uploadAvatarMutation.isPending ? (
+                      {avatarUpload.isUploading ? (
                         <>
                           <Loader2Icon className="animate-spin mr-2 h-4 w-4" />
                           Uploading...

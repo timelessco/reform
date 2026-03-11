@@ -351,14 +351,7 @@ export function BorderNoneIcon(props: LucideProps) {
       <rect fill="currentColor" height="1" rx=".5" width="1" x="7" y="13.025" />
       <rect fill="currentColor" height="1" rx=".5" width="1" x="7" y="1.025" />
       <rect fill="currentColor" height="1" rx=".5" width="1" x="13" y="7.025" />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        width="1"
-        x="13"
-        y="13.025"
-      />
+      <rect fill="currentColor" height="1" rx=".5" width="1" x="13" y="13.025" />
       <rect fill="currentColor" height="1" rx=".5" width="1" x="13" y="1.025" />
       <rect fill="currentColor" height="1" rx=".5" width="1" x="5" y="7.025" />
       <rect fill="currentColor" height="1" rx=".5" width="1" x="5" y="13.025" />
@@ -370,26 +363,12 @@ export function BorderNoneIcon(props: LucideProps) {
       <rect fill="currentColor" height="1" rx=".5" width="1" x="9" y="13.025" />
       <rect fill="currentColor" height="1" rx=".5" width="1" x="9" y="1.025" />
       <rect fill="currentColor" height="1" rx=".5" width="1" x="11" y="7.025" />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        width="1"
-        x="11"
-        y="13.025"
-      />
+      <rect fill="currentColor" height="1" rx=".5" width="1" x="11" y="13.025" />
       <rect fill="currentColor" height="1" rx=".5" width="1" x="11" y="1.025" />
       <rect fill="currentColor" height="1" rx=".5" width="1" x="7" y="9.025" />
       <rect fill="currentColor" height="1" rx=".5" width="1" x="13" y="9.025" />
       <rect fill="currentColor" height="1" rx=".5" width="1" x="7" y="11.025" />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        width="1"
-        x="13"
-        y="11.025"
-      />
+      <rect fill="currentColor" height="1" rx=".5" width="1" x="13" y="11.025" />
       <rect fill="currentColor" height="1" rx=".5" width="1" x="1" y="5.025" />
       <rect fill="currentColor" height="1" rx=".5" width="1" x="1" y="3.025" />
       <rect fill="currentColor" height="1" rx=".5" width="1" x="1" y="7.025" />
@@ -418,188 +397,32 @@ export function BorderRightIcon(props: LucideProps) {
         fill="currentColor"
         fillRule="evenodd"
       />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 5 7)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 5 13)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 3 7)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 3 13)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 7 7)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 1 7)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 7 13)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 1 13)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 7 5)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 1 5)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 7 3)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 1 3)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 7 9)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 1 9)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 7 11)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 1 11)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 9 7)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 9 13)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 11 7)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 11 13)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 5 1)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 3 1)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 7 1)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 1 1)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 9 1)"
-        width="1"
-      />
-      <rect
-        fill="currentColor"
-        height="1"
-        rx=".5"
-        transform="matrix(0 1 1 0 11 1)"
-        width="1"
-      />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 5 7)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 5 13)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 3 7)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 3 13)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 7 7)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 1 7)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 7 13)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 1 13)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 7 5)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 1 5)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 7 3)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 1 3)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 7 9)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 1 9)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 7 11)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 1 11)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 9 7)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 9 13)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 11 7)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 11 13)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 5 1)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 3 1)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 7 1)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 1 1)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 9 1)" width="1" />
+      <rect fill="currentColor" height="1" rx=".5" transform="matrix(0 1 1 0 11 1)" width="1" />
     </svg>
   );
 }

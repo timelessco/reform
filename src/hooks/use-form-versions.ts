@@ -1,11 +1,8 @@
 import { createTransaction, eq, useLiveQuery } from "@tanstack/react-db";
 import { useMemo } from "react";
-import { formCollection, formVersionCollection } from "@/db-collections";
-import {
-  discardFormChanges,
-  publishFormVersion,
-  restoreFormVersion,
-} from "@/lib/fn/form-versions";
+import { formCollection } from "@/db-collections/form.collections";
+import { formVersionCollection } from "@/db-collections/form-version.collection";
+import { discardFormChanges, publishFormVersion, restoreFormVersion } from "@/lib/fn/form-versions";
 import { useForm } from "./use-live-hooks";
 
 /**
@@ -31,9 +28,7 @@ export function useFormVersionContent(versionId: string | undefined) {
   return useLiveQuery(
     (q) => {
       if (!versionId) return undefined;
-      return q
-        .from({ v: formVersionCollection })
-        .where(({ v }) => eq(v.id, versionId));
+      return q.from({ v: formVersionCollection }).where(({ v }) => eq(v.id, versionId));
     },
     [versionId],
   );
@@ -53,30 +48,30 @@ export function useHasUnpublishedChanges(formId: string | undefined) {
 
   const latestVersion = versions?.[0];
 
+  // Use primitive deps to avoid re-computing on every live query object ref change
+  const hasPublished = !!form?.lastPublishedVersionId;
+  const publishedContentHash = form?.publishedContentHash;
+  const currentContentStr = form ? JSON.stringify(form.content) : null;
+  const publishedContentStr = latestVersion ? JSON.stringify(latestVersion.content) : null;
+  const currentCustomizationStr = form ? JSON.stringify(form.customization ?? {}) : null;
+  const publishedCustomizationStr = latestVersion
+    ? JSON.stringify(latestVersion.customization ?? {})
+    : null;
+
   return useMemo(() => {
-    if (!form || !formId) return false;
-    if (!form.publishedContentHash) return false;
-
-    // Never published — no "unpublished changes" indicator
-    if (!form.lastPublishedVersionId) return false;
-
-    // Published but version collection hasn't synced yet — can't compare
-    if (!latestVersion) return false;
-
-    // Compare current content with published version content
-    const currentContent = JSON.stringify(form.content);
-    const publishedContent = JSON.stringify(latestVersion.content);
-
-    if (currentContent !== publishedContent) return true;
-
-    // Compare current customization with published version customization
-    const currentCustomization = JSON.stringify(form.customization ?? {});
-    const publishedCustomization = JSON.stringify(
-      latestVersion.customization ?? {},
-    );
-
-    return currentCustomization !== publishedCustomization;
-  }, [form, latestVersion]);
+    if (!formId || !publishedContentHash || !hasPublished) return false;
+    if (!publishedContentStr) return false;
+    if (currentContentStr !== publishedContentStr) return true;
+    return currentCustomizationStr !== publishedCustomizationStr;
+  }, [
+    formId,
+    publishedContentHash,
+    hasPublished,
+    currentContentStr,
+    publishedContentStr,
+    currentCustomizationStr,
+    publishedCustomizationStr,
+  ]);
 }
 
 // ============================================================================
@@ -139,8 +134,7 @@ export function restoreVersion(formId: string, versionId: string) {
  */
 export function discardChanges(formId: string) {
   const form = formCollection.state.get(formId);
-  if (!form?.lastPublishedVersionId)
-    throw new Error("No published version to revert to");
+  if (!form?.lastPublishedVersionId) throw new Error("No published version to revert to");
 
   const version = formVersionCollection.state.get(form.lastPublishedVersionId);
   if (!version) throw new Error("Published version not found in local state");

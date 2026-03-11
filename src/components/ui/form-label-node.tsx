@@ -5,11 +5,7 @@ import { PlateElement } from "platejs/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export function FormLabelElement({
-  className,
-  children,
-  ...props
-}: PlateElementProps) {
+export function FormLabelElement({ className, children, ...props }: PlateElementProps) {
   const { editor, element, path } = props;
   const isRequired = element.required as boolean | undefined;
   const placeholder = element.placeholder as string | undefined;

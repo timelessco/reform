@@ -50,6 +50,7 @@ export function SidebarSection({
             <Button
               variant="ghost"
               className="size-[26px] p-[5px] rounded-lg overflow-hidden hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
+              aria-label="Section actions"
             >
               <MoreHorizontalIcon className="size-4" />
             </Button>
@@ -57,9 +58,7 @@ export function SidebarSection({
         </div>
       </div>
 
-      {isOpen && (
-        <div className={cn("flex flex-col", className)}>{children}</div>
-      )}
+      {isOpen && <div className={cn("flex flex-col", className)}>{children}</div>}
     </div>
   );
 }

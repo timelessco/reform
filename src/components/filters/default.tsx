@@ -3,12 +3,8 @@
 import { useCallback, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  createFilter,
-  Filters,
-  type Filter,
-  type FilterFieldConfig,
-} from "@/components/ui/filters";
+import { createFilter, Filters } from "@/components/ui/filters";
+import type { Filter, FilterFieldConfig } from "@/components/ui/filters";
 import {
   AlertCircleIcon,
   BanIcon,
@@ -44,10 +40,7 @@ const PriorityIcon = ({ priority }: { priority: string }) => {
   };
   return (
     <div
-      className={cn(
-        "size-2.25 shrink-0 rounded-full",
-        colors[priority as keyof typeof colors],
-      )}
+      className={cn("size-2.25 shrink-0 rounded-full", colors[priority as keyof typeof colors])}
     />
   );
 };

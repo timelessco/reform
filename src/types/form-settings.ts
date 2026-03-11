@@ -113,10 +113,7 @@ export const defaultPublicFormSettings: PublicFormSettings = {
 // ============================================================================
 // Default Settings Values
 // ============================================================================
-export const defaultFormSettings: Omit<
-  FormSettings,
-  "createdAt" | "updatedAt"
-> = {
+export const defaultFormSettings: Omit<FormSettings, "createdAt" | "updatedAt"> = {
   language: "English",
   redirectOnCompletion: false,
   redirectUrl: null,

@@ -24,8 +24,7 @@ export const BlockSelectionKit = [
     },
     render: {
       belowRootNodes: (props) => {
-        if (!props.attributes.className?.includes("slate-selectable"))
-          return null;
+        if (!props.attributes.className?.includes("slate-selectable")) return null;
 
         return <BlockSelection {...(props as any)} />;
       },

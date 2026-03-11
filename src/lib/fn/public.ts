@@ -3,10 +3,8 @@ import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { forms, formVersions, submissions, user } from "@/db/schema";
 import { db } from "@/lib/db";
-import {
-  type PublicFormSettings,
-  defaultPublicFormSettings,
-} from "@/types/form-settings";
+import { defaultPublicFormSettings } from "@/types/form-settings";
+import type { PublicFormSettings } from "@/types/form-settings";
 
 /**
  * Public server functions - NO authentication required
@@ -91,19 +89,13 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
     }
 
     // 2. Close on scheduled date
-    if (
-      settings.closeOnDate &&
-      settings.closeDate &&
-      new Date(settings.closeDate) < new Date()
-    ) {
+    if (settings.closeOnDate && settings.closeDate && new Date(settings.closeDate) < new Date()) {
       return {
         form: null,
         error: null,
         gated: {
           type: "date_expired" as const,
-          message:
-            settings.closedFormMessage ||
-            "This form is no longer accepting responses.",
+          message: settings.closedFormMessage || "This form is no longer accepting responses.",
         },
       };
     }
@@ -145,10 +137,7 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
             id: form.id,
             title: version.title,
             content: version.content as object[],
-            customization: (version.customization ?? {}) as Record<
-              string,
-              string
-            >,
+            customization: (version.customization ?? {}) as Record<string, string>,
             icon: form.icon,
             cover: form.cover,
             status: form.status,
@@ -244,11 +233,7 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
       throw new Error("This form is closed");
     }
     // Close on date
-    if (
-      form.closeOnDate &&
-      form.closeDate &&
-      new Date(form.closeDate) < new Date()
-    ) {
+    if (form.closeOnDate && form.closeDate && new Date(form.closeDate) < new Date()) {
       throw new Error("This form is no longer accepting responses");
     }
     // Submission limit
@@ -258,9 +243,7 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
         .from(submissions)
         .where(eq(submissions.formId, data.formId));
       if (submissionCount >= form.maxSubmissions) {
-        throw new Error(
-          "This form has reached its maximum number of submissions",
-        );
+        throw new Error("This form has reached its maximum number of submissions");
       }
     }
 
@@ -295,6 +278,8 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
     return { submissionId: id, success: true };
   });
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /**
  * Find a respondent's email from submission data.
  * Priority: keys containing "email" first, then any email-like string value.
@@ -302,18 +287,13 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
 function findRespondentEmail(data: Record<string, unknown>): string | null {
   // First pass: look for keys containing "email"
   for (const [key, value] of Object.entries(data)) {
-    if (
-      key.toLowerCase().includes("email") &&
-      typeof value === "string" &&
-      value.includes("@")
-    ) {
+    if (key.toLowerCase().includes("email") && typeof value === "string" && value.includes("@")) {
       return value;
     }
   }
   // Second pass: look for any email-like value
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   for (const value of Object.values(data)) {
-    if (typeof value === "string" && emailRegex.test(value)) {
+    if (typeof value === "string" && EMAIL_REGEX.test(value)) {
       return value;
     }
   }
@@ -373,8 +353,7 @@ async function sendEmailNotifications(
   if (settings.respondentEmailNotifications) {
     const respondentEmail = findRespondentEmail(submissionData);
     if (respondentEmail) {
-      const subject =
-        settings.respondentEmailSubject || "Thank you for your submission";
+      const subject = settings.respondentEmailSubject || "Thank you for your submission";
       const body =
         settings.respondentEmailBody ||
         "Thank you for filling out our form. We have received your response.";

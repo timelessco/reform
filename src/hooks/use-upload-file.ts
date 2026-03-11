@@ -1,10 +1,7 @@
 import { generateReactHelpers } from "@uploadthing/react";
 import * as React from "react";
 import { toast } from "sonner";
-import type {
-  ClientUploadedFileData,
-  UploadFilesOptions,
-} from "uploadthing/types";
+import type { ClientUploadedFileData, UploadFilesOptions } from "uploadthing/types";
 import { z } from "zod";
 import type { OurFileRouter } from "@/lib/uploadthing";
 
@@ -50,9 +47,7 @@ export function useUploadFile({
       const errorMessage = getErrorMessage(error);
 
       const message =
-        errorMessage.length > 0
-          ? errorMessage
-          : "Something went wrong, please try again later.";
+        errorMessage.length > 0 ? errorMessage : "Something went wrong, please try again later.";
 
       toast.error(message);
 

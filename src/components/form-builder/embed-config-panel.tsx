@@ -1,15 +1,72 @@
 import { useRef, useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { StyleNumberInput } from "@/components/ui/style-controls";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 
+/** Common display config shared across all embed types */
+export interface EmbedDisplayConfig {
+  title: "visible" | "hidden";
+  background: "transparent" | "solid";
+  alignment: "center" | "left";
+  dynamicHeight: boolean;
+  trackEvents: boolean;
+  branding: boolean;
+}
+
+/** Popup-specific appearance and behavior config */
+export interface EmbedPopupConfig {
+  overlay: "dark" | "light";
+  hideOnSubmit: boolean;
+  hideOnSubmitDelay: number;
+  trigger: "button" | "auto" | "scroll";
+  position: "bottom-right" | "bottom-left" | "center";
+  width: number;
+  emoji: boolean;
+  emojiIcon: string;
+  emojiAnimation: "wave" | "bounce" | "pulse";
+}
+
+/** Full embed options using typed config objects */
 export interface EmbedOptions {
+  height: number;
+  display: EmbedDisplayConfig;
+  popup: EmbedPopupConfig;
+  customDomain: boolean;
+}
+
+export const defaultDisplayConfig: EmbedDisplayConfig = {
+  title: "visible",
+  background: "solid",
+  alignment: "center",
+  dynamicHeight: true,
+  trackEvents: false,
+  branding: true,
+};
+
+export const defaultPopupConfig: EmbedPopupConfig = {
+  overlay: "light",
+  hideOnSubmit: false,
+  hideOnSubmitDelay: 0,
+  trigger: "button",
+  position: "bottom-right",
+  width: 376,
+  emoji: true,
+  emojiIcon: "\u{1F44B}",
+  emojiAnimation: "wave",
+};
+
+export const defaultEmbedOptions: EmbedOptions = {
+  height: 558,
+  display: defaultDisplayConfig,
+  popup: defaultPopupConfig,
+  customDomain: false,
+};
+
+/* ─── Flat field interface for TanStack Form bindings ─── */
+
+/** Flat representation used by TanStack Form field bindings and URL search params */
+export interface EmbedFormFields {
   height: number;
   dynamicHeight: boolean;
   hideTitle: boolean;
@@ -18,7 +75,6 @@ export interface EmbedOptions {
   trackEvents: boolean;
   customDomain: boolean;
   branding: boolean;
-  // Popup specific
   popupTrigger: "button" | "auto" | "scroll";
   popupPosition: "bottom-right" | "bottom-left" | "center";
   popupWidth: number;
@@ -30,7 +86,7 @@ export interface EmbedOptions {
   hideOnSubmitDelay: number;
 }
 
-export const defaultEmbedOptions: EmbedOptions = {
+export const defaultEmbedFormFields: EmbedFormFields = {
   height: 558,
   dynamicHeight: true,
   hideTitle: false,
@@ -50,6 +106,52 @@ export const defaultEmbedOptions: EmbedOptions = {
   hideOnSubmitDelay: 0,
 };
 
+/** Convert flat form fields to structured EmbedOptions */
+export const formFieldsToEmbedOptions = (fields: EmbedFormFields): EmbedOptions => ({
+  height: fields.height,
+  display: {
+    title: fields.hideTitle ? "hidden" : "visible",
+    background: fields.transparentBackground ? "transparent" : "solid",
+    alignment: fields.alignLeft ? "left" : "center",
+    dynamicHeight: fields.dynamicHeight,
+    trackEvents: fields.trackEvents,
+    branding: fields.branding,
+  },
+  popup: {
+    overlay: fields.darkOverlay ? "dark" : "light",
+    hideOnSubmit: fields.hideOnSubmit,
+    hideOnSubmitDelay: fields.hideOnSubmitDelay,
+    trigger: fields.popupTrigger,
+    position: fields.popupPosition,
+    width: fields.popupWidth,
+    emoji: fields.emoji,
+    emojiIcon: fields.emojiIcon,
+    emojiAnimation: fields.emojiAnimation,
+  },
+  customDomain: fields.customDomain,
+});
+
+/** Convert structured EmbedOptions back to flat form fields */
+export const embedOptionsToFormFields = (options: EmbedOptions): EmbedFormFields => ({
+  height: options.height,
+  dynamicHeight: options.display.dynamicHeight,
+  hideTitle: options.display.title === "hidden",
+  alignLeft: options.display.alignment === "left",
+  transparentBackground: options.display.background === "transparent",
+  trackEvents: options.display.trackEvents,
+  branding: options.display.branding,
+  customDomain: options.customDomain,
+  popupTrigger: options.popup.trigger,
+  popupPosition: options.popup.position,
+  popupWidth: options.popup.width,
+  darkOverlay: options.popup.overlay === "dark",
+  emoji: options.popup.emoji,
+  emojiIcon: options.popup.emojiIcon,
+  emojiAnimation: options.popup.emojiAnimation,
+  hideOnSubmit: options.popup.hideOnSubmit,
+  hideOnSubmitDelay: options.popup.hideOnSubmitDelay,
+});
+
 interface EmbedConfigPanelProps {
   embedType: EmbedType;
   form: { Field: any; Subscribe: any };
@@ -59,11 +161,7 @@ interface EmbedConfigPanelProps {
 /* ─── Layout helpers matching Figma node 24119:5595 ─── */
 
 export function ConfigCard({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-px overflow-hidden rounded-lg">
-      {children}
-    </div>
-  );
+  return <div className="flex flex-col gap-px overflow-hidden rounded-lg">{children}</div>;
 }
 
 /**
@@ -91,9 +189,7 @@ export function ConfigRow({
       <div className="flex-1 min-w-0 flex flex-col gap-1">
         <span className="text-sm font-medium leading-[1.15]">{label}</span>
         {description && (
-          <p className="text-sm font-normal leading-[1.15] text-muted-foreground">
-            {description}
-          </p>
+          <p className="text-sm font-normal leading-[1.15] text-muted-foreground">{description}</p>
         )}
       </div>
       {children}
@@ -124,8 +220,7 @@ function ScrubValue({
   const hasDragged = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const clamp = (v: number) =>
-    Math.max(min, Math.min(max, Math.round(v / step) * step));
+  const clamp = (v: number) => Math.max(min, Math.min(max, Math.round(v / step) * step));
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (editing) return;
@@ -170,17 +265,33 @@ function ScrubValue({
           if (e.key === "Enter") commit();
           if (e.key === "Escape") setEditing(false);
         }}
-        className="h-6 w-16 shrink-0 rounded-[5px] px-2 text-right text-[13px] font-medium bg-transparent outline-none tabular-nums"
+        aria-label={`${unit} value`}
+        className="h-6 w-16 shrink-0 rounded-[5px] px-2 text-right text-[13px] font-medium bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-ring tabular-nums"
       />
     );
   }
 
   return (
     <span
-      className="h-6 shrink-0 inline-flex items-center rounded-[5px] px-2 text-[13px] font-medium whitespace-nowrap cursor-ew-resize select-none"
+      role="slider"
+      tabIndex={0}
+      aria-label="Scrub value"
+      aria-valuemin={min}
+      aria-valuemax={max}
+      aria-valuenow={value}
+      className="h-6 shrink-0 inline-flex items-center rounded-[5px] px-2 text-[13px] font-medium whitespace-nowrap cursor-ew-resize select-none focus-visible:ring-2 focus-visible:ring-ring"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onKeyDown={(e) => {
+        if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+          e.preventDefault();
+          onChange(clamp(value + step));
+        } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+          e.preventDefault();
+          onChange(clamp(value - step));
+        }
+      }}
     >
       {value}
       {unit}
@@ -199,11 +310,7 @@ const selectTriggerCls =
 
 /* ─── Public entry point ─── */
 
-export function EmbedConfigPanel({
-  embedType,
-  form,
-  section,
-}: EmbedConfigPanelProps) {
+export function EmbedConfigPanel({ embedType, form, section }: EmbedConfigPanelProps) {
   if (section === "customize") {
     return <CustomizeSection embedType={embedType} form={form} />;
   }
@@ -226,13 +333,7 @@ const positionLabels: Record<string, string> = {
 
 /* ─── Sections ─── */
 
-function CustomizeSection({
-  embedType,
-  form,
-}: {
-  embedType: EmbedType;
-  form: { Field: any };
-}) {
+function CustomizeSection({ embedType, form }: { embedType: EmbedType; form: { Field: any } }) {
   if (embedType === "popup") {
     return (
       <ConfigCard>
@@ -262,9 +363,7 @@ function CustomizeSection({
               <Switch
                 aria-label="Hide on submit"
                 checked={field.state.value}
-                onCheckedChange={(checked: boolean) =>
-                  field.handleChange(checked)
-                }
+                onCheckedChange={(checked: boolean) => field.handleChange(checked)}
                 size="small"
               />
             </ConfigRow>
@@ -345,11 +444,7 @@ function CustomizeSection({
           {(dynamicHeight: boolean) => (
             <form.Field name="height">
               {(field: any) => (
-                <div
-                  className={
-                    dynamicHeight ? "opacity-40 pointer-events-none" : ""
-                  }
-                >
+                <div className={dynamicHeight ? "opacity-40 pointer-events-none" : ""}>
                   <StyleNumberInput
                     label="Height"
                     value={`${field.state.value}px`}
@@ -474,9 +569,7 @@ function ProSection({ form }: { form: { Field: any } }) {
 
       <ConfigRow label="Custom Domain">
         <Select value="varman.co" disabled>
-          <SelectTrigger className={`${selectTriggerCls} opacity-50`}>
-            varman.co
-          </SelectTrigger>
+          <SelectTrigger className={`${selectTriggerCls} opacity-50`}>varman.co</SelectTrigger>
           <SelectContent>
             <SelectItem value="varman.co">varman.co</SelectItem>
           </SelectContent>

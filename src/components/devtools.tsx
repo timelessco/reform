@@ -16,9 +16,7 @@ export function Devtools() {
         plugins={[
           {
             name: "Tanstack Router",
-            render: (
-              <TanStackRouterDevtoolsPanel aria-label="Tanstack Router Devtools" />
-            ),
+            render: <TanStackRouterDevtoolsPanel aria-label="Tanstack Router Devtools" />,
           },
           TanStackQueryDevtools,
           hotkeysDevtoolsPlugin(),

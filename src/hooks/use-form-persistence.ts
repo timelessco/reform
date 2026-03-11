@@ -14,7 +14,14 @@ export function useFormPersistence(formId: string, enabled: boolean) {
 
     try {
       const saved = localStorage.getItem(storageKey);
-      return saved ? JSON.parse(saved) : null;
+      if (!saved) return null;
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          return parsed as Record<string, unknown>;
+        }
+      } catch {}
+      return null;
     } catch {
       return null;
     }
@@ -55,13 +62,14 @@ export function useFormPersistence(formId: string, enabled: boolean) {
   }, [storageKey]);
 
   // Cleanup debounce on unmount
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
       }
-    };
-  }, []);
+    },
+    [],
+  );
 
   return { loadSavedData, saveData, clearSavedData };
 }

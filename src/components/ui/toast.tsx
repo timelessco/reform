@@ -12,23 +12,14 @@ const TOAST_SHADOW = [
 ].join(", ");
 
 function Provider(props: ToastPrimitive.Provider.Props) {
-  return (
-    <ToastPrimitive.Provider
-      toastManager={toastManager}
-      timeout={5000}
-      {...props}
-    />
-  );
+  return <ToastPrimitive.Provider toastManager={toastManager} timeout={5000} {...props} />;
 }
 
 function Viewport(props: ToastPrimitive.Viewport.Props) {
   const { className, ...rest } = props;
   return (
     <ToastPrimitive.Viewport
-      className={cn(
-        "fixed right-4 bottom-4 z-9999 flex w-fit flex-col items-end gap-4",
-        className,
-      )}
+      className={cn("fixed right-4 bottom-4 z-9999 flex w-fit flex-col items-end gap-4", className)}
       {...rest}
     />
   );
@@ -38,10 +29,7 @@ function Root(props: ToastPrimitive.Root.Props) {
   const { className, ...rest } = props;
   return (
     <ToastPrimitive.Root
-      className={cn(
-        "toast-root min-h-0 w-[320px] rounded-2xl bg-gray-950 px-4 py-3",
-        className,
-      )}
+      className={cn("toast-root min-h-0 w-[320px] rounded-2xl bg-gray-950 px-4 py-3", className)}
       style={{ boxShadow: TOAST_SHADOW }}
       {...rest}
     />

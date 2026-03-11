@@ -149,11 +149,7 @@ class MarkdownJoiner {
     let output = "";
 
     for (const char of text) {
-      if (
-        this.streamingCodeBlock ||
-        this.streamingTable ||
-        this.streamingLargeDocument
-      ) {
+      if (this.streamingCodeBlock || this.streamingTable || this.streamingLargeDocument) {
         this.buffer += char;
 
         if (char === "\n") {

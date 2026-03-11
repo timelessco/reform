@@ -17,12 +17,7 @@ export const authWorkspace = async (workspaceId: string, userId: string) => {
   const workspace = await db
     .select({ id: workspaces.id })
     .from(workspaces)
-    .where(
-      and(
-        eq(workspaces.id, workspaceId),
-        eq(workspaces.createdByUserId, userId),
-      ),
-    )
+    .where(and(eq(workspaces.id, workspaceId), eq(workspaces.createdByUserId, userId)))
     .limit(1);
 
   if (workspace.length === 0) {

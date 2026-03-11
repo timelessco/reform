@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 export type IconOption = {
   icon: (color: string, size?: string, className?: string) => ReactNode;

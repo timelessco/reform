@@ -9,11 +9,7 @@ import { cn } from "@/lib/utils";
 
 import { Caption, CaptionTextarea } from "./caption";
 import { MediaToolbar } from "./media-toolbar";
-import {
-  mediaResizeHandleVariants,
-  Resizable,
-  ResizeHandle,
-} from "./resize-handle";
+import { mediaResizeHandleVariants, Resizable, ResizeHandle } from "./resize-handle";
 
 export const ImageElement = withHOC(
   ResizableProvider,

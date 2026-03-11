@@ -1,5 +1,7 @@
-import { TrailingBlockPlugin, type Value } from "platejs";
-import { type TPlateEditor, useEditorRef } from "platejs/react";
+import { TrailingBlockPlugin } from "platejs";
+import type { Value } from "platejs";
+import { useEditorRef } from "platejs/react";
+import type { TPlateEditor } from "platejs/react";
 
 import { AlignKit } from "@/components/editor/plugins/align-kit";
 import { AutoformatKit } from "@/components/editor/plugins/autoformat-kit";
@@ -15,7 +17,6 @@ import { CursorOverlayKit } from "@/components/editor/plugins/cursor-overlay-kit
 import { DateKit } from "@/components/editor/plugins/date-kit";
 import { DiscussionKit } from "@/components/editor/plugins/discussion-kit";
 import { DndKit } from "@/components/editor/plugins/dnd-kit";
-import { DocxKit } from "@/components/editor/plugins/docx-kit";
 import { EmojiKit } from "@/components/editor/plugins/emoji-kit";
 import { ExitBreakKit } from "@/components/editor/plugins/exit-break-kit";
 import { FloatingToolbarKit } from "@/components/editor/plugins/floating-toolbar-kit";
@@ -78,7 +79,6 @@ export const EditorKit = [
   TrailingBlockPlugin,
 
   // Parsers
-  ...DocxKit,
   ...MarkdownKit,
 
   // UI

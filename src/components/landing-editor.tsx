@@ -1,13 +1,7 @@
-import { normalizeNodeId, type TElement, type Value } from "platejs";
+import { normalizeNodeId } from "platejs";
+import type { TElement, Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
-import {
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearch } from "@tanstack/react-router";
 import { EditorThemeProvider } from "@/contexts/editor-theme-context";
 import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
@@ -30,11 +24,8 @@ import {
 } from "@/components/ui/right-sidebar-resize-handle";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import { localFormCollection } from "@/db-collections";
-import {
-  EditorSidebarProvider,
-  useEditorSidebar,
-} from "@/hooks/use-editor-sidebar";
+import { localFormCollection } from "@/db-collections/form.collections";
+import { EditorSidebarProvider, useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useLocalForm } from "@/hooks/use-live-hooks";
 import { getLocalFormId, getLocalWorkspaceId } from "@/lib/local-draft";
 
@@ -97,10 +88,7 @@ function LandingLayout() {
 
   const setRightSidebarWidth = useCallback((width: number) => {
     const clamped = Math.round(
-      Math.min(
-        RIGHT_SIDEBAR_WIDTH_MAX,
-        Math.max(RIGHT_SIDEBAR_WIDTH_MIN, width),
-      ),
+      Math.min(RIGHT_SIDEBAR_WIDTH_MAX, Math.max(RIGHT_SIDEBAR_WIDTH_MIN, width)),
     );
     _setRightSidebarWidth(clamped);
     localStorage.setItem(RIGHT_SIDEBAR_WIDTH_KEY, String(clamped));
@@ -120,8 +108,7 @@ function LandingLayout() {
           <div
             className={cn(
               "flex-1 min-h-0",
-              !isRightResizing &&
-                "transition-[padding] duration-200 ease-linear",
+              !isRightResizing && "transition-[padding] duration-200 ease-linear",
             )}
             style={{ paddingRight: showSidebar ? rightSidebarWidth : 0 }}
           >
@@ -185,13 +172,8 @@ function LocalEditorApp() {
   const localWorkspaceId = getLocalWorkspaceId();
   const { data: savedDocs } = useLocalForm(localFormId);
 
-  const { customization, hasCustomization, themeVars } = useFormCustomization(
-    savedDocs?.[0],
-  );
-  const themeCtx = useMemo(
-    () => ({ themeVars, hasCustomization }),
-    [themeVars, hasCustomization],
-  );
+  const { customization, hasCustomization, themeVars } = useFormCustomization(savedDocs?.[0]);
+  const themeCtx = useMemo(() => ({ themeVars, hasCustomization }), [themeVars, hasCustomization]);
 
   const initializedRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
@@ -303,8 +285,7 @@ function LocalPreviewMode() {
   const { data: savedDocs } = useLocalForm(localFormId);
 
   const doc = savedDocs?.[0];
-  const { customization, hasCustomization, themeVars } =
-    useFormCustomization(doc);
+  const { customization, hasCustomization, themeVars } = useFormCustomization(doc);
   const content = (doc?.content as Value) || [];
 
   if (savedDocs === undefined) return <Loader />;

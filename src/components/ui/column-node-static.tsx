@@ -11,9 +11,7 @@ export function ColumnElementStatic(props: SlateElementProps<TColumnElement>) {
         className="h-full px-2 pt-2 group-first/column:pl-0 group-last/column:pr-0"
         {...props}
       >
-        <div className="relative h-full border border-transparent p-1.5">
-          {props.children}
-        </div>
+        <div className="relative h-full border border-transparent p-1.5">{props.children}</div>
       </SlateElement>
     </div>
   );

@@ -5,12 +5,13 @@ import type { FormHeaderElementData } from "@/components/ui/form-header-node";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import { useEditorHeaderVisibilitySafe } from "@/contexts/editor-header-visibility-context";
 import { EditorThemeProvider } from "@/contexts/editor-theme-context";
-import { formCollection, updateDoc, updateHeader } from "@/db-collections";
+import { formCollection, updateDoc, updateHeader } from "@/db-collections/form.collections";
 import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useForm } from "@/hooks/use-live-hooks";
 import { cn } from "@/lib/utils";
 import { Loader2Icon } from "@/components/ui/icons";
-import { normalizeNodeId, type TElement, type Value } from "platejs";
+import { normalizeNodeId } from "platejs";
+import type { TElement, Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
 import type { KeyboardEvent } from "react";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -55,14 +56,12 @@ export default function EditorApp({
     // Collection ready but form not found → genuinely doesn't exist
     if (isFormReady) {
       return (
-        <div className="h-screen w-full flex items-center justify-center">
-          Loading editor...
-        </div>
+        <div className="h-full w-full flex items-center justify-center">Loading editor...</div>
       );
     }
     // Still syncing → show spinner
     return (
-      <div className="h-screen w-full flex items-center justify-center">
+      <div className="h-full w-full flex items-center justify-center">
         <Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
@@ -96,9 +95,7 @@ function EditorAppInner({
   readOnly: boolean;
   savedDocs: any;
 }) {
-  const { customization, hasCustomization, themeVars } = useFormCustomization(
-    savedDocs?.[0],
-  );
+  const { customization, hasCustomization, themeVars } = useFormCustomization(savedDocs?.[0]);
   const skipSaveRef = useRef(false);
   const lastKnownContentRef = useRef<string | null>(null);
   const savedDocsRef = useRef(savedDocs);
@@ -132,10 +129,7 @@ function EditorAppInner({
 
     let content: Value;
 
-    if (
-      docData.content.length > 0 &&
-      docData.content[0]?.type === "formHeader"
-    ) {
+    if (docData.content.length > 0 && docData.content[0]?.type === "formHeader") {
       content = docData.content as Value;
     } else {
       // Add formHeader at index 0 with data from doc metadata
@@ -151,13 +145,11 @@ function EditorAppInner({
 
     // Migration: ensure Submit button exists for existing forms
     const hasSubmitButton = content.some(
-      (node: TElement) =>
-        node.type === "formButton" && node.buttonRole === "submit",
+      (node: TElement) => node.type === "formButton" && node.buttonRole === "submit",
     );
     if (!hasSubmitButton) {
       const thankYouIndex = content.findIndex(
-        (node: TElement) =>
-          node.type === "pageBreak" && node.isThankYouPage === true,
+        (node: TElement) => node.type === "pageBreak" && node.isThankYouPage === true,
       );
       const insertIndex = thankYouIndex !== -1 ? thankYouIndex : content.length;
       content = [
@@ -279,11 +271,7 @@ function EditorAppInner({
             variant="default"
             className="px-0 sm:px-0 max-w-full border-none shadow-none overflow-y-visible"
           >
-            <Editor
-              variant="demo"
-              className="rounded-none"
-              onKeyDown={handleEditorKeyDown}
-            />
+            <Editor variant="demo" className="rounded-none" onKeyDown={handleEditorKeyDown} />
           </EditorContainer>
         </Plate>
       </div>

@@ -1,9 +1,4 @@
-import {
-  BoldIcon,
-  ItalicIcon,
-  StrikethroughIcon,
-  UnderlineIcon,
-} from "@/components/ui/icons";
+import { BoldIcon, ItalicIcon, StrikethroughIcon, UnderlineIcon } from "@/components/ui/icons";
 import { KEYS } from "platejs";
 import { useEditorReadOnly } from "platejs/react";
 
@@ -29,17 +24,11 @@ export function FloatingToolbarButtons() {
             <ItalicIcon />
           </MarkToolbarButton>
 
-          <MarkToolbarButton
-            nodeType={KEYS.underline}
-            tooltip="Underline (⌘+U)"
-          >
+          <MarkToolbarButton nodeType={KEYS.underline} tooltip="Underline (⌘+U)">
             <UnderlineIcon />
           </MarkToolbarButton>
 
-          <MarkToolbarButton
-            nodeType={KEYS.strikethrough}
-            tooltip="Strikethrough (⌘+⇧+M)"
-          >
+          <MarkToolbarButton nodeType={KEYS.strikethrough} tooltip="Strikethrough (⌘+⇧+M)">
             <StrikethroughIcon />
           </MarkToolbarButton>
           <LinkToolbarButton />

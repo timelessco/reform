@@ -5,23 +5,19 @@ import { ResizableProvider, useResizableValue } from "@platejs/resizable";
 import type { TResizableProps, TVideoElement } from "platejs";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorMounted, withHOC } from "platejs/react";
+import { Suspense, lazy } from "react";
 import LiteYouTubeEmbed from "react-lite-youtube-embed";
-import ReactPlayer from "react-player";
+
+const ReactPlayer = lazy(() => import("react-player"));
 
 import { cn } from "@/lib/utils";
 
 import { Caption, CaptionTextarea } from "./caption";
-import {
-  mediaResizeHandleVariants,
-  Resizable,
-  ResizeHandle,
-} from "./resize-handle";
+import { mediaResizeHandleVariants, Resizable, ResizeHandle } from "./resize-handle";
 
 export const VideoElement = withHOC(
   ResizableProvider,
-  function VideoElement(
-    props: PlateElementProps<TVideoElement & TResizableProps>,
-  ) {
+  function VideoElement(props: PlateElementProps<TVideoElement & TResizableProps>) {
     const {
       align = "center",
       embed,
@@ -93,22 +89,18 @@ export const VideoElement = withHOC(
 
               {isUpload && isEditorMounted && (
                 <div ref={handleRef}>
-                  <ReactPlayer
-                    height="100%"
-                    src={unsafeUrl}
-                    width="100%"
-                    controls
-                  />
+                  <Suspense
+                    fallback={<div className="aspect-video bg-muted animate-pulse rounded-sm" />}
+                  >
+                    <ReactPlayer height="100%" src={unsafeUrl} width="100%" controls />
+                  </Suspense>
                 </div>
               )}
             </div>
           </Resizable>
 
           <Caption style={{ width }} align={align}>
-            <CaptionTextarea
-              readOnly={readOnly}
-              placeholder="Write a caption..."
-            />
+            <CaptionTextarea readOnly={readOnly} placeholder="Write a caption..." />
           </Caption>
         </figure>
         {props.children}

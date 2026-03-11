@@ -20,8 +20,8 @@ import {
   deleteSubmission,
   deleteSubmissionsBulk,
   getSubmissionsByFormIdQueryOption,
-  type SerializedSubmission,
 } from "@/lib/fn/submissions";
+import type { SerializedSubmission } from "@/lib/fn/submissions";
 import {
   getEditableFields,
   transformPlateStateToFormElements,
@@ -36,12 +36,14 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-  type ColumnDef,
-  type ColumnPinningState,
-  type RowSelectionState,
-  type VisibilityState,
 } from "@tanstack/react-table";
-import { format } from "date-fns";
+import type {
+  ColumnDef,
+  ColumnPinningState,
+  RowSelectionState,
+  VisibilityState,
+} from "@tanstack/react-table";
+
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -52,7 +54,7 @@ import {
   Trash2Icon,
   XIcon,
 } from "@/components/ui/icons";
-import { Circle, Columns } from "lucide-react";
+import { Columns } from "lucide-react";
 import type { Value } from "platejs";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useHotkey } from "@tanstack/react-hotkeys";
@@ -97,8 +99,7 @@ export const Route = createFileRoute(
     const [publishedData, submissionsData] = await Promise.all([
       context.queryClient.ensureQueryData({
         queryKey: ["publishedFormVersion", params.formId],
-        queryFn: () =>
-          getLatestPublishedVersion({ data: { formId: params.formId } }),
+        queryFn: () => getLatestPublishedVersion({ data: { formId: params.formId } }),
         revalidateIfStale: true,
       }),
       context.queryClient.ensureQueryData({
@@ -116,13 +117,9 @@ export const Route = createFileRoute(
 function SubmissionsPage() {
   const { formId } = Route.useParams();
   const queryClient = useQueryClient();
-  const {
-    publishedData: initialPublishedData,
-    submissionsData: initialSubmissionsData,
-  } = Route.useLoaderData();
-  const [activeTab, setActiveTab] = useState<"all" | "completed" | "partial">(
-    "all",
-  );
+  const { publishedData: initialPublishedData, submissionsData: initialSubmissionsData } =
+    Route.useLoaderData();
+  const [activeTab, setActiveTab] = useState<"all" | "completed" | "partial">("all");
   const [sorting, setSorting] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
@@ -191,23 +188,18 @@ function SubmissionsPage() {
     if (formElements) {
       const editableFields = getEditableFields(formElements);
       editableFields
-        .filter(
-          (field) =>
-            field.fieldType === "Input" || field.fieldType === "Textarea",
-        )
+        .filter((field) => field.fieldType === "Input" || field.fieldType === "Textarea")
         .forEach((field) => currentFieldNames.add(field.name));
     }
 
     const orphaned = new Set<string>();
     allSubmissions.forEach((submission) => {
       if (submission.data && typeof submission.data === "object") {
-        Object.keys(submission.data as Record<string, unknown>).forEach(
-          (key) => {
-            if (!currentFieldNames.has(key)) {
-              orphaned.add(key);
-            }
-          },
-        );
+        Object.keys(submission.data as Record<string, unknown>).forEach((key) => {
+          if (!currentFieldNames.has(key)) {
+            orphaned.add(key);
+          }
+        });
       }
     });
 
@@ -233,13 +225,8 @@ function SubmissionsPage() {
         header: ({ table }) => (
           <Checkbox
             checked={table.getIsAllPageRowsSelected()}
-            indeterminate={
-              table.getIsSomePageRowsSelected() &&
-              !table.getIsAllPageRowsSelected()
-            }
-            onCheckedChange={(value) =>
-              table.toggleAllPageRowsSelected(!!value)
-            }
+            indeterminate={table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected()}
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
             aria-label="Select all"
             className="translate-y-[2px]"
           />
@@ -262,19 +249,23 @@ function SubmissionsPage() {
       },
       // Submission Date column - minSize prevents action buttons from truncating into select column
       columnHelper.accessor("createdAt", {
-        header: ({ column }) => (
-          <DataGridColumnHeader column={column} title="Submitted at" />
-        ),
+        header: ({ column }) => <DataGridColumnHeader column={column} title="Submitted at" />,
         cell: (info) => (
           <div className="flex items-center justify-between gap-2 group/row min-w-0">
             <span className="text-[13px] truncate min-w-0">
-              {format(new Date(info.getValue()), "MMM d, h:mm a")}
+              {new Intl.DateTimeFormat(undefined, {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "numeric",
+              }).format(new Date(info.getValue()))}
             </span>
             <div className="flex shrink-0 items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                aria-label="Delete submission"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDelete(info.row.original.id);
@@ -297,8 +288,7 @@ function SubmissionsPage() {
 
       // Only include Input and Textarea fields (not Button)
       const inputFields = editableFields.filter(
-        (field) =>
-          field.fieldType === "Input" || field.fieldType === "Textarea",
+        (field) => field.fieldType === "Input" || field.fieldType === "Textarea",
       );
 
       inputFields.forEach((field) => {
@@ -315,7 +305,7 @@ function SubmissionsPage() {
                   column={column}
                   title={field.label || field.name}
                   icon={
-                    <Circle className="h-1.5 w-1.5 fill-emerald-500 text-emerald-500" />
+                    <span className="block h-2.5 w-2.5 rounded-full border-[1.5px] border-emerald-500" />
                   }
                 />
               ),
@@ -349,7 +339,7 @@ function SubmissionsPage() {
                 column={column}
                 title={fieldName}
                 icon={
-                  <Circle className="h-1.5 w-1.5 fill-red-500 text-red-500" />
+                  <span className="block h-2.5 w-2.5 rounded-full border-[1.5px] border-red-500" />
                 }
               />
             ),
@@ -432,9 +422,7 @@ function SubmissionsPage() {
   // Shared CSV download helper
   const downloadCSV = useCallback(
     (
-      rows: typeof table extends { getRowModel: () => { rows: infer R } }
-        ? R
-        : never,
+      rows: typeof table extends { getRowModel: () => { rows: infer R } } ? R : never,
       filename: string,
     ) => {
       if ((rows as any[]).length === 0) return;
@@ -449,16 +437,16 @@ function SubmissionsPage() {
         .join(",");
 
       const csvRows = (rows as any[])
-        .map((row) => {
-          return row
+        .map((row) =>
+          row
             .getVisibleCells()
             .filter((cell: any) => cell.column.id !== "select")
             .map((cell: any) => {
               const val = cell.getValue();
               return `"${val ?? ""}"`;
             })
-            .join(",");
-        })
+            .join(","),
+        )
         .join("\n");
 
       const csv = `${headers}\n${csvRows}`;
@@ -478,10 +466,7 @@ function SubmissionsPage() {
 
   // Export selected rows as CSV
   const handleExportSelected = useCallback(() => {
-    downloadCSV(
-      table.getSelectedRowModel().rows as any,
-      `submissions-selected-${formId}.csv`,
-    );
+    downloadCSV(table.getSelectedRowModel().rows as any, `submissions-selected-${formId}.csv`);
   }, [downloadCSV, formId, table]);
 
   const handleDownloadCSV = useCallback(() => {
@@ -528,11 +513,7 @@ function SubmissionsPage() {
                 />
               }
             >
-              {activeTab === "all"
-                ? "All"
-                : activeTab === "completed"
-                  ? "Completed"
-                  : "Partial"}
+              {activeTab === "all" ? "All" : activeTab === "completed" ? "Completed" : "Partial"}
               <span className="opacity-60">
                 {activeTab === "all"
                   ? allSubmissions.length
@@ -546,32 +527,19 @@ function SubmissionsPage() {
               />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-36">
-              <DropdownMenuItem
-                onClick={() => setActiveTab("all")}
-                className="gap-2"
-              >
+              <DropdownMenuItem onClick={() => setActiveTab("all")} className="gap-2">
                 All
                 <span className="ml-auto text-xs text-muted-foreground">
                   {allSubmissions.length}
                 </span>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setActiveTab("completed")}
-                className="gap-2"
-              >
+              <DropdownMenuItem onClick={() => setActiveTab("completed")} className="gap-2">
                 Completed
-                <span className="ml-auto text-xs text-muted-foreground">
-                  {completedCount}
-                </span>
+                <span className="ml-auto text-xs text-muted-foreground">{completedCount}</span>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setActiveTab("partial")}
-                className="gap-2"
-              >
+              <DropdownMenuItem onClick={() => setActiveTab("partial")} className="gap-2">
                 Partial
-                <span className="ml-auto text-xs text-muted-foreground">
-                  {partialCount}
-                </span>
+                <span className="ml-auto text-xs text-muted-foreground">{partialCount}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -586,6 +554,8 @@ function SubmissionsPage() {
                   className="h-full min-w-0 flex-1 bg-transparent border-0 p-0 outline-none text-[13px] placeholder:text-muted-foreground/40"
                   value={globalFilter}
                   onChange={(e) => setGlobalFilter(e.target.value)}
+                  aria-label="Search responses"
+                  name="search"
                 />
               </ButtonGroupText>
             </ButtonGroup>
@@ -631,11 +601,7 @@ function SubmissionsPage() {
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleExportSelected}
-                >
+                <Button variant="ghost" size="sm" onClick={handleExportSelected}>
                   <DownloadIcon className="h-3.5 w-3.5" />
                   Export
                   <span className="text-xs text-muted-foreground ml-1">
@@ -648,11 +614,7 @@ function SubmissionsPage() {
                     {formatForDisplay(HOTKEYS.SUBMISSIONS_DELETE)}
                   </span>
                 </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setRowSelection({})}
-                >
+                <Button variant="secondary" size="sm" onClick={() => setRowSelection({})}>
                   <XIcon className="h-3.5 w-3.5" />
                   Clear
                   <span className="text-xs text-muted-foreground ml-1">
@@ -741,12 +703,9 @@ function SubmissionsPage() {
               {/* Right: Page info and navigation */}
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span>
-                  {table.getState().pagination.pageIndex * pagination.pageSize +
-                    1}{" "}
-                  -{" "}
+                  {table.getState().pagination.pageIndex * pagination.pageSize + 1} -{" "}
                   {Math.min(
-                    (table.getState().pagination.pageIndex + 1) *
-                      pagination.pageSize,
+                    (table.getState().pagination.pageIndex + 1) * pagination.pageSize,
                     table.getFilteredRowModel().rows.length,
                   )}{" "}
                   of {table.getFilteredRowModel().rows.length}
@@ -758,6 +717,7 @@ function SubmissionsPage() {
                     className="h-7 w-7"
                     onClick={() => table.previousPage()}
                     disabled={!table.getCanPreviousPage()}
+                    aria-label="Previous page"
                   >
                     <ChevronLeftIcon className="h-4 w-4" />
                   </Button>
@@ -767,6 +727,7 @@ function SubmissionsPage() {
                     className="h-7 w-7"
                     onClick={() => table.nextPage()}
                     disabled={!table.getCanNextPage()}
+                    aria-label="Next page"
                   >
                     <ChevronRightIcon className="h-4 w-4" />
                   </Button>

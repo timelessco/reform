@@ -42,10 +42,7 @@ export const publishFormVersion = createServerFn({ method: "POST" })
 
     return await db.transaction(async (tx) => {
       // Get current form draft
-      const [form] = await tx
-        .select()
-        .from(forms)
-        .where(eq(forms.id, data.formId));
+      const [form] = await tx.select().from(forms).where(eq(forms.id, data.formId));
 
       if (!form) {
         throw new Error("Form not found");
@@ -104,12 +101,8 @@ export const publishFormVersion = createServerFn({ method: "POST" })
         .orderBy(desc(formVersions.version));
 
       if (allVersions.length > MAX_VERSIONS_PER_FORM) {
-        const versionsToDelete = allVersions
-          .slice(MAX_VERSIONS_PER_FORM)
-          .map((v) => v.id);
-        await tx
-          .delete(formVersions)
-          .where(inArray(formVersions.id, versionsToDelete));
+        const versionsToDelete = allVersions.slice(MAX_VERSIONS_PER_FORM).map((v) => v.id);
+        await tx.delete(formVersions).where(inArray(formVersions.id, versionsToDelete));
       }
 
       const totalInDb = Math.min(allVersions.length, MAX_VERSIONS_PER_FORM);
@@ -138,22 +131,23 @@ export const getFormVersions = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ formId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
-    await authForm(data.formId, context.session.user.id);
-
-    const versions = await db
-      .select({
-        id: formVersions.id,
-        version: formVersions.version,
-        title: formVersions.title,
-        publishedAt: formVersions.publishedAt,
-        publishedByUserId: formVersions.publishedByUserId,
-        publishedByName: user.name,
-        publishedByImage: user.image,
-      })
-      .from(formVersions)
-      .leftJoin(user, eq(formVersions.publishedByUserId, user.id))
-      .where(eq(formVersions.formId, data.formId))
-      .orderBy(desc(formVersions.version));
+    const [_, versions] = await Promise.all([
+      authForm(data.formId, context.session.user.id),
+      db
+        .select({
+          id: formVersions.id,
+          version: formVersions.version,
+          title: formVersions.title,
+          publishedAt: formVersions.publishedAt,
+          publishedByUserId: formVersions.publishedByUserId,
+          publishedByName: user.name,
+          publishedByImage: user.image,
+        })
+        .from(formVersions)
+        .leftJoin(user, eq(formVersions.publishedByUserId, user.id))
+        .where(eq(formVersions.formId, data.formId))
+        .orderBy(desc(formVersions.version)),
+    ]);
 
     return {
       versions: versions.map((v) => ({
@@ -206,18 +200,14 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
-    await authForm(data.formId, context.session.user.id);
+    const authPromise = authForm(data.formId, context.session.user.id);
 
-    // Get the version
+    // Get the version (start fetch in parallel with auth)
     const [version] = await db
       .select()
       .from(formVersions)
-      .where(
-        and(
-          eq(formVersions.id, data.versionId),
-          eq(formVersions.formId, data.formId),
-        ),
-      );
+      .where(and(eq(formVersions.id, data.versionId), eq(formVersions.formId, data.formId)));
+    await authPromise;
 
     if (!version) {
       throw new Error("Version not found");
@@ -360,7 +350,6 @@ export const getLatestPublishedVersion = createServerFn({ method: "GET" })
  * Compute content hash - exported for use in hooks
  */
 const computeFormContentHash = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
   .inputValidator(z.object({ content: z.array(z.any()) }))
-  .handler(async ({ data }) => {
-    return { hash: computeContentHash(data.content) };
-  });
+  .handler(async ({ data }) => ({ hash: computeContentHash(data.content) }));

@@ -3,7 +3,6 @@ import {
   ComboboxGroup,
   ComboboxGroupLabel,
   ComboboxItem,
-  type ComboboxItemProps,
   ComboboxPopover,
   ComboboxProvider,
   ComboboxRow,
@@ -11,12 +10,10 @@ import {
   useComboboxContext,
   useComboboxStore,
 } from "@ariakit/react";
+import type { ComboboxItemProps } from "@ariakit/react";
 import { filterWords } from "@platejs/combobox";
-import {
-  type UseComboboxInputResult,
-  useComboboxInput,
-  useHTMLInputCursorState,
-} from "@platejs/combobox/react";
+import { useComboboxInput, useHTMLInputCursorState } from "@platejs/combobox/react";
+import type { UseComboboxInputResult } from "@platejs/combobox/react";
 import { cva } from "class-variance-authority";
 import type { Point, TElement } from "platejs";
 import { useComposedRef, useEditorRef } from "platejs/react";
@@ -43,17 +40,10 @@ const InlineComboboxContext = React.createContext<InlineComboboxContextValue>(
   null as unknown as InlineComboboxContextValue,
 );
 
-const defaultFilter: FilterFn = (
-  { group, keywords = [], label, value },
-  search,
-) => {
-  const uniqueTerms = new Set(
-    [value, ...keywords, group, label].filter(Boolean),
-  );
+const defaultFilter: FilterFn = ({ group, keywords = [], label, value }, search) => {
+  const uniqueTerms = new Set([value, ...keywords, group, label].filter(Boolean));
 
-  return Array.from(uniqueTerms).some((keyword) =>
-    filterWords(keyword ?? "", search),
-  );
+  return Array.from(uniqueTerms).some((keyword) => filterWords(keyword ?? "", search));
 };
 
 type InlineComboboxProps = {
@@ -185,10 +175,7 @@ const InlineCombobox = ({
   return (
     <span contentEditable={false}>
       <ComboboxProvider
-        open={
-          (items.length > 0 || hasEmpty) &&
-          (!hideWhenNoValue || value.length > 0)
-        }
+        open={(items.length > 0 || hasEmpty) && (!hideWhenNoValue || value.length > 0)}
         store={store}
       >
         <InlineComboboxContext.Provider value={contextValue}>
@@ -211,13 +198,11 @@ const InlineComboboxInput = ({
     inputRef: contextRef,
     showTrigger,
     trigger,
-  } = React.useContext(InlineComboboxContext);
+  } = React.use(InlineComboboxContext);
 
   const store = useComboboxContext();
   if (!store) {
-    throw new Error(
-      "InlineComboboxInput must be used within an InlineCombobox",
-    );
+    throw new Error("InlineComboboxInput must be used within an InlineCombobox");
   }
   const value = store.useState("value");
 
@@ -235,19 +220,13 @@ const InlineComboboxInput = ({
       {showTrigger && trigger}
 
       <span className="relative min-h-[1lh]">
-        <span
-          className="invisible overflow-hidden text-nowrap"
-          aria-hidden="true"
-        >
+        <span className="invisible overflow-hidden text-nowrap" aria-hidden="true">
           {value || "\u200B"}
         </span>
 
         <Combobox
           ref={ref}
-          className={cn(
-            "absolute top-0 left-0 size-full bg-transparent outline-none",
-            className,
-          )}
+          className={cn("absolute top-0 left-0 size-full bg-transparent outline-none", className)}
           value={value}
           autoSelect
           {...inputProps}
@@ -260,23 +239,17 @@ const InlineComboboxInput = ({
 
 InlineComboboxInput.displayName = "InlineComboboxInput";
 
-const InlineComboboxContent: typeof ComboboxPopover = ({
-  className,
-  ...props
-}) => {
-  // Portal prevents CSS from leaking into popover
-  return (
-    <Portal>
-      <ComboboxPopover
-        className={cn(
-          "z-500 max-h-[288px] w-[300px] overflow-y-auto rounded-xl bg-popover p-1 shadow-md ring-1 ring-foreground/10",
-          className,
-        )}
-        {...props}
-      />
-    </Portal>
-  );
-};
+const InlineComboboxContent: typeof ComboboxPopover = ({ className, ...props }) => (
+  <Portal>
+    <ComboboxPopover
+      className={cn(
+        "z-500 max-h-[288px] w-[300px] overflow-y-auto rounded-xl bg-popover p-1 shadow-md ring-1 ring-foreground/10",
+        className,
+      )}
+      {...props}
+    />
+  </Portal>
+);
 
 const comboboxItemVariants = cva(
   "relative flex h-[26px] select-none items-center rounded-lg px-2 py-[5.5px] text-[13px] font-medium tracking-[0.13px] leading-tight text-foreground/80 outline-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
@@ -310,7 +283,7 @@ const InlineComboboxItem = ({
   Required<Pick<ComboboxItemProps, "value">>) => {
   const { value } = props;
 
-  const { filter, removeInput } = React.useContext(InlineComboboxContext);
+  const { filter, removeInput } = React.use(InlineComboboxContext);
 
   const store = useComboboxContext();
   if (!store) {
@@ -340,16 +313,11 @@ const InlineComboboxItem = ({
   );
 };
 
-const InlineComboboxEmpty = ({
-  children,
-  className,
-}: React.HTMLAttributes<HTMLDivElement>) => {
-  const { setHasEmpty } = React.useContext(InlineComboboxContext);
+const InlineComboboxEmpty = ({ children, className }: React.HTMLAttributes<HTMLDivElement>) => {
+  const { setHasEmpty } = React.use(InlineComboboxContext);
   const store = useComboboxContext();
   if (!store) {
-    throw new Error(
-      "InlineComboboxEmpty must be used within an InlineCombobox",
-    );
+    throw new Error("InlineComboboxEmpty must be used within an InlineCombobox");
   }
   const items = store.useState("items");
 
@@ -364,27 +332,17 @@ const InlineComboboxEmpty = ({
   if (items.length > 0) return null;
 
   return (
-    <div
-      className={cn(comboboxItemVariants({ interactive: false }), className)}
-    >
-      {children}
-    </div>
+    <div className={cn(comboboxItemVariants({ interactive: false }), className)}>{children}</div>
   );
 };
 
 const InlineComboboxRow = ComboboxRow;
 
-function InlineComboboxGroup({
-  className,
-  ...props
-}: React.ComponentProps<typeof ComboboxGroup>) {
+function InlineComboboxGroup({ className, ...props }: React.ComponentProps<typeof ComboboxGroup>) {
   return (
     <ComboboxGroup
       {...props}
-      className={cn(
-        "hidden not-last:border-b py-1.5 [&:has([role=option])]:block",
-        className,
-      )}
+      className={cn("hidden not-last:border-b py-1.5 [&:has([role=option])]:block", className)}
     />
   );
 }

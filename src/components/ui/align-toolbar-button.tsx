@@ -1,11 +1,7 @@
 import type { Alignment } from "@platejs/basic-styles";
 import { TextAlignPlugin } from "@platejs/basic-styles/react";
 import { AlignJustifyIcon } from "lucide-react";
-import {
-  AlignCenterIcon,
-  AlignLeftIcon,
-  AlignRightIcon,
-} from "@/components/ui/icons";
+import { AlignCenterIcon, AlignLeftIcon, AlignRightIcon } from "@/components/ui/icons";
 import { useEditorPlugin, useSelectionFragmentProp } from "platejs/react";
 import * as React from "react";
 
@@ -38,9 +34,7 @@ const items = [
   },
 ];
 
-export function AlignToolbarButton(
-  props: React.ComponentProps<typeof DropdownMenu>,
-) {
+export function AlignToolbarButton(props: React.ComponentProps<typeof DropdownMenu>) {
   const { editor, tf } = useEditorPlugin(TextAlignPlugin);
   const value =
     useSelectionFragmentProp({
@@ -49,14 +43,11 @@ export function AlignToolbarButton(
     }) ?? "left";
 
   const [open, setOpen] = React.useState(false);
-  const IconValue =
-    items.find((item) => item.value === value)?.icon ?? AlignLeftIcon;
+  const IconValue = items.find((item) => item.value === value)?.icon ?? AlignLeftIcon;
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
-      <DropdownMenuTrigger
-        render={<ToolbarButton pressed={open} tooltip="Align" isDropdown />}
-      >
+      <DropdownMenuTrigger render={<ToolbarButton pressed={open} tooltip="Align" isDropdown />}>
         <IconValue />
       </DropdownMenuTrigger>
 

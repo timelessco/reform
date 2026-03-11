@@ -1,5 +1,6 @@
 import * as React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
+import { cva } from "class-variance-authority";
+import type { VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
@@ -47,10 +48,7 @@ function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function AlertDescription({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+function AlertDescription({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="alert-description"
@@ -65,42 +63,22 @@ function AlertDescription({
 
 function AlertAction({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <div
-      data-slot="alert-action"
-      className={cn("absolute top-2 end-2", className)}
-      {...props}
-    />
+    <div data-slot="alert-action" className={cn("absolute top-2 end-2", className)} {...props} />
   );
 }
 
 function AlertIcon({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="alert-icon"
-      className={cn("shrink-0", className)}
-      {...props}
-    />
-  );
+  return <div data-slot="alert-icon" className={cn("shrink-0", className)} {...props} />;
 }
 
 function AlertContent({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="alert-content"
-      className={cn(
-        "space-y-2 [&_[data-slot=alert-title]]:font-semibold",
-        className,
-      )}
+      className={cn("space-y-2 [&_[data-slot=alert-title]]:font-semibold", className)}
       {...props}
     />
   );
 }
 
-export {
-  Alert,
-  AlertAction,
-  AlertContent,
-  AlertDescription,
-  AlertIcon,
-  AlertTitle,
-};
+export { Alert, AlertAction, AlertContent, AlertDescription, AlertIcon, AlertTitle };

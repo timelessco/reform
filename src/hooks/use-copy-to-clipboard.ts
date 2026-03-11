@@ -30,9 +30,7 @@ export function useCopyToClipboard({
         onCopySuccess?.(finalText);
       } catch (error) {
         setState("error");
-        onCopyError?.(
-          error instanceof Error ? error : new Error("Copy failed"),
-        );
+        onCopyError?.(error instanceof Error ? error : new Error("Copy failed"));
       } finally {
         // Schedule reset to idle
         resetTimeoutRef.current = setTimeout(() => {

@@ -17,6 +17,7 @@ export function AboutSidebar({ onClose }: AboutSidebarProps) {
           size="icon"
           className="h-7 w-7 text-muted-foreground hover:text-foreground"
           onClick={onClose}
+          aria-label="Close"
         >
           <XIcon className="h-4 w-4" />
         </Button>

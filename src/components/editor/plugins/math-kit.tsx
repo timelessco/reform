@@ -1,11 +1,43 @@
-import { EquationPlugin, InlineEquationPlugin } from "@platejs/math/react";
+import { KEYS } from "platejs";
+import { createPlatePlugin } from "platejs/react";
+import * as React from "react";
 
-import {
-  EquationElement,
-  InlineEquationElement,
-} from "@/components/ui/equation-node";
+const LazyEquationElement = React.lazy(() =>
+  import("@/components/ui/equation-node").then((mod) => ({
+    default: mod.EquationElement,
+  })),
+);
+const LazyInlineEquationElement = React.lazy(() =>
+  import("@/components/ui/equation-node").then((mod) => ({
+    default: mod.InlineEquationElement,
+  })),
+);
 
-export const MathKit = [
-  InlineEquationPlugin.withComponent(InlineEquationElement),
-  EquationPlugin.withComponent(EquationElement),
-];
+function EquationElementLazy(props: any) {
+  return (
+    <React.Suspense fallback={<div className="my-1 p-3 bg-muted rounded-sm animate-pulse" />}>
+      <LazyEquationElement {...props} />
+    </React.Suspense>
+  );
+}
+function InlineEquationElementLazy(props: any) {
+  return (
+    <React.Suspense
+      fallback={<span className="inline-block mx-1 w-16 h-5 bg-muted rounded-sm animate-pulse" />}
+    >
+      <LazyInlineEquationElement {...props} />
+    </React.Suspense>
+  );
+}
+
+const LightEquationPlugin = createPlatePlugin({
+  key: KEYS.equation,
+  node: { isElement: true, isVoid: true },
+}).withComponent(EquationElementLazy);
+
+const LightInlineEquationPlugin = createPlatePlugin({
+  key: KEYS.inlineEquation,
+  node: { isElement: true, isInline: true, isVoid: true },
+}).withComponent(InlineEquationElementLazy);
+
+export const MathKit = [LightInlineEquationPlugin, LightEquationPlugin];

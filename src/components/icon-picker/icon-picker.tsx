@@ -5,7 +5,7 @@ import { matchSorter } from "match-sorter";
 import { ColorPicker } from "./color-picker";
 import { iconOptions } from "./icon-data";
 import { IconPickerPreview } from "./icon-picker-preview";
-import { type IconPickerProps } from "./types";
+import type { IconPickerProps } from "./types";
 
 const ICONS_PER_PAGE = 99;
 const ROW_SIZE = 11;
@@ -45,14 +45,8 @@ export function IconPickerContent({
 
   return (
     <div className="h-[368px] w-[310px] bg-muted/50 px-3">
-      <IconPickerHeader
-        searchValue={searchValue}
-        setSearchValue={setSearchValue}
-      />
-      <div
-        className="icon-color-container overflow-x-auto pt-2"
-        style={{ scrollbarWidth: "none" }}
-      >
+      <IconPickerHeader searchValue={searchValue} setSearchValue={setSearchValue} />
+      <div className="icon-color-container overflow-x-auto pt-2" style={{ scrollbarWidth: "none" }}>
         <ColorPicker
           onChange={(sliderColor) => {
             setColor(sliderColor);
@@ -117,15 +111,10 @@ type IconPickerHeaderProps = {
   setSearchValue: (value: string) => void;
 };
 
-function IconPickerHeader({
-  searchValue,
-  setSearchValue,
-}: IconPickerHeaderProps) {
+function IconPickerHeader({ searchValue, setSearchValue }: IconPickerHeaderProps) {
   return (
     <div className="flex items-center justify-between border-b border-b-border py-3">
-      <span className="text-sm leading-4 font-medium text-foreground">
-        Choose an icon
-      </span>
+      <span className="text-sm leading-4 font-medium text-foreground">Choose an icon</span>
       <div className="flex w-[139px] items-center rounded-lg bg-muted px-[10px] py-[7px]">
         <figure className="mr-[6px] h-3 w-3 text-muted-foreground">
           <svg
@@ -137,6 +126,7 @@ function IconPickerHeader({
             strokeWidth="2"
             viewBox="0 0 24 24"
             width="12"
+            aria-hidden="true"
           >
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.3-4.3" />
@@ -171,7 +161,7 @@ function IconGrid({ labels, onSelect }: IconGridProps) {
   }, [labels]);
 
   return (
-    <>
+    <div style={{ contentVisibility: "auto", containIntrinsicSize: "auto 200px" }}>
       {rows.map((row) => (
         <div className="flex justify-start" key={row[0]}>
           {row.map((label) => (
@@ -179,7 +169,7 @@ function IconGrid({ labels, onSelect }: IconGridProps) {
           ))}
         </div>
       ))}
-    </>
+    </div>
   );
 }
 
@@ -211,12 +201,7 @@ type IconPaginationProps = {
   totalPages: number;
 };
 
-function IconPagination({
-  currentPage,
-  onNext,
-  onPrev,
-  totalPages,
-}: IconPaginationProps) {
+function IconPagination({ currentPage, onNext, onPrev, totalPages }: IconPaginationProps) {
   return (
     <div className="absolute bottom-2 left-0 flex w-full justify-between px-2 pt-2">
       <button

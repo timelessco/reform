@@ -1,8 +1,4 @@
-import {
-  PlaceholderPlugin,
-  PlaceholderProvider,
-  updateUploadHistory,
-} from "@platejs/media/react";
+import { PlaceholderPlugin, PlaceholderProvider, updateUploadHistory } from "@platejs/media/react";
 import {
   AudioLinesIcon,
   FileUpIcon,
@@ -57,8 +53,7 @@ export const PlaceholderElement = withHOC(
 
     const { api } = useEditorPlugin(PlaceholderPlugin);
 
-    const { isUploading, progress, uploadedFile, uploadFile, uploadingFile } =
-      useUploadFile();
+    const { isUploading, progress, uploadedFile, uploadFile, uploadingFile } = useUploadFile();
 
     const loading = isUploading && uploadingFile;
 
@@ -117,13 +112,7 @@ export const PlaceholderElement = withHOC(
 
       api.placeholder.removeUploadingFile(element.id as string);
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [
-      uploadedFile,
-      element.id,
-      api.placeholder.removeUploadingFile,
-      editor,
-      element,
-    ]);
+    }, [uploadedFile, element.id, api.placeholder.removeUploadingFile, editor, element]);
 
     // React dev mode will call React.useEffect twice
     const isReplaced = React.useRef(false);
@@ -133,20 +122,14 @@ export const PlaceholderElement = withHOC(
       if (isReplaced.current) return;
 
       isReplaced.current = true;
-      const currentFiles = api.placeholder.getUploadingFile(
-        element.id as string,
-      );
+      const currentFiles = api.placeholder.getUploadingFile(element.id as string);
 
       if (!currentFiles) return;
 
       replaceCurrentPlaceholder(currentFiles);
 
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [
-      api.placeholder.getUploadingFile,
-      element.id,
-      replaceCurrentPlaceholder,
-    ]);
+    }, [api.placeholder.getUploadingFile, element.id, replaceCurrentPlaceholder]);
 
     return (
       <PlateElement className="my-1" {...props}>
@@ -163,9 +146,7 @@ export const PlaceholderElement = withHOC(
               {currentContent.icon}
             </div>
             <div className="whitespace-nowrap text-muted-foreground text-sm text-left">
-              <div>
-                {loading ? uploadingFile?.name : currentContent.content}
-              </div>
+              <div>{loading ? uploadingFile?.name : currentContent.content}</div>
 
               {loading && !isImage && (
                 <div className="mt-1 flex items-center gap-1.5">
@@ -182,11 +163,7 @@ export const PlaceholderElement = withHOC(
         )}
 
         {isImage && loading && (
-          <ImageProgress
-            file={uploadingFile}
-            imageRef={imageRef}
-            progress={progress}
-          />
+          <ImageProgress file={uploadingFile} imageRef={imageRef} progress={progress} />
         )}
 
         {props.children}
@@ -228,13 +205,13 @@ export function ImageProgress({
         className="h-auto w-full rounded-sm object-cover"
         alt={file.name}
         src={objectUrl}
+        width={800}
+        height={600}
       />
       {progress < 100 && (
         <div className="absolute right-1 bottom-1 flex items-center space-x-2 rounded-full bg-black/50 px-1 py-0.5">
           <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" />
-          <span className="font-medium text-white text-xs">
-            {Math.round(progress)}%
-          </span>
+          <span className="font-medium text-white text-xs">{Math.round(progress)}%</span>
         </div>
       )}
     </div>
@@ -258,8 +235,6 @@ function formatBytes(
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
 
   return `${(bytes / 1024 ** i).toFixed(decimals)} ${
-    sizeType === "accurate"
-      ? (accurateSizes[i] ?? "Bytest")
-      : (sizes[i] ?? "Bytes")
+    sizeType === "accurate" ? (accurateSizes[i] ?? "Bytest") : (sizes[i] ?? "Bytes")
   }`;
 }

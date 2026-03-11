@@ -1,11 +1,8 @@
 import { createTransaction } from "@tanstack/react-db";
 import { logger } from "@/lib/utils";
-import { localFormCollection } from "@/db-collections";
+import { localFormCollection } from "@/db-collections/form.collections";
 import { formCollection } from "@/db-collections/form.collections";
-import {
-  workspaceCollection,
-  createWorkspaceLocal,
-} from "@/db-collections/workspace.collection";
+import { workspaceCollection, createWorkspaceLocal } from "@/db-collections/workspace.collection";
 import { createForm } from "@/lib/fn/forms";
 
 /**
@@ -26,9 +23,7 @@ type SyncResult = {
  *
  * @param organizationId - The organization ID to sync forms to
  */
-export async function syncLocalDataToCloud(
-  organizationId: string,
-): Promise<SyncResult | null> {
+export async function syncLocalDataToCloud(organizationId: string): Promise<SyncResult | null> {
   try {
     logger("Starting local data sync to cloud via createTransaction...");
     logger(`Organization ID: ${organizationId}`);
@@ -49,22 +44,15 @@ export async function syncLocalDataToCloud(
 
     // Get existing workspaces or create one
     const existingWorkspaces = await workspaceCollection.toArrayWhenReady();
-    const orgWorkspaces = existingWorkspaces.filter(
-      (ws) => ws.organizationId === organizationId,
-    );
+    const orgWorkspaces = existingWorkspaces.filter((ws) => ws.organizationId === organizationId);
 
     let targetWorkspaceId: string;
     if (orgWorkspaces.length === 0) {
       logger("No workspace found, creating via Electric collection...");
       try {
-        const newWorkspace = await createWorkspaceLocal(
-          organizationId,
-          "My workspace",
-        );
+        const newWorkspace = await createWorkspaceLocal(organizationId, "My workspace");
         targetWorkspaceId = newWorkspace.id;
-        logger(
-          `Created workspace ${targetWorkspaceId} via Electric collection`,
-        );
+        logger(`Created workspace ${targetWorkspaceId} via Electric collection`);
       } catch (wsError) {
         console.error("Failed to create workspace:", wsError);
         throw wsError;
@@ -93,10 +81,7 @@ export async function syncLocalDataToCloud(
           icon: localForm.icon,
           cover: localForm.cover,
           isMultiStep: localForm.isMultiStep ?? false,
-          status: (localForm.status || "draft") as
-            | "draft"
-            | "published"
-            | "archived",
+          status: (localForm.status || "draft") as "draft" | "published" | "archived",
           // Include settings fields from local form (they're now part of the form)
           language: localForm.language,
           redirectOnCompletion: localForm.redirectOnCompletion,
@@ -149,17 +134,12 @@ export async function syncLocalDataToCloud(
           `Synced form "${localForm.title || "Untitled"}" as ${newFormId} via createTransaction`,
         );
       } catch (error) {
-        console.error(
-          `Failed to sync form "${localForm.title || "Untitled"}":`,
-          error,
-        );
+        console.error(`Failed to sync form "${localForm.title || "Untitled"}":`, error);
         // Continue with other forms
       }
     }
 
-    logger(
-      `Successfully synced ${syncedForms.length} forms via createTransaction`,
-    );
+    logger(`Successfully synced ${syncedForms.length} forms via createTransaction`);
     return {
       success: true,
       syncedForms,

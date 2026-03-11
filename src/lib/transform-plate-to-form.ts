@@ -132,13 +132,11 @@ function extractTextContent(children: Array<{ text?: string }>): string {
  * Generates a slugified name from a label string.
  * Example: "Email Address" -> "email_address"
  */
+const NON_ALNUM_RE = /[^a-z0-9]+/g;
+const TRIM_UNDERSCORES_RE = /^_|_$/g;
+
 function slugify(str: string): string {
-  return (
-    str
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_|_$/g, "") || "field"
-  );
+  return str.toLowerCase().replace(NON_ALNUM_RE, "_").replace(TRIM_UNDERSCORES_RE, "") || "field";
 }
 
 /**
@@ -219,9 +217,7 @@ function extractTableRows(node: any): { cells: string[]; isHeader: boolean }[] {
  * @param value - Plate editor content array
  * @returns Array of elements for preview rendering
  */
-export function transformPlateStateToFormElements(
-  value: Value,
-): TransformedElement[] {
+export function transformPlateStateToFormElements(value: Value): TransformedElement[] {
   const elements: TransformedElement[] = [];
   let fieldIndex = 0;
 
@@ -235,9 +231,7 @@ export function transformPlateStateToFormElements(
         break;
 
       case "formLabel": {
-        const labelText = extractTextContent(
-          node.children as Array<{ text?: string }>,
-        );
+        const labelText = extractTextContent(node.children as Array<{ text?: string }>);
         const isRequired = Boolean(node.required);
 
         // Check if next node is a formInput or formTextarea
@@ -248,14 +242,9 @@ export function transformPlateStateToFormElements(
         let defaultValue: string | undefined;
         let fieldType: "Input" | "Textarea" = "Input";
 
-        if (
-          nextNode &&
-          (nextNode.type === "formInput" || nextNode.type === "formTextarea")
-        ) {
+        if (nextNode && (nextNode.type === "formInput" || nextNode.type === "formTextarea")) {
           fieldType = nextNode.type === "formTextarea" ? "Textarea" : "Input";
-          const inputText = extractTextContent(
-            nextNode.children as Array<{ text?: string }>,
-          );
+          const inputText = extractTextContent(nextNode.children as Array<{ text?: string }>);
           placeholder = inputText || (nextNode.placeholder as string) || "";
           minLength = nextNode.minLength as number | undefined;
           maxLength = nextNode.maxLength as number | undefined;
@@ -287,9 +276,7 @@ export function transformPlateStateToFormElements(
 
       // Headings -> Static elements
       case "h1": {
-        const content = extractTextContent(
-          node.children as Array<{ text?: string }>,
-        );
+        const content = extractTextContent(node.children as Array<{ text?: string }>);
         if (content) {
           elements.push({
             id: `h1_${elements.length}`,
@@ -303,9 +290,7 @@ export function transformPlateStateToFormElements(
       }
 
       case "h2": {
-        const content = extractTextContent(
-          node.children as Array<{ text?: string }>,
-        );
+        const content = extractTextContent(node.children as Array<{ text?: string }>);
         if (content) {
           elements.push({
             id: `h2_${elements.length}`,
@@ -319,9 +304,7 @@ export function transformPlateStateToFormElements(
       }
 
       case "h3": {
-        const content = extractTextContent(
-          node.children as Array<{ text?: string }>,
-        );
+        const content = extractTextContent(node.children as Array<{ text?: string }>);
         if (content) {
           elements.push({
             id: `h3_${elements.length}`,
@@ -361,9 +344,7 @@ export function transformPlateStateToFormElements(
       // Paragraphs/blockquotes -> Description or EmptyBlock
       case "p":
       case "blockquote": {
-        const content = extractTextContent(
-          node.children as Array<{ text?: string }>,
-        );
+        const content = extractTextContent(node.children as Array<{ text?: string }>);
         if (content) {
           // Non-empty paragraph -> Description
           elements.push({
@@ -393,21 +374,14 @@ export function transformPlateStateToFormElements(
       // Button field
       case "formButton": {
         // Get button text from label property (new), children (old), or buttonText (legacy)
-        const childText = extractTextContent(
-          node.children as Array<{ text?: string }>,
-        );
+        const childText = extractTextContent(node.children as Array<{ text?: string }>);
         const btnText =
           (node.label as string | undefined) ||
           childText ||
           (node.buttonText as string | undefined);
-        const btnRole =
-          (node.buttonRole as "next" | "previous" | "submit") || "submit";
+        const btnRole = (node.buttonRole as "next" | "previous" | "submit") || "submit";
         const defaultText =
-          btnRole === "next"
-            ? "Next"
-            : btnRole === "previous"
-              ? "Previous"
-              : "Submit";
+          btnRole === "next" ? "Next" : btnRole === "previous" ? "Previous" : "Submit";
         const name = `button_${fieldIndex}`;
         elements.push({
           id: name,
@@ -469,9 +443,7 @@ export function transformPlateStateToFormElements(
         }
 
         // Recursively transform toggle content
-        const toggleContent = transformPlateStateToFormElements(
-          contentNodes as Value,
-        );
+        const toggleContent = transformPlateStateToFormElements(contentNodes as Value);
 
         elements.push({
           id: `toggle_${elements.length}`,
@@ -501,9 +473,7 @@ export function transformPlateStateToFormElements(
 
       // Callout
       case "callout": {
-        const content = extractTextContent(
-          node.children as Array<{ text?: string }>,
-        );
+        const content = extractTextContent(node.children as Array<{ text?: string }>);
         const emoji = node.emoji as string | undefined;
         elements.push({
           id: `callout_${elements.length}`,
@@ -530,21 +500,15 @@ export function transformPlateStateToFormElements(
 /**
  * Filters only editable form fields (non-static elements)
  */
-export function getEditableFields(
-  elements: TransformedElement[],
-): PlateFormField[] {
-  return elements.filter(
-    (el): el is PlateFormField => !("static" in el) || !el.static,
-  );
+export function getEditableFields(elements: TransformedElement[]): PlateFormField[] {
+  return elements.filter((el): el is PlateFormField => !("static" in el) || !el.static);
 }
 
 /**
  * Generates default form values from a list of form fields.
  * Used to initialize TanStack Form with empty values.
  */
-function generateDefaultValues(
-  elements: TransformedElement[],
-): Record<string, unknown> {
+function generateDefaultValues(elements: TransformedElement[]): Record<string, unknown> {
   const defaults: Record<string, unknown> = {};
 
   for (const el of elements) {
@@ -574,9 +538,7 @@ type StepSplitResult = {
  * @param elements - Array of transformed elements
  * @returns Object with steps array and optional thankYouContent
  */
-export function splitElementsIntoSteps(
-  elements: TransformedElement[],
-): StepSplitResult {
+export function splitElementsIntoSteps(elements: TransformedElement[]): StepSplitResult {
   const steps: TransformedElement[][] = [];
   let currentStep: TransformedElement[] = [];
   let thankYouContent: TransformedElement[] | null = null;

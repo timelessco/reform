@@ -10,17 +10,10 @@ import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useForm } from "@/hooks/use-live-hooks";
 import { cn } from "@/lib/utils";
 
-export function PreviewMode({
-  formId,
-  workspaceId,
-}: {
-  formId: string;
-  workspaceId: string;
-}) {
+export function PreviewMode({ formId, workspaceId }: { formId: string; workspaceId: string }) {
   const { data: savedDocs, isLoading } = useForm(formId);
   const doc = savedDocs?.[0];
-  const { customization, hasCustomization, themeVars } =
-    useFormCustomization(doc);
+  const { customization, hasCustomization, themeVars } = useFormCustomization(doc);
   const content = (doc?.content as Value) || [];
 
   // Read embed config from search params
@@ -61,11 +54,7 @@ export function PreviewMode({
   }
 
   if (isLoading || !doc) {
-    return (
-      <div className="h-full w-full flex items-center justify-center">
-        Loading...
-      </div>
-    );
+    return <div className="h-full w-full flex items-center justify-center">Loading...</div>;
   }
 
   return (
@@ -74,9 +63,7 @@ export function PreviewMode({
         hasCustomization && "bf-themed",
         customization?.mode === "dark" && "dark",
         "w-full h-full flex flex-col transition-colors duration-300 bg-background text-foreground",
-        embedType === "fullpage"
-          ? "overflow-y-auto overflow-x-hidden"
-          : "overflow-hidden",
+        embedType === "fullpage" ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden",
       )}
       style={hasCustomization ? themeVars : undefined}
     >
@@ -155,9 +142,7 @@ export function PreviewMode({
                           <FormPreviewFromPlate
                             content={content}
                             title={hideTitle ? "" : doc.title}
-                            icon={
-                              showEmoji ? (doc.icon ?? undefined) : undefined
-                            }
+                            icon={showEmoji ? (doc.icon ?? undefined) : undefined}
                             cover={doc.cover ?? undefined}
                             onSubmit={async () => {}}
                             hideTitle={hideTitle}
@@ -186,6 +171,15 @@ export function PreviewMode({
                   <div
                     className="absolute inset-0 bg-black/40 z-10 transition-opacity duration-300 pointer-events-auto"
                     onClick={() => setIsPopupOpen(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setIsPopupOpen(false);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Close preview"
                   />
                 )}
 
@@ -209,6 +203,7 @@ export function PreviewMode({
                         size="icon"
                         className="h-8 w-8 hover:bg-muted text-muted-foreground bg-background/50 backdrop-blur-sm rounded-full shadow-sm"
                         onClick={() => setIsPopupOpen(false)}
+                        aria-label="Close"
                       >
                         <XIcon className="h-4 w-4" />
                       </Button>
@@ -244,11 +239,10 @@ export function PreviewMode({
                   <button
                     type="button"
                     onClick={() => setIsPopupOpen(true)}
+                    aria-label="Open form preview"
                     className={cn(
                       "absolute z-20 pointer-events-auto w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer",
-                      popupPosition === "bottom-left"
-                        ? "bottom-6 left-6"
-                        : "bottom-6 right-6",
+                      popupPosition === "bottom-left" ? "bottom-6 left-6" : "bottom-6 right-6",
                     )}
                   >
                     {showEmoji && doc.icon ? (

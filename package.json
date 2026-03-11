@@ -14,7 +14,7 @@
     "knip:fix": "knip --fix --use-tsconfig-files",
     "fmt": "oxfmt .",
     "fmt:check": "oxfmt --check",
-    "check": "oxlint --type-aware --type-check",
+    "check": "ultracite check",
     "check:fix": "bun run check --fix",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -23,7 +23,9 @@
     "db:studio": "drizzle-kit studio",
     "build:embed": "esbuild src/scripts/embed-popup.ts --bundle --minify --outfile=public/embed/popup.js --target=es2020 --format=iife",
     "build": "bun run build:embed && NODE_OPTIONS='--max-old-space-size=8192' vite build",
-    "start": "node .output/server/index.mjs"
+    "start": "node .output/server/index.mjs",
+    "fix": "ultracite fix",
+    "prepare": "lefthook install"
   },
   "dependencies": {
     "@ai-sdk/react": "2.0.28",
@@ -34,7 +36,6 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@emoji-mart/data": "1.2.1",
-    "@faker-js/faker": "^10.3.0",
     "@fontsource-variable/inter": "^5.2.8",
     "@heroicons/react": "^2.2.0",
     "@platejs/ai": "^52.3.1",
@@ -148,6 +149,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.3.0",
     "@tanstack/devtools-vite": "^0.5.3",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -163,12 +165,13 @@
     "esbuild": "^0.24.2",
     "jsdom": "^27.4.0",
     "knip": "^5.86.0",
-    "oxfmt": "^0.28.0",
-    "oxlint": "^1.51.0",
+    "lefthook": "^2.1.3",
+    "oxfmt": "^0.37.0",
+    "oxlint": "^1.52.0",
     "oxlint-tsgolint": "^0.11.5",
-    "prettier": "^3.8.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
+    "ultracite": "7.2.5",
     "vite": "^7.3.1",
     "vitest": "^3.2.4",
     "web-vitals": "^5.1.0"

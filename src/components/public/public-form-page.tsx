@@ -6,10 +6,7 @@ import { FormPreviewFromPlate } from "@/components/form-components/form-preview-
 import { BrandingFooter } from "@/components/public/branding-footer";
 import { AlreadySubmitted, FormClosed } from "@/components/public/form-closed";
 import { PasswordGate } from "@/components/public/password-gate";
-import {
-  TranslationProvider,
-  useTranslation,
-} from "@/contexts/translation-context";
+import { TranslationProvider, useTranslation } from "@/contexts/translation-context";
 import { createPublicSubmission } from "@/lib/fn/public";
 import { getTranslations } from "@/lib/translations";
 import { cn } from "@/lib/utils";
@@ -20,10 +17,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import {
-  type PublicFormSettings,
-  defaultPublicFormSettings,
-} from "@/types/form-settings";
+import { type PublicFormSettings, defaultPublicFormSettings } from "@/types/form-settings";
 
 interface PublicForm {
   id: string;
@@ -41,20 +35,30 @@ interface GatedState {
   message?: string | null;
 }
 
+/** Embed display configuration for the public form page */
+export interface PublicFormEmbedConfig {
+  title: "visible" | "hidden";
+  background: "transparent" | "solid";
+  alignment: "center" | "left";
+  dynamicHeight: boolean;
+}
+
+export const defaultPublicFormEmbedConfig: PublicFormEmbedConfig = {
+  title: "visible",
+  background: "solid",
+  alignment: "center",
+  dynamicHeight: false,
+};
+
 interface PublicFormPageProps {
   form: PublicForm | null;
   error: "not_found" | null;
   formId: string;
   gated?: GatedState | null;
-  transparentBackground?: boolean;
   /** Whether this form is loaded in a popup iframe */
   isPopup?: boolean;
-  /** Hide the form title */
-  hideTitle?: boolean;
-  /** Align form content to the left */
-  alignLeft?: boolean;
-  /** Enable dynamic height communication for standard iframe embeds */
-  dynamicHeight?: boolean;
+  /** Embed display configuration */
+  embedConfig?: PublicFormEmbedConfig;
 }
 
 /**
@@ -97,9 +101,7 @@ function FormNotPublished() {
             <LockIcon />
           </EmptyMedia>
           <EmptyTitle>{t("formNotAvailable")}</EmptyTitle>
-          <EmptyDescription>
-            {t("formNotAvailableDescription")}
-          </EmptyDescription>
+          <EmptyDescription>{t("formNotAvailableDescription")}</EmptyDescription>
         </EmptyHeader>
       </Empty>
     </div>
@@ -111,12 +113,13 @@ export function PublicFormPage({
   error,
   formId,
   gated,
-  transparentBackground,
   isPopup = false,
-  hideTitle = false,
-  alignLeft = false,
-  dynamicHeight = false,
+  embedConfig = defaultPublicFormEmbedConfig,
 }: PublicFormPageProps) {
+  const transparentBackground = embedConfig.background === "transparent";
+  const hideTitle = embedConfig.title === "hidden";
+  const alignLeft = embedConfig.alignment === "left";
+  const dynamicHeight = embedConfig.dynamicHeight;
   const containerRef = useRef<HTMLDivElement>(null);
   const [submitted, setSubmitted] = useState(false);
 
@@ -153,11 +156,7 @@ export function PublicFormPage({
 
   // Setup height communication for popup embeds and standard embeds with dynamicHeight
   useEffect(() => {
-    if (
-      (!isPopup && !dynamicHeight) ||
-      typeof window === "undefined" ||
-      window.parent === window
-    )
+    if ((!isPopup && !dynamicHeight) || typeof window === "undefined" || window.parent === window)
       return;
 
     // Notify parent that form has loaded
@@ -240,13 +239,7 @@ export function PublicFormPage({
         throw err; // Re-throw so the form knows it failed
       }
     },
-    [
-      formId,
-      isPopup,
-      form?.title,
-      form?.settings?.preventDuplicateSubmissions,
-      resolvedLanguage,
-    ],
+    [formId, isPopup, form?.title, form?.settings?.preventDuplicateSubmissions, resolvedLanguage],
   );
 
   // Handle error states
@@ -294,14 +287,13 @@ export function PublicFormPage({
       ref={containerRef}
       className={cn(
         "pb-8 overflow-x-hidden",
-        form.customization &&
-          Object.keys(form.customization).length > 0 &&
-          "bf-themed",
+        form.customization && Object.keys(form.customization).length > 0 && "bf-themed",
         // Don't use min-h-screen for popup mode - it causes resize loop
         !isPopup && "min-h-screen",
         transparentBackground || isPopup ? "bg-transparent" : "bg-white",
         alignLeft && "text-left",
       )}
+      aria-live="polite"
     >
       <FormPreviewFromPlate
         content={form.content as Value}
@@ -326,9 +318,5 @@ export function PublicFormPage({
     );
   }
 
-  return (
-    <TranslationProvider language={resolvedLanguage}>
-      {formContent}
-    </TranslationProvider>
-  );
+  return <TranslationProvider language={resolvedLanguage}>{formContent}</TranslationProvider>;
 }

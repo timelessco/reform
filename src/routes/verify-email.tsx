@@ -1,19 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  createFileRoute,
-  useNavigate,
-  useSearch,
-} from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { Loader2Icon } from "@/components/ui/icons";
 import * as React from "react";
 import { toast } from "sonner";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { auth, useSession } from "@/lib/auth-client";
 import { setSyncAfterLoginFlag } from "@/lib/local-draft";
 
@@ -134,11 +126,7 @@ function VerifyEmailPage() {
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">No email address found</p>
-          <Button
-            variant="link"
-            onClick={() => navigate({ to: "/login" })}
-            className="p-0 h-auto"
-          >
+          <Button variant="link" onClick={() => navigate({ to: "/login" })} className="p-0 h-auto">
             Go to login
           </Button>
         </div>
@@ -175,25 +163,15 @@ function VerifyEmailPage() {
               aria-label="Back icon"
             >
               <title>Back icon</title>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 19l-7-7 7-7"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
             {isSignInMode ? "Back" : "Sign out"}
           </Button>
 
           {/* Heading */}
-          <h1 className="text-2xl font-semibold text-foreground mb-2">
-            Check your email
-          </h1>
-          <p className="text-muted-foreground text-[15px] mb-2">
-            We sent a code to
-          </p>
-          <p className="text-foreground font-medium text-[15px] mb-10">
-            {email}
-          </p>
+          <h1 className="text-2xl font-semibold text-foreground mb-2">Check your email</h1>
+          <p className="text-muted-foreground text-[15px] mb-2">We sent a code to</p>
+          <p className="text-foreground font-medium text-[15px] mb-10">{email}</p>
 
           {/* OTP Input */}
           <div className="mb-8">
@@ -233,10 +211,7 @@ function VerifyEmailPage() {
           >
             {signInOtpMutation.isPending || verifyEmailMutation.isPending ? (
               <>
-                <Loader2Icon
-                  className="h-4 w-4 animate-spin mr-2"
-                  aria-label="Loading"
-                />
+                <Loader2Icon className="h-4 w-4 animate-spin mr-2" aria-label="Loading" />
                 Verifying...
               </>
             ) : (

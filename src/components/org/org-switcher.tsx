@@ -34,9 +34,7 @@ function OrganizationSwitcher() {
   const { data: session } = useSession();
   const user = session?.user;
 
-  const { data: activeOrg } = useQuery(
-    auth.organization.getFullOrganization.queryOptions(),
-  );
+  const { data: activeOrg } = useQuery(auth.organization.getFullOrganization.queryOptions());
 
   const { data: orgs } = useQuery(auth.organization.list.queryOptions());
 
@@ -129,15 +127,11 @@ function OrganizationSwitcher() {
               return (
                 <DropdownMenuItem
                   key={org.id}
-                  onClick={() =>
-                    setActiveOrgMutation.mutate({ organizationId: org.id })
-                  }
+                  onClick={() => setActiveOrgMutation.mutate({ organizationId: org.id })}
                   className="gap-2.5 py-2"
                 >
                   <Avatar className="h-4 w-4 rounded-full">
-                    <AvatarFallback className="text-[8px]">
-                      {getInitials(org.name)}
-                    </AvatarFallback>
+                    <AvatarFallback className="text-[8px]">{getInitials(org.name)}</AvatarFallback>
                   </Avatar>
                   <span className="flex-1 truncate">{org.name}</span>
                   {role && (
@@ -148,9 +142,7 @@ function OrganizationSwitcher() {
                       {role}
                     </Badge>
                   )}
-                  {org.id === activeOrg?.id && (
-                    <div className="h-2 w-2 rounded-full bg-primary" />
-                  )}
+                  {org.id === activeOrg?.id && <div className="h-2 w-2 rounded-full bg-primary" />}
                 </DropdownMenuItem>
               );
             })}
@@ -169,10 +161,7 @@ function OrganizationSwitcher() {
               <UsersIcon className="h-4 w-4" />
               <span>Members</span>
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => settingsDialogStore.open()}
-              className="gap-2.5 py-2"
-            >
+            <DropdownMenuItem onClick={() => settingsDialogStore.open()} className="gap-2.5 py-2">
               <SettingsIcon className="h-4 w-4" />
               <span>Settings</span>
             </DropdownMenuItem>

@@ -24,11 +24,7 @@ const store = {
 };
 
 export function useCommandPalette() {
-  const isPaletteOpen = useSyncExternalStore(
-    store.subscribe,
-    store.getSnapshot,
-    () => false,
-  );
+  const isPaletteOpen = useSyncExternalStore(store.subscribe, store.getSnapshot, () => false);
 
   return {
     isOpen: isPaletteOpen,

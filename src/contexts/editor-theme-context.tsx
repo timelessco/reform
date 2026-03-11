@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { createContext, useContext } from "react";
+import { createContext, use } from "react";
 
 export interface EditorThemeValue {
   themeVars: CSSProperties;
@@ -14,4 +14,4 @@ const EditorThemeContext = createContext<EditorThemeValue>({
 });
 
 export const EditorThemeProvider = EditorThemeContext.Provider;
-export const useEditorTheme = () => useContext(EditorThemeContext);
+export const useEditorTheme = () => use(EditorThemeContext);

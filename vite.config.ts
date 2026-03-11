@@ -61,8 +61,7 @@ const config = defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes("@platejs/") || id.includes("platejs"))
-            return "editor";
+          if (id.includes("@platejs/") || id.includes("platejs")) return "editor";
           if (id.includes("@radix-ui/")) return "ui";
           if (id.includes("@sentry/")) return "sentry";
         },
