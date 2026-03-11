@@ -88,6 +88,7 @@
     "@tanstack/react-router-ssr-query": "^1.166.2",
     "@tanstack/react-start": "^1.166.2",
     "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.13.21",
     "@tanstack/router-plugin": "^1.166.2",
     "@udecode/cn": "^52.0.11",
     "@uploadthing/react": "7.3.3",
