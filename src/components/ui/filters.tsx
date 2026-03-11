@@ -1302,7 +1302,7 @@ function FilterValueSelector<T = unknown>({
             aria-label={field.onLabel || field.offLabel || "Toggle"}
             checked={isChecked}
             onCheckedChange={(checked) => onChange([checked as T])}
-            size="small"
+            size="sm"
           />
           {field.onLabel && field.offLabel && (
             <span className="text-xs text-muted-foreground">{isChecked ? onLabel : offLabel}</span>

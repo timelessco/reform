@@ -9,11 +9,9 @@ const buttonBaseClasses = [
   "align-middle whitespace-nowrap transition select-none",
   "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   "outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
-  "hover:not-data-disabled:-translate-y-px",
-  "active:not-data-disabled:translate-y-0",
   "data-disabled:cursor-not-allowed data-disabled:opacity-50",
   "rounded-lg border border-transparent bg-clip-padding",
-  "text-sm font-medium",
+  "text-sm font-normal",
   "aria-invalid:border-destructive aria-invalid:ring-destructive/20",
   "group/button",
 ];
@@ -39,6 +37,7 @@ const buttonVariants = cva(buttonBaseClasses.join(" "), {
       xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pe-1.5 has-data-[icon=inline-start]:ps-1.5 [&_svg:not([class*='size-'])]:size-3",
       sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pe-1.5 has-data-[icon=inline-start]:ps-1.5 [&_svg:not([class*='size-'])]:size-3.5",
       lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pe-3 has-data-[icon=inline-start]:ps-3",
+      md: "h-7.5 gap-1.5 px-2.5 has-data-[icon=inline-end]:pe-2 has-data-[icon=inline-start]:ps-2",
       icon: "size-8 cursor-pointer",
       "icon-xs":
         "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3 cursor-pointer",

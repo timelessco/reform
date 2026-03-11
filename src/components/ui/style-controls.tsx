@@ -287,7 +287,7 @@ export function StyleColorPicker({
         className,
       )}
     >
-      <div className="bg-transparent px-3 h-full flex items-center font-medium text-muted-foreground flex-1 select-none border-r border-border/60">
+      <div className="bg-transparent px-3 h-full flex items-center font-medium text-muted-foreground flex-1 select-none">
         {label}
       </div>
       <div className="flex-none px-2 h-full flex items-center gap-2">

@@ -363,8 +363,8 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
           anchor={virtualAnchor}
           className={cn("w-[288px] p-1", hasCustomization && "bf-themed")}
           style={hasCustomization ? themeVars : undefined}
-          side="left"
-          align="center"
+          // side="left"
+          align="start"
           sideOffset={8}
         >
           {showTurnInto ? (
@@ -434,7 +434,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                       </span>
                       <Switch
                         aria-label="Required"
-                        size="small"
+                        size="sm"
                         checked={isRequired}
                         onCheckedChange={handleToggleRequired}
                       />
@@ -446,7 +446,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                         </span>
                         <Switch
                           aria-label="Default answer"
-                          size="small"
+                          size="sm"
                           checked={hasDefaultValue}
                           onCheckedChange={handleToggleDefaultValue}
                         />
@@ -470,7 +470,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                         </span>
                         <Switch
                           aria-label="Min characters"
-                          size="small"
+                          size="sm"
                           checked={hasMinLength}
                           onCheckedChange={handleToggleMinLength}
                         />
@@ -496,7 +496,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                         </span>
                         <Switch
                           aria-label="Max characters"
-                          size="small"
+                          size="sm"
                           checked={hasMaxLength}
                           onCheckedChange={handleToggleMaxLength}
                         />

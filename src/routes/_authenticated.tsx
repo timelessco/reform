@@ -68,7 +68,6 @@ import {
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
   useSidebar,
@@ -159,22 +158,6 @@ const LazyCustomizeSidebar = lazy(() =>
     default: m.CustomizeSidebar,
   })),
 );
-
-type SidebarNavLabelProps = {
-  icon: React.ReactNode;
-  label: string;
-};
-
-function SidebarNavLabel({ icon, label }: SidebarNavLabelProps) {
-  return (
-    <>
-      <div className="flex items-center justify-center size-[18px] shrink-0">{icon}</div>
-      <span className="text-sm font-[450] text-sidebar-nav-text tracking-[0.14px] leading-[1.15] font-case truncate">
-        {label}
-      </span>
-    </>
-  );
-}
 
 // Route configuration
 export const Route = createFileRoute("/_authenticated")({
@@ -316,7 +299,7 @@ function AuthLayoutContent() {
             "fixed top-0 bottom-0 right-0 z-40 overflow-hidden bg-background",
             !isRightResizing && "transition-[width] duration-200 ease-linear",
             "[[data-resizing]_&]:transition-none",
-            showEditorSidebar && "border-l border-border/60",
+            showEditorSidebar && "border-l border-sidebar-border",
             !showEditorSidebar && "pointer-events-none",
           )}
           style={{
@@ -427,64 +410,48 @@ function AppSidebar() {
               {/* Nav items: Figma system-flat node 23504-5047 - pixel-perfect */}
               <SidebarMenu className="gap-0">
                 <SidebarMenuItem>
-                  <SidebarMenuButton
-                    render={<Link to="/dashboard" />}
+                  <SidebarItem
+                    prefix={<HomeIcon className="size-[18px] text-muted-foreground" />}
+                    label="All"
+                    to="/dashboard"
                     isActive={location.pathname === "/dashboard"}
-                    tooltip="All"
-                    className="min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active"
-                  >
-                    <SidebarNavLabel
-                      icon={<HomeIcon className="size-[18px] text-muted-foreground" />}
-                      label="All"
-                    />
-                  </SidebarMenuButton>
+                  />
+                  {/* </SidebarMenuButton> */}
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton
+                  <SidebarItem
                     onClick={togglePalette}
-                    tooltip="Search"
-                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active cursor-pointer"
-                  >
-                    <SidebarNavLabel
-                      icon={<SearchIcon className="size-[18px] text-muted-foreground" />}
-                      label="Search"
-                    />
-                  </SidebarMenuButton>
+                    prefix={<SearchIcon className="size-[18px] text-muted-foreground" />}
+                    label="Search"
+                  />
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton
+                  <SidebarItem
                     onClick={toggleInbox}
                     isActive={isInboxOpen}
-                    tooltip={pendingCount > 0 ? `Notifications (${pendingCount})` : "Notifications"}
-                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active cursor-pointer"
+                    prefix={
+                      <div className="relative flex items-center justify-center size-[18px] shrink-0">
+                        <BellIcon className="size-[18px] text-muted-foreground" />
+                        {pendingCount > 0 && (
+                          <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-blue-500 ring-2 ring-background" />
+                        )}
+                      </div>
+                    }
+                    label="Notifications"
                   >
-                    <div className="relative flex items-center justify-center size-[18px] shrink-0">
-                      <BellIcon className="size-[18px] text-muted-foreground" />
-                      {pendingCount > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-blue-500 ring-2 ring-background" />
-                      )}
-                    </div>
-                    <span className="text-sm font-[450] text-sidebar-nav-text tracking-[0.14px] leading-[1.15] font-case truncate flex-1 min-w-0">
-                      Notifications
-                    </span>
                     {pendingCount > 0 && (
                       <span className="text-[10px] bg-blue-500 text-white py-0.5 rounded-full font-semibold shrink-0 tabular-nums">
                         {pendingCount}
                       </span>
                     )}
-                  </SidebarMenuButton>
+                  </SidebarItem>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton
+                  <SidebarItem
                     onClick={() => settingsDialogStore.open()}
-                    tooltip="Settings"
-                    className="h-[30px] min-w-0 rounded-lg px-2 py-[7px] [&_svg]:size-[18px] transition-colors hover:bg-sidebar-active data-[active=true]:bg-sidebar-active cursor-pointer"
-                  >
-                    <SidebarNavLabel
-                      icon={<SettingsIcon className="size-[18px] text-muted-foreground" />}
-                      label="Settings"
-                    />
-                  </SidebarMenuButton>
+                    prefix={<SettingsIcon className="size-[18px] text-muted-foreground" />}
+                    label="Settings"
+                  />
                 </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
@@ -495,7 +462,7 @@ function AppSidebar() {
           </div>
         </SidebarContent>
 
-        <SidebarFooter className="p-0 flex shrink-0 flex-col gap-4">
+        <SidebarFooter className="p-0 flex shrink-0 flex-col gap-4 py-3 px-2">
           <UserMenuMinimal onOpenTrash={() => setTrashDialogOpen(true)} />
         </SidebarFooter>
         {/* <SidebarRail /> */}
@@ -1147,13 +1114,9 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
     <>
       <div className="flex flex-col">
         {/* Favorites Section */}
-        <SidebarSection label="Favorites" initialOpen={favoriteForms.length > 0} action={<></>}>
-          {favoriteForms.length === 0 ? (
-            <span className="text-muted-foreground/50 text-[11px] px-2 py-1 italic">
-              No favorites yet
-            </span>
-          ) : (
-            favoriteForms.map((form) => {
+        {favoriteForms.length > 0 && (
+          <SidebarSection label="Favorites" initialOpen action={<></>}>
+            {favoriteForms.map((form) => {
               const favTo =
                 form.status === "published"
                   ? `/workspace/${form.workspaceId}/form-builder/${form.id}/submissions`
@@ -1177,9 +1140,9 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
                   }
                 />
               );
-            })
-          )}
-        </SidebarSection>
+            })}
+          </SidebarSection>
+        )}
 
         <div className="mt-[15px] space-y-4">
           {isLoading ? (

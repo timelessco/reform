@@ -404,7 +404,7 @@ function DraftForm() {
                       field.handleBlur();
                     }}
                     disabled={false}
-                    size="small"
+                    size="sm"
                     aria-invalid={!!field.state.meta.errors.length && field.state.meta.isTouched}
                   />
                 </field.Field>

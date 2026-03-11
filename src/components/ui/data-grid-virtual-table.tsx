@@ -105,6 +105,7 @@ function DataGridVirtualTable<TData>({
                 <Fragment key={row.id}>
                   <DataGridTableBodyRow
                     row={row}
+                    data-index={virtualRow.index}
                     dndRef={(node) => rowVirtualizer.measureElement(node)}
                   >
                     {row.getVisibleCells().map((cell: Cell<TData, unknown>, colIndex) => (

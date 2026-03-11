@@ -333,7 +333,13 @@ const positionLabels: Record<string, string> = {
 
 /* ─── Sections ─── */
 
-function CustomizeSection({ embedType, form }: { embedType: EmbedType; form: { Field: any } }) {
+function CustomizeSection({
+  embedType,
+  form,
+}: {
+  embedType: EmbedType;
+  form: { Field: any; Subscribe: any };
+}) {
   if (embedType === "popup") {
     return (
       <ConfigCard>
@@ -364,7 +370,7 @@ function CustomizeSection({ embedType, form }: { embedType: EmbedType; form: { F
                 aria-label="Hide on submit"
                 checked={field.state.value}
                 onCheckedChange={(checked: boolean) => field.handleChange(checked)}
-                size="small"
+                size="sm"
               />
             </ConfigRow>
           )}
@@ -415,7 +421,7 @@ function CustomizeSection({ embedType, form }: { embedType: EmbedType; form: { F
                 aria-label="Dark Overlay"
                 checked={field.state.value}
                 onCheckedChange={(v) => field.handleChange(v)}
-                size="small"
+                size="sm"
               />
             </ConfigRow>
           )}
@@ -428,7 +434,7 @@ function CustomizeSection({ embedType, form }: { embedType: EmbedType; form: { F
                 aria-label="Show Emoji"
                 checked={field.state.value}
                 onCheckedChange={(v) => field.handleChange(v)}
-                size="small"
+                size="sm"
               />
             </ConfigRow>
           )}
@@ -471,7 +477,7 @@ function CustomizeSection({ embedType, form }: { embedType: EmbedType; form: { F
                 aria-label="Dynamic Height"
                 checked={field.state.value}
                 onCheckedChange={(v) => field.handleChange(v)}
-                size="small"
+                size="sm"
               />
             </ConfigRow>
           )}
@@ -484,7 +490,7 @@ function CustomizeSection({ embedType, form }: { embedType: EmbedType; form: { F
                 aria-label="Hide Title"
                 checked={field.state.value}
                 onCheckedChange={(v) => field.handleChange(v)}
-                size="small"
+                size="sm"
               />
             </ConfigRow>
           )}
@@ -497,7 +503,7 @@ function CustomizeSection({ embedType, form }: { embedType: EmbedType; form: { F
                 aria-label="Align Left"
                 checked={field.state.value}
                 onCheckedChange={(v) => field.handleChange(v)}
-                size="small"
+                size="sm"
               />
             </ConfigRow>
           )}
@@ -510,7 +516,7 @@ function CustomizeSection({ embedType, form }: { embedType: EmbedType; form: { F
                 aria-label="Transparency"
                 checked={field.state.value}
                 onCheckedChange={(v) => field.handleChange(v)}
-                size="small"
+                size="sm"
               />
             </ConfigRow>
           )}
@@ -529,7 +535,7 @@ function CustomizeSection({ embedType, form }: { embedType: EmbedType; form: { F
               aria-label="Transparent BG"
               checked={field.state.value}
               onCheckedChange={(v) => field.handleChange(v)}
-              size="small"
+              size="sm"
             />
           </ConfigRow>
         )}
@@ -548,7 +554,7 @@ function ProSection({ form }: { form: { Field: any } }) {
               aria-label="Analytics"
               checked={field.state.value}
               onCheckedChange={(v) => field.handleChange(v)}
-              size="small"
+              size="sm"
             />
           </ConfigRow>
         )}
@@ -561,7 +567,7 @@ function ProSection({ form }: { form: { Field: any } }) {
               aria-label="Reform Branding"
               checked={field.state.value}
               onCheckedChange={(v) => field.handleChange(v)}
-              size="small"
+              size="sm"
             />
           </ConfigRow>
         )}

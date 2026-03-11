@@ -251,17 +251,20 @@ function DataGridTableBodyRow<TData>({
   row,
   dndRef,
   dndStyle,
+  "data-index": dataIndex,
 }: {
   children: ReactNode;
   row: Row<TData>;
   dndRef?: React.Ref<HTMLTableRowElement>;
   dndStyle?: CSSProperties;
+  "data-index"?: number;
 }) {
   const { props, table } = useDataGrid();
 
   return (
     <tr
       ref={dndRef}
+      data-index={dataIndex}
       style={{ ...(dndStyle ? dndStyle : null) }}
       data-state={table.options.enableRowSelection && row.getIsSelected() ? "selected" : undefined}
       onClick={() => props.onRowClick && props.onRowClick(row.original)}

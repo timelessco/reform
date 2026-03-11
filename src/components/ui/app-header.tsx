@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toggleFavoriteLocal } from "@/db-collections/favorite.collection";
 import { updateFormStatus } from "@/db-collections/form.collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
@@ -99,12 +99,9 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
   type WorkflowState = "idle" | "publishing" | "discarding";
   type ActiveDialog = "delete" | "discard" | null;
   type ActiveMenu = "main" | "local" | null;
-  type ActiveTooltip = "share" | "settings" | null;
-
   const [workflowState, setWorkflowState] = useState<WorkflowState>("idle");
   const [activeDialog, setActiveDialog] = useState<ActiveDialog>(null);
   const [activeMenu, setActiveMenu] = useState<ActiveMenu>(null);
-  const [activeTooltip, setActiveTooltip] = useState<ActiveTooltip>(null);
 
   // Derived booleans for readability
   const isDiscarding = workflowState === "discarding";
@@ -357,7 +354,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
               <Tooltip>
                 <TooltipTrigger
                   render={
-                    <span className="mr-1 inline-flex h-7 items-center whitespace-nowrap rounded-[min(var(--radius-md),12px)] bg-muted/60 px-2.5 text-[0.8rem] font-normal text-muted-foreground/70" />
+                    <span className="mr-1 inline-flex h-7 items-center whitespace-nowrap rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] font-normal text-muted-foreground/70" />
                   }
                 >
                   Edited{" "}
@@ -400,7 +397,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
               to="/"
               className={cn(
                 buttonVariants({ variant: "ghost", size: "sm" }),
-                "h-8 px-2.5 text-muted-foreground hover:text-foreground font-normal",
+                "px-2.5 text-muted-foreground hover:text-foreground font-normal",
               )}
             >
               About
@@ -509,7 +506,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
               </Popover>
               <Button
                 size="sm"
-                className="h-8 pl-2 pr-2 py-1.5 ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
+                className="pl-2.5 pr-2 py-1.5 ml-1 text-[14px] tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
                 onClick={() => navigate({ to: "/signup" })}
               >
                 Publish
@@ -558,7 +555,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                           })}
                           className={cn(
                             buttonVariants({ variant: "ghost", size: "sm" }),
-                            "h-7 px-2.5 text-muted-foreground hover:text-foreground font-normal",
+                            " px-2.5 text-muted-foreground hover:text-foreground font-normal",
                             demo && "text-foreground bg-accent/50",
                           )}
                         />
@@ -575,66 +572,60 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                   </Tooltip>
                 )}
 
-                {savedDocs?.[0]?.status === "published" && (
-                  <Tooltip
-                    open={activeTooltip === "share" && !isShareSidebarOpen}
-                    onOpenChange={(open) => setActiveTooltip(open ? "share" : null)}
-                  >
+                <TooltipProvider>
+                  {savedDocs?.[0]?.status === "published" && (
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className={cn(
+                              "px-2.5 text-muted-foreground hover:text-foreground font-normal",
+                              isShareSidebarOpen && "text-foreground bg-accent/50",
+                            )}
+                            onClick={() => toggleShareSidebar()}
+                          />
+                        }
+                      >
+                        Share
+                      </TooltipTrigger>
+                      {!isEditorSidebarOpen && (
+                        <TooltipContent side="bottom" align="end">
+                          <p className="font-medium">Share</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatForDisplay(HOTKEYS.TOGGLE_SHARE_SIDEBAR)}
+                          </p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  )}
+
+                  {/* Settings icon button directly in header - toggles form settings sidebar */}
+                  <Tooltip>
                     <TooltipTrigger
                       render={
                         <Button
                           variant="ghost"
-                          size="sm"
-                          className={cn(
-                            "px-2.5 text-muted-foreground hover:text-foreground font-normal",
-                            isShareSidebarOpen && "text-foreground bg-accent/50",
-                          )}
-                          onClick={() => {
-                            setActiveTooltip(null);
-                            requestAnimationFrame(() => toggleShareSidebar());
-                          }}
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          aria-label="Settings"
+                          onClick={() => toggleSettingsSidebar()}
                         />
                       }
                     >
-                      Share
+                      <SettingsIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" align="end">
-                      <p className="font-medium">Share</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatForDisplay(HOTKEYS.TOGGLE_SHARE_SIDEBAR)}
-                      </p>
-                    </TooltipContent>
+                    {!isEditorSidebarOpen && (
+                      <TooltipContent side="bottom" align="end">
+                        <p className="font-medium">Settings</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatForDisplay(HOTKEYS.TOGGLE_SETTINGS_SIDEBAR)}
+                        </p>
+                      </TooltipContent>
+                    )}
                   </Tooltip>
-                )}
-
-                {/* Settings icon button directly in header - toggles form settings sidebar */}
-                <Tooltip
-                  open={activeTooltip === "settings" && !isSettingsSidebarOpen}
-                  onOpenChange={(open) => setActiveTooltip(open ? "settings" : null)}
-                >
-                  <TooltipTrigger
-                    render={
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                        aria-label="Settings"
-                        onClick={() => {
-                          setActiveTooltip(null);
-                          requestAnimationFrame(() => toggleSettingsSidebar());
-                        }}
-                      />
-                    }
-                  >
-                    <SettingsIcon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" align="end">
-                    <p className="font-medium">Settings</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatForDisplay(HOTKEYS.TOGGLE_SETTINGS_SIDEBAR)}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
+                </TooltipProvider>
 
                 {/* Three dots menu - popover button list matching workspace/sidebar style */}
                 <Popover
@@ -686,7 +677,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                       <Button
                         size="sm"
                         className={cn(
-                          "h-8 pl-2 pr-2 py-1.5 ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none",
+                          "pl-2 pr-2 py-1.5 ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none",
                           !isLoadingSavedDocs &&
                             (hasUnpublishedChanges || savedDocs?.[0]?.status !== "published")
                             ? "bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
@@ -726,12 +717,12 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                           search={(prev) => ({ ...prev, force: true })}
                           className={cn(
                             buttonVariants({ size: "sm" }),
-                            "h-8 pl-[10px] pr-[8px] ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200",
+                            "pl-[10px] pr-[8px] ml-1 text-[14px] font-medium tracking-[0.14px] leading-tight transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200",
                           )}
                         />
                       }
                     >
-                      <PencilIcon className="h-3.5 w-3.5 mr-1.5" />
+                      <PencilIcon className="h-3.5 w-3.5" />
                       Edit
                     </TooltipTrigger>
                     <TooltipContent side="bottom" align="end">

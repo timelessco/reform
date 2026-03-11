@@ -17,7 +17,8 @@ import {
   Trash2Icon,
   UsersIcon,
 } from "@/components/ui/icons";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
+import { Button } from "./ui/button";
 
 function getInitials(name?: string | null) {
   if (!name) return "U";
@@ -65,17 +66,6 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
       },
     }),
   );
-
-  const closeTimer = useRef<ReturnType<typeof setTimeout>>(null);
-
-  const handleMouseEnter = useCallback(() => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    setIsOpen(true);
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    closeTimer.current = setTimeout(() => setIsOpen(false), 200);
-  }, []);
 
   const setActiveOrgMutation = useMutation(
     auth.organization.setActive.mutationOptions({
@@ -136,17 +126,14 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
     "size-4 shrink-0 text-foreground/80 [&_path]:stroke-[1.6] [&_path]:stroke-current";
 
   return (
-    <div
-      className="border-t border-b bg-background transition-colors hover:bg-sidebar-active"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <div className="bg-background transition-colors hover:bg-sidebar-active">
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger
           render={
-            <button
-              type="button"
-              className="flex w-full min-w-0 items-center gap-2 rounded-lg overflow-hidden px-1 py-[7px] transition-colors cursor-pointer"
+            <Button
+              variant="ghost"
+              size="md"
+              className="flex w-full min-w-0 gap-2 rounded-lg overflow-hidden px-1 py-[7px] transition-colors cursor-pointer items-center justify-start"
               aria-label="Toggle user menu"
             />
           }
@@ -181,8 +168,6 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
           align="center"
           sideOffset={8}
           className="w-[calc(var(--anchor-width)-16px)]"
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
         >
           {/* User info header */}
           <div className="px-2 py-1.5 flex items-start gap-2.5">

@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { and, count, desc, eq, inArray, lt, or } from "drizzle-orm";
+import { and, count, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { submissions } from "@/db/schema";
 import { db } from "@/lib/db";
@@ -82,10 +82,11 @@ export const getSubmissionsByFormIdPaginated = createServerFn({ method: "GET" })
       formId: z.string().uuid(),
       cursor: z.object({ createdAt: z.string(), id: z.string() }).optional(),
       limit: z.number().int().min(1).max(100).default(SUBMISSIONS_PAGE_SIZE),
+      search: z.string().optional(),
     }),
   )
   .handler(async ({ data, context }) => {
-    const { formId, cursor, limit } = data;
+    const { formId, cursor, limit, search } = data;
 
     await authForm(formId, context.session.user.id);
 
@@ -96,9 +97,15 @@ export const getSubmissionsByFormIdPaginated = createServerFn({ method: "GET" })
         )
       : undefined;
 
-    const whereCondition = cursorCondition
-      ? and(eq(submissions.formId, formId), cursorCondition)
-      : eq(submissions.formId, formId);
+    const searchCondition = search?.trim()
+      ? sql`${submissions.data}::text ILIKE ${"%" + search.trim() + "%"}`
+      : undefined;
+
+    const conditions = [eq(submissions.formId, formId), cursorCondition, searchCondition].filter(
+      Boolean,
+    );
+
+    const whereCondition = conditions.length > 1 ? and(...conditions) : conditions[0];
 
     const rows = await db
       .select()

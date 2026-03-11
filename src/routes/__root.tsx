@@ -8,7 +8,7 @@ import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { Toaster } from "@/components/ui/sonner";
 import type { Session } from "../lib/auth";
-import appCss from "../styles.css?url";
+import appCss from "../styles/styles.css?url";
 
 const LazyDevtools = lazy(() =>
   import("../components/devtools").then((m) => ({ default: m.Devtools })),

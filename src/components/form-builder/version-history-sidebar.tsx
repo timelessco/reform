@@ -96,7 +96,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
       collapsible="none"
       className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out"
     >
-      <SidebarHeader className="pr-1 pt-2 border-b border-border/40 flex flex-row items-center justify-between shrink-0">
+      <SidebarHeader className="pr-1 pt-2  flex flex-row items-center justify-between shrink-0">
         <p className="text-sm font-medium leading-[1.15] text-muted-foreground tracking-[0.14px] pl-2.5 pr-2 py-1.5">
           Version History
         </p>
@@ -161,7 +161,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
 
                 {/* Suffix: timestamp or menu */}
                 {isSelected ? (
-                  <div className="shrink-0 self-center">
+                  <div className="shrink-0 self-center px-2">
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         render={

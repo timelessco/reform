@@ -28,9 +28,12 @@ function EmbedTabBar({
 }) {
   const activeIndex = items.findIndex((t) => t.value === value);
   const count = items.length;
-  // Percentage-based: pill always tracks 1/N width at index/N offset
-  const pillLeft = `calc(${(activeIndex / count) * 100}% + 3px)`;
-  const pillWidth = `calc(${100 / count}% - ${6 / count}px)`;
+  const padding = 3; // px – matches p-[3px] on the container
+  const totalPadding = padding * 2;
+  // Pill width = (container - 2×padding) / N
+  const pillWidth = `calc((100% - ${totalPadding}px) / ${count})`;
+  // Pill left = padding + index × pillWidth
+  const pillLeft = `calc(${padding}px + ${activeIndex} * (100% - ${totalPadding}px) / ${count})`;
 
   return (
     <div className="relative bg-secondary rounded-[10px] p-[3px] w-full flex">
@@ -44,7 +47,7 @@ function EmbedTabBar({
           type="button"
           onClick={() => onChange(tab.value)}
           className={cn(
-            "relative z-10 flex-1 h-7 rounded-[8px] text-sm font-medium text-center transition-colors",
+            "relative z-10 flex-1 h-7 rounded-[8px] text-sm font-medium text-center flex items-center justify-center transition-colors",
             value === tab.value ? "text-foreground" : "text-muted-foreground",
           )}
         >

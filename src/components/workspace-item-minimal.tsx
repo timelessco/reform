@@ -1,3 +1,4 @@
+import { ThemedFormIcon } from "@/components/icon-picker";
 import { SidebarItem } from "@/components/sidebar-item";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -5,26 +6,27 @@ import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
-  ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   AlphabeticalIcon,
   CalendarIcon,
+  CheckIcon,
+  ChevronRightIcon,
   ClockRewindIcon,
   CopyIcon,
+  Loader2Icon,
   MoreHorizontalIcon,
   Pencil2Icon,
   PlusIcon,
+  TrashIcon,
 } from "@/components/ui/icons";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SidebarSection } from "@/components/ui/sidebar-section";
 import { createFormLocal } from "@/db-collections/form.collections";
 import { cn } from "@/lib/utils";
 import { useLocation, useRouter } from "@tanstack/react-router";
-import { CheckIcon, ChevronRightIcon, Loader2Icon, TrashIcon } from "@/components/ui/icons";
 import { useState } from "react";
-import { ThemedFormIcon } from "@/components/icon-picker";
 
 export type WorkspaceWithForms = {
   id: string;
@@ -137,7 +139,7 @@ export function WorkspaceItemMinimal({
                     {sortOptions.map((option) => (
                       <Button
                         key={option.value}
-                        type="button"
+                        size="sm"
                         variant="ghost"
                         onClick={() => {
                           onSortChange(option.value);
@@ -164,11 +166,13 @@ export function WorkspaceItemMinimal({
               <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground tracking-[0.24px] leading-tight">
                 Workspace
               </div>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={handleCreateForm}
                 disabled={isCreatingForm}
-                className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none"
+                className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
               >
                 {isCreatingForm ? (
                   <Loader2Icon className="size-4 animate-spin shrink-0" strokeWidth={1.5} />
@@ -176,23 +180,27 @@ export function WorkspaceItemMinimal({
                   <PlusIcon className="size-4 shrink-0" strokeWidth={1.5} />
                 )}
                 <span className="flex-1 text-left">New form</span>
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={onRename}
                 className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
               >
                 <Pencil2Icon className="size-4 shrink-0" strokeWidth={1.5} />
                 <span className="flex-1 text-left">Rename</span>
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={onDelete}
                 className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-red-500/70 hover:text-red-500 hover:bg-red-500/5"
               >
                 <TrashIcon className="size-4 shrink-0" strokeWidth={1.5} />
                 <span className="flex-1 text-left">Delete</span>
-              </button>
+              </Button>
             </div>
           </PopoverContent>
         </Popover>
@@ -283,7 +291,6 @@ function WorkspaceFormMinimal({
           <CopyIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
           <span className="flex-1 text-left">Duplicate</span>
         </ContextMenuItem>
-        <ContextMenuSeparator className="my-1 h-px bg-border mx-0" />
         <ContextMenuItem
           variant="destructive"
           onClick={(e) => {

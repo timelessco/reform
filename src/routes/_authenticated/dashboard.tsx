@@ -191,24 +191,24 @@ function DashboardPage() {
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
-              size="sm"
-              className="text-muted-foreground hover:text-foreground hover:bg-muted/50 font-medium"
+              size="default"
+              className="text-muted-foreground font-medium"
               onClick={handleCreateWorkspace}
               disabled={isLoading}
             >
-              <FolderPlus className="h-4 w-4 mr-2" />
+              <FolderPlus className="h-4 w-4" />
               New workspace
             </Button>
             <Button
-              size="sm"
+              size="default"
               onClick={handleCreateForm}
               disabled={isLoading || isCreating || orgWorkspaces.length === 0}
               className=" font-medium"
             >
               {isCreating ? (
-                <Loader2Icon className="h-4 w-4 animate-spin mr-2" />
+                <Loader2Icon className="h-4 w-4 animate-spin" />
               ) : (
-                <PlusIcon className="h-4 w-4 mr-2" />
+                <PlusIcon className="h-4 w-4" />
               )}
               New form
             </Button>
@@ -236,7 +236,7 @@ function DashboardPage() {
               : paginatedForms.map((form) => (
                   <div
                     key={form.id}
-                    className="group flex flex-col p-2 -mx-2 rounded-xl hover:bg-muted/30 transition-[background-color] duration-200 cursor-pointer"
+                    className="group flex flex-col p-2 -mx-2 rounded-lg hover:bg-muted/30 transition-[background-color] duration-200 cursor-pointer"
                   >
                     <Link
                       to={
@@ -286,8 +286,7 @@ function DashboardPage() {
                                 render={
                                   <Button
                                     variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 rounded-full hover:bg-muted"
+                                    size="icon-sm"
                                     aria-label="Duplicate form"
                                     onClick={(e) => {
                                       e.preventDefault();
@@ -307,8 +306,7 @@ function DashboardPage() {
                                 render={
                                   <Button
                                     variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive"
+                                    size="icon-sm"
                                     aria-label="Delete form"
                                     onClick={(e) => {
                                       e.preventDefault();

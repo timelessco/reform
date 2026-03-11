@@ -493,7 +493,7 @@ function SubmissionsPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="gap-2 font-normal bg-accent/60 hover:bg-accent"
+                  className="gap-2 font-normal bg-accent/60 hover:bg-accent rounded-lg"
                 />
               }
             >
@@ -530,8 +530,8 @@ function SubmissionsPage() {
 
           {/* Right side: Search and filters */}
           <div className="flex items-center gap-1.5">
-            <ButtonGroup className="w-[180px] focus-within:w-[240px] transition-[width] duration-200 ease-out">
-              <ButtonGroupText className="h-7 w-full rounded-lg px-2.5 gap-1.5 text-[13px] focus-within:ring-1 focus-within:ring-foreground/15">
+            <ButtonGroup className="w-[180px] focus-within:w-[240px] transition-[width] duration-200 ease-out border-none rounded-lg">
+              <ButtonGroupText className="h-7 w-full rounded-lg px-2.5 gap-1.5 text-[13px]">
                 <svg
                   width="14"
                   height="14"
@@ -556,7 +556,7 @@ function SubmissionsPage() {
                 </svg>
                 <input
                   placeholder="Search responses..."
-                  className="min-w-0 flex-1 bg-transparent border-0 p-0 outline-none text-[13px] placeholder:text-alpha-50 placeholder:text-lg"
+                  className="min-w-0 flex-1 bg-transparent border-0 p-0 outline-none text-[13px] placeholder:text-(--color-gray-alpha-600) placeholder:text-normal placeholder:text-[0.8rem]"
                   value={globalFilter}
                   onChange={(e) => setGlobalFilter(e.target.value)}
                   aria-label="Search responses"
@@ -571,9 +571,13 @@ function SubmissionsPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11px] font-medium bg-accent/60 hover:bg-accent text-foreground transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md font-medium bg-accent/60 hover:bg-accent text-(--color-gray-alpha-600) transition-colors cursor-pointer text-normal text-[0.8rem] rounded-lg"
                 >
-                  <Columns className="h-3 w-3" />
+                  <Columns
+                    className="h-3 w-3"
+                    strokeWidth="2"
+                    color="var(--color-gray-alpha-600)"
+                  />
                   Columns
                 </Button>
               }
@@ -582,10 +586,10 @@ function SubmissionsPage() {
             <Button
               variant="ghost"
               size="sm"
-              className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11px] font-medium bg-accent/60 hover:bg-accent text-foreground transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md font-medium bg-accent/60 hover:bg-accent text-(--color-gray-alpha-600) transition-colors cursor-pointer text-normal text-[0.8rem] rounded-lg"
               onClick={handleDownloadCSV}
             >
-              <DownloadIcon className="h-3 w-3" />
+              <DownloadIcon className="h-3 w-3" color="var(--color-gray-alpha-600)" />
               Download CSV
             </Button>
           </div>

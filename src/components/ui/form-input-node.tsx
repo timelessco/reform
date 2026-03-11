@@ -28,7 +28,7 @@ export function FormInputElement({ className, children, ...props }: PlateElement
     <PlateElement
       attributes={{ ...attributes, placeholder, "data-bf-input": "true" }}
       className={cn(
-        "relative my-1 flex h-7 w-full max-w-[464px] items-center rounded-lg border-0 bg-card pl-[10px] pr-[8px] text-sm tracking-[0.28px] leading-[1.15] shadow-form-input cursor-text caret-current",
+        "relative my-1 flex h-7 w-full max-w-[464px] items-center rounded-[8px] border-0 bg-card pl-[10px] pr-[8px] text-sm tracking-[0.28px] leading-[1.15] shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] cursor-text caret-current",
         isSelected && focused && "ring-ring/50 ring-[3px]",
         className,
       )}

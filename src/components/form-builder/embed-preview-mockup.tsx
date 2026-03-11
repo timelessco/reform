@@ -199,7 +199,7 @@ export function EmbedPreviewMockup({
   const popupIconDisplay = resolveIconDisplay(emoji, emojiIcon);
 
   return (
-    <div className="rounded-[12px] border border-border bg-[#f5f5f5] dark:bg-muted/30 overflow-hidden">
+    <div className="rounded-[12px] bg-[#f5f5f5] dark:bg-muted/30 overflow-hidden">
       {/* Browser Chrome */}
       <div className="flex items-center gap-1 px-2.25 pt-2.5 pb-2">
         <div className="flex gap-1.5">
@@ -270,7 +270,7 @@ export function EmbedPreviewMockup({
         {/* The single morphing box */}
         {target && (
           <motion.div
-            className="absolute bg-[#e0e0e0] dark:bg-card shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-border/50 z-20 overflow-hidden"
+            className="absolute bg-[#e0e0e0] dark:bg-card shadow-[0_2px_10px_rgba(0,0,0,0.04)]  z-20 overflow-hidden"
             animate={target}
             transition={transition}
             onAnimationComplete={handleAnimationComplete}
@@ -318,7 +318,7 @@ export function EmbedPreviewMockup({
           <button
             type="button"
             aria-label="Open popup preview"
-            className="absolute w-[28px] h-[28px] rounded-full bg-[#e0e0e0] dark:bg-card shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-border/50 z-20 cursor-pointer p-0"
+            className="absolute w-[28px] h-[28px] rounded-full bg-[#e0e0e0] dark:bg-card shadow-[0_2px_10px_rgba(0,0,0,0.04)]  z-20 cursor-pointer p-0"
             style={{ left: bubblePos.left, top: bubblePos.top }}
             onMouseEnter={() => setIsPopupExpanded(true)}
             onClick={() => setIsPopupExpanded(true)}

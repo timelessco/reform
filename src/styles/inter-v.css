@@ -1,0 +1,19 @@
+/* Arial Fallback for inter-v */
+@font-face {
+  font-family: inter-v-fallback;
+  ascent-override: 90.6218%;
+  descent-override: -22.5641%;
+  font-display: swap;
+  line-gap-override: 0%;
+  size-adjust: 106.9003%;
+  src: local("Arial");
+}
+
+/* Inter Variable */
+@font-face {
+  font-family: inter-v;
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  src: url("/fonts/Inter-V.woff2") format("woff2");
+}

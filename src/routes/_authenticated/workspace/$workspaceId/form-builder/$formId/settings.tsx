@@ -112,7 +112,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Redirect on completion"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="small"
+                      size="sm"
                     />
                   )}
                 </form.AppField>
@@ -168,7 +168,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Progress bar"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="small"
+                      size="sm"
                     />
                   )}
                 </form.AppField>
@@ -192,7 +192,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                         aria-label="Branding"
                         checked={!!field.state.value}
                         onCheckedChange={field.handleChange}
-                        size="small"
+                        size="sm"
                       />
                     )}
                   </form.AppField>
@@ -217,7 +217,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                         aria-label="Data retention"
                         checked={!!field.state.value}
                         onCheckedChange={field.handleChange}
-                        size="small"
+                        size="sm"
                       />
                     )}
                   </form.AppField>
@@ -264,7 +264,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Self notifications"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="small"
+                      size="sm"
                     />
                   )}
                 </form.AppField>
@@ -309,7 +309,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                         aria-label="Respondent email notifications"
                         checked={!!field.state.value}
                         onCheckedChange={field.handleChange}
-                        size="small"
+                        size="sm"
                       />
                     )}
                   </form.AppField>
@@ -369,7 +369,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Password protect"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="small"
+                      size="sm"
                     />
                   )}
                 </form.AppField>
@@ -403,7 +403,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Close form"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="small"
+                      size="sm"
                     />
                   )}
                 </form.AppField>
@@ -443,7 +443,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Close on date"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="small"
+                      size="sm"
                     />
                   )}
                 </form.AppField>
@@ -480,7 +480,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Limit submissions"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="small"
+                      size="sm"
                     />
                   )}
                 </form.AppField>
@@ -521,7 +521,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Prevent duplicates"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="small"
+                      size="sm"
                     />
                   )}
                 </form.AppField>
@@ -543,7 +543,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Auto-jump"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="small"
+                      size="sm"
                     />
                   )}
                 </form.AppField>
@@ -560,7 +560,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Save for later"
                       checked={field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="small"
+                      size="sm"
                     />
                   )}
                 </form.AppField>
