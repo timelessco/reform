@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, use, ReactNode } from "react";
+import React, { createContext, use, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { ColumnFiltersState, RowData, SortingState, Table } from "@tanstack/react-table";
 
@@ -37,6 +37,9 @@ export interface DataGridContextProps<TData extends object> {
   table: Table<TData>;
   recordCount: number;
   isLoading: boolean;
+  virtualized: boolean;
+  isFetchingMore: boolean;
+  fetchMoreSkeletonCount: number;
 }
 
 export type DataGridRequestParams = {
@@ -56,6 +59,9 @@ export interface DataGridProps<TData extends object> {
   loadingMode?: "skeleton" | "spinner";
   loadingMessage?: ReactNode | string;
   emptyMessage?: ReactNode | string;
+  virtualized?: boolean;
+  isFetchingMore?: boolean;
+  fetchMoreSkeletonCount?: number;
   tableLayout?: {
     dense?: boolean;
     cellBorder?: boolean;
@@ -110,6 +116,9 @@ function DataGridProvider<TData extends object>({
         table,
         recordCount: props.recordCount,
         isLoading: props.isLoading || false,
+        virtualized: props.virtualized || false,
+        isFetchingMore: props.isFetchingMore || false,
+        fetchMoreSkeletonCount: props.fetchMoreSkeletonCount ?? 5,
       }}
     >
       {children}
@@ -178,14 +187,20 @@ function DataGridContainer({
   children,
   className,
   border = true,
+  ref,
+  onScroll,
 }: {
   children: ReactNode;
   className?: string;
   border?: boolean;
+  ref?: React.Ref<HTMLDivElement>;
+  onScroll?: React.UIEventHandler<HTMLDivElement>;
 }) {
   return (
     <div
+      ref={ref}
       data-slot="data-grid"
+      onScroll={onScroll}
       className={cn("grid w-full", border && "border border-border rounded-lg", className)}
     >
       {children}
