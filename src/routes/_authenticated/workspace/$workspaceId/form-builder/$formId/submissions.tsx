@@ -4,7 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DataGrid, DataGridContainer } from "@/components/ui/data-grid";
 import { DataGridColumnHeader } from "@/components/ui/data-grid-column-header";
 import { DataGridColumnVisibility } from "@/components/ui/data-grid-column-visibility";
-import { DataGridTable } from "@/components/ui/data-grid-table";
+import { DataGridVirtualTable } from "@/components/ui/data-grid-virtual-table";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -19,21 +19,21 @@ import { getLatestPublishedVersion } from "@/lib/fn/form-versions";
 import {
   deleteSubmission,
   deleteSubmissionsBulk,
-  getSubmissionsByFormIdQueryOption,
+  getSubmissionsByFormIdPaginated,
+  getSubmissionsCountQueryOption,
 } from "@/lib/fn/submissions";
-import type { SerializedSubmission } from "@/lib/fn/submissions";
+import type { SerializedSubmission, SubmissionCursor } from "@/lib/fn/submissions";
 import {
   getEditableFields,
   transformPlateStateToFormElements,
 } from "@/lib/transform-plate-to-form";
 import { cn } from "@/lib/utils";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   createColumnHelper,
   getCoreRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -46,8 +46,6 @@ import type {
 
 import {
   ChevronDownIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
   DownloadIcon,
   FilterIcon,
   SearchIcon,
@@ -56,7 +54,7 @@ import {
 } from "@/components/ui/icons";
 import { Columns } from "lucide-react";
 import type { Value } from "platejs";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { HOTKEYS, formatForDisplay } from "@/lib/hotkeys";
 import { z } from "zod";
@@ -86,7 +84,6 @@ const FIELD_STATUS_CONFIG: Record<
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute(
   "/_authenticated/workspace/$workspaceId/form-builder/$formId/submissions",
@@ -96,18 +93,15 @@ export const Route = createFileRoute(
   }),
   component: SubmissionsPage,
   loader: async ({ context, params }) => {
-    const [publishedData, submissionsData] = await Promise.all([
+    const [publishedData] = await Promise.all([
       context.queryClient.ensureQueryData({
         queryKey: ["publishedFormVersion", params.formId],
         queryFn: () => getLatestPublishedVersion({ data: { formId: params.formId } }),
         revalidateIfStale: true,
       }),
-      context.queryClient.ensureQueryData({
-        ...getSubmissionsByFormIdQueryOption(params.formId),
-        revalidateIfStale: true,
-      }),
+      context.queryClient.ensureQueryData(getSubmissionsCountQueryOption(params.formId)),
     ]);
-    return { publishedData, submissionsData };
+    return { publishedData };
   },
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
@@ -117,12 +111,10 @@ export const Route = createFileRoute(
 function SubmissionsPage() {
   const { formId } = Route.useParams();
   const queryClient = useQueryClient();
-  const { publishedData: initialPublishedData, submissionsData: initialSubmissionsData } =
-    Route.useLoaderData();
+  const { publishedData: initialPublishedData } = Route.useLoaderData();
   const [activeTab, setActiveTab] = useState<"all" | "completed" | "partial">("all");
   const [sorting, setSorting] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
   const [fieldStatusFilter, setFieldStatusFilter] = useState<Set<FieldStatus>>(
     new Set(["current", "deleted"]),
   );
@@ -130,6 +122,7 @@ function SubmissionsPage() {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({});
   const [columnOrder, setColumnOrder] = useState<string[]>([]);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // 1. Fetch Published Form Structure (to derive columns from published version, not draft)
   const { data: publishedData } = useQuery({
@@ -139,14 +132,48 @@ function SubmissionsPage() {
   });
   const publishedContent = publishedData?.form?.content;
 
-  // 2. Fetch Submissions via server function
-  const { data } = useQuery({
-    ...getSubmissionsByFormIdQueryOption(formId),
-    initialData: initialSubmissionsData,
+  // 2. Fetch Submissions via infinite query
+  const {
+    data: submissionsData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: isLoadingSubmissions,
+  } = useInfiniteQuery({
+    queryKey: ["submissions", formId],
+    queryFn: async ({ pageParam }: { pageParam: SubmissionCursor | undefined }) =>
+      getSubmissionsByFormIdPaginated({
+        data: { formId, cursor: pageParam },
+      }),
+    initialPageParam: undefined as SubmissionCursor | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    refetchOnWindowFocus: true,
   });
 
+  const { data: countData } = useQuery(getSubmissionsCountQueryOption(formId));
+  const totalCount = countData?.total ?? 0;
+
+  const allSubmissions: SerializedSubmission[] = useMemo(
+    () => submissionsData?.pages?.flatMap((page) => page.submissions) ?? [],
+    [submissionsData],
+  );
+
+  const fetchMoreOnBottomReached = useCallback(
+    (containerRefElement?: HTMLDivElement | null) => {
+      if (!containerRefElement) return;
+      const { scrollHeight, scrollTop, clientHeight } = containerRefElement;
+      if (scrollHeight - scrollTop - clientHeight < 500 && !isFetchingNextPage && hasNextPage) {
+        fetchNextPage();
+      }
+    },
+    [fetchNextPage, isFetchingNextPage, hasNextPage],
+  );
+
+  useEffect(() => {
+    fetchMoreOnBottomReached(scrollContainerRef.current);
+  }, [fetchMoreOnBottomReached]);
+
   // Client-side filter based on activeTab
-  const allSubmissions: SerializedSubmission[] = data?.submissions ?? [];
   const { completedCount, partialCount } = useMemo(() => {
     let completed = 0;
     for (const s of allSubmissions) {
@@ -379,7 +406,6 @@ function SubmissionsPage() {
     state: {
       sorting,
       globalFilter,
-      pagination,
       rowSelection,
       columnVisibility,
       columnPinning,
@@ -392,11 +418,9 @@ function SubmissionsPage() {
     onColumnOrderChange: setColumnOrder,
     onSortingChange: setSorting as any,
     onGlobalFilterChange: setGlobalFilter,
-    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     autoResetPageIndex: false,
     columnResizeMode: "onChange",
     getRowId: (row) => row.id,
@@ -509,7 +533,7 @@ function SubmissionsPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 gap-1.5 text-[11px] font-medium bg-accent/60 hover:bg-accent"
+                  className="gap-2 font-normal bg-accent/60 hover:bg-accent"
                 />
               }
             >
@@ -546,12 +570,33 @@ function SubmissionsPage() {
 
           {/* Right side: Search and filters */}
           <div className="flex items-center gap-1.5">
-            <ButtonGroup className="w-[180px] focus-within:w-[240px] transition-all">
-              <ButtonGroupText className="h-7 w-full rounded-lg bg-accent/60 hover:bg-accent px-2 gap-1.5 ">
-                <SearchIcon className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+            <ButtonGroup className="w-[180px] focus-within:w-[240px] transition-[width] duration-200 ease-out">
+              <ButtonGroupText className="h-7 w-full rounded-lg px-2.5 gap-1.5 text-[13px] focus-within:ring-1 focus-within:ring-foreground/15">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <g clip-path="url(#clip0_20327_1364)">
+                    <path
+                      fill-rule="evenodd"
+                      clip-rule="evenodd"
+                      d="M5.8335 0.416504C8.8248 0.41668 11.2494 2.84218 11.2495 5.8335C11.2494 7.05861 10.8415 8.18785 10.1558 9.09521L13.3638 12.3032C13.6566 12.5961 13.6566 13.0709 13.3638 13.3638C13.0709 13.6566 12.5961 13.6566 12.3032 13.3638L9.09521 10.1558C8.18785 10.8415 7.05861 11.2494 5.8335 11.2495C2.84218 11.2494 0.41668 8.8248 0.416504 5.8335C0.416645 2.84216 2.84216 0.416645 5.8335 0.416504ZM5.8335 1.9165C3.67059 1.91664 1.91664 3.67059 1.9165 5.8335C1.91668 7.99638 3.67061 9.74937 5.8335 9.74951C7.99635 9.74934 9.74934 7.99635 9.74951 5.8335C9.74937 3.67061 7.99638 1.91668 5.8335 1.9165Z"
+                      fill="black"
+                      fill-opacity="0.51"
+                    />
+                  </g>
+                  <defs>
+                    <clipPath id="clip0_20327_1364">
+                      <rect width="14" height="14" fill="white" />
+                    </clipPath>
+                  </defs>
+                </svg>
                 <input
                   placeholder="Search responses..."
-                  className="h-full min-w-0 flex-1 bg-transparent border-0 p-0 outline-none text-[13px] placeholder:text-muted-foreground/40"
+                  className="min-w-0 flex-1 bg-transparent border-0 p-0 outline-none text-[13px] placeholder:text-alpha-50 placeholder:text-lg"
                   value={globalFilter}
                   onChange={(e) => setGlobalFilter(e.target.value)}
                   aria-label="Search responses"
@@ -563,24 +608,26 @@ function SubmissionsPage() {
             <DataGridColumnVisibility
               table={table}
               trigger={
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11px] font-medium bg-accent/60 hover:bg-accent text-foreground transition-colors cursor-pointer"
                 >
                   <Columns className="h-3 w-3" />
                   Columns
-                </button>
+                </Button>
               }
             />
 
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md text-[11px] font-medium bg-accent/60 hover:bg-accent text-foreground transition-colors cursor-pointer"
               onClick={handleDownloadCSV}
             >
               <DownloadIcon className="h-3 w-3" />
               Download CSV
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -628,7 +675,11 @@ function SubmissionsPage() {
 
         <DataGrid
           table={table}
-          recordCount={allSubmissions.length}
+          recordCount={totalCount}
+          virtualized={true}
+          isFetchingMore={isFetchingNextPage}
+          fetchMoreSkeletonCount={5}
+          isLoading={isLoadingSubmissions}
           tableLayout={{
             dense: true,
             columnsResizable: true,
@@ -658,82 +709,13 @@ function SubmissionsPage() {
         >
           <div className="w-full flex-1 flex flex-col min-h-0 overflow-hidden">
             <DataGridContainer
+              ref={scrollContainerRef}
               border={false}
               className="flex-1 min-h-0 border-b border-border overflow-auto content-start"
+              onScroll={(e) => fetchMoreOnBottomReached(e.currentTarget)}
             >
-              <DataGridTable />
+              <DataGridVirtualTable scrollRef={scrollContainerRef} />
             </DataGridContainer>
-
-            {/* Custom Pagination - 20/50/80 style */}
-            <div className="shrink-0 flex items-center justify-between px-2 py-0.75 -mt-px border-b border-border">
-              {/* Left: Page size tabs */}
-              <Tabs
-                value={String(pagination.pageSize)}
-                onValueChange={(value) => {
-                  const size = Number(value);
-                  if (Number.isNaN(size)) return;
-                  setPagination((prev) => ({
-                    ...prev,
-                    pageSize: size,
-                    pageIndex: 0,
-                  }));
-                }}
-                className="w-[108px] gap-0"
-              >
-                <TabsList className="relative grid w-full grid-cols-3 rounded-xl bg-muted/80 p-[2px] h-[30px] overflow-hidden">
-                  <div
-                    className="absolute top-[2px] bottom-[2px] rounded-[10px] bg-background/95 shadow-[0px_0px_0px_1px_rgba(0,0,0,0.04),0px_1px_2px_rgba(0,0,0,0.10)] dark:bg-background/70 dark:shadow-[inset_0px_0px_0px_1px_rgba(255,255,255,0.06),0px_1px_2px_rgba(0,0,0,0.45)] z-0 transition-[left,width] duration-250 ease-in-out"
-                    style={{
-                      left: `calc(2px + ${[20, 50, 80].indexOf(pagination.pageSize)} * ((100% - 4px) / 3))`,
-                      width: "calc((100% - 4px) / 3)",
-                    }}
-                  />
-                  {[20, 50, 80].map((size) => (
-                    <TabsTrigger
-                      key={size}
-                      value={String(size)}
-                      className="relative z-10 h-[26px] w-full rounded-[10px] border-0 px-0 py-0 text-sm font-medium leading-none group-data-[variant=default]/tabs-list:data-active:shadow-none group-data-[variant=default]/tabs-list:data-active:bg-transparent group-data-[variant=default]/tabs-list:data-active:border-transparent data-active:text-foreground text-muted-foreground hover:text-foreground"
-                    >
-                      {size}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-
-              {/* Right: Page info and navigation */}
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span>
-                  {table.getState().pagination.pageIndex * pagination.pageSize + 1} -{" "}
-                  {Math.min(
-                    (table.getState().pagination.pageIndex + 1) * pagination.pageSize,
-                    table.getFilteredRowModel().rows.length,
-                  )}{" "}
-                  of {table.getFilteredRowModel().rows.length}
-                </span>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => table.previousPage()}
-                    disabled={!table.getCanPreviousPage()}
-                    aria-label="Previous page"
-                  >
-                    <ChevronLeftIcon className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => table.nextPage()}
-                    disabled={!table.getCanNextPage()}
-                    aria-label="Next page"
-                  >
-                    <ChevronRightIcon className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
           </div>
         </DataGrid>
       </div>
