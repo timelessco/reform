@@ -7,12 +7,8 @@ import { DataGridColumnVisibility } from "@/components/ui/data-grid-column-visib
 import { DataGridVirtualTable } from "@/components/ui/data-grid-virtual-table";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getLatestPublishedVersion } from "@/lib/fn/form-versions";
@@ -27,7 +23,6 @@ import {
   getEditableFields,
   transformPlateStateToFormElements,
 } from "@/lib/transform-plate-to-form";
-import { cn } from "@/lib/utils";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
@@ -48,7 +43,6 @@ import {
   ChevronDownIcon,
   DownloadIcon,
   FilterIcon,
-  SearchIcon,
   Trash2Icon,
   XIcon,
 } from "@/components/ui/icons";
@@ -61,25 +55,6 @@ import { z } from "zod";
 
 // Field status types for color coding
 type FieldStatus = "current" | "deleted";
-
-// Status colors and labels
-const FIELD_STATUS_CONFIG: Record<
-  FieldStatus,
-  { color: string; bgColor: string; label: string; dotColor: string }
-> = {
-  current: {
-    color: "text-emerald-700 dark:text-emerald-400",
-    bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
-    label: "Current",
-    dotColor: "fill-emerald-500",
-  },
-  deleted: {
-    color: "text-red-700 dark:text-red-400",
-    bgColor: "bg-red-50 dark:bg-red-950/30",
-    label: "Deleted",
-    dotColor: "fill-red-500",
-  },
-};
 
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
@@ -115,9 +90,7 @@ function SubmissionsPage() {
   const [activeTab, setActiveTab] = useState<"all" | "completed" | "partial">("all");
   const [sorting, setSorting] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
-  const [fieldStatusFilter, setFieldStatusFilter] = useState<Set<FieldStatus>>(
-    new Set(["current", "deleted"]),
-  );
+  const [fieldStatusFilter] = useState<Set<FieldStatus>>(new Set(["current", "deleted"]));
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({});
@@ -241,7 +214,7 @@ function SubmissionsPage() {
 
   // 4. Derive Columns from PUBLISHED Form Content (not draft)
   // Track field counts by status for the filter badge
-  const { columns, fieldCounts } = useMemo(() => {
+  const { columns } = useMemo(() => {
     const columnHelper = createColumnHelper<any>();
     const counts: Record<FieldStatus, number> = { current: 0, deleted: 0 };
 
@@ -386,19 +359,6 @@ function SubmissionsPage() {
 
     return { columns: baseColumns, fieldCounts: counts };
   }, [formElements, orphanedFieldNames, fieldStatusFilter, handleDelete]);
-
-  // Toggle field status filter
-  const toggleFieldStatus = (status: FieldStatus) => {
-    setFieldStatusFilter((prev) => {
-      const next = new Set(prev);
-      if (next.has(status)) {
-        next.delete(status);
-      } else {
-        next.add(status);
-      }
-      return next;
-    });
-  };
 
   const table = useReactTable({
     data: submissions,
