@@ -23,7 +23,6 @@ import {
   ArrowLeftToLine,
   ArrowRightToLine,
   ArrowUp,
-  ChevronsUpDown,
   PinOff,
   Settings2,
 } from "lucide-react";
@@ -48,23 +47,21 @@ function DataGridColumnHeader<TData, TValue>({
   const { isLoading, table, props, recordCount } = useDataGrid();
 
   const moveColumn = (direction: "left" | "right") => {
-    const currentOrder = [...table.getState().columnOrder]; // Get current column order
-    const currentIndex = currentOrder.indexOf(column.id); // Get current index of the column
+    const currentOrder = [...table.getState().columnOrder];
+    const currentIndex = currentOrder.indexOf(column.id);
 
     if (direction === "left" && currentIndex > 0) {
-      // Move column left
       const newOrder = [...currentOrder];
       const [movedColumn] = newOrder.splice(currentIndex, 1);
       newOrder.splice(currentIndex - 1, 0, movedColumn);
-      table.setColumnOrder(newOrder); // Update column order
+      table.setColumnOrder(newOrder);
     }
 
     if (direction === "right" && currentIndex < currentOrder.length - 1) {
-      // Move column right
       const newOrder = [...currentOrder];
       const [movedColumn] = newOrder.splice(currentIndex, 1);
       newOrder.splice(currentIndex + 1, 0, movedColumn);
-      table.setColumnOrder(newOrder); // Update column order
+      table.setColumnOrder(newOrder);
     }
   };
 
@@ -93,7 +90,7 @@ function DataGridColumnHeader<TData, TValue>({
   const headerButtonProps = {
     variant: "ghost" as const,
     className: cn(
-      "text-secondary-foreground/80 rounded-md font-normal -ms-2 px-2 h-7 hover:bg-secondary data-[state=open]:bg-secondary hover:text-foreground data-[state=open]:text-foreground",
+      "text-secondary-foreground/80 rounded-none font-normal px-2 h-full w-full justify-between hover:bg-transparent data-[state=open]:bg-transparent",
       className,
     ),
     disabled: isLoading || recordCount === 0,
@@ -111,16 +108,16 @@ function DataGridColumnHeader<TData, TValue>({
 
   const headerButtonContent = (
     <>
-      {icon && icon}
-      {title}
+      <span className="inline-flex items-center gap-1.5">
+        {icon && icon}
+        {title}
+      </span>
       {column.getCanSort() &&
         (column.getIsSorted() === "desc" ? (
           <ArrowDown className="size-[0.7rem]! mt-px" />
         ) : column.getIsSorted() === "asc" ? (
           <ArrowUp className="size-[0.7rem]! mt-px" />
-        ) : (
-          <ChevronsUpDown className="size-[0.7rem]! mt-px" />
-        ))}
+        ) : null)}
     </>
   );
 
