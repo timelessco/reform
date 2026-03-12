@@ -246,7 +246,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                     )}
                   >
                     {showEmoji && doc.icon ? (
-                      <span className="text-2xl leading-none">{doc.icon}</span>
+                      <span className="text-2xl">{doc.icon}</span>
                     ) : (
                       <svg
                         className="w-6 h-6"

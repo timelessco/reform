@@ -149,7 +149,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
               getInitials(displayName)
             )}
           </div>
-          <p className="min-w-0 truncate text-left text-sm font-medium leading-[1.15] text-sidebar-foreground font-case">
+          <p className="min-w-0 truncate text-left text-sm font-medium text-sidebar-foreground font-case">
             {displayName}
           </p>
           <div className="shrink-0 flex items-center">
@@ -197,7 +197,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
 
           {/* Account section */}
           <div className="flex flex-col">
-            <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground tracking-[0.24px] leading-tight">
+            <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground">
               Account
             </div>
             {accountMenuItems.map((item) => {
@@ -207,7 +207,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
                   key={item.key}
                   type="button"
                   onClick={item.action}
-                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground cursor-pointer"
                 >
                   <Icon className={menuItemIconClass} />
                   <span className="flex-1 text-left">{item.label}</span>
@@ -220,7 +220,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
 
           {/* Organizations section */}
           <div className="flex flex-col">
-            <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground tracking-[0.24px] leading-tight truncate">
+            <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground truncate">
               {session?.user?.email}
             </div>
             {orgs?.map((org: { id: string; name: string }) => {
@@ -233,7 +233,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
                     setActiveOrgMutation.mutate({ organizationId: org.id });
                     setIsOpen(false);
                   }}
-                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground cursor-pointer"
                   aria-label={`Switch to ${org.name}`}
                 >
                   <div className="h-5 w-5 rounded bg-sidebar-active flex items-center justify-center text-[9px] font-bold text-sidebar-foreground shrink-0">
@@ -265,7 +265,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
               signOutMutation.mutate({});
               setIsOpen(false);
             }}
-            className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground cursor-pointer"
+            className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground cursor-pointer"
           >
             <LogOutIcon className={menuItemIconClass} />
             <span className="flex-1 text-left">Log out</span>

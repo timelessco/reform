@@ -167,12 +167,12 @@ export function Comment(props: {
           <AvatarImage alt={userInfo?.name} src={userInfo?.avatarUrl} />
           <AvatarFallback>{userInfo?.name?.[0]}</AvatarFallback>
         </Avatar>
-        <h4 className="mx-2 font-semibold text-sm leading-none">
+        <h4 className="mx-2 font-semibold text-sm">
           {/* Replace to your own backend or refer to potion */}
           {userInfo?.name}
         </h4>
 
-        <div className="text-muted-foreground/80 text-xs leading-none">
+        <div className="text-muted-foreground/80 text-xs">
           <span className="mr-1">{formatCommentDate(new Date(comment.createdAt))}</span>
           {comment.isEdited && <span>(edited)</span>}
         </div>

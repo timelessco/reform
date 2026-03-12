@@ -96,10 +96,7 @@ function DraftForm() {
                     aria-invalid={!!field.state.meta.errors.length && field.state.meta.isTouched}
                   />
                   <field.FieldContent>
-                    <field.FieldLabel
-                      className="space-y-1 leading-none"
-                      htmlFor={"Checkbox_1767870049368"}
-                    >
+                    <field.FieldLabel className="space-y-1" htmlFor={"Checkbox_1767870049368"}>
                       Checkbox Label *
                     </field.FieldLabel>
 

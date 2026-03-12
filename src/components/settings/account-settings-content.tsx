@@ -409,7 +409,7 @@ export function AccountSettingsContent() {
             <Button
               variant="ghost"
               size="sm"
-              className="rounded-lg bg-gray-50 text-13 font-medium leading-[115%] text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
+              className="rounded-lg bg-gray-50 text-13 font-medium text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
               onClick={() => avatarUpload.fileInputRef.current?.click()}
             >
               <ImageIcon className="size-4" />
@@ -432,10 +432,7 @@ export function AccountSettingsContent() {
           <profileForm.AppField name="displayName">
             {(field) => (
               <div className="flex-1 flex flex-col gap-2">
-                <label
-                  className="text-sm leading-tight text-muted-foreground tracking-tight"
-                  htmlFor={displayNameId}
-                >
+                <label className="text-sm text-muted-foreground" htmlFor={displayNameId}>
                   Display name
                 </label>
                 <InputGroup
@@ -469,7 +466,7 @@ export function AccountSettingsContent() {
                         );
                       }}
                       disabled={updateProfileMutation.isPending}
-                      className="rounded-lg bg-gray-50 text-13 font-medium leading-[115%] text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
+                      className="rounded-lg bg-gray-50 text-13 font-medium text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
                     >
                       Save
                     </InputGroupButton>
@@ -481,10 +478,7 @@ export function AccountSettingsContent() {
           <profileForm.AppField name="username">
             {(field) => (
               <div className="flex-1 flex flex-col gap-2">
-                <label
-                  className="text-sm leading-tight text-muted-foreground tracking-tight"
-                  htmlFor={usernameId}
-                >
+                <label className="text-sm text-muted-foreground" htmlFor={usernameId}>
                   Username
                 </label>
                 <InputGroup
@@ -519,7 +513,7 @@ export function AccountSettingsContent() {
                         );
                       }}
                       disabled={updateProfileMutation.isPending}
-                      className="rounded-lg bg-gray-50 text-13 font-medium leading-[115%] text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
+                      className="rounded-lg bg-gray-50 text-13 font-medium text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
                     >
                       Save
                     </InputGroupButton>
@@ -532,24 +526,22 @@ export function AccountSettingsContent() {
 
         {/* Email Section */}
         <section className="flex flex-col gap-[10px]">
-          <h3 className="text-sm font-medium leading-tight text-foreground">Email</h3>
+          <h3 className="text-sm font-medium text-foreground">Email</h3>
           <div className="bg-secondary rounded-2xl pl-2 pr-2.5 py-2 flex items-center gap-3">
             <div className="flex flex-1 gap-2 items-start min-w-0">
               <div className="size-[38px] rounded-lg overflow-hidden flex items-center justify-center shrink-0">
                 <MailIcon className="size-[22px] text-muted-foreground" />
               </div>
               <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium leading-tight text-foreground truncate">
-                  {user?.email || ""}
-                </p>
-                <p className="text-sm leading-tight text-muted-foreground">Current email</p>
+                <p className="text-sm font-medium text-foreground truncate">{user?.email || ""}</p>
+                <p className="text-sm text-muted-foreground">Current email</p>
               </div>
             </div>
             <Button
               variant="secondary"
               size="sm"
               onClick={emailChange.toggle}
-              className="rounded-lg bg-gray-50 text-13 font-medium leading-[115%] text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
+              className="rounded-lg bg-gray-50 text-13 font-medium text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
             >
               Change email
             </Button>
@@ -572,7 +564,7 @@ export function AccountSettingsContent() {
                       emailChange.submit(field.state.value);
                     }}
                     disabled={emailChange.isPending || !field.state.value}
-                    className="rounded-lg bg-gray-50 text-13 font-medium leading-[115%] text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
+                    className="rounded-lg bg-gray-50 text-13 font-medium text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
                   >
                     {emailChange.isPending ? "Sending..." : "Verify"}
                   </InputGroupButton>
@@ -584,16 +576,14 @@ export function AccountSettingsContent() {
 
         {/* Appearance Section */}
         <section className="flex flex-col gap-[10px]">
-          <h3 className="text-sm font-medium leading-tight text-foreground">Appearance</h3>
+          <h3 className="text-sm font-medium text-foreground">Appearance</h3>
           <div className="bg-secondary rounded-2xl pl-2 pr-2.5 py-2 flex items-center gap-3">
             <div className="flex flex-1 gap-2 items-center min-w-0">
               <div className="size-[38px] rounded-lg overflow-hidden flex items-center justify-center shrink-0">
                 <TeleVisionIcon className="size-[22px] text-muted-foreground" />
               </div>
               <div className="flex flex-col justify-center">
-                <p className="text-sm font-medium leading-tight text-foreground">
-                  Choose light/dark mode
-                </p>
+                <p className="text-sm font-medium text-foreground">Choose light/dark mode</p>
               </div>
             </div>
             <ThemeSelect />
@@ -602,7 +592,7 @@ export function AccountSettingsContent() {
 
         {/* Connected Account Section */}
         <section className="flex flex-col gap-[10px]">
-          <h3 className="text-sm font-medium leading-tight text-foreground">Connected account</h3>
+          <h3 className="text-sm font-medium text-foreground">Connected account</h3>
           <div className="bg-secondary rounded-2xl pl-2 pr-2.5 py-2 flex items-center gap-3">
             <div className="flex flex-1 gap-2 items-start min-w-0">
               <div className="size-[38px] rounded-lg overflow-hidden flex items-center justify-center shrink-0">
@@ -627,12 +617,12 @@ export function AccountSettingsContent() {
                 </svg>
               </div>
               <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium leading-tight text-foreground truncate">
+                <p className="text-sm font-medium text-foreground truncate">
                   {accounts.find((a) => a.providerId === "google")
                     ? user?.email || "Google account"
                     : "Google"}
                 </p>
-                <p className="text-sm leading-tight text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   {accounts.find((a) => a.providerId === "google")
                     ? "Current email"
                     : "Not connected"}
@@ -644,7 +634,7 @@ export function AccountSettingsContent() {
                 variant="secondary"
                 size="sm"
                 onClick={() => handleDisconnectAccount("google")}
-                className="rounded-lg bg-gray-50 text-13 font-medium leading-[115%] text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
+                className="rounded-lg bg-gray-50 text-13 font-medium text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
               >
                 Disconnect
               </Button>
@@ -653,7 +643,7 @@ export function AccountSettingsContent() {
                 variant="secondary"
                 size="sm"
                 onClick={handleGoogleSignIn}
-                className="rounded-lg bg-gray-50 text-13 font-medium leading-[115%] text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
+                className="rounded-lg bg-gray-50 text-13 font-medium text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
               >
                 Connect
               </Button>
@@ -662,7 +652,7 @@ export function AccountSettingsContent() {
           {accounts.find((a) => a.providerId === "google") && (
             <div className="flex items-center gap-2">
               <AlertCircleIcon className="size-[18px] text-muted-foreground shrink-0" />
-              <p className="text-[13px] text-muted-foreground leading-tight">
+              <p className="text-[13px] text-muted-foreground">
                 You have logged in with your Google account.
               </p>
             </div>
@@ -671,8 +661,8 @@ export function AccountSettingsContent() {
 
         {/* Delete Account Section */}
         <section className="flex flex-col gap-[10px]">
-          <h3 className="text-sm font-medium leading-tight text-foreground">Delete Account</h3>
-          <p className="text-sm text-foreground leading-tight">
+          <h3 className="text-sm font-medium text-foreground">Delete Account</h3>
+          <p className="text-sm text-foreground">
             If you no longer wish to use recollect, you can permanently delete your account.
           </p>
           <Button

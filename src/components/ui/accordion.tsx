@@ -77,7 +77,7 @@ function AccordionTrigger({
         )}
       </AccordionPrimitive.Trigger>
       {action && (
-        <div className="flex items-center gap-2 opacity-0 group-hover/accordion-header:opacity-100 transition-opacity shrink-0">
+        <div className="flex items-center gap-1 opacity-0 group-hover/accordion-header:opacity-100 transition-opacity shrink-0 mr-[0.55px]">
           {action}
         </div>
       )}
@@ -85,7 +85,11 @@ function AccordionTrigger({
   );
 }
 
-function AccordionContent({ className, children, ...props }: AccordionPrimitive.Panel.Props) {
+function AccordionContent({
+  className,
+  children,
+  ...props
+}: AccordionPrimitive.Panel.Props) {
   return (
     <AccordionPrimitive.Panel
       data-slot="accordion-content"

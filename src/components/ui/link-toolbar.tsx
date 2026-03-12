@@ -16,7 +16,7 @@ import { KEYS } from "platejs";
 import { useEditorRef, useFormInputProps, usePluginOption } from "platejs/react";
 import * as React from "react";
 
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 const popoverVariants = cva(
@@ -146,13 +146,13 @@ function LinkOpenButton() {
 
   const attributes = React.useMemo(
     () => {
-      const entry = editor.api.node<TLinkElement>({
+      const entry = editor.api.node({
         match: { type: editor.getType(KEYS.link) },
       });
       if (!entry) {
         return {};
       }
-      const [element] = entry;
+      const [element] = entry as [TLinkElement, unknown];
       return getLinkAttributes(editor, element);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

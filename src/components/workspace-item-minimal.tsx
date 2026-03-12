@@ -1,7 +1,11 @@
 import { ThemedFormIcon } from "@/components/icon-picker";
 import { SidebarItem } from "@/components/sidebar-item";
 import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -21,7 +25,11 @@ import {
   PlusIcon,
   TrashIcon,
 } from "@/components/ui/icons";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { SidebarSection } from "@/components/ui/sidebar-section";
 import { createFormLocal } from "@/db-collections/form.collections";
 import { cn } from "@/lib/utils";
@@ -78,7 +86,8 @@ export function WorkspaceItemMinimal({
     { value: "manual", label: "Manual", icon: CopyIcon },
   ] as const;
 
-  const currentSort = sortOptions.find((o) => o.value === sortMode) || sortOptions[0];
+  const currentSort =
+    sortOptions.find((o) => o.value === sortMode) || sortOptions[0];
 
   const handleCreateForm = async () => {
     setIsCreatingForm(true);
@@ -110,18 +119,21 @@ export function WorkspaceItemMinimal({
               <Button
                 variant="ghost"
                 size="icon-sm"
-                className="size-[26px] p-[5px] rounded-lg overflow-hidden hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
+                className="size-[26px] p-[5px] mr-1 rounded-lg overflow-hidden hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
                 title="More options"
               />
             }
           >
-            <MoreHorizontalIcon className="size-4" />
+            <MoreHorizontalIcon />
           </PopoverTrigger>
           <PopoverContent align="start" className="w-48" sideOffset={4}>
             <div className="flex flex-col">
               <Collapsible open={sortExpanded} onOpenChange={setSortExpanded}>
-                <CollapsibleTrigger className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 w-full overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors cursor-pointer text-foreground/80 hover:bg-accent hover:text-accent-foreground">
-                  <currentSort.icon className="size-4 shrink-0" strokeWidth={1.5} />
+                <CollapsibleTrigger className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 w-full overflow-hidden text-[13px] font-medium transition-colors cursor-pointer text-foreground/80 hover:bg-accent hover:text-accent-foreground">
+                  <currentSort.icon
+                    className="size-4 shrink-0"
+                    strokeWidth={1.5}
+                  />
                   <span className="flex-1 text-left">{currentSort.label}</span>
                   <ChevronRightIcon
                     className={cn(
@@ -133,7 +145,7 @@ export function WorkspaceItemMinimal({
                 </CollapsibleTrigger>
                 <CollapsibleContent className="overflow-hidden h-(--collapsible-panel-height) transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0">
                   <div className="flex flex-col pt-1">
-                    <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground tracking-[0.24px] leading-tight">
+                    <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground">
                       Sort by
                     </div>
                     {sortOptions.map((option) => (
@@ -146,23 +158,29 @@ export function WorkspaceItemMinimal({
                           setSortExpanded(false);
                         }}
                         className={cn(
-                          "h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors cursor-pointer",
+                          "h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium transition-colors cursor-pointer",
                           sortMode === option.value
                             ? "bg-black/5 text-foreground"
                             : "text-foreground/80 hover:bg-accent hover:text-accent-foreground",
                         )}
                       >
-                        <option.icon className="size-4 shrink-0" strokeWidth={1.5} />
+                        <option.icon
+                          className="size-4 shrink-0"
+                          strokeWidth={1.5}
+                        />
                         <span className="flex-1 text-left">{option.label}</span>
                         {sortMode === option.value && (
-                          <CheckIcon className="size-3 shrink-0" strokeWidth={2} />
+                          <CheckIcon
+                            className="size-3 shrink-0"
+                            strokeWidth={2}
+                          />
                         )}
                       </Button>
                     ))}
                   </div>
                 </CollapsibleContent>
               </Collapsible>
-              <div className="h-6.5 px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground tracking-[0.24px] leading-tight">
+              <div className="h-6.5 px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground">
                 Workspace
               </div>
               <Button
@@ -171,10 +189,13 @@ export function WorkspaceItemMinimal({
                 size="sm"
                 onClick={handleCreateForm}
                 disabled={isCreatingForm}
-                className="h-6.5 px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
+                className="h-6.5 px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
               >
                 {isCreatingForm ? (
-                  <Loader2Icon className="size-4 animate-spin shrink-0" strokeWidth={1.5} />
+                  <Loader2Icon
+                    className="size-4 animate-spin shrink-0"
+                    strokeWidth={1.5}
+                  />
                 ) : (
                   <PlusIcon className="size-4 shrink-0" strokeWidth={1.5} />
                 )}
@@ -185,7 +206,7 @@ export function WorkspaceItemMinimal({
                 variant="ghost"
                 size="sm"
                 onClick={onRename}
-                className="h-6.5 px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
+                className="h-6.5 px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
               >
                 <Pencil2Icon className="size-4 shrink-0" strokeWidth={1.5} />
                 <span className="flex-1 text-left">Rename</span>
@@ -195,7 +216,7 @@ export function WorkspaceItemMinimal({
                 variant="ghost"
                 size="sm"
                 onClick={onDelete}
-                className="h-6.5 px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-red-500/70 hover:text-red-500 hover:bg-red-500/5"
+                className="h-6.5 px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium transition-colors text-red-500/70 hover:text-red-500 hover:bg-red-500/5"
               >
                 <TrashIcon className="size-4 shrink-0" strokeWidth={1.5} />
                 <span className="flex-1 text-left">Delete</span>
@@ -216,7 +237,9 @@ export function WorkspaceItemMinimal({
         />
       ))}
       {workspace.forms.length === 0 && (
-        <span className="text-muted-foreground/50 text-[11px] px-8 py-1 italic">No forms yet</span>
+        <span className="text-muted-foreground/50 text-[11px] px-8 py-1 italic">
+          No forms yet
+        </span>
       )}
     </SidebarSection>
   );
@@ -270,14 +293,14 @@ function WorkspaceFormMinimal({
       <ContextMenuTrigger render={<div />}>
         <SidebarItem label={label} to={to} isActive={isActive} prefix={prefix}>
           {showCount && (
-            <span className="text-[11px] tracking-[0.33px] text-muted-foreground tabular-nums shrink-0 font-medium leading-tight font-case">
+            <span className="text-[11px] text-muted-foreground tabular-nums shrink-0 tracking-5 font-medium font-case">
               {submissionCount}
             </span>
           )}
         </SidebarItem>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-[195px] rounded-2xl p-1 shadow-popover border-0 outline-hidden">
-        <div className="text-[12px] font-medium text-muted-foreground px-2 py-1.5 tracking-[0.24px]">
+        <div className="text-[12px] font-medium text-muted-foreground px-2 py-1.5">
           Form
         </div>
         <ContextMenuItem
@@ -285,7 +308,7 @@ function WorkspaceFormMinimal({
             e.stopPropagation();
             onDuplicate();
           }}
-          className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground [&_svg]:size-3.5"
+          className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground [&_svg]:size-3.5"
         >
           <CopyIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
           <span className="flex-1 text-left">Duplicate</span>
@@ -296,7 +319,7 @@ function WorkspaceFormMinimal({
             e.stopPropagation();
             onDelete();
           }}
-          className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors text-red-500/70 hover:bg-red-500/5 focus:bg-red-500/5 focus:text-red-500 [&_svg]:size-3.5"
+          className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium transition-colors text-red-500/70 hover:bg-red-500/5 focus:bg-red-500/5 focus:text-red-500 [&_svg]:size-3.5"
         >
           <TrashIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
           <span className="flex-1 text-left">Delete</span>

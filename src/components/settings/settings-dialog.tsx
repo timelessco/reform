@@ -53,9 +53,7 @@ export function SettingsDialog() {
         <div className="relative w-[180px] shrink-0 flex flex-col after:absolute after:right-0 after:top-0 after:bottom-0 after:w-[0.5px] after:bg-[var(--color-gray-100)]">
           {/* Settings label */}
           <div className="px-[18px] pt-5 pb-[12.21px]">
-            <p className="text-[13px] font-medium text-muted-foreground leading-tight tracking-tight">
-              Settings
-            </p>
+            <p className="text-[13px] font-medium text-muted-foreground">Settings</p>
           </div>
 
           {/* Nav items */}
@@ -74,9 +72,7 @@ export function SettingsDialog() {
                   )}
                 >
                   <Icon className="size-[18px] shrink-0 text-muted-foreground" />
-                  <span className="text-sm font-medium leading-[1.15] text-foreground tracking-tight">
-                    {item.label}
-                  </span>
+                  <span className="text-sm font-medium text-foreground">{item.label}</span>
                 </button>
               );
             })}
@@ -86,7 +82,7 @@ export function SettingsDialog() {
         {/* Right Content Area — entire section scrolls */}
         <ScrollArea className="flex-1 min-h-0" hideScrollbar>
           <div className="px-12 pt-8 pb-8">
-            <DialogTitle className="text-lg font-semibold leading-[1.15] text-foreground mb-2">
+            <DialogTitle className="text-lg font-semibold text-foreground mb-2">
               {tabTitles[activeTab]}
             </DialogTitle>
             <TabContent tab={activeTab} />

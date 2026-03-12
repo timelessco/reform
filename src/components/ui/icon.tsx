@@ -24,7 +24,7 @@ export function Icon(props: IconProps) {
   return (
     <svg
       data-slot="icon"
-      className={cn("inline-block size-[1em] shrink-0 align-middle leading-[1em]", className)}
+      className={cn("inline-block size-[1em] shrink-0 align-middle", className)}
       xmlns="http://www.w3.org/2000/svg"
       {...ariaLabelProps}
       {...rest}

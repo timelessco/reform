@@ -77,7 +77,7 @@ export const Route = createFileRoute(
           }),
         initialPageParam: undefined as SubmissionCursor | undefined,
         getNextPageParam: (lastPage: Awaited<ReturnType<typeof getSubmissionsByFormIdPaginated>>) =>
-          lastPage.nextCursor,
+          lastPage?.nextCursor,
       }),
     ]);
     return { publishedData };
@@ -127,14 +127,14 @@ function SubmissionsPage() {
         data: { formId, cursor: pageParam },
       }),
     initialPageParam: undefined as SubmissionCursor | undefined,
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    getNextPageParam: (lastPage) => lastPage?.nextCursor,
     refetchOnWindowFocus: true,
   });
   const { data: countData } = useQuery(getSubmissionsCountQueryOption(formId));
   const totalCount = countData?.total ?? 0;
 
   const allSubmissions: SerializedSubmission[] = useMemo(
-    () => submissionsData?.pages?.flatMap((page) => page.submissions) ?? [],
+    () => submissionsData?.pages?.flatMap((page) => page?.submissions ?? []) ?? [],
     [submissionsData],
   );
 

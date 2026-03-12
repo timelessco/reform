@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { Button } from "./button";
 
 export function Logo({ className, ...props }: React.SVGProps<SVGSVGElement>) {
   return (
@@ -37,8 +38,9 @@ export function LogoToggle({
   className,
 }: LogoToggleProps) {
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
+      size="default"
       onClick={onClick}
       className={cn(
         "group/logo relative flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
@@ -90,6 +92,6 @@ export function LogoToggle({
           />
         </svg>
       )}
-    </button>
+    </Button>
   );
 }

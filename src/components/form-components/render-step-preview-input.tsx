@@ -182,7 +182,7 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
               <Label htmlFor={element.name}>
                 {element.label}
                 {element.required && (
-                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 leading-none ml-2">
+                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 ml-2">
                     *
                   </span>
                 )}
@@ -225,7 +225,7 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
               <Label htmlFor={element.name}>
                 {element.label}
                 {element.required && (
-                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 leading-none ml-2">
+                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 ml-2">
                     *
                   </span>
                 )}

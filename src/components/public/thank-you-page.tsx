@@ -19,7 +19,7 @@ function ThankYouPage({ formTitle, onSubmitAnother }: ThankYouPageProps) {
 
         {/* Message */}
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold tracking-tight">Thank you!</h1>
+          <h1 className="text-2xl font-bold">Thank you!</h1>
           <p className="text-muted-foreground">Your response has been submitted successfully.</p>
         </div>
 

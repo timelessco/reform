@@ -69,7 +69,7 @@ function DataGridColumnHeader<TData, TValue>({
   const headerLabel = (
     <div
       className={cn(
-        "text-secondary-foreground/80 font-normal inline-flex h-full items-center gap-1.5 text-[0.8125rem] leading-[calc(1.125/0.8125)] [&_svg]:size-3.5 [&_svg]:opacity-60",
+        "text-secondary-foreground/80 font-normal inline-flex h-full items-center gap-1.5 text-[0.8125rem] [&_svg]:size-3.5 [&_svg]:opacity-60",
         className,
       )}
     >

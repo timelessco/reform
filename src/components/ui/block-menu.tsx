@@ -373,7 +373,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
               <Button
                 variant="ghost"
                 onClick={() => setShowTurnInto(false)}
-                className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] text-foreground/80 hover:bg-accent hover:text-accent-foreground mb-1"
+                className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium text-foreground/80 hover:bg-accent hover:text-accent-foreground mb-1"
               >
                 ← Back
               </Button>
@@ -428,7 +428,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
               {fieldType === "formInput" && (
                 <>
                   <MenuItem onClick={handleToggleRequired}>
-                    <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15] text-left">
+                    <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 text-left">
                       Required
                     </span>
                     <Switch
@@ -441,7 +441,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                   </MenuItem>
 
                   <MenuItem onClick={handleToggleDefaultValue}>
-                    <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15] text-left">
+                    <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 text-left">
                       Default answer
                     </span>
                     <Switch
@@ -465,7 +465,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                   )}
 
                   <MenuItem onClick={handleToggleMinLength}>
-                    <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15] text-left">
+                    <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 text-left">
                       Min characters
                     </span>
                     <Switch
@@ -491,7 +491,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                   )}
 
                   <MenuItem onClick={handleToggleMaxLength}>
-                    <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15] text-left">
+                    <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 text-left">
                       Max characters
                     </span>
                     <Switch
@@ -524,7 +524,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
               {fieldType === "formButton" && (
                 <>
                   <div className="px-2 py-1.5 space-y-2">
-                    <Label className="text-[12px] font-medium text-muted-foreground tracking-[0.24px]">
+                    <Label className="text-[12px] font-medium text-muted-foreground">
                       Button Name
                     </Label>
                     <Input
@@ -592,7 +592,7 @@ function MenuItem({
       variant="ghost"
       onClick={onClick}
       className={cn(
-        "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium tracking-[0.13px] transition-colors [&_svg]:shrink-0",
+        "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] font-medium transition-colors [&_svg]:shrink-0",
         destructive
           ? "text-red-500/70 hover:bg-red-500/5 hover:text-red-500 focus:bg-red-500/5 focus:text-red-500"
           : "text-foreground/80 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",

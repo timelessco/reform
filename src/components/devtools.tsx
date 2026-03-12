@@ -16,14 +16,16 @@ export function Devtools() {
         plugins={[
           {
             name: "Tanstack Router",
-            render: <TanStackRouterDevtoolsPanel aria-label="Tanstack Router Devtools" />,
+            render: (
+              <TanStackRouterDevtoolsPanel aria-label="Tanstack Router Devtools" />
+            ),
           },
           TanStackQueryDevtools,
           hotkeysDevtoolsPlugin(),
         ]}
       />
       <Agentation aria-label="Agentation" />
-      <TailwindIndicator key="tailwind-indicator" />
+      {/* <TailwindIndicator key="tailwind-indicator" /> */}
     </>
   );
 }

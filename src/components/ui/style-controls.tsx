@@ -506,7 +506,7 @@ export function StyleSelect({
                               {option.label}
                             </div>
                             {option.description && (
-                              <div className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                              <div className="text-[11px] text-muted-foreground mt-0.5">
                                 {option.description}
                               </div>
                             )}

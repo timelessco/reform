@@ -9,6 +9,8 @@
   * {
     @apply border-border outline-ring/50;
     text-wrap: pretty;
+    line-height: 115%;
+    letter-spacing: 0.01em;
   }
   body {
     @apply bg-background text-foreground;
@@ -164,7 +166,7 @@
   --sidebar: var(--color-gray-50);
   --sidebar-primary: var(--color-gray-90);
   --sidebar-primary-foreground: var(--color-gray-900);
-  --sidebar-accent: var(--color-gray-200);
+  --sidebar-accent: var(--color-gray-100);
   --sidebar-accent-foreground: var(--color-gray-900);
   --sidebar-border: var(--color-gray-200);
   --sidebar-ring: var(--color-gray-600);
@@ -299,7 +301,7 @@
   --sidebar-foreground: var(--color-gray-800);
   --sidebar-primary: var(--color-gray-400);
   --sidebar-primary-foreground: var(--color-gray-50);
-  --sidebar-accent: var(--color-gray-300);
+  --sidebar-accent: var(--color-gray-100);
   --sidebar-accent-foreground: var(--color-gray-950);
   --sidebar-border: var(--color-gray-200);
   --sidebar-ring: var(--color-gray-600);

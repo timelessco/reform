@@ -61,7 +61,7 @@ export function OnboardingContentElement(props: PlateElementProps) {
               <SparklesIcon className="h-4 w-4" />
               <span>The next generation of forms</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
               Beautiful forms, building itself.
             </h2>
           </div>
@@ -88,11 +88,11 @@ export function OnboardingContentElement(props: PlateElementProps) {
             </div>
 
             <div className="py-6 space-y-1">
-              <p className="text-lg text-muted-foreground/80 leading-relaxed">
+              <p className="text-lg text-muted-foreground/80">
                 {APP_NAME} is a form builder that{" "}
                 <span className="text-fuchsia-500 font-semibold px-1">works like a doc</span>.
               </p>
-              <p className="text-lg text-muted-foreground/80 leading-relaxed">
+              <p className="text-lg text-muted-foreground/80">
                 Just type{" "}
                 <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-foreground">
                   /

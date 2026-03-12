@@ -603,7 +603,7 @@ export const WorkspaceHeader = ({
 }: WorkspaceHeaderProps) => (
   <div className="flex items-center justify-between mb-12">
     <div className="flex items-center gap-2">
-      <h1 className="text-4xl font-bold tracking-tight">{name}</h1>
+      <h1 className="text-4xl font-bold">{name}</h1>
       <DropdownMenu>
         <DropdownMenuTrigger
           render={

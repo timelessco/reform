@@ -107,7 +107,7 @@ function OrganizationSwitcher() {
                 {getInitials(displayName)}
               </AvatarFallback>
             </Avatar>
-            <div className="grid flex-1 text-left text-sm leading-tight">
+            <div className="grid flex-1 text-left text-sm">
               <span className="truncate font-semibold">{displayName}</span>
             </div>
             <ChevronDownIcon className="ml-auto h-4 w-4 text-muted-foreground" />

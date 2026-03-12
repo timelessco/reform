@@ -883,7 +883,7 @@ function SidebarInbox() {
                           <UsersIcon className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[12px] font-medium text-foreground leading-tight">
+                          <p className="text-[12px] font-medium text-foreground">
                             You've been invited to join{" "}
                             <span className="font-bold">
                               {(invitation as any).organization?.name ?? "an organization"}

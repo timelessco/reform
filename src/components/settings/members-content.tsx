@@ -72,7 +72,7 @@ export function MembersContent() {
         {/* Invite Section */}
         <section className="flex flex-col gap-3">
           <h3 className="text-sm font-medium text-[var(--gray-900)]">Invite member</h3>
-          <p className="text-[13px] text-[var(--gray-600)] leading-[1.5]">
+          <p className="text-[13px] text-[var(--gray-600)]">
             Invite a new member to join your organization.
           </p>
           <inviteForm.AppField name="email">
@@ -160,9 +160,7 @@ export function MembersContent() {
         {/* Members List */}
         <section className="flex flex-col gap-3">
           <h3 className="text-sm font-medium text-[var(--gray-900)]">Members</h3>
-          <p className="text-[13px] text-[var(--gray-600)] leading-[1.5]">
-            Manage members of your organization.
-          </p>
+          <p className="text-[13px] text-[var(--gray-600)]">Manage members of your organization.</p>
           <div className="flex flex-col gap-2">
             {isLoadingMembers ? (
               <p className="text-sm text-muted-foreground py-4 text-center">Loading members...</p>

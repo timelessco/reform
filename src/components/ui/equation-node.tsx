@@ -132,7 +132,7 @@ export function InlineEquationElement(props: PlateElementProps<TEquationElement>
         >
           <span
             ref={katexRef}
-            className={cn(element.texExpression.length === 0 && "hidden", "font-mono leading-none")}
+            className={cn(element.texExpression.length === 0 && "hidden", "font-mono")}
           />
           {element.texExpression.length === 0 && (
             <span>

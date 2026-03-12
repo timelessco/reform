@@ -74,7 +74,7 @@ function BillingPage() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:p-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Billing</h1>
+        <h1 className="text-2xl font-bold">Billing</h1>
         {activeSubscription && (
           <Button variant="outline" onClick={handleOpenPortal}>
             Manage Billing

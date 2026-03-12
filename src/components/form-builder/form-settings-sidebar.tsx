@@ -23,8 +23,8 @@ export function FormSettingsSidebar({ formId, isLocal }: FormSettingsSidebarProp
           <h2 className="text-sm font-semibold text-foreground px-2.5">Settings</h2>
           <Button
             variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            size="icon-sm"
+            className="text-muted-foreground hover:text-foreground"
             onClick={closeSidebar}
             aria-label="Close settings"
           >

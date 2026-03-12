@@ -84,8 +84,8 @@ const tabsTriggerVariants = cva(
         ].join(" "),
       },
       size: {
-        md: "h-[28px] px-2.5 py-1.5 text-sm tracking-[0.21px] leading-tight",
-        sm: "h-[22px] px-2 py-1 text-xs tracking-[0.18px] leading-tight",
+        md: "h-[28px] px-2.5 py-1.5 text-sm",
+        sm: "h-[22px] px-2 py-1 text-xs",
       },
     },
     defaultVariants: {

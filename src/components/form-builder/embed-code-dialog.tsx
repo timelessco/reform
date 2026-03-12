@@ -189,7 +189,7 @@ function CodeBlock({
     <div className="relative group mt-3 w-full max-w-full overflow-hidden">
       <pre
         className={cn(
-          "w-full max-w-full bg-muted/30 border border-border/50 rounded-xl p-4 text-[12px] font-mono text-foreground/90 leading-relaxed scrollbar-hide whitespace-pre-wrap break-words overflow-x-hidden [tab-size:2]",
+          "w-full max-w-full bg-muted/30 border border-border/50 rounded-xl p-4 text-[12px] font-mono text-foreground/90 scrollbar-hide whitespace-pre-wrap break-words overflow-x-hidden [tab-size:2]",
           hljsClassName,
         )}
       >
@@ -229,10 +229,10 @@ export function EmbedCodeDialog({
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-background border-border p-0 [&>button]:text-muted-foreground">
         <div className="p-8 pb-10 space-y-8">
           <DialogHeader className="text-left">
-            <DialogTitle className="text-xl font-bold text-foreground tracking-tight">
+            <DialogTitle className="text-xl font-bold text-foreground">
               Add to your website
             </DialogTitle>
-            <p className="text-muted-foreground text-[13px] leading-relaxed mt-1.5">
+            <p className="text-muted-foreground text-[13px] mt-1.5">
               {embedType === "popup"
                 ? `Enable the ${APP_NAME} popup on your site with a single script and trigger via button attributes or direct JS.`
                 : "Integrate this form seamlessly into your website using the snippet below."}
@@ -274,7 +274,7 @@ export function EmbedCodeDialog({
                 </div>
 
                 <div>
-                  <p className="text-muted-foreground text-[12px] mt-6 mb-4 leading-relaxed">
+                  <p className="text-muted-foreground text-[12px] mt-6 mb-4">
                     To{" "}
                     <strong className="text-foreground font-semibold">
                       open the popup on clicking a button
@@ -288,7 +288,7 @@ export function EmbedCodeDialog({
                   <div className="bg-brand/5 border-l-4 border-brand rounded-r-lg p-4 mb-4">
                     <div className="text-[11px] text-foreground/80 font-mono space-y-1">
                       <div className="text-muted-foreground/60">{"// Data attributes"}</div>
-                      <div className="break-all leading-relaxed">
+                      <div className="break-all">
                         data-form-id="{formId}"{` data-position="${options.popup.position}"`}
                         {isAlignLeft && ` data-align-left="1"`}
                         {isHideTitle && ` data-hide-title="1"`}
@@ -321,7 +321,7 @@ export function EmbedCodeDialog({
                   <div className="bg-brand/5 border-l-4 border-brand rounded-r-lg p-4 mb-4">
                     <div className="text-[11px] text-foreground/80 font-mono space-y-1">
                       <div className="text-muted-foreground/60">{"// Link href"}</div>
-                      <div className="break-all leading-relaxed">{hashUrl}</div>
+                      <div className="break-all">{hashUrl}</div>
                     </div>
                   </div>
                   <CodeBlock
@@ -358,7 +358,7 @@ export function EmbedCodeDialog({
                     Save website page and query parameters
                   </AccordionTrigger>
                   <AccordionContent className="pb-8 space-y-4 text-muted-foreground text-[12px]">
-                    <p className="leading-relaxed">
+                    <p>
                       Your page's URL and query parameters are automatically forwarded to the{" "}
                       {embedType === "popup" ? "popup" : "form"} and saved via hidden fields.
                     </p>
@@ -367,7 +367,7 @@ export function EmbedCodeDialog({
                     </div>
                     {embedType === "popup" && (
                       <div className="pt-2">
-                        <p className="leading-relaxed mb-3">
+                        <p className="mb-3">
                           Data attributes on triggers become hidden fields automatically.
                         </p>
                         <CodeBlock
@@ -388,9 +388,7 @@ export function EmbedCodeDialog({
                     Use JavaScript
                   </AccordionTrigger>
                   <AccordionContent className="pb-8 space-y-5 text-muted-foreground text-[12px]">
-                    <p className="leading-relaxed opacity-80">
-                      Share these instructions with your developers.
-                    </p>
+                    <p className="opacity-80">Share these instructions with your developers.</p>
 
                     {embedType === "standard" ? (
                       <CodeBlock
@@ -406,7 +404,7 @@ Reform.loadEmbeds();`}
                       />
                     ) : (
                       <div className="space-y-4">
-                        <p className="leading-relaxed">
+                        <p>
                           Open and close popups via{" "}
                           <code className="text-foreground font-mono bg-muted px-1 rounded">
                             window.Reform

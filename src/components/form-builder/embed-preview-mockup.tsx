@@ -53,7 +53,7 @@ function PopupIconContent({ display }: { display: IconDisplay }) {
   }
   if (display.type === "emoji") {
     return (
-      <span className="absolute inset-0 flex items-center justify-center text-[14px] leading-none text-muted bg-muted">
+      <span className="absolute inset-0 flex items-center justify-center text-[14px] text-muted bg-muted">
         {display.value}
       </span>
     );

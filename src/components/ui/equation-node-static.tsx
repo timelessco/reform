@@ -80,12 +80,7 @@ export function InlineEquationElementStatic(props: SlateElementProps<TEquationEl
             "text-muted-foreground after:bg-neutral-500/10",
         )}
       >
-        <span
-          className={cn(
-            props.element.texExpression.length === 0 && "hidden",
-            "font-mono leading-none",
-          )}
-        >
+        <span className={cn(props.element.texExpression.length === 0 && "hidden", "font-mono")}>
           {renderedNodes?.length ? renderedNodes : props.element.texExpression}
         </span>
       </div>

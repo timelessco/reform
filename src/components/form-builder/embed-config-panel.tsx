@@ -187,11 +187,9 @@ export function ConfigRow({
       }`}
     >
       <div className="flex-1 min-w-0 flex flex-col gap-1">
-        <span className="text-sm font-medium leading-tight">{label}</span>
+        <span className="text-sm font-medium">{label}</span>
         {description && (
-          <p className="text-sm font-normal leading-tight text-wrap text-muted-foreground">
-            {description}
-          </p>
+          <p className="text-sm font-normal text-wrap text-muted-foreground">{description}</p>
         )}
       </div>
       {children}
@@ -308,7 +306,7 @@ function ScrubValue({
  * Use data-[size=default]:h-[24px] to match specificity of the default variant class.
  */
 const selectTriggerCls =
-  "data-[size=default]:h-[24px] shrink-0 border-none bg-transparent shadow-none rounded-[5px] px-2 py-0 gap-1 w-auto text-[13px] leading-[1.15] font-medium text-foreground whitespace-nowrap [&_svg]:size-3";
+  "data-[size=default]:h-[24px] shrink-0 border-none bg-transparent shadow-none rounded-[5px] px-2 py-0 gap-1 w-auto text-[13px] font-medium text-foreground whitespace-nowrap [&_svg]:size-3";
 
 /* ─── Public entry point ─── */
 

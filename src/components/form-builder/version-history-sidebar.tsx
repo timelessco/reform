@@ -97,7 +97,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
       className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out"
     >
       <SidebarHeader className="pr-1 pt-2  flex flex-row items-center justify-between shrink-0">
-        <p className="text-sm font-medium leading-[1.15] text-muted-foreground tracking-[0.14px] pl-2.5 pr-2 py-1.5">
+        <p className="text-sm font-medium text-muted-foreground pl-2.5 pr-2 py-1.5">
           Version History
         </p>
         <Button
@@ -150,10 +150,8 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
 
                 {/* Content */}
                 <div className="flex-1 min-w-0 flex flex-col gap-1">
-                  <p className="text-sm font-medium leading-[1.15] text-foreground truncate">
-                    {publisher.name}
-                  </p>
-                  <p className="text-[13px] leading-[1.15] text-muted-foreground tracking-[0.13px]">
+                  <p className="text-sm font-medium text-foreground truncate">{publisher.name}</p>
+                  <p className="text-[13px] text-muted-foreground">
                     {version.version} change{version.version !== 1 ? "s" : ""} ·{" "}
                     {isCurrent ? "Current" : "Published"}
                   </p>
@@ -183,7 +181,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
                         className="min-w-[151px] rounded-xl p-1 flex flex-col gap-0.5"
                       >
                         <DropdownMenuItem
-                          className="h-[26px] px-2 rounded-lg text-[13px] tracking-[0.13px]"
+                          className="h-[26px] px-2 rounded-lg text-[13px]"
                           disabled={isRestoring}
                           onClick={() => setRestoreConfirmVersionId(version.id)}
                         >
@@ -192,10 +190,10 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
                           ) : null}
                           Restore this version
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="h-[26px] px-2 rounded-lg text-[13px] tracking-[0.13px]">
+                        <DropdownMenuItem className="h-[26px] px-2 rounded-lg text-[13px]">
                           Publish this version
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="h-[26px] px-2 rounded-lg text-[13px] tracking-[0.13px]">
+                        <DropdownMenuItem className="h-[26px] px-2 rounded-lg text-[13px]">
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -203,7 +201,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
                   </div>
                 ) : (
                   <div className="shrink-0 pt-0.5">
-                    <span className="text-[13px] font-medium leading-[1.15] text-muted-foreground tracking-[0.13px] px-2">
+                    <span className="text-[13px] font-medium text-muted-foreground px-2">
                       {formatRelativeTime(version.publishedAt)}
                     </span>
                   </div>

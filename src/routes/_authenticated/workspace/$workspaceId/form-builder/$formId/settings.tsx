@@ -88,7 +88,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       value={(field.state.value as string) || "English"}
                       onValueChange={(value) => field.handleChange(value ?? "English")}
                     >
-                      <SelectTrigger className="w-[120px] h-[34px] !rounded-none !border-0 !bg-secondary text-sm">
+                      <SelectTrigger className="w-[120px] h-[34px] rounded-none! border-0! bg-secondary! text-sm">
                         <SelectValue placeholder="Select language" />
                       </SelectTrigger>
                       <SelectContent>
@@ -335,7 +335,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                         </form.AppField>
                       </ConfigRow>
                       <div className="bg-secondary px-[10px] py-[7px]">
-                        <span className="text-sm leading-[1.15] mb-1.5 block">Body</span>
+                        <span className="text-sm mb-1.5 block">Body</span>
                         <form.AppField name="respondentEmailBody">
                           {(field) => (
                             <Textarea
@@ -413,7 +413,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 {(closeForm) =>
                   closeForm ? (
                     <div className="bg-secondary px-[10px] py-[7px]">
-                      <span className="text-sm leading-[1.15] mb-1.5 block">Closed message</span>
+                      <span className="text-sm mb-1.5 block">Closed message</span>
                       <form.AppField name="closedFormMessage">
                         {(field) => (
                           <Textarea

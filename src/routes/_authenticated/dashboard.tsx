@@ -181,7 +181,7 @@ function DashboardPage() {
       <main className="flex-1 p-6 md:p-12 lg:p-20 max-w-6xl mx-auto w-full">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Home</h1>
+            <h1 className="text-2xl font-bold">Home</h1>
             <p className="text-sm text-muted-foreground mt-1 font-medium">
               {isLoading
                 ? "Loading..."
