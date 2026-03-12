@@ -23,6 +23,20 @@ export interface BaseColorTokens {
 }
 
 export const BASE_COLORS: Record<string, BaseColorTokens> = {
+  neutral: {
+    background: "#ffffff",
+    foreground: "#212121",
+    card: "#ffffff",
+    "card-foreground": "#212121",
+    popover: "#ffffff",
+    "popover-foreground": "#2e2e2e",
+    muted: "#f5f5f5",
+    "muted-foreground": "#7c7c7c",
+    accent: "#ededed",
+    "accent-foreground": "#2e2e2e",
+    border: "#ededed",
+    input: "#e0e0e0",
+  },
   zinc: {
     background: "#ffffff",
     foreground: "#09090b",
@@ -79,20 +93,6 @@ export const BASE_COLORS: Record<string, BaseColorTokens> = {
     border: "#e5e7eb",
     input: "#e5e7eb",
   },
-  neutral: {
-    background: "#ffffff",
-    foreground: "#0a0a0a",
-    card: "#ffffff",
-    "card-foreground": "#0a0a0a",
-    popover: "#ffffff",
-    "popover-foreground": "#0a0a0a",
-    muted: "#f5f5f5",
-    "muted-foreground": "#737373",
-    accent: "#f5f5f5",
-    "accent-foreground": "#171717",
-    border: "#e5e5e5",
-    input: "#e5e5e5",
-  },
 };
 
 // ============================================================================
@@ -101,6 +101,20 @@ export const BASE_COLORS: Record<string, BaseColorTokens> = {
 // ============================================================================
 
 export const DARK_BASE_COLORS: Record<string, BaseColorTokens> = {
+  neutral: {
+    background: "#131313",
+    foreground: "#d1d1d1",
+    card: "#292929",
+    "card-foreground": "#f8f8f8",
+    popover: "#1c1c1c",
+    "popover-foreground": "#afafaf",
+    muted: "#3d3d3d",
+    "muted-foreground": "#a6a6a6",
+    accent: "#363636",
+    "accent-foreground": "#d1d1d1",
+    border: "#363636",
+    input: "#363636",
+  },
   zinc: {
     background: "#09090b",
     foreground: "#fafafa",
@@ -157,20 +171,6 @@ export const DARK_BASE_COLORS: Record<string, BaseColorTokens> = {
     border: "#1c202a",
     input: "#292c36",
   },
-  neutral: {
-    background: "#0a0a0a",
-    foreground: "#fafafa",
-    card: "#171717",
-    "card-foreground": "#fafafa",
-    popover: "#171717",
-    "popover-foreground": "#fafafa",
-    muted: "#262626",
-    "muted-foreground": "#a1a1a1",
-    accent: "#262626",
-    "accent-foreground": "#fafafa",
-    border: "#232323",
-    input: "#2f2f2f",
-  },
 };
 
 // ============================================================================
@@ -184,6 +184,11 @@ export interface ThemeColorTokens {
 }
 
 export const THEME_COLORS: Record<string, ThemeColorTokens> = {
+  neutral: {
+    primary: "#212121",
+    "primary-foreground": "#ffffff",
+    ring: "#7c7c7c",
+  },
   zinc: {
     primary: "#18181b",
     "primary-foreground": "#fafafa",
@@ -290,8 +295,8 @@ export const STYLES: Record<string, StyleConfig> = {
   vega: {
     radius: "medium",
     spacing: "normal",
-    baseColor: "zinc",
-    themeColor: "zinc",
+    baseColor: "neutral",
+    themeColor: "neutral",
     font: "Inter",
   },
   nova: {

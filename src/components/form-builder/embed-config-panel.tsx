@@ -182,14 +182,16 @@ export function ConfigRow({
 }) {
   return (
     <div
-      className={`bg-secondary flex gap-3 items-center overflow-clip pl-2 py-2 ${
+      className={`bg-secondary min-h-8.5 flex gap-3 items-center overflow-clip pl-2 py-2 ${
         variant === "switch" ? "pr-[6px]" : "pr-[3px]"
       }`}
     >
       <div className="flex-1 min-w-0 flex flex-col gap-1">
-        <span className="text-sm font-medium leading-[1.15]">{label}</span>
+        <span className="text-sm font-medium leading-tight">{label}</span>
         {description && (
-          <p className="text-sm font-normal leading-[1.15] text-muted-foreground">{description}</p>
+          <p className="text-sm font-normal leading-tight text-wrap text-muted-foreground">
+            {description}
+          </p>
         )}
       </div>
       {children}

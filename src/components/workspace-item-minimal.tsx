@@ -162,8 +162,7 @@ export function WorkspaceItemMinimal({
                   </div>
                 </CollapsibleContent>
               </Collapsible>
-              <div className="my-1 h-px bg-border" />
-              <div className="px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground tracking-[0.24px] leading-tight">
+              <div className="h-6.5 px-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground tracking-[0.24px] leading-tight">
                 Workspace
               </div>
               <Button
@@ -172,7 +171,7 @@ export function WorkspaceItemMinimal({
                 size="sm"
                 onClick={handleCreateForm}
                 disabled={isCreatingForm}
-                className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
+                className="h-6.5 px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
               >
                 {isCreatingForm ? (
                   <Loader2Icon className="size-4 animate-spin shrink-0" strokeWidth={1.5} />
@@ -186,7 +185,7 @@ export function WorkspaceItemMinimal({
                 variant="ghost"
                 size="sm"
                 onClick={onRename}
-                className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
+                className="h-6.5 px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground"
               >
                 <Pencil2Icon className="size-4 shrink-0" strokeWidth={1.5} />
                 <span className="flex-1 text-left">Rename</span>
@@ -196,7 +195,7 @@ export function WorkspaceItemMinimal({
                 variant="ghost"
                 size="sm"
                 onClick={onDelete}
-                className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-red-500/70 hover:text-red-500 hover:bg-red-500/5"
+                className="h-6.5 px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] font-medium tracking-[0.13px] leading-tight transition-colors text-red-500/70 hover:text-red-500 hover:bg-red-500/5"
               >
                 <TrashIcon className="size-4 shrink-0" strokeWidth={1.5} />
                 <span className="flex-1 text-left">Delete</span>

@@ -77,8 +77,8 @@ function resolveTokens(customization: Record<string, string>): Record<string, st
 
   const isDark = customization.mode === "dark";
   const baseColors = isDark ? DARK_BASE_COLORS : BASE_COLORS;
-  const base = baseColors[baseColorName] ?? baseColors.zinc;
-  const theme = THEME_COLORS[themeColorName] ?? THEME_COLORS.zinc;
+  const base = baseColors[baseColorName] ?? baseColors.neutral;
+  const theme = THEME_COLORS[themeColorName] ?? THEME_COLORS.neutral;
 
   // Build merged token map
   const tokens: Record<string, string> = {

@@ -10,9 +10,9 @@ import type { CopyState } from "@/hooks/use-copy-to-clipboard";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 
 export const motionIconVariants: Variants = {
-  initial: { opacity: 0, scale: 0.8, filter: "blur(2px)" },
+  initial: { opacity: 0, scale: 0.25, filter: "blur(4px)" },
   animate: { opacity: 1, scale: 1, filter: "blur(0px)" },
-  exit: { opacity: 0, scale: 0.8 },
+  exit: { opacity: 0, scale: 0.25, filter: "blur(4px)" },
 };
 
 export const motionIconProps: HTMLMotionProps<"span"> = {
@@ -20,7 +20,7 @@ export const motionIconProps: HTMLMotionProps<"span"> = {
   initial: "initial",
   animate: "animate",
   exit: "exit",
-  transition: { duration: 0.15, ease: "easeOut" },
+  transition: { type: "spring", duration: 0.3, bounce: 0 },
 };
 
 export function CopyStateIcon({ state }: { state: CopyState }) {
@@ -66,6 +66,8 @@ export function CopyButton({
     onCopyError,
   });
 
+  const label = state === "done" ? "Copied" : children;
+
   return (
     <Button
       size={size}
@@ -77,7 +79,7 @@ export function CopyButton({
       {...props}
     >
       <CopyStateIcon state={state} />
-      {children}
+      {label}
     </Button>
   );
 }

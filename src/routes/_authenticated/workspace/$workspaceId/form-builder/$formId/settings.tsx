@@ -72,7 +72,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
     },
   });
 
-  const CONFIG_INPUT_CLS = "!rounded-none !border-0 !bg-secondary !h-[34px]";
+  const CONFIG_INPUT_CLS = "rounded-lg !border-none";
 
   return (
     <div className="space-y-3 pb-8">

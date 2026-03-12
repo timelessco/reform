@@ -201,7 +201,11 @@ function DataGridContainer({
       ref={ref}
       data-slot="data-grid"
       onScroll={onScroll}
-      className={cn("grid w-full", border && "border border-border rounded-lg", className)}
+      className={cn(
+        "grid w-full",
+        border && "border border-border border-b-0 rounded-lg",
+        className,
+      )}
     >
       {children}
     </div>

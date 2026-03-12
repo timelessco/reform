@@ -137,22 +137,23 @@
 
 
   /* Shadcn/ui Tokens */
-  --background: var(--color-white);
+  --background: var(--color-gray-90);
   --foreground: var(--color-gray-900);
   --card: var(--color-gray-50);
   --card-foreground: var(--color-gray-900);
-  --popover: var(--color-white);
+  --popover: var(--color-gray-90);
   --popover-foreground: var(--color-gray-800);
   --primary: var(--color-gray-900);
-  --primary-foreground: var(--color-white);
+  --primary-foreground: var(--color-gray-90);
   --secondary: var(--color-gray-100);
   --secondary-foreground: var(--color-gray-700);
   --accent: var(--color-gray-200);
   --accent-foreground: var(--color-gray-800);
-  --muted: var(--color-gray-100);
+  --muted: var(--color-gray-300);
   --muted-foreground: var(--color-gray-600);
-  --destructive: var(--color-red-600);
-  --destructive-foreground: var(--color-red-500);
+  --destructive: #cd2b31;
+  --destructive-foreground: #e03636;
+  --border: var(--color-gray-200);
   --input: var(--color-gray-300);
   --ring: var(--color-gray-600);
   --chart-1: var(--color-blue-400);
@@ -161,8 +162,7 @@
   --chart-4: var(--color-blue-700);
   --chart-5: var(--color-blue-800);
   --sidebar: var(--color-gray-50);
-  --sidebar-foreground: var(--color-gray-700);
-  --sidebar-primary: var(--color-white);
+  --sidebar-primary: var(--color-gray-90);
   --sidebar-primary-foreground: var(--color-gray-900);
   --sidebar-accent: var(--color-gray-200);
   --sidebar-accent-foreground: var(--color-gray-900);
@@ -271,24 +271,22 @@
 	--color-blacks-1000: #fff; /* 100% White */
 
   /* Shadcn/ui Tokens */
-
-  --border: var(--color-gray-400);
   --background: var(--color-gray-0);
   --card: var(--color-gray-200);
   --card-foreground: var(--color-gray-950);
   --popover: var(--color-gray-50);
   --popover-foreground: var(--color-gray-800);
-   --primary: var(--color-gray-950);
+  --primary: var(--color-gray-950);
   --primary-foreground: var(--color-gray-90);
   --secondary: var(--color-gray-100);
   --secondary-foreground: var(--color-gray-800);
- --muted: var(--color-gray-300);
-  --muted-foreground: var(--color-gray-700);
+  --muted: var(--color-gray-300);
+  --muted-foreground: var(--color-gray-600);
   --accent: var(--color-gray-400);
   --accent-foreground: var(--color-gray-900);
   --accent-active: var(--color-gray-500);
-  --destructive: var(--color-red-500);
-  --destructive-foreground: var(--color-red-600);
+  --destructive: #cd2b31;
+  --destructive-foreground: #e03636;
   --border: var(--color-gray-400);
   --input: var(--color-gray-400);
   --ring: var(--color-gray-600);

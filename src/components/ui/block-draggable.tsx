@@ -253,7 +253,7 @@ function Draggable(props: PlateElementProps) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-auto w-auto rounded-lg has-[>svg]:px-1 has-[>svg]:py-1.5"
+                      className="h-auto w-auto rounded-lg has-[>svg]:px-1 has-[>svg]:py-1.5 border border-transparent"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();

@@ -190,9 +190,8 @@ function DashboardPage() {
           </div>
           <div className="flex items-center gap-3">
             <Button
-              variant="ghost"
+              variant="secondary"
               size="default"
-              className="text-muted-foreground font-medium"
               onClick={handleCreateWorkspace}
               disabled={isLoading}
             >

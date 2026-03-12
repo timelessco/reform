@@ -51,6 +51,11 @@ const THEME_COLOR_OPTIONS: {
   description: string;
 }[] = [
   {
+    label: "Neutral",
+    value: "neutral",
+    description: "Matches application theme. Default.",
+  },
+  {
     label: "Zinc",
     value: "zinc",
     description: "Neutral gray. Understated and versatile.",
@@ -110,6 +115,11 @@ const BASE_COLOR_OPTIONS: {
   description: string;
 }[] = [
   {
+    label: "Neutral",
+    value: "neutral",
+    description: "True neutral. The most balanced.",
+  },
+  {
     label: "Zinc",
     value: "zinc",
     description: "Pure neutral. Works with everything.",
@@ -128,11 +138,6 @@ const BASE_COLOR_OPTIONS: {
     label: "Gray",
     value: "gray",
     description: "Slightly cool. Versatile and clean.",
-  },
-  {
-    label: "Neutral",
-    value: "neutral",
-    description: "True neutral. The most balanced.",
   },
 ];
 
@@ -558,13 +563,13 @@ function AdvancedColorPickers({
   updateField: (field: string, value: string) => void;
 }) {
   // Resolve current base + theme to show fallback colors
-  const baseColorName = customization.baseColor || "zinc";
-  const themeColorName = customization.themeColor || "zinc";
+  const baseColorName = customization.baseColor || "neutral";
+  const themeColorName = customization.themeColor || "neutral";
   const isDark = customization.mode === "dark";
   const mode = isDark ? "dark" : "light";
   const baseColors = isDark ? DARK_BASE_COLORS : BASE_COLORS;
-  const base = baseColors[baseColorName] ?? baseColors.zinc;
-  const theme = THEME_COLORS[themeColorName] ?? THEME_COLORS.zinc;
+  const base = baseColors[baseColorName] ?? baseColors.neutral;
+  const theme = THEME_COLORS[themeColorName] ?? THEME_COLORS.neutral;
 
   // Merged resolved tokens for fallback display
   const resolved: Record<string, string> = {

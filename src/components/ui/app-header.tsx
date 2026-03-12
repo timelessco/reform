@@ -365,9 +365,9 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                 </TooltipTrigger>
                 <TooltipContent side="bottom" align="end">
                   <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-background/70">
                       Edited by{" "}
-                      <span className="font-medium text-foreground">
+                      <span className="font-medium text-background">
                         {session?.user?.name ?? "You"}
                       </span>{" "}
                       {formatDistanceToNow(
@@ -376,9 +376,9 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                       ago
                     </p>
                     {savedDocs?.[0]?.createdAt && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-background/70">
                         Created by{" "}
-                        <span className="font-medium text-foreground">
+                        <span className="font-medium text-background">
                           {session?.user?.name ?? "You"}
                         </span>{" "}
                         {format(

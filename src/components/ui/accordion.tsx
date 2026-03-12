@@ -1,7 +1,8 @@
 import { Accordion as AccordionPrimitive } from "@base-ui/react/accordion";
+import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
-import { ChevronDownIcon, ChevronUpIcon } from "@/components/ui/icons";
+import { ChevronDownIcon } from "@/components/ui/icons";
 
 function Accordion({ className, ...props }: AccordionPrimitive.Root.Props) {
   return (
@@ -23,27 +24,63 @@ function AccordionItem({ className, ...props }: AccordionPrimitive.Item.Props) {
   );
 }
 
-function AccordionTrigger({ className, children, ...props }: AccordionPrimitive.Trigger.Props) {
+interface AccordionTriggerProps extends AccordionPrimitive.Trigger.Props {
+  /** Position of the chevron icon relative to the label.
+   *  - "inline": chevron sits right after the label text (sidebar style)
+   *  - "end": chevron is pushed to the far right (default / FAQ style) */
+  iconPosition?: "inline" | "end";
+  /** Optional action slot rendered on the far right (visible on hover). */
+  action?: ReactNode;
+}
+
+function AccordionTrigger({
+  className,
+  children,
+  iconPosition = "end",
+  action,
+  ...props
+}: AccordionTriggerProps) {
+  const isInline = iconPosition === "inline";
+
   return (
-    <AccordionPrimitive.Header className="flex">
+    <AccordionPrimitive.Header className="group/accordion-header flex">
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
+        data-icon-position={iconPosition}
         className={cn(
-          "focus-visible:ring-ring/50 focus-visible:border-ring focus-visible:after:border-ring **:data-[slot=accordion-trigger-icon]:text-muted-foreground rounded-lg py-2.5 text-start text-sm font-medium hover:underline focus-visible:ring-3 **:data-[slot=accordion-trigger-icon]:ms-auto **:data-[slot=accordion-trigger-icon]:size-4 group/accordion-trigger relative flex flex-1 items-start justify-between border border-transparent transition-all outline-none aria-disabled:pointer-events-none aria-disabled:opacity-50",
+          "group/accordion-trigger relative flex flex-1 items-center border border-transparent transition-all outline-none",
+          "focus-visible:ring-ring/50 focus-visible:border-ring focus-visible:ring-3",
+          "aria-disabled:pointer-events-none aria-disabled:opacity-50",
+          isInline
+            ? "gap-1 rounded-lg py-1.5 text-start text-[13px] font-medium"
+            : "justify-between rounded-lg py-2.5 text-start text-sm font-medium hover:underline",
           className,
         )}
         {...props}
       >
-        {children}
-        <ChevronDownIcon
-          data-slot="accordion-trigger-icon"
-          className="pointer-events-none shrink-0 group-aria-expanded/accordion-trigger:hidden"
-        />
-        <ChevronUpIcon
-          data-slot="accordion-trigger-icon"
-          className="pointer-events-none hidden shrink-0 group-aria-expanded/accordion-trigger:inline"
-        />
+        {isInline ? (
+          <span className="flex items-center gap-1 flex-1 min-w-0">
+            {children}
+            <ChevronDownIcon
+              data-slot="accordion-trigger-icon"
+              className="size-2.5 shrink-0 text-muted-foreground transition-transform duration-200 group-aria-expanded/accordion-trigger:-rotate-0 -rotate-90"
+            />
+          </span>
+        ) : (
+          <>
+            {children}
+            <ChevronDownIcon
+              data-slot="accordion-trigger-icon"
+              className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-aria-expanded/accordion-trigger:rotate-180"
+            />
+          </>
+        )}
       </AccordionPrimitive.Trigger>
+      {action && (
+        <div className="flex items-center gap-2 opacity-0 group-hover/accordion-header:opacity-100 transition-opacity shrink-0">
+          {action}
+        </div>
+      )}
     </AccordionPrimitive.Header>
   );
 }
@@ -57,7 +94,7 @@ function AccordionContent({ className, children, ...props }: AccordionPrimitive.
     >
       <div
         className={cn(
-          "pt-0 pb-2.5 [&_a]:hover:text-foreground [&_a]:underline [&_a]:underline-offset-3 [&_p:not(:last-child)]:mb-4",
+          "pt-0 pb-2.5 [&_a]:hover:text-foreground  [&_p:not(:last-child)]:mb-4",
           className,
         )}
       >

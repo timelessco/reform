@@ -1,7 +1,13 @@
 import { APP_NAME } from "@/lib/app-config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CheckIcon, ChevronDownIcon, CopyIcon } from "@/components/ui/icons";
+import { CheckIcon, CopyIcon } from "@/components/ui/icons";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
@@ -204,15 +210,6 @@ export function EmbedCodeDialog({
   formId,
   docTitle,
 }: EmbedCodeDialogProps) {
-  const [sections, setSections] = useState<Record<string, boolean>>({
-    save: false,
-    js: false,
-  });
-
-  const toggleSection = (section: string) => {
-    setSections((prev) => ({ ...prev, [section]: !prev[section] }));
-  };
-
   const embedUrl = useMemo(() => generateEmbedUrl(formId, options), [formId, options]);
   const embedCode = useMemo(
     () => generateEmbedCode(embedType, options, formId, docTitle),
@@ -350,26 +347,17 @@ export function EmbedCodeDialog({
             )}
 
             {/* Documentation Accordions */}
-            <div className="pt-8 border-t border-border space-y-1">
-              {/* Query Parameters */}
-              <div className="border-b border-border/50">
-                <Button
-                  variant="ghost"
-                  onClick={() => toggleSection("save")}
-                  className="w-full flex items-center justify-between py-5 h-auto px-0 text-left group hover:bg-transparent"
-                >
-                  <span className="text-[14px] font-semibold text-foreground group-hover:text-brand transition-colors">
+            <div className="pt-8 border-t border-border">
+              <Accordion>
+                {/* Query Parameters */}
+                <AccordionItem value="save" className="border-b border-border/50">
+                  <AccordionTrigger
+                    iconPosition="end"
+                    className="py-5 px-0 text-[14px] font-semibold text-foreground group-hover:text-brand transition-colors hover:no-underline"
+                  >
                     Save website page and query parameters
-                  </span>
-                  <ChevronDownIcon
-                    className={cn(
-                      "w-4 h-4 text-muted-foreground/50 transition-transform group-hover:text-brand",
-                      sections.save && "rotate-180",
-                    )}
-                  />
-                </Button>
-                {sections.save && (
-                  <div className="pb-8 space-y-4 text-muted-foreground text-[12px]">
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-8 space-y-4 text-muted-foreground text-[12px]">
                     <p className="leading-relaxed">
                       Your page's URL and query parameters are automatically forwarded to the{" "}
                       {embedType === "popup" ? "popup" : "form"} and saved via hidden fields.
@@ -388,29 +376,18 @@ export function EmbedCodeDialog({
                         />
                       </div>
                     )}
-                  </div>
-                )}
-              </div>
+                  </AccordionContent>
+                </AccordionItem>
 
-              {/* JavaScript API */}
-              <div className="border-b border-border/50">
-                <Button
-                  variant="ghost"
-                  onClick={() => toggleSection("js")}
-                  className="w-full flex items-center justify-between py-5 h-auto px-0 text-left group hover:bg-transparent"
-                >
-                  <span className="text-[14px] font-semibold text-foreground group-hover:text-brand transition-colors">
+                {/* JavaScript API */}
+                <AccordionItem value="js" className="border-b border-border/50">
+                  <AccordionTrigger
+                    iconPosition="end"
+                    className="py-5 px-0 text-[14px] font-semibold text-foreground group-hover:text-brand transition-colors hover:no-underline"
+                  >
                     Use JavaScript
-                  </span>
-                  <ChevronDownIcon
-                    className={cn(
-                      "w-4 h-4 text-muted-foreground/50 transition-transform group-hover:text-brand",
-                      sections.js && "rotate-180",
-                    )}
-                  />
-                </Button>
-                {sections.js && (
-                  <div className="pb-8 space-y-5 text-muted-foreground text-[12px]">
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-8 space-y-5 text-muted-foreground text-[12px]">
                     <p className="leading-relaxed opacity-80">
                       Share these instructions with your developers.
                     </p>
@@ -521,9 +498,9 @@ Reform.closePopup('${formId}');`}
                         />
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
           </div>
         </div>

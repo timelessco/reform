@@ -5,58 +5,16 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { CopyButton } from "@/components/copy-button/copy-button";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
 import { SidebarSection } from "@/components/ui/sidebar-section";
+import { Tabs, TabsIndicator, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm } from "@/hooks/use-live-hooks";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { publishForm } from "@/hooks/use-form-versions";
-import { cn } from "@/lib/utils";
 import { formFieldsToEmbedOptions } from "./embed-config-panel";
 import { EmbedConfigPanel } from "./embed-config-panel";
 import { EmbedCodeDialog, searchToFormValues, formValuesToSearch, tabs } from "./embed-section";
 import { EmbedPreviewMockup } from "./embed-preview-mockup";
-
-function EmbedTabBar({
-  tabs: items,
-  value,
-  onChange,
-}: {
-  tabs: { value: string; label: string }[];
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const activeIndex = items.findIndex((t) => t.value === value);
-  const count = items.length;
-  const padding = 3; // px – matches p-[3px] on the container
-  const totalPadding = padding * 2;
-  // Pill width = (container - 2×padding) / N
-  const pillWidth = `calc((100% - ${totalPadding}px) / ${count})`;
-  // Pill left = padding + index × pillWidth
-  const pillLeft = `calc(${padding}px + ${activeIndex} * (100% - ${totalPadding}px) / ${count})`;
-
-  return (
-    <div className="relative bg-secondary rounded-[10px] p-[3px] w-full flex">
-      <div
-        className="absolute top-[3px] bottom-[3px] rounded-[8px] bg-white shadow-[0px_0px_1.5px_0px_rgba(0,0,0,0.16),0px_2px_5px_0px_rgba(0,0,0,0.14)] dark:bg-background z-0 transition-[left,width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
-        style={{ left: pillLeft, width: pillWidth }}
-      />
-      {items.map((tab) => (
-        <button
-          key={tab.value}
-          type="button"
-          onClick={() => onChange(tab.value)}
-          className={cn(
-            "relative z-10 flex-1 h-7 rounded-[8px] text-sm font-medium text-center flex items-center justify-center transition-colors",
-            value === tab.value ? "text-foreground" : "text-muted-foreground",
-          )}
-        >
-          {tab.label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 interface ShareSummarySidebarProps {
   formId: string;
@@ -129,11 +87,20 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
         {!isDraft && (
           <form.Field name="embedType">
             {(field) => (
-              <EmbedTabBar
-                tabs={tabs}
+              <Tabs
                 value={field.state.value}
-                onChange={(v) => field.handleChange(v)}
-              />
+                onValueChange={(v) => field.handleChange(v as typeof field.state.value)}
+                className="pl-1"
+              >
+                <TabsList className="w-full">
+                  {tabs.map((tab) => (
+                    <TabsTrigger key={tab.value} value={tab.value}>
+                      {tab.label}
+                    </TabsTrigger>
+                  ))}
+                  <TabsIndicator />
+                </TabsList>
+              </Tabs>
             )}
           </form.Field>
         )}
@@ -189,7 +156,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
                     <Button
                       onClick={() => setCodeDialogOpen(true)}
                       variant="default"
-                      className="w-full h-9 rounded-xl font-semibold text-xs hover:bg-foreground/90"
+                      className="w-full h-9 rounded-2xl font-semibold text-xs hover:bg-foreground/90"
                     >
                       Get Code
                     </Button>
@@ -213,21 +180,21 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
 
       {/* Sticky footer — URL bar only, when published */}
       {!isDraft && (
-        <SidebarFooter className="px-2 py-2.25">
-          <ButtonGroup className="w-full">
-            <ButtonGroupText className="flex-1 min-w-0 h-8 rounded-lg">
-              <span className="text-[11px] text-muted-foreground truncate">{shareUrl}</span>
-            </ButtonGroupText>
+        <SidebarFooter className="px-2 py-2">
+          <div className="flex items-center gap-[6px] rounded-lg bg-gray-100 pl-[10px] pr-[3px] py-[3px] h-[30px]">
+            <span className="flex-1 min-w-0 truncate text-sm text-(--color-gray-alpha-600) font-case leading-tight">
+              {shareUrl}
+            </span>
             <CopyButton
               text={shareUrl}
-              variant="outline"
+              variant="ghost"
               size="sm"
-              className="h-8 shrink-0 rounded-lg"
-              onCopySuccess={() => toast.success("Link copied to clipboard")}
+              className="h-6 shrink-0 rounded-[5px] bg-(--color-gray-0) shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] px-2 gap-1 text-[13px] tracking-1 text-gray-600 border-none hover:bg-(--color-gray-0) [&_svg]:size-[13px]"
+              onCopySuccess={() => {}}
             >
               Copy
             </CopyButton>
-          </ButtonGroup>
+          </div>
         </SidebarFooter>
       )}
     </Sidebar>

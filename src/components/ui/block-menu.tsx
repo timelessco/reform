@@ -427,95 +427,95 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
               {/* Field-Specific Options */}
               {fieldType === "formInput" && (
                 <>
-                  <div className="flex flex-col gap-px [&>div]:bg-secondary [&>:first-child]:rounded-t-[8px] [&>:last-child]:rounded-b-[8px]">
-                    <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
-                      <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">
-                        Required
-                      </span>
-                      <Switch
-                        aria-label="Required"
-                        size="sm"
-                        checked={isRequired}
-                        onCheckedChange={handleToggleRequired}
+                  <MenuItem onClick={handleToggleRequired}>
+                    <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15] text-left">
+                      Required
+                    </span>
+                    <Switch
+                      aria-label="Required"
+                      size="sm"
+                      checked={isRequired}
+                      onCheckedChange={handleToggleRequired}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </MenuItem>
+
+                  <MenuItem onClick={handleToggleDefaultValue}>
+                    <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15] text-left">
+                      Default answer
+                    </span>
+                    <Switch
+                      aria-label="Default answer"
+                      size="sm"
+                      checked={hasDefaultValue}
+                      onCheckedChange={handleToggleDefaultValue}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </MenuItem>
+                  {hasDefaultValue && (
+                    <div className="px-2 pb-2">
+                      <Input
+                        value={currentDefaultValue || ""}
+                        onChange={(e) => handleUpdateDefaultValue(e.target.value)}
+                        placeholder="Enter default value"
+                        className="h-7 text-[13px] rounded-lg"
+                        aria-label="Default value"
                       />
                     </div>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
-                        <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">
-                          Default answer
-                        </span>
-                        <Switch
-                          aria-label="Default answer"
-                          size="sm"
-                          checked={hasDefaultValue}
-                          onCheckedChange={handleToggleDefaultValue}
-                        />
-                      </div>
-                      {hasDefaultValue && (
-                        <div className="px-2 pb-2">
-                          <Input
-                            value={currentDefaultValue || ""}
-                            onChange={(e) => handleUpdateDefaultValue(e.target.value)}
-                            placeholder="Enter default value"
-                            className="h-7 text-[13px] rounded-lg"
-                            aria-label="Default value"
-                          />
-                        </div>
-                      )}
+                  )}
+
+                  <MenuItem onClick={handleToggleMinLength}>
+                    <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15] text-left">
+                      Min characters
+                    </span>
+                    <Switch
+                      aria-label="Min characters"
+                      size="sm"
+                      checked={hasMinLength}
+                      onCheckedChange={handleToggleMinLength}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </MenuItem>
+                  {hasMinLength && (
+                    <div className="px-2 pb-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        value={currentMinLength || 1}
+                        onChange={(e) => handleUpdateMinLength(Number(e.target.value))}
+                        placeholder="Min"
+                        className="h-7 text-[13px] rounded-lg"
+                        aria-label="Minimum length"
+                      />
                     </div>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
-                        <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">
-                          Min characters
-                        </span>
-                        <Switch
-                          aria-label="Min characters"
-                          size="sm"
-                          checked={hasMinLength}
-                          onCheckedChange={handleToggleMinLength}
-                        />
-                      </div>
-                      {hasMinLength && (
-                        <div className="px-2 pb-2">
-                          <Input
-                            type="number"
-                            min={1}
-                            value={currentMinLength || 1}
-                            onChange={(e) => handleUpdateMinLength(Number(e.target.value))}
-                            placeholder="Min"
-                            className="h-7 text-[13px] rounded-lg"
-                            aria-label="Minimum length"
-                          />
-                        </div>
-                      )}
+                  )}
+
+                  <MenuItem onClick={handleToggleMaxLength}>
+                    <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15] text-left">
+                      Max characters
+                    </span>
+                    <Switch
+                      aria-label="Max characters"
+                      size="sm"
+                      checked={hasMaxLength}
+                      onCheckedChange={handleToggleMaxLength}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </MenuItem>
+                  {hasMaxLength && (
+                    <div className="px-2 pb-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        value={currentMaxLength || 100}
+                        onChange={(e) => handleUpdateMaxLength(Number(e.target.value))}
+                        placeholder="Max"
+                        className="h-7 text-[13px] rounded-lg"
+                        aria-label="Maximum length"
+                      />
                     </div>
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-[6px] pl-[10px] pr-[6px] py-[7px]">
-                        <span className="flex-1 min-w-0 text-[13px] font-medium text-foreground/80 leading-[1.15]">
-                          Max characters
-                        </span>
-                        <Switch
-                          aria-label="Max characters"
-                          size="sm"
-                          checked={hasMaxLength}
-                          onCheckedChange={handleToggleMaxLength}
-                        />
-                      </div>
-                      {hasMaxLength && (
-                        <div className="px-2 pb-2">
-                          <Input
-                            type="number"
-                            min={1}
-                            value={currentMaxLength || 100}
-                            onChange={(e) => handleUpdateMaxLength(Number(e.target.value))}
-                            placeholder="Max"
-                            className="h-7 text-[13px] rounded-lg"
-                            aria-label="Maximum length"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  )}
+
                   <div className="my-1 h-px bg-border" />
                 </>
               )}

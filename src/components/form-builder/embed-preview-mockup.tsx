@@ -53,7 +53,7 @@ function PopupIconContent({ display }: { display: IconDisplay }) {
   }
   if (display.type === "emoji") {
     return (
-      <span className="absolute inset-0 flex items-center justify-center text-[14px] leading-none">
+      <span className="absolute inset-0 flex items-center justify-center text-[14px] leading-none text-muted bg-muted">
         {display.value}
       </span>
     );
@@ -199,7 +199,7 @@ export function EmbedPreviewMockup({
   const popupIconDisplay = resolveIconDisplay(emoji, emojiIcon);
 
   return (
-    <div className="rounded-[12px] bg-[#f5f5f5] dark:bg-muted/30 overflow-hidden">
+    <div className="rounded-[12px] bg-secondary overflow-hidden">
       {/* Browser Chrome */}
       <div className="flex items-center gap-1 px-2.25 pt-2.5 pb-2">
         <div className="flex gap-1.5">
@@ -270,7 +270,7 @@ export function EmbedPreviewMockup({
         {/* The single morphing box */}
         {target && (
           <motion.div
-            className="absolute bg-[#e0e0e0] dark:bg-card shadow-[0_2px_10px_rgba(0,0,0,0.04)]  z-20 overflow-hidden"
+            className="absolute bg-muted shadow-[0_2px_10px_rgba(0,0,0,0.04)]  z-20 overflow-hidden"
             animate={target}
             transition={transition}
             onAnimationComplete={handleAnimationComplete}

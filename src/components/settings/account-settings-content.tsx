@@ -255,7 +255,7 @@ function ThemeSelect() {
       >
         <SelectValue />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent positionerClassName="z-103">
         <SelectItem value="system">System</SelectItem>
         <SelectItem value="light">Light</SelectItem>
         <SelectItem value="dark">Dark</SelectItem>
@@ -406,22 +406,23 @@ export function AccountSettingsContent() {
             className="hidden"
           />
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-lg bg-gray-50 text-13 font-medium leading-[115%] text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
               onClick={() => avatarUpload.fileInputRef.current?.click()}
-              className="h-[30px] bg-background rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] outline outline-1 outline-offset-[-1px] outline-transparent px-2 text-[13px] font-medium cursor-pointer hover:bg-accent transition-colors flex items-center gap-1.5"
             >
               <ImageIcon className="size-4" />
               Upload image
-            </button>
+            </Button>
             {user?.image && (
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => updateProfileMutation.mutate({ image: "" })}
-                className="bg-muted rounded-lg px-2.5 py-[7px] text-[13px] font-medium text-muted-foreground cursor-pointer hover:bg-accent transition-colors"
               >
                 Remove
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -432,23 +433,25 @@ export function AccountSettingsContent() {
             {(field) => (
               <div className="flex-1 flex flex-col gap-2">
                 <label
-                  className="text-sm leading-[1.15] text-[var(--gray-600)] tracking-tight"
+                  className="text-sm leading-tight text-muted-foreground tracking-tight"
                   htmlFor={displayNameId}
                 >
                   Display name
                 </label>
                 <InputGroup
-                  className={`h-[30px] bg-muted border-0 overflow-clip${displayNameChanged ? " pr-[3px]" : ""}`}
+                  variant="borderless"
+                  className={`h-[30px] bg-secondary border-0 ring-0  overflow-clip${displayNameChanged ? " pr-[3px]" : ""}`}
                 >
                   <InputGroupInput
                     id={displayNameId}
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="Enter display name"
-                    className="h-[30px] text-sm text-foreground pl-2.5 pr-1.5"
+                    className="h-[30px] text-sm text-foreground pl-2.5 pr-1.5 ring-0 focus-visible:ring-0"
                   />
                   {displayNameChanged && (
                     <InputGroupButton
+                      variant="default"
                       onClick={() => {
                         updateProfileMutation.mutate(
                           { name: field.state.value },
@@ -466,7 +469,7 @@ export function AccountSettingsContent() {
                         );
                       }}
                       disabled={updateProfileMutation.isPending}
-                      className="h-6 rounded-[5px] px-2 bg-background my-[2px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] text-xs text-foreground hover:bg-accent"
+                      className="rounded-lg bg-gray-50 text-13 font-medium leading-[115%] text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
                     >
                       Save
                     </InputGroupButton>
@@ -479,13 +482,14 @@ export function AccountSettingsContent() {
             {(field) => (
               <div className="flex-1 flex flex-col gap-2">
                 <label
-                  className="text-sm leading-[1.15] text-[var(--gray-600)] tracking-tight"
+                  className="text-sm leading-tight text-muted-foreground tracking-tight"
                   htmlFor={usernameId}
                 >
                   Username
                 </label>
                 <InputGroup
-                  className={`h-[30px] bg-muted border-0 overflow-clip${usernameChanged ? " pr-[3px]" : ""}`}
+                  variant="borderless"
+                  className={`h-[30px] bg-secondary border-0 ring-0 focus-visible:ring-0 overflow-clip${usernameChanged ? " pr-[3px]" : ""}`}
                 >
                   <InputGroupInput
                     id={usernameId}
@@ -515,7 +519,7 @@ export function AccountSettingsContent() {
                         );
                       }}
                       disabled={updateProfileMutation.isPending}
-                      className="h-6 rounded-[5px] px-2 bg-background my-[2px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] text-xs text-foreground hover:bg-accent"
+                      className="rounded-lg bg-gray-50 text-13 font-medium leading-[115%] text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
                     >
                       Save
                     </InputGroupButton>
@@ -528,26 +532,27 @@ export function AccountSettingsContent() {
 
         {/* Email Section */}
         <section className="flex flex-col gap-[10px]">
-          <h3 className="text-sm font-medium leading-[1.15] text-foreground">Email</h3>
-          <div className="bg-muted rounded-xl pl-2 pr-2.5 py-2 flex items-center gap-3">
+          <h3 className="text-sm font-medium leading-tight text-foreground">Email</h3>
+          <div className="bg-secondary rounded-2xl pl-2 pr-2.5 py-2 flex items-center gap-3">
             <div className="flex flex-1 gap-2 items-start min-w-0">
               <div className="size-[38px] rounded-lg overflow-hidden flex items-center justify-center shrink-0">
                 <MailIcon className="size-[22px] text-muted-foreground" />
               </div>
               <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium leading-[1.15] text-foreground truncate">
+                <p className="text-sm font-medium leading-tight text-foreground truncate">
                   {user?.email || ""}
                 </p>
-                <p className="text-sm leading-[1.15] text-muted-foreground">Current email</p>
+                <p className="text-sm leading-tight text-muted-foreground">Current email</p>
               </div>
             </div>
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={emailChange.toggle}
-              className="h-[30px] bg-background rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] outline outline-1 outline-offset-[-1px] outline-transparent px-3 text-[13px] font-medium cursor-pointer hover:bg-muted transition-colors shrink-0"
+              className="rounded-lg bg-gray-50 text-13 font-medium leading-[115%] text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
             >
               Change email
-            </button>
+            </Button>
           </div>
           {emailChange.isOpen && (
             <profileForm.AppField name="newEmail">
@@ -567,7 +572,7 @@ export function AccountSettingsContent() {
                       emailChange.submit(field.state.value);
                     }}
                     disabled={emailChange.isPending || !field.state.value}
-                    className="h-6 rounded-[5px] px-2 bg-background shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] text-xs text-foreground hover:bg-accent"
+                    className="rounded-lg bg-gray-50 text-13 font-medium leading-[115%] text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
                   >
                     {emailChange.isPending ? "Sending..." : "Verify"}
                   </InputGroupButton>
@@ -579,14 +584,14 @@ export function AccountSettingsContent() {
 
         {/* Appearance Section */}
         <section className="flex flex-col gap-[10px]">
-          <h3 className="text-sm font-medium leading-[1.15] text-foreground">Appearance</h3>
-          <div className="bg-muted rounded-xl pl-2 pr-2.5 py-2 flex items-center gap-3">
+          <h3 className="text-sm font-medium leading-tight text-foreground">Appearance</h3>
+          <div className="bg-secondary rounded-2xl pl-2 pr-2.5 py-2 flex items-center gap-3">
             <div className="flex flex-1 gap-2 items-center min-w-0">
               <div className="size-[38px] rounded-lg overflow-hidden flex items-center justify-center shrink-0">
                 <TeleVisionIcon className="size-[22px] text-muted-foreground" />
               </div>
               <div className="flex flex-col justify-center">
-                <p className="text-sm font-medium leading-[1.15] text-foreground">
+                <p className="text-sm font-medium leading-tight text-foreground">
                   Choose light/dark mode
                 </p>
               </div>
@@ -597,8 +602,8 @@ export function AccountSettingsContent() {
 
         {/* Connected Account Section */}
         <section className="flex flex-col gap-[10px]">
-          <h3 className="text-sm font-medium leading-[1.15] text-foreground">Connected account</h3>
-          <div className="bg-muted rounded-xl pl-2 pr-2.5 py-2 flex items-center gap-3">
+          <h3 className="text-sm font-medium leading-tight text-foreground">Connected account</h3>
+          <div className="bg-secondary rounded-2xl pl-2 pr-2.5 py-2 flex items-center gap-3">
             <div className="flex flex-1 gap-2 items-start min-w-0">
               <div className="size-[38px] rounded-lg overflow-hidden flex items-center justify-center shrink-0">
                 <svg viewBox="0 0 24 24" className="size-5">
@@ -622,12 +627,12 @@ export function AccountSettingsContent() {
                 </svg>
               </div>
               <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium leading-[1.15] text-foreground truncate">
+                <p className="text-sm font-medium leading-tight text-foreground truncate">
                   {accounts.find((a) => a.providerId === "google")
                     ? user?.email || "Google account"
                     : "Google"}
                 </p>
-                <p className="text-sm leading-[1.15] text-muted-foreground">
+                <p className="text-sm leading-tight text-muted-foreground">
                   {accounts.find((a) => a.providerId === "google")
                     ? "Current email"
                     : "Not connected"}
@@ -635,27 +640,29 @@ export function AccountSettingsContent() {
               </div>
             </div>
             {accounts.find((a) => a.providerId === "google") ? (
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => handleDisconnectAccount("google")}
-                className="h-[30px] bg-background rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] outline outline-1 outline-offset-[-1px] outline-transparent px-3 text-[13px] font-medium cursor-pointer hover:bg-muted transition-colors shrink-0"
+                className="rounded-lg bg-gray-50 text-13 font-medium leading-[115%] text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
               >
                 Disconnect
-              </button>
+              </Button>
             ) : (
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={handleGoogleSignIn}
-                className="h-[30px] bg-background rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] outline outline-1 outline-offset-[-1px] outline-transparent px-3 text-[13px] font-medium cursor-pointer hover:bg-muted transition-colors shrink-0"
+                className="rounded-lg bg-gray-50 text-13 font-medium leading-[115%] text-gray-800 filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
               >
                 Connect
-              </button>
+              </Button>
             )}
           </div>
           {accounts.find((a) => a.providerId === "google") && (
             <div className="flex items-center gap-2">
               <AlertCircleIcon className="size-[18px] text-muted-foreground shrink-0" />
-              <p className="text-[13px] text-muted-foreground leading-[1.5]">
+              <p className="text-[13px] text-muted-foreground leading-tight">
                 You have logged in with your Google account.
               </p>
             </div>
@@ -664,15 +671,16 @@ export function AccountSettingsContent() {
 
         {/* Delete Account Section */}
         <section className="flex flex-col gap-[10px]">
-          <h3 className="text-sm font-medium leading-[1.15] text-foreground">Delete Account</h3>
-          <p className="text-sm text-foreground leading-[1.5]">
+          <h3 className="text-sm font-medium leading-tight text-foreground">Delete Account</h3>
+          <p className="text-sm text-foreground leading-tight">
             If you no longer wish to use recollect, you can permanently delete your account.
           </p>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="md"
             onClick={handleDeleteAccount}
             disabled={deleteAccountMutation.isPending}
-            className="w-full bg-muted rounded-lg px-2.5 py-[7px] flex items-center justify-center gap-1.5 cursor-pointer hover:bg-accent transition-colors disabled:opacity-50"
+            className="w-full bg-secondary rounded-lg px-2.5 py-[7px] flex items-center justify-center gap-1.5 cursor-pointer hover:bg-accent transition-colors disabled:opacity-50"
           >
             {deleteAccountMutation.isPending ? (
               <Loader2Icon className="animate-spin size-3 text-destructive" />
@@ -680,7 +688,7 @@ export function AccountSettingsContent() {
               <TriangleAlertIcon className="size-3 text-destructive" />
             )}
             <span className="text-destructive text-sm font-medium">Delete my account</span>
-          </button>
+          </Button>
         </section>
 
         {/* 2FA Dialog */}

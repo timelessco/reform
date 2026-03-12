@@ -39,14 +39,8 @@ import type {
   VisibilityState,
 } from "@tanstack/react-table";
 
-import {
-  ChevronDownIcon,
-  DownloadIcon,
-  FilterIcon,
-  Trash2Icon,
-  XIcon,
-} from "@/components/ui/icons";
-import { Columns } from "lucide-react";
+import { ChevronDownIcon, FilterIcon, Trash2Icon, XIcon } from "@/components/ui/icons";
+import { Columns, Download, Search } from "lucide-react";
 import type { Value } from "platejs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useHotkey } from "@tanstack/react-hotkeys";
@@ -75,6 +69,16 @@ export const Route = createFileRoute(
         revalidateIfStale: true,
       }),
       context.queryClient.ensureQueryData(getSubmissionsCountQueryOption(params.formId)),
+      context.queryClient.ensureInfiniteQueryData({
+        queryKey: ["submissions", params.formId],
+        queryFn: () =>
+          getSubmissionsByFormIdPaginated({
+            data: { formId: params.formId, cursor: undefined },
+          }),
+        initialPageParam: undefined as SubmissionCursor | undefined,
+        getNextPageParam: (lastPage: Awaited<ReturnType<typeof getSubmissionsByFormIdPaginated>>) =>
+          lastPage.nextCursor,
+      }),
     ]);
     return { publishedData };
   },
@@ -95,7 +99,12 @@ function SubmissionsPage() {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({});
   const [columnOrder, setColumnOrder] = useState<string[]>([]);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollContainerEl, setScrollContainerEl] = useState<HTMLDivElement | null>(null);
+  const scrollContainerRef = useCallback((node: HTMLDivElement | null) => {
+    setScrollContainerEl(node);
+  }, []);
+  const scrollContainerRefObj = useRef<HTMLDivElement | null>(null);
+  scrollContainerRefObj.current = scrollContainerEl;
 
   // 1. Fetch Published Form Structure (to derive columns from published version, not draft)
   const { data: publishedData } = useQuery({
@@ -104,7 +113,6 @@ function SubmissionsPage() {
     initialData: initialPublishedData,
   });
   const publishedContent = publishedData?.form?.content;
-
   // 2. Fetch Submissions via infinite query
   const {
     data: submissionsData,
@@ -122,7 +130,6 @@ function SubmissionsPage() {
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     refetchOnWindowFocus: true,
   });
-
   const { data: countData } = useQuery(getSubmissionsCountQueryOption(formId));
   const totalCount = countData?.total ?? 0;
 
@@ -143,8 +150,8 @@ function SubmissionsPage() {
   );
 
   useEffect(() => {
-    fetchMoreOnBottomReached(scrollContainerRef.current);
-  }, [fetchMoreOnBottomReached]);
+    fetchMoreOnBottomReached(scrollContainerEl);
+  }, [fetchMoreOnBottomReached, scrollContainerEl]);
 
   // Client-side filter based on activeTab
   const { completedCount, partialCount } = useMemo(() => {
@@ -530,33 +537,12 @@ function SubmissionsPage() {
 
           {/* Right side: Search and filters */}
           <div className="flex items-center gap-1.5">
-            <ButtonGroup className="w-[180px] focus-within:w-[240px] transition-[width] duration-200 ease-out border-none rounded-lg">
-              <ButtonGroupText className="h-7 w-full rounded-lg px-2.5 gap-1.5 text-[13px]">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 14 14"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <g clip-path="url(#clip0_20327_1364)">
-                    <path
-                      fill-rule="evenodd"
-                      clip-rule="evenodd"
-                      d="M5.8335 0.416504C8.8248 0.41668 11.2494 2.84218 11.2495 5.8335C11.2494 7.05861 10.8415 8.18785 10.1558 9.09521L13.3638 12.3032C13.6566 12.5961 13.6566 13.0709 13.3638 13.3638C13.0709 13.6566 12.5961 13.6566 12.3032 13.3638L9.09521 10.1558C8.18785 10.8415 7.05861 11.2494 5.8335 11.2495C2.84218 11.2494 0.41668 8.8248 0.416504 5.8335C0.416645 2.84216 2.84216 0.416645 5.8335 0.416504ZM5.8335 1.9165C3.67059 1.91664 1.91664 3.67059 1.9165 5.8335C1.91668 7.99638 3.67061 9.74937 5.8335 9.74951C7.99635 9.74934 9.74934 7.99635 9.74951 5.8335C9.74937 3.67061 7.99638 1.91668 5.8335 1.9165Z"
-                      fill="black"
-                      fill-opacity="0.51"
-                    />
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_20327_1364">
-                      <rect width="14" height="14" fill="white" />
-                    </clipPath>
-                  </defs>
-                </svg>
+            <ButtonGroup className="w-[180px] focus-within:w-[240px] transition-[width] border-none duration-200 ease-out rounded-lg">
+              <ButtonGroupText className="h-7 w-full rounded-lg px-2.5 gap-1.5 text-[13px] bg-accent/60 border border-transparent">
+                <Search className="h-3 w-3" strokeWidth={2} color="var(--color-gray-alpha-600)" />
                 <input
                   placeholder="Search responses..."
-                  className="min-w-0 flex-1 bg-transparent border-0 p-0 outline-none text-[13px] placeholder:text-(--color-gray-alpha-600) placeholder:text-normal placeholder:text-[0.8rem]"
+                  className="min-w-0 flex-1  bg-transparent border-0 p-0 outline-none text-[13px] placeholder:text-(--color-gray-alpha-600) placeholder:text-normal placeholder:text-[0.8rem]"
                   value={globalFilter}
                   onChange={(e) => setGlobalFilter(e.target.value)}
                   aria-label="Search responses"
@@ -589,7 +575,7 @@ function SubmissionsPage() {
               className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md font-medium bg-accent/60 hover:bg-accent text-(--color-gray-alpha-600) transition-colors cursor-pointer text-normal text-[0.8rem] rounded-lg"
               onClick={handleDownloadCSV}
             >
-              <DownloadIcon className="h-3 w-3" color="var(--color-gray-alpha-600)" />
+              <Download className="h-3 w-3" strokeWidth={2} color="var(--color-gray-alpha-600)" />
               Download CSV
             </Button>
           </div>
@@ -600,9 +586,9 @@ function SubmissionsPage() {
       <div className="flex-1 flex flex-col min-h-0 min-w-0">
         {/* Floating Bulk Action Bar */}
         {Object.keys(rowSelection).length > 0 && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[min(560px,90vw)] animate-in slide-in-from-bottom-4 fade-in duration-300">
-            <div className="flex items-center justify-between px-2.75 py-2.25 bg-background rounded-xl shadow-md">
-              <div className="flex items-center gap-2.5">
+          <div className="fixed bottom-6 left-1/2  -translate-x-1/2 z-50 w-[min(560px,90vw)] animate-in slide-in-from-bottom-4 fade-in duration-300">
+            <div className="flex items-center justify-between  px-2.75 py-2.25 bg-background rounded-xl shadow-md">
+              <div className="flex items-center gap-1">
                 <Checkbox
                   checked={true}
                   className="border-foreground data-[state=checked]:bg-foreground data-[state=checked]:border-foreground size-5"
@@ -611,9 +597,9 @@ function SubmissionsPage() {
                   {Object.keys(rowSelection).length} selected
                 </span>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 h-6.5">
                 <Button variant="ghost" size="sm" onClick={handleExportSelected}>
-                  <DownloadIcon className="h-3.5 w-3.5" />
+                  <Download className="h-3.5 w-3.5" />
                   Export
                   <span className="text-xs text-muted-foreground ml-1">
                     {formatForDisplay(HOTKEYS.SUBMISSIONS_EXPORT)}
@@ -678,7 +664,7 @@ function SubmissionsPage() {
               className="flex-1 min-h-0 border-b border-border overflow-auto content-start"
               onScroll={(e) => fetchMoreOnBottomReached(e.currentTarget)}
             >
-              <DataGridVirtualTable scrollRef={scrollContainerRef} />
+              <DataGridVirtualTable scrollRef={scrollContainerRefObj} />
             </DataGridContainer>
           </div>
         </DataGrid>
