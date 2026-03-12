@@ -31,7 +31,6 @@ interface DataGridColumnHeaderProps<TData, TValue> extends HTMLAttributes<HTMLDi
   column: Column<TData, TValue>;
   title?: string;
   icon?: ReactNode;
-  pinnable?: boolean;
   filter?: ReactNode;
   visibility?: boolean;
 }
@@ -46,43 +45,35 @@ function DataGridColumnHeader<TData, TValue>({
 }: DataGridColumnHeaderProps<TData, TValue>) {
   const { isLoading, table, props, recordCount } = useDataGrid();
 
-  const moveColumn = (direction: "left" | "right") => {
-    const currentOrder = [...table.getState().columnOrder];
-    const currentIndex = currentOrder.indexOf(column.id);
-
-    if (direction === "left" && currentIndex > 0) {
-      const newOrder = [...currentOrder];
-      const [movedColumn] = newOrder.splice(currentIndex, 1);
-      newOrder.splice(currentIndex - 1, 0, movedColumn);
-      table.setColumnOrder(newOrder);
-    }
-
-    if (direction === "right" && currentIndex < currentOrder.length - 1) {
-      const newOrder = [...currentOrder];
-      const [movedColumn] = newOrder.splice(currentIndex, 1);
-      newOrder.splice(currentIndex + 1, 0, movedColumn);
-      table.setColumnOrder(newOrder);
-    }
+  const getColumnPosition = () => {
+    const order = table.getState().columnOrder;
+    const index = order.indexOf(column.id);
+    return { order, index };
   };
 
   const canMove = (direction: "left" | "right"): boolean => {
-    const currentOrder = table.getState().columnOrder;
-    const currentIndex = currentOrder.indexOf(column.id);
-    if (direction === "left") {
-      return currentIndex > 0;
-    } else {
-      return currentIndex < currentOrder.length - 1;
-    }
+    const { order, index } = getColumnPosition();
+    return direction === "left" ? index > 0 : index < order.length - 1;
   };
 
-  const headerLabel = () => (
+  const moveColumn = (direction: "left" | "right") => {
+    if (!canMove(direction)) return;
+    const { order, index } = getColumnPosition();
+    const newOrder = [...order];
+    const [moved] = newOrder.splice(index, 1);
+    const targetIndex = direction === "left" ? index - 1 : index + 1;
+    newOrder.splice(targetIndex, 0, moved);
+    table.setColumnOrder(newOrder);
+  };
+
+  const headerLabel = (
     <div
       className={cn(
         "text-secondary-foreground/80 font-normal inline-flex h-full items-center gap-1.5 text-[0.8125rem] leading-[calc(1.125/0.8125)] [&_svg]:size-3.5 [&_svg]:opacity-60",
         className,
       )}
     >
-      {icon && icon}
+      {icon}
       {title}
     </div>
   );
@@ -109,7 +100,7 @@ function DataGridColumnHeader<TData, TValue>({
   const headerButtonContent = (
     <>
       <span className="inline-flex items-center gap-1.5">
-        {icon && icon}
+        {icon}
         {title}
       </span>
       {column.getCanSort() &&
@@ -121,9 +112,9 @@ function DataGridColumnHeader<TData, TValue>({
     </>
   );
 
-  const headerButton = () => <Button {...headerButtonProps}>{headerButtonContent}</Button>;
+  const headerButton = <Button {...headerButtonProps}>{headerButtonContent}</Button>;
 
-  const headerPin = () => (
+  const headerPin = (
     <Button
       size="sm"
       variant="ghost"
@@ -136,7 +127,7 @@ function DataGridColumnHeader<TData, TValue>({
     </Button>
   );
 
-  const headerControls = () => (
+  const headerControls = (
     <div className="flex items-center h-full gap-1.5 justify-between">
       <DropdownMenu>
         <DropdownMenuTrigger render={<Button {...headerButtonProps} />}>
@@ -271,7 +262,7 @@ function DataGridColumnHeader<TData, TValue>({
       {props.tableLayout?.columnsPinnable &&
         column.getCanPin() &&
         column.getIsPinned() &&
-        headerPin()}
+        headerPin}
     </div>
   );
 
@@ -281,14 +272,14 @@ function DataGridColumnHeader<TData, TValue>({
     (props.tableLayout?.columnsPinnable && column.getCanPin()) ||
     filter
   ) {
-    return headerControls();
+    return headerControls;
   }
 
   if (column.getCanSort() || (props.tableLayout?.columnsResizable && column.getCanResize())) {
-    return <div className="flex items-center h-full">{headerButton()}</div>;
+    return <div className="flex items-center h-full">{headerButton}</div>;
   }
 
-  return headerLabel();
+  return headerLabel;
 }
 
 export { DataGridColumnHeader, type DataGridColumnHeaderProps };
