@@ -603,7 +603,7 @@ export function AccountSettingsContent() {
           <div className="bg-secondary rounded-2xl pl-2 pr-2.5 py-2 flex items-center gap-3">
             <div className="flex flex-1 gap-2 items-start min-w-0">
               <div className="size-[38px] rounded-lg overflow-hidden flex items-center justify-center shrink-0">
-                <svg viewBox="0 0 24 24" className="size-5">
+                <svg viewBox="0 0 24 24" width="20" height="20" className="size-5">
                   <title>Google logo</title>
                   <path
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
