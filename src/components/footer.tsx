@@ -96,7 +96,7 @@ function FooterLink({ label }: { label: string }) {
   return (
     <Button
       variant="link"
-      className="text-[14px] font-medium text-muted-foreground hover:text-foreground p-0 h-auto"
+      className="text-[14px] text-muted-foreground hover:text-foreground p-0 h-auto"
     >
       {label}
     </Button>

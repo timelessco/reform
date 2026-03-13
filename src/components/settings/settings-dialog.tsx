@@ -1,8 +1,8 @@
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useSettingsDialog } from "@/hooks/use-settings-dialog";
 import type { SettingsTab } from "@/hooks/use-settings-dialog";
-import { cn } from "@/lib/utils";
+import { useSettingsDialog } from "@/hooks/use-settings-dialog";
+import { SidebarItem } from "../sidebar-item";
 import { CircleUserIcon, DownloadIcon, SparklesIcon } from "../ui/icons";
 import { AccountSettingsContent } from "./account-settings-content";
 import { ImportContent } from "./import-content";
@@ -53,7 +53,7 @@ export function SettingsDialog() {
         <div className="relative w-[180px] shrink-0 flex flex-col after:absolute after:right-0 after:top-0 after:bottom-0 after:w-[0.5px] after:bg-[var(--color-gray-100)]">
           {/* Settings label */}
           <div className="px-[18px] pt-5 pb-[12.21px]">
-            <p className="text-[13px] font-medium text-muted-foreground">Settings</p>
+            <p className="text-sm font-medium tracking-[0.26px] text-muted-foreground">Settings</p>
           </div>
 
           {/* Nav items */}
@@ -62,18 +62,13 @@ export function SettingsDialog() {
               const Icon = item.icon;
               const isActive = activeTab === item.key;
               return (
-                <button
+                <SidebarItem
+                  label={item.label}
                   key={item.key}
-                  type="button"
+                  isActive={isActive}
                   onClick={() => setTab(item.key)}
-                  className={cn(
-                    "h-[30px] w-full px-2 py-[7px] rounded-lg flex items-center gap-2 overflow-hidden cursor-pointer transition-colors",
-                    isActive ? "bg-accent text-accent-foreground" : "hover:bg-accent/50",
-                  )}
-                >
-                  <Icon className="size-[18px] shrink-0 text-muted-foreground" />
-                  <span className="text-sm font-medium text-foreground">{item.label}</span>
-                </button>
+                  prefix={<Icon className="size-[18px] shrink-0 text-muted-foreground" />}
+                />
               );
             })}
           </nav>
@@ -82,7 +77,7 @@ export function SettingsDialog() {
         {/* Right Content Area — entire section scrolls */}
         <ScrollArea className="flex-1 min-h-0" hideScrollbar>
           <div className="px-12 pt-8 pb-8">
-            <DialogTitle className="text-lg font-semibold text-foreground mb-2">
+            <DialogTitle className="text-xl font-semibold text-foreground mb-4">
               {tabTitles[activeTab]}
             </DialogTitle>
             <TabContent tab={activeTab} />

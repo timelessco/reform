@@ -1,9 +1,4 @@
-import {
-  ImageIcon,
-  SettingsIcon,
-  UploadIcon,
-  XIcon,
-} from "@/components/ui/icons";
+import { ImageIcon, SettingsIcon, UploadIcon, XIcon } from "@/components/ui/icons";
 import { IconPickerContent, IconPickerPreview } from "@/components/icon-picker";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PlateElementProps } from "platejs/react";
@@ -17,11 +12,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { createFormButtonNode } from "@/components/ui/form-button-node";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEditorTheme } from "@/contexts/editor-theme-context";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
@@ -36,10 +27,7 @@ import type { FormHeaderElementData } from "@/lib/form-header-factory";
 import { THEME_COLORS } from "@/lib/theme-presets";
 import { cn, isValidUrl, DEFAULT_ICON } from "@/lib/utils";
 
-export {
-  createFormHeaderNode,
-  type FormHeaderElementData,
-} from "@/lib/form-header-factory";
+export { createFormHeaderNode, type FormHeaderElementData } from "@/lib/form-header-factory";
 
 // Static derivations from THEME_COLORS — hoisted to module scope to avoid re-computing on every render
 const ACCENT_COLORS = Object.values(THEME_COLORS).map((t) => t.primary);
@@ -47,21 +35,10 @@ const PRIMARY_TO_THEME_NAME = new Map(
   Object.entries(THEME_COLORS).map(([name, t]) => [t.primary, name]),
 );
 
-function CoverUpload({
-  onFileChange,
-}: {
-  onFileChange: (url: string) => void;
-}) {
+function CoverUpload({ onFileChange }: { onFileChange: (url: string) => void }) {
   const [
     { isDragging, errors },
-    {
-      handleDragEnter,
-      handleDragLeave,
-      handleDragOver,
-      handleDrop,
-      openFileDialog,
-      getInputProps,
-    },
+    { handleDragEnter, handleDragLeave, handleDragOver, handleDrop, openFileDialog, getInputProps },
   ] = useFileUpload({
     maxFiles: 1,
     maxSize: 5 * 1024 * 1024,
@@ -93,13 +70,11 @@ function CoverUpload({
         <input {...getInputProps()} className="sr-only" />
         <div className="flex flex-col items-center gap-2 text-muted-foreground">
           <UploadIcon className="h-8 w-8" />
-          <span className="text-sm font-medium">Upload cover image</span>
+          <span className="text-sm">Upload cover image</span>
           <span className="text-xs">Max 5MB</span>
         </div>
       </button>
-      {errors.length > 0 && (
-        <div className="text-destructive text-sm">{errors[0]}</div>
-      )}
+      {errors.length > 0 && <div className="text-destructive text-sm">{errors[0]}</div>}
     </div>
   );
 }
@@ -116,14 +91,7 @@ function IconUploadTab({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [
     { isDragging, errors },
-    {
-      handleDragEnter,
-      handleDragLeave,
-      handleDragOver,
-      handleDrop,
-      openFileDialog,
-      getInputProps,
-    },
+    { handleDragEnter, handleDragLeave, handleDragOver, handleDrop, openFileDialog, getInputProps },
   ] = useFileUpload({
     maxFiles: 1,
     maxSize: 5 * 1024 * 1024,
@@ -131,7 +99,7 @@ function IconUploadTab({
     multiple: false,
     onFilesChange: (files) => {
       if (files[0]?.file) {
-        setSelectedFile(files[0].file);
+        setSelectedFile(files[0]?.file as File);
       }
     },
   });
@@ -141,13 +109,11 @@ function IconUploadTab({
     return (
       <div className="h-[368px] w-[310px] bg-muted/50 px-3 flex flex-col">
         <div className="flex items-center justify-between border-b border-b-border py-3">
-          <span className="text-sm font-medium text-foreground">
-            Crop image
-          </span>
+          <span className="text-sm text-foreground">Crop image</span>
           <button
             type="button"
             onClick={() => setSelectedFile(null)}
-            className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             Cancel
           </button>
@@ -168,7 +134,7 @@ function IconUploadTab({
               render={
                 <button
                   type="button"
-                  className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1 rounded-lg hover:bg-muted"
+                  className="text-[13px] text-muted-foreground hover:text-foreground transition-colors px-3 py-1 rounded-lg hover:bg-muted"
                 />
               }
             >
@@ -178,7 +144,7 @@ function IconUploadTab({
               render={
                 <button
                   type="button"
-                  className="text-[13px] font-medium text-primary hover:text-primary/80 transition-colors px-4 py-1 rounded-lg bg-primary/10 hover:bg-primary/15"
+                  className="text-[13px] text-primary hover:text-primary/80 transition-colors px-4 py-1 rounded-lg bg-primary/10 hover:bg-primary/15"
                 />
               }
             >
@@ -194,9 +160,7 @@ function IconUploadTab({
   return (
     <div className="h-[368px] w-[310px] bg-muted/50 px-3 flex flex-col">
       <div className="flex items-center border-b border-b-border py-3">
-        <span className="text-sm font-medium text-foreground">
-          Upload an image
-        </span>
+        <span className="text-sm text-foreground">Upload an image</span>
       </div>
 
       <div className="flex-1 flex items-center justify-center py-4">
@@ -233,26 +197,18 @@ function IconUploadTab({
               <div
                 className={cn(
                   "w-10 h-10 rounded-lg flex items-center justify-center mb-2 transition-colors",
-                  isDragging
-                    ? "bg-primary/15"
-                    : "bg-primary/10 group-hover/upload:bg-primary/15",
+                  isDragging ? "bg-primary/15" : "bg-primary/10 group-hover/upload:bg-primary/15",
                 )}
               >
                 <UploadIcon
                   className={cn(
                     "h-[18px] w-[18px] transition-colors",
-                    isDragging
-                      ? "text-primary"
-                      : "text-primary/70 group-hover/upload:text-primary",
+                    isDragging ? "text-primary" : "text-primary/70 group-hover/upload:text-primary",
                   )}
                 />
               </div>
-              <p className="text-[13px] font-medium text-foreground">
-                Drop your image here
-              </p>
-              <p className="text-xs text-muted-foreground">
-                or click to browse
-              </p>
+              <p className="text-[13px] text-foreground">Drop your image here</p>
+              <p className="text-xs text-muted-foreground">or click to browse</p>
               <p className="text-[10px] text-muted-foreground/60 mt-2 tracking-wide uppercase">
                 PNG, JPG, SVG · Max 5MB
               </p>
@@ -270,7 +226,7 @@ function IconUploadTab({
           type="button"
           onClick={onRemove}
           onMouseDown={(e) => e.preventDefault()}
-          className="text-[13px] font-medium text-muted-foreground hover:text-destructive transition-colors px-3 py-1 rounded-lg hover:bg-muted"
+          className="text-[13px] text-muted-foreground hover:text-destructive transition-colors px-3 py-1 rounded-lg hover:bg-muted"
         >
           Remove icon
         </button>
@@ -284,13 +240,7 @@ const iconTabs = [
   { value: "upload", label: "Upload" },
 ] as const;
 
-function IconTabBar({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
+function IconTabBar({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const items = iconTabs;
   const activeIndex = items.findIndex((t) => t.value === value);
   const count = items.length;
@@ -309,7 +259,7 @@ function IconTabBar({
           type="button"
           onClick={() => onChange(tab.value)}
           className={cn(
-            "relative z-10 flex-1 h-7 rounded-[8px] text-sm font-medium text-center transition-colors",
+            "relative z-10 flex-1 h-7 rounded-[8px] text-sm text-center transition-colors",
             value === tab.value ? "text-foreground" : "text-muted-foreground",
           )}
         >
@@ -420,8 +370,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                     height={200}
                     className={cn(
                       "w-full h-full object-cover border-0 ",
-                      cover.includes("tint=true") &&
-                        "relative z-0 brightness-60 grayscale",
+                      cover.includes("tint=true") && "relative z-0 brightness-60 grayscale",
                     )}
                   />
                 </>
@@ -457,10 +406,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                       <TabsTrigger value="gallery">Gallery</TabsTrigger>
                       <TabsTrigger value="upload">Upload</TabsTrigger>
                     </TabsList>
-                    <TabsContent
-                      value="gallery"
-                      className="grid grid-cols-4 gap-2 pt-4"
-                    >
+                    <TabsContent value="gallery" className="grid grid-cols-4 gap-2 pt-4">
                       <button
                         type="button"
                         onClick={() =>
@@ -656,16 +602,11 @@ export function FormHeaderElement(props: PlateElementProps) {
             <Popover open={iconPopoverOpen} onOpenChange={setIconPopoverOpen}>
               {hasLogo && (
                 <div
-                  className={cn(
-                    "relative z-10 mb-1",
-                    hasCover ? "" : "mt-4 sm:mt-6",
-                  )}
+                  className={cn("relative z-10 mb-1", hasCover ? "" : "mt-4 sm:mt-6")}
                   data-bf-logo-emoji-container={
                     hasCover && icon && !isValidUrl(icon) ? "true" : undefined
                   }
-                  data-bf-logo-container={
-                    hasCover && icon && isValidUrl(icon) ? "true" : undefined
-                  }
+                  data-bf-logo-container={hasCover && icon && isValidUrl(icon) ? "true" : undefined}
                 >
                   <PopoverTrigger
                     render={
@@ -690,11 +631,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                       ) : (
                         <IconPickerPreview
                           icon={icon}
-                          iconColor={
-                            hasCustomization
-                              ? undefined
-                              : iconColor || undefined
-                          }
+                          iconColor={hasCustomization ? undefined : iconColor || undefined}
                           useThemeColor={hasCustomization || !iconColor}
                           iconSize="48"
                           size="100"
@@ -766,9 +703,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                 className={cn(
                   "w-[310px] p-0",
                   hasCustomization && "bf-themed",
-                  hasCustomization &&
-                    editorCustomization?.mode === "dark" &&
-                    "dark",
+                  hasCustomization && editorCustomization?.mode === "dark" && "dark",
                 )}
                 style={hasCustomization ? themeVars : undefined}
               >
@@ -778,16 +713,8 @@ export function FormHeaderElement(props: PlateElementProps) {
                   </div>
                   {iconTab === "icon" ? (
                     <IconPickerContent
-                      iconValue={
-                        icon && icon !== DEFAULT_ICON && !isValidUrl(icon)
-                          ? icon
-                          : null
-                      }
-                      iconColor={
-                        hasCustomization
-                          ? activeAccentColor
-                          : iconColor || "#000000"
-                      }
+                      iconValue={icon && icon !== DEFAULT_ICON && !isValidUrl(icon) ? icon : null}
+                      iconColor={hasCustomization ? activeAccentColor : iconColor || "#000000"}
                       onIconChange={(newIcon) => {
                         handleIconChange(newIcon);
                         setIconPopoverOpen(false);
@@ -824,7 +751,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                 ref={titleRef}
                 rows={1}
                 aria-label="Form title"
-                className="w-full text-4xl sm:text-[48px] font-serif font-light -tracking-[0.03em] border-none outline-none bg-transparent text-foreground placeholder:text-foreground/50 placeholder:font-light py-1 sm:py-2 h-auto select-text placeholder:font-serif resize-none overflow-hidden"
+                className="w-full text-[48px] font-['Timeless_Serif'] placeholder:font-['Timeless_Serif'] font-[252] leading-tight tracking-[-1.44px] border-none outline-none bg-transparent text-foreground placeholder:text-foreground/50 py-1 sm:py-2 h-auto select-text resize-none overflow-hidden"
                 placeholder="Create your form."
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
@@ -834,8 +761,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                     e.preventDefault();
                     // Check if onboarding content is present (by type)
                     const secondBlock = editor.children[1] as any;
-                    const isOnboarding =
-                      secondBlock?.type === "onboardingContent";
+                    const isOnboarding = secondBlock?.type === "onboardingContent";
 
                     if (isOnboarding) {
                       // Clear to empty state: header + empty paragraph + submit button
@@ -850,9 +776,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                       });
                       // Move cursor to first paragraph
                       const firstBlockPath = [1];
-                      const startPoint = (editor.api as any).edges(
-                        firstBlockPath,
-                      )?.[0];
+                      const startPoint = (editor.api as any).edges(firstBlockPath)?.[0];
                       if (startPoint) {
                         editor.tf.select(startPoint);
                         editor.tf.focus();
@@ -860,9 +784,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                     } else {
                       // Normal behavior: move focus to first block
                       const firstBlockPath = [1];
-                      const startPoint = (editor.api as any).edges(
-                        firstBlockPath,
-                      )?.[0];
+                      const startPoint = (editor.api as any).edges(firstBlockPath)?.[0];
                       if (startPoint) {
                         editor.tf.select(startPoint);
                         editor.tf.focus();

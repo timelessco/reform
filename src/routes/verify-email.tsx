@@ -171,7 +171,7 @@ function VerifyEmailPage() {
           {/* Heading */}
           <h1 className="text-2xl font-semibold text-foreground mb-2">Check your email</h1>
           <p className="text-muted-foreground text-[15px] mb-2">We sent a code to</p>
-          <p className="text-foreground font-medium text-[15px] mb-10">{email}</p>
+          <p className="text-foreground text-[15px] mb-10">{email}</p>
 
           {/* OTP Input */}
           <div className="mb-8">
@@ -195,7 +195,7 @@ function VerifyEmailPage() {
                   <InputOTPSlot
                     key={index}
                     index={index}
-                    className="w-12 h-14 text-xl font-medium rounded-xl"
+                    className="w-12 h-14 text-xl rounded-xl"
                   />
                 ))}
               </InputOTPGroup>
@@ -207,7 +207,7 @@ function VerifyEmailPage() {
             type="button"
             onClick={handleVerify}
             disabled={isPending || otp.length !== 6}
-            className="w-full h-12 rounded-xl font-medium text-[15px]"
+            className="w-full h-12 rounded-xl text-[15px]"
           >
             {signInOtpMutation.isPending || verifyEmailMutation.isPending ? (
               <>

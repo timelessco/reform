@@ -221,7 +221,7 @@ export function StyleNumberInput({
         ))}
       </div>
 
-      <div className="relative px-3 font-medium text-muted-foreground flex-1 z-10 pointer-events-none transition-colors group-hover:text-foreground">
+      <div className="relative px-3 text-muted-foreground flex-1 z-10 pointer-events-none transition-colors group-hover:text-foreground">
         {label}
       </div>
 
@@ -287,7 +287,7 @@ export function StyleColorPicker({
         className,
       )}
     >
-      <div className="bg-transparent px-3 h-full flex items-center font-medium text-muted-foreground flex-1 select-none">
+      <div className="bg-transparent px-3 h-full flex items-center text-muted-foreground flex-1 select-none">
         {label}
       </div>
       <div className="flex-none px-2 h-full flex items-center gap-2">
@@ -419,7 +419,7 @@ export function StyleSelect({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "w-full flex items-center justify-between rounded-lg border border-border/60 bg-transparent h-[34px] px-3 font-medium text-[13px] hover:bg-accent/50 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+          "w-full flex items-center justify-between rounded-lg border border-border/60 bg-transparent h-[34px] px-3 text-[13px] hover:bg-accent/50 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-ring",
           isOpen && "bg-accent/50 border-border/80",
         )}
       >
@@ -500,11 +500,7 @@ export function StyleSelect({
                             />
                           )}
                           <div className="min-w-0">
-                            <div
-                              className={cn("text-[13px] capitalize", isSelected && "font-medium")}
-                            >
-                              {option.label}
-                            </div>
+                            <div className="text-[13px] capitalize">{option.label}</div>
                             {option.description && (
                               <div className="text-[11px] text-muted-foreground mt-0.5">
                                 {option.description}
@@ -578,7 +574,7 @@ export function StyleToggle({
         className,
       )}
     >
-      <span className="font-medium text-muted-foreground text-[13px]">{label}</span>
+      <span className="text-muted-foreground text-[13px]">{label}</span>
       <div
         ref={containerRef}
         className="relative flex rounded-md  isolation-auto h-[26px] items-center"
@@ -668,7 +664,7 @@ export function StyleAlignToggle({
         className,
       )}
     >
-      <div className="bg-transparent px-3 h-full flex items-center font-medium text-muted-foreground flex-1 select-none border-r border-border/60">
+      <div className="bg-transparent px-3 h-full flex items-center text-muted-foreground flex-1 select-none border-r border-border/60">
         {label}
       </div>
       <div

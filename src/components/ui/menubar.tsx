@@ -50,7 +50,7 @@ function MenubarTrigger({ className, ...props }: React.ComponentProps<typeof Dro
     <DropdownMenuTrigger
       data-slot="menubar-trigger"
       className={cn(
-        "hover:bg-muted aria-expanded:bg-muted rounded-sm px-1.5 py-[2px] text-sm font-medium flex items-center outline-hidden select-none",
+        "hover:bg-muted aria-expanded:bg-muted rounded-sm px-1.5 py-[2px] text-sm flex items-center outline-hidden select-none",
         className,
       )}
       {...props}
@@ -174,7 +174,7 @@ function MenubarLabel({
       <DropdownMenuLabel
         data-slot="menubar-label"
         data-inset={inset}
-        className={cn("px-1.5 py-1 text-sm font-medium data-inset:ps-7", className)}
+        className={cn("px-1.5 py-1 text-sm data-inset:ps-7", className)}
         {...props}
       />
     </DropdownMenuGroup>

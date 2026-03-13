@@ -1,5 +1,5 @@
-import { createContext, use } from "react";
 import type { ReactNode } from "react";
+import { createContext, use } from "react";
 
 import AvatarUpload from "@/components/file-upload/avatar-upload";
 import { Button } from "@/components/ui/button";
@@ -10,24 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  ImageIcon,
-  Loader2Icon,
-  MoreHorizontalIcon,
-  PencilIcon,
-  PlusIcon,
-  SmileIcon,
-  Trash2Icon,
-  UploadIcon,
-  XIcon,
-} from "@/components/ui/icons";
+import { ImageIcon, SmileIcon, UploadIcon, XIcon } from "@/components/ui/icons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { cn } from "@/lib/utils";
@@ -98,7 +81,7 @@ const CoverUpload = ({ onFileChange }: { onFileChange: (url: string) => void }) 
         <input {...getInputProps()} className="sr-only" />
         <div className="flex flex-col items-center gap-2 text-muted-foreground">
           <UploadIcon className="h-8 w-8" />
-          <span className="text-sm font-medium">Upload cover image</span>
+          <span className="text-sm">Upload cover image</span>
           <span className="text-xs">Max 5MB</span>
         </div>
       </button>
@@ -581,70 +564,3 @@ export const FormHeader = Object.assign(FormHeaderRoot, {
   Title: FormHeaderTitle,
   Actions: ActionButtons,
 });
-
-// ---------------------------------------------------------------------------
-// WorkspaceHeader (unchanged — different pattern, not suitable for compound)
-// ---------------------------------------------------------------------------
-
-export interface WorkspaceHeaderProps {
-  name: string;
-  onRename: () => void;
-  onDelete: () => void;
-  onNewForm: () => void;
-  isCreatingForm?: boolean;
-}
-
-export const WorkspaceHeader = ({
-  name,
-  onRename,
-  onDelete,
-  onNewForm,
-  isCreatingForm,
-}: WorkspaceHeaderProps) => (
-  <div className="flex items-center justify-between mb-12">
-    <div className="flex items-center gap-2">
-      <h1 className="text-4xl font-bold">{name}</h1>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
-            />
-          }
-        >
-          <MoreHorizontalIcon className="h-5 w-5" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={onRename}>
-            <PencilIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-            <span>Rename workspace</span>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
-            <Trash2Icon className="mr-2 h-4 w-4" />
-            <span>Delete workspace</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-    <div className="flex items-center gap-4">
-      <div className="flex items-center gap-2">
-        <Button
-          size="sm"
-          className="h-9 gap-2 bg-blue-600 hover:bg-blue-700 font-medium px-4"
-          onClick={onNewForm}
-          disabled={isCreatingForm}
-        >
-          {isCreatingForm ? (
-            <Loader2Icon className="h-4 w-4 animate-spin" />
-          ) : (
-            <PlusIcon className="h-4 w-4" />
-          )}
-          New form
-        </Button>
-      </div>
-    </div>
-  </div>
-);

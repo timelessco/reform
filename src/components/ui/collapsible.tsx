@@ -18,7 +18,7 @@ function CollapsibleTrigger({ className, ...props }: CollapsiblePrimitive.Trigge
       data-slot="collapsible-trigger"
       type="button"
       className={cn(
-        "aria-disclosure-button w-full cursor-pointer outline-hidden focus-visible:ring-1 focus-visible:ring-gray-200",
+        "aria-disclosure-button w-full cursor-pointer outline-hidden focus-visible:ring-1 focus-visible:ring-gray-200 hover:bg-(--color-gray-alpha-100) hover:text-foreground",
         className,
       )}
       {...props}

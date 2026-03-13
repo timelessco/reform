@@ -369,7 +369,7 @@ function DataGridTableLoader() {
 
   return (
     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-      <div className="text-muted-foreground bg-card  flex items-center gap-2 px-4 py-2 font-medium text-sm border shadow-xs rounded-md">
+      <div className="text-muted-foreground bg-card  flex items-center gap-2 px-4 py-2 text-sm border shadow-xs rounded-md">
         <svg
           aria-hidden="true"
           className="animate-spin -ml-1 h-5 w-5 text-muted-foreground"

@@ -106,7 +106,7 @@ export default function AvatarUpload({
 
       {/* Upload Instructions */}
       <div className="text-center space-y-0.5">
-        <p className="text-sm font-medium">{currentFile ? "Avatar uploaded" : "Upload avatar"}</p>
+        <p className="text-sm">{currentFile ? "Avatar uploaded" : "Upload avatar"}</p>
         <p className="text-xs text-muted-foreground">PNG, JPG up to {formatBytes(maxSize)}</p>
       </div>
 

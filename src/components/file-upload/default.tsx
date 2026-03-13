@@ -52,7 +52,7 @@ function Component() {
           <Button
             variant="link"
             onClick={() => removeFile(files[0]?.id)}
-            className="cursor-pointer text-destructive font-medium p-0 h-auto text-xs"
+            className="cursor-pointer text-destructive p-0 h-auto text-xs"
             aria-label={`Remove ${fileName}`}
           >
             Remove

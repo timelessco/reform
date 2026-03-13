@@ -96,19 +96,19 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
       collapsible="none"
       className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out"
     >
-      <SidebarHeader className="pr-1 pt-2  flex flex-row items-center justify-between shrink-0">
-        <p className="text-sm font-medium text-muted-foreground pl-2.5 pr-2 py-1.5">
-          Version History
-        </p>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7 text-muted-foreground hover:text-foreground rounded-lg"
-          onClick={closeSidebar}
-          aria-label="Close version history"
-        >
-          <XIcon className="size-3.5" />
-        </Button>
+      <SidebarHeader className="pt-2 pb-3 pl-1 shrink-0 gap-2.25 space-y-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base text-foreground pl-2.5">Version History</h2>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            onClick={closeSidebar}
+            aria-label="Close"
+          >
+            <XIcon className="h-4 w-4" />
+          </Button>
+        </div>
       </SidebarHeader>
 
       <SidebarContent className="px-2 pt-[10px] relative">
@@ -130,11 +130,13 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
             const isCurrent = index === 0;
 
             return (
-              <button
+              <Button
+                variant="ghost"
+                size="lg"
                 key={version.id}
                 onClick={() => selectVersion(version.id)}
                 className={cn(
-                  "flex gap-1.5 items-start pl-2 py-2 rounded-lg w-full text-left relative",
+                  "flex gap-1.5 h-auto items-start pl-2 py-2 rounded-lg w-full text-left relative",
                   isSelected ? "bg-accent" : "hover:bg-accent/50",
                 )}
               >
@@ -142,7 +144,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
                 <div className="shrink-0">
                   <Avatar className="size-5 rounded-full">
                     <AvatarImage src={publisher.image} alt={publisher.name} />
-                    <AvatarFallback className="text-[13px] font-medium bg-muted text-muted-foreground rounded-full">
+                    <AvatarFallback className="text-[13px] bg-muted text-muted-foreground rounded-full">
                       {publisher.initial}
                     </AvatarFallback>
                   </Avatar>
@@ -150,8 +152,10 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
 
                 {/* Content */}
                 <div className="flex-1 min-w-0 flex flex-col gap-1">
-                  <p className="text-sm font-medium text-foreground truncate">{publisher.name}</p>
-                  <p className="text-[13px] text-muted-foreground">
+                  <p className="text-base leading-[16px] text-foreground font-medium truncate">
+                    {publisher.name}
+                  </p>
+                  <p className="text-sm leading-[15px] font-normal text-muted-foreground tracking-[0.13px]">
                     {version.version} change{version.version !== 1 ? "s" : ""} ·{" "}
                     {isCurrent ? "Current" : "Published"}
                   </p>
@@ -201,12 +205,12 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
                   </div>
                 ) : (
                   <div className="shrink-0 pt-0.5">
-                    <span className="text-[13px] font-medium text-muted-foreground px-2">
+                    <span className="text-[13px] text-muted-foreground px-2">
                       {formatRelativeTime(version.publishedAt)}
                     </span>
                   </div>
                 )}
-              </button>
+              </Button>
             );
           })}
         </div>

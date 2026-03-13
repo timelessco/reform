@@ -52,8 +52,8 @@ function AccordionTrigger({
           "focus-visible:ring-ring/50 focus-visible:border-ring focus-visible:ring-3",
           "aria-disabled:pointer-events-none aria-disabled:opacity-50",
           isInline
-            ? "gap-1 rounded-lg py-1.5 text-start text-[13px] font-medium"
-            : "justify-between rounded-lg py-2.5 text-start text-sm font-medium hover:underline",
+            ? "gap-1 rounded-lg py-1.5 text-start text-[13px]"
+            : "justify-between rounded-lg py-2.5 text-start text-sm hover:underline",
           className,
         )}
         {...props}
@@ -85,11 +85,7 @@ function AccordionTrigger({
   );
 }
 
-function AccordionContent({
-  className,
-  children,
-  ...props
-}: AccordionPrimitive.Panel.Props) {
+function AccordionContent({ className, children, ...props }: AccordionPrimitive.Panel.Props) {
   return (
     <AccordionPrimitive.Panel
       data-slot="accordion-content"

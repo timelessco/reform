@@ -39,7 +39,7 @@ function OnboardingItem({
   return (
     <a
       href={href}
-      className="flex items-center gap-3 text-muted-foreground/70 hover:text-foreground transition-colors group text-sm font-medium py-0.5"
+      className="flex items-center gap-3 text-muted-foreground/70 hover:text-foreground transition-colors group text-sm py-0.5"
     >
       <Icon className="h-4 w-4 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity" />
       <span>{label}</span>
@@ -71,8 +71,7 @@ export function OnboardingContentElement(props: PlateElementProps) {
               <div className="flex items-center gap-3 text-muted-foreground/60 text-lg">
                 <FileTextIcon className="h-5 w-5" />
                 <span>
-                  Press <span className="font-medium text-foreground/80">Enter</span> to start from
-                  scratch
+                  Press <span className="text-foreground/80">Enter</span> to start from scratch
                 </span>
               </div>
 
@@ -144,7 +143,7 @@ export function OnboardingContentElement(props: PlateElementProps) {
           </DialogHeader>
           <div className="flex flex-col items-center py-12 text-muted-foreground">
             <LayoutIcon className="h-12 w-12 mb-4 opacity-50" />
-            <p className="text-lg font-medium">Coming soon</p>
+            <p className="text-lg">Coming soon</p>
             <p className="text-sm mt-2">We're working on some great templates for you.</p>
           </div>
         </DialogContent>

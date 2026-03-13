@@ -62,7 +62,7 @@ function ComboboxInput({
         render={
           <InputGroupInput
             disabled={disabled}
-            className="min-w-[80px] flex-1 bg-transparent px-2.5 text-13 outline-none placeholder:font-medium placeholder:text-gray-alpha-600"
+            className="min-w-[80px] flex-1 bg-transparent px-2.5 text-13 outline-none placeholder:text-gray-alpha-600"
           />
         }
         {...props}
@@ -250,7 +250,7 @@ function ComboboxChipsInput({ className, ...props }: ComboboxPrimitive.Input.Pro
     <ComboboxPrimitive.Input
       data-slot="combobox-chip-input"
       className={cn(
-        "min-w-[80px] flex-1 bg-transparent px-2.5 text-13 outline-none placeholder:font-medium placeholder:text-gray-alpha-600",
+        "min-w-[80px] flex-1 bg-transparent px-2.5 text-13 outline-none placeholder:text-gray-alpha-600",
         className,
       )}
       {...props}

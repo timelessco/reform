@@ -6,37 +6,13 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
-import {
-  formCollection,
-  localFormCollection,
-} from "@/db-collections/form.collections";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-} from "@/components/ui/sidebar";
+import { formCollection, localFormCollection } from "@/db-collections/form.collections";
+import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
 import { SidebarSection } from "@/components/ui/sidebar-section";
-import {
-  ConfigCard,
-  ConfigRow,
-} from "@/components/form-builder/embed-config-panel";
-import {
-  StyleSelect,
-  StyleColorPicker,
-  StyleNumberInput,
-} from "@/components/ui/style-controls";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  STYLES,
-  BASE_COLORS,
-  DARK_BASE_COLORS,
-  THEME_COLORS,
-  FONT_MAP,
-} from "@/lib/theme-presets";
+import { ConfigCard, ConfigRow } from "@/components/form-builder/embed-config-panel";
+import { StyleSelect, StyleColorPicker, StyleNumberInput } from "@/components/ui/style-controls";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { STYLES, BASE_COLORS, DARK_BASE_COLORS, THEME_COLORS, FONT_MAP } from "@/lib/theme-presets";
 import { TOKEN_NAMES } from "@/lib/generate-theme-css";
 
 const FONT_OPTIONS = Object.keys(FONT_MAP);
@@ -217,10 +193,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
   const formDoc = formResult.data?.[0] ?? null;
   const collection = isLocal ? localFormCollection : formCollection;
 
-  const customization = (formDoc?.customization ?? {}) as Record<
-    string,
-    string
-  >;
+  const customization = (formDoc?.customization ?? {}) as Record<string, string>;
 
   // Resolve the active style to get fallback values
   const resolvedStyle = useMemo(() => {
@@ -324,8 +297,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
 
   const activePreset = customization.preset || "vega";
   const activeMode = customization.mode || "light";
-  const activeBaseColors =
-    activeMode === "dark" ? DARK_BASE_COLORS : BASE_COLORS;
+  const activeBaseColors = activeMode === "dark" ? DARK_BASE_COLORS : BASE_COLORS;
   const activeThemeColor = getValue("themeColor");
   const activeBaseColor = getValue("baseColor");
   const activeFont = getValue("font");
@@ -338,17 +310,15 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
       className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out"
     >
       {/* Header — matches share sidebar */}
-      <SidebarHeader className="pt-2 pb-1 pl-1 shrink-0">
+      <SidebarHeader className="pt-2 pb-3 pl-1 shrink-0 gap-2.25 space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground px-2.5">
-            Customize
-          </h2>
+          <h2 className="text-base text-foreground pl-2.5">Customize</h2>
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-xs"
             className="h-7 w-7 text-muted-foreground hover:text-foreground"
             onClick={closeSidebar}
-            aria-label="Close customize panel"
+            aria-label="Close"
           >
             <XIcon className="h-4 w-4" />
           </Button>
@@ -365,7 +335,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
                 aria-label="Dark Mode"
                 checked={activeMode === "dark"}
                 onCheckedChange={handleModeToggle}
-                size="sm"
+                size="default"
               />
             </ConfigRow>
           </ConfigCard>
@@ -436,12 +406,12 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
               <ProBadge />
             </div>
             <p className="text-[12px] text-muted-foreground mb-3">
-              Preview advanced customization. {APP_NAME} Pro is required to
-              apply it to the published form.
+              Preview advanced customization. {APP_NAME} Pro is required to apply it to the
+              published form.
             </p>
             <Button
               variant="outline"
-              className="w-full h-7 text-[13px] font-medium text-sidebar-foreground bg-background border border-border hover:bg-muted rounded-lg shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
+              className="w-full h-7 text-[13px] text-sidebar-foreground bg-background border border-border hover:bg-muted rounded-lg shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
             >
               Upgrade to Pro
             </Button>
@@ -538,9 +508,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
             <div className="rounded-lg overflow-hidden border border-border/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
               <Textarea
                 value={getValue("customCss")}
-                onChange={(e) =>
-                  updateWithCustomPreset("customCss", e.target.value)
-                }
+                onChange={(e) => updateWithCustomPreset("customCss", e.target.value)}
                 aria-label="Custom CSS"
                 className="font-mono text-[11px] h-32 bg-[#1e1e1e] text-[#d4d4d4] border-0 rounded-none focus-visible:ring-2 focus-visible:ring-ring p-3"
                 placeholder=".bf-themed { ... }"
@@ -550,16 +518,10 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
             <div className="flex items-center gap-1.5 px-1 pt-2">
               <Tooltip>
                 <TooltipTrigger
-                  render={
-                    <InfoIcon className="h-3 w-3 text-muted-foreground/60 cursor-help" />
-                  }
+                  render={<InfoIcon className="h-3 w-3 text-muted-foreground/60 cursor-help" />}
                 />
-                <TooltipContent
-                  side="bottom"
-                  className="max-w-[240px] text-[11px]"
-                >
-                  Supports shadcn tokens: --bf-primary, --bf-background,
-                  --bf-foreground, etc.
+                <TooltipContent side="bottom" className="max-w-[240px] text-[11px]">
+                  Supports shadcn tokens: --bf-primary, --bf-background, --bf-foreground, etc.
                 </TooltipContent>
               </Tooltip>
               <span className="text-[11px] text-muted-foreground/60">
@@ -624,10 +586,7 @@ function AdvancedColorPickers({
       {ADVANCED_COLOR_TOKENS.map(({ key, label }) => {
         const prefixedKey = `${mode}:${key}`;
         const currentValue =
-          customization[prefixedKey] ||
-          customization[key] ||
-          resolved[key] ||
-          "#000000";
+          customization[prefixedKey] || customization[key] || resolved[key] || "#000000";
 
         return (
           <StyleColorPicker

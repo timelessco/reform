@@ -41,7 +41,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
     return (
       <div className="h-full w-full flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-lg font-medium mb-2">Form Not Found</h2>
+          <h2 className="text-lg mb-2">Form Not Found</h2>
           <p className="text-sm text-muted-foreground mb-4">
             This form does not exist or has been deleted.
           </p>

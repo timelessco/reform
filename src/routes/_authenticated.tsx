@@ -396,7 +396,7 @@ function AppSidebar() {
               render={<LogoToggle direction="left" onClick={() => toggleSidebar()} />}
             />
             <TooltipContent side="bottom" align="start">
-              <p className="font-medium">Collapse sidebar</p>
+              <p>Collapse sidebar</p>
               <p className="text-xs text-muted-foreground">
                 {formatForDisplay(HOTKEYS.DISMISS_SIDEBARS)}
               </p>
@@ -433,14 +433,14 @@ function AppSidebar() {
                       <div className="relative flex items-center justify-center size-[18px] shrink-0">
                         <BellIcon className="size-[18px] text-muted-foreground" />
                         {pendingCount > 0 && (
-                          <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-blue-500 ring-2 ring-background" />
+                          <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-primary ring-2 ring-background" />
                         )}
                       </div>
                     }
                     label="Notifications"
                   >
                     {pendingCount > 0 && (
-                      <span className="text-[10px] bg-blue-500 text-white py-0.5 rounded-full font-semibold shrink-0 tabular-nums">
+                      <span className="text-[10px] bg-primary text-primary-foreground py-0.5 rounded-full font-semibold shrink-0 tabular-nums">
                         {pendingCount}
                       </span>
                     )}
@@ -672,7 +672,7 @@ function TrashDialog({
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     <FileTextIcon className="h-4 w-4 text-muted-foreground shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-[13px] font-medium text-foreground truncate">
+                      <p className="text-[13px] text-foreground truncate">
                         {form.title || "Untitled"}
                       </p>
                       <p className="text-[11px] text-muted-foreground/60 truncate">
@@ -883,7 +883,7 @@ function SidebarInbox() {
                           <UsersIcon className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[12px] font-medium text-foreground">
+                          <p className="text-[12px] text-foreground">
                             You've been invited to join{" "}
                             <span className="font-bold">
                               {(invitation as any).organization?.name ?? "an organization"}

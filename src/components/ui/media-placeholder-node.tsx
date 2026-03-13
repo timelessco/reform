@@ -211,7 +211,7 @@ export function ImageProgress({
       {progress < 100 && (
         <div className="absolute right-1 bottom-1 flex items-center space-x-2 rounded-full bg-black/50 px-1 py-0.5">
           <Loader2Icon className="size-3.5 animate-spin text-muted-foreground" />
-          <span className="font-medium text-white text-xs">{Math.round(progress)}%</span>
+          <span className="text-white text-xs">{Math.round(progress)}%</span>
         </div>
       )}
     </div>

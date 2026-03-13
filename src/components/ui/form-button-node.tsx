@@ -122,7 +122,7 @@ export function FormButtonElement({ className, children, ...props }: PlateElemen
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="space-y-2">
-          <Label htmlFor={buttonLabelId} className="text-sm font-medium">
+          <Label htmlFor={buttonLabelId} className="text-sm">
             Button label
           </Label>
           <Input
@@ -173,7 +173,7 @@ export function FormButtonElement({ className, children, ...props }: PlateElemen
         {!isPrevious && GearIcon}
         <span
           className={cn(
-            "inline-flex h-8 items-center justify-center rounded-lg px-2.5 text-sm font-medium transition-colors cursor-default select-none gap-1.5",
+            "inline-flex h-8 items-center justify-center rounded-lg px-2.5 text-sm transition-colors cursor-default select-none gap-1.5",
             isPrevious
               ? "border border-input bg-background shadow-xs text-foreground"
               : "bg-primary text-primary-foreground ",

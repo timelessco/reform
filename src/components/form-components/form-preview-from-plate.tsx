@@ -132,7 +132,7 @@ function ToggleRenderer({
         <ChevronRightIcon
           className={`h-4 w-4 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`}
         />
-        <span className="font-medium">{title}</span>
+        <span>{title}</span>
       </CollapsibleTrigger>
       <CollapsibleContent className="pl-6 space-y-2">
         {items.map((child) => (
@@ -167,7 +167,7 @@ function RenderPreviewElement({
       case "H2":
         return <h2 className="text-2xl font-semibold mt-5 mb-3">{element.content}</h2>;
       case "H3":
-        return <h3 className="text-xl font-medium mt-4 mb-2">{element.content}</h3>;
+        return <h3 className="text-xl mt-4 mb-2">{element.content}</h3>;
       case "Separator":
         return <Separator className="my-4" />;
       case "EmptyBlock":
@@ -552,7 +552,7 @@ export function FormPreviewFromPlate({
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] text-center p-8">
         <div className="text-muted-foreground mb-4">{NoContentPlaceholderIcon}</div>
-        <h3 className="text-lg font-medium mb-2">No Content Yet</h3>
+        <h3 className="text-lg mb-2">No Content Yet</h3>
         <p className="text-sm text-muted-foreground max-w-md">
           Add content to the editor to see the preview.
         </p>

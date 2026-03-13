@@ -9,37 +9,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toggleFavoriteLocal } from "@/db-collections/favorite.collection";
 import { updateFormStatus } from "@/db-collections/form.collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
-import {
-  discardChanges,
-  publishForm,
-  useHasUnpublishedChanges,
-} from "@/hooks/use-form-versions";
+import { discardChanges, publishForm, useHasUnpublishedChanges } from "@/hooks/use-form-versions";
 import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
 import { HOTKEYS, formatForDisplay } from "@/lib/hotkeys";
 import { cn, parseTimestampAsUTC } from "@/lib/utils";
 import { useHotkey } from "@tanstack/react-hotkeys";
-import {
-  Link,
-  useLocation,
-  useNavigate,
-  useParams,
-  useSearch,
-} from "@tanstack/react-router";
+import { Link, useLocation, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   Loader2Icon,
@@ -69,19 +50,14 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
   const { pathname } = useLocation();
   const isDashboard = pathname === "/dashboard";
   const isLandingPage = pathname === "/";
-  const isFormBuilder =
-    pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
+  const isFormBuilder = pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
   const isEditRoute = pathname.endsWith("/edit");
   const { data: sessionData } = useSession();
   const session = sessionData;
   const navigate = useNavigate();
 
   // Editor sidebar state
-  const {
-    activeSidebar,
-    closeSidebar,
-    toggleSidebar: toggleEditorSidebar,
-  } = useEditorSidebar();
+  const { activeSidebar, closeSidebar, toggleSidebar: toggleEditorSidebar } = useEditorSidebar();
 
   const isShareSidebarOpen = activeSidebar === "share";
   const isEditorSidebarOpen = !!activeSidebar;
@@ -234,8 +210,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
   });
 
   useHotkey(HOTKEYS.TOGGLE_SHARE_SIDEBAR, () => toggleShareSidebar(), {
-    enabled:
-      isFormBuilder && isEditRoute && savedDocs?.[0]?.status === "published",
+    enabled: isFormBuilder && isEditRoute && savedDocs?.[0]?.status === "published",
   });
 
   const isLeftSidebarOpen = state === "expanded";
@@ -309,7 +284,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
     <>
       <header
         className={cn(
-          "group/header flex h-10 w-full items-center justify-between bg-background px-2 text-[13px] -z-10 font-medium shrink-0 select-none transition-opacity duration-150",
+          "group/header flex h-10 w-full items-center justify-between bg-background px-2 text-[13px] -z-10 shrink-0 select-none transition-opacity duration-150",
           isDistractionHidden && "opacity-0 pointer-events-none",
         )}
       >
@@ -328,7 +303,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                 }
               />
               <TooltipContent side="right">
-                <p className="font-medium">Expand sidebar</p>
+                <p>Expand sidebar</p>
                 <p className="text-xs text-muted-foreground">
                   {formatForDisplay(HOTKEYS.DISMISS_SIDEBARS)}
                 </p>
@@ -352,27 +327,27 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                   <span className="text-muted-foreground/50">/</span>
                 </>
               )}
-              {savedDocs?.[0].status === "published" &&
-              workspaceId &&
-              formId ? (
+              {savedDocs?.[0].status === "published" && workspaceId && formId ? (
                 <Link
                   to="/workspace/$workspaceId/form-builder/$formId/submissions"
                   params={{ workspaceId, formId }}
                   className={cn(
                     buttonVariants({ variant: "link", size: "sm" }),
-                    "font-medium truncate max-w-[200px] text-foreground no-underline hover:underline px-1.5",
+                    "max-w-[200px] text-foreground no-underline px-1.5 justify-start overflow-hidden",
                   )}
                 >
-                  {savedDocs?.[0].title || "Untitled"}
+                  <span className="truncate hover:underline">
+                    {savedDocs?.[0].title || "Untitled"}
+                  </span>
                 </Link>
               ) : (
                 <span
                   className={cn(
                     buttonVariants({ variant: "link", size: "sm" }),
-                    "font-medium truncate max-w-[200px] no-underline cursor-default px-1.5",
+                    "max-w-[200px] no-underline cursor-default px-1.5 justify-start overflow-hidden",
                   )}
                 >
-                  {savedDocs?.[0].title || "Untitled"}
+                  <span className="truncate">{savedDocs?.[0].title || "Untitled"}</span>
                 </span>
               )}
               <span className="text-muted-foreground/50">/</span>
@@ -389,12 +364,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
         </div>
 
         {/* Right Section: Actions — hidden when any editor sidebar is open */}
-        <div
-          className={cn(
-            "flex items-center gap-1",
-            isEditorSidebarOpen && "hidden",
-          )}
-        >
+        <div className={cn("flex items-center gap-1", isEditorSidebarOpen && "hidden")}>
           {isFormBuilder &&
             savedDocs?.[0]?.updatedAt &&
             !isEditorSidebarOpen &&
@@ -407,8 +377,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                 >
                   Edited{" "}
                   {formatDistanceToNow(
-                    parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ??
-                      new Date(),
+                    parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date(),
                   )}{" "}
                   ago
                 </TooltipTrigger>
@@ -416,24 +385,18 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                   <div className="space-y-1">
                     <p className="text-xs text-background/70">
                       Edited by{" "}
-                      <span className="font-medium text-background">
-                        {session?.user?.name ?? "You"}
-                      </span>{" "}
+                      <span className="text-background">{session?.user?.name ?? "You"}</span>{" "}
                       {formatDistanceToNow(
-                        parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ??
-                          new Date(),
+                        parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date(),
                       )}{" "}
                       ago
                     </p>
                     {savedDocs?.[0]?.createdAt && (
                       <p className="text-xs text-background/70">
                         Created by{" "}
-                        <span className="font-medium text-background">
-                          {session?.user?.name ?? "You"}
-                        </span>{" "}
+                        <span className="text-background">{session?.user?.name ?? "You"}</span>{" "}
                         {format(
-                          parseTimestampAsUTC(savedDocs?.[0]?.createdAt) ??
-                            new Date(),
+                          parseTimestampAsUTC(savedDocs?.[0]?.createdAt) ?? new Date(),
                           "MMM d, yyyy",
                         )}
                       </p>
@@ -448,7 +411,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
               variant="ghost"
               size="sm"
               className={cn(
-                "h-8 px-2.5 text-muted-foreground hover:text-foreground font-normal",
+                "px-2.5 text-muted-foreground hover:text-foreground font-normal",
                 activeSidebar === "about" && "text-foreground bg-accent/50",
               )}
               onClick={() => toggleEditorSidebar("about")}
@@ -466,7 +429,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                       variant="ghost"
                       size="sm"
                       className={cn(
-                        "h-8 px-2.5 text-muted-foreground hover:text-foreground font-normal",
+                        "px-2.5 text-muted-foreground hover:text-foreground font-normal",
                         demo && "text-foreground bg-accent/50",
                       )}
                       onClick={handleTogglePreview}
@@ -476,9 +439,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                   {demo ? "Editor" : "Preview"}
                 </TooltipTrigger>
                 <TooltipContent side="bottom" align="end">
-                  <p className="font-medium">
-                    {demo ? "Back to Editor" : "Preview Form"}
-                  </p>
+                  <p>{demo ? "Back to Editor" : "Preview Form"}</p>
                   <p className="text-xs text-muted-foreground">
                     {formatForDisplay(HOTKEYS.TOGGLE_PREVIEW)}
                   </p>
@@ -488,7 +449,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  "h-8 px-2.5 text-muted-foreground hover:text-foreground font-normal",
+                  "px-2.5 text-muted-foreground hover:text-foreground font-normal",
                   activeSidebar === "about" && "text-foreground bg-accent/50",
                 )}
                 onClick={() => toggleEditorSidebar("about")}
@@ -498,11 +459,11 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-muted-foreground hover:text-foreground rounded-lg"
+                className="text-muted-foreground hover:text-foreground rounded-lg"
                 onClick={() => toggleEditorSidebar("settings")}
                 aria-label="Settings"
               >
-                <SettingsIcon />
+                <SettingsIcon fill="transparent" />
               </Button>
               <Popover
                 open={activeMenu === "local"}
@@ -518,10 +479,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                     />
                   }
                 >
-                  <MoreHorizontalIcon
-                    className="h-[18px] w-[18px]"
-                    strokeWidth={1.5}
-                  />
+                  <MoreHorizontalIcon className="h-[18px] w-[18px]" strokeWidth={1.5} />
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-48" sideOffset={4}>
                   <div className="flex flex-col">
@@ -531,7 +489,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                         setActiveMenu(null);
                         setTimeout(() => toggleEditorSidebar("customize"), 150);
                       }}
-                      className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-medium font-case transition-colors hover:bg-accent hover:text-accent-foreground"
+                      className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-case transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
                       <span className="flex-1 text-left">Customization</span>
                       <span className="text-xs text-muted-foreground ml-auto pl-3">
@@ -545,7 +503,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                         setActiveMenu(null);
                         setTimeout(() => navigate({ to: "/login" }), 150);
                       }}
-                      className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-medium font-case transition-colors hover:bg-accent hover:text-accent-foreground"
+                      className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-case transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
                       <span className="flex-1 text-left">Sign in</span>
                     </Button>
@@ -555,7 +513,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                         setActiveMenu(null);
                         setTimeout(() => navigate({ to: "/signup" }), 150);
                       }}
-                      className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-medium font-case transition-colors hover:bg-accent hover:text-accent-foreground"
+                      className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-case transition-colors hover:bg-accent hover:text-accent-foreground"
                     >
                       <span className="flex-1 text-left">Sign up</span>
                     </Button>
@@ -589,18 +547,13 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                     }
                   >
                     {isDiscarding ? (
-                      <Loader2Icon
-                        className="h-4 w-4 animate-spin"
-                        strokeWidth={2}
-                      />
+                      <Loader2Icon className="h-4 w-4 animate-spin" strokeWidth={2} />
                     ) : (
                       <RotateCcwIcon className="h-4 w-4" strokeWidth={2} />
                     )}
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="font-medium">
-                      Reset to last published version
-                    </p>
+                    <p>Reset to last published version</p>
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -627,9 +580,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                       {demo ? "Editor" : "Preview"}
                     </TooltipTrigger>
                     <TooltipContent side="bottom" align="end">
-                      <p className="font-medium">
-                        {demo ? "Back to Editor" : "Preview Form"}
-                      </p>
+                      <p>{demo ? "Back to Editor" : "Preview Form"}</p>
                       <p className="text-xs text-muted-foreground">
                         {formatForDisplay(HOTKEYS.TOGGLE_PREVIEW)}
                       </p>
@@ -647,8 +598,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                             size="sm"
                             className={cn(
                               "px-2.5 text-muted-foreground hover:text-foreground font-normal",
-                              isShareSidebarOpen &&
-                                "text-foreground bg-accent/50",
+                              isShareSidebarOpen && "text-foreground bg-accent/50",
                             )}
                             onClick={() => toggleShareSidebar()}
                           />
@@ -658,7 +608,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                       </TooltipTrigger>
                       {!isEditorSidebarOpen && (
                         <TooltipContent side="bottom" align="end">
-                          <p className="font-medium">Share</p>
+                          <p>Share</p>
                           <p className="text-xs text-muted-foreground">
                             {formatForDisplay(HOTKEYS.TOGGLE_SHARE_SIDEBAR)}
                           </p>
@@ -674,17 +624,17 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          className="text-muted-foreground hover:text-foreground"
                           aria-label="Settings"
                           onClick={() => toggleSettingsSidebar()}
                         />
                       }
                     >
-                      <SettingsIcon />
+                      <SettingsIcon fill="transparent" />
                     </TooltipTrigger>
                     {!isEditorSidebarOpen && (
                       <TooltipContent side="bottom" align="end">
-                        <p className="font-medium">Settings</p>
+                        <p>Settings</p>
                         <p className="text-xs text-muted-foreground">
                           {formatForDisplay(HOTKEYS.TOGGLE_SETTINGS_SIDEBAR)}
                         </p>
@@ -703,15 +653,12 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 bg-background rounded-lg hover:text-foreground"
+                        className="h-7 w-7 bg-background rounded-lg"
                         aria-label="More options"
                       />
                     }
                   >
-                    <MoreHorizontalIcon
-                      className="h-[18px] w-[18px]"
-                      strokeWidth={1.5}
-                    />
+                    <MoreHorizontalIcon className="h-[18px] w-[18px]" strokeWidth={1.5} />
                   </PopoverTrigger>
                   <PopoverContent align="end" className="w-48" sideOffset={4}>
                     <div className="flex flex-col">
@@ -724,7 +671,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                             // Defer action so popover fully closes before any layout shift
                             setTimeout(() => item.onClick(), 150);
                           }}
-                          className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-medium font-case transition-colors hover:bg-accent hover:text-accent-foreground"
+                          className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-case transition-colors hover:bg-accent hover:text-accent-foreground"
                         >
                           <span className="flex-1 text-left">{item.label}</span>
                           {item.shortcut && (
@@ -746,18 +693,16 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                       <Button
                         size="sm"
                         className={cn(
-                          "pl-2 pr-2 py-1.5 ml-1 text-[14px] font-medium transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none",
+                          "pl-2 pr-2 py-1.5 ml-1 text-[14px] transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none",
                           !isLoadingSavedDocs &&
-                            (hasUnpublishedChanges ||
-                              savedDocs?.[0]?.status !== "published")
+                            (hasUnpublishedChanges || savedDocs?.[0]?.status !== "published")
                             ? "bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
                             : "bg-muted text-muted-foreground hover:bg-muted/80",
                         )}
                         onClick={handlePublish}
                         disabled={
                           isPublishing ||
-                          (!hasUnpublishedChanges &&
-                            savedDocs?.[0]?.status === "published")
+                          (!hasUnpublishedChanges && savedDocs?.[0]?.status === "published")
                         }
                       />
                     }
@@ -788,7 +733,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                           search={(prev) => ({ ...prev, force: true })}
                           className={cn(
                             buttonVariants({ size: "sm" }),
-                            "pl-[10px] pr-[8px] ml-1 text-[14px] font-medium transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200",
+                            "pl-[10px] pr-[8px] ml-1 text-[14px] transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200",
                           )}
                         />
                       }
@@ -817,8 +762,8 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete form</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this form? This action will move
-              it to trash and cannot be easily undone.
+              Are you sure you want to delete this form? This action will move it to trash and
+              cannot be easily undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -841,8 +786,8 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Discard unpublished changes?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will revert the form to the last published version. Any
-              unsaved changes will be lost.
+              This will revert the form to the last published version. Any unsaved changes will be
+              lost.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -183,11 +183,12 @@ export function ConfigRow({
   return (
     <div
       className={`bg-secondary min-h-8.5 flex gap-3 items-center overflow-clip pl-2 py-2 ${
+        // max-h-9.5
         variant === "switch" ? "pr-[6px]" : "pr-[3px]"
       }`}
     >
       <div className="flex-1 min-w-0 flex flex-col gap-1">
-        <span className="text-sm font-medium">{label}</span>
+        <span className="text-base font-normal">{label}</span>
         {description && (
           <p className="text-sm font-normal text-wrap text-muted-foreground">{description}</p>
         )}
@@ -266,7 +267,7 @@ function ScrubValue({
           if (e.key === "Escape") setEditing(false);
         }}
         aria-label={`${unit} value`}
-        className="h-6 w-16 shrink-0 rounded-[5px] px-2 text-right text-[13px] font-medium bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-ring tabular-nums"
+        className="h-6 w-16 shrink-0 rounded-[5px] px-2 text-right text-[13px] bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-ring tabular-nums"
       />
     );
   }
@@ -279,7 +280,7 @@ function ScrubValue({
       aria-valuemin={min}
       aria-valuemax={max}
       aria-valuenow={value}
-      className="h-6 shrink-0 inline-flex items-center rounded-[5px] px-2 text-[13px] font-medium whitespace-nowrap cursor-ew-resize select-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="h-6 shrink-0 inline-flex items-center rounded-[5px] px-2 text-[13px] whitespace-nowrap cursor-ew-resize select-none focus-visible:ring-2 focus-visible:ring-ring"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -305,8 +306,8 @@ function ScrubValue({
  * Must override SelectTrigger defaults: data-[size=default]:h-8, py-2, pe-2, ps-2.5, rounded-lg
  * Use data-[size=default]:h-[24px] to match specificity of the default variant class.
  */
-const selectTriggerCls =
-  "data-[size=default]:h-[24px] shrink-0 border-none bg-transparent shadow-none rounded-[5px] px-2 py-0 gap-1 w-auto text-[13px] font-medium text-foreground whitespace-nowrap [&_svg]:size-3";
+export const selectTriggerCls =
+  "data-[size=default]:h-[24px] shrink-0 border-none bg-transparent shadow-none rounded-[5px] px-2 py-0 gap-1 w-auto text-[13px] text-foreground font-medium whitespace-nowrap [&_svg]:size-3";
 
 /* ─── Public entry point ─── */
 
@@ -362,20 +363,6 @@ function CustomizeSection({
             </ConfigRow>
           )}
         </form.Field>
-
-        <form.Field name="hideOnSubmit">
-          {(field: any) => (
-            <ConfigRow label="Hide on submit">
-              <Switch
-                aria-label="Hide on submit"
-                checked={field.state.value}
-                onCheckedChange={(checked: boolean) => field.handleChange(checked)}
-                size="sm"
-              />
-            </ConfigRow>
-          )}
-        </form.Field>
-
         <form.Field name="popupPosition">
           {(field: any) => (
             <ConfigRow label="Popup Position">
@@ -413,7 +400,18 @@ function CustomizeSection({
             />
           )}
         </form.Field>
-
+        <form.Field name="hideOnSubmit">
+          {(field: any) => (
+            <ConfigRow label="Hide on submit">
+              <Switch
+                aria-label="Hide on submit"
+                checked={field.state.value}
+                onCheckedChange={(checked: boolean) => field.handleChange(checked)}
+                size="default"
+              />
+            </ConfigRow>
+          )}
+        </form.Field>
         <form.Field name="darkOverlay">
           {(field: any) => (
             <ConfigRow label="Dark Overlay" variant="switch">
@@ -421,7 +419,7 @@ function CustomizeSection({
                 aria-label="Dark Overlay"
                 checked={field.state.value}
                 onCheckedChange={(v) => field.handleChange(v)}
-                size="sm"
+                size="default"
               />
             </ConfigRow>
           )}
@@ -434,7 +432,7 @@ function CustomizeSection({
                 aria-label="Show Emoji"
                 checked={field.state.value}
                 onCheckedChange={(v) => field.handleChange(v)}
-                size="sm"
+                size="default"
               />
             </ConfigRow>
           )}
@@ -477,7 +475,7 @@ function CustomizeSection({
                 aria-label="Dynamic Height"
                 checked={field.state.value}
                 onCheckedChange={(v) => field.handleChange(v)}
-                size="sm"
+                size="default"
               />
             </ConfigRow>
           )}
@@ -490,7 +488,7 @@ function CustomizeSection({
                 aria-label="Hide Title"
                 checked={field.state.value}
                 onCheckedChange={(v) => field.handleChange(v)}
-                size="sm"
+                size="default"
               />
             </ConfigRow>
           )}
@@ -503,7 +501,7 @@ function CustomizeSection({
                 aria-label="Align Left"
                 checked={field.state.value}
                 onCheckedChange={(v) => field.handleChange(v)}
-                size="sm"
+                size="default"
               />
             </ConfigRow>
           )}
@@ -516,7 +514,7 @@ function CustomizeSection({
                 aria-label="Transparency"
                 checked={field.state.value}
                 onCheckedChange={(v) => field.handleChange(v)}
-                size="sm"
+                size="default"
               />
             </ConfigRow>
           )}
@@ -535,7 +533,7 @@ function CustomizeSection({
               aria-label="Transparent BG"
               checked={field.state.value}
               onCheckedChange={(v) => field.handleChange(v)}
-              size="sm"
+              size="default"
             />
           </ConfigRow>
         )}
@@ -554,7 +552,7 @@ function ProSection({ form }: { form: { Field: any } }) {
               aria-label="Analytics"
               checked={field.state.value}
               onCheckedChange={(v) => field.handleChange(v)}
-              size="sm"
+              size="default"
             />
           </ConfigRow>
         )}
@@ -567,7 +565,7 @@ function ProSection({ form }: { form: { Field: any } }) {
               aria-label="Reform Branding"
               checked={field.state.value}
               onCheckedChange={(v) => field.handleChange(v)}
-              size="sm"
+              size="default"
             />
           </ConfigRow>
         )}

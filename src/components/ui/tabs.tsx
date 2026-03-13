@@ -64,7 +64,7 @@ function TabsList({
 
 const tabsTriggerVariants = cva(
   [
-    "relative z-10 gap-1.5 border border-transparent font-medium",
+    "relative z-10 gap-1.5 border border-transparent",
     "[&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
     "text-muted-foreground hover:text-foreground",
     "inline-flex flex-1 items-center justify-center whitespace-nowrap transition-colors",
@@ -121,8 +121,8 @@ function TabsTrigger({
       {badge !== undefined && (
         <span
           className={cn(
-            "inline-flex items-center justify-center rounded-full bg-muted text-muted-foreground font-medium",
-            size === "sm" ? "min-w-4 h-4 px-1 text-[10px]" : "min-w-5 h-5 px-1.5 text-[11px]",
+            "inline-flex items-center justify-center rounded-full bg-muted text-muted-foreground",
+            size === "sm" ? "min-w-4 h-4 px-1 text-[10px]" : "min-w-5 h-5 px-1.5 text-[14px]",
           )}
         >
           {badge}

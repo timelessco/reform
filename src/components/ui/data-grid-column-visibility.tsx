@@ -21,7 +21,7 @@ function DataGridColumnVisibility<TData>({
       <DropdownMenuTrigger render={trigger} />
       <DropdownMenuContent align="end" className="min-w-[150px]">
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="font-medium">Toggle Columns</DropdownMenuLabel>
+          <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
           {table
             .getAllColumns()
             .filter((column) => typeof column.accessorFn !== "undefined" && column.getCanHide())

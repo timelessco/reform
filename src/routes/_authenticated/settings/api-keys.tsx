@@ -157,7 +157,7 @@ function APIKeysPage() {
       <div className="flex items-center justify-end">
         <Button
           onClick={() => setIsCreateDialogOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
         >
           <PlusIcon className="h-4 w-4" />
           Create API key
@@ -184,25 +184,13 @@ function APIKeysPage() {
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[150px] text-muted-foreground font-medium py-3 px-4">
-                  Name
-                </TableHead>
-                <TableHead className="text-muted-foreground font-medium py-3 px-4">Key</TableHead>
-                <TableHead className="text-muted-foreground font-medium py-3 px-4">
-                  Version
-                </TableHead>
-                <TableHead className="text-muted-foreground font-medium py-3 px-4">
-                  Permissions
-                </TableHead>
-                <TableHead className="text-muted-foreground font-medium py-3 px-4">
-                  Last used
-                </TableHead>
-                <TableHead className="text-muted-foreground font-medium py-3 px-4">
-                  Created at
-                </TableHead>
-                <TableHead className="text-muted-foreground font-medium py-3 px-4">
-                  Created by
-                </TableHead>
+                <TableHead className="w-[150px] text-muted-foreground py-3 px-4">Name</TableHead>
+                <TableHead className="text-muted-foreground py-3 px-4">Key</TableHead>
+                <TableHead className="text-muted-foreground py-3 px-4">Version</TableHead>
+                <TableHead className="text-muted-foreground py-3 px-4">Permissions</TableHead>
+                <TableHead className="text-muted-foreground py-3 px-4">Last used</TableHead>
+                <TableHead className="text-muted-foreground py-3 px-4">Created at</TableHead>
+                <TableHead className="text-muted-foreground py-3 px-4">Created by</TableHead>
                 <TableHead className="w-[50px] py-3 px-4"></TableHead>
               </TableRow>
             </TableHeader>
@@ -212,7 +200,7 @@ function APIKeysPage() {
                   key={key.id}
                   className="group border-b last:border-0 hover:bg-muted/30 transition-colors"
                 >
-                  <TableCell className="font-medium py-4 px-4">{key.name}</TableCell>
+                  <TableCell className="py-4 px-4">{key.name}</TableCell>
                   <TableCell className="text-muted-foreground font-mono text-xs py-4 px-4">
                     {key.start}...{key.prefix}
                   </TableCell>
@@ -272,7 +260,7 @@ function APIKeysPage() {
 
       <div className="flex items-center gap-1 text-[13px] text-muted-foreground pt-8">
         <span>{APP_NAME}'s API is currently in Beta. Learn more about it on</span>
-        <a href={APP_API_DOCS_URL} className="text-blue-600 hover:underline">
+        <a href={APP_API_DOCS_URL} className="text-foreground hover:underline">
           {APP_API_DOCS_URL}
         </a>
         <span>.</span>
@@ -287,7 +275,7 @@ function APIKeysPage() {
           </DialogHeader>
           <div className="py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor={nameInputId}>
+              <label className="text-sm" htmlFor={nameInputId}>
                 Name
               </label>
               <Input
@@ -296,7 +284,7 @@ function APIKeysPage() {
                 value={newKeyName}
                 onChange={(e) => setNewKeyName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleCreateKey()}
-                className="focus-visible:ring-blue-500"
+                className="focus-visible:ring-ring"
               />
             </div>
           </div>
@@ -305,7 +293,7 @@ function APIKeysPage() {
               Cancel
             </Button>
             <Button
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
               onClick={handleCreateKey}
               disabled={!newKeyName.trim() || createMutation.isPending}
             >
@@ -337,13 +325,13 @@ function APIKeysPage() {
           <div className="space-y-6 py-4">
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex gap-3 text-amber-800">
               <AlertCircleIcon className="h-5 w-5 shrink-0" />
-              <p className="text-[13px] font-medium">
+              <p className="text-[13px]">
                 You will only be able to see this key once, store it safely.
               </p>
             </div>
 
             <div className="space-y-3">
-              <label className="text-sm font-medium text-foreground" htmlFor={apiKeyInputId}>
+              <label className="text-sm text-foreground" htmlFor={apiKeyInputId}>
                 API key
               </label>
               <div className="relative flex items-center">
@@ -384,7 +372,7 @@ function APIKeysPage() {
 
           <div className="mt-2 text-left">
             <Button
-              className="bg-blue-600 hover:bg-blue-700 text-white min-w-[80px] px-6 py-2 h-auto"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 min-w-[80px] px-6 py-2 h-auto"
               onClick={() => setIsViewDialogOpen(false)}
             >
               Done

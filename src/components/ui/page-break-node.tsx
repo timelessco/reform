@@ -108,7 +108,7 @@ export function PageBreakElement(props: PlateElementProps) {
 
         {/* Page label */}
         <div className="mx-4 flex items-center gap-4 text-sm text-muted-foreground">
-          <span className="font-medium">Page {pageNumber}</span>
+          <span>Page {pageNumber}</span>
 
           {/* Thank you page toggle */}
           {!((element.hasFormFields as boolean) ?? false) && (

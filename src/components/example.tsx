@@ -35,9 +35,7 @@ function Example({
       )}
       {...props}
     >
-      {title && (
-        <div className="text-muted-foreground px-1.5 py-2 text-xs font-medium">{title}</div>
-      )}
+      {title && <div className="text-muted-foreground px-1.5 py-2 text-xs">{title}</div>}
       <div
         data-slot="example-content"
         className={cn(

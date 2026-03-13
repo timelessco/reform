@@ -35,23 +35,18 @@ export function SidebarSection({
   );
 
   return (
-    <Accordion
-      defaultValue={initialOpen ? [SECTION_VALUE] : []}
-      className="flex flex-col"
-    >
+    <Accordion defaultValue={initialOpen ? [SECTION_VALUE] : []} className="flex flex-col">
       <AccordionItem value={SECTION_VALUE} className="border-none ">
         <AccordionTrigger
           iconPosition="inline"
           action={action ?? defaultAction}
           className="h-7.5 px-1 py-1.5 rounded-lg overflow-hidden cursor-pointer ml-[0.55px]"
         >
-          <span className="text-[13px] font-medium text-muted-foreground truncate tracking-4 font-case">
+          <span className="text-[13px] text-muted-foreground truncate tracking-4 font-case font-medium">
             {label}
           </span>
         </AccordionTrigger>
-        <AccordionContent className={cn("flex flex-col", className)}>
-          {children}
-        </AccordionContent>
+        <AccordionContent className={cn("flex flex-col", className)}>{children}</AccordionContent>
       </AccordionItem>
     </Accordion>
   );

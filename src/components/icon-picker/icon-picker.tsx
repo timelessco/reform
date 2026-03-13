@@ -114,7 +114,7 @@ type IconPickerHeaderProps = {
 function IconPickerHeader({ searchValue, setSearchValue }: IconPickerHeaderProps) {
   return (
     <div className="flex items-center justify-between border-b border-b-border py-3">
-      <span className="text-sm font-medium text-foreground">Choose an icon</span>
+      <span className="text-sm text-foreground">Choose an icon</span>
       <div className="flex w-[139px] items-center rounded-lg bg-muted px-[10px] py-[7px]">
         <figure className="mr-[6px] h-3 w-3 text-muted-foreground">
           <svg
@@ -205,18 +205,18 @@ function IconPagination({ currentPage, onNext, onPrev, totalPages }: IconPaginat
   return (
     <div className="absolute bottom-2 left-0 flex w-full justify-between px-2 pt-2">
       <button
-        className="flex items-center rounded-lg px-2 py-[5px] text-13 font-medium text-foreground hover:bg-muted disabled:opacity-50"
+        className="flex items-center rounded-lg px-2 py-[5px] text-13 text-foreground hover:bg-muted disabled:opacity-50"
         disabled={currentPage === 1}
         onClick={onPrev}
         type="button"
       >
         prev
       </button>
-      <span className="text-13 font-medium text-foreground">
+      <span className="text-13 text-foreground">
         {currentPage}/{totalPages}
       </span>
       <button
-        className="flex items-center rounded-lg px-2 py-[5px] text-13 font-medium text-foreground hover:bg-muted disabled:opacity-50"
+        className="flex items-center rounded-lg px-2 py-[5px] text-13 text-foreground hover:bg-muted disabled:opacity-50"
         disabled={currentPage === totalPages}
         onClick={onNext}
         type="button"

@@ -20,7 +20,7 @@ export function FormLabelElement({ className, children, ...props }: PlateElement
   return (
     <PlateElement
       className={cn(
-        "m-0 px-0 py-1 text-sm font-medium text-foreground relative cursor-text caret-current",
+        "m-0 px-0 py-1 text-sm text-foreground relative cursor-text caret-current",
         className,
       )}
       {...props}

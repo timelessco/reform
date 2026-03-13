@@ -184,7 +184,7 @@ function SignUpPage() {
             <div className="text-center space-y-2">
               <h2 className="text-xl font-semibold text-foreground">Verify your email</h2>
               <p className="text-sm text-muted-foreground">
-                We sent a code to <span className="font-medium text-foreground">{email}</span>
+                We sent a code to <span className="text-foreground">{email}</span>
               </p>
             </div>
 
@@ -239,7 +239,7 @@ function SignUpPage() {
                 variant="link"
                 onClick={() => sendOtpMutation.mutate({ email, type: "email-verification" })}
                 disabled={isPending}
-                className="p-0 h-auto font-medium"
+                className="p-0 h-auto"
               >
                 Resend
               </Button>
@@ -390,7 +390,7 @@ function SignUpPage() {
             {/* Switch to sign in */}
             <p className="text-center text-sm text-muted-foreground pt-2">
               Already have an account?{" "}
-              <Link to="/login" className="font-medium text-foreground hover:underline">
+              <Link to="/login" className="text-foreground hover:underline">
                 Sign in
               </Link>
             </p>

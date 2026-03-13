@@ -22,7 +22,7 @@ const AnchorLinkComponent = (props: AnchorLinkProps & { ref?: React.Ref<HTMLAnch
         data-slot="aria-current-link"
         className={cn(
           "rounded-xs underline transition data-disabled:cursor-default data-disabled:no-underline",
-          !hasImageChildren && "outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
+          !hasImageChildren && "outline-none focus-visible:ring-2 focus-visible:ring-ring",
           hasImageChildren && "group",
           className,
         )}

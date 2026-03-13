@@ -252,7 +252,7 @@ const InlineComboboxContent: typeof ComboboxPopover = ({ className, ...props }) 
 );
 
 const comboboxItemVariants = cva(
-  "relative flex h-[26px] select-none items-center rounded-lg px-2 py-[5.5px] text-[13px] font-medium text-foreground/80 outline-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "relative flex h-[26px] select-none items-center rounded-lg px-2 py-[5.5px] text-[13px] text-foreground/80 outline-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     defaultVariants: {
       interactive: true,
@@ -354,7 +354,7 @@ function InlineComboboxGroupLabel({
   return (
     <ComboboxGroupLabel
       {...props}
-      className={cn("px-2 py-1.5 text-[12px] font-medium text-muted-foreground", className)}
+      className={cn("px-2 py-1.5 text-[12px] text-muted-foreground", className)}
     />
   );
 }

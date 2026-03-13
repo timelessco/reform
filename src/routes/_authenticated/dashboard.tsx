@@ -182,7 +182,7 @@ function DashboardPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold">Home</h1>
-            <p className="text-sm text-muted-foreground mt-1 font-medium">
+            <p className="text-sm text-muted-foreground mt-1">
               {isLoading
                 ? "Loading..."
                 : `${orgForms.length} form${orgForms.length !== 1 ? "s" : ""} across ${orgWorkspaces.length} workspace${orgWorkspaces.length !== 1 ? "s" : ""}`}
@@ -191,24 +191,19 @@ function DashboardPage() {
           <div className="flex items-center gap-3">
             <Button
               variant="secondary"
-              size="default"
+              size="sm"
               onClick={handleCreateWorkspace}
               disabled={isLoading}
             >
-              <FolderPlus className="h-4 w-4" />
+              <FolderPlus />
               New workspace
             </Button>
             <Button
-              size="default"
+              size="sm"
               onClick={handleCreateForm}
               disabled={isLoading || isCreating || orgWorkspaces.length === 0}
-              className=" font-medium"
             >
-              {isCreating ? (
-                <Loader2Icon className="h-4 w-4 animate-spin" />
-              ) : (
-                <PlusIcon className="h-4 w-4" />
-              )}
+              {isCreating ? <Loader2Icon className="animate-spin" /> : <PlusIcon />}
               New form
             </Button>
           </div>
@@ -254,7 +249,7 @@ function DashboardPage() {
                         <div className="flex items-center gap-3">
                           <div className="flex flex-col">
                             <div className="flex items-center gap-2">
-                              <span className="text-lg font-semibold group-hover:text-blue-600 transition-colors">
+                              <span className="font-semibold  transition-colors">
                                 {form.title || "Untitled"}
                               </span>
                               <Badge
@@ -268,7 +263,7 @@ function DashboardPage() {
                                 {form.status === "published" ? "Published" : "Draft"}
                               </Badge>
                             </div>
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5 font-medium">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
                               <span>
                                 {workspaceNameMap.get(form.workspaceId) || "Unknown workspace"}
                               </span>
@@ -285,7 +280,7 @@ function DashboardPage() {
                                 render={
                                   <Button
                                     variant="ghost"
-                                    size="icon-sm"
+                                    size="icon"
                                     aria-label="Duplicate form"
                                     onClick={(e) => {
                                       e.preventDefault();
@@ -305,7 +300,7 @@ function DashboardPage() {
                                 render={
                                   <Button
                                     variant="ghost"
-                                    size="icon-sm"
+                                    size="icon"
                                     aria-label="Delete form"
                                     onClick={(e) => {
                                       e.preventDefault();
@@ -378,7 +373,7 @@ function DashboardPage() {
                 <FileTextIcon className="h-6 w-6 text-muted-foreground" />
               </div>
               <div className="space-y-1">
-                <p className="font-medium">No forms yet</p>
+                <p>No forms yet</p>
                 <p className="text-sm text-muted-foreground max-w-xs">
                   Create your first form to get started.
                 </p>
@@ -400,7 +395,7 @@ function DashboardPage() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-10 w-10 rounded-full bg-muted/50 hover:bg-muted shadow-sm border"
+          className="h-10 w-10 rounded-full bg-muted/50 hover:bg-secondary shadow-sm border"
           aria-label="Help"
         >
           <HelpCircleIcon className="h-5 w-5 text-muted-foreground" />

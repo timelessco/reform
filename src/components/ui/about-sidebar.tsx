@@ -12,7 +12,7 @@ export function AboutSidebar({ onClose }: AboutSidebarProps) {
   return (
     <div className="flex h-full flex-col bg-background animate-in slide-in-from-right duration-300 ease-in-out">
       <div className="flex h-10 items-center justify-between border-b border-border/40 px-3 shrink-0">
-        <span className="text-[13px] font-medium">About</span>
+        <span className="text-[13px]">About</span>
         <Button
           variant="ghost"
           size="icon"

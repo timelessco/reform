@@ -21,7 +21,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "@/components/ui/icons";
 import { useState } from "react";
 import { SidebarSection } from "@/components/ui/sidebar-section";
-import { ConfigCard, ConfigRow } from "@/components/form-builder/embed-config-panel";
+import {
+  ConfigCard,
+  ConfigRow,
+  selectTriggerCls,
+} from "@/components/form-builder/embed-config-panel";
 
 export const Route = createFileRoute(
   "/_authenticated/workspace/$workspaceId/form-builder/$formId/settings",
@@ -88,7 +92,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       value={(field.state.value as string) || "English"}
                       onValueChange={(value) => field.handleChange(value ?? "English")}
                     >
-                      <SelectTrigger className="w-[120px] h-[34px] rounded-none! border-0! bg-secondary! text-sm">
+                      <SelectTrigger className={selectTriggerCls}>
                         <SelectValue placeholder="Select language" />
                       </SelectTrigger>
                       <SelectContent>
@@ -112,7 +116,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Redirect on completion"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="sm"
+                      size="default"
                     />
                   )}
                 </form.AppField>
@@ -168,7 +172,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Progress bar"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="sm"
+                      size="default"
                     />
                   )}
                 </form.AppField>
@@ -192,7 +196,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                         aria-label="Branding"
                         checked={!!field.state.value}
                         onCheckedChange={field.handleChange}
-                        size="sm"
+                        size="default"
                       />
                     )}
                   </form.AppField>
@@ -217,7 +221,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                         aria-label="Data retention"
                         checked={!!field.state.value}
                         onCheckedChange={field.handleChange}
-                        size="sm"
+                        size="default"
                       />
                     )}
                   </form.AppField>
@@ -264,7 +268,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Self notifications"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="sm"
+                      size="default"
                     />
                   )}
                 </form.AppField>
@@ -309,7 +313,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                         aria-label="Respondent email notifications"
                         checked={!!field.state.value}
                         onCheckedChange={field.handleChange}
-                        size="sm"
+                        size="default"
                       />
                     )}
                   </form.AppField>
@@ -369,7 +373,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Password protect"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="sm"
+                      size="default"
                     />
                   )}
                 </form.AppField>
@@ -403,7 +407,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Close form"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="sm"
+                      size="default"
                     />
                   )}
                 </form.AppField>
@@ -443,7 +447,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Close on date"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="sm"
+                      size="default"
                     />
                   )}
                 </form.AppField>
@@ -480,7 +484,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Limit submissions"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="sm"
+                      size="default"
                     />
                   )}
                 </form.AppField>
@@ -521,7 +525,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Prevent duplicates"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="sm"
+                      size="default"
                     />
                   )}
                 </form.AppField>
@@ -543,7 +547,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Auto-jump"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="sm"
+                      size="default"
                     />
                   )}
                 </form.AppField>
@@ -560,7 +564,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                       aria-label="Save for later"
                       checked={field.state.value}
                       onCheckedChange={field.handleChange}
-                      size="sm"
+                      size="default"
                     />
                   )}
                 </form.AppField>

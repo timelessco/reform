@@ -145,12 +145,13 @@
   --card-foreground: var(--color-gray-900);
   --popover: var(--color-gray-90);
   --popover-foreground: var(--color-gray-800);
-  --primary: var(--color-gray-900);
+  --primary: var(--color-gray-950);
   --primary-foreground: var(--color-gray-90);
   --secondary: var(--color-gray-100);
   --secondary-foreground: var(--color-gray-700);
-  --accent: var(--color-gray-200);
-  --accent-foreground: var(--color-gray-800);
+  --accent: var(--color-gray-alpha-100); 
+  /* var(--color-gray-200); */
+  --accent-foreground: var(--color-foreground);
   --muted: var(--color-gray-300);
   --muted-foreground: var(--color-gray-600);
   --destructive: #cd2b31;
@@ -229,7 +230,7 @@
 
 	/* Dark Gray Alpha Shades */
 	--color-gray-alpha-50: rgb(255 255 255 / 5%); /* 5% White */
-	--color-gray-alpha-100: rgb(255 255 255 / 9%); /* 9% White */
+	--color-gray-alpha-100: rgb(255 255 255 / 8%); /* 8% White */
 	--color-gray-alpha-200: rgb(255 255 255 / 13%); /* 13% White */
 	--color-gray-alpha-300: rgb(255 255 255 / 17%); /* 17% White */
 	--color-gray-alpha-400: rgb(255 255 255 / 22%); /* 22% White */
@@ -284,13 +285,14 @@
   --secondary-foreground: var(--color-gray-800);
   --muted: var(--color-gray-300);
   --muted-foreground: var(--color-gray-600);
-  --accent: var(--color-gray-400);
-  --accent-foreground: var(--color-gray-900);
+  --accent: var(--color-gray-alpha-100); 
+  /* var(--color-gray-200); */
+  --accent-foreground: var(--color-foreground);
   --accent-active: var(--color-gray-500);
   --destructive: #cd2b31;
   --destructive-foreground: #e03636;
   --border: var(--color-gray-400);
-  --input: var(--color-gray-400);
+  --input: var(--color-gray-300);
   --ring: var(--color-gray-600);
   --chart-1: var(--color-blue-900);
   --chart-2: var(--color-blue-800);
@@ -343,7 +345,7 @@
   /* Fonts */
 	--font-sans: inter-v, inter-v-fallback;
   /* Variations Fonts */
-  --font-sans--font-variation-settings: "opsz" 24, "wght" 420;
+  --font-sans--font-variation-settings: "opsz" 20, "wght" 450;
     /* Fonts Weight */
   --font-sans-weight: 420;
 
@@ -412,27 +414,47 @@
   --font-variation-420: "wght" 420;
 
 
-  /* Font Size */
+  /* Font Size (line-height overrides Tailwind's defaults to match Figma's 115%) */
   --text-2xs: 0.6875rem; /*11px*/
+  --text-2xs--line-height: 1.15;
   --text-xs: 0.75rem; /*12px*/
+  --text-xs--line-height: 1.15;
   --text-sm: 0.8125rem; /*13px*/
+  --text-sm--line-height: 1.15;
   --text-base: 0.875rem; /*14px*/
+  --text-base--line-height: 1.15;
   --text-lg: 1rem; /*16px*/
+  --text-lg--line-height: 1.15;
   --text-xl: 1.125rem; /*18px*/
+  --text-xl--line-height: 1.15;
   --text-2xl: 1.25rem; /*20px*/
+  --text-2xl--line-height: 1.15;
   --text-3xl: 1.5rem; /*24px*/
+  --text-3xl--line-height: 1.15;
   --text-4xl: 1.625rem; /*26px*/
+  --text-4xl--line-height: 1.15;
   --text-5xl: 1.75rem; /*28px*/
+  --text-5xl--line-height: 1.15;
   --text-6xl: 2rem; /*32px*/
+  --text-6xl--line-height: 1.15;
   --text-7xl: 2.5rem; /*40px*/
+  --text-7xl--line-height: 1.15;
   --text-8xl: 2.75rem; /*44px*/
+  --text-8xl--line-height: 1.15;
   --text-9xl: 3rem; /*48px*/
+  --text-9xl--line-height: 1.15;
   --text-10xl: 3.25rem; /*52px*/
+  --text-10xl--line-height: 1.15;
   --text-11xl: 3.5rem; /*56px*/
+  --text-11xl--line-height: 1.15;
   --text-12xl: 4rem; /*64px*/
+  --text-12xl--line-height: 1.15;
   --text-13xl: 4.5rem; /*72px*/
+  --text-13xl--line-height: 1.15;
   --text-14xl: 5rem; /*80px*/
+  --text-14xl--line-height: 1.15;
   --text-15xl: 5.5rem; /*88px*/
+  --text-15xl--line-height: 1.15;
 
   /* Line Height */
   --leading-tight: 1.15; /*115%*/

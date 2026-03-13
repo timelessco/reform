@@ -457,7 +457,7 @@ Reform.closePopup('${formId}');`}
                         Examples
                       </h4>
                       <div className="space-y-3">
-                        <p className="text-[12px] font-medium text-foreground/80">
+                        <p className="text-[12px] text-foreground/80">
                           1. Open as centered modal with delay
                         </p>
                         <CodeBlock
@@ -470,7 +470,7 @@ Reform.closePopup('${formId}');`}
                         />
                       </div>
                       <div className="space-y-3">
-                        <p className="text-[12px] font-medium text-foreground/80">
+                        <p className="text-[12px] text-foreground/80">
                           2. Set custom hidden fields
                         </p>
                         <CodeBlock
@@ -484,9 +484,7 @@ Reform.closePopup('${formId}');`}
                         />
                       </div>
                       <div className="space-y-3">
-                        <p className="text-[12px] font-medium text-foreground/80">
-                          3. Handle events
-                        </p>
+                        <p className="text-[12px] text-foreground/80">3. Handle events</p>
                         <CodeBlock
                           code={`Reform.openPopup('${formId}', {
   onOpen: () => console.log('Opened'),

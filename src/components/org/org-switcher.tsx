@@ -119,9 +119,7 @@ function OrganizationSwitcher() {
             sideOffset={4}
           >
             <DropdownMenuSeparator />
-            <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-              Organizations
-            </div>
+            <div className="px-2 py-1.5 text-xs text-muted-foreground">Organizations</div>
             {orgs?.map((org) => {
               const role = roleByOrgId[org.id];
               return (

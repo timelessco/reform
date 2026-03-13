@@ -212,7 +212,7 @@ export default function DataGridDemo() {
       {
         accessorKey: "name",
         header: "Name",
-        cell: (info) => <span className="font-medium">{info.getValue() as string}</span>,
+        cell: (info) => <span>{info.getValue() as string}</span>,
         size: 175,
         meta: {
           headerClassName: "",

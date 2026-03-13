@@ -68,7 +68,9 @@ export const Route = createFileRoute(
         queryFn: () => getLatestPublishedVersion({ data: { formId: params.formId } }),
         revalidateIfStale: true,
       }),
-      context.queryClient.ensureQueryData(getSubmissionsCountQueryOption(params.formId)),
+      context.queryClient
+        .ensureQueryData(getSubmissionsCountQueryOption(params.formId))
+        .catch(() => ({ total: 0 })),
       context.queryClient.ensureInfiniteQueryData({
         queryKey: ["submissions", params.formId],
         queryFn: () =>
@@ -512,10 +514,7 @@ function SubmissionsPage() {
                     ? completedCount
                     : partialCount}
               </span>
-              <ChevronDownIcon
-                className="h-2.5 w-2.5 shrink-0 text-muted-foreground transition-transform duration-200"
-                strokeWidth="2"
-              />
+              <ChevronDownIcon className="size-2.5 shrink-0  text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-36">
               <DropdownMenuItem onClick={() => setActiveTab("all")} className="gap-2">
@@ -557,7 +556,7 @@ function SubmissionsPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md font-medium bg-accent/60 hover:bg-accent text-(--color-gray-alpha-600) transition-colors cursor-pointer text-normal text-[0.8rem] rounded-lg"
+                  className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-accent/60 hover:bg-accent text-(--color-gray-alpha-600) transition-colors cursor-pointer text-normal text-[0.8rem] rounded-lg"
                 >
                   <Columns
                     className="h-3 w-3"
@@ -572,7 +571,7 @@ function SubmissionsPage() {
             <Button
               variant="ghost"
               size="sm"
-              className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md font-medium bg-accent/60 hover:bg-accent text-(--color-gray-alpha-600) transition-colors cursor-pointer text-normal text-[0.8rem] rounded-lg"
+              className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-accent/60 hover:bg-accent text-(--color-gray-alpha-600) transition-colors cursor-pointer text-normal text-[0.8rem] rounded-lg"
               onClick={handleDownloadCSV}
             >
               <Download className="h-3 w-3" strokeWidth={2} color="var(--color-gray-alpha-600)" />
@@ -593,9 +592,7 @@ function SubmissionsPage() {
                   checked={true}
                   className="border-foreground data-[state=checked]:bg-foreground data-[state=checked]:border-foreground size-5"
                 />
-                <span className="text-sm font-medium">
-                  {Object.keys(rowSelection).length} selected
-                </span>
+                <span className="text-sm">{Object.keys(rowSelection).length} selected</span>
               </div>
               <div className="flex items-center gap-1 h-6.5">
                 <Button variant="ghost" size="sm" onClick={handleExportSelected}>
@@ -647,7 +644,7 @@ function SubmissionsPage() {
                 <FilterIcon className="h-6 w-6" />
               </div>
               <div className="space-y-1 text-center">
-                <p className="font-medium">No results found</p>
+                <p>No results found</p>
                 <p className="text-xs text-muted-foreground">
                   {globalFilter
                     ? "Try adjusting your search query."

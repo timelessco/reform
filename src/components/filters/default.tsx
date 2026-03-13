@@ -167,7 +167,7 @@ export default function FiltersDemo() {
             {
               value: "john",
               label: "John Doe",
-              icon: <div className="size-3 rounded-full bg-blue-400" />,
+              icon: <div className="size-3 rounded-full bg-primary" />,
             },
             {
               value: "jane",
@@ -202,7 +202,7 @@ export default function FiltersDemo() {
             {
               value: "standard",
               label: "Standard",
-              icon: <Building className="size-3 text-blue-500" />,
+              icon: <Building className="size-3 text-muted-foreground" />,
             },
             {
               value: "trial",

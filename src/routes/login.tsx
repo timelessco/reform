@@ -237,7 +237,7 @@ function LoginPage() {
             <div className="text-center space-y-2">
               <h2 className="text-xl font-semibold text-foreground">Check your email</h2>
               <p className="text-sm text-muted-foreground">
-                We sent a code to <span className="font-medium text-foreground">{email}</span>
+                We sent a code to <span className="text-foreground">{email}</span>
               </p>
             </div>
 
@@ -290,7 +290,7 @@ function LoginPage() {
                 variant="link"
                 onClick={() => sendOtpMutation.mutate({ email, type: "sign-in" })}
                 disabled={isPending}
-                className="p-0 h-auto font-medium"
+                className="p-0 h-auto"
               >
                 Resend
               </Button>
@@ -353,7 +353,7 @@ function LoginPage() {
                   className={cn(
                     "rounded-full capitalize",
                     signInMethod === method &&
-                      "bg-foreground text-background font-medium hover:bg-foreground hover:text-background",
+                      "bg-foreground text-background hover:bg-foreground hover:text-background",
                   )}
                 >
                   {method === "otp" ? "Passwordless" : method}
@@ -510,7 +510,7 @@ function LoginPage() {
             {/* Switch to sign up */}
             <p className="text-center text-sm text-muted-foreground pt-2">
               Don\u2019t have an account?{" "}
-              <Link to="/signup" className="font-medium text-foreground hover:underline">
+              <Link to="/signup" className="text-foreground hover:underline">
                 Sign up
               </Link>
             </p>
