@@ -20,7 +20,7 @@ export const motionIconProps: HTMLMotionProps<"span"> = {
   initial: "initial",
   animate: "animate",
   exit: "exit",
-  transition: { type: "spring", duration: 0.8, bounce: 0 },
+  transition: { type: "spring", duration: 0.4, bounce: 0 },
 };
 
 export function CopyStateIcon({ state }: { state: CopyState }) {
@@ -66,8 +66,6 @@ export function CopyButton({
     onCopyError,
   });
 
-  const label = state === "done" ? "Copied" : children;
-
   return (
     <Button
       size={size}
@@ -79,7 +77,7 @@ export function CopyButton({
       aria-label="Copy"
       {...props}
     >
-      {label}
+      {children}
     </Button>
   );
 }

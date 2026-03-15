@@ -13,7 +13,12 @@ import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   createFormLocal,
   duplicateFormById,
@@ -25,7 +30,12 @@ import { useSession } from "@/lib/auth-client";
 import { clearLocalDraftIds } from "@/lib/local-draft";
 import { syncLocalDataToCloud } from "@/lib/sync";
 import { parseTimestampAsUTC } from "@/lib/utils";
-import { createFileRoute, Link, useLoaderData, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  useLoaderData,
+  useNavigate,
+} from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import {
   ChevronLeftIcon,
@@ -64,18 +74,24 @@ function DashboardPage() {
 
   const { data: session } = useSession();
 
-  const { data: liveWorkspaces, isLoading: wsLoading } = useOrgWorkspaces(activeOrg?.id);
-  const { data: liveForms, isLoading: formsLoading } = useOrgForms(activeOrg?.id);
+  const { data: liveWorkspaces, isLoading: wsLoading } = useOrgWorkspaces(
+    activeOrg?.id,
+  );
+  const { data: liveForms, isLoading: formsLoading } = useOrgForms(
+    activeOrg?.id,
+  );
 
   const isLoading = wsLoading || formsLoading;
-  const isElectricReady = !isLoading && liveWorkspaces !== undefined && liveForms !== undefined;
+  const isElectricReady =
+    !isLoading && liveWorkspaces !== undefined && liveForms !== undefined;
 
   const orgWorkspaces = isElectricReady ? liveWorkspaces || [] : [];
 
   const orgForms = useMemo(() => {
     if (!isElectricReady) return [];
     return (liveForms || []).toSorted(
-      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
     );
   }, [liveForms, isElectricReady]);
 
@@ -86,17 +102,23 @@ function DashboardPage() {
 
   const totalPages = Math.ceil(orgForms.length / FORMS_PER_PAGE);
   const startIndex = (currentPage - 1) * FORMS_PER_PAGE;
-  const paginatedForms = orgForms.slice(startIndex, startIndex + FORMS_PER_PAGE);
+  const paginatedForms = orgForms.slice(
+    startIndex,
+    startIndex + FORMS_PER_PAGE,
+  );
 
   useEffect(() => {
     const syncData = async () => {
-      const shouldSyncSocial = sessionStorage.getItem("shouldSyncAfterSocialLogin") === "true";
-      const shouldSyncLogin = sessionStorage.getItem("shouldSyncAfterLogin") === "true";
+      const shouldSyncSocial =
+        sessionStorage.getItem("shouldSyncAfterSocialLogin") === "true";
+      const shouldSyncLogin =
+        sessionStorage.getItem("shouldSyncAfterLogin") === "true";
       const shouldSync = shouldSyncSocial || shouldSyncLogin;
 
       if (!shouldSync || !session?.user || !activeOrg?.id) return;
 
-      if (shouldSyncSocial) sessionStorage.removeItem("shouldSyncAfterSocialLogin");
+      if (shouldSyncSocial)
+        sessionStorage.removeItem("shouldSyncAfterSocialLogin");
       if (shouldSyncLogin) sessionStorage.removeItem("shouldSyncAfterLogin");
 
       try {
@@ -201,7 +223,13 @@ function DashboardPage() {
             </Button>
             <Button
               size="sm"
-              prefix={isCreating ? <Loader2Icon className="animate-spin" /> : <PlusIcon />}
+              prefix={
+                isCreating ? (
+                  <Loader2Icon className="animate-spin" />
+                ) : (
+                  <PlusIcon />
+                )
+              }
               onClick={handleCreateForm}
               disabled={isLoading || isCreating || orgWorkspaces.length === 0}
             >
@@ -261,12 +289,15 @@ function DashboardPage() {
                                     : "bg-muted/80 text-muted-foreground"
                                 } rounded-full`}
                               >
-                                {form.status === "published" ? "Published" : "Draft"}
+                                {form.status === "published"
+                                  ? "Published"
+                                  : "Draft"}
                               </Badge>
                             </div>
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
                               <span>
-                                {workspaceNameMap.get(form.workspaceId) || "Unknown workspace"}
+                                {workspaceNameMap.get(form.workspaceId) ||
+                                  "Unknown workspace"}
                               </span>
                               <span className="w-0.5 h-0.5 rounded-full bg-muted-foreground/30"></span>
                               <span>{formatLastEdited(form.updatedAt)}</span>
@@ -329,7 +360,8 @@ function DashboardPage() {
           {!isLoading && totalPages > 1 && (
             <div className="flex items-center justify-between pt-4 border-t">
               <p className="text-sm text-muted-foreground">
-                Showing {startIndex + 1}-{Math.min(startIndex + FORMS_PER_PAGE, orgForms.length)} of{" "}
+                Showing {startIndex + 1}-
+                {Math.min(startIndex + FORMS_PER_PAGE, orgForms.length)} of{" "}
                 {orgForms.length} forms
               </p>
               <div className="flex items-center gap-2">
@@ -343,22 +375,26 @@ function DashboardPage() {
                   Previous
                 </Button>
                 <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <Button
-                      key={page}
-                      variant={currentPage === page ? "default" : "ghost"}
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={() => setCurrentPage(page)}
-                    >
-                      {page}
-                    </Button>
-                  ))}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (page) => (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "ghost"}
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => setCurrentPage(page)}
+                      >
+                        {page}
+                      </Button>
+                    ),
+                  )}
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
                   disabled={currentPage === totalPages}
                 >
                   Next
@@ -384,7 +420,9 @@ function DashboardPage() {
                 onClick={handleCreateForm}
                 disabled={isLoading || isCreating || orgWorkspaces.length === 0}
               >
-                {isCreating && <Loader2Icon className="h-4 w-4 animate-spin mr-2" />}
+                {isCreating && (
+                  <Loader2Icon className="h-4 w-4 animate-spin mr-2" />
+                )}
                 Create my first form
               </Button>
             </div>
@@ -408,7 +446,8 @@ function DashboardPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete form</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{formToDelete?.title}"? This action cannot be undone.
+              Are you sure you want to delete "{formToDelete?.title}"? This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

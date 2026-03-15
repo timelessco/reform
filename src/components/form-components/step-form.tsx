@@ -260,9 +260,12 @@ function RenderStepButton({
   // Next button - type="submit" triggers form validation and onSubmit
   if (buttonRole === "next") {
     const button = (
-      <Button type="submit" className="inline-flex items-center gap-2" disabled={isSubmitting}>
+      <Button
+        type="submit"
+        suffix={<ChevronRightIcon className="h-4 w-4" />}
+        disabled={isSubmitting}
+      >
         {buttonText}
-        <ChevronRightIcon className="h-4 w-4" />
       </Button>
     );
     return grouped ? button : <div className="flex justify-end">{button}</div>;
@@ -270,9 +273,12 @@ function RenderStepButton({
 
   // Submit button - type="submit" triggers form validation and final submit
   const submitButton = (
-    <Button type="submit" className="inline-flex items-center gap-2" disabled={isSubmitting}>
+    <Button
+      type="submit"
+      suffix={layout !== "editor" ? <ChevronRightIcon className="h-4 w-4" /> : undefined}
+      disabled={isSubmitting}
+    >
       {isSubmitting ? t("submitting") : buttonText}
-      {layout !== "editor" && <ChevronRightIcon className="h-4 w-4" />}
     </Button>
   );
   return grouped ? submitButton : <div className="flex justify-end">{submitButton}</div>;

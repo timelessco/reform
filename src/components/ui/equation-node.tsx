@@ -202,8 +202,13 @@ const EquationPopoverContent = ({
         {...props}
       />
 
-      <Button variant="secondary" className="px-3" onClick={onClose}>
-        Done <CornerDownLeftIcon className="size-3.5" />
+      <Button
+        variant="secondary"
+        className="px-3"
+        suffix={<CornerDownLeftIcon className="size-3.5" />}
+        onClick={onClose}
+      >
+        Done
       </Button>
     </PopoverContent>
   );
