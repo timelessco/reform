@@ -733,12 +733,14 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                           search={(prev) => ({ ...prev, force: true })}
                           className={cn(
                             buttonVariants({ size: "sm" }),
-                            "pl-[10px] pr-[8px] ml-1 text-[14px] transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200",
+                            "ml-1 text-base transition-all rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200",
                           )}
                         />
                       }
                     >
-                      <PencilIcon className="h-3.5 w-3.5" />
+                      <span data-icon="inline-start" className="shrink-0 [&_svg]:size-[1em]!">
+                        <PencilIcon />
+                      </span>
                       Edit
                     </TooltipTrigger>
                     <TooltipContent side="bottom" align="end">

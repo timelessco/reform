@@ -195,7 +195,6 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
               variant="ghost"
               size="sm"
               className="h-6 shrink-0 rounded-[5px] bg-(--color-gray-0) shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] px-2 gap-1 text-sm  text-gray-600 border-none hover:bg-(--color-gray-0) [&_svg]:size-[13px]"
-              onCopySuccess={() => {}}
             >
               Copy
             </CopyButton>

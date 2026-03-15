@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
@@ -14,15 +16,18 @@ const buttonBaseClasses = [
   "text-sm font-normal",
   "aria-invalid:border-destructive aria-invalid:ring-destructive/20",
   "group/button",
+  "pl-2.5 pr-2",
 ];
 
 const buttonVariants = cva(buttonBaseClasses.join(" "), {
   variants: {
     variant: {
-      default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
+      default:
+        "bg-primary text-primary-foreground [a]:hover:bg-primary/80 border-none shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)]",
       outline:
         "border-border bg-background hover:bg-(--color-gray-alpha-100) hover:text-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 aria-expanded:bg-muted aria-expanded:text-foreground",
-      secondary: "bg-secondary hover:bg-secondary/80 aria-expanded:bg-secondary",
+      secondary:
+        "bg-secondary hover:bg-secondary/80 aria-expanded:bg-secondary border-none shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)]",
       ghost:
         "hover:bg-secondary hover:text-secondary-foreground dark:hover:bg-muted/50 aria-expanded:bg-muted aria-expanded:text-foreground",
       destructive:
@@ -55,14 +60,40 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  prefix,
+  suffix,
+  children,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: Omit<ButtonPrimitive.Props, "prefix"> &
+  VariantProps<typeof buttonVariants> & {
+    prefix?: ReactNode;
+    suffix?: ReactNode;
+  }) {
   return (
     <ButtonPrimitive
       data-slot="button"
+      focusableWhenDisabled
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
-    />
+    >
+      {prefix && (
+        <span
+          data-icon="inline-start"
+          className="relative inline-flex items-center justify-center shrink-0 [&_svg]:size-[1em]!"
+        >
+          {prefix}
+        </span>
+      )}
+      {children}
+      {suffix && (
+        <span
+          data-icon="inline-end"
+          className="relative inline-flex items-center justify-center shrink-0 [&_svg]:size-[1em]!"
+        >
+          {suffix}
+        </span>
+      )}
+    </ButtonPrimitive>
   );
 }
 

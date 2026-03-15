@@ -3,13 +3,8 @@ import { Toast as ToastPrimitive } from "@base-ui/react/toast";
 
 export const toastManager = ToastPrimitive.createToastManager();
 
-const TOAST_SHADOW = [
-  "0 64px 18px 0 rgb(0 0 0 / 0%)",
-  "0 41px 16px 0 rgb(0 0 0 / 2%)",
-  "0 23px 14px 0 rgb(0 0 0 / 6%)",
-  "0 10px 10px 0 rgb(0 0 0 / 11%)",
-  "0 3px 6px 0 rgb(0 0 0 / 13%)",
-].join(", ");
+const TOAST_SHADOW =
+  "0 0 1px 0 rgba(0, 0, 0, 0.19), 0 1px 2px 0 rgba(0, 0, 0, 0.07), 0 6px 15px -5px rgba(0, 0, 0, 0.11)";
 
 function Provider(props: ToastPrimitive.Provider.Props) {
   return <ToastPrimitive.Provider toastManager={toastManager} timeout={5000} {...props} />;

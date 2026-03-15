@@ -190,20 +190,21 @@ function DashboardPage() {
           </div>
           <div className="flex items-center gap-3">
             <Button
-              variant="secondary"
+              className="ml-1"
               size="sm"
+              variant="secondary"
+              prefix={<FolderPlus />}
               onClick={handleCreateWorkspace}
               disabled={isLoading}
             >
-              <FolderPlus />
               New workspace
             </Button>
             <Button
               size="sm"
+              prefix={isCreating ? <Loader2Icon className="animate-spin" /> : <PlusIcon />}
               onClick={handleCreateForm}
               disabled={isLoading || isCreating || orgWorkspaces.length === 0}
             >
-              {isCreating ? <Loader2Icon className="animate-spin" /> : <PlusIcon />}
               New form
             </Button>
           </div>

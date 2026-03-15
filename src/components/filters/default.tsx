@@ -315,8 +315,8 @@ export default function FiltersDemo() {
       </div>
 
       {filters.length > 0 && (
-        <Button variant="outline" onClick={() => setFilters([])}>
-          <FunnelX /> Clear
+        <Button variant="outline" prefix={<FunnelX />} onClick={() => setFilters([])}>
+          Clear
         </Button>
       )}
     </div>

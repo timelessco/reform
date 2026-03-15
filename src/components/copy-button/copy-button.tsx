@@ -20,7 +20,7 @@ export const motionIconProps: HTMLMotionProps<"span"> = {
   initial: "initial",
   animate: "animate",
   exit: "exit",
-  transition: { type: "spring", duration: 0.3, bounce: 0 },
+  transition: { type: "spring", duration: 0.8, bounce: 0 },
 };
 
 export function CopyStateIcon({ state }: { state: CopyState }) {
@@ -75,10 +75,10 @@ export function CopyButton({
         copy(text);
         onClick?.(e);
       }}
+      prefix={<CopyStateIcon state={state} />}
       aria-label="Copy"
       {...props}
     >
-      <CopyStateIcon state={state} />
       {label}
     </Button>
   );
