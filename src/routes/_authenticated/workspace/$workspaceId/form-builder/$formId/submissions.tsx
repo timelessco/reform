@@ -45,7 +45,6 @@ import type { Value } from "platejs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { HOTKEYS, formatForDisplay } from "@/lib/hotkeys";
-import { z } from "zod";
 
 // Field status types for color coding
 type FieldStatus = "current" | "deleted";
@@ -57,9 +56,6 @@ import { NotFound } from "@/components/ui/not-found";
 export const Route = createFileRoute(
   "/_authenticated/workspace/$workspaceId/form-builder/$formId/submissions",
 )({
-  validateSearch: z.object({
-    demo: z.boolean().optional(),
-  }),
   component: SubmissionsPage,
   loader: async ({ context, params }) => {
     const [publishedData] = await Promise.all([
@@ -251,6 +247,10 @@ function SubmissionsPage() {
         size: 48,
         minSize: 48,
         maxSize: 48,
+        meta: {
+          // headerClassName: "w-48",
+          // cellClassName: "w-48",
+        },
         enableSorting: false,
         enableHiding: false,
         enablePinning: false,
@@ -493,7 +493,7 @@ function SubmissionsPage() {
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0 bg-background">
       {/* Filter Controls Row */}
-      <div className="shrink-0 px-3 py-4  border-border">
+      <div className="shrink-0 px-5 pb-4.5 pt-2.5  border-border">
         <div className="flex items-center justify-between">
           {/* Status filter dropdown */}
           <DropdownMenu>

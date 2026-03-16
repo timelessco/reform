@@ -5,10 +5,10 @@ import {
   THEME_COLORS,
   RADIUS_MAP,
   SPACING_MAP,
-  FONT_MAP,
   STYLES,
   DESTRUCTIVE_TOKENS,
 } from "./theme-presets";
+import { FONT_MAP, getGoogleFontUrl } from "./font-registry";
 
 /**
  * Layout fields that map to --bf-* layout CSS variables.
@@ -210,4 +210,17 @@ export function generateThemeCss(customization: Record<string, string> | null | 
   }
 
   return css;
+}
+
+/**
+ * Returns the Google Fonts CSS API URL for the font in customization, or null if self-hosted.
+ */
+export function getGoogleFontLinkUrl(
+  customization: Record<string, string> | null | undefined,
+): string | null {
+  if (!customization) return null;
+  const presetName = customization.preset || "vega";
+  const style = STYLES[presetName] ?? STYLES.vega;
+  const fontName = customization.font || style.font;
+  return getGoogleFontUrl(fontName);
 }

@@ -8,7 +8,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { getPublishedFormById } from "@/lib/fn/public";
-import { generateThemeCss } from "@/lib/generate-theme-css";
+import { generateThemeCss, getGoogleFontLinkUrl } from "@/lib/generate-theme-css";
 
 export const Route = createFileRoute("/forms/$formId")({
   // SSR loader - fetches form data on the server for SEO
@@ -79,9 +79,11 @@ function PublicFormRoute() {
 
   const customization = loaderData?.form?.customization ?? null;
   const themeCss = useMemo(() => generateThemeCss(customization), [customization]);
+  const googleFontUrl = useMemo(() => getGoogleFontLinkUrl(customization), [customization]);
 
   return (
     <>
+      {googleFontUrl && <link rel="stylesheet" href={googleFontUrl} />}
       {themeCss && <style>{themeCss}</style>}
       <PublicFormPage
         form={loaderData?.form ?? null}

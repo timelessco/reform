@@ -12,10 +12,16 @@ import { SidebarSection } from "@/components/ui/sidebar-section";
 import { ConfigCard, ConfigRow } from "@/components/form-builder/embed-config-panel";
 import { StyleSelect, StyleColorPicker, StyleNumberInput } from "@/components/ui/style-controls";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { STYLES, BASE_COLORS, DARK_BASE_COLORS, THEME_COLORS, FONT_MAP } from "@/lib/theme-presets";
+import { STYLES, BASE_COLORS, DARK_BASE_COLORS, THEME_COLORS } from "@/lib/theme-presets";
+import { FONT_REGISTRY } from "@/lib/font-registry";
+import { loadGoogleFont } from "@/lib/load-google-font";
 import { TOKEN_NAMES } from "@/lib/generate-theme-css";
 
-const FONT_OPTIONS = Object.keys(FONT_MAP);
+const FONT_OPTIONS = Object.keys(FONT_REGISTRY).map((name) => ({
+  label: name,
+  value: name,
+  description: FONT_REGISTRY[name].category,
+}));
 
 const STYLE_OPTIONS: { label: string; value: string; description: string }[] = [
   {
@@ -383,8 +389,11 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
               <StyleSelect
                 label="Font"
                 value={activeFont}
-                onChange={(v) => updateWithCustomPreset("font", v)}
-                options={FONT_OPTIONS.map((f) => ({ label: f, value: f }))}
+                onChange={(v) => {
+                  loadGoogleFont(v);
+                  updateWithCustomPreset("font", v);
+                }}
+                options={FONT_OPTIONS}
                 className={CONFIG_SELECT_CLS}
               />
               <StyleSelect
@@ -465,16 +474,6 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
             </ConfigCard>
           </SidebarSection>
 
-          {/* Colors */}
-          <SidebarSection label="Colors" action={<ProBadge />}>
-            <ConfigCard>
-              <AdvancedColorPickers
-                customization={customization}
-                updateField={updateWithCustomPreset}
-              />
-            </ConfigCard>
-          </SidebarSection>
-
           {/* Typography */}
           <SidebarSection label="Typography" action={<ProBadge />}>
             <ConfigCard>
@@ -499,6 +498,16 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
                 unit="em"
                 displayUnit=""
                 className={CONFIG_INPUT_CLS}
+              />
+            </ConfigCard>
+          </SidebarSection>
+
+          {/* Colors */}
+          <SidebarSection label="Colors" action={<ProBadge />}>
+            <ConfigCard>
+              <AdvancedColorPickers
+                customization={customization}
+                updateField={updateWithCustomPreset}
               />
             </ConfigCard>
           </SidebarSection>

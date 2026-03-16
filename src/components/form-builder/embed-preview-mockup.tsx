@@ -151,13 +151,14 @@ export function EmbedPreviewMockup({
   const hasAnimated = useRef(false);
   const isResizing = useRef(false);
 
-  // Measure content area and keep in sync on resize
+  // Measure content area — only re-measure on resize for fullpage
   useLayoutEffect(() => {
     const el = contentRef.current;
     if (!el) return;
     let initialMeasure = true;
     const measure = () => {
       if (!initialMeasure) {
+        if (embedType !== "fullpage") return;
         isResizing.current = true;
       }
       initialMeasure = false;
@@ -170,11 +171,16 @@ export function EmbedPreviewMockup({
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [embedType]);
 
-  // Reset popup expanded state when leaving popup tab
+  // Reset popup expanded state when leaving popup tab, auto-open after 2s
   useEffect(() => {
-    if (embedType !== "popup") setIsPopupExpanded(false);
+    if (embedType !== "popup") {
+      setIsPopupExpanded(false);
+      return;
+    }
+    const timer = setTimeout(() => setIsPopupExpanded(true), 2000);
+    return () => clearTimeout(timer);
   }, [embedType]);
 
   const target =

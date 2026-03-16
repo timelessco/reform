@@ -1,148 +1,165 @@
-import { createContext, useCallback, useContext, useState } from "react";
-import type { ReactNode } from "react";
-import { jsx } from "react/jsx-runtime";
+import { eq, useLiveQuery } from "@tanstack/react-db";
+import { useCallback } from "react";
+import { editorUICollection } from "@/db-collections/editor-ui.collection";
+import type { SettingsTab, ShareTab, SidebarType } from "@/db-collections/editor-ui.collection";
 
-type SidebarType = "settings" | "share" | "history" | "customize" | "about" | null;
-export type SettingsTab = "integrations" | "settings";
-type ShareTab = "share" | "summary";
+export type { SettingsTab, SidebarType };
 export type EmbedType = "standard" | "popup" | "fullpage";
 
-type EditorSidebarState = {
-  activeSidebar: SidebarType;
-  settingsTab: SettingsTab;
-  shareTab: ShareTab;
-  selectedVersionId: string | null;
-};
+function useEditorUIState() {
+  const { data } = useLiveQuery(
+    (q) => q.from({ state: editorUICollection }).where(({ state }) => eq(state.id, "editor-ui")),
+    [],
+  );
+  return (
+    data?.[0] ?? {
+      activeSidebar: null,
+      settingsTab: "settings" as const,
+      shareTab: "share" as const,
+      selectedVersionId: null,
+      previewMode: false,
+    }
+  );
+}
 
-type EditorSidebarContextValue = {
-  activeSidebar: SidebarType;
-  settingsTab: SettingsTab;
-  shareTab: ShareTab;
-  selectedVersionId: string | null;
-  isOpen: boolean;
-  openSettings: (tab?: SettingsTab) => void;
-  openShare: (tab?: ShareTab) => void;
-  openVersionHistory: (versionId?: string) => void;
-  openCustomize: () => void;
-  openAbout: () => void;
-  closeSidebar: () => void;
-  resetSidebar: () => void;
-  toggleSidebar: (sidebar: SidebarType, tab?: SettingsTab | ShareTab) => void;
-  selectVersion: (versionId: string | null) => void;
-  exitVersionView: () => void;
-};
-
-const initialState: EditorSidebarState = {
-  activeSidebar: null,
-  settingsTab: "settings",
-  shareTab: "share",
-  selectedVersionId: null,
-};
-
-const EditorSidebarContext = createContext<EditorSidebarContextValue | null>(null);
-
-export function EditorSidebarProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<EditorSidebarState>(initialState);
+export function useEditorSidebar() {
+  const state = useEditorUIState();
 
   const openSettings = useCallback((tab?: SettingsTab) => {
-    setState((prev) => ({
-      ...prev,
-      activeSidebar: "settings",
-      settingsTab: tab ?? prev.settingsTab,
-    }));
+    editorUICollection.update("editor-ui", (draft) => {
+      draft.activeSidebar = "settings";
+      if (tab) draft.settingsTab = tab;
+    });
   }, []);
 
   const openShare = useCallback((tab?: ShareTab) => {
-    setState((prev) => ({
-      ...prev,
-      activeSidebar: "share",
-      shareTab: tab ?? prev.shareTab,
-    }));
+    editorUICollection.update("editor-ui", (draft) => {
+      draft.activeSidebar = "share";
+      if (tab) draft.shareTab = tab;
+    });
   }, []);
 
   const openVersionHistory = useCallback((versionId?: string) => {
-    setState((prev) => ({
-      ...prev,
-      activeSidebar: "history",
-      selectedVersionId: versionId ?? prev.selectedVersionId,
-    }));
+    editorUICollection.update("editor-ui", (draft) => {
+      draft.activeSidebar = "history";
+      if (versionId) draft.selectedVersionId = versionId;
+    });
   }, []);
 
   const openCustomize = useCallback(() => {
-    setState((prev) => ({ ...prev, activeSidebar: "customize" }));
+    editorUICollection.update("editor-ui", (draft) => {
+      draft.activeSidebar = "customize";
+    });
   }, []);
 
   const openAbout = useCallback(() => {
-    setState((prev) => ({ ...prev, activeSidebar: "about" }));
-  }, []);
-
-  const toggleSidebar = useCallback((sidebar: SidebarType, tab?: SettingsTab | ShareTab) => {
-    setState((prev) => {
-      const isAlreadyOpen = prev.activeSidebar === sidebar;
-      const isSwitchingTab =
-        isAlreadyOpen &&
-        tab &&
-        ((sidebar === "settings" && prev.settingsTab !== tab) ||
-          (sidebar === "share" && prev.shareTab !== tab));
-
-      const nextSidebar = isAlreadyOpen && !isSwitchingTab ? null : sidebar;
-      const updates: Partial<EditorSidebarState> = {
-        activeSidebar: nextSidebar,
-      };
-      if (nextSidebar && tab) {
-        if (nextSidebar === "settings") {
-          updates.settingsTab = tab as SettingsTab;
-        } else if (nextSidebar === "share") {
-          updates.shareTab = tab as ShareTab;
-        }
-      }
-      return { ...prev, ...updates };
+    editorUICollection.update("editor-ui", (draft) => {
+      draft.activeSidebar = "about";
     });
   }, []);
 
   const closeSidebar = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      activeSidebar: null,
-      selectedVersionId: null,
-    }));
+    editorUICollection.update("editor-ui", (draft) => {
+      const wasShareOpen = draft.activeSidebar === "share";
+      draft.activeSidebar = null;
+      draft.selectedVersionId = null;
+      if (wasShareOpen) {
+        draft.previewMode = false;
+      }
+    });
   }, []);
 
   const resetSidebar = useCallback(() => {
-    setState(initialState);
+    editorUICollection.update("editor-ui", (draft) => {
+      draft.activeSidebar = null;
+      draft.settingsTab = "settings";
+      draft.shareTab = "share";
+      draft.selectedVersionId = null;
+      draft.previewMode = false;
+    });
+  }, []);
+
+  const toggleSidebar = useCallback((sidebar: SidebarType, tab?: SettingsTab | ShareTab) => {
+    editorUICollection.update("editor-ui", (draft) => {
+      const isAlreadyOpen = draft.activeSidebar === sidebar;
+      const isSwitchingTab =
+        isAlreadyOpen &&
+        tab &&
+        ((sidebar === "settings" && draft.settingsTab !== tab) ||
+          (sidebar === "share" && draft.shareTab !== tab));
+
+      const nextSidebar = isAlreadyOpen && !isSwitchingTab ? null : sidebar;
+
+      draft.activeSidebar = nextSidebar;
+
+      if (nextSidebar && tab) {
+        if (nextSidebar === "settings") {
+          draft.settingsTab = tab as SettingsTab;
+        } else if (nextSidebar === "share") {
+          draft.shareTab = tab as ShareTab;
+        }
+      }
+
+      // When toggling share OFF, exit preview mode
+      if (sidebar === "share" && isAlreadyOpen && !isSwitchingTab) {
+        draft.previewMode = false;
+      }
+
+      if (nextSidebar === null) {
+        draft.selectedVersionId = null;
+      }
+    });
   }, []);
 
   const selectVersion = useCallback((versionId: string | null) => {
-    setState((prev) => ({ ...prev, selectedVersionId: versionId }));
+    editorUICollection.update("editor-ui", (draft) => {
+      draft.selectedVersionId = versionId;
+    });
   }, []);
 
   const exitVersionView = useCallback(() => {
-    setState((prev) => ({ ...prev, selectedVersionId: null }));
+    editorUICollection.update("editor-ui", (draft) => {
+      draft.selectedVersionId = null;
+    });
   }, []);
 
-  return jsx(EditorSidebarContext.Provider, {
-    value: {
-      ...state,
-      isOpen: state.activeSidebar !== null,
-      openSettings,
-      openShare,
-      openVersionHistory,
-      openCustomize,
-      openAbout,
-      toggleSidebar,
-      closeSidebar,
-      resetSidebar,
-      selectVersion,
-      exitVersionView,
-    },
-    children,
-  });
-}
+  const enterPreview = useCallback(() => {
+    editorUICollection.update("editor-ui", (draft) => {
+      draft.previewMode = true;
+    });
+  }, []);
 
-export function useEditorSidebar() {
-  const context = useContext(EditorSidebarContext);
-  if (!context) {
-    throw new Error("useEditorSidebar must be used within an EditorSidebarProvider");
-  }
-  return context;
+  const exitPreview = useCallback(() => {
+    editorUICollection.update("editor-ui", (draft) => {
+      draft.previewMode = false;
+    });
+  }, []);
+
+  const togglePreview = useCallback(() => {
+    editorUICollection.update("editor-ui", (draft) => {
+      draft.previewMode = !draft.previewMode;
+    });
+  }, []);
+
+  return {
+    activeSidebar: state.activeSidebar,
+    settingsTab: state.settingsTab,
+    shareTab: state.shareTab,
+    selectedVersionId: state.selectedVersionId,
+    previewMode: state.previewMode,
+    isOpen: state.activeSidebar !== null,
+    openSettings,
+    openShare,
+    openVersionHistory,
+    openCustomize,
+    openAbout,
+    closeSidebar,
+    resetSidebar,
+    toggleSidebar,
+    selectVersion,
+    exitVersionView,
+    enterPreview,
+    exitPreview,
+    togglePreview,
+  };
 }

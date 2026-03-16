@@ -99,7 +99,7 @@ import {
   workspaceCollection,
 } from "@/db-collections/workspace.collection";
 import { useCommandPalette } from "@/hooks/use-command-palette";
-import { EditorSidebarProvider, useEditorSidebar } from "@/hooks/use-editor-sidebar";
+import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import {
   useArchivedForms,
   useFavoriteForms,
@@ -196,13 +196,11 @@ function AuthLayout() {
 
   return (
     <SidebarProvider style={{ "--app-header-height": "40px" } as React.CSSProperties}>
-      <EditorSidebarProvider>
-        <EditorHeaderVisibilityProvider enabled={isEditRoute}>
-          <MinimalSidebarProvider>
-            <AuthLayoutContent />
-          </MinimalSidebarProvider>
-        </EditorHeaderVisibilityProvider>
-      </EditorSidebarProvider>
+      <EditorHeaderVisibilityProvider enabled={isEditRoute}>
+        <MinimalSidebarProvider>
+          <AuthLayoutContent />
+        </MinimalSidebarProvider>
+      </EditorHeaderVisibilityProvider>
     </SidebarProvider>
   );
 }
@@ -266,19 +264,19 @@ function AuthLayoutContent() {
         )}
         <div className="relative z-20 flex-1 min-h-0 overflow-hidden flex">
           {/* Main content - flex-1 auto fills available space */}
-          <div className={cn("flex-1 min-w-0 flex flex-col z-50")}>
+          <div
+            className={cn(
+              "flex-1 min-w-0 flex flex-col z-50",
+              !isRightResizing && "transition-[padding] duration-200 ease-linear",
+            )}
+            style={{
+              paddingRight: showEditorSidebar ? rightSidebarWidth : 0,
+            }}
+          >
             <div className="relative z-0 shrink-0">
               <AppHeader isDistractionHidden={isDistractionHeaderHidden} />
             </div>
-            <div
-              className={cn(
-                "flex-1 min-h-0 flex flex-col",
-                !isRightResizing && "transition-[padding] duration-200 ease-linear",
-              )}
-              style={{
-                paddingRight: showEditorSidebar ? rightSidebarWidth : 0,
-              }}
-            >
+            <div className="flex-1 min-h-0 flex flex-col">
               <Outlet key={formId} />
             </div>
           </div>

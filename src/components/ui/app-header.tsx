@@ -9,6 +9,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Loader2Icon,
+  MoreHorizontalIcon,
+  PencilIcon,
+  RotateCcwIcon,
+  SettingsIcon,
+} from "@/components/ui/icons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toggleFavoriteLocal } from "@/db-collections/favorite.collection";
@@ -20,16 +27,9 @@ import { useSession } from "@/lib/auth-client";
 import { HOTKEYS, formatForDisplay } from "@/lib/hotkeys";
 import { cn, parseTimestampAsUTC } from "@/lib/utils";
 import { useHotkey } from "@tanstack/react-hotkeys";
-import { Link, useLocation, useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate, useParams } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
-import {
-  Loader2Icon,
-  MoreHorizontalIcon,
-  PencilIcon,
-  RotateCcwIcon,
-  SettingsIcon,
-} from "@/components/ui/icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { LogoToggle } from "./logo";
 import { useSidebarSafe } from "./sidebar";
@@ -57,7 +57,15 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
   const navigate = useNavigate();
 
   // Editor sidebar state
-  const { activeSidebar, closeSidebar, toggleSidebar: toggleEditorSidebar } = useEditorSidebar();
+  const {
+    activeSidebar,
+    closeSidebar,
+    toggleSidebar: toggleEditorSidebar,
+    previewMode,
+    enterPreview,
+    togglePreview,
+    openShare,
+  } = useEditorSidebar();
 
   const isShareSidebarOpen = activeSidebar === "share";
   const isEditorSidebarOpen = !!activeSidebar;
@@ -81,11 +89,31 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
   };
 
   const toggleShareSidebar = () => {
-    toggleEditorSidebar("share");
+    if (!isEditRoute && workspaceId && formId) {
+      // Set collection state BEFORE navigating (synchronous, survives route change)
+      openShare();
+      enterPreview();
+      navigate({
+        to: "/workspace/$workspaceId/form-builder/$formId/edit",
+        params: { workspaceId, formId },
+        search: { force: true },
+      });
+      return;
+    }
+    if (isShareSidebarOpen) {
+      closeSidebar(); // Also exits preview mode when share was open
+    } else {
+      enterPreview();
+      openShare();
+    }
   };
 
-  const searchParams: any = useSearch({ strict: false });
-  const demo = searchParams.demo;
+  // Close editor-only sidebars when navigating away from the edit route
+  useEffect(() => {
+    if (!isEditRoute && (activeSidebar === "history" || activeSidebar === "customize")) {
+      closeSidebar();
+    }
+  }, [isEditRoute, activeSidebar, closeSidebar]);
 
   // Single source: Electric live data (useForm)
   const { data: workspace } = useWorkspace(workspaceId);
@@ -197,15 +225,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
     enabled: isFormBuilder && !isEditRoute && !!workspaceId && !!formId,
   });
 
-  const handleTogglePreview = () => {
-    navigate({
-      to: ".",
-      search: (prev: any) => ({ ...prev, demo: !demo }),
-      replace: true,
-    });
-  };
-
-  useHotkey(HOTKEYS.TOGGLE_PREVIEW, () => handleTogglePreview(), {
+  useHotkey(HOTKEYS.TOGGLE_PREVIEW, () => togglePreview(), {
     enabled: (isFormBuilder && isEditRoute) || isLandingPage,
   });
 
@@ -260,10 +280,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
       key: "customization",
       label: "Customization",
       shortcut: formatForDisplay(HOTKEYS.TOGGLE_CUSTOMIZE_SIDEBAR),
-      onClick: () => {
-        toggleCustomizeSidebar();
-        if (isSettingsSidebarOpen) toggleSettingsSidebar();
-      },
+      onClick: () => toggleCustomizeSidebar(),
       show: isEditRoute,
     },
     {
@@ -364,47 +381,42 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
         </div>
 
         {/* Right Section: Actions — hidden when any editor sidebar is open */}
-        <div className={cn("flex items-center gap-1", isEditorSidebarOpen && "hidden")}>
-          {isFormBuilder &&
-            savedDocs?.[0]?.updatedAt &&
-            !isEditorSidebarOpen &&
-            !isLoadingSavedDocs && (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <span className="mr-1 inline-flex h-7 items-center whitespace-nowrap rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] font-normal text-muted-foreground/70" />
-                  }
-                >
-                  Edited{" "}
-                  {formatDistanceToNow(
-                    parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date(),
-                  )}{" "}
-                  ago
-                </TooltipTrigger>
-                <TooltipContent side="bottom" align="end">
-                  <div className="space-y-1">
+        <div className="flex items-center gap-1">
+          {isFormBuilder && savedDocs?.[0]?.updatedAt && !isLoadingSavedDocs && (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <span className="mr-1 inline-flex h-7 items-center whitespace-nowrap rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] font-normal text-muted-foreground/70" />
+                }
+              >
+                Edited{" "}
+                {formatDistanceToNow(parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date())}{" "}
+                ago
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="end">
+                <div className="space-y-1">
+                  <p className="text-xs text-background/70">
+                    Edited by{" "}
+                    <span className="text-background">{session?.user?.name ?? "You"}</span>{" "}
+                    {formatDistanceToNow(
+                      parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date(),
+                    )}{" "}
+                    ago
+                  </p>
+                  {savedDocs?.[0]?.createdAt && (
                     <p className="text-xs text-background/70">
-                      Edited by{" "}
+                      Created by{" "}
                       <span className="text-background">{session?.user?.name ?? "You"}</span>{" "}
-                      {formatDistanceToNow(
-                        parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date(),
-                      )}{" "}
-                      ago
+                      {format(
+                        parseTimestampAsUTC(savedDocs?.[0]?.createdAt) ?? new Date(),
+                        "MMM d, yyyy",
+                      )}
                     </p>
-                    {savedDocs?.[0]?.createdAt && (
-                      <p className="text-xs text-background/70">
-                        Created by{" "}
-                        <span className="text-background">{session?.user?.name ?? "You"}</span>{" "}
-                        {format(
-                          parseTimestampAsUTC(savedDocs?.[0]?.createdAt) ?? new Date(),
-                          "MMM d, yyyy",
-                        )}
-                      </p>
-                    )}
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            )}
+                  )}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
           {isDashboard && (
             <Button
@@ -430,16 +442,16 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                       size="sm"
                       className={cn(
                         "px-2.5 text-muted-foreground hover:text-foreground font-normal",
-                        demo && "text-foreground bg-accent/50",
+                        previewMode && "text-foreground bg-accent/50",
                       )}
-                      onClick={handleTogglePreview}
+                      onClick={togglePreview}
                     />
                   }
                 >
-                  {demo ? "Editor" : "Preview"}
+                  {previewMode ? "Editor" : "Preview"}
                 </TooltipTrigger>
                 <TooltipContent side="bottom" align="end">
-                  <p>{demo ? "Back to Editor" : "Preview Form"}</p>
+                  <p>{previewMode ? "Back to Editor" : "Preview Form"}</p>
                   <p className="text-xs text-muted-foreground">
                     {formatForDisplay(HOTKEYS.TOGGLE_PREVIEW)}
                   </p>
@@ -563,24 +575,21 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                   <Tooltip>
                     <TooltipTrigger
                       render={
-                        <Link
-                          to="."
-                          search={(prev) => ({
-                            ...prev,
-                            demo: !demo,
-                          })}
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           className={cn(
-                            buttonVariants({ variant: "ghost", size: "sm" }),
-                            " px-2.5 text-muted-foreground hover:text-foreground font-normal",
-                            demo && "text-foreground bg-accent/50",
+                            "px-2.5 text-muted-foreground hover:text-foreground font-normal",
+                            previewMode && "text-foreground bg-accent/50",
                           )}
+                          onClick={togglePreview}
                         />
                       }
                     >
-                      {demo ? "Editor" : "Preview"}
+                      {previewMode ? "Editor" : "Preview"}
                     </TooltipTrigger>
                     <TooltipContent side="bottom" align="end">
-                      <p>{demo ? "Back to Editor" : "Preview Form"}</p>
+                      <p>{previewMode ? "Back to Editor" : "Preview Form"}</p>
                       <p className="text-xs text-muted-foreground">
                         {formatForDisplay(HOTKEYS.TOGGLE_PREVIEW)}
                       </p>
@@ -588,60 +597,29 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                   </Tooltip>
                 )}
 
-                <TooltipProvider>
-                  {savedDocs?.[0]?.status === "published" && (
-                    <Tooltip>
-                      <TooltipTrigger
-                        render={
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className={cn(
-                              "px-2.5 text-muted-foreground hover:text-foreground font-normal",
-                              isShareSidebarOpen && "text-foreground bg-accent/50",
-                            )}
-                            onClick={() => toggleShareSidebar()}
-                          />
-                        }
-                      >
-                        Share
-                      </TooltipTrigger>
-                      {!isEditorSidebarOpen && (
-                        <TooltipContent side="bottom" align="end">
-                          <p>Share</p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatForDisplay(HOTKEYS.TOGGLE_SHARE_SIDEBAR)}
-                          </p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  )}
-
-                  {/* Settings icon button directly in header - toggles form settings sidebar */}
-                  <Tooltip>
-                    <TooltipTrigger
-                      render={
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-muted-foreground hover:text-foreground"
-                          aria-label="Settings"
-                          onClick={() => toggleSettingsSidebar()}
-                        />
-                      }
-                    >
-                      <SettingsIcon fill="transparent" />
-                    </TooltipTrigger>
-                    {!isEditorSidebarOpen && (
-                      <TooltipContent side="bottom" align="end">
-                        <p>Settings</p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatForDisplay(HOTKEYS.TOGGLE_SETTINGS_SIDEBAR)}
-                        </p>
-                      </TooltipContent>
+                {savedDocs?.[0]?.status === "published" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "px-2.5 text-muted-foreground hover:text-foreground font-normal",
+                      isShareSidebarOpen && "text-foreground bg-accent/50",
                     )}
-                  </Tooltip>
-                </TooltipProvider>
+                    onClick={() => toggleShareSidebar()}
+                  >
+                    Share
+                  </Button>
+                )}
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label="Settings"
+                  onClick={() => toggleSettingsSidebar()}
+                >
+                  <SettingsIcon fill="transparent" />
+                </Button>
 
                 {/* Three dots menu - popover button list matching workspace/sidebar style */}
                 <Popover

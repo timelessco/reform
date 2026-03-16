@@ -259,14 +259,10 @@ export const RADIUS_MAP: Record<string, string> = {
 };
 
 // ============================================================================
-// Font Map
+// Font Map — derived from font-registry.ts (single source of truth)
 // ============================================================================
 
-export const FONT_MAP: Record<string, string> = {
-  Inter: '"Inter-V", sans-serif',
-  "Timeless Serif": '"Timeless Serif", ui-serif, Georgia, serif',
-  "Timeless Sans": '"Timeless Sans", sans-serif',
-};
+export { FONT_MAP } from "./font-registry";
 
 // ============================================================================
 // Spacing Map

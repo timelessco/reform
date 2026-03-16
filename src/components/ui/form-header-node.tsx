@@ -1,19 +1,20 @@
-import { ImageIcon, SettingsIcon, UploadIcon, XIcon } from "@/components/ui/icons";
+import {
+  ImageIcon,
+  CircleUserRoundIcon,
+  DownloadIcon,
+  SettingsIcon,
+  Trash2Icon,
+  UploadIcon,
+} from "@/components/ui/icons";
 import { IconPickerContent, IconPickerPreview } from "@/components/icon-picker";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorRef } from "platejs/react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { ButtonGroup, ButtonGroupSeparator } from "@/components/ui/button-group";
 import { createFormButtonNode } from "@/components/ui/form-button-node";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsIndicator, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEditorTheme } from "@/contexts/editor-theme-context";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useFileUpload } from "@/hooks/use-file-upload";
@@ -26,7 +27,6 @@ import {
 import type { FormHeaderElementData } from "@/lib/form-header-factory";
 import { THEME_COLORS } from "@/lib/theme-presets";
 import { cn, isValidUrl, DEFAULT_ICON } from "@/lib/utils";
-
 export { createFormHeaderNode, type FormHeaderElementData } from "@/lib/form-header-factory";
 
 // Static derivations from THEME_COLORS — hoisted to module scope to avoid re-computing on every render
@@ -34,6 +34,41 @@ const ACCENT_COLORS = Object.values(THEME_COLORS).map((t) => t.primary);
 const PRIMARY_TO_THEME_NAME = new Map(
   Object.entries(THEME_COLORS).map(([name, t]) => [t.primary, name]),
 );
+
+const COVER_GALLERY = [
+  {
+    src: "https://images.unsplash.com/photo-1604076850742-4c7221f3101b?w=800&q=80&tint=true",
+    label: "Abstract mesh",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80&tint=true",
+    label: "Abstract gradient",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true",
+    label: "Abstract geometric",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80&tint=true",
+    label: "Abstract liquid",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=800&q=80&tint=true",
+    label: "3D shapes",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80&tint=true",
+    label: "Gradient curves",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80&tint=true",
+    label: "Geometric waves",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&q=80&tint=true",
+    label: "Abstract paint",
+  },
+] as const;
 
 function CoverUpload({ onFileChange }: { onFileChange: (url: string) => void }) {
   const [
@@ -79,16 +114,21 @@ function CoverUpload({ onFileChange }: { onFileChange: (url: string) => void }) 
   );
 }
 
+const IS_MAC = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);
+const PASTE_HINT = IS_MAC ? "\u2318+V" : "Ctrl+V";
+
 function IconUploadTab({
   currentIcon,
   onUpload,
-  onRemove,
+  onCancel,
 }: {
   currentIcon: string | null;
   onUpload: (url: string) => void;
-  onRemove: () => void;
+  onCancel: () => void;
 }) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showCrop, setShowCrop] = useState(false);
   const [
     { isDragging, errors },
     { handleDragEnter, handleDragLeave, handleDragOver, handleDrop, openFileDialog, getInputProps },
@@ -99,137 +139,164 @@ function IconUploadTab({
     multiple: false,
     onFilesChange: (files) => {
       if (files[0]?.file) {
-        setSelectedFile(files[0]?.file as File);
+        const file = files[0].file as File;
+        setSelectedFile(file);
+        setPreviewUrl(URL.createObjectURL(file));
       }
     },
   });
 
+  // Clipboard paste handler
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith("image/")) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) {
+            setSelectedFile(file);
+            setPreviewUrl(URL.createObjectURL(file));
+          }
+          return;
+        }
+      }
+    };
+    document.addEventListener("paste", handlePaste);
+    return () => document.removeEventListener("paste", handlePaste);
+  }, []);
+
+  // Cleanup preview URL
+  useEffect(
+    () => () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    },
+    [previewUrl],
+  );
+
+  const resetState = () => {
+    setSelectedFile(null);
+    setShowCrop(false);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+  };
+
   // Crop view
-  if (selectedFile) {
+  if (showCrop && selectedFile) {
     return (
-      <div className="h-[368px] w-[310px] bg-muted/50 px-3 flex flex-col">
-        <div className="flex items-center justify-between border-b border-b-border py-3">
-          <span className="text-sm text-foreground">Crop image</span>
-          <button
-            type="button"
-            onClick={() => setSelectedFile(null)}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
+      <div className="w-[310px] px-3 flex flex-col">
         <ImageCrop
           file={selectedFile}
           aspect={1}
           onCrop={(croppedImage) => {
             onUpload(croppedImage);
-            setSelectedFile(null);
+            resetState();
           }}
         >
-          <div className="flex-1 flex items-center justify-center py-3 overflow-hidden">
+          <div className="flex items-center justify-center py-3 overflow-hidden">
             <ImageCropContent className="max-h-[250px] max-w-full rounded-lg" />
           </div>
           <div className="flex items-center justify-between pb-3 pt-1">
-            <ImageCropReset
-              render={
-                <button
-                  type="button"
-                  className="text-[13px] text-muted-foreground hover:text-foreground transition-colors px-3 py-1 rounded-lg hover:bg-muted"
-                />
-              }
-            >
-              Reset
-            </ImageCropReset>
-            <ImageCropApply
-              render={
-                <button
-                  type="button"
-                  className="text-[13px] text-primary hover:text-primary/80 transition-colors px-4 py-1 rounded-lg bg-primary/10 hover:bg-primary/15"
-                />
-              }
-            >
-              Apply
-            </ImageCropApply>
+            <ImageCropReset render={<Button variant="ghost" size="sm" />}>Reset</ImageCropReset>
+            <ImageCropApply render={<Button variant="default" size="sm" />}>Save</ImageCropApply>
           </div>
         </ImageCrop>
       </div>
     );
   }
 
-  // Upload view
+  // Preview view (file selected, before crop)
+  if (selectedFile && previewUrl) {
+    return (
+      <div className="w-[310px] px-3 flex flex-col">
+        <div className="flex flex-col items-center justify-center py-4">
+          <p className="text-xs text-muted-foreground mb-3">Preview</p>
+          <div className="rounded-lg border border-border overflow-hidden shadow-sm">
+            <img
+              src={previewUrl}
+              alt="Preview"
+              width={180}
+              height={180}
+              className="max-w-[180px] max-h-[180px] object-contain"
+            />
+          </div>
+        </div>
+
+        {errors.length > 0 && (
+          <p className="text-destructive text-xs pb-2 text-center">{errors[0]}</p>
+        )}
+
+        <div className="flex items-center justify-between pb-3 pt-1">
+          <Button variant="ghost" size="sm" onClick={resetState}>
+            Back
+          </Button>
+          <Button variant="default" size="sm" onClick={() => setShowCrop(true)}>
+            Save
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Upload view (initial state)
   return (
-    <div className="h-[368px] w-[310px] bg-muted/50 px-3 flex flex-col">
-      <div className="flex items-center border-b border-b-border py-3">
-        <span className="text-sm text-foreground">Upload an image</span>
+    <div className="w-[310px] px-3 flex flex-col">
+      <div className="py-4">
+        {currentIcon ? (
+          <button
+            type="button"
+            className="w-full rounded-lg border border-dashed border-muted-foreground/25 hover:border-muted-foreground/40 hover:bg-muted/50 flex flex-col items-center justify-center gap-2 py-4 transition-all cursor-pointer"
+            onClick={openFileDialog}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
+            <input {...getInputProps()} className="sr-only" />
+            <img
+              src={currentIcon}
+              alt="Current icon"
+              width={80}
+              height={80}
+              className="max-w-[80px] max-h-[80px] rounded-lg object-contain"
+            />
+            <span className="text-xs text-muted-foreground">Click to replace</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={cn(
+              "w-full h-24 rounded-lg border border-dashed flex items-center justify-center gap-2.5 transition-all cursor-pointer",
+              isDragging
+                ? "border-primary bg-primary/5"
+                : "border-muted-foreground/25 hover:border-muted-foreground/40 hover:bg-muted/50",
+            )}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onClick={openFileDialog}
+          >
+            <input {...getInputProps()} className="sr-only" />
+            <ImageIcon className="h-5 w-5 text-muted-foreground/60" />
+            <span className="text-sm text-muted-foreground">Upload an image</span>
+          </button>
+        )}
       </div>
 
-      <div className="flex-1 flex items-center justify-center py-4">
-        <button
-          type="button"
-          className={cn(
-            "group/upload w-full h-full rounded-xl border border-dashed flex flex-col items-center justify-center gap-1 transition-all cursor-pointer relative overflow-hidden",
-            isDragging
-              ? "border-primary bg-primary/5 scale-[0.98]"
-              : "border-muted-foreground/25 hover:border-muted-foreground/40 bg-background hover:bg-muted/50",
-          )}
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          onClick={openFileDialog}
-        >
-          <input {...getInputProps()} className="sr-only" />
-          {currentIcon ? (
-            <div className="w-full h-full p-3 flex flex-col items-center justify-center gap-3">
-              <img
-                src={currentIcon}
-                alt="Current icon"
-                width={180}
-                height={180}
-                className="max-w-[180px] max-h-[180px] rounded-lg object-contain"
-              />
-              <span className="text-xs text-muted-foreground group-hover/upload:text-foreground transition-colors">
-                Click to replace
-              </span>
-            </div>
-          ) : (
-            <>
-              <div
-                className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center mb-2 transition-colors",
-                  isDragging ? "bg-primary/15" : "bg-primary/10 group-hover/upload:bg-primary/15",
-                )}
-              >
-                <UploadIcon
-                  className={cn(
-                    "h-[18px] w-[18px] transition-colors",
-                    isDragging ? "text-primary" : "text-primary/70 group-hover/upload:text-primary",
-                  )}
-                />
-              </div>
-              <p className="text-[13px] text-foreground">Drop your image here</p>
-              <p className="text-xs text-muted-foreground">or click to browse</p>
-              <p className="text-[10px] text-muted-foreground/60 mt-2 tracking-wide uppercase">
-                PNG, JPG, SVG · Max 5MB
-              </p>
-            </>
-          )}
-        </button>
-      </div>
+      <p className="text-xs text-muted-foreground/60 text-center pb-3">
+        or {PASTE_HINT} to paste an image or link
+      </p>
 
       {errors.length > 0 && (
         <p className="text-destructive text-xs pb-2 text-center">{errors[0]}</p>
       )}
 
-      <div className="flex justify-center pb-3 pt-1">
-        <button
-          type="button"
-          onClick={onRemove}
-          onMouseDown={(e) => e.preventDefault()}
-          className="text-[13px] text-muted-foreground hover:text-destructive transition-colors px-3 py-1 rounded-lg hover:bg-muted"
-        >
-          Remove icon
-        </button>
+      <div className="flex items-center justify-between pb-3 pt-1 border-t border-border">
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          Cancel
+        </Button>
       </div>
     </div>
   );
@@ -248,7 +315,7 @@ function IconTabBar({ value, onChange }: { value: string; onChange: (v: string) 
   const pillWidth = `calc(${100 / count}% - ${6 / count}px)`;
 
   return (
-    <div className="relative bg-secondary rounded-[10px] p-[3px] w-full flex">
+    <div className="relative bg-secondary rounded-[10px] p-[3px] flex-1 flex">
       <div
         className="absolute top-[3px] bottom-[3px] rounded-[8px] bg-white shadow-[0px_0px_1.5px_0px_rgba(0,0,0,0.16),0px_2px_5px_0px_rgba(0,0,0,0.14)] dark:bg-background z-0 transition-[left,width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
         style={{ left: pillLeft, width: pillWidth }}
@@ -345,6 +412,7 @@ export function FormHeaderElement(props: PlateElementProps) {
 
   const [iconPopoverOpen, setIconPopoverOpen] = useState(false);
   const [iconTab, setIconTab] = useState("icon");
+  const [coverPopoverOpen, setCoverPopoverOpen] = useState(false);
 
   return (
     <PlateElement {...props}>
@@ -383,217 +451,133 @@ export function FormHeaderElement(props: PlateElementProps) {
                 />
               )}
             </div>
-            <div className="absolute top-2 right-4 flex gap-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Dialog>
-                <DialogTrigger
-                  render={
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="bg-white/80 hover:bg-white text-xs h-7"
-                      onMouseDown={(e) => e.preventDefault()}
-                    />
-                  }
-                >
-                  Change cover
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Cover Image</DialogTitle>
-                  </DialogHeader>
-                  <Tabs defaultValue="gallery" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="gallery">Gallery</TabsTrigger>
-                      <TabsTrigger value="upload">Upload</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="gallery" className="grid grid-cols-4 gap-2 pt-4">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleCoverChange(
-                            "https://images.unsplash.com/photo-1604076850742-4c7221f3101b?w=800&q=80&tint=true",
-                          )
-                        }
-                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-[opacity,transform]"
-                        aria-label="Abstract mesh"
-                      >
-                        <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                        <img
-                          src="https://images.unsplash.com/photo-1604076850742-4c7221f3101b?w=800&q=80&tint=true"
-                          alt="Abstract mesh"
-                          width={200}
-                          height={64}
-                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
-                        />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleCoverChange(
-                            "https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80&tint=true",
-                          )
-                        }
-                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-[opacity,transform]"
-                        aria-label="Abstract gradient"
-                      >
-                        <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                        <img
-                          src="https://images.unsplash.com/photo-1574169208507-84376144848b?w=800&q=80&tint=true"
-                          alt="Abstract gradient"
-                          width={200}
-                          height={64}
-                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
-                        />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleCoverChange(
-                            "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true",
-                          )
-                        }
-                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-[opacity,transform]"
-                        aria-label="Abstract geometric"
-                      >
-                        <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                        <img
-                          src="https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true"
-                          alt="Abstract geometric"
-                          width={200}
-                          height={64}
-                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
-                        />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleCoverChange(
-                            "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80&tint=true",
-                          )
-                        }
-                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-[opacity,transform]"
-                        aria-label="Abstract liquid"
-                      >
-                        <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                        <img
-                          src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&q=80&tint=true"
-                          alt="Abstract liquid"
-                          width={200}
-                          height={64}
-                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
-                        />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleCoverChange(
-                            "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=800&q=80&tint=true",
-                          )
-                        }
-                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-[opacity,transform]"
-                        aria-label="3D shapes"
-                      >
-                        <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                        <img
-                          src="https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=800&q=80&tint=true"
-                          alt="3D shapes"
-                          width={200}
-                          height={64}
-                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
-                        />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleCoverChange(
-                            "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80&tint=true",
-                          )
-                        }
-                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-[opacity,transform]"
-                        aria-label="Gradient curves"
-                      >
-                        <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                        <img
-                          src="https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80&tint=true"
-                          alt="Gradient curves"
-                          width={200}
-                          height={64}
-                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
-                        />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleCoverChange(
-                            "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80&tint=true",
-                          )
-                        }
-                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-[opacity,transform]"
-                        aria-label="Geometric waves"
-                      >
-                        <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                        <img
-                          src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80&tint=true"
-                          alt="Geometric waves"
-                          width={200}
-                          height={64}
-                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
-                        />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleCoverChange(
-                            "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&q=80&tint=true",
-                          )
-                        }
-                        className="h-16 bg-muted rounded relative cursor-pointer hover:ring-2 ring-primary overflow-hidden transition-[opacity,transform]"
-                        aria-label="Abstract paint"
-                      >
-                        <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-                        <img
-                          src="https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=800&q=80&tint=true"
-                          alt="Abstract paint"
-                          width={200}
-                          height={64}
-                          className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
-                        />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleCoverChange(null)}
-                        onMouseDown={(e) => e.preventDefault()}
-                        className="col-span-4 mt-2 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-2 border rounded-md hover:bg-muted/50"
-                      >
-                        <XIcon className="h-4 w-4" /> Remove cover
-                      </button>
-                    </TabsContent>
-                    <TabsContent value="upload" className="pt-4">
-                      <CoverUpload onFileChange={handleCoverChange} />
-                      <button
-                        type="button"
-                        onClick={() => handleCoverChange(null)}
-                        onMouseDown={(e) => e.preventDefault()}
-                        className="w-full mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors py-2 border rounded-md hover:bg-muted/50"
-                      >
-                        <XIcon className="h-4 w-4" /> Remove cover
-                      </button>
-                    </TabsContent>
-                  </Tabs>
-                </DialogContent>
-              </Dialog>
-
-              <Button
-                variant="secondary"
-                size="sm"
-                className="bg-white/80 hover:bg-white text-xs h-7 text-muted-foreground hover:text-destructive"
-                onClick={() => handleCoverChange(null)}
-                onMouseDown={(e) => e.preventDefault()}
+            <Popover open={coverPopoverOpen} onOpenChange={setCoverPopoverOpen}>
+              <div
+                className="absolute top-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{ right: "calc(var(--editor-px, 64px) * -1 + 16px)" }}
               >
-                Remove
-              </Button>
-            </div>
+                <ButtonGroup className="bg-background/80 backdrop-blur-sm rounded-lg shadow-lg border border-border">
+                  <PopoverTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-foreground/80 hover:text-foreground hover:bg-secondary text-xs border-none rounded-none rounded-l-lg"
+                        onMouseDown={(e) => e.preventDefault()}
+                      />
+                    }
+                  >
+                    Change
+                  </PopoverTrigger>
+                  <ButtonGroupSeparator className="bg-border" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-foreground/80 hover:text-foreground hover:bg-secondary text-xs border-none rounded-none"
+                    onClick={() => handleCoverChange(null)}
+                    onMouseDown={(e) => e.preventDefault()}
+                  >
+                    Remove
+                  </Button>
+                  <ButtonGroupSeparator className="bg-border" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-foreground/80 hover:text-foreground hover:bg-secondary border-none rounded-none rounded-r-lg"
+                    onClick={() => {
+                      if (cover) {
+                        const link = document.createElement("a");
+                        link.href = cover;
+                        link.download = "cover-image";
+                        link.target = "_blank";
+                        link.rel = "noopener";
+                        link.click();
+                      }
+                    }}
+                    onMouseDown={(e) => e.preventDefault()}
+                    aria-label="Download cover"
+                  >
+                    <DownloadIcon />
+                  </Button>
+                </ButtonGroup>
+              </div>
+
+              <PopoverContent
+                align="end"
+                side="bottom"
+                className="w-[480px] p-0 rounded-xl border border-border/50 shadow-xl overflow-hidden"
+                sideOffset={8}
+              >
+                <Tabs defaultValue="gallery" className="w-full pl-1">
+                  <div className="flex items-center justify-between pr-4 py-2">
+                    <TabsList className="w-full">
+                      <TabsTrigger
+                        value="gallery"
+                        className="tracking-[0.21px] text-base font-medium"
+                      >
+                        Gallery
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="upload"
+                        className="tracking-[0.21px] text-base font-medium"
+                      >
+                        Upload
+                      </TabsTrigger>
+                      <TabsIndicator />
+                    </TabsList>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 ml-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => {
+                        handleCoverChange(null);
+                        setCoverPopoverOpen(false);
+                      }}
+                      onMouseDown={(e) => e.preventDefault()}
+                      aria-label="Remove cover"
+                    >
+                      <Trash2Icon />
+                    </Button>
+                  </div>
+
+                  <TabsContent value="gallery" className="px-4 pb-4 mt-0">
+                    <p className="text-xs text-muted-foreground mb-2 mt-1">Abstract</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {COVER_GALLERY.map((item) => (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={() => {
+                            handleCoverChange(item.src);
+                            setCoverPopoverOpen(false);
+                          }}
+                          className="h-16 bg-muted rounded-lg relative cursor-pointer hover:ring-2 ring-primary ring-offset-1 ring-offset-background overflow-hidden transition-all hover:scale-[1.02]"
+                          aria-label={item.label}
+                        >
+                          <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
+                          <img
+                            src={item.src}
+                            alt={item.label}
+                            width={200}
+                            height={64}
+                            className="relative z-0 w-full h-full object-cover brightness-60 grayscale"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="upload" className="px-4 pb-4 mt-0">
+                    <CoverUpload
+                      onFileChange={(url) => {
+                        handleCoverChange(url);
+                        setCoverPopoverOpen(false);
+                      }}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </PopoverContent>
+            </Popover>
           </>
         )}
 
@@ -664,7 +648,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        prefix={<ImageIcon />}
+                        prefix={<CircleUserRoundIcon />}
                         onMouseDown={(e) => e.preventDefault()}
                       />
                     }
@@ -705,8 +689,21 @@ export function FormHeaderElement(props: PlateElementProps) {
                 style={hasCustomization ? themeVars : undefined}
               >
                 <div className="w-full">
-                  <div className="px-3 pt-2 pb-1">
+                  <div className="flex items-center gap-2 px-3 pt-2 pb-1">
                     <IconTabBar value={iconTab} onChange={setIconTab} />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => {
+                        handleIconChange(null);
+                        setIconPopoverOpen(false);
+                      }}
+                      onMouseDown={(e) => e.preventDefault()}
+                      aria-label="Remove icon"
+                    >
+                      <Trash2Icon />
+                    </Button>
                   </div>
                   {iconTab === "icon" ? (
                     <IconPickerContent
@@ -733,10 +730,7 @@ export function FormHeaderElement(props: PlateElementProps) {
                         handleIconChange(url);
                         setIconPopoverOpen(false);
                       }}
-                      onRemove={() => {
-                        handleIconChange(null);
-                        setIconPopoverOpen(false);
-                      }}
+                      onCancel={() => setIconPopoverOpen(false)}
                     />
                   )}
                 </div>

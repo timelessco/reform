@@ -81,7 +81,7 @@ function DataGridColumnHeader<TData, TValue>({
   const headerButtonProps = {
     variant: "ghost" as const,
     className: cn(
-      "text-secondary-foreground/80 rounded-none font-normal px-2 h-full w-full justify-between hover:bg-transparent data-[state=open]:bg-transparent",
+      "text-secondary-foreground/80 rounded-none font-normal px-2 h-full w-full justify-between hover:bg-transparent data-[state=open]:bg-transparent aria-expanded:bg-transparent",
       className,
     ),
     disabled: isLoading || recordCount === 0,

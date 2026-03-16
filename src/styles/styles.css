@@ -273,6 +273,8 @@
 	--color-blacks-950: rgb(255 255 255 / 95%); /* 95% White */
 	--color-blacks-1000: #fff; /* 100% White */
 
+  
+
   /* Shadcn/ui Tokens */
   --background: var(--color-gray-0);
   --card: var(--color-gray-200);
@@ -341,14 +343,17 @@
 }
 
 @theme inline {
-  --tw-leading: 1rem;
-  /* Fonts */
-	--font-sans: inter-v, inter-v-fallback;
-  /* Variations Fonts */
-  --font-sans--font-variation-settings: "opsz" 20, "wght" 450;
-    /* Fonts Weight */
-  --font-sans-weight: 420;
+  --tw-leading: 1rem;
+ --tw-font-weight : 450;
 
+  /* Fonts */
+  --font-sans: inter-v, inter-v-fallback;
+
+  /* Variations Fonts */
+  --font-sans--font-variation-settings: "opsz" 20, "wght" var(--tw-font-weight, 450);
+
+  /* Font Weight */
+  --font-sans-weight: var(--tw-font-weight, 420);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -566,6 +571,10 @@
   --input: var(--bf-input);
   --ring: var(--bf-ring);
   --radius: var(--bf-radius);
+  --radius-sm: calc(var(--bf-radius) - 4px);
+  --radius-md: calc(var(--bf-radius) - 2px);
+  --radius-lg: var(--bf-radius);
+  --radius-xl: calc(var(--bf-radius) + 4px);
 
   /* Tailwind v4 --color-* overrides (needed for bg-background, text-foreground, etc.) */
   --color-background: var(--bf-background);
@@ -601,12 +610,19 @@
   margin-inline: auto;
 }
 
-/* Editor content area: override the padding-based centering when page width is set.
-   The editor uses sm:px-[max(64px,calc(50%-350px))] for a ~700px content area.
-   We override with a calc that centers to the desired page-width. */
+/* Editor content area: set --editor-px so cover buttons can break out of padding.
+   The editor uses sm:px-[max(64px,calc(50%-350px))] for a ~700px content area. */
+@media (width >= 640px) {
+  .group\/editor {
+    --editor-px: max(64px, calc(50% - 350px));
+  }
+}
+
+/* Override the padding-based centering when page width is set. */
 .bf-themed .group\/editor {
-  padding-left: max(64px, calc(50% - var(--bf-page-width, 700px) / 2));
-  padding-right: max(64px, calc(50% - var(--bf-page-width, 700px) / 2));
+  --editor-px: max(64px, calc(50% - var(--bf-page-width, 700px) / 2));
+  padding-left: var(--editor-px);
+  padding-right: var(--editor-px);
 }
 
 .bf-themed [data-bf-cover] {

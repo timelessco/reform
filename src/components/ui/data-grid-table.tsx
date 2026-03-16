@@ -137,6 +137,7 @@ function DataGridTableHeadRowCell<TData>({
       data-last-col={isLastLeftPinned ? "left" : isFirstRightPinned ? "right" : undefined}
       className={cn(
         "relative h-10 text-left rtl:text-right align-middle font-normal text-secondary-foreground/80 [&:has([role=checkbox])]:pe-0",
+        "hover:shadow-[inset_1px_0_0_0_var(--color-border),inset_-1px_0_0_0_var(--color-border)] has-[[data-state=open]]:shadow-none",
         headerCellSpacing,
         props.tableLayout?.cellBorder && "border-e",
         props.tableLayout?.columnsResizable && column.getCanResize() && "truncate",
@@ -164,7 +165,7 @@ function DataGridTableHeadRowCellResize<TData>({ header }: { header: Header<TDat
         onMouseDown: header.getResizeHandler(),
         onTouchStart: header.getResizeHandler(),
         className:
-          "absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-transparent before:-translate-x-px group-hover/header-row:before:bg-border",
+          "absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-transparent before:-translate-x-px",
       }}
     />
   );

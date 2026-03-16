@@ -407,7 +407,7 @@ export function AccountSettingsContent() {
               variant="ghost"
               size="sm"
               prefix={<ImageIcon />}
-              className="h-[30px] rounded-lg bg-popover px-2 text-sm text-popover-foreground shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] hover:bg-gray-200"
+              className="h-[30px] rounded-lg bg-popover px-2 text-sm text-popover-foreground filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
               onClick={() => avatarUpload.fileInputRef.current?.click()}
             >
               Upload image

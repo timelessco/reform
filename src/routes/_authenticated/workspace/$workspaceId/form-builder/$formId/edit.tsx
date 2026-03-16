@@ -3,6 +3,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { NotFound } from "@/components/ui/not-found";
 import { useFormVersionContent } from "@/hooks/use-form-versions";
 import { formCollection } from "@/db-collections/form.collections";
+import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
 import { getFormbyIdQueryOption } from "@/lib/fn/forms";
 import { cn } from "@/lib/utils";
@@ -20,7 +21,6 @@ export const Route = createFileRoute(
   "/_authenticated/workspace/$workspaceId/form-builder/$formId/edit",
 )({
   validateSearch: z.object({
-    demo: z.boolean().optional(),
     force: z.boolean().optional(), // When true, skip redirect for published forms
     // Embed config params — synced from sidebar, read by PreviewMode
     embedType: z.enum(["standard", "popup", "fullpage"]).catch("standard").optional(),
@@ -113,8 +113,7 @@ function DesignPage() {
 
   const versionData = versionContentDataArray?.[0];
 
-  const search = Route.useSearch();
-  const demo = search.demo;
+  const { previewMode } = useEditorSidebar();
 
   useEffect(() => {
     if (!isVersionHistoryOpen && isViewingVersion) {
@@ -155,10 +154,10 @@ function DesignPage() {
         <div
           className={cn(
             "flex-1 overflow-x-hidden",
-            demo ? "h-full overflow-hidden" : "overflow-y-auto",
+            previewMode ? "h-full overflow-hidden" : "overflow-y-auto",
           )}
         >
-          {demo ? (
+          {previewMode ? (
             <PreviewMode formId={formId} workspaceId={workspaceId} />
           ) : isViewingVersion && isLoadingVersionContent ? (
             <div className="h-full w-full flex items-center justify-center">

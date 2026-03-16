@@ -4,7 +4,6 @@ import { NotFound } from "@/components/ui/not-found";
 import { formCollection } from "@/db-collections/form.collections";
 import { getFormbyIdQueryOption } from "@/lib/fn/forms";
 import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
-import { z } from "zod";
 
 interface RedirectError {
   to?: string;
@@ -15,9 +14,6 @@ interface RedirectError {
 
 export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/form-builder/$formId")(
   {
-    validateSearch: z.object({
-      demo: z.boolean().optional(),
-    }),
     // Redirect to appropriate child route based on form status
     beforeLoad: async ({ context, params, location }) => {
       // Only redirect if we're at the exact parent route (no child route)

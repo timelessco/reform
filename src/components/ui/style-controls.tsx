@@ -24,7 +24,7 @@ export function StyleNumberInput({
   value,
   onChange,
   min = 0,
-  max = 100, // Used for visual fill percentage
+  max = 100,
   step = 1,
   unit: forcedUnit,
   displayUnit,
@@ -39,8 +39,10 @@ export function StyleNumberInput({
   const [isInteracting, setIsInteracting] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
   const [isHovered, setIsHovered] = React.useState(false);
-  const inputRef = React.useRef<HTMLInputElement>(null);
   const trackRef = React.useRef<HTMLDivElement>(null);
+
+  // Rubber-banding: how far past the edge the user is dragging (in px)
+  const [rubberBand, setRubberBand] = React.useState(0);
 
   // Click-vs-drag detection refs
   const pointerDownPos = React.useRef<{ x: number; y: number } | null>(null);
@@ -48,6 +50,8 @@ export function StyleNumberInput({
   const animRef = React.useRef<ReturnType<typeof animate> | null>(null);
   const wrapperRectRef = React.useRef<DOMRect | null>(null);
   const CLICK_THRESHOLD = 3;
+  // Dead zone: px past the edge before rubber banding kicks in
+  const DEAD_ZONE = 12;
 
   const visualMax = max === Infinity ? 1000 : max;
   const visualMin = min === -Infinity ? 0 : min;
@@ -58,7 +62,8 @@ export function StyleNumberInput({
 
   // Motion values for imperative animation
   const fillPercent = useMotionValue(percentage);
-  const fillWidth = useTransform(fillPercent, (pct) => `${pct}%`);
+  // Fill extends 8px past the knob so its rounded edge wraps around the knob
+  const fillWidth = useTransform(fillPercent, (pct) => `calc(${pct}% + 8px)`);
   const handleLeft = useTransform(fillPercent, (pct) => `max(3px, calc(${pct}% - 2.5px))`);
 
   // Sync fill from props when not interacting
@@ -79,13 +84,25 @@ export function StyleNumberInput({
     [min, max, visualMin, visualMax, numValue],
   );
 
+  // Compute rubber band overflow (px past track edge, with diminishing returns)
+  const computeRubberBand = React.useCallback((clientX: number) => {
+    const rect = wrapperRectRef.current;
+    if (!rect) return 0;
+    const overflowLeft = rect.left - clientX;
+    const overflowRight = clientX - rect.right;
+    const overflow = Math.max(overflowLeft, overflowRight);
+    if (overflow <= DEAD_ZONE) return 0;
+    // Diminishing returns: logarithmic stretch, capped at 6px to stay within parent padding
+    const pastDead = overflow - DEAD_ZONE;
+    return Math.min(Math.log1p(pastDead) * 3, 6);
+  }, []);
+
   const percentFromValue = React.useCallback(
     (v: number) => ((v - visualMin) / (visualMax - visualMin)) * 100,
     [visualMin, visualMax],
   );
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (document.activeElement === inputRef.current) return;
     e.preventDefault();
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     pointerDownPos.current = { x: e.clientX, y: e.clientY };
@@ -112,7 +129,6 @@ export function StyleNumberInput({
     }
 
     if (!isClickRef.current) {
-      // Drag mode — handle follows cursor position on track (absolute, not delta)
       const newValue = positionToValue(e.clientX);
       const snapped = Math.round(newValue / step) * step;
       const clamped = Math.max(min, Math.min(max, snapped));
@@ -123,6 +139,9 @@ export function StyleNumberInput({
       }
       fillPercent.jump(newPct);
       onChange(`${clamped}${unit}`);
+
+      // Rubber banding when dragging past edges
+      setRubberBand(computeRubberBand(e.clientX));
     }
   };
 
@@ -151,21 +170,22 @@ export function StyleNumberInput({
 
     setIsInteracting(false);
     setIsDragging(false);
+    setRubberBand(0);
     pointerDownPos.current = null;
   };
 
   const isActive = isHovered || isInteracting;
 
-  // Dodge text on the left/right edges to avoid overlapping the label or value
-  const valueDodge = percentage < 25 || percentage > 75;
-
-  const handleOpacity = !isActive ? 0 : valueDodge ? 0.1 : isDragging ? 0.9 : 0.5;
+  // Rubber band stretch direction: which edge is being pushed
+  const isAtMin = numValue <= min;
+  const isAtMax = numValue >= max;
+  const stretchDirection = rubberBand > 0 ? (isAtMin ? "left" : isAtMax ? "right" : null) : null;
 
   return (
-    <div
+    <motion.div
       ref={trackRef}
       className={cn(
-        "relative flex items-center rounded-lg overflow-hidden border border-border/60 bg-transparent h-[34px] text-[13px] select-none cursor-ew-resize group",
+        "relative flex items-center rounded-lg overflow-hidden border border-border/60 bg-background h-[34px] text-[13px] select-none cursor-pointer group",
         className,
       )}
       onPointerDown={handlePointerDown}
@@ -173,77 +193,81 @@ export function StyleNumberInput({
       onPointerUp={handlePointerUp}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      animate={{
+        scaleX: rubberBand > 0 ? 1 + rubberBand * 0.002 : 1,
+        x:
+          stretchDirection === "left"
+            ? -rubberBand * 0.4
+            : stretchDirection === "right"
+              ? rubberBand * 0.4
+              : 0,
+      }}
+      transition={
+        rubberBand > 0
+          ? { duration: 0 }
+          : { type: "spring", stiffness: 400, damping: 20, mass: 0.5 }
+      }
+      style={{
+        transformOrigin: stretchDirection === "left" ? "right center" : "left center",
+      }}
     >
-      {/* Scrubber Fill Bar */}
+      {/* Filled track — extends past knob, rounded edge wraps around it */}
       <motion.div
-        className="absolute left-0 top-0 bottom-0 bg-primary/10 pointer-events-none"
-        style={{ width: fillWidth }}
-        animate={{
-          backgroundColor: isActive ? "hsl(var(--primary) / 0.15)" : "hsl(var(--primary) / 0.1)",
-        }}
-        transition={{ duration: 0.15 }}
+        className="absolute left-0 top-[2px] bottom-[2px] rounded-r-xl pointer-events-none bg-secondary"
+        style={{ width: fillWidth, maxWidth: "100%" }}
       />
 
-      {/* Handle knob */}
+      {/* Handle knob — sits inside the fill area with margin */}
       <motion.div
-        className="absolute top-1/2 w-[5px] h-[20px] rounded-full pointer-events-none z-20"
-        style={{
-          left: handleLeft,
-          y: "-50%",
-          maskImage:
-            "linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%)",
-          WebkitMaskImage:
-            "linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%)",
-        }}
+        className="absolute my-1.5 top-[3px] bottom-[3px] w-[4px] rounded-full z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+        style={{ left: handleLeft }}
         animate={{
-          opacity: handleOpacity,
-          scaleX: isActive ? 1 : 0.3,
-          scaleY: isActive && valueDodge ? 0.7 : 1,
           backgroundColor: isDragging
-            ? "var(--bf-handle-active, rgba(120,120,120,0.9))"
-            : "var(--bf-handle-idle, rgba(120,120,120,0.55))",
+            ? "color-mix(in srgb, var(--color-foreground) 55%, transparent)"
+            : isActive
+              ? "color-mix(in srgb, var(--color-foreground) 40%, transparent)"
+              : "color-mix(in srgb, var(--color-foreground) 28%, transparent)",
         }}
-        transition={{
-          scaleX: { type: "spring", visualDuration: 0.25, bounce: 0.15 },
-          scaleY: { type: "spring", visualDuration: 0.2, bounce: 0.1 },
-          opacity: { duration: 0.15 },
-        }}
+        transition={{ duration: 0.1 }}
       />
 
-      {/* Hash marks at 10%–90% */}
-      <div className="absolute inset-0 flex items-center pointer-events-none">
-        {Array.from({ length: 9 }, (_, i) => (
-          <div
-            key={i}
-            className="absolute w-px h-2 bg-foreground opacity-10"
-            style={{ left: `${(i + 1) * 10}%` }}
-          />
-        ))}
+      {/* Hash marks at 10%–90% — only visible on hover */}
+      <div className="absolute inset-0 flex items-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+        {Array.from({ length: 9 }, (_, i) => {
+          const markPercent = (i + 1) * 10;
+          const isFilled = markPercent <= percentage;
+          return (
+            <div
+              key={i}
+              className="absolute w-px h-2.5 rounded-full transition-opacity duration-150"
+              style={{
+                left: `${markPercent}%`,
+                backgroundColor: isFilled
+                  ? "color-mix(in srgb, var(--color-foreground) 30%, transparent)"
+                  : "color-mix(in srgb, var(--color-foreground) 12%, transparent)",
+              }}
+            />
+          );
+        })}
       </div>
 
       <div className="relative px-3 text-muted-foreground flex-1 z-10 pointer-events-none transition-colors group-hover:text-foreground">
         {label}
       </div>
 
-      <div className="relative flex-none h-full z-20" style={{ width: valueWidth }}>
-        <input
-          ref={inputRef}
-          value={`${numValue}${shownUnit}`}
-          aria-label={label}
-          onChange={(e) => {
-            const raw = e.target.value.replace(/[^0-9.-]/g, "");
-            if (raw === "" || raw === "-") return;
-            onChange(`${raw}${unit}`);
-          }}
-          onPointerDown={(e) => e.stopPropagation()} // Prevent dragging when clicking input
-          className={cn(
-            "absolute inset-0 w-full h-full text-right px-3 bg-transparent outline-none tabular-nums font-mono transition-colors",
-            isActive ? "text-foreground" : "text-muted-foreground",
-            "focus:bg-background focus:text-foreground focus:cursor-text",
-          )}
-        />
+      {/* Read-only value display */}
+      <div
+        className={cn(
+          "relative flex-none h-full flex items-center justify-end px-3 z-10 pointer-events-none tabular-nums font-mono transition-colors",
+          isActive ? "text-foreground" : "text-muted-foreground",
+        )}
+        style={{ width: valueWidth }}
+        aria-label={`${label}: ${numValue}${shownUnit}`}
+      >
+        {numValue}
+        {shownUnit}
       </div>
-    </div>
+    </motion.div>
   );
 }
 

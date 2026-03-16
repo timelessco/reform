@@ -21,7 +21,6 @@ import {
   ChevronsRight as LucideChevronsRight,
   CircleCheck as LucideCircleCheck,
   CirclePlus as LucideCirclePlus,
-  CircleUserRound as LucideCircleUserRound,
   CircleX as LucideCircleX,
   Clock as LucideClock,
   CornerDownLeft as LucideCornerDownLeft,
@@ -44,7 +43,6 @@ import {
   GripHorizontal as LucideGripHorizontal,
   GripVertical as LucideGripVertical,
   HelpCircle as LucideHelpCircle,
-  Image as LucideImage,
   Indent as LucideIndent,
   Info as LucideInfo,
   Italic as LucideItalic,
@@ -58,11 +56,9 @@ import {
   ListTodo as LucideListTodo,
   Loader2 as LucideLoader2,
   Lock as LucideLock,
-  LogOut as LucideLogOut,
   MessageSquareText as LucideMessageSquareText,
   Minus as LucideMinus,
   Monitor as LucideMonitor,
-  Moon as LucideMoon,
   MoreVertical as LucideMoreVertical,
   OctagonX as LucideOctagonX,
   Outdent as LucideOutdent,
@@ -78,9 +74,7 @@ import {
   RotateCcw as LucideRotateCcw,
   Save as LucideSave,
   Shield as LucideShield,
-  Smile as LucideSmile,
   Strikethrough as LucideStrikethrough,
-  Sun as LucideSun,
   Tag as LucideTag,
   Text as LucideText,
   Trash2 as LucideTrash2,
@@ -200,6 +194,7 @@ export function SettingsIcon(props: React.SVGProps<SVGSVGElement>) {
         d="M6.2998 8.9998C6.2998 10.4911 7.5085 11.6998 8.9998 11.6998C10.4911 11.6998 11.6998 10.4911 11.6998 8.9998C11.6998 7.5085 10.4911 6.2998 8.9998 6.2998C7.5085 6.2998 6.2998 7.5085 6.2998 8.9998Z"
         fill="var(--sidebar-icon-inner)"
         stroke="var(--sidebar-icon-stroke)"
+        strokeWidth="var(--stroke-width)"
       />
     </svg>
   );
@@ -682,7 +677,31 @@ export const ChevronUpIcon = createConsistentLucideIcon(LucideChevronUp);
 export const ChevronsRightIcon = createConsistentLucideIcon(LucideChevronsRight);
 export const CircleCheckIcon = createConsistentLucideIcon(LucideCircleCheck);
 export const CirclePlusIcon = createConsistentLucideIcon(LucideCirclePlus);
-export const CircleUserRoundIcon = createConsistentLucideIcon(LucideCircleUserRound);
+export function CircleUserRoundIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path
+        opacity="0.12"
+        d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+        fill="var(--sidebar-icon-stroke)"
+      />
+      <path
+        d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14M15 9H15.01M9 9H9.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM15.5 9C15.5 9.27614 15.2761 9.5 15 9.5C14.7239 9.5 14.5 9.27614 14.5 9C14.5 8.72386 14.7239 8.5 15 8.5C15.2761 8.5 15.5 8.72386 15.5 9ZM9.5 9C9.5 9.27614 9.27614 9.5 9 9.5C8.72386 9.5 8.5 9.27614 8.5 9C8.5 8.72386 8.72386 8.5 9 8.5C9.27614 8.5 9.5 8.72386 9.5 9Z"
+        stroke="var(--sidebar-icon-stroke)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 export const CircleXIcon = createConsistentLucideIcon(LucideCircleX);
 export const ClockIcon = createConsistentLucideIcon(LucideClock);
 export const CreditCardIcon = createConsistentLucideIcon(LucideCreditCard);
@@ -720,6 +739,7 @@ export const ImageIcon = (props: React.SVGProps<SVGSVGElement>) => (
       d="M3.99964 13.3338L9.91234 7.42108C10.1763 7.15707 10.3084 7.02506 10.4606 6.9756C10.5945 6.9321 10.7387 6.9321 10.8726 6.9756C11.0248 7.02506 11.1568 7.15707 11.4208 7.42108L14.2701 10.2703M6.99992 5.66683C6.99992 6.40321 6.40297 7.00016 5.66659 7.00016C4.93021 7.00016 4.33325 6.40321 4.33325 5.66683C4.33325 4.93045 4.93021 4.3335 5.66659 4.3335C6.40297 4.3335 6.99992 4.93045 6.99992 5.66683ZM14.6666 8.00016C14.6666 11.6821 11.6818 14.6668 7.99992 14.6668C4.31802 14.6668 1.33325 11.6821 1.33325 8.00016C1.33325 4.31826 4.31802 1.3335 7.99992 1.3335C11.6818 1.3335 14.6666 4.31826 14.6666 8.00016Z"
       stroke="var(--sidebar-icon-stroke)"
       strokeLinecap="round"
+      strokeWidth="var(--stroke-width)"
       strokeLinejoin="round"
     />
   </svg>

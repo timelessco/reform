@@ -2,7 +2,7 @@ import { normalizeNodeId } from "platejs";
 import type { TElement, Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearch } from "@tanstack/react-router";
+
 import { EditorThemeProvider } from "@/contexts/editor-theme-context";
 import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
 import { useFormCustomization } from "@/hooks/use-form-customization";
@@ -25,7 +25,7 @@ import {
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { localFormCollection } from "@/db-collections/form.collections";
-import { EditorSidebarProvider, useEditorSidebar } from "@/hooks/use-editor-sidebar";
+import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useLocalForm } from "@/hooks/use-live-hooks";
 import { getLocalFormId, getLocalWorkspaceId } from "@/lib/local-draft";
 
@@ -54,19 +54,14 @@ export default function LandingEditor() {
         </div>
       }
     >
-      {() => (
-        <EditorSidebarProvider>
-          <LandingLayout />
-        </EditorSidebarProvider>
-      )}
+      {() => <LandingLayout />}
     </ClientOnly>
   );
 }
 
 function LandingLayout() {
-  const { activeSidebar } = useEditorSidebar();
+  const { activeSidebar, previewMode } = useEditorSidebar();
   const showSidebar = !!activeSidebar;
-  const { demo } = useSearch({ strict: false }) as { demo?: boolean };
 
   // Right sidebar width state (persisted, matches authenticated route)
   const [rightSidebarWidth, _setRightSidebarWidth] = useState(() => {
@@ -112,7 +107,7 @@ function LandingLayout() {
             )}
             style={{ paddingRight: showSidebar ? rightSidebarWidth : 0 }}
           >
-            {demo ? <LocalPreviewMode /> : <LocalEditorApp />}
+            {previewMode ? <LocalPreviewMode /> : <LocalEditorApp />}
           </div>
         </div>
       </div>
