@@ -249,7 +249,7 @@ function ThemeSelect() {
   const { theme, setTheme } = useTheme();
   return (
     <Select value={theme} onValueChange={(val) => setTheme(val as "dark" | "light" | "system")}>
-      <SelectTrigger className="shrink-0 h-[30px] bg-background border-0 rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] outline outline-1 -outline-offset-1 outline-transparent pl-3 pr-2.5 text-sm text-foreground">
+      <SelectTrigger className="shrink-0 bg-gray-50 border-0 rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] outline-1 -outline-offset-1 outline-transparent pl-3 pr-2.5 text-sm text-foreground capitalize">
         <SelectValue />
       </SelectTrigger>
       <SelectContent positionerClassName="z-103">
@@ -406,10 +406,10 @@ export function AccountSettingsContent() {
             <Button
               variant="ghost"
               size="sm"
-              className="h-[30px] rounded-lg bg-gray-50 px-2 text-sm text-gray-800 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] hover:bg-gray-200"
+              prefix={<ImageIcon />}
+              className="h-[30px] rounded-lg bg-popover px-2 text-sm text-popover-foreground shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] hover:bg-gray-200"
               onClick={() => avatarUpload.fileInputRef.current?.click()}
             >
-              <ImageIcon className="size-4" />
               Upload image
             </Button>
             {user?.image && (
@@ -556,22 +556,26 @@ export function AccountSettingsContent() {
           {emailChange.isOpen && (
             <profileForm.AppField name="newEmail">
               {(field) => (
-                <InputGroup className="h-7 flex-1 bg-muted border-0 overflow-clip pr-[3px]">
+                <InputGroup
+                  variant="borderless"
+                  className="h-[30px] bg-secondary border-0 ring-0 overflow-clip pr-[3px]"
+                >
                   <InputGroupInput
                     type="email"
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="Enter new email address"
                     aria-label="New email address"
-                    className="h-7 text-sm text-foreground"
+                    className="h-[30px] text-base text-foreground pl-2.5 pr-1.5"
                   />
                   <InputGroupButton
+                    variant="default"
                     onClick={() => {
                       if (!field.state.value) return;
                       emailChange.submit(field.state.value);
                     }}
                     disabled={emailChange.isPending || !field.state.value}
-                    className="h-[30px] rounded-lg bg-gray-50 px-3 text-sm text-gray-800 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] hover:bg-gray-200"
+                    className="h-[24px] rounded-lg bg-gray-50 px-3 text-sm text-gray-800 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] hover:bg-gray-200"
                   >
                     {emailChange.isPending ? "Sending..." : "Verify"}
                   </InputGroupButton>

@@ -18,19 +18,12 @@ import {
   getSubmissionsByFormIdPaginated,
   getSubmissionsCountQueryOption,
 } from "@/lib/fn/submissions";
-import type {
-  SerializedSubmission,
-  SubmissionCursor,
-} from "@/lib/fn/submissions";
+import type { SerializedSubmission, SubmissionCursor } from "@/lib/fn/submissions";
 import {
   getEditableFields,
   transformPlateStateToFormElements,
 } from "@/lib/transform-plate-to-form";
-import {
-  useInfiniteQuery,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   createColumnHelper,
@@ -46,12 +39,7 @@ import type {
   VisibilityState,
 } from "@tanstack/react-table";
 
-import {
-  ChevronDownIcon,
-  FilterIcon,
-  Trash2Icon,
-  XIcon,
-} from "@/components/ui/icons";
+import { ChevronDownIcon, FilterIcon, Trash2Icon, XIcon } from "@/components/ui/icons";
 import { Columns, Download, Search } from "lucide-react";
 import type { Value } from "platejs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -77,8 +65,7 @@ export const Route = createFileRoute(
     const [publishedData] = await Promise.all([
       context.queryClient.ensureQueryData({
         queryKey: ["publishedFormVersion", params.formId],
-        queryFn: () =>
-          getLatestPublishedVersion({ data: { formId: params.formId } }),
+        queryFn: () => getLatestPublishedVersion({ data: { formId: params.formId } }),
         revalidateIfStale: true,
       }),
       context.queryClient
@@ -91,9 +78,8 @@ export const Route = createFileRoute(
             data: { formId: params.formId, cursor: undefined },
           }),
         initialPageParam: undefined as SubmissionCursor | undefined,
-        getNextPageParam: (
-          lastPage: Awaited<ReturnType<typeof getSubmissionsByFormIdPaginated>>,
-        ) => lastPage?.nextCursor,
+        getNextPageParam: (lastPage: Awaited<ReturnType<typeof getSubmissionsByFormIdPaginated>>) =>
+          lastPage?.nextCursor,
       }),
     ]);
     return { publishedData };
@@ -107,20 +93,15 @@ function SubmissionsPage() {
   const { formId } = Route.useParams();
   const queryClient = useQueryClient();
   const { publishedData: initialPublishedData } = Route.useLoaderData();
-  const [activeTab, setActiveTab] = useState<"all" | "completed" | "partial">(
-    "all",
-  );
+  const [activeTab, setActiveTab] = useState<"all" | "completed" | "partial">("all");
   const [sorting, setSorting] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
-  const [fieldStatusFilter] = useState<Set<FieldStatus>>(
-    new Set(["current", "deleted"]),
-  );
+  const [fieldStatusFilter] = useState<Set<FieldStatus>>(new Set(["current", "deleted"]));
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({});
   const [columnOrder, setColumnOrder] = useState<string[]>([]);
-  const [scrollContainerEl, setScrollContainerEl] =
-    useState<HTMLDivElement | null>(null);
+  const [scrollContainerEl, setScrollContainerEl] = useState<HTMLDivElement | null>(null);
   const scrollContainerRef = useCallback((node: HTMLDivElement | null) => {
     setScrollContainerEl(node);
   }, []);
@@ -143,11 +124,7 @@ function SubmissionsPage() {
     isLoading: isLoadingSubmissions,
   } = useInfiniteQuery({
     queryKey: ["submissions", formId],
-    queryFn: async ({
-      pageParam,
-    }: {
-      pageParam: SubmissionCursor | undefined;
-    }) =>
+    queryFn: async ({ pageParam }: { pageParam: SubmissionCursor | undefined }) =>
       getSubmissionsByFormIdPaginated({
         data: { formId, cursor: pageParam },
       }),
@@ -159,8 +136,7 @@ function SubmissionsPage() {
   const totalCount = countData?.total ?? 0;
 
   const allSubmissions: SerializedSubmission[] = useMemo(
-    () =>
-      submissionsData?.pages?.flatMap((page) => page?.submissions ?? []) ?? [],
+    () => submissionsData?.pages?.flatMap((page) => page?.submissions ?? []) ?? [],
     [submissionsData],
   );
 
@@ -168,11 +144,7 @@ function SubmissionsPage() {
     (containerRefElement?: HTMLDivElement | null) => {
       if (!containerRefElement) return;
       const { scrollHeight, scrollTop, clientHeight } = containerRefElement;
-      if (
-        scrollHeight - scrollTop - clientHeight < 500 &&
-        !isFetchingNextPage &&
-        hasNextPage
-      ) {
+      if (scrollHeight - scrollTop - clientHeight < 500 && !isFetchingNextPage && hasNextPage) {
         fetchNextPage();
       }
     },
@@ -225,23 +197,18 @@ function SubmissionsPage() {
     if (formElements) {
       const editableFields = getEditableFields(formElements);
       editableFields
-        .filter(
-          (field) =>
-            field.fieldType === "Input" || field.fieldType === "Textarea",
-        )
+        .filter((field) => field.fieldType === "Input" || field.fieldType === "Textarea")
         .forEach((field) => currentFieldNames.add(field.name));
     }
 
     const orphaned = new Set<string>();
     allSubmissions.forEach((submission) => {
       if (submission.data && typeof submission.data === "object") {
-        Object.keys(submission.data as Record<string, unknown>).forEach(
-          (key) => {
-            if (!currentFieldNames.has(key)) {
-              orphaned.add(key);
-            }
-          },
-        );
+        Object.keys(submission.data as Record<string, unknown>).forEach((key) => {
+          if (!currentFieldNames.has(key)) {
+            orphaned.add(key);
+          }
+        });
       }
     });
 
@@ -267,13 +234,8 @@ function SubmissionsPage() {
         header: ({ table }) => (
           <Checkbox
             checked={table.getIsAllPageRowsSelected()}
-            indeterminate={
-              table.getIsSomePageRowsSelected() &&
-              !table.getIsAllPageRowsSelected()
-            }
-            onCheckedChange={(value) =>
-              table.toggleAllPageRowsSelected(!!value)
-            }
+            indeterminate={table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected()}
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
             aria-label="Select all"
             className="translate-y-[2px]"
           />
@@ -296,9 +258,7 @@ function SubmissionsPage() {
       },
       // Submission Date column - minSize prevents action buttons from truncating into select column
       columnHelper.accessor("createdAt", {
-        header: ({ column }) => (
-          <DataGridColumnHeader column={column} title="Submitted at" />
-        ),
+        header: ({ column }) => <DataGridColumnHeader column={column} title="Submitted at" />,
         cell: (info) => (
           <div className="flex items-center justify-between gap-2 group/row min-w-0">
             <span className="text-[13px] truncate min-w-0">
@@ -337,8 +297,7 @@ function SubmissionsPage() {
 
       // Only include Input and Textarea fields (not Button)
       const inputFields = editableFields.filter(
-        (field) =>
-          field.fieldType === "Input" || field.fieldType === "Textarea",
+        (field) => field.fieldType === "Input" || field.fieldType === "Textarea",
       );
 
       inputFields.forEach((field) => {
@@ -456,9 +415,7 @@ function SubmissionsPage() {
   // Shared CSV download helper
   const downloadCSV = useCallback(
     (
-      rows: typeof table extends { getRowModel: () => { rows: infer R } }
-        ? R
-        : never,
+      rows: typeof table extends { getRowModel: () => { rows: infer R } } ? R : never,
       filename: string,
     ) => {
       if ((rows as any[]).length === 0) return;
@@ -502,10 +459,7 @@ function SubmissionsPage() {
 
   // Export selected rows as CSV
   const handleExportSelected = useCallback(() => {
-    downloadCSV(
-      table.getSelectedRowModel().rows as any,
-      `submissions-selected-${formId}.csv`,
-    );
+    downloadCSV(table.getSelectedRowModel().rows as any, `submissions-selected-${formId}.csv`);
   }, [downloadCSV, formId, table]);
 
   const handleDownloadCSV = useCallback(() => {
@@ -552,11 +506,7 @@ function SubmissionsPage() {
                 />
               }
             >
-              {activeTab === "all"
-                ? "All"
-                : activeTab === "completed"
-                  ? "Completed"
-                  : "Partial"}
+              {activeTab === "all" ? "All" : activeTab === "completed" ? "Completed" : "Partial"}
               <span className="opacity-60">
                 {activeTab === "all"
                   ? allSubmissions.length
@@ -567,32 +517,19 @@ function SubmissionsPage() {
               <ChevronDownIcon className="size-2.5 shrink-0  text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-36">
-              <DropdownMenuItem
-                onClick={() => setActiveTab("all")}
-                className="gap-2"
-              >
+              <DropdownMenuItem onClick={() => setActiveTab("all")} className="gap-2">
                 All
                 <span className="ml-auto text-xs text-muted-foreground">
                   {allSubmissions.length}
                 </span>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setActiveTab("completed")}
-                className="gap-2"
-              >
+              <DropdownMenuItem onClick={() => setActiveTab("completed")} className="gap-2">
                 Completed
-                <span className="ml-auto text-xs text-muted-foreground">
-                  {completedCount}
-                </span>
+                <span className="ml-auto text-xs text-muted-foreground">{completedCount}</span>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setActiveTab("partial")}
-                className="gap-2"
-              >
+              <DropdownMenuItem onClick={() => setActiveTab("partial")} className="gap-2">
                 Partial
-                <span className="ml-auto text-xs text-muted-foreground">
-                  {partialCount}
-                </span>
+                <span className="ml-auto text-xs text-muted-foreground">{partialCount}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -601,11 +538,7 @@ function SubmissionsPage() {
           <div className="flex items-center gap-1.5">
             <ButtonGroup className="w-[180px] focus-within:w-[240px] transition-[width] border-none duration-200 ease-out rounded-lg">
               <ButtonGroupText className="h-7 w-full rounded-lg px-2.5 gap-1.5 text-[13px] bg-accent/60 border border-transparent">
-                <Search
-                  className="h-3 w-3"
-                  strokeWidth={2}
-                  color="var(--color-gray-alpha-600)"
-                />
+                <Search className="h-3 w-3" strokeWidth={2} color="var(--color-gray-alpha-600)" />
                 <input
                   placeholder="Search responses..."
                   className="min-w-0 flex-1  bg-transparent border-0 p-0 outline-none text-[13px] placeholder:text-(--color-gray-alpha-600) placeholder:text-normal placeholder:text-[0.8rem]"
@@ -623,13 +556,9 @@ function SubmissionsPage() {
                 <Button
                   variant="ghost"
                   size="sm"
+                  prefix={<Columns strokeWidth="2" color="var(--color-gray-alpha-600)" />}
                   className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-accent/60 hover:bg-accent text-(--color-gray-alpha-600) transition-colors cursor-pointer text-normal text-[0.8rem] rounded-lg"
                 >
-                  <Columns
-                    className="h-3 w-3"
-                    strokeWidth="2"
-                    color="var(--color-gray-alpha-600)"
-                  />
                   Columns
                 </Button>
               }
@@ -638,14 +567,10 @@ function SubmissionsPage() {
             <Button
               variant="ghost"
               size="sm"
+              prefix={<Download strokeWidth={2} color="var(--color-gray-alpha-600)" />}
               className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-accent/60 hover:bg-accent text-(--color-gray-alpha-600) transition-colors cursor-pointer text-normal text-[0.8rem] rounded-lg"
               onClick={handleDownloadCSV}
             >
-              <Download
-                className="h-3 w-3"
-                strokeWidth={2}
-                color="var(--color-gray-alpha-600)"
-              />
               Download CSV
             </Button>
           </div>
@@ -663,16 +588,10 @@ function SubmissionsPage() {
                   checked={true}
                   className="border-foreground data-[state=checked]:bg-foreground data-[state=checked]:border-foreground size-5"
                 />
-                <span className="text-sm">
-                  {Object.keys(rowSelection).length} selected
-                </span>
+                <span className="text-sm">{Object.keys(rowSelection).length} selected</span>
               </div>
               <div className="flex items-center gap-1 h-6.5">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleExportSelected}
-                >
+                <Button variant="ghost" size="sm" onClick={handleExportSelected}>
                   <Download className="h-3.5 w-3.5" />
                   Export
                   <span className="text-xs text-muted-foreground ml-1">
@@ -685,11 +604,7 @@ function SubmissionsPage() {
                     {formatForDisplay(HOTKEYS.SUBMISSIONS_DELETE)}
                   </span>
                 </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setRowSelection({})}
-                >
+                <Button variant="secondary" size="sm" onClick={() => setRowSelection({})}>
                   <XIcon className="h-3.5 w-3.5" />
                   Clear
                   <span className="text-xs text-muted-foreground ml-1">

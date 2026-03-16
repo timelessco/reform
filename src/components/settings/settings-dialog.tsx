@@ -76,7 +76,7 @@ export function SettingsDialog() {
 
         {/* Right Content Area — entire section scrolls */}
         <ScrollArea className="flex-1 min-h-0" hideScrollbar>
-          <div className="px-12 pt-8 pb-8">
+          <div className="px-12.25 pt-8 pb-8">
             <DialogTitle className="text-xl font-semibold text-foreground mb-4">
               {tabTitles[activeTab]}
             </DialogTitle>

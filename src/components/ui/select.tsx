@@ -1,10 +1,10 @@
 "use client";
 
-import * as React from "react";
 import { Select as SelectPrimitive } from "@base-ui/react/select";
+import * as React from "react";
 
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
-import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "@/components/ui/icons";
 
 const Select = SelectPrimitive.Root;
 
@@ -48,7 +48,7 @@ function SelectTrigger({
     >
       {children}
       <SelectPrimitive.Icon
-        render={<ChevronDownIcon className="text-muted-foreground size-4 pointer-events-none" />}
+        render={<ChevronDownIcon className="pointer-events-none text-gray-500" />}
       />
     </SelectPrimitive.Trigger>
   );
