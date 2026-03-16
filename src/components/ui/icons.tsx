@@ -697,7 +697,33 @@ export const FolderIcon = createConsistentLucideIcon(LucideFolder);
 export const FolderOpenIcon = createConsistentLucideIcon(LucideFolderOpen);
 export const FolderSearchIcon = createConsistentLucideIcon(LucideFolderSearch);
 export const HelpCircleIcon = createConsistentLucideIcon(LucideHelpCircle);
-export const ImageIcon = createConsistentLucideIcon(LucideImage);
+export const ImageIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 16 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <g opacity="0.12">
+      <path
+        d="M5.66675 7.00016C6.40313 7.00016 7.00008 6.40321 7.00008 5.66683C7.00008 4.93045 6.40313 4.3335 5.66675 4.3335C4.93037 4.3335 4.33341 4.93045 4.33341 5.66683C4.33341 6.40321 4.93037 7.00016 5.66675 7.00016Z"
+        fill="var(--sidebar-icon-stroke)"
+      />
+      <path
+        d="M14.2702 10.2703C13.3416 12.8346 10.8848 14.6668 8.00003 14.6668C6.4991 14.6668 5.11402 14.1708 3.99976 13.3338L9.91245 7.42108C10.1765 7.15707 10.3085 7.02506 10.4607 6.9756C10.5946 6.9321 10.7388 6.9321 10.8727 6.9756C11.0249 7.02506 11.1569 7.15707 11.4209 7.42108L14.2702 10.2703Z"
+        fill="var(--sidebar-icon-stroke)"
+      />
+    </g>
+    <path
+      d="M3.99964 13.3338L9.91234 7.42108C10.1763 7.15707 10.3084 7.02506 10.4606 6.9756C10.5945 6.9321 10.7387 6.9321 10.8726 6.9756C11.0248 7.02506 11.1568 7.15707 11.4208 7.42108L14.2701 10.2703M6.99992 5.66683C6.99992 6.40321 6.40297 7.00016 5.66659 7.00016C4.93021 7.00016 4.33325 6.40321 4.33325 5.66683C4.33325 4.93045 4.93021 4.3335 5.66659 4.3335C6.40297 4.3335 6.99992 4.93045 6.99992 5.66683ZM14.6666 8.00016C14.6666 11.6821 11.6818 14.6668 7.99992 14.6668C4.31802 14.6668 1.33325 11.6821 1.33325 8.00016C1.33325 4.31826 4.31802 1.3335 7.99992 1.3335C11.6818 1.3335 14.6666 4.31826 14.6666 8.00016Z"
+      stroke="var(--sidebar-icon-stroke)"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 export const InfoIcon = createConsistentLucideIcon(LucideInfo);
 export const KeyboardIcon = createConsistentLucideIcon(LucideKeyboard);
 export const LanguagesIcon = createConsistentLucideIcon(LucideLanguages);

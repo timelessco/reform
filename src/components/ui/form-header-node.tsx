@@ -664,12 +664,11 @@ export function FormHeaderElement(props: PlateElementProps) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-muted-foreground h-6 px-2 text-xs hover:bg-muted"
+                        prefix={<ImageIcon />}
                         onMouseDown={(e) => e.preventDefault()}
                       />
                     }
                   >
-                    <ImageIcon className="mr-1.5 h-3.5 w-3.5" />
                     Add icon
                   </PopoverTrigger>
                 )}
@@ -677,22 +676,20 @@ export function FormHeaderElement(props: PlateElementProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-muted-foreground h-6 px-2 text-xs hover:bg-muted"
                     onClick={handleAddCover}
+                    prefix={<ImageIcon />}
                     onMouseDown={(e) => e.preventDefault()}
                   >
-                    <ImageIcon className="mr-1.5 h-3.5 w-3.5" />
                     Add cover
                   </Button>
                 )}
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-muted-foreground h-6 px-2 text-xs hover:bg-muted"
                   onClick={toggleCustomize}
                   onMouseDown={(e) => e.preventDefault()}
                 >
-                  <SettingsIcon className="mr-1.5 h-3.5 w-3.5" />
+                  <SettingsIcon />
                   Customize
                 </Button>
               </div>
