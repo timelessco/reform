@@ -474,20 +474,23 @@ function SubmissionsPage() {
     () => {
       table.toggleAllPageRowsSelected(!table.getIsAllPageRowsSelected());
     },
-    { conflictBehavior: "replace" },
+    { conflictBehavior: "replace", ignoreInputs: true },
   );
 
   useHotkey(HOTKEYS.SUBMISSIONS_EXPORT, () => handleExportSelected(), {
     enabled: hasSelection,
     conflictBehavior: "replace",
+    ignoreInputs: true,
   });
 
   useHotkey(HOTKEYS.SUBMISSIONS_DELETE, () => handleBulkDelete(), {
     enabled: hasSelection,
+    ignoreInputs: true,
   });
 
   useHotkey(HOTKEYS.SUBMISSIONS_CLEAR_SELECTION, () => setRowSelection({}), {
     enabled: hasSelection,
+    ignoreInputs: true,
   });
 
   return (

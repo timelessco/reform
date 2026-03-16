@@ -122,7 +122,9 @@ function SidebarProvider({
   );
 
   // Adds a keyboard shortcut to toggle the sidebar.
-  useHotkey(HOTKEYS.TOGGLE_SIDEBAR, () => toggleSidebar());
+  useHotkey(HOTKEYS.TOGGLE_SIDEBAR, () => toggleSidebar(), {
+    ignoreInputs: true,
+  });
 
   // We add a state so that we can do data-state="expanded" or "collapsed".
   // This makes it easier to style the sidebar with Tailwind classes.
@@ -574,6 +576,7 @@ const sidebarMenuButtonVariants = cva(
         default: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         outline:
           "bg-background hover:bg-sidebar-accent hover:text-sidebar-accent-foreground shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
+        link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
         default: "h-8 text-sm",

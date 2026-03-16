@@ -251,14 +251,14 @@ export function StyleNumberInput({
         })}
       </div>
 
-      <div className="relative px-3 text-muted-foreground flex-1 z-10 pointer-events-none transition-colors group-hover:text-foreground">
+      <div className="relative pl-2  text-base font-normal flex-1 z-10 pointer-events-none transition-colors group-hover:text-foreground">
         {label}
       </div>
 
       {/* Read-only value display */}
       <div
         className={cn(
-          "relative flex-none h-full flex items-center justify-end px-3 z-10 pointer-events-none tabular-nums font-mono transition-colors",
+          "relative flex-none h-full flex items-center justify-end pr-2.75 z-10 pointer-events-none tabular-nums font-mono transition-colors",
           isActive ? "text-foreground" : "text-muted-foreground",
         )}
         style={{ width: valueWidth }}

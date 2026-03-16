@@ -35,7 +35,9 @@ export function SidebarItem({
       )}
     >
       <span className="flex items-center gap-2 overflow-hidden flex-1 min-w-0">
-        <div className="flex items-center justify-center shrink-0">{prefix}</div>
+        <div className="flex items-center justify-center shrink-0 [&>svg]:size-[18px]">
+          {prefix}
+        </div>
         <span className="truncate font-case">{label}</span>
       </span>
       {children}

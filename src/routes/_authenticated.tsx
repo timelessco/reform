@@ -383,7 +383,9 @@ function AppSidebar() {
     }
   }, [activeOrg, orgsData, session, setActiveOrgMutation]);
 
-  useHotkey(HOTKEYS.TOGGLE_COMMAND_PALETTE, () => togglePalette());
+  useHotkey(HOTKEYS.TOGGLE_COMMAND_PALETTE, () => togglePalette(), {
+    ignoreInputs: true,
+  });
 
   return (
     <>
@@ -427,14 +429,7 @@ function AppSidebar() {
                   <SidebarItem
                     onClick={toggleInbox}
                     isActive={isInboxOpen}
-                    prefix={
-                      <div className="relative flex items-center justify-center size-[18px] shrink-0">
-                        <BellIcon className="size-[18px] text-muted-foreground" />
-                        {pendingCount > 0 && (
-                          <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-primary ring-2 ring-background" />
-                        )}
-                      </div>
-                    }
+                    prefix={<BellIcon className="size-[18px] text-muted-foreground" />}
                     label="Notifications"
                   >
                     {pendingCount > 0 && (
