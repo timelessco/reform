@@ -37,7 +37,7 @@ import {
   RotateCcwIcon,
   TriangleAlertIcon,
 } from "@/components/ui/icons";
-import { useId, useRef, useState } from "react";
+import { useCallback, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { MailIcon, TeleVisionIcon } from "../ui/icons";
 
@@ -245,10 +245,15 @@ const useAvatarUpload = (): AvatarUploadApi => {
 
 // --- Sub-components ---
 
-function ThemeSelect() {
+// --- Sub-components ---
+const ThemeSelect = () => {
   const { theme, setTheme } = useTheme();
+  const handleThemeChange = useCallback(
+    (val: string) => setTheme(val as "dark" | "light" | "system"),
+    [setTheme],
+  );
   return (
-    <Select value={theme} onValueChange={(val) => setTheme(val as "dark" | "light" | "system")}>
+    <Select value={theme} onValueChange={handleThemeChange}>
       <SelectTrigger className="shrink-0 bg-gray-50 border-0 rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] outline-1 -outline-offset-1 outline-transparent pl-3 pr-2.5 text-sm text-foreground capitalize">
         <SelectValue />
       </SelectTrigger>
@@ -259,11 +264,12 @@ function ThemeSelect() {
       </SelectContent>
     </Select>
   );
-}
+};
 
 // --- Main Component ---
 
-export function AccountSettingsContent() {
+// --- Main Component ---
+export const AccountSettingsContent = () => {
   const queryClient = useQueryClient();
   const { data: session, isPending: isSessionPending } = useSession();
   const user = session?.user;
@@ -348,21 +354,44 @@ export function AccountSettingsContent() {
     }),
   );
 
-  const handleDisconnectAccount = (providerId: string) => {
-    unlinkAccountMutation.mutate({ providerId });
-  };
+  const handleDisconnectAccount = useCallback(
+    (providerId: string) => {
+      unlinkAccountMutation.mutate({ providerId });
+    },
+    [unlinkAccountMutation],
+  );
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = useCallback(() => {
     if (!window.confirm("Are you absolutely sure? This action cannot be undone.")) return;
     deleteAccountMutation.mutate({});
-  };
+  }, [deleteAccountMutation]);
 
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = useCallback(() => {
     socialSignInMutation.mutate({
       provider: "google",
       callbackURL: window.location.origin,
     });
-  };
+  }, [socialSignInMutation]);
+
+  const handleOpenFileDialog = useCallback(
+    () => avatarUpload.fileInputRef.current?.click(),
+    [avatarUpload.fileInputRef],
+  );
+
+  const handleRemoveAvatar = useCallback(
+    () => updateProfileMutation.mutate({ image: "" }),
+    [updateProfileMutation],
+  );
+
+  const handleDisconnectGoogle = useCallback(
+    () => handleDisconnectAccount("google"),
+    [handleDisconnectAccount],
+  );
+
+  const handlePasswordChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => twoFa.setPassword(e.target.value),
+    [twoFa],
+  );
 
   if (isSessionPending) {
     return (
@@ -380,7 +409,7 @@ export function AccountSettingsContent() {
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
-            onClick={() => avatarUpload.fileInputRef.current?.click()}
+            onClick={handleOpenFileDialog}
             aria-label="Change avatar"
             className="relative group cursor-pointer p-0 h-auto rounded-full"
           >
@@ -408,7 +437,7 @@ export function AccountSettingsContent() {
               size="sm"
               prefix={<ImageIcon />}
               className="h-[30px] rounded-lg bg-popover px-2 text-sm text-popover-foreground filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-gray-200"
-              onClick={() => avatarUpload.fileInputRef.current?.click()}
+              onClick={handleOpenFileDialog}
             >
               Upload image
             </Button>
@@ -417,7 +446,7 @@ export function AccountSettingsContent() {
                 variant="secondary"
                 size="sm"
                 className="h-[30px] px-2.5 rounded-lg"
-                onClick={() => updateProfileMutation.mutate({ image: "" })}
+                onClick={handleRemoveAvatar}
               >
                 Remove
               </Button>
@@ -644,7 +673,7 @@ export function AccountSettingsContent() {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={() => handleDisconnectAccount("google")}
+                onClick={handleDisconnectGoogle}
                 className="h-[30px] rounded-lg bg-gray-50 px-3 text-sm text-gray-800 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] hover:bg-gray-200"
               >
                 Disconnect
@@ -709,7 +738,7 @@ export function AccountSettingsContent() {
                       type="password"
                       placeholder="Your password"
                       value={twoFa.password}
-                      onChange={(e) => twoFa.setPassword(e.target.value)}
+                      onChange={handlePasswordChange}
                       aria-label="Current password"
                       autoComplete="current-password"
                     />
@@ -844,4 +873,4 @@ export function AccountSettingsContent() {
       </div>
     </profileForm.AppForm>
   );
-}
+};

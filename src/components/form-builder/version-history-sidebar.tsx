@@ -1,6 +1,6 @@
 import { formatDistanceToNow } from "date-fns";
 import { Loader2Icon, MoreHorizontalIcon, XIcon } from "@/components/ui/icons";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -27,11 +27,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const stopPropagation = (e: React.MouseEvent) => e.stopPropagation();
+
 interface VersionHistorySidebarProps {
   formId: string;
 }
 
-export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
+export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) => {
   const { data: versions } = useFormVersions(formId);
   const { closeSidebar } = useEditorSidebar();
   const { selectedVersionId, selectVersion, exitVersionView } = useVersionHistorySidebar();
@@ -40,23 +42,37 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
   const [isRestoring, setIsRestoring] = useState(false);
   const [restoreConfirmVersionId, setRestoreConfirmVersionId] = useState<string | null>(null);
 
+  const handleRestore = useCallback(
+    async (versionId: string) => {
+      setIsRestoring(true);
+      try {
+        const tx = restoreVersion(formId, versionId);
+        await tx.isPersisted.promise;
+        toast.success("Version restored. Publish again to make it live.");
+        exitVersionView();
+      } catch {
+        toast.error("Failed to restore version");
+      } finally {
+        setIsRestoring(false);
+      }
+    },
+    [formId, exitVersionView],
+  );
+
+  const handleRestoreDialogChange = useCallback((open: boolean) => {
+    if (!open) setRestoreConfirmVersionId(null);
+  }, []);
+
+  const handleRestoreConfirm = useCallback(() => {
+    if (restoreConfirmVersionId) {
+      handleRestore(restoreConfirmVersionId);
+    }
+    setRestoreConfirmVersionId(null);
+  }, [restoreConfirmVersionId, handleRestore]);
+
   const versionList = versions ?? [];
 
   const effectiveVersionId = selectedVersionId ?? versionList[0]?.id ?? null;
-
-  const handleRestore = async (versionId: string) => {
-    setIsRestoring(true);
-    try {
-      const tx = restoreVersion(formId, versionId);
-      await tx.isPersisted.promise;
-      toast.success("Version restored. Publish again to make it live.");
-      exitVersionView();
-    } catch {
-      toast.error("Failed to restore version");
-    } finally {
-      setIsRestoring(false);
-    }
-  };
 
   const getPublisherInfo = (publishedByUserId: string) => {
     if (currentUser && publishedByUserId === currentUser.id) {
@@ -171,7 +187,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
                             variant="ghost"
                             size="icon"
                             className="size-[26px] rounded-lg"
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={stopPropagation}
                             aria-label="Version actions"
                           />
                         }
@@ -216,12 +232,7 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
         </div>
       </SidebarContent>
 
-      <AlertDialog
-        open={!!restoreConfirmVersionId}
-        onOpenChange={(open) => {
-          if (!open) setRestoreConfirmVersionId(null);
-        }}
-      >
+      <AlertDialog open={!!restoreConfirmVersionId} onOpenChange={handleRestoreDialogChange}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Restore this version?</AlertDialogTitle>
@@ -231,19 +242,10 @@ export function VersionHistorySidebar({ formId }: VersionHistorySidebarProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (restoreConfirmVersionId) {
-                  handleRestore(restoreConfirmVersionId);
-                }
-                setRestoreConfirmVersionId(null);
-              }}
-            >
-              Restore
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleRestoreConfirm}>Restore</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </Sidebar>
   );
-}
+};

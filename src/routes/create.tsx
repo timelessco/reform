@@ -30,26 +30,24 @@ import { localFormCollection } from "@/db-collections/form.collections";
 import { useLocalForm } from "@/hooks/use-live-hooks";
 import { getLocalFormId, getLocalWorkspaceId } from "@/lib/local-draft";
 
-function RouteComponent() {
-  return (
-    <ClientOnly
-      fallback={
-        <div className="flex items-center justify-center h-screen">
-          <Loader />
-        </div>
-      }
-    >
-      <div className="flex flex-col h-screen overflow-hidden">
-        <AppHeader />
-        <div className="flex-1 overflow-auto relative bg-background">
-          <LocalEditorApp />
-        </div>
+const RouteComponent = () => (
+  <ClientOnly
+    fallback={
+      <div className="flex items-center justify-center h-screen">
+        <Loader />
       </div>
-    </ClientOnly>
-  );
-}
+    }
+  >
+    <div className="flex flex-col h-screen overflow-hidden">
+      <AppHeader />
+      <div className="flex-1 overflow-auto relative bg-background">
+        <LocalEditorApp />
+      </div>
+    </div>
+  </ClientOnly>
+);
 
-function LocalEditorApp() {
+const LocalEditorApp = () => {
   const localFormId = getLocalFormId();
   const localWorkspaceId = getLocalWorkspaceId();
   const { data: savedDocs } = useLocalForm(localFormId);
@@ -162,4 +160,4 @@ function LocalEditorApp() {
       </Plate>
     </div>
   );
-}
+};

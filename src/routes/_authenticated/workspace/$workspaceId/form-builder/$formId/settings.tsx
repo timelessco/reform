@@ -19,13 +19,39 @@ import { APP_NAME } from "@/lib/app-config";
 import { defaultFormSettings } from "@/types/form-settings";
 import { createFileRoute } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "@/components/ui/icons";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { SidebarSection } from "@/components/ui/sidebar-section";
 import {
   ConfigCard,
   ConfigRow,
   selectTriggerCls,
 } from "@/components/form-builder/embed-config-panel";
+
+// Settings defaults (module-scope, computed once)
+const { customization: _c, ...settingsDefaults } = defaultFormSettings;
+const settingsKeys = Object.keys(settingsDefaults);
+
+// Module-level selectors for form.Subscribe (no props/state dependency)
+const selectRedirectOnCompletion = (state: { values: { redirectOnCompletion: unknown } }) =>
+  state.values.redirectOnCompletion;
+const selectDataRetention = (state: { values: { dataRetention: unknown } }) =>
+  state.values.dataRetention;
+const selectSelfEmailNotifications = (state: { values: { selfEmailNotifications: unknown } }) =>
+  state.values.selfEmailNotifications;
+const selectRespondentEmailNotifications = (state: {
+  values: { respondentEmailNotifications: unknown };
+}) => state.values.respondentEmailNotifications;
+const selectPasswordProtect = (state: { values: { passwordProtect: unknown } }) =>
+  state.values.passwordProtect;
+const selectCloseForm = (state: { values: { closeForm: unknown } }) => state.values.closeForm;
+const selectCloseOnDate = (state: { values: { closeOnDate: unknown } }) => state.values.closeOnDate;
+const selectLimitSubmissions = (state: { values: { limitSubmissions: unknown } }) =>
+  state.values.limitSubmissions;
+
+const SettingsPage = () => {
+  const { formId } = Route.useParams();
+  return <SettingsContent formId={formId} />;
+};
 
 export const Route = createFileRoute(
   "/_authenticated/workspace/$workspaceId/form-builder/$formId/settings",
@@ -36,16 +62,36 @@ export const Route = createFileRoute(
   notFoundComponent: NotFound,
 });
 
-// Settings defaults (module-scope, computed once)
-const { customization: _c, ...settingsDefaults } = defaultFormSettings;
-const settingsKeys = Object.keys(settingsDefaults);
+const PasswordInput = ({ value, onChange }: { value: string; onChange: (val: string) => void }) => {
+  const [show, setShow] = useState(false);
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value),
+    [onChange],
+  );
+  const handleToggleShow = useCallback(() => setShow((prev) => !prev), []);
+  return (
+    <div className="relative w-[140px]">
+      <Input
+        type={show ? "text" : "password"}
+        placeholder="Enter password"
+        value={value}
+        onChange={handleChange}
+        className="!rounded-none !border-0 !bg-secondary !h-[34px] text-sm pr-8"
+        aria-label="Form password"
+      />
+      <button
+        type="button"
+        onClick={handleToggleShow}
+        className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+        aria-label="Toggle password visibility"
+      >
+        {show ? <EyeOffIcon className="h-3.5 w-3.5" /> : <EyeIcon className="h-3.5 w-3.5" />}
+      </button>
+    </div>
+  );
+};
 
-function SettingsPage() {
-  const { formId } = Route.useParams();
-  return <SettingsContent formId={formId} />;
-}
-
-export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?: boolean }) {
+export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?: boolean }) => {
   const cloudForm = useForm(isLocal ? undefined : formId);
   const localFormResult = useLocalForm(isLocal ? formId : undefined);
   const formResult = isLocal ? localFormResult : cloudForm;
@@ -122,7 +168,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 </form.AppField>
               </ConfigRow>
 
-              <form.Subscribe selector={(state) => state.values.redirectOnCompletion}>
+              <form.Subscribe selector={selectRedirectOnCompletion}>
                 {(redirectOnCompletion) =>
                   redirectOnCompletion ? (
                     <>
@@ -228,7 +274,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 </div>
               </ConfigRow>
 
-              <form.Subscribe selector={(state) => state.values.dataRetention}>
+              <form.Subscribe selector={selectDataRetention}>
                 {(dataRetention) =>
                   dataRetention ? (
                     <ConfigRow label="Retention days">
@@ -274,7 +320,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 </form.AppField>
               </ConfigRow>
 
-              <form.Subscribe selector={(state) => state.values.selfEmailNotifications}>
+              <form.Subscribe selector={selectSelfEmailNotifications}>
                 {(selfEmailNotifications) =>
                   selfEmailNotifications ? (
                     <ConfigRow label="Email">
@@ -320,7 +366,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 </div>
               </ConfigRow>
 
-              <form.Subscribe selector={(state) => state.values.respondentEmailNotifications}>
+              <form.Subscribe selector={selectRespondentEmailNotifications}>
                 {(respondentEmailNotifications) =>
                   respondentEmailNotifications ? (
                     <>
@@ -379,7 +425,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 </form.AppField>
               </ConfigRow>
 
-              <form.Subscribe selector={(state) => state.values.passwordProtect}>
+              <form.Subscribe selector={selectPasswordProtect}>
                 {(passwordProtect) =>
                   passwordProtect ? (
                     <ConfigRow label="Password">
@@ -413,7 +459,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 </form.AppField>
               </ConfigRow>
 
-              <form.Subscribe selector={(state) => state.values.closeForm}>
+              <form.Subscribe selector={selectCloseForm}>
                 {(closeForm) =>
                   closeForm ? (
                     <div className="bg-secondary px-[10px] py-[7px]">
@@ -453,7 +499,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 </form.AppField>
               </ConfigRow>
 
-              <form.Subscribe selector={(state) => state.values.closeOnDate}>
+              <form.Subscribe selector={selectCloseOnDate}>
                 {(closeOnDate) =>
                   closeOnDate ? (
                     <ConfigRow label="Close date">
@@ -490,7 +536,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 </form.AppField>
               </ConfigRow>
 
-              <form.Subscribe selector={(state) => state.values.limitSubmissions}>
+              <form.Subscribe selector={selectLimitSubmissions}>
                 {(limitSubmissions) =>
                   limitSubmissions ? (
                     <ConfigRow label="Max submissions">
@@ -575,28 +621,4 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
       </form.AppForm>
     </div>
   );
-}
-
-function PasswordInput({ value, onChange }: { value: string; onChange: (val: string) => void }) {
-  const [show, setShow] = useState(false);
-  return (
-    <div className="relative w-[140px]">
-      <Input
-        type={show ? "text" : "password"}
-        placeholder="Enter password"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="!rounded-none !border-0 !bg-secondary !h-[34px] text-sm pr-8"
-        aria-label="Form password"
-      />
-      <button
-        type="button"
-        onClick={() => setShow(!show)}
-        className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-        aria-label="Toggle password visibility"
-      >
-        {show ? <EyeOffIcon className="h-3.5 w-3.5" /> : <EyeIcon className="h-3.5 w-3.5" />}
-      </button>
-    </div>
-  );
-}
+};

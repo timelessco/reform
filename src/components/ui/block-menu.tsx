@@ -3,7 +3,15 @@ import {
   BlockMenuPlugin,
   BlockSelectionPlugin,
 } from "@platejs/selection/react";
-import { ChevronRightIcon, GripVerticalIcon } from "@/components/ui/icons";
+import {
+  ChevronRightIcon,
+  CopyIcon,
+  EyeOffIcon,
+  GripVerticalIcon,
+  Pencil2Icon,
+  PlusIcon,
+  TrashIcon,
+} from "@/components/ui/icons";
 import { KEYS } from "platejs";
 import { useEditorPlugin, useEditorSelector, useHotkeys, usePluginOption } from "platejs/react";
 import * as React from "react";
@@ -13,23 +21,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
-import { CopyIcon, EyeOffIcon, Pencil2Icon, PlusIcon, TrashIcon } from "@/components/ui/icons";
 import { useEditorTheme } from "@/contexts/editor-theme-context";
 import { cn } from "@/lib/utils";
 
 type BlockFieldType = "formInput" | "formButton" | "static" | "unknown";
 
 // Get field type category for the menu
-function getFieldType(nodeType: string | undefined): BlockFieldType {
+// Get field type category for the menu
+const getFieldType = (nodeType: string | undefined): BlockFieldType => {
   if (!nodeType) return "unknown";
   if (["formLabel", "formInput", "formTextarea"].includes(nodeType)) return "formInput";
   if (nodeType === "formButton") return "formButton";
   if (["h1", "h2", "h3", "p", "blockquote", "hr"].includes(nodeType)) return "static";
   return "unknown";
-}
+};
 
 // Get label text from node
-function extractLabelText(node: { children?: Array<{ text?: string }> }): string {
+// Get label text from node
+const extractLabelText = (node: { children?: Array<{ text?: string }> }): string => {
   if (!node.children) return "Untitled";
   return (
     node.children
@@ -37,9 +46,9 @@ function extractLabelText(node: { children?: Array<{ text?: string }> }): string
       .join("")
       .trim() || "Untitled"
   );
-}
+};
 
-export function BlockMenu({ children }: { children: React.ReactNode }) {
+export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   const { api, editor } = useEditorPlugin(BlockMenuPlugin);
   const openId = usePluginOption(BlockMenuPlugin, "openId");
   const { themeVars, hasCustomization } = useEditorTheme();
@@ -157,18 +166,17 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
   }, [isOpen, labelNode, firstNode, nodeType]);
 
   // Handlers for form input options
-  const handleToggleRequired = () => {
+  const handleToggleRequired = React.useCallback(() => {
     if (!labelNode || !firstPath) return;
-    // Find the label path
     const labelPath = nodeType === "formLabel" ? firstPath : [...firstPath];
     if (["formInput", "formTextarea"].includes(nodeType ?? "")) {
       labelPath[labelPath.length - 1] -= 1;
     }
     const currentRequired = Boolean(labelNode.required);
     editor.tf.setNodes({ required: !currentRequired }, { at: labelPath });
-  };
+  }, [labelNode, firstPath, nodeType, editor.tf]);
 
-  const handleToggleMinLength = () => {
+  const handleToggleMinLength = React.useCallback(() => {
     const inputPath = getInputPath();
     if (!inputPath) return;
     const hasMinLength = inputNode?.minLength !== undefined;
@@ -177,15 +185,18 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
     } else {
       editor.tf.setNodes({ minLength: 1 }, { at: inputPath });
     }
-  };
+  }, [getInputPath, inputNode?.minLength, editor.tf]);
 
-  const handleUpdateMinLength = (value: number) => {
-    const inputPath = getInputPath();
-    if (!inputPath) return;
-    editor.tf.setNodes({ minLength: value }, { at: inputPath });
-  };
+  const handleUpdateMinLength = React.useCallback(
+    (value: number) => {
+      const inputPath = getInputPath();
+      if (!inputPath) return;
+      editor.tf.setNodes({ minLength: value }, { at: inputPath });
+    },
+    [getInputPath, editor.tf],
+  );
 
-  const handleToggleMaxLength = () => {
+  const handleToggleMaxLength = React.useCallback(() => {
     const inputPath = getInputPath();
     if (!inputPath) return;
     const hasMaxLength = inputNode?.maxLength !== undefined;
@@ -194,15 +205,18 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
     } else {
       editor.tf.setNodes({ maxLength: 100 }, { at: inputPath });
     }
-  };
+  }, [getInputPath, inputNode?.maxLength, editor.tf]);
 
-  const handleUpdateMaxLength = (value: number) => {
-    const inputPath = getInputPath();
-    if (!inputPath) return;
-    editor.tf.setNodes({ maxLength: value }, { at: inputPath });
-  };
+  const handleUpdateMaxLength = React.useCallback(
+    (value: number) => {
+      const inputPath = getInputPath();
+      if (!inputPath) return;
+      editor.tf.setNodes({ maxLength: value }, { at: inputPath });
+    },
+    [getInputPath, editor.tf],
+  );
 
-  const handleToggleDefaultValue = () => {
+  const handleToggleDefaultValue = React.useCallback(() => {
     const inputPath = getInputPath();
     if (!inputPath) return;
     const hasDefault = inputNode?.defaultValue !== undefined;
@@ -211,43 +225,46 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
     } else {
       editor.tf.setNodes({ defaultValue: "" }, { at: inputPath });
     }
-  };
+  }, [getInputPath, inputNode?.defaultValue, editor.tf]);
 
-  const handleUpdateDefaultValue = (value: string) => {
-    const inputPath = getInputPath();
-    if (!inputPath) return;
-    editor.tf.setNodes({ defaultValue: value }, { at: inputPath });
-  };
+  const handleUpdateDefaultValue = React.useCallback(
+    (value: string) => {
+      const inputPath = getInputPath();
+      if (!inputPath) return;
+      editor.tf.setNodes({ defaultValue: value }, { at: inputPath });
+    },
+    [getInputPath, editor.tf],
+  );
 
   // Button-specific handlers
-  const handleUpdateButtonText = (value: string) => {
-    if (!firstPath || nodeType !== "formButton") return;
-    setButtonText(value);
+  const handleUpdateButtonText = React.useCallback(
+    (value: string) => {
+      if (!firstPath || nodeType !== "formButton") return;
+      setButtonText(value);
 
-    // Update children to sync with the renderer in form-button-node.tsx
-    editor.tf.withoutNormalizing(() => {
-      editor.tf.insertNodes({ text: value }, { at: [...firstPath, 0], select: false });
-      editor.tf.removeNodes({ at: [...firstPath, 1] });
-    });
+      editor.tf.withoutNormalizing(() => {
+        editor.tf.insertNodes({ text: value }, { at: [...firstPath, 0], select: false });
+        editor.tf.removeNodes({ at: [...firstPath, 1] });
+      });
 
-    // Also keep buttonText property for backward compatibility
-    editor.tf.setNodes({ buttonText: value }, { at: firstPath });
-  };
+      editor.tf.setNodes({ buttonText: value }, { at: firstPath });
+    },
+    [firstPath, nodeType, editor.tf],
+  );
 
-  const handleUpdateFieldName = () => {
+  const handleUpdateFieldName = React.useCallback(() => {
     if (!labelNode || !firstPath || !fieldName.trim()) return;
     const labelPath =
       nodeType === "formLabel" || nodeType === "formButton" ? firstPath : [...firstPath];
     if (["formInput", "formTextarea"].includes(nodeType ?? "")) {
       labelPath[labelPath.length - 1] -= 1;
     }
-    // Update the text content of the label
     editor.tf.withoutNormalizing(() => {
       editor.tf.insertNodes({ text: fieldName.trim() }, { at: [...labelPath, 0], select: false });
       editor.tf.removeNodes({ at: [...labelPath, 1] });
     });
     setIsEditingName(false);
-  };
+  }, [labelNode, firstPath, fieldName, nodeType, editor.tf]);
 
   // Common actions
   const handleDelete = React.useCallback(() => {
@@ -261,20 +278,23 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
     api.blockMenu.hide();
   }, [editor, api.blockMenu]);
 
-  const handleTurnInto = (type: string) => {
-    editor
-      .getApi(BlockSelectionPlugin)
-      .blockSelection.getNodes()
-      .forEach(([node, path]) => {
-        if (node[KEYS.listType]) {
-          editor.tf.unsetNodes([KEYS.listType, "indent"], {
-            at: path,
-          });
-        }
-        editor.tf.toggleBlock(type, { at: path });
-      });
-    api.blockMenu.hide();
-  };
+  const handleTurnInto = React.useCallback(
+    (type: string) => {
+      editor
+        .getApi(BlockSelectionPlugin)
+        .blockSelection.getNodes()
+        .forEach(([node, path]) => {
+          if (node[KEYS.listType]) {
+            editor.tf.unsetNodes([KEYS.listType, "indent"], {
+              at: path,
+            });
+          }
+          editor.tf.toggleBlock(type, { at: path });
+        });
+      api.blockMenu.hide();
+    },
+    [editor, api.blockMenu],
+  );
 
   React.useEffect(() => {
     const node = blockMenuTriggerRef.current;
@@ -336,6 +356,72 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
   const currentMaxLength = inputNode?.maxLength;
   const currentDefaultValue = inputNode?.defaultValue;
 
+  const handlePopoverOpenChange = React.useCallback(
+    (open: boolean) => {
+      if (!open) api.blockMenu.hide();
+    },
+    [api.blockMenu],
+  );
+
+  const handleBackClick = React.useCallback(() => setShowTurnInto(false), []);
+
+  const handleTurnIntoParagraph = React.useCallback(() => handleTurnInto(KEYS.p), [handleTurnInto]);
+  const handleTurnIntoH1 = React.useCallback(() => handleTurnInto(KEYS.h1), [handleTurnInto]);
+  const handleTurnIntoH2 = React.useCallback(() => handleTurnInto(KEYS.h2), [handleTurnInto]);
+  const handleTurnIntoH3 = React.useCallback(() => handleTurnInto(KEYS.h3), [handleTurnInto]);
+  const handleTurnIntoBlockquote = React.useCallback(
+    () => handleTurnInto(KEYS.blockquote),
+    [handleTurnInto],
+  );
+
+  const handleFieldNameChange = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => setFieldName(e.target.value),
+    [],
+  );
+
+  const handleFieldNameKeyDown = React.useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") handleUpdateFieldName();
+      if (e.key === "Escape") setIsEditingName(false);
+    },
+    [handleUpdateFieldName],
+  );
+
+  const handleToggleEditName = React.useCallback(
+    () => setIsEditingName(!isEditingName),
+    [isEditingName],
+  );
+
+  const handleStopPropagation = React.useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+  }, []);
+
+  const handleDefaultValueChange = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => handleUpdateDefaultValue(e.target.value),
+    [handleUpdateDefaultValue],
+  );
+
+  const handleMinLengthChange = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => handleUpdateMinLength(Number(e.target.value)),
+    [handleUpdateMinLength],
+  );
+
+  const handleMaxLengthChange = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => handleUpdateMaxLength(Number(e.target.value)),
+    [handleUpdateMaxLength],
+  );
+
+  const handleButtonTextChange = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => handleUpdateButtonText(e.target.value),
+    [handleUpdateButtonText],
+  );
+
+  const handleHideMenu = React.useCallback(() => {
+    api.blockMenu.hide();
+  }, [api.blockMenu]);
+
+  const handleShowTurnInto = React.useCallback(() => setShowTurnInto(true), []);
+
   // Virtual anchor for positioning the popover at the click coordinates
   const virtualAnchor = React.useMemo(() => {
     if (!isOpen) return undefined;
@@ -358,7 +444,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
     <>
       <div ref={blockMenuTriggerRef}>{children}</div>
 
-      <Popover open={isOpen} onOpenChange={(open) => !open && api.blockMenu.hide()}>
+      <Popover open={isOpen} onOpenChange={handlePopoverOpenChange}>
         <PopoverContent
           anchor={virtualAnchor}
           className={cn("w-[288px] p-1", hasCustomization && "bf-themed")}
@@ -372,17 +458,17 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
             <div>
               <Button
                 variant="ghost"
-                onClick={() => setShowTurnInto(false)}
+                onClick={handleBackClick}
                 className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] text-foreground/80 hover:bg-accent hover:text-accent-foreground mb-1"
               >
                 ← Back
               </Button>
               <div className="my-1 h-px bg-border" />
-              <MenuItem onClick={() => handleTurnInto(KEYS.p)}>Paragraph</MenuItem>
-              <MenuItem onClick={() => handleTurnInto(KEYS.h1)}>Heading 1</MenuItem>
-              <MenuItem onClick={() => handleTurnInto(KEYS.h2)}>Heading 2</MenuItem>
-              <MenuItem onClick={() => handleTurnInto(KEYS.h3)}>Heading 3</MenuItem>
-              <MenuItem onClick={() => handleTurnInto(KEYS.blockquote)}>Blockquote</MenuItem>
+              <MenuItem onClick={handleTurnIntoParagraph}>Paragraph</MenuItem>
+              <MenuItem onClick={handleTurnIntoH1}>Heading 1</MenuItem>
+              <MenuItem onClick={handleTurnIntoH2}>Heading 2</MenuItem>
+              <MenuItem onClick={handleTurnIntoH3}>Heading 3</MenuItem>
+              <MenuItem onClick={handleTurnIntoBlockquote}>Blockquote</MenuItem>
             </div>
           ) : (
             /* Main Menu - sidebar popover style */
@@ -397,12 +483,9 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                 {isEditingName ? (
                   <Input
                     value={fieldName}
-                    onChange={(e) => setFieldName(e.target.value)}
+                    onChange={handleFieldNameChange}
                     onBlur={handleUpdateFieldName}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleUpdateFieldName();
-                      if (e.key === "Escape") setIsEditingName(false);
-                    }}
+                    onKeyDown={handleFieldNameKeyDown}
                     className="h-7 text-[13px] flex-1 rounded-lg"
                     aria-label="Field name"
                     autoFocus
@@ -414,7 +497,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6 shrink-0 rounded-lg hover:bg-black/5"
-                  onClick={() => setIsEditingName(!isEditingName)}
+                  onClick={handleToggleEditName}
                   aria-label="Edit field"
                 >
                   <Pencil2Icon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -434,7 +517,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                       size="sm"
                       checked={isRequired}
                       onCheckedChange={handleToggleRequired}
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={handleStopPropagation}
                     />
                   </MenuItem>
 
@@ -447,14 +530,14 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                       size="sm"
                       checked={hasDefaultValue}
                       onCheckedChange={handleToggleDefaultValue}
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={handleStopPropagation}
                     />
                   </MenuItem>
                   {hasDefaultValue && (
                     <div className="px-2 pb-2">
                       <Input
                         value={currentDefaultValue || ""}
-                        onChange={(e) => handleUpdateDefaultValue(e.target.value)}
+                        onChange={handleDefaultValueChange}
                         placeholder="Enter default value"
                         className="h-7 text-[13px] rounded-lg"
                         aria-label="Default value"
@@ -471,7 +554,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                       size="sm"
                       checked={hasMinLength}
                       onCheckedChange={handleToggleMinLength}
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={handleStopPropagation}
                     />
                   </MenuItem>
                   {hasMinLength && (
@@ -480,7 +563,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                         type="number"
                         min={1}
                         value={currentMinLength || 1}
-                        onChange={(e) => handleUpdateMinLength(Number(e.target.value))}
+                        onChange={handleMinLengthChange}
                         placeholder="Min"
                         className="h-7 text-[13px] rounded-lg"
                         aria-label="Minimum length"
@@ -497,7 +580,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                       size="sm"
                       checked={hasMaxLength}
                       onCheckedChange={handleToggleMaxLength}
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={handleStopPropagation}
                     />
                   </MenuItem>
                   {hasMaxLength && (
@@ -506,7 +589,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                         type="number"
                         min={1}
                         value={currentMaxLength || 100}
-                        onChange={(e) => handleUpdateMaxLength(Number(e.target.value))}
+                        onChange={handleMaxLengthChange}
                         placeholder="Max"
                         className="h-7 text-[13px] rounded-lg"
                         aria-label="Maximum length"
@@ -525,7 +608,7 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                     <Label className="text-[12px] text-muted-foreground">Button Name</Label>
                     <Input
                       value={buttonText}
-                      onChange={(e) => handleUpdateButtonText(e.target.value)}
+                      onChange={handleButtonTextChange}
                       placeholder="Enter button name"
                       className="h-8 text-[13px] rounded-lg"
                     />
@@ -546,18 +629,18 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
                   <span className="flex-1 text-left">Duplicate</span>
                   <span className="text-xs text-muted-foreground">⌘D</span>
                 </MenuItem>
-                <MenuItem onClick={() => api.blockMenu.hide()}>
+                <MenuItem onClick={handleHideMenu}>
                   <EyeOffIcon className="h-3.5 w-3.5 shrink-0" />
                   <span className="flex-1 text-left">Hide</span>
                   <span className="text-xs text-muted-foreground">⌘⌥H</span>
                 </MenuItem>
-                <MenuItem onClick={() => api.blockMenu.hide()}>
+                <MenuItem onClick={handleHideMenu}>
                   <PlusIcon className="h-3.5 w-3.5 shrink-0" />
                   <span className="flex-1 text-left">Add conditional logic</span>
                   <span className="text-xs text-muted-foreground">⌘⌥L</span>
                 </MenuItem>
                 <div className="my-1 h-px bg-border mx-0" />
-                <MenuItem onClick={() => setShowTurnInto(true)}>
+                <MenuItem onClick={handleShowTurnInto}>
                   <span className="text-[13px]">↺</span>
                   <span className="flex-1 text-left">Turn into</span>
                   <ChevronRightIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
@@ -569,10 +652,11 @@ export function BlockMenu({ children }: { children: React.ReactNode }) {
       </Popover>
     </>
   );
-}
+};
 
 // Reusable Menu Item component - matches sidebar popover style
-function MenuItem({
+// Reusable Menu Item component - matches sidebar popover style
+const MenuItem = ({
   children,
   onClick,
   className,
@@ -582,20 +666,18 @@ function MenuItem({
   onClick: () => void;
   className?: string;
   destructive?: boolean;
-}) {
-  return (
-    <Button
-      variant="ghost"
-      onClick={onClick}
-      className={cn(
-        "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] transition-colors [&_svg]:shrink-0",
-        destructive
-          ? "text-red-500/70 hover:bg-red-500/5 hover:text-red-500 focus:bg-red-500/5 focus:text-red-500"
-          : "text-foreground/80 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-        className,
-      )}
-    >
-      {children}
-    </Button>
-  );
-}
+}) => (
+  <Button
+    variant="ghost"
+    onClick={onClick}
+    className={cn(
+      "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] transition-colors [&_svg]:shrink-0",
+      destructive
+        ? "text-red-500/70 hover:bg-red-500/5 hover:text-red-500 focus:bg-red-500/5 focus:text-red-500"
+        : "text-foreground/80 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+      className,
+    )}
+  >
+    {children}
+  </Button>
+);

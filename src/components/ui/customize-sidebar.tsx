@@ -6,48 +6,19 @@ import { useTheme } from "@/components/ThemeProvider";
 import { Textarea } from "@/components/ui/textarea";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
-import {
-  formCollection,
-  localFormCollection,
-} from "@/db-collections/form.collections";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-} from "@/components/ui/sidebar";
+import { formCollection, localFormCollection } from "@/db-collections/form.collections";
+import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
 import { SidebarSection } from "@/components/ui/sidebar-section";
 import {
   ConfigCard,
   ConfigRow,
   selectTriggerCls,
 } from "@/components/form-builder/embed-config-panel";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
-import {
-  StyleColorPicker,
-  StyleNumberInput,
-} from "@/components/ui/style-controls";
-import {
-  Tabs,
-  TabsIndicator,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  STYLES,
-  BASE_COLORS,
-  DARK_BASE_COLORS,
-  THEME_COLORS,
-} from "@/lib/theme-presets";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import { StyleColorPicker, StyleNumberInput } from "@/components/ui/style-controls";
+import { Tabs, TabsIndicator, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { STYLES, BASE_COLORS, DARK_BASE_COLORS, THEME_COLORS } from "@/lib/theme-presets";
 import { FONT_REGISTRY } from "@/lib/font-registry";
 import { loadGoogleFont } from "@/lib/load-google-font";
 import { TOKEN_NAMES } from "@/lib/generate-theme-css";
@@ -98,7 +69,7 @@ const RADIUS_OPTIONS: { label: string; value: string }[] = [
 
 const CONFIG_INPUT_CLS = "!rounded-none !border-0 bg-secondary !h-[34px]";
 
-function ColorSwatch({ color }: { color?: string }) {
+const ColorSwatch = ({ color }: { color?: string }) => {
   if (!color) return null;
   return (
     <div
@@ -106,22 +77,20 @@ function ColorSwatch({ color }: { color?: string }) {
       style={{ backgroundColor: color }}
     />
   );
-}
+};
 
-function ProBadge() {
-  return (
-    <div className="bg-teal-100 dark:bg-teal-700/20 text-teal-700 dark:text-teal-400 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
-      Pro
-    </div>
-  );
-}
+const ProBadge = () => (
+  <div className="bg-teal-100 dark:bg-teal-700/20 text-teal-700 dark:text-teal-400 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
+    Pro
+  </div>
+);
 
 interface CustomizeSidebarProps {
   formId: string;
   isLocal?: boolean;
 }
 
-export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
+export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => {
   const { closeSidebar } = useEditorSidebar();
   const { theme, setTheme } = useTheme();
   const cloudForm = useForm(isLocal ? undefined : formId);
@@ -130,10 +99,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
   const formDoc = formResult.data?.[0] ?? null;
   const collection = isLocal ? localFormCollection : formCollection;
 
-  const customization = (formDoc?.customization ?? {}) as Record<
-    string,
-    string
-  >;
+  const customization = (formDoc?.customization ?? {}) as Record<string, string>;
 
   // Resolve the active style to get fallback values
   const resolvedStyle = useMemo(() => {
@@ -224,8 +190,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
   // Sync editor mode when app theme changes from outside (user menu, settings)
   const resolvedAppTheme =
     theme === "system"
-      ? typeof window !== "undefined" &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
         ? "dark"
         : "light"
       : theme;
@@ -239,14 +204,57 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
   const activePreset = customization.preset || "vega";
   const activeMode = customization.mode || "light";
   const activeThemeColor = getValue("themeColor");
-  const activeBaseColors =
-    activeMode === "dark" ? DARK_BASE_COLORS : BASE_COLORS;
+  const activeBaseColors = activeMode === "dark" ? DARK_BASE_COLORS : BASE_COLORS;
   const activeBaseColor = getValue("baseColor");
   const activeFont = getValue("font");
   const activeRadius = getValue("radius");
 
   const cssKey = `${activeMode}:customCss`;
   const cssValue = customization[cssKey] || customization.customCss || "";
+
+  const handleThemeColorChange = useCallback(
+    (v: string) => {
+      if (v) updateFields({ themeColor: v, preset: "custom" });
+    },
+    [updateFields],
+  );
+
+  const handleBaseColorChange = useCallback(
+    (v: string) => {
+      if (v) updateFields({ baseColor: v, preset: "custom" });
+    },
+    [updateFields],
+  );
+
+  const handleFontChange = useCallback(
+    (v: string) => {
+      if (!v) return;
+      loadGoogleFont(v);
+      updateWithCustomPreset("font", v);
+    },
+    [updateWithCustomPreset],
+  );
+
+  const handleRadiusChange = useCallback(
+    (v: string) => {
+      if (v) updateWithCustomPreset("radius", v);
+    },
+    [updateWithCustomPreset],
+  );
+
+  const handleCssChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      updateWithCustomPreset(cssKey, e.target.value);
+    },
+    [updateWithCustomPreset, cssKey],
+  );
+
+  const handleStyleChange = useCallback(
+    (v: string) => {
+      if (v) selectStyle(v);
+    },
+    [selectStyle],
+  );
 
   return (
     <Sidebar
@@ -257,9 +265,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
       {/* Header */}
       <SidebarHeader className="pt-2 pb-3 pl-1 shrink-0 gap-2.25 space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-medium text-foreground pl-2.5 font-sans">
-            Customize
-          </h2>
+          <h2 className="text-base font-medium text-foreground pl-2.5 font-sans">Customize</h2>
           <Button
             variant="ghost"
             size="icon-xs"
@@ -279,13 +285,9 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
           <SidebarSection label="Theme" className="pb-2.75" action={<></>}>
             <ConfigCard>
               <ConfigRow label="Style">
-                <Select
-                  value={activePreset}
-                  onValueChange={(v) => v && selectStyle(v)}
-                >
+                <Select value={activePreset} onValueChange={handleStyleChange}>
                   <SelectTrigger className={selectTriggerCls}>
-                    {STYLE_OPTIONS.find((o) => o.value === activePreset)
-                      ?.label ?? activePreset}
+                    {STYLE_OPTIONS.find((o) => o.value === activePreset)?.label ?? activePreset}
                   </SelectTrigger>
                   <SelectContent>
                     {STYLE_OPTIONS.map((o) => (
@@ -297,19 +299,11 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
                 </Select>
               </ConfigRow>
               <ConfigRow label="Accent">
-                <Select
-                  value={activeThemeColor}
-                  onValueChange={(v) => {
-                    if (v) updateFields({ themeColor: v, preset: "custom" });
-                  }}
-                >
+                <Select value={activeThemeColor} onValueChange={handleThemeColorChange}>
                   <SelectTrigger className={selectTriggerCls}>
-                    <ColorSwatch
-                      color={THEME_COLORS[activeThemeColor]?.primary}
-                    />
-                    {THEME_COLOR_OPTIONS.find(
-                      (o) => o.value === activeThemeColor,
-                    )?.label ?? activeThemeColor}
+                    <ColorSwatch color={THEME_COLORS[activeThemeColor]?.primary} />
+                    {THEME_COLOR_OPTIONS.find((o) => o.value === activeThemeColor)?.label ??
+                      activeThemeColor}
                   </SelectTrigger>
                   <SelectContent>
                     {THEME_COLOR_OPTIONS.map((o) => (
@@ -322,18 +316,11 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
                 </Select>
               </ConfigRow>
               <ConfigRow label="Base">
-                <Select
-                  value={activeBaseColor}
-                  onValueChange={(v) => {
-                    if (v) updateFields({ baseColor: v, preset: "custom" });
-                  }}
-                >
+                <Select value={activeBaseColor} onValueChange={handleBaseColorChange}>
                   <SelectTrigger className={selectTriggerCls}>
-                    <ColorSwatch
-                      color={activeBaseColors[activeBaseColor]?.muted}
-                    />
-                    {BASE_COLOR_OPTIONS.find((o) => o.value === activeBaseColor)
-                      ?.label ?? activeBaseColor}
+                    <ColorSwatch color={activeBaseColors[activeBaseColor]?.muted} />
+                    {BASE_COLOR_OPTIONS.find((o) => o.value === activeBaseColor)?.label ??
+                      activeBaseColor}
                   </SelectTrigger>
                   <SelectContent>
                     {BASE_COLOR_OPTIONS.map((o) => (
@@ -346,17 +333,9 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
                 </Select>
               </ConfigRow>
               <ConfigRow label="Font">
-                <Select
-                  value={activeFont}
-                  onValueChange={(v) => {
-                    if (!v) return;
-                    loadGoogleFont(v);
-                    updateWithCustomPreset("font", v);
-                  }}
-                >
+                <Select value={activeFont} onValueChange={handleFontChange}>
                   <SelectTrigger className={selectTriggerCls}>
-                    {FONT_OPTIONS.find((o) => o.value === activeFont)?.label ??
-                      activeFont}
+                    {FONT_OPTIONS.find((o) => o.value === activeFont)?.label ?? activeFont}
                   </SelectTrigger>
                   <SelectContent>
                     {FONT_OPTIONS.map((o) => (
@@ -368,15 +347,9 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
                 </Select>
               </ConfigRow>
               <ConfigRow label="Radius">
-                <Select
-                  value={activeRadius}
-                  onValueChange={(v) =>
-                    v && updateWithCustomPreset("radius", v)
-                  }
-                >
+                <Select value={activeRadius} onValueChange={handleRadiusChange}>
                   <SelectTrigger className={selectTriggerCls}>
-                    {RADIUS_OPTIONS.find((o) => o.value === activeRadius)
-                      ?.label ?? activeRadius}
+                    {RADIUS_OPTIONS.find((o) => o.value === activeRadius)?.label ?? activeRadius}
                   </SelectTrigger>
                   <SelectContent>
                     {RADIUS_OPTIONS.map((o) => (
@@ -399,8 +372,8 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
               <ProBadge />
             </div>
             <p className="text-[12px] text-muted-foreground mb-3">
-              Preview advanced customization. {APP_NAME} Pro is required to
-              apply it to the published form.
+              Preview advanced customization. {APP_NAME} Pro is required to apply it to the
+              published form.
             </p>
             <Button
               variant="outline"
@@ -508,7 +481,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
             <div className="rounded-lg overflow-hidden border border-border/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
               <Textarea
                 value={cssValue}
-                onChange={(e) => updateWithCustomPreset(cssKey, e.target.value)}
+                onChange={handleCssChange}
                 aria-label={`Custom CSS (${activeMode} mode)`}
                 className="font-mono text-[11px] h-32 bg-secondary text-foreground border-0 rounded-none focus-visible:ring-2 focus-visible:ring-ring p-3"
                 placeholder=".bf-themed { ... }"
@@ -518,16 +491,10 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
             <div className="flex items-center gap-1.5 px-1 pt-2">
               <Tooltip>
                 <TooltipTrigger
-                  render={
-                    <InfoIcon className="h-3 w-3 text-muted-foreground/60 cursor-help" />
-                  }
+                  render={<InfoIcon className="h-3 w-3 text-muted-foreground/60 cursor-help" />}
                 />
-                <TooltipContent
-                  side="bottom"
-                  className="max-w-[240px] text-[11px]"
-                >
-                  Supports shadcn tokens: --bf-primary, --bf-background,
-                  --bf-foreground, etc.
+                <TooltipContent side="bottom" className="max-w-[240px] text-[11px]">
+                  Supports shadcn tokens: --bf-primary, --bf-background, --bf-foreground, etc.
                 </TooltipContent>
               </Tooltip>
               <span className="text-[11px] text-muted-foreground/60">
@@ -539,7 +506,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
       </SidebarContent>
     </Sidebar>
   );
-}
+};
 
 // ── Advanced Color Pickers (extracted for readability) ──
 
@@ -561,13 +528,13 @@ const ADVANCED_COLOR_TOKENS = [
   { key: "ring", label: "Ring" },
 ] as const;
 
-function AdvancedColorPickers({
+const AdvancedColorPickers = ({
   customization,
   updateField,
 }: {
   customization: Record<string, string>;
   updateField: (field: string, value: string) => void;
-}) {
+}) => {
   const baseColorName = customization.baseColor || "neutral";
   const themeColorName = customization.themeColor || "neutral";
   const isDark = customization.mode === "dark";
@@ -590,10 +557,7 @@ function AdvancedColorPickers({
       {ADVANCED_COLOR_TOKENS.map(({ key, label }) => {
         const prefixedKey = `${mode}:${key}`;
         const currentValue =
-          customization[prefixedKey] ||
-          customization[key] ||
-          resolved[key] ||
-          "#000000";
+          customization[prefixedKey] || customization[key] || resolved[key] || "#000000";
 
         return (
           <StyleColorPicker
@@ -607,4 +571,4 @@ function AdvancedColorPickers({
       })}
     </>
   );
-}
+};

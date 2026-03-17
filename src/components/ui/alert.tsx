@@ -20,65 +20,53 @@ const alertVariants = cva(
   },
 );
 
-function Alert({
+export const Alert = ({
   className,
   variant,
   ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof alertVariants>) {
-  return (
-    <div
-      data-slot="alert"
-      role="alert"
-      className={cn(alertVariants({ variant }), className)}
-      {...props}
-    />
-  );
-}
+}: React.ComponentProps<"div"> & VariantProps<typeof alertVariants>) => (
+  <div
+    data-slot="alert"
+    role="alert"
+    className={cn(alertVariants({ variant }), className)}
+    {...props}
+  />
+);
 
-function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="alert-title"
-      className={cn(
-        "group-has-[>svg]/alert:col-start-2 [&_a]:hover:text-foreground [&_a]:underline [&_a]:underline-offset-3",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+export const AlertTitle = ({ className, ...props }: React.ComponentProps<"div">) => (
+  <div
+    data-slot="alert-title"
+    className={cn(
+      "group-has-[>svg]/alert:col-start-2 [&_a]:hover:text-foreground [&_a]:underline [&_a]:underline-offset-3",
+      className,
+    )}
+    {...props}
+  />
+);
 
-function AlertDescription({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="alert-description"
-      className={cn(
-        "text-muted-foreground text-sm text-balance md:text-pretty [&_p:not(:last-child)]:mb-4 [&_a]:hover:text-foreground [&_a]:underline [&_a]:underline-offset-3",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+export const AlertDescription = ({ className, ...props }: React.ComponentProps<"div">) => (
+  <div
+    data-slot="alert-description"
+    className={cn(
+      "text-muted-foreground text-sm text-balance md:text-pretty [&_p:not(:last-child)]:mb-4 [&_a]:hover:text-foreground [&_a]:underline [&_a]:underline-offset-3",
+      className,
+    )}
+    {...props}
+  />
+);
 
-function AlertAction({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div data-slot="alert-action" className={cn("absolute top-2 end-2", className)} {...props} />
-  );
-}
+export const AlertAction = ({ className, ...props }: React.ComponentProps<"div">) => (
+  <div data-slot="alert-action" className={cn("absolute top-2 end-2", className)} {...props} />
+);
 
-function AlertIcon({ className, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="alert-icon" className={cn("shrink-0", className)} {...props} />;
-}
+export const AlertIcon = ({ className, ...props }: React.ComponentProps<"div">) => (
+  <div data-slot="alert-icon" className={cn("shrink-0", className)} {...props} />
+);
 
-function AlertContent({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="alert-content"
-      className={cn("space-y-2 [&_[data-slot=alert-title]]:font-semibold", className)}
-      {...props}
-    />
-  );
-}
-
-export { Alert, AlertAction, AlertContent, AlertDescription, AlertIcon, AlertTitle };
+export const AlertContent = ({ className, ...props }: React.ComponentProps<"div">) => (
+  <div
+    data-slot="alert-content"
+    className={cn("space-y-2 [&_[data-slot=alert-title]]:font-semibold", className)}
+    {...props}
+  />
+);

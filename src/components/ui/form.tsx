@@ -20,11 +20,15 @@ const FormField = <
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 >({
   ...props
-}: ControllerProps<TFieldValues, TName>) => (
-  <FormFieldContext.Provider value={{ name: props.name }}>
-    <Controller {...props} />
-  </FormFieldContext.Provider>
-);
+}: ControllerProps<TFieldValues, TName>) => {
+  const fieldContextValue = React.useMemo(() => ({ name: props.name }), [props.name]);
+
+  return (
+    <FormFieldContext.Provider value={fieldContextValue}>
+      <Controller {...props} />
+    </FormFieldContext.Provider>
+  );
+};
 
 const useFormField = () => {
   const fieldContext = React.use(FormFieldContext);
@@ -55,17 +59,18 @@ type FormItemContextValue = {
 
 const FormItemContext = React.createContext<FormItemContextValue>({} as FormItemContextValue);
 
-function FormItem({ className, ...props }: React.ComponentProps<"div">) {
+export const FormItem = ({ className, ...props }: React.ComponentProps<"div">) => {
   const id = React.useId();
+  const itemContextValue = React.useMemo(() => ({ id }), [id]);
 
   return (
-    <FormItemContext.Provider value={{ id }}>
+    <FormItemContext.Provider value={itemContextValue}>
       <div data-slot="form-item" className={cn("grid gap-2", className)} {...props} />
     </FormItemContext.Provider>
   );
-}
+};
 
-function FormLabel({ className, ...props }: React.ComponentProps<typeof Label>) {
+export const FormLabel = ({ className, ...props }: React.ComponentProps<typeof Label>) => {
   const { error, formItemId } = useFormField();
 
   return (
@@ -77,9 +82,12 @@ function FormLabel({ className, ...props }: React.ComponentProps<typeof Label>) 
       {...props}
     />
   );
-}
+};
 
-function FormControl({ children, ...props }: React.PropsWithChildren<React.ComponentProps<"div">>) {
+export const FormControl = ({
+  children,
+  ...props
+}: React.PropsWithChildren<React.ComponentProps<"div">>) => {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
 
   if (!React.isValidElement(children)) {
@@ -93,9 +101,9 @@ function FormControl({ children, ...props }: React.PropsWithChildren<React.Compo
     "aria-invalid": !!error,
     ...props,
   });
-}
+};
 
-function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
+export const FormDescription = ({ className, ...props }: React.ComponentProps<"p">) => {
   const { formDescriptionId } = useFormField();
 
   return (
@@ -106,9 +114,9 @@ function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
       {...props}
     />
   );
-}
+};
 
-function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
+export const FormMessage = ({ className, ...props }: React.ComponentProps<"p">) => {
   const { error, formMessageId } = useFormField();
   const body = error ? String(error?.message ?? "") : props.children;
 
@@ -126,15 +134,6 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
       {body}
     </p>
   );
-}
-
-export {
-  useFormField,
-  Form,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormDescription,
-  FormMessage,
-  FormField,
 };
+
+export { useFormField, Form, FormField };

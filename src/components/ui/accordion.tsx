@@ -4,25 +4,21 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronDownIcon } from "@/components/ui/icons";
 
-function Accordion({ className, ...props }: AccordionPrimitive.Root.Props) {
-  return (
-    <AccordionPrimitive.Root
-      data-slot="accordion"
-      className={cn("flex w-full flex-col", className)}
-      {...props}
-    />
-  );
-}
+export const Accordion = ({ className, ...props }: AccordionPrimitive.Root.Props) => (
+  <AccordionPrimitive.Root
+    data-slot="accordion"
+    className={cn("flex w-full flex-col", className)}
+    {...props}
+  />
+);
 
-function AccordionItem({ className, ...props }: AccordionPrimitive.Item.Props) {
-  return (
-    <AccordionPrimitive.Item
-      data-slot="accordion-item"
-      className={cn("not-last:border-b", className)}
-      {...props}
-    />
-  );
-}
+export const AccordionItem = ({ className, ...props }: AccordionPrimitive.Item.Props) => (
+  <AccordionPrimitive.Item
+    data-slot="accordion-item"
+    className={cn("not-last:border-b", className)}
+    {...props}
+  />
+);
 
 interface AccordionTriggerProps extends AccordionPrimitive.Trigger.Props {
   /** Position of the chevron icon relative to the label.
@@ -33,13 +29,13 @@ interface AccordionTriggerProps extends AccordionPrimitive.Trigger.Props {
   action?: ReactNode;
 }
 
-function AccordionTrigger({
+export const AccordionTrigger = ({
   className,
   children,
   iconPosition = "end",
   action,
   ...props
-}: AccordionTriggerProps) {
+}: AccordionTriggerProps) => {
   const isInline = iconPosition === "inline";
 
   return (
@@ -83,25 +79,25 @@ function AccordionTrigger({
       )}
     </AccordionPrimitive.Header>
   );
-}
+};
 
-function AccordionContent({ className, children, ...props }: AccordionPrimitive.Panel.Props) {
-  return (
-    <AccordionPrimitive.Panel
-      data-slot="accordion-content"
-      className="h-(--accordion-panel-height) overflow-hidden text-sm transition-[height] duration-300 ease-in-out data-ending-style:h-0 data-starting-style:h-0"
-      {...props}
+export const AccordionContent = ({
+  className,
+  children,
+  ...props
+}: AccordionPrimitive.Panel.Props) => (
+  <AccordionPrimitive.Panel
+    data-slot="accordion-content"
+    className="h-(--accordion-panel-height) overflow-hidden text-sm transition-[height] duration-300 ease-in-out data-ending-style:h-0 data-starting-style:h-0"
+    {...props}
+  >
+    <div
+      className={cn(
+        "pt-0 pb-2.5 [&_a]:hover:text-foreground  [&_p:not(:last-child)]:mb-4",
+        className,
+      )}
     >
-      <div
-        className={cn(
-          "pt-0 pb-2.5 [&_a]:hover:text-foreground  [&_p:not(:last-child)]:mb-4",
-          className,
-        )}
-      >
-        {children}
-      </div>
-    </AccordionPrimitive.Panel>
-  );
-}
-
-export { Accordion, AccordionItem, AccordionTrigger, AccordionContent };
+      {children}
+    </div>
+  </AccordionPrimitive.Panel>
+);

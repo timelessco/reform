@@ -206,7 +206,7 @@ export const deleteForm = createServerFn({ method: "POST" })
     });
   });
 
-const getFormsByWorkspace = createServerFn({ method: "GET" })
+const _getFormsByWorkspace = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ workspaceId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
@@ -295,7 +295,7 @@ export const duplicateForm = createServerFn({ method: "POST" })
     });
   });
 
-const moveFormToWorkspace = createServerFn({ method: "POST" })
+const _moveFormToWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
@@ -323,7 +323,7 @@ const moveFormToWorkspace = createServerFn({ method: "POST" })
     });
   });
 
-const getFormById = createServerFn({ method: "GET" })
+const _getFormById = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data, context }) => {
@@ -342,6 +342,6 @@ const getFormById = createServerFn({ method: "GET" })
 export const getFormbyIdQueryOption = (formId: string) =>
   queryOptions({
     queryKey: ["forms", formId],
-    queryFn: ({ signal }) => getFormById({ data: { id: formId }, signal }),
+    queryFn: ({ signal }) => _getFormById({ data: { id: formId }, signal }),
     staleTime: 1000 * 60 * 10, // 10 minutes
   });

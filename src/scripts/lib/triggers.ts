@@ -10,7 +10,7 @@ type OpenPopupCallback = (formId: string, options: PopupOptions) => void;
 /**
  * Parse options from element data attributes
  */
-function parseDataAttributes(element: HTMLElement): PopupOptions {
+const parseDataAttributes = (element: HTMLElement): PopupOptions => {
   const options: PopupOptions = {};
 
   // Layout
@@ -87,16 +87,18 @@ function parseDataAttributes(element: HTMLElement): PopupOptions {
   }
 
   return options;
-}
+};
 
 /**
  * Parse options from URL hash parameters
  * Format: #form-open=formId&align-left=1&hide-title=1&overlay=1&emoji-text=👋&emoji-animation=wave&auto-close=5000
  */
-function parseHashParams(hash: string): {
+const parseHashParams = (
+  hash: string,
+): {
   formId: string | null;
   options: PopupOptions;
-} {
+} => {
   const params = new URLSearchParams(hash.replace(/^#/, ""));
   const formId = params.get("form-open");
   const options: PopupOptions = {};
@@ -163,12 +165,12 @@ function parseHashParams(hash: string): {
   }
 
   return { formId, options };
-}
+};
 
 /**
  * Setup click event delegation for trigger elements
  */
-export function setupClickTriggers(openPopup: OpenPopupCallback): void {
+export const setupClickTriggers = (openPopup: OpenPopupCallback): void => {
   document.addEventListener("click", (e) => {
     const target = e.target as HTMLElement;
 
@@ -198,12 +200,12 @@ export function setupClickTriggers(openPopup: OpenPopupCallback): void {
       }
     }
   });
-}
+};
 
 /**
  * Check if URL hash contains form-open on page load
  */
-export function checkHashTrigger(openPopup: OpenPopupCallback): void {
+export const checkHashTrigger = (openPopup: OpenPopupCallback): void => {
   const { hash } = window.location;
   if (hash?.includes("form-open=")) {
     const { formId, options } = parseHashParams(hash);
@@ -214,12 +216,12 @@ export function checkHashTrigger(openPopup: OpenPopupCallback): void {
       }, 100);
     }
   }
-}
+};
 
 /**
  * Listen for hash changes (back/forward navigation)
  */
-export function setupHashChangeListener(openPopup: OpenPopupCallback): void {
+export const setupHashChangeListener = (openPopup: OpenPopupCallback): void => {
   window.addEventListener("hashchange", () => {
     const { hash } = window.location;
     if (hash?.includes("form-open=")) {
@@ -229,4 +231,4 @@ export function setupHashChangeListener(openPopup: OpenPopupCallback): void {
       }
     }
   });
-}
+};

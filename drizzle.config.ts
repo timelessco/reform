@@ -8,7 +8,7 @@ export default defineConfig({
   schema: "./src/db/schema.ts",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL!,
+    url: process.env.DATABASE_URL ?? "",
   },
   schemaFilter: ["public"], // Only manage public schema, ignore Supabase system schemas
 });

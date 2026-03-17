@@ -1,7 +1,4 @@
 import { TrailingBlockPlugin } from "platejs";
-import type { Value } from "platejs";
-import { useEditorRef } from "platejs/react";
-import type { TPlateEditor } from "platejs/react";
 
 import { AlignKit } from "@/components/editor/plugins/align-kit";
 import { AutoformatKit } from "@/components/editor/plugins/autoformat-kit";
@@ -86,7 +83,3 @@ export const EditorKit = [
   // ...FixedToolbarKit,
   ...FloatingToolbarKit,
 ];
-
-type MyEditor = TPlateEditor<Value, (typeof EditorKit)[number]>;
-
-const useEditor = () => useEditorRef<MyEditor>();

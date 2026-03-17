@@ -1,5 +1,4 @@
 import { useChat as useBaseChat } from "@ai-sdk/react";
-import type { UseChatHelpers } from "@ai-sdk/react";
 import { AIChatPlugin, aiCommentToRange } from "@platejs/ai/react";
 import { getCommentKey, getTransientCommentKey } from "@platejs/comment";
 import { deserializeMd } from "@platejs/markdown";
@@ -121,7 +120,8 @@ export const useChat = () => {
           return;
         }
 
-        const aiComment = data.data.comment!;
+        const aiComment = data.data.comment;
+        if (!aiComment) return;
         const range = aiCommentToRange(editor, aiComment);
 
         if (!range) return console.warn("No range found for AI comment");

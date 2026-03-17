@@ -25,11 +25,11 @@ interface OverlayElements {
 /**
  * Create overlay and popup container elements
  */
-export function createOverlay(
+export const createOverlay = (
   formId: string,
   options: PopupOptions,
   onClose: () => void,
-): OverlayElements {
+): OverlayElements => {
   const isModal = options.layout === "modal" || options.position === "center";
   const showOverlay = options.overlay !== false || isModal;
   const position = options.position || "bottom-right";
@@ -111,12 +111,12 @@ export function createOverlay(
     loadingEl,
     emojiEl,
   };
-}
+};
 
 /**
  * Destroy overlay and cleanup
  */
-export function destroyOverlay(overlay: HTMLElement): void {
+export const destroyOverlay = (overlay: HTMLElement): void => {
   // Restore body scroll
   document.body.style.overflow = "";
 
@@ -127,28 +127,28 @@ export function destroyOverlay(overlay: HTMLElement): void {
   setTimeout(() => {
     overlay.remove();
   }, 150);
-}
+};
 
 /**
  * Update popup height based on iframe content
  */
-export function updatePopupHeight(popup: HTMLElement, height: number): void {
+export const updatePopupHeight = (popup: HTMLElement, height: number): void => {
   const maxHeight = window.innerHeight - 40; // 20px margin top and bottom
   const clampedHeight = Math.min(height, maxHeight);
   popup.style.maxHeight = `${clampedHeight}px`;
-}
+};
 
 /**
  * Hide loading indicator
  */
-export function hideLoading(loadingEl: HTMLElement): void {
+export const hideLoading = (loadingEl: HTMLElement): void => {
   loadingEl.style.display = "none";
-}
+};
 
 /**
  * Get CSS class for emoji animation
  */
-function getEmojiAnimationClass(animation?: string): string {
+const getEmojiAnimationClass = (animation?: string): string => {
   switch (animation) {
     case "wave":
       return "bf-emoji--wave";
@@ -159,13 +159,13 @@ function getEmojiAnimationClass(animation?: string): string {
     default:
       return "";
   }
-}
+};
 
 /**
  * Hide emoji after first page (multi-step forms)
  */
-export function hideEmoji(emojiEl?: HTMLElement): void {
+export const hideEmoji = (emojiEl?: HTMLElement): void => {
   if (emojiEl) {
     emojiEl.style.display = "none";
   }
-}
+};

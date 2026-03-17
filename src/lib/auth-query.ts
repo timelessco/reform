@@ -111,11 +111,11 @@ type AuthClientToQuery<T, Path extends string[] = []> = {
  * useMutation(client.signIn.email.mutationOptions())
  * ```
  */
-export function createAuthQueryClient<TClient extends Record<string, any>>(
+export const createAuthQueryClient = <TClient extends Record<string, any>>(
   client: TClient,
   path: string[] = [],
-): AuthClientToQuery<TClient> {
-  return new Proxy(() => {}, {
+): AuthClientToQuery<TClient> =>
+  new Proxy(() => {}, {
     get(_, key: string) {
       const newPath = [...path, key];
       const getTarget = () => path.reduce((acc, k) => acc?.[k], client as any);
@@ -153,4 +153,3 @@ export function createAuthQueryClient<TClient extends Record<string, any>>(
       return createAuthQueryClient(client, newPath);
     },
   }) as unknown as AuthClientToQuery<TClient>;
-}

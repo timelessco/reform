@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 
-const getPunkSongs = createServerFn({
+const _getPunkSongs = createServerFn({
   method: "GET",
 }).handler(async () => [
   { id: 1, name: "Teenage Dirtbag", artist: "Wheatus" },

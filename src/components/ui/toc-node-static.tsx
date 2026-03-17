@@ -21,7 +21,7 @@ const headingItemVariants = cva(
   },
 );
 
-export function TocElementStatic(props: SlateElementProps) {
+export const TocElementStatic = (props: SlateElementProps) => {
   const { editor } = props;
   const headingList = getHeadingList(editor);
 
@@ -49,7 +49,7 @@ export function TocElementStatic(props: SlateElementProps) {
       {props.children}
     </SlateElement>
   );
-}
+};
 
 const headingDepth: Record<string, number> = {
   h1: 1,

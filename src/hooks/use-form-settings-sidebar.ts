@@ -1,7 +1,7 @@
 import type { SettingsTab } from "./use-editor-sidebar";
 import { useEditorSidebar } from "./use-editor-sidebar";
 
-export function useFormSettingsSidebar() {
+export const useFormSettingsSidebar = () => {
   const { activeSidebar, settingsTab, openSettings, toggleSidebar, closeSidebar } =
     useEditorSidebar();
 
@@ -15,4 +15,4 @@ export function useFormSettingsSidebar() {
     toggle: (tab?: SettingsTab) => toggleSidebar("settings", tab),
     openTab: (tab: "integrations" | "settings") => openSettings(tab),
   };
-}
+};

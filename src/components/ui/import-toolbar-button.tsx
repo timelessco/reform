@@ -18,7 +18,7 @@ import { ToolbarButton } from "./toolbar";
 
 type ImportType = "html" | "markdown";
 
-export function ImportToolbarButton(props: React.ComponentProps<typeof DropdownMenu>) {
+export const ImportToolbarButton = (props: React.ComponentProps<typeof DropdownMenu>) => {
   const editor = useEditorRef();
   const [open, setOpen] = React.useState(false);
 
@@ -90,4 +90,4 @@ export function ImportToolbarButton(props: React.ComponentProps<typeof DropdownM
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+};

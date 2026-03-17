@@ -1,21 +1,25 @@
 import type { PlateElementProps } from "platejs/react";
 
 import { PlateElement } from "platejs/react";
+import { useCallback } from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export function FormLabelElement({ className, children, ...props }: PlateElementProps) {
+export const FormLabelElement = ({ className, children, ...props }: PlateElementProps) => {
   const { editor, element, path } = props;
   const isRequired = element.required as boolean | undefined;
   const placeholder = element.placeholder as string | undefined;
   const isEmpty = editor.api.isEmpty(element);
 
-  const toggleRequired = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    editor.tf.setNodes({ required: !isRequired }, { at: path });
-  };
+  const toggleRequired = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      editor.tf.setNodes({ required: !isRequired }, { at: path });
+    },
+    [editor, isRequired, path],
+  );
 
   return (
     <PlateElement
@@ -49,4 +53,4 @@ export function FormLabelElement({ className, children, ...props }: PlateElement
       </div>
     </PlateElement>
   );
-}
+};

@@ -15,12 +15,10 @@ export const Route = createFileRoute("/demo/$")({
   notFoundComponent: NotFound,
 });
 
-function RouteComponent() {
-  return (
-    <div>
-      <Link to="/demo/$" search={{ workspaceId: "1", formId: "1" }}>
-        Home
-      </Link>
-    </div>
-  );
-}
+const RouteComponent = () => (
+  <div>
+    <Link to="/demo/$" search={{ workspaceId: "1", formId: "1" }}>
+      Home
+    </Link>
+  </div>
+);

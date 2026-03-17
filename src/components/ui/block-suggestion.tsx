@@ -76,7 +76,7 @@ const createSuggestionLineEntries = (lines: string[], prefix: string): Suggestio
   });
 };
 
-export function BlockSuggestionCard({
+export const BlockSuggestionCard = ({
   idx: _idx,
   isLast,
   suggestion,
@@ -84,22 +84,22 @@ export function BlockSuggestionCard({
   idx: number;
   isLast: boolean;
   suggestion: ResolvedSuggestion;
-}) {
+}) => {
   const { api, editor } = useEditorPlugin(SuggestionPlugin);
 
   const userInfo = usePluginOption(discussionPlugin, "user", suggestion.userId);
 
-  const accept = (suggestion: ResolvedSuggestion) => {
+  const handleAccept = React.useCallback(() => {
     api.suggestion.withoutSuggestions(() => {
       acceptSuggestion(editor, suggestion);
     });
-  };
+  }, [api.suggestion, editor, suggestion]);
 
-  const reject = (suggestion: ResolvedSuggestion) => {
+  const handleReject = React.useCallback(() => {
     api.suggestion.withoutSuggestions(() => {
       rejectSuggestion(editor, suggestion);
     });
-  };
+  }, [api.suggestion, editor, suggestion]);
 
   const [hovering, setHovering] = React.useState(false);
 
@@ -112,7 +112,7 @@ export function BlockSuggestionCard({
   const removeLines =
     suggestion.type === "remove"
       ? createSuggestionLineEntries(
-          suggestionText2Array(suggestion.text!),
+          suggestionText2Array(suggestion.text ?? ""),
           `${suggestion.suggestionId}-remove`,
         )
       : [];
@@ -120,7 +120,7 @@ export function BlockSuggestionCard({
   const insertLines =
     suggestion.type === "insert"
       ? createSuggestionLineEntries(
-          suggestionText2Array(suggestion.newText!),
+          suggestionText2Array(suggestion.newText ?? ""),
           `${suggestion.suggestionId}-insert`,
         )
       : [];
@@ -128,7 +128,7 @@ export function BlockSuggestionCard({
   const replaceNewLines =
     suggestion.type === "replace"
       ? createSuggestionLineEntries(
-          suggestionText2Array(suggestion.newText!),
+          suggestionText2Array(suggestion.newText ?? ""),
           `${suggestion.suggestionId}-replace-new`,
         )
       : [];
@@ -136,20 +136,23 @@ export function BlockSuggestionCard({
   const replaceOldLines =
     suggestion.type === "replace"
       ? createSuggestionLineEntries(
-          suggestionText2Array(suggestion.text!),
+          suggestionText2Array(suggestion.text ?? ""),
           `${suggestion.suggestionId}-replace-old`,
         )
       : [];
 
   const [editingId, setEditingId] = React.useState<string | null>(null);
 
+  const handleMouseEnter = React.useCallback(() => setHovering(true), []);
+  const handleMouseLeave = React.useCallback(() => setHovering(false), []);
+
   return (
     <article
       key={suggestion.suggestionId}
       className="relative"
       aria-label={`Suggestion by ${userInfo?.name ?? "Unknown contributor"}`}
-      onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div className="flex flex-col p-4">
         <div className="relative flex items-center">
@@ -239,7 +242,7 @@ export function BlockSuggestionCard({
               variant="ghost"
               className="size-6 p-1 text-muted-foreground"
               aria-label="Accept suggestion"
-              onClick={() => accept(suggestion)}
+              onClick={handleAccept}
             >
               <CheckIcon className="size-4" />
             </Button>
@@ -248,7 +251,7 @@ export function BlockSuggestionCard({
               variant="ghost"
               className="size-6 p-1 text-muted-foreground"
               aria-label="Reject suggestion"
-              onClick={() => reject(suggestion)}
+              onClick={handleReject}
             >
               <XIcon className="size-4" />
             </Button>
@@ -261,7 +264,7 @@ export function BlockSuggestionCard({
       {!isLast && <div className="h-px w-full bg-muted" />}
     </article>
   );
-}
+};
 
 export const useResolveSuggestion = (
   suggestionNodes: NodeEntry<TElement | TSuggestionText>[],

@@ -8,7 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 import { cn } from "@/lib/utils";
@@ -20,16 +20,15 @@ const lowlight = createLowlight(all);
 const hljsClassName =
   "py-1 **:[.hljs-addition]:bg-[#f0fff4] **:[.hljs-addition]:text-[#22863a] dark:**:[.hljs-addition]:bg-[#3c5743] dark:**:[.hljs-addition]:text-[#ceead5] **:[.hljs-attr,.hljs-attribute,.hljs-literal,.hljs-meta,.hljs-number,.hljs-operator,.hljs-selector-attr,.hljs-selector-class,.hljs-selector-id,.hljs-variable]:text-[#005cc5] dark:**:[.hljs-attr,.hljs-attribute,.hljs-literal,.hljs-meta,.hljs-number,.hljs-operator,.hljs-selector-attr,.hljs-selector-class,.hljs-selector-id,.hljs-variable]:text-[#6596cf] **:[.hljs-built\\\\_in,.hljs-symbol]:text-[#e36209] dark:**:[.hljs-built\\\\_in,.hljs-symbol]:text-[#c3854e] **:[.hljs-bullet]:text-[#735c0f] **:[.hljs-comment,.hljs-code,.hljs-formula]:text-[#6a737d] dark:**:[.hljs-comment,.hljs-code,.hljs-formula]:text-[#6a737d] **:[.hljs-deletion]:bg-[#ffeef0] **:[.hljs-deletion]:text-[#b31d28] dark:**:[.hljs-deletion]:bg-[#473235] dark:**:[.hljs-deletion]:text-[#e7c7cb] **:[.hljs-emphasis]:italic **:[.hljs-keyword,.hljs-doctag,.hljs-template-tag,.hljs-template-variable,.hljs-type,.hljs-variable.language\\\\_]:text-[#d73a49] dark:**:[.hljs-keyword,.hljs-doctag,.hljs-template-tag,.hljs-template-variable,.hljs-type,.hljs-variable.language\\\\_]:text-[#ee6960] **:[.hljs-name,.hljs-quote,.hljs-selector-tag,.hljs-selector-pseudo]:text-[#22863a] dark:**:[.hljs-name,.hljs-quote,.hljs-selector-tag,.hljs-selector-pseudo]:text-[#36a84f] **:[.hljs-regexp,.hljs-string,.hljs-meta_.hljs-string]:text-[#032f62] dark:**:[.hljs-regexp,.hljs-string,.hljs-meta_.hljs-string]:text-[#3593ff] **:[.hljs-section]:font-bold **:[.hljs-section]:text-[#005cc5] dark:**:[.hljs-section]:text-[#61a5f2] **:[.hljs-strong]:font-bold **:[.hljs-title,.hljs-title.class\\\\_,.hljs-title.class\\\\_.inherited\\\\_\\\\_,.hljs-title.function\\\\_]:text-[#6f42c1] dark:**:[.hljs-title,.hljs-title.class\\\\_,.hljs-title.class\\\\_.inherited\\\\_\\\\_,.hljs-title.function\\\\_]:text-[#a77bfa]";
 
-function escapeHtml(value: string) {
-  return value
+const escapeHtml = (value: string) =>
+  value
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
-}
 
-function renderHighlighted(code: string, language?: string) {
+const renderHighlighted = (code: string, language?: string) => {
   try {
     const tree = language ? lowlight.highlight(language, code) : lowlight.highlightAuto(code);
     return toHtml(tree);
@@ -41,7 +40,7 @@ function renderHighlighted(code: string, language?: string) {
       return escapeHtml(code);
     }
   }
-}
+};
 
 interface EmbedCodeDialogProps {
   open: boolean;
@@ -52,7 +51,7 @@ interface EmbedCodeDialogProps {
   docTitle?: string;
 }
 
-export function generateEmbedUrl(formId: string, options: EmbedOptions): string {
+export const generateEmbedUrl = (formId: string, options: EmbedOptions): string => {
   const baseUrl = `${window.location.origin}/forms/${formId}`;
   const params = new URLSearchParams();
   if (options.display.title === "hidden") params.append("hideTitle", "true");
@@ -62,14 +61,14 @@ export function generateEmbedUrl(formId: string, options: EmbedOptions): string 
   if (options.display.dynamicHeight) params.append("dynamicHeight", "true");
   const queryString = params.toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
-}
+};
 
-function generateEmbedCode(
+const generateEmbedCode = (
   embedType: EmbedType,
   options: EmbedOptions,
   formId: string,
   docTitle?: string,
-): string {
+): string => {
   const embedUrl = generateEmbedUrl(formId, options);
 
   if (embedType === "standard") {
@@ -115,15 +114,15 @@ function generateEmbedCode(
 
 <!-- Or link to it -->
 <a href="${embedUrl}">Open Form</a>`;
-}
+};
 
-function CopyButton({ text }: { text: string }) {
+const CopyButton = ({ text }: { text: string }) => {
   const [copied, setCopied] = useState(false);
-  const handleCopy = () => {
+  const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
+  }, [text]);
   return (
     <Button
       type="button"
@@ -136,15 +135,15 @@ function CopyButton({ text }: { text: string }) {
       {copied ? <CheckIcon className="w-3.5 h-3.5" /> : <CopyIcon className="w-3.5 h-3.5" />}
     </Button>
   );
-}
+};
 
-function InlineCopyBar({ value }: { value: string }) {
+const InlineCopyBar = ({ value }: { value: string }) => {
   const [copied, setCopied] = useState(false);
-  const handleCopy = () => {
+  const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(value);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
+  }, [value]);
   return (
     <div className="flex gap-1.5">
       <Input
@@ -167,9 +166,9 @@ function InlineCopyBar({ value }: { value: string }) {
       </Button>
     </div>
   );
-}
+};
 
-function CodeBlock({
+const CodeBlock = ({
   code,
   language,
   inline,
@@ -177,7 +176,7 @@ function CodeBlock({
   code: string;
   language?: string;
   inline?: boolean;
-}) {
+}) => {
   const highlighted = useMemo(() => renderHighlighted(code, language), [code, language]);
   const isInline = inline ?? !code.includes("\n");
 
@@ -200,16 +199,16 @@ function CodeBlock({
       </div>
     </div>
   );
-}
+};
 
-export function EmbedCodeDialog({
+export const EmbedCodeDialog = ({
   open,
   onOpenChange,
   embedType,
   options,
   formId,
   docTitle,
-}: EmbedCodeDialogProps) {
+}: EmbedCodeDialogProps) => {
   const embedUrl = useMemo(() => generateEmbedUrl(formId, options), [formId, options]);
   const embedCode = useMemo(
     () => generateEmbedCode(embedType, options, formId, docTitle),
@@ -282,7 +281,7 @@ export function EmbedCodeDialog({
                     , add{" "}
                     <code className="text-foreground font-mono bg-muted px-1.5 py-0.5 rounded text-[11px] border border-border/50">
                       data-form-id
-                    </code>{" "}
+                    </code>
                     attributes to any clickable element.
                   </p>
                   <div className="bg-brand/5 border-l-4 border-brand rounded-r-lg p-4 mb-4">
@@ -503,4 +502,4 @@ Reform.closePopup('${formId}');`}
       </DialogContent>
     </Dialog>
   );
-}
+};

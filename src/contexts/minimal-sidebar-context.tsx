@@ -16,7 +16,7 @@ interface MinimalSidebarContextType {
 
 const MinimalSidebarContext = createContext<MinimalSidebarContextType | undefined>(undefined);
 
-export function MinimalSidebarProvider({ children }: { children: React.ReactNode }) {
+export const MinimalSidebarProvider = ({ children }: { children: React.ReactNode }) => {
   const [isPinned, setIsPinned] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const [isInboxOpen, setIsInboxOpen] = useState(false);
@@ -75,16 +75,14 @@ export function MinimalSidebarProvider({ children }: { children: React.ReactNode
   );
 
   return <MinimalSidebarContext.Provider value={value}>{children}</MinimalSidebarContext.Provider>;
-}
+};
 
-export function useMinimalSidebar() {
+export const useMinimalSidebar = () => {
   const context = useContext(MinimalSidebarContext);
   if (context === undefined) {
     throw new Error("useMinimalSidebar must be used within a MinimalSidebarProvider");
   }
   return context;
-}
+};
 
-function useMinimalSidebarSafe() {
-  return useContext(MinimalSidebarContext);
-}
+export const useMinimalSidebarSafe = () => useContext(MinimalSidebarContext);

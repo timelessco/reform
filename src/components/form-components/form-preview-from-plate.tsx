@@ -27,7 +27,7 @@ import { ChevronRightIcon } from "@/components/ui/icons";
 import { IconPickerPreview } from "@/components/icon-picker";
 import { AnimatePresence, motion } from "motion/react";
 import type { Value } from "platejs";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const SuccessCheckmarkIcon = (
   <svg
@@ -91,9 +91,7 @@ interface FormPreviewFromPlateProps {
   formId?: string;
 }
 
-function isHexColor(str: string): boolean {
-  return /^#([0-9A-Fa-f]{3}){1,2}$/.test(str);
-}
+const isHexColor = (str: string): boolean => /^#([0-9A-Fa-f]{3}){1,2}$/.test(str);
 
 const PAGE_MAX_WIDTH = {
   editor: "var(--bf-page-width, 700px)",
@@ -113,7 +111,7 @@ export type NavigationHandlers = {
 /**
  * Toggle renderer component with its own open/closed state
  */
-function ToggleRenderer({
+const ToggleRenderer = ({
   title,
   items,
   form,
@@ -123,7 +121,7 @@ function ToggleRenderer({
   items: TransformedElement[];
   form: ReturnType<typeof usePreviewForm>["form"];
   layout: "public" | "editor";
-}) {
+}) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -141,12 +139,12 @@ function ToggleRenderer({
       </CollapsibleContent>
     </Collapsible>
   );
-}
+};
 
 /**
  * Renders a single preview element (static or input)
  */
-function RenderPreviewElement({
+const RenderPreviewElement = ({
   element,
   form,
   navigation,
@@ -158,7 +156,7 @@ function RenderPreviewElement({
   navigation?: NavigationHandlers;
   grouped?: boolean;
   layout: "public" | "editor";
-}) {
+}) => {
   // Static elements
   if ("static" in element && element.static) {
     switch (element.fieldType) {
@@ -177,8 +175,8 @@ function RenderPreviewElement({
       case "UnorderedList":
         return (
           <ul className="my-2 ml-6 space-y-1 list-disc">
-            {element.items.map((item, idx) => (
-              <li key={`${element.id}-${idx}`} className="text-sm pl-1">
+            {element.items.map((item) => (
+              <li key={`${element.id}-${item}`} className="text-sm pl-1">
                 {item}
               </li>
             ))}
@@ -187,8 +185,8 @@ function RenderPreviewElement({
       case "OrderedList":
         return (
           <ol className="my-2 ml-6 space-y-1 list-decimal">
-            {element.items.map((item, idx) => (
-              <li key={`${element.id}-${idx}`} className="text-sm pl-1">
+            {element.items.map((item) => (
+              <li key={`${element.id}-${item}`} className="text-sm pl-1">
                 {item}
               </li>
             ))}
@@ -217,24 +215,20 @@ function RenderPreviewElement({
                   <>
                     {headerRows.length > 0 && (
                       <TableHeader>
-                        {headerRows.map((row, rowIdx) => (
-                          <TableRow key={`${element.id}-header-${rowIdx}`}>
-                            {row.cells.map((cell, cellIdx) => (
-                              <TableHead key={`${element.id}-header-${rowIdx}-${cellIdx}`}>
-                                {cell}
-                              </TableHead>
+                        {headerRows.map((row) => (
+                          <TableRow key={`${element.id}-header-${row.cells.join("-")}`}>
+                            {row.cells.map((cell) => (
+                              <TableHead key={`${element.id}-header-${cell}`}>{cell}</TableHead>
                             ))}
                           </TableRow>
                         ))}
                       </TableHeader>
                     )}
                     <TableBody>
-                      {bodyRows.map((row, rowIdx) => (
-                        <TableRow key={`${element.id}-row-${rowIdx}`}>
-                          {row.cells.map((cell, cellIdx) => (
-                            <TableCell key={`${element.id}-row-${rowIdx}-${cellIdx}`}>
-                              {cell}
-                            </TableCell>
+                      {bodyRows.map((row) => (
+                        <TableRow key={`${element.id}-row-${row.cells.join("-")}`}>
+                          {row.cells.map((cell) => (
+                            <TableCell key={`${element.id}-${cell}`}>{cell}</TableCell>
                           ))}
                         </TableRow>
                       ))}
@@ -279,13 +273,13 @@ function RenderPreviewElement({
   }
 
   return null;
-}
+};
 
 /**
  * Form header component with proper icon and cover handling
  * Matches the editor's form-header.tsx rendering patterns
  */
-function PreviewFormHeader({
+const PreviewFormHeader = ({
   title,
   icon,
   iconColor,
@@ -299,9 +293,11 @@ function PreviewFormHeader({
   cover?: string;
   hideTitle?: boolean;
   layout: "public" | "editor";
-}) {
+}) => {
   const [imageError, setImageError] = useState(false);
   const [iconError, setIconError] = useState(false);
+  const handleImageError = useCallback(() => setImageError(true), []);
+  const handleIconError = useCallback(() => setIconError(true), []);
 
   // Check if we have valid cover (URL or hex color)
   const hasCover = cover && (isHexColor(cover) || isValidUrl(cover)) && !imageError;
@@ -341,7 +337,7 @@ function PreviewFormHeader({
               "w-full h-full object-cover",
               cover.includes("tint=true") && "relative z-0 brightness-60 grayscale",
             )}
-            onError={() => setImageError(true)}
+            onError={handleImageError}
           />
         </div>
       );
@@ -386,7 +382,7 @@ function PreviewFormHeader({
             height={120}
             className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-md object-cover"
             data-bf-logo
-            onError={() => setIconError(true)}
+            onError={handleIconError}
           />
         </div>
       );
@@ -456,12 +452,12 @@ function PreviewFormHeader({
       </div>
     </div>
   );
-}
+};
 
 /**
  * Renders custom thank you content after form submission
  */
-function RenderThankYouContent({
+const RenderThankYouContent = ({
   elements,
   form,
   onReset,
@@ -471,7 +467,7 @@ function RenderThankYouContent({
   form: ReturnType<typeof usePreviewForm>["form"];
   onReset?: () => void;
   layout: "public" | "editor";
-}) {
+}) => {
   const { t } = useTranslation();
   return (
     <div data-bf-field-list className="space-y-4">
@@ -495,12 +491,12 @@ function RenderThankYouContent({
       )}
     </div>
   );
-}
+};
 
 /**
  * Default thank you message when no custom content is provided
  */
-function DefaultThankYou({ onReset }: { onReset?: () => void }) {
+const DefaultThankYou = ({ onReset }: { onReset?: () => void }) => {
   const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -516,14 +512,14 @@ function DefaultThankYou({ onReset }: { onReset?: () => void }) {
       )}
     </div>
   );
-}
+};
 
 /**
  * Renders Plate editor content as a functional form preview.
  * Supports multi-step forms with page breaks as step dividers.
  * Uses separate forms per step with StepFormContext for state management.
  */
-export function FormPreviewFromPlate({
+export const FormPreviewFromPlate = ({
   content,
   title: legacyTitle,
   icon: legacyIcon,
@@ -533,7 +529,7 @@ export function FormPreviewFromPlate({
   layout = "public",
   settings,
   formId,
-}: FormPreviewFromPlateProps) {
+}: FormPreviewFromPlateProps) => {
   const headerFromContent = extractFormHeader(content);
   const hasHeaderNode = headerFromContent !== null;
 
@@ -581,7 +577,7 @@ export function FormPreviewFromPlate({
       />
     </StepFormProvider>
   );
-}
+};
 
 /**
  * Animation variants for form step transitions
@@ -606,7 +602,7 @@ const stepVariants = {
 /**
  * Inner content component that uses StepFormContext
  */
-function FormPreviewContent({
+const FormPreviewContent = ({
   steps,
   thankYouContent,
   title,
@@ -626,7 +622,7 @@ function FormPreviewContent({
   hideTitle?: boolean;
   layout: "public" | "editor";
   settings?: PublicFormSettings;
-}) {
+}) => {
   const { currentStep, totalSteps, isSubmitted, direction, reset } = useStepForm();
   const { t } = useTranslation();
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
@@ -770,4 +766,4 @@ function FormPreviewContent({
       </div>
     </div>
   );
-}
+};

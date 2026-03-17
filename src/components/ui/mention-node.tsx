@@ -17,11 +17,11 @@ import {
   InlineComboboxItem,
 } from "./inline-combobox";
 
-export function MentionElement(
+export const MentionElement = (
   props: PlateElementProps<TMentionElement> & {
     prefix?: string;
   },
-) {
+) => {
   const element = props.element;
 
   const selected = useSelected();
@@ -64,11 +64,11 @@ export function MentionElement(
       )}
     </PlateElement>
   );
-}
+};
 
 const onSelectItem = getMentionOnSelectItem();
 
-export function MentionInputElement(props: PlateElementProps<TComboboxInputElement>) {
+export const MentionInputElement = (props: PlateElementProps<TComboboxInputElement>) => {
   const { editor, element } = props;
   const [search, setSearch] = React.useState("");
 
@@ -105,7 +105,7 @@ export function MentionInputElement(props: PlateElementProps<TComboboxInputEleme
       {props.children}
     </PlateElement>
   );
-}
+};
 
 const MENTIONABLES = [
   { key: "0", text: "Aayla Secura" },

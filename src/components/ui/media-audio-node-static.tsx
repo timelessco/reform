@@ -10,7 +10,7 @@ const createCaptionTrackUrl = (text: string) => {
   return URL.createObjectURL(blob);
 };
 
-export function AudioElementStatic(props: SlateElementProps<TAudioElement & TCaptionElement>) {
+export const AudioElementStatic = (props: SlateElementProps<TAudioElement & TCaptionElement>) => {
   const { caption } = props.element;
   const captionText = React.useMemo(() => {
     if (!caption?.length) return "";
@@ -51,4 +51,4 @@ export function AudioElementStatic(props: SlateElementProps<TAudioElement & TCap
       {props.children}
     </SlateElement>
   );
-}
+};

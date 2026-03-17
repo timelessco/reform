@@ -91,7 +91,7 @@ export const Route = createFileRoute(
   notFoundComponent: NotFound,
 });
 
-function DesignPage() {
+const DesignPage = () => {
   const { pathname } = useLocation();
   // Extract formId from pathname to ensure it's always current
   const formIdFromPath = pathname.split("/form-builder/")[1]?.split("/")[0] || "";
@@ -184,4 +184,4 @@ function DesignPage() {
       </main>
     </div>
   );
-}
+};

@@ -11,7 +11,7 @@ import {
 const SECTION_VALUE = "section";
 
 /** Collapsible sidebar section with label, chevron, and optional action (Figma system-flat). */
-export function SidebarSection({
+export const SidebarSection = ({
   label,
   children,
   action,
@@ -23,7 +23,7 @@ export function SidebarSection({
   action?: React.ReactNode;
   initialOpen?: boolean;
   className?: string;
-}) {
+}) => {
   const defaultAction = (
     <Button
       variant="ghost"
@@ -50,4 +50,4 @@ export function SidebarSection({
       </AccordionItem>
     </Accordion>
   );
-}
+};

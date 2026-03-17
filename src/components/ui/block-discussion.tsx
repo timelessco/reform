@@ -132,7 +132,7 @@ const BlockCommentContent = ({
 
     if (!activeNode) return null;
 
-    return editor.api.toDOMNode(activeNode[0])!;
+    return editor.api.toDOMNode(activeNode[0]) ?? null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     activeSuggestion,
@@ -144,24 +144,26 @@ const BlockCommentContent = ({
     editor.getApi,
   ]);
 
+  const handleOpenChange = React.useCallback(
+    (_open_: boolean) => {
+      if (!_open_ && isCommenting && draftCommentNode) {
+        editor.tf.unsetNodes(getDraftCommentKey(), {
+          at: [],
+          mode: "lowest",
+          match: (n) => n[getDraftCommentKey()],
+        });
+      }
+      setOpen(_open_);
+    },
+    [isCommenting, draftCommentNode, editor.tf],
+  );
+
   if (suggestionsCount + resolvedDiscussions.length === 0 && !draftCommentNode)
     return <div className="w-full">{children}</div>;
 
   return (
     <div className="flex w-full justify-between">
-      <Popover
-        open={open}
-        onOpenChange={(_open_) => {
-          if (!_open_ && isCommenting && draftCommentNode) {
-            editor.tf.unsetNodes(getDraftCommentKey(), {
-              at: [],
-              mode: "lowest",
-              match: (n) => n[getDraftCommentKey()],
-            });
-          }
-          setOpen(_open_);
-        }}
-      >
+      <Popover open={open} onOpenChange={handleOpenChange}>
         <div className="w-full">{children}</div>
         {anchorElement && <PopoverAnchor virtualRef={{ current: { current: anchorElement } }} />}
 
@@ -238,7 +240,7 @@ const BlockCommentContent = ({
   );
 };
 
-function BlockComment({ discussion, isLast }: { discussion: TDiscussion; isLast: boolean }) {
+const BlockComment = ({ discussion, isLast }: { discussion: TDiscussion; isLast: boolean }) => {
   const [editingId, setEditingId] = React.useState<string | null>(null);
 
   return (
@@ -262,7 +264,7 @@ function BlockComment({ discussion, isLast }: { discussion: TDiscussion; isLast:
       {!isLast && <div className="h-px w-full bg-muted" />}
     </React.Fragment>
   );
-}
+};
 
 const useResolvedDiscussion = (commentNodes: NodeEntry<TCommentText>[], blockPath: Path) => {
   const { api, getOption, setOption } = useEditorPlugin(commentPlugin);

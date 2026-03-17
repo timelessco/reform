@@ -4,7 +4,7 @@ import type * as React from "react";
 
 import { ToolbarButton } from "./toolbar";
 
-export function IndentToolbarButton(props: React.ComponentProps<typeof ToolbarButton>) {
+export const IndentToolbarButton = (props: React.ComponentProps<typeof ToolbarButton>) => {
   const { props: buttonProps } = useIndentButton();
 
   return (
@@ -12,9 +12,9 @@ export function IndentToolbarButton(props: React.ComponentProps<typeof ToolbarBu
       <IndentIcon />
     </ToolbarButton>
   );
-}
+};
 
-export function OutdentToolbarButton(props: React.ComponentProps<typeof ToolbarButton>) {
+export const OutdentToolbarButton = (props: React.ComponentProps<typeof ToolbarButton>) => {
   const { props: buttonProps } = useOutdentButton();
 
   return (
@@ -22,4 +22,4 @@ export function OutdentToolbarButton(props: React.ComponentProps<typeof ToolbarB
       <OutdentIcon />
     </ToolbarButton>
   );
-}
+};

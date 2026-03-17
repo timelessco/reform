@@ -88,7 +88,7 @@ export const formCollection = createCollection(
     getKey: (item) => item.id,
     startSync: false, // Sync starts in _authenticated.tsx loader after auth is confirmed
     syncMode: "eager",
-    onInsert: async ({ transaction, collection }) => {
+    onInsert: async ({ transaction }) => {
       const newItem = transaction.mutations[0].modified;
       const result = (await createForm({ data: newItem })) as ServerTxResult;
       return { txid: result.txid };
@@ -147,17 +147,16 @@ const DEFAULT_FORM_SETTINGS: FormBuilderSettings = {
 /**
  * Updates the form content (Plate editor value).
  */
-async function updateContent(id: string, content: any[]) {
-  return formCollection.update(id, (draft) => {
+const _updateContent = async (id: string, content: any[]) =>
+  formCollection.update(id, (draft) => {
     draft.content = content;
     draft.updatedAt = new Date().toISOString();
   });
-}
 
 /**
  * Updates the form header fields (title, icon, cover).
  */
-export async function updateHeader(
+export const updateHeader = async (
   id: string,
   header: {
     title?: string;
@@ -167,8 +166,8 @@ export async function updateHeader(
     createdAt: string;
     updatedAt: string;
   },
-) {
-  return formCollection.update(id, (draft) => {
+) =>
+  formCollection.update(id, (draft) => {
     if (header.title !== undefined) draft.title = header.title;
     if (header.icon !== undefined) draft.icon = header.icon;
     if (header.cover !== undefined) draft.cover = header.cover;
@@ -176,44 +175,40 @@ export async function updateHeader(
     if (header.createdAt !== undefined) draft.createdAt = header.createdAt;
     if (header.updatedAt !== undefined) draft.updatedAt = header.updatedAt;
   });
-}
 
 /**
  * Updates general form settings.
  */
-export async function updateSettings(id: string, settings: Partial<typeof DEFAULT_FORM_SETTINGS>) {
-  return formCollection.update(id, (draft) => {
+export const updateSettings = async (id: string, settings: Partial<typeof DEFAULT_FORM_SETTINGS>) =>
+  formCollection.update(id, (draft) => {
     logger("updateSettings", id, Object.keys(settings));
     draft.settings = { ...draft.settings, ...settings };
     draft.updatedAt = new Date().toISOString();
   });
-}
 
 /**
  * Generic update for when we need to batch multiple changes.
  */
-export async function updateDoc(id: string, updater: (draft: any) => void) {
-  return formCollection.update(id, (draft) => {
+export const updateDoc = async (id: string, updater: (draft: any) => void) =>
+  formCollection.update(id, (draft) => {
     logger("updateDoc", id);
     updater(draft);
     draft.updatedAt = new Date().toISOString();
   });
-}
 
 /**
  * Updates the form status (draft, published, archived).
  */
-export async function updateFormStatus(id: string, status: "draft" | "published" | "archived") {
-  return formCollection.update(id, (draft) => {
+export const updateFormStatus = async (id: string, status: "draft" | "published" | "archived") =>
+  formCollection.update(id, (draft) => {
     draft.status = status;
     draft.updatedAt = new Date().toISOString();
   });
-}
 
 /**
  * Creates a new form with default values and returns the new document.
  */
-export async function createFormLocal(workspaceId: string, title = "Untitled"): Promise<Form> {
+export const createFormLocal = async (workspaceId: string, title = "Untitled"): Promise<Form> => {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const newForm: Form = {
@@ -234,20 +229,20 @@ export async function createFormLocal(workspaceId: string, title = "Untitled"): 
 
   await formCollection.insert(newForm);
   return newForm;
-}
+};
 
 /**
  * Deletes a form by ID.
  */
-async function deleteFormLocal(id: string): Promise<void> {
+const _deleteFormLocal = async (id: string): Promise<void> => {
   await formCollection.delete(id);
-}
+};
 
 /**
  * Duplicates a form by ID and returns the new document.
  * The new form's title will be "{original title} copy"
  */
-export function duplicateFormById(formId: string): Form {
+export const duplicateFormById = (formId: string): Form => {
   const sourceForm = formCollection.state.get(formId);
   if (!sourceForm) {
     throw new Error(`Form not found: ${formId}`);
@@ -286,52 +281,50 @@ export function duplicateFormById(formId: string): Form {
   });
 
   return newForm;
-}
+};
 
 /**
  * @deprecated Use duplicateFormById instead
  */
-export function duplicateForm(sourceForm: Form): Form {
-  return duplicateFormById(sourceForm.id);
-}
+export const duplicateForm = (sourceForm: Form): Form => duplicateFormById(sourceForm.id);
 
 /**
  * Moves a form to a different workspace.
  */
-async function moveFormToWorkspace(formId: string, targetWorkspaceId: string): Promise<void> {
+const _moveFormToWorkspace = async (formId: string, targetWorkspaceId: string): Promise<void> => {
   await formCollection.update(formId, (draft) => {
     draft.workspaceId = targetWorkspaceId;
     draft.updatedAt = new Date().toISOString();
   });
-}
+};
 
 /**
  * Archives a form (moves to trash).
  * Sets status to 'archived' and records deletedAt timestamp.
  */
-async function archiveFormLocal(id: string): Promise<void> {
+const _archiveFormLocal = async (id: string): Promise<void> => {
   await formCollection.update(id, (draft) => {
     draft.status = "archived";
     draft.deletedAt = new Date().toISOString();
     draft.updatedAt = new Date().toISOString();
   });
-}
+};
 
 /**
  * Restores a form from trash.
  * Sets status back to 'draft' and clears deletedAt.
  */
-export async function restoreFormLocal(id: string): Promise<void> {
+export const restoreFormLocal = async (id: string): Promise<void> => {
   await formCollection.update(id, (draft) => {
     draft.status = "draft";
     draft.deletedAt = null;
     draft.updatedAt = new Date().toISOString();
   });
-}
+};
 
 /**
  * Permanently deletes a form (cannot be undone).
  */
-export async function permanentDeleteFormLocal(id: string): Promise<void> {
+export const permanentDeleteFormLocal = async (id: string): Promise<void> => {
   await formCollection.delete(id);
-}
+};

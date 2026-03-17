@@ -15,13 +15,13 @@ const EditorHeaderVisibilityContext = createContext<EditorHeaderVisibilityContex
   undefined,
 );
 
-export function EditorHeaderVisibilityProvider({
+export const EditorHeaderVisibilityProvider = ({
   enabled,
   children,
 }: {
   enabled: boolean;
   children: React.ReactNode;
-}) {
+}) => {
   const [visible, setVisible] = useState(true);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -86,9 +86,9 @@ export function EditorHeaderVisibilityProvider({
       {children}
     </EditorHeaderVisibilityContext.Provider>
   );
-}
+};
 
-export function useEditorHeaderVisibility() {
+export const useEditorHeaderVisibility = () => {
   const context = use(EditorHeaderVisibilityContext);
   if (!context) {
     throw new Error(
@@ -96,8 +96,6 @@ export function useEditorHeaderVisibility() {
     );
   }
   return context;
-}
+};
 
-export function useEditorHeaderVisibilitySafe() {
-  return use(EditorHeaderVisibilityContext);
-}
+export const useEditorHeaderVisibilitySafe = () => use(EditorHeaderVisibilityContext);

@@ -11,26 +11,26 @@ import { MarkdownKit } from "./markdown-kit";
 let _aiModules: typeof import("@platejs/ai") | null = null;
 let _aiReactModules: typeof import("@platejs/ai/react") | null = null;
 
-async function getAIModules() {
+const getAIModules = async () => {
   if (!_aiModules) {
     _aiModules = await import("@platejs/ai");
   }
   return _aiModules;
-}
+};
 
-async function getAIReactModules() {
+const getAIReactModules = async () => {
   if (!_aiReactModules) {
     _aiReactModules = await import("@platejs/ai/react");
   }
   return _aiReactModules;
-}
+};
 
 // Eagerly kick off the dynamic imports when this module is first evaluated
 // (i.e., when AI features are actually requested), so they resolve in parallel.
 const aiModulesPromise = getAIModules();
 const aiReactModulesPromise = getAIReactModules();
 
-export async function loadAIKit() {
+export const loadAIKit = async () => {
   const [aiMod, aiReactMod] = await Promise.all([aiModulesPromise, aiReactModulesPromise]);
 
   const { withAIBatch } = aiMod;
@@ -114,4 +114,4 @@ export async function loadAIKit() {
   });
 
   return [...CursorOverlayKit, ...MarkdownKit, AIPlugin.withComponent(AILeaf), aiChatPlugin];
-}
+};

@@ -27,7 +27,7 @@ interface RenderPreviewInputProps {
 /**
  * Extracts error message from Zod/TanStack Form error object
  */
-function extractErrorMessage(error: unknown): string {
+const extractErrorMessage = (error: unknown): string => {
   if (!error) return "Invalid value";
 
   // Handle array of errors
@@ -48,20 +48,20 @@ function extractErrorMessage(error: unknown): string {
   }
 
   return "Invalid value";
-}
+};
 
 /**
  * Renders a single field in the preview form.
  * Supports Input, Textarea, and Button field types.
  */
-export function RenderPreviewInput({
+export const RenderPreviewInput = ({
   field,
   form,
   navigation,
   grouped = false,
   isMultiPage = false,
   layout = "public",
-}: RenderPreviewInputProps) {
+}: RenderPreviewInputProps) => {
   // Handle Button field type
   if (field.fieldType === "Button") {
     const buttonRole = field.buttonRole || "submit";
@@ -202,4 +202,4 @@ export function RenderPreviewInput({
       }}
     </form.AppField>
   );
-}
+};

@@ -7,7 +7,7 @@ let dbInstance: ReturnType<typeof drizzle> | undefined;
  * Get the database instance, initializing lazily if needed.
  * This ensures DATABASE_URL is read at runtime rather than build time.
  */
-function getDb() {
+const getDb = () => {
   if (!dbInstance) {
     const url = process.env.DATABASE_URL;
     if (!url) {
@@ -21,7 +21,7 @@ function getDb() {
     });
   }
   return dbInstance;
-}
+};
 
 // Re-export for backwards compatibility
 export const db = getDb();

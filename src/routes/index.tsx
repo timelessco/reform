@@ -24,10 +24,8 @@ export const Route = createFileRoute("/")({
   notFoundComponent: NotFound,
 });
 
-function RouteComponent() {
-  return (
-    <Suspense fallback={<Loader />}>
-      <LandingEditor />
-    </Suspense>
-  );
-}
+const RouteComponent = () => (
+  <Suspense fallback={<Loader />}>
+    <LandingEditor />
+  </Suspense>
+);

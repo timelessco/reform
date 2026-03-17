@@ -62,7 +62,7 @@ interface ImageFocusRingProps {
   hasImageChildren?: boolean;
 }
 
-function ImageFocusRing(props: ImageFocusRingProps) {
+const ImageFocusRing = (props: ImageFocusRingProps) => {
   const { hasImageChildren } = props;
 
   if (isNullable(hasImageChildren)) {
@@ -75,9 +75,9 @@ function ImageFocusRing(props: ImageFocusRingProps) {
       data-slot="image-focus-ring"
     />
   );
-}
+};
 
-export function LinkHint() {
+export const LinkHint = () => {
   const pending = React.use(LinkTransitionContext);
 
   return (
@@ -87,4 +87,4 @@ export function LinkHint() {
       data-slot="link-hint"
     />
   );
-}
+};

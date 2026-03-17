@@ -45,21 +45,21 @@ const landingValue = normalizeNodeId([
   },
 ]);
 
-export default function LandingEditor() {
-  return (
-    <ClientOnly
-      fallback={
-        <div className="flex items-center justify-center h-screen">
-          <Loader />
-        </div>
-      }
-    >
-      {() => <LandingLayout />}
-    </ClientOnly>
-  );
-}
+const noop = async () => {};
 
-function LandingLayout() {
+const LandingEditor = () => (
+  <ClientOnly
+    fallback={
+      <div className="flex items-center justify-center h-screen">
+        <Loader />
+      </div>
+    }
+  >
+    {() => <LandingLayout />}
+  </ClientOnly>
+);
+
+const LandingLayout = () => {
   const { activeSidebar, previewMode } = useEditorSidebar();
   const showSidebar = !!activeSidebar;
 
@@ -144,14 +144,14 @@ function LandingLayout() {
       </div>
     </div>
   );
-}
+};
 
-function LandingSidebar() {
+const LandingSidebar = () => {
   const localFormId = getLocalFormId();
   const { activeSidebar, closeSidebar } = useEditorSidebar();
 
   if (activeSidebar === "about") {
-    return <AboutSidebar onClose={() => closeSidebar()} />;
+    return <AboutSidebar onClose={closeSidebar} />;
   }
   if (activeSidebar === "settings") {
     return <FormSettingsSidebar formId={localFormId} isLocal />;
@@ -160,9 +160,9 @@ function LandingSidebar() {
     return <CustomizeSidebar formId={localFormId} isLocal />;
   }
   return null;
-}
+};
 
-function LocalEditorApp() {
+const LocalEditorApp = () => {
   const localFormId = getLocalFormId();
   const localWorkspaceId = getLocalWorkspaceId();
   const { data: savedDocs } = useLocalForm(localFormId);
@@ -273,9 +273,9 @@ function LocalEditorApp() {
       </main>
     </EditorThemeProvider>
   );
-}
+};
 
-function LocalPreviewMode() {
+const LocalPreviewMode = () => {
   const localFormId = getLocalFormId();
   const { data: savedDocs } = useLocalForm(localFormId);
 
@@ -300,11 +300,13 @@ function LocalPreviewMode() {
           title={doc?.title ?? ""}
           icon={doc?.icon ?? undefined}
           cover={doc?.cover ?? undefined}
-          onSubmit={async () => {}}
+          onSubmit={noop}
           layout="editor"
           formId={localFormId}
         />
       </div>
     </div>
   );
-}
+};
+
+export default LandingEditor;

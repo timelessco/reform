@@ -25,7 +25,7 @@ interface RenderStepPreviewInputProps {
 /**
  * Extracts error message from Zod/TanStack Form error object
  */
-function extractErrorMessage(error: unknown): string {
+const extractErrorMessage = (error: unknown): string => {
   if (!error) return "Invalid value";
 
   if (Array.isArray(error)) {
@@ -43,12 +43,12 @@ function extractErrorMessage(error: unknown): string {
   }
 
   return "Invalid value";
-}
+};
 
 /**
  * Toggle renderer component with its own open/closed state
  */
-function ToggleRenderer({
+const ToggleRenderer = ({
   title,
   items,
   form,
@@ -56,7 +56,7 @@ function ToggleRenderer({
   title: string;
   items: TransformedElement[];
   form: AppForm;
-}) {
+}) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -74,14 +74,14 @@ function ToggleRenderer({
       </CollapsibleContent>
     </Collapsible>
   );
-}
+};
 
 /**
  * Renders a single element in the step form.
  * Handles static elements and form fields (Input, Textarea).
  * Buttons are handled separately in StepForm.
  */
-export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInputProps) {
+export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInputProps) => {
   // Static elements
   if ("static" in element && element.static) {
     switch (element.fieldType) {
@@ -100,8 +100,8 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
       case "UnorderedList":
         return (
           <ul className="my-2 ml-6 space-y-1 list-disc">
-            {element.items.map((item, idx) => (
-              <li key={`${element.id}-${idx}`} className="text-sm pl-1">
+            {element.items.map((item) => (
+              <li key={`${element.id}-${item}`} className="text-sm pl-1">
                 {item}
               </li>
             ))}
@@ -110,8 +110,8 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
       case "OrderedList":
         return (
           <ol className="my-2 ml-6 space-y-1 list-decimal">
-            {element.items.map((item, idx) => (
-              <li key={`${element.id}-${idx}`} className="text-sm pl-1">
+            {element.items.map((item) => (
+              <li key={`${element.id}-${item}`} className="text-sm pl-1">
                 {item}
               </li>
             ))}
@@ -127,12 +127,10 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
                 <TableHeader>
                   {element.rows
                     .filter((row) => row.isHeader)
-                    .map((row, rowIdx) => (
-                      <TableRow key={`${element.id}-header-${rowIdx}`}>
-                        {row.cells.map((cell, cellIdx) => (
-                          <TableHead key={`${element.id}-header-${rowIdx}-${cellIdx}`}>
-                            {cell}
-                          </TableHead>
+                    .map((row) => (
+                      <TableRow key={`${element.id}-header-${row.cells.join("-")}`}>
+                        {row.cells.map((cell) => (
+                          <TableHead key={`${element.id}-header-${cell}`}>{cell}</TableHead>
                         ))}
                       </TableRow>
                     ))}
@@ -141,10 +139,10 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
               <TableBody>
                 {element.rows
                   .filter((row) => !row.isHeader)
-                  .map((row, rowIdx) => (
-                    <TableRow key={`${element.id}-row-${rowIdx}`}>
-                      {row.cells.map((cell, cellIdx) => (
-                        <TableCell key={`${element.id}-row-${rowIdx}-${cellIdx}`}>{cell}</TableCell>
+                  .map((row) => (
+                    <TableRow key={`${element.id}-row-${row.cells.join("-")}`}>
+                      {row.cells.map((cell) => (
+                        <TableCell key={`${element.id}-row-${cell}`}>{cell}</TableCell>
                       ))}
                     </TableRow>
                   ))}
@@ -255,4 +253,4 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
   }
 
   return null;
-}
+};

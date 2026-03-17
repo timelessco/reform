@@ -12,14 +12,14 @@ export interface SidebarItemProps {
   prefix?: React.ReactNode;
 }
 
-export function SidebarItem({
+export const SidebarItem = ({
   to,
   label,
   isActive,
   onClick,
   prefix,
   children,
-}: SidebarItemProps & { children?: React.ReactNode }) {
+}: SidebarItemProps & { children?: React.ReactNode }) => {
   const Component: React.ElementType = to ? Link : SidebarMenuButton;
   const componentProps = to ? { to } : { type: "button" as const };
 
@@ -43,4 +43,4 @@ export function SidebarItem({
       {children}
     </Component>
   );
-}
+};

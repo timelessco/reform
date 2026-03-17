@@ -6,11 +6,11 @@ export const toastManager = ToastPrimitive.createToastManager();
 const TOAST_SHADOW =
   "0 0 1px 0 rgba(0, 0, 0, 0.19), 0 1px 2px 0 rgba(0, 0, 0, 0.07), 0 6px 15px -5px rgba(0, 0, 0, 0.11)";
 
-function Provider(props: ToastPrimitive.Provider.Props) {
-  return <ToastPrimitive.Provider toastManager={toastManager} timeout={5000} {...props} />;
-}
+const Provider = (props: ToastPrimitive.Provider.Props) => (
+  <ToastPrimitive.Provider toastManager={toastManager} timeout={5000} {...props} />
+);
 
-function Viewport(props: ToastPrimitive.Viewport.Props) {
+const Viewport = (props: ToastPrimitive.Viewport.Props) => {
   const { className, ...rest } = props;
   return (
     <ToastPrimitive.Viewport
@@ -18,9 +18,9 @@ function Viewport(props: ToastPrimitive.Viewport.Props) {
       {...rest}
     />
   );
-}
+};
 
-function Root(props: ToastPrimitive.Root.Props) {
+const Root = (props: ToastPrimitive.Root.Props) => {
   const { className, ...rest } = props;
   return (
     <ToastPrimitive.Root
@@ -29,9 +29,9 @@ function Root(props: ToastPrimitive.Root.Props) {
       {...rest}
     />
   );
-}
+};
 
-function Title(props: ToastPrimitive.Title.Props) {
+const Title = (props: ToastPrimitive.Title.Props) => {
   const { className, ...rest } = props;
   return (
     <ToastPrimitive.Title
@@ -39,9 +39,9 @@ function Title(props: ToastPrimitive.Title.Props) {
       {...rest}
     />
   );
-}
+};
 
-function Description(props: ToastPrimitive.Description.Props) {
+const Description = (props: ToastPrimitive.Description.Props) => {
   const { className, ...rest } = props;
   return (
     <ToastPrimitive.Description
@@ -49,13 +49,11 @@ function Description(props: ToastPrimitive.Description.Props) {
       {...rest}
     />
   );
-}
+};
 
-function Close(props: ToastPrimitive.Close.Props) {
-  return <ToastPrimitive.Close {...props} />;
-}
+const Close = (props: ToastPrimitive.Close.Props) => <ToastPrimitive.Close {...props} />;
 
-function List() {
+const List = () => {
   const { toasts } = ToastPrimitive.useToastManager();
   return toasts.map((toast) => (
     <Root key={toast.id} toast={toast}>
@@ -68,21 +66,19 @@ function List() {
       </div>
     </Root>
   ));
-}
+};
 
 /**
  * Pre-composed toast setup for use in layout files (Server Components).
  * Renders Provider + Viewport + List as a single client component boundary.
  */
-export function ToastSetup() {
-  return (
-    <Provider>
-      <Viewport>
-        <List />
-      </Viewport>
-    </Provider>
-  );
-}
+export const ToastSetup = () => (
+  <Provider>
+    <Viewport>
+      <List />
+    </Viewport>
+  </Provider>
+);
 
 export const Toast = {
   Close,

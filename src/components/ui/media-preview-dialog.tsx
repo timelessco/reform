@@ -33,7 +33,7 @@ const buttonVariants = cva("rounded bg-[rgba(0,0,0,0.5)] px-1", {
 
 const SCROLL_SPEED = 4;
 
-export function MediaPreviewDialog() {
+export const MediaPreviewDialog = () => {
   const editor = useEditorRef();
   const isOpen = useImagePreviewValue("isOpen", editor.id);
   const scale = useImagePreviewValue("scale");
@@ -147,7 +147,7 @@ export function MediaPreviewDialog() {
                     <ScaleInput
                       className="w-10 rounded px-1 text-slate-500 outline"
                       aria-label="Zoom level"
-                    />{" "}
+                    />
                     <span>%</span>
                   </>
                 ) : (
@@ -189,10 +189,10 @@ export function MediaPreviewDialog() {
       </div>
     </div>
   );
-}
+};
 
-function ScaleInput(props: React.ComponentProps<"input">) {
+const ScaleInput = (props: React.ComponentProps<"input">) => {
   const { props: scaleInputProps, ref } = useScaleInput();
 
   return <input {...scaleInputProps} {...props} ref={ref} />;
-}
+};

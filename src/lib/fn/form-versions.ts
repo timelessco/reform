@@ -13,10 +13,10 @@ const MAX_VERSIONS_PER_FORM = 20;
 /**
  * Compute a hash of the content for fast change detection
  */
-function computeContentHash(content: unknown): string {
+const computeContentHash = (content: unknown): string => {
   const str = JSON.stringify(content);
   return crypto.createHash("md5").update(str).digest("hex");
-}
+};
 
 const serializeVersion = (version: typeof formVersions.$inferSelect) => ({
   ...version,
@@ -349,7 +349,7 @@ export const getLatestPublishedVersion = createServerFn({ method: "GET" })
 /**
  * Compute content hash - exported for use in hooks
  */
-const computeFormContentHash = createServerFn({ method: "POST" })
+const _computeFormContentHash = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ content: z.array(z.any()) }))
   .handler(async ({ data }) => ({ hash: computeContentHash(data.content) }));

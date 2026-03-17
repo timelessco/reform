@@ -477,7 +477,7 @@ const filterItemVariants = cva("flex items-center shadow-xs shadow-black/5", {
   },
 });
 
-function FilterInput<T = unknown>({
+const FilterInput = <T = unknown>({
   field,
   onChange,
   onBlur,
@@ -489,7 +489,7 @@ function FilterInput<T = unknown>({
   className?: string;
   field?: FilterFieldConfig<T>;
   onInputChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}) {
+}) => {
   const context = useFilterContext();
   const [isValid, setIsValid] = useState(true);
   const [validationMessage, setValidationMessage] = useState("");
@@ -651,7 +651,7 @@ function FilterInput<T = unknown>({
       )}
     </div>
   );
-}
+};
 
 interface FilterRemoveButtonProps
   extends
@@ -660,7 +660,7 @@ interface FilterRemoveButtonProps
   icon?: React.ReactNode;
 }
 
-function FilterRemoveButton({ className, icon = <XIcon />, ...props }: FilterRemoveButtonProps) {
+const FilterRemoveButton = ({ className, icon = <XIcon />, ...props }: FilterRemoveButtonProps) => {
   const context = useFilterContext();
 
   return (
@@ -681,7 +681,7 @@ function FilterRemoveButton({ className, icon = <XIcon />, ...props }: FilterRem
       {icon}
     </button>
   );
-}
+};
 
 // Generic types for flexible filter system
 export interface FilterOption<T = unknown> {
@@ -779,17 +779,19 @@ const isFieldGroup = <T = unknown>(
 const isGroupLevelField = <T = unknown>(field: FilterFieldConfig<T>): boolean =>
   Boolean(field.group && field.fields);
 
-const flattenFields = <T = unknown>(fields: FilterFieldsConfig<T>): FilterFieldConfig<T>[] =>
-  fields.reduce<FilterFieldConfig<T>[]>((acc, item) => {
+const flattenFields = <T = unknown>(fields: FilterFieldsConfig<T>): FilterFieldConfig<T>[] => {
+  const result: FilterFieldConfig<T>[] = [];
+  for (const item of fields) {
     if (isFieldGroup(item)) {
-      return [...acc, ...item.fields];
+      result.push(...item.fields);
+    } else if (isGroupLevelField(item)) {
+      result.push(...(item.fields ?? []));
+    } else {
+      result.push(item);
     }
-    // Handle group-level fields (new structure)
-    if (isGroupLevelField(item)) {
-      return [...acc, ...item.fields!];
-    }
-    return [...acc, item];
-  }, []);
+  }
+  return result;
+};
 
 const getFieldsMap = <T = unknown>(
   fields: FilterFieldsConfig<T>,
@@ -950,12 +952,12 @@ interface FilterOperatorDropdownProps<T = unknown> {
   onChange: (operator: string) => void;
 }
 
-function FilterOperatorDropdown<T = unknown>({
+const FilterOperatorDropdown = <T = unknown>({
   field,
   operator,
   values,
   onChange,
-}: FilterOperatorDropdownProps<T>) {
+}: FilterOperatorDropdownProps<T>) => {
   const context = useFilterContext();
   const operators = getOperatorsForField(field, values, context.i18n);
 
@@ -998,7 +1000,7 @@ function FilterOperatorDropdown<T = unknown>({
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+};
 
 interface FilterValueSelectorProps<T = unknown> {
   field: FilterFieldConfig<T>;
@@ -1017,13 +1019,13 @@ interface SelectOptionsPopoverProps<T = unknown> {
   inline?: boolean;
 }
 
-function SelectOptionsPopover<T = unknown>({
+const SelectOptionsPopover = <T = unknown>({
   field,
   values,
   onChange,
   onClose,
   inline = false,
-}: SelectOptionsPopoverProps<T>) {
+}: SelectOptionsPopoverProps<T>) => {
   const [open, setOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const context = useFilterContext();
@@ -1079,7 +1081,7 @@ function SelectOptionsPopover<T = unknown>({
                       }
                     }}
                   >
-                    {option.icon && option.icon}
+                    {option.icon}
                     <span className="text-accent-foreground truncate">{option.label}</span>
                     <CheckIcon className="text-primary ms-auto" />
                   </CommandItem>
@@ -1119,7 +1121,7 @@ function SelectOptionsPopover<T = unknown>({
                         }
                       }}
                     >
-                      {option.icon && option.icon}
+                      {option.icon}
                       <span className="text-accent-foreground truncate">{option.label}</span>
                       <CheckIcon className="text-primary ms-auto opacity-0" />
                     </CommandItem>
@@ -1205,7 +1207,7 @@ function SelectOptionsPopover<T = unknown>({
                       }
                     }}
                   >
-                    {option.icon && option.icon}
+                    {option.icon}
                     <span className="text-accent-foreground truncate">{option.label}</span>
                     <CheckIcon className="text-primary ms-auto" />
                   </CommandItem>
@@ -1237,7 +1239,7 @@ function SelectOptionsPopover<T = unknown>({
                         }
                       }}
                     >
-                      {option.icon && option.icon}
+                      {option.icon}
                       <span className="text-accent-foreground truncate">{option.label}</span>
                       <CheckIcon className="text-primary ms-auto opacity-0" />
                     </CommandItem>
@@ -1250,14 +1252,14 @@ function SelectOptionsPopover<T = unknown>({
       </PopoverContent>
     </Popover>
   );
-}
+};
 
-function FilterValueSelector<T = unknown>({
+const FilterValueSelector = <T = unknown>({
   field,
   values,
   onChange,
   operator,
-}: FilterValueSelectorProps<T>) {
+}: FilterValueSelectorProps<T>) => {
   const [open, setOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const context = useFilterContext();
@@ -1647,7 +1649,7 @@ function FilterValueSelector<T = unknown>({
                       if (!isMultiSelect) setOpen(false);
                     }}
                   >
-                    {option.icon && option.icon}
+                    {option.icon}
                     <span className="text-accent-foreground truncate">{option.label}</span>
                     <CheckIcon className="text-primary ms-auto" />
                   </CommandItem>
@@ -1678,7 +1680,7 @@ function FilterValueSelector<T = unknown>({
                         }
                       }}
                     >
-                      {option.icon && option.icon}
+                      {option.icon}
                       <span className="text-accent-foreground truncate">{option.label}</span>
                       <CheckIcon className="text-primary ms-auto opacity-0" />
                     </CommandItem>
@@ -1691,7 +1693,7 @@ function FilterValueSelector<T = unknown>({
       </PopoverContent>
     </Popover>
   );
-}
+};
 
 export interface Filter<T = unknown> {
   id: string;
@@ -1826,7 +1828,7 @@ interface FiltersProps<T = unknown> {
   popoverContentClassName?: string;
 }
 
-export function Filters<T = unknown>({
+export const Filters = <T = unknown>({
   filters,
   fields,
   onChange,
@@ -1845,7 +1847,7 @@ export function Filters<T = unknown>({
   trigger,
   allowMultiple = true,
   popoverContentClassName,
-}: FiltersProps<T>) {
+}: FiltersProps<T>) => {
   const [addFilterOpen, setAddFilterOpen] = useState(false);
   const [selectedFieldForOptions, setSelectedFieldForOptions] =
     useState<FilterFieldConfig<T> | null>(null);
@@ -2004,25 +2006,43 @@ export function Filters<T = unknown>({
     });
   }, [fields, filters, allowMultiple]);
 
+  const filterContextValue = useMemo(
+    () => ({
+      variant,
+      size,
+      radius,
+      i18n: mergedI18n,
+      cursorPointer,
+      className,
+      showAddButton,
+      addButtonText,
+      addButtonIcon,
+      addButtonClassName,
+      addButton,
+      showSearchInput,
+      trigger,
+      allowMultiple,
+    }),
+    [
+      variant,
+      size,
+      radius,
+      mergedI18n,
+      cursorPointer,
+      className,
+      showAddButton,
+      addButtonText,
+      addButtonIcon,
+      addButtonClassName,
+      addButton,
+      showSearchInput,
+      trigger,
+      allowMultiple,
+    ],
+  );
+
   return (
-    <FilterContext.Provider
-      value={{
-        variant,
-        size,
-        radius,
-        i18n: mergedI18n,
-        cursorPointer,
-        className,
-        showAddButton,
-        addButtonText,
-        addButtonIcon,
-        addButtonClassName,
-        addButton,
-        showSearchInput,
-        trigger,
-        allowMultiple,
-      }}
-    >
+    <FilterContext.Provider value={filterContextValue}>
       <div className={cn(filtersContainerVariants({ variant, size }), className)}>
         {showAddButton && selectableFields.length > 0 && (
           <Popover
@@ -2093,7 +2113,7 @@ export function Filters<T = unknown>({
                     )}
                     <CommandList>
                       <CommandEmpty>{mergedI18n.noFieldsFound}</CommandEmpty>
-                      {fields.map((item, index) => {
+                      {fields.map((item, _index) => {
                         // Handle grouped fields (FilterFieldGroup structure)
                         if (isFieldGroup(item)) {
                           const groupFields = item.fields.filter((field) => {
@@ -2112,11 +2132,18 @@ export function Filters<T = unknown>({
                           if (groupFields.length === 0) return null;
 
                           return (
-                            <CommandGroup key={`group-${index}`} heading={item.group || "Fields"}>
-                              {groupFields.map((field, fieldIndex) => {
+                            <CommandGroup
+                              key={`group-${item.group || "fields"}`}
+                              heading={item.group || "Fields"}
+                            >
+                              {groupFields.map((field) => {
                                 // Handle separator
                                 if (field.type === "separator") {
-                                  return <CommandSeparator key={`separator-${fieldIndex}`} />;
+                                  return (
+                                    <CommandSeparator
+                                      key={`separator-${field.label || field.key || "sep"}`}
+                                    />
+                                  );
                                 }
 
                                 // Regular field
@@ -2136,7 +2163,7 @@ export function Filters<T = unknown>({
 
                         // Handle group-level fields (new FilterFieldConfig structure with group property)
                         if (isGroupLevelField(item)) {
-                          const groupFields = item.fields!.filter((field) => {
+                          const groupFields = (item.fields ?? []).filter((field) => {
                             // Include separators and labels for display
                             if (field.type === "separator") {
                               return true;
@@ -2152,11 +2179,18 @@ export function Filters<T = unknown>({
                           if (groupFields.length === 0) return null;
 
                           return (
-                            <CommandGroup key={`group-${index}`} heading={item.group || "Fields"}>
-                              {groupFields.map((field, fieldIndex) => {
+                            <CommandGroup
+                              key={`group-${item.group || "fields"}`}
+                              heading={item.group || "Fields"}
+                            >
+                              {groupFields.map((field) => {
                                 // Handle separator
                                 if (field.type === "separator") {
-                                  return <CommandSeparator key={`separator-${fieldIndex}`} />;
+                                  return (
+                                    <CommandSeparator
+                                      key={`separator-${field.label || field.key || "sep"}`}
+                                    />
+                                  );
                                 }
 
                                 // Regular field
@@ -2179,7 +2213,11 @@ export function Filters<T = unknown>({
 
                         // Handle separator
                         if (field.type === "separator") {
-                          return <CommandSeparator key={`separator-${index}`} />;
+                          return (
+                            <CommandSeparator
+                              key={`separator-${field.label || field.key || "sep"}`}
+                            />
+                          );
                         }
 
                         // Regular field
@@ -2247,7 +2285,7 @@ export function Filters<T = unknown>({
       </div>
     </FilterContext.Provider>
   );
-}
+};
 
 export const createFilter = <T = unknown>(
   field: string,

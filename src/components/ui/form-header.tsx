@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { createContext, use } from "react";
+import { createContext, use, useMemo } from "react";
 
 import AvatarUpload from "@/components/file-upload/avatar-upload";
 import { Button } from "@/components/ui/button";
@@ -100,7 +100,6 @@ const FormHeaderCover = () => {
   if (!cover) {
     return null;
   }
-
   const setCoverUrl = (url: string | null) => onCoverChange(url);
 
   return (
@@ -128,8 +127,7 @@ const FormHeaderCover = () => {
             backgroundColor: cover?.startsWith("#") ? cover : "#FFE4E1",
           }}
         />
-      )}
-
+      )}{" "}
       <div className="absolute bottom-2 right-2 opacity-0 group-hover/cover:opacity-100 transition-opacity flex gap-2">
         <Dialog>
           <DialogTrigger
@@ -456,7 +454,6 @@ const FormHeaderTitle = () => {
 
 const ActionButtons = () => {
   const { hasCover, hasLogo, onIconChange, onCoverChange } = useFormHeaderContext();
-
   const handleAddCover = () => onCoverChange("#FFE4E1");
   const handleAddIcon = () => onIconChange("default-icon");
 
@@ -521,16 +518,19 @@ const FormHeaderRoot = ({
   const hasCover = !!cover;
   const hasLogo = !!icon;
 
-  const contextValue: FormHeaderContextValue = {
-    title,
-    icon,
-    cover,
-    hasCover,
-    hasLogo,
-    onTitleChange,
-    onIconChange,
-    onCoverChange,
-  };
+  const contextValue = useMemo<FormHeaderContextValue>(
+    () => ({
+      title,
+      icon,
+      cover,
+      hasCover,
+      hasLogo,
+      onTitleChange,
+      onIconChange,
+      onCoverChange,
+    }),
+    [title, icon, cover, hasCover, hasLogo, onTitleChange, onIconChange, onCoverChange],
+  );
 
   return (
     <FormHeaderContext value={contextValue}>

@@ -55,7 +55,7 @@ export const Route = createFileRoute("/forms/$i8n/$formId")({
   }),
 });
 
-function PublicFormRoute() {
+const PublicFormRoute = () => {
   const loaderData = Route.useLoaderData();
   const { formId } = Route.useParams();
   const search = Route.useSearch();
@@ -86,4 +86,4 @@ function PublicFormRoute() {
       embedConfig={embedConfig}
     />
   );
-}
+};

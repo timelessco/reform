@@ -7,7 +7,7 @@ import { MarkToolbarButton } from "./mark-toolbar-button";
 import { ToolbarGroup } from "./toolbar";
 import { TurnIntoToolbarButton } from "./turn-into-toolbar-button";
 
-export function FloatingToolbarButtons() {
+export const FloatingToolbarButtons = () => {
   const readOnly = useEditorReadOnly();
 
   return (
@@ -36,4 +36,4 @@ export function FloatingToolbarButtons() {
       )}
     </>
   );
-}
+};

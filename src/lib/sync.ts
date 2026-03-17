@@ -1,7 +1,6 @@
 import { createTransaction } from "@tanstack/react-db";
 import { logger } from "@/lib/utils";
-import { localFormCollection } from "@/db-collections/form.collections";
-import { formCollection } from "@/db-collections/form.collections";
+import { localFormCollection, formCollection } from "@/db-collections/form.collections";
 import { workspaceCollection, createWorkspaceLocal } from "@/db-collections/workspace.collection";
 import { createForm } from "@/lib/fn/forms";
 
@@ -23,7 +22,7 @@ type SyncResult = {
  *
  * @param organizationId - The organization ID to sync forms to
  */
-export async function syncLocalDataToCloud(organizationId: string): Promise<SyncResult | null> {
+export const syncLocalDataToCloud = async (organizationId: string): Promise<SyncResult | null> => {
   try {
     logger("Starting local data sync to cloud via createTransaction...");
     logger(`Organization ID: ${organizationId}`);
@@ -148,12 +147,12 @@ export async function syncLocalDataToCloud(organizationId: string): Promise<Sync
     console.error("Failed to sync local data to cloud:", error);
     throw error;
   }
-}
+};
 
 /**
  * Checks if there is local data that needs to be synced
  */
-export async function hasLocalDataToSync(): Promise<boolean> {
+export const hasLocalDataToSync = async (): Promise<boolean> => {
   try {
     const forms = await localFormCollection.toArrayWhenReady();
     return forms.length > 0;
@@ -161,4 +160,4 @@ export async function hasLocalDataToSync(): Promise<boolean> {
     console.error("Failed to check for local data:", error);
     return false;
   }
-}
+};

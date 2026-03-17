@@ -17,17 +17,15 @@ type StepFormContextValue = {
 
 const StepFormContext = React.createContext<StepFormContextValue | null>(null);
 
-export function useStepForm() {
+export const useStepForm = () => {
   const context = React.use(StepFormContext);
   if (!context) {
     throw new Error("useStepForm must be used within a StepFormProvider.");
   }
   return context;
-}
+};
 
-function useStepFormSafe() {
-  return React.use(StepFormContext);
-}
+export const useStepFormSafe = () => React.use(StepFormContext);
 
 interface StepFormProviderProps {
   children: React.ReactNode;
@@ -40,13 +38,13 @@ interface StepFormProviderProps {
   saveAnswersForLater?: boolean;
 }
 
-export function StepFormProvider({
+export const StepFormProvider = ({
   children,
   totalSteps,
   onSubmit,
   formId = "",
   saveAnswersForLater = false,
-}: StepFormProviderProps) {
+}: StepFormProviderProps) => {
   const { loadSavedData, saveData, clearSavedData } = useFormPersistence(
     formId,
     saveAnswersForLater,
@@ -142,4 +140,4 @@ export function StepFormProvider({
   );
 
   return <StepFormContext.Provider value={value}>{children}</StepFormContext.Provider>;
-}
+};

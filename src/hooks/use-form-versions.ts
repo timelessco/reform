@@ -8,8 +8,8 @@ import { useForm } from "./use-live-hooks";
 /**
  * Hook to get list of published versions for a form (Electric-synced)
  */
-export function useFormVersions(formId: string | undefined) {
-  return useLiveQuery(
+export const useFormVersions = (formId: string | undefined) =>
+  useLiveQuery(
     (q) => {
       if (!formId) return undefined;
       return q
@@ -19,26 +19,24 @@ export function useFormVersions(formId: string | undefined) {
     },
     [formId],
   );
-}
 
 /**
  * Hook to get full content of a specific version (Electric-synced)
  */
-export function useFormVersionContent(versionId: string | undefined) {
-  return useLiveQuery(
+export const useFormVersionContent = (versionId: string | undefined) =>
+  useLiveQuery(
     (q) => {
       if (!versionId) return undefined;
       return q.from({ v: formVersionCollection }).where(({ v }) => eq(v.id, versionId));
     },
     [versionId],
   );
-}
 
 /**
  * Hook to detect if the current draft has unpublished changes.
  * Compares current content hash with the last published hash.
  */
-export function useHasUnpublishedChanges(formId: string | undefined) {
+export const useHasUnpublishedChanges = (formId: string | undefined) => {
   const { data: formData } = useForm(formId);
   const { data: versions } = useFormVersions(formId);
 
@@ -72,7 +70,7 @@ export function useHasUnpublishedChanges(formId: string | undefined) {
     currentCustomizationStr,
     publishedCustomizationStr,
   ]);
-}
+};
 
 // ============================================================================
 // Optimistic action functions using createTransaction
@@ -82,10 +80,17 @@ export function useHasUnpublishedChanges(formId: string | undefined) {
 // On error the transaction auto-rolls back the optimistic state.
 // ============================================================================
 
+// ============================================================================
+// Optimistic action functions using createTransaction
+// Applies optimistic state instantly, then calls server fn in mutationFn.
+// Collection's onUpdate does NOT fire because mutations are owned by the tx.
+// On success the overlay is confirmed; Electric syncs the real data seamlessly.
+// On error the transaction auto-rolls back the optimistic state.
+// ============================================================================
 /**
  * Publish the current form draft. Optimistically sets status to "published".
  */
-export function publishForm(formId: string) {
+export const publishForm = (formId: string) => {
   const tx = createTransaction({
     mutationFn: async () => {
       await publishFormVersion({ data: { formId } });
@@ -100,13 +105,13 @@ export function publishForm(formId: string) {
   });
 
   return tx;
-}
+};
 
 /**
  * Restore a version's content to the form draft.
  * Optimistically updates content/title/customization from the local version data.
  */
-export function restoreVersion(formId: string, versionId: string) {
+export const restoreVersion = (formId: string, versionId: string) => {
   const version = formVersionCollection.state.get(versionId);
   if (!version) throw new Error("Version not found in local state");
 
@@ -126,13 +131,13 @@ export function restoreVersion(formId: string, versionId: string) {
   });
 
   return tx;
-}
+};
 
 /**
  * Discard changes and revert to last published version.
  * Optimistically updates content/title/customization from the published version.
  */
-export function discardChanges(formId: string) {
+export const discardChanges = (formId: string) => {
   const form = formCollection.state.get(formId);
   if (!form?.lastPublishedVersionId) throw new Error("No published version to revert to");
 
@@ -155,4 +160,4 @@ export function discardChanges(formId: string) {
   });
 
   return tx;
-}
+};

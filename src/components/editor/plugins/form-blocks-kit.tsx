@@ -19,21 +19,21 @@ const FORM_FIELD_TYPES = new Set([
 // Button types that should not be deleted
 const PROTECTED_BUTTON_TYPES = new Set(["formButton"]);
 
-function moveToPath(editor: PlateEditor, path: Path): boolean {
+const moveToPath = (editor: PlateEditor, path: Path): boolean => {
   const node = editor.api.node(path);
   if (node) {
     editor.tf.select({ path: [...path, 0], offset: 0 });
     return true;
   }
   return false;
-}
+};
 
 /**
  * Find the next block after the given path, skipping form buttons and page breaks.
  * - If next is a "submit" button (last page), return null (stay in place)
  * - If next is a "next/previous" button, skip to first element after page break
  */
-function findNextNonButtonPath(editor: PlateEditor, currentPath: Path): Path | null {
+const findNextNonButtonPath = (editor: PlateEditor, currentPath: Path): Path | null => {
   const children = editor.children as TElement[];
   const currentIndex = currentPath[0];
 
@@ -82,7 +82,7 @@ function findNextNonButtonPath(editor: PlateEditor, currentPath: Path): Path | n
   }
 
   return null;
-}
+};
 
 /**
  * Find the previous block before the given path, skipping form buttons, page breaks, and headers.
@@ -92,7 +92,7 @@ function findNextNonButtonPath(editor: PlateEditor, currentPath: Path): Path | n
  * delete both the block and the pageBreak, then move the cursor to the previous content block.
  * Returns true if it handled the deletion.
  */
-function tryDeletePageBreakWithEmptyBlock(editor: PlateEditor, blockPath: Path): boolean {
+const tryDeletePageBreakWithEmptyBlock = (editor: PlateEditor, blockPath: Path): boolean => {
   const children = editor.children as TElement[];
   const currentIndex = blockPath[0];
 
@@ -131,9 +131,9 @@ function tryDeletePageBreakWithEmptyBlock(editor: PlateEditor, blockPath: Path):
     }
   }
   return true;
-}
+};
 
-function findPrevNonButtonPath(editor: PlateEditor, currentPath: Path): Path | null {
+const findPrevNonButtonPath = (editor: PlateEditor, currentPath: Path): Path | null => {
   const children = editor.children as TElement[];
   const currentIndex = currentPath[0];
 
@@ -154,9 +154,9 @@ function findPrevNonButtonPath(editor: PlateEditor, currentPath: Path): Path | n
   }
 
   return null;
-}
+};
 
-function handleFormBlockKeyDown(editor: PlateEditor, event: React.KeyboardEvent): void {
+const handleFormBlockKeyDown = (editor: PlateEditor, event: React.KeyboardEvent): void => {
   // Prevent double-handling when multiple form plugins process same event
   if ((event as any).__formBlockHandled) return;
 
@@ -328,7 +328,7 @@ function handleFormBlockKeyDown(editor: PlateEditor, event: React.KeyboardEvent)
     editor.tf.removeNodes({ at: path });
     return;
   }
-}
+};
 
 export const FormLabelPlugin = createPlatePlugin({
   key: "formLabel",
@@ -351,9 +351,7 @@ export const FormInputPlugin = createPlatePlugin({
 /**
  * Check if node is any form button
  */
-function isFormButton(node: TElement): boolean {
-  return node.type === "formButton";
-}
+const isFormButton = (node: TElement): boolean => node.type === "formButton";
 
 export const FormButtonPlugin = createPlatePlugin({
   key: "formButton",
@@ -907,7 +905,7 @@ export const PageBreakPlugin = createPlatePlugin({
  * Global keyboard navigation plugin to skip form buttons when navigating with Tab/Arrow keys.
  * This applies to ALL blocks, not just form blocks.
  */
-function handleGlobalKeyDown(editor: PlateEditor, event: React.KeyboardEvent): void {
+const handleGlobalKeyDown = (editor: PlateEditor, event: React.KeyboardEvent): void => {
   // Don't interfere if already handled by form block handlers
   if ((event as any).__formBlockHandled) return;
 
@@ -1075,7 +1073,7 @@ function handleGlobalKeyDown(editor: PlateEditor, event: React.KeyboardEvent): v
       return;
     }
   }
-}
+};
 
 const GlobalKeyboardNavigationPlugin = createPlatePlugin({
   key: "globalKeyboardNavigation",

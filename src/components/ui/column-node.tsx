@@ -80,18 +80,17 @@ export const ColumnElement = withHOC(
   },
 );
 
+const handleGripClick = (event: React.MouseEvent) => {
+  event.stopPropagation();
+  event.preventDefault();
+};
+
 const ColumnDragHandle = React.memo(function ColumnDragHandle() {
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger render={<Button variant="ghost" className="!px-1 h-5" />}>
-          <GripHorizontalIcon
-            className="text-muted-foreground"
-            onClick={(event) => {
-              event.stopPropagation();
-              event.preventDefault();
-            }}
-          />
+          <GripHorizontalIcon className="text-muted-foreground" onClick={handleGripClick} />
         </TooltipTrigger>
 
         <TooltipContent>Drag to move column</TooltipContent>
@@ -100,7 +99,7 @@ const ColumnDragHandle = React.memo(function ColumnDragHandle() {
   );
 });
 
-function DropLine() {
+const DropLine = () => {
   const { dropLine } = useDropLine({ orientation: "horizontal" });
 
   if (!dropLine) return null;
@@ -115,19 +114,17 @@ function DropLine() {
       )}
     />
   );
-}
+};
 
-export function ColumnGroupElement(props: PlateElementProps) {
-  return (
-    <PlateElement className="mb-2" {...props}>
-      <ColumnFloatingToolbar>
-        <div className="flex size-full rounded">{props.children}</div>
-      </ColumnFloatingToolbar>
-    </PlateElement>
-  );
-}
+export const ColumnGroupElement = (props: PlateElementProps) => (
+  <PlateElement className="mb-2" {...props}>
+    <ColumnFloatingToolbar>
+      <div className="flex size-full rounded">{props.children}</div>
+    </ColumnFloatingToolbar>
+  </PlateElement>
+);
 
-function ColumnFloatingToolbar({ children }: React.PropsWithChildren) {
+const ColumnFloatingToolbar = ({ children }: React.PropsWithChildren) => {
   const editor = useEditorRef();
   const readOnly = useReadOnly();
   const element = useElement<TColumnElement>();
@@ -138,39 +135,46 @@ function ColumnFloatingToolbar({ children }: React.PropsWithChildren) {
 
   const open = isFocusedLast && !readOnly && selected && isCollapsed;
 
-  const onColumnChange = (widths: string[]) => {
-    setColumns(editor, {
-      at: element,
-      widths,
-    });
-  };
+  const onColumnChange = React.useCallback(
+    (widths: string[]) => {
+      setColumns(editor, {
+        at: element,
+        widths,
+      });
+    },
+    [editor, element],
+  );
+
+  const handleDouble = React.useCallback(() => onColumnChange(["50%", "50%"]), [onColumnChange]);
+  const handleTriple = React.useCallback(
+    () => onColumnChange(["33%", "33%", "33%"]),
+    [onColumnChange],
+  );
+  const handleRightSide = React.useCallback(() => onColumnChange(["70%", "30%"]), [onColumnChange]);
+  const handleLeftSide = React.useCallback(() => onColumnChange(["30%", "70%"]), [onColumnChange]);
+  const handleDoubleSide = React.useCallback(
+    () => onColumnChange(["25%", "50%", "25%"]),
+    [onColumnChange],
+  );
 
   return (
     <Popover open={open} modal={false}>
       <PopoverAnchor>{children}</PopoverAnchor>
       <PopoverContent className="w-auto border p-2.5" align="center" side="top" sideOffset={10}>
         <div className="box-content flex h-8 items-center">
-          <Button variant="ghost" className="size-8" onClick={() => onColumnChange(["50%", "50%"])}>
+          <Button variant="ghost" className="size-8" onClick={handleDouble}>
             <DoubleColumnOutlined />
           </Button>
-          <Button
-            variant="ghost"
-            className="size-8"
-            onClick={() => onColumnChange(["33%", "33%", "33%"])}
-          >
+          <Button variant="ghost" className="size-8" onClick={handleTriple}>
             <ThreeColumnOutlined />
           </Button>
-          <Button variant="ghost" className="size-8" onClick={() => onColumnChange(["70%", "30%"])}>
+          <Button variant="ghost" className="size-8" onClick={handleRightSide}>
             <RightSideDoubleColumnOutlined />
           </Button>
-          <Button variant="ghost" className="size-8" onClick={() => onColumnChange(["30%", "70%"])}>
+          <Button variant="ghost" className="size-8" onClick={handleLeftSide}>
             <LeftSideDoubleColumnOutlined />
           </Button>
-          <Button
-            variant="ghost"
-            className="size-8"
-            onClick={() => onColumnChange(["25%", "50%", "25%"])}
-          >
+          <Button variant="ghost" className="size-8" onClick={handleDoubleSide}>
             <DoubleSideDoubleColumnOutlined />
           </Button>
 
@@ -182,7 +186,7 @@ function ColumnFloatingToolbar({ children }: React.PropsWithChildren) {
       </PopoverContent>
     </Popover>
   );
-}
+};
 
 const DoubleColumnOutlined = (props: LucideProps) => (
   <svg

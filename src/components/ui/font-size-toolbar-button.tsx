@@ -37,28 +37,30 @@ const FONT_SIZES = [
   "96",
 ] as const;
 
-export function FontSizeToolbarButton() {
+const cursorFontSizeSelector = (editor: any) => {
+  const fontSize = editor.api.marks()?.[KEYS.fontSize];
+
+  if (fontSize) {
+    return toUnitLess(fontSize as string);
+  }
+
+  const [block] = editor.api.block<TElement>() || [];
+
+  if (!block?.type) return DEFAULT_FONT_SIZE;
+
+  return block.type in FONT_SIZE_MAP
+    ? FONT_SIZE_MAP[block.type as keyof typeof FONT_SIZE_MAP]
+    : DEFAULT_FONT_SIZE;
+};
+
+export const FontSizeToolbarButton = () => {
   const [inputValue, setInputValue] = React.useState(DEFAULT_FONT_SIZE);
   const [isFocused, setIsFocused] = React.useState(false);
   const { editor, tf } = useEditorPlugin(FontSizePlugin);
 
-  const cursorFontSize = useEditorSelector((editor) => {
-    const fontSize = editor.api.marks()?.[KEYS.fontSize];
+  const cursorFontSize = useEditorSelector(cursorFontSizeSelector, []);
 
-    if (fontSize) {
-      return toUnitLess(fontSize as string);
-    }
-
-    const [block] = editor.api.block<TElement>() || [];
-
-    if (!block?.type) return DEFAULT_FONT_SIZE;
-
-    return block.type in FONT_SIZE_MAP
-      ? FONT_SIZE_MAP[block.type as keyof typeof FONT_SIZE_MAP]
-      : DEFAULT_FONT_SIZE;
-  }, []);
-
-  const handleInputChange = () => {
+  const handleInputChange = React.useCallback(() => {
     const newSize = toUnitLess(inputValue);
 
     if (Number.parseInt(newSize, 10) < 1 || Number.parseInt(newSize, 10) > 100) {
@@ -71,19 +73,57 @@ export function FontSizeToolbarButton() {
     }
 
     editor.tf.focus();
-  };
-
-  const handleFontSizeChange = (delta: number) => {
-    const newSize = Number(displayValue) + delta;
-    tf.fontSize.addMark(`${newSize}px`);
-    editor.tf.focus();
-  };
+  }, [inputValue, cursorFontSize, editor, tf]);
 
   const displayValue = isFocused ? inputValue : cursorFontSize;
 
+  const handleDecrease = React.useCallback(() => {
+    const newSize = Number(displayValue) + -1;
+    tf.fontSize.addMark(`${newSize}px`);
+    editor.tf.focus();
+  }, [displayValue, tf, editor]);
+
+  const handleIncrease = React.useCallback(() => {
+    const newSize = Number(displayValue) + 1;
+    tf.fontSize.addMark(`${newSize}px`);
+    editor.tf.focus();
+  }, [displayValue, tf, editor]);
+
+  const handleBlur = React.useCallback(() => {
+    setIsFocused(false);
+    handleInputChange();
+  }, [handleInputChange]);
+
+  const handleChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  }, []);
+
+  const handleFocus = React.useCallback(() => {
+    setIsFocused(true);
+    setInputValue(toUnitLess(cursorFontSize));
+  }, [cursorFontSize]);
+
+  const handleKeyDown = React.useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleInputChange();
+      }
+    },
+    [handleInputChange],
+  );
+
+  const handleSizeClick = React.useCallback(
+    (size: string) => {
+      tf.fontSize.addMark(`${size}px`);
+      setIsFocused(false);
+    },
+    [tf],
+  );
+
   return (
     <div className="flex h-7 items-center gap-1 rounded-md bg-muted/60 p-0">
-      <ToolbarButton onClick={() => handleFontSizeChange(-1)}>
+      <ToolbarButton onClick={handleDecrease}>
         <MinusIcon />
       </ToolbarButton>
 
@@ -95,21 +135,10 @@ export function FontSizeToolbarButton() {
                 "h-full w-10 shrink-0 bg-transparent px-1 text-center text-sm hover:bg-muted",
               )}
               value={displayValue}
-              onBlur={() => {
-                setIsFocused(false);
-                handleInputChange();
-              }}
-              onChange={(e) => setInputValue(e.target.value)}
-              onFocus={() => {
-                setIsFocused(true);
-                setInputValue(toUnitLess(cursorFontSize));
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleInputChange();
-                }
-              }}
+              onBlur={handleBlur}
+              onChange={handleChange}
+              onFocus={handleFocus}
+              onKeyDown={handleKeyDown}
               data-plate-focus="true"
               type="text"
             />
@@ -123,10 +152,7 @@ export function FontSizeToolbarButton() {
               className={cn(
                 "flex h-8 w-full items-center justify-center text-sm data-[highlighted=true]:bg-accent",
               )}
-              onClick={() => {
-                tf.fontSize.addMark(`${size}px`);
-                setIsFocused(false);
-              }}
+              onClick={() => handleSizeClick(size)}
               data-highlighted={size === displayValue}
             >
               {size}
@@ -135,9 +161,9 @@ export function FontSizeToolbarButton() {
         </PopoverContent>
       </Popover>
 
-      <ToolbarButton onClick={() => handleFontSizeChange(1)}>
+      <ToolbarButton onClick={handleIncrease}>
         <PlusIcon />
       </ToolbarButton>
     </div>
   );
-}
+};

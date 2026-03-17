@@ -1,39 +1,48 @@
 import { Redo2Icon, Undo2Icon } from "@/components/ui/icons";
 import { useEditorRef, useEditorSelector } from "platejs/react";
+import { useCallback } from "react";
 import type * as React from "react";
 
 import { ToolbarButton } from "./toolbar";
 
-export function RedoToolbarButton(props: React.ComponentProps<typeof ToolbarButton>) {
+const redoDisabledSelector = (editor: any) => editor.history.redos.length === 0;
+const undoDisabledSelector = (editor: any) => editor.history.undos.length === 0;
+const preventDefault = (e: React.MouseEvent) => e.preventDefault();
+
+export const RedoToolbarButton = (props: React.ComponentProps<typeof ToolbarButton>) => {
   const editor = useEditorRef();
-  const disabled = useEditorSelector((editor) => editor.history.redos.length === 0, []);
+  const disabled = useEditorSelector(redoDisabledSelector, []);
+
+  const handleClick = useCallback(() => editor.redo(), [editor]);
 
   return (
     <ToolbarButton
       {...props}
       disabled={disabled}
-      onClick={() => editor.redo()}
-      onMouseDown={(e) => e.preventDefault()}
+      onClick={handleClick}
+      onMouseDown={preventDefault}
       tooltip="Redo"
     >
       <Redo2Icon />
     </ToolbarButton>
   );
-}
+};
 
-export function UndoToolbarButton(props: React.ComponentProps<typeof ToolbarButton>) {
+export const UndoToolbarButton = (props: React.ComponentProps<typeof ToolbarButton>) => {
   const editor = useEditorRef();
-  const disabled = useEditorSelector((editor) => editor.history.undos.length === 0, []);
+  const disabled = useEditorSelector(undoDisabledSelector, []);
+
+  const handleClick = useCallback(() => editor.undo(), [editor]);
 
   return (
     <ToolbarButton
       {...props}
       disabled={disabled}
-      onClick={() => editor.undo()}
-      onMouseDown={(e) => e.preventDefault()}
+      onClick={handleClick}
+      onMouseDown={preventDefault}
       tooltip="Undo"
     >
       <Undo2Icon />
     </ToolbarButton>
   );
-}
+};

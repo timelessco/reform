@@ -27,7 +27,7 @@ type StepState = {
  * @param schemas - Array of Zod schemas for each step
  * @returns Object with stepper state and methods
  */
-function useFormStepper(schemas: ZodObject[]) {
+const useFormStepper = (schemas: ZodObject[]) => {
   const stepCount = schemas.length;
   const [currentStep, setCurrentStep] = useState(1); // Start from 1
 
@@ -97,4 +97,4 @@ function useFormStepper(schemas: ZodObject[]) {
     handleNextStepOrSubmit, // Handle next/submit action
     handleCancelOrBack, // Handle back/cancel action
   };
-}
+};

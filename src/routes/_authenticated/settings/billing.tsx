@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { useCallback } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,31 +16,34 @@ export const Route = createFileRoute("/_authenticated/settings/billing")({
   notFoundComponent: NotFound,
 });
 
-function BillingPage() {
+const BillingPage = () => {
   const { data: customerState, isLoading } = useQuery(auth.customer.state.queryOptions());
 
   const { data: activeOrg } = useQuery(auth.organization.getFullOrganization.queryOptions());
 
-  const handleUpgrade = async (planSlug: string) => {
-    if (!activeOrg) {
-      toast.error("Please select an organization first");
-      return;
-    }
-    try {
-      const { data, error } = (await authClient.checkout({
-        slug: planSlug,
-        referenceId: activeOrg.id,
-      })) as { data: { url: string } | null; error: Error | null };
-
-      if (error) throw error;
-
-      if (data?.url) {
-        window.location.href = data.url;
+  const handleUpgrade = useCallback(
+    async (planSlug: string) => {
+      if (!activeOrg) {
+        toast.error("Please select an organization first");
+        return;
       }
-    } catch (error: unknown) {
-      toast.error((error as Error).message || "Failed to initiate checkout");
-    }
-  };
+      try {
+        const { data, error } = (await authClient.checkout({
+          slug: planSlug,
+          referenceId: activeOrg.id,
+        })) as { data: { url: string } | null; error: Error | null };
+
+        if (error) throw error;
+
+        if (data?.url) {
+          window.location.href = data.url;
+        }
+      } catch (error: unknown) {
+        toast.error((error as Error).message || "Failed to initiate checkout");
+      }
+    },
+    [activeOrg],
+  );
 
   const {
     data: portalData,
@@ -55,9 +59,12 @@ function BillingPage() {
     window.location.href = (portalData as { url: string }).url;
   }
 
-  const handleOpenPortal = () => {
+  const handleOpenPortal = useCallback(() => {
     openPortal();
-  };
+  }, [openPortal]);
+
+  const handleUpgradePro = useCallback(() => handleUpgrade("Pro"), [handleUpgrade]);
+  const handleUpgradeBusiness = useCallback(() => handleUpgrade("Pro-(Yearly)"), [handleUpgrade]);
 
   const activeSubscription = customerState?.activeSubscriptions?.[0];
 
@@ -120,7 +127,7 @@ function BillingPage() {
             <Button
               className="w-full"
               variant={isProPlan ? "outline" : "default"}
-              onClick={() => handleUpgrade("Pro")}
+              onClick={handleUpgradePro}
               disabled={isProPlan}
             >
               {isProPlan ? "Current Plan" : "Upgrade to Pro"}
@@ -143,7 +150,7 @@ function BillingPage() {
             <Button
               className="w-full"
               variant={isBusinessPlan ? "outline" : "default"}
-              onClick={() => handleUpgrade("Pro-(Yearly)")}
+              onClick={handleUpgradeBusiness}
               disabled={isBusinessPlan}
             >
               {isBusinessPlan ? "Current Plan" : "Upgrade to Business"}
@@ -153,4 +160,4 @@ function BillingPage() {
       </div>
     </div>
   );
-}
+};

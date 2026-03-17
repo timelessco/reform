@@ -26,11 +26,11 @@ interface DataGridColumnFilterProps<TData, TValue> {
   }[];
 }
 
-function DataGridColumnFilter<TData, TValue>({
+export const DataGridColumnFilter = <TData, TValue>({
   column,
   title,
   options,
-}: DataGridColumnFilterProps<TData, TValue>) {
+}: DataGridColumnFilterProps<TData, TValue>) => {
   const facets = column?.getFacetedUniqueValues();
   const selectedValues = new Set(column?.getFilterValue() as string[]);
 
@@ -127,6 +127,6 @@ function DataGridColumnFilter<TData, TValue>({
       </PopoverContent>
     </Popover>
   );
-}
+};
 
-export { DataGridColumnFilter, type DataGridColumnFilterProps };
+export { type DataGridColumnFilterProps };

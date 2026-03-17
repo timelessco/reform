@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { duplicateForm, updateDoc, updateFormStatus } from "@/db-collections/form.collections";
 import { useNavigate } from "@tanstack/react-router";
 import { CopyIcon, MoreHorizontalIcon, TagIcon, Trash2Icon } from "@/components/ui/icons";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 interface FormActionsMenuProps {
@@ -36,21 +36,28 @@ interface FormActionsMenuProps {
   workspaceId: string;
 }
 
-export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
+export const FormActionsMenu = ({ form, workspaceId }: FormActionsMenuProps) => {
   const navigate = useNavigate();
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [newTitle, setNewTitle] = useState(form?.title || "");
 
-  if (!form) return null;
+  const handleOpenRename = useCallback(() => {
+    setNewTitle(form?.title || "");
+    setIsRenameOpen(true);
+  }, [form?.title]);
 
-  const handleCopyLink = () => {
-    const url = `${window.location.origin}/forms/${form.id}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Link copied to clipboard");
-  };
+  const handleOpenDelete = useCallback(() => setIsDeleteOpen(true), []);
 
-  const handleDuplicate = async () => {
+  const handleCloseRename = useCallback(() => setIsRenameOpen(false), []);
+
+  const handleTitleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => setNewTitle(e.target.value),
+    [],
+  );
+
+  const handleDuplicate = useCallback(async () => {
+    if (!form) return;
     try {
       const newForm = await duplicateForm(form);
       toast.success("Form duplicated");
@@ -61,9 +68,10 @@ export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
     } catch {
       toast.error("Failed to duplicate form");
     }
-  };
+  }, [form, navigate, workspaceId]);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
+    if (!form) return;
     try {
       await updateFormStatus(form.id, "archived");
       toast.success("Form deleted");
@@ -74,10 +82,10 @@ export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
     } catch {
       toast.error("Failed to delete form");
     }
-  };
+  }, [form, navigate, workspaceId]);
 
-  const handleRename = async () => {
-    if (!newTitle.trim()) return;
+  const handleRename = useCallback(async () => {
+    if (!form || !newTitle.trim()) return;
     try {
       await updateDoc(form.id, (draft) => {
         draft.title = newTitle.trim();
@@ -87,7 +95,16 @@ export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
     } catch {
       toast.error("Failed to rename form");
     }
-  };
+  }, [form, newTitle]);
+
+  const handleTitleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") handleRename();
+    },
+    [handleRename],
+  );
+
+  if (!form) return null;
 
   return (
     <>
@@ -105,12 +122,7 @@ export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
           <MoreHorizontalIcon className="h-5 w-5" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
-          <DropdownMenuItem
-            onClick={() => {
-              setNewTitle(form?.title || "");
-              setIsRenameOpen(true);
-            }}
-          >
+          <DropdownMenuItem onClick={handleOpenRename}>
             <TagIcon className="mr-2 h-4 w-4 text-muted-foreground" />
             <span>Rename</span>
           </DropdownMenuItem>
@@ -120,7 +132,7 @@ export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={() => setIsDeleteOpen(true)}
+            onClick={handleOpenDelete}
             className="text-destructive focus:text-destructive"
           >
             <Trash2Icon className="mr-2 h-4 w-4" />
@@ -139,18 +151,16 @@ export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
           <div className="py-4">
             <Input
               value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
+              onChange={handleTitleChange}
               placeholder="Form title"
               aria-label="Form name"
               autoComplete="off"
               autoFocus
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleRename();
-              }}
+              onKeyDown={handleTitleKeyDown}
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRenameOpen(false)}>
+            <Button variant="outline" onClick={handleCloseRename}>
               Cancel
             </Button>
             <Button onClick={handleRename}>Save</Button>
@@ -181,4 +191,4 @@ export function FormActionsMenu({ form, workspaceId }: FormActionsMenuProps) {
       </AlertDialog>
     </>
   );
-}
+};

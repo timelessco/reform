@@ -38,10 +38,10 @@ export const editorVariants = cva(
   },
 );
 
-export function EditorStatic({
+export const EditorStatic = ({
   className,
   variant,
   ...props
-}: PlateStaticProps & VariantProps<typeof editorVariants>) {
-  return <PlateStatic className={cn(editorVariants({ variant }), className)} {...props} />;
-}
+}: PlateStaticProps & VariantProps<typeof editorVariants>) => (
+  <PlateStatic className={cn(editorVariants({ variant }), className)} {...props} />
+);

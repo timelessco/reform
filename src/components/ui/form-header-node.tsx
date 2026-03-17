@@ -70,7 +70,7 @@ const COVER_GALLERY = [
   },
 ] as const;
 
-function CoverUpload({ onFileChange }: { onFileChange: (url: string) => void }) {
+const CoverUpload = ({ onFileChange }: { onFileChange: (url: string) => void }) => {
   const [
     { isDragging, errors },
     { handleDragEnter, handleDragLeave, handleDragOver, handleDrop, openFileDialog, getInputProps },
@@ -112,12 +112,12 @@ function CoverUpload({ onFileChange }: { onFileChange: (url: string) => void }) 
       {errors.length > 0 && <div className="text-destructive text-sm">{errors[0]}</div>}
     </div>
   );
-}
+};
 
 const IS_MAC = typeof navigator !== "undefined" && /mac/i.test(navigator.userAgent);
 const PASTE_HINT = IS_MAC ? "\u2318+V" : "Ctrl+V";
 
-function IconUploadTab({
+const IconUploadTab = ({
   currentIcon,
   onUpload,
   onCancel,
@@ -125,7 +125,7 @@ function IconUploadTab({
   currentIcon: string | null;
   onUpload: (url: string) => void;
   onCancel: () => void;
-}) {
+}) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showCrop, setShowCrop] = useState(false);
@@ -174,7 +174,6 @@ function IconUploadTab({
     },
     [previewUrl],
   );
-
   const resetState = () => {
     setSelectedFile(null);
     setShowCrop(false);
@@ -300,14 +299,14 @@ function IconUploadTab({
       </div>
     </div>
   );
-}
+};
 
 const iconTabs = [
   { value: "icon", label: "Icon" },
   { value: "upload", label: "Upload" },
 ] as const;
 
-function IconTabBar({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+const IconTabBar = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => {
   const items = iconTabs;
   const activeIndex = items.findIndex((t) => t.value === value);
   const count = items.length;
@@ -335,9 +334,9 @@ function IconTabBar({ value, onChange }: { value: string; onChange: (v: string) 
       ))}
     </div>
   );
-}
+};
 
-export function FormHeaderElement(props: PlateElementProps) {
+export const FormHeaderElement = (props: PlateElementProps) => {
   const { element, children } = props;
   const editor = useEditorRef();
   const {
@@ -347,13 +346,13 @@ export function FormHeaderElement(props: PlateElementProps) {
     updateThemeColor,
   } = useEditorTheme();
   const { activeSidebar, closeSidebar, openCustomize } = useEditorSidebar();
-  const toggleCustomize = () => {
+  const toggleCustomize = useCallback(() => {
     if (activeSidebar === "customize") {
       closeSidebar();
     } else {
       openCustomize();
     }
-  };
+  }, [activeSidebar, closeSidebar, openCustomize]);
 
   const title = (element.title as string) || "";
   const icon = (element.icon as string | null) || null;
@@ -363,12 +362,15 @@ export function FormHeaderElement(props: PlateElementProps) {
   const hasCover = !!cover;
   const hasLogo = !!icon;
 
-  const updateHeader = (updates: Partial<FormHeaderElementData>) => {
-    const path = editor.api.findPath(element);
-    if (path) {
-      editor.tf.setNodes(updates, { at: path });
-    }
-  };
+  const updateHeader = useCallback(
+    (updates: Partial<FormHeaderElementData>) => {
+      const path = editor.api.findPath(element);
+      if (path) {
+        editor.tf.setNodes(updates, { at: path });
+      }
+    },
+    [editor, element],
+  );
 
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
@@ -384,26 +386,41 @@ export function FormHeaderElement(props: PlateElementProps) {
     autoResizeTitle();
   }, [title, autoResizeTitle]);
 
-  const handleTitleChange = (newTitle: string) => {
-    updateHeader({ title: newTitle });
-  };
+  const handleTitleChange = useCallback(
+    (newTitle: string) => {
+      updateHeader({ title: newTitle });
+    },
+    [updateHeader],
+  );
 
-  const handleIconChange = (newIcon: string | null) => {
-    updateHeader({ icon: newIcon });
-  };
+  const handleIconChange = useCallback(
+    (newIcon: string | null) => {
+      updateHeader({ icon: newIcon });
+    },
+    [updateHeader],
+  );
 
-  const handleIconColorChange = (newColor: string) => {
-    updateHeader({ iconColor: newColor });
-  };
+  const handleIconColorChange = useCallback(
+    (newColor: string) => {
+      updateHeader({ iconColor: newColor });
+    },
+    [updateHeader],
+  );
 
-  const handleCoverChange = (newCover: string | null) => {
-    updateHeader({ cover: newCover });
-  };
+  const handleCoverChange = useCallback(
+    (newCover: string | null) => {
+      updateHeader({ cover: newCover });
+    },
+    [updateHeader],
+  );
 
-  const handleAddCover = () =>
-    handleCoverChange(
-      "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true",
-    );
+  const handleAddCover = useCallback(
+    () =>
+      handleCoverChange(
+        "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80&tint=true",
+      ),
+    [handleCoverChange],
+  );
 
   const accentColors = hasCustomization ? ACCENT_COLORS : undefined;
   const activeThemeColorName = editorCustomization?.themeColor || "zinc";
@@ -580,7 +597,6 @@ export function FormHeaderElement(props: PlateElementProps) {
             </Popover>
           </>
         )}
-
         <div className={cn("relative w-full flex flex-col")}>
           <div className="w-full">
             <Popover open={iconPopoverOpen} onOpenChange={setIconPopoverOpen}>
@@ -792,4 +808,4 @@ export function FormHeaderElement(props: PlateElementProps) {
       {children}
     </PlateElement>
   );
-}
+};

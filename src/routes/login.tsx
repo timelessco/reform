@@ -45,7 +45,7 @@ const otpVerifySchema = z.object({
 
 type SignInMethod = "email" | "username" | "otp";
 
-function LoginPage() {
+const LoginPage = () => {
   const [signInMethod, setSignInMethod] = React.useState<SignInMethod>("email");
   const [step, setStep] = React.useState<"form" | "otp">("form");
   const [email, setEmail] = React.useState("");
@@ -194,7 +194,6 @@ function LoginPage() {
     sendOtpMutation.isPending ||
     verifyOtpMutation.isPending ||
     socialSignInMutation.isPending;
-
   const handleGoogleSignIn = async () => {
     socialSignInMutation.mutate({
       provider: "google",
@@ -519,4 +518,4 @@ function LoginPage() {
       </div>
     </div>
   );
-}
+};

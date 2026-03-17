@@ -26,7 +26,7 @@ export const BlockListStatic: RenderStaticNodeWrapper = (props) => {
   return (props) => <List {...props} />;
 };
 
-function List(props: SlateRenderElementProps) {
+const List = (props: SlateRenderElementProps) => {
   const { listStart, listStyleType } = props.element as TListElement;
   const { Li, Marker } = config[listStyleType] ?? {};
   const List = isOrderedList(props.element) ? "ol" : "ul";
@@ -37,9 +37,9 @@ function List(props: SlateRenderElementProps) {
       {Li ? <Li {...props} /> : <li>{props.children}</li>}
     </List>
   );
-}
+};
 
-function TodoMarkerStatic(props: SlateRenderElementProps) {
+const TodoMarkerStatic = (props: SlateRenderElementProps) => {
   const checked = props.element.checked as boolean;
 
   return (
@@ -58,17 +58,15 @@ function TodoMarkerStatic(props: SlateRenderElementProps) {
       </Button>
     </div>
   );
-}
+};
 
-function TodoLiStatic(props: SlateRenderElementProps) {
-  return (
-    <li
-      className={cn(
-        "list-none",
-        (props.element.checked as boolean) && "text-muted-foreground line-through",
-      )}
-    >
-      {props.children}
-    </li>
-  );
-}
+const TodoLiStatic = (props: SlateRenderElementProps) => (
+  <li
+    className={cn(
+      "list-none",
+      (props.element.checked as boolean) && "text-muted-foreground line-through",
+    )}
+  >
+    {props.children}
+  </li>
+);

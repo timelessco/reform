@@ -8,6 +8,8 @@ import { getEditableFields } from "@/lib/transform-plate-to-form";
 import type { TransformedElement } from "@/lib/transform-plate-to-form";
 import { RenderStepPreviewInput } from "./render-step-preview-input";
 
+const selectStateValues = (state: any) => state.values;
+
 interface StepFormProps {
   stepIndex: number;
   elements: TransformedElement[];
@@ -20,13 +22,13 @@ interface StepFormProps {
  * Individual step form component with its own form instance.
  * Uses StepFormContext for navigation and data accumulation.
  */
-export function StepForm({
+export const StepForm = ({
   stepIndex,
   elements,
   isLastStep,
   layout = "public",
   autoJump = false,
-}: StepFormProps) {
+}: StepFormProps) => {
   const { currentStep, goToPrevStep, isSubmitting } = useStepForm();
   const fields = getEditableFields(elements);
 
@@ -92,7 +94,7 @@ export function StepForm({
       >
         {/* Auto-jump watcher */}
         {autoJump && !isLastStep && (
-          <form.Subscribe selector={(state) => state.values}>
+          <form.Subscribe selector={selectStateValues}>
             {() => {
               checkAutoJump();
               return null;
@@ -167,14 +169,14 @@ export function StepForm({
       </form.Form>
     </form.AppForm>
   );
-}
+};
 
 /**
  * Groups elements for rendering, combining adjacent buttons into groups
  */
-function groupElementsForRendering(
+const groupElementsForRendering = (
   elements: TransformedElement[],
-): Array<TransformedElement | { type: "buttonGroup"; buttons: TransformedElement[] }> {
+): Array<TransformedElement | { type: "buttonGroup"; buttons: TransformedElement[] }> => {
   const result: Array<TransformedElement | { type: "buttonGroup"; buttons: TransformedElement[] }> =
     [];
   let i = 0;
@@ -205,7 +207,7 @@ function groupElementsForRendering(
   }
 
   return result;
-}
+};
 
 /**
  * Button field type extracted from PlateFormField union
@@ -222,7 +224,7 @@ type ButtonField = {
  * Renders button elements for step forms.
  * Previous uses onClick, Next/Submit use type="submit" to trigger form validation.
  */
-function RenderStepButton({
+const RenderStepButton = ({
   field,
   isSubmitting,
   onPrevious,
@@ -234,7 +236,7 @@ function RenderStepButton({
   onPrevious?: () => void;
   grouped?: boolean;
   layout?: "public" | "editor";
-}) {
+}) => {
   const { t } = useTranslation();
   const buttonRole = field.buttonRole || "submit";
   const defaultText =
@@ -282,4 +284,4 @@ function RenderStepButton({
     </Button>
   );
   return grouped ? submitButton : <div className="flex justify-end">{submitButton}</div>;
-}
+};

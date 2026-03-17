@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useEditorSidebar } from "./use-editor-sidebar";
 
-export function useVersionHistorySidebar() {
+export const useVersionHistorySidebar = () => {
   const {
     activeSidebar,
     toggleSidebar,
@@ -39,4 +39,4 @@ export function useVersionHistorySidebar() {
     exitVersionView,
     toggle: () => toggleSidebar("history"),
   };
-}
+};

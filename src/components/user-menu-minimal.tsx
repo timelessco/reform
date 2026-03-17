@@ -17,10 +17,10 @@ import {
   Trash2Icon,
   UsersIcon,
 } from "@/components/ui/icons";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Button } from "./ui/button";
 
-function getInitials(name?: string | null) {
+const getInitials = (name?: string | null) => {
   if (!name) return "U";
   return name
     .split(" ")
@@ -28,13 +28,13 @@ function getInitials(name?: string | null) {
     .join("")
     .toUpperCase()
     .slice(0, 2);
-}
+};
 
 export interface UserMenuMinimalProps {
   onOpenTrash: () => void;
 }
 
-export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
+export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
@@ -121,6 +121,11 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
       },
     },
   ];
+
+  const handleLogout = useCallback(() => {
+    signOutMutation.mutate({});
+    setIsOpen(false);
+  }, [signOutMutation]);
 
   const menuItemIconClass =
     "size-4 shrink-0 text-foreground/80 [&_path]:stroke-[1.6] [&_path]:stroke-current";
@@ -257,10 +262,7 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
           {/* Logout */}
           <button
             type="button"
-            onClick={() => {
-              signOutMutation.mutate({});
-              setIsOpen(false);
-            }}
+            onClick={handleLogout}
             className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground cursor-pointer"
           >
             <LogOutIcon className={menuItemIconClass} />
@@ -270,4 +272,4 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
       </Popover>
     </div>
   );
-}
+};

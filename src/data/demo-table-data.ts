@@ -26,13 +26,15 @@ const newPerson = async (num: number): Promise<Person> => {
     age: faker.number.int(40),
     visits: faker.number.int(1000),
     progress: faker.number.int(100),
-    status: faker.helpers.shuffle<Person["status"]>(["relationship", "complicated", "single"])[0]!,
+    status:
+      faker.helpers.shuffle<Person["status"]>(["relationship", "complicated", "single"])[0] ??
+      "single",
   };
 };
 
-async function makeData(...lens: number[]) {
+const _makeData = async (...lens: number[]) => {
   const makeDataLevel = async (depth = 0): Promise<Person[]> => {
-    const len = lens[depth]!;
+    const len = lens[depth] ?? 0;
     return Promise.all(
       range(len).map(
         async (index): Promise<Person> => ({
@@ -44,4 +46,4 @@ async function makeData(...lens: number[]) {
   };
 
   return makeDataLevel();
-}
+};

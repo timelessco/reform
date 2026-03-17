@@ -4,7 +4,7 @@ import { RangeApi } from "platejs";
 
 import { cn } from "@/lib/utils";
 
-export function CursorOverlay() {
+export const CursorOverlay = () => {
   const { cursors } = useCursorOverlay();
 
   return (
@@ -14,15 +14,15 @@ export function CursorOverlay() {
       ))}
     </>
   );
-}
+};
 
-function Cursor({
+const Cursor = ({
   id,
   caretPosition,
   data,
   selection,
   selectionRects,
-}: CursorOverlayState<CursorData>) {
+}: CursorOverlayState<CursorData>) => {
   const { style, selectionStyle = style } = data ?? ({} as CursorData);
   const isCursor = RangeApi.isCollapsed(selection);
 
@@ -53,4 +53,4 @@ function Cursor({
       )}
     </>
   );
-}
+};

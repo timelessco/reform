@@ -37,11 +37,12 @@ const resizeHandleVariants = cva("absolute z-40", {
   },
 });
 
-export function ResizeHandle({
+export const ResizeHandle = ({
   className,
   options,
   ...props
-}: React.ComponentProps<typeof ResizeHandlePrimitive> & VariantProps<typeof resizeHandleVariants>) {
+}: React.ComponentProps<typeof ResizeHandlePrimitive> &
+  VariantProps<typeof resizeHandleVariants>) => {
   const state = useResizeHandleState(options ?? {});
   const resizeHandle = useResizeHandle(state);
 
@@ -55,7 +56,7 @@ export function ResizeHandle({
       {...props}
     />
   );
-}
+};
 
 const resizableVariants = cva("", {
   variants: {
@@ -67,10 +68,10 @@ const resizableVariants = cva("", {
   },
 });
 
-export function Resizable({
+export const Resizable = ({
   align,
   className,
   ...props
-}: React.ComponentProps<typeof ResizablePrimitive> & VariantProps<typeof resizableVariants>) {
-  return <ResizablePrimitive {...props} className={cn(resizableVariants({ align }), className)} />;
-}
+}: React.ComponentProps<typeof ResizablePrimitive> & VariantProps<typeof resizableVariants>) => (
+  <ResizablePrimitive {...props} className={cn(resizableVariants({ align }), className)} />
+);

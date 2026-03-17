@@ -155,9 +155,14 @@ const InlineCombobox = ({
     [trigger, showTrigger, filter, inputProps, removeInput],
   );
 
+  const setValueWithTransition = React.useCallback(
+    (newValue: string) => React.startTransition(() => setValue(newValue)),
+    [setValue],
+  );
+
   const store = useComboboxStore({
     // open: ,
-    setValue: (newValue) => React.startTransition(() => setValue(newValue)),
+    setValue: setValueWithTransition,
   });
 
   const items = store.useState("items");
@@ -301,13 +306,19 @@ const InlineComboboxItem = ({
 
   if (!visible) return null;
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const handleClick = React.useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      removeInput(focusEditor);
+      onClick?.(event);
+    },
+    [removeInput, focusEditor, onClick],
+  );
+
   return (
     <ComboboxItem
       className={cn(comboboxItemVariants(), className)}
-      onClick={(event) => {
-        removeInput(focusEditor);
-        onClick?.(event);
-      }}
+      onClick={handleClick}
       {...props}
     />
   );
@@ -338,33 +349,30 @@ const InlineComboboxEmpty = ({ children, className }: React.HTMLAttributes<HTMLD
 
 const InlineComboboxRow = ComboboxRow;
 
-function InlineComboboxGroup({ className, ...props }: React.ComponentProps<typeof ComboboxGroup>) {
-  return (
-    <ComboboxGroup
-      {...props}
-      className={cn("hidden not-last:border-b py-1.5 [&:has([role=option])]:block", className)}
-    />
-  );
-}
-
-function InlineComboboxGroupLabel({
+export const InlineComboboxGroup = ({
   className,
   ...props
-}: React.ComponentProps<typeof ComboboxGroupLabel>) {
-  return (
-    <ComboboxGroupLabel
-      {...props}
-      className={cn("px-2 py-1.5 text-[12px] text-muted-foreground", className)}
-    />
-  );
-}
+}: React.ComponentProps<typeof ComboboxGroup>) => (
+  <ComboboxGroup
+    {...props}
+    className={cn("hidden not-last:border-b py-1.5 [&:has([role=option])]:block", className)}
+  />
+);
+
+export const InlineComboboxGroupLabel = ({
+  className,
+  ...props
+}: React.ComponentProps<typeof ComboboxGroupLabel>) => (
+  <ComboboxGroupLabel
+    {...props}
+    className={cn("px-2 py-1.5 text-[12px] text-muted-foreground", className)}
+  />
+);
 
 export {
   InlineCombobox,
   InlineComboboxContent,
   InlineComboboxEmpty,
-  InlineComboboxGroup,
-  InlineComboboxGroupLabel,
   InlineComboboxInput,
   InlineComboboxItem,
   InlineComboboxRow,

@@ -5,7 +5,7 @@ import { useCallback } from "react";
  * Currently a placeholder - will be fully implemented when
  * radio/select field types are added to the form builder.
  */
-export function useAutoJump(enabled: boolean, onAdvance: () => void) {
+export const useAutoJump = (enabled: boolean, onAdvance: () => void) => {
   /**
    * Call this when a single-select field is answered.
    * Will auto-advance to next field after a short delay for visual feedback.
@@ -31,4 +31,4 @@ export function useAutoJump(enabled: boolean, onAdvance: () => void) {
   );
 
   return { handleFieldSelection };
-}
+};

@@ -1,7 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { CropIcon, RotateCcwIcon } from "@/components/ui/icons";
-import { createContext, cloneElement, use, useCallback, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  cloneElement,
+  use,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type {
   ComponentProps,
   CSSProperties,
@@ -146,16 +155,22 @@ export const ImageCrop = ({
     [reactCropProps.aspect],
   );
 
-  const handleChange = (pixelCrop: PixelCrop, percentCrop: PercentCrop) => {
-    setCrop(percentCrop);
-    onChange?.(pixelCrop, percentCrop);
-  };
+  const handleChange = useCallback(
+    (pixelCrop: PixelCrop, percentCrop: PercentCrop) => {
+      setCrop(percentCrop);
+      onChange?.(pixelCrop, percentCrop);
+    },
+    [onChange],
+  );
 
   // biome-ignore lint/suspicious/useAwait: "onComplete is async"
-  const handleComplete = async (pixelCrop: PixelCrop, percentCrop: PercentCrop) => {
-    setCompletedCrop(pixelCrop);
-    onComplete?.(pixelCrop, percentCrop);
-  };
+  const handleComplete = useCallback(
+    async (pixelCrop: PixelCrop, percentCrop: PercentCrop) => {
+      setCompletedCrop(pixelCrop);
+      onComplete?.(pixelCrop, percentCrop);
+    },
+    [onComplete],
+  );
 
   const applyCrop = async () => {
     if (!(imgRef.current && completedCrop)) {
@@ -174,21 +189,38 @@ export const ImageCrop = ({
     }
   };
 
-  const contextValue: ImageCropContextType = {
-    file,
-    maxImageSize,
-    imgSrc,
-    crop,
-    completedCrop,
-    imgRef,
-    onCrop,
-    reactCropProps,
-    handleChange,
-    handleComplete,
-    onImageLoad,
-    applyCrop,
-    resetCrop,
-  };
+  const contextValue = useMemo<ImageCropContextType>(
+    () => ({
+      file,
+      maxImageSize,
+      imgSrc,
+      crop,
+      completedCrop,
+      imgRef,
+      onCrop,
+      reactCropProps,
+      handleChange,
+      handleComplete,
+      onImageLoad,
+      applyCrop,
+      resetCrop,
+    }),
+    [
+      file,
+      maxImageSize,
+      imgSrc,
+      crop,
+      completedCrop,
+      imgRef,
+      onCrop,
+      reactCropProps,
+      handleChange,
+      handleComplete,
+      onImageLoad,
+      applyCrop,
+      resetCrop,
+    ],
+  );
 
   return <ImageCropContext.Provider value={contextValue}>{children}</ImageCropContext.Provider>;
 };
@@ -229,7 +261,6 @@ export type ImageCropApplyProps = ComponentProps<"button"> & {
 
 export const ImageCropApply = ({ render, children, onClick, ...props }: ImageCropApplyProps) => {
   const { applyCrop } = useImageCrop();
-
   const handleClick = async (e: MouseEvent<HTMLButtonElement>) => {
     await applyCrop();
     onClick?.(e);
@@ -256,7 +287,6 @@ export type ImageCropResetProps = ComponentProps<"button"> & {
 
 export const ImageCropReset = ({ render, children, onClick, ...props }: ImageCropResetProps) => {
   const { resetCrop } = useImageCrop();
-
   const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
     resetCrop();
     onClick?.(e);

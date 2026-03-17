@@ -89,6 +89,7 @@ export const MediaEmbedElement = withHOC(
                       )}
                       title="embed"
                       src={embed?.url}
+                      sandbox="allow-scripts allow-same-origin allow-popups"
                       allowFullScreen
                     />
                   </div>
@@ -104,7 +105,7 @@ export const MediaEmbedElement = withHOC(
                       "[&_.react-tweet-theme]:ring-2 [&_.react-tweet-theme]:ring-ring [&_.react-tweet-theme]:ring-offset-2",
                   )}
                 >
-                  <Tweet id={embed?.id!} />
+                  <Tweet id={embed?.id ?? ""} />
                 </div>
               )}
 

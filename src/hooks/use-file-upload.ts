@@ -1,6 +1,5 @@
-import type React from "react";
 import { useCallback, useRef, useState } from "react";
-import type { ChangeEvent, DragEvent, InputHTMLAttributes } from "react";
+import type { ChangeEvent, DragEvent, InputHTMLAttributes, Ref } from "react";
 
 export type FileMetadata = {
   name: string;
@@ -47,7 +46,7 @@ type FileUploadActions = {
   getInputProps: (
     props?: InputHTMLAttributes<HTMLInputElement>,
   ) => InputHTMLAttributes<HTMLInputElement> & {
-    ref: React.Ref<HTMLInputElement>;
+    ref: Ref<HTMLInputElement>;
   };
 };
 
