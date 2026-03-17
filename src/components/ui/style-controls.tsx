@@ -307,12 +307,12 @@ export function StyleColorPicker({
   return (
     <div
       className={cn(
-        "flex items-center rounded-[8px] overflow-hidden border border-border/60 bg-transparent h-[32px] text-[13px]",
+        "bg-secondary min-h-8.5 flex gap-3 items-center overflow-clip pl-2.5 py-1.75 pr-[3px]",
         className,
       )}
     >
-      <div className="bg-transparent px-3 h-full flex items-center text-muted-foreground flex-1 select-none">
-        {label}
+      <div className="flex-1 min-w-0">
+        <span className="text-base font-normal">{label}</span>
       </div>
       <div className="flex-none px-2 h-full flex items-center gap-2">
         <input

@@ -20,7 +20,7 @@ export function FormSettingsSidebar({ formId, isLocal }: FormSettingsSidebarProp
     >
       <SidebarHeader className="pt-2 pb-3 pl-1 shrink-0 gap-2.25 space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-base text-foreground pl-2.5">Settings</h2>
+          <h2 className="text-base font-normal text-foreground pl-2.5">Settings</h2>
           <Button
             variant="ghost"
             size="icon-xs"

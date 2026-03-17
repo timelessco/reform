@@ -6,48 +6,20 @@ import { useTheme } from "@/components/ThemeProvider";
 import { Textarea } from "@/components/ui/textarea";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
-import {
-  formCollection,
-  localFormCollection,
-} from "@/db-collections/form.collections";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-} from "@/components/ui/sidebar";
+import { formCollection, localFormCollection } from "@/db-collections/form.collections";
+import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
 import { SidebarSection } from "@/components/ui/sidebar-section";
 import {
   ConfigCard,
   ConfigRow,
   selectTriggerCls,
 } from "@/components/form-builder/embed-config-panel";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
-import {
-  StyleColorPicker,
-  StyleNumberInput,
-} from "@/components/ui/style-controls";
-import {
-  Tabs,
-  TabsIndicator,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  STYLES,
-  BASE_COLORS,
-  DARK_BASE_COLORS,
-  THEME_COLORS,
-} from "@/lib/theme-presets";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import { StyleColorPicker, StyleNumberInput } from "@/components/ui/style-controls";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsIndicator, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { STYLES, BASE_COLORS, DARK_BASE_COLORS, THEME_COLORS } from "@/lib/theme-presets";
 import { FONT_REGISTRY } from "@/lib/font-registry";
 import { loadGoogleFont } from "@/lib/load-google-font";
 import { TOKEN_NAMES } from "@/lib/generate-theme-css";
@@ -130,10 +102,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
   const formDoc = formResult.data?.[0] ?? null;
   const collection = isLocal ? localFormCollection : formCollection;
 
-  const customization = (formDoc?.customization ?? {}) as Record<
-    string,
-    string
-  >;
+  const customization = (formDoc?.customization ?? {}) as Record<string, string>;
 
   // Resolve the active style to get fallback values
   const resolvedStyle = useMemo(() => {
@@ -224,8 +193,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
   // Sync editor mode when app theme changes from outside (user menu, settings)
   const resolvedAppTheme =
     theme === "system"
-      ? typeof window !== "undefined" &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
         ? "dark"
         : "light"
       : theme;
@@ -239,8 +207,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
   const activePreset = customization.preset || "vega";
   const activeMode = customization.mode || "light";
   const activeThemeColor = getValue("themeColor");
-  const activeBaseColors =
-    activeMode === "dark" ? DARK_BASE_COLORS : BASE_COLORS;
+  const activeBaseColors = activeMode === "dark" ? DARK_BASE_COLORS : BASE_COLORS;
   const activeBaseColor = getValue("baseColor");
   const activeFont = getValue("font");
   const activeRadius = getValue("radius");
@@ -257,9 +224,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
       {/* Header */}
       <SidebarHeader className="pt-2 pb-3 pl-1 shrink-0 gap-2.25 space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-medium text-foreground pl-2.5 font-sans">
-            Customize
-          </h2>
+          <h2 className="text-base font-normal text-foreground pl-2.5 font-sans">Customize</h2>
           <Button
             variant="ghost"
             size="icon-xs"
@@ -279,13 +244,9 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
           <SidebarSection label="Theme" className="pb-2.75" action={<></>}>
             <ConfigCard>
               <ConfigRow label="Style">
-                <Select
-                  value={activePreset}
-                  onValueChange={(v) => v && selectStyle(v)}
-                >
+                <Select value={activePreset} onValueChange={(v) => v && selectStyle(v)}>
                   <SelectTrigger className={selectTriggerCls}>
-                    {STYLE_OPTIONS.find((o) => o.value === activePreset)
-                      ?.label ?? activePreset}
+                    {STYLE_OPTIONS.find((o) => o.value === activePreset)?.label ?? activePreset}
                   </SelectTrigger>
                   <SelectContent>
                     {STYLE_OPTIONS.map((o) => (
@@ -304,12 +265,9 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
                   }}
                 >
                   <SelectTrigger className={selectTriggerCls}>
-                    <ColorSwatch
-                      color={THEME_COLORS[activeThemeColor]?.primary}
-                    />
-                    {THEME_COLOR_OPTIONS.find(
-                      (o) => o.value === activeThemeColor,
-                    )?.label ?? activeThemeColor}
+                    <ColorSwatch color={THEME_COLORS[activeThemeColor]?.primary} />
+                    {THEME_COLOR_OPTIONS.find((o) => o.value === activeThemeColor)?.label ??
+                      activeThemeColor}
                   </SelectTrigger>
                   <SelectContent>
                     {THEME_COLOR_OPTIONS.map((o) => (
@@ -329,11 +287,9 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
                   }}
                 >
                   <SelectTrigger className={selectTriggerCls}>
-                    <ColorSwatch
-                      color={activeBaseColors[activeBaseColor]?.muted}
-                    />
-                    {BASE_COLOR_OPTIONS.find((o) => o.value === activeBaseColor)
-                      ?.label ?? activeBaseColor}
+                    <ColorSwatch color={activeBaseColors[activeBaseColor]?.muted} />
+                    {BASE_COLOR_OPTIONS.find((o) => o.value === activeBaseColor)?.label ??
+                      activeBaseColor}
                   </SelectTrigger>
                   <SelectContent>
                     {BASE_COLOR_OPTIONS.map((o) => (
@@ -355,8 +311,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
                   }}
                 >
                   <SelectTrigger className={selectTriggerCls}>
-                    {FONT_OPTIONS.find((o) => o.value === activeFont)?.label ??
-                      activeFont}
+                    {FONT_OPTIONS.find((o) => o.value === activeFont)?.label ?? activeFont}
                   </SelectTrigger>
                   <SelectContent>
                     {FONT_OPTIONS.map((o) => (
@@ -370,13 +325,10 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
               <ConfigRow label="Radius">
                 <Select
                   value={activeRadius}
-                  onValueChange={(v) =>
-                    v && updateWithCustomPreset("radius", v)
-                  }
+                  onValueChange={(v) => v && updateWithCustomPreset("radius", v)}
                 >
                   <SelectTrigger className={selectTriggerCls}>
-                    {RADIUS_OPTIONS.find((o) => o.value === activeRadius)
-                      ?.label ?? activeRadius}
+                    {RADIUS_OPTIONS.find((o) => o.value === activeRadius)?.label ?? activeRadius}
                   </SelectTrigger>
                   <SelectContent>
                     {RADIUS_OPTIONS.map((o) => (
@@ -399,8 +351,8 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
               <ProBadge />
             </div>
             <p className="text-[12px] text-muted-foreground mb-3">
-              Preview advanced customization. {APP_NAME} Pro is required to
-              apply it to the published form.
+              Preview advanced customization. {APP_NAME} Pro is required to apply it to the
+              published form.
             </p>
             <Button
               variant="outline"
@@ -438,8 +390,8 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
                 label="Logo Width"
                 value={getValue("logoWidth") || "100px"}
                 onChange={(v) => updateWithCustomPreset("logoWidth", v)}
-                min={40}
-                max={200}
+                min={0}
+                max={100}
                 step={4}
                 unit="px"
                 displayUnit=""
@@ -486,9 +438,71 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
             </ConfigCard>
           </SidebarSection>
 
+          {/* Title */}
+          <SidebarSection label="Title" action={<ProBadge />}>
+            <ConfigCard>
+              <ConfigRow label="Font">
+                <Select
+                  value={getValue("titleFont") || "Timeless Serif"}
+                  onValueChange={(v) => {
+                    if (!v) return;
+                    loadGoogleFont(v);
+                    updateWithCustomPreset("titleFont", v);
+                  }}
+                >
+                  <SelectTrigger className={selectTriggerCls}>
+                    {FONT_OPTIONS.find(
+                      (o) => o.value === (getValue("titleFont") || "Timeless Serif"),
+                    )?.label ??
+                      (getValue("titleFont") || "Timeless Serif")}
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FONT_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </ConfigRow>
+              <StyleNumberInput
+                label="Font Size"
+                value={getValue("titleFontSize") || "48px"}
+                onChange={(v) => updateWithCustomPreset("titleFontSize", v)}
+                min={24}
+                max={72}
+                step={2}
+                unit="px"
+                displayUnit=""
+                className={CONFIG_INPUT_CLS}
+              />
+              <StyleNumberInput
+                label="Letter Spacing"
+                value={getValue("titleLetterSpacing") || "-1.44px"}
+                onChange={(v) => updateWithCustomPreset("titleLetterSpacing", v)}
+                min={-3}
+                max={3}
+                step={0.25}
+                unit="px"
+                displayUnit=""
+                className={CONFIG_INPUT_CLS}
+              />
+              <ConfigRow label="Italic" variant="switch">
+                <Switch
+                  aria-label="Italic"
+                  checked={getValue("titleItalic") === "true"}
+                  onCheckedChange={(v: boolean) =>
+                    updateWithCustomPreset("titleItalic", v ? "true" : "")
+                  }
+                  size="default"
+                />
+              </ConfigRow>
+            </ConfigCard>
+          </SidebarSection>
+
           {/* Colors — with Light / Dark tabs */}
           <SidebarSection label="Colors" action={<ProBadge />}>
-            <Tabs value={activeMode} onValueChange={handleModeToggle}>
+            <Tabs value={activeMode} onValueChange={handleModeToggle} className="mb-2.5">
               <TabsList className="w-full">
                 <TabsTrigger value="light">Light</TabsTrigger>
                 <TabsTrigger value="dark">Dark</TabsTrigger>
@@ -518,16 +532,10 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
             <div className="flex items-center gap-1.5 px-1 pt-2">
               <Tooltip>
                 <TooltipTrigger
-                  render={
-                    <InfoIcon className="h-3 w-3 text-muted-foreground/60 cursor-help" />
-                  }
+                  render={<InfoIcon className="h-3 w-3 text-muted-foreground/60 cursor-help" />}
                 />
-                <TooltipContent
-                  side="bottom"
-                  className="max-w-[240px] text-[11px]"
-                >
-                  Supports shadcn tokens: --bf-primary, --bf-background,
-                  --bf-foreground, etc.
+                <TooltipContent side="bottom" className="max-w-[240px] text-[11px]">
+                  Supports shadcn tokens: --bf-primary, --bf-background, --bf-foreground, etc.
                 </TooltipContent>
               </Tooltip>
               <span className="text-[11px] text-muted-foreground/60">
@@ -590,10 +598,7 @@ function AdvancedColorPickers({
       {ADVANCED_COLOR_TOKENS.map(({ key, label }) => {
         const prefixedKey = `${mode}:${key}`;
         const currentValue =
-          customization[prefixedKey] ||
-          customization[key] ||
-          resolved[key] ||
-          "#000000";
+          customization[prefixedKey] || customization[key] || resolved[key] || "#000000";
 
         return (
           <StyleColorPicker
@@ -601,7 +606,7 @@ function AdvancedColorPickers({
             label={label}
             value={currentValue}
             onChange={(v) => updateField(prefixedKey, v)}
-            className="!rounded-none !border-0 !bg-secondary !h-[34px]"
+            className="!rounded-none"
           />
         );
       })}

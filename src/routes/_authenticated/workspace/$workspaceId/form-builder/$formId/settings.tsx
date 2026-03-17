@@ -580,13 +580,13 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
 function PasswordInput({ value, onChange }: { value: string; onChange: (val: string) => void }) {
   const [show, setShow] = useState(false);
   return (
-    <div className="relative w-[140px]">
+    <div className="relative w-[160px]">
       <Input
         type={show ? "text" : "password"}
         placeholder="Enter password"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="!rounded-none !border-0 !bg-secondary !h-[34px] text-sm pr-8"
+        className="w-full text-sm rounded-lg !border-none pr-8"
         aria-label="Form password"
       />
       <button

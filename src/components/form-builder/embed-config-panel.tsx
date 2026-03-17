@@ -1,13 +1,8 @@
-import { useRef, useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { StyleNumberInput } from "@/components/ui/style-controls";
+import { Switch } from "@/components/ui/switch";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
+import { useRef, useState } from "react";
 
 /** Common display config shared across all embed types */
 export interface EmbedDisplayConfig {
@@ -112,9 +107,7 @@ export const defaultEmbedFormFields: EmbedFormFields = {
 };
 
 /** Convert flat form fields to structured EmbedOptions */
-export const formFieldsToEmbedOptions = (
-  fields: EmbedFormFields,
-): EmbedOptions => ({
+export const formFieldsToEmbedOptions = (fields: EmbedFormFields): EmbedOptions => ({
   height: fields.height,
   display: {
     title: fields.hideTitle ? "hidden" : "visible",
@@ -139,9 +132,7 @@ export const formFieldsToEmbedOptions = (
 });
 
 /** Convert structured EmbedOptions back to flat form fields */
-export const embedOptionsToFormFields = (
-  options: EmbedOptions,
-): EmbedFormFields => ({
+export const embedOptionsToFormFields = (options: EmbedOptions): EmbedFormFields => ({
   height: options.height,
   dynamicHeight: options.display.dynamicHeight,
   hideTitle: options.display.title === "hidden",
@@ -170,11 +161,7 @@ interface EmbedConfigPanelProps {
 /* ─── Layout helpers matching Figma node 24119:5595 ─── */
 
 export function ConfigCard({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-px overflow-hidden rounded-lg">
-      {children}
-    </div>
-  );
+  return <div className="flex flex-col gap-px overflow-hidden rounded-lg">{children}</div>;
 }
 
 /**
@@ -195,7 +182,7 @@ export function ConfigRow({
 }) {
   return (
     <div
-      className={`bg-secondary min-h-8.5 flex gap-3 items-center overflow-clip pl-2 py-2 ${
+      className={`bg-secondary min-h-8.5 flex gap-3 items-center overflow-clip pl-2.5 py-1.75 ${
         // max-h-9.5
         variant === "switch" ? "pr-[6px]" : "pr-[3px]"
       }`}
@@ -203,9 +190,7 @@ export function ConfigRow({
       <div className="flex-1 min-w-0 flex flex-col gap-1">
         <span className="text-base font-normal">{label}</span>
         {description && (
-          <p className="text-sm font-normal text-wrap text-muted-foreground">
-            {description}
-          </p>
+          <p className="text-sm font-normal text-wrap text-muted-foreground">{description}</p>
         )}
       </div>
       {children}
@@ -236,8 +221,7 @@ function ScrubValue({
   const hasDragged = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const clamp = (v: number) =>
-    Math.max(min, Math.min(max, Math.round(v / step) * step));
+  const clamp = (v: number) => Math.max(min, Math.min(max, Math.round(v / step) * step));
 
   const handlePointerDown = (e: React.PointerEvent) => {
     if (editing) return;
@@ -327,11 +311,7 @@ export const selectTriggerCls =
 
 /* ─── Public entry point ─── */
 
-export function EmbedConfigPanel({
-  embedType,
-  form,
-  section,
-}: EmbedConfigPanelProps) {
+export function EmbedConfigPanel({ embedType, form, section }: EmbedConfigPanelProps) {
   if (section === "customize") {
     return <CustomizeSection embedType={embedType} form={form} />;
   }
@@ -426,9 +406,7 @@ function CustomizeSection({
               <Switch
                 aria-label="Hide on submit"
                 checked={field.state.value}
-                onCheckedChange={(checked: boolean) =>
-                  field.handleChange(checked)
-                }
+                onCheckedChange={(checked: boolean) => field.handleChange(checked)}
                 size="default"
               />
             </ConfigRow>
@@ -470,11 +448,7 @@ function CustomizeSection({
           {(dynamicHeight: boolean) => (
             <form.Field name="height">
               {(field: any) => (
-                <div
-                  className={
-                    dynamicHeight ? "opacity-40 pointer-events-none" : ""
-                  }
-                >
+                <div className={dynamicHeight ? "opacity-40 pointer-events-none" : ""}>
                   <StyleNumberInput
                     label="Height"
                     value={`${field.state.value}px`}
@@ -599,9 +573,7 @@ function ProSection({ form }: { form: { Field: any } }) {
 
       <ConfigRow label="Custom Domain">
         <Select value="varman.co" disabled>
-          <SelectTrigger className={`${selectTriggerCls} opacity-50`}>
-            varman.co
-          </SelectTrigger>
+          <SelectTrigger className={`${selectTriggerCls} opacity-50`}>varman.co</SelectTrigger>
           <SelectContent>
             <SelectItem value="varman.co">varman.co</SelectItem>
           </SelectContent>

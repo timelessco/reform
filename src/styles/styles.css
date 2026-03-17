@@ -630,14 +630,14 @@
 }
 
 /* Logo/icon positioning: half overlapping cover, half below.
-   Uses negative margin to pull the container up by half its height. */
+   Uses fixed 100px reference for positioning so icon stays centered
+   regardless of --bf-logo-width changes. */
 .bf-themed [data-bf-logo-container="true"] {
-  margin-top: calc(var(--bf-logo-width, 120px) / -2);
+  margin-top: -50px;
 }
 
-/* Emoji container: use half of the logo width (or default ~50px for 100px emoji) */
 .bf-themed [data-bf-logo-emoji-container="true"] {
-  margin-top: calc(var(--bf-logo-width, 100px) / -2);
+  margin-top: -50px;
 }
 
 /* Logo image sizing */
@@ -646,9 +646,30 @@
   height: var(--bf-logo-width, 120px);
 }
 
-/* Emoji logo sizing — scale the font-size to match --bf-logo-width */
-.bf-themed [data-bf-logo-emoji] {
-  font-size: var(--bf-logo-width, 100px);
+/* Icon picker logo: fixed 100px container keeps icon position stable.
+   The accent circle inside scales with --bf-logo-width, icon SVG stays fixed at 48px. */
+.bf-themed [data-bf-logo-icon] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 100px;
+}
+
+.bf-themed [data-bf-logo-icon] > div {
+  width: max(48px, var(--bf-logo-width, 100px)) !important;
+  height: max(48px, var(--bf-logo-width, 100px)) !important;
+}
+
+/* Keep the icon SVG at fixed size regardless of circle size */
+.bf-themed [data-bf-logo-icon] > div > svg {
+  width: 48px !important;
+  height: 48px !important;
+}
+
+/* Hide accent circle background when logo width is 0 — icon still shows */
+.bf-themed [data-bf-logo-icon="minimal"] > div {
+  background-color: transparent !important;
 }
 
 /* Input width: editor input nodes */
@@ -665,7 +686,52 @@
 /* Typography bridge */
 .bf-themed {
   font-size: var(--bf-font-size);
-  letter-spacing: var(--bf-letter-spacing);
+}
+
+/* Override global * { letter-spacing: 0.01em } inside themed forms */
+.bf-themed,
+.bf-themed * {
+  letter-spacing: var(--bf-letter-spacing, 0.01em);
+}
+
+/* Header is excluded from body typography — revert to base layer defaults */
+.bf-themed [data-bf-header],
+.bf-themed [data-bf-header] * {
+  letter-spacing: revert-layer;
+}
+
+/* Title textarea (editor) and title h1 (preview) get their own controls.
+   Fallbacks match the Figma default: Timeless Serif, 48px, -0.03em spacing. */
+.bf-themed [data-bf-header] textarea,
+.bf-themed [data-bf-title] {
+  font-family: var(--bf-title-font, "Timeless Serif", ui-serif, Georgia, serif);
+  font-size: var(--bf-title-font-size, clamp(2.25rem, 6vw, 48px));
+  letter-spacing: var(--bf-title-letter-spacing, -0.03em);
+  font-style: var(--bf-title-font-style, normal);
+}
+
+/* Font-size: editor blocks (inputs, labels, buttons, textareas, paragraphs — NOT headings/header) */
+.bf-themed [data-slate-editor] {
+  font-size: var(--bf-font-size, 1rem);
+}
+
+.bf-themed [data-slate-editor] [data-slate-node="element"]:not(h1, h2, h3, h4, h5, h6):not([data-bf-header]),
+.bf-themed [data-slate-editor] [data-slate-node="element"]:not(h1, h2, h3, h4, h5, h6):not([data-bf-header]) > * {
+  font-size: inherit;
+}
+
+/* Font-size: preview form content (NOT headings) */
+.bf-themed [data-bf-field-list] *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
+.bf-themed [data-bf-form-container] > :not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
+  font-size: var(--bf-font-size, 1rem);
+}
+
+/* PlateStatic content manages its own font-sizes via node components.
+   Override the field-list font-size rule for all slate-editor descendants
+   so headings, lists, paragraphs, etc. render at correct sizes. */
+.bf-themed [data-bf-field-list] [data-slate-editor] *,
+.bf-themed [data-bf-form-container] [data-slate-editor] * {
+  font-size: inherit;
 }
 
 /* Spacing bridge: field list vertical spacing between children */

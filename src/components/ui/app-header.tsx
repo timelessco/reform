@@ -16,36 +16,18 @@ import {
   RotateCcwIcon,
   SettingsIcon,
 } from "@/components/ui/icons";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toggleFavoriteLocal } from "@/db-collections/favorite.collection";
 import { updateFormStatus } from "@/db-collections/form.collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
-import {
-  discardChanges,
-  publishForm,
-  useHasUnpublishedChanges,
-} from "@/hooks/use-form-versions";
+import { discardChanges, publishForm, useHasUnpublishedChanges } from "@/hooks/use-form-versions";
 import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
 import { HOTKEYS, formatForDisplay } from "@/lib/hotkeys";
 import { cn, parseTimestampAsUTC } from "@/lib/utils";
 import { useHotkey } from "@tanstack/react-hotkeys";
-import {
-  Link,
-  useLocation,
-  useNavigate,
-  useParams,
-} from "@tanstack/react-router";
+import { Link, useLocation, useNavigate, useParams } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -68,8 +50,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
   const { pathname } = useLocation();
   const isDashboard = pathname === "/dashboard";
   const isLandingPage = pathname === "/";
-  const isFormBuilder =
-    pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
+  const isFormBuilder = pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
   const isEditRoute = pathname.endsWith("/edit");
   const { data: sessionData } = useSession();
   const session = sessionData;
@@ -129,10 +110,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
 
   // Close editor-only sidebars when navigating away from the edit route
   useEffect(() => {
-    if (
-      !isEditRoute &&
-      (activeSidebar === "history" || activeSidebar === "customize")
-    ) {
+    if (!isEditRoute && (activeSidebar === "history" || activeSidebar === "customize")) {
       closeSidebar();
     }
   }, [isEditRoute, activeSidebar, closeSidebar]);
@@ -252,8 +230,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
   });
 
   useHotkey(HOTKEYS.TOGGLE_SHARE_SIDEBAR, () => toggleShareSidebar(), {
-    enabled:
-      isFormBuilder && isEditRoute && savedDocs?.[0]?.status === "published",
+    enabled: isFormBuilder && isEditRoute && savedDocs?.[0]?.status === "published",
   });
 
   const isLeftSidebarOpen = state === "expanded";
@@ -367,9 +344,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                   <span className="text-muted-foreground/50">/</span>
                 </>
               )}
-              {savedDocs?.[0].status === "published" &&
-              workspaceId &&
-              formId ? (
+              {savedDocs?.[0].status === "published" && workspaceId && formId ? (
                 <Link
                   to="/workspace/$workspaceId/form-builder/$formId/submissions"
                   params={{ workspaceId, formId }}
@@ -389,9 +364,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                     "max-w-[200px] no-underline cursor-default px-1.5 justify-start overflow-hidden",
                   )}
                 >
-                  <span className="truncate">
-                    {savedDocs?.[0].title || "Untitled"}
-                  </span>
+                  <span className="truncate">{savedDocs?.[0].title || "Untitled"}</span>
                 </span>
               )}
               <span className="text-muted-foreground/50">/</span>
@@ -409,52 +382,41 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
 
         {/* Right Section: Actions — hidden when any editor sidebar is open */}
         <div className="flex items-center gap-1">
-          {isFormBuilder &&
-            savedDocs?.[0]?.updatedAt &&
-            !isLoadingSavedDocs && (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <span className="mr-1 inline-flex h-7 items-center whitespace-nowrap rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] font-normal text-muted-foreground/70" />
-                  }
-                >
-                  Edited{" "}
-                  {formatDistanceToNow(
-                    parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ??
-                      new Date(),
-                  )}{" "}
-                  ago
-                </TooltipTrigger>
-                <TooltipContent side="bottom" align="end">
-                  <div className="space-y-1">
+          {isFormBuilder && savedDocs?.[0]?.updatedAt && !isLoadingSavedDocs && (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <span className="mr-1 inline-flex h-7 items-center whitespace-nowrap rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] font-normal text-muted-foreground/70" />
+                }
+              >
+                Edited{" "}
+                {formatDistanceToNow(parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date())}{" "}
+                ago
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="end">
+                <div className="space-y-1">
+                  <p className="text-xs text-background/70">
+                    Edited by{" "}
+                    <span className="text-background">{session?.user?.name ?? "You"}</span>{" "}
+                    {formatDistanceToNow(
+                      parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date(),
+                    )}{" "}
+                    ago
+                  </p>
+                  {savedDocs?.[0]?.createdAt && (
                     <p className="text-xs text-background/70">
-                      Edited by{" "}
-                      <span className="text-background">
-                        {session?.user?.name ?? "You"}
-                      </span>{" "}
-                      {formatDistanceToNow(
-                        parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ??
-                          new Date(),
-                      )}{" "}
-                      ago
+                      Created by{" "}
+                      <span className="text-background">{session?.user?.name ?? "You"}</span>{" "}
+                      {format(
+                        parseTimestampAsUTC(savedDocs?.[0]?.createdAt) ?? new Date(),
+                        "MMM d, yyyy",
+                      )}
                     </p>
-                    {savedDocs?.[0]?.createdAt && (
-                      <p className="text-xs text-background/70">
-                        Created by{" "}
-                        <span className="text-background">
-                          {session?.user?.name ?? "You"}
-                        </span>{" "}
-                        {format(
-                          parseTimestampAsUTC(savedDocs?.[0]?.createdAt) ??
-                            new Date(),
-                          "MMM d, yyyy",
-                        )}
-                      </p>
-                    )}
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            )}
+                  )}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
           {isDashboard && (
             <Button
@@ -529,10 +491,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                     />
                   }
                 >
-                  <MoreHorizontalIcon
-                    className="h-[18px] w-[18px]"
-                    strokeWidth={1.5}
-                  />
+                  <MoreHorizontalIcon className="h-[18px] w-[18px]" strokeWidth={1.5} />
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-48" sideOffset={4}>
                   <div className="flex flex-col">
@@ -600,10 +559,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                     }
                   >
                     {isDiscarding ? (
-                      <Loader2Icon
-                        className="h-4 w-4 animate-spin"
-                        strokeWidth={2}
-                      />
+                      <Loader2Icon className="h-4 w-4 animate-spin" strokeWidth={2} />
                     ) : (
                       <RotateCcwIcon className="h-4 w-4" strokeWidth={2} />
                     )}
@@ -717,16 +673,14 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                         className={cn(
                           "pl-2 pr-2 py-1.5 ml-1 text-[14px] transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none",
                           !isLoadingSavedDocs &&
-                            (hasUnpublishedChanges ||
-                              savedDocs?.[0]?.status !== "published")
+                            (hasUnpublishedChanges || savedDocs?.[0]?.status !== "published")
                             ? "bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
                             : "bg-muted text-muted-foreground hover:bg-muted/80",
                         )}
                         onClick={handlePublish}
                         disabled={
                           isPublishing ||
-                          (!hasUnpublishedChanges &&
-                            savedDocs?.[0]?.status === "published")
+                          (!hasUnpublishedChanges && savedDocs?.[0]?.status === "published")
                         }
                       />
                     }
@@ -762,10 +716,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                         />
                       }
                     >
-                      <span
-                        data-icon="inline-start"
-                        className="shrink-0 [&_svg]:size-[1em]!"
-                      >
+                      <span data-icon="inline-start" className="shrink-0 [&_svg]:size-[1em]!">
                         <PencilIcon />
                       </span>
                       Edit
@@ -791,8 +742,8 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete form</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this form? This action will move
-              it to trash and cannot be easily undone.
+              Are you sure you want to delete this form? This action will move it to trash and
+              cannot be easily undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -815,8 +766,8 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Discard unpublished changes?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will revert the form to the last published version. Any
-              unsaved changes will be lost.
+              This will revert the form to the last published version. Any unsaved changes will be
+              lost.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
