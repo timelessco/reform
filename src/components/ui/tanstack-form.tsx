@@ -63,34 +63,6 @@ const Form = ({
   );
 };
 
-const { useAppForm, withForm, withFieldGroup } = createFormHook({
-  fieldContext,
-  formContext,
-  fieldComponents: {
-    Field,
-    FieldError,
-    FieldSet,
-    FieldContent,
-    FieldDescription,
-    FieldGroup,
-    FieldLabel,
-    FieldLegend,
-    FieldSeparator,
-    FieldTitle,
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
-  },
-  formComponents: {
-    SubmitButton,
-    StepButton,
-    FieldLegend,
-    FieldDescription,
-    FieldSeparator,
-    Form,
-  },
-});
-
 type FormItemContextValue = {
   id: string;
 };
@@ -226,5 +198,33 @@ const StepButton = ({
     {label}
   </Button>
 );
+
+const { useAppForm, withForm, withFieldGroup } = createFormHook({
+  fieldContext,
+  formContext,
+  fieldComponents: {
+    Field,
+    FieldError,
+    FieldSet,
+    FieldContent,
+    FieldDescription,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSeparator,
+    FieldTitle,
+    InputGroup,
+    InputGroupAddon,
+    InputGroupInput,
+  },
+  formComponents: {
+    SubmitButton,
+    StepButton,
+    FieldLegend,
+    FieldDescription,
+    FieldSeparator,
+    Form,
+  },
+});
 
 export { revalidateLogic, useAppForm, useFieldContext, useFormContext, withFieldGroup, withForm };

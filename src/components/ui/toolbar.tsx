@@ -97,6 +97,42 @@ const dropdownArrowVariants = cva(
   },
 );
 
+type TooltipProps<T extends React.ElementType> = {
+  tooltip?: React.ReactNode;
+  tooltipContentProps?: Omit<React.ComponentPropsWithoutRef<typeof TooltipContent>, "children">;
+  tooltipProps?: Omit<React.ComponentPropsWithoutRef<typeof Tooltip>, "children">;
+  tooltipTriggerProps?: React.ComponentPropsWithoutRef<typeof TooltipTrigger>;
+} & React.ComponentProps<T>;
+
+const withTooltip = <T extends React.ElementType>(Component: T) =>
+  function ExtendComponent({
+    tooltip,
+    tooltipContentProps,
+    tooltipProps,
+    tooltipTriggerProps,
+    ...props
+  }: TooltipProps<T>) {
+    const [mounted, setMounted] = React.useState(false);
+
+    React.useEffect(() => {
+      setMounted(true);
+    }, []);
+
+    const component = <Component {...(props as React.ComponentProps<T>)} />;
+
+    if (tooltip && mounted) {
+      return (
+        <Tooltip {...tooltipProps}>
+          <TooltipTrigger render={component} {...tooltipTriggerProps} />
+
+          <TooltipContent {...tooltipContentProps}>{tooltip}</TooltipContent>
+        </Tooltip>
+      );
+    }
+
+    return component;
+  };
+
 type ToolbarButtonProps = {
   isDropdown?: boolean;
   pressed?: boolean;
@@ -241,42 +277,6 @@ export const ToolbarGroup = ({ children, className }: React.ComponentProps<"div"
     </div>
   </div>
 );
-
-type TooltipProps<T extends React.ElementType> = {
-  tooltip?: React.ReactNode;
-  tooltipContentProps?: Omit<React.ComponentPropsWithoutRef<typeof TooltipContent>, "children">;
-  tooltipProps?: Omit<React.ComponentPropsWithoutRef<typeof Tooltip>, "children">;
-  tooltipTriggerProps?: React.ComponentPropsWithoutRef<typeof TooltipTrigger>;
-} & React.ComponentProps<T>;
-
-const withTooltip = <T extends React.ElementType>(Component: T) =>
-  function ExtendComponent({
-    tooltip,
-    tooltipContentProps,
-    tooltipProps,
-    tooltipTriggerProps,
-    ...props
-  }: TooltipProps<T>) {
-    const [mounted, setMounted] = React.useState(false);
-
-    React.useEffect(() => {
-      setMounted(true);
-    }, []);
-
-    const component = <Component {...(props as React.ComponentProps<T>)} />;
-
-    if (tooltip && mounted) {
-      return (
-        <Tooltip {...tooltipProps}>
-          <TooltipTrigger render={component} {...tooltipTriggerProps} />
-
-          <TooltipContent {...tooltipContentProps}>{tooltip}</TooltipContent>
-        </Tooltip>
-      );
-    }
-
-    return component;
-  };
 
 export const ToolbarMenuGroup = ({
   children,
