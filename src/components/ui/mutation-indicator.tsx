@@ -6,7 +6,7 @@ import { useMutationState } from "@tanstack/react-query";
  *
  * Uses useMutationState from TanStack Query v5 to track all pending mutations.
  */
-export function MutationIndicator() {
+export const MutationIndicator = () => {
   const pendingMutations = useMutationState({
     filters: { status: "pending" },
     select: () => 1,
@@ -29,4 +29,4 @@ export function MutationIndicator() {
       Saving {pendingMutations.length}...
     </div>
   );
-}
+};

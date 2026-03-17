@@ -9,6 +9,39 @@ import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { getPublishedFormById } from "@/lib/fn/public";
 
+const PublicFormRoute = () => {
+  const loaderData = Route.useLoaderData();
+  const { formId } = Route.useParams();
+  const search = Route.useSearch();
+  // Force light theme for public form pages — isolate from app's dark mode
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.remove("dark");
+    root.classList.add("light");
+  }, []);
+
+  // Support both transparentBackground and transparent params
+  const isTransparent = search.transparentBackground || search.transparent || false;
+
+  const embedConfig: PublicFormEmbedConfig = {
+    title: search.hideTitle ? "hidden" : "visible",
+    background: isTransparent ? "transparent" : "solid",
+    alignment: search.alignLeft ? "left" : "center",
+    dynamicHeight: search.dynamicHeight,
+  };
+
+  return (
+    <PublicFormPage
+      form={loaderData?.form ?? null}
+      error={loaderData?.error ?? null}
+      gated={loaderData?.gated ?? null}
+      formId={formId}
+      isPopup={search.popup}
+      embedConfig={embedConfig}
+    />
+  );
+};
+
 export const Route = createFileRoute("/forms/$i8n/$formId")({
   // SSR loader - fetches form data on the server for SEO
   loader: async ({ params }) => getPublishedFormById({ data: { id: params.formId } }),
@@ -54,36 +87,3 @@ export const Route = createFileRoute("/forms/$i8n/$formId")({
     dynamicHeight: z.coerce.boolean().optional().default(false),
   }),
 });
-
-function PublicFormRoute() {
-  const loaderData = Route.useLoaderData();
-  const { formId } = Route.useParams();
-  const search = Route.useSearch();
-  // Force light theme for public form pages — isolate from app's dark mode
-  useEffect(() => {
-    const root = document.documentElement;
-    root.classList.remove("dark");
-    root.classList.add("light");
-  }, []);
-
-  // Support both transparentBackground and transparent params
-  const isTransparent = search.transparentBackground || search.transparent || false;
-
-  const embedConfig: PublicFormEmbedConfig = {
-    title: search.hideTitle ? "hidden" : "visible",
-    background: isTransparent ? "transparent" : "solid",
-    alignment: search.alignLeft ? "left" : "center",
-    dynamicHeight: search.dynamicHeight,
-  };
-
-  return (
-    <PublicFormPage
-      form={loaderData?.form ?? null}
-      error={loaderData?.error ?? null}
-      gated={loaderData?.gated ?? null}
-      formId={formId}
-      isPopup={search.popup}
-      embedConfig={embedConfig}
-    />
-  );
-}

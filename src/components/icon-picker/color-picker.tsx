@@ -17,7 +17,7 @@ type ColorPickerProps = {
   colors?: string[];
 };
 
-export function ColorPicker({ onChange, selectedColor, colors }: ColorPickerProps) {
+export const ColorPicker = ({ onChange, selectedColor, colors }: ColorPickerProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const isDark = ref.current?.closest(".dark") != null;
 
@@ -79,4 +79,4 @@ export function ColorPicker({ onChange, selectedColor, colors }: ColorPickerProp
       ))}
     </div>
   );
-}
+};

@@ -29,7 +29,7 @@ type CarouselContextProps = {
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null);
 
-function useCarousel() {
+export const useCarousel = () => {
   const context = React.use(CarouselContext);
 
   if (!context) {
@@ -37,9 +37,9 @@ function useCarousel() {
   }
 
   return context;
-}
+};
 
-function Carousel({
+export const Carousel = ({
   orientation = "horizontal",
   opts,
   setApi,
@@ -47,7 +47,7 @@ function Carousel({
   className,
   children,
   ...props
-}: React.ComponentProps<"div"> & CarouselProps) {
+}: React.ComponentProps<"div"> & CarouselProps) => {
   const [carouselRef, api] = useEmblaCarousel(
     {
       ...opts,
@@ -101,19 +101,22 @@ function Carousel({
     };
   }, [api, onSelect]);
 
+  const contextValue = React.useMemo(
+    () => ({
+      carouselRef,
+      api: api,
+      opts,
+      orientation: orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
+      scrollPrev,
+      scrollNext,
+      canScrollPrev,
+      canScrollNext,
+    }),
+    [carouselRef, api, opts, orientation, scrollPrev, scrollNext, canScrollPrev, canScrollNext],
+  );
+
   return (
-    <CarouselContext.Provider
-      value={{
-        carouselRef,
-        api: api,
-        opts,
-        orientation: orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
-        scrollPrev,
-        scrollNext,
-        canScrollPrev,
-        canScrollNext,
-      }}
-    >
+    <CarouselContext.Provider value={contextValue}>
       <div
         onKeyDownCapture={handleKeyDown}
         className={cn("relative", className)}
@@ -126,9 +129,9 @@ function Carousel({
       </div>
     </CarouselContext.Provider>
   );
-}
+};
 
-function CarouselContent({ className, ...props }: React.ComponentProps<"div">) {
+export const CarouselContent = ({ className, ...props }: React.ComponentProps<"div">) => {
   const { carouselRef, orientation } = useCarousel();
 
   return (
@@ -139,9 +142,9 @@ function CarouselContent({ className, ...props }: React.ComponentProps<"div">) {
       />
     </div>
   );
-}
+};
 
-function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
+export const CarouselItem = ({ className, ...props }: React.ComponentProps<"div">) => {
   const { orientation } = useCarousel();
 
   return (
@@ -157,14 +160,14 @@ function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
       {...props}
     />
   );
-}
+};
 
-function CarouselPrevious({
+export const CarouselPrevious = ({
   className,
   variant = "outline",
   size = "icon-sm",
   ...props
-}: React.ComponentProps<typeof Button>) {
+}: React.ComponentProps<typeof Button>) => {
   const { orientation, scrollPrev, canScrollPrev } = useCarousel();
 
   return (
@@ -187,14 +190,14 @@ function CarouselPrevious({
       <span className="sr-only">Previous slide</span>
     </Button>
   );
-}
+};
 
-function CarouselNext({
+export const CarouselNext = ({
   className,
   variant = "outline",
   size = "icon-sm",
   ...props
-}: React.ComponentProps<typeof Button>) {
+}: React.ComponentProps<typeof Button>) => {
   const { orientation, scrollNext, canScrollNext } = useCarousel();
 
   return (
@@ -217,14 +220,6 @@ function CarouselNext({
       <span className="sr-only">Next slide</span>
     </Button>
   );
-}
-
-export {
-  type CarouselApi,
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselPrevious,
-  CarouselNext,
-  useCarousel,
 };
+
+export { type CarouselApi };

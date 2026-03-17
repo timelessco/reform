@@ -10,9 +10,9 @@ const createCaptionTrackUrl = (text: string) => {
   return URL.createObjectURL(blob);
 };
 
-export function VideoElementStatic(
+export const VideoElementStatic = (
   props: SlateElementProps<TVideoElement & TCaptionElement & TResizableProps>,
-) {
+) => {
   const { align = "center", caption, url, width } = props.element;
   const captionText = React.useMemo(() => {
     if (!caption?.length) return "";
@@ -51,4 +51,4 @@ export function VideoElementStatic(
       {props.children}
     </SlateElement>
   );
-}
+};

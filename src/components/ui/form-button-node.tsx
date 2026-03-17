@@ -18,7 +18,7 @@ export interface FormButtonElementData {
   children: [{ text: string }];
 }
 
-export function createFormButtonNode(role: ButtonRole, text?: string): FormButtonElementData {
+export const createFormButtonNode = (role: ButtonRole, text?: string): FormButtonElementData => {
   const defaultText = role === "next" ? "Next" : role === "previous" ? "Previous" : "Submit";
   return {
     type: "formButton",
@@ -26,9 +26,9 @@ export function createFormButtonNode(role: ButtonRole, text?: string): FormButto
     label: text ?? defaultText,
     children: [{ text: "" }],
   };
-}
+};
 
-function getPlaceholderForRole(role: ButtonRole): string {
+const getPlaceholderForRole = (role: ButtonRole): string => {
   switch (role) {
     case "next":
       return "Next";
@@ -39,17 +39,17 @@ function getPlaceholderForRole(role: ButtonRole): string {
     default:
       return "Button";
   }
-}
+};
 
 /**
  * Extracts text content from a node's children
  */
-function extractTextFromChildren(children: Array<{ text?: string }>): string {
+const extractTextFromChildren = (children: Array<{ text?: string }>): string => {
   if (!Array.isArray(children)) return "";
   return children.map((child) => child.text || "").join("");
-}
+};
 
-export function FormButtonElement({ className, children, ...props }: PlateElementProps) {
+export const FormButtonElement = ({ className, children, ...props }: PlateElementProps) => {
   const { element } = props;
   const editor = useEditorRef();
   const buttonRole = (element.buttonRole as ButtonRole) ?? "submit";
@@ -85,15 +85,59 @@ export function FormButtonElement({ className, children, ...props }: PlateElemen
 
   const buttonLabelId = React.useId();
 
+  const handlePopoverOpenChange = React.useCallback(
+    (open: boolean) => {
+      if (open) setInputValue(label);
+      setIsOpen(open);
+    },
+    [label],
+  );
+
+  const handleGearMouseDown = React.useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleGearClick = React.useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsOpen(true);
+  }, []);
+
+  const handlePopoverMouseDown = React.useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+  }, []);
+
+  const handleInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  }, []);
+
+  const handleInputBlur = React.useCallback(() => {
+    handleLabelChange(inputValue);
+  }, [handleLabelChange, inputValue]);
+
+  const handleInputKeyDown = React.useCallback(
+    (e: React.KeyboardEvent) => {
+      e.stopPropagation();
+      if (e.key === "Enter") {
+        e.preventDefault();
+        saveAndClose();
+      }
+    },
+    [saveAndClose],
+  );
+
+  const handleInputMouseDown = React.useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+  }, []);
+
+  const handleInputClick = React.useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+  }, []);
+
   // Gear icon component
   const GearIcon = (
-    <Popover
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (open) setInputValue(label); // Initialize input when opening
-        setIsOpen(open);
-      }}
-    >
+    <Popover open={isOpen} onOpenChange={handlePopoverOpenChange}>
       <PopoverTrigger
         render={
           <Button
@@ -101,15 +145,8 @@ export function FormButtonElement({ className, children, ...props }: PlateElemen
             size="icon-sm"
             className="h-7 w-7 opacity-0 group-hover:opacity-100"
             aria-label="Button settings"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsOpen(true);
-            }}
+            onMouseDown={handleGearMouseDown}
+            onClick={handleGearClick}
           />
         }
       >
@@ -119,7 +156,7 @@ export function FormButtonElement({ className, children, ...props }: PlateElemen
         className="w-64 p-4 border"
         side={isPrevious ? "right" : "left"}
         align="start"
-        onMouseDown={(e) => e.stopPropagation()}
+        onMouseDown={handlePopoverMouseDown}
       >
         <div className="space-y-2">
           <Label htmlFor={buttonLabelId} className="text-sm">
@@ -129,17 +166,11 @@ export function FormButtonElement({ className, children, ...props }: PlateElemen
             id={buttonLabelId}
             value={inputValue}
             placeholder={placeholder}
-            onChange={(e) => setInputValue(e.target.value)}
-            onBlur={() => handleLabelChange(inputValue)}
-            onKeyDown={(e) => {
-              e.stopPropagation();
-              if (e.key === "Enter") {
-                e.preventDefault();
-                saveAndClose();
-              }
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
+            onChange={handleInputChange}
+            onBlur={handleInputBlur}
+            onKeyDown={handleInputKeyDown}
+            onMouseDown={handleInputMouseDown}
+            onClick={handleInputClick}
           />
         </div>
       </PopoverContent>
@@ -164,10 +195,7 @@ export function FormButtonElement({ className, children, ...props }: PlateElemen
         contentEditable={false}
         role="presentation"
         aria-hidden="true"
-        onMouseDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
+        onMouseDown={handleGearMouseDown}
       >
         {/* Gear icon on left when button floats right (so button touches right edge) */}
         {!isPrevious && GearIcon}
@@ -188,4 +216,4 @@ export function FormButtonElement({ className, children, ...props }: PlateElemen
       </div>
     </PlateElement>
   );
-}
+};

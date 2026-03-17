@@ -6,7 +6,7 @@ import { SlateLeaf } from "platejs/static";
 
 import { cn } from "@/lib/utils";
 
-export function SuggestionLeafStatic(props: SlateLeafProps<TSuggestionText>) {
+export const SuggestionLeafStatic = (props: SlateLeafProps<TSuggestionText>) => {
   const { editor, leaf } = props;
 
   const dataList = editor.getApi(BaseSuggestionPlugin).suggestion.dataList(leaf);
@@ -27,4 +27,4 @@ export function SuggestionLeafStatic(props: SlateLeafProps<TSuggestionText>) {
       {props.children}
     </SlateLeaf>
   );
-}
+};

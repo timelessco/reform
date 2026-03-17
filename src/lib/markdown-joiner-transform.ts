@@ -4,9 +4,9 @@ import type { TextStreamPart, ToolSet } from "ai";
  * Transform chunks like [**,bold,**] to [**bold**] make the md deserializer
  * happy.
  *
- * @experimental
+ * Experimental API - subject to change.
  */
-const markdownJoinerTransform =
+const _markdownJoinerTransform =
   <TOOLS extends ToolSet>() =>
   () => {
     const joiner = new MarkdownJoiner();
@@ -228,8 +228,5 @@ class MarkdownJoiner {
   }
 }
 
-async function delay(delayInMs?: number | null): Promise<void> {
-  return delayInMs == null
-    ? Promise.resolve()
-    : new Promise((resolve) => setTimeout(resolve, delayInMs));
-}
+const delay = async (delayInMs?: number | null): Promise<void> =>
+  delayInMs == null ? Promise.resolve() : new Promise((resolve) => setTimeout(resolve, delayInMs));

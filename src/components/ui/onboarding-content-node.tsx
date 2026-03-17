@@ -20,14 +20,12 @@ export interface OnboardingContentElementData {
   children: [{ text: "" }];
 }
 
-export function createOnboardingContentNode(): OnboardingContentElementData {
-  return {
-    type: "onboardingContent",
-    children: [{ text: "" }],
-  };
-}
+export const createOnboardingContentNode = (): OnboardingContentElementData => ({
+  type: "onboardingContent",
+  children: [{ text: "" }],
+});
 
-function OnboardingItem({
+const OnboardingItem = ({
   icon: Icon,
   label,
   href = "#",
@@ -35,19 +33,17 @@ function OnboardingItem({
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   href?: string;
-}) {
-  return (
-    <a
-      href={href}
-      className="flex items-center gap-3 text-muted-foreground/70 hover:text-foreground transition-colors group text-sm py-0.5"
-    >
-      <Icon className="h-4 w-4 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity" />
-      <span>{label}</span>
-    </a>
-  );
-}
+}) => (
+  <a
+    href={href}
+    className="flex items-center gap-3 text-muted-foreground/70 hover:text-foreground transition-colors group text-sm py-0.5"
+  >
+    <Icon className="h-4 w-4 shrink-0 opacity-70 group-hover:opacity-100 transition-opacity" />
+    <span>{label}</span>
+  </a>
+);
 
-export function OnboardingContentElement(props: PlateElementProps) {
+export const OnboardingContentElement = (props: PlateElementProps) => {
   const { children } = props;
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
 
@@ -95,11 +91,11 @@ export function OnboardingContentElement(props: PlateElementProps) {
                 Just type{" "}
                 <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-foreground">
                   /
-                </code>{" "}
+                </code>
                 to insert form blocks and{" "}
                 <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-fuchsia-500">
                   @
-                </code>{" "}
+                </code>
                 to mention question answers.
               </p>
             </div>
@@ -152,4 +148,4 @@ export function OnboardingContentElement(props: PlateElementProps) {
       {children}
     </PlateElement>
   );
-}
+};

@@ -63,51 +63,24 @@ const Form = ({
   );
 };
 
-const { useAppForm, withForm, withFieldGroup } = createFormHook({
-  fieldContext,
-  formContext,
-  fieldComponents: {
-    Field,
-    FieldError,
-    FieldSet,
-    FieldContent,
-    FieldDescription,
-    FieldGroup,
-    FieldLabel,
-    FieldLegend,
-    FieldSeparator,
-    FieldTitle,
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
-  },
-  formComponents: {
-    SubmitButton,
-    StepButton,
-    FieldLegend,
-    FieldDescription,
-    FieldSeparator,
-    Form,
-  },
-});
-
 type FormItemContextValue = {
   id: string;
 };
 
 const FormItemContext = React.createContext<FormItemContextValue>({} as FormItemContextValue);
 
-function FieldSet({ className, children, ...props }: React.ComponentProps<"fieldset">) {
+const FieldSet = ({ className, children, ...props }: React.ComponentProps<"fieldset">) => {
   const id = React.useId();
+  const itemContextValue = React.useMemo(() => ({ id }), [id]);
 
   return (
-    <FormItemContext.Provider value={{ id }}>
+    <FormItemContext.Provider value={itemContextValue}>
       <DefaultFieldSet className={cn("grid ", className)} {...props}>
         {children}
       </DefaultFieldSet>
     </FormItemContext.Provider>
   );
-}
+};
 
 // Stable selector function to ensure consistent hook calls
 const fieldStateSelector = (state: any) => ({
@@ -151,10 +124,10 @@ const useFieldContext = () => {
   };
 };
 
-function Field({
+const Field = ({
   children,
   ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) {
+}: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) => {
   const { errors, isTouched, formItemId, formDescriptionId, formMessageId, handleBlur } =
     useFieldContext();
   const hasVisibleErrors = !!errors.length && isTouched;
@@ -173,9 +146,9 @@ function Field({
       {children}
     </DefaultField>
   );
-}
+};
 
-function FieldError({ className, ...props }: React.ComponentProps<"p">) {
+const FieldError = ({ className, ...props }: React.ComponentProps<"p">) => {
   const { errors, isTouched, formMessageId } = useFieldContext();
   const body = errors.length ? String(errors.at(0)?.message ?? "") : "";
   if (!body || !isTouched) return null;
@@ -188,9 +161,9 @@ function FieldError({ className, ...props }: React.ComponentProps<"p">) {
       errors={body ? [{ message: body }] : []}
     />
   );
-}
+};
 
-function SubmitButton({
+const SubmitButton = ({
   label,
   className,
   size,
@@ -198,7 +171,7 @@ function SubmitButton({
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     label: string;
-  }) {
+  }) => {
   const form = useFormContext();
   return (
     <form.Subscribe selector={(state) => state.isSubmitting}>
@@ -210,9 +183,9 @@ function SubmitButton({
       )}
     </form.Subscribe>
   );
-}
+};
 
-function StepButton({
+const StepButton = ({
   label,
   handleMovement,
   ...props
@@ -220,12 +193,38 @@ function StepButton({
   VariantProps<typeof buttonVariants> & {
     label: React.ReactNode | string;
     handleMovement: () => void;
-  }) {
-  return (
-    <Button size="sm" variant="ghost" type="button" onClick={handleMovement} {...props}>
-      {label}
-    </Button>
-  );
-}
+  }) => (
+  <Button size="sm" variant="ghost" type="button" onClick={handleMovement} {...props}>
+    {label}
+  </Button>
+);
+
+const { useAppForm, withForm, withFieldGroup } = createFormHook({
+  fieldContext,
+  formContext,
+  fieldComponents: {
+    Field,
+    FieldError,
+    FieldSet,
+    FieldContent,
+    FieldDescription,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSeparator,
+    FieldTitle,
+    InputGroup,
+    InputGroupAddon,
+    InputGroupInput,
+  },
+  formComponents: {
+    SubmitButton,
+    StepButton,
+    FieldLegend,
+    FieldDescription,
+    FieldSeparator,
+    Form,
+  },
+});
 
 export { revalidateLogic, useAppForm, useFieldContext, useFormContext, withFieldGroup, withForm };

@@ -9,7 +9,7 @@ import type { PopupOptions } from "./types";
  * In production, this comes from the script's src attribute
  * Falls back to current origin for local development
  */
-function getBaseUrl(): string {
+const getBaseUrl = (): string => {
   // Try to get URL from the script tag that loaded us
   const scripts = document.getElementsByTagName("script");
   for (let i = scripts.length - 1; i >= 0; i--) {
@@ -27,12 +27,12 @@ function getBaseUrl(): string {
 
   // Fallback to current origin (for local dev)
   return window.location.origin;
-}
+};
 
 /**
  * Build the iframe URL with query parameters
  */
-function buildIframeUrl(formId: string, options: PopupOptions): string {
+const buildIframeUrl = (formId: string, options: PopupOptions): string => {
   const baseUrl = getBaseUrl();
   const params = new URLSearchParams();
 
@@ -70,16 +70,16 @@ function buildIframeUrl(formId: string, options: PopupOptions): string {
   });
 
   return `${baseUrl}/forms/${formId}?${params.toString()}`;
-}
+};
 
 /**
  * Create and configure the iframe element
  */
-export function createIframe(
+export const createIframe = (
   formId: string,
   options: PopupOptions,
   container: HTMLElement,
-): HTMLIFrameElement {
+): HTMLIFrameElement => {
   const iframe = document.createElement("iframe");
   iframe.className = "bf-iframe";
   iframe.setAttribute("title", "Reform");
@@ -98,20 +98,20 @@ export function createIframe(
   container.appendChild(iframe);
 
   return iframe;
-}
+};
 
 /**
  * Update iframe height
  */
-export function updateIframeHeight(iframe: HTMLIFrameElement, height: number): void {
+export const updateIframeHeight = (iframe: HTMLIFrameElement, height: number): void => {
   // Add some padding to prevent scrollbars
   const adjustedHeight = height + 2;
   iframe.style.height = `${adjustedHeight}px`;
-}
+};
 
 /**
  * Destroy iframe and cleanup
  */
-export function destroyIframe(iframe: HTMLIFrameElement): void {
+export const destroyIframe = (iframe: HTMLIFrameElement): void => {
   iframe.remove();
-}
+};

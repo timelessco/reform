@@ -10,7 +10,6 @@ import {
   useTableElement,
   useTableMergeState,
 } from "@platejs/table/react";
-import { PopoverAnchor } from "@/components/ui/popover";
 import { cva } from "class-variance-authority";
 import {
   ArrowDown,
@@ -58,7 +57,7 @@ import {
   DropdownMenuPortal,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Popover, PopoverContent } from "@/components/ui/popover";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 import { blockSelectionVariants } from "./block-selection";
@@ -116,7 +115,10 @@ export const TableElement = withHOC(
   },
 );
 
-function TableFloatingToolbar({ children, ...props }: React.ComponentProps<typeof PopoverContent>) {
+const TableFloatingToolbar = ({
+  children,
+  ...props
+}: React.ComponentProps<typeof PopoverContent>) => {
   const { tf } = useEditorPlugin(TablePlugin);
   const selected = useSelected();
   const element = useElement<TTableElement>();
@@ -183,7 +185,6 @@ function TableFloatingToolbar({ children, ...props }: React.ComponentProps<typeo
             </ToolbarGroup>
           )}
         </ToolbarGroup>
-
         {collapsedInside && (
           <ToolbarGroup>
             <ToolbarButton
@@ -215,7 +216,6 @@ function TableFloatingToolbar({ children, ...props }: React.ComponentProps<typeo
             </ToolbarButton>
           </ToolbarGroup>
         )}
-
         {collapsedInside && (
           <ToolbarGroup>
             <ToolbarButton
@@ -246,13 +246,13 @@ function TableFloatingToolbar({ children, ...props }: React.ComponentProps<typeo
               <XIcon />
             </ToolbarButton>
           </ToolbarGroup>
-        )}
+        )}{" "}
       </PopoverContent>
     </Popover>
   );
-}
+};
 
-function TableBordersDropdownMenuContent(props: React.HTMLAttributes<HTMLDivElement>) {
+const TableBordersDropdownMenuContent = (props: React.HTMLAttributes<HTMLDivElement>) => {
   const {
     getOnSelectTableBorder,
     hasBottomBorder,
@@ -320,9 +320,15 @@ function TableBordersDropdownMenuContent(props: React.HTMLAttributes<HTMLDivElem
       </DropdownMenuGroup>
     </DropdownMenuContent>
   );
-}
+};
 
-function ColorDropdownMenu({ children, tooltip }: { children: React.ReactNode; tooltip: string }) {
+const ColorDropdownMenu = ({
+  children,
+  tooltip,
+}: {
+  children: React.ReactNode;
+  tooltip: string;
+}) => {
   const [open, setOpen] = React.useState(false);
 
   const editor = useEditorRef();
@@ -367,9 +373,9 @@ function ColorDropdownMenu({ children, tooltip }: { children: React.ReactNode; t
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+};
 
-export function TableRowElement({ children, ...props }: PlateElementProps<TTableRowElement>) {
+export const TableRowElement = ({ children, ...props }: PlateElementProps<TTableRowElement>) => {
   const { element } = props;
   const readOnly = useReadOnly();
   const selected = useSelected();
@@ -412,9 +418,9 @@ export function TableRowElement({ children, ...props }: PlateElementProps<TTable
       {children}
     </PlateElement>
   );
-}
+};
 
-function RowDragHandle({ dragRef }: { dragRef: React.Ref<any> }) {
+const RowDragHandle = ({ dragRef }: { dragRef: React.Ref<any> }) => {
   const editor = useEditorRef();
   const element = useElement();
 
@@ -434,9 +440,9 @@ function RowDragHandle({ dragRef }: { dragRef: React.Ref<any> }) {
       <GripVerticalIcon className="text-muted-foreground" />
     </Button>
   );
-}
+};
 
-function RowDropLine() {
+const RowDropLine = () => {
   const { dropLine } = useDropLine();
 
   if (!dropLine) return null;
@@ -449,14 +455,14 @@ function RowDropLine() {
       )}
     />
   );
-}
+};
 
-export function TableCellElement({
+export const TableCellElement = ({
   isHeader,
   ...props
 }: PlateElementProps<TTableCellElement> & {
   isHeader?: boolean;
-}) {
+}) => {
   const { api } = useEditorPlugin(TablePlugin);
   const readOnly = useReadOnly();
   const element = props.element;
@@ -559,11 +565,11 @@ export function TableCellElement({
       {isSelectingRow && <div className={blockSelectionVariants()} contentEditable={false} />}
     </PlateElement>
   );
-}
+};
 
-export function TableCellHeaderElement(props: React.ComponentProps<typeof TableCellElement>) {
-  return <TableCellElement {...props} isHeader />;
-}
+export const TableCellHeaderElement = (props: React.ComponentProps<typeof TableCellElement>) => (
+  <TableCellElement {...props} isHeader />
+);
 
 const columnResizeVariants = cva("fade-in hidden animate-in", {
   variants: {

@@ -6,7 +6,7 @@ import { PlateLeaf, useEditorPlugin, usePluginOption } from "platejs/react";
 import { commentPlugin } from "@/components/editor/plugins/comment-kit";
 import { cn } from "@/lib/utils";
 
-export function CommentLeaf(props: PlateLeafProps<TCommentText>) {
+export const CommentLeaf = (props: PlateLeafProps<TCommentText>) => {
   const { children, leaf } = props;
 
   const { api, setOption } = useEditorPlugin(commentPlugin);
@@ -37,4 +37,4 @@ export function CommentLeaf(props: PlateLeafProps<TCommentText>) {
       {children}
     </PlateLeaf>
   );
-}
+};

@@ -1,7 +1,7 @@
 import type { Value } from "platejs";
 import type { FormElement, StaticFormElement } from "@/types/form-types";
 
-type PreviewElement = FormElement | StaticFormElement;
+type _PreviewElement = FormElement | StaticFormElement;
 
 type FormHeaderData = {
   title: string;
@@ -10,7 +10,7 @@ type FormHeaderData = {
   cover: string | null;
 };
 
-export function extractFormHeader(value: Value): FormHeaderData | null {
+export const extractFormHeader = (value: Value): FormHeaderData | null => {
   if (value.length > 0 && value[0].type === "formHeader") {
     const node = value[0];
     return {
@@ -21,7 +21,7 @@ export function extractFormHeader(value: Value): FormHeaderData | null {
     };
   }
   return null;
-}
+};
 
 export type PlateFormField =
   | {
@@ -120,13 +120,13 @@ export type TransformedElement = PlateFormField | PlateStaticElement;
 /**
  * Extracts plain text content from a Plate node's children array.
  */
-export function extractTextContent(children: Array<{ text?: string }>): string {
+export const extractTextContent = (children: Array<{ text?: string }>): string => {
   if (!Array.isArray(children)) return "";
   return children
     .map((child) => child.text || "")
     .join("")
     .trim();
-}
+};
 
 /**
  * Generates a slugified name from a label string.
@@ -135,15 +135,14 @@ export function extractTextContent(children: Array<{ text?: string }>): string {
 const NON_ALNUM_RE = /[^a-z0-9]+/g;
 const TRIM_UNDERSCORES_RE = /^_|_$/g;
 
-export function slugify(str: string): string {
-  return str.toLowerCase().replace(NON_ALNUM_RE, "_").replace(TRIM_UNDERSCORES_RE, "") || "field";
-}
+export const slugify = (str: string): string =>
+  str.toLowerCase().replace(NON_ALNUM_RE, "_").replace(TRIM_UNDERSCORES_RE, "") || "field";
 
 /**
  * Extracts list items from a Plate list node (ul/ol).
  * Handles nested structure: ul > li > lic > text
  */
-function extractListItems(node: any): string[] {
+const extractListItems = (node: any): string[] => {
   const items: string[] = [];
   if (!node.children || !Array.isArray(node.children)) return items;
 
@@ -163,13 +162,13 @@ function extractListItems(node: any): string[] {
     }
   }
   return items;
-}
+};
 
 /**
  * Extracts table rows from a Plate table node.
  * Handles structure: table > tr > (th|td) > text
  */
-function extractTableRows(node: any): { cells: string[]; isHeader: boolean }[] {
+const extractTableRows = (node: any): { cells: string[]; isHeader: boolean }[] => {
   const rows: { cells: string[]; isHeader: boolean }[] = [];
   if (!node.children || !Array.isArray(node.children)) return rows;
 
@@ -202,7 +201,7 @@ function extractTableRows(node: any): { cells: string[]; isHeader: boolean }[] {
     }
   }
   return rows;
-}
+};
 
 /**
  * Transforms Plate.js editor Value into form elements suitable for preview.
@@ -217,7 +216,7 @@ function extractTableRows(node: any): { cells: string[]; isHeader: boolean }[] {
  * @param value - Plate editor content array
  * @returns Array of elements for preview rendering
  */
-export function transformPlateStateToFormElements(value: Value): TransformedElement[] {
+export const transformPlateStateToFormElements = (value: Value): TransformedElement[] => {
   const elements: TransformedElement[] = [];
   let fieldIndex = 0;
 
@@ -495,20 +494,19 @@ export function transformPlateStateToFormElements(value: Value): TransformedElem
   }
 
   return elements;
-}
+};
 
 /**
  * Filters only editable form fields (non-static elements)
  */
-export function getEditableFields(elements: TransformedElement[]): PlateFormField[] {
-  return elements.filter((el): el is PlateFormField => !("static" in el) || !el.static);
-}
+export const getEditableFields = (elements: TransformedElement[]): PlateFormField[] =>
+  elements.filter((el): el is PlateFormField => !("static" in el) || !el.static);
 
 /**
  * Generates default form values from a list of form fields.
  * Used to initialize TanStack Form with empty values.
  */
-function generateDefaultValues(elements: TransformedElement[]): Record<string, unknown> {
+const _generateDefaultValues = (elements: TransformedElement[]): Record<string, unknown> => {
   const defaults: Record<string, unknown> = {};
 
   for (const el of elements) {
@@ -518,7 +516,7 @@ function generateDefaultValues(elements: TransformedElement[]): Record<string, u
   }
 
   return defaults;
-}
+};
 
 /**
  * Result of splitting elements into steps
@@ -538,7 +536,7 @@ type StepSplitResult = {
  * @param elements - Array of transformed elements
  * @returns Object with steps array and optional thankYouContent
  */
-export function splitElementsIntoSteps(elements: TransformedElement[]): StepSplitResult {
+export const splitElementsIntoSteps = (elements: TransformedElement[]): StepSplitResult => {
   const steps: TransformedElement[][] = [];
   let currentStep: TransformedElement[] = [];
   let thankYouContent: TransformedElement[] | null = null;
@@ -583,4 +581,4 @@ export function splitElementsIntoSteps(elements: TransformedElement[]): StepSpli
   }
 
   return { steps, thankYouContent };
-}
+};

@@ -14,7 +14,7 @@ import {
 
 import { ToolbarButton } from "./toolbar";
 
-export function MoreToolbarButton(props: React.ComponentProps<typeof DropdownMenu>) {
+export const MoreToolbarButton = (props: React.ComponentProps<typeof DropdownMenu>) => {
   const editor = useEditorRef();
   const [open, setOpen] = React.useState(false);
 
@@ -39,7 +39,6 @@ export function MoreToolbarButton(props: React.ComponentProps<typeof DropdownMen
             <KeyboardIcon />
             Keyboard input
           </DropdownMenuItem>
-
           <DropdownMenuItem
             onSelect={() => {
               editor.tf.toggleMark(KEYS.sup, {
@@ -68,4 +67,4 @@ export function MoreToolbarButton(props: React.ComponentProps<typeof DropdownMen
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+};

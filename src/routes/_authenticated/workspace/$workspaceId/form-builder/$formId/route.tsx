@@ -12,6 +12,36 @@ interface RedirectError {
   statusCode?: number;
 }
 
+const FormLayout = () => {
+  const { pathname } = useLocation();
+  // Extract formId from pathname to ensure it's always current
+  const formIdFromPath = pathname.split("/form-builder/")[1]?.split("/")[0] || "";
+  const params = Route.useParams();
+  const formId = formIdFromPath || params.formId;
+
+  // Hide header on edit route (editor has its own full-screen layout)
+  const isEditRoute = pathname.includes("/form-builder/") && pathname.includes("/edit");
+  // For edit route, render without header
+  if (isEditRoute) {
+    return (
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-background">
+        <main className="flex-1 min-h-0 min-w-0 overflow-hidden relative flex flex-col">
+          <Outlet key={formId} />
+        </main>
+      </div>
+    );
+  }
+
+  // Non-edit routes (submissions, settings, etc.) - full-width layout
+  return (
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-background">
+      <main className="flex-1 min-h-0 min-w-0 overflow-auto relative">
+        <Outlet key={formId} />
+      </main>
+    </div>
+  );
+};
+
 export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/form-builder/$formId")(
   {
     // Redirect to appropriate child route based on form status
@@ -83,33 +113,3 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
     notFoundComponent: NotFound,
   },
 );
-
-function FormLayout() {
-  const { pathname } = useLocation();
-  // Extract formId from pathname to ensure it's always current
-  const formIdFromPath = pathname.split("/form-builder/")[1]?.split("/")[0] || "";
-  const params = Route.useParams();
-  const formId = formIdFromPath || params.formId;
-
-  // Hide header on edit route (editor has its own full-screen layout)
-  const isEditRoute = pathname.includes("/form-builder/") && pathname.includes("/edit");
-  // For edit route, render without header
-  if (isEditRoute) {
-    return (
-      <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-background">
-        <main className="flex-1 min-h-0 min-w-0 overflow-hidden relative flex flex-col">
-          <Outlet key={formId} />
-        </main>
-      </div>
-    );
-  }
-
-  // Non-edit routes (submissions, settings, etc.) - full-width layout
-  return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden bg-background">
-      <main className="flex-1 min-h-0 min-w-0 overflow-auto relative">
-        <Outlet key={formId} />
-      </main>
-    </div>
-  );
-}

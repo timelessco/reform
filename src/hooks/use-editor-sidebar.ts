@@ -6,7 +6,7 @@ import type { SettingsTab, ShareTab, SidebarType } from "@/db-collections/editor
 export type { SettingsTab, SidebarType };
 export type EmbedType = "standard" | "popup" | "fullpage";
 
-function useEditorUIState() {
+const useEditorUIState = () => {
   const { data } = useLiveQuery(
     (q) => q.from({ state: editorUICollection }).where(({ state }) => eq(state.id, "editor-ui")),
     [],
@@ -20,9 +20,9 @@ function useEditorUIState() {
       previewMode: false,
     }
   );
-}
+};
 
-export function useEditorSidebar() {
+export const useEditorSidebar = () => {
   const state = useEditorUIState();
 
   const openSettings = useCallback((tab?: SettingsTab) => {
@@ -162,4 +162,4 @@ export function useEditorSidebar() {
     exitPreview,
     togglePreview,
   };
-}
+};

@@ -56,7 +56,7 @@ const buttonVariants = cva(buttonBaseClasses.join(" "), {
   },
 });
 
-function Button({
+export const Button = ({
   className,
   variant = "default",
   size = "default",
@@ -68,33 +68,31 @@ function Button({
   VariantProps<typeof buttonVariants> & {
     prefix?: ReactNode;
     suffix?: ReactNode;
-  }) {
-  return (
-    <ButtonPrimitive
-      data-slot="button"
-      focusableWhenDisabled
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    >
-      {prefix && (
-        <span
-          data-icon="inline-start"
-          className="relative inline-flex items-center justify-center shrink-0 [&_svg]:size-4!"
-        >
-          {prefix}
-        </span>
-      )}
-      {children}
-      {suffix && (
-        <span
-          data-icon="inline-end"
-          className="relative inline-flex items-center justify-center shrink-0 [&_svg]:size-[1em]!"
-        >
-          {suffix}
-        </span>
-      )}
-    </ButtonPrimitive>
-  );
-}
+  }) => (
+  <ButtonPrimitive
+    data-slot="button"
+    focusableWhenDisabled
+    className={cn(buttonVariants({ variant, size, className }))}
+    {...props}
+  >
+    {prefix && (
+      <span
+        data-icon="inline-start"
+        className="relative inline-flex items-center justify-center shrink-0 [&_svg]:size-4!"
+      >
+        {prefix}
+      </span>
+    )}
+    {children}
+    {suffix && (
+      <span
+        data-icon="inline-end"
+        className="relative inline-flex items-center justify-center shrink-0 [&_svg]:size-[1em]!"
+      >
+        {suffix}
+      </span>
+    )}
+  </ButtonPrimitive>
+);
 
-export { Button, buttonBaseClasses, buttonVariants };
+export { buttonBaseClasses, buttonVariants };

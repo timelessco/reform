@@ -7,7 +7,7 @@ import {
   SettingsIcon,
   UsersIcon,
 } from "@/components/ui/icons";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -27,7 +27,17 @@ import { auth, useSession } from "@/lib/auth-client";
 import { settingsDialogStore } from "@/hooks/use-settings-dialog";
 import { getUserMembershipsQueryOptions } from "@/lib/fn/workspaces";
 
-function OrganizationSwitcher() {
+const getInitials = (name?: string | null) => {
+  if (!name) return "U";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+const OrganizationSwitcher = () => {
   const { isMobile } = useSidebar();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -73,19 +83,15 @@ function OrganizationSwitcher() {
     }),
   );
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     signOutMutation.mutate({});
-  };
+  }, [signOutMutation]);
 
-  const getInitials = (name?: string | null) => {
-    if (!name) return "U";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const handleNavigateHome = useCallback(() => router.navigate({ to: "/dashboard" }), [router]);
+
+  const handleOpenMembers = useCallback(() => settingsDialogStore.open("members"), []);
+
+  const handleOpenSettings = useCallback(() => settingsDialogStore.open(), []);
 
   const displayName = activeOrg?.name || user?.name || "User";
 
@@ -145,21 +151,15 @@ function OrganizationSwitcher() {
               );
             })}
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => router.navigate({ to: "/dashboard" })}
-              className="gap-2.5 py-2"
-            >
+            <DropdownMenuItem onClick={handleNavigateHome} className="gap-2.5 py-2">
               <HomeIcon className="h-4 w-4" />
               <span>Home</span>
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => settingsDialogStore.open("members")}
-              className="gap-2.5 py-2"
-            >
+            <DropdownMenuItem onClick={handleOpenMembers} className="gap-2.5 py-2">
               <UsersIcon className="h-4 w-4" />
               <span>Members</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => settingsDialogStore.open()} className="gap-2.5 py-2">
+            <DropdownMenuItem onClick={handleOpenSettings} className="gap-2.5 py-2">
               <SettingsIcon className="h-4 w-4" />
               <span>Settings</span>
             </DropdownMenuItem>
@@ -173,4 +173,4 @@ function OrganizationSwitcher() {
       </SidebarMenuItem>
     </SidebarMenu>
   );
-}
+};

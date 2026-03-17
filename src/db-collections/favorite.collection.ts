@@ -12,7 +12,7 @@ const FormFavoriteSchema = z.object({
   createdAt: timestampField,
 });
 
-type FormFavorite = z.infer<typeof FormFavoriteSchema>;
+type _FormFavorite = z.infer<typeof FormFavoriteSchema>;
 
 export const favoriteCollection = createCollection(
   electricCollectionOptions({
@@ -46,7 +46,7 @@ export const favoriteCollection = createCollection(
   }),
 );
 
-export async function toggleFavoriteLocal(userId: string, formId: string): Promise<void> {
+export const toggleFavoriteLocal = async (userId: string, formId: string): Promise<void> => {
   const id = `${userId}:${formId}`;
   const existing = favoriteCollection.state.get(id);
 
@@ -60,9 +60,9 @@ export async function toggleFavoriteLocal(userId: string, formId: string): Promi
       createdAt: new Date().toISOString(),
     });
   }
-}
+};
 
-async function addFavoriteLocal(userId: string, formId: string): Promise<void> {
+const _addFavoriteLocal = async (userId: string, formId: string): Promise<void> => {
   const id = `${userId}:${formId}`;
   await favoriteCollection.insert({
     id,
@@ -70,13 +70,13 @@ async function addFavoriteLocal(userId: string, formId: string): Promise<void> {
     formId,
     createdAt: new Date().toISOString(),
   });
-}
+};
 
-async function removeFavoriteLocal(userId: string, formId: string): Promise<void> {
+const _removeFavoriteLocal = async (userId: string, formId: string): Promise<void> => {
   await favoriteCollection.delete(`${userId}:${formId}`);
-}
+};
 
-function isFavoriteLocal(userId: string, formId: string): boolean {
+const _isFavoriteLocal = (userId: string, formId: string): boolean => {
   const id = `${userId}:${formId}`;
   return favoriteCollection.state.has(id);
-}
+};

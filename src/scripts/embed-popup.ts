@@ -27,7 +27,7 @@ const activePopups = new Map<string, PopupInstance>();
 /**
  * Open a popup for the given form
  */
-function openPopup(formId: string, options: PopupOptions = {}): void {
+export const openPopup = (formId: string, options: PopupOptions = {}): void => {
   // Don't open if already open
   if (activePopups.has(formId)) {
     console.warn(`[Reform] Popup for form ${formId} is already open`);
@@ -63,12 +63,12 @@ function openPopup(formId: string, options: PopupOptions = {}): void {
       console.error("[Reform] onOpen callback error:", e);
     }
   }
-}
+};
 
 /**
  * Close the popup for the given form
  */
-function closePopup(formId: string): void {
+export const closePopup = (formId: string): void => {
   const instance = activePopups.get(formId);
   if (!instance) {
     return;
@@ -93,12 +93,12 @@ function closePopup(formId: string): void {
       console.error("[Reform] onClose callback error:", e);
     }
   }
-}
+};
 
 /**
  * Handle postMessage events from iframes
  */
-function handleMessage(event: MessageEvent): void {
+const handleMessage = (event: MessageEvent): void => {
   // Parse message data
   let data: IframeEvent;
   try {
@@ -188,12 +188,12 @@ function handleMessage(event: MessageEvent): void {
       closePopup(instance.formId);
       break;
   }
-}
+};
 
 /**
  * Initialize the embed script
  */
-function init(): void {
+const init = (): void => {
   // Inject styles
   injectStyles();
 
@@ -208,7 +208,7 @@ function init(): void {
 
   // Setup message listener for iframe communication
   window.addEventListener("message", handleMessage);
-}
+};
 
 // Create global API
 window.Reform = {
@@ -224,4 +224,3 @@ if (document.readyState === "loading") {
 }
 
 // Export for potential future module usage
-export { openPopup, closePopup };

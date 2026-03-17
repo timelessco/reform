@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef } from "react";
 const STORAGE_KEY_PREFIX = "betterforms_";
 const DEBOUNCE_MS = 500;
 
-export function useFormPersistence(formId: string, enabled: boolean) {
+export const useFormPersistence = (formId: string, enabled: boolean) => {
   const storageKey = `${STORAGE_KEY_PREFIX}${formId}`;
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -72,4 +72,4 @@ export function useFormPersistence(formId: string, enabled: boolean) {
   );
 
   return { loadSavedData, saveData, clearSavedData };
-}
+};

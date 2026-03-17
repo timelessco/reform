@@ -18,13 +18,6 @@ import { cn } from "@/lib/utils";
 import { guestMiddleware } from "@/middleware/auth";
 import { Logo } from "@/components/ui/logo";
 
-export const Route = createFileRoute("/login")({
-  server: {
-    middleware: [guestMiddleware],
-  },
-  component: LoginPage,
-});
-
 const signInEmailSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
@@ -45,7 +38,7 @@ const otpVerifySchema = z.object({
 
 type SignInMethod = "email" | "username" | "otp";
 
-function LoginPage() {
+const LoginPage = () => {
   const [signInMethod, setSignInMethod] = React.useState<SignInMethod>("email");
   const [step, setStep] = React.useState<"form" | "otp">("form");
   const [email, setEmail] = React.useState("");
@@ -194,7 +187,6 @@ function LoginPage() {
     sendOtpMutation.isPending ||
     verifyOtpMutation.isPending ||
     socialSignInMutation.isPending;
-
   const handleGoogleSignIn = async () => {
     socialSignInMutation.mutate({
       provider: "google",
@@ -519,4 +511,11 @@ function LoginPage() {
       </div>
     </div>
   );
-}
+};
+
+export const Route = createFileRoute("/login")({
+  server: {
+    middleware: [guestMiddleware],
+  },
+  component: LoginPage,
+});

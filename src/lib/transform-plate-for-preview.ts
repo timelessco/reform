@@ -28,7 +28,7 @@ export type PreviewStepResult = {
  * Handles multi-step splitting on pageBreak nodes and
  * thank-you page extraction (isThankYouPage pageBreak).
  */
-export function transformPlateForPreview(value: Value): PreviewStepResult {
+export const transformPlateForPreview = (value: Value): PreviewStepResult => {
   // Skip formHeader node (handled separately by extractFormHeader)
   let startIdx = 0;
   if (value.length > 0 && value[0].type === "formHeader") {
@@ -79,14 +79,14 @@ export function transformPlateForPreview(value: Value): PreviewStepResult {
   const steps = rawSteps.map((stepNodes) => createSegments(stepNodes));
 
   return { steps, thankYouNodes };
-}
+};
 
 /**
  * Walks an array of Plate nodes and produces an ordered list of segments.
  * Consecutive static nodes are grouped into a single StaticSegment.
  * Form nodes (formLabel+formInput, formButton) become FieldSegments.
  */
-function createSegments(nodes: Value): PreviewSegment[] {
+const createSegments = (nodes: Value): PreviewSegment[] => {
   const segments: PreviewSegment[] = [];
   let staticBuffer: Value = [];
   let fieldIndex = 0;
@@ -194,7 +194,7 @@ function createSegments(nodes: Value): PreviewSegment[] {
 
   flushStatic();
   return segments;
-}
+};
 
 // --- Utility functions ---
 
@@ -202,18 +202,14 @@ function createSegments(nodes: Value): PreviewSegment[] {
  * Extracts PlateFormField items from a segment array.
  * Used by StepForm to set up form validation.
  */
-export function getFieldsFromSegments(segments: PreviewSegment[]): PlateFormField[] {
-  return segments
-    .filter((seg): seg is FieldSegment => seg.type === "field")
-    .map((seg) => seg.field);
-}
+export const getFieldsFromSegments = (segments: PreviewSegment[]): PlateFormField[] =>
+  segments.filter((seg): seg is FieldSegment => seg.type === "field").map((seg) => seg.field);
 
 /**
  * Extracts only editable (non-button) fields from segments.
  * Used for form field count checks and auto-jump logic.
  */
-export function getEditableFieldsFromSegments(segments: PreviewSegment[]): PlateFormField[] {
-  return getFieldsFromSegments(segments).filter(
+export const getEditableFieldsFromSegments = (segments: PreviewSegment[]): PlateFormField[] =>
+  getFieldsFromSegments(segments).filter(
     (f) => f.fieldType === "Input" || f.fieldType === "Textarea",
   );
-}

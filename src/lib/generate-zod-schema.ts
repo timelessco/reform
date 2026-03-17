@@ -402,7 +402,7 @@ const generateZodSchemaString = (schema: ZodType): string => {
   return "z.unknown()";
 };
 
-const getZodSchemaString = (
+const _getZodSchemaString = (
   formElements: FormStep[] | (FormElement | FormArray)[],
   isMultiStep = false,
   schemaName = "formSchema",

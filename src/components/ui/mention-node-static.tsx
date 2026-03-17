@@ -5,11 +5,11 @@ import { SlateElement } from "platejs/static";
 
 import { cn } from "@/lib/utils";
 
-export function MentionElementStatic(
+export const MentionElementStatic = (
   props: SlateElementProps<TMentionElement> & {
     prefix?: string;
   },
-) {
+) => {
   const { prefix } = props;
   const element = props.element;
 
@@ -32,4 +32,4 @@ export function MentionElementStatic(
       {element.value}
     </SlateElement>
   );
-}
+};

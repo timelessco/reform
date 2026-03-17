@@ -16,7 +16,7 @@ const SubmissionSchema = z.object({
   updatedAt: timestampField,
 });
 
-type Submission = z.infer<typeof SubmissionSchema>;
+type _Submission = z.infer<typeof SubmissionSchema>;
 
 // ============================================================================
 // Collection with ElectricSQL sync

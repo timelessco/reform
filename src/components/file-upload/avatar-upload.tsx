@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { formatBytes, useFileUpload } from "@/hooks/use-file-upload";
 import type { FileWithPreview } from "@/hooks/use-file-upload";
 import { cn } from "@/lib/utils";
+import { useCallback } from "react";
 
 interface AvatarUploadProps {
   maxSize?: number;
@@ -24,6 +25,13 @@ export default function AvatarUpload({
   onFileChange,
   defaultAvatar,
 }: AvatarUploadProps) {
+  const handleFilesChange = useCallback(
+    (files: FileWithPreview[]) => {
+      onFileChange?.(files[0] || null);
+    },
+    [onFileChange],
+  );
+
   const [
     { files, isDragging, errors },
     {
@@ -40,14 +48,11 @@ export default function AvatarUpload({
     maxSize,
     accept: "image/*",
     multiple: false,
-    onFilesChange: (files) => {
-      onFileChange?.(files[0] || null);
-    },
+    onFilesChange: handleFilesChange,
   });
 
   const currentFile = files[0];
   const previewUrl = currentFile?.preview || defaultAvatar;
-
   const handleRemove = () => {
     if (currentFile) {
       removeFile(currentFile.id);

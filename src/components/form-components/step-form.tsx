@@ -12,6 +12,8 @@ import type { PreviewSegment } from "@/lib/transform-plate-for-preview";
 import { StaticContentBlock } from "./static-content-block";
 import { RenderStepPreviewInput } from "./render-step-preview-input";
 
+const selectStateValues = (state: any) => state.values;
+
 interface StepFormProps {
   stepIndex: number;
   segments: PreviewSegment[];
@@ -24,13 +26,13 @@ interface StepFormProps {
  * Individual step form component with its own form instance.
  * Uses StepFormContext for navigation and data accumulation.
  */
-export function StepForm({
+export const StepForm = ({
   stepIndex,
   segments,
   isLastStep,
   layout = "public",
   autoJump = false,
-}: StepFormProps) {
+}: StepFormProps) => {
   const { currentStep, goToPrevStep, isSubmitting } = useStepForm();
   const fields = useMemo(() => getFieldsFromSegments(segments), [segments]);
   const editableFields = useMemo(() => getEditableFieldsFromSegments(segments), [segments]);
@@ -97,14 +99,14 @@ export function StepForm({
       >
         {/* Auto-jump watcher */}
         {autoJump && !isLastStep && (
-          <form.Subscribe selector={(state) => state.values}>
+          <form.Subscribe selector={selectStateValues}>
             {() => {
               checkAutoJump();
               return null;
             }}
           </form.Subscribe>
         )}
-        {groupedItems.map((item, idx) => {
+        {groupedItems.map((item) => {
           // Handle button groups (Previous + Next/Submit on same line)
           if (item.type === "buttonGroup") {
             const prevButton = item.buttons.find((b) => b.buttonRole === "previous");
@@ -146,7 +148,12 @@ export function StepForm({
 
           // Static segment — render via PlateStatic
           if (item.type === "static") {
-            return <StaticContentBlock key={`static-${idx}`} nodes={item.nodes} />;
+            return (
+              <StaticContentBlock
+                key={`static-${item.nodes.length}-${JSON.stringify(item.nodes[0]).slice(0, 32)}`}
+                nodes={item.nodes}
+              />
+            );
           }
 
           // Field segment
@@ -179,7 +186,7 @@ export function StepForm({
       </form.Form>
     </form.AppForm>
   );
-}
+};
 
 // --- Grouping logic ---
 
@@ -196,7 +203,7 @@ type GroupedSegment = PreviewSegment | { type: "buttonGroup"; buttons: ButtonFie
 /**
  * Groups segments for rendering, combining adjacent button FieldSegments into groups.
  */
-function groupSegmentsForRendering(segments: PreviewSegment[]): GroupedSegment[] {
+const groupSegmentsForRendering = (segments: PreviewSegment[]): GroupedSegment[] => {
   const result: GroupedSegment[] = [];
   let i = 0;
 
@@ -231,7 +238,7 @@ function groupSegmentsForRendering(segments: PreviewSegment[]): GroupedSegment[]
   }
 
   return result;
-}
+};
 
 // --- Button renderer ---
 
@@ -239,7 +246,7 @@ function groupSegmentsForRendering(segments: PreviewSegment[]): GroupedSegment[]
  * Renders button elements for step forms.
  * Previous uses onClick, Next/Submit use type="submit" to trigger form validation.
  */
-function RenderStepButton({
+const RenderStepButton = ({
   field,
   isSubmitting,
   onPrevious,
@@ -251,7 +258,7 @@ function RenderStepButton({
   onPrevious?: () => void;
   grouped?: boolean;
   layout?: "public" | "editor";
-}) {
+}) => {
   const { t } = useTranslation();
   const buttonRole = field.buttonRole || "submit";
   const defaultText =
@@ -316,4 +323,4 @@ function RenderStepButton({
       {submitButton}
     </div>
   );
-}
+};

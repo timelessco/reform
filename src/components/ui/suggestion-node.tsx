@@ -34,7 +34,7 @@ const suggestionVariants = cva(
   },
 );
 
-export function SuggestionLeaf(props: PlateLeafProps<TSuggestionText>) {
+export const SuggestionLeaf = (props: PlateLeafProps<TSuggestionText>) => {
   const { api, setOption } = useEditorPlugin(suggestionPlugin);
   const leaf = props.leaf;
 
@@ -71,7 +71,7 @@ export function SuggestionLeaf(props: PlateLeafProps<TSuggestionText>) {
       {props.children}
     </PlateLeaf>
   );
-}
+};
 export const SuggestionLineBreak: RenderNodeWrapper<SuggestionConfig> = ({ api, element }) => {
   if (!api.suggestion.isBlockSuggestion(element)) return;
 
@@ -86,13 +86,13 @@ export const SuggestionLineBreak: RenderNodeWrapper<SuggestionConfig> = ({ api, 
   };
 };
 
-function SuggestionLineBreakContent({
+const SuggestionLineBreakContent = ({
   children,
   suggestionData,
 }: {
   children: React.ReactNode;
   suggestionData: TSuggestionData;
-}) {
+}) => {
   const { isLineBreak, type } = suggestionData;
   const isRemove = type === "remove";
   const isInsert = type === "insert";
@@ -151,4 +151,4 @@ function SuggestionLineBreakContent({
       )}
     </>
   );
-}
+};

@@ -2,7 +2,7 @@ import { APP_NAME } from "@/lib/app-config";
 import { Link, useSearch } from "@tanstack/react-router";
 import { SparklesIcon, XIcon } from "@/components/ui/icons";
 import { SPRITE_PATH, iconMap } from "@/components/icon-picker/icon-data";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Value } from "platejs";
 import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,9 @@ import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useForm } from "@/hooks/use-live-hooks";
 import { cn } from "@/lib/utils";
 
-export function PreviewMode({ formId, workspaceId }: { formId: string; workspaceId: string }) {
+const noop = async () => {};
+
+export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspaceId: string }) => {
   const { data: savedDocs, isLoading } = useForm(formId);
   const doc = savedDocs?.[0];
   const { customization, hasCustomization, themeVars } = useFormCustomization(doc);
@@ -32,6 +34,8 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
   const alignLeft = (search.embedAlignLeft as boolean) ?? false;
 
   const [isPopupOpen, setIsPopupOpen] = useState(true);
+  const handleClosePopup = useCallback(() => setIsPopupOpen(false), []);
+  const handleOpenPopup = useCallback(() => setIsPopupOpen(true), []);
 
   // Re-open popup when switching to popup mode
   useEffect(() => {
@@ -145,7 +149,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                             title={hideTitle ? "" : doc.title}
                             icon={showEmoji ? (doc.icon ?? undefined) : undefined}
                             cover={doc.cover ?? undefined}
-                            onSubmit={async () => {}}
+                            onSubmit={noop}
                             hideTitle={hideTitle}
                           />
                         </div>
@@ -169,17 +173,10 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
               <div className="absolute inset-0 flex flex-col pointer-events-none">
                 {/* Dark overlay — only when popup is open */}
                 {darkOverlay && isPopupOpen && (
-                  <div
-                    className="absolute inset-0 bg-black/40 z-10 transition-opacity duration-300 pointer-events-auto"
-                    onClick={() => setIsPopupOpen(false)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setIsPopupOpen(false);
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
+                  <button
+                    type="button"
+                    className="absolute inset-0 bg-black/40 z-10 transition-opacity duration-300 pointer-events-auto w-full h-full border-none cursor-default"
+                    onClick={handleClosePopup}
                     aria-label="Close preview"
                   />
                 )}
@@ -211,7 +208,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 hover:bg-muted text-muted-foreground bg-background/50 backdrop-blur-sm rounded-full shadow-sm"
-                        onClick={() => setIsPopupOpen(false)}
+                        onClick={handleClosePopup}
                         aria-label="Close"
                       >
                         <XIcon className="h-4 w-4" />
@@ -225,7 +222,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                         title={hideTitle ? "" : doc.title}
                         icon={showEmoji ? (doc.icon ?? undefined) : undefined}
                         cover={doc.cover ?? undefined}
-                        onSubmit={async () => {}}
+                        onSubmit={noop}
                         hideTitle={hideTitle}
                       />
                     </div>
@@ -247,7 +244,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
                 {!isPopupOpen && (
                   <button
                     type="button"
-                    onClick={() => setIsPopupOpen(true)}
+                    onClick={handleOpenPopup}
                     aria-label="Open form preview"
                     className="absolute z-20 pointer-events-auto w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center hover:scale-105 active:scale-95 transition-[inset] duration-300 ease-out cursor-pointer"
                     style={
@@ -295,7 +292,7 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
               title={hideTitle ? "" : doc.title}
               icon={doc.icon ?? undefined}
               cover={doc.cover ?? undefined}
-              onSubmit={async () => {}}
+              onSubmit={noop}
               hideTitle={hideTitle}
               layout="editor"
             />
@@ -310,16 +307,14 @@ export function PreviewMode({ formId, workspaceId }: { formId: string; workspace
       )}
     </div>
   );
-}
+};
 
-function BrandingBadge() {
-  return (
-    <div className="flex justify-end pt-6">
-      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted/50 rounded-full text-[10px] font-bold text-muted-foreground hover:text-foreground transition-colors cursor-default border border-border/50">
-        <span>Made with</span>
-        <SparklesIcon className="h-3 w-3 fill-muted-foreground/50 text-muted-foreground/50" />
-        <span>{APP_NAME}</span>
-      </div>
+const BrandingBadge = () => (
+  <div className="flex justify-end pt-6">
+    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted/50 rounded-full text-[10px] font-bold text-muted-foreground hover:text-foreground transition-colors cursor-default border border-border/50">
+      <span>Made with</span>
+      <SparklesIcon className="h-3 w-3 fill-muted-foreground/50 text-muted-foreground/50" />
+      <span>{APP_NAME}</span>
     </div>
-  );
-}
+  </div>
+);

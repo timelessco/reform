@@ -128,7 +128,7 @@ interface RichText extends TBasicMarks, TCommentText, TFontMarks, TText {
   kbd?: boolean;
 }
 
-type MyValue = (
+type _MyValue = (
   | MyBlockquoteElement
   | MyCodeBlockElement
   | MyH1Element

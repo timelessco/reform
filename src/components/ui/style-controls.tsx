@@ -19,7 +19,7 @@ interface StyleNumberInputProps {
   valueWidth?: string;
 }
 
-export function StyleNumberInput({
+export const StyleNumberInput = ({
   label,
   value,
   onChange,
@@ -30,7 +30,7 @@ export function StyleNumberInput({
   displayUnit,
   className,
   valueWidth = "60px",
-}: StyleNumberInputProps) {
+}: StyleNumberInputProps) => {
   const match = value?.toString().match(/^(-?\d*\.?\d+)(.*)$/);
   const numValue = match ? parseFloat(match[1]) : 0;
   const unit = forcedUnit ?? (match ? match[2] : "");
@@ -101,7 +101,6 @@ export function StyleNumberInput({
     (v: number) => ((v - visualMin) / (visualMax - visualMin)) * 100,
     [visualMin, visualMax],
   );
-
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -114,7 +113,6 @@ export function StyleNumberInput({
       wrapperRectRef.current = trackRef.current.getBoundingClientRect();
     }
   };
-
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isInteracting || !pointerDownPos.current) return;
 
@@ -144,7 +142,6 @@ export function StyleNumberInput({
       setRubberBand(computeRubberBand(e.clientX));
     }
   };
-
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isInteracting) return;
 
@@ -269,21 +266,22 @@ export function StyleNumberInput({
       </div>
     </motion.div>
   );
-}
+};
 
 /** Convert any CSS color (hex, oklch, rgb, etc.) to #rrggbb for <input type="color"> */
-function cssColorToHex(color: string): string {
+const cssColorToHex = (color: string): string => {
   if (color?.startsWith("#")) return color.slice(0, 7);
   try {
-    const ctx = document.createElement("canvas").getContext("2d")!;
+    const ctx = document.createElement("canvas").getContext("2d");
+    if (!ctx) return "#000000";
     ctx.fillStyle = color;
     return ctx.fillStyle; // always returns #rrggbb
   } catch {
     return "#000000";
   }
-}
+};
 
-export function StyleColorPicker({
+export const StyleColorPicker = ({
   label,
   value,
   onChange,
@@ -293,7 +291,7 @@ export function StyleColorPicker({
   value: string;
   onChange: (val: string) => void;
   className?: string;
-}) {
+}) => {
   const hexColor = cssColorToHex(value);
   const textInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -344,9 +342,9 @@ export function StyleColorPicker({
       </div>
     </div>
   );
-}
+};
 
-export function StyleSelect({
+export const StyleSelect = ({
   label,
   value,
   onChange,
@@ -363,7 +361,7 @@ export function StyleSelect({
     swatchColor?: string;
   }[];
   className?: string;
-}) {
+}) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -557,9 +555,9 @@ export function StyleSelect({
         )}
     </div>
   );
-}
+};
 
-export function StyleToggle({
+export const StyleToggle = ({
   label,
   value,
   onChange,
@@ -569,7 +567,7 @@ export function StyleToggle({
   value: boolean;
   onChange: (val: boolean) => void;
   className?: string;
-}) {
+}) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const buttonRefs = React.useRef<Map<boolean, HTMLButtonElement>>(new Map());
   const [pillStyle, setPillStyle] = React.useState<{
@@ -647,9 +645,9 @@ export function StyleToggle({
       </div>
     </div>
   );
-}
+};
 
-export function StyleAlignToggle({
+export const StyleAlignToggle = ({
   label,
   value,
   onChange,
@@ -659,7 +657,7 @@ export function StyleAlignToggle({
   value: string;
   onChange: (val: string) => void;
   className?: string;
-}) {
+}) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const buttonRefs = React.useRef<Map<string, HTMLButtonElement>>(new Map());
   const [pillStyle, setPillStyle] = React.useState<{
@@ -755,4 +753,4 @@ export function StyleAlignToggle({
       </div>
     </div>
   );
-}
+};

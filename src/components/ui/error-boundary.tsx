@@ -1,11 +1,12 @@
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { RefreshCwIcon } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
+import { useCallback } from "react";
 
-export function ErrorBoundary({ error, reset }: ErrorComponentProps) {
+export const ErrorBoundary = ({ error, reset }: ErrorComponentProps) => {
   const isDev = import.meta.env.DEV;
 
-  const createGithubIssue = () => {
+  const createGithubIssue = useCallback(() => {
     const title = encodeURIComponent(`Error: ${error.message}`);
     const body = encodeURIComponent(`## Error Details
 
@@ -27,7 +28,6 @@ ${error.stack || "No stack trace available"}
 
 ## Expected Behavior
 
-
 ## Actual Behavior
 
 `);
@@ -35,7 +35,7 @@ ${error.stack || "No stack trace available"}
       `https://github.com/timelessco/better-forms/issues/new?title=${title}&body=${body}`,
       "_blank",
     );
-  };
+  }, [error.message, error.stack]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
@@ -91,4 +91,4 @@ ${error.stack || "No stack trace available"}
       </div>
     </div>
   );
-}
+};

@@ -34,7 +34,7 @@ const createInitialTableGrid = () =>
     })),
   );
 
-export function TableToolbarButton(props: React.ComponentProps<typeof DropdownMenu>) {
+export const TableToolbarButton = (props: React.ComponentProps<typeof DropdownMenu>) => {
   const tableSelected = useEditorSelector(
     (editor) => editor.api.some({ match: { type: KEYS.table } }),
     [],
@@ -49,7 +49,6 @@ export function TableToolbarButton(props: React.ComponentProps<typeof DropdownMe
       <DropdownMenuTrigger render={<ToolbarButton pressed={open} tooltip="Table" isDropdown />}>
         <Table />
       </DropdownMenuTrigger>
-
       <DropdownMenuContent className="flex w-[180px] min-w-0 flex-col" align="start">
         <DropdownMenuGroup>
           <DropdownMenuSub>
@@ -201,9 +200,15 @@ export function TableToolbarButton(props: React.ComponentProps<typeof DropdownMe
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+};
 
-function TablePicker() {
+const handleKeyUp = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+  if (event.key === " " || event.key === "Spacebar") {
+    event.preventDefault();
+  }
+};
+
+const TablePicker = () => {
   const { editor, tf } = useEditorPlugin(TablePlugin);
 
   const [tablePicker, setTablePicker] = React.useState<{
@@ -225,22 +230,14 @@ function TablePicker() {
       size: { colCount: colIndex + 1, rowCount: rowIndex + 1 },
     }));
   };
-
   const handleInsertTable = () => {
     tf.insert.table(tablePicker.size, { select: true });
     editor.tf.focus();
   };
-
   const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
     if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
       event.preventDefault();
       handleInsertTable();
-    }
-  };
-
-  const handleKeyUp = (event: React.KeyboardEvent<HTMLButtonElement>) => {
-    if (event.key === " " || event.key === "Spacebar") {
-      event.preventDefault();
     }
   };
 
@@ -276,4 +273,4 @@ function TablePicker() {
       </div>
     </Button>
   );
-}
+};

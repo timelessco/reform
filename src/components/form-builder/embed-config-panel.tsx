@@ -160,16 +160,16 @@ interface EmbedConfigPanelProps {
 
 /* ─── Layout helpers matching Figma node 24119:5595 ─── */
 
-export function ConfigCard({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-col gap-px overflow-hidden rounded-lg">{children}</div>;
-}
+export const ConfigCard = ({ children }: { children: React.ReactNode }) => (
+  <div className="flex flex-col gap-px overflow-hidden rounded-lg">{children}</div>
+);
 
 /**
  * Figma row:
  *   Select / value rows → pl-[10px] pr-[3px] py-[7px] gap-[6px]
  *   Switch rows          → pl-[10px] pr-[6px] py-[7px] gap-[6px]
  */
-export function ConfigRow({
+export const ConfigRow = ({
   label,
   description,
   children,
@@ -179,27 +179,25 @@ export function ConfigRow({
   description?: string;
   children: React.ReactNode;
   variant?: "default" | "switch";
-}) {
-  return (
-    <div
-      className={`bg-secondary min-h-8.5 flex gap-3 items-center overflow-clip pl-2.5 py-1.75 ${
-        // max-h-9.5
-        variant === "switch" ? "pr-[6px]" : "pr-[3px]"
-      }`}
-    >
-      <div className="flex-1 min-w-0 flex flex-col gap-1">
-        <span className="text-base font-normal">{label}</span>
-        {description && (
-          <p className="text-sm font-normal text-wrap text-muted-foreground">{description}</p>
-        )}
-      </div>
-      {children}
+}) => (
+  <div
+    className={`bg-secondary min-h-8.5 flex gap-3 items-center overflow-clip pl-2.5 py-1.75 ${
+      // max-h-9.5
+      variant === "switch" ? "pr-[6px]" : "pr-[3px]"
+    }`}
+  >
+    <div className="flex-1 min-w-0 flex flex-col gap-1">
+      <span className="text-base font-normal">{label}</span>
+      {description && (
+        <p className="text-sm font-normal text-wrap text-muted-foreground">{description}</p>
+      )}
     </div>
-  );
-}
+    {children}
+  </div>
+);
 
 /** Drag-to-scrub + click-to-edit, styled as Figma value button: h-6 px-2 rounded-[5px] */
-function ScrubValue({
+const ScrubValue = ({
   value,
   onChange,
   min,
@@ -213,7 +211,7 @@ function ScrubValue({
   max: number;
   step?: number;
   unit?: string;
-}) {
+}) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const startX = useRef(0);
@@ -298,7 +296,7 @@ function ScrubValue({
       {unit}
     </span>
   );
-}
+};
 
 /* ─── Select trigger class (shared) ─── */
 /**
@@ -311,12 +309,12 @@ export const selectTriggerCls =
 
 /* ─── Public entry point ─── */
 
-export function EmbedConfigPanel({ embedType, form, section }: EmbedConfigPanelProps) {
+export const EmbedConfigPanel = ({ embedType, form, section }: EmbedConfigPanelProps) => {
   if (section === "customize") {
     return <CustomizeSection embedType={embedType} form={form} />;
   }
   return <ProSection form={form} />;
-}
+};
 
 /* ─── Label maps ─── */
 
@@ -332,25 +330,25 @@ const positionLabels: Record<string, string> = {
   center: "Center",
 };
 
+const selectDynamicHeight = (s: any) => s.values.dynamicHeight;
+
 /* ─── Sections ─── */
 
-function CustomizeSection({
+/* ─── Sections ─── */
+const CustomizeSection = ({
   embedType,
   form,
 }: {
   embedType: EmbedType;
   form: { Field: any; Subscribe: any };
-}) {
+}) => {
   if (embedType === "popup") {
     return (
       <ConfigCard>
         <form.Field name="popupTrigger">
           {(field: any) => (
             <ConfigRow label="Open popup">
-              <Select
-                value={field.state.value}
-                onValueChange={(v: string) => field.handleChange(v)}
-              >
+              <Select value={field.state.value} onValueChange={field.handleChange}>
                 <SelectTrigger className={selectTriggerCls}>
                   {triggerLabels[field.state.value] ?? field.state.value}
                 </SelectTrigger>
@@ -366,10 +364,7 @@ function CustomizeSection({
         <form.Field name="popupPosition">
           {(field: any) => (
             <ConfigRow label="Popup Position">
-              <Select
-                value={field.state.value}
-                onValueChange={(v: string) => field.handleChange(v)}
-              >
+              <Select value={field.state.value} onValueChange={field.handleChange}>
                 <SelectTrigger className={selectTriggerCls}>
                   {positionLabels[field.state.value] ?? field.state.value}
                 </SelectTrigger>
@@ -418,7 +413,7 @@ function CustomizeSection({
               <Switch
                 aria-label="Dark Overlay"
                 checked={field.state.value}
-                onCheckedChange={(v) => field.handleChange(v)}
+                onCheckedChange={field.handleChange}
                 size="default"
               />
             </ConfigRow>
@@ -431,7 +426,7 @@ function CustomizeSection({
               <Switch
                 aria-label="Show Emoji"
                 checked={field.state.value}
-                onCheckedChange={(v) => field.handleChange(v)}
+                onCheckedChange={field.handleChange}
                 size="default"
               />
             </ConfigRow>
@@ -444,7 +439,7 @@ function CustomizeSection({
   if (embedType === "standard") {
     return (
       <ConfigCard>
-        <form.Subscribe selector={(s: any) => s.values.dynamicHeight}>
+        <form.Subscribe selector={selectDynamicHeight}>
           {(dynamicHeight: boolean) => (
             <form.Field name="height">
               {(field: any) => (
@@ -474,7 +469,7 @@ function CustomizeSection({
               <Switch
                 aria-label="Dynamic Height"
                 checked={field.state.value}
-                onCheckedChange={(v) => field.handleChange(v)}
+                onCheckedChange={field.handleChange}
                 size="default"
               />
             </ConfigRow>
@@ -487,7 +482,7 @@ function CustomizeSection({
               <Switch
                 aria-label="Hide Title"
                 checked={field.state.value}
-                onCheckedChange={(v) => field.handleChange(v)}
+                onCheckedChange={field.handleChange}
                 size="default"
               />
             </ConfigRow>
@@ -500,7 +495,7 @@ function CustomizeSection({
               <Switch
                 aria-label="Align Left"
                 checked={field.state.value}
-                onCheckedChange={(v) => field.handleChange(v)}
+                onCheckedChange={field.handleChange}
                 size="default"
               />
             </ConfigRow>
@@ -513,7 +508,7 @@ function CustomizeSection({
               <Switch
                 aria-label="Transparency"
                 checked={field.state.value}
-                onCheckedChange={(v) => field.handleChange(v)}
+                onCheckedChange={field.handleChange}
                 size="default"
               />
             </ConfigRow>
@@ -532,7 +527,7 @@ function CustomizeSection({
             <Switch
               aria-label="Transparent BG"
               checked={field.state.value}
-              onCheckedChange={(v) => field.handleChange(v)}
+              onCheckedChange={field.handleChange}
               size="default"
             />
           </ConfigRow>
@@ -540,45 +535,43 @@ function CustomizeSection({
       </form.Field>
     </ConfigCard>
   );
-}
+};
 
-function ProSection({ form }: { form: { Field: any } }) {
-  return (
-    <ConfigCard>
-      <form.Field name="trackEvents">
-        {(field: any) => (
-          <ConfigRow label="Analytics" variant="switch">
-            <Switch
-              aria-label="Analytics"
-              checked={field.state.value}
-              onCheckedChange={(v) => field.handleChange(v)}
-              size="default"
-            />
-          </ConfigRow>
-        )}
-      </form.Field>
+const ProSection = ({ form }: { form: { Field: any } }) => (
+  <ConfigCard>
+    <form.Field name="trackEvents">
+      {(field: any) => (
+        <ConfigRow label="Analytics" variant="switch">
+          <Switch
+            aria-label="Analytics"
+            checked={field.state.value}
+            onCheckedChange={field.handleChange}
+            size="default"
+          />
+        </ConfigRow>
+      )}
+    </form.Field>
 
-      <form.Field name="branding">
-        {(field: any) => (
-          <ConfigRow label="Reform Branding" variant="switch">
-            <Switch
-              aria-label="Reform Branding"
-              checked={field.state.value}
-              onCheckedChange={(v) => field.handleChange(v)}
-              size="default"
-            />
-          </ConfigRow>
-        )}
-      </form.Field>
+    <form.Field name="branding">
+      {(field: any) => (
+        <ConfigRow label="Reform Branding" variant="switch">
+          <Switch
+            aria-label="Reform Branding"
+            checked={field.state.value}
+            onCheckedChange={field.handleChange}
+            size="default"
+          />
+        </ConfigRow>
+      )}
+    </form.Field>
 
-      <ConfigRow label="Custom Domain">
-        <Select value="varman.co" disabled>
-          <SelectTrigger className={`${selectTriggerCls} opacity-50`}>varman.co</SelectTrigger>
-          <SelectContent>
-            <SelectItem value="varman.co">varman.co</SelectItem>
-          </SelectContent>
-        </Select>
-      </ConfigRow>
-    </ConfigCard>
-  );
-}
+    <ConfigRow label="Custom Domain">
+      <Select value="varman.co" disabled>
+        <SelectTrigger className={`${selectTriggerCls} opacity-50`}>varman.co</SelectTrigger>
+        <SelectContent>
+          <SelectItem value="varman.co">varman.co</SelectItem>
+        </SelectContent>
+      </Select>
+    </ConfigRow>
+  </ConfigCard>
+);

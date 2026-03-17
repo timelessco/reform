@@ -2,12 +2,13 @@ import type { TDateElement } from "platejs";
 import type { PlateElementProps } from "platejs/react";
 
 import { PlateElement, useReadOnly } from "platejs/react";
+import { useCallback } from "react";
 
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-export function DateElement(props: PlateElementProps<TDateElement>) {
+export const DateElement = (props: PlateElementProps<TDateElement>) => {
   const { editor, element } = props;
 
   const readOnly = useReadOnly();
@@ -48,6 +49,14 @@ export function DateElement(props: PlateElementProps<TDateElement>) {
         <span>Pick a date</span>
       )}
     </span>
+  );
+
+  const handleDateSelect = useCallback(
+    (date: Date | undefined) => {
+      if (!date) return;
+      editor.tf.setNodes({ date: date.toDateString() }, { at: element });
+    },
+    [editor.tf, element],
   );
 
   if (readOnly) {
@@ -106,11 +115,7 @@ export function DateElement(props: PlateElementProps<TDateElement>) {
         <PopoverContent className="w-auto p-0">
           <Calendar
             selected={new Date(element.date as string)}
-            onSelect={(date) => {
-              if (!date) return;
-
-              editor.tf.setNodes({ date: date.toDateString() }, { at: element });
-            }}
+            onSelect={handleDateSelect}
             mode="single"
             initialFocus
           />
@@ -119,4 +124,4 @@ export function DateElement(props: PlateElementProps<TDateElement>) {
       {props.children}
     </PlateElement>
   );
-}
+};

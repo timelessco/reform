@@ -27,6 +27,32 @@ import {
   selectTriggerCls,
 } from "@/components/form-builder/embed-config-panel";
 
+// Settings defaults (module-scope, computed once)
+const { customization: _c, ...settingsDefaults } = defaultFormSettings;
+const settingsKeys = Object.keys(settingsDefaults);
+
+// Module-level selectors for form.Subscribe (no props/state dependency)
+const selectRedirectOnCompletion = (state: { values: { redirectOnCompletion: unknown } }) =>
+  state.values.redirectOnCompletion;
+const selectDataRetention = (state: { values: { dataRetention: unknown } }) =>
+  state.values.dataRetention;
+const selectSelfEmailNotifications = (state: { values: { selfEmailNotifications: unknown } }) =>
+  state.values.selfEmailNotifications;
+const selectRespondentEmailNotifications = (state: {
+  values: { respondentEmailNotifications: unknown };
+}) => state.values.respondentEmailNotifications;
+const selectPasswordProtect = (state: { values: { passwordProtect: unknown } }) =>
+  state.values.passwordProtect;
+const selectCloseForm = (state: { values: { closeForm: unknown } }) => state.values.closeForm;
+const selectCloseOnDate = (state: { values: { closeOnDate: unknown } }) => state.values.closeOnDate;
+const selectLimitSubmissions = (state: { values: { limitSubmissions: unknown } }) =>
+  state.values.limitSubmissions;
+
+const SettingsPage = () => {
+  const { formId } = Route.useParams();
+  return <SettingsContent formId={formId} />;
+};
+
 export const Route = createFileRoute(
   "/_authenticated/workspace/$workspaceId/form-builder/$formId/settings",
 )({
@@ -36,16 +62,7 @@ export const Route = createFileRoute(
   notFoundComponent: NotFound,
 });
 
-// Settings defaults (module-scope, computed once)
-const { customization: _c, ...settingsDefaults } = defaultFormSettings;
-const settingsKeys = Object.keys(settingsDefaults);
-
-function SettingsPage() {
-  const { formId } = Route.useParams();
-  return <SettingsContent formId={formId} />;
-}
-
-export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?: boolean }) {
+export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?: boolean }) => {
   const cloudForm = useForm(isLocal ? undefined : formId);
   const localFormResult = useLocalForm(isLocal ? formId : undefined);
   const formResult = isLocal ? localFormResult : cloudForm;
@@ -122,7 +139,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 </form.AppField>
               </ConfigRow>
 
-              <form.Subscribe selector={(state) => state.values.redirectOnCompletion}>
+              <form.Subscribe selector={selectRedirectOnCompletion}>
                 {(redirectOnCompletion) =>
                   redirectOnCompletion ? (
                     <>
@@ -228,7 +245,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 </div>
               </ConfigRow>
 
-              <form.Subscribe selector={(state) => state.values.dataRetention}>
+              <form.Subscribe selector={selectDataRetention}>
                 {(dataRetention) =>
                   dataRetention ? (
                     <ConfigRow label="Retention days">
@@ -274,7 +291,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 </form.AppField>
               </ConfigRow>
 
-              <form.Subscribe selector={(state) => state.values.selfEmailNotifications}>
+              <form.Subscribe selector={selectSelfEmailNotifications}>
                 {(selfEmailNotifications) =>
                   selfEmailNotifications ? (
                     <ConfigRow label="Email">
@@ -320,7 +337,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 </div>
               </ConfigRow>
 
-              <form.Subscribe selector={(state) => state.values.respondentEmailNotifications}>
+              <form.Subscribe selector={selectRespondentEmailNotifications}>
                 {(respondentEmailNotifications) =>
                   respondentEmailNotifications ? (
                     <>
@@ -379,7 +396,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 </form.AppField>
               </ConfigRow>
 
-              <form.Subscribe selector={(state) => state.values.passwordProtect}>
+              <form.Subscribe selector={selectPasswordProtect}>
                 {(passwordProtect) =>
                   passwordProtect ? (
                     <ConfigRow label="Password">
@@ -413,7 +430,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 </form.AppField>
               </ConfigRow>
 
-              <form.Subscribe selector={(state) => state.values.closeForm}>
+              <form.Subscribe selector={selectCloseForm}>
                 {(closeForm) =>
                   closeForm ? (
                     <div className="bg-secondary px-[10px] py-[7px]">
@@ -453,7 +470,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 </form.AppField>
               </ConfigRow>
 
-              <form.Subscribe selector={(state) => state.values.closeOnDate}>
+              <form.Subscribe selector={selectCloseOnDate}>
                 {(closeOnDate) =>
                   closeOnDate ? (
                     <ConfigRow label="Close date">
@@ -490,7 +507,7 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
                 </form.AppField>
               </ConfigRow>
 
-              <form.Subscribe selector={(state) => state.values.limitSubmissions}>
+              <form.Subscribe selector={selectLimitSubmissions}>
                 {(limitSubmissions) =>
                   limitSubmissions ? (
                     <ConfigRow label="Max submissions">
@@ -575,9 +592,9 @@ export function SettingsContent({ formId, isLocal }: { formId: string; isLocal?:
       </form.AppForm>
     </div>
   );
-}
+};
 
-function PasswordInput({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+const PasswordInput = ({ value, onChange }: { value: string; onChange: (val: string) => void }) => {
   const [show, setShow] = useState(false);
   return (
     <div className="relative w-[160px]">
@@ -599,4 +616,4 @@ function PasswordInput({ value, onChange }: { value: string; onChange: (val: str
       </button>
     </div>
   );
-}
+};

@@ -14,12 +14,7 @@ const searchSchema = z.object({
   mode: z.enum(["signin", "verify"]).optional(),
 });
 
-export const Route = createFileRoute("/verify-email")({
-  validateSearch: searchSchema,
-  component: VerifyEmailPage,
-});
-
-function VerifyEmailPage() {
+const VerifyEmailPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const search = useSearch({ from: "/verify-email" });
@@ -89,7 +84,6 @@ function VerifyEmailPage() {
       },
     }),
   );
-
   const handleVerify = () => {
     if (otp.length !== 6) return;
 
@@ -99,14 +93,12 @@ function VerifyEmailPage() {
       verifyEmailMutation.mutate({ email, otp });
     }
   };
-
   const handleResend = () => {
     sendOtpMutation.mutate({
       email,
       type: isSignInMode ? "sign-in" : "email-verification",
     });
   };
-
   const handleBack = () => {
     if (isSignInMode) {
       navigate({ to: "/login" });
@@ -235,4 +227,9 @@ function VerifyEmailPage() {
       </div>
     </div>
   );
-}
+};
+
+export const Route = createFileRoute("/verify-email")({
+  validateSearch: searchSchema,
+  component: VerifyEmailPage,
+});

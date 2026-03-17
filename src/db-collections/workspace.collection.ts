@@ -61,10 +61,10 @@ export const workspaceCollection = createCollection(
   }),
 );
 
-export async function createWorkspaceLocal(
+export const createWorkspaceLocal = async (
   organizationId: string,
   name = "Collection",
-): Promise<Workspace> {
+): Promise<Workspace> => {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const newWorkspace: Workspace = {
@@ -78,22 +78,22 @@ export async function createWorkspaceLocal(
 
   await workspaceCollection.insert(newWorkspace);
   return newWorkspace;
-}
+};
 
-export async function updateWorkspaceName(id: string, name: string): Promise<void> {
+export const updateWorkspaceName = async (id: string, name: string): Promise<void> => {
   await workspaceCollection.update(id, (draft) => {
     draft.name = name;
     draft.updatedAt = new Date().toISOString();
   });
-}
+};
 
-async function updateWorkspaceLocal(id: string, updater: (draft: any) => void): Promise<void> {
+const _updateWorkspaceLocal = async (id: string, updater: (draft: any) => void): Promise<void> => {
   await workspaceCollection.update(id, (draft) => {
     updater(draft);
     draft.updatedAt = new Date().toISOString();
   });
-}
+};
 
-export async function deleteWorkspaceLocal(id: string): Promise<void> {
+export const deleteWorkspaceLocal = async (id: string): Promise<void> => {
   await workspaceCollection.delete(id);
-}
+};

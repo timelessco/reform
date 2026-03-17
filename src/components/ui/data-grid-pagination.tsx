@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useDataGrid } from "@/components/ui/data-grid";
 import {
@@ -29,7 +29,7 @@ interface DataGridPaginationProps {
   ellipsisText?: string;
 }
 
-function DataGridPagination(props: DataGridPaginationProps) {
+export const DataGridPagination = (props: DataGridPaginationProps) => {
   const { table, recordCount, isLoading } = useDataGrid();
 
   const defaultProps: Partial<DataGridPaginationProps> = {
@@ -72,6 +72,17 @@ function DataGridPagination(props: DataGridPaginationProps) {
   const currentGroupStart = Math.floor(pageIndex / paginationMoreLimit) * paginationMoreLimit;
   const currentGroupEnd = Math.min(currentGroupStart + paginationMoreLimit, pageCount);
 
+  const handlePageSizeChange = useCallback(
+    (value: string) => {
+      const newPageSize = Number(value);
+      table.setPageSize(newPageSize);
+    },
+    [table],
+  );
+
+  const handlePreviousPage = useCallback(() => table.previousPage(), [table]);
+  const handleNextPage = useCallback(() => table.nextPage(), [table]);
+
   // Render page buttons based on the current group
   const renderPageButtons = () => {
     const buttons = [];
@@ -97,16 +108,21 @@ function DataGridPagination(props: DataGridPaginationProps) {
     return buttons;
   };
 
+  const handleEllipsisPrev = useCallback(
+    () => table.setPageIndex(currentGroupStart - 1),
+    [table, currentGroupStart],
+  );
+
+  const handleEllipsisNext = useCallback(
+    () => table.setPageIndex(currentGroupEnd),
+    [table, currentGroupEnd],
+  );
+
   // Render a "previous" ellipsis button if there are previous pages to show
   const renderEllipsisPrevButton = () => {
     if (currentGroupStart > 0) {
       return (
-        <Button
-          size="sm"
-          className={btnBaseClasses}
-          variant="ghost"
-          onClick={() => table.setPageIndex(currentGroupStart - 1)}
-        >
+        <Button size="sm" className={btnBaseClasses} variant="ghost" onClick={handleEllipsisPrev}>
           {mergedProps.ellipsisText}
         </Button>
       );
@@ -118,12 +134,7 @@ function DataGridPagination(props: DataGridPaginationProps) {
   const renderEllipsisNextButton = () => {
     if (currentGroupEnd < pageCount) {
       return (
-        <Button
-          className={btnBaseClasses}
-          variant="ghost"
-          size="sm"
-          onClick={() => table.setPageIndex(currentGroupEnd)}
-        >
+        <Button className={btnBaseClasses} variant="ghost" size="sm" onClick={handleEllipsisNext}>
           {mergedProps.ellipsisText}
         </Button>
       );
@@ -145,13 +156,7 @@ function DataGridPagination(props: DataGridPaginationProps) {
         ) : (
           <>
             <div className="text-sm text-muted-foreground">{mergedProps.rowsPerPageLabel}</div>
-            <Select
-              value={`${pageSize}`}
-              onValueChange={(value) => {
-                const newPageSize = Number(value);
-                table.setPageSize(newPageSize);
-              }}
-            >
+            <Select value={`${pageSize}`} onValueChange={handlePageSizeChange}>
               <SelectTrigger className="w-fit" size="sm">
                 <SelectValue placeholder={`${pageSize}`} />
               </SelectTrigger>
@@ -180,7 +185,7 @@ function DataGridPagination(props: DataGridPaginationProps) {
                   size="sm"
                   variant="ghost"
                   className={btnArrowClasses}
-                  onClick={() => table.previousPage()}
+                  onClick={handlePreviousPage}
                   disabled={!table.getCanPreviousPage()}
                 >
                   <span className="sr-only">{mergedProps.previousPageLabel}</span>
@@ -197,7 +202,7 @@ function DataGridPagination(props: DataGridPaginationProps) {
                   size="sm"
                   variant="ghost"
                   className={btnArrowClasses}
-                  onClick={() => table.nextPage()}
+                  onClick={handleNextPage}
                   disabled={!table.getCanNextPage()}
                 >
                   <span className="sr-only">{mergedProps.nextPageLabel}</span>
@@ -210,6 +215,6 @@ function DataGridPagination(props: DataGridPaginationProps) {
       </div>
     </div>
   );
-}
+};
 
-export { DataGridPagination, type DataGridPaginationProps };
+export { type DataGridPaginationProps };

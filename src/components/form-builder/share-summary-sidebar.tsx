@@ -1,7 +1,7 @@
 import { useForm as useTanstackForm } from "@tanstack/react-form";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { RocketIcon, XIcon } from "@/components/ui/icons";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { CopyButton } from "@/components/copy-button/copy-button";
 import { Button } from "@/components/ui/button";
@@ -11,16 +11,17 @@ import { Tabs, TabsIndicator, TabsList, TabsTrigger } from "@/components/ui/tabs
 import { useForm } from "@/hooks/use-live-hooks";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { publishForm } from "@/hooks/use-form-versions";
-import { formFieldsToEmbedOptions } from "./embed-config-panel";
-import { EmbedConfigPanel } from "./embed-config-panel";
+import { formFieldsToEmbedOptions, EmbedConfigPanel } from "./embed-config-panel";
 import { EmbedCodeDialog, searchToFormValues, formValuesToSearch, tabs } from "./embed-section";
 import { EmbedPreviewMockup } from "./embed-preview-mockup";
+
+const selectValues = (state: any) => state.values;
 
 interface ShareSummarySidebarProps {
   formId: string;
 }
 
-export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
+export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
   const { closeSidebar } = useEditorSidebar();
   const { data: savedDocs } = useForm(formId);
   const doc = savedDocs?.[0];
@@ -28,6 +29,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
   const search = useSearch({ strict: false }) as Record<string, unknown>;
   const navigate = useNavigate();
   const [codeDialogOpen, setCodeDialogOpen] = useState(false);
+  const handleOpenCodeDialog = useCallback(() => setCodeDialogOpen(true), []);
 
   const form = useTanstackForm({
     defaultValues: searchToFormValues(search, doc?.icon),
@@ -46,12 +48,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
     },
   });
 
-  if (!doc) return null;
-
-  const isDraft = doc.status === "draft";
-  const shareUrl = `${window.location.origin}/forms/${doc.id}`;
-
-  const handlePublish = async () => {
+  const handlePublish = useCallback(async () => {
     try {
       const tx = publishForm(formId);
       await tx.isPersisted.promise;
@@ -60,7 +57,12 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
       toast.error("Failed to publish form");
       console.error(error);
     }
-  };
+  }, [formId]);
+
+  if (!doc) return null;
+
+  const isDraft = doc.status === "draft";
+  const shareUrl = `${window.location.origin}/forms/${doc.id}`;
 
   return (
     <Sidebar
@@ -130,7 +132,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
               </Button>
             </div>
           ) : (
-            <form.Subscribe selector={(state) => state.values}>
+            <form.Subscribe selector={selectValues}>
               {(values) => {
                 const embedType = values.embedType;
                 const options = formFieldsToEmbedOptions(values);
@@ -159,7 +161,7 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
 
                     {/* Get Code button — inside scrollable content, after Pro Features */}
                     <Button
-                      onClick={() => setCodeDialogOpen(true)}
+                      onClick={handleOpenCodeDialog}
                       variant="default"
                       className="w-full h-9 mt-0.5 rounded-2xl font-semibold text-xs hover:bg-foreground/90"
                     >
@@ -203,4 +205,4 @@ export function ShareSummarySidebar({ formId }: ShareSummarySidebarProps) {
       )}
     </Sidebar>
   );
-}
+};

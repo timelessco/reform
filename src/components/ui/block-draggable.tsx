@@ -133,7 +133,7 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
   return (props) => <Draggable {...props} />;
 };
 
-function Draggable(props: PlateElementProps) {
+const Draggable = (props: PlateElementProps) => {
   const { children, editor, element, path } = props;
   const blockSelectionApi = editor.getApi(BlockSelectionPlugin).blockSelection;
 
@@ -210,6 +210,24 @@ function Draggable(props: PlateElementProps) {
     }
   }, [isAboutToDrag, previewRef.current?.classList.remove]);
 
+  const handleAddBlock = React.useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // Insert a new paragraph block after the current block
+      const nextPath = [...path];
+      nextPath[nextPath.length - 1] += 1;
+      editor.tf.insertNodes(
+        {
+          type: KEYS.p,
+          children: [{ text: "" }],
+        },
+        { at: nextPath, select: true },
+      );
+    },
+    [editor.tf, path],
+  );
+
   React.useEffect(() => {
     const node = nodeRef.current;
     if (!node) return;
@@ -254,20 +272,7 @@ function Draggable(props: PlateElementProps) {
                       variant="ghost"
                       size="icon"
                       className="h-auto w-auto rounded-lg has-[>svg]:px-1 has-[>svg]:py-1.5 border border-transparent"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        // Insert a new paragraph block after the current block
-                        const nextPath = [...path];
-                        nextPath[nextPath.length - 1] += 1;
-                        editor.tf.insertNodes(
-                          {
-                            type: KEYS.p,
-                            children: [{ text: "" }],
-                          },
-                          { at: nextPath, select: true },
-                        );
-                      }}
+                      onClick={handleAddBlock}
                       data-plate-prevent-deselect
                     />
                   }
@@ -307,14 +312,14 @@ function Draggable(props: PlateElementProps) {
       </div>
     </div>
   );
-}
+};
 
-function Gutter({
+const Gutter = ({
   children,
   className,
   gutterPosition = "center",
   ...props
-}: React.ComponentProps<"div"> & { gutterPosition?: "center" | "top" }) {
+}: React.ComponentProps<"div"> & { gutterPosition?: "center" | "top" }) => {
   const editor = useEditorRef();
   const element = useElement();
   const isSelectionAreaVisible = usePluginOption(BlockSelectionPlugin, "isSelectionAreaVisible");
@@ -340,7 +345,7 @@ function Gutter({
       {children}
     </div>
   );
-}
+};
 
 const DragHandle = React.memo(function DragHandle({
   isDragging,
@@ -358,6 +363,106 @@ const DragHandle = React.memo(function DragHandle({
   const editor = useEditorRef();
   const element = useElement();
 
+  const handleClick = React.useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isDragging) return;
+
+      const blockSelectionApi = editor.getApi(BlockSelectionPlugin);
+      const currentSelection = blockSelectionApi.blockSelection.getNodes();
+      if (
+        currentSelection.length === 0 ||
+        !currentSelection.some(([node]) => node.id === element.id)
+      ) {
+        blockSelectionApi.blockSelection.set([element.id as string]);
+      }
+
+      const api = editor.getApi(BlockMenuPlugin);
+
+      api.blockMenu.show(BLOCK_CONTEXT_MENU_ID, {
+        x: e.clientX,
+        y: e.clientY,
+      });
+    },
+    [isDragging, editor, element.id],
+  );
+
+  const handleMouseDown = React.useCallback(
+    (e: React.MouseEvent) => {
+      if (isFormButton) return;
+      resetPreview();
+
+      if ((e.button !== 0 && e.button !== 2) || e.shiftKey) return;
+
+      const blockSelection = editor
+        .getApi(BlockSelectionPlugin)
+        .blockSelection.getNodes({ sort: true });
+
+      let selectionNodes =
+        blockSelection.length > 0 ? blockSelection : editor.api.blocks({ mode: "highest" });
+
+      if (!selectionNodes.some(([node]) => node.id === element.id)) {
+        const currentPath = editor.api.findPath(element);
+        if (!currentPath) return;
+        selectionNodes = [[element, currentPath]];
+      }
+
+      const blocks = expandListItemsWithChildren(editor, selectionNodes).map(([node]) => node);
+
+      if (blockSelection.length === 0) {
+        editor.tf.blur();
+        editor.tf.collapse();
+      }
+
+      const elements = createDragPreviewElements(editor, blocks);
+      previewRef.current?.append(...elements);
+      previewRef.current?.classList.remove("hidden");
+      previewRef.current?.classList.add("opacity-0");
+      editor.setOption(DndPlugin, "multiplePreviewRef", previewRef);
+
+      editor
+        .getApi(BlockSelectionPlugin)
+        .blockSelection.set(blocks.map((block) => block.id as string));
+    },
+    [isFormButton, resetPreview, editor, element, previewRef],
+  );
+
+  const handleMouseEnter = React.useCallback(() => {
+    if (isDragging) return;
+
+    const blockSelection = editor
+      .getApi(BlockSelectionPlugin)
+      .blockSelection.getNodes({ sort: true });
+
+    let selectedBlocks =
+      blockSelection.length > 0 ? blockSelection : editor.api.blocks({ mode: "highest" });
+
+    if (!selectedBlocks.some(([node]) => node.id === element.id)) {
+      const currentPath = editor.api.findPath(element);
+      if (!currentPath) return;
+      selectedBlocks = [[element, currentPath]];
+    }
+
+    const processedBlocks = expandListItemsWithChildren(editor, selectedBlocks);
+
+    const ids = processedBlocks.map((block) => block[0].id as string);
+
+    if (ids.length > 1 && ids.includes(element.id as string)) {
+      const previewTop = calculatePreviewTop(editor, {
+        blocks: processedBlocks.map((block) => block[0]),
+        element,
+      });
+      setPreviewTop(previewTop);
+    } else {
+      setPreviewTop(0);
+    }
+  }, [isDragging, editor, element, setPreviewTop]);
+
+  const handleMouseUp = React.useCallback(() => {
+    resetPreview();
+  }, [resetPreview]);
+
   return (
     <Tooltip>
       <TooltipTrigger
@@ -365,103 +470,10 @@ const DragHandle = React.memo(function DragHandle({
           <button
             type="button"
             className="flex items-center justify-center h-auto w-auto overflow-hidden rounded-lg hover:bg-accent has-[>svg]:px-1 has-[>svg]:py-1.5"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (isDragging) return;
-
-              // Ensure the current block is selected before showing the menu
-              const blockSelectionApi = editor.getApi(BlockSelectionPlugin);
-              const currentSelection = blockSelectionApi.blockSelection.getNodes();
-              if (
-                currentSelection.length === 0 ||
-                !currentSelection.some(([node]) => node.id === element.id)
-              ) {
-                blockSelectionApi.blockSelection.set([element.id as string]);
-              }
-
-              const api = editor.getApi(BlockMenuPlugin);
-
-              api.blockMenu.show(BLOCK_CONTEXT_MENU_ID, {
-                x: e.clientX,
-                y: e.clientY,
-              });
-            }}
-            onMouseDown={(e) => {
-              if (isFormButton) return;
-              resetPreview();
-
-              if ((e.button !== 0 && e.button !== 2) || e.shiftKey) return;
-
-              const blockSelection = editor
-                .getApi(BlockSelectionPlugin)
-                .blockSelection.getNodes({ sort: true });
-
-              let selectionNodes =
-                blockSelection.length > 0 ? blockSelection : editor.api.blocks({ mode: "highest" });
-
-              // If current block is not in selection, use it as the starting point
-              if (!selectionNodes.some(([node]) => node.id === element.id)) {
-                const currentPath = editor.api.findPath(element);
-                if (!currentPath) return;
-                selectionNodes = [[element, currentPath]];
-              }
-
-              // Process selection nodes to include list children
-              const blocks = expandListItemsWithChildren(editor, selectionNodes).map(
-                ([node]) => node,
-              );
-
-              if (blockSelection.length === 0) {
-                editor.tf.blur();
-                editor.tf.collapse();
-              }
-
-              const elements = createDragPreviewElements(editor, blocks);
-              previewRef.current?.append(...elements);
-              previewRef.current?.classList.remove("hidden");
-              previewRef.current?.classList.add("opacity-0");
-              editor.setOption(DndPlugin, "multiplePreviewRef", previewRef);
-
-              editor
-                .getApi(BlockSelectionPlugin)
-                .blockSelection.set(blocks.map((block) => block.id as string));
-            }}
-            onMouseEnter={() => {
-              if (isDragging) return;
-
-              const blockSelection = editor
-                .getApi(BlockSelectionPlugin)
-                .blockSelection.getNodes({ sort: true });
-
-              let selectedBlocks =
-                blockSelection.length > 0 ? blockSelection : editor.api.blocks({ mode: "highest" });
-
-              // If current block is not in selection, use it as the starting point
-              if (!selectedBlocks.some(([node]) => node.id === element.id)) {
-                const currentPath = editor.api.findPath(element);
-                if (!currentPath) return;
-                selectedBlocks = [[element, currentPath]];
-              }
-
-              // Process selection to include list children
-              const processedBlocks = expandListItemsWithChildren(editor, selectedBlocks);
-
-              const ids = processedBlocks.map((block) => block[0].id as string);
-
-              if (ids.length > 1 && ids.includes(element.id as string)) {
-                const previewTop = calculatePreviewTop(editor, {
-                  blocks: processedBlocks.map((block) => block[0]),
-                  element,
-                });
-                setPreviewTop(previewTop);
-              } else {
-                setPreviewTop(0);
-              }
-            }}
-            onMouseUp={() => {
-              resetPreview();
-            }}
+            onClick={handleClick}
+            onMouseDown={handleMouseDown}
+            onMouseEnter={handleMouseEnter}
+            onMouseUp={handleMouseUp}
             data-plate-prevent-deselect
           />
         }
@@ -503,63 +515,64 @@ const DropLine = React.memo(function DropLine({
   );
 });
 
+/**
+ * Remove data attributes from the element to avoid recognized as slate
+ * elements incorrectly.
+ */
+const removeDataAttributes = (element: HTMLElement) => {
+  Array.from(element.attributes).forEach((attr) => {
+    if (attr.name.startsWith("data-slate") || attr.name.startsWith("data-block-id")) {
+      element.removeAttribute(attr.name);
+    }
+  });
+
+  Array.from(element.children).forEach((child) => {
+    removeDataAttributes(child as HTMLElement);
+  });
+};
+
+// Apply visual compensation for horizontal scroll
+const applyScrollCompensation = (original: Element, cloned: HTMLElement) => {
+  const scrollLeft = original.scrollLeft;
+
+  if (scrollLeft > 0) {
+    // Create a wrapper to handle the scroll offset
+    const scrollWrapper = document.createElement("div");
+    Object.assign(scrollWrapper.style, {
+      overflow: "hidden",
+      width: `${original.clientWidth}px`,
+    });
+
+    // Create inner container with the full content
+    const innerContainer = document.createElement("div");
+    Object.assign(innerContainer.style, {
+      transform: `translateX(-${scrollLeft}px)`,
+      width: `${original.scrollWidth}px`,
+    });
+
+    // Move all children to the inner container
+    while (cloned.firstChild) {
+      innerContainer.append(cloned.firstChild);
+    }
+
+    // Apply the original element's styles to maintain appearance
+    const originalStyles = window.getComputedStyle(original);
+    cloned.style.padding = "0";
+    innerContainer.style.padding = originalStyles.padding;
+
+    scrollWrapper.append(innerContainer);
+    cloned.append(scrollWrapper);
+  }
+};
+
 const createDragPreviewElements = (editor: PlateEditor, blocks: TElement[]): HTMLElement[] => {
   const elements: HTMLElement[] = [];
   const ids: string[] = [];
 
-  /**
-   * Remove data attributes from the element to avoid recognized as slate
-   * elements incorrectly.
-   */
-  const removeDataAttributes = (element: HTMLElement) => {
-    Array.from(element.attributes).forEach((attr) => {
-      if (attr.name.startsWith("data-slate") || attr.name.startsWith("data-block-id")) {
-        element.removeAttribute(attr.name);
-      }
-    });
-
-    Array.from(element.children).forEach((child) => {
-      removeDataAttributes(child as HTMLElement);
-    });
-  };
-
   const resolveElement = (node: TElement, index: number) => {
-    const domNode = editor.api.toDOMNode(node)!;
+    const domNode = editor.api.toDOMNode(node);
+    if (!domNode) return;
     const newDomNode = domNode.cloneNode(true) as HTMLElement;
-
-    // Apply visual compensation for horizontal scroll
-    const applyScrollCompensation = (original: Element, cloned: HTMLElement) => {
-      const scrollLeft = original.scrollLeft;
-
-      if (scrollLeft > 0) {
-        // Create a wrapper to handle the scroll offset
-        const scrollWrapper = document.createElement("div");
-        Object.assign(scrollWrapper.style, {
-          overflow: "hidden",
-          width: `${original.clientWidth}px`,
-        });
-
-        // Create inner container with the full content
-        const innerContainer = document.createElement("div");
-        Object.assign(innerContainer.style, {
-          transform: `translateX(-${scrollLeft}px)`,
-          width: `${original.scrollWidth}px`,
-        });
-
-        // Move all children to the inner container
-        while (cloned.firstChild) {
-          innerContainer.append(cloned.firstChild);
-        }
-
-        // Apply the original element's styles to maintain appearance
-        const originalStyles = window.getComputedStyle(original);
-        cloned.style.padding = "0";
-        innerContainer.style.padding = originalStyles.padding;
-
-        scrollWrapper.append(innerContainer);
-        cloned.append(scrollWrapper);
-      }
-    };
 
     applyScrollCompensation(domNode, newDomNode);
 
@@ -610,11 +623,15 @@ const calculatePreviewTop = (
     element: TElement;
   },
 ): number => {
-  const child = editor.api.toDOMNode(element)!;
-  const editable = editor.api.toDOMNode(editor)!;
+  const child = editor.api.toDOMNode(element);
+  const editable = editor.api.toDOMNode(editor);
   const firstSelectedChild = blocks[0];
 
-  const firstDomNode = editor.api.toDOMNode(firstSelectedChild)!;
+  if (!child || !editable || !firstSelectedChild) return 0;
+
+  const firstDomNode = editor.api.toDOMNode(firstSelectedChild);
+
+  if (!firstDomNode) return 0;
   // Get editor's top padding
   const editorPaddingTop = Number(window.getComputedStyle(editable).paddingTop.replace("px", ""));
 

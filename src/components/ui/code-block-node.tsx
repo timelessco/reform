@@ -16,7 +16,7 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox";
 
-export function CodeBlockElement(props: PlateElementProps<TCodeBlockElement>) {
+export const CodeBlockElement = (props: PlateElementProps<TCodeBlockElement>) => {
   const { editor, element } = props;
 
   return (
@@ -57,9 +57,9 @@ export function CodeBlockElement(props: PlateElementProps<TCodeBlockElement>) {
       </div>
     </PlateElement>
   );
-}
+};
 
-function CodeBlockCombobox() {
+const CodeBlockCombobox = () => {
   const readOnly = useReadOnly();
   const editor = useEditorRef();
   const element = useElement<TCodeBlockElement>();
@@ -94,12 +94,12 @@ function CodeBlockCombobox() {
       </ComboboxContent>
     </Combobox>
   );
-}
+};
 
-function CopyButton({
+const CopyButton = ({
   value,
   ...props
-}: { value: (() => string) | string } & Omit<React.ComponentProps<typeof Button>, "value">) {
+}: { value: (() => string) | string } & Omit<React.ComponentProps<typeof Button>, "value">) => {
   const [hasCopied, setHasCopied] = React.useState(false);
 
   React.useEffect(() => {
@@ -120,17 +120,15 @@ function CopyButton({
       {hasCopied ? <CheckIcon className="!size-3" /> : <CopyIcon className="!size-3" />}
     </Button>
   );
-}
+};
 
-export function CodeLineElement(props: PlateElementProps) {
-  return <PlateElement {...props} />;
-}
+export const CodeLineElement = (props: PlateElementProps) => <PlateElement {...props} />;
 
-export function CodeSyntaxLeaf(props: PlateLeafProps<TCodeSyntaxLeaf>) {
+export const CodeSyntaxLeaf = (props: PlateLeafProps<TCodeSyntaxLeaf>) => {
   const tokenClassName = props.leaf.className as string;
 
   return <PlateLeaf className={tokenClassName} {...props} />;
-}
+};
 
 const languages: { label: string; value: string }[] = [
   { label: "Auto", value: "auto" },

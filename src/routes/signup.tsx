@@ -17,13 +17,6 @@ import { auth } from "@/lib/auth-client";
 import { guestMiddleware } from "@/middleware/auth";
 import { Logo } from "@/components/ui/logo";
 
-export const Route = createFileRoute("/signup")({
-  server: {
-    middleware: [guestMiddleware],
-  },
-  component: SignUpPage,
-});
-
 const signUpSchema = z.object({
   username: z
     .string()
@@ -44,7 +37,7 @@ const otpSchema = z.object({
   otp: z.string().length(6, "OTP must be 6 digits"),
 });
 
-function SignUpPage() {
+const SignUpPage = () => {
   const [step, setStep] = React.useState<"form" | "otp">("form");
   const [email, setEmail] = React.useState("");
   const navigate = useNavigate();
@@ -135,7 +128,6 @@ function SignUpPage() {
       },
     }),
   );
-
   const handleGoogleSignIn = async () => {
     socialSignInMutation.mutate({
       provider: "google",
@@ -399,4 +391,11 @@ function SignUpPage() {
       </div>
     </div>
   );
-}
+};
+
+export const Route = createFileRoute("/signup")({
+  server: {
+    middleware: [guestMiddleware],
+  },
+  component: SignUpPage,
+});

@@ -20,18 +20,18 @@ const PLAN_LIMITS = {
   },
 };
 
-async function getActivePlan(): Promise<PlanSlug> {
+const getActivePlan = async (): Promise<PlanSlug> => {
   const customerState = await auth.customer.state.queryOptions().queryFn();
 
   if (!customerState?.activeSubscriptions) return "free";
   return (customerState.activeSubscriptions[0].id as PlanSlug) || "free";
-}
+};
 
-async function checkFeatureLimit(
+const _checkFeatureLimit = async (
   feature: keyof typeof PLAN_LIMITS.free,
   currentCount: number,
-): Promise<boolean> {
+): Promise<boolean> => {
   const plan = await getActivePlan();
   const limit = PLAN_LIMITS[plan][feature];
   return currentCount < limit;
-}
+};

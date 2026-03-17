@@ -1,5 +1,6 @@
 // Forked when https://github.com/shadcn-ui/ui/blob/d6d4017b951782b5af9ca1187ad74d2de9268498/templates/next-template/components/tailwind-indicator.tsx
-export function TailwindIndicator() {
+// Forked when https://github.com/shadcn-ui/ui/blob/d6d4017b951782b5af9ca1187ad74d2de9268498/templates/next-template/components/tailwind-indicator.tsx
+export const TailwindIndicator = () => {
   if (process.env.NODE_ENV === "production") {
     return null;
   }
@@ -17,4 +18,4 @@ export function TailwindIndicator() {
       <div className="hidden 2xl:block">2xl</div>
     </div>
   );
-}
+};

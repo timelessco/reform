@@ -1,14 +1,17 @@
 import { CircleUserRoundIcon } from "@/components/ui/icons";
+import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useFileUpload } from "@/hooks/use-file-upload";
 
-function Component() {
+const Component = () => {
   const [{ files }, { removeFile, openFileDialog, getInputProps }] = useFileUpload({
     accept: "image/*",
   });
 
   const previewUrl = files[0]?.preview || null;
   const fileName = files[0]?.file.name || null;
+
+  const handleRemove = useCallback(() => removeFile(files[0]?.id), [removeFile, files]);
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -48,10 +51,10 @@ function Component() {
         <div className="inline-flex gap-2 text-xs">
           <p className="text-muted-foreground truncate" aria-live="polite">
             {fileName}
-          </p>{" "}
+          </p>
           <Button
             variant="link"
-            onClick={() => removeFile(files[0]?.id)}
+            onClick={handleRemove}
             className="cursor-pointer text-destructive p-0 h-auto text-xs"
             aria-label={`Remove ${fileName}`}
           >
@@ -67,4 +70,4 @@ function Component() {
       )}
     </div>
   );
-}
+};

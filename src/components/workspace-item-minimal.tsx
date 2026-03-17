@@ -26,7 +26,7 @@ import { SidebarSection } from "@/components/ui/sidebar-section";
 import { createFormLocal } from "@/db-collections/form.collections";
 import { cn } from "@/lib/utils";
 import { useLocation, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 export type WorkspaceWithForms = {
   id: string;
@@ -57,7 +57,7 @@ export interface WorkspaceItemMinimalProps {
   onDeleteForm: (form: WorkspaceWithForms["forms"][0]) => void;
 }
 
-export function WorkspaceItemMinimal({
+export const WorkspaceItemMinimal = ({
   workspace,
   submissionCounts,
   sortMode,
@@ -66,10 +66,14 @@ export function WorkspaceItemMinimal({
   onDelete,
   onDuplicateForm,
   onDeleteForm,
-}: WorkspaceItemMinimalProps) {
+}: WorkspaceItemMinimalProps) => {
   const router = useRouter();
   const [isCreatingForm, setIsCreatingForm] = useState(false);
   const [sortExpanded, setSortExpanded] = useState(false);
+
+  const handlePopoverOpenChange = useCallback((open: boolean) => {
+    if (!open) setSortExpanded(false);
+  }, []);
 
   const sortOptions = [
     { value: "recent", label: "Recent First", icon: CalendarIcon },
@@ -80,7 +84,7 @@ export function WorkspaceItemMinimal({
 
   const currentSort = sortOptions.find((o) => o.value === sortMode) || sortOptions[0];
 
-  const handleCreateForm = async () => {
+  const handleCreateForm = useCallback(async () => {
     setIsCreatingForm(true);
     try {
       const newForm = await createFormLocal(workspace.id);
@@ -93,18 +97,14 @@ export function WorkspaceItemMinimal({
     } finally {
       setIsCreatingForm(false);
     }
-  };
+  }, [workspace.id, router]);
 
   return (
     <SidebarSection
       label={workspace.name}
       initialOpen={true}
       action={
-        <Popover
-          onOpenChange={(open) => {
-            if (!open) setSortExpanded(false);
-          }}
-        >
+        <Popover onOpenChange={handlePopoverOpenChange}>
           <PopoverTrigger
             render={
               <Button
@@ -217,7 +217,7 @@ export function WorkspaceItemMinimal({
       )}
     </SidebarSection>
   );
-}
+};
 
 const getFormIcon = (
   _title: string,
@@ -240,13 +240,13 @@ interface WorkspaceFormMinimalProps {
   onDelete: () => void;
 }
 
-function WorkspaceFormMinimal({
+const WorkspaceFormMinimal = ({
   form,
   workspaceId,
   submissionCount,
   onDuplicate,
   onDelete,
-}: WorkspaceFormMinimalProps) {
+}: WorkspaceFormMinimalProps) => {
   const location = useLocation();
   const isPublishedForm = form.status === "published";
   const to = isPublishedForm
@@ -299,4 +299,4 @@ function WorkspaceFormMinimal({
       </ContextMenuContent>
     </ContextMenu>
   );
-}
+};

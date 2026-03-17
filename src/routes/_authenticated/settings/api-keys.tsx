@@ -12,7 +12,7 @@ import {
   PlusIcon,
   Trash2Icon,
 } from "@/components/ui/icons";
-import { useId, useState } from "react";
+import { useCallback, useId, useState } from "react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -61,24 +61,7 @@ import {
 import { APP_NAME, APP_API_DOCS_URL } from "@/lib/app-config";
 import { auth, useSession } from "@/lib/auth-client";
 
-export const Route = createFileRoute("/_authenticated/settings/api-keys")({
-  component: APIKeysPage,
-  loader: async ({ context }) => {
-    if (typeof window === "undefined") {
-      return { apiKeys: [] };
-    }
-    const apiKeys = await context.queryClient.ensureQueryData({
-      ...auth.apiKey.list.queryOptions(),
-      revalidateIfStale: true,
-    });
-    return { apiKeys };
-  },
-  pendingComponent: Loader,
-  errorComponent: ErrorBoundary,
-  notFoundComponent: NotFound,
-});
-
-function APIKeysPage() {
+const APIKeysPage = () => {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
   const { apiKeys: initialApiKeys } = Route.useLoaderData();
@@ -131,32 +114,59 @@ function APIKeysPage() {
     }),
   );
 
-  const handleCreateKey = async () => {
+  const handleCreateKey = useCallback(async () => {
     if (!newKeyName.trim()) return;
     createMutation.mutate({
       name: newKeyName,
     });
-  };
+  }, [newKeyName, createMutation]);
 
-  const handleDeleteKey = async () => {
+  const handleDeleteKey = useCallback(async () => {
     if (!apiKeyToDelete) return;
     deleteMutation.mutate({
       keyId: apiKeyToDelete,
     });
-  };
+  }, [apiKeyToDelete, deleteMutation]);
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = useCallback((text: string) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
     toast.success("Copied to clipboard");
     setTimeout(() => setCopied(false), 2000);
-  };
+  }, []);
+
+  const handleOpenCreateDialog = useCallback(() => setIsCreateDialogOpen(true), []);
+  const handleCloseCreateDialog = useCallback(() => setIsCreateDialogOpen(false), []);
+  const handleCloseViewDialog = useCallback(() => setIsViewDialogOpen(false), []);
+  const handleToggleShowKey = useCallback(() => setShowKey((prev) => !prev), []);
+  const handleCopyCreatedKey = useCallback(
+    () => createdKey && copyToClipboard(createdKey),
+    [createdKey, copyToClipboard],
+  );
+
+  const handleNewKeyNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => setNewKeyName(e.target.value),
+    [],
+  );
+
+  const handleNewKeyNameKeyDown = useCallback(
+    (e: React.KeyboardEvent) => e.key === "Enter" && handleCreateKey(),
+    [handleCreateKey],
+  );
+
+  const handleViewDialogOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      setIsViewDialogOpen(false);
+      setCreatedKey(null);
+      setShowKey(false);
+    }
+  }, []);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-end">
         <Button
-          onClick={() => setIsCreateDialogOpen(true)}
+          onClick={handleOpenCreateDialog}
           className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
         >
           <PlusIcon className="h-4 w-4" />
@@ -175,7 +185,7 @@ function APIKeysPage() {
               Create an API key to access our API and automate your tasks.
             </EmptyDescription>
           </EmptyHeader>
-          <Button onClick={() => setIsCreateDialogOpen(true)} variant="outline" className="mt-2">
+          <Button onClick={handleOpenCreateDialog} variant="outline" className="mt-2">
             Create your first key
           </Button>
         </Empty>
@@ -282,14 +292,14 @@ function APIKeysPage() {
                 id={nameInputId}
                 placeholder="e.g. Production"
                 value={newKeyName}
-                onChange={(e) => setNewKeyName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCreateKey()}
+                onChange={handleNewKeyNameChange}
+                onKeyDown={handleNewKeyNameKeyDown}
                 className="focus-visible:ring-ring"
               />
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+            <Button variant="outline" onClick={handleCloseCreateDialog}>
               Cancel
             </Button>
             <Button
@@ -307,16 +317,7 @@ function APIKeysPage() {
       </Dialog>
 
       {/* View Dialog */}
-      <Dialog
-        open={isViewDialogOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            setIsViewDialogOpen(false);
-            setCreatedKey(null);
-            setShowKey(false);
-          }
-        }}
-      >
+      <Dialog open={isViewDialogOpen} onOpenChange={handleViewDialogOpenChange}>
         <DialogContent className="sm:max-w-[500px] p-6">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">View API key</DialogTitle>
@@ -347,7 +348,7 @@ function APIKeysPage() {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-muted-foreground"
-                    onClick={() => setShowKey(!showKey)}
+                    onClick={handleToggleShowKey}
                     aria-label="Toggle key visibility"
                   >
                     {showKey ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
@@ -356,7 +357,7 @@ function APIKeysPage() {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-muted-foreground"
-                    onClick={() => createdKey && copyToClipboard(createdKey)}
+                    onClick={handleCopyCreatedKey}
                     aria-label="Copy API key"
                   >
                     {copied ? (
@@ -373,7 +374,7 @@ function APIKeysPage() {
           <div className="mt-2 text-left">
             <Button
               className="bg-primary text-primary-foreground hover:bg-primary/90 min-w-[80px] px-6 py-2 h-auto"
-              onClick={() => setIsViewDialogOpen(false)}
+              onClick={handleCloseViewDialog}
             >
               Done
             </Button>
@@ -407,4 +408,21 @@ function APIKeysPage() {
       </AlertDialog>
     </div>
   );
-}
+};
+
+export const Route = createFileRoute("/_authenticated/settings/api-keys")({
+  component: APIKeysPage,
+  loader: async ({ context }) => {
+    if (typeof window === "undefined") {
+      return { apiKeys: [] };
+    }
+    const apiKeys = await context.queryClient.ensureQueryData({
+      ...auth.apiKey.list.queryOptions(),
+      revalidateIfStale: true,
+    });
+    return { apiKeys };
+  },
+  pendingComponent: Loader,
+  errorComponent: ErrorBoundary,
+  notFoundComponent: NotFound,
+});

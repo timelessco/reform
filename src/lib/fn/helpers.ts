@@ -1,7 +1,5 @@
-import { getRequestHeaders } from "@tanstack/react-start/server";
 import { and, eq, sql } from "drizzle-orm";
 import { forms, workspaces } from "@/db/schema";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 /**

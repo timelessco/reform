@@ -32,7 +32,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Cell, flexRender, HeaderGroup, Row } from "@tanstack/react-table";
 import { GripHorizontalIcon } from "@/components/ui/icons";
 
-function DataGridTableDndRowHandle({ rowId }: { rowId: string }) {
+export const DataGridTableDndRowHandle = ({ rowId }: { rowId: string }) => {
   const { attributes, listeners } = useSortable({
     id: rowId,
   });
@@ -49,9 +49,9 @@ function DataGridTableDndRowHandle({ rowId }: { rowId: string }) {
       <GripHorizontalIcon />
     </Button>
   );
-}
+};
 
-function DataGridTableDndRow<TData>({ row }: { row: Row<TData> }) {
+const DataGridTableDndRow = <TData,>({ row }: { row: Row<TData> }) => {
   const { transform, transition, setNodeRef, isDragging } = useSortable({
     id: row.id,
   });
@@ -65,22 +65,22 @@ function DataGridTableDndRow<TData>({ row }: { row: Row<TData> }) {
   };
   return (
     <DataGridTableBodyRow row={row} dndRef={setNodeRef} dndStyle={style} key={row.id}>
-      {row.getVisibleCells().map((cell: Cell<TData, unknown>, colIndex) => (
-        <DataGridTableBodyRowCell cell={cell} key={colIndex}>
+      {row.getVisibleCells().map((cell: Cell<TData, unknown>) => (
+        <DataGridTableBodyRowCell cell={cell} key={cell.id}>
           {flexRender(cell.column.columnDef.cell, cell.getContext())}
         </DataGridTableBodyRowCell>
       ))}
     </DataGridTableBodyRow>
   );
-}
+};
 
-function DataGridTableDndRows<TData>({
+export const DataGridTableDndRows = <TData,>({
   handleDragEnd,
   dataIds,
 }: {
   handleDragEnd: (event: DragEndEvent) => void;
   dataIds: UniqueIdentifier[];
-}) {
+}) => {
   const { table, isLoading, props } = useDataGrid();
   const pagination = table.getState().pagination;
 
@@ -101,13 +101,13 @@ function DataGridTableDndRows<TData>({
       <div className="relative">
         <DataGridTableBase>
           <DataGridTableHead>
-            {table.getHeaderGroups().map((headerGroup: HeaderGroup<TData>, index) => (
-              <DataGridTableHeadRow headerGroup={headerGroup} key={index}>
-                {headerGroup.headers.map((header, index) => {
+            {table.getHeaderGroups().map((headerGroup: HeaderGroup<TData>) => (
+              <DataGridTableHeadRow headerGroup={headerGroup} key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
                   const { column } = header;
 
                   return (
-                    <DataGridTableHeadRowCell header={header} key={index}>
+                    <DataGridTableHeadRowCell header={header} key={header.id}>
                       {header.isPlaceholder
                         ? null
                         : flexRender(header.column.columnDef.header, header.getContext())}
@@ -127,15 +127,17 @@ function DataGridTableDndRows<TData>({
 
           <DataGridTableBody>
             {props.loadingMode === "skeleton" && isLoading && pagination?.pageSize ? (
-              Array.from({ length: pagination.pageSize }).map((_, rowIndex) => (
-                <DataGridTableBodyRowSkeleton key={rowIndex}>
-                  {table.getVisibleFlatColumns().map((column, colIndex) => (
-                    <DataGridTableBodyRowSkeletonCell column={column} key={colIndex}>
-                      {column.columnDef.meta?.skeleton}
-                    </DataGridTableBodyRowSkeletonCell>
-                  ))}
-                </DataGridTableBodyRowSkeleton>
-              ))
+              Array.from({ length: pagination.pageSize }, (_, i) => `skeleton-${i}`).map(
+                (skeletonId) => (
+                  <DataGridTableBodyRowSkeleton key={skeletonId}>
+                    {table.getVisibleFlatColumns().map((column) => (
+                      <DataGridTableBodyRowSkeletonCell column={column} key={column.id}>
+                        {column.columnDef.meta?.skeleton}
+                      </DataGridTableBodyRowSkeletonCell>
+                    ))}
+                  </DataGridTableBodyRowSkeleton>
+                ),
+              )
             ) : table.getRowModel().rows.length ? (
               <SortableContext items={dataIds} strategy={verticalListSortingStrategy}>
                 {table.getRowModel().rows.map((row: Row<TData>) => (
@@ -150,6 +152,4 @@ function DataGridTableDndRows<TData>({
       </div>
     </DndContext>
   );
-}
-
-export { DataGridTableDndRowHandle, DataGridTableDndRows };
+};

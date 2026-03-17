@@ -34,7 +34,7 @@ const items = [
   },
 ];
 
-export function AlignToolbarButton(props: React.ComponentProps<typeof DropdownMenu>) {
+export const AlignToolbarButton = (props: React.ComponentProps<typeof DropdownMenu>) => {
   const { editor, tf } = useEditorPlugin(TextAlignPlugin);
   const value =
     useSelectionFragmentProp({
@@ -45,6 +45,14 @@ export function AlignToolbarButton(props: React.ComponentProps<typeof DropdownMe
   const [open, setOpen] = React.useState(false);
   const IconValue = items.find((item) => item.value === value)?.icon ?? AlignLeftIcon;
 
+  const handleValueChange = React.useCallback(
+    (value: string) => {
+      tf.textAlign.setNodes(value as Alignment);
+      editor.tf.focus();
+    },
+    [tf.textAlign, editor.tf],
+  );
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
       <DropdownMenuTrigger render={<ToolbarButton pressed={open} tooltip="Align" isDropdown />}>
@@ -52,13 +60,7 @@ export function AlignToolbarButton(props: React.ComponentProps<typeof DropdownMe
       </DropdownMenuTrigger>
 
       <DropdownMenuContent className="min-w-0" align="start">
-        <DropdownMenuRadioGroup
-          value={value}
-          onValueChange={(value) => {
-            tf.textAlign.setNodes(value as Alignment);
-            editor.tf.focus();
-          }}
-        >
+        <DropdownMenuRadioGroup value={value} onValueChange={handleValueChange}>
           {items.map(({ icon: Icon, value: itemValue }) => (
             <DropdownMenuRadioItem
               key={itemValue}
@@ -72,4 +74,4 @@ export function AlignToolbarButton(props: React.ComponentProps<typeof DropdownMe
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+};

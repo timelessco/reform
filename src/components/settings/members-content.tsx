@@ -1,4 +1,3 @@
-import { useStore } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClockIcon, MailIcon, PlusIcon, Trash2Icon, XIcon } from "@/components/ui/icons";
 import { useId } from "react";
@@ -8,7 +7,7 @@ import { InputGroup, InputGroupButton, InputGroupInput } from "@/components/ui/i
 import { useAppForm } from "@/components/ui/tanstack-form";
 import { auth } from "@/lib/auth-client";
 
-export function MembersContent() {
+export const MembersContent = () => {
   const queryClient = useQueryClient();
   const inviteForm = useAppForm({
     defaultValues: { email: "" },
@@ -208,4 +207,4 @@ export function MembersContent() {
       </div>
     </inviteForm.AppForm>
   );
-}
+};

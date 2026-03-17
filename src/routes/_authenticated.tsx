@@ -115,14 +115,7 @@ import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/middleware/auth";
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  createFileRoute,
-  Link,
-  Outlet,
-  useLocation,
-  useParams,
-  useRouter,
-} from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation, useParams, useRouter } from "@tanstack/react-router";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type * as React from "react";
@@ -159,6 +152,21 @@ const LazyCustomizeSidebar = lazy(() =>
   })),
 );
 
+const AuthLayout = () => {
+  const { pathname } = useLocation();
+  const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
+
+  return (
+    <SidebarProvider style={{ "--app-header-height": "40px" } as React.CSSProperties}>
+      <EditorHeaderVisibilityProvider enabled={isEditRoute}>
+        <MinimalSidebarProvider>
+          <AuthLayoutContent />
+        </MinimalSidebarProvider>
+      </EditorHeaderVisibilityProvider>
+    </SidebarProvider>
+  );
+};
+
 // Route configuration
 export const Route = createFileRoute("/_authenticated")({
   server: {
@@ -190,22 +198,7 @@ export const Route = createFileRoute("/_authenticated")({
   ssr: "data-only",
 });
 
-function AuthLayout() {
-  const { pathname } = useLocation();
-  const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
-
-  return (
-    <SidebarProvider style={{ "--app-header-height": "40px" } as React.CSSProperties}>
-      <EditorHeaderVisibilityProvider enabled={isEditRoute}>
-        <MinimalSidebarProvider>
-          <AuthLayoutContent />
-        </MinimalSidebarProvider>
-      </EditorHeaderVisibilityProvider>
-    </SidebarProvider>
-  );
-}
-
-function AuthLayoutContent() {
+const AuthLayoutContent = () => {
   const location = useLocation();
   const { pathname } = location;
   const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
@@ -320,11 +313,13 @@ function AuthLayoutContent() {
       </SidebarInset>
     </>
   );
-}
+};
 
 // Minimal Sidebar Item Component (Figma system-flat: form list item with icon, title, optional count)
 // App Sidebar Component using shadcn/ui
-function AppSidebar() {
+// Minimal Sidebar Item Component (Figma system-flat: form list item with icon, title, optional count)
+// App Sidebar Component using shadcn/ui
+const AppSidebar = () => {
   const { toggleSidebar } = useSidebar();
   const { isInboxOpen, toggleInbox } = useMinimalSidebar();
   const location = useLocation();
@@ -335,6 +330,10 @@ function AppSidebar() {
     isOpen: isPaletteOpen,
     setIsOpen: setIsPaletteOpen,
   } = useCommandPalette();
+
+  const handleOpenSettings = useCallback(() => settingsDialogStore.open(), []);
+
+  const handleOpenTrash = useCallback(() => setTrashDialogOpen(true), []);
 
   // Trash dialog state
   const [trashDialogOpen, setTrashDialogOpen] = useState(false);
@@ -392,9 +391,7 @@ function AppSidebar() {
       <Sidebar className="border-r-[0.5px] bg-background h-screen">
         <SidebarHeader className="h-12 pl-2 pr-2 pt-2 pb-0 flex flex-row items-center">
           <Tooltip>
-            <TooltipTrigger
-              render={<LogoToggle direction="left" onClick={() => toggleSidebar()} />}
-            />
+            <TooltipTrigger render={<LogoToggle direction="left" onClick={toggleSidebar} />} />
             <TooltipContent side="bottom" align="start">
               <p>Collapse sidebar</p>
               <p className="text-xs text-muted-foreground">
@@ -441,7 +438,7 @@ function AppSidebar() {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarItem
-                    onClick={() => settingsDialogStore.open()}
+                    onClick={handleOpenSettings}
                     prefix={<SettingsIcon className="size-[18px] text-muted-foreground" />}
                     label="Settings"
                   />
@@ -456,7 +453,7 @@ function AppSidebar() {
         </SidebarContent>
 
         <SidebarFooter className="p-0 flex shrink-0 flex-col gap-4 py-3 px-2">
-          <UserMenuMinimal onOpenTrash={() => setTrashDialogOpen(true)} />
+          <UserMenuMinimal onOpenTrash={handleOpenTrash} />
         </SidebarFooter>
         {/* <SidebarRail /> */}
       </Sidebar>
@@ -572,10 +569,11 @@ function AppSidebar() {
       <SettingsDialog />
     </>
   );
-}
+};
 
 // Trash Dialog Component
-function TrashDialog({
+// Trash Dialog Component
+const TrashDialog = ({
   open,
   onOpenChange,
   activeOrgId,
@@ -583,7 +581,7 @@ function TrashDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   activeOrgId?: string;
-}) {
+}) => {
   const [searchQuery, setSearchQuery] = useState("");
   const { data: archivedFormsData } = useArchivedForms();
   const { data: orgWorkspacesData } = useOrgWorkspaces(activeOrgId);
@@ -618,6 +616,11 @@ function TrashDialog({
     );
   }, [orgWorkspacesData]);
 
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value),
+    [],
+  );
+
   const handleRestore = async (formId: string) => {
     try {
       await restoreFormLocal(formId);
@@ -642,7 +645,7 @@ function TrashDialog({
           <Input
             placeholder="Search pages in Trash"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
             className="h-9 bg-muted/30 border-0 focus-visible:ring-1 focus-visible:ring-foreground/20"
             aria-label="Search trash"
           />
@@ -718,10 +721,11 @@ function TrashDialog({
       </DialogContent>
     </Dialog>
   );
-}
+};
 
 // Sidebar Inbox Panel Component
-function SidebarInbox() {
+// Sidebar Inbox Panel Component
+const SidebarInbox = () => {
   const { isInboxOpen, closeInbox } = useMinimalSidebar();
   const { state } = useSidebar();
   const queryClient = useQueryClient();
@@ -941,10 +945,11 @@ function SidebarInbox() {
       </div>
     </div>
   );
-}
+};
 
 // Workspaces section - uses live queries for real-time sync (Minimal Style)
-function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
+// Workspaces section - uses live queries for real-time sync (Minimal Style)
+const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => {
   const router = useRouter();
   const location = useLocation();
   const { data: session } = useSession();
@@ -962,10 +967,10 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
     }
     return "recent";
   });
-  const handleSortChange = (mode: "recent" | "oldest" | "alphabetical" | "manual") => {
+  const handleSortChange = useCallback((mode: "recent" | "oldest" | "alphabetical" | "manual") => {
     setSortMode(mode);
     localStorage.setItem("sidebar-sort-mode", mode);
-  };
+  }, []);
 
   const { data: workspacesData, isLoading: workspacesLoading } = useOrgWorkspaces(activeOrgId);
   const { data: formsData, isLoading: formsLoading } = useOrgForms(activeOrgId);
@@ -1030,7 +1035,24 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
     title: string;
   } | null>(null);
 
-  const handleDeleteWorkspace = async () => {
+  const handleDeleteDialogOpenChange = useCallback((open: boolean) => {
+    setDeleteDialogOpen(open);
+    if (!open) setDeleteConfirmName("");
+  }, []);
+
+  const handleDeleteConfirmNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => setDeleteConfirmName(e.target.value),
+    [],
+  );
+
+  const handleNewWorkspaceNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => setNewWorkspaceName(e.target.value),
+    [],
+  );
+
+  const handleCloseRenameDialog = useCallback(() => setRenameDialogOpen(false), []);
+
+  const handleDeleteWorkspace = useCallback(async () => {
     if (!workspaceToDelete || deleteConfirmName !== workspaceToDelete.name) return;
     try {
       await deleteWorkspaceLocal(workspaceToDelete.id);
@@ -1041,9 +1063,9 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
     } catch (error) {
       console.error("Failed to delete workspace:", error);
     }
-  };
+  }, [workspaceToDelete, deleteConfirmName, router]);
 
-  const handleRenameWorkspace = async () => {
+  const handleRenameWorkspace = useCallback(async () => {
     if (!workspaceToRename || !newWorkspaceName.trim()) return;
     try {
       await updateWorkspaceName(workspaceToRename.id, newWorkspaceName.trim());
@@ -1053,7 +1075,16 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
     } catch (error) {
       console.error("Failed to rename workspace:", error);
     }
-  };
+  }, [workspaceToRename, newWorkspaceName]);
+
+  const handleRenameKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        handleRenameWorkspace();
+      }
+    },
+    [handleRenameWorkspace],
+  );
 
   const openRenameDialog = (workspace: WorkspaceWithForms) => {
     setWorkspaceToRename(workspace);
@@ -1067,26 +1098,29 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
     setDeleteDialogOpen(true);
   };
 
-  const handleDuplicateForm = async (form: WorkspaceWithForms["forms"][0]) => {
-    try {
-      const newForm = await duplicateFormById(form.id);
-      toast.success("Form duplicated");
-      router.navigate({
-        to: "/workspace/$workspaceId/form-builder/$formId/edit",
-        params: { workspaceId: newForm.workspaceId, formId: newForm.id },
-      });
-    } catch (error) {
-      console.error("Failed to duplicate form:", error);
-      toast.error("Failed to duplicate form");
-    }
-  };
+  const handleDuplicateForm = useCallback(
+    async (form: WorkspaceWithForms["forms"][0]) => {
+      try {
+        const newForm = await duplicateFormById(form.id);
+        toast.success("Form duplicated");
+        router.navigate({
+          to: "/workspace/$workspaceId/form-builder/$formId/edit",
+          params: { workspaceId: newForm.workspaceId, formId: newForm.id },
+        });
+      } catch (error) {
+        console.error("Failed to duplicate form:", error);
+        toast.error("Failed to duplicate form");
+      }
+    },
+    [router],
+  );
 
-  const handleDeleteForm = (form: WorkspaceWithForms["forms"][0]) => {
+  const handleDeleteForm = useCallback((form: WorkspaceWithForms["forms"][0]) => {
     setFormToDelete({ id: form.id, title: form.title || "Untitled" });
     setFormDeleteDialogOpen(true);
-  };
+  }, []);
 
-  const handleConfirmDeleteForm = async () => {
+  const handleConfirmDeleteForm = useCallback(async () => {
     if (!formToDelete) return;
     try {
       await updateFormStatus(formToDelete.id, "archived");
@@ -1101,7 +1135,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
       console.error("Failed to delete form:", error);
       toast.error("Failed to delete form");
     }
-  };
+  }, [formToDelete, location.pathname, router]);
 
   return (
     <>
@@ -1171,13 +1205,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
       </div>
 
       {/* Delete Workspace Confirmation Dialog */}
-      <AlertDialog
-        open={deleteDialogOpen}
-        onOpenChange={(open) => {
-          setDeleteDialogOpen(open);
-          if (!open) setDeleteConfirmName("");
-        }}
-      >
+      <AlertDialog open={deleteDialogOpen} onOpenChange={handleDeleteDialogOpenChange}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete workspace</AlertDialogTitle>
@@ -1187,7 +1215,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
                 <strong>
                   {workspaceToDelete?.forms?.length || 0} form
                   {(workspaceToDelete?.forms?.length || 0) !== 1 ? "s" : ""}
-                </strong>{" "}
+                </strong>
                 within it. This action cannot be undone.
               </p>
               <div className="space-y-2">
@@ -1196,7 +1224,7 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
                 </p>
                 <Input
                   value={deleteConfirmName}
-                  onChange={(e) => setDeleteConfirmName(e.target.value)}
+                  onChange={handleDeleteConfirmNameChange}
                   placeholder="Type workspace name to confirm"
                   aria-label="Type to confirm deletion"
                   className="mt-2"
@@ -1226,17 +1254,13 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
           </DialogHeader>
           <Input
             value={newWorkspaceName}
-            onChange={(e) => setNewWorkspaceName(e.target.value)}
+            onChange={handleNewWorkspaceNameChange}
             placeholder="Workspace name"
             aria-label="Workspace name"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleRenameWorkspace();
-              }
-            }}
+            onKeyDown={handleRenameKeyDown}
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRenameDialogOpen(false)}>
+            <Button variant="outline" onClick={handleCloseRenameDialog}>
               Cancel
             </Button>
             <Button onClick={handleRenameWorkspace}>Save</Button>
@@ -1267,4 +1291,4 @@ function SidebarWorkspacesMinimal({ activeOrgId }: { activeOrgId?: string }) {
       </AlertDialog>
     </>
   );
-}
+};

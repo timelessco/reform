@@ -17,7 +17,7 @@ export const blockSelectionVariants = cva(
   },
 );
 
-export function BlockSelection(props: PlateElementProps) {
+export const BlockSelection = (props: PlateElementProps) => {
   const isBlockSelected = useBlockSelected();
 
   if (!isBlockSelected || props.plugin.key === "tr" || props.plugin.key === "table") return null;
@@ -30,4 +30,4 @@ export function BlockSelection(props: PlateElementProps) {
       data-slot="block-selection"
     />
   );
-}
+};

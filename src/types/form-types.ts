@@ -229,7 +229,7 @@ export type FormArray = {
 };
 //------------------------------------------------------------Form Element Handlers
 /**
- * @DropElement is a function that is used to drop an element to the form elements array
+ * DropElement is a function that is used to drop an element to the form elements array
  * USE CASES
  * - Element: i is required
  * - Nested Element: i, j is required

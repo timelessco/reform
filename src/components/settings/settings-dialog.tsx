@@ -1,5 +1,6 @@
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useCallback } from "react";
 import type { SettingsTab } from "@/hooks/use-settings-dialog";
 import { useSettingsDialog } from "@/hooks/use-settings-dialog";
 import { SidebarItem } from "../sidebar-item";
@@ -26,7 +27,7 @@ const tabTitles: Record<SettingsTab, string> = {
   import: "Import",
 };
 
-function TabContent({ tab }: { tab: SettingsTab }) {
+const TabContent = ({ tab }: { tab: SettingsTab }) => {
   switch (tab) {
     case "account":
       return <AccountSettingsContent />;
@@ -37,13 +38,20 @@ function TabContent({ tab }: { tab: SettingsTab }) {
     case "import":
       return <ImportContent />;
   }
-}
+};
 
-export function SettingsDialog() {
+export const SettingsDialog = () => {
   const { isOpen, activeTab, close, setTab } = useSettingsDialog();
 
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open) close();
+    },
+    [close],
+  );
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && close()}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
         overlayClassName="bg-[rgba(0,0,0,0.36)] backdrop-blur-[4px] duration-150"
@@ -88,4 +96,4 @@ export function SettingsDialog() {
       </DialogContent>
     </Dialog>
   );
-}
+};

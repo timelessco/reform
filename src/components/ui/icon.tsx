@@ -10,7 +10,9 @@ export interface IconProps extends React.ComponentProps<"svg"> {
 
 // For accessibility - https://www.smashingmagazine.com/2021/05/accessible-svg-patterns-comparison/
 // Default: aria hidden props are used as the majority of icons are decorative
-export function Icon(props: IconProps) {
+// For accessibility - https://www.smashingmagazine.com/2021/05/accessible-svg-patterns-comparison/
+// Default: aria hidden props are used as the majority of icons are decorative
+export const Icon = (props: IconProps) => {
   const { "aria-label": ariaLabel, children, className, name, ...rest } = props;
   const ariaLabelProps: AriaHiddenProps | AriaLabelProps = isNullable(ariaLabel)
     ? {
@@ -34,7 +36,7 @@ export function Icon(props: IconProps) {
       {name ? <use href={`/svg/sprite.svg#${name}`} /> : children}
     </svg>
   );
-}
+};
 
 interface AriaLabelProps {
   role: React.ComponentProps<"svg">["role"];

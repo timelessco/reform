@@ -43,12 +43,7 @@ const DEFAULT_EDITOR_VALUE = normalizeNodeId([
  * DEFAULT_EDITOR_VALUE on the first render (while data is loading),
  * and the editor would never update because `resetKey` doesn't change.
  */
-export default function EditorApp({
-  formId,
-  workspaceId,
-  versionContent,
-  readOnly = false,
-}: EditorAppProps) {
+const EditorApp = ({ formId, workspaceId, versionContent, readOnly = false }: EditorAppProps) => {
   const { data: savedDocs, isReady: isFormReady } = useForm(formId);
 
   // Guard: don't mount the editor until we have actual form data
@@ -76,13 +71,14 @@ export default function EditorApp({
       savedDocs={savedDocs}
     />
   );
-}
+};
+export default EditorApp;
 
 /**
  * Inner component: only mounts once data is available.
  * `usePlateEditor` is guaranteed to receive real content from its first call.
  */
-function EditorAppInner({
+const EditorAppInner = ({
   formId,
   workspaceId,
   versionContent,
@@ -94,7 +90,7 @@ function EditorAppInner({
   versionContent?: Value;
   readOnly: boolean;
   savedDocs: any;
-}) {
+}) => {
   const { customization, hasCustomization, themeVars } = useFormCustomization(savedDocs?.[0]);
   const skipSaveRef = useRef(false);
   const lastKnownContentRef = useRef<string | null>(null);
@@ -277,4 +273,4 @@ function EditorAppInner({
       </div>
     </EditorThemeProvider>
   );
-}
+};

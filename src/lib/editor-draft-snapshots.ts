@@ -6,21 +6,19 @@ type EditorDraftSnapshot = {
 
 const editorDraftSnapshots = new Map<string, EditorDraftSnapshot>();
 
-export function setEditorDraftSnapshot(
+export const setEditorDraftSnapshot = (
   formId: string,
   snapshot: { content: unknown[]; title: string },
-) {
+) => {
   editorDraftSnapshots.set(formId, {
     content: snapshot.content,
     title: snapshot.title,
     capturedAt: Date.now(),
   });
-}
+};
 
-export function getEditorDraftSnapshot(formId: string) {
-  return editorDraftSnapshots.get(formId);
-}
+export const getEditorDraftSnapshot = (formId: string) => editorDraftSnapshots.get(formId);
 
-export function clearEditorDraftSnapshot(formId: string) {
+export const clearEditorDraftSnapshot = (formId: string) => {
   editorDraftSnapshots.delete(formId);
-}
+};

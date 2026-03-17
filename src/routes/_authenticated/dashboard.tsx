@@ -38,20 +38,12 @@ import {
   Trash2Icon,
 } from "@/components/ui/icons";
 import { FolderPlus } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 const FORMS_PER_PAGE = 10;
 
-export const Route = createFileRoute("/_authenticated/dashboard")({
-  component: DashboardPage,
-  ssr: "data-only",
-  pendingComponent: Loader,
-  errorComponent: ErrorBoundary,
-  notFoundComponent: NotFound,
-});
-
-function DashboardPage() {
+const DashboardPage = () => {
   const navigate = useNavigate();
   const { activeOrg } = useLoaderData({ from: "/_authenticated" });
   const [isCreating, setIsCreating] = useState(false);
@@ -113,7 +105,7 @@ function DashboardPage() {
     syncData();
   }, [session, activeOrg?.id]);
 
-  const handleCreateWorkspace = async () => {
+  const handleCreateWorkspace = useCallback(async () => {
     if (!activeOrg?.id) return;
     try {
       await createWorkspaceLocal(activeOrg.id, "New Collection");
@@ -122,9 +114,9 @@ function DashboardPage() {
       console.error("Failed to create workspace:", error);
       toast.error("Failed to create workspace");
     }
-  };
+  }, [activeOrg?.id]);
 
-  const handleCreateForm = async () => {
+  const handleCreateForm = useCallback(async () => {
     if (orgWorkspaces.length === 0) return;
 
     setIsCreating(true);
@@ -140,14 +132,14 @@ function DashboardPage() {
     } finally {
       setIsCreating(false);
     }
-  };
+  }, [orgWorkspaces, navigate]);
 
-  const handleDeleteClick = (form: { id: string; title: string }) => {
+  const handleDeleteClick = useCallback((form: { id: string; title: string }) => {
     setFormToDelete(form);
     setDeleteDialogOpen(true);
-  };
+  }, []);
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = useCallback(async () => {
     if (formToDelete) {
       try {
         await updateFormStatus(formToDelete.id, "archived");
@@ -157,21 +149,31 @@ function DashboardPage() {
         console.error("Failed to archive form:", error);
       }
     }
-  };
+  }, [formToDelete]);
 
-  const handleDuplicate = async (formId: string) => {
-    try {
-      const newForm = await duplicateFormById(formId);
-      toast.success("Form duplicated");
-      navigate({
-        to: "/workspace/$workspaceId/form-builder/$formId/edit",
-        params: { workspaceId: newForm.workspaceId, formId: newForm.id },
-      });
-    } catch (error) {
-      console.error("Failed to duplicate form:", error);
-      toast.error("Failed to duplicate form");
-    }
-  };
+  const handleDuplicate = useCallback(
+    async (formId: string) => {
+      try {
+        const newForm = await duplicateFormById(formId);
+        toast.success("Form duplicated");
+        navigate({
+          to: "/workspace/$workspaceId/form-builder/$formId/edit",
+          params: { workspaceId: newForm.workspaceId, formId: newForm.id },
+        });
+      } catch (error) {
+        console.error("Failed to duplicate form:", error);
+        toast.error("Failed to duplicate form");
+      }
+    },
+    [navigate],
+  );
+
+  const handlePrevPage = useCallback(() => setCurrentPage((p) => Math.max(1, p - 1)), []);
+
+  const handleNextPage = useCallback(
+    () => setCurrentPage((p) => Math.min(totalPages, p + 1)),
+    [totalPages],
+  );
 
   const formatLastEdited = (timestamp: string) =>
     `Edited ${formatDistanceToNow(parseTimestampAsUTC(timestamp) ?? new Date())} ago`;
@@ -336,7 +338,7 @@ function DashboardPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  onClick={handlePrevPage}
                   disabled={currentPage === 1}
                 >
                   <ChevronLeftIcon className="h-4 w-4" />
@@ -358,7 +360,7 @@ function DashboardPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  onClick={handleNextPage}
                   disabled={currentPage === totalPages}
                 >
                   Next
@@ -424,4 +426,12 @@ function DashboardPage() {
       </AlertDialog>
     </div>
   );
-}
+};
+
+export const Route = createFileRoute("/_authenticated/dashboard")({
+  component: DashboardPage,
+  ssr: "data-only",
+  pendingComponent: Loader,
+  errorComponent: ErrorBoundary,
+  notFoundComponent: NotFound,
+});

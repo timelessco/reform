@@ -303,6 +303,10 @@ export default function FiltersDemo() {
     setFilters(filters);
   }, []);
 
+  const handleClearFilters = useCallback(() => {
+    setFilters([]);
+  }, []);
+
   return (
     <div className="flex items-start gap-2.5 grow space-y-6 self-start content-start">
       <div className="flex-1">
@@ -315,7 +319,7 @@ export default function FiltersDemo() {
       </div>
 
       {filters.length > 0 && (
-        <Button variant="outline" prefix={<FunnelX />} onClick={() => setFilters([])}>
+        <Button variant="outline" prefix={<FunnelX />} onClick={handleClearFilters}>
           Clear
         </Button>
       )}

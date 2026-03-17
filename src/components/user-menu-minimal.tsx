@@ -20,7 +20,7 @@ import {
 import { useMemo, useState } from "react";
 import { Button } from "./ui/button";
 
-function getInitials(name?: string | null) {
+const getInitials = (name?: string | null) => {
   if (!name) return "U";
   return name
     .split(" ")
@@ -28,13 +28,13 @@ function getInitials(name?: string | null) {
     .join("")
     .toUpperCase()
     .slice(0, 2);
-}
+};
 
 export interface UserMenuMinimalProps {
   onOpenTrash: () => void;
 }
 
-export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
+export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
@@ -270,4 +270,4 @@ export function UserMenuMinimal({ onOpenTrash }: UserMenuMinimalProps) {
       </Popover>
     </div>
   );
-}
+};

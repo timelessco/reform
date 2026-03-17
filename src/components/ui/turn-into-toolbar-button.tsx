@@ -111,7 +111,7 @@ export const turnIntoItems = [
   },
 ];
 
-export function TurnIntoToolbarButton(props: React.ComponentProps<typeof DropdownMenu>) {
+export const TurnIntoToolbarButton = (props: React.ComponentProps<typeof DropdownMenu>) => {
   const editor = useEditorRef();
   const [open, setOpen] = React.useState(false);
 
@@ -152,4 +152,4 @@ export function TurnIntoToolbarButton(props: React.ComponentProps<typeof Dropdow
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+};

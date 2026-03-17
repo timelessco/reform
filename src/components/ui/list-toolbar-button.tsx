@@ -19,7 +19,7 @@ import {
   ToolbarSplitButtonSecondary,
 } from "./toolbar";
 
-export function BulletedListToolbarButton() {
+export const BulletedListToolbarButton = () => {
   const editor = useEditorRef();
   const [open, setOpen] = React.useState(false);
 
@@ -88,9 +88,9 @@ export function BulletedListToolbarButton() {
       </DropdownMenu>
     </ToolbarSplitButton>
   );
-}
+};
 
-export function NumberedListToolbarButton() {
+export const NumberedListToolbarButton = () => {
   const editor = useEditorRef();
   const [open, setOpen] = React.useState(false);
 
@@ -175,9 +175,9 @@ export function NumberedListToolbarButton() {
       </DropdownMenu>
     </ToolbarSplitButton>
   );
-}
+};
 
-export function TodoListToolbarButton(props: React.ComponentProps<typeof ToolbarButton>) {
+export const TodoListToolbarButton = (props: React.ComponentProps<typeof ToolbarButton>) => {
   const state = useIndentTodoToolBarButtonState({ nodeType: "todo" });
   const { props: buttonProps } = useIndentTodoToolBarButton(state);
 
@@ -186,4 +186,4 @@ export function TodoListToolbarButton(props: React.ComponentProps<typeof Toolbar
       <ListTodoIcon />
     </ToolbarButton>
   );
-}
+};

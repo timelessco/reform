@@ -13,7 +13,7 @@ import {
 
 import { ToolbarButton } from "./toolbar";
 
-export function ModeToolbarButton(props: React.ComponentProps<typeof DropdownMenu>) {
+export const ModeToolbarButton = (props: React.ComponentProps<typeof DropdownMenu>) => {
   const editor = useEditorRef();
   const [readOnly, setReadOnly] = usePlateState("readOnly");
   const [open, setOpen] = React.useState(false);
@@ -93,4 +93,4 @@ export function ModeToolbarButton(props: React.ComponentProps<typeof DropdownMen
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+};

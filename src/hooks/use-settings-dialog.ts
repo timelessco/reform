@@ -5,9 +5,9 @@ type SettingsTab = "account" | "members" | "ai-features" | "import";
 const listeners = new Set<() => void>();
 let state = { isOpen: false, activeTab: "account" as SettingsTab };
 
-function emit() {
+const emit = () => {
   listeners.forEach((l) => l());
-}
+};
 
 const store = {
   getSnapshot: () => state,
@@ -31,7 +31,7 @@ const store = {
 
 export type { SettingsTab };
 
-export function useSettingsDialog() {
+export const useSettingsDialog = () => {
   const current = useSyncExternalStore(store.subscribe, store.getSnapshot, () => ({
     isOpen: false,
     activeTab: "account" as SettingsTab,
@@ -42,7 +42,7 @@ export function useSettingsDialog() {
     close: store.close,
     setTab: store.setTab,
   };
-}
+};
 
 // For imperative use outside React components
 export const settingsDialogStore = store;

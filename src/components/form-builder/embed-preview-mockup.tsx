@@ -26,7 +26,7 @@ type IconDisplay =
   | { type: "sprite"; value: string }
   | null;
 
-function resolveIconDisplay(emoji: boolean, emojiIcon: string | undefined): IconDisplay {
+const resolveIconDisplay = (emoji: boolean, emojiIcon: string | undefined): IconDisplay => {
   if (!emoji) return null;
   const icon = (emojiIcon || "").trim();
   if (!icon) return null;
@@ -35,10 +35,11 @@ function resolveIconDisplay(emoji: boolean, emojiIcon: string | undefined): Icon
   // Short string likely emoji (e.g. 👋)
   if (icon.length <= 4) return { type: "emoji", value: icon };
   return null;
-}
+};
 
-function PopupIconContent({ display }: { display: IconDisplay }) {
+const PopupIconContent = ({ display }: { display: IconDisplay }) => {
   const [imageError, setImageError] = useState(false);
+  const handleImageError = useCallback(() => setImageError(true), []);
   if (!display) return null;
   if (display.type === "image") {
     if (imageError) return null;
@@ -47,7 +48,7 @@ function PopupIconContent({ display }: { display: IconDisplay }) {
         src={display.value}
         alt=""
         className="absolute inset-0 size-full object-contain"
-        onError={() => setImageError(true)}
+        onError={handleImageError}
       />
     );
   }
@@ -68,16 +69,16 @@ function PopupIconContent({ display }: { display: IconDisplay }) {
     );
   }
   return null;
-}
+};
 
-function getTargetStyle(
+const getTargetStyle = (
   embedType: EmbedType,
   popupPosition: string,
   isPopupExpanded: boolean,
   cw: number,
   ch: number,
   alignLeft?: boolean,
-) {
+) => {
   switch (embedType) {
     case "standard": {
       const w = alignLeft ? cw * 0.65 : cw - 16;
@@ -109,9 +110,9 @@ function getTargetStyle(
       return { ...pos, width: size, height: size, borderRadius: size / 2 };
     }
   }
-}
+};
 
-function getCornerPos(position: string, cw: number, ch: number, w: number, h: number) {
+const getCornerPos = (position: string, cw: number, ch: number, w: number, h: number) => {
   switch (position) {
     case "bottom-left":
       return { left: PAD, top: PAD + ch - h };
@@ -121,10 +122,11 @@ function getCornerPos(position: string, cw: number, ch: number, w: number, h: nu
     default:
       return { left: PAD + cw - w, top: PAD + ch - h };
   }
-}
+};
 
 // Get the bubble position (always in the corner, even when popup is expanded at center)
-function getBubblePos(position: string, cw: number, ch: number) {
+// Get the bubble position (always in the corner, even when popup is expanded at center)
+const getBubblePos = (position: string, cw: number, ch: number) => {
   const size = 28;
   switch (position) {
     case "bottom-left":
@@ -135,16 +137,16 @@ function getBubblePos(position: string, cw: number, ch: number) {
     default:
       return { left: PAD + cw - size, top: PAD + ch - size };
   }
-}
+};
 
-export function EmbedPreviewMockup({
+export const EmbedPreviewMockup = ({
   embedType = "fullpage",
   popupPosition = "bottom-right",
   darkOverlay = false,
   emoji = true,
   emojiIcon = "👋",
   alignLeft = false,
-}: EmbedPreviewMockupProps) {
+}: EmbedPreviewMockupProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [isPopupExpanded, setIsPopupExpanded] = useState(false);
@@ -199,6 +201,23 @@ export function EmbedPreviewMockup({
     hasAnimated.current = true;
     isResizing.current = false;
   }, []);
+
+  const handleMouseEnterMorph = useCallback(() => {
+    if (isPopupExpanded) return;
+    setIsPopupExpanded(true);
+  }, [isPopupExpanded]);
+
+  const handleMouseLeaveMorph = useCallback(() => {
+    setIsPopupExpanded(false);
+  }, []);
+
+  const handleCloseClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsPopupExpanded(false);
+  }, []);
+
+  const handleBubbleMouseEnter = useCallback(() => setIsPopupExpanded(true), []);
+  const handleBubbleClick = useCallback(() => setIsPopupExpanded(true), []);
 
   const bubblePos = size.w > 0 ? getBubblePos(popupPosition, size.w, size.h) : null;
   const isPopup = embedType === "popup";
@@ -280,12 +299,8 @@ export function EmbedPreviewMockup({
             animate={target}
             transition={transition}
             onAnimationComplete={handleAnimationComplete}
-            onMouseEnter={() => {
-              if (isPopup && !isPopupExpanded) setIsPopupExpanded(true);
-            }}
-            onMouseLeave={() => {
-              if (isPopup) setIsPopupExpanded(false);
-            }}
+            onMouseEnter={isPopup ? handleMouseEnterMorph : undefined}
+            onMouseLeave={isPopup ? handleMouseLeaveMorph : undefined}
           >
             {/* Close button inside expanded popup */}
             {isPopup && isPopupExpanded && (
@@ -293,10 +308,7 @@ export function EmbedPreviewMockup({
                 type="button"
                 aria-label="Close preview"
                 className="absolute top-1 right-1 z-30 h-3.5 w-3.5 rounded-full bg-muted-foreground/10 flex items-center justify-center hover:bg-muted-foreground/20 transition-colors cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsPopupExpanded(false);
-                }}
+                onClick={handleCloseClick}
               >
                 <XIcon className="h-2 w-2 text-muted-foreground" />
               </button>
@@ -326,11 +338,11 @@ export function EmbedPreviewMockup({
             aria-label="Open popup preview"
             className="absolute w-[28px] h-[28px] rounded-full bg-[#e0e0e0] dark:bg-card shadow-[0_2px_10px_rgba(0,0,0,0.04)]  z-20 cursor-pointer p-0"
             style={{ left: bubblePos.left, top: bubblePos.top }}
-            onMouseEnter={() => setIsPopupExpanded(true)}
-            onClick={() => setIsPopupExpanded(true)}
+            onMouseEnter={handleBubbleMouseEnter}
+            onClick={handleBubbleClick}
           />
         )}
       </div>
     </div>
   );
-}
+};

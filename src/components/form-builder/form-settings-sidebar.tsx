@@ -9,7 +9,7 @@ interface FormSettingsSidebarProps {
   isLocal?: boolean;
 }
 
-export function FormSettingsSidebar({ formId, isLocal }: FormSettingsSidebarProps) {
+export const FormSettingsSidebar = ({ formId, isLocal }: FormSettingsSidebarProps) => {
   const { closeSidebar } = useEditorSidebar();
 
   return (
@@ -40,4 +40,4 @@ export function FormSettingsSidebar({ formId, isLocal }: FormSettingsSidebarProp
       </SidebarContent>
     </Sidebar>
   );
-}
+};

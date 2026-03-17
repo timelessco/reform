@@ -24,13 +24,13 @@ const getAdjustedColor = (color: string | undefined, isDarkMode: boolean) => {
   return color;
 };
 
-export function IconPickerPreview({
+export const IconPickerPreview = ({
   icon,
   iconColor,
   iconSize = "10",
   size = "14",
   useThemeColor = false,
-}: IconPickerPreviewProps) {
+}: IconPickerPreviewProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const isDarkMode = ref.current?.closest(".dark") != null;
 
@@ -67,13 +67,13 @@ export function IconPickerPreview({
       {matchedIcon?.icon(fillColor, iconSize)}
     </div>
   );
-}
+};
 
 /**
  * Renders a form icon with optional theme customization.
  * Handles URL images, sprite icons, and the default-icon sentinel.
  */
-export function ThemedFormIcon({
+export const ThemedFormIcon = ({
   icon,
   customization,
   iconSize = "10",
@@ -83,7 +83,7 @@ export function ThemedFormIcon({
   customization?: Record<string, string> | null;
   iconSize?: string;
   size?: string;
-}) {
+}) => {
   const themeVars =
     customization && Object.keys(customization).length > 0
       ? getThemeStyleVars(customization)
@@ -114,4 +114,4 @@ export function ThemedFormIcon({
       />
     </div>
   );
-}
+};

@@ -14,9 +14,9 @@ import type { PlateFormField } from "./transform-plate-to-form";
  * @param fields - Array of form fields with validation properties
  * @returns Zod object schema for form validation
  */
-export function generateZodSchemaFromFields(
+export const generateZodSchemaFromFields = (
   fields: PlateFormField[],
-): z.ZodObject<Record<string, ZodType>> {
+): z.ZodObject<Record<string, ZodType>> => {
   const schemaShape: Record<string, ZodType> = {};
 
   for (const field of fields) {
@@ -51,7 +51,7 @@ export function generateZodSchemaFromFields(
   }
 
   return z.object(schemaShape);
-}
+};
 
 /**
  * Generates default form values from fields, using defaultValue if specified.
@@ -59,7 +59,9 @@ export function generateZodSchemaFromFields(
  * @param fields - Array of form fields
  * @returns Object with field names as keys and default values
  */
-export function generateDefaultValuesFromFields(fields: PlateFormField[]): Record<string, unknown> {
+export const generateDefaultValuesFromFields = (
+  fields: PlateFormField[],
+): Record<string, unknown> => {
   const defaults: Record<string, unknown> = {};
 
   for (const field of fields) {
@@ -71,4 +73,4 @@ export function generateDefaultValuesFromFields(fields: PlateFormField[]): Recor
   }
 
   return defaults;
-}
+};

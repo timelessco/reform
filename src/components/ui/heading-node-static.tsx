@@ -18,37 +18,35 @@ const headingVariants = cva("relative mb-1", {
   },
 });
 
-export function HeadingElementStatic({
+export const HeadingElementStatic = ({
   variant = "h1",
   ...props
-}: SlateElementProps & VariantProps<typeof headingVariants>) {
-  return (
-    <SlateElement as={variant!} className={headingVariants({ variant })} {...props}>
-      {props.children}
-    </SlateElement>
-  );
-}
+}: SlateElementProps & VariantProps<typeof headingVariants>) => (
+  <SlateElement as={variant ?? "h1"} className={headingVariants({ variant })} {...props}>
+    {props.children}
+  </SlateElement>
+);
 
-export function H1ElementStatic(props: SlateElementProps) {
-  return <HeadingElementStatic variant="h1" {...props} />;
-}
+export const H1ElementStatic = (props: SlateElementProps) => (
+  <HeadingElementStatic variant="h1" {...props} />
+);
 
-export function H2ElementStatic(props: React.ComponentProps<typeof HeadingElementStatic>) {
-  return <HeadingElementStatic variant="h2" {...props} />;
-}
+export const H2ElementStatic = (props: React.ComponentProps<typeof HeadingElementStatic>) => (
+  <HeadingElementStatic variant="h2" {...props} />
+);
 
-export function H3ElementStatic(props: React.ComponentProps<typeof HeadingElementStatic>) {
-  return <HeadingElementStatic variant="h3" {...props} />;
-}
+export const H3ElementStatic = (props: React.ComponentProps<typeof HeadingElementStatic>) => (
+  <HeadingElementStatic variant="h3" {...props} />
+);
 
-export function H4ElementStatic(props: React.ComponentProps<typeof HeadingElementStatic>) {
-  return <HeadingElementStatic variant="h4" {...props} />;
-}
+export const H4ElementStatic = (props: React.ComponentProps<typeof HeadingElementStatic>) => (
+  <HeadingElementStatic variant="h4" {...props} />
+);
 
-export function H5ElementStatic(props: React.ComponentProps<typeof HeadingElementStatic>) {
-  return <HeadingElementStatic variant="h5" {...props} />;
-}
+export const H5ElementStatic = (props: React.ComponentProps<typeof HeadingElementStatic>) => (
+  <HeadingElementStatic variant="h5" {...props} />
+);
 
-export function H6ElementStatic(props: React.ComponentProps<typeof HeadingElementStatic>) {
-  return <HeadingElementStatic variant="h6" {...props} />;
-}
+export const H6ElementStatic = (props: React.ComponentProps<typeof HeadingElementStatic>) => (
+  <HeadingElementStatic variant="h6" {...props} />
+);

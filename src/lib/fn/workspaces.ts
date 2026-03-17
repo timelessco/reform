@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { and, desc, eq, inArray, not } from "drizzle-orm";
+import { desc, eq, inArray, not } from "drizzle-orm";
 import { z } from "zod";
 import { authWorkspace, getTxId } from "./helpers";
 

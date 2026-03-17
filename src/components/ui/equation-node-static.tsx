@@ -7,7 +7,7 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-export function EquationElementStatic(props: SlateElementProps<TEquationElement>) {
+export const EquationElementStatic = (props: SlateElementProps<TEquationElement>) => {
   const { element } = props;
 
   const html = getEquationHtml({
@@ -48,9 +48,9 @@ export function EquationElementStatic(props: SlateElementProps<TEquationElement>
       {props.children}
     </SlateElement>
   );
-}
+};
 
-export function InlineEquationElementStatic(props: SlateElementProps<TEquationElement>) {
+export const InlineEquationElementStatic = (props: SlateElementProps<TEquationElement>) => {
   const html = getEquationHtml({
     element: props.element,
     options: {
@@ -87,14 +87,14 @@ export function InlineEquationElementStatic(props: SlateElementProps<TEquationEl
       {props.children}
     </SlateElement>
   );
-}
+};
 
 const ATTRIBUTE_NAME_MAP: Record<string, string> = {
   class: "className",
   for: "htmlFor",
 };
 
-function parseMathHtml(html: string): React.ReactNode[] | null {
+const parseMathHtml = (html: string): React.ReactNode[] | null => {
   if (typeof DOMParser === "undefined") {
     return null;
   }
@@ -107,9 +107,9 @@ function parseMathHtml(html: string): React.ReactNode[] | null {
     .filter((node): node is React.ReactNode => node !== null);
 
   return nodes.length ? nodes : null;
-}
+};
 
-function convertNodeToReact(node: ChildNode, key: string): React.ReactNode | null {
+const convertNodeToReact = (node: ChildNode, key: string): React.ReactNode | null => {
   if (node.nodeType === 3) {
     return node.textContent;
   }
@@ -127,9 +127,9 @@ function convertNodeToReact(node: ChildNode, key: string): React.ReactNode | nul
     children.length === 0 ? undefined : children.length === 1 ? children[0] : children;
 
   return React.createElement(element.tagName.toLowerCase(), { ...props, key }, content);
-}
+};
 
-function convertAttributes(element: Element): Record<string, unknown> {
+const convertAttributes = (element: Element): Record<string, unknown> => {
   const props: Record<string, unknown> = {};
 
   Array.from(element.attributes).forEach((attr) => {
@@ -152,10 +152,10 @@ function convertAttributes(element: Element): Record<string, unknown> {
   });
 
   return props;
-}
+};
 
-function parseStyleString(style: string): Record<string, string> {
-  return style.split(";").reduce<Record<string, string>>((acc, declaration) => {
+const parseStyleString = (style: string): Record<string, string> =>
+  style.split(";").reduce<Record<string, string>>((acc, declaration) => {
     const [property, ...rest] = declaration.split(":");
     if (!property || !rest.length) {
       return acc;
@@ -171,4 +171,3 @@ function parseStyleString(style: string): Record<string, string> {
     acc[camelCased] = value;
     return acc;
   }, {});
-}

@@ -12,7 +12,9 @@
     "no-unused-vars": [
       "warn",
       {
-        "argsIgnorePattern": "^_"
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
       }
     ],
     "no-console": "off",
@@ -36,7 +38,8 @@
     "jsx-a11y/no-autofocus": "off",
     "jsx-a11y/click-events-have-key-events": "warn",
     "jsx-a11y/no-static-element-interactions": "warn",
-    "jsx-a11y/anchor-is-valid": "off"
+    "jsx-a11y/anchor-is-valid": "off",
+    "react-perf/jsx-no-new-function-as-prop": "off"
   },
   "settings": {
     "jsx-a11y": {

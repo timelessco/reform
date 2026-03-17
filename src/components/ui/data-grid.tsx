@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, use, ReactNode } from "react";
+import React, { createContext, use, useMemo, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { ColumnFiltersState, RowData, SortingState, Table } from "@tanstack/react-table";
 
@@ -96,37 +96,40 @@ const DataGridContext = createContext<
   DataGridContextProps<any> | undefined
 >(undefined);
 
-function useDataGrid() {
+export const useDataGrid = () => {
   const context = use(DataGridContext);
   if (!context) {
     throw new Error("useDataGrid must be used within a DataGridProvider");
   }
   return context;
-}
+};
 
-function DataGridProvider<TData extends object>({
+export const DataGridProvider = <TData extends object>({
   children,
   table,
   ...props
-}: DataGridProps<TData> & { table: Table<TData> }) {
-  return (
-    <DataGridContext.Provider
-      value={{
-        props,
-        table,
-        recordCount: props.recordCount,
-        isLoading: props.isLoading || false,
-        virtualized: props.virtualized || false,
-        isFetchingMore: props.isFetchingMore || false,
-        fetchMoreSkeletonCount: props.fetchMoreSkeletonCount ?? 5,
-      }}
-    >
-      {children}
-    </DataGridContext.Provider>
+}: DataGridProps<TData> & { table: Table<TData> }) => {
+  const contextValue = useMemo(
+    () => ({
+      props,
+      table,
+      recordCount: props.recordCount,
+      isLoading: props.isLoading || false,
+      virtualized: props.virtualized || false,
+      isFetchingMore: props.isFetchingMore || false,
+      fetchMoreSkeletonCount: props.fetchMoreSkeletonCount ?? 5,
+    }),
+    [props, table],
   );
-}
 
-function DataGrid<TData extends object>({ children, table, ...props }: DataGridProps<TData>) {
+  return <DataGridContext.Provider value={contextValue}>{children}</DataGridContext.Provider>;
+};
+
+export const DataGrid = <TData extends object>({
+  children,
+  table,
+  ...props
+}: DataGridProps<TData>) => {
   const defaultProps: Partial<DataGridProps<TData>> = {
     loadingMode: "skeleton",
     tableLayout: {
@@ -181,9 +184,9 @@ function DataGrid<TData extends object>({ children, table, ...props }: DataGridP
       {children}
     </DataGridProvider>
   );
-}
+};
 
-function DataGridContainer({
+export const DataGridContainer = ({
   children,
   className,
   border = true,
@@ -195,21 +198,13 @@ function DataGridContainer({
   border?: boolean;
   ref?: React.Ref<HTMLDivElement>;
   onScroll?: React.UIEventHandler<HTMLDivElement>;
-}) {
-  return (
-    <div
-      ref={ref}
-      data-slot="data-grid"
-      onScroll={onScroll}
-      className={cn(
-        "grid w-full",
-        border && "border border-border border-b-0 rounded-lg",
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
-}
-
-export { useDataGrid, DataGridProvider, DataGrid, DataGridContainer };
+}) => (
+  <div
+    ref={ref}
+    data-slot="data-grid"
+    onScroll={onScroll}
+    className={cn("grid w-full", border && "border border-border border-b-0 rounded-lg", className)}
+  >
+    {children}
+  </div>
+);

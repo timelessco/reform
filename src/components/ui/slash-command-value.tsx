@@ -1,5 +1,5 @@
-/** @jsxRuntime classic */
-/** @jsx jsx */
+/* @jsxRuntime classic */
+/* @jsx jsx */
 import { jsx } from "@platejs/test-utils";
 
 void jsx;

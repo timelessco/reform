@@ -70,7 +70,7 @@ const RADIUS_OPTIONS: { label: string; value: string }[] = [
 
 const CONFIG_INPUT_CLS = "!rounded-none !border-0 bg-secondary !h-[34px]";
 
-function ColorSwatch({ color }: { color?: string }) {
+const ColorSwatch = ({ color }: { color?: string }) => {
   if (!color) return null;
   return (
     <div
@@ -78,22 +78,20 @@ function ColorSwatch({ color }: { color?: string }) {
       style={{ backgroundColor: color }}
     />
   );
-}
+};
 
-function ProBadge() {
-  return (
-    <div className="bg-teal-100 dark:bg-teal-700/20 text-teal-700 dark:text-teal-400 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
-      Pro
-    </div>
-  );
-}
+const ProBadge = () => (
+  <div className="bg-teal-100 dark:bg-teal-700/20 text-teal-700 dark:text-teal-400 text-[9px] px-1.5 py-px rounded-[4px] font-bold uppercase tracking-wider shadow-sm">
+    Pro
+  </div>
+);
 
 interface CustomizeSidebarProps {
   formId: string;
   isLocal?: boolean;
 }
 
-export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
+export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => {
   const { closeSidebar } = useEditorSidebar();
   const { theme, setTheme } = useTheme();
   const cloudForm = useForm(isLocal ? undefined : formId);
@@ -215,6 +213,36 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
   const cssKey = `${activeMode}:customCss`;
   const cssValue = customization[cssKey] || customization.customCss || "";
 
+  const handleThemeColorChange = useCallback(
+    (v: string) => {
+      if (v) updateFields({ themeColor: v, preset: "custom" });
+    },
+    [updateFields],
+  );
+
+  const handleBaseColorChange = useCallback(
+    (v: string) => {
+      if (v) updateFields({ baseColor: v, preset: "custom" });
+    },
+    [updateFields],
+  );
+
+  const handleFontChange = useCallback(
+    (v: string) => {
+      if (!v) return;
+      loadGoogleFont(v);
+      updateWithCustomPreset("font", v);
+    },
+    [updateWithCustomPreset],
+  );
+
+  const handleCssChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      updateWithCustomPreset(cssKey, e.target.value);
+    },
+    [updateWithCustomPreset, cssKey],
+  );
+
   return (
     <Sidebar
       side="right"
@@ -258,12 +286,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
                 </Select>
               </ConfigRow>
               <ConfigRow label="Accent">
-                <Select
-                  value={activeThemeColor}
-                  onValueChange={(v) => {
-                    if (v) updateFields({ themeColor: v, preset: "custom" });
-                  }}
-                >
+                <Select value={activeThemeColor} onValueChange={handleThemeColorChange}>
                   <SelectTrigger className={selectTriggerCls}>
                     <ColorSwatch color={THEME_COLORS[activeThemeColor]?.primary} />
                     {THEME_COLOR_OPTIONS.find((o) => o.value === activeThemeColor)?.label ??
@@ -280,12 +303,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
                 </Select>
               </ConfigRow>
               <ConfigRow label="Base">
-                <Select
-                  value={activeBaseColor}
-                  onValueChange={(v) => {
-                    if (v) updateFields({ baseColor: v, preset: "custom" });
-                  }}
-                >
+                <Select value={activeBaseColor} onValueChange={handleBaseColorChange}>
                   <SelectTrigger className={selectTriggerCls}>
                     <ColorSwatch color={activeBaseColors[activeBaseColor]?.muted} />
                     {BASE_COLOR_OPTIONS.find((o) => o.value === activeBaseColor)?.label ??
@@ -302,14 +320,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
                 </Select>
               </ConfigRow>
               <ConfigRow label="Font">
-                <Select
-                  value={activeFont}
-                  onValueChange={(v) => {
-                    if (!v) return;
-                    loadGoogleFont(v);
-                    updateWithCustomPreset("font", v);
-                  }}
-                >
+                <Select value={activeFont} onValueChange={handleFontChange}>
                   <SelectTrigger className={selectTriggerCls}>
                     {FONT_OPTIONS.find((o) => o.value === activeFont)?.label ?? activeFont}
                   </SelectTrigger>
@@ -522,7 +533,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
             <div className="rounded-lg overflow-hidden border border-border/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
               <Textarea
                 value={cssValue}
-                onChange={(e) => updateWithCustomPreset(cssKey, e.target.value)}
+                onChange={handleCssChange}
                 aria-label={`Custom CSS (${activeMode} mode)`}
                 className="font-mono text-[11px] h-32 bg-secondary text-foreground border-0 rounded-none focus-visible:ring-2 focus-visible:ring-ring p-3"
                 placeholder=".bf-themed { ... }"
@@ -547,7 +558,7 @@ export function CustomizeSidebar({ formId, isLocal }: CustomizeSidebarProps) {
       </SidebarContent>
     </Sidebar>
   );
-}
+};
 
 // ── Advanced Color Pickers (extracted for readability) ──
 
@@ -569,13 +580,13 @@ const ADVANCED_COLOR_TOKENS = [
   { key: "ring", label: "Ring" },
 ] as const;
 
-function AdvancedColorPickers({
+const AdvancedColorPickers = ({
   customization,
   updateField,
 }: {
   customization: Record<string, string>;
   updateField: (field: string, value: string) => void;
-}) {
+}) => {
   const baseColorName = customization.baseColor || "neutral";
   const themeColorName = customization.themeColor || "neutral";
   const isDark = customization.mode === "dark";
@@ -612,4 +623,4 @@ function AdvancedColorPickers({
       })}
     </>
   );
-}
+};

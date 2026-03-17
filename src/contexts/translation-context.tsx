@@ -15,7 +15,7 @@ interface TranslationProviderProps {
   children: React.ReactNode;
 }
 
-export function TranslationProvider({ language, children }: TranslationProviderProps) {
+export const TranslationProvider = ({ language, children }: TranslationProviderProps) => {
   const translations = useMemo(() => getTranslations(language), [language]);
   const code = language.length <= 3 ? language : languageToCode(language);
 
@@ -35,9 +35,9 @@ export function TranslationProvider({ language, children }: TranslationProviderP
   const value = useMemo(() => ({ t, language: code }), [t, code]);
 
   return <TranslationContext.Provider value={value}>{children}</TranslationContext.Provider>;
-}
+};
 
-export function useTranslation(): TranslationContextValue {
+export const useTranslation = (): TranslationContextValue => {
   const ctx = use(TranslationContext);
   if (!ctx) {
     // Fallback to English if no provider
@@ -56,4 +56,4 @@ export function useTranslation(): TranslationContextValue {
     };
   }
   return ctx;
-}
+};

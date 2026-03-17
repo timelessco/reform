@@ -67,10 +67,10 @@ const MEDIA_CONFIG: Record<
   },
 };
 
-export function MediaToolbarButton({
+export const MediaToolbarButton = ({
   nodeType,
   ...props
-}: React.ComponentProps<typeof DropdownMenu> & { nodeType: string }) {
+}: React.ComponentProps<typeof DropdownMenu> & { nodeType: string }) => {
   const currentConfig = MEDIA_CONFIG[nodeType];
 
   const editor = useEditorRef();
@@ -85,25 +85,24 @@ export function MediaToolbarButton({
     },
   });
 
+  const handleClick = React.useCallback(() => {
+    openFilePicker();
+  }, [openFilePicker]);
+
+  const handleKeyDown = React.useCallback((e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setOpen(true);
+    }
+  }, []);
+
   return (
     <>
-      <ToolbarSplitButton
-        onClick={() => {
-          openFilePicker();
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "ArrowDown") {
-            e.preventDefault();
-            setOpen(true);
-          }
-        }}
-        pressed={open}
-      >
+      <ToolbarSplitButton onClick={handleClick} onKeyDown={handleKeyDown} pressed={open}>
         <ToolbarSplitButtonPrimary>{currentConfig.icon}</ToolbarSplitButtonPrimary>
 
         <DropdownMenu open={open} onOpenChange={setOpen} modal={false} {...props}>
           <DropdownMenuTrigger render={<ToolbarSplitButtonSecondary />} />
-
           <DropdownMenuContent onClick={(e) => e.stopPropagation()} align="start" alignOffset={-32}>
             <DropdownMenuGroup>
               <DropdownMenuItem onSelect={() => openFilePicker()}>
@@ -119,12 +118,7 @@ export function MediaToolbarButton({
         </DropdownMenu>
       </ToolbarSplitButton>
 
-      <AlertDialog
-        open={dialogOpen}
-        onOpenChange={(value) => {
-          setDialogOpen(value);
-        }}
-      >
+      <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <AlertDialogContent className="gap-6">
           <MediaUrlDialogContent
             currentConfig={currentConfig}
@@ -135,9 +129,9 @@ export function MediaToolbarButton({
       </AlertDialog>
     </>
   );
-}
+};
 
-function MediaUrlDialogContent({
+const MediaUrlDialogContent = ({
   currentConfig,
   nodeType,
   setOpen,
@@ -145,7 +139,7 @@ function MediaUrlDialogContent({
   currentConfig: (typeof MEDIA_CONFIG)[string];
   nodeType: string;
   setOpen: (value: boolean) => void;
-}) {
+}) => {
   const editor = useEditorRef();
   const [url, setUrl] = React.useState("");
   const urlInputId = React.useId();
@@ -202,4 +196,4 @@ function MediaUrlDialogContent({
       </AlertDialogFooter>
     </>
   );
-}
+};

@@ -8,11 +8,11 @@ export type UseCopyToClipboardOptions = {
   resetDelay?: number;
 };
 
-export function useCopyToClipboard({
+export const useCopyToClipboard = ({
   onCopySuccess,
   onCopyError,
   resetDelay = 1500,
-}: UseCopyToClipboardOptions = {}) {
+}: UseCopyToClipboardOptions = {}) => {
   const [state, setState] = useState<CopyState>("idle");
   const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -42,4 +42,4 @@ export function useCopyToClipboard({
   );
 
   return { state, copy } as const;
-}
+};

@@ -5,7 +5,7 @@ import { logger } from "@/lib/utils";
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = `${APP_NAME} <noreply@share.recollect.so>`;
 
-export async function sendOTPEmail(email: string, otp: string, type: string) {
+export const sendOTPEmail = async (email: string, otp: string, type: string) => {
   // type: "sign-in" | "email-verification" | "forget-password"
   const subject =
     type === "email-verification"
@@ -33,14 +33,14 @@ export async function sendOTPEmail(email: string, otp: string, type: string) {
   if (error) {
     logger("[Email] Failed to send OTP:", error);
   }
-}
+};
 
-export async function sendOrgInvitationEmail(
+export const sendOrgInvitationEmail = async (
   email: string,
   orgName: string,
   inviterName: string,
   inviteLink: string,
-) {
+) => {
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
     to: email,
@@ -65,14 +65,14 @@ export async function sendOrgInvitationEmail(
   if (error) {
     logger("[Email] Failed to send invitation:", error);
   }
-}
+};
 
-export async function sendFormSubmissionNotification(
+export const sendFormSubmissionNotification = async (
   to: string,
   formTitle: string,
   submissionId: string,
   data: Record<string, unknown>,
-) {
+) => {
   // Build a simple key-value HTML table from submission data
   const rows = Object.entries(data)
     .map(
@@ -104,9 +104,9 @@ export async function sendFormSubmissionNotification(
   if (error) {
     logger("[Email] Failed to send submission notification:", error);
   }
-}
+};
 
-export async function sendRespondentConfirmation(to: string, subject: string, body: string) {
+export const sendRespondentConfirmation = async (to: string, subject: string, body: string) => {
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
     to,
@@ -123,13 +123,13 @@ export async function sendRespondentConfirmation(to: string, subject: string, bo
   if (error) {
     logger("[Email] Failed to send respondent confirmation:", error);
   }
-}
+};
 
-export async function sendChangeEmailConfirmationEmail(
+export const sendChangeEmailConfirmationEmail = async (
   email: string,
   newEmail: string,
   url: string,
-) {
+) => {
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
     to: email,
@@ -154,13 +154,12 @@ export async function sendChangeEmailConfirmationEmail(
   if (error) {
     logger("[Email] Failed to send change email confirmation:", error);
   }
-}
+};
 
-function escapeHtml(str: string): string {
-  return str
+const escapeHtml = (str: string): string =>
+  str
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
-}

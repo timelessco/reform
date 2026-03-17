@@ -27,9 +27,8 @@ const LAYOUT_FIELDS: Record<string, string> = {
 };
 
 /** Migrates legacy "vw" page-width values to "%" (same numeric range 30-100). */
-function migratePageWidth(value: string): string {
-  return value.endsWith("vw") ? value.replace(/vw$/, "%") : value;
-}
+const migratePageWidth = (value: string): string =>
+  value.endsWith("vw") ? value.replace(/vw$/, "%") : value;
 
 /**
  * All shadcn token names that can be overridden via --bf-* prefix.
@@ -67,7 +66,7 @@ export const TOKEN_NAMES = [
  * 5. Apply font + radius
  * 6. Apply any individual token overrides (advanced Pro keys)
  */
-function resolveTokens(customization: Record<string, string>): Record<string, string> {
+const resolveTokens = (customization: Record<string, string>): Record<string, string> => {
   const presetName = customization.preset || "vega";
   const style = STYLES[presetName] ?? STYLES.vega;
 
@@ -120,12 +119,12 @@ function resolveTokens(customization: Record<string, string>): Record<string, st
   }
 
   return tokens;
-}
+};
 
 /**
  * Builds --bf-* CSS variable entries from resolved tokens + layout fields.
  */
-function buildThemeVarEntries(customization: Record<string, string>): [string, string][] {
+const buildThemeVarEntries = (customization: Record<string, string>): [string, string][] => {
   const tokens = resolveTokens(customization);
   const entries: [string, string][] = [];
 
@@ -161,16 +160,16 @@ function buildThemeVarEntries(customization: Record<string, string>): [string, s
   }
 
   return entries;
-}
+};
 
 /**
  * Returns a React style object with CSS custom properties for the full theme.
  * Apply to a `.bf-themed` container; the bridge rules in styles.css map
  * --bf-* to standard shadcn vars within scope.
  */
-export function getThemeStyleVars(
+export const getThemeStyleVars = (
   customization: Record<string, string> | null | undefined,
-): CSSProperties {
+): CSSProperties => {
   if (!customization || Object.keys(customization).length === 0) return {};
 
   const vars: Record<string, string> = {};
@@ -179,32 +178,32 @@ export function getThemeStyleVars(
   }
   applyLogoMinimalFlag(customization, vars);
   return vars as CSSProperties;
-}
+};
 
-export function isLogoMinimalSize(
+export const isLogoMinimalSize = (
   customization: Record<string, string> | null | undefined,
-): boolean {
+): boolean => {
   if (!customization?.logoWidth) return false;
   return Number.parseInt(customization.logoWidth) <= 0;
-}
+};
 
-function applyLogoMinimalFlag(
+const applyLogoMinimalFlag = (
   customization: Record<string, string>,
   vars: Record<string, string>,
-): void {
+): void => {
   if (customization.logoWidth && Number.parseInt(customization.logoWidth) <= 0) {
     vars["--bf-logo-minimal"] = "1";
   }
-}
+};
 
 /**
  * Returns a React style object with ONLY layout --bf-* vars.
  * Used in the editor canvas so it gets correct dimensions
  * without overriding color tokens (which would conflict with editor chrome).
  */
-export function getLayoutOnlyVars(
+export const getLayoutOnlyVars = (
   customization: Record<string, string> | null | undefined,
-): CSSProperties {
+): CSSProperties => {
   if (!customization || Object.keys(customization).length === 0) return {};
 
   const vars: Record<string, string> = {};
@@ -216,14 +215,16 @@ export function getLayoutOnlyVars(
   }
   applyLogoMinimalFlag(customization, vars);
   return vars as CSSProperties;
-}
+};
 
 /**
  * Generates a `<style>` body that sets CSS custom properties on `.bf-themed`.
  * Used for public form SSR injection. The property-consuming bridge rules
  * live in styles.css and are loaded with the page.
  */
-export function generateThemeCss(customization: Record<string, string> | null | undefined): string {
+export const generateThemeCss = (
+  customization: Record<string, string> | null | undefined,
+): string => {
   if (!customization || Object.keys(customization).length === 0) return "";
 
   const entries = buildThemeVarEntries(customization);
@@ -239,17 +240,17 @@ export function generateThemeCss(customization: Record<string, string> | null | 
   }
 
   return css;
-}
+};
 
 /**
  * Returns the Google Fonts CSS API URL for the font in customization, or null if self-hosted.
  */
-export function getGoogleFontLinkUrl(
+export const getGoogleFontLinkUrl = (
   customization: Record<string, string> | null | undefined,
-): string | null {
+): string | null => {
   if (!customization) return null;
   const presetName = customization.preset || "vega";
   const style = STYLES[presetName] ?? STYLES.vega;
   const fontName = customization.font || style.font;
   return getGoogleFontUrl(fontName);
-}
+};

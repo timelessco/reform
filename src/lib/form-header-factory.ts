@@ -10,15 +10,13 @@ export interface FormHeaderElementData {
   children: [{ text: "" }];
 }
 
-export function createFormHeaderNode(
+export const createFormHeaderNode = (
   data: Partial<Omit<FormHeaderElementData, "type" | "children">> = {},
-): FormHeaderElementData {
-  return {
-    type: "formHeader",
-    title: data.title ?? "",
-    icon: data.icon ?? null,
-    iconColor: data.iconColor ?? null,
-    cover: data.cover ?? null,
-    children: [{ text: "" }],
-  };
-}
+): FormHeaderElementData => ({
+  type: "formHeader",
+  title: data.title ?? "",
+  icon: data.icon ?? null,
+  iconColor: data.iconColor ?? null,
+  cover: data.cover ?? null,
+  children: [{ text: "" }],
+});

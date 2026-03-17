@@ -5,9 +5,9 @@ import { SlateElement } from "platejs/static";
 
 import { cn } from "@/lib/utils";
 
-export function ImageElementStatic(
+export const ImageElementStatic = (
   props: SlateElementProps<TImageElement & TCaptionProps & TResizableProps>,
-) {
+) => {
   const { align = "center", caption, url, width } = props.element;
 
   return (
@@ -29,4 +29,4 @@ export function ImageElementStatic(
       {props.children}
     </SlateElement>
   );
-}
+};

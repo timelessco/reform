@@ -6,7 +6,7 @@ export const RIGHT_SIDEBAR_WIDTH_DEFAULT = 340;
 export const RIGHT_SIDEBAR_WIDTH_MAX = 420;
 export const RIGHT_SIDEBAR_WIDTH_KEY = "right_sidebar_width";
 
-export function RightSidebarResizeHandle({
+export const RightSidebarResizeHandle = ({
   sidebarWidth,
   setSidebarWidth,
   setIsResizing,
@@ -14,7 +14,7 @@ export function RightSidebarResizeHandle({
   sidebarWidth: number;
   setSidebarWidth: (width: number) => void;
   setIsResizing: (v: boolean) => void;
-}) {
+}) => {
   const startXRef = useRef(0);
   const startWidthRef = useRef(0);
 
@@ -85,4 +85,4 @@ export function RightSidebarResizeHandle({
       style={{ right: `${sidebarWidth}px` }}
     />
   );
-}
+};

@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils";
 
 import { AIChatEditor } from "./ai-chat-editor";
 
-export function AIMenu() {
+export const AIMenu = () => {
   const { api, editor } = useEditorPlugin(AIChatPlugin);
   const mode = usePluginOption(AIChatPlugin, "mode");
   const toolName = usePluginOption(AIChatPlugin, "toolName");
@@ -73,13 +73,16 @@ export function AIMenu() {
     };
   }, [streaming, api, editor]);
 
-  const setOpen = (open: boolean) => {
-    if (open) {
-      api.aiChat.show();
-    } else {
-      api.aiChat.hide();
-    }
-  };
+  const setOpen = React.useCallback(
+    (open: boolean) => {
+      if (open) {
+        api.aiChat.show();
+      } else {
+        api.aiChat.hide();
+      }
+    },
+    [api.aiChat],
+  );
 
   const show = (anchorElement: HTMLElement) => {
     setAnchorElement(anchorElement);
@@ -90,7 +93,8 @@ export function AIMenu() {
     onOpenBlockSelection: (blocks: NodeEntry[]) => {
       const lastBlock = blocks.at(-1)?.[0];
       if (lastBlock) {
-        show(editor.api.toDOMNode(lastBlock)!);
+        const domNode = editor.api.toDOMNode(lastBlock);
+        if (domNode) show(domNode);
       }
     },
     onOpenChange: (open) => {
@@ -100,18 +104,22 @@ export function AIMenu() {
       }
     },
     onOpenCursor: () => {
-      const [ancestor] = editor.api.block({ highest: true })!;
+      const block = editor.api.block({ highest: true });
+      if (!block) return;
+      const [ancestor] = block;
 
       if (!editor.api.isAt({ end: true }) && !editor.api.isEmpty(ancestor)) {
         editor.getApi(BlockSelectionPlugin).blockSelection.set(ancestor.id as string);
       }
 
-      show(editor.api.toDOMNode(ancestor)!);
+      const domNode = editor.api.toDOMNode(ancestor);
+      if (domNode) show(domNode);
     },
     onOpenSelection: () => {
       const lastBlock = editor.api.blocks().at(-1)?.[0];
       if (lastBlock) {
-        show(editor.api.toDOMNode(lastBlock)!);
+        const domNode = editor.api.toDOMNode(lastBlock);
+        if (domNode) show(domNode);
       }
     },
   });
@@ -150,6 +158,21 @@ export function AIMenu() {
       setAnchorElement(anchorDom);
     }
   }, [editor, isLoading, mode, toolName]);
+
+  const handleInputKeyDown = React.useCallback(
+    (e: React.KeyboardEvent) => {
+      if (isHotkey("backspace")(e) && input.length === 0) {
+        e.preventDefault();
+        api.aiChat.hide();
+      }
+      if (isHotkey("enter")(e) && !e.shiftKey && !value) {
+        e.preventDefault();
+        void api.aiChat.submit(input);
+        setInput("");
+      }
+    },
+    [api.aiChat, input, value],
+  );
 
   if (isLoading && mode === "insert") return null;
 
@@ -191,17 +214,7 @@ export function AIMenu() {
                 "border-b focus-visible:ring-transparent",
               )}
               value={input}
-              onKeyDown={(e) => {
-                if (isHotkey("backspace")(e) && input.length === 0) {
-                  e.preventDefault();
-                  api.aiChat.hide();
-                }
-                if (isHotkey("enter")(e) && !e.shiftKey && !value) {
-                  e.preventDefault();
-                  void api.aiChat.submit(input);
-                  setInput("");
-                }
-              }}
+              onKeyDown={handleInputKeyDown}
               onValueChange={setInput}
               placeholder="Ask AI anything..."
               aria-label="AI command"
@@ -219,7 +232,7 @@ export function AIMenu() {
       </PopoverContent>
     </Popover>
   );
-}
+};
 
 type EditorChatState =
   | "cursorCommand"
@@ -534,7 +547,7 @@ export const AIMenuItems = ({
 }) => {
   const editor = useEditorRef();
   const { messages } = usePluginOption(AIChatPlugin, "chat");
-  const aiEditor = usePluginOption(AIChatPlugin, "aiEditor")!;
+  const aiEditor = usePluginOption(AIChatPlugin, "aiEditor");
   const isSelecting = useIsSelecting();
 
   const menuState = React.useMemo(() => {
@@ -590,7 +603,7 @@ export const AIMenuItems = ({
   );
 };
 
-export function AILoadingBar() {
+export const AILoadingBar = () => {
   const editor = useEditorRef();
 
   const toolName = usePluginOption(AIChatPlugin, "toolName");
@@ -603,20 +616,35 @@ export function AILoadingBar() {
 
   const isLoading = status === "streaming" || status === "submitted";
 
-  const handleComments = (type: "accept" | "reject") => {
-    if (type === "accept") {
-      editor.tf.unsetNodes([getTransientCommentKey()], {
-        at: [],
-        match: (n) => TextApi.isText(n) && !!n[KEYS.comment],
-      });
-    }
+  const handleComments = React.useCallback(
+    (type: "accept" | "reject") => {
+      if (type === "accept") {
+        editor.tf.unsetNodes([getTransientCommentKey()], {
+          at: [],
+          match: (n) => TextApi.isText(n) && !!n[KEYS.comment],
+        });
+      }
 
-    if (type === "reject") {
-      editor.getTransforms(commentPlugin).comment.unsetMark({ transient: true });
-    }
+      if (type === "reject") {
+        editor.getTransforms(commentPlugin).comment.unsetMark({ transient: true });
+      }
 
-    api.aiChat.hide();
-  };
+      api.aiChat.hide();
+    },
+    [editor, api.aiChat],
+  );
+
+  const handleStop = React.useCallback(() => {
+    api.aiChat.stop();
+  }, [api.aiChat]);
+
+  const handleAccept = React.useCallback(() => {
+    handleComments("accept");
+  }, [handleComments]);
+
+  const handleReject = React.useCallback(() => {
+    handleComments("reject");
+  }, [handleComments]);
 
   useHotkeys("esc", () => {
     api.aiChat.stop();
@@ -641,7 +669,7 @@ export function AILoadingBar() {
           size="sm"
           variant="ghost"
           className="flex items-center gap-1 text-xs"
-          onClick={() => api.aiChat.stop()}
+          onClick={handleStop}
         >
           <PauseIcon className="h-4 w-4" />
           Stop
@@ -664,11 +692,11 @@ export function AILoadingBar() {
         {/* Header with controls */}
         <div className="flex w-full items-center justify-between gap-3">
           <div className="flex items-center gap-5">
-            <Button size="sm" disabled={isLoading} onClick={() => handleComments("accept")}>
+            <Button size="sm" disabled={isLoading} onClick={handleAccept}>
               Accept
             </Button>
 
-            <Button size="sm" disabled={isLoading} onClick={() => handleComments("reject")}>
+            <Button size="sm" disabled={isLoading} onClick={handleReject}>
               Reject
             </Button>
           </div>
@@ -678,4 +706,4 @@ export function AILoadingBar() {
   }
 
   return null;
-}
+};

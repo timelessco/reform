@@ -13,7 +13,7 @@ interface RenderStepPreviewInputProps {
 /**
  * Extracts error message from Zod/TanStack Form error object
  */
-function extractErrorMessage(error: unknown): string {
+const extractErrorMessage = (error: unknown): string => {
   if (!error) return "Invalid value";
 
   if (Array.isArray(error)) {
@@ -31,13 +31,13 @@ function extractErrorMessage(error: unknown): string {
   }
 
   return "Invalid value";
-}
+};
 
 /**
  * Renders a form field (Input or Textarea) in the step form.
  * Buttons are handled separately in StepForm.
  */
-export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInputProps) {
+export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInputProps) => {
   // Form field: Textarea
   if (element.fieldType === "Textarea") {
     return (
@@ -123,4 +123,4 @@ export function RenderStepPreviewInput({ element, form }: RenderStepPreviewInput
   }
 
   return null;
-}
+};

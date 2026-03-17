@@ -138,18 +138,14 @@ const codeLanguageMap: Record<string, string> = {
   fr: "French",
 };
 
-export function languageToCode(language: string): string {
-  return languageCodeMap[language] ?? "en";
-}
+export const languageToCode = (language: string): string => languageCodeMap[language] ?? "en";
 
-export function codeToLanguage(code: string): string {
-  return codeLanguageMap[code] ?? "English";
-}
+export const codeToLanguage = (code: string): string => codeLanguageMap[code] ?? "English";
 
-export function getTranslations(langOrCode: string): Translations {
+export const getTranslations = (langOrCode: string): Translations => {
   // Accept either language name or code
   const code = languageCodeMap[langOrCode] ?? langOrCode;
   return translations[code] ?? en;
-}
+};
 
 export type { TranslationKey, Translations };

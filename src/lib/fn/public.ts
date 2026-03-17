@@ -3,7 +3,6 @@ import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { forms, formVersions, submissions, user } from "@/db/schema";
 import { db } from "@/lib/db";
-import { defaultPublicFormSettings } from "@/types/form-settings";
 import type { PublicFormSettings } from "@/types/form-settings";
 
 /**
@@ -284,7 +283,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * Find a respondent's email from submission data.
  * Priority: keys containing "email" first, then any email-like string value.
  */
-function findRespondentEmail(data: Record<string, unknown>): string | null {
+const findRespondentEmail = (data: Record<string, unknown>): string | null => {
   // First pass: look for keys containing "email"
   for (const [key, value] of Object.entries(data)) {
     if (key.toLowerCase().includes("email") && typeof value === "string" && value.includes("@")) {
@@ -298,7 +297,7 @@ function findRespondentEmail(data: Record<string, unknown>): string | null {
     }
   }
   return null;
-}
+};
 
 /**
  * Send email notifications after form submission (fire-and-forget)
@@ -311,13 +310,13 @@ interface EmailNotificationSettings {
   respondentEmailBody: string | null;
 }
 
-async function sendEmailNotifications(
+const sendEmailNotifications = async (
   settings: EmailNotificationSettings,
   createdByUserId: string,
   formId: string,
   submissionId: string,
   submissionData: Record<string, unknown>,
-) {
+) => {
   const { sendFormSubmissionNotification, sendRespondentConfirmation } =
     await import("@/lib/email");
 
@@ -362,4 +361,4 @@ async function sendEmailNotifications(
       );
     }
   }
-}
+};

@@ -1,4 +1,4 @@
-import { HTMLAttributes, ReactNode } from "react";
+import { HTMLAttributes, ReactNode, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useDataGrid } from "@/components/ui/data-grid";
@@ -35,14 +35,14 @@ interface DataGridColumnHeaderProps<TData, TValue> extends HTMLAttributes<HTMLDi
   visibility?: boolean;
 }
 
-function DataGridColumnHeader<TData, TValue>({
+export const DataGridColumnHeader = <TData, TValue>({
   column,
   title = "",
   icon,
   className,
   filter,
   visibility = false,
-}: DataGridColumnHeaderProps<TData, TValue>) {
+}: DataGridColumnHeaderProps<TData, TValue>) => {
   const { isLoading, table, props, recordCount } = useDataGrid();
 
   const getColumnPosition = () => {
@@ -78,6 +78,48 @@ function DataGridColumnHeader<TData, TValue>({
     </div>
   );
 
+  const handleSort = useCallback(() => {
+    const isSorted = column.getIsSorted();
+    if (isSorted === "asc") {
+      column.toggleSorting(true);
+    } else if (isSorted === "desc") {
+      column.clearSorting();
+    } else {
+      column.toggleSorting(false);
+    }
+  }, [column]);
+
+  const handleUnpin = useCallback(() => column.pin(false), [column]);
+
+  const handleSortAsc = useCallback(() => {
+    if (column.getIsSorted() === "asc") {
+      column.clearSorting();
+    } else {
+      column.toggleSorting(false);
+    }
+  }, [column]);
+
+  const handleSortDesc = useCallback(() => {
+    if (column.getIsSorted() === "desc") {
+      column.clearSorting();
+    } else {
+      column.toggleSorting(true);
+    }
+  }, [column]);
+
+  const handlePinLeft = useCallback(
+    () => column.pin(column.getIsPinned() === "left" ? false : "left"),
+    [column],
+  );
+
+  const handlePinRight = useCallback(
+    () => column.pin(column.getIsPinned() === "right" ? false : "right"),
+    [column],
+  );
+
+  const handleMoveLeft = useCallback(() => moveColumn("left"), [moveColumn]);
+  const handleMoveRight = useCallback(() => moveColumn("right"), [moveColumn]);
+
   const headerButtonProps = {
     variant: "ghost" as const,
     className: cn(
@@ -85,16 +127,7 @@ function DataGridColumnHeader<TData, TValue>({
       className,
     ),
     disabled: isLoading || recordCount === 0,
-    onClick: () => {
-      const isSorted = column.getIsSorted();
-      if (isSorted === "asc") {
-        column.toggleSorting(true);
-      } else if (isSorted === "desc") {
-        column.clearSorting();
-      } else {
-        column.toggleSorting(false);
-      }
-    },
+    onClick: handleSort,
   };
 
   const headerButtonContent = (
@@ -119,7 +152,7 @@ function DataGridColumnHeader<TData, TValue>({
       size="sm"
       variant="ghost"
       className="-me-1 size-7 rounded-md"
-      onClick={() => column.pin(false)}
+      onClick={handleUnpin}
       aria-label={`Unpin ${title} column`}
       title={`Unpin ${title} column`}
     >
@@ -146,32 +179,14 @@ function DataGridColumnHeader<TData, TValue>({
 
           {column.getCanSort() && (
             <>
-              <DropdownMenuItem
-                onClick={() => {
-                  if (column.getIsSorted() === "asc") {
-                    column.clearSorting();
-                  } else {
-                    column.toggleSorting(false);
-                  }
-                }}
-                disabled={!column.getCanSort()}
-              >
+              <DropdownMenuItem onClick={handleSortAsc} disabled={!column.getCanSort()}>
                 <ArrowUp className="size-3.5!" />
                 <span className="grow">Asc</span>
                 {column.getIsSorted() === "asc" && (
                   <CheckIcon className="size-4 opacity-100! text-primary" />
                 )}
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  if (column.getIsSorted() === "desc") {
-                    column.clearSorting();
-                  } else {
-                    column.toggleSorting(true);
-                  }
-                }}
-                disabled={!column.getCanSort()}
-              >
+              <DropdownMenuItem onClick={handleSortDesc} disabled={!column.getCanSort()}>
                 <ArrowDown className="size-3.5!" />
                 <span className="grow">Desc</span>
                 {column.getIsSorted() === "desc" && (
@@ -186,18 +201,14 @@ function DataGridColumnHeader<TData, TValue>({
 
           {props.tableLayout?.columnsPinnable && column.getCanPin() && (
             <>
-              <DropdownMenuItem
-                onClick={() => column.pin(column.getIsPinned() === "left" ? false : "left")}
-              >
+              <DropdownMenuItem onClick={handlePinLeft}>
                 <ArrowLeftToLine className="size-3.5!" aria-hidden="true" />
                 <span className="grow">Pin to left</span>
                 {column.getIsPinned() === "left" && (
                   <CheckIcon className="size-4 opacity-100! text-primary" />
                 )}
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => column.pin(column.getIsPinned() === "right" ? false : "right")}
-              >
+              <DropdownMenuItem onClick={handlePinRight}>
                 <ArrowRightToLine className="size-3.5!" aria-hidden="true" />
                 <span className="grow">Pin to right</span>
                 {column.getIsPinned() === "right" && (
@@ -211,14 +222,14 @@ function DataGridColumnHeader<TData, TValue>({
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => moveColumn("left")}
+                onClick={handleMoveLeft}
                 disabled={!canMove("left") || column.getIsPinned() !== false}
               >
                 <ArrowLeftIcon className="size-3.5!" aria-hidden="true" />
                 <span>Move to Left</span>
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => moveColumn("right")}
+                onClick={handleMoveRight}
                 disabled={!canMove("right") || column.getIsPinned() !== false}
               >
                 <ArrowRightIcon className="size-3.5!" aria-hidden="true" />
@@ -280,6 +291,6 @@ function DataGridColumnHeader<TData, TValue>({
   }
 
   return headerLabel;
-}
+};
 
-export { DataGridColumnHeader, type DataGridColumnHeaderProps };
+export { type DataGridColumnHeaderProps };

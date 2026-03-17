@@ -3,16 +3,14 @@ import { clsx } from "clsx";
 import type { ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
 
 /** Parse timestamp from DB/Electric as UTC. Postgres returns "YYYY-MM-DD HH:mm:ss" without timezone; treat as UTC. */
-export function parseTimestampAsUTC(value: string | undefined): Date | null {
+export const parseTimestampAsUTC = (value: string | undefined): Date | null => {
   if (!value) return null;
   if (value.endsWith("Z") || /[+-]\d{2}(:\d{2})?$/.test(value)) return new Date(value);
   return new Date(value.replace(" ", "T") + "Z");
-}
+};
 
 /** Default icon sentinel used in form headers */
 export const DEFAULT_ICON = "default-icon";
@@ -20,11 +18,11 @@ export const DEFAULT_ICON = "default-icon";
 export const DEFAULT_ICON_NAME = "file-06";
 
 /** Check if a string is a valid URL (absolute, relative path, blob, or data URI) */
-export function isValidUrl(str: string): boolean {
+export const isValidUrl = (str: string): boolean => {
   if (!str) return false;
   try {
-    new URL(str);
-    return true;
+    const _url = new URL(str);
+    return Boolean(_url);
   } catch {
     return (
       str.startsWith("/") ||
@@ -33,7 +31,7 @@ export function isValidUrl(str: string): boolean {
       str.startsWith("data:")
     );
   }
-}
+};
 
 export const logger = createIsomorphicFn()
   .client((...args: any[]) => {
@@ -45,7 +43,4 @@ export const logger = createIsomorphicFn()
     console.log("[Server Log] :", ...args);
   });
 
-export function isNullable(value: unknown): value is null | undefined {
-  // eslint-disable-next-line no-eq-null, eqeqeq
-  return value == null;
-}
+export const isNullable = (value: unknown): value is null | undefined => value == null;

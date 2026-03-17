@@ -19,6 +19,35 @@ interface MyRouterContext {
   session: Session | null;
 }
 
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("vite-ui-theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme:dark)").matches)){document.documentElement.classList.add("dark");document.documentElement.style.colorScheme="dark"}}catch(e){}})()`;
+
+const RootDocument = ({ children }: { children: React.ReactNode }) => (
+  <html lang="en" suppressHydrationWarning>
+    <head>
+      {/* Theme init script - static trusted content, not user input */}
+      <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      <HeadContent />
+    </head>
+    <body
+      suppressHydrationWarning
+      className="min-h-screen bg-background text-foreground antialiased font-sans"
+    >
+      <HotkeysProvider defaultOptions={{ hotkey: { preventDefault: true } }}>
+        <ThemeProvider defaultTheme="light">
+          {children}
+          <Toaster richColors />
+          {process.env.NODE_ENV === "development" && (
+            <Suspense>
+              <LazyDevtools />
+            </Suspense>
+          )}
+        </ThemeProvider>
+      </HotkeysProvider>
+      <Scripts />
+    </body>
+  </html>
+);
+
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => ({
     meta: [
@@ -46,33 +75,3 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,
 });
-
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("vite-ui-theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme:dark)").matches)){document.documentElement.classList.add("dark");document.documentElement.style.colorScheme="dark"}}catch(e){}})()`;
-
-function RootDocument({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        <HeadContent />
-      </head>
-      <body
-        suppressHydrationWarning
-        className="min-h-screen bg-background text-foreground antialiased font-sans"
-      >
-        <HotkeysProvider defaultOptions={{ hotkey: { preventDefault: true } }}>
-          <ThemeProvider defaultTheme="light">
-            {children}
-            <Toaster richColors />
-            {process.env.NODE_ENV === "development" && (
-              <Suspense>
-                <LazyDevtools />
-              </Suspense>
-            )}
-          </ThemeProvider>
-        </HotkeysProvider>
-        <Scripts />
-      </body>
-    </html>
-  );
-}

@@ -101,7 +101,7 @@ export const PlaceholderElement = withHOC(
           isUpload: true,
           name: element.mediaType === KEYS.file ? uploadedFile.name : "",
           placeholderId: element.id as string,
-          type: element.mediaType!,
+          type: element.mediaType ?? KEYS.img,
           url: uploadedFile.url,
         };
 
@@ -172,7 +172,7 @@ export const PlaceholderElement = withHOC(
   },
 );
 
-export function ImageProgress({
+export const ImageProgress = ({
   className,
   file,
   imageRef,
@@ -182,7 +182,7 @@ export function ImageProgress({
   className?: string;
   imageRef?: React.RefObject<HTMLImageElement | null>;
   progress?: number;
-}) {
+}) => {
   const [objectUrl, setObjectUrl] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -216,15 +216,15 @@ export function ImageProgress({
       )}
     </div>
   );
-}
+};
 
-function formatBytes(
+const formatBytes = (
   bytes: number,
   opts: {
     decimals?: number;
     sizeType?: "accurate" | "normal";
   } = {},
-) {
+) => {
   const { decimals = 0, sizeType = "normal" } = opts;
 
   const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
@@ -237,4 +237,4 @@ function formatBytes(
   return `${(bytes / 1024 ** i).toFixed(decimals)} ${
     sizeType === "accurate" ? (accurateSizes[i] ?? "Bytest") : (sizes[i] ?? "Bytes")
   }`;
-}
+};

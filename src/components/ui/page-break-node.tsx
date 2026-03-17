@@ -12,17 +12,15 @@ export interface PageBreakElementData {
   children: [{ text: "" }];
 }
 
-export function createPageBreakNode(
+export const createPageBreakNode = (
   data: Partial<Omit<PageBreakElementData, "type" | "children">> = {},
-): PageBreakElementData {
-  return {
-    type: "pageBreak",
-    isThankYouPage: data.isThankYouPage ?? false,
-    children: [{ text: "" }],
-  };
-}
+): PageBreakElementData => ({
+  type: "pageBreak",
+  isThankYouPage: data.isThankYouPage ?? false,
+  children: [{ text: "" }],
+});
 
-export function PageBreakElement(props: PlateElementProps) {
+export const PageBreakElement = (props: PlateElementProps) => {
   const { element, children } = props;
   const editor = useEditorRef();
   const readOnly = useReadOnly();
@@ -48,7 +46,6 @@ export function PageBreakElement(props: PlateElementProps) {
     }
     return count;
   })();
-
   const handleThankYouToggle = (checked: boolean) => {
     const path = editor.api.findPath(element);
     if (!path) return;
@@ -138,4 +135,4 @@ export function PageBreakElement(props: PlateElementProps) {
       {children}
     </PlateElement>
   );
-}
+};

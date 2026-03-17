@@ -39,7 +39,7 @@ export type TComment = {
   userId: string;
 };
 
-export function Comment(props: {
+export const Comment = (props: {
   comment: TComment;
   discussionLength: number;
   editingId: string | null;
@@ -48,7 +48,7 @@ export function Comment(props: {
   documentContent?: string;
   showDocumentContent?: boolean;
   onEditorClick?: () => void;
-}) {
+}) => {
   const {
     comment,
     discussionLength,
@@ -143,7 +143,6 @@ export function Comment(props: {
     });
     setEditingId(null);
   };
-
   const onResolveComment = () => {
     void resolveDiscussion(comment.discussionId);
     tf.comment.unsetMark({ id: comment.discussionId });
@@ -156,11 +155,37 @@ export function Comment(props: {
   const [hovering, setHovering] = React.useState(false);
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
 
+  const handleMouseEnter = React.useCallback(() => setHovering(true), []);
+  const handleMouseLeave = React.useCallback(() => setHovering(false), []);
+
+  const handleCancelClick = React.useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      void onCancel();
+    },
+    [onCancel],
+  );
+
+  const handleSaveClick = React.useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      void onSave();
+    },
+    [onSave],
+  );
+
+  const handleRemoveComment = React.useCallback(() => {
+    if (discussionLength === 1) {
+      tf.comment.unsetMark({ id: comment.discussionId });
+      void removeDiscussion(comment.discussionId);
+    }
+  }, [discussionLength, tf.comment, comment.discussionId, removeDiscussion]);
+
   return (
     <article
       aria-label={`Comment by ${userInfo?.name ?? "Unknown user"}`}
-      onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div className="relative flex items-center">
         <Avatar className="size-5">
@@ -192,12 +217,7 @@ export function Comment(props: {
             )}
 
             <CommentMoreDropdown
-              onRemoveComment={() => {
-                if (discussionLength === 1) {
-                  tf.comment.unsetMark({ id: comment.discussionId });
-                  void removeDiscussion(comment.discussionId);
-                }
-              }}
+              onRemoveComment={handleRemoveComment}
               comment={comment}
               dropdownOpen={dropdownOpen}
               setDropdownOpen={setDropdownOpen}
@@ -222,7 +242,6 @@ export function Comment(props: {
         <Plate readOnly={!isEditing} editor={commentEditor}>
           <EditorContainer variant="comment">
             <Editor variant="comment" className="w-auto grow" onClick={() => onEditorClick?.()} />
-
             {isEditing && (
               <div className="ml-auto flex shrink-0 gap-1">
                 <Button
@@ -230,10 +249,7 @@ export function Comment(props: {
                   variant="ghost"
                   className="size-[28px]"
                   aria-label="Cancel editing"
-                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                    e.stopPropagation();
-                    void onCancel();
-                  }}
+                  onClick={handleCancelClick}
                 >
                   <div className="flex size-5 shrink-0 items-center justify-center rounded-[50%] bg-primary/40">
                     <XIcon className="size-3 stroke-[3px] text-background" />
@@ -244,10 +260,7 @@ export function Comment(props: {
                   size="icon"
                   variant="ghost"
                   aria-label="Save comment"
-                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                    e.stopPropagation();
-                    void onSave();
-                  }}
+                  onClick={handleSaveClick}
                 >
                   <div className="flex size-5 shrink-0 items-center justify-center rounded-[50%] bg-brand">
                     <CheckIcon className="size-3 stroke-[3px] text-background" />
@@ -260,15 +273,15 @@ export function Comment(props: {
       </div>
     </article>
   );
-}
+};
 
-function CommentMoreDropdown(props: {
+const CommentMoreDropdown = (props: {
   comment: TComment;
   dropdownOpen: boolean;
   setDropdownOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setEditingId: React.Dispatch<React.SetStateAction<string | null>>;
   onRemoveComment?: () => void;
-}) {
+}) => {
   const { comment, dropdownOpen, setDropdownOpen, setEditingId, onRemoveComment } = props;
 
   const editor = useEditorRef();
@@ -305,6 +318,10 @@ function CommentMoreDropdown(props: {
     onRemoveComment?.();
   }, [comment.discussionId, comment.id, editor, onRemoveComment]);
 
+  const handleTriggerClick = React.useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+  }, []);
+
   const onEditComment = React.useCallback(() => {
     selectedEditCommentRef.current = true;
 
@@ -323,7 +340,7 @@ function CommentMoreDropdown(props: {
             aria-label="Comment actions"
           />
         }
-        onClick={(e) => e.stopPropagation()}
+        onClick={handleTriggerClick}
       >
         <MoreHorizontalIcon className="size-4" />
       </DropdownMenuTrigger>
@@ -341,7 +358,7 @@ function CommentMoreDropdown(props: {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+};
 
 const useCommentEditor = (
   options: Omit<CreatePlateEditorOptions, "plugins"> = {},
@@ -360,7 +377,7 @@ const useCommentEditor = (
   return commentEditor;
 };
 
-export function CommentCreateForm({
+export const CommentCreateForm = ({
   autoFocus = false,
   className,
   discussionId: discussionIdProp,
@@ -370,7 +387,7 @@ export function CommentCreateForm({
   className?: string;
   discussionId?: string;
   focusOnMount?: boolean;
-}) {
+}) => {
   const discussions = usePluginOption(discussionPlugin, "discussions");
 
   const editor = useEditorRef();
@@ -489,6 +506,28 @@ export function CommentCreateForm({
     });
   }, [commentValue, commentEditor.tf, discussionId, editor, discussions]);
 
+  const handlePlateChange = React.useCallback(({ value }: { value: Value }) => {
+    setCommentValue(value);
+  }, []);
+
+  const handleEditorKeyDown = React.useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        onAddComment();
+      }
+    },
+    [onAddComment],
+  );
+
+  const handleSubmitClick = React.useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onAddComment();
+    },
+    [onAddComment],
+  );
+
   return (
     <div className={cn("flex w-full", className)}>
       <div className="mt-2 mr-1 shrink-0">
@@ -500,22 +539,12 @@ export function CommentCreateForm({
       </div>
 
       <div className="relative flex grow gap-2">
-        <Plate
-          onChange={({ value }) => {
-            setCommentValue(value);
-          }}
-          editor={commentEditor}
-        >
+        <Plate onChange={handlePlateChange} editor={commentEditor}>
           <EditorContainer variant="comment">
             <Editor
               variant="comment"
               className="min-h-[25px] grow pt-0.5 pr-8"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  onAddComment();
-                }
-              }}
+              onKeyDown={handleEditorKeyDown}
               placeholder="Reply..."
               autoComplete="off"
               autoFocus={autoFocus}
@@ -527,10 +556,7 @@ export function CommentCreateForm({
               className="absolute right-0.5 bottom-0.5 ml-auto size-6 shrink-0"
               aria-label="Submit comment"
               disabled={commentContent.trim().length === 0}
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddComment();
-              }}
+              onClick={handleSubmitClick}
             >
               <div className="flex size-6 items-center justify-center rounded-full">
                 <ArrowUpIcon />
@@ -541,7 +567,7 @@ export function CommentCreateForm({
       </div>
     </div>
   );
-}
+};
 
 export const formatCommentDate = (date: Date) => {
   const now = new Date();

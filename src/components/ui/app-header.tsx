@@ -38,7 +38,7 @@ interface AppHeaderProps {
   isDistractionHidden?: boolean;
 }
 
-export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
+export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const { formId, workspaceId } = useParams({ strict: false }) as {
     formId?: string;
     workspaceId?: string;
@@ -70,16 +70,13 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
   const isShareSidebarOpen = activeSidebar === "share";
   const isEditorSidebarOpen = !!activeSidebar;
 
-  const isVersionHistoryOpen = activeSidebar === "history";
   const toggleVersionHistory = () => {
     toggleEditorSidebar("history");
   };
-  const isSettingsSidebarOpen = activeSidebar === "settings";
   const toggleSettingsSidebar = () => {
     toggleEditorSidebar("settings");
   };
 
-  const isCustomizeSidebarOpen = activeSidebar === "customize";
   const toggleCustomizeSidebar = () => {
     toggleEditorSidebar("customize");
   };
@@ -142,7 +139,6 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
     if (!session?.user?.id || !formId) return;
     await toggleFavoriteLocal(session.user.id, formId);
   };
-
   const handleDeleteForm = async () => {
     if (!formId) return;
     try {
@@ -153,7 +149,6 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
       toast.error("Failed to delete form");
     }
   };
-
   const handlePublish = async () => {
     if (formId && workspaceId) {
       setWorkflowState("publishing");
@@ -709,6 +704,7 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
                           to="/workspace/$workspaceId/form-builder/$formId/edit"
                           params={() => ({ workspaceId, formId })}
                           search={(prev) => ({ ...prev, force: true })}
+                          aria-label="Edit form"
                           className={cn(
                             buttonVariants({ size: "sm" }),
                             "ml-1 text-base transition-all rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200",
@@ -786,4 +782,4 @@ export function AppHeader({ isDistractionHidden = false }: AppHeaderProps) {
       </AlertDialog>
     </>
   );
-}
+};

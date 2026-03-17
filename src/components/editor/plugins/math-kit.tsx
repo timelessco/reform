@@ -13,22 +13,18 @@ const LazyInlineEquationElement = React.lazy(() =>
   })),
 );
 
-function EquationElementLazy(props: any) {
-  return (
-    <React.Suspense fallback={<div className="my-1 p-3 bg-muted rounded-sm animate-pulse" />}>
-      <LazyEquationElement {...props} />
-    </React.Suspense>
-  );
-}
-function InlineEquationElementLazy(props: any) {
-  return (
-    <React.Suspense
-      fallback={<span className="inline-block mx-1 w-16 h-5 bg-muted rounded-sm animate-pulse" />}
-    >
-      <LazyInlineEquationElement {...props} />
-    </React.Suspense>
-  );
-}
+const EquationElementLazy = (props: any) => (
+  <React.Suspense fallback={<div className="my-1 p-3 bg-muted rounded-sm animate-pulse" />}>
+    <LazyEquationElement {...props} />
+  </React.Suspense>
+);
+const InlineEquationElementLazy = (props: any) => (
+  <React.Suspense
+    fallback={<span className="inline-block mx-1 w-16 h-5 bg-muted rounded-sm animate-pulse" />}
+  >
+    <LazyInlineEquationElement {...props} />
+  </React.Suspense>
+);
 
 const LightEquationPlugin = createPlatePlugin({
   key: KEYS.equation,

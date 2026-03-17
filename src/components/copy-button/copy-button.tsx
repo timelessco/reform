@@ -3,6 +3,7 @@
 import { CheckIcon, CircleXIcon, CopyIcon } from "@/components/ui/icons";
 import type { HTMLMotionProps, Variants } from "motion/react";
 import { AnimatePresence, motion } from "motion/react";
+import { useCallback } from "react";
 import type { ComponentProps } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -23,25 +24,23 @@ export const motionIconProps: HTMLMotionProps<"span"> = {
   transition: { type: "spring", duration: 0.4, bounce: 0 },
 };
 
-export function CopyStateIcon({ state }: { state: CopyState }) {
-  return (
-    <AnimatePresence mode="popLayout" initial={false}>
-      {state === "idle" ? (
-        <motion.span key="idle" {...motionIconProps}>
-          <CopyIcon />
-        </motion.span>
-      ) : state === "done" ? (
-        <motion.span key="done" {...motionIconProps}>
-          <CheckIcon strokeWidth={3} />
-        </motion.span>
-      ) : state === "error" ? (
-        <motion.span key="error" {...motionIconProps}>
-          <CircleXIcon />
-        </motion.span>
-      ) : null}
-    </AnimatePresence>
-  );
-}
+export const CopyStateIcon = ({ state }: { state: CopyState }) => (
+  <AnimatePresence mode="popLayout" initial={false}>
+    {state === "idle" ? (
+      <motion.span key="idle" {...motionIconProps}>
+        <CopyIcon />
+      </motion.span>
+    ) : state === "done" ? (
+      <motion.span key="done" {...motionIconProps}>
+        <CheckIcon strokeWidth={3} />
+      </motion.span>
+    ) : state === "error" ? (
+      <motion.span key="error" {...motionIconProps}>
+        <CircleXIcon />
+      </motion.span>
+    ) : null}
+  </AnimatePresence>
+);
 
 export type CopyButtonProps = ComponentProps<typeof Button> & {
   /** The text to copy, or a function that returns the text. */
@@ -52,7 +51,7 @@ export type CopyButtonProps = ComponentProps<typeof Button> & {
   onCopyError?: (error: Error) => void;
 };
 
-export function CopyButton({
+export const CopyButton = ({
   size = "icon",
   children,
   text,
@@ -60,19 +59,24 @@ export function CopyButton({
   onCopyError,
   onClick,
   ...props
-}: CopyButtonProps) {
+}: CopyButtonProps) => {
   const { state, copy } = useCopyToClipboard({
     onCopySuccess,
     onCopyError,
   });
 
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      copy(text);
+      onClick?.(e);
+    },
+    [copy, text, onClick],
+  );
+
   return (
     <Button
       size={size}
-      onClick={(e) => {
-        copy(text);
-        onClick?.(e);
-      }}
+      onClick={handleClick}
       prefix={<CopyStateIcon state={state} />}
       aria-label="Copy"
       {...props}
@@ -80,4 +84,4 @@ export function CopyButton({
       {children}
     </Button>
   );
-}
+};

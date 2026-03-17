@@ -76,9 +76,7 @@ interface FormPreviewFromPlateProps {
   formId?: string;
 }
 
-function isHexColor(str: string): boolean {
-  return /^#([0-9A-Fa-f]{3}){1,2}$/.test(str);
-}
+const isHexColor = (str: string): boolean => /^#([0-9A-Fa-f]{3}){1,2}$/.test(str);
 
 const PAGE_MAX_WIDTH = {
   editor: "var(--bf-page-width, 700px)",
@@ -89,7 +87,7 @@ const PAGE_MAX_WIDTH = {
  * Form header component with proper icon and cover handling
  * Matches the editor's form-header.tsx rendering patterns
  */
-function PreviewFormHeader({
+const PreviewFormHeader = ({
   title,
   icon,
   iconColor,
@@ -103,9 +101,11 @@ function PreviewFormHeader({
   cover?: string;
   hideTitle?: boolean;
   layout: "public" | "editor";
-}) {
+}) => {
   const [imageError, setImageError] = useState(false);
   const [iconError, setIconError] = useState(false);
+  const handleImageError = () => setImageError(true);
+  const handleIconError = () => setIconError(true);
   const headerRef = useRef<HTMLDivElement>(null);
   const [isLogoMinimal, setIsLogoMinimal] = useState(false);
 
@@ -155,7 +155,7 @@ function PreviewFormHeader({
               "w-full h-full object-cover",
               cover.includes("tint=true") && "relative z-0 brightness-60 grayscale",
             )}
-            onError={() => setImageError(true)}
+            onError={handleImageError}
           />
         </div>
       );
@@ -202,7 +202,7 @@ function PreviewFormHeader({
             height={120}
             className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-md object-cover"
             data-bf-logo
-            onError={() => setIconError(true)}
+            onError={handleIconError}
           />
         </div>
       );
@@ -276,13 +276,13 @@ function PreviewFormHeader({
       </div>
     </div>
   );
-}
+};
 
 /**
  * Renders custom thank you content after form submission.
  * Thank-you page is static-only — rendered entirely via PlateStatic.
  */
-function RenderThankYouContent({ nodes, onReset }: { nodes: Value; onReset?: () => void }) {
+const RenderThankYouContent = ({ nodes, onReset }: { nodes: Value; onReset?: () => void }) => {
   const { t } = useTranslation();
   return (
     <div data-bf-field-list className="space-y-4">
@@ -302,12 +302,12 @@ function RenderThankYouContent({ nodes, onReset }: { nodes: Value; onReset?: () 
       )}
     </div>
   );
-}
+};
 
 /**
  * Default thank you message when no custom content is provided
  */
-function DefaultThankYou({ onReset }: { onReset?: () => void }) {
+const DefaultThankYou = ({ onReset }: { onReset?: () => void }) => {
   const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -323,7 +323,7 @@ function DefaultThankYou({ onReset }: { onReset?: () => void }) {
       )}
     </div>
   );
-}
+};
 
 /**
  * Renders Plate editor content as a functional form preview.
@@ -334,7 +334,7 @@ function DefaultThankYou({ onReset }: { onReset?: () => void }) {
  * is rendered via PlateStatic for full rich-text fidelity.
  * Form fields (Input, Textarea, Button) use custom form components.
  */
-export function FormPreviewFromPlate({
+export const FormPreviewFromPlate = ({
   content,
   title: legacyTitle,
   icon: legacyIcon,
@@ -344,7 +344,7 @@ export function FormPreviewFromPlate({
   layout = "public",
   settings,
   formId,
-}: FormPreviewFromPlateProps) {
+}: FormPreviewFromPlateProps) => {
   const headerFromContent = useMemo(() => extractFormHeader(content), [content]);
   const hasHeaderNode = headerFromContent !== null;
 
@@ -389,7 +389,7 @@ export function FormPreviewFromPlate({
       />
     </StepFormProvider>
   );
-}
+};
 
 /**
  * Animation variants for form step transitions
@@ -414,7 +414,7 @@ const stepVariants = {
 /**
  * Inner content component that uses StepFormContext
  */
-function FormPreviewContent({
+const FormPreviewContent = ({
   steps,
   thankYouNodes,
   title,
@@ -434,7 +434,7 @@ function FormPreviewContent({
   hideTitle?: boolean;
   layout: "public" | "editor";
   settings?: PublicFormSettings;
-}) {
+}) => {
   const { currentStep, totalSteps, isSubmitted, direction, reset } = useStepForm();
   const { t } = useTranslation();
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
@@ -570,4 +570,4 @@ function FormPreviewContent({
       </div>
     </div>
   );
-}
+};

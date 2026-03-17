@@ -30,14 +30,14 @@ interface UsePreviewFormOptions {
  * @param options.formName - Optional form name/id for the form element
  * @returns Form instance compatible with AppForm type
  */
-export function usePreviewForm({
+export const usePreviewForm = ({
   fields,
   formName = "previewForm",
   onSubmit: customOnSubmit,
 }: UsePreviewFormOptions): {
   form: AppForm;
   formName: string;
-} {
+} => {
   // Generate Zod schema from field validation properties
   const validationSchema = useMemo(() => generateZodSchemaFromFields(fields), [fields]);
 
@@ -91,7 +91,7 @@ export function usePreviewForm({
   });
 
   return { form: form as unknown as AppForm, formName };
-}
+};
 
 interface UseStepPreviewFormOptions {
   fields: PlateFormField[];
@@ -104,7 +104,7 @@ interface UseStepPreviewFormOptions {
  * Creates a TanStack Form instance for a single step in a multi-step form.
  * Uses StepFormContext for navigation and data accumulation.
  */
-export function useStepPreviewForm({
+export const useStepPreviewForm = ({
   fields,
   stepIndex,
   isLastStep,
@@ -112,7 +112,7 @@ export function useStepPreviewForm({
 }: UseStepPreviewFormOptions): {
   form: AppForm;
   formName: string;
-} {
+} => {
   const { formData, goToNextStep, submitForm } = useStepForm();
 
   // Generate Zod schema from step's field validation properties
@@ -175,4 +175,4 @@ export function useStepPreviewForm({
   });
 
   return { form: form as unknown as AppForm, formName };
-}
+};

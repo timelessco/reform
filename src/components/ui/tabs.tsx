@@ -9,16 +9,19 @@ import { cn } from "@/lib/utils";
 
 /* ─────────────────────────── Tabs Root ────────────────────────── */
 
-function Tabs({ className, orientation = "horizontal", ...props }: TabsPrimitive.Root.Props) {
-  return (
-    <TabsPrimitive.Root
-      data-slot="tabs"
-      data-orientation={orientation}
-      className={cn("gap-2 group/tabs flex data-horizontal:flex-col", className)}
-      {...props}
-    />
-  );
-}
+/* ─────────────────────────── Tabs Root ────────────────────────── */
+export const Tabs = ({
+  className,
+  orientation = "horizontal",
+  ...props
+}: TabsPrimitive.Root.Props) => (
+  <TabsPrimitive.Root
+    data-slot="tabs"
+    data-orientation={orientation}
+    className={cn("gap-2 group/tabs flex data-horizontal:flex-col", className)}
+    {...props}
+  />
+);
 
 /* ─────────────────────────── TabsList ──────────────────────────── */
 
@@ -43,22 +46,20 @@ const tabsListVariants = cva(
   },
 );
 
-function TabsList({
+export const TabsList = ({
   className,
   variant = "default",
   size = "md",
   ...props
-}: TabsPrimitive.List.Props & VariantProps<typeof tabsListVariants>) {
-  return (
-    <TabsPrimitive.List
-      data-slot="tabs-list"
-      data-variant={variant}
-      data-size={size}
-      className={cn(tabsListVariants({ variant, size }), className)}
-      {...props}
-    />
-  );
-}
+}: TabsPrimitive.List.Props & VariantProps<typeof tabsListVariants>) => (
+  <TabsPrimitive.List
+    data-slot="tabs-list"
+    data-variant={variant}
+    data-size={size}
+    className={cn(tabsListVariants({ variant, size }), className)}
+    {...props}
+  />
+);
 
 /* ─────────────────────────── TabsTrigger ───────────────────────── */
 
@@ -101,7 +102,7 @@ interface TabsTriggerProps
   badge?: ReactNode;
 }
 
-function TabsTrigger({
+export const TabsTrigger = ({
   className,
   variant,
   size,
@@ -109,28 +110,26 @@ function TabsTrigger({
   badge,
   children,
   ...props
-}: TabsTriggerProps) {
-  return (
-    <TabsPrimitive.Tab
-      data-slot="tabs-trigger"
-      className={cn(tabsTriggerVariants({ variant, size }), className)}
-      {...props}
-    >
-      {prefixIcon && <span className="shrink-0">{prefixIcon}</span>}
-      {children}
-      {badge !== undefined && (
-        <span
-          className={cn(
-            "inline-flex items-center justify-center rounded-full bg-muted text-muted-foreground",
-            size === "sm" ? "min-w-4 h-4 px-1 text-[10px]" : "min-w-5 h-5 px-1.5 text-[14px]",
-          )}
-        >
-          {badge}
-        </span>
-      )}
-    </TabsPrimitive.Tab>
-  );
-}
+}: TabsTriggerProps) => (
+  <TabsPrimitive.Tab
+    data-slot="tabs-trigger"
+    className={cn(tabsTriggerVariants({ variant, size }), className)}
+    {...props}
+  >
+    {prefixIcon && <span className="shrink-0">{prefixIcon}</span>}
+    {children}
+    {badge !== undefined && (
+      <span
+        className={cn(
+          "inline-flex items-center justify-center rounded-full bg-muted text-muted-foreground",
+          size === "sm" ? "min-w-4 h-4 px-1 text-[10px]" : "min-w-5 h-5 px-1.5 text-[14px]",
+        )}
+      >
+        {badge}
+      </span>
+    )}
+  </TabsPrimitive.Tab>
+);
 
 /* ─────────────────────────── TabsIndicator ─────────────────────── */
 
@@ -155,39 +154,27 @@ const tabsIndicatorVariants = cva(
   },
 );
 
-function TabsIndicator({
+export const TabsIndicator = ({
   className,
   variant,
   ...props
-}: TabsPrimitive.Indicator.Props & VariantProps<typeof tabsIndicatorVariants>) {
-  return (
-    <TabsPrimitive.Indicator
-      data-slot="tabs-indicator"
-      className={cn(tabsIndicatorVariants({ variant }), className)}
-      {...props}
-    />
-  );
-}
+}: TabsPrimitive.Indicator.Props & VariantProps<typeof tabsIndicatorVariants>) => (
+  <TabsPrimitive.Indicator
+    data-slot="tabs-indicator"
+    className={cn(tabsIndicatorVariants({ variant }), className)}
+    {...props}
+  />
+);
 
 /* ─────────────────────────── TabsContent ──────────────────────── */
 
-function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
-  return (
-    <TabsPrimitive.Panel
-      data-slot="tabs-content"
-      className={cn("text-sm flex-1 outline-none", className)}
-      {...props}
-    />
-  );
-}
+/* ─────────────────────────── TabsContent ──────────────────────── */
+export const TabsContent = ({ className, ...props }: TabsPrimitive.Panel.Props) => (
+  <TabsPrimitive.Panel
+    data-slot="tabs-content"
+    className={cn("text-sm flex-1 outline-none", className)}
+    {...props}
+  />
+);
 
-export {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsIndicator,
-  TabsContent,
-  tabsListVariants,
-  tabsTriggerVariants,
-  tabsIndicatorVariants,
-};
+export { tabsListVariants, tabsTriggerVariants, tabsIndicatorVariants };

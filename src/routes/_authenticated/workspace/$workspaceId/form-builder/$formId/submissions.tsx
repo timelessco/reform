@@ -53,39 +53,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 
-export const Route = createFileRoute(
-  "/_authenticated/workspace/$workspaceId/form-builder/$formId/submissions",
-)({
-  component: SubmissionsPage,
-  loader: async ({ context, params }) => {
-    const [publishedData] = await Promise.all([
-      context.queryClient.ensureQueryData({
-        queryKey: ["publishedFormVersion", params.formId],
-        queryFn: () => getLatestPublishedVersion({ data: { formId: params.formId } }),
-        revalidateIfStale: true,
-      }),
-      context.queryClient
-        .ensureQueryData(getSubmissionsCountQueryOption(params.formId))
-        .catch(() => ({ total: 0 })),
-      context.queryClient.ensureInfiniteQueryData({
-        queryKey: ["submissions", params.formId],
-        queryFn: () =>
-          getSubmissionsByFormIdPaginated({
-            data: { formId: params.formId, cursor: undefined },
-          }),
-        initialPageParam: undefined as SubmissionCursor | undefined,
-        getNextPageParam: (lastPage: Awaited<ReturnType<typeof getSubmissionsByFormIdPaginated>>) =>
-          lastPage?.nextCursor,
-      }),
-    ]);
-    return { publishedData };
-  },
-  pendingComponent: Loader,
-  errorComponent: ErrorBoundary,
-  notFoundComponent: NotFound,
-});
-
-function SubmissionsPage() {
+const SubmissionsPage = () => {
   const { formId } = Route.useParams();
   const queryClient = useQueryClient();
   const { publishedData: initialPublishedData } = Route.useLoaderData();
@@ -97,6 +65,15 @@ function SubmissionsPage() {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({});
   const [columnOrder, setColumnOrder] = useState<string[]>([]);
+  const handleSetActiveTabAll = useCallback(() => setActiveTab("all"), []);
+  const handleSetActiveTabCompleted = useCallback(() => setActiveTab("completed"), []);
+  const handleSetActiveTabPartial = useCallback(() => setActiveTab("partial"), []);
+  const handleGlobalFilterChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => setGlobalFilter(e.target.value),
+    [],
+  );
+  const handleClearSelection = useCallback(() => setRowSelection({}), []);
+
   const [scrollContainerEl, setScrollContainerEl] = useState<HTMLDivElement | null>(null);
   const scrollContainerRef = useCallback((node: HTMLDivElement | null) => {
     setScrollContainerEl(node);
@@ -520,17 +497,17 @@ function SubmissionsPage() {
               <ChevronDownIcon className="size-2.5 shrink-0  text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-36">
-              <DropdownMenuItem onClick={() => setActiveTab("all")} className="gap-2">
+              <DropdownMenuItem onClick={handleSetActiveTabAll} className="gap-2">
                 All
                 <span className="ml-auto text-xs text-muted-foreground">
                   {allSubmissions.length}
                 </span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setActiveTab("completed")} className="gap-2">
+              <DropdownMenuItem onClick={handleSetActiveTabCompleted} className="gap-2">
                 Completed
                 <span className="ml-auto text-xs text-muted-foreground">{completedCount}</span>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setActiveTab("partial")} className="gap-2">
+              <DropdownMenuItem onClick={handleSetActiveTabPartial} className="gap-2">
                 Partial
                 <span className="ml-auto text-xs text-muted-foreground">{partialCount}</span>
               </DropdownMenuItem>
@@ -546,7 +523,7 @@ function SubmissionsPage() {
                   placeholder="Search responses..."
                   className="min-w-0 flex-1  bg-transparent border-0 p-0 outline-none text-[13px] placeholder:text-(--color-gray-alpha-600) placeholder:text-normal placeholder:text-[0.8rem]"
                   value={globalFilter}
-                  onChange={(e) => setGlobalFilter(e.target.value)}
+                  onChange={handleGlobalFilterChange}
                   aria-label="Search responses"
                   name="search"
                 />
@@ -614,7 +591,7 @@ function SubmissionsPage() {
                     {formatForDisplay(HOTKEYS.SUBMISSIONS_DELETE)}
                   </span>
                 </Button>
-                <Button variant="secondary" size="sm" onClick={() => setRowSelection({})}>
+                <Button variant="secondary" size="sm" onClick={handleClearSelection}>
                   <XIcon className="h-3.5 w-3.5" />
                   Clear
                   <span className="text-xs text-muted-foreground ml-1">
@@ -674,4 +651,36 @@ function SubmissionsPage() {
       </div>
     </div>
   );
-}
+};
+
+export const Route = createFileRoute(
+  "/_authenticated/workspace/$workspaceId/form-builder/$formId/submissions",
+)({
+  component: SubmissionsPage,
+  loader: async ({ context, params }) => {
+    const [publishedData] = await Promise.all([
+      context.queryClient.ensureQueryData({
+        queryKey: ["publishedFormVersion", params.formId],
+        queryFn: () => getLatestPublishedVersion({ data: { formId: params.formId } }),
+        revalidateIfStale: true,
+      }),
+      context.queryClient
+        .ensureQueryData(getSubmissionsCountQueryOption(params.formId))
+        .catch(() => ({ total: 0 })),
+      context.queryClient.ensureInfiniteQueryData({
+        queryKey: ["submissions", params.formId],
+        queryFn: () =>
+          getSubmissionsByFormIdPaginated({
+            data: { formId: params.formId, cursor: undefined },
+          }),
+        initialPageParam: undefined as SubmissionCursor | undefined,
+        getNextPageParam: (lastPage: Awaited<ReturnType<typeof getSubmissionsByFormIdPaginated>>) =>
+          lastPage?.nextCursor,
+      }),
+    ]);
+    return { publishedData };
+  },
+  pendingComponent: Loader,
+  errorComponent: ErrorBoundary,
+  notFoundComponent: NotFound,
+});

@@ -22,11 +22,11 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 const ESTIMATED_ROW_HEIGHT_DENSE = 37;
 const ESTIMATED_ROW_HEIGHT_DEFAULT = 49;
 
-function DataGridVirtualTable<TData>({
+export const DataGridVirtualTable = <TData,>({
   scrollRef,
 }: {
   scrollRef: RefObject<HTMLDivElement | null>;
-}) {
+}) => {
   const { table, isLoading, props, isFetchingMore, fetchMoreSkeletonCount } = useDataGrid();
   const { rows } = table.getRowModel();
 
@@ -48,12 +48,12 @@ function DataGridVirtualTable<TData>({
   return (
     <DataGridTableBase>
       <DataGridTableHead>
-        {table.getHeaderGroups().map((headerGroup: HeaderGroup<TData>, index) => (
-          <DataGridTableHeadRow headerGroup={headerGroup} key={index}>
-            {headerGroup.headers.map((header, hIndex) => {
+        {table.getHeaderGroups().map((headerGroup: HeaderGroup<TData>) => (
+          <DataGridTableHeadRow headerGroup={headerGroup} key={headerGroup.id}>
+            {headerGroup.headers.map((header) => {
               const { column } = header;
               return (
-                <DataGridTableHeadRowCell header={header} key={hIndex}>
+                <DataGridTableHeadRowCell header={header} key={header.id}>
                   {header.isPlaceholder
                     ? null
                     : flexRender(header.column.columnDef.header, header.getContext())}
@@ -71,10 +71,10 @@ function DataGridVirtualTable<TData>({
 
       <DataGridTableBody>
         {isLoading && props.loadingMode === "skeleton" ? (
-          Array.from({ length: 10 }).map((_, rowIndex) => (
-            <DataGridTableBodyRowSkeleton key={rowIndex}>
-              {table.getVisibleFlatColumns().map((column, colIndex) => (
-                <DataGridTableBodyRowSkeletonCell column={column} key={colIndex}>
+          Array.from({ length: 10 }, (_, i) => `skeleton-${i}`).map((skeletonId) => (
+            <DataGridTableBodyRowSkeleton key={skeletonId}>
+              {table.getVisibleFlatColumns().map((column) => (
+                <DataGridTableBodyRowSkeletonCell column={column} key={column.id}>
                   {column.columnDef.meta?.skeleton ?? (
                     <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
                   )}
@@ -108,8 +108,8 @@ function DataGridVirtualTable<TData>({
                     data-index={virtualRow.index}
                     dndRef={(node) => rowVirtualizer.measureElement(node)}
                   >
-                    {row.getVisibleCells().map((cell: Cell<TData, unknown>, colIndex) => (
-                      <DataGridTableBodyRowCell cell={cell} key={colIndex}>
+                    {row.getVisibleCells().map((cell: Cell<TData, unknown>) => (
+                      <DataGridTableBodyRowCell cell={cell} key={cell.id}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </DataGridTableBodyRowCell>
                     ))}
@@ -135,22 +135,22 @@ function DataGridVirtualTable<TData>({
             )}
 
             {isFetchingMore &&
-              Array.from({ length: fetchMoreSkeletonCount }).map((_, rowIndex) => (
-                <DataGridTableBodyRowSkeleton key={`skeleton-${rowIndex}`}>
-                  {table.getVisibleFlatColumns().map((column, colIndex) => (
-                    <DataGridTableBodyRowSkeletonCell column={column} key={colIndex}>
-                      {column.columnDef.meta?.skeleton ?? (
-                        <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
-                      )}
-                    </DataGridTableBodyRowSkeletonCell>
-                  ))}
-                </DataGridTableBodyRowSkeleton>
-              ))}
+              Array.from({ length: fetchMoreSkeletonCount }, (_, i) => `fetch-skeleton-${i}`).map(
+                (skeletonId) => (
+                  <DataGridTableBodyRowSkeleton key={skeletonId}>
+                    {table.getVisibleFlatColumns().map((column) => (
+                      <DataGridTableBodyRowSkeletonCell column={column} key={column.id}>
+                        {column.columnDef.meta?.skeleton ?? (
+                          <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                        )}
+                      </DataGridTableBodyRowSkeletonCell>
+                    ))}
+                  </DataGridTableBodyRowSkeleton>
+                ),
+              )}
           </>
         )}
       </DataGridTableBody>
     </DataGridTableBase>
   );
-}
-
-export { DataGridVirtualTable };
+};

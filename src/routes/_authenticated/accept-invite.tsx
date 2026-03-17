@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useCallback } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,17 +10,7 @@ import { NotFound } from "@/components/ui/not-found";
 import { auth, authClient } from "@/lib/auth-client";
 import { logger } from "@/lib/utils";
 
-export const Route = createFileRoute("/_authenticated/accept-invite")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    invitationId: search.invitationId as string,
-  }),
-  component: AcceptInvitePage,
-  pendingComponent: Loader,
-  errorComponent: ErrorBoundary,
-  notFoundComponent: NotFound,
-});
-
-function AcceptInvitePage() {
+const AcceptInvitePage = () => {
   const { invitationId } = Route.useSearch();
   const router = useRouter();
 
@@ -71,6 +62,18 @@ function AcceptInvitePage() {
     }),
   );
 
+  const handleGoToDashboard = useCallback(() => router.navigate({ to: "/dashboard" }), [router]);
+
+  const handleAccept = useCallback(
+    () => acceptMutation.mutate({ invitationId }),
+    [acceptMutation, invitationId],
+  );
+
+  const handleReject = useCallback(
+    () => rejectMutation.mutate({ invitationId }),
+    [rejectMutation, invitationId],
+  );
+
   if (isLoading) {
     return <div className="flex flex-1 items-center justify-center">Loading invitation...</div>;
   }
@@ -87,7 +90,7 @@ function AcceptInvitePage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => router.navigate({ to: "/dashboard" })}>Go to Dashboard</Button>
+            <Button onClick={handleGoToDashboard}>Go to Dashboard</Button>
           </CardContent>
         </Card>
       </div>
@@ -103,7 +106,7 @@ function AcceptInvitePage() {
             <CardDescription>The invitation link may be invalid or has expired.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => router.navigate({ to: "/dashboard" })}>Go to Dashboard</Button>
+            <Button onClick={handleGoToDashboard}>Go to Dashboard</Button>
           </CardContent>
         </Card>
       </div>
@@ -123,14 +126,14 @@ function AcceptInvitePage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <Button
-            onClick={() => acceptMutation.mutate({ invitationId })}
+            onClick={handleAccept}
             disabled={acceptMutation.isPending || rejectMutation.isPending}
           >
             {acceptMutation.isPending ? "Accepting..." : "Accept Invitation"}
           </Button>
           <Button
             variant="outline"
-            onClick={() => rejectMutation.mutate({ invitationId })}
+            onClick={handleReject}
             disabled={acceptMutation.isPending || rejectMutation.isPending}
           >
             {rejectMutation.isPending ? "Rejecting..." : "Reject"}
@@ -139,4 +142,14 @@ function AcceptInvitePage() {
       </Card>
     </div>
   );
-}
+};
+
+export const Route = createFileRoute("/_authenticated/accept-invite")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    invitationId: search.invitationId as string,
+  }),
+  component: AcceptInvitePage,
+  pendingComponent: Loader,
+  errorComponent: ErrorBoundary,
+  notFoundComponent: NotFound,
+});

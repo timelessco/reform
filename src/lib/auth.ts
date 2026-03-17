@@ -16,7 +16,7 @@ import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { eq } from "drizzle-orm";
 
 const polarClient = new Polar({
-  accessToken: process.env.POLAR_ACCESS_TOKEN!,
+  accessToken: process.env.POLAR_ACCESS_TOKEN ?? "",
   server: "sandbox", // TODO: Change to production
 });
 
@@ -195,7 +195,7 @@ export const auth = betterAuth({
         }),
         portal(),
         webhooks({
-          secret: process.env.POLAR_WEBHOOK_SECRET!,
+          secret: process.env.POLAR_WEBHOOK_SECRET ?? "",
         }),
       ],
     }),
