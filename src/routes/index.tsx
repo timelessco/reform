@@ -8,6 +8,12 @@ import { guestMiddleware } from "@/middleware/auth";
 
 const LandingEditor = lazy(() => import("@/components/landing-editor"));
 
+const RouteComponent = () => (
+  <Suspense fallback={<Loader />}>
+    <LandingEditor />
+  </Suspense>
+);
+
 export const Route = createFileRoute("/")({
   server: {
     middleware: [guestMiddleware],
@@ -23,9 +29,3 @@ export const Route = createFileRoute("/")({
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,
 });
-
-const RouteComponent = () => (
-  <Suspense fallback={<Loader />}>
-    <LandingEditor />
-  </Suspense>
-);

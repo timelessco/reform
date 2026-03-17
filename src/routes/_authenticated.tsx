@@ -152,6 +152,21 @@ const LazyCustomizeSidebar = lazy(() =>
   })),
 );
 
+const AuthLayout = () => {
+  const { pathname } = useLocation();
+  const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
+
+  return (
+    <SidebarProvider style={{ "--app-header-height": "40px" } as React.CSSProperties}>
+      <EditorHeaderVisibilityProvider enabled={isEditRoute}>
+        <MinimalSidebarProvider>
+          <AuthLayoutContent />
+        </MinimalSidebarProvider>
+      </EditorHeaderVisibilityProvider>
+    </SidebarProvider>
+  );
+};
+
 // Route configuration
 export const Route = createFileRoute("/_authenticated")({
   server: {
@@ -182,21 +197,6 @@ export const Route = createFileRoute("/_authenticated")({
   notFoundComponent: NotFound,
   ssr: "data-only",
 });
-
-const AuthLayout = () => {
-  const { pathname } = useLocation();
-  const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
-
-  return (
-    <SidebarProvider style={{ "--app-header-height": "40px" } as React.CSSProperties}>
-      <EditorHeaderVisibilityProvider enabled={isEditRoute}>
-        <MinimalSidebarProvider>
-          <AuthLayoutContent />
-        </MinimalSidebarProvider>
-      </EditorHeaderVisibilityProvider>
-    </SidebarProvider>
-  );
-};
 
 const AuthLayoutContent = () => {
   const location = useLocation();

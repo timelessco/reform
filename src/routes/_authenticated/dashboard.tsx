@@ -43,14 +43,6 @@ import { toast } from "sonner";
 
 const FORMS_PER_PAGE = 10;
 
-export const Route = createFileRoute("/_authenticated/dashboard")({
-  component: DashboardPage,
-  ssr: "data-only",
-  pendingComponent: Loader,
-  errorComponent: ErrorBoundary,
-  notFoundComponent: NotFound,
-});
-
 const DashboardPage = () => {
   const navigate = useNavigate();
   const { activeOrg } = useLoaderData({ from: "/_authenticated" });
@@ -435,3 +427,11 @@ const DashboardPage = () => {
     </div>
   );
 };
+
+export const Route = createFileRoute("/_authenticated/dashboard")({
+  component: DashboardPage,
+  ssr: "data-only",
+  pendingComponent: Loader,
+  errorComponent: ErrorBoundary,
+  notFoundComponent: NotFound,
+});

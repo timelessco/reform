@@ -18,13 +18,6 @@ import { cn } from "@/lib/utils";
 import { guestMiddleware } from "@/middleware/auth";
 import { Logo } from "@/components/ui/logo";
 
-export const Route = createFileRoute("/login")({
-  server: {
-    middleware: [guestMiddleware],
-  },
-  component: LoginPage,
-});
-
 const signInEmailSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
@@ -519,3 +512,10 @@ const LoginPage = () => {
     </div>
   );
 };
+
+export const Route = createFileRoute("/login")({
+  server: {
+    middleware: [guestMiddleware],
+  },
+  component: LoginPage,
+});

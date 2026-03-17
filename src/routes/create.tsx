@@ -4,17 +4,6 @@ import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { guestMiddleware } from "@/middleware/auth";
 
-export const Route = createFileRoute("/create")({
-  server: {
-    middleware: [guestMiddleware],
-  },
-  ssr: false,
-  component: RouteComponent,
-  pendingComponent: Loader,
-  errorComponent: ErrorBoundary,
-  notFoundComponent: NotFound,
-});
-
 // ---- Everything below is code-split by autoCodeSplitting ----
 
 import { normalizeNodeId } from "platejs";
@@ -161,3 +150,14 @@ const LocalEditorApp = () => {
     </div>
   );
 };
+
+export const Route = createFileRoute("/create")({
+  server: {
+    middleware: [guestMiddleware],
+  },
+  ssr: false,
+  component: RouteComponent,
+  pendingComponent: Loader,
+  errorComponent: ErrorBoundary,
+  notFoundComponent: NotFound,
+});

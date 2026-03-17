@@ -61,23 +61,6 @@ import {
 import { APP_NAME, APP_API_DOCS_URL } from "@/lib/app-config";
 import { auth, useSession } from "@/lib/auth-client";
 
-export const Route = createFileRoute("/_authenticated/settings/api-keys")({
-  component: APIKeysPage,
-  loader: async ({ context }) => {
-    if (typeof window === "undefined") {
-      return { apiKeys: [] };
-    }
-    const apiKeys = await context.queryClient.ensureQueryData({
-      ...auth.apiKey.list.queryOptions(),
-      revalidateIfStale: true,
-    });
-    return { apiKeys };
-  },
-  pendingComponent: Loader,
-  errorComponent: ErrorBoundary,
-  notFoundComponent: NotFound,
-});
-
 const APIKeysPage = () => {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
@@ -426,3 +409,20 @@ const APIKeysPage = () => {
     </div>
   );
 };
+
+export const Route = createFileRoute("/_authenticated/settings/api-keys")({
+  component: APIKeysPage,
+  loader: async ({ context }) => {
+    if (typeof window === "undefined") {
+      return { apiKeys: [] };
+    }
+    const apiKeys = await context.queryClient.ensureQueryData({
+      ...auth.apiKey.list.queryOptions(),
+      revalidateIfStale: true,
+    });
+    return { apiKeys };
+  },
+  pendingComponent: Loader,
+  errorComponent: ErrorBoundary,
+  notFoundComponent: NotFound,
+});

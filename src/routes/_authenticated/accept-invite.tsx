@@ -10,16 +10,6 @@ import { NotFound } from "@/components/ui/not-found";
 import { auth, authClient } from "@/lib/auth-client";
 import { logger } from "@/lib/utils";
 
-export const Route = createFileRoute("/_authenticated/accept-invite")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    invitationId: search.invitationId as string,
-  }),
-  component: AcceptInvitePage,
-  pendingComponent: Loader,
-  errorComponent: ErrorBoundary,
-  notFoundComponent: NotFound,
-});
-
 const AcceptInvitePage = () => {
   const { invitationId } = Route.useSearch();
   const router = useRouter();
@@ -153,3 +143,13 @@ const AcceptInvitePage = () => {
     </div>
   );
 };
+
+export const Route = createFileRoute("/_authenticated/accept-invite")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    invitationId: search.invitationId as string,
+  }),
+  component: AcceptInvitePage,
+  pendingComponent: Loader,
+  errorComponent: ErrorBoundary,
+  notFoundComponent: NotFound,
+});

@@ -9,13 +9,6 @@ import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { auth, authClient } from "@/lib/auth-client";
 
-export const Route = createFileRoute("/_authenticated/settings/billing")({
-  component: BillingPage,
-  pendingComponent: Loader,
-  errorComponent: ErrorBoundary,
-  notFoundComponent: NotFound,
-});
-
 const BillingPage = () => {
   const { data: customerState, isLoading } = useQuery(auth.customer.state.queryOptions());
 
@@ -161,3 +154,10 @@ const BillingPage = () => {
     </div>
   );
 };
+
+export const Route = createFileRoute("/_authenticated/settings/billing")({
+  component: BillingPage,
+  pendingComponent: Loader,
+  errorComponent: ErrorBoundary,
+  notFoundComponent: NotFound,
+});

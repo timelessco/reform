@@ -14,11 +14,6 @@ const searchSchema = z.object({
   mode: z.enum(["signin", "verify"]).optional(),
 });
 
-export const Route = createFileRoute("/verify-email")({
-  validateSearch: searchSchema,
-  component: VerifyEmailPage,
-});
-
 const VerifyEmailPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -233,3 +228,8 @@ const VerifyEmailPage = () => {
     </div>
   );
 };
+
+export const Route = createFileRoute("/verify-email")({
+  validateSearch: searchSchema,
+  component: VerifyEmailPage,
+});

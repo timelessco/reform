@@ -17,13 +17,6 @@ import { auth } from "@/lib/auth-client";
 import { guestMiddleware } from "@/middleware/auth";
 import { Logo } from "@/components/ui/logo";
 
-export const Route = createFileRoute("/signup")({
-  server: {
-    middleware: [guestMiddleware],
-  },
-  component: SignUpPage,
-});
-
 const signUpSchema = z.object({
   username: z
     .string()
@@ -399,3 +392,10 @@ const SignUpPage = () => {
     </div>
   );
 };
+
+export const Route = createFileRoute("/signup")({
+  server: {
+    middleware: [guestMiddleware],
+  },
+  component: SignUpPage,
+});

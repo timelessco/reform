@@ -53,38 +53,6 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 
-export const Route = createFileRoute(
-  "/_authenticated/workspace/$workspaceId/form-builder/$formId/submissions",
-)({
-  component: SubmissionsPage,
-  loader: async ({ context, params }) => {
-    const [publishedData] = await Promise.all([
-      context.queryClient.ensureQueryData({
-        queryKey: ["publishedFormVersion", params.formId],
-        queryFn: () => getLatestPublishedVersion({ data: { formId: params.formId } }),
-        revalidateIfStale: true,
-      }),
-      context.queryClient
-        .ensureQueryData(getSubmissionsCountQueryOption(params.formId))
-        .catch(() => ({ total: 0 })),
-      context.queryClient.ensureInfiniteQueryData({
-        queryKey: ["submissions", params.formId],
-        queryFn: () =>
-          getSubmissionsByFormIdPaginated({
-            data: { formId: params.formId, cursor: undefined },
-          }),
-        initialPageParam: undefined as SubmissionCursor | undefined,
-        getNextPageParam: (lastPage: Awaited<ReturnType<typeof getSubmissionsByFormIdPaginated>>) =>
-          lastPage?.nextCursor,
-      }),
-    ]);
-    return { publishedData };
-  },
-  pendingComponent: Loader,
-  errorComponent: ErrorBoundary,
-  notFoundComponent: NotFound,
-});
-
 const SubmissionsPage = () => {
   const { formId } = Route.useParams();
   const queryClient = useQueryClient();
@@ -677,3 +645,35 @@ const SubmissionsPage = () => {
     </div>
   );
 };
+
+export const Route = createFileRoute(
+  "/_authenticated/workspace/$workspaceId/form-builder/$formId/submissions",
+)({
+  component: SubmissionsPage,
+  loader: async ({ context, params }) => {
+    const [publishedData] = await Promise.all([
+      context.queryClient.ensureQueryData({
+        queryKey: ["publishedFormVersion", params.formId],
+        queryFn: () => getLatestPublishedVersion({ data: { formId: params.formId } }),
+        revalidateIfStale: true,
+      }),
+      context.queryClient
+        .ensureQueryData(getSubmissionsCountQueryOption(params.formId))
+        .catch(() => ({ total: 0 })),
+      context.queryClient.ensureInfiniteQueryData({
+        queryKey: ["submissions", params.formId],
+        queryFn: () =>
+          getSubmissionsByFormIdPaginated({
+            data: { formId: params.formId, cursor: undefined },
+          }),
+        initialPageParam: undefined as SubmissionCursor | undefined,
+        getNextPageParam: (lastPage: Awaited<ReturnType<typeof getSubmissionsByFormIdPaginated>>) =>
+          lastPage?.nextCursor,
+      }),
+    ]);
+    return { publishedData };
+  },
+  pendingComponent: Loader,
+  errorComponent: ErrorBoundary,
+  notFoundComponent: NotFound,
+});
