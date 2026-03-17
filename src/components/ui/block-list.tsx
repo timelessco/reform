@@ -8,6 +8,32 @@ import type React from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
+const TodoMarker = (props: PlateElementProps) => {
+  const state = useTodoListElementState({ element: props.element });
+  const { checkboxProps } = useTodoListElement(state);
+  const readOnly = useReadOnly();
+
+  return (
+    <div contentEditable={false}>
+      <Checkbox
+        className={cn("-left-6 absolute top-1", readOnly && "pointer-events-none")}
+        {...checkboxProps}
+      />
+    </div>
+  );
+};
+
+const TodoLi = (props: PlateElementProps) => (
+  <li
+    className={cn(
+      "list-none",
+      (props.element.checked as boolean) && "text-muted-foreground line-through",
+    )}
+  >
+    {props.children}
+  </li>
+);
+
 const config: Record<
   string,
   {
@@ -39,29 +65,3 @@ const List = (props: PlateElementProps) => {
     </List>
   );
 };
-
-const TodoMarker = (props: PlateElementProps) => {
-  const state = useTodoListElementState({ element: props.element });
-  const { checkboxProps } = useTodoListElement(state);
-  const readOnly = useReadOnly();
-
-  return (
-    <div contentEditable={false}>
-      <Checkbox
-        className={cn("-left-6 absolute top-1", readOnly && "pointer-events-none")}
-        {...checkboxProps}
-      />
-    </div>
-  );
-};
-
-const TodoLi = (props: PlateElementProps) => (
-  <li
-    className={cn(
-      "list-none",
-      (props.element.checked as boolean) && "text-muted-foreground line-through",
-    )}
-  >
-    {props.children}
-  </li>
-);

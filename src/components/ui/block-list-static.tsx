@@ -7,38 +7,6 @@ import type * as React from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const config: Record<
-  string,
-  {
-    Li: React.FC<SlateRenderElementProps>;
-    Marker: React.FC<SlateRenderElementProps>;
-  }
-> = {
-  todo: {
-    Li: TodoLiStatic,
-    Marker: TodoMarkerStatic,
-  },
-};
-
-export const BlockListStatic: RenderStaticNodeWrapper = (props) => {
-  if (!props.element.listStyleType) return;
-
-  return (props) => <List {...props} />;
-};
-
-const List = (props: SlateRenderElementProps) => {
-  const { listStart, listStyleType } = props.element as TListElement;
-  const { Li, Marker } = config[listStyleType] ?? {};
-  const List = isOrderedList(props.element) ? "ol" : "ul";
-
-  return (
-    <List className="relative m-0 p-0" style={{ listStyleType }} start={listStart}>
-      {Marker && <Marker {...props} />}
-      {Li ? <Li {...props} /> : <li>{props.children}</li>}
-    </List>
-  );
-};
-
 const TodoMarkerStatic = (props: SlateRenderElementProps) => {
   const checked = props.element.checked as boolean;
 
@@ -70,3 +38,35 @@ const TodoLiStatic = (props: SlateRenderElementProps) => (
     {props.children}
   </li>
 );
+
+const config: Record<
+  string,
+  {
+    Li: React.FC<SlateRenderElementProps>;
+    Marker: React.FC<SlateRenderElementProps>;
+  }
+> = {
+  todo: {
+    Li: TodoLiStatic,
+    Marker: TodoMarkerStatic,
+  },
+};
+
+export const BlockListStatic: RenderStaticNodeWrapper = (props) => {
+  if (!props.element.listStyleType) return;
+
+  return (props) => <List {...props} />;
+};
+
+const List = (props: SlateRenderElementProps) => {
+  const { listStart, listStyleType } = props.element as TListElement;
+  const { Li, Marker } = config[listStyleType] ?? {};
+  const List = isOrderedList(props.element) ? "ol" : "ul";
+
+  return (
+    <List className="relative m-0 p-0" style={{ listStyleType }} start={listStart}>
+      {Marker && <Marker {...props} />}
+      {Li ? <Li {...props} /> : <li>{props.children}</li>}
+    </List>
+  );
+};
