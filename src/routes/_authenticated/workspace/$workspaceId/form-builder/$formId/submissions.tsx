@@ -536,7 +536,14 @@ const SubmissionsPage = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  prefix={<Columns strokeWidth="2" color="var(--color-gray-alpha-600)" />}
+                  prefix={
+                    <Columns
+                      className="size-3"
+                      strokeWidth="2"
+                      color="var(--color-gray-alpha-600)"
+                    />
+                  }
+                  suffix={<ChevronDownIcon className="size-2.5 shrink-0 text-muted-foreground" />}
                   className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-accent/60 hover:bg-accent text-(--color-gray-alpha-600) transition-colors cursor-pointer text-normal text-[0.8rem] rounded-lg"
                 >
                   Columns

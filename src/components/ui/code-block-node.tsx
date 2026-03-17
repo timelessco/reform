@@ -73,7 +73,7 @@ const CodeBlockCombobox = () => {
       value={value}
       onValueChange={(val) => {
         if (val) {
-          editor.tf.setNodes<TCodeBlockElement>({ lang: val as string }, { at: element });
+          editor.tf.setNodes({ lang: val as string }, { at: element });
         }
       }}
     >
@@ -82,7 +82,7 @@ const CodeBlockCombobox = () => {
         placeholder="Search language..."
         className="h-6 w-[120px] border-0 bg-transparent shadow-none"
       />
-      <ComboboxContent className="w-[200px]">
+      <ComboboxContent className="w-[150px]">
         <ComboboxEmpty>No language found.</ComboboxEmpty>
         <ComboboxList className="max-h-[344px] overflow-y-auto">
           {(language) => (

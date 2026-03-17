@@ -16,6 +16,7 @@ import {
 } from "@/components/form-builder/embed-config-panel";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { StyleColorPicker, StyleNumberInput } from "@/components/ui/style-controls";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsIndicator, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { STYLES, BASE_COLORS, DARK_BASE_COLORS, THEME_COLORS } from "@/lib/theme-presets";
@@ -235,25 +236,11 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
     [updateWithCustomPreset],
   );
 
-  const handleRadiusChange = useCallback(
-    (v: string) => {
-      if (v) updateWithCustomPreset("radius", v);
-    },
-    [updateWithCustomPreset],
-  );
-
   const handleCssChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       updateWithCustomPreset(cssKey, e.target.value);
     },
     [updateWithCustomPreset, cssKey],
-  );
-
-  const handleStyleChange = useCallback(
-    (v: string) => {
-      if (v) selectStyle(v);
-    },
-    [selectStyle],
   );
 
   return (
@@ -265,7 +252,7 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
       {/* Header */}
       <SidebarHeader className="pt-2 pb-3 pl-1 shrink-0 gap-2.25 space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-medium text-foreground pl-2.5 font-sans">Customize</h2>
+          <h2 className="text-base font-normal text-foreground pl-2.5 font-sans">Customize</h2>
           <Button
             variant="ghost"
             size="icon-xs"
@@ -285,7 +272,7 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
           <SidebarSection label="Theme" className="pb-2.75" action={<></>}>
             <ConfigCard>
               <ConfigRow label="Style">
-                <Select value={activePreset} onValueChange={handleStyleChange}>
+                <Select value={activePreset} onValueChange={(v) => v && selectStyle(v)}>
                   <SelectTrigger className={selectTriggerCls}>
                     {STYLE_OPTIONS.find((o) => o.value === activePreset)?.label ?? activePreset}
                   </SelectTrigger>
@@ -347,7 +334,10 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
                 </Select>
               </ConfigRow>
               <ConfigRow label="Radius">
-                <Select value={activeRadius} onValueChange={handleRadiusChange}>
+                <Select
+                  value={activeRadius}
+                  onValueChange={(v) => v && updateWithCustomPreset("radius", v)}
+                >
                   <SelectTrigger className={selectTriggerCls}>
                     {RADIUS_OPTIONS.find((o) => o.value === activeRadius)?.label ?? activeRadius}
                   </SelectTrigger>
@@ -411,8 +401,8 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
                 label="Logo Width"
                 value={getValue("logoWidth") || "100px"}
                 onChange={(v) => updateWithCustomPreset("logoWidth", v)}
-                min={40}
-                max={200}
+                min={0}
+                max={100}
                 step={4}
                 unit="px"
                 displayUnit=""
@@ -459,9 +449,71 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
             </ConfigCard>
           </SidebarSection>
 
+          {/* Title */}
+          <SidebarSection label="Title" action={<ProBadge />}>
+            <ConfigCard>
+              <ConfigRow label="Font">
+                <Select
+                  value={getValue("titleFont") || "Timeless Serif"}
+                  onValueChange={(v) => {
+                    if (!v) return;
+                    loadGoogleFont(v);
+                    updateWithCustomPreset("titleFont", v);
+                  }}
+                >
+                  <SelectTrigger className={selectTriggerCls}>
+                    {FONT_OPTIONS.find(
+                      (o) => o.value === (getValue("titleFont") || "Timeless Serif"),
+                    )?.label ??
+                      (getValue("titleFont") || "Timeless Serif")}
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FONT_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </ConfigRow>
+              <StyleNumberInput
+                label="Font Size"
+                value={getValue("titleFontSize") || "48px"}
+                onChange={(v) => updateWithCustomPreset("titleFontSize", v)}
+                min={24}
+                max={72}
+                step={2}
+                unit="px"
+                displayUnit=""
+                className={CONFIG_INPUT_CLS}
+              />
+              <StyleNumberInput
+                label="Letter Spacing"
+                value={getValue("titleLetterSpacing") || "-1.44px"}
+                onChange={(v) => updateWithCustomPreset("titleLetterSpacing", v)}
+                min={-3}
+                max={3}
+                step={0.25}
+                unit="px"
+                displayUnit=""
+                className={CONFIG_INPUT_CLS}
+              />
+              <ConfigRow label="Italic" variant="switch">
+                <Switch
+                  aria-label="Italic"
+                  checked={getValue("titleItalic") === "true"}
+                  onCheckedChange={(v: boolean) =>
+                    updateWithCustomPreset("titleItalic", v ? "true" : "")
+                  }
+                  size="default"
+                />
+              </ConfigRow>
+            </ConfigCard>
+          </SidebarSection>
+
           {/* Colors — with Light / Dark tabs */}
           <SidebarSection label="Colors" action={<ProBadge />}>
-            <Tabs value={activeMode} onValueChange={handleModeToggle}>
+            <Tabs value={activeMode} onValueChange={handleModeToggle} className="mb-2.5">
               <TabsList className="w-full">
                 <TabsTrigger value="light">Light</TabsTrigger>
                 <TabsTrigger value="dark">Dark</TabsTrigger>
@@ -565,7 +617,7 @@ const AdvancedColorPickers = ({
             label={label}
             value={currentValue}
             onChange={(v) => updateField(prefixedKey, v)}
-            className="!rounded-none !border-0 !bg-secondary !h-[34px]"
+            className="!rounded-none"
           />
         );
       })}

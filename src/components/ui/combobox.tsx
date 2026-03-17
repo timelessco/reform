@@ -109,7 +109,7 @@ export const ComboboxContent = ({
         data-slot="combobox-content"
         data-chips={!!anchor}
         className={cn(
-          "w-(--anchor-width) origin-(--transform-origin) rounded-xl bg-white shadow-custom-7 transition-[scale,opacity,shadow] data-starting-style:scale-98 data-starting-style:opacity-0",
+          "w-(--anchor-width) origin-(--transform-origin) rounded-2xl bg-popover text-popover-foreground shadow-[0_0_1px_0_rgba(0,0,0,0.19),0_1px_2px_0_rgba(0,0,0,0.07),0_6px_15px_-5px_rgba(0,0,0,0.11)] ring-1 ring-foreground/10 transition-[scale,opacity,shadow] data-starting-style:scale-98 data-starting-style:opacity-0",
           className,
         )}
         {...props}
@@ -121,7 +121,7 @@ export const ComboboxContent = ({
 export const ComboboxList = ({ className, ...props }: ComboboxPrimitive.List.Props) => (
   <ComboboxPrimitive.List
     data-slot="combobox-list"
-    className={cn("p-1 empty:hidden", className)}
+    className={cn("flex flex-col gap-1 p-1 empty:hidden", className)}
     {...props}
   />
 );
@@ -130,7 +130,7 @@ export const ComboboxItem = ({ className, children, ...props }: ComboboxPrimitiv
   <ComboboxPrimitive.Item
     data-slot="combobox-item"
     className={cn(
-      "group flex cursor-pointer items-center gap-2 rounded-lg px-2 py-[5.5px] text-13 font-450 text-gray-900 transition-colors select-none data-highlighted:bg-gray-200 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+      "group flex cursor-pointer items-center gap-2 rounded-lg px-2 py-[5px] text-[13px] font-case text-foreground transition-colors select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
       className,
     )}
     {...props}

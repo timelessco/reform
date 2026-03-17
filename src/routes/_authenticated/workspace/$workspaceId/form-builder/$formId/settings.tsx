@@ -19,7 +19,7 @@ import { APP_NAME } from "@/lib/app-config";
 import { defaultFormSettings } from "@/types/form-settings";
 import { createFileRoute } from "@tanstack/react-router";
 import { EyeIcon, EyeOffIcon } from "@/components/ui/icons";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { SidebarSection } from "@/components/ui/sidebar-section";
 import {
   ConfigCard,
@@ -61,35 +61,6 @@ export const Route = createFileRoute(
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,
 });
-
-const PasswordInput = ({ value, onChange }: { value: string; onChange: (val: string) => void }) => {
-  const [show, setShow] = useState(false);
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value),
-    [onChange],
-  );
-  const handleToggleShow = useCallback(() => setShow((prev) => !prev), []);
-  return (
-    <div className="relative w-[140px]">
-      <Input
-        type={show ? "text" : "password"}
-        placeholder="Enter password"
-        value={value}
-        onChange={handleChange}
-        className="!rounded-none !border-0 !bg-secondary !h-[34px] text-sm pr-8"
-        aria-label="Form password"
-      />
-      <button
-        type="button"
-        onClick={handleToggleShow}
-        className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-        aria-label="Toggle password visibility"
-      >
-        {show ? <EyeOffIcon className="h-3.5 w-3.5" /> : <EyeIcon className="h-3.5 w-3.5" />}
-      </button>
-    </div>
-  );
-};
 
 export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?: boolean }) => {
   const cloudForm = useForm(isLocal ? undefined : formId);
@@ -619,6 +590,30 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
           </SidebarSection>
         </form.Form>
       </form.AppForm>
+    </div>
+  );
+};
+
+const PasswordInput = ({ value, onChange }: { value: string; onChange: (val: string) => void }) => {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative w-[160px]">
+      <Input
+        type={show ? "text" : "password"}
+        placeholder="Enter password"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full text-sm rounded-lg !border-none pr-8"
+        aria-label="Form password"
+      />
+      <button
+        type="button"
+        onClick={() => setShow(!show)}
+        className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+        aria-label="Toggle password visibility"
+      >
+        {show ? <EyeOffIcon className="h-3.5 w-3.5" /> : <EyeIcon className="h-3.5 w-3.5" />}
+      </button>
     </div>
   );
 };

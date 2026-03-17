@@ -1,11 +1,4 @@
-import {
-  ImageIcon,
-  CircleUserRoundIcon,
-  DownloadIcon,
-  SettingsIcon,
-  Trash2Icon,
-  UploadIcon,
-} from "@/components/ui/icons";
+import { ImageIcon, CircleUserRoundIcon, SettingsIcon, Trash2Icon } from "@/components/ui/icons";
 import { IconPickerContent, IconPickerPreview } from "@/components/icon-picker";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PlateElementProps } from "platejs/react";
@@ -70,7 +63,16 @@ const COVER_GALLERY = [
   },
 ] as const;
 
-const CoverUpload = ({ onFileChange }: { onFileChange: (url: string) => void }) => {
+const CoverUpload = ({
+  currentCover,
+  onUpload,
+  onCancel,
+}: {
+  currentCover: string | null;
+  onUpload: (url: string) => void;
+  onCancel: () => void;
+}) => {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [
     { isDragging, errors },
     { handleDragEnter, handleDragLeave, handleDragOver, handleDrop, openFileDialog, getInputProps },
@@ -80,36 +82,144 @@ const CoverUpload = ({ onFileChange }: { onFileChange: (url: string) => void }) 
     accept: "image/*",
     multiple: false,
     onFilesChange: (files) => {
-      if (files[0]?.preview) {
-        onFileChange(files[0].preview);
+      if (files[0]?.file) {
+        setPreviewUrl(URL.createObjectURL(files[0].file as File));
       }
     },
   });
 
-  return (
-    <div className="flex flex-col gap-4">
-      <button
-        className={cn(
-          "group/cover-upload relative h-32 w-full cursor-pointer overflow-hidden rounded-md border-2 border-dashed transition-colors flex items-center justify-center",
-          isDragging
-            ? "border-primary bg-primary/5"
-            : "border-muted-foreground/25 hover:border-muted-foreground/20 hover:bg-muted/50",
-        )}
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-        onClick={openFileDialog}
-        type="button"
-      >
-        <input {...getInputProps()} className="sr-only" />
-        <div className="flex flex-col items-center gap-2 text-muted-foreground">
-          <UploadIcon className="h-8 w-8" />
-          <span className="text-sm">Upload cover image</span>
-          <span className="text-xs">Max 5MB</span>
+  // Clipboard paste handler
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith("image/")) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) {
+            setPreviewUrl(URL.createObjectURL(file));
+          }
+          return;
+        }
+      }
+    };
+    document.addEventListener("paste", handlePaste);
+    return () => document.removeEventListener("paste", handlePaste);
+  }, []);
+
+  // Cleanup preview URL
+  useEffect(
+    () => () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    },
+    [previewUrl],
+  );
+
+  const resetState = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+  };
+
+  // Preview view
+  if (previewUrl) {
+    return (
+      <div className="flex flex-col">
+        <div className="flex flex-col items-center justify-center py-4">
+          <p className="text-xs text-muted-foreground mb-3">Preview</p>
+          <div className="rounded-lg border border-border overflow-hidden shadow-sm">
+            <img
+              src={previewUrl}
+              alt="Preview"
+              width={260}
+              height={120}
+              className="max-w-[260px] max-h-[120px] object-cover"
+            />
+          </div>
         </div>
-      </button>
-      {errors.length > 0 && <div className="text-destructive text-sm">{errors[0]}</div>}
+
+        {errors.length > 0 && (
+          <p className="text-destructive text-xs pb-2 text-center">{errors[0]}</p>
+        )}
+
+        <div className="flex items-center justify-between pb-3 pt-1">
+          <Button variant="ghost" size="sm" onClick={resetState}>
+            Back
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => {
+              onUpload(previewUrl);
+              resetState();
+            }}
+          >
+            Save
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Upload view (initial state)
+  return (
+    <div className="flex flex-col">
+      <div className="py-4">
+        {currentCover && !currentCover.startsWith("#") ? (
+          <button
+            type="button"
+            className="w-full rounded-lg border border-dashed border-muted-foreground/25 hover:border-muted-foreground/40 hover:bg-muted/50 flex flex-col items-center justify-center gap-2 py-4 transition-all cursor-pointer"
+            onClick={openFileDialog}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
+            <input {...getInputProps()} className="sr-only" />
+            <img
+              src={currentCover}
+              alt="Current cover"
+              width={200}
+              height={80}
+              className="max-w-[200px] max-h-[80px] rounded-lg object-cover"
+            />
+            <span className="text-xs text-muted-foreground">Click to replace</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={cn(
+              "w-full h-24 rounded-lg border border-dashed flex items-center justify-center gap-2.5 transition-all cursor-pointer",
+              isDragging
+                ? "border-primary bg-primary/5"
+                : "border-muted-foreground/25 hover:border-muted-foreground/40 hover:bg-muted/50",
+            )}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onClick={openFileDialog}
+          >
+            <input {...getInputProps()} className="sr-only" />
+            <ImageIcon className="h-5 w-5 text-muted-foreground/60" />
+            <span className="text-sm text-muted-foreground">Upload an image</span>
+          </button>
+        )}
+      </div>
+
+      <p className="text-xs text-muted-foreground/60 text-center pb-3">
+        or {PASTE_HINT} to paste an image or link
+      </p>
+
+      {errors.length > 0 && (
+        <p className="text-destructive text-xs pb-2 text-center">{errors[0]}</p>
+      )}
+
+      <div className="flex items-center justify-between pb-3 pt-1 border-t border-border">
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
     </div>
   );
 };
@@ -382,9 +492,12 @@ export const FormHeaderElement = (props: PlateElementProps) => {
     }
   }, []);
 
+  const titleFontSize = editorCustomization?.titleFontSize;
+  const titleFont = editorCustomization?.titleFont;
+
   useEffect(() => {
     autoResizeTitle();
-  }, [title, autoResizeTitle]);
+  }, [title, titleFontSize, titleFont, autoResizeTitle]);
 
   const handleTitleChange = useCallback(
     (newTitle: string) => {
@@ -426,13 +539,22 @@ export const FormHeaderElement = (props: PlateElementProps) => {
   const activeThemeColorName = editorCustomization?.themeColor || "zinc";
   const activeAccentColor =
     THEME_COLORS[activeThemeColorName]?.primary || THEME_COLORS.zinc.primary;
+  const isLogoMinimal =
+    hasCustomization &&
+    editorCustomization?.logoWidth &&
+    Number.parseInt(editorCustomization.logoWidth) <= 0;
+
+  const logoCircleSize =
+    hasCustomization && editorCustomization?.logoWidth
+      ? String(Math.max(48, Number.parseInt(editorCustomization.logoWidth)))
+      : "100";
 
   const [iconPopoverOpen, setIconPopoverOpen] = useState(false);
   const [iconTab, setIconTab] = useState("icon");
   const [coverPopoverOpen, setCoverPopoverOpen] = useState(false);
 
   return (
-    <PlateElement {...props}>
+    <PlateElement {...props} attributes={{ ...props.attributes, "data-bf-header": "" }}>
       <div
         contentEditable={false}
         className="group relative w-full flex flex-col mb-4 select-none rounded-none"
@@ -497,55 +619,21 @@ export const FormHeaderElement = (props: PlateElementProps) => {
                     Remove
                   </Button>
                   <ButtonGroupSeparator className="bg-border" />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-foreground/80 hover:text-foreground hover:bg-secondary border-none rounded-none rounded-r-lg"
-                    onClick={() => {
-                      if (cover) {
-                        const link = document.createElement("a");
-                        link.href = cover;
-                        link.download = "cover-image";
-                        link.target = "_blank";
-                        link.rel = "noopener";
-                        link.click();
-                      }
-                    }}
-                    onMouseDown={(e) => e.preventDefault()}
-                    aria-label="Download cover"
-                  >
-                    <DownloadIcon />
-                  </Button>
                 </ButtonGroup>
               </div>
 
-              <PopoverContent
-                align="end"
-                side="bottom"
-                className="w-[480px] p-0 rounded-xl border border-border/50 shadow-xl overflow-hidden"
-                sideOffset={8}
-              >
-                <Tabs defaultValue="gallery" className="w-full pl-1">
-                  <div className="flex items-center justify-between pr-4 py-2">
+              <PopoverContent align="end" side="bottom" className="w-[310px] p-0" sideOffset={8}>
+                <Tabs defaultValue="gallery" className="w-full">
+                  <div className="flex items-center gap-2 px-3 pt-2 pb-1">
                     <TabsList className="w-full">
-                      <TabsTrigger
-                        value="gallery"
-                        className="tracking-[0.21px] text-base font-medium"
-                      >
-                        Gallery
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="upload"
-                        className="tracking-[0.21px] text-base font-medium"
-                      >
-                        Upload
-                      </TabsTrigger>
+                      <TabsTrigger value="gallery">Gallery</TabsTrigger>
+                      <TabsTrigger value="upload">Upload</TabsTrigger>
                       <TabsIndicator />
                     </TabsList>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="shrink-0 ml-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      className="shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                       onClick={() => {
                         handleCoverChange(null);
                         setCoverPopoverOpen(false);
@@ -557,9 +645,9 @@ export const FormHeaderElement = (props: PlateElementProps) => {
                     </Button>
                   </div>
 
-                  <TabsContent value="gallery" className="px-4 pb-4 mt-0">
+                  <TabsContent value="gallery" className="px-3 pb-3 mt-0">
                     <p className="text-xs text-muted-foreground mb-2 mt-1">Abstract</p>
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       {COVER_GALLERY.map((item) => (
                         <button
                           key={item.label}
@@ -584,12 +672,14 @@ export const FormHeaderElement = (props: PlateElementProps) => {
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="upload" className="px-4 pb-4 mt-0">
+                  <TabsContent value="upload" className="px-3 pb-3 mt-0">
                     <CoverUpload
-                      onFileChange={(url) => {
+                      currentCover={cover}
+                      onUpload={(url) => {
                         handleCoverChange(url);
                         setCoverPopoverOpen(false);
                       }}
+                      onCancel={() => setCoverPopoverOpen(false)}
                     />
                   </TabsContent>
                 </Tabs>
@@ -629,22 +719,26 @@ export const FormHeaderElement = (props: PlateElementProps) => {
                           data-bf-logo
                         />
                       ) : (
-                        <IconPickerPreview
-                          icon={icon}
-                          iconColor={hasCustomization ? undefined : iconColor || undefined}
-                          useThemeColor={hasCustomization || !iconColor}
-                          iconSize="48"
-                          size="100"
-                        />
+                        <span data-bf-logo-icon={isLogoMinimal ? "minimal" : ""}>
+                          <IconPickerPreview
+                            icon={icon}
+                            iconColor={hasCustomization ? undefined : iconColor || undefined}
+                            useThemeColor={hasCustomization || !iconColor}
+                            iconSize="48"
+                            size={logoCircleSize}
+                          />
+                        </span>
                       )
                     ) : (
-                      <IconPickerPreview
-                        icon={null}
-                        iconColor={undefined}
-                        useThemeColor
-                        iconSize="48"
-                        size="100"
-                      />
+                      <span data-bf-logo-icon={isLogoMinimal ? "minimal" : ""}>
+                        <IconPickerPreview
+                          icon={null}
+                          iconColor={undefined}
+                          useThemeColor
+                          iconSize="48"
+                          size={logoCircleSize}
+                        />
+                      </span>
                     )}
                   </PopoverTrigger>
                 </div>

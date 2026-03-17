@@ -120,7 +120,7 @@ export type TransformedElement = PlateFormField | PlateStaticElement;
 /**
  * Extracts plain text content from a Plate node's children array.
  */
-const extractTextContent = (children: Array<{ text?: string }>): string => {
+export const extractTextContent = (children: Array<{ text?: string }>): string => {
   if (!Array.isArray(children)) return "";
   return children
     .map((child) => child.text || "")
@@ -135,7 +135,7 @@ const extractTextContent = (children: Array<{ text?: string }>): string => {
 const NON_ALNUM_RE = /[^a-z0-9]+/g;
 const TRIM_UNDERSCORES_RE = /^_|_$/g;
 
-const slugify = (str: string): string =>
+export const slugify = (str: string): string =>
   str.toLowerCase().replace(NON_ALNUM_RE, "_").replace(TRIM_UNDERSCORES_RE, "") || "field";
 
 /**

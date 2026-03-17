@@ -1,33 +1,18 @@
-import { RenderPreviewInput } from "@/components/form-components/render-preview-input";
+import { StaticContentBlock } from "@/components/form-components/static-content-block";
 import { StepForm } from "@/components/form-components/step-form";
 import { ProgressBar } from "@/components/public/progress-bar";
 import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Separator } from "@/components/ui/separator";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { StepFormProvider, useStepForm } from "@/contexts/step-form-context";
 import { useTranslation } from "@/contexts/translation-context";
-import { usePreviewForm } from "@/hooks/use-preview-form";
-import {
-  extractFormHeader,
-  splitElementsIntoSteps,
-  transformPlateStateToFormElements,
-} from "@/lib/transform-plate-to-form";
-import type { PlateFormField, TransformedElement } from "@/lib/transform-plate-to-form";
+import { extractFormHeader } from "@/lib/transform-plate-to-form";
+import { transformPlateForPreview } from "@/lib/transform-plate-for-preview";
+import type { PreviewSegment } from "@/lib/transform-plate-for-preview";
 import { cn, isValidUrl, DEFAULT_ICON } from "@/lib/utils";
 import type { PublicFormSettings } from "@/types/form-settings";
-import { ChevronRightIcon } from "@/components/ui/icons";
 import { IconPickerPreview } from "@/components/icon-picker";
 import { AnimatePresence, motion } from "motion/react";
 import type { Value } from "platejs";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const SuccessCheckmarkIcon = (
   <svg
@@ -99,183 +84,6 @@ const PAGE_MAX_WIDTH = {
 } as const;
 
 /**
- * Navigation handlers for buttons
- */
-export type NavigationHandlers = {
-  onNext?: () => void;
-  onPrevious?: () => void;
-  onSubmit?: () => void;
-  isSubmitting?: boolean;
-};
-
-/**
- * Toggle renderer component with its own open/closed state
- */
-const ToggleRenderer = ({
-  title,
-  items,
-  form,
-  layout,
-}: {
-  title: string;
-  items: TransformedElement[];
-  form: ReturnType<typeof usePreviewForm>["form"];
-  layout: "public" | "editor";
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="my-2">
-      <CollapsibleTrigger className="flex items-center gap-2 w-full text-left hover:bg-muted/50 rounded-md p-2 -ml-2 transition-colors">
-        <ChevronRightIcon
-          className={`h-4 w-4 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-90" : ""}`}
-        />
-        <span>{title}</span>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="pl-6 space-y-2">
-        {items.map((child) => (
-          <RenderPreviewElement key={child.id} element={child} form={form} layout={layout} />
-        ))}
-      </CollapsibleContent>
-    </Collapsible>
-  );
-};
-
-/**
- * Renders a single preview element (static or input)
- */
-const RenderPreviewElement = ({
-  element,
-  form,
-  navigation,
-  grouped = false,
-  layout,
-}: {
-  element: TransformedElement;
-  form: ReturnType<typeof usePreviewForm>["form"];
-  navigation?: NavigationHandlers;
-  grouped?: boolean;
-  layout: "public" | "editor";
-}) => {
-  // Static elements
-  if ("static" in element && element.static) {
-    switch (element.fieldType) {
-      case "H1":
-        return <h1 className="text-3xl font-bold mt-6 mb-4">{element.content}</h1>;
-      case "H2":
-        return <h2 className="text-2xl font-semibold mt-5 mb-3">{element.content}</h2>;
-      case "H3":
-        return <h3 className="text-xl mt-4 mb-2">{element.content}</h3>;
-      case "Separator":
-        return <Separator className="my-4" />;
-      case "EmptyBlock":
-        return <div className="-mt-2 h-2" aria-hidden="true" />; // Minimal spacer, offset space-y-4
-      case "FieldDescription":
-        return <p className="text-muted-foreground text-sm my-2">{element.content}</p>;
-      case "UnorderedList":
-        return (
-          <ul className="my-2 ml-6 space-y-1 list-disc">
-            {element.items.map((item) => (
-              <li key={`${element.id}-${item}`} className="text-sm pl-1">
-                {item}
-              </li>
-            ))}
-          </ul>
-        );
-      case "OrderedList":
-        return (
-          <ol className="my-2 ml-6 space-y-1 list-decimal">
-            {element.items.map((item) => (
-              <li key={`${element.id}-${item}`} className="text-sm pl-1">
-                {item}
-              </li>
-            ))}
-          </ol>
-        );
-      case "Toggle":
-        return (
-          <ToggleRenderer
-            title={element.title}
-            items={element.children}
-            form={form}
-            layout={layout}
-          />
-        );
-      case "Table":
-        return (
-          <div className="my-4 border rounded-md overflow-hidden">
-            <Table>
-              {(() => {
-                const headerRows: typeof element.rows = [];
-                const bodyRows: typeof element.rows = [];
-                for (const row of element.rows) {
-                  (row.isHeader ? headerRows : bodyRows).push(row);
-                }
-                return (
-                  <>
-                    {headerRows.length > 0 && (
-                      <TableHeader>
-                        {headerRows.map((row) => (
-                          <TableRow key={`${element.id}-header-${row.cells.join("-")}`}>
-                            {row.cells.map((cell) => (
-                              <TableHead key={`${element.id}-header-${cell}`}>{cell}</TableHead>
-                            ))}
-                          </TableRow>
-                        ))}
-                      </TableHeader>
-                    )}
-                    <TableBody>
-                      {bodyRows.map((row) => (
-                        <TableRow key={`${element.id}-row-${row.cells.join("-")}`}>
-                          {row.cells.map((cell) => (
-                            <TableCell key={`${element.id}-${cell}`}>{cell}</TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </>
-                );
-              })()}
-            </Table>
-          </div>
-        );
-      case "Callout":
-        return (
-          <div className="my-4 bg-muted rounded-lg p-4 flex gap-3 items-start">
-            {element.emoji && (
-              <span className="text-xl shrink-0" role="img" aria-hidden="true">
-                {element.emoji}
-              </span>
-            )}
-            <p className="text-sm">{element.content}</p>
-          </div>
-        );
-      default:
-        return null;
-    }
-  }
-
-  // Form fields (Input, Textarea, Button)
-  if (
-    element.fieldType === "Input" ||
-    element.fieldType === "Textarea" ||
-    element.fieldType === "Button"
-  ) {
-    return (
-      <RenderPreviewInput
-        field={element as PlateFormField}
-        form={form}
-        navigation={navigation}
-        grouped={grouped}
-        layout={layout}
-      />
-    );
-  }
-
-  return null;
-};
-
-/**
  * Form header component with proper icon and cover handling
  * Matches the editor's form-header.tsx rendering patterns
  */
@@ -296,8 +104,18 @@ const PreviewFormHeader = ({
 }) => {
   const [imageError, setImageError] = useState(false);
   const [iconError, setIconError] = useState(false);
-  const handleImageError = useCallback(() => setImageError(true), []);
-  const handleIconError = useCallback(() => setIconError(true), []);
+  const handleImageError = () => setImageError(true);
+  const handleIconError = () => setIconError(true);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [isLogoMinimal, setIsLogoMinimal] = useState(false);
+
+  // Check if logo should hide its background (at minimum size)
+  useEffect(() => {
+    if (!headerRef.current) return;
+    const minimal =
+      getComputedStyle(headerRef.current).getPropertyValue("--bf-logo-minimal").trim() === "1";
+    setIsLogoMinimal(minimal);
+  }, [cover, icon, title]);
 
   // Check if we have valid cover (URL or hex color)
   const hasCover = cover && (isHexColor(cover) || isValidUrl(cover)) && !imageError;
@@ -357,13 +175,15 @@ const PreviewFormHeader = ({
           className={hasCover ? "relative z-10" : ""}
           data-bf-logo-emoji-container={hasCover ? "true" : undefined}
         >
-          <IconPickerPreview
-            icon={null}
-            iconColor={undefined}
-            useThemeColor
-            iconSize="48"
-            size="100"
-          />
+          <span data-bf-logo-icon={isLogoMinimal ? "minimal" : undefined}>
+            <IconPickerPreview
+              icon={null}
+              iconColor={undefined}
+              useThemeColor
+              iconSize="48"
+              size="100"
+            />
+          </span>
         </div>
       );
     }
@@ -394,20 +214,22 @@ const PreviewFormHeader = ({
         className={hasCover ? "relative z-10 block" : ""}
         data-bf-logo-emoji-container={hasCover ? "true" : undefined}
       >
-        <IconPickerPreview
-          icon={icon}
-          iconColor={iconColor || undefined}
-          useThemeColor={!iconColor}
-          iconSize="48"
-          size="100"
-        />
+        <span data-bf-logo-icon={isLogoMinimal ? "minimal" : undefined}>
+          <IconPickerPreview
+            icon={icon}
+            iconColor={iconColor || undefined}
+            useThemeColor={!iconColor}
+            iconSize="48"
+            size="100"
+          />
+        </span>
       </div>
     );
   };
 
   if (layout === "editor") {
     return (
-      <div className="mb-4 sm:mb-8 w-full">
+      <div ref={headerRef} className="mb-4 sm:mb-8 w-full">
         {hasCover && renderCover()}
 
         {/* Match editor's left-aligned layout */}
@@ -419,6 +241,7 @@ const PreviewFormHeader = ({
           {hasIcon && renderIcon()}
           {hasTitle && (
             <h1
+              data-bf-title
               className={`text-4xl sm:text-[48px] font-serif font-light -tracking-[0.03em] text-foreground ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
             >
               {title}
@@ -431,11 +254,11 @@ const PreviewFormHeader = ({
 
   // For public layout, no negative margin tricks needed
   return (
-    <div className="mb-4 sm:mb-8 w-full">
+    <div ref={headerRef} className="mb-4 sm:mb-8 w-full">
       {hasCover && renderCover()}
 
       <div
-        className="mx-auto px-4 sm:px-0"
+        className="mx-auto px-4"
         style={{ maxWidth: PAGE_MAX_WIDTH.public }}
         data-bf-form-container
       >
@@ -443,6 +266,7 @@ const PreviewFormHeader = ({
           {hasIcon && renderIcon()}
           {hasTitle && (
             <h1
+              data-bf-title
               className={`text-4xl sm:text-[48px] font-serif font-light -tracking-[0.03em] text-foreground ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
             >
               {title}
@@ -455,27 +279,14 @@ const PreviewFormHeader = ({
 };
 
 /**
- * Renders custom thank you content after form submission
+ * Renders custom thank you content after form submission.
+ * Thank-you page is static-only — rendered entirely via PlateStatic.
  */
-const RenderThankYouContent = ({
-  elements,
-  form,
-  onReset,
-  layout,
-}: {
-  elements: TransformedElement[];
-  form: ReturnType<typeof usePreviewForm>["form"];
-  onReset?: () => void;
-  layout: "public" | "editor";
-}) => {
+const RenderThankYouContent = ({ nodes, onReset }: { nodes: Value; onReset?: () => void }) => {
   const { t } = useTranslation();
   return (
     <div data-bf-field-list className="space-y-4">
-      {elements.map((element) => (
-        <div key={element.id} className="w-full">
-          <RenderPreviewElement element={element} form={form} layout={layout} />
-        </div>
-      ))}
+      <StaticContentBlock nodes={nodes} />
       {onReset && (
         <div className="flex justify-center pt-4">
           <Button
@@ -518,6 +329,10 @@ const DefaultThankYou = ({ onReset }: { onReset?: () => void }) => {
  * Renders Plate editor content as a functional form preview.
  * Supports multi-step forms with page breaks as step dividers.
  * Uses separate forms per step with StepFormContext for state management.
+ *
+ * Static content (headings, paragraphs, blockquotes, code blocks, etc.)
+ * is rendered via PlateStatic for full rich-text fidelity.
+ * Form fields (Input, Textarea, Button) use custom form components.
  */
 export const FormPreviewFromPlate = ({
   content,
@@ -530,7 +345,7 @@ export const FormPreviewFromPlate = ({
   settings,
   formId,
 }: FormPreviewFromPlateProps) => {
-  const headerFromContent = extractFormHeader(content);
+  const headerFromContent = useMemo(() => extractFormHeader(content), [content]);
   const hasHeaderNode = headerFromContent !== null;
 
   const title = hideTitle ? "" : hasHeaderNode ? headerFromContent.title : legacyTitle;
@@ -538,12 +353,10 @@ export const FormPreviewFromPlate = ({
   const iconColor = hasHeaderNode ? headerFromContent.iconColor : null;
   const cover = hasHeaderNode ? (headerFromContent.cover ?? legacyCover) : legacyCover;
 
-  const elements = transformPlateStateToFormElements(content);
+  // Transform Plate content into chunked preview segments
+  const { steps, thankYouNodes } = useMemo(() => transformPlateForPreview(content), [content]);
 
-  // Split elements into steps based on page breaks
-  const { steps, thankYouContent } = splitElementsIntoSteps(elements);
-
-  // Show placeholder if no elements found
+  // Show placeholder if no segments found
   if (steps.length === 0 || steps.flat().length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] text-center p-8">
@@ -559,14 +372,13 @@ export const FormPreviewFromPlate = ({
   return (
     <StepFormProvider
       totalSteps={steps.length}
-      thankYouContent={thankYouContent}
       onSubmit={onSubmit}
       formId={formId}
       saveAnswersForLater={settings?.saveAnswersForLater}
     >
       <FormPreviewContent
         steps={steps}
-        thankYouContent={thankYouContent}
+        thankYouNodes={thankYouNodes}
         title={title}
         icon={icon}
         iconColor={iconColor}
@@ -604,7 +416,7 @@ const stepVariants = {
  */
 const FormPreviewContent = ({
   steps,
-  thankYouContent,
+  thankYouNodes,
   title,
   icon,
   iconColor,
@@ -613,8 +425,8 @@ const FormPreviewContent = ({
   layout,
   settings,
 }: {
-  steps: TransformedElement[][];
-  thankYouContent: TransformedElement[] | null;
+  steps: PreviewSegment[][];
+  thankYouNodes: Value | null;
   title?: string;
   icon?: string;
   iconColor?: string | null;
@@ -626,9 +438,6 @@ const FormPreviewContent = ({
   const { currentStep, totalSteps, isSubmitted, direction, reset } = useStepForm();
   const { t } = useTranslation();
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
-
-  // Create a dummy form for thank you content rendering (static elements only)
-  const { form } = usePreviewForm({ fields: [] });
 
   // Handle redirect on completion
   useEffect(() => {
@@ -684,13 +493,8 @@ const FormPreviewContent = ({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            {thankYouContent && thankYouContent.length > 0 ? (
-              <RenderThankYouContent
-                elements={thankYouContent}
-                form={form}
-                onReset={reset}
-                layout={layout}
-              />
+            {thankYouNodes && thankYouNodes.length > 0 ? (
+              <RenderThankYouContent nodes={thankYouNodes} onReset={reset} />
             ) : (
               <DefaultThankYou onReset={reset} />
             )}
@@ -709,10 +513,10 @@ const FormPreviewContent = ({
   }
 
   const isLastStep = currentStep === steps.length - 1;
-  const currentStepElements = steps[currentStep] || [];
+  const currentStepSegments = steps[currentStep] || [];
 
   return (
-    <div className="w-full">
+    <div className="w-full py-3">
       {/* Header Section */}
       <PreviewFormHeader
         title={title}
@@ -756,7 +560,7 @@ const FormPreviewContent = ({
             <StepForm
               key={currentStep}
               stepIndex={currentStep}
-              elements={currentStepElements}
+              segments={currentStepSegments}
               isLastStep={isLastStep}
               layout={layout}
               autoJump={settings?.autoJump}

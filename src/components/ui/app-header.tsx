@@ -17,7 +17,7 @@ import {
   SettingsIcon,
 } from "@/components/ui/icons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toggleFavoriteLocal } from "@/db-collections/favorite.collection";
 import { updateFormStatus } from "@/db-collections/form.collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
@@ -392,7 +392,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                 <div className="space-y-1">
                   <p className="text-xs text-background/70">
                     Edited by{" "}
-                    <span className="text-background">{session?.user?.name ?? "You"}</span>
+                    <span className="text-background">{session?.user?.name ?? "You"}</span>{" "}
                     {formatDistanceToNow(
                       parseTimestampAsUTC(savedDocs?.[0]?.updatedAt) ?? new Date(),
                     )}{" "}
@@ -401,7 +401,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                   {savedDocs?.[0]?.createdAt && (
                     <p className="text-xs text-background/70">
                       Created by{" "}
-                      <span className="text-background">{session?.user?.name ?? "You"}</span>
+                      <span className="text-background">{session?.user?.name ?? "You"}</span>{" "}
                       {format(
                         parseTimestampAsUTC(savedDocs?.[0]?.createdAt) ?? new Date(),
                         "MMM d, yyyy",

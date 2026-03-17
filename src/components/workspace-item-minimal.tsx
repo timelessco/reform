@@ -120,7 +120,7 @@ export const WorkspaceItemMinimal = ({
           <PopoverContent align="start" className="w-48" sideOffset={4}>
             <div className="flex flex-col">
               <Collapsible open={sortExpanded} onOpenChange={setSortExpanded}>
-                <CollapsibleTrigger className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 w-full overflow-hidden text-[13px] transition-colors cursor-pointer text-foreground/80 ">
+                <CollapsibleTrigger className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 w-full overflow-hidden text-[13px] transition-colors cursor-pointer text-foreground">
                   <currentSort.icon className="size-4 shrink-0" />
                   <span className="flex-1 text-left">{currentSort.label}</span>
                   <ChevronRightIcon
@@ -148,7 +148,7 @@ export const WorkspaceItemMinimal = ({
                           "h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] transition-colors cursor-pointer",
                           sortMode === option.value
                             ? "bg-black/5 text-foreground"
-                            : "text-foreground/80 hover:bg-(--color-gray-alpha-100) hover:text-foreground",
+                            : "text-foreground hover:bg-(--color-gray-alpha-100) hover:text-foreground",
                         )}
                       >
                         <option.icon className="size-4 shrink-0" />
@@ -168,7 +168,7 @@ export const WorkspaceItemMinimal = ({
                 size="sm"
                 onClick={handleCreateForm}
                 disabled={isCreatingForm}
-                className="h-6.5 px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] transition-colors text-foreground/80"
+                className="h-6.5 px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] transition-colors text-foreground"
               >
                 {isCreatingForm ? (
                   <Loader2Icon className="size-4 animate-spin shrink-0" />
@@ -182,7 +182,7 @@ export const WorkspaceItemMinimal = ({
                 variant="ghost"
                 size="sm"
                 onClick={onRename}
-                className="h-6.5 px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] transition-colors text-foreground/80"
+                className="h-6.5 px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] transition-colors text-foreground"
               >
                 <Pencil2Icon className="size-4 shrink-0" />
                 <span className="flex-1 text-left">Rename</span>

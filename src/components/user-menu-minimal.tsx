@@ -17,7 +17,7 @@ import {
   Trash2Icon,
   UsersIcon,
 } from "@/components/ui/icons";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "./ui/button";
 
 const getInitials = (name?: string | null) => {
@@ -122,11 +122,6 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
     },
   ];
 
-  const handleLogout = useCallback(() => {
-    signOutMutation.mutate({});
-    setIsOpen(false);
-  }, [signOutMutation]);
-
   const menuItemIconClass =
     "size-4 shrink-0 text-foreground/80 [&_path]:stroke-[1.6] [&_path]:stroke-current";
 
@@ -208,7 +203,7 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
                   key={item.key}
                   type="button"
                   onClick={item.action}
-                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] transition-colors text-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
                 >
                   <Icon className={menuItemIconClass} />
                   <span className="flex-1 text-left">{item.label}</span>
@@ -234,7 +229,7 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
                     setActiveOrgMutation.mutate({ organizationId: org.id });
                     setIsOpen(false);
                   }}
-                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] transition-colors text-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
                   aria-label={`Switch to ${org.name}`}
                 >
                   <div className="h-5 w-5 rounded bg-sidebar-active flex items-center justify-center text-[9px] font-bold text-sidebar-foreground shrink-0">
@@ -262,8 +257,11 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
           {/* Logout */}
           <button
             type="button"
-            onClick={handleLogout}
-            className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] transition-colors text-foreground/80 hover:bg-accent hover:text-accent-foreground cursor-pointer"
+            onClick={() => {
+              signOutMutation.mutate({});
+              setIsOpen(false);
+            }}
+            className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] transition-colors text-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
           >
             <LogOutIcon className={menuItemIconClass} />
             <span className="flex-1 text-left">Log out</span>

@@ -1,8 +1,8 @@
-import { useRef, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { StyleNumberInput } from "@/components/ui/style-controls";
+import { Switch } from "@/components/ui/switch";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
+import { useRef, useState } from "react";
 
 /** Common display config shared across all embed types */
 export interface EmbedDisplayConfig {
@@ -160,7 +160,6 @@ interface EmbedConfigPanelProps {
 
 /* ─── Layout helpers matching Figma node 24119:5595 ─── */
 
-/* ─── Layout helpers matching Figma node 24119:5595 ─── */
 export const ConfigCard = ({ children }: { children: React.ReactNode }) => (
   <div className="flex flex-col gap-px overflow-hidden rounded-lg">{children}</div>
 );
@@ -182,7 +181,7 @@ export const ConfigRow = ({
   variant?: "default" | "switch";
 }) => (
   <div
-    className={`bg-secondary min-h-8.5 flex gap-3 items-center overflow-clip pl-2 py-2 ${
+    className={`bg-secondary min-h-8.5 flex gap-3 items-center overflow-clip pl-2.5 py-1.75 ${
       // max-h-9.5
       variant === "switch" ? "pr-[6px]" : "pr-[3px]"
     }`}
@@ -197,6 +196,108 @@ export const ConfigRow = ({
   </div>
 );
 
+/** Drag-to-scrub + click-to-edit, styled as Figma value button: h-6 px-2 rounded-[5px] */
+const ScrubValue = ({
+  value,
+  onChange,
+  min,
+  max,
+  step = 1,
+  unit = "px",
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  min: number;
+  max: number;
+  step?: number;
+  unit?: string;
+}) => {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const startX = useRef(0);
+  const startVal = useRef(0);
+  const hasDragged = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const clamp = (v: number) => Math.max(min, Math.min(max, Math.round(v / step) * step));
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (editing) return;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    startX.current = e.clientX;
+    startVal.current = value;
+    hasDragged.current = false;
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!(e.target as HTMLElement).hasPointerCapture(e.pointerId)) return;
+    const dx = e.clientX - startX.current;
+    if (Math.abs(dx) > 3) hasDragged.current = true;
+    if (hasDragged.current) {
+      onChange(clamp(startVal.current + dx));
+    }
+  };
+
+  const handlePointerUp = () => {
+    if (!hasDragged.current && !editing) {
+      setDraft(String(value));
+      setEditing(true);
+      requestAnimationFrame(() => inputRef.current?.select());
+    }
+  };
+
+  const commit = () => {
+    const num = parseInt(draft);
+    if (!isNaN(num)) onChange(clamp(num));
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        autoFocus
+        value={draft}
+        onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, ""))}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          if (e.key === "Escape") setEditing(false);
+        }}
+        aria-label={`${unit} value`}
+        className="h-6 w-16 shrink-0 rounded-[5px] px-2 text-right text-[13px] bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-ring tabular-nums"
+      />
+    );
+  }
+
+  return (
+    <span
+      role="slider"
+      tabIndex={0}
+      aria-label="Scrub value"
+      aria-valuemin={min}
+      aria-valuemax={max}
+      aria-valuenow={value}
+      className="h-6 shrink-0 inline-flex items-center rounded-[5px] px-2 text-[13px] whitespace-nowrap cursor-ew-resize select-none focus-visible:ring-2 focus-visible:ring-ring"
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onKeyDown={(e) => {
+        if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+          e.preventDefault();
+          onChange(clamp(value + step));
+        } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+          e.preventDefault();
+          onChange(clamp(value - step));
+        }
+      }}
+    >
+      {value}
+      {unit}
+    </span>
+  );
+};
+
 /* ─── Select trigger class (shared) ─── */
 /**
  * Figma button: h-[24px] px-[8px] py-[5.5px] rounded-[5px] gap-[4px]
@@ -208,7 +309,6 @@ export const selectTriggerCls =
 
 /* ─── Public entry point ─── */
 
-/* ─── Public entry point ─── */
 export const EmbedConfigPanel = ({ embedType, form, section }: EmbedConfigPanelProps) => {
   if (section === "customize") {
     return <CustomizeSection embedType={embedType} form={form} />;
@@ -301,7 +401,7 @@ const CustomizeSection = ({
               <Switch
                 aria-label="Hide on submit"
                 checked={field.state.value}
-                onCheckedChange={field.handleChange}
+                onCheckedChange={(checked: boolean) => field.handleChange(checked)}
                 size="default"
               />
             </ConfigRow>

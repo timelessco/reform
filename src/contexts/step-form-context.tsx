@@ -1,6 +1,5 @@
 import * as React from "react";
 import { useFormPersistence } from "@/hooks/use-form-persistence";
-import type { TransformedElement } from "@/lib/transform-plate-to-form";
 
 type StepFormContextValue = {
   currentStep: number;
@@ -25,12 +24,9 @@ export const useStepForm = () => {
   return context;
 };
 
-export const useStepFormSafe = () => React.use(StepFormContext);
-
 interface StepFormProviderProps {
   children: React.ReactNode;
   totalSteps: number;
-  thankYouContent?: TransformedElement[] | null;
   onSubmit?: (data: Record<string, unknown>) => Promise<void>;
   /** Form ID for localStorage key */
   formId?: string;

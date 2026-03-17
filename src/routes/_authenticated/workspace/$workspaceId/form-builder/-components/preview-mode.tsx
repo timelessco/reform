@@ -1,6 +1,7 @@
 import { APP_NAME } from "@/lib/app-config";
 import { Link, useSearch } from "@tanstack/react-router";
 import { SparklesIcon, XIcon } from "@/components/ui/icons";
+import { SPRITE_PATH, iconMap } from "@/components/icon-picker/icon-data";
 import { useState, useEffect, useCallback } from "react";
 import type { Value } from "platejs";
 import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
@@ -137,7 +138,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                       >
                         <div
                           className={cn(
-                            "w-full h-full",
+                            "w-full h-full overflow-x-hidden",
                             !dynamicHeight &&
                               "overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20",
                             alignLeft ? "max-w-[600px]" : "",
@@ -183,15 +184,23 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                 {/* Popup panel */}
                 {isPopupOpen && (
                   <div
-                    className={cn(
-                      "absolute bg-background rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.15)] border border-border overflow-hidden flex flex-col transition-all duration-300 z-20 pointer-events-auto",
-                      popupPosition === "center"
-                        ? "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                    className="absolute bg-background rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.15)] border border-border overflow-hidden flex flex-col z-20 pointer-events-auto transition-[top,left,transform] duration-300 ease-out"
+                    style={{
+                      width: popupWidth,
+                      ...(popupPosition === "center"
+                        ? {
+                            top: "50%",
+                            left: `calc(50% - ${popupWidth / 2}px)`,
+                            transform: "translateY(-50%)",
+                          }
                         : popupPosition === "bottom-left"
-                          ? "bottom-12 left-12"
-                          : "bottom-12 right-12",
-                    )}
-                    style={{ width: popupWidth }}
+                          ? { top: "100%", left: 48, transform: "translateY(calc(-100% - 48px))" }
+                          : {
+                              top: "100%",
+                              left: `calc(100% - ${popupWidth}px - 48px)`,
+                              transform: "translateY(calc(-100% - 48px))",
+                            }),
+                    }}
                   >
                     {/* Close button */}
                     <div className="absolute top-4 right-4 z-30 pointer-events-auto">
@@ -207,7 +216,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                     </div>
 
                     {/* Popup form content */}
-                    <div className="overflow-y-auto max-h-[650px]">
+                    <div className="overflow-y-auto overflow-x-hidden max-h-[650px]">
                       <FormPreviewFromPlate
                         content={content}
                         title={hideTitle ? "" : doc.title}
@@ -237,13 +246,17 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                     type="button"
                     onClick={handleOpenPopup}
                     aria-label="Open form preview"
-                    className={cn(
-                      "absolute z-20 pointer-events-auto w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer",
-                      popupPosition === "bottom-left" ? "bottom-6 left-6" : "bottom-6 right-6",
-                    )}
+                    className="absolute z-20 pointer-events-auto w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center hover:scale-105 active:scale-95 transition-[inset] duration-300 ease-out cursor-pointer"
+                    style={
+                      popupPosition === "bottom-left"
+                        ? { bottom: 24, left: 24, right: "auto" }
+                        : { bottom: 24, right: "auto", left: "calc(100% - 80px)" }
+                    }
                   >
-                    {showEmoji && doc.icon ? (
-                      <span className="text-2xl">{doc.icon}</span>
+                    {showEmoji && doc.icon && iconMap.has(doc.icon) ? (
+                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                        <use href={`${SPRITE_PATH}#${doc.icon}`} />
+                      </svg>
                     ) : (
                       <svg
                         className="w-6 h-6"

@@ -22,6 +22,8 @@ const LAYOUT_FIELDS: Record<string, string> = {
   inputWidth: "--bf-input-width",
   baseFontSize: "--bf-font-size",
   letterSpacing: "--bf-letter-spacing",
+  titleFontSize: "--bf-title-font-size",
+  titleLetterSpacing: "--bf-title-letter-spacing",
 };
 
 /** Migrates legacy "vw" page-width values to "%" (same numeric range 30-100). */
@@ -139,6 +141,15 @@ const buildThemeVarEntries = (customization: Record<string, string>): [string, s
   if (tokens.radius) entries.push(["--bf-radius", tokens.radius]);
   if (tokens.spacing) entries.push(["--bf-spacing", tokens.spacing]);
 
+  // Title font (resolved from font name → CSS value)
+  if (customization.titleFont) {
+    const titleFontValue = FONT_MAP[customization.titleFont] ?? FONT_MAP.Inter;
+    entries.push(["--bf-title-font", titleFontValue]);
+  }
+  if (customization.titleItalic === "true") {
+    entries.push(["--bf-title-font-style", "italic"]);
+  }
+
   // Layout vars
   for (const [field, cssVar] of Object.entries(LAYOUT_FIELDS)) {
     if (customization[field]) {
@@ -165,7 +176,24 @@ export const getThemeStyleVars = (
   for (const [prop, value] of buildThemeVarEntries(customization)) {
     vars[prop] = value;
   }
+  applyLogoMinimalFlag(customization, vars);
   return vars as CSSProperties;
+};
+
+export const isLogoMinimalSize = (
+  customization: Record<string, string> | null | undefined,
+): boolean => {
+  if (!customization?.logoWidth) return false;
+  return Number.parseInt(customization.logoWidth) <= 0;
+};
+
+const applyLogoMinimalFlag = (
+  customization: Record<string, string>,
+  vars: Record<string, string>,
+): void => {
+  if (customization.logoWidth && Number.parseInt(customization.logoWidth) <= 0) {
+    vars["--bf-logo-minimal"] = "1";
+  }
 };
 
 /**
@@ -185,6 +213,7 @@ export const getLayoutOnlyVars = (
         field === "pageWidth" ? migratePageWidth(customization[field]) : customization[field];
     }
   }
+  applyLogoMinimalFlag(customization, vars);
   return vars as CSSProperties;
 };
 

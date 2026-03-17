@@ -15,12 +15,15 @@ export const useFormCustomization = (doc: { customization?: unknown } | null | u
   const themeVars = useMemo(() => getThemeStyleVars(customization), [customizationKey]);
   const googleFontUrl = useMemo(() => getGoogleFontLinkUrl(customization), [customizationKey]);
 
-  // Dynamically load Google Font in editor/preview contexts
+  // Dynamically load Google Fonts in editor/preview contexts
   useEffect(() => {
     if (customization?.font) {
       loadGoogleFont(customization.font);
     }
-  }, [customization?.font]);
+    if (customization?.titleFont) {
+      loadGoogleFont(customization.titleFont);
+    }
+  }, [customization?.font, customization?.titleFont]);
 
   return { customization, hasCustomization, themeVars, googleFontUrl };
 };

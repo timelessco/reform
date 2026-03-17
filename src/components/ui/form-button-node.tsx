@@ -181,17 +181,17 @@ export const FormButtonElement = ({ className, children, ...props }: PlateElemen
     <PlateElement
       className={cn(
         "m-0 px-0 py-1",
-        // Previous floats left, Submit on single-page floats left, otherwise floats right
-        isPrevious ? "float-left clear-none" : "float-right clear-none",
+        isPrevious ? "float-left clear-none" : "clear-both flex",
         className,
       )}
+      style={!isPrevious ? { maxWidth: "var(--bf-input-width)" } : undefined}
       {...props}
     >
       {/* Hidden children to maintain Slate structure */}
       <span className="hidden">{children}</span>
       {/* Non-editable button visual - onMouseDown prevents cursor placement */}
       <div
-        className="inline-flex items-center gap-1 group"
+        className={cn("inline-flex items-center gap-1 group", !isPrevious && "ml-auto")}
         contentEditable={false}
         role="presentation"
         aria-hidden="true"

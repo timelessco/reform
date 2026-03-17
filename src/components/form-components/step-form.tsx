@@ -1,18 +1,22 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useStepForm } from "@/contexts/step-form-context";
 import { useTranslation } from "@/contexts/translation-context";
 import { useStepPreviewForm } from "@/hooks/use-preview-form";
-import { getEditableFields } from "@/lib/transform-plate-to-form";
-import type { TransformedElement } from "@/lib/transform-plate-to-form";
+import {
+  getEditableFieldsFromSegments,
+  getFieldsFromSegments,
+} from "@/lib/transform-plate-for-preview";
+import type { PreviewSegment } from "@/lib/transform-plate-for-preview";
+import { StaticContentBlock } from "./static-content-block";
 import { RenderStepPreviewInput } from "./render-step-preview-input";
 
 const selectStateValues = (state: any) => state.values;
 
 interface StepFormProps {
   stepIndex: number;
-  elements: TransformedElement[];
+  segments: PreviewSegment[];
   isLastStep: boolean;
   layout?: "public" | "editor";
   autoJump?: boolean;
@@ -24,13 +28,14 @@ interface StepFormProps {
  */
 export const StepForm = ({
   stepIndex,
-  elements,
+  segments,
   isLastStep,
   layout = "public",
   autoJump = false,
 }: StepFormProps) => {
   const { currentStep, goToPrevStep, isSubmitting } = useStepForm();
-  const fields = getEditableFields(elements);
+  const fields = useMemo(() => getFieldsFromSegments(segments), [segments]);
+  const editableFields = useMemo(() => getEditableFieldsFromSegments(segments), [segments]);
 
   const { form, formName } = useStepPreviewForm({
     fields,
@@ -39,8 +44,8 @@ export const StepForm = ({
     formName: `stepForm-${stepIndex}`,
   });
 
-  // Group elements for rendering (combine adjacent buttons)
-  const groupedElements = groupElementsForRendering(elements);
+  // Group segments for rendering (combine adjacent buttons)
+  const groupedItems = useMemo(() => groupSegmentsForRendering(segments), [segments]);
 
   const formRef = useRef<HTMLFormElement>(null);
   const autoJumpTriggered = useRef(false);
@@ -66,7 +71,7 @@ export const StepForm = ({
     if (!autoJump || isLastStep || autoJumpTriggered.current || isSubmitting) return;
 
     // Check if all required fields have values
-    const allRequiredFilled = fields.every((field) => {
+    const allRequiredFilled = editableFields.every((field) => {
       if (!("required" in field) || !field.required) return true;
       const value = form.getFieldValue(field.name as never);
       if (value === undefined || value === null || value === "") return false;
@@ -74,14 +79,14 @@ export const StepForm = ({
       return true;
     });
 
-    if (allRequiredFilled && fields.length > 0) {
+    if (allRequiredFilled && editableFields.length > 0) {
       autoJumpTriggered.current = true;
       // Short delay to let the user see their selection
       setTimeout(() => {
         form.handleSubmit();
       }, 400);
     }
-  }, [autoJump, isLastStep, isSubmitting, fields, form]);
+  }, [autoJump, isLastStep, isSubmitting, editableFields, form]);
 
   return (
     <form.AppForm>
@@ -101,17 +106,13 @@ export const StepForm = ({
             }}
           </form.Subscribe>
         )}
-        {groupedElements.map((item) => {
+        {groupedItems.map((item) => {
           // Handle button groups (Previous + Next/Submit on same line)
-          if ("type" in item && item.type === "buttonGroup") {
-            const prevButton = item.buttons.find(
-              (b) => b.fieldType === "Button" && b.buttonRole === "previous",
+          if (item.type === "buttonGroup") {
+            const prevButton = item.buttons.find((b) => b.buttonRole === "previous");
+            const actionButton = item.buttons.find(
+              (b) => b.buttonRole === "next" || b.buttonRole === "submit",
             );
-            const actionButton = item.buttons.find((b) => {
-              if (b.fieldType !== "Button") return false;
-              const role = b.buttonRole;
-              return role === "next" || role === "submit";
-            });
 
             const groupKey = `button-group-${item.buttons.map((b) => b.id).join("-")}`;
 
@@ -119,8 +120,9 @@ export const StepForm = ({
               <div
                 key={groupKey}
                 className="flex flex-row-reverse justify-between items-center w-full"
+                style={{ maxWidth: "var(--bf-input-width)" }}
               >
-                {actionButton && actionButton.fieldType === "Button" && (
+                {actionButton && (
                   <RenderStepButton
                     field={actionButton}
                     isSubmitting={isSubmitting}
@@ -129,7 +131,7 @@ export const StepForm = ({
                     layout={layout}
                   />
                 )}
-                {prevButton && prevButton.fieldType === "Button" ? (
+                {prevButton ? (
                   <RenderStepButton
                     field={prevButton}
                     isSubmitting={isSubmitting}
@@ -144,74 +146,50 @@ export const StepForm = ({
             );
           }
 
-          // Regular element
-          const element = item as TransformedElement;
-
-          // Handle button separately
-          if (element.fieldType === "Button") {
+          // Static segment — render via PlateStatic
+          if (item.type === "static") {
             return (
-              <RenderStepButton
-                key={element.id}
-                field={element}
-                isSubmitting={isSubmitting}
-                onPrevious={currentStep > 0 ? goToPrevStep : undefined}
-                layout={layout}
+              <StaticContentBlock
+                key={`static-${item.nodes.length}-${JSON.stringify(item.nodes[0]).slice(0, 32)}`}
+                nodes={item.nodes}
               />
             );
           }
 
-          return (
-            <div key={element.id} className="w-full">
-              <RenderStepPreviewInput element={element} form={form} />
-            </div>
-          );
+          // Field segment
+          if (item.type === "field") {
+            const { field } = item;
+
+            // Handle button separately
+            if (field.fieldType === "Button") {
+              return (
+                <RenderStepButton
+                  key={field.id}
+                  field={field}
+                  isSubmitting={isSubmitting}
+                  onPrevious={currentStep > 0 ? goToPrevStep : undefined}
+                  layout={layout}
+                />
+              );
+            }
+
+            // Input/Textarea — delegate to existing renderer
+            return (
+              <div key={field.id} className="w-full">
+                <RenderStepPreviewInput element={field} form={form} />
+              </div>
+            );
+          }
+
+          return null;
         })}
       </form.Form>
     </form.AppForm>
   );
 };
 
-/**
- * Groups elements for rendering, combining adjacent buttons into groups
- */
-const groupElementsForRendering = (
-  elements: TransformedElement[],
-): Array<TransformedElement | { type: "buttonGroup"; buttons: TransformedElement[] }> => {
-  const result: Array<TransformedElement | { type: "buttonGroup"; buttons: TransformedElement[] }> =
-    [];
-  let i = 0;
+// --- Grouping logic ---
 
-  while (i < elements.length) {
-    const element = elements[i];
-
-    // Check if this is a button
-    if (element.fieldType === "Button") {
-      const buttons: TransformedElement[] = [element];
-
-      // Collect consecutive buttons
-      while (i + 1 < elements.length && elements[i + 1].fieldType === "Button") {
-        i++;
-        buttons.push(elements[i]);
-      }
-
-      // If multiple buttons, group them; otherwise keep single
-      if (buttons.length > 1) {
-        result.push({ type: "buttonGroup", buttons });
-      } else {
-        result.push(element);
-      }
-    } else {
-      result.push(element);
-    }
-    i++;
-  }
-
-  return result;
-};
-
-/**
- * Button field type extracted from PlateFormField union
- */
 type ButtonField = {
   id: string;
   name: string;
@@ -219,6 +197,50 @@ type ButtonField = {
   buttonText?: string;
   buttonRole: "next" | "previous" | "submit";
 };
+
+type GroupedSegment = PreviewSegment | { type: "buttonGroup"; buttons: ButtonField[] };
+
+/**
+ * Groups segments for rendering, combining adjacent button FieldSegments into groups.
+ */
+const groupSegmentsForRendering = (segments: PreviewSegment[]): GroupedSegment[] => {
+  const result: GroupedSegment[] = [];
+  let i = 0;
+
+  while (i < segments.length) {
+    const seg = segments[i];
+
+    // Check if this is a button field segment
+    if (seg.type === "field" && seg.field.fieldType === "Button") {
+      const buttons: ButtonField[] = [seg.field as ButtonField];
+
+      // Collect consecutive button segments
+      while (i + 1 < segments.length) {
+        const next = segments[i + 1];
+        if (next.type === "field" && next.field.fieldType === "Button") {
+          i++;
+          buttons.push(next.field as ButtonField);
+        } else {
+          break;
+        }
+      }
+
+      // If multiple buttons, group them; otherwise keep single
+      if (buttons.length > 1) {
+        result.push({ type: "buttonGroup", buttons });
+      } else {
+        result.push(seg);
+      }
+    } else {
+      result.push(seg);
+    }
+    i++;
+  }
+
+  return result;
+};
+
+// --- Button renderer ---
 
 /**
  * Renders button elements for step forms.
@@ -250,13 +272,18 @@ const RenderStepButton = ({
         type="button"
         variant="outline"
         onClick={onPrevious}
-        className="inline-flex items-center gap-2"
+        prefix={<ChevronLeftIcon className="h-4 w-4" />}
       >
-        <ChevronLeftIcon className="h-4 w-4" />
         {buttonText}
       </Button>
     );
-    return grouped ? button : <div className="flex justify-start">{button}</div>;
+    return grouped ? (
+      button
+    ) : (
+      <div className="flex justify-start" style={{ maxWidth: "var(--bf-input-width)" }}>
+        {button}
+      </div>
+    );
   }
 
   // Next button - type="submit" triggers form validation and onSubmit
@@ -270,7 +297,13 @@ const RenderStepButton = ({
         {buttonText}
       </Button>
     );
-    return grouped ? button : <div className="flex justify-end">{button}</div>;
+    return grouped ? (
+      button
+    ) : (
+      <div className="flex justify-end" style={{ maxWidth: "var(--bf-input-width)" }}>
+        {button}
+      </div>
+    );
   }
 
   // Submit button - type="submit" triggers form validation and final submit
@@ -283,5 +316,11 @@ const RenderStepButton = ({
       {isSubmitting ? t("submitting") : buttonText}
     </Button>
   );
-  return grouped ? submitButton : <div className="flex justify-end">{submitButton}</div>;
+  return grouped ? (
+    submitButton
+  ) : (
+    <div className="flex justify-end" style={{ maxWidth: "var(--bf-input-width)" }}>
+      {submitButton}
+    </div>
+  );
 };
