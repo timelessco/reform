@@ -19,27 +19,23 @@ type SharedFormProps = {
 };
 
 type Input = {
-  name: string;
   fieldType: "Input";
 } & React.InputHTMLAttributes<HTMLInputElement> &
   SharedFormProps;
 
 type PasswordInput = {
-  name: string;
   fieldType: "Password";
   type: "password";
 } & React.InputHTMLAttributes<HTMLInputElement> &
   SharedFormProps;
 
 type OTPInput = {
-  name: string;
   fieldType: "OTP";
 } & Omit<OTPInputProps, "children"> & {
     children?: React.ReactNode;
   } & SharedFormProps;
 
 type Textarea = {
-  name: string;
   fieldType: "Textarea";
 } & React.TextareaHTMLAttributes<HTMLTextAreaElement> &
   SharedFormProps;
@@ -107,32 +103,11 @@ type DatePicker = {
 } & React.InputHTMLAttributes<HTMLInputElement> &
   SharedFormProps;
 
-type H1 = {
-  fieldType: "H1";
-  /**
-   * the name is used as a key to identify the field
-   */
+type Heading = {
+  fieldType: "H1" | "H2" | "H3";
   name: string;
   content: string;
   static: true;
-} & React.HTMLAttributes<HTMLHeadingElement>;
-type H2 = {
-  fieldType: "H2";
-  /**
-   * the name is used as a key to identify the field
-   */
-  name: string;
-  static: true;
-  content: string;
-} & React.HTMLAttributes<HTMLHeadingElement>;
-type H3 = {
-  fieldType: "H3";
-  /**
-   * the name is used as a key to identify the field
-   */
-  name: string;
-  static: true;
-  content: string;
 } & React.HTMLAttributes<HTMLHeadingElement>;
 
 type Divider = {
@@ -199,7 +174,7 @@ type FormFieldElement =
  * StaticFormElement is a type that represents a static form element
  * that is not editable by the user
  */
-export type StaticFormElement = H1 | H2 | H3 | Divider | PageBreak | Description | Legend;
+export type StaticFormElement = Heading | Divider | PageBreak | Description | Legend;
 
 export type FormElement =
   | (FormFieldElement & { id: string })
@@ -229,61 +204,78 @@ export type FormArray = {
 };
 //------------------------------------------------------------Form Element Handlers
 /**
- * DropElement is a function that is used to drop an element to the form elements array
- * USE CASES
- * - Element: i is required
- * - Nested Element: i, j is required
- * - Element in MS form: i, stepIndex is required
- * - Nested Element in MS form: i, j, stepIndex is required
+ * Address types for targeting elements in flat, nested, or multi-step layouts.
  */
-type DropElementOptions = {
-  /**
-   * Index where an element should be dropped to the form elements array
-   */
+export type FlatAddress = { fieldIndex: number };
+export type NestedAddress = { fieldIndex: number; nestedIndex: number };
+export type StepAddress = { stepIndex: number; fieldIndex: number };
+export type StepNestedAddress = {
+  stepIndex: number;
   fieldIndex: number;
-  /**
-   * Index where a nested element should be dropped to the nested array
-   */
-  j?: number;
-  /**
-   * Whether the form is a multi-step form or not
-   */
-  isMS?: boolean;
-  stepIndex?: number;
+  nestedIndex: number;
 };
-export type DropElement = (options: DropElementOptions) => void;
+export type ElementAddress =
+  | FlatAddress
+  | NestedAddress
+  | StepAddress
+  | StepNestedAddress;
 
-type EditElementOptions = {
-  fieldIndex: number;
-  modifiedFormElement: FormElement;
-  j?: number;
-  stepIndex?: number;
-};
-export type EditElement = (options: EditElementOptions) => void;
+export type DropElement = (address: ElementAddress) => void;
 
-type ReorderParams = {
-  newOrder: FormElementOrList[];
-  fieldIndex?: number | null;
-  stepIndex?: number | null;
-};
+export type EditElement = (
+  address: ElementAddress,
+  modifiedFormElement: FormElement,
+) => void;
 
-export type ReorderElements = (params: ReorderParams) => void;
+export type ReorderElements = (
+  address: Pick<StepAddress, "stepIndex"> | Pick<FlatAddress, "fieldIndex">,
+  newOrder: FormElementOrList[],
+) => void;
 
-export type AppendElement = (options: {
-  fieldType: FormElement["fieldType"];
-  /**
-   * index where a nested element should be appended to the main array
-   */
-  fieldIndex?: number | null;
-  stepIndex?: number;
-  j?: number;
-  id?: string;
-  name?: string;
-  content?: string;
-  required?: boolean;
-}) => void;
+export type AppendElement = (
+  address: ElementAddress,
+  fieldType: FormElement["fieldType"],
+  overrides?: {
+    id?: string;
+    name?: string;
+    content?: string;
+    required?: boolean;
+  },
+) => void;
 
 export type SetTemplate = (template: string) => void;
+
+//------------------------------------------------------------Type Helpers
+/** Extract a specific variant by fieldType */
+export type ElementOfType<T extends FormElement["fieldType"]> = Extract<
+  FormElement,
+  { fieldType: T }
+>;
+
+/** All fieldType string literals */
+export type FieldTypeLiteral = FormElement["fieldType"];
+
+/** Type guard: is this element static? */
+export function isStatic(
+  el: FormElement,
+): el is StaticFormElement & { id: string } {
+  return "static" in el && (el as { static?: boolean }).static === true;
+}
+
+/** Type guard: narrow to specific fieldType */
+export function isFieldType<T extends FieldTypeLiteral>(
+  el: FormElement,
+  type: T,
+): el is ElementOfType<T> {
+  return el.fieldType === type;
+}
+
+/** Type guard: is this an element with options? */
+export function hasOptions(
+  el: FormElement,
+): el is FormElement & { options: Option[] } {
+  return "options" in el && Array.isArray((el as unknown as { options?: unknown }).options);
+}
 
 //------------------------------------------------------------API Response Types
 /**

@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import type { AppForm } from "@/hooks/use-form-builder";
-import type { PlateFormField } from "@/lib/transform-plate-to-form";
+import type { PlateFormField } from "@/lib/transform-pipeline";
 
 interface RenderStepPreviewInputProps {
   element: PlateFormField;

@@ -2,7 +2,7 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
-import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,11 +16,19 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { HOTKEYS } from "@/lib/hotkeys";
 import { cn } from "@/lib/utils";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { PanelLeftIcon } from "@/components/ui/icons";
+
+const MOBILE_BREAKPOINT = 768;
+const mobileSubscribe = (callback: () => void) => {
+  const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+  mql.addEventListener("change", callback);
+  return () => mql.removeEventListener("change", callback);
+};
+const getMobileSnapshot = () => window.innerWidth < MOBILE_BREAKPOINT;
+const getMobileServerSnapshot = () => false;
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -72,7 +80,7 @@ export const SidebarProvider = ({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) => {
-  const isMobile = useIsMobile();
+  const isMobile = useSyncExternalStore(mobileSubscribe, getMobileSnapshot, getMobileServerSnapshot);
   const [openMobile, setOpenMobile] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
 

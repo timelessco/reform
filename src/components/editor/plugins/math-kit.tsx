@@ -1,6 +1,14 @@
+import { BaseEquationPlugin, BaseInlineEquationPlugin } from "@platejs/math";
 import { KEYS } from "platejs";
 import { createPlatePlugin } from "platejs/react";
 import * as React from "react";
+
+import {
+  EquationElementStatic,
+  InlineEquationElementStatic,
+} from "@/components/ui/equation-node-static";
+
+// ── Interactive plugins (lazy-loaded) ────────────────────────────────
 
 const LazyEquationElement = React.lazy(() =>
   import("@/components/ui/equation-node").then((mod) => ({
@@ -37,3 +45,10 @@ const LightInlineEquationPlugin = createPlatePlugin({
 }).withComponent(InlineEquationElementLazy);
 
 export const MathKit = [LightInlineEquationPlugin, LightEquationPlugin];
+
+// ── Static/SSR plugins ───────────────────────────────────────────────
+
+export const BaseMathKit = [
+  BaseInlineEquationPlugin.withComponent(InlineEquationElementStatic),
+  BaseEquationPlugin.withComponent(EquationElementStatic),
+];

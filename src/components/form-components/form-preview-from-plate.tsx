@@ -4,9 +4,8 @@ import { ProgressBar } from "@/components/public/progress-bar";
 import { Button } from "@/components/ui/button";
 import { StepFormProvider, useStepForm } from "@/contexts/step-form-context";
 import { useTranslation } from "@/contexts/translation-context";
-import { extractFormHeader } from "@/lib/transform-plate-to-form";
-import { transformPlateForPreview } from "@/lib/transform-plate-for-preview";
-import type { PreviewSegment } from "@/lib/transform-plate-for-preview";
+import { extractFormHeader, preparePreview } from "@/lib/transform-pipeline";
+import type { PreviewSegment } from "@/lib/transform-pipeline";
 import { cn, isValidUrl, DEFAULT_ICON } from "@/lib/utils";
 import type { PublicFormSettings } from "@/types/form-settings";
 import { IconPickerPreview } from "@/components/icon-picker";
@@ -354,7 +353,7 @@ export const FormPreviewFromPlate = ({
   const cover = hasHeaderNode ? (headerFromContent.cover ?? legacyCover) : legacyCover;
 
   // Transform Plate content into chunked preview segments
-  const { steps, thankYouNodes } = useMemo(() => transformPlateForPreview(content), [content]);
+  const { steps, thankYouNodes } = useMemo(() => preparePreview(content), [content]);
 
   // Show placeholder if no segments found
   if (steps.length === 0 || steps.flat().length === 0) {

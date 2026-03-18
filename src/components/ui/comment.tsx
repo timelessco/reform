@@ -14,7 +14,7 @@ import {
   usePluginOption,
 } from "platejs/react";
 import * as React from "react";
-import { BasicMarksKit } from "@/components/editor/plugins/basic-marks-kit";
+import { BasicMarksKit } from "@/components/editor/plugins/marks-kit";
 import { discussionPlugin } from "@/components/editor/plugins/discussion-kit";
 import type { TDiscussion } from "@/components/editor/plugins/discussion-kit";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

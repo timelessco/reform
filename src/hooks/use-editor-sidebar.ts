@@ -1,5 +1,5 @@
 import { eq, useLiveQuery } from "@tanstack/react-db";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { editorUICollection } from "@/db-collections/editor-ui.collection";
 import type { SettingsTab, ShareTab, SidebarType } from "@/db-collections/editor-ui.collection";
 
@@ -162,4 +162,41 @@ export const useEditorSidebar = () => {
     exitPreview,
     togglePreview,
   };
+};
+
+export const useVersionHistorySidebar = () => {
+  const {
+    activeSidebar,
+    toggleSidebar,
+    openVersionHistory,
+    closeSidebar,
+    selectedVersionId,
+    selectVersion,
+    exitVersionView,
+  } = useEditorSidebar();
+
+  const isOpen = activeSidebar === "history";
+  const isViewingVersion = selectedVersionId !== null;
+
+  const handleSetIsOpen = useCallback(
+    (open: boolean) => {
+      if (open) {
+        openVersionHistory();
+      } else {
+        exitVersionView();
+        closeSidebar();
+      }
+    },
+    [openVersionHistory, closeSidebar, exitVersionView],
+  );
+
+  return useMemo(() => ({
+    isOpen,
+    selectedVersionId,
+    isViewingVersion,
+    setIsOpen: handleSetIsOpen,
+    selectVersion,
+    exitVersionView,
+    toggle: () => toggleSidebar("history"),
+  }), [isOpen, selectedVersionId, isViewingVersion, handleSetIsOpen, selectVersion, exitVersionView, toggleSidebar]);
 };

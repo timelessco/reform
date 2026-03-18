@@ -6,7 +6,7 @@ const WHITESPACE_RE = /\s/;
 const STARTS_WITH_DIGIT_RE = /^\d/;
 
 // Static field types that don't need schema validation
-const STATIC_FIELD_TYPES = new Set(["H1", "H2", "H3", "Separator"]);
+const STATIC_FIELD_TYPES = new Set(["H1", "H2", "H3", "Separator", "FieldDescription", "FieldLegend", "PageBreak"]);
 
 const isStatic = (fieldType: string): boolean => STATIC_FIELD_TYPES.has(fieldType);
 
@@ -161,6 +161,9 @@ const FIELD_SCHEMA_MAP = new Map<FormElement["fieldType"], FieldSchemaGenerator>
   ["H2", () => z.string()],
   ["H3", () => z.string()],
   ["Separator", () => z.string()],
+  ["FieldDescription", () => z.string()],
+  ["FieldLegend", () => z.string()],
+  ["PageBreak", () => z.string()],
 ]);
 
 // Helper function to generate schema for a single field

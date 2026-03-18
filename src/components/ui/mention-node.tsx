@@ -5,7 +5,6 @@ import { IS_APPLE, KEYS } from "platejs";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useFocused, useReadOnly, useSelected } from "platejs/react";
 import * as React from "react";
-import { useMounted } from "@/hooks/use-mounted";
 import { cn } from "@/lib/utils";
 
 import {
@@ -26,7 +25,8 @@ export const MentionElement = (
 
   const selected = useSelected();
   const focused = useFocused();
-  const mounted = useMounted();
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => { setMounted(true); }, []);
   const readOnly = useReadOnly();
 
   return (

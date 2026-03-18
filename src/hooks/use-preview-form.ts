@@ -11,8 +11,8 @@ import { useStepForm } from "@/contexts/step-form-context";
 import {
   generateDefaultValuesFromFields,
   generateZodSchemaFromFields,
-} from "@/lib/generate-preview-schema";
-import type { PlateFormField } from "@/lib/transform-plate-to-form";
+} from "@/lib/transform-pipeline";
+import type { PlateFormField } from "@/lib/transform-pipeline";
 import { logger } from "@/lib/utils";
 import type { AppForm } from "./use-form-builder";
 

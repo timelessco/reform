@@ -15,8 +15,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useFormVersions, restoreVersion } from "@/hooks/use-form-versions";
-import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
-import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
+import { useEditorSidebar, useVersionHistorySidebar } from "@/hooks/use-editor-sidebar";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";

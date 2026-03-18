@@ -1,121 +1,18 @@
-import type { Value } from "platejs";
-import type { FormElement, StaticFormElement } from "@/types/form-types";
-
-type _PreviewElement = FormElement | StaticFormElement;
-
-type FormHeaderData = {
-  title: string;
-  icon: string | null;
-  iconColor: string | null;
-  cover: string | null;
-};
-
-export const extractFormHeader = (value: Value): FormHeaderData | null => {
-  if (value.length > 0 && value[0].type === "formHeader") {
-    const node = value[0];
-    return {
-      title: (node.title as string) || "",
-      icon: (node.icon as string | null) || null,
-      iconColor: (node.iconColor as string | null) || null,
-      cover: (node.cover as string | null) || null,
-    };
-  }
-  return null;
-};
-
-export type PlateFormField =
-  | {
-      id: string;
-      name: string;
-      fieldType: "Input";
-      label?: string;
-      placeholder?: string;
-      required?: boolean;
-      minLength?: number;
-      maxLength?: number;
-      defaultValue?: string;
-    }
-  | {
-      id: string;
-      name: string;
-      fieldType: "Textarea";
-      label?: string;
-      placeholder?: string;
-      required?: boolean;
-      minLength?: number;
-      maxLength?: number;
-      defaultValue?: string;
-    }
-  | {
-      id: string;
-      name: string;
-      fieldType: "Button";
-      buttonText?: string;
-      buttonRole: "next" | "previous" | "submit";
-    };
-
-export type PlateStaticElement =
-  | { id: string; fieldType: "H1"; content: string; static: true; name: string }
-  | { id: string; fieldType: "H2"; content: string; static: true; name: string }
-  | { id: string; fieldType: "H3"; content: string; static: true; name: string }
-  | { id: string; fieldType: "Separator"; static: true; name: string }
-  | { id: string; fieldType: "EmptyBlock"; static: true; name: string }
-  | {
-      id: string;
-      fieldType: "FieldDescription";
-      content: string;
-      static: true;
-      name: string;
-    }
-  | {
-      id: string;
-      fieldType: "PageBreak";
-      isThankYouPage: boolean;
-      static: true;
-      name: string;
-    }
-  | {
-      id: string;
-      fieldType: "UnorderedList";
-      items: string[];
-      static: true;
-      name: string;
-    }
-  | {
-      id: string;
-      fieldType: "OrderedList";
-      items: string[];
-      static: true;
-      name: string;
-    }
-  | {
-      id: string;
-      fieldType: "Toggle";
-      title: string;
-      children: TransformedElement[];
-      static: true;
-      name: string;
-    }
-  | {
-      id: string;
-      fieldType: "Table";
-      rows: { cells: string[]; isHeader: boolean }[];
-      static: true;
-      name: string;
-    }
-  | {
-      id: string;
-      fieldType: "Callout";
-      emoji?: string;
-      content: string;
-      static: true;
-      name: string;
-    };
-
 /**
- * Combined type for all preview elements
+ * Unified node parsing for Plate editor content.
+ *
+ * Consolidates the duplicated logic from transform-plate-to-form.ts and
+ * transform-plate-for-preview.ts into a single module.
  */
-export type TransformedElement = PlateFormField | PlateStaticElement;
+import type { Value } from "platejs";
+import type {
+  FormHeaderData,
+  PlateFormField,
+  PreviewSegment,
+  TransformedElement,
+} from "./types";
+
+// --- Text extraction helpers ---
 
 /**
  * Extracts plain text content from a Plate node's children array.
@@ -137,6 +34,26 @@ const TRIM_UNDERSCORES_RE = /^_|_$/g;
 
 export const slugify = (str: string): string =>
   str.toLowerCase().replace(NON_ALNUM_RE, "_").replace(TRIM_UNDERSCORES_RE, "") || "field";
+
+// --- Form header extraction ---
+
+/**
+ * Extracts form header data from the first node if it's a formHeader.
+ */
+export const extractFormHeader = (value: Value): FormHeaderData | null => {
+  if (value.length > 0 && value[0].type === "formHeader") {
+    const node = value[0];
+    return {
+      title: (node.title as string) || "",
+      icon: (node.icon as string | null) || null,
+      iconColor: (node.iconColor as string | null) || null,
+      cover: (node.cover as string | null) || null,
+    };
+  }
+  return null;
+};
+
+// --- List / table extraction helpers ---
 
 /**
  * Extracts list items from a Plate list node (ul/ol).
@@ -203,6 +120,88 @@ const extractTableRows = (node: any): { cells: string[]; isHeader: boolean }[] =
   return rows;
 };
 
+// --- Shared field parsing ---
+
+/**
+ * Parses a formLabel + (optional formInput/formTextarea) pair into a PlateFormField.
+ * Returns the field and how many nodes were consumed (1 or 2).
+ */
+const parseFormLabelPair = (
+  nodes: any[],
+  i: number,
+  fieldIndex: number,
+): { field: PlateFormField; consumed: number } => {
+  const node = nodes[i];
+  const labelText = extractTextContent(node.children as Array<{ text?: string }>);
+  const isRequired = Boolean(node.required);
+
+  // Check if next node is a formInput or formTextarea
+  const nextNode = nodes[i + 1];
+  let placeholder = "";
+  let minLength: number | undefined;
+  let maxLength: number | undefined;
+  let defaultValue: string | undefined;
+  let fieldType: "Input" | "Textarea" = "Input";
+  let consumed = 1;
+
+  if (nextNode && (nextNode.type === "formInput" || nextNode.type === "formTextarea")) {
+    fieldType = nextNode.type === "formTextarea" ? "Textarea" : "Input";
+    const inputText = extractTextContent(nextNode.children as Array<{ text?: string }>);
+    placeholder = inputText || (nextNode.placeholder as string) || "";
+    minLength = nextNode.minLength as number | undefined;
+    maxLength = nextNode.maxLength as number | undefined;
+    defaultValue = nextNode.defaultValue as string | undefined;
+    consumed = 2;
+  }
+
+  // Use Plate.js element ID as stable field name (doesn't change when fields are reordered)
+  const stableId = (node as { id?: string }).id;
+  const baseName = slugify(labelText);
+  // Fallback to position-based name for backward compatibility with old content
+  const name = stableId || `${baseName}_${fieldIndex}`;
+
+  return {
+    field: {
+      id: name,
+      name,
+      fieldType,
+      label: labelText || "Untitled Field",
+      placeholder: placeholder || undefined,
+      required: isRequired,
+      minLength,
+      maxLength,
+      defaultValue,
+    },
+    consumed,
+  };
+};
+
+/**
+ * Parses a formButton node into a PlateFormField.
+ */
+const parseFormButton = (node: any, fieldIndex: number): PlateFormField => {
+  // Get button text from label property (new), children (old), or buttonText (legacy)
+  const childText = extractTextContent(node.children as Array<{ text?: string }>);
+  const btnText =
+    (node.label as string | undefined) ||
+    childText ||
+    (node.buttonText as string | undefined);
+  const btnRole = (node.buttonRole as "next" | "previous" | "submit") || "submit";
+  const defaultText =
+    btnRole === "next" ? "Next" : btnRole === "previous" ? "Previous" : "Submit";
+  const name = `button_${fieldIndex}`;
+
+  return {
+    id: name,
+    name,
+    fieldType: "Button",
+    buttonText: btnText || defaultText,
+    buttonRole: btnRole,
+  };
+};
+
+// --- Flat element parsing (used by transformPlateStateToFormElements) ---
+
 /**
  * Transforms Plate.js editor Value into form elements suitable for preview.
  *
@@ -230,47 +229,11 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
         break;
 
       case "formLabel": {
-        const labelText = extractTextContent(node.children as Array<{ text?: string }>);
-        const isRequired = Boolean(node.required);
-
-        // Check if next node is a formInput or formTextarea
-        const nextNode = value[i + 1];
-        let placeholder = "";
-        let minLength: number | undefined;
-        let maxLength: number | undefined;
-        let defaultValue: string | undefined;
-        let fieldType: "Input" | "Textarea" = "Input";
-
-        if (nextNode && (nextNode.type === "formInput" || nextNode.type === "formTextarea")) {
-          fieldType = nextNode.type === "formTextarea" ? "Textarea" : "Input";
-          const inputText = extractTextContent(nextNode.children as Array<{ text?: string }>);
-          placeholder = inputText || (nextNode.placeholder as string) || "";
-          minLength = nextNode.minLength as number | undefined;
-          maxLength = nextNode.maxLength as number | undefined;
-          defaultValue = nextNode.defaultValue as string | undefined;
-
-          i++; // Skip the formInput/formTextarea in the next iteration
-        }
-
-        // Use Plate.js element ID as stable field name (doesn't change when fields are reordered)
-        const stableId = (node as { id?: string }).id;
-        const baseName = slugify(labelText);
-        // Fallback to position-based name for backward compatibility with old content
-        const name = stableId || `${baseName}_${fieldIndex}`;
-
-        elements.push({
-          id: name,
-          name,
-          fieldType,
-          label: labelText || "Untitled Field",
-          placeholder: placeholder || undefined,
-          required: isRequired,
-          minLength,
-          maxLength,
-          defaultValue,
-        });
+        const { field, consumed } = parseFormLabelPair(value as any[], i, fieldIndex);
+        elements.push(field);
         fieldIndex++;
-        break;
+        i += consumed;
+        continue; // skip the i++ at the end
       }
 
       // Headings -> Static elements
@@ -372,23 +335,8 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
 
       // Button field
       case "formButton": {
-        // Get button text from label property (new), children (old), or buttonText (legacy)
-        const childText = extractTextContent(node.children as Array<{ text?: string }>);
-        const btnText =
-          (node.label as string | undefined) ||
-          childText ||
-          (node.buttonText as string | undefined);
-        const btnRole = (node.buttonRole as "next" | "previous" | "submit") || "submit";
-        const defaultText =
-          btnRole === "next" ? "Next" : btnRole === "previous" ? "Previous" : "Submit";
-        const name = `button_${fieldIndex}`;
-        elements.push({
-          id: name,
-          name,
-          fieldType: "Button",
-          buttonText: btnText || defaultText,
-          buttonRole: btnRole,
-        });
+        const field = parseFormButton(node, fieldIndex);
+        elements.push(field);
         fieldIndex++;
         break;
       }
@@ -496,6 +444,70 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
   return elements;
 };
 
+// --- Preview segment parsing (used by transformPlateForPreview) ---
+
+/**
+ * Walks an array of Plate nodes and produces an ordered list of segments.
+ * Consecutive static nodes are grouped into a single StaticSegment.
+ * Form nodes (formLabel+formInput, formButton) become FieldSegments.
+ */
+export const createSegments = (nodes: Value): PreviewSegment[] => {
+  const segments: PreviewSegment[] = [];
+  let staticBuffer: Value = [];
+  let fieldIndex = 0;
+
+  const flushStatic = () => {
+    if (staticBuffer.length > 0) {
+      segments.push({ type: "static", nodes: staticBuffer });
+      staticBuffer = [];
+    }
+  };
+
+  let i = 0;
+  while (i < nodes.length) {
+    const node = nodes[i];
+    const nodeType = node.type as string;
+
+    switch (nodeType) {
+      case "formLabel": {
+        flushStatic();
+
+        const { field, consumed } = parseFormLabelPair(nodes as any[], i, fieldIndex);
+        segments.push({ type: "field", field });
+        fieldIndex++;
+        i += consumed;
+        continue; // skip the i++ at the end
+      }
+
+      case "formButton": {
+        flushStatic();
+
+        const field = parseFormButton(node, fieldIndex);
+        segments.push({ type: "field", field });
+        fieldIndex++;
+        break;
+      }
+
+      // Skip standalone formInput/formTextarea (handled with formLabel above)
+      case "formInput":
+      case "formTextarea":
+        break;
+
+      default:
+        // Everything else is static content -- accumulate into buffer
+        staticBuffer.push(node);
+        break;
+    }
+
+    i++;
+  }
+
+  flushStatic();
+  return segments;
+};
+
+// --- Utility functions ---
+
 /**
  * Filters only editable form fields (non-static elements)
  */
@@ -503,82 +515,19 @@ export const getEditableFields = (elements: TransformedElement[]): PlateFormFiel
   elements.filter((el): el is PlateFormField => !("static" in el) || !el.static);
 
 /**
- * Generates default form values from a list of form fields.
- * Used to initialize TanStack Form with empty values.
+ * Extracts PlateFormField items from a segment array.
+ * Used by StepForm to set up form validation.
  */
-const _generateDefaultValues = (elements: TransformedElement[]): Record<string, unknown> => {
-  const defaults: Record<string, unknown> = {};
-
-  for (const el of elements) {
-    if (!("static" in el) || !el.static) {
-      defaults[(el as PlateFormField).name] = "";
-    }
-  }
-
-  return defaults;
-};
+export const getFieldsFromSegments = (segments: PreviewSegment[]): PlateFormField[] =>
+  segments
+    .filter((seg): seg is { type: "field"; field: PlateFormField } => seg.type === "field")
+    .map((seg) => seg.field);
 
 /**
- * Result of splitting elements into steps
+ * Extracts only editable (non-button) fields from segments.
+ * Used for form field count checks and auto-jump logic.
  */
-type StepSplitResult = {
-  /** Array of steps, each containing elements for that step */
-  steps: TransformedElement[][];
-  /** Content to show after form submission (from thank you page break) */
-  thankYouContent: TransformedElement[] | null;
-};
-
-/**
- * Splits transformed elements into steps based on PageBreak elements.
- * - Regular PageBreak = step divider
- * - PageBreak with isThankYouPage = marks content after it as thank you content
- *
- * @param elements - Array of transformed elements
- * @returns Object with steps array and optional thankYouContent
- */
-export const splitElementsIntoSteps = (elements: TransformedElement[]): StepSplitResult => {
-  const steps: TransformedElement[][] = [];
-  let currentStep: TransformedElement[] = [];
-  let thankYouContent: TransformedElement[] | null = null;
-  let isCollectingThankYou = false;
-
-  for (const element of elements) {
-    // Check if this is a PageBreak
-    if ("static" in element && element.fieldType === "PageBreak") {
-      // Save current step if it has content
-      if (currentStep.length > 0) {
-        steps.push(currentStep);
-        currentStep = [];
-      }
-
-      // If this is a thank you page break, start collecting thank you content
-      if (element.isThankYouPage) {
-        isCollectingThankYou = true;
-      }
-      // Don't add the PageBreak element itself to any step
-      continue;
-    }
-
-    // Add element to appropriate collection
-    if (isCollectingThankYou) {
-      if (!thankYouContent) {
-        thankYouContent = [];
-      }
-      thankYouContent.push(element);
-    } else {
-      currentStep.push(element);
-    }
-  }
-
-  // Don't forget the last step (if not collecting thank you content)
-  if (currentStep.length > 0 && !isCollectingThankYou) {
-    steps.push(currentStep);
-  }
-
-  // If no steps were created but we have content, it's a single step
-  if (steps.length === 0 && currentStep.length > 0) {
-    steps.push(currentStep);
-  }
-
-  return { steps, thankYouContent };
-};
+export const getEditableFieldsFromSegments = (segments: PreviewSegment[]): PlateFormField[] =>
+  getFieldsFromSegments(segments).filter(
+    (f) => f.fieldType === "Input" || f.fieldType === "Textarea",
+  );

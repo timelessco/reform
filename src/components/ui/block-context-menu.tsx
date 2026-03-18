@@ -17,14 +17,19 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { useIsTouchDevice } from "@/hooks/use-is-touch-device";
-
 type _Value = "askAI" | null;
+
+const touchSubscribe = (callback: () => void) => {
+  window.addEventListener("resize", callback, { passive: true });
+  return () => window.removeEventListener("resize", callback);
+};
+const getTouchSnapshot = () => "ontouchstart" in window || navigator.maxTouchPoints > 0;
+const getTouchServerSnapshot = () => false;
 
 export const BlockContextMenu = ({ children }: { children: React.ReactNode }) => {
   const { api, editor } = useEditorPlugin(BlockMenuPlugin);
   const [_value, setValue] = React.useState<_Value>(null);
-  const isTouch = useIsTouchDevice();
+  const isTouch = React.useSyncExternalStore(touchSubscribe, getTouchSnapshot, getTouchServerSnapshot);
   const [readOnly] = usePlateState("readOnly");
   const openId = usePluginOption(BlockMenuPlugin, "openId");
   const isOpen = openId === BLOCK_CONTEXT_MENU_ID;
