@@ -57,6 +57,8 @@ export type CopyButtonProps = ComponentProps<typeof Button> & {
   onCopyError?: (error: Error) => void;
 };
 
+type CopyButtonClickEvent = Parameters<NonNullable<ComponentProps<typeof Button>["onClick"]>>[0];
+
 export const CopyButton = ({
   size = "icon",
   children,
@@ -72,7 +74,7 @@ export const CopyButton = ({
   });
 
   const handleClick = useCallback(
-    (e: React.MouseEvent<HTMLButtonElement>) => {
+    (e: CopyButtonClickEvent) => {
       copy(text);
       onClick?.(e);
     },

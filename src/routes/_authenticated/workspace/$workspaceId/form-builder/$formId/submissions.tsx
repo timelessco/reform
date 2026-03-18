@@ -84,6 +84,10 @@ const formatSubmissionValue = (value: unknown): string => {
   }
 };
 
+const toSubmissionColumn = <TValue,>(
+  column: ColumnDef<SerializedSubmission, TValue>,
+): ColumnDef<SerializedSubmission, unknown> => column as ColumnDef<SerializedSubmission, unknown>;
+
 const SubmissionsPage = () => {
   const { formId } = Route.useParams();
   const queryClient = useQueryClient();
@@ -241,38 +245,40 @@ const SubmissionsPage = () => {
         enableResizing: false,
       },
       // Submission Date column - minSize prevents action buttons from truncating into select column
-      columnHelper.accessor("createdAt", {
-        header: ({ column }) => <DataGridColumnHeader column={column} title="Submitted at" />,
-        cell: (info) => (
-          <div className="flex items-center justify-between gap-2 group/row min-w-0">
-            <span className="text-[13px] truncate min-w-0">
-              {new Intl.DateTimeFormat(undefined, {
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "numeric",
-              }).format(new Date(info.getValue()))}
-            </span>
-            <div className="flex shrink-0 items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
-                aria-label="Delete submission"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(info.row.original.id);
-                }}
-              >
-                <Trash2Icon className="h-3.5 w-3.5" />
-              </Button>
+      toSubmissionColumn(
+        columnHelper.accessor("createdAt", {
+          header: ({ column }) => <DataGridColumnHeader column={column} title="Submitted at" />,
+          cell: (info) => (
+            <div className="flex items-center justify-between gap-2 group/row min-w-0">
+              <span className="text-[13px] truncate min-w-0">
+                {new Intl.DateTimeFormat(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "numeric",
+                }).format(new Date(info.getValue()))}
+              </span>
+              <div className="flex shrink-0 items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                  aria-label="Delete submission"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(info.row.original.id);
+                  }}
+                >
+                  <Trash2Icon className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
-          </div>
-        ),
-        id: "submitted_at",
-        size: 200,
-        minSize: 140,
-      }),
+          ),
+          id: "submitted_at",
+          size: 200,
+          minSize: 140,
+        }),
+      ),
     ];
 
     // Dynamic columns based on PUBLISHED form fields (current fields)
@@ -291,27 +297,29 @@ const SubmissionsPage = () => {
         // Only add if status filter includes this status
         if (fieldStatusFilter.has(status)) {
           baseColumns.push(
-            columnHelper.accessor((row) => row.data?.[field.name], {
-              id: field.name,
-              header: ({ column }) => (
-                <DataGridColumnHeader
-                  column={column}
-                  title={field.label || field.name}
-                  icon={
-                    <span className="block h-2.5 w-2.5 rounded-full border-[1.5px] border-emerald-500" />
-                  }
-                />
-              ),
-              cell: (info) => (
-                <span className="text-[13px] truncate max-w-[300px] block">
-                  {formatSubmissionValue(info.getValue())}
-                </span>
-              ),
-              size: 150,
-              meta: {
-                headerTitle: field.label || field.name,
-              },
-            }),
+            toSubmissionColumn(
+              columnHelper.accessor((row) => row.data?.[field.name], {
+                id: field.name,
+                header: ({ column }) => (
+                  <DataGridColumnHeader
+                    column={column}
+                    title={field.label || field.name}
+                    icon={
+                      <span className="block h-2.5 w-2.5 rounded-full border-[1.5px] border-emerald-500" />
+                    }
+                  />
+                ),
+                cell: (info) => (
+                  <span className="text-[13px] truncate max-w-[300px] block">
+                    {formatSubmissionValue(info.getValue())}
+                  </span>
+                ),
+                size: 150,
+                meta: {
+                  headerTitle: field.label || field.name,
+                },
+              }),
+            ),
           );
         }
       });
@@ -325,27 +333,29 @@ const SubmissionsPage = () => {
       // Only add if status filter includes this status
       if (fieldStatusFilter.has(status)) {
         baseColumns.push(
-          columnHelper.accessor((row) => row.data?.[fieldName], {
-            id: fieldName,
-            header: ({ column }) => (
-              <DataGridColumnHeader
-                column={column}
-                title={fieldName}
-                icon={
-                  <span className="block h-2.5 w-2.5 rounded-full border-[1.5px] border-red-500" />
-                }
-              />
-            ),
-            cell: (info) => (
-              <span className="text-[13px] truncate max-w-[300px] block text-muted-foreground">
-                {formatSubmissionValue(info.getValue())}
-              </span>
-            ),
-            size: 150,
-            meta: {
-              headerTitle: fieldName,
-            },
-          }),
+          toSubmissionColumn(
+            columnHelper.accessor((row) => row.data?.[fieldName], {
+              id: fieldName,
+              header: ({ column }) => (
+                <DataGridColumnHeader
+                  column={column}
+                  title={fieldName}
+                  icon={
+                    <span className="block h-2.5 w-2.5 rounded-full border-[1.5px] border-red-500" />
+                  }
+                />
+              ),
+              cell: (info) => (
+                <span className="text-[13px] truncate max-w-[300px] block text-muted-foreground">
+                  {formatSubmissionValue(info.getValue())}
+                </span>
+              ),
+              size: 150,
+              meta: {
+                headerTitle: fieldName,
+              },
+            }),
+          ),
         );
       }
     });
