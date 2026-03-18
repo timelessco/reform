@@ -11,10 +11,13 @@ export const FormHeaderPlugin = createPlatePlugin({
     isSelectable: false,
     component: FormHeaderElement,
   },
+  // eslint-disable-next-line typescript-eslint/no-explicit-any
   extendEditor: ({ editor }: any) => {
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
     const editorRef = editor as any;
     const { normalizeNode, deleteBackward, deleteForward, deleteFragment } = editorRef;
 
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
     editorRef.normalizeNode = (entry: any) => {
       const path = entry[1];
 
@@ -48,6 +51,7 @@ export const FormHeaderPlugin = createPlatePlugin({
       normalizeNode(entry);
     };
 
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
     editorRef.deleteBackward = (unit: any) => {
       const block = editorRef.api.block();
       const [node, path] = (block as [TElement, Path]) ?? [];
@@ -60,6 +64,7 @@ export const FormHeaderPlugin = createPlatePlugin({
       if (path && path[0] === 1) {
         const selection = editorRef.selection;
         if (selection && editorRef.api.isCollapsed(selection)) {
+          // eslint-disable-next-line typescript-eslint/no-explicit-any
           const edges = editorRef.api.edges(path) as any;
           const start = edges?.[0];
           if (
@@ -75,6 +80,7 @@ export const FormHeaderPlugin = createPlatePlugin({
       deleteBackward(unit);
     };
 
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
     editorRef.deleteForward = (unit: any) => {
       const block = editorRef.api.block();
       const [node] = (block as [TElement, Path]) ?? [];
@@ -86,6 +92,7 @@ export const FormHeaderPlugin = createPlatePlugin({
       deleteForward(unit);
     };
 
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
     editorRef.deleteFragment = (direction: any) => {
       const { selection } = editorRef;
       if (!selection) {
@@ -93,6 +100,7 @@ export const FormHeaderPlugin = createPlatePlugin({
         return;
       }
 
+      // eslint-disable-next-line typescript-eslint/no-explicit-any
       const edges = (editorRef.api.edges(selection) as any) ?? [];
       const start = edges[0];
       const end = edges[1];
@@ -101,6 +109,7 @@ export const FormHeaderPlugin = createPlatePlugin({
         if (editorRef.children.length > 1) {
           editorRef.tf.delete({
             at: {
+              // eslint-disable-next-line typescript-eslint/no-explicit-any
               anchor: (editorRef.api.edges([1]) as any)[0],
               focus: end,
             },
@@ -110,6 +119,7 @@ export const FormHeaderPlugin = createPlatePlugin({
             editorRef.tf.insertNodes({ type: "p", children: [{ text: "" }] } as TElement, {
               at: [1],
             });
+            // eslint-disable-next-line typescript-eslint/no-explicit-any
             editorRef.tf.select((editorRef.api.edges([1]) as any)[0]);
           }
           return;

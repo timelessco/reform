@@ -17,5 +17,6 @@ import { File } from "node:buffer";
  * If you're not using `oz.file()`, you can safely remove this polyfill.
  */
 if (typeof globalThis.File === "undefined") {
+  // eslint-disable-next-line typescript-eslint/no-explicit-any
   globalThis.File = File as any;
 }

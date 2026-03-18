@@ -94,7 +94,7 @@ export const FormControl = ({
     return children;
   }
 
-  return React.cloneElement(children as React.ReactElement<any>, {
+  return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
     "data-slot": "form-control",
     id: formItemId,
     "aria-describedby": !error ? `${formDescriptionId}` : `${formDescriptionId} ${formMessageId}`,

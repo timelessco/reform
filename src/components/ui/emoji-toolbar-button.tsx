@@ -55,7 +55,7 @@ export const EmojiPopover = ({
   setIsOpen: (open: boolean) => void;
 }) => (
   <Popover open={isOpen} onOpenChange={setIsOpen}>
-    <PopoverTrigger render={control} />
+    <PopoverTrigger nativeButton={false} render={control} />
     <PopoverContent className="z-100 p-2.5">{children}</PopoverContent>
   </Popover>
 );
@@ -203,7 +203,7 @@ const EmojiPickerContent = ({
   const getRowWidth = settings.perLine.value * settings.buttonSize.value;
 
   const isCategoryVisible = React.useCallback(
-    (categoryId: any) =>
+    (categoryId: string) =>
       visibleCategories.size === 0
         ? true
         : visibleCategories.has(categoryId)

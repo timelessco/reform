@@ -4,6 +4,7 @@ import { jsx } from "@platejs/test-utils";
 
 void jsx;
 
+// eslint-disable-next-line typescript-eslint/no-explicit-any
 export const slashCommandValue: any = (
   <fragment>
     <hh2>

@@ -30,18 +30,26 @@ export const favoriteCollection = createCollection(
     getKey: (item) => item.id,
     startSync: false, // Sync starts in _authenticated.tsx loader after auth is confirmed
     onInsert: async ({ transaction }) => {
-      const newItem = transaction.mutations[0].modified;
-      const result = (await addFavorite({
-        data: { formId: newItem.formId },
-      })) as ServerTxResult;
-      return { txid: result.txid };
+      const txids = await Promise.all(
+        transaction.mutations.map(async (m) => {
+          const result = (await addFavorite({
+            data: { formId: m.modified.formId },
+          })) as ServerTxResult;
+          return result.txid;
+        }),
+      );
+      return { txid: txids };
     },
     onDelete: async ({ transaction }) => {
-      const deletedItem = transaction.mutations[0].original;
-      const result = (await removeFavorite({
-        data: { formId: deletedItem.formId },
-      })) as ServerTxResult;
-      return { txid: result.txid };
+      const txids = await Promise.all(
+        transaction.mutations.map(async (m) => {
+          const result = (await removeFavorite({
+            data: { formId: m.original.formId },
+          })) as ServerTxResult;
+          return result.txid;
+        }),
+      );
+      return { txid: txids };
     },
   }),
 );

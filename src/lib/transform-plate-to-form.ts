@@ -3,6 +3,14 @@ import type { FormElement, StaticFormElement } from "@/types/form-types";
 
 type _PreviewElement = FormElement | StaticFormElement;
 
+/** Loose Plate node shape for tree traversal in extractors */
+interface PlateNode {
+  type?: string;
+  text?: string;
+  children?: PlateNode[];
+  [key: string]: unknown;
+}
+
 type FormHeaderData = {
   title: string;
   icon: string | null;
@@ -142,7 +150,7 @@ export const slugify = (str: string): string =>
  * Extracts list items from a Plate list node (ul/ol).
  * Handles nested structure: ul > li > lic > text
  */
-const extractListItems = (node: any): string[] => {
+const extractListItems = (node: PlateNode): string[] => {
   const items: string[] = [];
   if (!node.children || !Array.isArray(node.children)) return items;
 
@@ -168,7 +176,7 @@ const extractListItems = (node: any): string[] => {
  * Extracts table rows from a Plate table node.
  * Handles structure: table > tr > (th|td) > text
  */
-const extractTableRows = (node: any): { cells: string[]; isHeader: boolean }[] => {
+const extractTableRows = (node: PlateNode): { cells: string[]; isHeader: boolean }[] => {
   const rows: { cells: string[]; isHeader: boolean }[] = [];
   if (!node.children || !Array.isArray(node.children)) return rows;
 
@@ -426,9 +434,9 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
       // Toggle (collapsible)
       case "toggle": {
         // First child is typically the toggle title, rest is content
-        const children = node.children as any[];
+        const children = node.children as PlateNode[];
         let title = "";
-        const contentNodes: any[] = [];
+        const contentNodes: PlateNode[] = [];
 
         if (children && children.length > 0) {
           // Extract title from first element

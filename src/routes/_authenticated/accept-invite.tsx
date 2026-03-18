@@ -2,6 +2,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
+import { zodValidator } from "@tanstack/zod-adapter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
@@ -47,8 +49,8 @@ const AcceptInvitePage = () => {
         toast.success("Invitation accepted successfully");
         router.navigate({ to: "/dashboard" });
       },
-      onError: (error: any) => {
-        toast.error(error.message || "Failed to accept invitation");
+      onError: (err: unknown) => {
+        toast.error(err instanceof Error ? err.message : "Failed to accept invitation");
       },
     }),
   );
@@ -120,8 +122,11 @@ const AcceptInvitePage = () => {
           <CardTitle>Organization Invitation</CardTitle>
           <CardDescription>
             You have been invited to join{" "}
-            <strong>{(invitation as any).organization?.name ?? "this organization"}</strong> as a{" "}
-            <strong>{invitation.role}</strong>.
+            <strong>
+              {(invitation as unknown as { organization?: { name?: string } }).organization?.name ??
+                "this organization"}
+            </strong>{" "}
+            as a <strong>{invitation.role}</strong>.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -145,9 +150,11 @@ const AcceptInvitePage = () => {
 };
 
 export const Route = createFileRoute("/_authenticated/accept-invite")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    invitationId: search.invitationId as string,
-  }),
+  validateSearch: zodValidator(
+    z.object({
+      invitationId: z.string(),
+    }),
+  ),
   component: AcceptInvitePage,
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,

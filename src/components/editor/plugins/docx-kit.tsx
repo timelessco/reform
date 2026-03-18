@@ -4,9 +4,9 @@ import { JuicePlugin } from "@platejs/juice";
 export const DocxKit = [DocxPlugin, JuicePlugin];
 
 export const loadDocxKit = async () => {
-  const [{ DocxPlugin }, { JuicePlugin }] = await Promise.all([
+  const [{ DocxPlugin: LoadedDocxPlugin }, { JuicePlugin: LoadedJuicePlugin }] = await Promise.all([
     import("@platejs/docx"),
     import("@platejs/juice"),
   ]);
-  return [DocxPlugin, JuicePlugin];
+  return [LoadedDocxPlugin, LoadedJuicePlugin];
 };

@@ -33,8 +33,8 @@ export const useUploadFile = ({
       const res = await uploadFiles("editorUploader", {
         ...props,
         files: [file],
-        onUploadProgress: ({ progress }) => {
-          setProgress(Math.min(progress, 100));
+        onUploadProgress: ({ progress: uploadProgress }) => {
+          setProgress(Math.min(uploadProgress, 100));
         },
       });
 
@@ -65,13 +65,13 @@ export const useUploadFile = ({
       } as UploadedFile;
 
       // Simulate upload progress
-      let progress = 0;
+      let mockProgress = 0;
 
       const simulateProgress = async () => {
-        while (progress < 100) {
+        while (mockProgress < 100) {
           await new Promise((resolve) => setTimeout(resolve, 50));
-          progress += 2;
-          setProgress(Math.min(progress, 100));
+          mockProgress += 2;
+          setProgress(Math.min(mockProgress, 100));
         }
       };
 
@@ -112,7 +112,7 @@ const getErrorMessage = (err: unknown) => {
   return unknownError;
 };
 
-const showErrorToast = (err: unknown) => {
+const _showErrorToast = (err: unknown) => {
   const errorMessage = getErrorMessage(err);
 
   return toast.error(errorMessage);

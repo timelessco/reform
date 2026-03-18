@@ -10,11 +10,11 @@ interface PasswordGateProps {
   children: React.ReactNode;
 }
 
-function getStorageKey(formId: string) {
+const getStorageKey = (formId: string) => {
   return `bf-unlocked-${formId}`;
-}
+};
 
-export function PasswordGate({ formId, children }: PasswordGateProps) {
+export const PasswordGate = ({ formId, children }: PasswordGateProps) => {
   const { t } = useTranslation();
   const [unlocked, setUnlocked] = useState(false);
   const [password, setPassword] = useState("");
@@ -129,4 +129,4 @@ export function PasswordGate({ formId, children }: PasswordGateProps) {
       </div>
     </div>
   );
-}
+};

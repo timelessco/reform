@@ -223,11 +223,11 @@ export const useFileUpload = (
         onFilesAdded?.(validFiles);
 
         setState((prev) => {
-          const newFiles = !multiple ? validFiles : [...prev.files, ...validFiles];
-          onFilesChange?.(newFiles);
+          const updatedFiles = !multiple ? validFiles : [...prev.files, ...validFiles];
+          onFilesChange?.(updatedFiles);
           return {
             ...prev,
-            files: newFiles,
+            files: updatedFiles,
             errors,
           };
         });

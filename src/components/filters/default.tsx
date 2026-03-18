@@ -299,8 +299,8 @@ export default function FiltersDemo() {
     createFilter("priority", "contains", ["low", "medium", "critical"]),
   ]);
 
-  const handleFiltersChange = useCallback((filters: Filter[]) => {
-    setFilters(filters);
+  const handleFiltersChange = useCallback((updatedFilters: Filter[]) => {
+    setFilters(updatedFilters);
   }, []);
 
   const handleClearFilters = useCallback(() => {

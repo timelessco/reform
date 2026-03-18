@@ -13,11 +13,13 @@ const LazyInlineEquationElement = React.lazy(() =>
   })),
 );
 
+// eslint-disable-next-line typescript-eslint/no-explicit-any
 const EquationElementLazy = (props: any) => (
   <React.Suspense fallback={<div className="my-1 p-3 bg-muted rounded-sm animate-pulse" />}>
     <LazyEquationElement {...props} />
   </React.Suspense>
 );
+// eslint-disable-next-line typescript-eslint/no-explicit-any
 const InlineEquationElementLazy = (props: any) => (
   <React.Suspense
     fallback={<span className="inline-block mx-1 w-16 h-5 bg-muted rounded-sm animate-pulse" />}

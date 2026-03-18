@@ -201,7 +201,10 @@ const getWorkspacesWithForms = createServerFn({ method: "GET" })
         });
         return acc;
       },
-      {} as Record<string, any[]>,
+      {} as Record<
+        string,
+        { id: string; title: string | null; updatedAt: string; workspaceId: string }[]
+      >,
     );
 
     return {

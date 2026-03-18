@@ -12,7 +12,7 @@ interface FormClosedProps {
   message?: string | null;
 }
 
-export function FormClosed({ message }: FormClosedProps) {
+export const FormClosed = ({ message }: FormClosedProps) => {
   const { t } = useTranslation();
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
@@ -27,9 +27,9 @@ export function FormClosed({ message }: FormClosedProps) {
       </Empty>
     </div>
   );
-}
+};
 
-export function AlreadySubmitted() {
+export const AlreadySubmitted = () => {
   const { t } = useTranslation();
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
@@ -44,4 +44,4 @@ export function AlreadySubmitted() {
       </Empty>
     </div>
   );
-}
+};

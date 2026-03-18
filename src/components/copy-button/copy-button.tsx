@@ -24,19 +24,25 @@ export const motionIconProps: HTMLMotionProps<"span"> = {
   transition: { type: "spring", duration: 0.4, bounce: 0 },
 };
 
-export const CopyStateIcon = ({ state }: { state: CopyState }) => (
+export const CopyStateIcon = ({
+  state,
+  className: _className,
+}: {
+  state: CopyState;
+  className?: string;
+}) => (
   <AnimatePresence mode="popLayout" initial={false}>
     {state === "idle" ? (
       <motion.span key="idle" {...motionIconProps}>
-        <CopyIcon />
+        <CopyIcon className="size-3.25" />
       </motion.span>
     ) : state === "done" ? (
       <motion.span key="done" {...motionIconProps}>
-        <CheckIcon strokeWidth={3} />
+        <CheckIcon strokeWidth={3} className="size-3.25" />
       </motion.span>
     ) : state === "error" ? (
       <motion.span key="error" {...motionIconProps}>
-        <CircleXIcon />
+        <CircleXIcon className="size-3.25" />
       </motion.span>
     ) : null}
   </AnimatePresence>
@@ -77,7 +83,7 @@ export const CopyButton = ({
     <Button
       size={size}
       onClick={handleClick}
-      prefix={<CopyStateIcon state={state} />}
+      prefix={<CopyStateIcon state={state} className="size-3.25" />}
       aria-label="Copy"
       {...props}
     >

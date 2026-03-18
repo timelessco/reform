@@ -106,7 +106,9 @@ const LocalEditorApp = () => {
       lastSavedContentRef.current = value;
 
       // Persist to local collection
-      const headerNode = value.find((n: any) => n.type === "formHeader") as any;
+      const headerNode = value.find((n: TElement) => n.type === "formHeader") as
+        | (TElement & { title?: string; icon?: string | null; cover?: string | null })
+        | undefined;
       const updateData = {
         content: value,
         title: headerNode?.title || "Draft Form",

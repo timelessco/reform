@@ -1,3 +1,9 @@
+"use client";
+
+import * as React from "react";
+
+import type { Point, TElement } from "platejs";
+
 import {
   Combobox,
   ComboboxGroup,
@@ -15,9 +21,7 @@ import { filterWords } from "@platejs/combobox";
 import { useComboboxInput, useHTMLInputCursorState } from "@platejs/combobox/react";
 import type { UseComboboxInputResult } from "@platejs/combobox/react";
 import { cva } from "class-variance-authority";
-import type { Point, TElement } from "platejs";
 import { useComposedRef, useEditorRef } from "platejs/react";
-import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -43,7 +47,7 @@ const InlineComboboxContext = React.createContext<InlineComboboxContextValue>(
 const defaultFilter: FilterFn = ({ group, keywords = [], label, value }, search) => {
   const uniqueTerms = new Set([value, ...keywords, group, label].filter(Boolean));
 
-  return Array.from(uniqueTerms).some((keyword) => filterWords(keyword ?? "", search));
+  return Array.from(uniqueTerms).some((keyword) => keyword && filterWords(keyword, search));
 };
 
 type InlineComboboxProps = {
@@ -77,7 +81,7 @@ const InlineCombobox = ({
 
   // Check if current user is the creator of this element (for Yjs collaboration)
   const isCreator = React.useMemo(() => {
-    const elementUserId = (element as { userId?: string }).userId;
+    const elementUserId = (element as TElement & { userId?: string }).userId;
     const currentUserId = editor.meta.userId;
 
     // If no userId (backwards compatibility or non-Yjs), allow
@@ -152,17 +156,12 @@ const InlineCombobox = ({
       showTrigger,
       trigger,
     }),
-    [trigger, showTrigger, filter, inputProps, removeInput],
-  );
-
-  const setValueWithTransition = React.useCallback(
-    (newValue: string) => React.startTransition(() => setValue(newValue)),
-    [setValue],
+    [trigger, showTrigger, filter, inputRef, inputProps, removeInput, setHasEmpty],
   );
 
   const store = useComboboxStore({
     // open: ,
-    setValue: setValueWithTransition,
+    setValue: (newValue) => React.startTransition(() => setValue(newValue)),
   });
 
   const items = store.useState("items");
@@ -175,7 +174,7 @@ const InlineCombobox = ({
     if (!store.getState().activeId) {
       store.setActiveId(store.first());
     }
-  }, [store]);
+  }, [items, store]);
 
   return (
     <span contentEditable={false}>
@@ -203,12 +202,10 @@ const InlineComboboxInput = ({
     inputRef: contextRef,
     showTrigger,
     trigger,
-  } = React.use(InlineComboboxContext);
+  } = React.useContext(InlineComboboxContext);
 
-  const store = useComboboxContext();
-  if (!store) {
-    throw new Error("InlineComboboxInput must be used within an InlineCombobox");
-  }
+  // eslint-disable-next-line typescript-eslint/no-non-null-assertion -- context is guaranteed by parent provider
+  const store = useComboboxContext()!;
   const value = store.useState("value");
 
   const ref = useComposedRef(propRef, contextRef);
@@ -244,20 +241,45 @@ const InlineComboboxInput = ({
 
 InlineComboboxInput.displayName = "InlineComboboxInput";
 
-const InlineComboboxContent: typeof ComboboxPopover = ({ className, ...props }) => (
-  <Portal>
-    <ComboboxPopover
-      className={cn(
-        "z-500 max-h-[288px] w-[300px] overflow-y-auto rounded-xl bg-popover p-1 shadow-md ring-1 ring-foreground/10",
-        className,
-      )}
-      {...props}
-    />
-  </Portal>
-);
+const InlineComboboxContent: typeof ComboboxPopover = ({ className, ...props }) => {
+  // Portal prevents CSS from leaking into popover
+  const store = useComboboxContext();
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!store) return;
+
+    const state = store.getState();
+    const { items, activeId } = state;
+
+    if (!items.length) return;
+
+    const currentIndex = items.findIndex((item) => item.id === activeId);
+
+    if (event.key === "ArrowUp" && currentIndex <= 0) {
+      event.preventDefault();
+      store.setActiveId(store.last());
+    } else if (event.key === "ArrowDown" && currentIndex >= items.length - 1) {
+      event.preventDefault();
+      store.setActiveId(store.first());
+    }
+  };
+
+  return (
+    <Portal>
+      <ComboboxPopover
+        className={cn(
+          "z-500 max-h-[288px] w-[300px] overflow-y-auto rounded-md bg-popover shadow-md",
+          className,
+        )}
+        onKeyDownCapture={handleKeyDown}
+        {...props}
+      />
+    </Portal>
+  );
+};
 
 const comboboxItemVariants = cva(
-  "relative flex h-[26px] select-none items-center rounded-lg px-2 py-[5.5px] text-[13px] text-foreground/80 outline-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "relative mx-1 flex h-[28px] select-none items-center rounded-sm px-2 text-foreground text-sm outline-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     defaultVariants: {
       interactive: true,
@@ -288,48 +310,37 @@ const InlineComboboxItem = ({
   Required<Pick<ComboboxItemProps, "value">>) => {
   const { value } = props;
 
-  const { filter, removeInput } = React.use(InlineComboboxContext);
+  const { filter, removeInput } = React.useContext(InlineComboboxContext);
 
-  const store = useComboboxContext();
-  if (!store) {
-    throw new Error("InlineComboboxItem must be used within an InlineCombobox");
-  }
+  // eslint-disable-next-line typescript-eslint/no-non-null-assertion -- context is guaranteed by parent provider
+  const store = useComboboxContext()!;
 
   // Optimization: Do not subscribe to value if filter is false
-  const storeValue = store.useState("value");
-  const search = filter ? storeValue : undefined;
+  const search = filter && store.useState("value");
 
   const visible = React.useMemo(
-    () => !filter || filter({ group, keywords, label, value }, search ?? ""),
+    () => !filter || filter({ group, keywords, label, value }, search as string),
     [filter, group, keywords, label, value, search],
   );
 
   if (!visible) return null;
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const handleClick = React.useCallback(
-    (event: React.MouseEvent<HTMLDivElement>) => {
-      removeInput(focusEditor);
-      onClick?.(event);
-    },
-    [removeInput, focusEditor, onClick],
-  );
-
   return (
     <ComboboxItem
       className={cn(comboboxItemVariants(), className)}
-      onClick={handleClick}
+      onClick={(event) => {
+        removeInput(focusEditor);
+        onClick?.(event);
+      }}
       {...props}
     />
   );
 };
 
 const InlineComboboxEmpty = ({ children, className }: React.HTMLAttributes<HTMLDivElement>) => {
-  const { setHasEmpty } = React.use(InlineComboboxContext);
-  const store = useComboboxContext();
-  if (!store) {
-    throw new Error("InlineComboboxEmpty must be used within an InlineCombobox");
-  }
+  const { setHasEmpty } = React.useContext(InlineComboboxContext);
+  // eslint-disable-next-line typescript-eslint/no-non-null-assertion -- context is guaranteed by parent provider
+  const store = useComboboxContext()!;
   const items = store.useState("items");
 
   React.useEffect(() => {
@@ -349,7 +360,7 @@ const InlineComboboxEmpty = ({ children, className }: React.HTMLAttributes<HTMLD
 
 const InlineComboboxRow = ComboboxRow;
 
-export const InlineComboboxGroup = ({
+const InlineComboboxGroup = ({
   className,
   ...props
 }: React.ComponentProps<typeof ComboboxGroup>) => (
@@ -359,13 +370,13 @@ export const InlineComboboxGroup = ({
   />
 );
 
-export const InlineComboboxGroupLabel = ({
+const InlineComboboxGroupLabel = ({
   className,
   ...props
 }: React.ComponentProps<typeof ComboboxGroupLabel>) => (
   <ComboboxGroupLabel
     {...props}
-    className={cn("px-2 py-1.5 text-[12px] text-muted-foreground", className)}
+    className={cn("mt-1.5 mb-2 px-3 font-medium text-muted-foreground text-xs", className)}
   />
 );
 
@@ -373,6 +384,8 @@ export {
   InlineCombobox,
   InlineComboboxContent,
   InlineComboboxEmpty,
+  InlineComboboxGroup,
+  InlineComboboxGroupLabel,
   InlineComboboxInput,
   InlineComboboxItem,
   InlineComboboxRow,

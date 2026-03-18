@@ -39,7 +39,7 @@ export const MediaToolbar = ({
   const readOnly = useReadOnly();
   const selected = useSelected();
   const isFocusedLast = useFocusedLast();
-  const selectionCollapsed = useEditorSelector((editor) => !editor.api.isExpanded(), []);
+  const selectionCollapsed = useEditorSelector((ed) => !ed.api.isExpanded(), []);
   const isImagePreviewOpen = useImagePreviewValue("isOpen", editor.id);
   const open = isFocusedLast && !readOnly && selected && selectionCollapsed && !isImagePreviewOpen;
   const isEditing = useFloatingMediaValue("isEditing");

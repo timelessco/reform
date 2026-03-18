@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { zodValidator } from "@tanstack/zod-adapter";
 import { Loader2Icon } from "@/components/ui/icons";
 import * as React from "react";
 import { toast } from "sonner";
@@ -38,11 +39,19 @@ const otpVerifySchema = z.object({
 
 type SignInMethod = "email" | "username" | "otp";
 
+const SAFE_REDIRECT_PATTERN = /^\/[a-zA-Z0-9\-_/$.~]+$/;
+
 const LoginPage = () => {
   const [signInMethod, setSignInMethod] = React.useState<SignInMethod>("email");
   const [step, setStep] = React.useState<"form" | "otp">("form");
   const [email, setEmail] = React.useState("");
   const router = useRouter();
+  const { redirect: redirectTo } = Route.useSearch();
+
+  const navigateAfterLogin = React.useCallback(() => {
+    const target = redirectTo && SAFE_REDIRECT_PATTERN.test(redirectTo) ? redirectTo : "/dashboard";
+    router.navigate({ to: target, replace: true });
+  }, [redirectTo, router]);
 
   const signInMutation = useMutation(
     auth.signIn.email.mutationOptions({
@@ -50,7 +59,7 @@ const LoginPage = () => {
         toast.success("Signed in successfully!");
         // Set flag for dashboard to handle sync (org is available there)
         sessionStorage.setItem("shouldSyncAfterLogin", "true");
-        router.navigate({ to: "/dashboard", replace: true });
+        navigateAfterLogin();
       },
       onError: (error) => {
         if (error.code === "EMAIL_NOT_VERIFIED") {
@@ -67,7 +76,7 @@ const LoginPage = () => {
         toast.success("Signed in successfully!");
         // Set flag for dashboard to handle sync (org is available there)
         sessionStorage.setItem("shouldSyncAfterLogin", "true");
-        router.navigate({ to: "/dashboard", replace: true });
+        navigateAfterLogin();
       },
       onError: (error) => {
         if (error.code === "EMAIL_NOT_VERIFIED") {
@@ -97,7 +106,7 @@ const LoginPage = () => {
         toast.success("Signed in successfully!");
         // Set flag for dashboard to handle sync (org is available there)
         sessionStorage.setItem("shouldSyncAfterLogin", "true");
-        router.navigate({ to: "/dashboard", replace: true });
+        navigateAfterLogin();
       },
       onError: (error) => {
         toast.error(error.message || "Verification failed");
@@ -501,11 +510,23 @@ const LoginPage = () => {
 
             {/* Switch to sign up */}
             <p className="text-center text-sm text-muted-foreground pt-2">
-              Don\u2019t have an account?{" "}
+              Don't have an account?{" "}
               <Link to="/signup" className="text-foreground hover:underline">
                 Sign up
               </Link>
             </p>
+
+            {/* Landing page link for new visitors */}
+            {redirectTo && (
+              <p className="text-center text-sm text-muted-foreground">
+                <Link
+                  to="/"
+                  className="text-muted-foreground hover:text-foreground hover:underline"
+                >
+                  View landing page
+                </Link>
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -517,5 +538,10 @@ export const Route = createFileRoute("/login")({
   server: {
     middleware: [guestMiddleware],
   },
+  validateSearch: zodValidator(
+    z.object({
+      redirect: z.string().optional(),
+    }),
+  ),
   component: LoginPage,
 });

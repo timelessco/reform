@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { InfoIcon, XIcon } from "@/components/ui/icons";
 import { APP_NAME } from "@/lib/app-config";
 import { Button } from "@/components/ui/button";
@@ -93,14 +93,17 @@ interface CustomizeSidebarProps {
 
 export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => {
   const { closeSidebar } = useEditorSidebar();
-  const { theme, setTheme } = useTheme();
+  const { setTheme } = useTheme();
   const cloudForm = useForm(isLocal ? undefined : formId);
   const localFormResult = useLocalForm(isLocal ? formId : undefined);
   const formResult = isLocal ? localFormResult : cloudForm;
   const formDoc = formResult.data?.[0] ?? null;
   const collection = isLocal ? localFormCollection : formCollection;
 
-  const customization = (formDoc?.customization ?? {}) as Record<string, string>;
+  const customization = useMemo(
+    () => (formDoc?.customization ?? {}) as Record<string, string>,
+    [formDoc?.customization],
+  );
 
   // Resolve the active style to get fallback values
   const resolvedStyle = useMemo(() => {
@@ -187,20 +190,6 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
     },
     [updateFields, customization, setTheme],
   );
-
-  // Sync editor mode when app theme changes from outside (user menu, settings)
-  const resolvedAppTheme =
-    theme === "system"
-      ? typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light"
-      : theme;
-
-  useEffect(() => {
-    if (resolvedAppTheme !== customization.mode && formDoc?.id) {
-      updateFields({ mode: resolvedAppTheme });
-    }
-  }, [resolvedAppTheme]);
 
   const activePreset = customization.preset || "vega";
   const activeMode = customization.mode || "light";

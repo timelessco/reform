@@ -5,13 +5,13 @@ import { z } from "zod";
 import { submissions } from "@/db/schema";
 import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
-import { authForm } from "./helpers";
+import { authForm, getTxId } from "./helpers";
 
 // Serialized submission type for client consumption
 export type SerializedSubmission = {
   id: string;
   formId: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   isCompleted: boolean;
   createdAt: string;
   updatedAt: string;
@@ -21,7 +21,7 @@ const serializeSubmission = (s: typeof submissions.$inferSelect) => ({
   ...s,
   createdAt: s.createdAt.toISOString(),
   updatedAt: s.updatedAt.toISOString(),
-  data: s.data as any,
+  data: s.data as Record<string, unknown>,
 });
 
 // GET submissions by form
@@ -45,10 +45,12 @@ export const deleteSubmission = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid(), formId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
-    const authPromise = authForm(data.formId, context.session.user.id);
-    await authPromise;
-    await db.delete(submissions).where(eq(submissions.id, data.id));
-    return { success: true };
+    await authForm(data.formId, context.session.user.id);
+    return await db.transaction(async (tx) => {
+      await tx.delete(submissions).where(eq(submissions.id, data.id));
+      const txid = await getTxId(tx);
+      return { success: true, txid };
+    });
   });
 
 // DELETE submissions bulk
@@ -61,13 +63,15 @@ export const deleteSubmissionsBulk = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
-    const authPromise = authForm(data.formId, context.session.user.id);
-    await authPromise;
+    await authForm(data.formId, context.session.user.id);
     if (data.submissionIds.length === 0) {
-      return { success: true, deleted: 0 };
+      return { success: true, deleted: 0, txid: 0 };
     }
-    await db.delete(submissions).where(inArray(submissions.id, data.submissionIds));
-    return { success: true, deleted: data.submissionIds.length };
+    return await db.transaction(async (tx) => {
+      await tx.delete(submissions).where(inArray(submissions.id, data.submissionIds));
+      const txid = await getTxId(tx);
+      return { success: true, deleted: data.submissionIds.length, txid };
+    });
   });
 
 // Cursor pagination types and constants

@@ -83,6 +83,7 @@ const FieldSet = ({ className, children, ...props }: React.ComponentProps<"field
 };
 
 // Stable selector function to ensure consistent hook calls
+// eslint-disable-next-line typescript-eslint/no-explicit-any
 const fieldStateSelector = (state: any) => ({
   errors: state?.meta?.errors ?? [],
   isTouched: state?.meta?.isTouched ?? false,
@@ -93,23 +94,24 @@ const useFieldContext = () => {
 
   // Always call _useFieldContext() unconditionally - it's a hook and must be called
   // This hook may conditionally call hooks internally, but we must always call it
-  const fieldContext = _useFieldContext();
+  const innerFieldContext = _useFieldContext();
 
   // Use a ref to maintain a stable store reference across renders
   // This ensures useStore is always called with a consistent reference type
-  const storeRef = React.useRef<any>(null);
+  const storeRef = React.useRef<unknown>(null);
 
   // Update the ref if we have a store, but always use the ref for useStore
-  // This ensures hook order stability even when fieldContext changes
-  if (fieldContext?.store !== undefined) {
-    storeRef.current = fieldContext.store ?? null;
+  // This ensures hook order stability even when innerFieldContext changes
+  if (innerFieldContext?.store !== undefined) {
+    storeRef.current = innerFieldContext.store ?? null;
   }
 
   // Always call useStore unconditionally to keep hook order stable
   // useStore handles undefined/null store by not subscribing
+  // eslint-disable-next-line typescript-eslint/no-explicit-any
   const fieldState = useStore(storeRef.current as any, fieldStateSelector);
 
-  if (!fieldContext) {
+  if (!innerFieldContext) {
     throw new Error("useFieldContext should be used within <FormItem>");
   }
 
@@ -120,7 +122,7 @@ const useFieldContext = () => {
     formMessageId: `${id}-form-item-message`,
     errors: fieldState.errors,
     isTouched: fieldState.isTouched,
-    ...fieldContext,
+    ...innerFieldContext,
   };
 };
 

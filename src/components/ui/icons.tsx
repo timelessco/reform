@@ -620,6 +620,7 @@ export const ChevronsLeftIcon = (props: React.SVGProps<SVGSVGElement>) => (
 // ============================================================================
 
 const createConsistentLucideIcon = (Icon: React.ComponentType<LucideProps>) => {
+  // eslint-disable-next-line eslint-plugin-unicorn/consistent-function-scoping -- Icon is captured via JSX
   const ConsistentLucideIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <Icon strokeWidth={1.5} absoluteStrokeWidth {...props} />
   );

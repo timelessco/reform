@@ -25,6 +25,7 @@ export const PopoverAnchor = ({
     return (
       <PopoverPrimitive.Positioner
         data-slot="popover-anchor"
+        // eslint-disable-next-line typescript-eslint/no-explicit-any
         anchor={virtualRef as any}
         className={cn("sr-only", className)}
         {...props}

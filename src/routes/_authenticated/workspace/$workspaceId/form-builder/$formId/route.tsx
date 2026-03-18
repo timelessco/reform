@@ -3,14 +3,27 @@ import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { formCollection } from "@/db-collections/form.collections";
 import { getFormbyIdQueryOption } from "@/lib/fn/forms";
-import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
+import type { QueryClient } from "@tanstack/react-query";
+import { createFileRoute, isRedirect, Outlet, redirect, useLocation } from "@tanstack/react-router";
 
-interface RedirectError {
-  to?: string;
-  href?: string;
-  isRedirect?: boolean;
-  statusCode?: number;
-}
+type FormStatus = "draft" | "published" | "archived";
+type FormStatusQueryResult = {
+  form?: {
+    status?: FormStatus;
+  };
+};
+
+const getFormStatus = async (
+  queryClient: QueryClient,
+  formId: string,
+): Promise<FormStatus | undefined> => {
+  const result = (await queryClient.ensureQueryData({
+    ...getFormbyIdQueryOption(formId),
+    revalidateIfStale: true,
+  })) as FormStatusQueryResult;
+
+  return result.form?.status;
+};
 
 const FormLayout = () => {
   const { pathname } = useLocation();
@@ -55,15 +68,11 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
         try {
           // Try collection first (instant, no network)
           const cachedForm = formCollection.state.get(params.formId);
-          let status = cachedForm?.status as "draft" | "published" | "archived" | undefined;
+          let status = cachedForm?.status as FormStatus | undefined;
 
           // Fall back to server fetch if not in collection yet
           if (!status) {
-            const result = await context.queryClient.ensureQueryData({
-              ...getFormbyIdQueryOption(params.formId),
-              revalidateIfStale: true,
-            });
-            status = result?.form?.status as "draft" | "published" | "archived" | undefined;
+            status = await getFormStatus(context.queryClient, params.formId);
           }
 
           if (status === "published") {
@@ -79,25 +88,9 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
             });
           }
         } catch (error: unknown) {
-          // If it's a redirect (TanStack Router throws redirect objects), rethrow it
-          // Redirect objects have specific properties like 'to', 'href', or are Response instances
-          const redirectError = error as RedirectError;
-          if (
-            error instanceof Response ||
-            (typeof error === "object" &&
-              error !== null &&
-              (redirectError.to !== undefined ||
-                redirectError.href !== undefined ||
-                redirectError.isRedirect === true ||
-                redirectError.statusCode === 301 ||
-                redirectError.statusCode === 302 ||
-                redirectError.statusCode === 307 ||
-                redirectError.statusCode === 308))
-          ) {
+          if (isRedirect(error)) {
             throw error;
           }
-          // On error, default to edit route
-          console.error("[route.tsx beforeLoad] Error fetching form, defaulting to edit:", error);
           throw redirect({
             to: "/workspace/$workspaceId/form-builder/$formId/edit",
             params: { workspaceId: params.workspaceId, formId: params.formId },
@@ -105,7 +98,8 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
         }
       }
     },
-    staleTime: 0,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
     component: FormLayout,
     ssr: false,
     pendingComponent: Loader,

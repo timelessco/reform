@@ -3,6 +3,7 @@ import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { useFileUpload } from "@/hooks/use-file-upload";
 
+// eslint-disable-next-line eslint/no-unused-vars -- component preserved for future use
 const Component = () => {
   const [{ files }, { removeFile, openFileDialog, getInputProps }] = useFileUpload({
     accept: "image/*",

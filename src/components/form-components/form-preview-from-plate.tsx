@@ -65,7 +65,7 @@ interface FormPreviewFromPlateProps {
   /** Optional cover image URL or hex color code */
   cover?: string;
   /** Optional custom submit handler */
-  onSubmit?: (values: Record<string, any>) => Promise<void>;
+  onSubmit?: (values: Record<string, unknown>) => Promise<void>;
   /** Whether to hide the form title */
   hideTitle?: boolean;
   /** Layout variant */
@@ -74,6 +74,8 @@ interface FormPreviewFromPlateProps {
   settings?: PublicFormSettings;
   /** Form ID for localStorage persistence */
   formId?: string;
+  /** Form customization record for theming */
+  customization?: Record<string, string> | null;
 }
 
 const isHexColor = (str: string): boolean => /^#([0-9A-Fa-f]{3}){1,2}$/.test(str);
@@ -94,6 +96,7 @@ const PreviewFormHeader = ({
   cover,
   hideTitle,
   layout,
+  customization,
 }: {
   title?: string;
   icon?: string;
@@ -101,21 +104,21 @@ const PreviewFormHeader = ({
   cover?: string;
   hideTitle?: boolean;
   layout: "public" | "editor";
+  customization?: Record<string, string> | null;
 }) => {
   const [imageError, setImageError] = useState(false);
   const [iconError, setIconError] = useState(false);
   const handleImageError = () => setImageError(true);
   const handleIconError = () => setIconError(true);
   const headerRef = useRef<HTMLDivElement>(null);
-  const [isLogoMinimal, setIsLogoMinimal] = useState(false);
 
-  // Check if logo should hide its background (at minimum size)
-  useEffect(() => {
-    if (!headerRef.current) return;
-    const minimal =
-      getComputedStyle(headerRef.current).getPropertyValue("--bf-logo-minimal").trim() === "1";
-    setIsLogoMinimal(minimal);
-  }, [cover, icon, title]);
+  const hasCustomization = !!(customization && Object.keys(customization).length > 0);
+  const isLogoMinimal =
+    hasCustomization && !!customization?.logoWidth && Number.parseInt(customization.logoWidth) <= 0;
+  const logoCircleSize =
+    hasCustomization && customization?.logoWidth
+      ? String(Math.max(48, Number.parseInt(customization.logoWidth)))
+      : "100";
 
   // Check if we have valid cover (URL or hex color)
   const hasCover = cover && (isHexColor(cover) || isValidUrl(cover)) && !imageError;
@@ -175,13 +178,13 @@ const PreviewFormHeader = ({
           className={hasCover ? "relative z-10" : ""}
           data-bf-logo-emoji-container={hasCover ? "true" : undefined}
         >
-          <span data-bf-logo-icon={isLogoMinimal ? "minimal" : undefined}>
+          <span data-bf-logo-icon={isLogoMinimal ? "minimal" : ""}>
             <IconPickerPreview
               icon={null}
               iconColor={undefined}
               useThemeColor
               iconSize="48"
-              size="100"
+              size={logoCircleSize}
             />
           </span>
         </div>
@@ -214,13 +217,13 @@ const PreviewFormHeader = ({
         className={hasCover ? "relative z-10 block" : ""}
         data-bf-logo-emoji-container={hasCover ? "true" : undefined}
       >
-        <span data-bf-logo-icon={isLogoMinimal ? "minimal" : undefined}>
+        <span data-bf-logo-icon={isLogoMinimal ? "minimal" : ""}>
           <IconPickerPreview
             icon={icon}
             iconColor={iconColor || undefined}
             useThemeColor={!iconColor}
             iconSize="48"
-            size="100"
+            size={logoCircleSize}
           />
         </span>
       </div>
@@ -232,9 +235,9 @@ const PreviewFormHeader = ({
       <div ref={headerRef} className="mb-4 sm:mb-8 w-full">
         {hasCover && renderCover()}
 
-        {/* Match editor's left-aligned layout */}
+        {/* Match editor's left-aligned layout — no inner padding so title width matches the editor's content area */}
         <div
-          className="mx-auto w-full px-4"
+          className="mx-auto w-full"
           style={{ maxWidth: PAGE_MAX_WIDTH.editor }}
           data-bf-form-container
         >
@@ -242,6 +245,7 @@ const PreviewFormHeader = ({
           {hasTitle && (
             <h1
               data-bf-title
+              style={{ textWrap: "pretty" }}
               className={`text-4xl sm:text-[48px] font-serif font-light -tracking-[0.03em] text-foreground ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
             >
               {title}
@@ -267,6 +271,7 @@ const PreviewFormHeader = ({
           {hasTitle && (
             <h1
               data-bf-title
+              style={{ textWrap: "pretty" }}
               className={`text-4xl sm:text-[48px] font-serif font-light -tracking-[0.03em] text-foreground ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
             >
               {title}
@@ -344,6 +349,7 @@ export const FormPreviewFromPlate = ({
   layout = "public",
   settings,
   formId,
+  customization,
 }: FormPreviewFromPlateProps) => {
   const headerFromContent = useMemo(() => extractFormHeader(content), [content]);
   const hasHeaderNode = headerFromContent !== null;
@@ -386,6 +392,7 @@ export const FormPreviewFromPlate = ({
         hideTitle={hideTitle}
         layout={layout}
         settings={settings}
+        customization={customization}
       />
     </StepFormProvider>
   );
@@ -424,6 +431,7 @@ const FormPreviewContent = ({
   hideTitle,
   layout,
   settings,
+  customization,
 }: {
   steps: PreviewSegment[][];
   thankYouNodes: Value | null;
@@ -434,6 +442,7 @@ const FormPreviewContent = ({
   hideTitle?: boolean;
   layout: "public" | "editor";
   settings?: PublicFormSettings;
+  customization?: Record<string, string> | null;
 }) => {
   const { currentStep, totalSteps, isSubmitted, direction, reset } = useStepForm();
   const { t } = useTranslation();
@@ -482,6 +491,7 @@ const FormPreviewContent = ({
           cover={cover}
           hideTitle={hideTitle}
           layout={layout}
+          customization={customization}
         />
         <div
           className={cn("w-full mx-auto", layout === "editor" ? "px-4" : "px-4 sm:px-0")}
@@ -524,6 +534,7 @@ const FormPreviewContent = ({
         cover={cover}
         hideTitle={hideTitle}
         layout={layout}
+        customization={customization}
       />
 
       {/* Progress Bar */}

@@ -206,7 +206,12 @@ type IconPaginationProps = {
   totalPages: number;
 };
 
-const IconPagination = ({ currentPage, onNext, onPrev, totalPages }: IconPaginationProps) => (
+const IconPagination = ({
+  currentPage,
+  onNext,
+  onPrev,
+  totalPages: pageCount,
+}: IconPaginationProps) => (
   <div className="absolute bottom-2 left-0 flex w-full justify-between px-2 pt-2">
     <button
       className="flex items-center rounded-lg px-2 py-[5px] text-13 text-foreground hover:bg-muted disabled:opacity-50"
@@ -217,11 +222,11 @@ const IconPagination = ({ currentPage, onNext, onPrev, totalPages }: IconPaginat
       prev
     </button>
     <span className="text-13 text-foreground">
-      {currentPage}/{totalPages}
+      {currentPage}/{pageCount}
     </span>
     <button
       className="flex items-center rounded-lg px-2 py-[5px] text-13 text-foreground hover:bg-muted disabled:opacity-50"
-      disabled={currentPage === totalPages}
+      disabled={currentPage === pageCount}
       onClick={onNext}
       type="button"
     >

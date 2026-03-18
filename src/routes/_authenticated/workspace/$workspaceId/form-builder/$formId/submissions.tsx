@@ -33,32 +33,63 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import type {
+  Cell,
   ColumnDef,
   ColumnPinningState,
+  Row,
   RowSelectionState,
+  SortingState,
   VisibilityState,
 } from "@tanstack/react-table";
 
 import { ChevronDownIcon, FilterIcon, Trash2Icon, XIcon } from "@/components/ui/icons";
 import { Columns, Download, Search } from "lucide-react";
 import type { Value } from "platejs";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { HOTKEYS, formatForDisplay } from "@/lib/hotkeys";
 
 // Field status types for color coding
 type FieldStatus = "current" | "deleted";
+type PaginatedSubmissionsPage = {
+  submissions: SerializedSubmission[];
+  nextCursor?: SubmissionCursor;
+};
 
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
+
+const getPaginatedSubmissionsPage = (
+  formId: string,
+  cursor?: SubmissionCursor,
+): Promise<PaginatedSubmissionsPage> =>
+  getSubmissionsByFormIdPaginated({
+    data: { formId, cursor },
+  }) as Promise<PaginatedSubmissionsPage>;
+
+const formatSubmissionValue = (value: unknown): string => {
+  if (value === null || value === undefined || value === "") {
+    return "-";
+  }
+
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+};
 
 const SubmissionsPage = () => {
   const { formId } = Route.useParams();
   const queryClient = useQueryClient();
   const { publishedData: initialPublishedData } = Route.useLoaderData();
   const [activeTab, setActiveTab] = useState<"all" | "completed" | "partial">("all");
-  const [sorting, setSorting] = useState([]);
+  const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [fieldStatusFilter] = useState<Set<FieldStatus>>(new Set(["current", "deleted"]));
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -73,13 +104,6 @@ const SubmissionsPage = () => {
     [],
   );
   const handleClearSelection = useCallback(() => setRowSelection({}), []);
-
-  const [scrollContainerEl, setScrollContainerEl] = useState<HTMLDivElement | null>(null);
-  const scrollContainerRef = useCallback((node: HTMLDivElement | null) => {
-    setScrollContainerEl(node);
-  }, []);
-  const scrollContainerRefObj = useRef<HTMLDivElement | null>(null);
-  scrollContainerRefObj.current = scrollContainerEl;
 
   // 1. Fetch Published Form Structure (to derive columns from published version, not draft)
   const { data: publishedData } = useQuery({
@@ -98,9 +122,7 @@ const SubmissionsPage = () => {
   } = useInfiniteQuery({
     queryKey: ["submissions", formId],
     queryFn: async ({ pageParam }: { pageParam: SubmissionCursor | undefined }) =>
-      getSubmissionsByFormIdPaginated({
-        data: { formId, cursor: pageParam },
-      }),
+      getPaginatedSubmissionsPage(formId, pageParam),
     initialPageParam: undefined as SubmissionCursor | undefined,
     getNextPageParam: (lastPage) => lastPage?.nextCursor,
     refetchOnWindowFocus: true,
@@ -112,21 +134,6 @@ const SubmissionsPage = () => {
     () => submissionsData?.pages?.flatMap((page) => page?.submissions ?? []) ?? [],
     [submissionsData],
   );
-
-  const fetchMoreOnBottomReached = useCallback(
-    (containerRefElement?: HTMLDivElement | null) => {
-      if (!containerRefElement) return;
-      const { scrollHeight, scrollTop, clientHeight } = containerRefElement;
-      if (scrollHeight - scrollTop - clientHeight < 500 && !isFetchingNextPage && hasNextPage) {
-        fetchNextPage();
-      }
-    },
-    [fetchNextPage, isFetchingNextPage, hasNextPage],
-  );
-
-  useEffect(() => {
-    fetchMoreOnBottomReached(scrollContainerEl);
-  }, [fetchMoreOnBottomReached, scrollContainerEl]);
 
   // Client-side filter based on activeTab
   const { completedCount, partialCount } = useMemo(() => {
@@ -197,11 +204,11 @@ const SubmissionsPage = () => {
   // 4. Derive Columns from PUBLISHED Form Content (not draft)
   // Track field counts by status for the filter badge
   const { columns } = useMemo(() => {
-    const columnHelper = createColumnHelper<any>();
+    const columnHelper = createColumnHelper<SerializedSubmission>();
     const counts: Record<FieldStatus, number> = { current: 0, deleted: 0 };
 
     // Select column for row selection - fixed width, non-resizable to prevent overlap with actions
-    const baseColumns: ColumnDef<any, any>[] = [
+    const baseColumns: ColumnDef<SerializedSubmission, unknown>[] = [
       {
         id: "select",
         header: ({ table }) => (
@@ -297,7 +304,7 @@ const SubmissionsPage = () => {
               ),
               cell: (info) => (
                 <span className="text-[13px] truncate max-w-[300px] block">
-                  {info.getValue() || "-"}
+                  {formatSubmissionValue(info.getValue())}
                 </span>
               ),
               size: 150,
@@ -331,7 +338,7 @@ const SubmissionsPage = () => {
             ),
             cell: (info) => (
               <span className="text-[13px] truncate max-w-[300px] block text-muted-foreground">
-                {info.getValue() || "-"}
+                {formatSubmissionValue(info.getValue())}
               </span>
             ),
             size: 150,
@@ -362,7 +369,7 @@ const SubmissionsPage = () => {
     onColumnVisibilityChange: setColumnVisibility,
     onColumnPinningChange: setColumnPinning,
     onColumnOrderChange: setColumnOrder,
-    onSortingChange: setSorting as any,
+    onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -391,11 +398,8 @@ const SubmissionsPage = () => {
 
   // Shared CSV download helper
   const downloadCSV = useCallback(
-    (
-      rows: typeof table extends { getRowModel: () => { rows: infer R } } ? R : never,
-      filename: string,
-    ) => {
-      if ((rows as any[]).length === 0) return;
+    (rows: Row<SerializedSubmission>[], filename: string) => {
+      if (rows.length === 0) return;
 
       const headers = columns
         .filter((col) => col.id !== "select")
@@ -406,12 +410,12 @@ const SubmissionsPage = () => {
         })
         .join(",");
 
-      const csvRows = (rows as any[])
+      const csvRows = rows
         .map((row) =>
           row
             .getVisibleCells()
-            .filter((cell: any) => cell.column.id !== "select")
-            .map((cell: any) => {
+            .filter((cell: Cell<SerializedSubmission, unknown>) => cell.column.id !== "select")
+            .map((cell: Cell<SerializedSubmission, unknown>) => {
               const val = cell.getValue();
               return `"${val ?? ""}"`;
             })
@@ -436,11 +440,11 @@ const SubmissionsPage = () => {
 
   // Export selected rows as CSV
   const handleExportSelected = useCallback(() => {
-    downloadCSV(table.getSelectedRowModel().rows as any, `submissions-selected-${formId}.csv`);
+    downloadCSV(table.getSelectedRowModel().rows, `submissions-selected-${formId}.csv`);
   }, [downloadCSV, formId, table]);
 
   const handleDownloadCSV = useCallback(() => {
-    downloadCSV(table.getRowModel().rows as any, `submissions-${formId}.csv`);
+    downloadCSV(table.getRowModel().rows, `submissions-${formId}.csv`);
   }, [downloadCSV, formId, table]);
 
   // Keyboard shortcuts (scoped to submissions page)
@@ -518,7 +522,7 @@ const SubmissionsPage = () => {
           <div className="flex items-center gap-1.5">
             <ButtonGroup className="w-[180px] focus-within:w-[240px] transition-[width] border-none duration-200 ease-out rounded-lg">
               <ButtonGroupText className="h-7 w-full rounded-lg px-2.5 gap-1.5 text-[13px] bg-accent/60 border border-transparent">
-                <Search className="h-3 w-3" strokeWidth={2} color="var(--color-gray-alpha-600)" />
+                <Search className="size-4" strokeWidth={2} color="var(--color-gray-alpha-600)" />
                 <input
                   placeholder="Search responses..."
                   className="min-w-0 flex-1  bg-transparent border-0 p-0 outline-none text-[13px] placeholder:text-(--color-gray-alpha-600) placeholder:text-normal placeholder:text-[0.8rem]"
@@ -538,7 +542,7 @@ const SubmissionsPage = () => {
                   size="sm"
                   prefix={
                     <Columns
-                      className="size-3"
+                      className="size-4"
                       strokeWidth="2"
                       color="var(--color-gray-alpha-600)"
                     />
@@ -554,7 +558,9 @@ const SubmissionsPage = () => {
             <Button
               variant="ghost"
               size="sm"
-              prefix={<Download strokeWidth={2} color="var(--color-gray-alpha-600)" />}
+              prefix={
+                <Download strokeWidth={2} color="var(--color-gray-alpha-600)" className="size-4" />
+              }
               className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md bg-accent/60 hover:bg-accent text-(--color-gray-alpha-600) transition-colors cursor-pointer text-normal text-[0.8rem] rounded-lg"
               onClick={handleDownloadCSV}
             >
@@ -606,14 +612,11 @@ const SubmissionsPage = () => {
         <DataGrid
           table={table}
           recordCount={totalCount}
-          virtualized={true}
-          isFetchingMore={isFetchingNextPage}
-          fetchMoreSkeletonCount={5}
           isLoading={isLoadingSubmissions}
           tableLayout={{
             dense: true,
             columnsResizable: true,
-            columnsPinnable: true,
+            columnsPinnable: false,
             columnsVisibility: true,
             columnsMovable: true,
             headerSticky: true,
@@ -639,12 +642,15 @@ const SubmissionsPage = () => {
         >
           <div className="w-full flex-1 flex flex-col min-h-0 overflow-hidden">
             <DataGridContainer
-              ref={scrollContainerRef}
               border={false}
               className="flex-1 min-h-0 border-b border-border overflow-auto content-start"
-              onScroll={(e) => fetchMoreOnBottomReached(e.currentTarget)}
             >
-              <DataGridVirtualTable scrollRef={scrollContainerRefObj} />
+              <DataGridVirtualTable
+                onFetchMore={fetchNextPage}
+                hasMore={hasNextPage}
+                isFetchingMore={isFetchingNextPage}
+                fetchMoreOffset={5}
+              />
             </DataGridContainer>
           </div>
         </DataGrid>
@@ -669,18 +675,19 @@ export const Route = createFileRoute(
         .catch(() => ({ total: 0 })),
       context.queryClient.ensureInfiniteQueryData({
         queryKey: ["submissions", params.formId],
-        queryFn: () =>
-          getSubmissionsByFormIdPaginated({
-            data: { formId: params.formId, cursor: undefined },
-          }),
+        queryFn: () => getPaginatedSubmissionsPage(params.formId, undefined),
         initialPageParam: undefined as SubmissionCursor | undefined,
-        getNextPageParam: (lastPage: Awaited<ReturnType<typeof getSubmissionsByFormIdPaginated>>) =>
-          lastPage?.nextCursor,
+        getNextPageParam: (lastPage: PaginatedSubmissionsPage) => lastPage.nextCursor,
       }),
     ]);
     return { publishedData };
   },
+  staleTime: 30_000,
+  gcTime: 5 * 60_000,
+  pendingMs: 500,
+  pendingMinMs: 300,
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,
+  ssr: false,
 });

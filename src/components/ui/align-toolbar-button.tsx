@@ -46,8 +46,8 @@ export const AlignToolbarButton = (props: React.ComponentProps<typeof DropdownMe
   const IconValue = items.find((item) => item.value === value)?.icon ?? AlignLeftIcon;
 
   const handleValueChange = React.useCallback(
-    (value: string) => {
-      tf.textAlign.setNodes(value as Alignment);
+    (newValue: string) => {
+      tf.textAlign.setNodes(newValue as Alignment);
       editor.tf.focus();
     },
     [tf.textAlign, editor.tf],

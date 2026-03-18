@@ -35,7 +35,7 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
     // Check if block is strictly after a form button in the same page section
     // Logic: Find nearest preceding button. If no PageBreak exists between that button and this block, it's invalid.
     let isAfterButton = false;
-    let isHidden = false;
+    let blockIsHidden = false;
 
     const children = editor.children as TElement[];
     const currentIndex = path[0];
@@ -47,7 +47,7 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
       const node = children[i];
       if (!node) continue;
       if (node.type === "formButton") {
-        const role = (node as any).buttonRole;
+        const role = (node as TElement & { buttonRole?: string }).buttonRole;
         // If role is previous, we don't count it as a "terminator".
         // (We assume the structure [Previous] [Next] is valid, so [Next] is not "after" a terminator)
         if (role === "previous") continue;
@@ -72,21 +72,21 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
 
         // Special case: PageBreak itself is valid immediately after button
         if (node.type === "pageBreak") {
-          isHidden = false;
+          blockIsHidden = false;
           isAfterButton = false; // PageBreak allows starting new section
         } else if (!isThankYou) {
-          isHidden = true;
+          blockIsHidden = true;
         }
       }
     }
 
-    if (isHidden) {
+    if (blockIsHidden) {
       return { isAfterButton: true, isHidden: true, enabled: false };
     }
 
-    let enabled = false;
+    let isEnabled = false;
     if (path.length === 1 && !isType(editor, element, UNDRAGGABLE_KEYS)) {
-      enabled = true;
+      isEnabled = true;
     } else if (path.length === 3 && !isType(editor, element, UNDRAGGABLE_KEYS)) {
       const block = editor.api.some({
         at: path,
@@ -94,7 +94,7 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
           type: editor.getType(KEYS.column),
         },
       });
-      if (block) enabled = true;
+      if (block) isEnabled = true;
     } else if (path.length === 4 && !isType(editor, element, UNDRAGGABLE_KEYS)) {
       const block = editor.api.some({
         at: path,
@@ -102,35 +102,35 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
           type: editor.getType(KEYS.table),
         },
       });
-      if (block) enabled = true;
+      if (block) isEnabled = true;
     }
 
     // If strictly after button (even if thank you), we might want to disable dragging?
     // For now, allow regular logic for ThankYou page, but the earlier check handled the hidden ones.
-    if (isAfterButton && !isHidden) {
+    if (isAfterButton && !blockIsHidden) {
       // It is a Thank You page. Allow dragging?
       // User: "no single way to do that [add after button]".
       // Moving Thank You page might be allowed.
       // Let's keep 'enabled' as calculated derived from structure.
     }
 
-    return { isAfterButton, isHidden, enabled };
+    return { isAfterButton, isHidden: blockIsHidden, enabled: isEnabled };
   }, [editor, element, path]);
 
   if (isHidden) {
     // Use height:0 to keep it in DOM for normalization but invisible to user
     // opacity:0 and pointer-events:none ensures no interaction
     // We avoid display:none to prevent potential selection issues if cursor is forced there
-    return (props) => (
+    return (innerProps) => (
       <div className="opacity-0 pointer-events-none h-0 overflow-hidden" aria-hidden="true">
-        {props.children}
+        {innerProps.children}
       </div>
     );
   }
 
   if (!enabled) return;
 
-  return (props) => <Draggable {...props} />;
+  return (innerProps) => <Draggable {...innerProps} />;
 };
 
 const Draggable = (props: PlateElementProps) => {
@@ -154,7 +154,7 @@ const Draggable = (props: PlateElementProps) => {
 
   const buttonLayoutClass = React.useMemo(() => {
     if (isFormButton) {
-      const role = (element as any).buttonRole;
+      const role = (element as TElement & { buttonRole?: string }).buttonRole;
       if (role === "previous") return "float-left clear-none";
       return "float-right clear-none"; // next/submit
     }
@@ -208,7 +208,8 @@ const Draggable = (props: PlateElementProps) => {
     if (justStartedAboutToDrag) {
       previewRef.current?.classList.remove("opacity-0");
     }
-  }, [isAboutToDrag, previewRef.current?.classList.remove]);
+    // eslint-disable-next-line eslint-plugin-react-hooks/exhaustive-deps -- previewRef.current is a mutable ref
+  }, [isAboutToDrag]);
 
   const handleAddBlock = React.useCallback(
     (e: React.MouseEvent) => {

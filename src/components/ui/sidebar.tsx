@@ -115,7 +115,7 @@ export const SidebarProvider = ({
 
   // Helper to toggle the sidebar.
   const toggleSidebar = useCallback(
-    () => (isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)),
+    () => (isMobile ? setOpenMobile((prev) => !prev) : setOpen((prev) => !prev)),
     [isMobile, setOpen],
   );
 
@@ -320,8 +320,8 @@ const SidebarResizeHandle = () => {
         userSelect: "none",
       });
 
-      const handleMouseMove = (e: MouseEvent) => {
-        const delta = e.clientX - startXRef.current;
+      const handleMouseMove = (evt: MouseEvent) => {
+        const delta = evt.clientX - startXRef.current;
         setSidebarWidth(startWidthRef.current + delta);
       };
 

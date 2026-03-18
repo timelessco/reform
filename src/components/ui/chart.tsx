@@ -68,7 +68,7 @@ export const ChartContainer = ({
 };
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
-  const colorConfig = Object.entries(config).filter(([, config]) => config.theme || config.color);
+  const colorConfig = Object.entries(config).filter(([, entry]) => entry.theme || entry.color);
 
   if (!colorConfig.length) {
     return null;

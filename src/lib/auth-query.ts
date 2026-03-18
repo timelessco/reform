@@ -15,6 +15,7 @@ type QueryMethod = `get${string}` | `list${string}` | "state" | "portal";
 // Extract data type from better-auth's generic functions
 // Constrain the options arg to throw: false to resolve the conditional return type
 type InferBetterAuthData<TFn> = TFn extends (
+  // eslint-disable-next-line typescript-eslint/no-explicit-any
   data: any,
   options?: { throw?: false },
 ) => Promise<infer R>
@@ -24,6 +25,7 @@ type InferBetterAuthData<TFn> = TFn extends (
   : never;
 
 type InferBetterAuthError<TFn> = TFn extends (
+  // eslint-disable-next-line typescript-eslint/no-explicit-any
   data: any,
   options?: { throw?: true },
 ) => Promise<infer R>
@@ -33,6 +35,7 @@ type InferBetterAuthError<TFn> = TFn extends (
   : never;
 
 interface InferQueryOptions<
+  // eslint-disable-next-line typescript-eslint/no-explicit-any
   TFn extends (...args: any[]) => any,
   TPath extends readonly string[],
   TData = InferBetterAuthData<TFn>,
@@ -43,6 +46,7 @@ interface InferQueryOptions<
 }
 
 interface InferMutationOptions<
+  // eslint-disable-next-line typescript-eslint/no-explicit-any
   TFn extends (...args: any[]) => any,
   TData = InferBetterAuthData<TFn>,
   TError = InferBetterAuthError<TFn>,
@@ -52,11 +56,13 @@ interface InferMutationOptions<
 }
 
 type TransformFunction<
+  // eslint-disable-next-line typescript-eslint/no-explicit-any
   TFn extends (...args: any[]) => any,
   Path extends string[],
   TParams extends Parameters<TFn>[0] = Parameters<TFn>[0],
   TData = InferBetterAuthData<TFn>,
   TError = InferBetterAuthError<TFn>,
+  // eslint-disable-next-line typescript-eslint/no-explicit-any
 > = Path extends [...any[], QueryMethod]
   ? {
       queryOptions: TParams extends undefined
@@ -83,11 +89,13 @@ type TransformFunction<
     };
 
 // Built-in keys that exist on all functions - we want to ignore these
+// eslint-disable-next-line typescript-eslint/no-explicit-any
 type BuiltinFunctionKeys = keyof ((...args: any[]) => any);
 
 // Helper: check if T has any meaningful keys beyond built-in function properties
 type HasExtraKeys<T> = Exclude<keyof T, BuiltinFunctionKeys> extends never ? false : true;
 
+/* eslint-disable typescript-eslint/no-explicit-any */
 type AuthClientToQuery<T, Path extends string[] = []> = {
   [K in keyof T as K extends OMIT_BETTER_AUTH_CLIENT_KEYS ? never : K]: T[K] extends (
     ...args: any[]
@@ -101,6 +109,7 @@ type AuthClientToQuery<T, Path extends string[] = []> = {
       ? AuthClientToQuery<T[K], [...Path, K & string]>
       : never;
 };
+/* eslint-enable typescript-eslint/no-explicit-any */
 
 /**
  * Creates a TanStack Query client for a Better Auth client.
@@ -111,6 +120,7 @@ type AuthClientToQuery<T, Path extends string[] = []> = {
  * useMutation(client.signIn.email.mutationOptions())
  * ```
  */
+// eslint-disable-next-line typescript-eslint/no-explicit-any
 export const createAuthQueryClient = <TClient extends Record<string, any>>(
   client: TClient,
   path: string[] = [],
@@ -118,6 +128,7 @@ export const createAuthQueryClient = <TClient extends Record<string, any>>(
   new Proxy(() => {}, {
     get(_, key: string) {
       const newPath = [...path, key];
+      // eslint-disable-next-line typescript-eslint/no-explicit-any
       const getTarget = () => path.reduce((acc, k) => acc?.[k], client as any);
 
       if (key === "queryKey") {

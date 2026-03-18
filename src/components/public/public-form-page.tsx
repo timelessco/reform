@@ -64,7 +64,7 @@ interface PublicFormPageProps {
 /**
  * Send a message to the parent window (for popup embeds)
  */
-function sendToParent(event: string, payload?: Record<string, unknown>): void {
+const sendToParent = (event: string, payload?: Record<string, unknown>): void => {
   if (typeof window === "undefined" || window.parent === window) return;
 
   try {
@@ -72,9 +72,9 @@ function sendToParent(event: string, payload?: Record<string, unknown>): void {
   } catch (e) {
     console.error("[Reform] Failed to send message to parent:", e);
   }
-}
+};
 
-function FormNotFound() {
+const FormNotFound = () => {
   const { t } = useTranslation();
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
@@ -89,9 +89,9 @@ function FormNotFound() {
       </Empty>
     </div>
   );
-}
+};
 
-function FormNotPublished() {
+const FormNotPublished = () => {
   const { t } = useTranslation();
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
@@ -106,16 +106,16 @@ function FormNotPublished() {
       </Empty>
     </div>
   );
-}
+};
 
-export function PublicFormPage({
+export const PublicFormPage = ({
   form,
   error,
   formId,
   gated,
   isPopup = false,
   embedConfig = defaultPublicFormEmbedConfig,
-}: PublicFormPageProps) {
+}: PublicFormPageProps) => {
   const transparentBackground = embedConfig.background === "transparent";
   const hideTitle = embedConfig.title === "hidden";
   const alignLeft = embedConfig.alignment === "left";
@@ -304,6 +304,7 @@ export function PublicFormPage({
         hideTitle={hideTitle}
         settings={settings}
         formId={formId}
+        customization={form.customization}
       />
       {settings.branding && <BrandingFooter />}
     </div>
@@ -319,4 +320,4 @@ export function PublicFormPage({
   }
 
   return <TranslationProvider language={resolvedLanguage}>{formContent}</TranslationProvider>;
-}
+};

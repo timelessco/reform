@@ -1,8 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
+import { notFound } from "@tanstack/react-router";
 import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { forms, formVersions, submissions, user } from "@/db/schema";
 import { db } from "@/lib/db";
+import { getTxId } from "./helpers";
 import type { PublicFormSettings } from "@/types/form-settings";
 
 /**
@@ -51,7 +53,7 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
       .where(and(eq(forms.id, data.id), eq(forms.status, "published")));
 
     if (!form) {
-      return { form: null, error: "not_found" as const, gated: null };
+      throw notFound();
     }
 
     // Read settings directly from the form row
@@ -249,14 +251,19 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
     const id = crypto.randomUUID();
     const now = new Date();
 
-    await db.insert(submissions).values({
-      id,
-      formId: data.formId,
-      formVersionId: form.lastPublishedVersionId,
-      data: data.data,
-      isCompleted: data.isCompleted,
-      createdAt: now,
-      updatedAt: now,
+    const result = await db.transaction(async (tx) => {
+      await tx.insert(submissions).values({
+        id,
+        formId: data.formId,
+        formVersionId: form.lastPublishedVersionId,
+        data: data.data,
+        isCompleted: data.isCompleted,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      const txid = await getTxId(tx);
+      return { submissionId: id, success: true, txid };
     });
 
     // Fire-and-forget email notifications
@@ -274,7 +281,7 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
       data.data,
     ).catch((err) => console.error("[Email] Notification error:", err));
 
-    return { submissionId: id, success: true };
+    return result;
   });
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

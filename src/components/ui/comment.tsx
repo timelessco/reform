@@ -76,40 +76,41 @@ export const Comment = (props: {
     editor.setOption(discussionPlugin, "discussions", updatedDiscussions);
   };
 
-  const removeDiscussion = async (id: string) => {
-    const updatedDiscussions = editor
-      .getOption(discussionPlugin, "discussions")
-      .filter((discussion) => discussion.id !== id);
-    editor.setOption(discussionPlugin, "discussions", updatedDiscussions);
-  };
+  const removeDiscussion = React.useCallback(
+    async (id: string) => {
+      const updatedDiscussions = editor
+        .getOption(discussionPlugin, "discussions")
+        .filter((discussion) => discussion.id !== id);
+      editor.setOption(discussionPlugin, "discussions", updatedDiscussions);
+    },
+    [editor],
+  );
 
-  const updateComment = async (input: {
-    id: string;
-    contentRich: Value;
-    discussionId: string;
-    isEdited: boolean;
-  }) => {
-    const updatedDiscussions = editor
-      .getOption(discussionPlugin, "discussions")
-      .map((discussion) => {
-        if (discussion.id === input.discussionId) {
-          const updatedComments = discussion.comments.map((comment) => {
-            if (comment.id === input.id) {
-              return {
-                ...comment,
-                contentRich: input.contentRich,
-                isEdited: true,
-                updatedAt: new Date(),
-              };
-            }
-            return comment;
-          });
-          return { ...discussion, comments: updatedComments };
-        }
-        return discussion;
-      });
-    editor.setOption(discussionPlugin, "discussions", updatedDiscussions);
-  };
+  const updateComment = React.useCallback(
+    async (input: { id: string; contentRich: Value; discussionId: string; isEdited: boolean }) => {
+      const updatedDiscussions = editor
+        .getOption(discussionPlugin, "discussions")
+        .map((discussion) => {
+          if (discussion.id === input.discussionId) {
+            const updatedComments = discussion.comments.map((c) => {
+              if (c.id === input.id) {
+                return {
+                  ...c,
+                  contentRich: input.contentRich,
+                  isEdited: true,
+                  updatedAt: new Date(),
+                };
+              }
+              return c;
+            });
+            return { ...discussion, comments: updatedComments };
+          }
+          return discussion;
+        });
+      editor.setOption(discussionPlugin, "discussions", updatedDiscussions);
+    },
+    [editor],
+  );
 
   const { tf } = useEditorPlugin(CommentPlugin);
 
@@ -126,15 +127,15 @@ export const Comment = (props: {
     [initialValue],
   );
 
-  const onCancel = () => {
+  const onCancel = React.useCallback(() => {
     setEditingId(null);
     commentEditor.tf.replaceNodes(initialValue, {
       at: [],
       children: true,
     });
-  };
+  }, [setEditingId, commentEditor.tf, initialValue]);
 
-  const onSave = () => {
+  const onSave = React.useCallback(() => {
     void updateComment({
       id: comment.id,
       contentRich: commentEditor.children,
@@ -142,7 +143,7 @@ export const Comment = (props: {
       isEdited: true,
     });
     setEditingId(null);
-  };
+  }, [updateComment, comment.id, commentEditor.children, comment.discussionId, setEditingId]);
   const onResolveComment = () => {
     void resolveDiscussion(comment.discussionId);
     tf.comment.unsetMark({ id: comment.discussionId });
@@ -362,7 +363,7 @@ const CommentMoreDropdown = (props: {
 
 const useCommentEditor = (
   options: Omit<CreatePlateEditorOptions, "plugins"> = {},
-  deps: any[] = [],
+  deps: unknown[] = [],
 ) => {
   const commentEditor = usePlateEditor(
     {

@@ -1,8 +1,8 @@
-"use client";
-
-import React, { createContext, use, useMemo, ReactNode } from "react";
-import { cn } from "@/lib/utils";
+import { createContext, useContext, useMemo } from "react";
+import type { ReactNode, Ref, UIEventHandler } from "react";
 import { ColumnFiltersState, RowData, SortingState, Table } from "@tanstack/react-table";
+
+import { cn } from "@/lib/utils";
 
 declare module "@tanstack/react-table" {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -37,9 +37,6 @@ export interface DataGridContextProps<TData extends object> {
   table: Table<TData>;
   recordCount: number;
   isLoading: boolean;
-  virtualized: boolean;
-  isFetchingMore: boolean;
-  fetchMoreSkeletonCount: number;
 }
 
 export type DataGridRequestParams = {
@@ -58,10 +55,9 @@ export interface DataGridProps<TData extends object> {
   isLoading?: boolean;
   loadingMode?: "skeleton" | "spinner";
   loadingMessage?: ReactNode | string;
+  fetchingMoreMessage?: ReactNode | string;
+  allRowsLoadedMessage?: ReactNode | string;
   emptyMessage?: ReactNode | string;
-  virtualized?: boolean;
-  isFetchingMore?: boolean;
-  fetchMoreSkeletonCount?: number;
   tableLayout?: {
     dense?: boolean;
     cellBorder?: boolean;
@@ -78,6 +74,7 @@ export interface DataGridProps<TData extends object> {
     columnsMovable?: boolean;
     columnsDraggable?: boolean;
     rowsDraggable?: boolean;
+    rowsPinnable?: boolean;
   };
   tableClassNames?: {
     base?: string;
@@ -92,44 +89,67 @@ export interface DataGridProps<TData extends object> {
 }
 
 const DataGridContext = createContext<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line typescript-eslint/no-explicit-any
   DataGridContextProps<any> | undefined
 >(undefined);
 
-export const useDataGrid = () => {
-  const context = use(DataGridContext);
+const useDataGrid = () => {
+  const context = useContext(DataGridContext);
   if (!context) {
     throw new Error("useDataGrid must be used within a DataGridProvider");
   }
   return context;
 };
 
-export const DataGridProvider = <TData extends object>({
+const DataGridProvider = <TData extends object>({
   children,
   table,
   ...props
 }: DataGridProps<TData> & { table: Table<TData> }) => {
-  const contextValue = useMemo(
+  const tableState = table.getState();
+
+  // Memoize context value so consumers don't re-render during column resize.
+  // Column sizing state is intentionally excluded from deps -- CSS variables
+  // on the <table> element handle width updates without React re-renders.
+  const value = useMemo(
     () => ({
       props,
       table,
       recordCount: props.recordCount,
       isLoading: props.isLoading || false,
-      virtualized: props.virtualized || false,
-      isFetchingMore: props.isFetchingMore || false,
-      fetchMoreSkeletonCount: props.fetchMoreSkeletonCount ?? 5,
     }),
-    [props, table],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      table,
+      props.recordCount,
+      props.isLoading,
+      props.loadingMode,
+      props.loadingMessage,
+      props.fetchingMoreMessage,
+      props.allRowsLoadedMessage,
+      props.emptyMessage,
+      props.onRowClick,
+      props.className,
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(props.tableLayout),
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(props.tableClassNames),
+      tableState.sorting,
+      tableState.pagination,
+      tableState.columnFilters,
+      tableState.rowSelection,
+      tableState.expanded,
+      tableState.columnVisibility,
+      tableState.columnOrder,
+      tableState.columnPinning,
+      tableState.globalFilter,
+    ],
   );
 
-  return <DataGridContext.Provider value={contextValue}>{children}</DataGridContext.Provider>;
+  return <DataGridContext.Provider value={value}>{children}</DataGridContext.Provider>;
 };
 
-export const DataGrid = <TData extends object>({
-  children,
-  table,
-  ...props
-}: DataGridProps<TData>) => {
+const DataGrid = <TData extends object>({ children, table, ...props }: DataGridProps<TData>) => {
   const defaultProps: Partial<DataGridProps<TData>> = {
     loadingMode: "skeleton",
     tableLayout: {
@@ -148,12 +168,13 @@ export const DataGrid = <TData extends object>({
       columnsMovable: false,
       columnsDraggable: false,
       rowsDraggable: false,
+      rowsPinnable: false,
     },
     tableClassNames: {
       base: "",
       header: "",
       headerRow: "",
-      headerSticky: "sticky top-0 z-10 bg-background/90 backdrop-blur-xs",
+      headerSticky: "sticky top-0 z-15 bg-background/90 backdrop-blur-xs",
       body: "",
       bodyRow: "",
       footer: "",
@@ -186,7 +207,7 @@ export const DataGrid = <TData extends object>({
   );
 };
 
-export const DataGridContainer = ({
+const DataGridContainer = ({
   children,
   className,
   border = true,
@@ -196,8 +217,8 @@ export const DataGridContainer = ({
   children: ReactNode;
   className?: string;
   border?: boolean;
-  ref?: React.Ref<HTMLDivElement>;
-  onScroll?: React.UIEventHandler<HTMLDivElement>;
+  ref?: Ref<HTMLDivElement>;
+  onScroll?: UIEventHandler<HTMLDivElement>;
 }) => (
   <div
     ref={ref}
@@ -208,3 +229,5 @@ export const DataGridContainer = ({
     {children}
   </div>
 );
+
+export { useDataGrid, DataGridProvider, DataGrid, DataGridContainer };

@@ -1,6 +1,7 @@
 import { AIChatPlugin } from "@platejs/ai/react";
 import { BlockSelectionPlugin } from "@platejs/selection/react";
 import { getPluginTypes, isHotkey, KEYS } from "platejs";
+import type { PlateElementProps } from "platejs/react";
 
 import { BlockSelection } from "@/components/ui/block-selection";
 
@@ -16,9 +17,9 @@ export const BlockSelectionKit = [
           "formHeader",
           "formButton",
         ]).includes(element.type),
-      onKeyDownSelecting: (editor, e) => {
+      onKeyDownSelecting: (ed, e) => {
         if (isHotkey("mod+j")(e)) {
-          editor.getApi(AIChatPlugin).aiChat.show();
+          ed.getApi(AIChatPlugin).aiChat.show();
         }
       },
     },
@@ -26,7 +27,7 @@ export const BlockSelectionKit = [
       belowRootNodes: (props) => {
         if (!props.attributes.className?.includes("slate-selectable")) return null;
 
-        return <BlockSelection {...(props as any)} />;
+        return <BlockSelection {...(props as PlateElementProps)} />;
       },
     },
   })),

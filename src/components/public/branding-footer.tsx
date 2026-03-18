@@ -1,7 +1,7 @@
 import { useTranslation } from "@/contexts/translation-context";
 import { APP_NAME, APP_WEBSITE_URL } from "@/lib/app-config";
 
-export function BrandingFooter() {
+export const BrandingFooter = () => {
   const { t } = useTranslation();
   return (
     <div className="text-center py-4 mt-8 text-sm text-muted-foreground">
@@ -16,4 +16,4 @@ export function BrandingFooter() {
       </a>
     </div>
   );
-}
+};

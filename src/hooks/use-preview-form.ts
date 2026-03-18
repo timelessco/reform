@@ -20,7 +20,7 @@ interface UsePreviewFormOptions {
   fields: PlateFormField[];
   formName?: string;
   /** Optional custom submit handler - if provided, replaces default toast behavior */
-  onSubmit?: (values: Record<string, any>) => Promise<void>;
+  onSubmit?: (values: Record<string, unknown>) => Promise<void>;
 }
 
 /**

@@ -67,7 +67,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         required: true,
         placeholder: "Type a question",
         children: [{ text: "" }],
-      } as any,
+      } as TElement,
       { at: labelPath },
     );
 
@@ -76,7 +76,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         type: "formInput",
         placeholder: "Type Placeholder text",
         children: [{ text: "" }],
-      } as any,
+      } as TElement,
       { at: PathApi.next(labelPath) },
     );
 
@@ -96,7 +96,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         required: false,
         placeholder: "Type a question",
         children: [{ text: "" }],
-      } as any,
+      } as TElement,
       { at: labelPath },
     );
 
@@ -105,7 +105,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         type: "formTextarea",
         placeholder: "Type a placeholder",
         children: [{ text: "" }],
-      } as any,
+      } as TElement,
       { at: PathApi.next(labelPath) },
     );
 
@@ -131,7 +131,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           type: "formButton",
           buttonRole: "next",
           children: [{ text: "Next" }],
-        } as any,
+        } as TElement,
         { at: nextPath },
       );
 
@@ -141,7 +141,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           type: "pageBreak",
           isThankYouPage: false,
           children: [{ text: "" }],
-        } as any,
+        } as TElement,
         { at: pageBreakPath },
       );
 
@@ -151,7 +151,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         {
           type: "p",
           children: [{ text: "" }],
-        } as any,
+        } as TElement,
         { at: paragraphPath, select: true },
       );
 
@@ -161,7 +161,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           type: "formButton",
           buttonRole: "previous",
           children: [{ text: "Previous" }],
-        } as any,
+        } as TElement,
         { at: prevButtonPath },
       );
 
@@ -171,7 +171,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           type: "formButton",
           buttonRole: "submit",
           children: [{ text: "Submit" }],
-        } as any,
+        } as TElement,
         { at: newSubmitPath },
       );
       return;
@@ -180,7 +180,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
     // Convert existing Submit button to Next (replace entire node for void elements)
     const submitPath: Path = [submitIndex];
     const submitBtn = children[submitIndex];
-    const currentText = (submitBtn.children?.[0] as any)?.text;
+    const currentText = (submitBtn.children?.[0] as Record<string, unknown>)?.text;
     const newText = currentText === "Submit" ? "Next" : currentText;
 
     // Remove old button and insert new one with updated role/text
@@ -190,7 +190,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         type: "formButton",
         buttonRole: "next",
         children: [{ text: newText }],
-      } as any,
+      } as TElement,
       { at: submitPath },
     );
 
@@ -201,7 +201,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         type: "pageBreak",
         isThankYouPage: false,
         children: [{ text: "" }],
-      } as any,
+      } as TElement,
       { at: pageBreakPath },
     );
 
@@ -211,7 +211,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
       {
         type: "p",
         children: [{ text: "" }],
-      } as any,
+      } as TElement,
       { at: paragraphPath, select: true },
     );
 
@@ -222,7 +222,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         type: "formButton",
         buttonRole: "previous",
         children: [{ text: "Previous" }],
-      } as any,
+      } as TElement,
       { at: prevButtonPath },
     );
 
@@ -233,7 +233,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         type: "formButton",
         buttonRole: "submit",
         children: [{ text: "Submit" }],
-      } as any,
+      } as TElement,
       { at: newSubmitPath },
     );
   },
@@ -263,7 +263,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           type: "formButton",
           buttonRole: "submit",
           children: [{ text: "Submit" }],
-        } as any,
+        } as TElement,
         { at: nextPath },
       );
 
@@ -273,7 +273,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           type: "pageBreak",
           isThankYouPage: true,
           children: [{ text: "" }],
-        } as any,
+        } as TElement,
         { at: pageBreakPath },
       );
 
@@ -283,7 +283,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         {
           type: "p",
           children: [{ text: "" }],
-        } as any,
+        } as TElement,
         { at: paragraphPath, select: true },
       );
       return;
@@ -297,7 +297,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         type: "pageBreak",
         isThankYouPage: true,
         children: [{ text: "" }],
-      } as any,
+      } as TElement,
       { at: pageBreakPath },
     );
 
@@ -307,7 +307,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
       {
         type: "p",
         children: [{ text: "" }],
-      } as any,
+      } as TElement,
       { at: paragraphPath, select: true },
     );
 

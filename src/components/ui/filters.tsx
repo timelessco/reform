@@ -1138,9 +1138,9 @@ const SelectOptionsPopover = <T = unknown>({
   return (
     <Popover
       open={open}
-      onOpenChange={(open) => {
-        setOpen(open);
-        if (!open) {
+      onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (!isOpen) {
           setTimeout(() => setSearchInput(""), 200);
         }
       }}
@@ -1585,9 +1585,9 @@ const FilterValueSelector = <T = unknown>({
   return (
     <Popover
       open={open}
-      onOpenChange={(open) => {
-        setOpen(open);
-        if (!open) {
+      onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (!isOpen) {
           setTimeout(() => setSearchInput(""), 200);
         }
       }}
@@ -1854,22 +1854,25 @@ export const Filters = <T = unknown>({
   const [tempSelectedValues, setTempSelectedValues] = useState<unknown[]>([]);
 
   // Merge provided i18n with defaults
-  const mergedI18n: FilterI18nConfig = {
-    ...DEFAULT_I18N,
-    ...i18n,
-    operators: {
-      ...DEFAULT_I18N.operators,
-      ...i18n?.operators,
-    },
-    placeholders: {
-      ...DEFAULT_I18N.placeholders,
-      ...i18n?.placeholders,
-    },
-    validation: {
-      ...DEFAULT_I18N.validation,
-      ...i18n?.validation,
-    },
-  };
+  const mergedI18n: FilterI18nConfig = useMemo(
+    () => ({
+      ...DEFAULT_I18N,
+      ...i18n,
+      operators: {
+        ...DEFAULT_I18N.operators,
+        ...i18n?.operators,
+      },
+      placeholders: {
+        ...DEFAULT_I18N.placeholders,
+        ...i18n?.placeholders,
+      },
+      validation: {
+        ...DEFAULT_I18N.validation,
+        ...i18n?.validation,
+      },
+    }),
+    [i18n],
+  );
 
   const fieldsMap = useMemo(() => getFieldsMap(fields), [fields]);
 

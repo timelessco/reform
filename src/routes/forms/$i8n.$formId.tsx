@@ -1,7 +1,7 @@
 import { APP_NAME } from "@/lib/app-config";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect } from "react";
-import z from "zod";
+import { z } from "zod";
+import { zodValidator } from "@tanstack/zod-adapter";
 import { PublicFormPage } from "@/components/public/public-form-page";
 import type { PublicFormEmbedConfig } from "@/components/public/public-form-page";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
@@ -13,12 +13,6 @@ const PublicFormRoute = () => {
   const loaderData = Route.useLoaderData();
   const { formId } = Route.useParams();
   const search = Route.useSearch();
-  // Force light theme for public form pages — isolate from app's dark mode
-  useEffect(() => {
-    const root = document.documentElement;
-    root.classList.remove("dark");
-    root.classList.add("light");
-  }, []);
 
   // Support both transparentBackground and transparent params
   const isTransparent = search.transparentBackground || search.transparent || false;
@@ -67,23 +61,29 @@ export const Route = createFileRoute("/forms/$i8n/$formId")({
       },
     ],
   }),
+  staleTime: 60_000,
+  gcTime: 5 * 60_000,
+  pendingMs: 500,
+  pendingMinMs: 300,
   component: PublicFormRoute,
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,
-  validateSearch: z.object({
-    // Transparent background for iframe embeds
-    transparentBackground: z.boolean().optional().default(false),
-    transparent: z.coerce.boolean().optional(), // Alias for transparentBackground
-    // Popup mode (embedded via popup.js)
-    popup: z.coerce.boolean().optional().default(false),
-    // Hide form title in popup
-    hideTitle: z.coerce.boolean().optional().default(false),
-    // Align form content to the left
-    alignLeft: z.coerce.boolean().optional().default(false),
-    // Origin page for tracking
-    originPage: z.string().optional(),
-    // Dynamic height for standard iframe embeds
-    dynamicHeight: z.coerce.boolean().optional().default(false),
-  }),
+  validateSearch: zodValidator(
+    z.object({
+      // Transparent background for iframe embeds
+      transparentBackground: z.boolean().optional().default(false),
+      transparent: z.coerce.boolean().optional(), // Alias for transparentBackground
+      // Popup mode (embedded via popup.js)
+      popup: z.coerce.boolean().optional().default(false),
+      // Hide form title in popup
+      hideTitle: z.coerce.boolean().optional().default(false),
+      // Align form content to the left
+      alignLeft: z.coerce.boolean().optional().default(false),
+      // Origin page for tracking
+      originPage: z.string().optional(),
+      // Dynamic height for standard iframe embeds
+      dynamicHeight: z.coerce.boolean().optional().default(false),
+    }),
+  ),
 });

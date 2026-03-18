@@ -861,7 +861,7 @@ export const FormHeaderElement = (props: PlateElementProps) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
                     // Check if onboarding content is present (by type)
-                    const secondBlock = editor.children[1] as any;
+                    const secondBlock = editor.children[1] as { type?: string };
                     const isOnboarding = secondBlock?.type === "onboardingContent";
 
                     if (isOnboarding) {
@@ -873,10 +873,12 @@ export const FormHeaderElement = (props: PlateElementProps) => {
                         createFormButtonNode("submit"),
                       ];
                       editor.tf.init({
+                        // eslint-disable-next-line typescript-eslint/no-explicit-any
                         value: emptyContent as any,
                       });
                       // Move cursor to first paragraph
                       const firstBlockPath = [1];
+                      // eslint-disable-next-line typescript-eslint/no-explicit-any
                       const startPoint = (editor.api as any).edges(firstBlockPath)?.[0];
                       if (startPoint) {
                         editor.tf.select(startPoint);
@@ -885,6 +887,7 @@ export const FormHeaderElement = (props: PlateElementProps) => {
                     } else {
                       // Normal behavior: move focus to first block
                       const firstBlockPath = [1];
+                      // eslint-disable-next-line typescript-eslint/no-explicit-any
                       const startPoint = (editor.api as any).edges(firstBlockPath)?.[0];
                       if (startPoint) {
                         editor.tf.select(startPoint);

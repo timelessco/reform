@@ -32,31 +32,43 @@ export const workspaceCollection = createCollection(
     getKey: (item) => item.id,
     startSync: false, // Sync starts in _authenticated.tsx loader after auth is confirmed
     onInsert: async ({ transaction }) => {
-      const newItem = transaction.mutations[0].modified;
-      const result = (await createWorkspace({
-        data: {
-          id: newItem.id,
-          organizationId: newItem.organizationId,
-          name: newItem.name,
-        },
-      })) as ServerTxResult;
-      return { txid: result.txid };
+      const txids = await Promise.all(
+        transaction.mutations.map(async (m) => {
+          const result = (await createWorkspace({
+            data: {
+              id: m.modified.id,
+              organizationId: m.modified.organizationId,
+              name: m.modified.name,
+            },
+          })) as ServerTxResult;
+          return result.txid;
+        }),
+      );
+      return { txid: txids };
     },
 
     onUpdate: async ({ transaction }) => {
-      const { original, changes } = transaction.mutations[0];
-      const result = await updateWorkspace({
-        data: { ...changes, id: original.id },
-      });
-      return { txid: (result as ServerTxResult).txid };
+      const txids = await Promise.all(
+        transaction.mutations.map(async (m) => {
+          const result = (await updateWorkspace({
+            data: { ...m.changes, id: m.original.id },
+          })) as ServerTxResult;
+          return result.txid;
+        }),
+      );
+      return { txid: txids };
     },
 
     onDelete: async ({ transaction }) => {
-      const deletedItem = transaction.mutations[0].original;
-      const result = (await deleteWorkspace({
-        data: { id: deletedItem.id },
-      })) as ServerTxResult;
-      return { txid: result.txid };
+      const txids = await Promise.all(
+        transaction.mutations.map(async (m) => {
+          const result = (await deleteWorkspace({
+            data: { id: m.original.id },
+          })) as ServerTxResult;
+          return result.txid;
+        }),
+      );
+      return { txid: txids };
     },
   }),
 );
@@ -87,7 +99,10 @@ export const updateWorkspaceName = async (id: string, name: string): Promise<voi
   });
 };
 
-const _updateWorkspaceLocal = async (id: string, updater: (draft: any) => void): Promise<void> => {
+const _updateWorkspaceLocal = async (
+  id: string,
+  updater: (draft: Workspace) => void,
+): Promise<void> => {
   await workspaceCollection.update(id, (draft) => {
     updater(draft);
     draft.updatedAt = new Date().toISOString();

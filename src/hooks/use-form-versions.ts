@@ -80,20 +80,14 @@ export const useHasUnpublishedChanges = (formId: string | undefined) => {
 // On error the transaction auto-rolls back the optimistic state.
 // ============================================================================
 
-// ============================================================================
-// Optimistic action functions using createTransaction
-// Applies optimistic state instantly, then calls server fn in mutationFn.
-// Collection's onUpdate does NOT fire because mutations are owned by the tx.
-// On success the overlay is confirmed; Electric syncs the real data seamlessly.
-// On error the transaction auto-rolls back the optimistic state.
-// ============================================================================
 /**
  * Publish the current form draft. Optimistically sets status to "published".
  */
 export const publishForm = (formId: string) => {
   const tx = createTransaction({
     mutationFn: async () => {
-      await publishFormVersion({ data: { formId } });
+      const result = await publishFormVersion({ data: { formId } });
+      return { txid: (result as { txid: number }).txid };
     },
   });
 
@@ -117,7 +111,8 @@ export const restoreVersion = (formId: string, versionId: string) => {
 
   const tx = createTransaction({
     mutationFn: async () => {
-      await restoreFormVersion({ data: { formId, versionId } });
+      const result = await restoreFormVersion({ data: { formId, versionId } });
+      return { txid: (result as { txid: number }).txid };
     },
   });
 
@@ -146,7 +141,8 @@ export const discardChanges = (formId: string) => {
 
   const tx = createTransaction({
     mutationFn: async () => {
-      await discardFormChanges({ data: { formId } });
+      const result = await discardFormChanges({ data: { formId } });
+      return { txid: (result as { txid: number }).txid };
     },
   });
 

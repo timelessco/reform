@@ -69,10 +69,10 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   // Get the selected node info
   // Get the selected node info reactive to editor state changes
   const selectedNodes = useEditorSelector(
-    (editor) => {
+    (ed) => {
       if (!isOpen) return [];
       try {
-        return editor.getApi(BlockSelectionPlugin).blockSelection.getNodes();
+        return ed.getApi(BlockSelectionPlugin).blockSelection.getNodes();
       } catch {
         return [];
       }

@@ -15,7 +15,7 @@ import { formFieldsToEmbedOptions, EmbedConfigPanel } from "./embed-config-panel
 import { EmbedCodeDialog, searchToFormValues, formValuesToSearch, tabs } from "./embed-section";
 import { EmbedPreviewMockup } from "./embed-preview-mockup";
 
-const selectValues = (state: any) => state.values;
+const selectValues = (state: { values: ReturnType<typeof searchToFormValues> }) => state.values;
 
 interface ShareSummarySidebarProps {
   formId: string;
@@ -26,7 +26,7 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
   const { data: savedDocs } = useForm(formId);
   const doc = savedDocs?.[0];
 
-  const search = useSearch({ strict: false }) as Record<string, unknown>;
+  const search = useSearch({ strict: false });
   const navigate = useNavigate();
   const [codeDialogOpen, setCodeDialogOpen] = useState(false);
   const handleOpenCodeDialog = useCallback(() => setCodeDialogOpen(true), []);
@@ -40,6 +40,7 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
           search: ((prev: Record<string, unknown>) => ({
             ...prev,
             ...formValuesToSearch(v),
+            // eslint-disable-next-line typescript-eslint/no-explicit-any
           })) as any,
           replace: true,
         });

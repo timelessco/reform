@@ -25,16 +25,16 @@ export const VideoElementStatic = (
 
   React.useEffect(() => {
     const previousUrl = trackUrlRef.current;
-    const url = createCaptionTrackUrl(captionText);
-    trackUrlRef.current = url;
-    setTrackUrl(url);
+    const captionTrackUrl = createCaptionTrackUrl(captionText);
+    trackUrlRef.current = captionTrackUrl;
+    setTrackUrl(captionTrackUrl);
 
-    if (previousUrl && previousUrl !== url) {
+    if (previousUrl && previousUrl !== captionTrackUrl) {
       URL.revokeObjectURL(previousUrl);
     }
 
     return () => {
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(captionTrackUrl);
     };
   }, [captionText]);
 

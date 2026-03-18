@@ -62,14 +62,15 @@ const DashboardPage = () => {
   const isLoading = wsLoading || formsLoading;
   const isElectricReady = !isLoading && liveWorkspaces !== undefined && liveForms !== undefined;
 
-  const orgWorkspaces = isElectricReady ? liveWorkspaces || [] : [];
+  const orgWorkspaces = useMemo(
+    () => (isElectricReady ? liveWorkspaces || [] : []),
+    [isElectricReady, liveWorkspaces],
+  );
 
-  const orgForms = useMemo(() => {
-    if (!isElectricReady) return [];
-    return (liveForms || []).toSorted(
-      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-    );
-  }, [liveForms, isElectricReady]);
+  const orgForms = useMemo(
+    () => (isElectricReady ? liveForms || [] : []),
+    [isElectricReady, liveForms],
+  );
 
   const workspaceNameMap = useMemo(
     () => new Map(orgWorkspaces.map((ws) => [ws.id, ws.name])),
@@ -195,7 +196,7 @@ const DashboardPage = () => {
               className="ml-1"
               size="sm"
               variant="secondary"
-              prefix={<FolderPlus />}
+              prefix={<FolderPlus className="size-4" />}
               onClick={handleCreateWorkspace}
               disabled={isLoading}
             >
@@ -203,7 +204,13 @@ const DashboardPage = () => {
             </Button>
             <Button
               size="sm"
-              prefix={isCreating ? <Loader2Icon className="animate-spin" /> : <PlusIcon />}
+              prefix={
+                isCreating ? (
+                  <Loader2Icon className="animate-spin" />
+                ) : (
+                  <PlusIcon className="size-4" />
+                )
+              }
               onClick={handleCreateForm}
               disabled={isLoading || isCreating || orgWorkspaces.length === 0}
             >
@@ -430,7 +437,7 @@ const DashboardPage = () => {
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
-  ssr: "data-only",
+  ssr: false,
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,

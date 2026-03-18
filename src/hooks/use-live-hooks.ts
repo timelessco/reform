@@ -92,7 +92,8 @@ export const useOrgForms = (organizationId?: string) =>
           updatedAt: form.updatedAt,
           icon: form.icon,
           customization: form.customization,
-        }));
+        }))
+        .orderBy(({ form }) => form.updatedAt, "desc");
     },
     [organizationId],
   );
@@ -190,18 +191,20 @@ export const useFavoriteForms = (userId?: string) => {
  * Custom hook for archived (trashed) forms with deletedAt field.
  */
 export const useArchivedForms = () =>
-  useLiveQuery((q) =>
-    q
-      .from({ form: formCollection })
-      .where(({ form }) => eq(form.status, "archived"))
-      .select(({ form }) => ({
-        id: form.id,
-        title: form.title,
-        workspaceId: form.workspaceId,
-        status: form.status,
-        updatedAt: form.updatedAt,
-        deletedAt: form.deletedAt,
-      })),
+  useLiveQuery(
+    (q) =>
+      q
+        .from({ form: formCollection })
+        .where(({ form }) => eq(form.status, "archived"))
+        .select(({ form }) => ({
+          id: form.id,
+          title: form.title,
+          workspaceId: form.workspaceId,
+          status: form.status,
+          updatedAt: form.updatedAt,
+          deletedAt: form.deletedAt,
+        })),
+    [],
   );
 
 /**
@@ -209,14 +212,16 @@ export const useArchivedForms = () =>
  * Returns a Map<formId, count> for efficient lookups.
  */
 export const useSubmissionCounts = () => {
-  const { data } = useLiveQuery((q) =>
-    q
-      .from({ sub: submissionCollection })
-      .groupBy(({ sub }) => sub.formId)
-      .select(({ sub }) => ({
-        formId: sub.formId,
-        count: count(sub.id),
-      })),
+  const { data } = useLiveQuery(
+    (q) =>
+      q
+        .from({ sub: submissionCollection })
+        .groupBy(({ sub }) => sub.formId)
+        .select(({ sub }) => ({
+          formId: sub.formId,
+          count: count(sub.id),
+        })),
+    [],
   );
 
   return useMemo(() => {

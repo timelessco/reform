@@ -151,7 +151,7 @@ const useEmailChange = (onSuccess: (fieldName: string, value: string) => void): 
         onSuccess("newEmail", "");
         setIsChangeEmailOpen(false);
       },
-      onError: (error: any) => {
+      onError: (error: Error) => {
         toast.error(error.message || "Failed to change email");
       },
     }),

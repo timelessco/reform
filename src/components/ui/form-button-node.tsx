@@ -70,18 +70,21 @@ export const FormButtonElement = ({ className, children, ...props }: PlateElemen
   const displayText = label.trim() || placeholder;
 
   // Handle label change - uses setNodes on element property (reactive)
-  const handleLabelChange = (newLabel: string) => {
-    const path = editor.api.findPath(element);
-    if (path) {
-      editor.tf.setNodes({ label: newLabel }, { at: path });
-    }
-  };
+  const handleLabelChange = React.useCallback(
+    (newLabel: string) => {
+      const path = editor.api.findPath(element);
+      if (path) {
+        editor.tf.setNodes({ label: newLabel }, { at: path });
+      }
+    },
+    [editor, element],
+  );
 
   // Save and close popover
-  const saveAndClose = () => {
+  const saveAndClose = React.useCallback(() => {
     handleLabelChange(inputValue);
     setIsOpen(false);
-  };
+  }, [handleLabelChange, inputValue]);
 
   const buttonLabelId = React.useId();
 

@@ -12,7 +12,9 @@ export const useFormCustomization = (doc: { customization?: unknown } | null | u
   const hasCustomization = !!(customization && Object.keys(customization).length > 0);
   // Use a stable primitive dep so the memo doesn't miss when the store emits a new object reference
   const customizationKey = customization ? JSON.stringify(customization) : null;
+  // eslint-disable-next-line eslint-plugin-react-hooks/exhaustive-deps -- customizationKey is a stable serialized form of customization
   const themeVars = useMemo(() => getThemeStyleVars(customization), [customizationKey]);
+  // eslint-disable-next-line eslint-plugin-react-hooks/exhaustive-deps -- customizationKey is a stable serialized form of customization
   const googleFontUrl = useMemo(() => getGoogleFontLinkUrl(customization), [customizationKey]);
 
   // Dynamically load Google Fonts in editor/preview contexts

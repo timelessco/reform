@@ -11,9 +11,9 @@ const serializeForm = (form: typeof forms.$inferSelect) => ({
   ...form,
   createdAt: form.createdAt.toISOString(),
   updatedAt: form.updatedAt.toISOString(),
-  content: form.content as any,
-  settings: form.settings as any,
-  customization: (form.customization ?? {}) as Record<string, any>,
+  content: form.content as unknown,
+  settings: form.settings as Record<string, unknown>,
+  customization: (form.customization ?? {}) as Record<string, string>,
 });
 
 const serializeFormListing = (form: typeof forms.$inferSelect) => ({
@@ -36,8 +36,8 @@ export const createForm = createServerFn({ method: "POST" })
       title: z.string().optional(),
       formName: z.string().optional(),
       schemaName: z.string().optional(),
-      content: z.array(z.any()).optional(),
-      settings: z.any().optional(),
+      content: z.array(z.unknown()).optional(),
+      settings: z.unknown().optional(),
       icon: z.string().nullable().optional(),
       cover: z.string().nullable().optional(),
       isMultiStep: z.boolean().optional(),
@@ -67,7 +67,7 @@ export const createForm = createServerFn({ method: "POST" })
       preventDuplicateSubmissions: z.boolean().optional(),
       dataRetention: z.boolean().optional(),
       dataRetentionDays: z.number().nullable().optional(),
-      customization: z.record(z.string(), z.any()).optional(),
+      customization: z.record(z.string(), z.unknown()).optional(),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -134,8 +134,8 @@ export const updateForm = createServerFn({ method: "POST" })
       title: z.string().optional(),
       formName: z.string().optional(),
       schemaName: z.string().optional(),
-      content: z.array(z.any()).optional(),
-      settings: z.any().optional(),
+      content: z.array(z.unknown()).optional(),
+      settings: z.unknown().optional(),
       icon: z.string().nullable().optional(),
       cover: z.string().nullable().optional(),
       isMultiStep: z.boolean().optional(),
@@ -166,7 +166,7 @@ export const updateForm = createServerFn({ method: "POST" })
       preventDuplicateSubmissions: z.boolean().optional(),
       dataRetention: z.boolean().optional(),
       dataRetentionDays: z.number().nullable().optional(),
-      customization: z.record(z.string(), z.any()).optional(),
+      customization: z.record(z.string(), z.unknown()).optional(),
     }),
   )
   .handler(async ({ data, context }) => {

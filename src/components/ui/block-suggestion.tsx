@@ -352,8 +352,8 @@ export const useResolveSuggestion = (
 
       let newText = "";
       let text = "";
-      let properties: any = {};
-      let newProperties: any = {};
+      let properties: Record<string, unknown> = {};
+      let newProperties: Record<string, unknown> = {};
 
       // overlapping suggestion
       entries.forEach(([node]) => {

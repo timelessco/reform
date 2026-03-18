@@ -46,7 +46,8 @@ export const DataGridColumnHeader = <TData, TValue>({
   const { isLoading, table, props, recordCount } = useDataGrid();
 
   const getColumnPosition = () => {
-    const order = table.getState().columnOrder;
+    const stateOrder = table.getState().columnOrder;
+    const order = stateOrder.length > 0 ? stateOrder : table.getAllLeafColumns().map((c) => c.id);
     const index = order.indexOf(column.id);
     return { order, index };
   };
@@ -56,15 +57,19 @@ export const DataGridColumnHeader = <TData, TValue>({
     return direction === "left" ? index > 0 : index < order.length - 1;
   };
 
-  const moveColumn = (direction: "left" | "right") => {
-    if (!canMove(direction)) return;
-    const { order, index } = getColumnPosition();
-    const newOrder = [...order];
-    const [moved] = newOrder.splice(index, 1);
-    const targetIndex = direction === "left" ? index - 1 : index + 1;
-    newOrder.splice(targetIndex, 0, moved);
-    table.setColumnOrder(newOrder);
-  };
+  const moveColumn = useCallback(
+    (direction: "left" | "right") => {
+      if (!canMove(direction)) return;
+      const { order, index } = getColumnPosition();
+      const newOrder = [...order];
+      const [moved] = newOrder.splice(index, 1);
+      const targetIndex = direction === "left" ? index - 1 : index + 1;
+      newOrder.splice(targetIndex, 0, moved);
+      table.setColumnOrder(newOrder);
+    },
+    // eslint-disable-next-line eslint-plugin-react-hooks/exhaustive-deps -- canMove and getColumnPosition read from table state
+    [table],
+  );
 
   const headerLabel = (
     <div
@@ -123,7 +128,7 @@ export const DataGridColumnHeader = <TData, TValue>({
   const headerButtonProps = {
     variant: "ghost" as const,
     className: cn(
-      "text-secondary-foreground/80 rounded-none font-normal px-2 h-full w-full justify-between hover:bg-transparent data-[state=open]:bg-transparent aria-expanded:bg-transparent",
+      "text-secondary-foreground/80 rounded-none font-normal px-2 h-full w-full justify-between hover:bg-transparent! data-[state=open]:bg-transparent! aria-expanded:bg-transparent!",
       className,
     ),
     disabled: isLoading || recordCount === 0,
@@ -197,7 +202,8 @@ export const DataGridColumnHeader = <TData, TValue>({
           )}
 
           {(filter || column.getCanSort()) &&
-            (column.getCanSort() || column.getCanPin() || visibility) && <DropdownMenuSeparator />}
+            props.tableLayout?.columnsPinnable &&
+            column.getCanPin() && <DropdownMenuSeparator />}
 
           {props.tableLayout?.columnsPinnable && column.getCanPin() && (
             <>

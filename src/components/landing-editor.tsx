@@ -221,7 +221,9 @@ const LocalEditorApp = () => {
       lastSavedContentRef.current = value;
 
       // Persist to local collection
-      const headerNode = value.find((n: any) => n.type === "formHeader") as any;
+      const headerNode = value.find((n) => n.type === "formHeader") as
+        | (Record<string, unknown> & { type: string })
+        | undefined;
       const updateData = {
         content: value,
         title: headerNode?.title || "Draft Form",
@@ -303,6 +305,7 @@ const LocalPreviewMode = () => {
           onSubmit={noop}
           layout="editor"
           formId={localFormId}
+          customization={customization}
         />
       </div>
     </div>

@@ -9,8 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { InputGroup, InputGroupAddon } from "@/components/ui/input-group";
-import { SearchIcon, CheckIcon } from "@/components/ui/icons";
+import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
+import { CheckIcon } from "@/components/ui/icons";
+import { Search } from "lucide-react";
 
 export const Command = ({ className, ...props }: React.ComponentProps<typeof CommandPrimitive>) => (
   <CommandPrimitive
@@ -56,19 +57,19 @@ export const CommandInput = ({
   ...props
 }: React.ComponentProps<typeof CommandPrimitive.Input>) => (
   <div data-slot="command-input-wrapper" className="p-1 pb-0">
-    <InputGroup className="bg-input/30 border-input/30 h-8! rounded-lg! shadow-none! *:data-[slot=input-group-addon]:ps-2!">
-      <CommandPrimitive.Input
-        data-slot="command-input"
-        className={cn(
-          "w-full text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
-          className,
-        )}
-        {...props}
-      />
-      <InputGroupAddon>
-        <SearchIcon className="size-4 shrink-0 opacity-50" />
-      </InputGroupAddon>
-    </InputGroup>
+    <ButtonGroup className="w-full border-none rounded-lg">
+      <ButtonGroupText className="h-7 w-full rounded-lg border border-transparent bg-accent/60 px-2.5 gap-1.5 text-[13px]">
+        <Search className="size-4" strokeWidth={2} color="var(--color-gray-alpha-600)" />
+        <CommandPrimitive.Input
+          data-slot="command-input"
+          className={cn(
+            "min-w-0 flex-1 bg-transparent border-0 p-0 outline-none text-[13px] placeholder:text-(--color-gray-alpha-600) placeholder:text-normal placeholder:text-[0.8rem] disabled:cursor-not-allowed disabled:opacity-50",
+            className,
+          )}
+          {...props}
+        />
+      </ButtonGroupText>
+    </ButtonGroup>
   </div>
 );
 
@@ -130,7 +131,7 @@ export const CommandItem = ({
   <CommandPrimitive.Item
     data-slot="command-item"
     className={cn(
-      "data-selected:bg-muted data-selected:text-foreground data-selected:*:[svg]:text-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none in-data-[slot=dialog-content]:rounded-lg! [&_svg:not([class*='size-'])]:size-4 group/command-item data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+      "data-selected:bg-(--color-gray-alpha-100) data-selected:text-foreground data-selected:*:[svg]:text-foreground relative flex cursor-default items-center gap-1.5 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none in-data-[slot=dialog-content]:rounded-lg! [&_svg:not([class*='size-'])]:size-4 group/command-item data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 hover:bg-(--color-gray-alpha-100) hover:text-foreground",
       className,
     )}
     {...props}

@@ -269,6 +269,7 @@ const TableBordersDropdownMenuContent = (props: React.HTMLAttributes<HTMLDivElem
       align="start"
       side="right"
       sideOffset={0}
+      // eslint-disable-next-line typescript-eslint/no-explicit-any
       {...(props as any)}
     >
       <DropdownMenuGroup>
@@ -420,7 +421,7 @@ export const TableRowElement = ({ children, ...props }: PlateElementProps<TTable
   );
 };
 
-const RowDragHandle = ({ dragRef }: { dragRef: React.Ref<any> }) => {
+const RowDragHandle = ({ dragRef }: { dragRef: React.Ref<HTMLButtonElement> }) => {
   const editor = useEditorRef();
   const element = useElement();
 
@@ -545,7 +546,9 @@ export const TableCellElement = ({
                 className={cn(
                   "absolute top-0 z-30 hidden h-full w-1 bg-ring",
                   "right-[-1.5px]",
-                  columnResizeVariants({ colIndex: colIndex as any }),
+                  columnResizeVariants({
+                    colIndex: colIndex as 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10,
+                  }),
                 )}
               />
               {colIndex === 0 && (

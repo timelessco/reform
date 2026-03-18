@@ -1,4 +1,5 @@
 import { useChat as useBaseChat } from "@ai-sdk/react";
+import type { Faker } from "@faker-js/faker";
 import { AIChatPlugin, aiCommentToRange } from "@platejs/ai/react";
 import { getCommentKey, getTransientCommentKey } from "@platejs/comment";
 import { deserializeMd } from "@platejs/markdown";
@@ -29,12 +30,13 @@ type MessageDataPart = {
   comment?: TComment;
 };
 
-type Chat = UseChatHelpers<ChatMessage>;
+type _Chat = UseChatHelpers<ChatMessage>;
 
 type ChatMessage = UIMessage<{}, MessageDataPart>;
 
 export const useChat = () => {
   const editor = useEditorRef();
+  // eslint-disable-next-line typescript-eslint/no-explicit-any
   const options = usePluginOption(AIChatPlugin, "chatOptions" as any) as any;
 
   // remove when you implement the route /api/ai/command
@@ -52,6 +54,7 @@ export const useChat = () => {
       api: options.api || "/api/ai/command",
       // Mock the API response. Remove it when you implement the route /api/ai/command
       fetch: (async (input, init) => {
+        // eslint-disable-next-line typescript-eslint/no-explicit-any
         const bodyOptions = (editor.getOptions(AIChatPlugin) as any).chatOptions?.body;
 
         const initBody = JSON.parse(init?.body as string);
@@ -72,7 +75,7 @@ export const useChat = () => {
           try {
             const content = JSON.parse(init?.body as string)
               .messages.at(-1)
-              .parts.find((p: any) => p.type === "text")?.text;
+              .parts.find((p: Record<string, unknown>) => p.type === "text")?.text;
 
             if (content.includes("Generate a markdown sample")) {
               sample = "markdown";
@@ -187,8 +190,9 @@ export const useChat = () => {
   );
 
   React.useEffect(() => {
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
     editor.setOption(AIChatPlugin, "chat", chat as any);
-  }, [chat, editor.setOption]);
+  }, [chat, editor, editor.setOption]);
 
   return chat;
 };
@@ -353,7 +357,7 @@ const fakeStreamText = async ({
   });
 };
 
-const getChunkData = (faker: any) => {
+const getChunkData = (faker: Faker) => {
   const delay = faker.number.int({ max: 20, min: 5 });
 
   const markdownChunks = [
@@ -1457,7 +1461,7 @@ const getChunkData = (faker: any) => {
   return { markdownChunks, mdxChunks, delay };
 };
 
-const createCommentChunks = (editor: PlateEditor, faker: any) => {
+const createCommentChunks = (editor: PlateEditor, faker: Faker) => {
   const selectedBlocksApi = editor.getApi(BlockSelectionPlugin).blockSelection;
 
   const selectedBlocks = selectedBlocksApi

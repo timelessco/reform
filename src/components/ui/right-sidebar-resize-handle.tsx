@@ -35,9 +35,9 @@ export const RightSidebarResizeHandle = ({
       document.body.style.cursor = "col-resize";
       document.body.style.userSelect = "none";
 
-      const handleMouseMove = (e: MouseEvent) => {
+      const handleMouseMove = (evt: MouseEvent) => {
         // For right sidebar, dragging left increases width
-        const delta = startXRef.current - e.clientX;
+        const delta = startXRef.current - evt.clientX;
         setSidebarWidth(startWidthRef.current + delta);
       };
 

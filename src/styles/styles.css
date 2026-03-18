@@ -729,8 +729,8 @@
 /* PlateStatic content manages its own font-sizes via node components.
    Override the field-list font-size rule for all slate-editor descendants
    so headings, lists, paragraphs, etc. render at correct sizes. */
-.bf-themed [data-bf-field-list] [data-slate-editor] *,
-.bf-themed [data-bf-form-container] [data-slate-editor] * {
+.bf-themed [data-bf-field-list] [data-slate-editor] *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
+.bf-themed [data-bf-form-container] [data-slate-editor] *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
   font-size: inherit;
 }
 

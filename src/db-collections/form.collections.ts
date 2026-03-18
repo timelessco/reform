@@ -32,6 +32,7 @@ export const FormSchema = z.object({
   title: z.string().default("Untitled"),
   formName: z.string().default("draft"),
   schemaName: z.string().default("draftFormSchema"),
+  // eslint-disable-next-line typescript-eslint/no-explicit-any -- Plate editor content is deeply nested with variable structure
   content: z.array(z.any()).default([]),
   settings: SettingsSchema.optional(),
   icon: z.string().nullable().optional(),
@@ -65,6 +66,7 @@ export const FormSchema = z.object({
   preventDuplicateSubmissions: z.coerce.boolean().default(false),
   dataRetention: z.coerce.boolean().default(false),
   dataRetentionDays: z.coerce.number().nullable().optional(),
+  // eslint-disable-next-line typescript-eslint/no-explicit-any -- customization values have variable types (string, number, boolean)
   customization: z.record(z.string(), z.any()).default({}),
   createdAt: timestampField,
   updatedAt: timestampField,
@@ -89,25 +91,37 @@ export const formCollection = createCollection(
     startSync: false, // Sync starts in _authenticated.tsx loader after auth is confirmed
     syncMode: "eager",
     onInsert: async ({ transaction }) => {
-      const newItem = transaction.mutations[0].modified;
-      const result = (await createForm({ data: newItem })) as ServerTxResult;
-      return { txid: result.txid };
+      const txids = await Promise.all(
+        transaction.mutations.map(async (m) => {
+          const result = (await createForm({ data: m.modified })) as ServerTxResult;
+          return result.txid;
+        }),
+      );
+      return { txid: txids };
     },
     onUpdate: async ({ transaction }) => {
-      const { original, changes } = transaction.mutations[0];
-      logger("changes", Object.keys(changes));
-      const result = await updateForm({
-        data: { ...changes, id: original.id },
-      });
-      return { txid: (result as ServerTxResult).txid };
+      const txids = await Promise.all(
+        transaction.mutations.map(async (m) => {
+          logger("changes", Object.keys(m.changes));
+          const result = (await updateForm({
+            data: { ...m.changes, id: m.original.id },
+          })) as ServerTxResult;
+          return result.txid;
+        }),
+      );
+      return { txid: txids };
     },
 
     onDelete: async ({ transaction }) => {
-      const deletedItem = transaction.mutations[0].original;
-      const result = (await deleteForm({
-        data: { id: deletedItem.id },
-      })) as ServerTxResult;
-      return { txid: result.txid };
+      const txids = await Promise.all(
+        transaction.mutations.map(async (m) => {
+          const result = (await deleteForm({
+            data: { id: m.original.id },
+          })) as ServerTxResult;
+          return result.txid;
+        }),
+      );
+      return { txid: txids };
     },
   }),
 );
@@ -147,7 +161,7 @@ const DEFAULT_FORM_SETTINGS: FormBuilderSettings = {
 /**
  * Updates the form content (Plate editor value).
  */
-const _updateContent = async (id: string, content: any[]) =>
+const _updateContent = async (id: string, content: unknown[]) =>
   formCollection.update(id, (draft) => {
     draft.content = content;
     draft.updatedAt = new Date().toISOString();
@@ -189,10 +203,10 @@ export const updateSettings = async (id: string, settings: Partial<typeof DEFAUL
 /**
  * Generic update for when we need to batch multiple changes.
  */
-export const updateDoc = async (id: string, updater: (draft: any) => void) =>
+export const updateDoc = async (id: string, updater: (draft: Form) => void) =>
   formCollection.update(id, (draft) => {
     logger("updateDoc", id);
-    updater(draft);
+    updater(draft as Form);
     draft.updatedAt = new Date().toISOString();
   });
 
@@ -223,6 +237,22 @@ export const createFormLocal = async (workspaceId: string, title = "Untitled"): 
     cover: null,
     isMultiStep: false,
     status: "draft",
+    language: "English",
+    redirectOnCompletion: false,
+    redirectDelay: 0,
+    progressBar: false,
+    branding: true,
+    autoJump: false,
+    saveAnswersForLater: true,
+    selfEmailNotifications: false,
+    respondentEmailNotifications: false,
+    passwordProtect: false,
+    closeForm: false,
+    closeOnDate: false,
+    limitSubmissions: false,
+    preventDuplicateSubmissions: false,
+    dataRetention: false,
+    customization: {},
     createdAt: now,
     updatedAt: now,
   };

@@ -74,6 +74,7 @@ export const DateElement = (props: PlateElementProps<TDateElement>) => {
     >
       <Popover>
         <PopoverTrigger
+          nativeButton={false}
           render={
             <span
               className={cn("w-fit cursor-pointer rounded-sm bg-muted px-1 text-muted-foreground")}

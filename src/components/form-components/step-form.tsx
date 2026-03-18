@@ -12,7 +12,7 @@ import type { PreviewSegment } from "@/lib/transform-plate-for-preview";
 import { StaticContentBlock } from "./static-content-block";
 import { RenderStepPreviewInput } from "./render-step-preview-input";
 
-const selectStateValues = (state: any) => state.values;
+const selectStateValues = (state: { values: Record<string, unknown> }) => state.values;
 
 interface StepFormProps {
   stepIndex: number;

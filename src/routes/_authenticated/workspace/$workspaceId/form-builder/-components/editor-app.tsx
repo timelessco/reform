@@ -5,22 +5,24 @@ import type { FormHeaderElementData } from "@/components/ui/form-header-node";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import { useEditorHeaderVisibilitySafe } from "@/contexts/editor-header-visibility-context";
 import { EditorThemeProvider } from "@/contexts/editor-theme-context";
-import { formCollection, updateDoc, updateHeader } from "@/db-collections/form.collections";
+import { formCollection } from "@/db-collections/form.collections";
+import type { Form } from "@/db-collections/form.collections";
 import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useForm } from "@/hooks/use-live-hooks";
+import { useTheme } from "@/components/ThemeProvider";
 import { cn } from "@/lib/utils";
 import { Loader2Icon } from "@/components/ui/icons";
 import { normalizeNodeId } from "platejs";
 import type { TElement, Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
 import type { KeyboardEvent } from "react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface EditorAppProps {
   formId: string;
   workspaceId?: string;
   defaultValue?: ReturnType<typeof normalizeNodeId>;
-  initialForm?: any;
+  initialForm?: unknown;
   versionContent?: Value;
   readOnly?: boolean;
 }
@@ -89,20 +91,43 @@ const EditorAppInner = ({
   workspaceId?: string;
   versionContent?: Value;
   readOnly: boolean;
-  savedDocs: any;
+  savedDocs: Form[] | undefined;
 }) => {
   const { customization, hasCustomization, themeVars } = useFormCustomization(savedDocs?.[0]);
+
+  // Sync editor mode when app theme changes (user menu, settings)
+  const { theme } = useTheme();
+  const resolvedAppTheme =
+    theme === "system"
+      ? typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light"
+      : theme;
+
+  useEffect(() => {
+    if (resolvedAppTheme !== customization?.mode && formId) {
+      formCollection.update(formId, (draft) => {
+        const current = (draft.customization ?? {}) as Record<string, string>;
+        draft.customization = { ...current, mode: resolvedAppTheme };
+        draft.updatedAt = new Date().toISOString();
+      });
+    }
+  }, [resolvedAppTheme, customization?.mode, formId]);
+
   const skipSaveRef = useRef(false);
   const lastKnownContentRef = useRef<string | null>(null);
   const savedDocsRef = useRef(savedDocs);
   savedDocsRef.current = savedDocs;
+  const pendingValueRef = useRef<Value | null>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const headerVisibility = useEditorHeaderVisibilitySafe();
   const [resetKey, setResetKey] = useState(0);
 
   // Detect external content change (discard, remote sync) and recreate editor.
   // setState during render is a documented React pattern — React aborts this
   // render and immediately re-renders with the new state.
-  if (!versionContent && savedDocs?.length) {
+  // Skip detection while we have a pending save — the sync-back is our own edit.
+  if (!versionContent && savedDocs?.length && !pendingValueRef.current) {
     const contentStr = JSON.stringify(savedDocs[0]?.content);
     if (lastKnownContentRef.current === null) {
       lastKnownContentRef.current = contentStr;
@@ -156,9 +181,7 @@ const EditorAppInner = ({
     }
 
     return content;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- savedDocs is intentionally
-    // excluded: initialContent only needs to recompute on resetKey change (via editor dep array).
-    // Including savedDocs would cause unnecessary recalculation on every Electric sync.
+    // eslint-disable-next-line eslint-plugin-react-hooks/exhaustive-deps -- savedDocs intentionally excluded; resetKey triggers recompute
   }, [versionContent, resetKey]);
 
   const editor = usePlateEditor(
@@ -178,32 +201,33 @@ const EditorAppInner = ({
         return;
       }
 
-      const contentStr = JSON.stringify(value);
-      if (lastKnownContentRef.current === contentStr) return;
+      pendingValueRef.current = value;
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        const val = pendingValueRef.current;
+        if (!val) return;
 
-      lastKnownContentRef.current = contentStr;
-      const now = new Date().toISOString();
-      const headerNode =
-        value.length > 0 && value[0]?.type === "formHeader"
-          ? (value[0] as unknown as FormHeaderElementData)
-          : null;
+        const headerNode =
+          val.length > 0 && val[0]?.type === "formHeader"
+            ? (val[0] as unknown as FormHeaderElementData)
+            : null;
 
-      updateDoc(formId, (draft) => {
-        draft.workspaceId = workspaceId;
-        draft.updatedAt = now;
-        draft.content = value;
-      });
+        // Update the ref so external-change detection recognizes
+        // the upcoming sync-back as our own edit
+        lastKnownContentRef.current = JSON.stringify(val);
+        pendingValueRef.current = null;
 
-      if (headerNode) {
-        updateHeader(formId, {
-          title: headerNode.title,
-          icon: headerNode.icon ?? undefined,
-          cover: headerNode.cover ?? undefined,
-          workspaceId: String(workspaceId),
-          updatedAt: now,
-          createdAt: savedDocsRef.current?.[0]?.createdAt ?? "",
+        formCollection.update(formId, (draft) => {
+          draft.content = val;
+          if (workspaceId) draft.workspaceId = workspaceId;
+          draft.updatedAt = new Date().toISOString();
+          if (headerNode) {
+            if (headerNode.title !== undefined) draft.title = headerNode.title;
+            if (headerNode.icon !== undefined) draft.icon = headerNode.icon ?? null;
+            if (headerNode.cover !== undefined) draft.cover = headerNode.cover ?? null;
+          }
         });
-      }
+      }, 500);
     },
     [formId, workspaceId, readOnly],
   );

@@ -20,7 +20,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
   const content = (doc?.content as Value) || [];
 
   // Read embed config from search params
-  const search = useSearch({ strict: false }) as Record<string, unknown>;
+  const search = useSearch({ strict: false });
   const embedType = (search.embedType as EmbedType) ?? "fullpage";
   const hideTitle = (search.embedHideTitle as boolean) ?? false;
   const transparentBackground = (search.embedTransparent as boolean) ?? false;
@@ -151,6 +151,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                             cover={doc.cover ?? undefined}
                             onSubmit={noop}
                             hideTitle={hideTitle}
+                            customization={customization}
                           />
                         </div>
                       </div>
@@ -224,6 +225,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                         cover={doc.cover ?? undefined}
                         onSubmit={noop}
                         hideTitle={hideTitle}
+                        customization={customization}
                       />
                     </div>
 
@@ -295,6 +297,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
               onSubmit={noop}
               hideTitle={hideTitle}
               layout="editor"
+              customization={customization}
             />
 
             {branding && (

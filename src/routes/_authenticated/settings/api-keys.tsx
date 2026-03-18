@@ -93,8 +93,8 @@ const APIKeysPage = () => {
           queryKey: auth.apiKey.list.queryKey(),
         });
       },
-      onError: (error: any) => {
-        toast.error(error.message || "Failed to create API key");
+      onError: (error: unknown) => {
+        toast.error(error instanceof Error ? error.message : "Failed to create API key");
       },
     }),
   );
@@ -108,8 +108,8 @@ const APIKeysPage = () => {
         setIsDeleteDialogOpen(false);
         setApiKeyToDelete(null);
       },
-      onError: (error: any) => {
-        toast.error(error.message || "Failed to delete API key");
+      onError: (error: unknown) => {
+        toast.error(error instanceof Error ? error.message : "Failed to delete API key");
       },
     }),
   );
@@ -219,10 +219,13 @@ const APIKeysPage = () => {
                     <div className="text-[13px] text-foreground">Full access</div>
                   </TableCell>
                   <TableCell className="text-muted-foreground py-4 px-4">
-                    {(key as any).lastUsedAt
-                      ? formatDistanceToNow(new Date((key as any).lastUsedAt), {
-                          addSuffix: true,
-                        })
+                    {(key as unknown as { lastUsedAt?: string }).lastUsedAt
+                      ? formatDistanceToNow(
+                          new Date((key as unknown as { lastUsedAt: string }).lastUsedAt),
+                          {
+                            addSuffix: true,
+                          },
+                        )
                       : "--"}
                   </TableCell>
                   <TableCell className="text-muted-foreground py-4 px-4">

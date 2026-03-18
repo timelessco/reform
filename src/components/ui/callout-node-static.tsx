@@ -7,7 +7,7 @@ export const CalloutElementStatic = ({ children, className, ...props }: SlateEle
   <SlateElement
     className={cn("my-1 flex rounded-sm bg-muted p-4 pl-3", className)}
     style={{
-      backgroundColor: props.element.backgroundColor as any,
+      backgroundColor: props.element.backgroundColor as string | undefined,
     }}
     {...props}
   >
@@ -19,7 +19,7 @@ export const CalloutElementStatic = ({ children, className, ...props }: SlateEle
             '"Apple Color Emoji", "Segoe UI Emoji", NotoColorEmoji, "Noto Color Emoji", "Segoe UI Symbol", "Android Emoji", EmojiSymbols',
         }}
       >
-        <span data-plate-prevent-deserialization>{(props.element.icon as any) || "💡"}</span>
+        <span data-plate-prevent-deserialization>{(props.element.icon as string) || "💡"}</span>
       </div>
       <div className="w-full">{children}</div>
     </div>

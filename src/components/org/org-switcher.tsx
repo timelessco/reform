@@ -37,6 +37,7 @@ const getInitials = (name?: string | null) => {
     .slice(0, 2);
 };
 
+// eslint-disable-next-line eslint/no-unused-vars -- component preserved for future use
 const OrganizationSwitcher = () => {
   const { isMobile } = useSidebar();
   const router = useRouter();

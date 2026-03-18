@@ -215,27 +215,29 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
 
     // Update form draft with version content + customization
     // Note: We don't update publishedContentHash so the form shows "has changes"
-    await db
-      .update(forms)
-      .set({
-        content: version.content,
-        title: version.title,
-        customization: version.customization ?? {},
-        updatedAt: new Date(),
-      })
-      .where(eq(forms.id, data.formId));
+    return await db.transaction(async (tx) => {
+      await tx
+        .update(forms)
+        .set({
+          content: version.content,
+          title: version.title,
+          customization: version.customization ?? {},
+          updatedAt: new Date(),
+        })
+        .where(eq(forms.id, data.formId));
 
-    const txid = await getTxId();
+      const txid = await getTxId(tx);
 
-    return {
-      success: true,
-      txid,
-      version: {
-        content: version.content as object[],
-        settings: version.settings as Record<string, object>,
-        title: version.title,
-      },
-    };
+      return {
+        success: true,
+        txid,
+        version: {
+          content: version.content as object[],
+          settings: version.settings as Record<string, object>,
+          title: version.title,
+        },
+      };
+    });
   });
 
 /**
@@ -271,28 +273,30 @@ export const discardFormChanges = createServerFn({ method: "POST" })
     const contentHash = computeContentHash(version.content);
 
     // Update form draft with version content, customization, AND hash (so no "changes" indicator)
-    await db
-      .update(forms)
-      .set({
-        content: version.content,
-        title: version.title,
-        customization: version.customization ?? {},
-        publishedContentHash: contentHash,
-        updatedAt: new Date(),
-      })
-      .where(eq(forms.id, data.formId));
+    return await db.transaction(async (tx) => {
+      await tx
+        .update(forms)
+        .set({
+          content: version.content,
+          title: version.title,
+          customization: version.customization ?? {},
+          publishedContentHash: contentHash,
+          updatedAt: new Date(),
+        })
+        .where(eq(forms.id, data.formId));
 
-    const txid = await getTxId();
+      const txid = await getTxId(tx);
 
-    return {
-      success: true,
-      txid,
-      version: {
-        content: version.content as object[],
-        settings: version.settings as Record<string, object>,
-        title: version.title,
-      },
-    };
+      return {
+        success: true,
+        txid,
+        version: {
+          content: version.content as object[],
+          settings: version.settings as Record<string, object>,
+          title: version.title,
+        },
+      };
+    });
   });
 
 /**

@@ -26,13 +26,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { duplicateForm, updateDoc, updateFormStatus } from "@/db-collections/form.collections";
+import type { Form } from "@/db-collections/form.collections";
 import { useNavigate } from "@tanstack/react-router";
 import { CopyIcon, MoreHorizontalIcon, TagIcon, Trash2Icon } from "@/components/ui/icons";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 interface FormActionsMenuProps {
-  form: any;
+  form: Form | null;
   workspaceId: string;
 }
 

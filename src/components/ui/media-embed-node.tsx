@@ -89,7 +89,7 @@ export const MediaEmbedElement = withHOC(
                       )}
                       title="embed"
                       src={embed?.url}
-                      sandbox="allow-scripts allow-same-origin allow-popups"
+                      sandbox="allow-scripts allow-popups"
                       allowFullScreen
                     />
                   </div>

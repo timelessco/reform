@@ -63,6 +63,7 @@ export const AIMenu = () => {
     if (!anchor) return;
 
     const timer = window.setTimeout(() => {
+      // eslint-disable-next-line typescript-eslint/no-explicit-any
       const anchorDom = editor.api.toDOMNode(anchor[0] as any);
       if (!anchorDom) return;
       setAnchorElement(anchorDom);
@@ -74,8 +75,8 @@ export const AIMenu = () => {
   }, [streaming, api, editor]);
 
   const setOpen = React.useCallback(
-    (open: boolean) => {
-      if (open) {
+    (isOpen: boolean) => {
+      if (isOpen) {
         api.aiChat.show();
       } else {
         api.aiChat.hide();
@@ -84,8 +85,8 @@ export const AIMenu = () => {
     [api.aiChat],
   );
 
-  const show = (anchorElement: HTMLElement) => {
-    setAnchorElement(anchorElement);
+  const show = (anchor: HTMLElement) => {
+    setAnchorElement(anchor);
     setOpen(true);
   };
 
@@ -97,8 +98,8 @@ export const AIMenu = () => {
         if (domNode) show(domNode);
       }
     },
-    onOpenChange: (open) => {
-      if (!open) {
+    onOpenChange: (isOpen) => {
+      if (!isOpen) {
         setAnchorElement(null);
         setInput("");
       }
@@ -128,6 +129,7 @@ export const AIMenu = () => {
     api.aiChat.stop();
 
     // remove when you implement the route /api/ai/command
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
     (chat as any)._abortFakeStream();
   });
 
@@ -153,6 +155,7 @@ export const AIMenu = () => {
       const block = editor.api.block({ at: anchorNode[1] });
       const blockNode = block?.[0];
       if (!blockNode) return;
+      // eslint-disable-next-line typescript-eslint/no-explicit-any
       const anchorDom = editor.api.toDOMNode(blockNode as any);
       if (!anchorDom) return;
       setAnchorElement(anchorDom);
@@ -650,6 +653,7 @@ export const AILoadingBar = () => {
     api.aiChat.stop();
 
     // remove when you implement the route /api/ai/command
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
     (chat as any)._abortFakeStream();
   });
 

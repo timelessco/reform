@@ -27,6 +27,7 @@ type StepState = {
  * @param schemas - Array of Zod schemas for each step
  * @returns Object with stepper state and methods
  */
+// eslint-disable-next-line eslint/no-unused-vars -- hook preserved for future use
 const useFormStepper = (schemas: ZodObject[]) => {
   const stepCount = schemas.length;
   const [currentStep, setCurrentStep] = useState(1); // Start from 1

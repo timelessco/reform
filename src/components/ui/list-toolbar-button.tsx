@@ -24,7 +24,7 @@ export const BulletedListToolbarButton = () => {
   const [open, setOpen] = React.useState(false);
 
   const pressed = useEditorSelector(
-    (editor) => someList(editor, [ListStyleType.Disc, ListStyleType.Circle, ListStyleType.Square]),
+    (ed) => someList(ed, [ListStyleType.Disc, ListStyleType.Circle, ListStyleType.Square]),
     [],
   );
 
@@ -95,8 +95,8 @@ export const NumberedListToolbarButton = () => {
   const [open, setOpen] = React.useState(false);
 
   const pressed = useEditorSelector(
-    (editor) =>
-      someList(editor, [
+    (ed) =>
+      someList(ed, [
         ListStyleType.Decimal,
         ListStyleType.LowerAlpha,
         ListStyleType.UpperAlpha,

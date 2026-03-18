@@ -1,9 +1,11 @@
 import type { ErrorComponentProps } from "@tanstack/react-router";
+import { useRouter } from "@tanstack/react-router";
 import { RefreshCwIcon } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { useCallback } from "react";
 
-export const ErrorBoundary = ({ error, reset }: ErrorComponentProps) => {
+export const ErrorBoundary = ({ error }: ErrorComponentProps) => {
+  const router = useRouter();
   const isDev = import.meta.env.DEV;
 
   const createGithubIssue = useCallback(() => {
@@ -62,7 +64,7 @@ ${error.stack || "No stack trace available"}
           )}
         </div>
         <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-          <Button onClick={reset} prefix={<RefreshCwIcon />}>
+          <Button onClick={() => router.invalidate()} prefix={<RefreshCwIcon className="size-4" />}>
             Reset and Try Again
           </Button>
           <Button

@@ -5,7 +5,9 @@ import type * as React from "react";
 
 import { ToolbarButton } from "./toolbar";
 
+// eslint-disable-next-line typescript-eslint/no-explicit-any
 const redoDisabledSelector = (editor: any) => editor.history.redos.length === 0;
+// eslint-disable-next-line typescript-eslint/no-explicit-any
 const undoDisabledSelector = (editor: any) => editor.history.undos.length === 0;
 const preventDefault = (e: React.MouseEvent) => e.preventDefault();
 

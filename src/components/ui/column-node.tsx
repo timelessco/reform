@@ -130,7 +130,7 @@ const ColumnFloatingToolbar = ({ children }: React.PropsWithChildren) => {
   const element = useElement<TColumnElement>();
   const { props: buttonProps } = useRemoveNodeButton({ element });
   const selected = useSelected();
-  const isCollapsed = useEditorSelector((editor) => editor.api.isCollapsed(), []);
+  const isCollapsed = useEditorSelector((ed) => ed.api.isCollapsed(), []);
   const isFocusedLast = useFocusedLast();
 
   const open = isFocusedLast && !readOnly && selected && isCollapsed;

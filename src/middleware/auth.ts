@@ -1,6 +1,6 @@
 import { redirect } from "@tanstack/react-router";
 import { createMiddleware } from "@tanstack/react-start";
-import { getCookie, getRequestHeaders } from "@tanstack/react-start/server";
+import { getCookie, getRequestHeaders, getRequestUrl } from "@tanstack/react-start/server";
 import { auth } from "@/lib/auth";
 
 export const authMiddleware = createMiddleware().server(async ({ next }) => {
@@ -8,7 +8,12 @@ export const authMiddleware = createMiddleware().server(async ({ next }) => {
   const session = await auth.api.getSession({ headers });
 
   if (!session) {
-    throw redirect({ to: "/" });
+    const url = getRequestUrl();
+    const pathname = new URL(url).pathname;
+    throw redirect({
+      to: "/login",
+      search: { redirect: pathname },
+    });
   }
 
   if (!session.user.emailVerified) {

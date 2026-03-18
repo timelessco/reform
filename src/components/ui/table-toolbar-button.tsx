@@ -27,8 +27,8 @@ type TablePickerCell = {
 };
 
 const createInitialTableGrid = () =>
-  Array.from({ length: 8 }, (_, rowIndex) =>
-    Array.from({ length: 8 }, (_, columnIndex) => ({
+  Array.from({ length: 8 }, (_unused, rowIndex) =>
+    Array.from({ length: 8 }, (_item, columnIndex) => ({
       id: `table-picker-${rowIndex}-${columnIndex}`,
       active: false,
     })),

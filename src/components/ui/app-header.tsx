@@ -17,7 +17,7 @@ import {
   SettingsIcon,
 } from "@/components/ui/icons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toggleFavoriteLocal } from "@/db-collections/favorite.collection";
 import { updateFormStatus } from "@/db-collections/form.collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
@@ -39,10 +39,7 @@ interface AppHeaderProps {
 }
 
 export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
-  const { formId, workspaceId } = useParams({ strict: false }) as {
-    formId?: string;
-    workspaceId?: string;
-  };
+  const { formId, workspaceId } = useParams({ strict: false });
   const { state, toggleSidebar: toggleMainSidebar } = useSidebarSafe() || {
     state: "expanded",
     toggleSidebar: () => {},
@@ -211,7 +208,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
       navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
         params: { workspaceId, formId },
-        search: (prev: any) => ({ ...prev, force: true }),
+        search: (prev: Record<string, unknown>) => ({ ...prev, force: true }),
       });
     }
   };

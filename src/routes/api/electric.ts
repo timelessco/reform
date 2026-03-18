@@ -177,6 +177,8 @@ export const Route = createFileRoute("/api/electric")({
         if (sourceId && sourceSecret) {
           upstreamUrl.searchParams.set("source_id", sourceId);
           upstreamUrl.searchParams.set("source_secret", sourceSecret);
+        } else if (process.env.NODE_ENV === "production") {
+          return json({ error: "Electric source credentials not configured" }, 500);
         }
 
         // Forward only Electric protocol query parameters
@@ -225,13 +227,7 @@ export const Route = createFileRoute("/api/electric")({
             "electric-offset, electric-handle, electric-schema, electric-cursor",
           );
 
-          // Override cache control
-          responseHeaders.set(
-            "Cache-Control",
-            "no-store, no-cache, must-revalidate, proxy-revalidate",
-          );
-          responseHeaders.set("Pragma", "no-cache");
-          responseHeaders.set("Expires", "0");
+          // Preserve Electric's cache headers but add Vary for per-user isolation
           responseHeaders.set("Vary", "Cookie");
 
           return new Response(upstream.body, {

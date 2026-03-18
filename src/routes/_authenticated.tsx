@@ -47,6 +47,7 @@ import {
   Trash2Icon,
   Undo2Icon,
   UsersIcon,
+  XIcon,
 } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import Loader from "@/components/ui/loader";
@@ -343,7 +344,9 @@ const AppSidebar = () => {
   const { data: workspacesData } = useOrgWorkspaces(activeOrg?.id);
 
   const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
-  const pendingCount = (invitations ?? []).filter((inv: any) => inv.status === "pending").length;
+  const pendingCount = (invitations ?? []).filter(
+    (inv: { status: string }) => inv.status === "pending",
+  ).length;
 
   const { data: session } = useSession();
 
@@ -492,7 +495,7 @@ const AppSidebar = () => {
                     }
                   }}
                 >
-                  <PlusIcon className="mr-2 h-4 w-4" />
+                  <PlusIcon className="size-4" />
                   <span>New form</span>
                 </CommandItem>
                 <CommandItem
@@ -510,7 +513,7 @@ const AppSidebar = () => {
                     setIsPaletteOpen(false);
                   }}
                 >
-                  <PlusIcon className="mr-2 h-4 w-4" />
+                  <PlusIcon className="size-4" />
                   <span>New workspace</span>
                 </CommandItem>
               </CommandGroup>
@@ -522,7 +525,7 @@ const AppSidebar = () => {
                     setIsPaletteOpen(false);
                   }}
                 >
-                  <HomeIcon className="mr-2 h-4 w-4" />
+                  <HomeIcon className="size-4" />
                   <span>Go to home</span>
                 </CommandItem>
                 <CommandItem
@@ -531,7 +534,7 @@ const AppSidebar = () => {
                     setIsPaletteOpen(false);
                   }}
                 >
-                  <SettingsIcon className="mr-2 h-4 w-4" />
+                  <SettingsIcon className="size-4" />
                   <span>Go to settings</span>
                 </CommandItem>
                 <CommandItem
@@ -540,7 +543,7 @@ const AppSidebar = () => {
                     setIsPaletteOpen(false);
                   }}
                 >
-                  <Trash2Icon className="mr-2 h-4 w-4" />
+                  <Trash2Icon className="size-4" />
                   <span>Trash</span>
                 </CommandItem>
                 <CommandItem
@@ -549,7 +552,7 @@ const AppSidebar = () => {
                     setIsPaletteOpen(false);
                   }}
                 >
-                  <LogOutIcon className="mr-2 h-4 w-4" />
+                  <LogOutIcon className="size-4" />
                   <span>Sign out</span>
                 </CommandItem>
               </CommandGroup>
@@ -773,8 +776,8 @@ const SidebarInbox = () => {
   const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
 
   // Helper to refetch invitations on error (stale data)
-  const handleError = (error: any) => {
-    const message = error?.message || "Something went wrong";
+  const handleError = (error: unknown) => {
+    const message = error instanceof Error ? error.message : "Something went wrong";
     toast.error(message);
     // Refetch to clear stale invitations
     queryClient.invalidateQueries({
@@ -811,7 +814,9 @@ const SidebarInbox = () => {
   if (!isInboxOpen && !isExiting && !prevOpenRef.current) return null;
 
   // Only show pending invitations
-  const pendingInvitations = (invitations ?? []).filter((inv: any) => inv.status === "pending");
+  const pendingInvitations = (invitations ?? []).filter(
+    (inv: { status: string }) => inv.status === "pending",
+  );
 
   return (
     <div
@@ -824,34 +829,20 @@ const SidebarInbox = () => {
       onTransitionEnd={handleTransitionEnd}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 h-10 border-b border-foreground/5">
-        <div className="flex items-center gap-2">
-          <h2 className="text-[13px] font-bold text-foreground">Inbox</h2>
-          {pendingInvitations.length > 0 && (
-            <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">
-              {pendingInvitations.length}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-0.5">
+      <SidebarHeader className="pt-2 pb-3 pl-1 shrink-0 gap-2.25 space-y-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base text-foreground pl-2.5">Inbox</h2>
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="icon"
+            className="text-muted-foreground hover:text-foreground"
             onClick={closeInbox}
-            className="h-6 w-7 mr-1"
-            title="Collapse"
-            aria-label="Collapse inbox"
+            aria-label="Close"
           >
-            <ChevronsLeftIcon className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon-sm" className="h-6 w-6" aria-label="Filter">
-            <FilterIcon className="h-3.5 w-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon-sm" className="h-6 w-6" aria-label="More options">
-            <MoreHorizontalIcon className="h-3.5 w-3.5" />
+            <XIcon className="h-4 w-4" />
           </Button>
         </div>
-      </div>
+      </SidebarHeader>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-2 no-scrollbar">
@@ -883,7 +874,11 @@ const SidebarInbox = () => {
                           <p className="text-[12px] text-foreground">
                             You've been invited to join{" "}
                             <span className="font-bold">
-                              {(invitation as any).organization?.name ?? "an organization"}
+                              {(
+                                invitation as unknown as {
+                                  organization?: { name?: string };
+                                }
+                              ).organization?.name ?? "an organization"}
                             </span>
                           </p>
                           <p className="text-[11px] text-muted-foreground/50 mt-0.5">
@@ -931,14 +926,9 @@ const SidebarInbox = () => {
               </div>
             </>
           )}
-
-          {/* Older / Other notifications section (for future extensibility) */}
-          <p className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest mb-3 px-2">
-            {pendingInvitations.length > 0 ? "Other" : "Notifications"}
-          </p>
           <div className="space-y-1">
             <div className="flex items-center justify-center py-8 text-muted-foreground/40">
-              <p className="text-xs">No other notifications</p>
+              <p className="text-base">No other notifications</p>
             </div>
           </div>
         </div>

@@ -43,7 +43,7 @@ const findNextNonButtonPath = (editor: PlateEditor, currentPath: Path): Path | n
 
     // If we hit a form button, check its role
     if (node.type === "formButton") {
-      const buttonRole = (node as any).buttonRole || "submit";
+      const buttonRole = (node as Record<string, unknown>).buttonRole || "submit";
 
       // If it's a submit button, check if there's a thank you page after it
       if (buttonRole === "submit") {
@@ -51,7 +51,10 @@ const findNextNonButtonPath = (editor: PlateEditor, currentPath: Path): Path | n
         let hasThankYouPage = false;
         for (let j = i + 1; j < children.length; j++) {
           const nextNode = children[j];
-          if (nextNode.type === "pageBreak" && (nextNode as any).isThankYouPage) {
+          if (
+            nextNode.type === "pageBreak" &&
+            (nextNode as Record<string, unknown>).isThankYouPage
+          ) {
             hasThankYouPage = true;
             break;
           }
@@ -158,12 +161,17 @@ const findPrevNonButtonPath = (editor: PlateEditor, currentPath: Path): Path | n
 
 const handleFormBlockKeyDown = (editor: PlateEditor, event: React.KeyboardEvent): void => {
   // Prevent double-handling when multiple form plugins process same event
-  if ((event as any).__formBlockHandled) return;
+  if (
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
+    (event as any).__formBlockHandled
+  )
+    return;
 
   const block = editor.api.block();
   if (!block || !FORM_FIELD_TYPES.has(block[0].type)) return;
 
   // Mark as handled before any action
+  // eslint-disable-next-line typescript-eslint/no-explicit-any
   (event as any).__formBlockHandled = true;
 
   const [node, path] = block;
@@ -366,6 +374,7 @@ export const FormButtonPlugin = createPlatePlugin({
     onChange: ({ editor }) => {
       // Redirect selection away from form buttons when it lands on them
       // Use a flag to prevent re-entrancy
+      // eslint-disable-next-line typescript-eslint/no-explicit-any
       if ((editor as any).__redirectingSelection) return;
 
       const { selection } = editor;
@@ -390,10 +399,12 @@ export const FormButtonPlugin = createPlatePlugin({
             const prevPath = [i];
             const edges = editor.api.edges(prevPath);
             if (edges?.[1]) {
+              // eslint-disable-next-line typescript-eslint/no-explicit-any
               (editor as any).__redirectingSelection = true;
               try {
                 editor.tf.select(edges[1]);
               } finally {
+                // eslint-disable-next-line typescript-eslint/no-explicit-any
                 (editor as any).__redirectingSelection = false;
               }
               return;
@@ -403,11 +414,14 @@ export const FormButtonPlugin = createPlatePlugin({
       }
     },
   },
+  // eslint-disable-next-line typescript-eslint/no-explicit-any
   extendEditor: ({ editor }: any) => {
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
     const editorRef = editor as any;
     const { deleteBackward, deleteForward, deleteFragment } = editorRef;
 
     // Prevent backspace from deleting any form button + handle pageBreak cleanup
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
     editorRef.deleteBackward = (unit: any) => {
       const block = editorRef.api.block();
       if (block) {
@@ -417,6 +431,7 @@ export const FormButtonPlugin = createPlatePlugin({
           selection &&
           editorRef.api.isCollapsed(selection) &&
           (() => {
+            // eslint-disable-next-line typescript-eslint/no-explicit-any
             const edges = editorRef.api.edges(path) as any;
             const start = edges?.[0];
             return (
@@ -444,6 +459,7 @@ export const FormButtonPlugin = createPlatePlugin({
       deleteBackward(unit);
     };
 
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
     editorRef.deleteForward = (unit: any) => {
       const block = editorRef.api.block();
       if (block) {
@@ -454,6 +470,7 @@ export const FormButtonPlugin = createPlatePlugin({
           if (nextNode && isFormButton(nextNode)) {
             const selection = editorRef.selection;
             if (selection && editorRef.api.isCollapsed(selection)) {
+              // eslint-disable-next-line typescript-eslint/no-explicit-any
               const edges = editorRef.api.edges(path) as any;
               const end = edges?.[1];
               if (
@@ -470,6 +487,7 @@ export const FormButtonPlugin = createPlatePlugin({
       deleteForward(unit);
     };
 
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
     editorRef.deleteFragment = (direction: any) => {
       const { selection } = editorRef;
       if (!selection) {
@@ -487,6 +505,7 @@ export const FormButtonPlugin = createPlatePlugin({
     };
 
     const originalRemoveNodes = editorRef.tf.removeNodes.bind(editorRef.tf);
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
     editorRef.tf.removeNodes = (options: any = {}) => {
       const selection = options.at || editorRef.selection;
       if (!selection) return originalRemoveNodes(options);
@@ -501,9 +520,11 @@ export const FormButtonPlugin = createPlatePlugin({
     };
 
     const originalInsertText = editorRef.tf.insertText.bind(editorRef.tf);
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
     editorRef.tf.insertText = (text: string, options?: any) => originalInsertText(text, options);
 
     const originalSelect = editorRef.tf.select.bind(editorRef.tf);
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
     editorRef.tf.select = (target: any) => {
       // Check if selection target is on a form button and redirect
       if (target && typeof target === "object") {
@@ -548,6 +569,7 @@ export const FormButtonPlugin = createPlatePlugin({
     };
 
     const originalInsertNodes = editorRef.tf.insertNodes.bind(editorRef.tf);
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
     editorRef.tf.insertNodes = (nodes: any, options: any = {}) => {
       const children = editorRef.children as TElement[];
       let insertPath = options.at;
@@ -565,7 +587,9 @@ export const FormButtonPlugin = createPlatePlugin({
           const nodeArray = Array.isArray(nodes) ? nodes : [nodes];
 
           // Only allow PageBreaks after a button
-          const allPageBreaks = nodeArray.every((n: any) => n.type === "pageBreak");
+          const allPageBreaks = nodeArray.every(
+            (n: Record<string, unknown>) => n.type === "pageBreak",
+          );
 
           if (!allPageBreaks) {
             // Redirect insertion to before the button
@@ -581,6 +605,7 @@ export const FormButtonPlugin = createPlatePlugin({
     };
 
     const originalMoveNodes = editorRef.moveNodes.bind(editorRef);
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
     editorRef.moveNodes = (options: any) => {
       // Similar logic: allow moving PageBreaks to be after buttons.
       // Prevent moving other things to be after buttons.
@@ -612,6 +637,7 @@ export const FormButtonPlugin = createPlatePlugin({
     };
     // Normalize to enforce multi-page button logic
     const originalNormalizeNode = editorRef.normalizeNode.bind(editorRef);
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
     editorRef.normalizeNode = (entry: any) => {
       const [_node, path] = entry;
 
@@ -637,7 +663,8 @@ export const FormButtonPlugin = createPlatePlugin({
             const pageEndIndex = i; // exclusive
             const isFirstPage = pageStartIndex === 0;
             // isLastPage = true if at document end OR next section is thank you page
-            const isLastPage = isEnd || (isPageBreak && (node as any).isThankYouPage === true);
+            const isLastPage =
+              isEnd || (isPageBreak && (node as Record<string, unknown>).isThankYouPage === true);
 
             // Determine if this is a Thank You section
             let isThankYouSection = false;
@@ -645,7 +672,10 @@ export const FormButtonPlugin = createPlatePlugin({
             if (!isFirstPage) {
               const prevBreak = getChildren()[pageStartIndex - 1];
               precedingBreakIndex = pageStartIndex - 1;
-              if (prevBreak?.type === "pageBreak" && (prevBreak as any).isThankYouPage) {
+              if (
+                prevBreak?.type === "pageBreak" &&
+                (prevBreak as Record<string, unknown>).isThankYouPage
+              ) {
                 isThankYouSection = true;
               }
             }
@@ -675,7 +705,7 @@ export const FormButtonPlugin = createPlatePlugin({
               }
 
               if (n.type === "formButton") {
-                const role = (n as any).buttonRole || "submit";
+                const role = (n as Record<string, unknown>).buttonRole || "submit";
                 if (role === "previous") {
                   previousButtonIndices.push(j);
                 } else {
@@ -705,7 +735,7 @@ export const FormButtonPlugin = createPlatePlugin({
 
             // Update Preceding Page Break with hasFormFields state
             if (precedingBreakIndex !== -1) {
-              const prevBreak = getChildren()[precedingBreakIndex] as any;
+              const prevBreak = getChildren()[precedingBreakIndex] as Record<string, unknown>;
               const currentHasData = prevBreak.hasFormFields === true;
               if (currentHasData !== hasFields) {
                 editorRef.tf.setNodes({ hasFormFields: hasFields }, { at: [precedingBreakIndex] });
@@ -809,7 +839,7 @@ export const FormButtonPlugin = createPlatePlugin({
             // "Smart Update": Only update if role is wrong.
             // Access button directly from editor to ensure fresh state
             const actionBtn = getChildren()[actionButtonIndex];
-            const currentRole = (actionBtn as any).buttonRole || "submit";
+            const currentRole = (actionBtn as Record<string, unknown>).buttonRole || "submit";
             const expectedRole = isLastPage ? "submit" : "next";
 
             if (currentRole !== expectedRole) {
@@ -817,7 +847,9 @@ export const FormButtonPlugin = createPlatePlugin({
               const oldDefault = currentRole === "submit" ? "Submit" : "Next";
               // Re-read button - check label property first, fallback to children for backwards compat
               const btn = getChildren()[actionButtonIndex];
-              const currentLabel = (btn as any).label ?? (btn?.children?.[0] as any)?.text;
+              const currentLabel =
+                (btn as Record<string, unknown>).label ??
+                (btn?.children?.[0] as Record<string, unknown>)?.text;
               const newLabel =
                 currentLabel === oldDefault
                   ? expectedRole === "submit"
@@ -907,7 +939,11 @@ export const PageBreakPlugin = createPlatePlugin({
  */
 const handleGlobalKeyDown = (editor: PlateEditor, event: React.KeyboardEvent): void => {
   // Don't interfere if already handled by form block handlers
-  if ((event as any).__formBlockHandled) return;
+  if (
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
+    (event as any).__formBlockHandled
+  )
+    return;
 
   const block = editor.api.block();
   if (!block) return;
@@ -918,6 +954,7 @@ const handleGlobalKeyDown = (editor: PlateEditor, event: React.KeyboardEvent): v
     if (tryDeletePageBreakWithEmptyBlock(editor, path)) {
       event.preventDefault();
       event.stopPropagation();
+      // eslint-disable-next-line typescript-eslint/no-explicit-any
       (event as any).__formBlockHandled = true;
       return;
     }
@@ -930,6 +967,7 @@ const handleGlobalKeyDown = (editor: PlateEditor, event: React.KeyboardEvent): v
       event.preventDefault();
       event.stopPropagation();
       event.nativeEvent.stopImmediatePropagation();
+      // eslint-disable-next-line typescript-eslint/no-explicit-any
       (event as any).__formBlockHandled = true;
       moveToPath(editor, nextPath);
     } else {
@@ -937,6 +975,7 @@ const handleGlobalKeyDown = (editor: PlateEditor, event: React.KeyboardEvent): v
       event.preventDefault();
       event.stopPropagation();
       event.nativeEvent.stopImmediatePropagation();
+      // eslint-disable-next-line typescript-eslint/no-explicit-any
       (event as any).__formBlockHandled = true;
 
       // Find insert position (before first formButton or at end)
@@ -968,6 +1007,7 @@ const handleGlobalKeyDown = (editor: PlateEditor, event: React.KeyboardEvent): v
         event.preventDefault();
         event.stopPropagation();
         event.nativeEvent.stopImmediatePropagation();
+        // eslint-disable-next-line typescript-eslint/no-explicit-any
         (event as any).__formBlockHandled = true;
         moveToPath(editor, prevPath);
       }
@@ -984,6 +1024,7 @@ const handleGlobalKeyDown = (editor: PlateEditor, event: React.KeyboardEvent): v
       if (defaultNextNode && (defaultNextNode[0] as TElement).type === "formButton") {
         event.preventDefault();
         event.stopPropagation();
+        // eslint-disable-next-line typescript-eslint/no-explicit-any
         (event as any).__formBlockHandled = true;
         moveToPath(editor, nextPath);
       }
@@ -991,6 +1032,7 @@ const handleGlobalKeyDown = (editor: PlateEditor, event: React.KeyboardEvent): v
       // Block ArrowDown from entering trailing buttons - keep cursor where it is
       event.preventDefault();
       event.stopPropagation();
+      // eslint-disable-next-line typescript-eslint/no-explicit-any
       (event as any).__formBlockHandled = true;
       // Explicitly maintain current selection to prevent cursor from vanishing
       const currentSelection = editor.selection;
@@ -1010,6 +1052,7 @@ const handleGlobalKeyDown = (editor: PlateEditor, event: React.KeyboardEvent): v
       if (defaultPrevNode && (defaultPrevNode[0] as TElement).type === "formButton") {
         event.preventDefault();
         event.stopPropagation();
+        // eslint-disable-next-line typescript-eslint/no-explicit-any
         (event as any).__formBlockHandled = true;
         moveToPath(editor, prevPath);
       }

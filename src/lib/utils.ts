@@ -34,12 +34,12 @@ export const isValidUrl = (str: string): boolean => {
 };
 
 export const logger = createIsomorphicFn()
-  .client((...args: any[]) => {
+  .client((...args: unknown[]) => {
     if (!import.meta.env.PROD) {
       console.log("[Client Log] :", ...args);
     }
   })
-  .server((...args: any[]) => {
+  .server((...args: unknown[]) => {
     console.log("[Server Log] :", ...args);
   });
 

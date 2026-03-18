@@ -29,9 +29,9 @@ export const FontColorToolbarButton = ({
 } & React.ComponentProps<typeof DropdownMenu>) => {
   const editor = useEditorRef();
 
-  const selectionDefined = useEditorSelector((editor) => !!editor.selection, []);
+  const selectionDefined = useEditorSelector((ed) => !!ed.selection, []);
 
-  const color = useEditorSelector((editor) => editor.api.mark(nodeType) as string, [nodeType]);
+  const color = useEditorSelector((ed) => ed.api.mark(nodeType) as string, [nodeType]);
 
   const [selectedColor, setSelectedColor] = React.useState<string>();
   const [open, setOpen] = React.useState(false);
@@ -307,7 +307,7 @@ const ColorDropdownMenuItem = ({
         className,
       )}
       style={{ backgroundColor: value }}
-      onSelect={(e: any) => {
+      onSelect={(e: Event) => {
         e.preventDefault();
         updateColor(value);
       }}

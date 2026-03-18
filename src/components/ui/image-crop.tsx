@@ -20,7 +20,7 @@ import type {
   RefObject,
   SyntheticEvent,
 } from "react";
-import ReactCrop, { centerCrop, makeAspectCrop } from "react-image-crop";
+import { ReactCrop, centerCrop, makeAspectCrop } from "react-image-crop";
 import type { PercentCrop, PixelCrop, ReactCropProps } from "react-image-crop";
 
 import "react-image-crop/dist/ReactCrop.css";
@@ -172,7 +172,7 @@ export const ImageCrop = ({
     [onComplete],
   );
 
-  const applyCrop = async () => {
+  const applyCrop = useCallback(async () => {
     if (!(imgRef.current && completedCrop)) {
       return;
     }
@@ -180,14 +180,14 @@ export const ImageCrop = ({
     const croppedImage = await getCroppedPngImage(imgRef.current, 1, completedCrop, maxImageSize);
 
     onCrop?.(croppedImage);
-  };
+  }, [completedCrop, maxImageSize, onCrop]);
 
-  const resetCrop = () => {
+  const resetCrop = useCallback(() => {
     if (initialCrop) {
       setCrop(initialCrop);
       setCompletedCrop(null);
     }
-  };
+  }, [initialCrop]);
 
   const contextValue = useMemo<ImageCropContextType>(
     () => ({
@@ -267,7 +267,7 @@ export const ImageCropApply = ({ render, children, onClick, ...props }: ImageCro
   };
 
   if (render) {
-    return cloneElement(render as ReactElement<any>, {
+    return cloneElement(render as ReactElement<Record<string, unknown>>, {
       onClick: handleClick,
       children,
       ...props,
@@ -293,7 +293,7 @@ export const ImageCropReset = ({ render, children, onClick, ...props }: ImageCro
   };
 
   if (render) {
-    return cloneElement(render as ReactElement<any>, {
+    return cloneElement(render as ReactElement<Record<string, unknown>>, {
       onClick: handleClick,
       children,
       ...props,

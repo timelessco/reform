@@ -117,6 +117,7 @@ export const InlineEquationElement = (props: PlateElementProps<TEquationElement>
     >
       <Popover open={open} onOpenChange={setOpen} modal={false}>
         <PopoverTrigger
+          nativeButton={false}
           render={
             <div
               className={cn(

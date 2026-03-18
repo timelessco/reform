@@ -37,6 +37,7 @@ const FONT_SIZES = [
   "96",
 ] as const;
 
+// eslint-disable-next-line typescript-eslint/no-explicit-any
 const cursorFontSizeSelector = (editor: any) => {
   const fontSize = editor.api.marks()?.[KEYS.fontSize];
 
@@ -129,6 +130,7 @@ export const FontSizeToolbarButton = () => {
 
       <Popover open={isFocused} modal={false}>
         <PopoverTrigger
+          nativeButton={false}
           render={
             <input
               className={cn(
