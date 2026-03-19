@@ -19,7 +19,7 @@ export const SelectGroup = ({ className, ...props }: SelectPrimitive.Group.Props
 export const SelectValue = ({ className, ...props }: SelectPrimitive.Value.Props) => (
   <SelectPrimitive.Value
     data-slot="select-value"
-    className={cn("flex flex-1 text-start", className)}
+    className={cn("flex flex-1 text-start font-medium font-sans", className)}
     {...props}
   />
 );
@@ -46,7 +46,7 @@ export const SelectTrigger = ({
       render={
         <ChevronDownIcon
           data-slot="accordion-trigger-icon"
-          className="size-2.5 shrink-0 text-muted-foreground transition-transform duration-200 group-aria-expanded/accordion-trigger:rotate-0 -rotate-90"
+          className="size-3 shrink-0 text-muted-foreground transition-transform duration-200 group-aria-expanded/accordion-trigger:rotate-0"
         />
       }
     />

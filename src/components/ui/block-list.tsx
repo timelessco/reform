@@ -16,7 +16,10 @@ const TodoMarker = (props: PlateElementProps) => {
   return (
     <div contentEditable={false}>
       <Checkbox
-        className={cn("-left-6 absolute top-1", readOnly && "pointer-events-none")}
+        className={cn(
+          "-left-6 absolute top-1/2 -translate-y-1/2",
+          readOnly && "pointer-events-none",
+        )}
         {...checkboxProps}
       />
     </div>

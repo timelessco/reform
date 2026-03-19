@@ -29,6 +29,7 @@ export const favoriteCollection = createCollection(
     },
     getKey: (item) => item.id,
     startSync: false, // Sync starts in _authenticated.tsx loader after auth is confirmed
+    syncMode: "progressive",
     onInsert: async ({ transaction }) => {
       const txids = await Promise.all(
         transaction.mutations.map(async (m) => {

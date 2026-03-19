@@ -577,7 +577,7 @@ export const AccountSettingsContent = () => {
               variant="secondary"
               size="sm"
               onClick={emailChange.toggle}
-              className="h-[30px] rounded-lg bg-gray-50 px-3 text-sm text-gray-800 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] hover:bg-gray-200"
+              className="h-[30px] rounded-lg bg-gray-50 px-3 font-medium font-sans text-sm text-gray-800 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] hover:bg-gray-200"
             >
               Change email
             </Button>
@@ -623,7 +623,9 @@ export const AccountSettingsContent = () => {
                 <TeleVisionIcon className="size-[22px] text-muted-foreground" />
               </div>
               <div className="flex flex-col justify-center">
-                <p className="text-base font-medium text-foreground">Choose light/dark mode</p>
+                <p className="text-base font-medium text-foreground font-sans">
+                  Choose light/dark mode
+                </p>
               </div>
             </div>
             <ThemeSelect />

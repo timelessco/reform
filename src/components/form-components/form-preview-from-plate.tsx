@@ -526,7 +526,7 @@ const FormPreviewContent = ({
   const currentStepSegments = steps[currentStep] || [];
 
   return (
-    <div className="w-full py-3">
+    <div className="w-full">
       {/* Header Section */}
       <PreviewFormHeader
         title={title}

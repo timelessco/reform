@@ -37,6 +37,6 @@ export const submissionCollection = createCollection(
     },
     getKey: (item) => item.id,
     startSync: false, // Sync starts in _authenticated.tsx loader after auth is confirmed
-    syncMode: "eager",
+    syncMode: "progressive",
   }),
 );

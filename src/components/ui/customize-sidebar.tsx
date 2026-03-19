@@ -236,7 +236,7 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
     <Sidebar
       side="right"
       collapsible="none"
-      className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out"
+      className="w-full h-full border-none animate-in slide-in-from-right-[40%] duration-200 ease-out"
     >
       {/* Header */}
       <SidebarHeader className="pt-2 pb-3 pl-1 shrink-0 gap-2.25 space-y-2">
@@ -341,26 +341,6 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
               </ConfigRow>
             </ConfigCard>
           </SidebarSection>
-
-          {/* Advanced Banner */}
-          <div className="shrink-0 overflow-hidden rounded-xl bg-free-plan-card-bg p-3 shadow-sm border border-border/40">
-            <div className="flex items-center gap-2 mb-2 justify-between">
-              <span className="text-[12px] font-[650] text-muted-foreground uppercase tracking-wider">
-                Advanced
-              </span>
-              <ProBadge />
-            </div>
-            <p className="text-[12px] text-muted-foreground mb-3">
-              Preview advanced customization. {APP_NAME} Pro is required to apply it to the
-              published form.
-            </p>
-            <Button
-              variant="outline"
-              className="w-full h-7 text-[13px] text-sidebar-foreground bg-background border border-border hover:bg-muted rounded-lg shadow-[0px_1px_2px_0px_rgba(0,0,0,0.1)]"
-            >
-              Upgrade to Pro
-            </Button>
-          </div>
 
           {/* Layout */}
           <SidebarSection label="Layout" action={<ProBadge />}>

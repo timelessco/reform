@@ -16,7 +16,7 @@ export const FormSettingsSidebar = ({ formId, isLocal }: FormSettingsSidebarProp
     <Sidebar
       side="right"
       collapsible="none"
-      className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out"
+      className="w-full h-full border-none animate-in slide-in-from-right-[40%] duration-200 ease-out"
     >
       <SidebarHeader className="pt-2 pb-3 pl-1 shrink-0 gap-2.25 space-y-2">
         <div className="flex items-center justify-between">

@@ -738,3 +738,10 @@
 .bf-themed [data-bf-field-list] > * + * {
   margin-top: var(--bf-spacing);
 }
+
+/* View Transition: preview mode tab switching */
+::view-transition-old(preview-content),
+::view-transition-new(preview-content) {
+  animation-duration: 200ms;
+  animation-timing-function: ease-out;
+}

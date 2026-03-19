@@ -89,7 +89,7 @@ export const formCollection = createCollection(
     },
     getKey: (item) => item.id,
     startSync: false, // Sync starts in _authenticated.tsx loader after auth is confirmed
-    syncMode: "eager",
+    syncMode: "progressive",
     onInsert: async ({ transaction }) => {
       const txids = await Promise.all(
         transaction.mutations.map(async (m) => {

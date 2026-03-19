@@ -2,6 +2,7 @@ import { useForm as useTanstackForm } from "@tanstack/react-form";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { RocketIcon, XIcon } from "@/components/ui/icons";
 import { useCallback, useState } from "react";
+import { flushSync } from "react-dom";
 import { toast } from "sonner";
 import { CopyButton } from "@/components/copy-button/copy-button";
 import { Button } from "@/components/ui/button";
@@ -69,7 +70,7 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
     <Sidebar
       side="right"
       collapsible="none"
-      className="w-full h-full border-none animate-in slide-in-from-right duration-300 ease-in-out"
+      className="w-full h-full border-none animate-in slide-in-from-right-[40%] duration-200 ease-out"
     >
       {/* Header */}
       <SidebarHeader className="pt-2 pb-3 pl-1 shrink-0 gap-2.25 space-y-2">
@@ -93,7 +94,26 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
               <Tabs
                 value={field.state.value}
                 defaultValue={"fullpage"}
-                onValueChange={(v) => field.handleChange(v as typeof field.state.value)}
+                onValueChange={(v) => {
+                  const update = () => {
+                    flushSync(() => {
+                      field.handleChange(v as typeof field.state.value);
+                      navigate({
+                        search: ((prev: Record<string, unknown>) => ({
+                          ...prev,
+                          embedType: v,
+                          // eslint-disable-next-line typescript-eslint/no-explicit-any
+                        })) as any,
+                        replace: true,
+                      });
+                    });
+                  };
+                  if (document.startViewTransition) {
+                    document.startViewTransition(update);
+                  } else {
+                    update();
+                  }
+                }}
                 className="pl-1"
               >
                 <TabsList className="w-full">
@@ -137,7 +157,6 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
               {(values) => {
                 const embedType = values.embedType;
                 const options = formFieldsToEmbedOptions(values);
-                console.log(options, "options");
                 return (
                   <div className="space-y-3">
                     {/* Preview mockup */}
@@ -164,7 +183,7 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
                     <Button
                       onClick={handleOpenCodeDialog}
                       variant="default"
-                      className="w-full h-9 mt-0.5 rounded-2xl font-semibold text-xs hover:bg-foreground/90"
+                      className="w-full text-base"
                     >
                       Get Code
                     </Button>

@@ -26,7 +26,7 @@ export const Tabs = ({
 /* ─────────────────────────── TabsList ──────────────────────────── */
 
 const tabsListVariants = cva(
-  "relative group/tabs-list text-muted-foreground inline-flex w-fit items-center justify-center group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col",
+  "relative group/tabs-list text-muted-foreground inline-flex w-fit items-center justify-center overflow-clip group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col",
   {
     variants: {
       variant: {

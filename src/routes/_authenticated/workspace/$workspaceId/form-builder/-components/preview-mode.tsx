@@ -70,7 +70,10 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
         "w-full h-full flex flex-col transition-colors duration-300 bg-background text-foreground",
         embedType === "fullpage" ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden",
       )}
-      style={hasCustomization ? themeVars : undefined}
+      style={{
+        ...(hasCustomization ? themeVars : undefined),
+        viewTransitionName: "preview-content",
+      }}
     >
       {/* Standard & Popup — mock website background */}
       {embedType !== "fullpage" && (

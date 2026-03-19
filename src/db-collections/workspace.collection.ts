@@ -30,6 +30,7 @@ export const workspaceCollection = createCollection(
       },
     },
     getKey: (item) => item.id,
+    syncMode: "progressive",
     startSync: false, // Sync starts in _authenticated.tsx loader after auth is confirmed
     onInsert: async ({ transaction }) => {
       const txids = await Promise.all(

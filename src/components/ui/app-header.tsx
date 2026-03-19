@@ -16,7 +16,14 @@ import {
   RotateCcwIcon,
   SettingsIcon,
 } from "@/components/ui/icons";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toggleFavoriteLocal } from "@/db-collections/favorite.collection";
 import { updateFormStatus } from "@/db-collections/form.collections";
@@ -469,11 +476,11 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
               >
                 <SettingsIcon fill="transparent" />
               </Button>
-              <Popover
+              <DropdownMenu
                 open={activeMenu === "local"}
                 onOpenChange={(open) => setActiveMenu(open ? "local" : null)}
               >
-                <PopoverTrigger
+                <DropdownMenuTrigger
                   render={
                     <Button
                       variant="ghost"
@@ -484,46 +491,23 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                   }
                 >
                   <MoreHorizontalIcon className="h-[18px] w-[18px]" strokeWidth={1.5} />
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-48" sideOffset={4}>
-                  <div className="flex flex-col">
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setActiveMenu(null);
-                        setTimeout(() => toggleEditorSidebar("customize"), 150);
-                      }}
-                      className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-case transition-colors hover:bg-accent hover:text-accent-foreground"
-                    >
-                      <span className="flex-1 text-left">Customization</span>
-                      <span className="text-xs text-muted-foreground ml-auto pl-3">
-                        {formatForDisplay(HOTKEYS.TOGGLE_CUSTOMIZE_SIDEBAR)}
-                      </span>
-                    </Button>
-                    <div className="my-1 h-px bg-border" />
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setActiveMenu(null);
-                        setTimeout(() => navigate({ to: "/login" }), 150);
-                      }}
-                      className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-case transition-colors hover:bg-accent hover:text-accent-foreground"
-                    >
-                      <span className="flex-1 text-left">Sign in</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setActiveMenu(null);
-                        setTimeout(() => navigate({ to: "/signup" }), 150);
-                      }}
-                      className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-case transition-colors hover:bg-accent hover:text-accent-foreground"
-                    >
-                      <span className="flex-1 text-left">Sign up</span>
-                    </Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48" sideOffset={4}>
+                  <DropdownMenuItem onClick={() => toggleEditorSidebar("customize")}>
+                    <span className="flex-1 text-left">Customization</span>
+                    <DropdownMenuShortcut>
+                      {formatForDisplay(HOTKEYS.TOGGLE_CUSTOMIZE_SIDEBAR)}
+                    </DropdownMenuShortcut>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate({ to: "/login" })}>
+                    <span className="flex-1 text-left">Sign in</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate({ to: "/signup" })}>
+                    <span className="flex-1 text-left">Sign up</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
                 size="sm"
                 className="pl-2.5 pr-2 py-1.5 ml-1 text-[14px] transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
@@ -614,46 +598,33 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                 </Button>
 
                 {/* Three dots menu - popover button list matching workspace/sidebar style */}
-                <Popover
+                <DropdownMenu
                   open={activeMenu === "main"}
                   onOpenChange={(open) => setActiveMenu(open ? "main" : null)}
                 >
-                  <PopoverTrigger
+                  <DropdownMenuTrigger
                     render={
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="p-[5px]  mr-1 rounded-lg overflow-hidden hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
+                        className="p-[5px] mr-1 rounded-lg overflow-hidden hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
                         aria-label="More options"
                       />
                     }
                   >
                     <MoreHorizontalIcon />
-                  </PopoverTrigger>
-                  <PopoverContent align="end" className="w-48" sideOffset={4}>
-                    <div className="flex flex-col">
-                      {menuItems.map((item) => (
-                        <Button
-                          key={item.key}
-                          variant="ghost"
-                          onClick={() => {
-                            setActiveMenu(null);
-                            // Defer action so popover fully closes before any layout shift
-                            setTimeout(() => item.onClick(), 150);
-                          }}
-                          className="h-[26px] px-2 py-[7px] rounded-lg inline-flex justify-start items-center gap-2 overflow-hidden text-foreground text-[13px] font-case transition-colors hover:bg-accent hover:text-accent-foreground"
-                        >
-                          <span className="flex-1 text-left">{item.label}</span>
-                          {item.shortcut && (
-                            <span className="text-xs text-muted-foreground ml-auto pl-3">
-                              {item.shortcut}
-                            </span>
-                          )}
-                        </Button>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48" sideOffset={4}>
+                    {menuItems.map((item) => (
+                      <DropdownMenuItem key={item.key} onClick={() => item.onClick()}>
+                        <span className="flex-1 text-left">{item.label}</span>
+                        {item.shortcut && (
+                          <DropdownMenuShortcut>{item.shortcut}</DropdownMenuShortcut>
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
               {isEditRoute ? (

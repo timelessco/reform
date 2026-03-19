@@ -4,7 +4,6 @@ import {
   BlockSelectionPlugin,
 } from "@platejs/selection/react";
 import {
-  ChevronRightIcon,
   CopyIcon,
   EyeOffIcon,
   GripVerticalIcon,
@@ -17,16 +16,24 @@ import { useEditorPlugin, useEditorSelector, useHotkeys, usePluginOption } from 
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { useEditorTheme } from "@/contexts/editor-theme-context";
 import { cn } from "@/lib/utils";
 
 type BlockFieldType = "formInput" | "formButton" | "static" | "unknown";
 
-// Get field type category for the menu
 // Get field type category for the menu
 const getFieldType = (nodeType: string | undefined): BlockFieldType => {
   if (!nodeType) return "unknown";
@@ -36,7 +43,6 @@ const getFieldType = (nodeType: string | undefined): BlockFieldType => {
   return "unknown";
 };
 
-// Get label text from node
 // Get label text from node
 const extractLabelText = (node: { children?: Array<{ text?: string }> }): string => {
   if (!node.children) return "Untitled";
@@ -60,13 +66,13 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
 
   const [isEditingName, setIsEditingName] = React.useState(false);
   const [fieldName, setFieldName] = React.useState("");
-  const [showTurnInto, setShowTurnInto] = React.useState(false);
   const [buttonText, setButtonText] = React.useState("");
+  const [turnIntoOpen, setTurnIntoOpen] = React.useState(false);
   // Track previous open state to detect open transition
   const wasOpenRef = React.useRef(false);
   const blockMenuTriggerRef = React.useRef<HTMLDivElement | null>(null);
+  const turnIntoCloseTimer = React.useRef<ReturnType<typeof setTimeout>>();
 
-  // Get the selected node info
   // Get the selected node info reactive to editor state changes
   const selectedNodes = useEditorSelector(
     (ed) => {
@@ -157,7 +163,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
           : "Untitled";
       setFieldName(label);
       setIsEditingName(false);
-      setShowTurnInto(false);
+      setTurnIntoOpen(false);
       if (nodeType === "formButton") {
         setButtonText((firstNode?.buttonText as string) || "Submit");
       }
@@ -283,7 +289,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
       editor
         .getApi(BlockSelectionPlugin)
         .blockSelection.getNodes()
-        .forEach(([node, path]) => {
+        .forEach(([node, path]: [Record<string, unknown>, number[]]) => {
           if (node[KEYS.listType]) {
             editor.tf.unsetNodes([KEYS.listType, "indent"], {
               at: path,
@@ -356,14 +362,19 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   const currentMaxLength = inputNode?.maxLength;
   const currentDefaultValue = inputNode?.defaultValue;
 
-  const handlePopoverOpenChange = React.useCallback(
-    (open: boolean) => {
-      if (!open) api.blockMenu.hide();
+  const handleOpenChange = React.useCallback(
+    (open: boolean, eventDetails: { reason?: string }) => {
+      if (!open) {
+        const { reason } = eventDetails;
+        // Only close on deliberate dismissals, not focus-related events
+        // that fire during submenu interactions
+        if (reason === "outsidePress" || reason === "escapeKey" || reason === "itemPress") {
+          api.blockMenu.hide();
+        }
+      }
     },
     [api.blockMenu],
   );
-
-  const handleBackClick = React.useCallback(() => setShowTurnInto(false), []);
 
   const handleTurnIntoParagraph = React.useCallback(() => handleTurnInto(KEYS.p), [handleTurnInto]);
   const handleTurnIntoH1 = React.useCallback(() => handleTurnInto(KEYS.h1), [handleTurnInto]);
@@ -381,6 +392,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
 
   const handleFieldNameKeyDown = React.useCallback(
     (e: React.KeyboardEvent) => {
+      e.stopPropagation();
       if (e.key === "Enter") handleUpdateFieldName();
       if (e.key === "Escape") setIsEditingName(false);
     },
@@ -393,6 +405,10 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   );
 
   const handleStopPropagation = React.useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+  }, []);
+
+  const handleInputKeyDown = React.useCallback((e: React.KeyboardEvent) => {
     e.stopPropagation();
   }, []);
 
@@ -420,9 +436,17 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     api.blockMenu.hide();
   }, [api.blockMenu]);
 
-  const handleShowTurnInto = React.useCallback(() => setShowTurnInto(true), []);
+  // Submenu hover handlers — manually bridge trigger ↔ submenu content
+  const handleTurnIntoPointerEnter = React.useCallback(() => {
+    clearTimeout(turnIntoCloseTimer.current);
+    setTurnIntoOpen(true);
+  }, []);
 
-  // Virtual anchor for positioning the popover at the click coordinates
+  const handleTurnIntoPointerLeave = React.useCallback(() => {
+    turnIntoCloseTimer.current = setTimeout(() => setTurnIntoOpen(false), 150);
+  }, []);
+
+  // Virtual anchor for positioning the menu at the click coordinates
   const virtualAnchor = React.useMemo(() => {
     if (!isOpen) return undefined;
     return {
@@ -444,240 +468,206 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     <>
       <div ref={blockMenuTriggerRef}>{children}</div>
 
-      <Popover open={isOpen} onOpenChange={handlePopoverOpenChange}>
-        <PopoverContent
+      <DropdownMenu open={isOpen} onOpenChange={handleOpenChange} modal={false}>
+        <DropdownMenuContent
           anchor={virtualAnchor}
           className={cn("w-[288px] p-1", hasCustomization && "bf-themed")}
           style={hasCustomization ? themeVars : undefined}
-          // side="left"
           align="start"
           sideOffset={8}
         >
-          {showTurnInto ? (
-            /* Turn Into Submenu - sidebar popover style */
-            <div>
-              <Button
-                variant="ghost"
-                onClick={handleBackClick}
-                className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] text-foreground/80 hover:bg-accent hover:text-accent-foreground mb-1"
-              >
-                ← Back
-              </Button>
-              <div className="my-1 h-px bg-border" />
-              <MenuItem onClick={handleTurnIntoParagraph}>Paragraph</MenuItem>
-              <MenuItem onClick={handleTurnIntoH1}>Heading 1</MenuItem>
-              <MenuItem onClick={handleTurnIntoH2}>Heading 2</MenuItem>
-              <MenuItem onClick={handleTurnIntoH3}>Heading 3</MenuItem>
-              <MenuItem onClick={handleTurnIntoBlockquote}>Blockquote</MenuItem>
-            </div>
-          ) : (
-            /* Main Menu - sidebar popover style */
-            <div>
-              {/* Field Name Header */}
-              <div className="flex items-center gap-2 px-2 py-1.5">
-                <GripVerticalIcon
-                  className="h-3.5 w-3.5 text-muted-foreground shrink-0"
-                  strokeWidth={1.5}
-                  aria-hidden="true"
+          {/* Field Name Header */}
+          <div className="flex items-center gap-2 px-2 py-1.5">
+            <GripVerticalIcon
+              className="h-3.5 w-3.5 text-muted-foreground shrink-0"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            />
+            {isEditingName ? (
+              <Input
+                value={fieldName}
+                onChange={handleFieldNameChange}
+                onBlur={handleUpdateFieldName}
+                onKeyDown={handleFieldNameKeyDown}
+                className="h-7 text-[13px] flex-1 rounded-lg"
+                aria-label="Field name"
+                autoFocus
+              />
+            ) : (
+              <span className="text-[13px] flex-1 truncate text-foreground">{fieldName}</span>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              prefix={<Pencil2Icon />}
+              className="h-6 w-6 shrink-0 rounded-lg hover:bg-black/5"
+              onClick={handleToggleEditName}
+              aria-label="Edit field"
+            ></Button>
+          </div>
+          <DropdownMenuSeparator />
+
+          {/* Field-Specific Options */}
+          {fieldType === "formInput" && (
+            <>
+              <DropdownMenuItem closeOnClick={false} onClick={handleToggleRequired}>
+                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                  Required
+                </span>
+                <Switch
+                  aria-label="Required"
+                  size="sm"
+                  checked={isRequired}
+                  onCheckedChange={handleToggleRequired}
+                  onClick={handleStopPropagation}
                 />
-                {isEditingName ? (
+              </DropdownMenuItem>
+
+              <DropdownMenuItem closeOnClick={false} onClick={handleToggleDefaultValue}>
+                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                  Default answer
+                </span>
+                <Switch
+                  aria-label="Default answer"
+                  size="sm"
+                  checked={hasDefaultValue}
+                  onCheckedChange={handleToggleDefaultValue}
+                  onClick={handleStopPropagation}
+                />
+              </DropdownMenuItem>
+              {hasDefaultValue && (
+                <div className="px-2 pb-2">
                   <Input
-                    value={fieldName}
-                    onChange={handleFieldNameChange}
-                    onBlur={handleUpdateFieldName}
-                    onKeyDown={handleFieldNameKeyDown}
-                    className="h-7 text-[13px] flex-1 rounded-lg"
-                    aria-label="Field name"
-                    autoFocus
+                    value={currentDefaultValue || ""}
+                    onChange={handleDefaultValueChange}
+                    onKeyDown={handleInputKeyDown}
+                    placeholder="Enter default value"
+                    className="h-7 text-[13px] rounded-lg"
+                    aria-label="Default value"
                   />
-                ) : (
-                  <span className="text-[13px] flex-1 truncate text-foreground">{fieldName}</span>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 shrink-0 rounded-lg hover:bg-black/5"
-                  onClick={handleToggleEditName}
-                  aria-label="Edit field"
-                >
-                  <Pencil2Icon className="h-3.5 w-3.5" aria-hidden="true" />
-                </Button>
-              </div>
-              <div className="my-1 h-px bg-border" />
-
-              {/* Field-Specific Options */}
-              {fieldType === "formInput" && (
-                <>
-                  <MenuItem onClick={handleToggleRequired}>
-                    <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
-                      Required
-                    </span>
-                    <Switch
-                      aria-label="Required"
-                      size="sm"
-                      checked={isRequired}
-                      onCheckedChange={handleToggleRequired}
-                      onClick={handleStopPropagation}
-                    />
-                  </MenuItem>
-
-                  <MenuItem onClick={handleToggleDefaultValue}>
-                    <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
-                      Default answer
-                    </span>
-                    <Switch
-                      aria-label="Default answer"
-                      size="sm"
-                      checked={hasDefaultValue}
-                      onCheckedChange={handleToggleDefaultValue}
-                      onClick={handleStopPropagation}
-                    />
-                  </MenuItem>
-                  {hasDefaultValue && (
-                    <div className="px-2 pb-2">
-                      <Input
-                        value={currentDefaultValue || ""}
-                        onChange={handleDefaultValueChange}
-                        placeholder="Enter default value"
-                        className="h-7 text-[13px] rounded-lg"
-                        aria-label="Default value"
-                      />
-                    </div>
-                  )}
-
-                  <MenuItem onClick={handleToggleMinLength}>
-                    <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
-                      Min characters
-                    </span>
-                    <Switch
-                      aria-label="Min characters"
-                      size="sm"
-                      checked={hasMinLength}
-                      onCheckedChange={handleToggleMinLength}
-                      onClick={handleStopPropagation}
-                    />
-                  </MenuItem>
-                  {hasMinLength && (
-                    <div className="px-2 pb-2">
-                      <Input
-                        type="number"
-                        min={1}
-                        value={currentMinLength || 1}
-                        onChange={handleMinLengthChange}
-                        placeholder="Min"
-                        className="h-7 text-[13px] rounded-lg"
-                        aria-label="Minimum length"
-                      />
-                    </div>
-                  )}
-
-                  <MenuItem onClick={handleToggleMaxLength}>
-                    <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
-                      Max characters
-                    </span>
-                    <Switch
-                      aria-label="Max characters"
-                      size="sm"
-                      checked={hasMaxLength}
-                      onCheckedChange={handleToggleMaxLength}
-                      onClick={handleStopPropagation}
-                    />
-                  </MenuItem>
-                  {hasMaxLength && (
-                    <div className="px-2 pb-2">
-                      <Input
-                        type="number"
-                        min={1}
-                        value={currentMaxLength || 100}
-                        onChange={handleMaxLengthChange}
-                        placeholder="Max"
-                        className="h-7 text-[13px] rounded-lg"
-                        aria-label="Maximum length"
-                      />
-                    </div>
-                  )}
-
-                  <div className="my-1 h-px bg-border" />
-                </>
+                </div>
               )}
 
-              {/* Button-Specific Options */}
-              {fieldType === "formButton" && (
-                <>
-                  <div className="px-2 py-1.5 space-y-2">
-                    <Label className="text-[12px] text-muted-foreground">Button Name</Label>
-                    <Input
-                      value={buttonText}
-                      onChange={handleButtonTextChange}
-                      placeholder="Enter button name"
-                      className="h-8 text-[13px] rounded-lg"
-                    />
-                  </div>
-                  <div className="my-1 h-px bg-border" />
-                </>
+              <DropdownMenuItem closeOnClick={false} onClick={handleToggleMinLength}>
+                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                  Min characters
+                </span>
+                <Switch
+                  aria-label="Min characters"
+                  size="sm"
+                  checked={hasMinLength}
+                  onCheckedChange={handleToggleMinLength}
+                  onClick={handleStopPropagation}
+                />
+              </DropdownMenuItem>
+              {hasMinLength && (
+                <div className="px-2 pb-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={currentMinLength || 1}
+                    onChange={handleMinLengthChange}
+                    onKeyDown={handleInputKeyDown}
+                    placeholder="Min"
+                    className="h-7 text-[13px] rounded-lg"
+                    aria-label="Minimum length"
+                  />
+                </div>
               )}
 
-              {/* Common Actions */}
-              <div className="px-0">
-                <MenuItem destructive onClick={handleDelete}>
-                  <TrashIcon className="h-3.5 w-3.5 shrink-0" />
-                  <span className="flex-1 text-left">Delete</span>
-                  <span className="text-xs text-muted-foreground">Del</span>
-                </MenuItem>
-                <MenuItem onClick={handleDuplicate}>
-                  <CopyIcon className="h-3.5 w-3.5 shrink-0" />
-                  <span className="flex-1 text-left">Duplicate</span>
-                  <span className="text-xs text-muted-foreground">⌘D</span>
-                </MenuItem>
-                <MenuItem onClick={handleHideMenu}>
-                  <EyeOffIcon className="h-3.5 w-3.5 shrink-0" />
-                  <span className="flex-1 text-left">Hide</span>
-                  <span className="text-xs text-muted-foreground">⌘⌥H</span>
-                </MenuItem>
-                <MenuItem onClick={handleHideMenu}>
-                  <PlusIcon className="h-3.5 w-3.5 shrink-0" />
-                  <span className="flex-1 text-left">Add conditional logic</span>
-                  <span className="text-xs text-muted-foreground">⌘⌥L</span>
-                </MenuItem>
-                <div className="my-1 h-px bg-border mx-0" />
-                <MenuItem onClick={handleShowTurnInto}>
-                  <span className="text-[13px]">↺</span>
-                  <span className="flex-1 text-left">Turn into</span>
-                  <ChevronRightIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
-                </MenuItem>
-              </div>
-            </div>
+              <DropdownMenuItem closeOnClick={false} onClick={handleToggleMaxLength}>
+                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                  Max characters
+                </span>
+                <Switch
+                  aria-label="Max characters"
+                  size="sm"
+                  checked={hasMaxLength}
+                  onCheckedChange={handleToggleMaxLength}
+                  onClick={handleStopPropagation}
+                />
+              </DropdownMenuItem>
+              {hasMaxLength && (
+                <div className="px-2 pb-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={currentMaxLength || 100}
+                    onChange={handleMaxLengthChange}
+                    onKeyDown={handleInputKeyDown}
+                    placeholder="Max"
+                    className="h-7 text-[13px] rounded-lg"
+                    aria-label="Maximum length"
+                  />
+                </div>
+              )}
+
+              <DropdownMenuSeparator />
+            </>
           )}
-        </PopoverContent>
-      </Popover>
+
+          {/* Button-Specific Options */}
+          {fieldType === "formButton" && (
+            <>
+              <div className="px-2 py-1.5 space-y-2">
+                <Label className="text-[12px] text-muted-foreground">Button Name</Label>
+                <Input
+                  value={buttonText}
+                  onChange={handleButtonTextChange}
+                  onKeyDown={handleInputKeyDown}
+                  placeholder="Enter button name"
+                  className="h-8 text-[13px] rounded-lg"
+                />
+              </div>
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          {/* Common Actions */}
+          <DropdownMenuItem variant="destructive" onClick={handleDelete}>
+            <TrashIcon />
+            <span className="flex-1 text-left">Delete</span>
+            <DropdownMenuShortcut>Del</DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleDuplicate}>
+            <CopyIcon />
+            <span className="flex-1 text-left">Duplicate</span>
+            <DropdownMenuShortcut>⌘D</DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleHideMenu}>
+            <EyeOffIcon />
+            <span className="flex-1 text-left">Hide</span>
+            <DropdownMenuShortcut>⌘⌥H</DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleHideMenu}>
+            <PlusIcon />
+            <span className="flex-1 text-left">Add conditional logic</span>
+            <DropdownMenuShortcut>⌘⌥L</DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+
+          {/* Turn Into Submenu */}
+          <DropdownMenuSub open={turnIntoOpen}>
+            <DropdownMenuSubTrigger
+              onPointerEnter={handleTurnIntoPointerEnter}
+              onPointerLeave={handleTurnIntoPointerLeave}
+            >
+              <span className="text-[13px]">↺</span>
+              <span className="flex-1 text-left">Turn into</span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent
+              onPointerEnter={handleTurnIntoPointerEnter}
+              onPointerLeave={handleTurnIntoPointerLeave}
+            >
+              <DropdownMenuItem onClick={handleTurnIntoParagraph}>Paragraph</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleTurnIntoH1}>Heading 1</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleTurnIntoH2}>Heading 2</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleTurnIntoH3}>Heading 3</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleTurnIntoBlockquote}>Blockquote</DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </>
   );
 };
-
-// Reusable Menu Item component - matches sidebar popover style
-// Reusable Menu Item component - matches sidebar popover style
-const MenuItem = ({
-  children,
-  onClick,
-  className,
-  destructive,
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  className?: string;
-  destructive?: boolean;
-}) => (
-  <Button
-    variant="ghost"
-    onClick={onClick}
-    className={cn(
-      "w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] transition-colors [&_svg]:shrink-0",
-      destructive
-        ? "text-red-500/70 hover:bg-red-500/5 hover:text-red-500 focus:bg-red-500/5 focus:text-red-500"
-        : "text-foreground/80 hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-      className,
-    )}
-  >
-    {children}
-  </Button>
-);
