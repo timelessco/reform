@@ -3,6 +3,7 @@ import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
 import { ChevronDownIcon } from "@/components/ui/icons";
 import * as React from "react";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -114,9 +115,7 @@ const withTooltip = <T extends React.ElementType>(Component: T) =>
   }: TooltipProps<T>) {
     const [mounted, setMounted] = React.useState(false);
 
-    React.useEffect(() => {
-      setMounted(true);
-    }, []);
+    useMountEffect(() => setMounted(true));
 
     const component = <Component {...(props as React.ComponentProps<T>)} />;
 

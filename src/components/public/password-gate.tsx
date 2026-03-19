@@ -1,5 +1,5 @@
 import { EyeIcon, EyeOffIcon, LockIcon } from "@/components/ui/icons";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/contexts/translation-context";
@@ -16,22 +16,18 @@ const getStorageKey = (formId: string) => {
 
 export const PasswordGate = ({ formId, children }: PasswordGateProps) => {
   const { t } = useTranslation();
-  const [unlocked, setUnlocked] = useState(false);
+  const [unlocked, setUnlocked] = useState(() => {
+    try {
+      return sessionStorage.getItem(getStorageKey(formId)) === "1";
+    } catch {
+      // sessionStorage unavailable
+      return false;
+    }
+  });
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
-
-  // Check sessionStorage on mount
-  useEffect(() => {
-    try {
-      if (sessionStorage.getItem(getStorageKey(formId)) === "1") {
-        setUnlocked(true);
-      }
-    } catch {
-      // sessionStorage unavailable
-    }
-  }, [formId]);
 
   const handleUnlock = useCallback(async () => {
     if (!password.trim()) {

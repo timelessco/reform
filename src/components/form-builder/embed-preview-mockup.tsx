@@ -175,12 +175,9 @@ export const EmbedPreviewMockup = ({
     return () => ro.disconnect();
   }, [embedType]);
 
-  // Reset popup expanded state when leaving popup tab, auto-open after 2s
+  // Auto-expand popup after 2s when in popup mode
   useEffect(() => {
-    if (embedType !== "popup") {
-      setIsPopupExpanded(false);
-      return;
-    }
+    if (embedType !== "popup") return;
     const timer = setTimeout(() => setIsPopupExpanded(true), 2000);
     return () => clearTimeout(timer);
   }, [embedType]);

@@ -33,7 +33,7 @@ export const FontColorToolbarButton = ({
 
   const color = useEditorSelector((ed) => ed.api.mark(nodeType) as string, [nodeType]);
 
-  const [selectedColor, setSelectedColor] = React.useState<string>();
+  const selectedColor = selectionDefined ? color : undefined;
   const [open, setOpen] = React.useState(false);
 
   const onToggle = React.useCallback(
@@ -46,8 +46,6 @@ export const FontColorToolbarButton = ({
   const updateColor = React.useCallback(
     (value: string) => {
       if (editor.selection) {
-        setSelectedColor(value);
-
         editor.tf.select(editor.selection);
         editor.tf.focus();
 
@@ -77,12 +75,6 @@ export const FontColorToolbarButton = ({
       onToggle();
     }
   }, [editor, selectedColor, onToggle, nodeType]);
-
-  React.useEffect(() => {
-    if (selectionDefined) {
-      setSelectedColor(color);
-    }
-  }, [color, selectionDefined]);
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
@@ -174,20 +166,19 @@ const ColorCustom = ({
   updateCustomColor: (color: string) => void;
   color?: string;
 } & React.ComponentPropsWithoutRef<"div">) => {
-  const [customColor, setCustomColor] = React.useState<string>();
-  const [value, setValue] = React.useState<string>(color || "#000000");
-
-  React.useEffect(() => {
+  const customColor = React.useMemo(() => {
     if (
       !color ||
       customColors.some((c) => c.value === color) ||
       colors.some((c) => c.value === color)
     ) {
-      return;
+      return undefined;
     }
 
-    setCustomColor(color);
+    return color;
   }, [color, colors, customColors]);
+
+  const [value, setValue] = React.useState<string>(color || "#000000");
 
   const computedColors = React.useMemo(
     () =>

@@ -12,6 +12,7 @@ import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorPlugin, withHOC } from "platejs/react";
 import * as React from "react";
 import { useFilePicker } from "use-file-picker";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 import { useUploadFile } from "@/hooks/use-upload-file";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -118,7 +119,7 @@ export const PlaceholderElement = withHOC(
     const isReplaced = React.useRef(false);
 
     /** Paste and drop */
-    React.useEffect(() => {
+    useMountEffect(() => {
       if (isReplaced.current) return;
 
       isReplaced.current = true;
@@ -127,9 +128,7 @@ export const PlaceholderElement = withHOC(
       if (!currentFiles) return;
 
       replaceCurrentPlaceholder(currentFiles);
-
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [api.placeholder.getUploadingFile, element.id, replaceCurrentPlaceholder]);
+    });
 
     return (
       <PlateElement className="my-1" {...props}>

@@ -1,5 +1,6 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 import { Button } from "@/components/ui/button";
 import { useStepForm } from "@/contexts/step-form-context";
 import { useTranslation } from "@/contexts/translation-context";
@@ -51,7 +52,7 @@ export const StepForm = ({
   const autoJumpTriggered = useRef(false);
 
   // Auto-focus the first focusable element on mount
-  useEffect(() => {
+  useMountEffect(() => {
     const timer = setTimeout(() => {
       if (formRef.current) {
         const focusable = formRef.current.querySelector(
@@ -64,7 +65,7 @@ export const StepForm = ({
     }, 300); // Wait for transition to settle
 
     return () => clearTimeout(timer);
-  }, []);
+  });
 
   // Auto-jump: check if all required fields are filled and auto-submit
   const checkAutoJump = useCallback(() => {

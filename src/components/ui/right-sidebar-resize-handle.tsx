@@ -1,5 +1,5 @@
 import type * as React from "react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useRef } from "react";
 
 export const RIGHT_SIDEBAR_WIDTH_MIN = 280;
 export const RIGHT_SIDEBAR_WIDTH_DEFAULT = 340;
@@ -17,14 +17,6 @@ export const RightSidebarResizeHandle = ({
 }) => {
   const startXRef = useRef(0);
   const startWidthRef = useRef(0);
-
-  useEffect(
-    () => () => {
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    },
-    [],
-  );
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {

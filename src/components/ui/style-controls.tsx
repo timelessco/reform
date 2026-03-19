@@ -365,7 +365,9 @@ export const StyleSelect = ({
   const [isOpen, setIsOpen] = React.useState(false);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
-  const [portalTarget, setPortalTarget] = React.useState<HTMLElement | null>(null);
+  const [portalTarget] = React.useState<HTMLElement | null>(() =>
+    typeof document !== "undefined" ? document.body : null,
+  );
   const [pos, setPos] = React.useState<{
     top: number;
     left: number;
@@ -392,11 +394,6 @@ export const StyleSelect = ({
       above,
     });
   }, [options.length, itemHeight]);
-
-  React.useEffect(() => {
-    // Portal directly to document.body to avoid parent overflow:hidden or z-index issues
-    setPortalTarget(document.body);
-  }, []);
 
   React.useEffect(() => {
     if (!isOpen) return;

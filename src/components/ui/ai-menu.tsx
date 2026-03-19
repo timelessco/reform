@@ -567,11 +567,17 @@ export const AIMenuItems = ({
     return items;
   }, [menuState]);
 
-  React.useEffect(() => {
+  const defaultValue = React.useMemo(() => {
     if (menuGroups.length > 0 && menuGroups[0].items.length > 0) {
-      setValue(menuGroups[0].items[0].value);
+      return menuGroups[0].items[0].value;
     }
-  }, [menuGroups, setValue]);
+    return "";
+  }, [menuGroups]);
+
+  // Sync derived default value to parent state
+  React.useEffect(() => {
+    setValue(defaultValue);
+  }, [defaultValue, setValue]);
 
   return (
     <>

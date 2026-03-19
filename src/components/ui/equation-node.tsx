@@ -88,11 +88,7 @@ export const InlineEquationElement = (props: PlateElementProps<TEquationElement>
   const isCollapsed = useEditorSelector((editor) => editor.api.isCollapsed(), []);
   const [open, setOpen] = React.useState(selected && isCollapsed);
 
-  React.useEffect(() => {
-    if (selected && isCollapsed) {
-      setOpen(true);
-    }
-  }, [selected, isCollapsed]);
+  const effectiveOpen = open || (selected && isCollapsed);
 
   useEquationElement({
     element,
@@ -115,7 +111,7 @@ export const InlineEquationElement = (props: PlateElementProps<TEquationElement>
       {...props}
       className={cn("mx-1 inline-block select-none rounded-sm [&_.katex-display]:my-0!")}
     >
-      <Popover open={open} onOpenChange={setOpen} modal={false}>
+      <Popover open={effectiveOpen} onOpenChange={setOpen} modal={false}>
         <PopoverTrigger
           nativeButton={false}
           render={
@@ -123,7 +119,8 @@ export const InlineEquationElement = (props: PlateElementProps<TEquationElement>
               className={cn(
                 'after:-top-0.5 after:-left-1 after:absolute after:inset-0 after:z-1 after:h-[calc(100%+4px)] after:w-[calc(100%+8px)] after:rounded-sm after:content-[""]',
                 "h-6",
-                ((element.texExpression.length > 0 && open) || selected) && "after:bg-brand/15",
+                ((element.texExpression.length > 0 && effectiveOpen) || selected) &&
+                  "after:bg-brand/15",
                 element.texExpression.length === 0 &&
                   "text-muted-foreground after:bg-neutral-500/10",
               )}
@@ -145,7 +142,7 @@ export const InlineEquationElement = (props: PlateElementProps<TEquationElement>
 
         <EquationPopoverContent
           className="my-auto"
-          open={open}
+          open={effectiveOpen}
           placeholder="E = mc^2"
           setOpen={setOpen}
           isInline
@@ -175,12 +172,6 @@ const EquationPopoverContent = ({
   const editor = useEditorRef();
   const readOnly = useReadOnly();
   const element = useElement<TEquationElement>();
-
-  React.useEffect(() => {
-    if (isInline && open) {
-      setOpen(true);
-    }
-  }, [isInline, open, setOpen]);
 
   if (readOnly) return null;
   const onClose = () => {

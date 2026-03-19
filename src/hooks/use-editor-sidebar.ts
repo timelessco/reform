@@ -28,6 +28,7 @@ export const useEditorSidebar = () => {
   const openSettings = useCallback((tab?: SettingsTab) => {
     editorUICollection.update("editor-ui", (draft) => {
       draft.activeSidebar = "settings";
+      draft.selectedVersionId = null;
       if (tab) draft.settingsTab = tab;
     });
   }, []);
@@ -35,6 +36,7 @@ export const useEditorSidebar = () => {
   const openShare = useCallback((tab?: ShareTab) => {
     editorUICollection.update("editor-ui", (draft) => {
       draft.activeSidebar = "share";
+      draft.selectedVersionId = null;
       if (tab) draft.shareTab = tab;
     });
   }, []);
@@ -49,12 +51,14 @@ export const useEditorSidebar = () => {
   const openCustomize = useCallback(() => {
     editorUICollection.update("editor-ui", (draft) => {
       draft.activeSidebar = "customize";
+      draft.selectedVersionId = null;
     });
   }, []);
 
   const openAbout = useCallback(() => {
     editorUICollection.update("editor-ui", (draft) => {
       draft.activeSidebar = "about";
+      draft.selectedVersionId = null;
     });
   }, []);
 
@@ -105,7 +109,8 @@ export const useEditorSidebar = () => {
         draft.previewMode = false;
       }
 
-      if (nextSidebar === null) {
+      // Clear version selection when leaving the history sidebar
+      if (nextSidebar !== "history") {
         draft.selectedVersionId = null;
       }
     });

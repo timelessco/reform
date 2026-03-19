@@ -142,6 +142,7 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
                   <div className="space-y-3">
                     {/* Preview mockup */}
                     <EmbedPreviewMockup
+                      key={embedType}
                       embedType={embedType}
                       popupPosition={options.popup.position}
                       darkOverlay={options.popup.overlay === "dark"}

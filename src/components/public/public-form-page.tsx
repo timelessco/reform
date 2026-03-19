@@ -121,22 +121,18 @@ export const PublicFormPage = ({
   const alignLeft = embedConfig.alignment === "left";
   const dynamicHeight = embedConfig.dynamicHeight;
   const containerRef = useRef<HTMLDivElement>(null);
-  const [submitted, setSubmitted] = useState(false);
-
-  const resolvedLanguage = form?.settings?.language ?? "English";
-
-  // Check duplicate prevention on mount
-  useEffect(() => {
+  const [submitted, setSubmitted] = useState(() => {
     if (form?.settings?.preventDuplicateSubmissions) {
       try {
-        if (localStorage.getItem(`bf-submitted-${formId}`) === "1") {
-          setSubmitted(true);
-        }
+        return localStorage.getItem(`bf-submitted-${formId}`) === "1";
       } catch {
         // localStorage unavailable
       }
     }
-  }, [form?.settings?.preventDuplicateSubmissions, formId]);
+    return false;
+  });
+
+  const resolvedLanguage = form?.settings?.language ?? "English";
 
   // Handle body/html transparency for iframes
   useEffect(() => {
