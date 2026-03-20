@@ -1,28 +1,27 @@
-import { useCallback, useMemo } from "react";
-import { InfoIcon, XIcon } from "@/components/ui/icons";
-import { APP_NAME } from "@/lib/app-config";
-import { Button } from "@/components/ui/button";
-import { useTheme } from "@/components/ThemeProvider";
-import { Textarea } from "@/components/ui/textarea";
-import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
-import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
-import { formCollection, localFormCollection } from "@/db-collections/form.collections";
-import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
-import { SidebarSection } from "@/components/ui/sidebar-section";
 import {
   ConfigCard,
   ConfigRow,
   selectTriggerCls,
 } from "@/components/form-builder/embed-config-panel";
+import { useTheme } from "@/components/ThemeProvider";
+import { Button } from "@/components/ui/button";
+import { InfoIcon, XIcon } from "@/components/ui/icons";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
+import { SidebarSection } from "@/components/ui/sidebar-section";
 import { StyleColorPicker, StyleNumberInput } from "@/components/ui/style-controls";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsIndicator, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { STYLES, BASE_COLORS, DARK_BASE_COLORS, THEME_COLORS } from "@/lib/theme-presets";
+import { formCollection, localFormCollection } from "@/db-collections/form.collections";
+import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
+import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
 import { FONT_REGISTRY } from "@/lib/font-registry";
-import { loadGoogleFont } from "@/lib/load-google-font";
 import { TOKEN_NAMES } from "@/lib/generate-theme-css";
+import { loadGoogleFont } from "@/lib/load-google-font";
+import { BASE_COLORS, DARK_BASE_COLORS, STYLES, THEME_COLORS } from "@/lib/theme-presets";
+import { useCallback, useMemo } from "react";
 
 const FONT_OPTIONS = Object.keys(FONT_REGISTRY).map((name) => ({
   label: name,

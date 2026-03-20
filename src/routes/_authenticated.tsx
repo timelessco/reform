@@ -79,22 +79,17 @@ import {
   useEditorHeaderVisibility,
 } from "@/contexts/editor-header-visibility-context";
 import { MinimalSidebarProvider, useMinimalSidebar } from "@/contexts/minimal-sidebar-context";
-import { favoriteCollection } from "@/db-collections/favorite.collection";
-import { formVersionCollection } from "@/db-collections/form-version.collection";
 import {
   createFormLocal,
   duplicateFormById,
-  formCollection,
   permanentDeleteFormLocal,
   restoreFormLocal,
   updateFormStatus,
 } from "@/db-collections/form.collections";
-import { submissionCollection } from "@/db-collections/submission.collections";
 import {
   createWorkspaceLocal,
   deleteWorkspaceLocal,
   updateWorkspaceName,
-  workspaceCollection,
 } from "@/db-collections/workspace.collection";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
