@@ -12,7 +12,7 @@ import { createFileRoute, isRedirect, redirect, useLocation } from "@tanstack/re
 import { format } from "date-fns";
 import { Loader2Icon } from "@/components/ui/icons";
 import type { Value } from "platejs";
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy } from "react";
 import { z } from "zod";
 import { zodValidator } from "@tanstack/zod-adapter";
 
@@ -30,12 +30,7 @@ const DesignPage = () => {
   const formId = formIdFromPath || params.formId;
 
   // Version history sidebar state
-  const {
-    isOpen: isVersionHistoryOpen,
-    selectedVersionId,
-    isViewingVersion,
-    exitVersionView,
-  } = useVersionHistorySidebar();
+  const { selectedVersionId, isViewingVersion, exitVersionView } = useVersionHistorySidebar();
 
   // Fetch version content when viewing a version
   const { data: versionContentDataArray, isLoading: isLoadingVersionContent } =
@@ -44,12 +39,6 @@ const DesignPage = () => {
   const versionData = versionContentDataArray?.[0];
 
   const { previewMode } = useEditorSidebar();
-
-  useEffect(() => {
-    if (!isVersionHistoryOpen && isViewingVersion) {
-      exitVersionView();
-    }
-  }, [isVersionHistoryOpen, isViewingVersion, exitVersionView]);
   const formatDateTime = (dateString: string) => format(new Date(dateString), "MMM d, h:mm a");
 
   const versionContent = versionData?.content as Value | undefined;

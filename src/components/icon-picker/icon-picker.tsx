@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Popover } from "@base-ui/react/popover";
 import { matchSorter } from "match-sorter";
 
@@ -24,17 +24,11 @@ export const IconPickerContent = ({
   onIconChange,
   colors,
 }: IconPickerContentProps) => {
-  const [color, setColor] = useState(iconColor);
   const [searchValue, setSearchValue] = useState("");
   const [pageIndex, setPageIndex] = useState(0);
 
-  useEffect(() => {
-    setColor(iconColor);
-  }, [iconColor]);
-
   const handleColorChange = useCallback(
     (sliderColor: string) => {
-      setColor(sliderColor);
       onColorChange(sliderColor);
     },
     [onColorChange],
@@ -63,7 +57,7 @@ export const IconPickerContent = ({
     <div className="h-[368px] w-[310px] bg-muted/50 px-3">
       <IconPickerHeader searchValue={searchValue} onSearchChange={handleSearchChange} />
       <div className="icon-color-container overflow-x-auto pt-2" style={{ scrollbarWidth: "none" }}>
-        <ColorPicker onChange={handleColorChange} selectedColor={color} colors={colors} />
+        <ColorPicker onChange={handleColorChange} selectedColor={iconColor} colors={colors} />
       </div>
       <div className="flex h-[253px] flex-col pt-2 pb-3">
         <IconGrid labels={filteredLabels} onSelect={onIconChange} />

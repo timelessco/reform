@@ -1,5 +1,6 @@
 import type React from "react";
 import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 
 interface EditorHeaderVisibilityContextType {
   enabled: boolean;
@@ -63,12 +64,9 @@ export const EditorHeaderVisibilityProvider = ({
     return () => window.removeEventListener("mousemove", onMouseMove);
   }, [enabled, visible, reportPointerActivity]);
 
-  useEffect(
-    () => () => {
-      clearHideTimer();
-    },
-    [clearHideTimer],
-  );
+  useMountEffect(() => () => {
+    clearHideTimer();
+  });
 
   const value = useMemo(
     () => ({

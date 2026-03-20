@@ -43,24 +43,19 @@ export const MediaToolbar = ({
   const isImagePreviewOpen = useImagePreviewValue("isOpen", editor.id);
   const open = isFocusedLast && !readOnly && selected && selectionCollapsed && !isImagePreviewOpen;
   const isEditing = useFloatingMediaValue("isEditing");
-  // Track previous open state to detect close transition
-  const wasOpenRef = React.useRef(open);
-
-  // Reset isEditing only when transitioning from open to closed
-  React.useEffect(() => {
-    const justClosed = !open && wasOpenRef.current;
-    wasOpenRef.current = open;
-
-    if (justClosed && isEditing) {
-      FloatingMediaStore.set("isEditing", false);
-    }
-  }, [open, isEditing]);
-
   const element = useElement();
   const { props: buttonProps } = useRemoveNodeButton({ element });
 
   return (
-    <Popover open={open} modal={false}>
+    <Popover
+      open={open}
+      onOpenChange={(newOpen) => {
+        if (!newOpen) {
+          FloatingMediaStore.set("isEditing", false);
+        }
+      }}
+      modal={false}
+    >
       <PopoverAnchor>{children}</PopoverAnchor>
 
       <PopoverContent className="w-auto p-1">

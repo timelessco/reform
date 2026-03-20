@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { Loader2Icon } from "@/components/ui/icons";
 import * as React from "react";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 import { toast } from "sonner";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
@@ -28,12 +29,12 @@ const VerifyEmailPage = () => {
   const otpInputRef = React.useRef<HTMLInputElement>(null);
 
   // Auto-focus OTP input on mount
-  React.useEffect(() => {
+  useMountEffect(() => {
     const timer = setTimeout(() => {
       otpInputRef.current?.focus();
     }, 300);
     return () => clearTimeout(timer);
-  }, []);
+  });
 
   // Sign in with OTP (for new sign-in flow)
   const signInOtpMutation = useMutation(

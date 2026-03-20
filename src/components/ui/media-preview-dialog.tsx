@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/icons";
 import { useEditorRef } from "platejs/react";
 import * as React from "react";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -55,7 +56,7 @@ export const MediaPreviewDialog = () => {
 
   const previewMaskRef = React.useRef<HTMLDivElement | null>(null);
 
-  React.useEffect(() => {
+  useMountEffect(() => {
     const node = previewMaskRef.current;
     if (!node) return;
 
@@ -67,7 +68,7 @@ export const MediaPreviewDialog = () => {
     return () => {
       node.removeEventListener("contextmenu", stopContextMenu);
     };
-  }, []);
+  });
 
   return (
     <div

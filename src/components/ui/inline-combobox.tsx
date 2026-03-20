@@ -23,6 +23,7 @@ import type { UseComboboxInputResult } from "@platejs/combobox/react";
 import { cva } from "class-variance-authority";
 import { useComposedRef, useEditorRef } from "platejs/react";
 
+import { useMountEffect } from "@/hooks/use-mount-effect";
 import { cn } from "@/lib/utils";
 
 type FilterFn = (
@@ -170,11 +171,13 @@ const InlineCombobox = ({
    * If there is no active ID and the list of items changes, select the first
    * item.
    */
+  const activeId = store.useState("activeId");
+
   React.useEffect(() => {
-    if (!store.getState().activeId) {
+    if (!activeId) {
       store.setActiveId(store.first());
     }
-  }, [items, store]);
+  }, [items, activeId, store]);
 
   return (
     <span contentEditable={false}>
@@ -343,13 +346,13 @@ const InlineComboboxEmpty = ({ children, className }: React.HTMLAttributes<HTMLD
   const store = useComboboxContext()!;
   const items = store.useState("items");
 
-  React.useEffect(() => {
+  useMountEffect(() => {
     setHasEmpty(true);
 
     return () => {
       setHasEmpty(false);
     };
-  }, [setHasEmpty]);
+  });
 
   if (items.length > 0) return null;
 

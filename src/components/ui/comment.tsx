@@ -14,6 +14,7 @@ import {
   usePluginOption,
 } from "platejs/react";
 import * as React from "react";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 import { BasicMarksKit } from "@/components/editor/plugins/basic-marks-kit";
 import { discussionPlugin } from "@/components/editor/plugins/discussion-kit";
 import type { TDiscussion } from "@/components/editor/plugins/discussion-kit";
@@ -403,11 +404,11 @@ export const CommentCreateForm = ({
   );
   const commentEditor = useCommentEditor();
 
-  React.useEffect(() => {
+  useMountEffect(() => {
     if (commentEditor && focusOnMount) {
       commentEditor.tf.focus();
     }
-  }, [commentEditor, focusOnMount]);
+  });
 
   const onAddComment = React.useCallback(async () => {
     if (!commentValue) return;

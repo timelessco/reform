@@ -2,7 +2,7 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
-import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, use, useCallback, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -298,17 +298,6 @@ const SidebarResizeHandle = () => {
   const startXRef = useRef(0);
   const startWidthRef = useRef(0);
 
-  useEffect(
-    () => () => {
-      Object.assign(document.body.style, {
-        cursor: "",
-        userSelect: "",
-        pointerEvents: "",
-      });
-    },
-    [],
-  );
-
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
@@ -327,7 +316,11 @@ const SidebarResizeHandle = () => {
 
       const handleMouseUp = () => {
         setIsResizing(false);
-        Object.assign(document.body.style, { cursor: "", userSelect: "" });
+        Object.assign(document.body.style, {
+          cursor: "",
+          userSelect: "",
+          pointerEvents: "",
+        });
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", handleMouseUp);
       };

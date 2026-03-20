@@ -102,17 +102,14 @@ const CopyButton = ({
 }: { value: (() => string) | string } & Omit<React.ComponentProps<typeof Button>, "value">) => {
   const [hasCopied, setHasCopied] = React.useState(false);
 
-  React.useEffect(() => {
-    setTimeout(() => {
-      setHasCopied(false);
-    }, 2000);
-  }, []);
-
   return (
     <Button
       onClick={() => {
         void navigator.clipboard.writeText(typeof value === "function" ? value() : value);
         setHasCopied(true);
+        setTimeout(() => {
+          setHasCopied(false);
+        }, 2000);
       }}
       {...props}
     >

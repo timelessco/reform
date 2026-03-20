@@ -1,4 +1,4 @@
-import { memo, ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import { useDataGrid } from "@/components/ui/data-grid";
 import {
   DataGridTableBase,
@@ -310,6 +310,49 @@ const DataGridTableVirtual = <TData,>({
     [centerRows, customEstimateSize, estimateSize],
   );
 
+  const resolvedFetchMoreOffset = useMemo(() => Math.max(0, fetchMoreOffset), [fetchMoreOffset]);
+
+  // Store mutable refs for the onChange callback to avoid re-creating the virtualizer
+  const fetchMoreRef = useRef({
+    isVirtualizationEnabled,
+    isInfiniteMode,
+    hasMore,
+    isFetchingMore,
+    centerRowsLength: centerRows.length,
+    resolvedFetchMoreOffset,
+    onFetchMore,
+  });
+  fetchMoreRef.current = {
+    isVirtualizationEnabled,
+    isInfiniteMode,
+    hasMore,
+    isFetchingMore,
+    centerRowsLength: centerRows.length,
+    resolvedFetchMoreOffset,
+    onFetchMore,
+  };
+
+  const handleVirtualizerChange = useCallback((instance: DataGridTableVirtualizerInstance) => {
+    const {
+      isVirtualizationEnabled: enabled,
+      isInfiniteMode: infinite,
+      hasMore: more,
+      isFetchingMore: fetching,
+      centerRowsLength,
+      resolvedFetchMoreOffset: offset,
+      onFetchMore: fetchMore,
+    } = fetchMoreRef.current;
+    if (!enabled || !infinite || more === false || fetching) return;
+
+    const items = instance.getVirtualItems();
+    const lastItem = items[items.length - 1];
+    if (!lastItem) return;
+
+    if (lastItem.index >= centerRowsLength - 1 - offset) {
+      fetchMore?.();
+    }
+  }, []);
+
   const virtualizer = useVirtualizer({
     count: centerRows.length,
     getScrollElement: resolveScrollElement,
@@ -317,6 +360,7 @@ const DataGridTableVirtual = <TData,>({
     estimateSize: resolveEstimateSize,
     overscan: customOverscan ?? overscan,
     measureElement: customMeasureElement,
+    onChange: handleVirtualizerChange,
     ...virtualizerOptionsRest,
   }) as DataGridTableVirtualizerInstance;
 
@@ -324,31 +368,6 @@ const DataGridTableVirtual = <TData,>({
   const totalSize = isVirtualizationEnabled ? virtualizer.getTotalSize() : 0;
   const measureRowRef =
     isVirtualizationEnabled && customMeasureElement ? virtualizer.measureElement : undefined;
-  const resolvedFetchMoreOffset = useMemo(() => Math.max(0, fetchMoreOffset), [fetchMoreOffset]);
-
-  /* eslint-disable eslint-plugin-react-hooks/exhaustive-deps -- virtualItems is derived from virtualizer and changes every render by design */
-  useEffect(() => {
-    if (!isVirtualizationEnabled || !isInfiniteMode || hasMore === false || isFetchingMore) {
-      return;
-    }
-
-    const lastItem = virtualItems[virtualItems.length - 1];
-    if (!lastItem) return;
-
-    if (lastItem.index >= centerRows.length - 1 - resolvedFetchMoreOffset) {
-      onFetchMore?.();
-    }
-  }, [
-    centerRows.length,
-    hasMore,
-    isFetchingMore,
-    isInfiniteMode,
-    isVirtualizationEnabled,
-    onFetchMore,
-    resolvedFetchMoreOffset,
-    virtualItems,
-  ]);
-  /* eslint-enable eslint-plugin-react-hooks/exhaustive-deps */
 
   return (
     <DataGridTableViewport

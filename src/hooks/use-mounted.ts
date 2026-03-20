@@ -1,11 +1,12 @@
-import * as React from "react";
+import { useState } from "react";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 
 export const useMounted = () => {
-  const [mounted, setMounted] = React.useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  React.useEffect(() => {
+  useMountEffect(() => {
     setMounted(true);
-  }, []);
+  });
 
   return mounted;
 };
