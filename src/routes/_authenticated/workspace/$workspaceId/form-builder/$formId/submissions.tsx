@@ -91,7 +91,7 @@ const toSubmissionColumn = <TValue,>(
 const SubmissionsPage = () => {
   const { formId } = Route.useParams();
   const queryClient = useQueryClient();
-  const { publishedData: initialPublishedData } = Route.useLoaderData();
+  Route.useLoaderData(); // ensure loader has primed the query cache
   const [activeTab, setActiveTab] = useState<"all" | "completed" | "partial">("all");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -113,7 +113,7 @@ const SubmissionsPage = () => {
   const { data: publishedData } = useQuery({
     queryKey: ["publishedFormVersion", formId],
     queryFn: () => getLatestPublishedVersion({ data: { formId } }),
-    initialData: initialPublishedData,
+    staleTime: 1000 * 60 * 10,
   });
   const publishedContent = publishedData?.form?.content;
   // 2. Fetch Submissions via infinite query
@@ -130,6 +130,7 @@ const SubmissionsPage = () => {
     initialPageParam: undefined as SubmissionCursor | undefined,
     getNextPageParam: (lastPage) => lastPage?.nextCursor,
     refetchOnWindowFocus: true,
+    staleTime: 30_000,
   });
   const { data: countData } = useQuery(getSubmissionsCountQueryOption(formId));
   const totalCount = countData?.total ?? 0;

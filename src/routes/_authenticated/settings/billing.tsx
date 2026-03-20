@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useLoaderData } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -10,9 +10,12 @@ import { NotFound } from "@/components/ui/not-found";
 import { auth, authClient } from "@/lib/auth-client";
 
 const BillingPage = () => {
-  const { data: customerState, isLoading } = useQuery(auth.customer.state.queryOptions());
+  const { data: customerState, isLoading } = useQuery({
+    ...auth.customer.state.queryOptions(),
+    staleTime: 1000 * 60 * 10,
+  });
 
-  const { data: activeOrg } = useQuery(auth.organization.getFullOrganization.queryOptions());
+  const { activeOrg } = useLoaderData({ from: "/_authenticated" });
 
   const handleUpgrade = useCallback(
     async (planSlug: string) => {

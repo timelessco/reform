@@ -5,9 +5,9 @@ import { useFormVersionContent } from "@/hooks/use-form-versions";
 import { formCollection } from "@/db-collections/form.collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
-import { getFormbyIdQueryOption } from "@/lib/fn/forms";
+import { getFormStatus } from "@/lib/fn/forms";
+import type { FormStatus } from "@/lib/fn/forms";
 import { cn } from "@/lib/utils";
-import type { QueryClient } from "@tanstack/react-query";
 import { createFileRoute, isRedirect, redirect, useLocation } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { Loader2Icon } from "@/components/ui/icons";
@@ -17,26 +17,9 @@ import { z } from "zod";
 import { zodValidator } from "@tanstack/zod-adapter";
 
 const EditorApp = lazy(() => import("../-components/editor-app"));
-import { PreviewMode } from "../-components/preview-mode";
-
-type FormStatus = "draft" | "published" | "archived";
-type FormStatusQueryResult = {
-  form?: {
-    status?: FormStatus;
-  };
-};
-
-const getFormStatus = async (
-  queryClient: QueryClient,
-  formId: string,
-): Promise<FormStatus | undefined> => {
-  const result = (await queryClient.ensureQueryData({
-    ...getFormbyIdQueryOption(formId),
-    revalidateIfStale: true,
-  })) as FormStatusQueryResult;
-
-  return result.form?.status;
-};
+const PreviewMode = lazy(() =>
+  import("../-components/preview-mode").then((m) => ({ default: m.PreviewMode })),
+);
 
 const DesignPage = () => {
   const { pathname } = useLocation();

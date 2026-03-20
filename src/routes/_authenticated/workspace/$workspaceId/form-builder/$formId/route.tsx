@@ -2,28 +2,9 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { formCollection } from "@/db-collections/form.collections";
-import { getFormbyIdQueryOption } from "@/lib/fn/forms";
-import type { QueryClient } from "@tanstack/react-query";
+import { getFormStatus } from "@/lib/fn/forms";
+import type { FormStatus } from "@/lib/fn/forms";
 import { createFileRoute, isRedirect, Outlet, redirect, useLocation } from "@tanstack/react-router";
-
-type FormStatus = "draft" | "published" | "archived";
-type FormStatusQueryResult = {
-  form?: {
-    status?: FormStatus;
-  };
-};
-
-const getFormStatus = async (
-  queryClient: QueryClient,
-  formId: string,
-): Promise<FormStatus | undefined> => {
-  const result = (await queryClient.ensureQueryData({
-    ...getFormbyIdQueryOption(formId),
-    revalidateIfStale: true,
-  })) as FormStatusQueryResult;
-
-  return result.form?.status;
-};
 
 const FormLayout = () => {
   const { pathname } = useLocation();

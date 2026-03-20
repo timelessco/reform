@@ -3,11 +3,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useTheme } from "@/components/ThemeProvider";
 import { auth, useSession } from "@/lib/auth-client";
 import { settingsDialogStore } from "@/hooks/use-settings-dialog";
-import { orgDataForLayoutQueryOptions } from "@/lib/fn/org";
 import { getUserMembershipsQueryOptions } from "@/lib/fn/workspaces";
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "@tanstack/react-router";
+import { useLoaderData, useRouter } from "@tanstack/react-router";
 import {
   ChevronDownIcon,
   LogOutIcon,
@@ -41,12 +40,12 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const { data: session } = useSession();
-  const { data: orgData } = useQuery(orgDataForLayoutQueryOptions());
-  const { data: membersData } = useQuery(auth.organization.listMembers.queryOptions());
+  const { activeOrg, orgsData: orgs } = useLoaderData({ from: "/_authenticated" });
+  const { data: membersData } = useQuery({
+    ...auth.organization.listMembers.queryOptions(),
+    staleTime: 1000 * 60 * 5,
+  });
   const { data: membershipsData } = useQuery(getUserMembershipsQueryOptions());
-
-  const activeOrg = orgData?.activeOrg ?? null;
-  const orgs = orgData?.orgsData ?? [];
   const displayName = activeOrg?.name ?? session?.user?.name ?? "User";
 
   const roleByOrgId = useMemo(() => {

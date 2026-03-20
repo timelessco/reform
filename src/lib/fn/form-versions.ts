@@ -105,16 +105,7 @@ export const publishFormVersion = createServerFn({ method: "POST" })
         await tx.delete(formVersions).where(inArray(formVersions.id, versionsToDelete));
       }
 
-      const totalInDb = Math.min(allVersions.length, MAX_VERSIONS_PER_FORM);
       const txid = await getTxId(tx);
-
-      console.log("[publishFormVersion] SUCCESS", {
-        formId: data.formId,
-        versionId,
-        versionNumber: nextVersionNumber,
-        totalVersionsInDb: totalInDb,
-        txid,
-      });
 
       return {
         version: serializeVersion(newVersion),
@@ -249,25 +240,21 @@ export const discardFormChanges = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await authForm(data.formId, context.session.user.id);
 
-    // Get the form to find last published version
-    const [form] = await db
-      .select({ lastPublishedVersionId: forms.lastPublishedVersionId })
+    // Get the form with its last published version in a single query
+    const [result] = await db
+      .select({
+        lastPublishedVersionId: forms.lastPublishedVersionId,
+        version: formVersions,
+      })
       .from(forms)
+      .innerJoin(formVersions, eq(forms.lastPublishedVersionId, formVersions.id))
       .where(eq(forms.id, data.formId));
 
-    if (!form?.lastPublishedVersionId) {
+    if (!result?.version) {
       throw new Error("No published version to revert to");
     }
 
-    // Get the last published version
-    const [version] = await db
-      .select()
-      .from(formVersions)
-      .where(eq(formVersions.id, form.lastPublishedVersionId));
-
-    if (!version) {
-      throw new Error("Published version not found");
-    }
+    const version = result.version;
 
     // Compute hash of the version content
     const contentHash = computeContentHash(version.content);
@@ -305,55 +292,42 @@ export const discardFormChanges = createServerFn({ method: "POST" })
 export const getLatestPublishedVersion = createServerFn({ method: "GET" })
   .inputValidator(z.object({ formId: z.string().uuid() }))
   .handler(async ({ data }) => {
-    // Get form with its current published version
-    const [form] = await db
+    // Get form with its published version in a single JOIN query
+    const [result] = await db
       .select({
         id: forms.id,
         status: forms.status,
         icon: forms.icon,
         cover: forms.cover,
         lastPublishedVersionId: forms.lastPublishedVersionId,
+        versionTitle: formVersions.title,
+        versionContent: formVersions.content,
+        versionSettings: formVersions.settings,
+        versionCustomization: formVersions.customization,
       })
       .from(forms)
+      .leftJoin(formVersions, eq(forms.lastPublishedVersionId, formVersions.id))
       .where(and(eq(forms.id, data.formId), eq(forms.status, "published")));
 
-    if (!form) {
+    if (!result) {
       return { form: null, error: "not_found" as const };
     }
 
-    if (!form.lastPublishedVersionId) {
+    if (!result.lastPublishedVersionId || !result.versionContent) {
       return { form: null, error: "not_published" as const };
-    }
-
-    // Get the published version content
-    const [version] = await db
-      .select()
-      .from(formVersions)
-      .where(eq(formVersions.id, form.lastPublishedVersionId));
-
-    if (!version) {
-      return { form: null, error: "version_not_found" as const };
     }
 
     return {
       form: {
-        id: form.id,
-        title: version.title,
-        content: version.content as object[],
-        settings: version.settings as Record<string, object>,
-        customization: (version.customization ?? {}) as Record<string, string>,
-        icon: form.icon,
-        cover: form.cover,
-        status: form.status,
+        id: result.id,
+        title: result.versionTitle ?? "",
+        content: result.versionContent as object[],
+        settings: result.versionSettings as Record<string, object>,
+        customization: (result.versionCustomization ?? {}) as Record<string, string>,
+        icon: result.icon,
+        cover: result.cover,
+        status: result.status,
       },
       error: null,
     };
   });
-
-/**
- * Compute content hash - exported for use in hooks
- */
-const _computeFormContentHash = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
-  .inputValidator(z.object({ content: z.array(z.any()) }))
-  .handler(async ({ data }) => ({ hash: computeContentHash(data.content) }));

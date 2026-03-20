@@ -21,7 +21,7 @@ const serializeSubmission = (s: typeof submissions.$inferSelect) => ({
   ...s,
   createdAt: s.createdAt.toISOString(),
   updatedAt: s.updatedAt.toISOString(),
-  data: s.data as Record<string, unknown>,
+  data: s.data as Record<string, object>,
 });
 
 // GET submissions by form
@@ -157,10 +157,12 @@ export const getSubmissionsByFormIdQueryOption = (formId: string) =>
     queryKey: ["submissions", formId],
     queryFn: () => getSubmissionsByFormId({ data: { formId } }),
     refetchOnWindowFocus: true,
+    staleTime: 30_000,
   });
 
 export const getSubmissionsCountQueryOption = (formId: string) =>
   queryOptions({
     queryKey: ["submissions", formId, "count"],
     queryFn: () => getSubmissionsCount({ data: { formId } }),
+    staleTime: 30_000,
   });

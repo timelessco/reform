@@ -8,5 +8,6 @@
         { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
       ]
     }
-  ]
+  ],
+  "regions": ["bom1"]
 }

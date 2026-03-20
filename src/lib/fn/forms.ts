@@ -11,8 +11,8 @@ const serializeForm = (form: typeof forms.$inferSelect) => ({
   ...form,
   createdAt: form.createdAt.toISOString(),
   updatedAt: form.updatedAt.toISOString(),
-  content: form.content as unknown,
-  settings: form.settings as Record<string, unknown>,
+  content: form.content as Record<string, object>,
+  settings: form.settings as Record<string, object>,
   customization: (form.customization ?? {}) as Record<string, string>,
 });
 
@@ -345,3 +345,22 @@ export const getFormbyIdQueryOption = (formId: string) =>
     queryFn: ({ signal }) => _getFormById({ data: { id: formId }, signal }),
     staleTime: 1000 * 60 * 10, // 10 minutes
   });
+
+export type FormStatus = "draft" | "published" | "archived";
+type FormStatusQueryResult = {
+  form?: {
+    status?: FormStatus;
+  };
+};
+
+export const getFormStatus = async (
+  queryClient: import("@tanstack/react-query").QueryClient,
+  formId: string,
+): Promise<FormStatus | undefined> => {
+  const result = (await queryClient.ensureQueryData({
+    ...getFormbyIdQueryOption(formId),
+    revalidateIfStale: true,
+  })) as FormStatusQueryResult;
+
+  return result.form?.status;
+};

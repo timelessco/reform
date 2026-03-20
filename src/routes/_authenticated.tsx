@@ -1,5 +1,4 @@
-import { ThemedFormIcon } from "@/components/icon-picker";
-import { SettingsDialog } from "@/components/settings/settings-dialog";
+import { ThemedFormIcon } from "@/components/icon-picker/icon-picker-preview";
 import { SidebarItem } from "@/components/sidebar-item";
 import {
   AlertDialog,
@@ -124,6 +123,11 @@ import {
 } from "react";
 import { toast } from "sonner";
 
+const LazySettingsDialog = lazy(() =>
+  import("@/components/settings/settings-dialog").then((m) => ({
+    default: m.SettingsDialog,
+  })),
+);
 const LazyFormSettingsSidebar = lazy(() =>
   import("@/components/form-builder/form-settings-sidebar").then((m) => ({
     default: m.FormSettingsSidebar,
@@ -338,8 +342,6 @@ const AppSidebar = () => {
     (inv: { status: string }) => inv.status === "pending",
   ).length;
 
-  const { data: session } = useSession();
-
   const signOutMutation = useMutation(
     auth.signOut.mutationOptions({
       onSuccess: () => {
@@ -368,12 +370,12 @@ const AppSidebar = () => {
   );
 
   // Set active organization if user has orgs but none is active (runs for all auth routes)
+  // orgsData comes from the server loader (session already validated), no need to gate on client session
   useEffect(() => {
-    if (!session?.user) return;
     if (!activeOrg && orgsData && orgsData.length > 0) {
       setActiveOrgMutation.mutate({ organizationId: orgsData[0].id });
     }
-  }, [activeOrg, orgsData, session, setActiveOrgMutation]);
+  }, [activeOrg, orgsData, setActiveOrgMutation]);
 
   useHotkey(HOTKEYS.TOGGLE_COMMAND_PALETTE, () => togglePalette(), {
     ignoreInputs: true,
@@ -559,7 +561,9 @@ const AppSidebar = () => {
       />
 
       {/* Settings Dialog */}
-      <SettingsDialog />
+      <Suspense fallback={null}>
+        <LazySettingsDialog />
+      </Suspense>
     </>
   );
 };
