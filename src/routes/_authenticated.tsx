@@ -81,7 +81,6 @@ import { MinimalSidebarProvider, useMinimalSidebar } from "@/contexts/minimal-si
 import {
   createFormLocal,
   duplicateFormById,
-  formCollection,
   permanentDeleteFormLocal,
   restoreFormLocal,
   updateFormStatus,
@@ -90,7 +89,6 @@ import {
   createWorkspaceLocal,
   deleteWorkspaceLocal,
   updateWorkspaceName,
-  workspaceCollection,
 } from "@/db-collections/workspace.collection";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
@@ -177,10 +175,6 @@ export const Route = createFileRoute("/_authenticated")({
       ...orgDataForLayoutQueryOptions(),
       revalidateIfStale: true,
     });
-    // Start sync for critical collections immediately (sidebar needs these).
-    // Non-critical collections (submissions, form_versions, favorites)
-    // will start lazily when their useLiveQuery hooks first run.
-    await Promise.all([workspaceCollection.preload(), formCollection.preload()]);
     return { activeOrg, orgsData };
   },
   staleTime: 500000, // 500 seconds
