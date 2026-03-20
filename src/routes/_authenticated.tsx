@@ -34,13 +34,10 @@ import {
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import {
   BellIcon,
-  ChevronsLeftIcon,
   FileTextIcon,
-  FilterIcon,
   HelpCircleIcon,
   HomeIcon,
   LogOutIcon,
-  MoreHorizontalIcon,
   PlusIcon,
   SearchIcon,
   SettingsIcon,
@@ -75,14 +72,15 @@ import {
 } from "@/components/ui/sidebar";
 import { SidebarSection } from "@/components/ui/sidebar-section";
 import { UserMenuMinimal } from "@/components/user-menu-minimal";
-import { WorkspaceItemMinimal } from "@/components/workspace-item-minimal";
 import type { WorkspaceWithForms } from "@/components/workspace-item-minimal";
+import { WorkspaceItemMinimal } from "@/components/workspace-item-minimal";
 import {
   EditorHeaderVisibilityProvider,
   useEditorHeaderVisibility,
 } from "@/contexts/editor-header-visibility-context";
 import { MinimalSidebarProvider, useMinimalSidebar } from "@/contexts/minimal-sidebar-context";
 import { favoriteCollection } from "@/db-collections/favorite.collection";
+import { formVersionCollection } from "@/db-collections/form-version.collection";
 import {
   createFormLocal,
   duplicateFormById,
@@ -91,7 +89,6 @@ import {
   restoreFormLocal,
   updateFormStatus,
 } from "@/db-collections/form.collections";
-import { formVersionCollection } from "@/db-collections/form-version.collection";
 import { submissionCollection } from "@/db-collections/submission.collections";
 import {
   createWorkspaceLocal,
@@ -175,21 +172,19 @@ export const Route = createFileRoute("/_authenticated")({
   },
   component: AuthLayout,
   loader: async ({ context }) => {
-    // Pre-fetch org data via ensureQueryData (like my-account pattern)
     const { activeOrg, orgsData } = await context.queryClient.ensureQueryData({
       ...orgDataForLayoutQueryOptions(),
       revalidateIfStale: true,
     });
-    // requires browser cookies for auth and server-side preload would fail
-    if (typeof window !== "undefined") {
-      await Promise.all([
-        workspaceCollection.preload(),
-        formCollection.preload(),
-        favoriteCollection.preload(),
-        submissionCollection.preload(),
-        formVersionCollection.preload(),
-      ]);
-    }
+    // if (typeof window !== "undefined") {
+    //   await Promise.all([
+    //     workspaceCollection.preload(),
+    //     formCollection.preload(),
+    //     favoriteCollection.preload(),
+    //     submissionCollection.preload(),
+    //     formVersionCollection.preload(),
+    //   ]);
+    // }
     return { activeOrg, orgsData };
   },
   staleTime: 500000, // 500 seconds
