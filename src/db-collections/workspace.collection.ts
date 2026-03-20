@@ -2,7 +2,7 @@ import { electricCollectionOptions } from "@tanstack/electric-db-collection";
 import { createCollection } from "@tanstack/react-db";
 import { z } from "zod";
 import { createWorkspace, deleteWorkspace, updateWorkspace } from "@/lib/fn/workspaces";
-import { electricFetchClient, getElectricUrl, timestampField } from "./shared";
+import { electricFetchClient, getElectricUrl, handleElectricError, timestampField } from "./shared";
 import type { ServerTxResult } from "./shared";
 
 const WorkspaceSchema = z.object({
@@ -24,6 +24,7 @@ export const workspaceCollection = createCollection(
       url: getElectricUrl(),
       params: { table: "workspaces" },
       fetchClient: electricFetchClient,
+      onError: handleElectricError,
       parser: {
         timestamptz: (date: string) => date,
         timestamp: (date: string) => date,

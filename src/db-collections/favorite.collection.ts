@@ -2,7 +2,7 @@ import { electricCollectionOptions } from "@tanstack/electric-db-collection";
 import { createCollection } from "@tanstack/react-db";
 import { z } from "zod";
 import { addFavorite, removeFavorite } from "@/lib/fn/favorites";
-import { electricFetchClient, getElectricUrl, timestampField } from "./shared";
+import { electricFetchClient, getElectricUrl, handleElectricError, timestampField } from "./shared";
 import type { ServerTxResult } from "./shared";
 
 const FormFavoriteSchema = z.object({
@@ -22,6 +22,7 @@ export const favoriteCollection = createCollection(
       url: getElectricUrl(),
       params: { table: "form_favorites" },
       fetchClient: electricFetchClient,
+      onError: handleElectricError,
       parser: {
         timestamptz: (date: string) => date,
         timestamp: (date: string) => date,

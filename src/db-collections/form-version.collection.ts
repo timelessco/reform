@@ -1,7 +1,7 @@
 import { electricCollectionOptions } from "@tanstack/electric-db-collection";
 import { createCollection } from "@tanstack/react-db";
 import { z } from "zod";
-import { electricFetchClient, getElectricUrl, timestampField } from "./shared";
+import { electricFetchClient, getElectricUrl, handleElectricError, timestampField } from "./shared";
 
 // ============================================================================
 // Form Version Schema (read-only — versions are immutable, created by server fns)
@@ -34,6 +34,7 @@ export const formVersionCollection = createCollection(
       url: getElectricUrl(),
       params: { table: "form_versions" },
       fetchClient: electricFetchClient,
+      onError: handleElectricError,
       parser: {
         timestamptz: (date: string) => date,
         timestamp: (date: string) => date,

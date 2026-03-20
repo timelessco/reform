@@ -1,5 +1,14 @@
 import { defineRelations } from "drizzle-orm";
-import { boolean, integer, jsonb, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { createSelectSchema } from "drizzle-zod";
 
 // ============================================================================
@@ -15,13 +24,17 @@ export const organization = pgTable("organization", {
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
-export const member = pgTable("member", {
-  id: text().primaryKey(),
-  userId: text().notNull(),
-  organizationId: text().notNull(),
-  role: text().notNull().default("member"),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-});
+export const member = pgTable(
+  "member",
+  {
+    id: text().primaryKey(),
+    userId: text().notNull(),
+    organizationId: text().notNull(),
+    role: text().notNull().default("member"),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("idx_member_user_id_org_id").on(t.userId, t.organizationId)],
+);
 
 export const invitation = pgTable("invitation", {
   id: text().primaryKey(),
@@ -126,141 +139,181 @@ export const apikey = pgTable("apikey", {
 });
 
 // Workspaces table for organizing forms
-export const workspaces = pgTable("workspaces", {
-  id: text().primaryKey(),
-  organizationId: text().notNull(),
-  createdByUserId: text().notNull(),
-  name: text().notNull().default("Collection"),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-});
+export const workspaces = pgTable(
+  "workspaces",
+  {
+    id: text().primaryKey(),
+    organizationId: text().notNull(),
+    createdByUserId: text().notNull(),
+    name: text().notNull().default("Collection"),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("idx_workspaces_organization_id").on(t.organizationId),
+    index("idx_workspaces_id_created_by").on(t.id, t.createdByUserId),
+  ],
+);
 
 // Forms table for storing form builder documents
-export const forms = pgTable("forms", {
-  id: text().primaryKey(), // UUID generated client-side
-  createdByUserId: text().notNull(),
-  workspaceId: text().notNull(),
-  title: text().notNull().default("Untitled"),
-  formName: text().notNull().default("draft"),
-  schemaName: text().notNull().default("draftFormSchema"),
-  content: jsonb().notNull().default([]),
-  settings: jsonb().notNull().default({}),
-  icon: text(),
-  cover: text(),
-  isMultiStep: boolean().notNull().default(false),
-  status: text().notNull().default("draft"), // 'draft' | 'published' | 'archived'
-  deletedAt: timestamp({ withTimezone: true }), // Soft delete timestamp for trash feature
-  // Version history fields
-  lastPublishedVersionId: text(), // FK to formVersions.id
-  publishedContentHash: text(), // Hash for fast change detection
-  // --- Public form settings (merged from form_settings) ---
-  language: text().default("English").notNull(),
-  redirectOnCompletion: boolean().default(false).notNull(),
-  redirectUrl: text(),
-  redirectDelay: integer().default(0).notNull(),
-  progressBar: boolean().default(false).notNull(),
-  branding: boolean().default(true).notNull(),
-  autoJump: boolean().default(false).notNull(),
-  saveAnswersForLater: boolean().default(true).notNull(),
-  selfEmailNotifications: boolean().default(false).notNull(),
-  notificationEmail: text(),
-  respondentEmailNotifications: boolean().default(false).notNull(),
-  respondentEmailSubject: text(),
-  respondentEmailBody: text(),
-  passwordProtect: boolean().default(false).notNull(),
-  password: text(),
-  closeForm: boolean().default(false).notNull(),
-  closedFormMessage: text().default("This form is now closed."),
-  closeOnDate: boolean().default(false).notNull(),
-  closeDate: text(),
-  limitSubmissions: boolean().default(false).notNull(),
-  maxSubmissions: integer(),
-  preventDuplicateSubmissions: boolean().default(false).notNull(),
-  dataRetention: boolean().default(false).notNull(),
-  dataRetentionDays: integer(),
-  customization: jsonb().default({}),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-});
+export const forms = pgTable(
+  "forms",
+  {
+    id: text().primaryKey(), // UUID generated client-side
+    createdByUserId: text().notNull(),
+    workspaceId: text().notNull(),
+    title: text().notNull().default("Untitled"),
+    formName: text().notNull().default("draft"),
+    schemaName: text().notNull().default("draftFormSchema"),
+    content: jsonb().notNull().default([]),
+    settings: jsonb().notNull().default({}),
+    icon: text(),
+    cover: text(),
+    isMultiStep: boolean().notNull().default(false),
+    status: text().notNull().default("draft"), // 'draft' | 'published' | 'archived'
+    deletedAt: timestamp({ withTimezone: true }), // Soft delete timestamp for trash feature
+    // Version history fields
+    lastPublishedVersionId: text(), // FK to formVersions.id
+    publishedContentHash: text(), // Hash for fast change detection
+    // --- Public form settings (merged from form_settings) ---
+    language: text().default("English").notNull(),
+    redirectOnCompletion: boolean().default(false).notNull(),
+    redirectUrl: text(),
+    redirectDelay: integer().default(0).notNull(),
+    progressBar: boolean().default(false).notNull(),
+    branding: boolean().default(true).notNull(),
+    autoJump: boolean().default(false).notNull(),
+    saveAnswersForLater: boolean().default(true).notNull(),
+    selfEmailNotifications: boolean().default(false).notNull(),
+    notificationEmail: text(),
+    respondentEmailNotifications: boolean().default(false).notNull(),
+    respondentEmailSubject: text(),
+    respondentEmailBody: text(),
+    passwordProtect: boolean().default(false).notNull(),
+    password: text(),
+    closeForm: boolean().default(false).notNull(),
+    closedFormMessage: text().default("This form is now closed."),
+    closeOnDate: boolean().default(false).notNull(),
+    closeDate: text(),
+    limitSubmissions: boolean().default(false).notNull(),
+    maxSubmissions: integer(),
+    preventDuplicateSubmissions: boolean().default(false).notNull(),
+    dataRetention: boolean().default(false).notNull(),
+    dataRetentionDays: integer(),
+    customization: jsonb().default({}),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("idx_forms_workspace_id").on(t.workspaceId),
+    index("idx_forms_workspace_id_status").on(t.workspaceId, t.status),
+    index("idx_forms_id_created_by").on(t.id, t.createdByUserId),
+  ],
+);
 
 // Form Versions table for storing published snapshots
-export const formVersions = pgTable("form_versions", {
-  id: text().primaryKey(),
-  formId: text().notNull(),
-  version: integer().notNull(), // v1, v2, v3...
-  content: jsonb().notNull(), // Plate.js JSON snapshot
-  settings: jsonb().notNull(), // Settings snapshot
-  customization: jsonb().default({}), // Theme customization snapshot
-  title: text().notNull(),
-  publishedByUserId: text().notNull(),
-  publishedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-});
+export const formVersions = pgTable(
+  "form_versions",
+  {
+    id: text().primaryKey(),
+    formId: text().notNull(),
+    version: integer().notNull(), // v1, v2, v3...
+    content: jsonb().notNull(), // Plate.js JSON snapshot
+    settings: jsonb().notNull(), // Settings snapshot
+    customization: jsonb().default({}), // Theme customization snapshot
+    title: text().notNull(),
+    publishedByUserId: text().notNull(),
+    publishedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("idx_form_versions_form_id").on(t.formId),
+    index("idx_form_versions_form_id_version").on(t.formId, t.version),
+  ],
+);
 
 // Submissions table for storing form responses
-export const submissions = pgTable("submissions", {
-  id: text().primaryKey(),
-  formId: text().notNull(),
-  formVersionId: text(), // Links to the form version this submission was created against
-  data: jsonb().notNull().default({}),
-  isCompleted: boolean().notNull().default(true),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-});
+export const submissions = pgTable(
+  "submissions",
+  {
+    id: text().primaryKey(),
+    formId: text().notNull(),
+    formVersionId: text(), // Links to the form version this submission was created against
+    data: jsonb().notNull().default({}),
+    isCompleted: boolean().notNull().default(true),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("idx_submissions_form_id").on(t.formId),
+    index("idx_submissions_form_id_created_at_id").on(t.formId, t.createdAt, t.id),
+  ],
+);
 
 // Form Favorites table for per-user favorites
-export const formFavorites = pgTable("form_favorites", {
-  id: text().primaryKey(), // Format: ${userId}:${formId}
-  userId: text().notNull(),
-  formId: text()
-    .notNull()
-    .references(() => forms.id, { onDelete: "cascade" }),
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-});
+export const formFavorites = pgTable(
+  "form_favorites",
+  {
+    id: text().primaryKey(), // Format: ${userId}:${formId}
+    userId: text().notNull(),
+    formId: text()
+      .notNull()
+      .references(() => forms.id, { onDelete: "cascade" }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("idx_form_favorites_user_id").on(t.userId),
+    index("idx_form_favorites_user_id_form_id").on(t.userId, t.formId),
+  ],
+);
 
 // ============================================================================
 // Form Visits Table (Analytics - Raw Events)
 // ============================================================================
-export const formVisits = pgTable("form_visits", {
-  id: text().primaryKey(),
-  formId: text().notNull(),
+export const formVisits = pgTable(
+  "form_visits",
+  {
+    id: text().primaryKey(),
+    formId: text().notNull(),
 
-  // Anonymous tracking
-  visitorHash: text().notNull(),
-  sessionId: text().notNull(),
+    // Anonymous tracking
+    visitorHash: text().notNull(),
+    sessionId: text().notNull(),
 
-  // Source attribution
-  referrer: text(),
-  utmSource: text(),
-  utmMedium: text(),
-  utmCampaign: text(),
+    // Source attribution
+    referrer: text(),
+    utmSource: text(),
+    utmMedium: text(),
+    utmCampaign: text(),
 
-  // Device metadata
-  deviceType: text(), // 'desktop' | 'tablet' | 'mobile'
-  browser: text(),
-  browserVersion: text(),
-  os: text(),
-  osVersion: text(),
+    // Device metadata
+    deviceType: text(), // 'desktop' | 'tablet' | 'mobile'
+    browser: text(),
+    browserVersion: text(),
+    os: text(),
+    osVersion: text(),
 
-  // Geolocation (country-level, privacy-friendly)
-  country: text(),
-  countryName: text(),
-  city: text(),
-  region: text(),
+    // Geolocation (country-level, privacy-friendly)
+    country: text(),
+    countryName: text(),
+    city: text(),
+    region: text(),
 
-  // Timing
-  visitStartedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  visitEndedAt: timestamp({ withTimezone: true }),
-  durationMs: integer(),
+    // Timing
+    visitStartedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    visitEndedAt: timestamp({ withTimezone: true }),
+    durationMs: integer(),
 
-  // Interaction tracking
-  didStartForm: boolean().notNull().default(false),
-  didSubmit: boolean().notNull().default(false),
-  submissionId: text(),
+    // Interaction tracking
+    didStartForm: boolean().notNull().default(false),
+    didSubmit: boolean().notNull().default(false),
+    submissionId: text(),
 
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-});
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("idx_form_visits_form_id").on(t.formId)],
+);
 
 // ============================================================================
 // Form Question Progress Table (Question Drop-off Tracking)
@@ -286,68 +339,76 @@ export const formQuestionProgress = pgTable("form_question_progress", {
 // ============================================================================
 // Form Analytics Daily Table (Pre-aggregated Daily Metrics)
 // ============================================================================
-export const formAnalyticsDaily = pgTable("form_analytics_daily", {
-  id: text().primaryKey(),
-  formId: text().notNull(),
-  date: text().notNull(), // 'YYYY-MM-DD'
+export const formAnalyticsDaily = pgTable(
+  "form_analytics_daily",
+  {
+    id: text().primaryKey(),
+    formId: text().notNull(),
+    date: text().notNull(), // 'YYYY-MM-DD'
 
-  // Core metrics
-  totalVisits: integer().notNull().default(0),
-  uniqueVisitors: integer().notNull().default(0),
-  totalSubmissions: integer().notNull().default(0),
-  uniqueSubmitters: integer().notNull().default(0),
-  avgDurationMs: integer(),
-  medianDurationMs: integer(),
+    // Core metrics
+    totalVisits: integer().notNull().default(0),
+    uniqueVisitors: integer().notNull().default(0),
+    totalSubmissions: integer().notNull().default(0),
+    uniqueSubmitters: integer().notNull().default(0),
+    avgDurationMs: integer(),
+    medianDurationMs: integer(),
 
-  // Device breakdown
-  deviceDesktop: integer().default(0),
-  deviceMobile: integer().default(0),
-  deviceTablet: integer().default(0),
+    // Device breakdown
+    deviceDesktop: integer().default(0),
+    deviceMobile: integer().default(0),
+    deviceTablet: integer().default(0),
 
-  // Browser breakdown
-  browserChrome: integer().default(0),
-  browserFirefox: integer().default(0),
-  browserSafari: integer().default(0),
-  browserEdge: integer().default(0),
-  browserOther: integer().default(0),
+    // Browser breakdown
+    browserChrome: integer().default(0),
+    browserFirefox: integer().default(0),
+    browserSafari: integer().default(0),
+    browserEdge: integer().default(0),
+    browserOther: integer().default(0),
 
-  // OS breakdown
-  osWindows: integer().default(0),
-  osMacos: integer().default(0),
-  osIos: integer().default(0),
-  osAndroid: integer().default(0),
-  osLinux: integer().default(0),
-  osOther: integer().default(0),
+    // OS breakdown
+    osWindows: integer().default(0),
+    osMacos: integer().default(0),
+    osIos: integer().default(0),
+    osAndroid: integer().default(0),
+    osLinux: integer().default(0),
+    osOther: integer().default(0),
 
-  // Flexible breakdowns (JSONB for many values)
-  countryBreakdown: jsonb().notNull().default({}),
-  cityBreakdown: jsonb().notNull().default({}),
-  sourceBreakdown: jsonb().notNull().default({}),
+    // Flexible breakdowns (JSONB for many values)
+    countryBreakdown: jsonb().notNull().default({}),
+    cityBreakdown: jsonb().notNull().default({}),
+    sourceBreakdown: jsonb().notNull().default({}),
 
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-});
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("idx_form_analytics_daily_form_id_date").on(t.formId, t.date)],
+);
 
 // ============================================================================
 // Form Dropoff Daily Table (Question Drop-off Aggregates)
 // ============================================================================
-export const formDropoffDaily = pgTable("form_dropoff_daily", {
-  id: text().primaryKey(),
-  formId: text().notNull(),
-  date: text().notNull(), // 'YYYY-MM-DD'
-  questionId: text().notNull(),
-  questionIndex: integer().notNull(),
+export const formDropoffDaily = pgTable(
+  "form_dropoff_daily",
+  {
+    id: text().primaryKey(),
+    formId: text().notNull(),
+    date: text().notNull(), // 'YYYY-MM-DD'
+    questionId: text().notNull(),
+    questionIndex: integer().notNull(),
 
-  viewCount: integer().notNull().default(0),
-  startCount: integer().notNull().default(0),
-  completeCount: integer().notNull().default(0),
-  dropoffCount: integer().notNull().default(0),
-  dropoffRate: integer(), // Percentage * 100
-  completionRate: integer(),
+    viewCount: integer().notNull().default(0),
+    startCount: integer().notNull().default(0),
+    completeCount: integer().notNull().default(0),
+    dropoffCount: integer().notNull().default(0),
+    dropoffRate: integer(), // Percentage * 100
+    completionRate: integer(),
 
-  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-});
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("idx_form_dropoff_daily_form_id_date").on(t.formId, t.date)],
+);
 
 // Drizzle v2 Relations using defineRelations
 export const relations = defineRelations(

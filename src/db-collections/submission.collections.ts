@@ -1,7 +1,7 @@
 import { electricCollectionOptions } from "@tanstack/electric-db-collection";
 import { createCollection } from "@tanstack/react-db";
 import { z } from "zod";
-import { electricFetchClient, getElectricUrl, timestampField } from "./shared";
+import { electricFetchClient, getElectricUrl, handleElectricError, timestampField } from "./shared";
 
 // ============================================================================
 // Submission Schema
@@ -30,6 +30,7 @@ export const submissionCollection = createCollection(
       url: getElectricUrl(),
       params: { table: "submissions" },
       fetchClient: electricFetchClient,
+      onError: handleElectricError,
       parser: {
         timestamptz: (date: string) => date,
         timestamp: (date: string) => date,

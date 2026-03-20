@@ -1,3 +1,4 @@
+import { FetchError } from "@electric-sql/client";
 import { z } from "zod";
 
 /** Parse Postgres timestamp (no TZ) as UTC before converting to ISO. Avoids local-time misparse. */
@@ -22,6 +23,18 @@ export const getElectricUrl = () => {
 };
 
 export type ServerTxResult = { txid: number };
+
+/** Shared onError handler for Electric shape streams.
+ *  Returns {} to signal retry with exponential backoff.
+ *  Without this, returning void permanently kills the stream. */
+export const handleElectricError = (error: unknown) => {
+  if (error instanceof FetchError) {
+    console.error(`Electric sync error: ${error.status}`, error.message);
+  } else {
+    console.error("Electric sync error:", error);
+  }
+  return {};
+};
 
 let redirecting = false;
 

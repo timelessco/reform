@@ -12,11 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as CreateRouteImport } from './routes/create'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FormsFormIdRouteImport } from './routes/forms/$formId'
-import { Route as DemoSplatRouteImport } from './routes/demo.$'
 import { Route as ApiElectricRouteImport } from './routes/api/electric'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAcceptInviteRouteImport } from './routes/_authenticated/accept-invite'
@@ -49,11 +47,6 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreateRoute = CreateRouteImport.update({
-  id: '/create',
-  path: '/create',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -66,11 +59,6 @@ const IndexRoute = IndexRouteImport.update({
 const FormsFormIdRoute = FormsFormIdRouteImport.update({
   id: '/forms/$formId',
   path: '/forms/$formId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DemoSplatRoute = DemoSplatRouteImport.update({
-  id: '/demo/$',
-  path: '/demo/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiElectricRoute = ApiElectricRouteImport.update({
@@ -173,7 +161,6 @@ const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/create': typeof CreateRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -181,7 +168,6 @@ export interface FileRoutesByFullPath {
   '/accept-invite': typeof AuthenticatedAcceptInviteRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/electric': typeof ApiElectricRoute
-  '/demo/$': typeof DemoSplatRoute
   '/forms/$formId': typeof FormsFormIdRoute
   '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -198,7 +184,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/create': typeof CreateRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -206,7 +191,6 @@ export interface FileRoutesByTo {
   '/accept-invite': typeof AuthenticatedAcceptInviteRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/api/electric': typeof ApiElectricRoute
-  '/demo/$': typeof DemoSplatRoute
   '/forms/$formId': typeof FormsFormIdRoute
   '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -225,7 +209,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/create': typeof CreateRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/verify-email': typeof VerifyEmailRoute
@@ -233,7 +216,6 @@ export interface FileRoutesById {
   '/_authenticated/accept-invite': typeof AuthenticatedAcceptInviteRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/api/electric': typeof ApiElectricRoute
-  '/demo/$': typeof DemoSplatRoute
   '/forms/$formId': typeof FormsFormIdRoute
   '/_authenticated/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -252,7 +234,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/create'
     | '/login'
     | '/signup'
     | '/verify-email'
@@ -260,7 +241,6 @@ export interface FileRouteTypes {
     | '/accept-invite'
     | '/dashboard'
     | '/api/electric'
-    | '/demo/$'
     | '/forms/$formId'
     | '/workspace/$workspaceId'
     | '/settings/api-keys'
@@ -277,7 +257,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/create'
     | '/login'
     | '/signup'
     | '/verify-email'
@@ -285,7 +264,6 @@ export interface FileRouteTypes {
     | '/accept-invite'
     | '/dashboard'
     | '/api/electric'
-    | '/demo/$'
     | '/forms/$formId'
     | '/workspace/$workspaceId'
     | '/settings/api-keys'
@@ -303,7 +281,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
-    | '/create'
     | '/login'
     | '/signup'
     | '/verify-email'
@@ -311,7 +288,6 @@ export interface FileRouteTypes {
     | '/_authenticated/accept-invite'
     | '/_authenticated/dashboard'
     | '/api/electric'
-    | '/demo/$'
     | '/forms/$formId'
     | '/_authenticated/workspace/$workspaceId'
     | '/_authenticated/settings/api-keys'
@@ -330,12 +306,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  CreateRoute: typeof CreateRoute
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   ApiElectricRoute: typeof ApiElectricRoute
-  DemoSplatRoute: typeof DemoSplatRoute
   FormsFormIdRoute: typeof FormsFormIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   FormsI8nFormIdRoute: typeof FormsI8nFormIdRoute
@@ -364,13 +338,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/create': {
-      id: '/create'
-      path: '/create'
-      fullPath: '/create'
-      preLoaderRoute: typeof CreateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -390,13 +357,6 @@ declare module '@tanstack/react-router' {
       path: '/forms/$formId'
       fullPath: '/forms/$formId'
       preLoaderRoute: typeof FormsFormIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo/$': {
-      id: '/demo/$'
-      path: '/demo/$'
-      fullPath: '/demo/$'
-      preLoaderRoute: typeof DemoSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/electric': {
@@ -595,12 +555,10 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  CreateRoute: CreateRoute,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   ApiElectricRoute: ApiElectricRoute,
-  DemoSplatRoute: DemoSplatRoute,
   FormsFormIdRoute: FormsFormIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   FormsI8nFormIdRoute: FormsI8nFormIdRoute,

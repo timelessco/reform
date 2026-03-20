@@ -7,7 +7,7 @@ import {
 import { z } from "zod";
 import { createForm, deleteForm, updateForm } from "@/lib/fn/forms";
 import { logger } from "@/lib/utils";
-import { electricFetchClient, getElectricUrl, timestampField } from "./shared";
+import { electricFetchClient, getElectricUrl, handleElectricError, timestampField } from "./shared";
 import type { ServerTxResult } from "./shared";
 
 const SettingsSchema = z.object({
@@ -82,6 +82,7 @@ export const formCollection = createCollection(
       url: getElectricUrl(),
       params: { table: "forms" },
       fetchClient: electricFetchClient,
+      onError: handleElectricError,
       parser: {
         timestamptz: (date: string) => date,
         timestamp: (date: string) => date,

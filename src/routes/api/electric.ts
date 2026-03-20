@@ -1,7 +1,7 @@
-import { member, workspaces } from "@/db/schema";
+import { forms, member, workspaces } from "@/db/schema";
 import { db } from "@/lib/db";
+import { eq } from "drizzle-orm";
 import { createFileRoute } from "@tanstack/react-router";
-import { eq, inArray } from "drizzle-orm";
 import { authMiddleware } from "@/middleware/auth";
 import { ELECTRIC_PROTOCOL_QUERY_PARAMS } from "@electric-sql/client";
 
@@ -10,6 +10,98 @@ const json = (data: unknown, status = 200) =>
     status,
     headers: { "Content-Type": "application/json" },
   });
+
+// ---------------------------------------------------------------------------
+// In-memory cache for user permission data (TTL: 30 seconds)
+// Eliminates 1-3 DB queries on every Electric request including long-polls.
+// ---------------------------------------------------------------------------
+const CACHE_TTL_MS = 30_000;
+const CACHE_MAX_SIZE = 500;
+
+interface CachedUserData {
+  memberships: { organizationId: string }[];
+  workspaceIds: string[];
+  formIds: string[];
+  timestamp: number;
+}
+
+const userCache = new Map<string, CachedUserData>();
+const inflightRequests = new Map<string, Promise<CachedUserData>>();
+
+const getCachedUserData = async (userId: string): Promise<CachedUserData> => {
+  const cached = userCache.get(userId);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached;
+  }
+
+  // Deduplicate concurrent requests for the same user
+  const inflight = inflightRequests.get(userId);
+  if (inflight) return inflight;
+
+  const promise = fetchUserData(userId);
+  inflightRequests.set(userId, promise);
+  try {
+    return await promise;
+  } finally {
+    inflightRequests.delete(userId);
+  }
+};
+
+const fetchUserData = async (userId: string): Promise<CachedUserData> => {
+  const rows = await db
+    .select({
+      orgId: member.organizationId,
+      workspaceId: workspaces.id,
+      formId: forms.id,
+    })
+    .from(member)
+    .leftJoin(workspaces, eq(workspaces.organizationId, member.organizationId))
+    .leftJoin(forms, eq(forms.workspaceId, workspaces.id))
+    .where(eq(member.userId, userId));
+
+  const orgIdSet = new Set<string>();
+  const workspaceIdSet = new Set<string>();
+  const formIdSet = new Set<string>();
+
+  for (const row of rows) {
+    orgIdSet.add(row.orgId);
+    if (row.workspaceId) workspaceIdSet.add(row.workspaceId);
+    if (row.formId) formIdSet.add(row.formId);
+  }
+
+  const memberships = [...orgIdSet].map((organizationId) => ({ organizationId }));
+  const workspaceIds = [...workspaceIdSet];
+  const formIds = [...formIdSet];
+
+  const data: CachedUserData = {
+    memberships,
+    workspaceIds,
+    formIds,
+    timestamp: Date.now(),
+  };
+
+  // Evict oldest entries if cache exceeds max size
+  if (userCache.size >= CACHE_MAX_SIZE) {
+    const firstKey = userCache.keys().next().value;
+    if (firstKey) userCache.delete(firstKey);
+  }
+
+  userCache.set(userId, data);
+  return data;
+};
+
+const buildInClause = (
+  column: string,
+  values: string[],
+): { whereSql: string; whereParams: Record<string, string> } => {
+  if (values.length === 0) return { whereSql: "1 = 0", whereParams: {} };
+  const placeholders = values.map((_, i) => `$${i + 1}`).join(", ");
+  const params: Record<string, string> = {};
+  for (let i = 0; i < values.length; i++) {
+    params[`params[${i + 1}]`] = values[i];
+  }
+  return { whereSql: `"${column}" IN (${placeholders})`, whereParams: params };
+};
 
 export const Route = createFileRoute("/api/electric")({
   server: {
@@ -22,7 +114,6 @@ export const Route = createFileRoute("/api/electric")({
         request: Request;
         context: { session: { user: { id: string } } };
       }) => {
-        // Use session from authMiddleware instead of re-fetching
         if (!context?.session?.user?.id) {
           return json({ error: "Not authenticated" }, 401);
         }
@@ -43,124 +134,35 @@ export const Route = createFileRoute("/api/electric")({
           return json({ error: "Invalid or missing table." }, 400);
         }
 
+        // Use cached user data instead of querying DB on every request
+        const userData = await getCachedUserData(userId);
+
         let whereSql: string;
         let whereParams: Record<string, string> = {};
 
-        // Hoist membership query before switch - shared by forms, workspaces, submissions, form_versions
-        const needsMembership = ["forms", "workspaces", "submissions", "form_versions"].includes(
-          table,
-        );
-        const userMemberships = needsMembership
-          ? await db
-              .select({ organizationId: member.organizationId })
-              .from(member)
-              .where(eq(member.userId, userId))
-          : [];
-
-        // Hoist workspace query - shared by forms, submissions, form_versions
-        const needsWorkspaces = ["forms", "submissions", "form_versions"].includes(table);
-        const workspaceList =
-          needsWorkspaces && userMemberships.length > 0
-            ? await db
-                .select({ id: workspaces.id })
-                .from(workspaces)
-                .where(
-                  inArray(
-                    workspaces.organizationId,
-                    userMemberships.map((m) => m.organizationId),
-                  ),
-                )
-            : [];
-
         switch (table) {
           case "forms": {
-            if (userMemberships.length === 0) {
-              whereSql = `1 = 0`;
-            } else if (workspaceList.length === 0) {
-              whereSql = `1 = 0`;
-            } else {
-              const placeholders = workspaceList.map((_, i) => `$${i + 1}`).join(", ");
-              whereSql = `"workspaceId" IN (${placeholders})`;
-              for (let i = 0; i < workspaceList.length; i++) {
-                whereParams[`params[${i + 1}]`] = workspaceList[i].id;
-              }
-            }
+            ({ whereSql, whereParams } = buildInClause("workspaceId", userData.workspaceIds));
             break;
           }
 
           case "workspaces": {
-            if (userMemberships.length === 0) {
-              whereSql = `1 = 0`;
-            } else {
-              const placeholders = userMemberships.map((_, i) => `$${i + 1}`).join(", ");
-              whereSql = `"organizationId" IN (${placeholders})`;
-              for (let i = 0; i < userMemberships.length; i++) {
-                whereParams[`params[${i + 1}]`] = userMemberships[i].organizationId;
-              }
-            }
+            ({ whereSql, whereParams } = buildInClause(
+              "organizationId",
+              userData.memberships.map((m) => m.organizationId),
+            ));
             break;
           }
 
-          case "submissions": {
-            if (userMemberships.length === 0 || workspaceList.length === 0) {
-              whereSql = `1 = 0`;
-            } else {
-              const { forms } = await import("@/db/schema");
-              const formList = await db
-                .select({ id: forms.id })
-                .from(forms)
-                .where(
-                  inArray(
-                    forms.workspaceId,
-                    workspaceList.map((ws) => ws.id),
-                  ),
-                );
-
-              if (formList.length === 0) {
-                whereSql = `1 = 0`;
-              } else {
-                const placeholders = formList.map((_, i) => `$${i + 1}`).join(", ");
-                whereSql = `"formId" IN (${placeholders})`;
-                for (let i = 0; i < formList.length; i++) {
-                  whereParams[`params[${i + 1}]`] = formList[i].id;
-                }
-              }
-            }
-            break;
-          }
-
+          case "submissions":
           case "form_versions": {
-            if (userMemberships.length === 0 || workspaceList.length === 0) {
-              whereSql = `1 = 0`;
-            } else {
-              const { forms } = await import("@/db/schema");
-              const formListVersions = await db
-                .select({ id: forms.id })
-                .from(forms)
-                .where(
-                  inArray(
-                    forms.workspaceId,
-                    workspaceList.map((ws) => ws.id),
-                  ),
-                );
-
-              if (formListVersions.length === 0) {
-                whereSql = `1 = 0`;
-              } else {
-                const placeholders = formListVersions.map((_, i) => `$${i + 1}`).join(", ");
-                whereSql = `"formId" IN (${placeholders})`;
-                for (let i = 0; i < formListVersions.length; i++) {
-                  whereParams[`params[${i + 1}]`] = formListVersions[i].id;
-                }
-              }
-            }
+            ({ whereSql, whereParams } = buildInClause("formId", userData.formIds));
             break;
           }
 
           case "form_favorites": {
-            // Users can only see their own favorites
             whereSql = `"userId" = $1`;
-            whereParams[`params[1]`] = userId;
+            whereParams["params[1]"] = userId;
             break;
           }
 
@@ -194,13 +196,11 @@ export const Route = createFileRoute("/api/electric")({
           upstreamUrl.searchParams.set(key, value);
         }
 
-        // logger("electric-proxy", {
-        //   userId,
-        //   table,
-        //   where: whereSql,
-        //   sourceId: sourceId ? `${sourceId.substring(0, 8)}...` : "not set",
-        //   url: upstreamUrl.toString().replace(sourceSecret || "", "[REDACTED]"),
-        // });
+        // Forward columns param if specified (not in ELECTRIC_PROTOCOL_QUERY_PARAMS)
+        const columns = url.searchParams.get("columns");
+        if (columns) {
+          upstreamUrl.searchParams.set("columns", columns);
+        }
 
         try {
           const upstream = await fetch(upstreamUrl.toString(), {
@@ -210,7 +210,6 @@ export const Route = createFileRoute("/api/electric")({
 
           const responseHeaders = new Headers();
 
-          // Copy all upstream headers including electric-* headers
           for (const [key, value] of upstream.headers.entries()) {
             if (
               key === "content-encoding" ||
@@ -227,7 +226,6 @@ export const Route = createFileRoute("/api/electric")({
             "electric-offset, electric-handle, electric-schema, electric-cursor",
           );
 
-          // Preserve Electric's cache headers but add Vary for per-user isolation
           responseHeaders.set("Vary", "Cookie");
 
           return new Response(upstream.body, {

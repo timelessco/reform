@@ -9,5 +9,5 @@
       ]
     }
   ],
-  "regions": ["bom1"]
+  "regions": ["bom1", "iad1", "fra1"]
 }
