@@ -1,12 +1,12 @@
-import type { QueryClient } from "@tanstack/react-query";
-import { createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
-import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { Toaster } from "@/components/ui/sonner";
+import { HotkeysProvider } from "@tanstack/react-hotkeys";
+import type { QueryClient } from "@tanstack/react-query";
+import { createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
+import { lazy, Suspense } from "react";
 import type { Session } from "../lib/auth";
 import appCss from "../styles/styles.css?url";
 
@@ -63,6 +63,13 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
     ],
     links: [
+      {
+        rel: "preload",
+        href: "/fonts/Inter-V.woff2",
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
       {
         rel: "stylesheet",
         href: appCss,

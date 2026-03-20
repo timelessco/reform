@@ -20,6 +20,7 @@ import {
   updateFormStatus,
 } from "@/db-collections/form.collections";
 import { createWorkspaceLocal } from "@/db-collections/workspace.collection";
+import { ClientOnly } from "@/components/client-only";
 import { useOrgForms, useOrgWorkspaces } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
 import { clearLocalDraftIds } from "@/lib/local-draft";
@@ -43,7 +44,38 @@ import { toast } from "sonner";
 
 const FORMS_PER_PAGE = 10;
 
-const DashboardPage = () => {
+const DashboardSkeleton = () => (
+  <div className="flex-1 flex flex-col min-h-screen bg-background text-foreground">
+    <main className="flex-1 p-6 md:p-12 lg:p-20 max-w-6xl mx-auto w-full">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <div className="h-8 w-32 rounded bg-muted animate-pulse" />
+          <div className="h-4 w-48 rounded bg-muted animate-pulse mt-2" />
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-32 rounded bg-muted animate-pulse" />
+          <div className="h-8 w-24 rounded bg-muted animate-pulse" />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-4">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={`dash-skel-${i}`} className="flex flex-col p-2 -mx-2 rounded-xl animate-pulse">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-2">
+                  <div className="h-5 w-48 rounded bg-muted" />
+                  <div className="h-3 w-32 rounded bg-muted" />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </main>
+  </div>
+);
+
+const DashboardContent = () => {
   const navigate = useNavigate();
   const { activeOrg } = useLoaderData({ from: "/_authenticated" });
   const [isCreating, setIsCreating] = useState(false);
@@ -435,9 +467,14 @@ const DashboardPage = () => {
   );
 };
 
+const DashboardPage = () => (
+  <ClientOnly fallback={<DashboardSkeleton />}>
+    <DashboardContent />
+  </ClientOnly>
+);
+
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
-  ssr: false,
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,

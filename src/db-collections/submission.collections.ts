@@ -8,8 +8,8 @@ import { electricFetchClient, getElectricUrl, handleElectricError, timestampFiel
 // ============================================================================
 
 const SubmissionSchema = z.object({
-  id: z.string().uuid(),
-  formId: z.string().uuid(),
+  id: z.uuid(),
+  formId: z.uuid(),
   data: z.record(z.string(), z.any()).default({}),
   isCompleted: z.boolean().default(true),
   createdAt: timestampField,
@@ -38,6 +38,6 @@ export const submissionCollection = createCollection(
     },
     getKey: (item) => item.id,
     startSync: false, // Sync starts in _authenticated.tsx loader after auth is confirmed
-    syncMode: "progressive",
+    syncMode: "on-demand",
   }),
 );

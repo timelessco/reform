@@ -561,7 +561,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                 />
               </DropdownMenuItem>
               {hasMinLength && (
-                <div className="px-2 pb-2">
+                <div className="p-2">
                   <Input
                     type="number"
                     min={1}
@@ -588,7 +588,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                 />
               </DropdownMenuItem>
               {hasMaxLength && (
-                <div className="px-2 pb-2">
+                <div className="p-2">
                   <Input
                     type="number"
                     min={1}

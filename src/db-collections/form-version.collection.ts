@@ -42,6 +42,6 @@ export const formVersionCollection = createCollection(
     },
     getKey: (item) => item.id,
     startSync: false,
-    syncMode: "progressive",
+    syncMode: "on-demand",
   }),
 );

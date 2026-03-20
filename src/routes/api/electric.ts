@@ -183,9 +183,9 @@ export const Route = createFileRoute("/api/electric")({
           return json({ error: "Electric source credentials not configured" }, 500);
         }
 
-        // Forward only Electric protocol query parameters
+        // Forward Electric protocol query parameters + subset__ params (used by fetchSnapshot)
         for (const [key, value] of url.searchParams.entries()) {
-          if (ELECTRIC_PROTOCOL_QUERY_PARAMS.includes(key)) {
+          if (ELECTRIC_PROTOCOL_QUERY_PARAMS.includes(key) || key.startsWith("subset__")) {
             upstreamUrl.searchParams.set(key, value);
           }
         }

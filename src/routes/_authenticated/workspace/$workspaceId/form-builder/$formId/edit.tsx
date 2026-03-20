@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { ClientOnly } from "@/components/client-only";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { NotFound } from "@/components/ui/not-found";
 import { useFormVersionContent } from "@/hooks/use-form-versions";
@@ -171,8 +172,17 @@ export const Route = createFileRoute(
       // On error, allow edit route to load
     }
   },
-  ssr: false,
-  component: DesignPage,
+  component: () => (
+    <ClientOnly
+      fallback={
+        <div className="flex items-center justify-center h-full">
+          <Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <DesignPage />
+    </ClientOnly>
+  ),
   pendingComponent: () => <div>Loading...</div>,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,

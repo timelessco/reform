@@ -8,7 +8,7 @@ import type { ServerTxResult } from "./shared";
 const FormFavoriteSchema = z.object({
   id: z.string(), // Format: ${userId}:${formId}
   userId: z.string(),
-  formId: z.string().uuid(),
+  formId: z.uuid(),
   createdAt: timestampField,
 });
 
@@ -30,7 +30,7 @@ export const favoriteCollection = createCollection(
     },
     getKey: (item) => item.id,
     startSync: false, // Sync starts in _authenticated.tsx loader after auth is confirmed
-    syncMode: "progressive",
+    syncMode: "on-demand",
     onInsert: async ({ transaction }) => {
       const txids = await Promise.all(
         transaction.mutations.map(async (m) => {

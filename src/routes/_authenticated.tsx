@@ -1,17 +1,6 @@
-import { ThemedFormIcon } from "@/components/icon-picker/icon-picker-preview";
 import { SidebarItem } from "@/components/sidebar-item";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { AppHeader } from "@/components/ui/app-header";
 import { Button } from "@/components/ui/button";
+import { ClientOnly } from "@/components/client-only";
 import {
   Command,
   CommandDialog,
@@ -22,14 +11,7 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import {
   BellIcon,
@@ -50,13 +32,6 @@ import Loader from "@/components/ui/loader";
 import { LogoToggle } from "@/components/ui/logo";
 import { NotFound } from "@/components/ui/not-found";
 import {
-  RIGHT_SIDEBAR_WIDTH_DEFAULT,
-  RIGHT_SIDEBAR_WIDTH_KEY,
-  RIGHT_SIDEBAR_WIDTH_MAX,
-  RIGHT_SIDEBAR_WIDTH_MIN,
-  RightSidebarResizeHandle,
-} from "@/components/ui/right-sidebar-resize-handle";
-import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -69,47 +44,28 @@ import {
   SidebarProvider,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { SidebarSection } from "@/components/ui/sidebar-section";
 import { UserMenuMinimal } from "@/components/user-menu-minimal";
-import type { WorkspaceWithForms } from "@/components/workspace-item-minimal";
-import { WorkspaceItemMinimal } from "@/components/workspace-item-minimal";
-import {
-  EditorHeaderVisibilityProvider,
-  useEditorHeaderVisibility,
-} from "@/contexts/editor-header-visibility-context";
+import { EditorHeaderVisibilityProvider } from "@/contexts/editor-header-visibility-context";
 import { MinimalSidebarProvider, useMinimalSidebar } from "@/contexts/minimal-sidebar-context";
 import {
   createFormLocal,
-  duplicateFormById,
-  formCollection,
   permanentDeleteFormLocal,
   restoreFormLocal,
-  updateFormStatus,
 } from "@/db-collections/form.collections";
-import {
-  createWorkspaceLocal,
-  deleteWorkspaceLocal,
-  updateWorkspaceName,
-  workspaceCollection,
-} from "@/db-collections/workspace.collection";
+import { createWorkspaceLocal } from "@/db-collections/workspace.collection";
 import { useCommandPalette } from "@/hooks/use-command-palette";
-import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
-import {
-  useArchivedForms,
-  useFavoriteForms,
-  useOrgForms,
-  useOrgWorkspaces,
-  useSubmissionCounts,
-} from "@/hooks/use-live-hooks";
+import { useArchivedForms, useOrgWorkspaces } from "@/hooks/use-live-hooks";
 import { settingsDialogStore } from "@/hooks/use-settings-dialog";
-import { auth, useSession } from "@/lib/auth-client";
+import { auth } from "@/lib/auth-client";
 import { orgDataForLayoutQueryOptions } from "@/lib/fn/org";
 import { HOTKEYS } from "@/lib/hotkeys";
 import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/middleware/auth";
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Outlet, useLocation, useParams, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useLocation, useRouter } from "@tanstack/react-router";
+import { ClientMainArea } from "@/routes/_authenticated/-components/client-main-area";
+import { ClientSidebarWorkspaces } from "@/routes/_authenticated/-components/client-sidebar-workspaces";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type * as React from "react";
@@ -128,26 +84,6 @@ import { toast } from "sonner";
 const LazySettingsDialog = lazy(() =>
   import("@/components/settings/settings-dialog").then((m) => ({
     default: m.SettingsDialog,
-  })),
-);
-const LazyFormSettingsSidebar = lazy(() =>
-  import("@/components/form-builder/form-settings-sidebar").then((m) => ({
-    default: m.FormSettingsSidebar,
-  })),
-);
-const LazyShareSummarySidebar = lazy(() =>
-  import("@/components/form-builder/share-summary-sidebar").then((m) => ({
-    default: m.ShareSummarySidebar,
-  })),
-);
-const LazyVersionHistorySidebar = lazy(() =>
-  import("@/components/form-builder/version-history-sidebar").then((m) => ({
-    default: m.VersionHistorySidebar,
-  })),
-);
-const LazyCustomizeSidebar = lazy(() =>
-  import("@/components/ui/customize-sidebar").then((m) => ({
-    default: m.CustomizeSidebar,
   })),
 );
 
@@ -177,134 +113,24 @@ export const Route = createFileRoute("/_authenticated")({
       ...orgDataForLayoutQueryOptions(),
       revalidateIfStale: true,
     });
-    if (typeof window !== "undefined") {
-      await Promise.all([workspaceCollection.preload(), formCollection.preload()]);
-    }
     return { activeOrg, orgsData };
   },
   staleTime: 500000, // 500 seconds
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,
-  ssr: "data-only",
+  ssr: true,
 });
 
-const AuthLayoutContent = () => {
-  const location = useLocation();
-  const { pathname } = location;
-  const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
-  const { visible: isHeaderVisible, reportPointerActivity } = useEditorHeaderVisibility();
-
-  const { formId } = useParams({ strict: false });
-
-  // Editor sidebar management
-  const { activeSidebar } = useEditorSidebar();
-
-  const isFormBuilder = pathname.includes("/form-builder/");
-  const showEditorSidebar = !!(activeSidebar && isFormBuilder && formId);
-  const isDistractionHeaderHidden = isEditRoute && !isHeaderVisible;
-
-  // Right sidebar width state (persisted, like left sidebar)
-  const [rightSidebarWidth, _setRightSidebarWidth] = useState(() => {
-    if (typeof window === "undefined") return RIGHT_SIDEBAR_WIDTH_DEFAULT;
-    const stored = localStorage.getItem(RIGHT_SIDEBAR_WIDTH_KEY);
-    if (stored) {
-      const parsed = Number(stored);
-      if (
-        !Number.isNaN(parsed) &&
-        parsed >= RIGHT_SIDEBAR_WIDTH_MIN &&
-        parsed <= RIGHT_SIDEBAR_WIDTH_MAX
-      ) {
-        return parsed;
-      }
-    }
-    return RIGHT_SIDEBAR_WIDTH_DEFAULT;
-  });
-  const [isRightResizing, setIsRightResizing] = useState(false);
-
-  const setRightSidebarWidth = useCallback((width: number) => {
-    const clamped = Math.round(
-      Math.min(RIGHT_SIDEBAR_WIDTH_MAX, Math.max(RIGHT_SIDEBAR_WIDTH_MIN, width)),
-    );
-    _setRightSidebarWidth(clamped);
-    localStorage.setItem(RIGHT_SIDEBAR_WIDTH_KEY, String(clamped));
-  }, []);
-
-  return (
-    <>
-      <AppSidebar />
-      <SidebarInbox />
-
-      <SidebarInset
-        className="overflow-hidden relative flex flex-col h-screen"
-        data-resizing={isRightResizing ? "" : undefined}
-      >
-        {isDistractionHeaderHidden && (
-          <div
-            className="fixed inset-x-0 top-0 z-1200 h-3 bg-transparent"
-            onMouseEnter={reportPointerActivity}
-            aria-hidden="true"
-          />
-        )}
-        <div className="relative z-20 flex-1 min-h-0 overflow-hidden flex">
-          {/* Main content - flex-1 auto fills available space */}
-          <div
-            className={cn(
-              "flex-1 min-w-0 flex flex-col z-50",
-              !isRightResizing && "transition-[padding] duration-200 ease-linear",
-            )}
-            style={{
-              paddingRight: showEditorSidebar ? rightSidebarWidth : 0,
-            }}
-          >
-            <div className="relative z-0 shrink-0">
-              <AppHeader isDistractionHidden={isDistractionHeaderHidden} />
-            </div>
-            <div className="flex-1 min-h-0 flex flex-col">
-              <Outlet key={formId} />
-            </div>
-          </div>
-        </div>
-
-        {/* Right sidebar resize handle - fixed overlay */}
-        {showEditorSidebar && (
-          <RightSidebarResizeHandle
-            sidebarWidth={rightSidebarWidth}
-            setSidebarWidth={setRightSidebarWidth}
-            setIsResizing={setIsRightResizing}
-          />
-        )}
-
-        {/* Right sidebar - fixed overlay */}
-        <div
-          className={cn(
-            "fixed top-0 bottom-0 right-0 z-40 overflow-hidden bg-background",
-            !isRightResizing && "transition-[width] duration-200 ease-linear",
-            "[[data-resizing]_&]:transition-none",
-            showEditorSidebar && "border-l border-sidebar-border",
-            !showEditorSidebar && "pointer-events-none",
-          )}
-          style={{
-            width: showEditorSidebar ? `${rightSidebarWidth}px` : 0,
-          }}
-        >
-          <div className="h-full w-full">
-            <Suspense fallback={null}>
-              {activeSidebar === "settings" && formId && (
-                <LazyFormSettingsSidebar formId={formId} />
-              )}
-              {activeSidebar === "share" && formId && <LazyShareSummarySidebar formId={formId} />}
-              {activeSidebar === "history" && formId && (
-                <LazyVersionHistorySidebar formId={formId} />
-              )}
-              {activeSidebar === "customize" && formId && <LazyCustomizeSidebar formId={formId} />}
-            </Suspense>
-          </div>
-        </div>
-      </SidebarInset>
-    </>
-  );
-};
+const AuthLayoutContent = () => (
+  <>
+    <AppSidebar />
+    <SidebarInbox />
+    <SidebarInset className="overflow-hidden relative flex flex-col h-screen">
+      <ClientMainArea />
+    </SidebarInset>
+  </>
+);
 
 // Minimal Sidebar Item Component (Figma system-flat: form list item with icon, title, optional count)
 // App Sidebar Component using shadcn/ui
@@ -331,7 +157,6 @@ const AppSidebar = () => {
 
   // Get pre-fetched data from route loader for immediate render
   const { activeOrg, orgsData } = Route.useLoaderData();
-  const { data: workspacesData } = useOrgWorkspaces(activeOrg?.id);
 
   const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
   const pendingCount = (invitations ?? []).filter(
@@ -439,7 +264,7 @@ const AppSidebar = () => {
           </SidebarGroup>
 
           <div className="mt-[13px] px-2">
-            <SidebarWorkspacesMinimal activeOrgId={activeOrg?.id} />
+            <ClientSidebarWorkspaces activeOrgId={activeOrg?.id} />
           </div>
         </SidebarContent>
 
@@ -460,26 +285,30 @@ const AppSidebar = () => {
                 <CommandItem
                   onSelect={async () => {
                     setIsPaletteOpen(false);
-                    if (activeOrg && workspacesData) {
-                      const orgWorkspaces = workspacesData;
-                      if (orgWorkspaces.length > 0) {
-                        // Use workspace from URL if available, otherwise use first workspace
-                        const workspaceMatch = location.pathname.match(/\/workspace\/([^/]+)/);
-                        const currentWorkspaceId = workspaceMatch?.[1];
-                        const targetWorkspace = currentWorkspaceId
-                          ? orgWorkspaces.find((ws) => ws.id === currentWorkspaceId) ||
-                            orgWorkspaces[0]
-                          : orgWorkspaces[0];
+                    if (!activeOrg) return;
+                    // Read workspace state directly (client-only context)
+                    const { workspaceCollection } =
+                      await import("@/db-collections/workspace.collection");
+                    const allWorkspaces = [...workspaceCollection.state.values()];
+                    const orgWorkspaces = allWorkspaces.filter(
+                      (ws) => ws.organizationId === activeOrg.id,
+                    );
+                    if (orgWorkspaces.length > 0) {
+                      const workspaceMatch = location.pathname.match(/\/workspace\/([^/]+)/);
+                      const currentWorkspaceId = workspaceMatch?.[1];
+                      const targetWorkspace = currentWorkspaceId
+                        ? orgWorkspaces.find((ws) => ws.id === currentWorkspaceId) ||
+                          orgWorkspaces[0]
+                        : orgWorkspaces[0];
 
-                        const newForm = await createFormLocal(targetWorkspace.id);
-                        router.navigate({
-                          to: "/workspace/$workspaceId/form-builder/$formId/edit",
-                          params: {
-                            workspaceId: targetWorkspace.id,
-                            formId: newForm.id,
-                          },
-                        });
-                      }
+                      const newForm = await createFormLocal(targetWorkspace.id);
+                      router.navigate({
+                        to: "/workspace/$workspaceId/form-builder/$formId/edit",
+                        params: {
+                          workspaceId: targetWorkspace.id,
+                          formId: newForm.id,
+                        },
+                      });
                     }
                   }}
                 >
@@ -549,12 +378,14 @@ const AppSidebar = () => {
         </CommandDialog>
       )}
 
-      {/* Trash Dialog */}
-      <TrashDialog
-        open={trashDialogOpen}
-        onOpenChange={setTrashDialogOpen}
-        activeOrgId={activeOrg?.id}
-      />
+      {/* Trash Dialog — uses useLiveQuery, must be client-only */}
+      <ClientOnly>
+        <TrashDialog
+          open={trashDialogOpen}
+          onOpenChange={setTrashDialogOpen}
+          activeOrgId={activeOrg?.id}
+        />
+      </ClientOnly>
 
       {/* Settings Dialog */}
       <Suspense fallback={null}>
@@ -924,351 +755,5 @@ const SidebarInbox = () => {
         </div>
       </div>
     </div>
-  );
-};
-
-// Workspaces section - uses live queries for real-time sync (Minimal Style)
-// Workspaces section - uses live queries for real-time sync (Minimal Style)
-const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => {
-  const router = useRouter();
-  const location = useLocation();
-  const { data: session } = useSession();
-
-  // Sort mode state with localStorage persistence
-  const [sortMode, setSortMode] = useState<"recent" | "oldest" | "alphabetical" | "manual">(() => {
-    if (typeof window !== "undefined") {
-      return (
-        (localStorage.getItem("sidebar-sort-mode") as
-          | "recent"
-          | "oldest"
-          | "alphabetical"
-          | "manual") || "recent"
-      );
-    }
-    return "recent";
-  });
-  const handleSortChange = useCallback((mode: "recent" | "oldest" | "alphabetical" | "manual") => {
-    setSortMode(mode);
-    localStorage.setItem("sidebar-sort-mode", mode);
-  }, []);
-
-  const { data: workspacesData, isLoading: workspacesLoading } = useOrgWorkspaces(activeOrgId);
-  const { data: formsData, isLoading: formsLoading } = useOrgForms(activeOrgId);
-  const submissionCounts = useSubmissionCounts();
-
-  // Get user's favorite forms
-  const favoriteForms = useFavoriteForms(session?.user?.id);
-
-  // Determine if Electric has synced
-  const isLoading = workspacesLoading || formsLoading;
-  const isElectricReady = !isLoading && workspacesData !== undefined && formsData !== undefined;
-
-  // Combine workspaces with their forms, filtered by active organization
-  const workspaces: WorkspaceWithForms[] = useMemo(() => {
-    if (!activeOrgId || !isElectricReady) return [];
-
-    const formsByWorkspace = (formsData || []).reduce(
-      (acc, form) => {
-        if (!acc[form.workspaceId]) acc[form.workspaceId] = [];
-        acc[form.workspaceId].push({
-          ...form,
-          customization: form.customization as Record<string, string> | null | undefined,
-        });
-        return acc;
-      },
-      {} as Record<string, WorkspaceWithForms["forms"]>,
-    );
-
-    return (workspacesData || []).map((ws) => ({
-      ...ws,
-      // Sort forms by recently edited (most recent first)
-      forms: (formsByWorkspace[ws.id] || []).toSorted(
-        (a: WorkspaceWithForms["forms"][0], b: WorkspaceWithForms["forms"][0]) => {
-          switch (sortMode) {
-            case "oldest":
-              return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
-            case "alphabetical":
-              return (a.title || "").localeCompare(b.title || "");
-            case "manual":
-              return 0;
-            case "recent":
-            default:
-              return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-          }
-        },
-      ),
-    }));
-  }, [workspacesData, formsData, activeOrgId, isElectricReady, sortMode]);
-
-  // State for workspace dialogs
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [workspaceToDelete, setWorkspaceToDelete] = useState<WorkspaceWithForms | null>(null);
-  const [deleteConfirmName, setDeleteConfirmName] = useState("");
-  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
-  const [workspaceToRename, setWorkspaceToRename] = useState<WorkspaceWithForms | null>(null);
-  const [newWorkspaceName, setNewWorkspaceName] = useState("");
-
-  // State for form delete dialog
-  const [formDeleteDialogOpen, setFormDeleteDialogOpen] = useState(false);
-  const [formToDelete, setFormToDelete] = useState<{
-    id: string;
-    title: string;
-  } | null>(null);
-
-  const handleDeleteDialogOpenChange = useCallback((open: boolean) => {
-    setDeleteDialogOpen(open);
-    if (!open) setDeleteConfirmName("");
-  }, []);
-
-  const handleDeleteConfirmNameChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setDeleteConfirmName(e.target.value),
-    [],
-  );
-
-  const handleNewWorkspaceNameChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setNewWorkspaceName(e.target.value),
-    [],
-  );
-
-  const handleCloseRenameDialog = useCallback(() => setRenameDialogOpen(false), []);
-
-  const handleDeleteWorkspace = useCallback(async () => {
-    if (!workspaceToDelete || deleteConfirmName !== workspaceToDelete.name) return;
-    try {
-      await deleteWorkspaceLocal(workspaceToDelete.id);
-      setDeleteDialogOpen(false);
-      setWorkspaceToDelete(null);
-      setDeleteConfirmName("");
-      router.navigate({ to: "/dashboard" });
-    } catch (error) {
-      console.error("Failed to delete workspace:", error);
-    }
-  }, [workspaceToDelete, deleteConfirmName, router]);
-
-  const handleRenameWorkspace = useCallback(async () => {
-    if (!workspaceToRename || !newWorkspaceName.trim()) return;
-    try {
-      await updateWorkspaceName(workspaceToRename.id, newWorkspaceName.trim());
-      setRenameDialogOpen(false);
-      setWorkspaceToRename(null);
-      setNewWorkspaceName("");
-    } catch (error) {
-      console.error("Failed to rename workspace:", error);
-    }
-  }, [workspaceToRename, newWorkspaceName]);
-
-  const handleRenameKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === "Enter") {
-        handleRenameWorkspace();
-      }
-    },
-    [handleRenameWorkspace],
-  );
-
-  const openRenameDialog = (workspace: WorkspaceWithForms) => {
-    setWorkspaceToRename(workspace);
-    setNewWorkspaceName(workspace.name);
-    setRenameDialogOpen(true);
-  };
-
-  const openDeleteDialog = (workspace: WorkspaceWithForms) => {
-    setWorkspaceToDelete(workspace);
-    setDeleteConfirmName("");
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDuplicateForm = useCallback(
-    async (form: WorkspaceWithForms["forms"][0]) => {
-      try {
-        const newForm = await duplicateFormById(form.id);
-        toast.success("Form duplicated");
-        router.navigate({
-          to: "/workspace/$workspaceId/form-builder/$formId/edit",
-          params: { workspaceId: newForm.workspaceId, formId: newForm.id },
-        });
-      } catch (error) {
-        console.error("Failed to duplicate form:", error);
-        toast.error("Failed to duplicate form");
-      }
-    },
-    [router],
-  );
-
-  const handleDeleteForm = useCallback((form: WorkspaceWithForms["forms"][0]) => {
-    setFormToDelete({ id: form.id, title: form.title || "Untitled" });
-    setFormDeleteDialogOpen(true);
-  }, []);
-
-  const handleConfirmDeleteForm = useCallback(async () => {
-    if (!formToDelete) return;
-    try {
-      await updateFormStatus(formToDelete.id, "archived");
-      toast.success("Form deleted");
-      // Navigate to dashboard if user is on the deleted form's page
-      if (location.pathname.includes(`/form-builder/${formToDelete.id}`)) {
-        router.navigate({ to: "/dashboard" });
-      }
-      setFormDeleteDialogOpen(false);
-      setFormToDelete(null);
-    } catch (error) {
-      console.error("Failed to delete form:", error);
-      toast.error("Failed to delete form");
-    }
-  }, [formToDelete, location.pathname, router]);
-
-  return (
-    <>
-      <div className="flex flex-col">
-        {/* Favorites Section */}
-        {favoriteForms.length > 0 && (
-          <SidebarSection label="Favorites" initialOpen action={<></>}>
-            {favoriteForms.map((form) => {
-              const favTo =
-                form.status === "published"
-                  ? `/workspace/${form.workspaceId}/form-builder/${form.id}/submissions`
-                  : `/workspace/${form.workspaceId}/form-builder/${form.id}/edit`;
-              const isFavActive = location.pathname.startsWith(
-                `/workspace/${form.workspaceId}/form-builder/${form.id}`,
-              );
-              return (
-                <SidebarItem
-                  key={form.id}
-                  label={form.title || "Untitled"}
-                  to={favTo}
-                  isActive={isFavActive}
-                  prefix={
-                    <ThemedFormIcon
-                      icon={form.icon}
-                      customization={
-                        form.customization as Record<string, string> | null | undefined
-                      }
-                    />
-                  }
-                />
-              );
-            })}
-          </SidebarSection>
-        )}
-
-        <div className="mt-[15px] space-y-4">
-          {isLoading ? (
-            ["collection-skeleton-1", "collection-skeleton-2"].map((key) => (
-              <div key={key} className="flex items-center gap-2 px-2 py-1.5">
-                <div className="h-4 w-4 rounded bg-muted animate-pulse" />
-                <div className="h-4 flex-1 rounded bg-muted animate-pulse" />
-              </div>
-            ))
-          ) : (
-            <div className="space-y-4">
-              {workspaces.map((workspace) => (
-                <WorkspaceItemMinimal
-                  key={workspace.id}
-                  workspace={workspace}
-                  submissionCounts={submissionCounts}
-                  sortMode={sortMode}
-                  onSortChange={handleSortChange}
-                  onRename={() => openRenameDialog(workspace)}
-                  onDelete={() => openDeleteDialog(workspace)}
-                  onDuplicateForm={handleDuplicateForm}
-                  onDeleteForm={handleDeleteForm}
-                />
-              ))}
-              {workspaces.length === 0 && (
-                <span className="text-muted-foreground/50 text-[11px] px-2 py-1 italic">
-                  No workspaces yet
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Delete Workspace Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={handleDeleteDialogOpenChange}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete workspace</AlertDialogTitle>
-            <AlertDialogDescription render={<div className="space-y-4" />}>
-              <p>
-                This will permanently delete <strong>"{workspaceToDelete?.name}"</strong> and{" "}
-                <strong>
-                  {workspaceToDelete?.forms?.length || 0} form
-                  {(workspaceToDelete?.forms?.length || 0) !== 1 ? "s" : ""}
-                </strong>
-                within it. This action cannot be undone.
-              </p>
-              <div className="space-y-2">
-                <p className="text-sm">
-                  Type <strong>{workspaceToDelete?.name}</strong> to confirm:
-                </p>
-                <Input
-                  value={deleteConfirmName}
-                  onChange={handleDeleteConfirmNameChange}
-                  placeholder="Type workspace name to confirm"
-                  aria-label="Type to confirm deletion"
-                  className="mt-2"
-                />
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteWorkspace}
-              disabled={deleteConfirmName !== workspaceToDelete?.name}
-              className="bg-destructive text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Delete workspace
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Rename Workspace Dialog */}
-      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rename workspace</DialogTitle>
-            <DialogDescription>Enter a new name for this workspace.</DialogDescription>
-          </DialogHeader>
-          <Input
-            value={newWorkspaceName}
-            onChange={handleNewWorkspaceNameChange}
-            placeholder="Workspace name"
-            aria-label="Workspace name"
-            onKeyDown={handleRenameKeyDown}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCloseRenameDialog}>
-              Cancel
-            </Button>
-            <Button onClick={handleRenameWorkspace}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Form Delete Confirmation Dialog */}
-      <AlertDialog open={formDeleteDialogOpen} onOpenChange={setFormDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete form</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{formToDelete?.title}"? This action will move it to
-              trash.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDeleteForm}
-              className="bg-destructive text-white hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
   );
 };

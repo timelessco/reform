@@ -1,3 +1,4 @@
+import { ClientOnly } from "@/components/client-only";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
@@ -6,7 +7,11 @@ import { createFileRoute } from "@tanstack/react-router";
 
 const SettingsPage = () => {
   const { formId } = Route.useParams();
-  return <SettingsContent formId={formId} />;
+  return (
+    <ClientOnly fallback={<Loader />}>
+      <SettingsContent formId={formId} />
+    </ClientOnly>
+  );
 };
 
 export const Route = createFileRoute(
@@ -16,5 +21,4 @@ export const Route = createFileRoute(
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,
-  ssr: false,
 });
