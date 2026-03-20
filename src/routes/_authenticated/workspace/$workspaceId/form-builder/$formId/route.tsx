@@ -82,7 +82,6 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
     staleTime: 30_000,
     gcTime: 5 * 60_000,
     component: FormLayout,
-    ssr: false,
     pendingComponent: Loader,
     errorComponent: ErrorBoundary,
     notFoundComponent: NotFound,
