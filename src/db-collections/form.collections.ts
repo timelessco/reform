@@ -26,9 +26,9 @@ const SettingsSchema = z.object({
 export type FormBuilderSettings = z.infer<typeof SettingsSchema>;
 
 export const FormSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   createdByUserId: z.string().optional(),
-  workspaceId: z.string().uuid(),
+  workspaceId: z.uuid(),
   title: z.string().default("Untitled"),
   formName: z.string().default("draft"),
   schemaName: z.string().default("draftFormSchema"),
@@ -90,7 +90,7 @@ export const formCollection = createCollection(
     },
     getKey: (item) => item.id,
     startSync: false, // Sync starts in _authenticated.tsx loader after auth is confirmed
-    syncMode: "progressive",
+    syncMode: "on-demand",
     onInsert: async ({ transaction }) => {
       const txids = await Promise.all(
         transaction.mutations.map(async (m) => {

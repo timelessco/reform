@@ -6,8 +6,8 @@ import { electricFetchClient, getElectricUrl, handleElectricError, timestampFiel
 import type { ServerTxResult } from "./shared";
 
 const WorkspaceSchema = z.object({
-  id: z.string().uuid(),
-  organizationId: z.string().uuid(),
+  id: z.uuid(),
+  organizationId: z.uuid(),
   createdByUserId: z.string().optional(), // Server injects this from auth context
   name: z.string().default("My workspace"),
   createdAt: timestampField,
@@ -31,7 +31,7 @@ export const workspaceCollection = createCollection(
       },
     },
     getKey: (item) => item.id,
-    syncMode: "progressive",
+    syncMode: "on-demand",
     startSync: false, // Sync starts in _authenticated.tsx loader after auth is confirmed
     onInsert: async ({ transaction }) => {
       const txids = await Promise.all(
