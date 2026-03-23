@@ -11,7 +11,7 @@ import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { apiKey, emailOTP, organization, twoFactor, username } from "better-auth/plugins";
+import { emailOTP, organization, testUtils, twoFactor, username } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { eq } from "drizzle-orm";
 
@@ -134,6 +134,7 @@ export const auth = betterAuth({
     "https://localhost:3001",
   ],
   plugins: [
+    ...(process.env.NODE_ENV === "test" ? [testUtils()] : []),
     username(),
     emailOTP({
       async sendVerificationOTP({ email, otp, type }) {
@@ -152,7 +153,7 @@ export const auth = betterAuth({
         digits: 6,
       },
     }),
-    apiKey(),
+    // apiKey(), // TODO: requires @better-auth/api-key package
     organization({
       async sendInvitationEmail(data) {
         logger(

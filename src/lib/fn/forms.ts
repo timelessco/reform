@@ -5,7 +5,7 @@ import { z } from "zod";
 import { forms } from "@/db/schema";
 import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
-import { authForm, getTxId } from "./helpers";
+import { authForm, getActiveOrgId, getTxId } from "./helpers";
 
 const serializeForm = (form: typeof forms.$inferSelect) => ({
   ...form,
@@ -171,8 +171,8 @@ export const updateForm = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { id, updatedAt: clientUpdatedAt, ...updateData } = data;
-    const authPromise = authForm(id, context.session.user.id);
-    await authPromise;
+    const orgId = getActiveOrgId(context.session);
+    await authForm(id, context.session.user.id, orgId);
 
     return await db.transaction(async (tx) => {
       const [form] = await tx
@@ -194,8 +194,8 @@ export const deleteForm = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data, context }) => {
-    const authPromise = authForm(data.id, context.session.user.id);
-    await authPromise;
+    const orgId = getActiveOrgId(context.session);
+    await authForm(data.id, context.session.user.id, orgId);
 
     return await db.transaction(async (tx) => {
       const [form] = await tx.delete(forms).where(eq(forms.id, data.id)).returning();
@@ -228,7 +228,8 @@ export const duplicateForm = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data, context }) => {
-    const authPromise = authForm(data.id, context.session.user.id);
+    const orgId = getActiveOrgId(context.session);
+    const authPromise = authForm(data.id, context.session.user.id, orgId);
 
     // Get the original form (start fetch in parallel with auth)
     const [originalForm] = await db.select().from(forms).where(eq(forms.id, data.id));
@@ -304,8 +305,8 @@ const _moveFormToWorkspace = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
-    const authPromise = authForm(data.formId, context.session.user.id);
-    await authPromise;
+    const orgId = getActiveOrgId(context.session);
+    await authForm(data.formId, context.session.user.id, orgId);
 
     return await db.transaction(async (tx) => {
       const [form] = await tx
@@ -327,8 +328,9 @@ const _getFormById = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data, context }) => {
+    const orgId = getActiveOrgId(context.session);
     const [_, [form]] = await Promise.all([
-      authForm(data.id, context.session.user.id),
+      authForm(data.id, context.session.user.id, orgId),
       db.select().from(forms).where(eq(forms.id, data.id)),
     ]);
 

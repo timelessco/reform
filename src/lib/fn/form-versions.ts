@@ -5,7 +5,7 @@ import { z } from "zod";
 import { forms, formVersions, user } from "@/db/schema";
 import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
-import { authForm, getTxId } from "./helpers";
+import { authForm, getActiveOrgId, getTxId } from "./helpers";
 
 // Maximum number of versions to keep per form (TODO: make plan-based)
 const MAX_VERSIONS_PER_FORM = 20;
@@ -38,7 +38,8 @@ export const publishFormVersion = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
-    await authForm(data.formId, context.session.user.id);
+    const orgId = getActiveOrgId(context.session);
+    await authForm(data.formId, context.session.user.id, orgId);
 
     return await db.transaction(async (tx) => {
       // Get current form draft
@@ -122,8 +123,9 @@ export const getFormVersions = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ formId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
+    const orgId = getActiveOrgId(context.session);
     const [_, versions] = await Promise.all([
-      authForm(data.formId, context.session.user.id),
+      authForm(data.formId, context.session.user.id, orgId),
       db
         .select({
           id: formVersions.id,
@@ -172,8 +174,8 @@ export const getFormVersionContent = createServerFn({ method: "GET" })
       throw new Error("Version not found");
     }
 
-    // Verify user has access to the form
-    await authForm(version.formId, context.session.user.id);
+    const orgId = getActiveOrgId(context.session);
+    await authForm(version.formId, context.session.user.id, orgId);
 
     return { version: serializeVersion(version) };
   });
@@ -191,7 +193,8 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
-    const authPromise = authForm(data.formId, context.session.user.id);
+    const orgId = getActiveOrgId(context.session);
+    const authPromise = authForm(data.formId, context.session.user.id, orgId);
 
     // Get the version (start fetch in parallel with auth)
     const [version] = await db
@@ -238,7 +241,8 @@ export const discardFormChanges = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ formId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
-    await authForm(data.formId, context.session.user.id);
+    const orgId = getActiveOrgId(context.session);
+    await authForm(data.formId, context.session.user.id, orgId);
 
     // Get the form with its last published version in a single query
     const [result] = await db

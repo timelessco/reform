@@ -1,6 +1,12 @@
-import { and, eq, sql } from "drizzle-orm";
-import { forms, workspaces } from "@/db/schema";
+import { and, eq, exists, sql } from "drizzle-orm";
+import { forms, member, workspaces } from "@/db/schema";
 import { db } from "@/lib/db";
+
+export const getActiveOrgId = (session: { session: Record<string, unknown> }): string => {
+  const orgId = session.session.activeOrganizationId as string | undefined;
+  if (!orgId) throw new Error("No active organization");
+  return orgId;
+};
 
 /**
  * Get authenticated user with their active organization.
@@ -9,13 +15,29 @@ import { db } from "@/lib/db";
 
 /**
  * Authorize access to a workspace.
- * Checks if the workspace belongs to the user's active organization.
+ * Checks if the workspace belongs to the user's active organization
+ * and the user is a member of that organization.
  */
-export const authWorkspace = async (workspaceId: string, userId: string) => {
+export const authWorkspace = async (
+  workspaceId: string,
+  userId: string,
+  organizationId: string,
+) => {
+  const memberSubquery = db
+    .select({ id: member.id })
+    .from(member)
+    .where(and(eq(member.userId, userId), eq(member.organizationId, organizationId)));
+
   const workspace = await db
     .select({ id: workspaces.id })
     .from(workspaces)
-    .where(and(eq(workspaces.id, workspaceId), eq(workspaces.createdByUserId, userId)))
+    .where(
+      and(
+        eq(workspaces.id, workspaceId),
+        eq(workspaces.organizationId, organizationId),
+        exists(memberSubquery),
+      ),
+    )
     .limit(1);
 
   if (workspace.length === 0) {
@@ -26,14 +48,26 @@ export const authWorkspace = async (workspaceId: string, userId: string) => {
 
 /**
  * Authorize access to a form.
- * Checks if the form's workspace belongs to the user's active organization.
+ * Checks if the form's workspace belongs to the user's active organization
+ * and the user is a member of that organization.
  */
-export const authForm = async (formId: string, userId: string) => {
+export const authForm = async (formId: string, userId: string, organizationId: string) => {
+  const memberSubquery = db
+    .select({ id: member.id })
+    .from(member)
+    .where(and(eq(member.userId, userId), eq(member.organizationId, organizationId)));
+
   const form = await db
     .select({ id: forms.id, workspaceId: forms.workspaceId })
     .from(forms)
     .innerJoin(workspaces, eq(forms.workspaceId, workspaces.id))
-    .where(and(eq(forms.id, formId), eq(forms.createdByUserId, userId)))
+    .where(
+      and(
+        eq(forms.id, formId),
+        eq(workspaces.organizationId, organizationId),
+        exists(memberSubquery),
+      ),
+    )
     .limit(1);
 
   if (form.length === 0) {

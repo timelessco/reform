@@ -5,7 +5,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { desc, eq, inArray, not } from "drizzle-orm";
 import { z } from "zod";
-import { authWorkspace, getTxId } from "./helpers";
+import { authWorkspace, getActiveOrgId, getTxId } from "./helpers";
 
 const workspaceSchema = z.object({
   id: z.string().uuid(),
@@ -57,8 +57,8 @@ export const updateWorkspace = createServerFn({ method: "POST" })
   .inputValidator(workspaceSchema.pick({ id: true, name: true }).partial({ name: true }))
   .handler(async ({ data, context }) => {
     const { id, ...updateData } = data;
-    const authPromise = authWorkspace(id, context.session.user.id);
-    await authPromise;
+    const orgId = getActiveOrgId(context.session);
+    await authWorkspace(id, context.session.user.id, orgId);
 
     return await db.transaction(async (tx) => {
       const [workspace] = await tx
@@ -87,8 +87,8 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(workspaceSchema.pick({ id: true }))
   .handler(async ({ data, context }) => {
-    const authPromise = authWorkspace(data.id, context.session.user.id);
-    await authPromise;
+    const orgId = getActiveOrgId(context.session);
+    await authWorkspace(data.id, context.session.user.id, orgId);
 
     return await db.transaction(async (tx) => {
       const [workspace] = await tx.delete(workspaces).where(eq(workspaces.id, data.id)).returning();
@@ -110,8 +110,9 @@ export const getWorkspaceById = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data, context }) => {
+    const orgId = getActiveOrgId(context.session);
     const [_, [workspace]] = await Promise.all([
-      authWorkspace(data.id, context.session.user.id),
+      authWorkspace(data.id, context.session.user.id, orgId),
       db.select().from(workspaces).where(eq(workspaces.id, data.id)),
     ]);
 

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { submissions } from "@/db/schema";
 import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
-import { authForm, getTxId } from "./helpers";
+import { authForm, getActiveOrgId, getTxId } from "./helpers";
 
 // Serialized submission type for client consumption
 export type SerializedSubmission = {
@@ -29,8 +29,9 @@ const getSubmissionsByFormId = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ formId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
+    const orgId = getActiveOrgId(context.session);
     const [_, list] = await Promise.all([
-      authForm(data.formId, context.session.user.id),
+      authForm(data.formId, context.session.user.id, orgId),
       db
         .select()
         .from(submissions)
@@ -45,7 +46,8 @@ export const deleteSubmission = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.string().uuid(), formId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
-    await authForm(data.formId, context.session.user.id);
+    const orgId = getActiveOrgId(context.session);
+    await authForm(data.formId, context.session.user.id, orgId);
     return await db.transaction(async (tx) => {
       await tx.delete(submissions).where(eq(submissions.id, data.id));
       const txid = await getTxId(tx);
@@ -63,7 +65,8 @@ export const deleteSubmissionsBulk = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
-    await authForm(data.formId, context.session.user.id);
+    const orgId = getActiveOrgId(context.session);
+    await authForm(data.formId, context.session.user.id, orgId);
     if (data.submissionIds.length === 0) {
       return { success: true, deleted: 0, txid: 0 };
     }
@@ -92,7 +95,8 @@ export const getSubmissionsByFormIdPaginated = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) => {
     const { formId, cursor, limit, search } = data;
 
-    await authForm(formId, context.session.user.id);
+    const orgId = getActiveOrgId(context.session);
+    await authForm(formId, context.session.user.id, orgId);
 
     const cursorCondition = cursor
       ? or(
@@ -141,7 +145,8 @@ export const getSubmissionsCount = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ formId: z.string().uuid() }))
   .handler(async ({ data, context }) => {
-    await authForm(data.formId, context.session.user.id);
+    const orgId = getActiveOrgId(context.session);
+    await authForm(data.formId, context.session.user.id, orgId);
 
     const [result] = await db
       .select({ total: count() })
