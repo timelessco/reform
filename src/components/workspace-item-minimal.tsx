@@ -31,7 +31,7 @@ import {
   TrashIcon,
 } from "@/components/ui/icons";
 import { SidebarSection } from "@/components/ui/sidebar-section";
-import { createFormLocal } from "@/db-collections/form.collections";
+import { createFormLocal } from "@/db-collections/collections";
 import { cn } from "@/lib/utils";
 import { useLocation, useRouter } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
@@ -39,13 +39,13 @@ import { useCallback, useState } from "react";
 export type WorkspaceWithForms = {
   id: string;
   organizationId: string;
-  createdByUserId?: string;
+  createdByUserId?: string | null;
   name: string;
   createdAt: string;
   updatedAt: string;
   forms: Array<{
     id: string;
-    title: string;
+    title: string | null;
     updatedAt: string;
     workspaceId: string;
     icon?: string | null;

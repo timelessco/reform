@@ -7,15 +7,16 @@ export type FormDetail = {
   title: string | null;
   status: string;
   workspaceId: string;
-  content: Record<string, object>;
-  settings: Record<string, object>;
-  customization: Record<string, string>;
+  content: unknown[];
+  settings?: Record<string, unknown>;
+  customization?: Record<string, unknown>;
   formName: string;
-  schemaName: string | null;
-  icon: string | null;
+  schemaName?: string | null;
+  icon?: string | null;
   createdAt: string;
   updatedAt: string;
-  createdByUserId: string;
+  createdByUserId?: string;
+  [key: string]: unknown; // Allow additional form fields (cover, isMultiStep, etc.)
 };
 
 type MutationHandler = (params: Record<string, unknown>) => Promise<unknown>;

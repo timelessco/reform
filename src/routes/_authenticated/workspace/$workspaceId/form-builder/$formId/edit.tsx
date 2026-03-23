@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { NotFound } from "@/components/ui/not-found";
 import { useFormVersionContent } from "@/hooks/use-form-versions";
-import { formCollection } from "@/db-collections/form.collections";
+import { getFormDetail } from "@/db-collections/collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
 import { getFormStatus } from "@/lib/fn/forms";
@@ -139,7 +139,7 @@ export const Route = createFileRoute(
 
     try {
       // Try collection cache first (instant, no network)
-      const cachedForm = formCollection.state.get(params.formId);
+      const cachedForm = getFormDetail(params.formId).get(params.formId);
       let status = cachedForm?.status as FormStatus | undefined;
 
       // Fall back to server fetch if not in collection yet

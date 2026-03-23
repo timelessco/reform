@@ -1,7 +1,7 @@
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import { formCollection } from "@/db-collections/form.collections";
+import { getFormDetail } from "@/db-collections/collections";
 import { getFormStatus } from "@/lib/fn/forms";
 import type { FormStatus } from "@/lib/fn/forms";
 import { createFileRoute, isRedirect, Outlet, redirect, useLocation } from "@tanstack/react-router";
@@ -48,7 +48,7 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
       if (isExactParentRoute) {
         try {
           // Try collection first (instant, no network)
-          const cachedForm = formCollection.state.get(params.formId);
+          const cachedForm = getFormDetail(params.formId).get(params.formId);
           let status = cachedForm?.status as FormStatus | undefined;
 
           // Fall back to server fetch if not in collection yet

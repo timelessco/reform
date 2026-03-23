@@ -5,8 +5,8 @@ import type { FormHeaderElementData } from "@/components/ui/form-header-node";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import { useEditorHeaderVisibilitySafe } from "@/contexts/editor-header-visibility-context";
 import { EditorThemeProvider } from "@/contexts/editor-theme-context";
-import { formCollection } from "@/db-collections/form.collections";
-import type { Form } from "@/db-collections/form.collections";
+import { getFormDetail } from "@/db-collections/collections";
+import type { Form } from "@/db-collections/collections";
 import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useForm } from "@/hooks/use-live-hooks";
 import { useTheme } from "@/components/ThemeProvider";
@@ -38,7 +38,7 @@ const DEFAULT_EDITOR_VALUE = normalizeNodeId([
 
 /**
  * Outer component: fetches data and guards against rendering
- * the editor before the Electric collection has synced.
+ * the editor before the collection data has loaded.
  *
  * This split is necessary because React hooks always execute regardless
  * of early returns. Without it, `usePlateEditor` would be called with
@@ -46,7 +46,9 @@ const DEFAULT_EDITOR_VALUE = normalizeNodeId([
  * and the editor would never update because `resetKey` doesn't change.
  */
 const EditorApp = ({ formId, workspaceId, versionContent, readOnly = false }: EditorAppProps) => {
-  const { data: savedDocs, isReady: isFormReady } = useForm(formId);
+  const { data: savedDocsRaw, isReady: isFormReady } = useForm(formId);
+  // Query-backed FormDetail is structurally compatible with Form at runtime
+  const savedDocs = savedDocsRaw as Form[] | undefined;
 
   // Guard: don't mount the editor until we have actual form data
   if (!versionContent && !savedDocs?.length) {
@@ -106,7 +108,7 @@ const EditorAppInner = ({
 
   useEffect(() => {
     if (resolvedAppTheme !== customization?.mode && formId) {
-      formCollection.update(formId, (draft) => {
+      getFormDetail(formId).update(formId, (draft) => {
         const current = (draft.customization ?? {}) as Record<string, string>;
         draft.customization = { ...current, mode: resolvedAppTheme };
         draft.updatedAt = new Date().toISOString();
@@ -217,7 +219,7 @@ const EditorAppInner = ({
         lastKnownContentRef.current = JSON.stringify(val);
         pendingValueRef.current = null;
 
-        formCollection.update(formId, (draft) => {
+        getFormDetail(formId).update(formId, (draft) => {
           draft.content = val;
           if (workspaceId) draft.workspaceId = workspaceId;
           draft.updatedAt = new Date().toISOString();
@@ -256,7 +258,7 @@ const EditorAppInner = ({
   const updateThemeColor = useCallback(
     (themeColor: string) => {
       if (formId) {
-        formCollection.update(formId, (draft) => {
+        getFormDetail(formId).update(formId, (draft) => {
           const current = (draft.customization ?? {}) as Record<string, string>;
           draft.customization = { ...current, themeColor, preset: "custom" };
           draft.updatedAt = new Date().toISOString();

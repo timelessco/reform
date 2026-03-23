@@ -1,33 +1,34 @@
 import { createTransaction, eq, useLiveQuery } from "@tanstack/react-db";
 import { useMemo } from "react";
-import { formCollection } from "@/db-collections/form.collections";
-import { formVersionCollection } from "@/db-collections/form-version.collection";
+import {
+  getFormDetail,
+  getVersionList,
+  getVersionContent,
+  getQueryClient,
+} from "@/db-collections/collections";
 import { discardFormChanges, publishFormVersion, restoreFormVersion } from "@/lib/fn/form-versions";
 import { useForm } from "./use-live-hooks";
 
 /**
- * Hook to get list of published versions for a form (Electric-synced)
+ * Hook to get list of published versions for a form (query-backed)
  */
 export const useFormVersions = (formId: string | undefined) =>
   useLiveQuery(
     (q) => {
       if (!formId) return undefined;
-      return q
-        .from({ v: formVersionCollection })
-        .where(({ v }) => eq(v.formId, formId))
-        .orderBy(({ v }) => v.version, "desc");
+      return q.from({ v: getVersionList(formId) }).orderBy(({ v }) => v.version, "desc");
     },
     [formId],
   );
 
 /**
- * Hook to get full content of a specific version (Electric-synced)
+ * Hook to get full content of a specific version (query-backed)
  */
 export const useFormVersionContent = (versionId: string | undefined) =>
   useLiveQuery(
     (q) => {
       if (!versionId) return undefined;
-      return q.from({ v: formVersionCollection }).where(({ v }) => eq(v.id, versionId));
+      return q.from({ v: getVersionContent(versionId) }).where(({ v }) => eq(v.id, versionId));
     },
     [versionId],
   );
@@ -75,8 +76,7 @@ export const useHasUnpublishedChanges = (formId: string | undefined) => {
 // ============================================================================
 // Optimistic action functions using createTransaction
 // Applies optimistic state instantly, then calls server fn in mutationFn.
-// Collection's onUpdate does NOT fire because mutations are owned by the tx.
-// On success the overlay is confirmed; Electric syncs the real data seamlessly.
+// On success the overlay is confirmed; query invalidation syncs the real data.
 // On error the transaction auto-rolls back the optimistic state.
 // ============================================================================
 
@@ -86,13 +86,13 @@ export const useHasUnpublishedChanges = (formId: string | undefined) => {
 export const publishForm = (formId: string) => {
   const tx = createTransaction({
     mutationFn: async () => {
-      const result = await publishFormVersion({ data: { formId } });
-      return { txid: (result as { txid: number }).txid };
+      await publishFormVersion({ data: { formId } });
+      await getQueryClient().invalidateQueries({ queryKey: ["form-versions", formId] });
     },
   });
 
   tx.mutate(() => {
-    formCollection.update(formId, (draft) => {
+    getFormDetail(formId).update(formId, (draft) => {
       draft.status = "published";
       draft.updatedAt = new Date().toISOString();
     });
@@ -106,18 +106,18 @@ export const publishForm = (formId: string) => {
  * Optimistically updates content/title/customization from the local version data.
  */
 export const restoreVersion = (formId: string, versionId: string) => {
-  const version = formVersionCollection.state.get(versionId);
+  const versionCollection = getVersionContent(versionId);
+  const version = versionCollection.get(versionId);
   if (!version) throw new Error("Version not found in local state");
 
   const tx = createTransaction({
     mutationFn: async () => {
-      const result = await restoreFormVersion({ data: { formId, versionId } });
-      return { txid: (result as { txid: number }).txid };
+      await restoreFormVersion({ data: { formId, versionId } });
     },
   });
 
   tx.mutate(() => {
-    formCollection.update(formId, (draft) => {
+    getFormDetail(formId).update(formId, (draft) => {
       draft.content = version.content;
       draft.title = version.title;
       draft.customization = version.customization ?? {};
@@ -133,21 +133,22 @@ export const restoreVersion = (formId: string, versionId: string) => {
  * Optimistically updates content/title/customization from the published version.
  */
 export const discardChanges = (formId: string) => {
-  const form = formCollection.state.get(formId);
+  const detail = getFormDetail(formId);
+  const form = detail.get(formId);
   if (!form?.lastPublishedVersionId) throw new Error("No published version to revert to");
 
-  const version = formVersionCollection.state.get(form.lastPublishedVersionId);
+  const versionCollection = getVersionContent(form.lastPublishedVersionId as string);
+  const version = versionCollection.get(form.lastPublishedVersionId as string);
   if (!version) throw new Error("Published version not found in local state");
 
   const tx = createTransaction({
     mutationFn: async () => {
-      const result = await discardFormChanges({ data: { formId } });
-      return { txid: (result as { txid: number }).txid };
+      await discardFormChanges({ data: { formId } });
     },
   });
 
   tx.mutate(() => {
-    formCollection.update(formId, (draft) => {
+    detail.update(formId, (draft) => {
       draft.content = version.content;
       draft.title = version.title;
       draft.customization = version.customization ?? {};

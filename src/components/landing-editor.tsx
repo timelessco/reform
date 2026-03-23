@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/right-sidebar-resize-handle";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import { localFormCollection } from "@/db-collections/form.collections";
+import { localFormCollection } from "@/db-collections/local-form.collection";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useLocalForm } from "@/hooks/use-live-hooks";
 import { getLocalFormId, getLocalWorkspaceId } from "@/lib/local-draft";

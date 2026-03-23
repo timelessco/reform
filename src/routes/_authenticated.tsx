@@ -80,18 +80,25 @@ import {
 import { MinimalSidebarProvider, useMinimalSidebar } from "@/contexts/minimal-sidebar-context";
 import {
   createFormLocal,
+  createWorkspaceLocal,
+  deleteWorkspaceLocal,
   duplicateFormById,
-  formCollection,
+  initCollections,
   permanentDeleteFormLocal,
   restoreFormLocal,
   updateFormStatus,
-} from "@/db-collections/form.collections";
-import {
-  createWorkspaceLocal,
-  deleteWorkspaceLocal,
   updateWorkspaceName,
-  workspaceCollection,
-} from "@/db-collections/workspace.collection";
+} from "@/db-collections/collections";
+import {
+  createWorkspace,
+  updateWorkspace,
+  deleteWorkspace,
+  getWorkspaces,
+} from "@/lib/fn/workspaces";
+import { createForm, updateForm, deleteForm } from "@/lib/fn/forms";
+import { addFavorite, removeFavorite } from "@/lib/fn/favorites";
+import { getFormVersions, getFormVersionContent } from "@/lib/fn/form-versions";
+import { getSubmissionsCount } from "@/lib/fn/submissions";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import {
@@ -178,7 +185,39 @@ export const Route = createFileRoute("/_authenticated")({
       revalidateIfStale: true,
     });
     if (typeof window !== "undefined") {
-      await Promise.all([workspaceCollection.preload(), formCollection.preload()]);
+      initCollections(context.queryClient, {
+        getWorkspacesWithForms: async () => {
+          const result = await getWorkspaces();
+          return { workspaces: result.workspaces.map((ws) => ({ ...ws, forms: [] })) };
+        },
+        getFormListings: async () => [],
+        getFormDetail: async (formId: string) => {
+          const { getFormbyIdQueryOption } = await import("@/lib/fn/forms");
+          const result = await context.queryClient.ensureQueryData(getFormbyIdQueryOption(formId));
+          return (result as { form?: any })?.form ?? null;
+        },
+        getFavorites: async () => [],
+        getVersionList: async (formId: string) => {
+          const result = await getFormVersions({ data: { formId } });
+          return result.versions;
+        },
+        getVersionContent: async (versionId: string) => {
+          const result = await getFormVersionContent({ data: { versionId } });
+          return result.version;
+        },
+        getSubmissionsCount: async (formId: string) => {
+          const result = await getSubmissionsCount({ data: { formId } });
+          return { total: result.total };
+        },
+        createWorkspace: async (data) => await createWorkspace({ data: data as any }),
+        updateWorkspace: async (data) => await updateWorkspace({ data: data as any }),
+        deleteWorkspace: async (data) => await deleteWorkspace({ data: data as any }),
+        createForm: async (data) => await createForm({ data: data as any }),
+        updateForm: async (data) => await updateForm({ data: data as any }),
+        deleteForm: async (data) => await deleteForm({ data: data as any }),
+        addFavorite: async (data) => await addFavorite({ data }),
+        removeFavorite: async (data) => await removeFavorite({ data }),
+      });
     }
     return { activeOrg, orgsData };
   },
@@ -341,7 +380,6 @@ const AppSidebar = () => {
   const signOutMutation = useMutation(
     auth.signOut.mutationOptions({
       onSuccess: () => {
-        localStorage.removeItem("electricAuthToken");
         router.invalidate();
         router.navigate({ to: "/" });
       },
@@ -959,13 +997,13 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
   // Get user's favorite forms
   const favoriteForms = useFavoriteForms(session?.user?.id);
 
-  // Determine if Electric has synced
+  // Determine if data has loaded
   const isLoading = workspacesLoading || formsLoading;
-  const isElectricReady = !isLoading && workspacesData !== undefined && formsData !== undefined;
+  const isDataReady = !isLoading && workspacesData !== undefined && formsData !== undefined;
 
   // Combine workspaces with their forms, filtered by active organization
   const workspaces: WorkspaceWithForms[] = useMemo(() => {
-    if (!activeOrgId || !isElectricReady) return [];
+    if (!activeOrgId || !isDataReady) return [];
 
     const formsByWorkspace = (formsData || []).reduce(
       (acc, form) => {
@@ -998,7 +1036,7 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
         },
       ),
     }));
-  }, [workspacesData, formsData, activeOrgId, isElectricReady, sortMode]);
+  }, [workspacesData, formsData, activeOrgId, isDataReady, sortMode]);
 
   // State for workspace dialogs
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
