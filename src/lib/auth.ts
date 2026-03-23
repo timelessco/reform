@@ -11,6 +11,7 @@ import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { apiKey } from "@better-auth/api-key";
 import { emailOTP, organization, testUtils, twoFactor, username } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { eq } from "drizzle-orm";
@@ -153,7 +154,7 @@ export const auth = betterAuth({
         digits: 6,
       },
     }),
-    // apiKey(), // TODO: requires @better-auth/api-key package
+    apiKey(),
     organization({
       async sendInvitationEmail(data) {
         logger(
