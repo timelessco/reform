@@ -26,6 +26,11 @@
       "sourceType": "git",
       "computedHash": "9eb60aa351b3f1c7af3567816427ceb13f91e9ba568fc7624ca0c91ca9657841"
     },
+    "tdd": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "ad055544599481182d0079c4198e85da26677cb408a677be2da04915375f0427"
+    },
     "vercel-react-best-practices": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",

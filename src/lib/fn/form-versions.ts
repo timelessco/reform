@@ -151,6 +151,7 @@ export const getFormVersions = createServerFn({ method: "GET" })
           name: v.publishedByName,
           image: v.publishedByImage,
         },
+        publishedByUserId: v.publishedByUserId,
       })),
     };
   });

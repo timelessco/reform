@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { useFormVersions, restoreVersion } from "@/hooks/use-form-versions";
+import { useFormVersions, useRestoreVersion } from "@/hooks/use-form-versions";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
 import { useSession } from "@/lib/auth-client";
@@ -35,6 +35,7 @@ interface VersionHistorySidebarProps {
 
 export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) => {
   const { data: versions } = useFormVersions(formId);
+  const restoreVersion = useRestoreVersion();
   const { closeSidebar } = useEditorSidebar();
   const { selectedVersionId, selectVersion, exitVersionView } = useVersionHistorySidebar();
   const { data: sessionData } = useSession();
@@ -46,8 +47,7 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
     async (versionId: string) => {
       setIsRestoring(true);
       try {
-        const tx = restoreVersion(formId, versionId);
-        await tx.isPersisted.promise;
+        await restoreVersion(formId, versionId);
         toast.success("Version restored. Publish again to make it live.");
         exitVersionView();
       } catch {
@@ -56,7 +56,7 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
         setIsRestoring(false);
       }
     },
-    [formId, exitVersionView],
+    [formId, exitVersionView, restoreVersion],
   );
 
   const handleRestoreDialogChange = useCallback((open: boolean) => {
