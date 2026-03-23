@@ -1,6 +1,7 @@
 import { eq, or, useLiveQuery } from "@tanstack/react-db";
 import { useMemo } from "react";
 import {
+  isInitialized,
   getWorkspaces,
   getFormListings,
   getFavorites,
@@ -14,7 +15,7 @@ import { localFormCollection } from "@/db-collections/local-form.collection";
 export const useOrgWorkspaces = (organizationId?: string) =>
   useLiveQuery(
     (q) => {
-      if (!organizationId) return undefined;
+      if (!organizationId || !isInitialized()) return undefined;
       return q
         .from({ ws: getWorkspaces() })
         .where(({ ws }) => eq(ws.organizationId, organizationId))
@@ -36,9 +37,8 @@ export const useOrgWorkspaces = (organizationId?: string) =>
 export const useWorkspace = (workspaceId?: string) => {
   const result = useLiveQuery(
     (q) => {
-      if (!workspaceId) return undefined;
-      let query = q.from({ ws: getWorkspaces() });
-      query = query.where(({ ws }) => eq(ws.id, workspaceId));
+      if (!workspaceId || !isInitialized()) return undefined;
+      const query = q.from({ ws: getWorkspaces() }).where(({ ws }) => eq(ws.id, workspaceId));
       return query.select(({ ws }) => ({
         id: ws.id,
         organizationId: ws.organizationId,
@@ -59,7 +59,7 @@ export const useWorkspace = (workspaceId?: string) => {
 export const useFormsForWorkspace = (workspaceId?: string) =>
   useLiveQuery(
     (q) => {
-      if (!workspaceId) return undefined;
+      if (!workspaceId || !isInitialized()) return undefined;
       return q
         .from({ form: getFormListings() })
         .where(({ form }) => eq(form.workspaceId, workspaceId))
@@ -80,7 +80,9 @@ export const useFormsForWorkspace = (workspaceId?: string) =>
  * The query-backed formListings collection already filters by org membership server-side.
  */
 export const useOrgForms = (_organizationId?: string) =>
-  useLiveQuery((q) => q
+  useLiveQuery((q) => {
+    if (!isInitialized()) return undefined;
+    return q
       .from({ form: getFormListings() })
       .where(({ form }) => or(eq(form.status, "draft"), eq(form.status, "published")))
       .select(({ form }) => ({
@@ -92,14 +94,15 @@ export const useOrgForms = (_organizationId?: string) =>
         icon: form.icon,
         customization: form.customization,
       }))
-      .orderBy(({ form }) => form.updatedAt, "desc"), []);
+      .orderBy(({ form }) => form.updatedAt, "desc");
+  }, []);
 
 /**
  * Custom hook for real-time form sync by ID.
  * Uses getFormDetail for full form data (used in editor).
  */
 export const useForm = (formId?: string) => {
-  const collection = formId ? getFormDetail(formId) : undefined;
+  const collection = formId && isInitialized() ? getFormDetail(formId) : undefined;
   return useLiveQuery(
     (q) => {
       if (!formId || !collection) return undefined;
@@ -127,7 +130,7 @@ export const useLocalForm = (formId?: string) =>
 export const useFavorites = (userId?: string) =>
   useLiveQuery(
     (q) => {
-      if (!userId) return undefined;
+      if (!userId || !isInitialized()) return undefined;
       return q
         .from({ fav: getFavorites() })
         .where(({ fav }) => eq(fav.userId, userId))
@@ -147,7 +150,7 @@ export const useFavorites = (userId?: string) =>
 export const useIsFavorite = (userId?: string, formId?: string) => {
   const { data } = useLiveQuery(
     (q) => {
-      if (!userId || !formId) return undefined;
+      if (!userId || !formId || !isInitialized()) return undefined;
       return q
         .from({ fav: getFavorites() })
         .where(({ fav }) => eq(fav.userId, userId))
@@ -165,22 +168,21 @@ export const useIsFavorite = (userId?: string, formId?: string) => {
  */
 export const useFavoriteForms = (userId?: string) => {
   const { data: favs } = useFavorites(userId);
-  const { data: allForms } = useLiveQuery(
-    (q) =>
-      q
-        .from({ form: getFormListings() })
-        .where(({ form }) => or(eq(form.status, "draft"), eq(form.status, "published")))
-        .select(({ form }) => ({
-          id: form.id,
-          title: form.title,
-          workspaceId: form.workspaceId,
-          status: form.status,
-          updatedAt: form.updatedAt,
-          icon: form.icon,
-          customization: form.customization,
-        })),
-    [],
-  );
+  const { data: allForms } = useLiveQuery((q) => {
+    if (!isInitialized()) return undefined;
+    return q
+      .from({ form: getFormListings() })
+      .where(({ form }) => or(eq(form.status, "draft"), eq(form.status, "published")))
+      .select(({ form }) => ({
+        id: form.id,
+        title: form.title,
+        workspaceId: form.workspaceId,
+        status: form.status,
+        updatedAt: form.updatedAt,
+        icon: form.icon,
+        customization: form.customization,
+      }));
+  }, []);
 
   return useMemo(() => {
     if (!favs || !allForms) return [];
@@ -193,21 +195,20 @@ export const useFavoriteForms = (userId?: string) => {
  * Custom hook for archived (trashed) forms with deletedAt field.
  */
 export const useArchivedForms = () =>
-  useLiveQuery(
-    (q) =>
-      q
-        .from({ form: getFormListings() })
-        .where(({ form }) => eq(form.status, "archived"))
-        .select(({ form }) => ({
-          id: form.id,
-          title: form.title,
-          workspaceId: form.workspaceId,
-          status: form.status,
-          updatedAt: form.updatedAt,
-          deletedAt: form.deletedAt,
-        })),
-    [],
-  );
+  useLiveQuery((q) => {
+    if (!isInitialized()) return undefined;
+    return q
+      .from({ form: getFormListings() })
+      .where(({ form }) => eq(form.status, "archived"))
+      .select(({ form }) => ({
+        id: form.id,
+        title: form.title,
+        workspaceId: form.workspaceId,
+        status: form.status,
+        updatedAt: form.updatedAt,
+        deletedAt: form.deletedAt,
+      }));
+  }, []);
 
 /**
  * Returns an empty submission count map.

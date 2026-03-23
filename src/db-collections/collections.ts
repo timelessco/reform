@@ -117,7 +117,9 @@ export const initCollections = (
   });
 };
 
-// --- Getters (lazy, must call initCollections first) ---
+// --- Getters ---
+
+export const isInitialized = () => _serverFns !== null && _queryClient !== null;
 
 const ensureInit = () => {
   if (!_serverFns || !_queryClient) {

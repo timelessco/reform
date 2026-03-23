@@ -1,6 +1,7 @@
 import { createTransaction, eq, useLiveQuery } from "@tanstack/react-db";
 import { useMemo } from "react";
 import {
+  isInitialized,
   getFormDetail,
   getVersionList,
   getVersionContent,
@@ -15,7 +16,7 @@ import { useForm } from "./use-live-hooks";
 export const useFormVersions = (formId: string | undefined) =>
   useLiveQuery(
     (q) => {
-      if (!formId) return undefined;
+      if (!formId || !isInitialized()) return undefined;
       return q.from({ v: getVersionList(formId) }).orderBy(({ v }) => v.version, "desc");
     },
     [formId],
@@ -27,7 +28,7 @@ export const useFormVersions = (formId: string | undefined) =>
 export const useFormVersionContent = (versionId: string | undefined) =>
   useLiveQuery(
     (q) => {
-      if (!versionId) return undefined;
+      if (!versionId || !isInitialized()) return undefined;
       return q.from({ v: getVersionContent(versionId) }).where(({ v }) => eq(v.id, versionId));
     },
     [versionId],
@@ -41,20 +42,22 @@ export const useHasUnpublishedChanges = (formId: string | undefined) => {
   const { data: formData } = useForm(formId);
   const { data: versions } = useFormVersions(formId);
 
-  // useForm already filters by formId via .where(eq(form.id, formId)),
-  // so the result is at most one item — no need for JS .find().
   const form = formData?.[0];
+  const latestVersionMeta = versions?.[0];
 
-  const latestVersion = versions?.[0];
+  // Fetch the latest version's full content for comparison
+  const { data: versionContentData } = useFormVersionContent(latestVersionMeta?.id);
+  const latestVersionContent = versionContentData?.[0];
 
-  // Use primitive deps to avoid re-computing on every live query object ref change
   const hasPublished = !!form?.lastPublishedVersionId;
   const publishedContentHash = form?.publishedContentHash;
   const currentContentStr = form ? JSON.stringify(form.content) : null;
-  const publishedContentStr = latestVersion ? JSON.stringify(latestVersion.content) : null;
+  const publishedContentStr = latestVersionContent
+    ? JSON.stringify(latestVersionContent.content)
+    : null;
   const currentCustomizationStr = form ? JSON.stringify(form.customization ?? {}) : null;
-  const publishedCustomizationStr = latestVersion
-    ? JSON.stringify(latestVersion.customization ?? {})
+  const publishedCustomizationStr = latestVersionContent
+    ? JSON.stringify(latestVersionContent.customization ?? {})
     : null;
 
   return useMemo(() => {

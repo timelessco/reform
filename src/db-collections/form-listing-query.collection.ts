@@ -11,6 +11,8 @@ export type FormListing = {
   workspaceId: string;
   icon: string | null;
   formName: string;
+  customization?: Record<string, unknown> | null;
+  deletedAt?: string | null;
 };
 
 export type FormFavorite = {
