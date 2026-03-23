@@ -1,9 +1,7 @@
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import { formCollection } from "@/db-collections/form.collections";
-import { getFormStatus } from "@/lib/fn/forms";
-import type { FormStatus } from "@/lib/fn/forms";
+import { ensureFormDetail, resolveFormRouteTarget } from "@/lib/form-route-detail";
 import { createFileRoute, isRedirect, Outlet, redirect, useLocation } from "@tanstack/react-router";
 
 const FormLayout = () => {
@@ -47,16 +45,9 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
 
       if (isExactParentRoute) {
         try {
-          // Try collection first (instant, no network)
-          const cachedForm = formCollection.state.get(params.formId);
-          let status = cachedForm?.status as FormStatus | undefined;
+          const target = await resolveFormRouteTarget(context.queryClient, params.formId);
 
-          // Fall back to server fetch if not in collection yet
-          if (!status) {
-            status = await getFormStatus(context.queryClient, params.formId);
-          }
-
-          if (status === "published") {
+          if (target === "submissions") {
             throw redirect({
               to: "/workspace/$workspaceId/form-builder/$formId/submissions",
               params: { workspaceId: params.workspaceId, formId: params.formId },
@@ -79,6 +70,7 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
         }
       }
     },
+    loader: async ({ context, params }) => ensureFormDetail(context.queryClient, params.formId),
     staleTime: 30_000,
     gcTime: 5 * 60_000,
     component: FormLayout,

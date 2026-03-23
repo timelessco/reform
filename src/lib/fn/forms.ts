@@ -346,6 +346,8 @@ export const getFormbyIdQueryOption = (formId: string) =>
     staleTime: 1000 * 60 * 10, // 10 minutes
   });
 
+export const getFormByIdQueryOptions = getFormbyIdQueryOption;
+
 export type FormStatus = "draft" | "published" | "archived";
 type FormStatusQueryResult = {
   form?: {

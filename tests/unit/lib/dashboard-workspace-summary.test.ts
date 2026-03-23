@@ -11,6 +11,9 @@ vi.mock<typeof import("@/lib/fn/workspaces")>("@/lib/fn/workspaces", () => ({
 
 describe("getDashboardWorkspaceSummaryQueryOptions", () => {
   it("returns only the active organization workspace summaries and forms", async () => {
+    getWorkspacesWithForms.mockReset();
+    createWorkspace.mockReset();
+
     const { getDashboardWorkspaceSummaryQueryOptions } =
       await import("@/lib/dashboard-workspace-summary");
 
@@ -61,6 +64,9 @@ describe("getDashboardWorkspaceSummaryQueryOptions", () => {
   });
 
   it("adds an optimistic workspace summary immediately while create is pending", async () => {
+    getWorkspacesWithForms.mockReset();
+    createWorkspace.mockReset();
+
     const { createDashboardWorkspaceMutationOptions } =
       await import("@/lib/dashboard-workspace-summary");
 
@@ -80,6 +86,9 @@ describe("getDashboardWorkspaceSummaryQueryOptions", () => {
   });
 
   it("reconciles the optimistic workspace with the server result after create succeeds", async () => {
+    getWorkspacesWithForms.mockReset();
+    createWorkspace.mockReset();
+
     const { createDashboardWorkspaceMutationOptions } =
       await import("@/lib/dashboard-workspace-summary");
 
@@ -121,6 +130,9 @@ describe("getDashboardWorkspaceSummaryQueryOptions", () => {
   });
 
   it("rolls back the optimistic workspace when create fails", async () => {
+    getWorkspacesWithForms.mockReset();
+    createWorkspace.mockReset();
+
     const { createDashboardWorkspaceMutationOptions } =
       await import("@/lib/dashboard-workspace-summary");
 

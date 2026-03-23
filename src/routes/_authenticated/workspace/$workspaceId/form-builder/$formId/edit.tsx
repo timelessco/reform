@@ -2,11 +2,9 @@ import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { NotFound } from "@/components/ui/not-found";
 import { useFormVersionContent } from "@/hooks/use-form-versions";
-import { formCollection } from "@/db-collections/form.collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
-import { getFormStatus } from "@/lib/fn/forms";
-import type { FormStatus } from "@/lib/fn/forms";
+import { resolveFormRouteTarget } from "@/lib/form-route-detail";
 import { cn } from "@/lib/utils";
 import { createFileRoute, isRedirect, redirect, useLocation } from "@tanstack/react-router";
 import { format } from "date-fns";
@@ -138,16 +136,9 @@ export const Route = createFileRoute(
     if (search.force === true) return;
 
     try {
-      // Try collection cache first (instant, no network)
-      const cachedForm = formCollection.state.get(params.formId);
-      let status = cachedForm?.status as FormStatus | undefined;
+      const target = await resolveFormRouteTarget(context.queryClient, params.formId);
 
-      // Fall back to server fetch if not in collection yet
-      if (!status) {
-        status = await getFormStatus(context.queryClient, params.formId);
-      }
-
-      if (status === "published") {
+      if (target === "submissions") {
         throw redirect({
           to: "/workspace/$workspaceId/form-builder/$formId/submissions",
           params: { workspaceId: params.workspaceId, formId: params.formId },
