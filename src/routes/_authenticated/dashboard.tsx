@@ -19,9 +19,11 @@ import {
   duplicateFormById,
   updateFormStatus,
 } from "@/db-collections/form.collections";
-import { createWorkspaceLocal } from "@/db-collections/workspace.collection";
-import { useOrgForms, useOrgWorkspaces } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
+import {
+  useCreateDashboardWorkspace,
+  useDashboardWorkspaceSummary,
+} from "@/hooks/use-dashboard-workspace-summary";
 import { clearLocalDraftIds } from "@/lib/local-draft";
 import { syncLocalDataToCloud } from "@/lib/sync";
 import { parseTimestampAsUTC } from "@/lib/utils";
@@ -55,22 +57,15 @@ const DashboardPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   const { data: session } = useSession();
-
-  const { data: liveWorkspaces, isLoading: wsLoading } = useOrgWorkspaces(activeOrg?.id);
-  const { data: liveForms, isLoading: formsLoading } = useOrgForms(activeOrg?.id);
-
-  const isLoading = wsLoading || formsLoading;
-  const isElectricReady = !isLoading && liveWorkspaces !== undefined && liveForms !== undefined;
+  const { data: dashboardSummary, isLoading } = useDashboardWorkspaceSummary(activeOrg?.id);
+  const createWorkspaceMutation = useCreateDashboardWorkspace(activeOrg?.id);
 
   const orgWorkspaces = useMemo(
-    () => (isElectricReady ? liveWorkspaces || [] : []),
-    [isElectricReady, liveWorkspaces],
+    () => dashboardSummary?.workspaces ?? [],
+    [dashboardSummary?.workspaces],
   );
 
-  const orgForms = useMemo(
-    () => (isElectricReady ? liveForms || [] : []),
-    [isElectricReady, liveForms],
-  );
+  const orgForms = useMemo(() => dashboardSummary?.forms ?? [], [dashboardSummary?.forms]);
 
   const workspaceNameMap = useMemo(
     () => new Map(orgWorkspaces.map((ws) => [ws.id, ws.name])),
@@ -109,13 +104,13 @@ const DashboardPage = () => {
   const handleCreateWorkspace = useCallback(async () => {
     if (!activeOrg?.id) return;
     try {
-      await createWorkspaceLocal(activeOrg.id, "New Collection");
+      await createWorkspaceMutation.mutateAsync({ name: "New Collection" });
       toast.success("Workspace created");
     } catch (error) {
       console.error("Failed to create workspace:", error);
       toast.error("Failed to create workspace");
     }
-  }, [activeOrg?.id]);
+  }, [activeOrg?.id, createWorkspaceMutation]);
 
   const handleCreateForm = useCallback(async () => {
     if (orgWorkspaces.length === 0) return;
@@ -198,7 +193,7 @@ const DashboardPage = () => {
               variant="secondary"
               prefix={<FolderPlus className="size-4" />}
               onClick={handleCreateWorkspace}
-              disabled={isLoading}
+              disabled={isLoading || createWorkspaceMutation.isPending}
             >
               New workspace
             </Button>

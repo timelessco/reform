@@ -155,7 +155,7 @@ export const getWorkspaces = createServerFn({ method: "GET" })
     };
   });
 
-const getWorkspacesWithForms = createServerFn({ method: "GET" })
+export const getWorkspacesWithForms = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     // Get organizations the user is a member of

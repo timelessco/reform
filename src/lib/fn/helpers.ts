@@ -1,46 +1,61 @@
-import { and, eq, sql } from "drizzle-orm";
-import { forms, workspaces } from "@/db/schema";
+import { eq, sql } from "drizzle-orm";
+import { forms, member, workspaces } from "@/db/schema";
 import { db } from "@/lib/db";
+import { createAccessAuthorizer } from "./access";
 
 /**
  * Get authenticated user with their active organization.
  * Throws if user is not authenticated or has no active org.
  */
 
+const accessAuthorizer = createAccessAuthorizer({
+  getWorkspaceById: async (workspaceId: string) => {
+    const [workspace] = await db
+      .select({
+        id: workspaces.id,
+        organizationId: workspaces.organizationId,
+      })
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceId))
+      .limit(1);
+
+    return workspace ?? null;
+  },
+  getFormById: async (formId: string) => {
+    const [form] = await db
+      .select({
+        id: forms.id,
+        workspaceId: forms.workspaceId,
+        organizationId: workspaces.organizationId,
+      })
+      .from(forms)
+      .innerJoin(workspaces, eq(forms.workspaceId, workspaces.id))
+      .where(eq(forms.id, formId))
+      .limit(1);
+
+    return form ?? null;
+  },
+  getOrganizationMembershipIdsByUserId: async (userId: string) => {
+    const memberships = await db
+      .select({ organizationId: member.organizationId })
+      .from(member)
+      .where(eq(member.userId, userId));
+
+    return memberships.map((membership) => membership.organizationId);
+  },
+});
+
 /**
  * Authorize access to a workspace.
- * Checks if the workspace belongs to the user's active organization.
+ * Checks if the user belongs to the organization that owns the workspace.
  */
-export const authWorkspace = async (workspaceId: string, userId: string) => {
-  const workspace = await db
-    .select({ id: workspaces.id })
-    .from(workspaces)
-    .where(and(eq(workspaces.id, workspaceId), eq(workspaces.createdByUserId, userId)))
-    .limit(1);
-
-  if (workspace.length === 0) {
-    throw new Error("Workspace not found or access denied");
-  }
-  return { workspace: workspace[0] };
-};
+export const authWorkspace = accessAuthorizer.authWorkspace;
 
 /**
  * Authorize access to a form.
- * Checks if the form's workspace belongs to the user's active organization.
+ * Checks if the user belongs to the organization that owns the form's workspace.
  */
-export const authForm = async (formId: string, userId: string) => {
-  const form = await db
-    .select({ id: forms.id, workspaceId: forms.workspaceId })
-    .from(forms)
-    .innerJoin(workspaces, eq(forms.workspaceId, workspaces.id))
-    .where(and(eq(forms.id, formId), eq(forms.createdByUserId, userId)))
-    .limit(1);
-
-  if (form.length === 0) {
-    throw new Error("Form not found or access denied");
-  }
-  return { form: form[0] };
-};
+export const authForm = accessAuthorizer.authForm;
 
 type DbLike = { execute: typeof db.execute };
 
