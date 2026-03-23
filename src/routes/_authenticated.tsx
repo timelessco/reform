@@ -94,15 +94,10 @@ import {
 } from "@/db-collections/workspace.collection";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
-import {
-  useArchivedForms,
-  useFavoriteForms,
-  useOrgForms,
-  useOrgWorkspaces,
-  useSubmissionCounts,
-} from "@/hooks/use-live-hooks";
+import { useNavigationSidebar } from "@/hooks/use-navigation-sidebar";
+import { useArchivedForms, useOrgWorkspaces, useSubmissionCounts } from "@/hooks/use-live-hooks";
 import { settingsDialogStore } from "@/hooks/use-settings-dialog";
-import { auth, useSession } from "@/lib/auth-client";
+import { auth } from "@/lib/auth-client";
 import { orgDataForLayoutQueryOptions } from "@/lib/fn/org";
 import { HOTKEYS } from "@/lib/hotkeys";
 import { cn } from "@/lib/utils";
@@ -932,7 +927,6 @@ const SidebarInbox = () => {
 const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => {
   const router = useRouter();
   const location = useLocation();
-  const { data: session } = useSession();
 
   // Sort mode state with localStorage persistence
   const [sortMode, setSortMode] = useState<"recent" | "oldest" | "alphabetical" | "manual">(() => {
@@ -952,37 +946,19 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
     localStorage.setItem("sidebar-sort-mode", mode);
   }, []);
 
-  const { data: workspacesData, isLoading: workspacesLoading } = useOrgWorkspaces(activeOrgId);
-  const { data: formsData, isLoading: formsLoading } = useOrgForms(activeOrgId);
+  const { data: navigationData, isLoading } = useNavigationSidebar(activeOrgId);
   const submissionCounts = useSubmissionCounts();
 
-  // Get user's favorite forms
-  const favoriteForms = useFavoriteForms(session?.user?.id);
-
-  // Determine if Electric has synced
-  const isLoading = workspacesLoading || formsLoading;
-  const isElectricReady = !isLoading && workspacesData !== undefined && formsData !== undefined;
+  const favoriteForms = navigationData.favoriteForms;
 
   // Combine workspaces with their forms, filtered by active organization
   const workspaces: WorkspaceWithForms[] = useMemo(() => {
-    if (!activeOrgId || !isElectricReady) return [];
+    if (!activeOrgId) return [];
 
-    const formsByWorkspace = (formsData || []).reduce(
-      (acc, form) => {
-        if (!acc[form.workspaceId]) acc[form.workspaceId] = [];
-        acc[form.workspaceId].push({
-          ...form,
-          customization: form.customization as Record<string, string> | null | undefined,
-        });
-        return acc;
-      },
-      {} as Record<string, WorkspaceWithForms["forms"]>,
-    );
-
-    return (workspacesData || []).map((ws) => ({
+    return navigationData.workspaces.map((ws) => ({
       ...ws,
       // Sort forms by recently edited (most recent first)
-      forms: (formsByWorkspace[ws.id] || []).toSorted(
+      forms: ws.forms.toSorted(
         (a: WorkspaceWithForms["forms"][0], b: WorkspaceWithForms["forms"][0]) => {
           switch (sortMode) {
             case "oldest":
@@ -998,7 +974,7 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
         },
       ),
     }));
-  }, [workspacesData, formsData, activeOrgId, isElectricReady, sortMode]);
+  }, [activeOrgId, navigationData.workspaces, sortMode]);
 
   // State for workspace dialogs
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

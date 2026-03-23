@@ -6,6 +6,22 @@ import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
 import { getTxId } from "./helpers";
 
+export const getFavorites = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const favorites = await db
+      .select()
+      .from(formFavorites)
+      .where(eq(formFavorites.userId, context.session.user.id));
+
+    return {
+      favorites: favorites.map((favorite) => ({
+        ...favorite,
+        createdAt: favorite.createdAt.toISOString(),
+      })),
+    };
+  });
+
 export const addFavorite = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ formId: z.string().uuid() }))

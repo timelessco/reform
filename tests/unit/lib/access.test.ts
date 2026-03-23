@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createAccessAuthorizer } from "./access";
+import { createAccessAuthorizer } from "@/lib/fn/access";
 
 const workspaceRecord = {
   id: "workspace-1",
@@ -21,10 +21,7 @@ describe("createAccessAuthorizer", () => {
     });
 
     await expect(authorizer.authWorkspace("workspace-1", "member-2")).resolves.toStrictEqual({
-      workspace: {
-        id: "workspace-1",
-        organizationId: "org-1",
-      },
+      workspace: workspaceRecord,
     });
   });
 
@@ -48,11 +45,7 @@ describe("createAccessAuthorizer", () => {
     });
 
     await expect(authorizer.authForm("form-1", "member-2")).resolves.toStrictEqual({
-      form: {
-        id: "form-1",
-        workspaceId: "workspace-1",
-        organizationId: "org-1",
-      },
+      form: formRecord,
     });
   });
 

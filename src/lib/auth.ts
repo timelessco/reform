@@ -11,14 +11,93 @@ import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { apiKey, emailOTP, organization, twoFactor, username } from "better-auth/plugins";
+import * as betterAuthPlugins from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { eq } from "drizzle-orm";
+
+const { emailOTP, organization, testUtils, twoFactor, username } = betterAuthPlugins;
+const apiKeyPlugin = "apiKey" in betterAuthPlugins ? betterAuthPlugins.apiKey : undefined;
 
 const polarClient = new Polar({
   accessToken: process.env.POLAR_ACCESS_TOKEN ?? "",
   server: "sandbox", // TODO: Change to production
 });
+
+const authPlugins = [
+  username(),
+  emailOTP({
+    async sendVerificationOTP({ email, otp, type }) {
+      if (import.meta.env.DEV) {
+        logger(`[Auth] Sending OTP to ${email} (type: ${type}) : ${otp}`);
+      } else {
+        void sendOTPEmail(email, otp, type);
+      }
+    },
+    otpLength: 6,
+    expiresIn: 300,
+    sendVerificationOnSignUp: true,
+  }),
+  twoFactor({
+    totpOptions: {
+      digits: 6,
+    },
+  }),
+  organization({
+    async sendInvitationEmail(data) {
+      logger(
+        `[Org] sendInvitationEmail callback START - email: ${data.email}, org: ${data.organization.name}, inviter: ${data.inviter.user.name}, invitationId: ${data.id}`,
+      );
+      const inviteLink = `${process.env.APP_URL || "http://localhost:3000"}/accept-invite?invitationId=${data.id}`;
+      logger(`[Org] Generated invite link: ${inviteLink}`);
+      void sendOrgInvitationEmail(
+        data.email,
+        data.organization.name,
+        data.inviter.user.name,
+        inviteLink,
+      );
+      logger(`[Org] sendInvitationEmail callback END`);
+    },
+  }),
+  polar({
+    client: polarClient,
+    createCustomerOnSignUp: true,
+    use: [
+      checkout({
+        products: [
+          {
+            productId: "398f06f7-a6f6-4f65-80b6-62e38bd2825c",
+            slug: "free",
+          },
+          {
+            productId: "0be62924-d418-4dcc-8c8c-2b4929f76695",
+            slug: "Pro-(Yearly)",
+          },
+          {
+            productId: "3662224a-d998-4a73-bf82-4957198d53ea",
+            slug: "Pro",
+          },
+        ],
+        successUrl:
+          (process.env.APP_URL || "http://localhost:3000") +
+          "/settings/billing?checkout_id={CHECKOUT_ID}",
+        authenticatedUsersOnly: true,
+      }),
+      portal(),
+      webhooks({
+        secret: process.env.POLAR_WEBHOOK_SECRET ?? "",
+      }),
+    ],
+  }),
+  tanstackStartCookies(),
+];
+
+if (apiKeyPlugin) {
+  authPlugins.splice(3, 0, apiKeyPlugin());
+}
+
+if (process.env.NODE_ENV === "test") {
+  authPlugins.push(testUtils({ captureOTP: true }));
+}
 
 export const auth = betterAuth({
   appName: APP_NAME,
@@ -133,74 +212,7 @@ export const auth = betterAuth({
     "https://*.vercel-preview-app",
     "https://localhost:3001",
   ],
-  plugins: [
-    username(),
-    emailOTP({
-      async sendVerificationOTP({ email, otp, type }) {
-        if (import.meta.env.DEV) {
-          logger(`[Auth] Sending OTP to ${email} (type: ${type}) : ${otp}`);
-        } else {
-          void sendOTPEmail(email, otp, type);
-        }
-      },
-      otpLength: 6,
-      expiresIn: 300,
-      sendVerificationOnSignUp: true,
-    }),
-    twoFactor({
-      totpOptions: {
-        digits: 6,
-      },
-    }),
-    apiKey(),
-    organization({
-      async sendInvitationEmail(data) {
-        logger(
-          `[Org] sendInvitationEmail callback START - email: ${data.email}, org: ${data.organization.name}, inviter: ${data.inviter.user.name}, invitationId: ${data.id}`,
-        );
-        const inviteLink = `${process.env.APP_URL || "http://localhost:3000"}/accept-invite?invitationId=${data.id}`;
-        logger(`[Org] Generated invite link: ${inviteLink}`);
-        void sendOrgInvitationEmail(
-          data.email,
-          data.organization.name,
-          data.inviter.user.name,
-          inviteLink,
-        );
-        logger(`[Org] sendInvitationEmail callback END`);
-      },
-    }),
-    polar({
-      client: polarClient,
-      createCustomerOnSignUp: true,
-      use: [
-        checkout({
-          products: [
-            {
-              productId: "398f06f7-a6f6-4f65-80b6-62e38bd2825c",
-              slug: "free",
-            },
-            {
-              productId: "0be62924-d418-4dcc-8c8c-2b4929f76695",
-              slug: "Pro-(Yearly)",
-            },
-            {
-              productId: "3662224a-d998-4a73-bf82-4957198d53ea",
-              slug: "Pro",
-            },
-          ],
-          successUrl:
-            (process.env.APP_URL || "http://localhost:3000") +
-            "/settings/billing?checkout_id={CHECKOUT_ID}",
-          authenticatedUsersOnly: true,
-        }),
-        portal(),
-        webhooks({
-          secret: process.env.POLAR_WEBHOOK_SECRET ?? "",
-        }),
-      ],
-    }),
-    tanstackStartCookies(),
-  ],
+  plugins: authPlugins,
 });
 
 export type Session = typeof auth.$Infer.Session;

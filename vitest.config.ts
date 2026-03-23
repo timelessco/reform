@@ -10,9 +10,12 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
-    setupFiles: ["./vitest.setup.ts"],
-    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    setupFiles: ["./tests/setup.ts"],
+    include: ["tests/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules", ".output", "drizzle"],
+    restoreMocks: true,
+    mockReset: true,
+    clearMocks: true,
     css: false,
   },
 });

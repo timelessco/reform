@@ -25,11 +25,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { toggleFavoriteLocal } from "@/db-collections/favorite.collection";
 import { updateFormStatus } from "@/db-collections/form.collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { discardChanges, publishForm, useHasUnpublishedChanges } from "@/hooks/use-form-versions";
-import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
+import {
+  useNavigationFavoriteState,
+  useToggleNavigationFavorite,
+} from "@/hooks/use-navigation-sidebar";
+import { useForm, useWorkspace } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
 import { HOTKEYS, formatForDisplay } from "@/lib/hotkeys";
 import { cn, parseTimestampAsUTC } from "@/lib/utils";
@@ -137,11 +140,12 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const isPublishing = workflowState === "publishing";
 
   // Favorite state
-  useIsFavorite(session?.user?.id, formId);
+  const isFavorite = useNavigationFavoriteState(formId);
+  const toggleFavoriteMutation = useToggleNavigationFavorite(session?.user?.id);
 
   const handleToggleFavorite = async () => {
     if (!session?.user?.id || !formId) return;
-    await toggleFavoriteLocal(session.user.id, formId);
+    await toggleFavoriteMutation.mutateAsync({ formId });
   };
   const handleDeleteForm = async () => {
     if (!formId) return;
@@ -259,7 +263,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const menuItems = [
     {
       key: "favorite",
-      label: "Favorite",
+      label: isFavorite ? "Remove favorite" : "Favorite",
       shortcut: formatForDisplay(HOTKEYS.TOGGLE_FAVORITE),
       onClick: () => handleToggleFavorite(),
     },

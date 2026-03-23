@@ -1,8 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { and, eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { z } from "zod";
-import { forms } from "@/db/schema";
+import { forms, member, workspaces } from "@/db/schema";
 import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
 import { authForm, getTxId } from "./helpers";
@@ -364,3 +364,46 @@ export const getFormStatus = async (
 
   return result.form?.status;
 };
+
+export const getNavigationForms = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .inputValidator(
+    z.object({
+      organizationId: z.string().uuid(),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    const formList = await db
+      .select({
+        id: forms.id,
+        title: forms.title,
+        status: forms.status,
+        updatedAt: forms.updatedAt,
+        createdAt: forms.createdAt,
+        workspaceId: forms.workspaceId,
+        icon: forms.icon,
+        formName: forms.formName,
+        customization: forms.customization,
+      })
+      .from(forms)
+      .innerJoin(workspaces, eq(forms.workspaceId, workspaces.id))
+      .innerJoin(member, eq(workspaces.organizationId, member.organizationId))
+      .where(
+        and(
+          eq(member.userId, context.session.user.id),
+          eq(workspaces.organizationId, data.organizationId),
+          or(eq(forms.status, "draft"), eq(forms.status, "published")),
+        ),
+      )
+      .orderBy(forms.updatedAt);
+
+    return {
+      forms: formList.map((form) => ({
+        ...form,
+        title: form.title ?? "Untitled",
+        updatedAt: form.updatedAt.toISOString(),
+        createdAt: form.createdAt.toISOString(),
+        customization: (form.customization ?? {}) as Record<string, string>,
+      })),
+    };
+  });
