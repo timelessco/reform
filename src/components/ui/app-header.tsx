@@ -27,7 +27,11 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useClientCommandLayer } from "@/hooks/use-client-command-layer";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
-import { discardChanges, publishForm, useHasUnpublishedChanges } from "@/hooks/use-form-versions";
+import {
+  useDiscardChanges,
+  useHasUnpublishedChanges,
+  usePublishForm,
+} from "@/hooks/use-form-versions";
 import {
   useNavigationFavoriteState,
   useToggleNavigationFavorite,
@@ -78,6 +82,9 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
 
   const isShareSidebarOpen = activeSidebar === "share";
   const isEditorSidebarOpen = !!activeSidebar;
+
+  const publishForm = usePublishForm();
+  const discardChanges = useDiscardChanges();
 
   const toggleVersionHistory = () => {
     toggleEditorSidebar("history");
@@ -163,8 +170,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
     if (formId && workspaceId) {
       setWorkflowState("publishing");
       try {
-        const tx = publishForm(formId);
-        await tx.isPersisted.promise;
+        await publishForm(formId);
         toast.success("Form published");
         navigate({
           to: "/workspace/$workspaceId/form-builder/$formId/submissions",
@@ -183,8 +189,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
     if (formId) {
       setWorkflowState("discarding");
       try {
-        const tx = discardChanges(formId);
-        await tx.isPersisted.promise;
+        await discardChanges(formId);
         toast.info("Changes discarded, reverted to last published version");
       } catch (error) {
         toast.error("Failed to discard changes");

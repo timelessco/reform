@@ -11,7 +11,7 @@ import { SidebarSection } from "@/components/ui/sidebar-section";
 import { Tabs, TabsIndicator, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm } from "@/hooks/use-live-hooks";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
-import { publishForm } from "@/hooks/use-form-versions";
+import { usePublishForm } from "@/hooks/use-form-versions";
 import { formFieldsToEmbedOptions, EmbedConfigPanel } from "./embed-config-panel";
 import { EmbedCodeDialog, searchToFormValues, formValuesToSearch, tabs } from "./embed-section";
 import { EmbedPreviewMockup } from "./embed-preview-mockup";
@@ -26,6 +26,7 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
   const { closeSidebar } = useEditorSidebar();
   const { data: savedDocs } = useForm(formId);
   const doc = savedDocs?.[0];
+  const publishForm = usePublishForm();
 
   const search = useSearch({ strict: false });
   const navigate = useNavigate();
@@ -52,14 +53,13 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
 
   const handlePublish = useCallback(async () => {
     try {
-      const tx = publishForm(formId);
-      await tx.isPersisted.promise;
+      await publishForm(formId);
       toast.success("Form published successfully!");
     } catch (error) {
       toast.error("Failed to publish form");
       console.error(error);
     }
-  }, [formId]);
+  }, [formId, publishForm]);
 
   if (!doc) return null;
 
