@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -135,6 +136,7 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                               onChange={(e) => field.handleChange(e.target.value || null)}
                               className={`w-[160px] text-sm ${CONFIG_INPUT_CLS}`}
                               aria-label="Redirect URL"
+                              variant="primary"
                             />
                           )}
                         </form.AppField>
@@ -151,6 +153,7 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                               onChange={(e) => field.handleChange(Number(e.target.value) || 0)}
                               className={`w-[70px] text-sm ${CONFIG_INPUT_CLS}`}
                               aria-label="Redirect delay"
+                              variant="primary"
                             />
                           )}
                         </form.AppField>
@@ -243,6 +246,7 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                             }
                             className={`w-[70px] text-sm ${CONFIG_INPUT_CLS}`}
                             aria-label="Retention days"
+                            variant="primary"
                           />
                         )}
                       </form.AppField>
@@ -286,6 +290,7 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                             onChange={(e) => field.handleChange(e.target.value || null)}
                             className={`w-[160px] text-sm ${CONFIG_INPUT_CLS}`}
                             aria-label="Notification email"
+                            variant="primary"
                           />
                         )}
                       </form.AppField>
@@ -333,6 +338,7 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                               onChange={(e) => field.handleChange(e.target.value || null)}
                               className={`w-[160px] text-sm ${CONFIG_INPUT_CLS}`}
                               aria-label="Email subject"
+                              variant="primary"
                             />
                           )}
                         </form.AppField>
@@ -458,12 +464,9 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                     <ConfigRow label="Close date">
                       <form.AppField name="closeDate">
                         {(field) => (
-                          <Input
-                            type="datetime-local"
+                          <DatePicker
                             value={(field.state.value as string) || ""}
-                            onChange={(e) => field.handleChange(e.target.value || null)}
-                            className={`w-[160px] text-sm ${CONFIG_INPUT_CLS}`}
-                            aria-label="Close date"
+                            onChange={(val: string | null) => field.handleChange(val)}
                           />
                         )}
                       </form.AppField>
@@ -505,6 +508,7 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                             }
                             className={`w-[70px] text-sm ${CONFIG_INPUT_CLS}`}
                             aria-label="Max submissions"
+                            variant="primary"
                           />
                         )}
                       </form.AppField>
@@ -587,6 +591,7 @@ const PasswordInput = ({ value, onChange }: { value: string; onChange: (val: str
         onChange={(e) => onChange(e.target.value)}
         className="w-full text-sm rounded-lg !border-none pr-8"
         aria-label="Form password"
+        variant="primary"
       />
       <button
         type="button"

@@ -274,7 +274,10 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
                 </Select>
               </ConfigRow>
               <ConfigRow label="Accent">
-                <Select value={activeThemeColor} onValueChange={handleThemeColorChange}>
+                <Select
+                  value={activeThemeColor}
+                  onValueChange={(v) => v && handleThemeColorChange(v)}
+                >
                   <SelectTrigger className={selectTriggerCls}>
                     <ColorSwatch color={THEME_COLORS[activeThemeColor]?.primary} />
                     {THEME_COLOR_OPTIONS.find((o) => o.value === activeThemeColor)?.label ??
@@ -291,7 +294,10 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
                 </Select>
               </ConfigRow>
               <ConfigRow label="Base">
-                <Select value={activeBaseColor} onValueChange={handleBaseColorChange}>
+                <Select
+                  value={activeBaseColor}
+                  onValueChange={(v) => v && handleBaseColorChange(v)}
+                >
                   <SelectTrigger className={selectTriggerCls}>
                     <ColorSwatch color={activeBaseColors[activeBaseColor]?.muted} />
                     {BASE_COLOR_OPTIONS.find((o) => o.value === activeBaseColor)?.label ??
@@ -308,7 +314,7 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
                 </Select>
               </ConfigRow>
               <ConfigRow label="Font">
-                <Select value={activeFont} onValueChange={handleFontChange}>
+                <Select value={activeFont} onValueChange={(v) => v && handleFontChange(v)}>
                   <SelectTrigger className={selectTriggerCls}>
                     {FONT_OPTIONS.find((o) => o.value === activeFont)?.label ?? activeFont}
                   </SelectTrigger>

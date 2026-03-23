@@ -84,6 +84,7 @@ export const MembersContent = () => {
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
                   aria-label="Email"
+                  variant="secondary"
                   className="h-[30px]"
                 />
                 <InputGroupButton
@@ -94,6 +95,7 @@ export const MembersContent = () => {
                       role: "member",
                     });
                   }}
+                  type="button"
                   disabled={inviteMutation.isPending || !field.state.value}
                   className="mr-1 gap-1.5"
                 >

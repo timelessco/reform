@@ -73,7 +73,7 @@ export const DataGridPagination = (props: DataGridPaginationProps) => {
   const currentGroupEnd = Math.min(currentGroupStart + paginationMoreLimit, pageCount);
 
   const handlePageSizeChange = useCallback(
-    (value: string) => {
+    (value: string | null) => {
       const newPageSize = Number(value);
       table.setPageSize(newPageSize);
     },

@@ -16,6 +16,16 @@
     @apply bg-background text-foreground;
   }
 
+  /* Hide number input spinners globally */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
   h1,
   h2,
   h3,
@@ -71,7 +81,7 @@
   /* colors */
 	--color-plain: #fff;
 	--color-plain-reverse: #0f0f0f;
-
+  --stroke-width: 1px;
 	/* Light Gray Shades (from figma variables) */
 	--color-gray-0: #fff;
 	--color-gray-50: #fff;

@@ -249,12 +249,15 @@ const useAvatarUpload = (): AvatarUploadApi => {
 const ThemeSelect = () => {
   const { theme, setTheme } = useTheme();
   const handleThemeChange = useCallback(
-    (val: string) => setTheme(val as "dark" | "light" | "system"),
+    (val: string | null) => setTheme((val ?? "system") as "dark" | "light" | "system"),
     [setTheme],
   );
   return (
     <Select value={theme} onValueChange={handleThemeChange}>
-      <SelectTrigger className="shrink-0 bg-gray-50 border-0 rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] outline-1 -outline-offset-1 outline-transparent pl-3 pr-2.5 text-sm text-foreground capitalize">
+      <SelectTrigger
+        size="md"
+        className="shrink-0  bg-gray-50 border-0 rounded-lg shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] outline-1 -outline-offset-1 outline-transparent pl-3 pr-2.5 text-sm text-foreground capitalize"
+      >
         <SelectValue />
       </SelectTrigger>
       <SelectContent positionerClassName="z-103">
@@ -474,7 +477,8 @@ export const AccountSettingsContent = () => {
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="Enter display name"
-                    className="h-[30px] text-base text-foreground pl-2.5 pr-1.5 ring-0 focus-visible:ring-0"
+                    variant="secondary"
+                    // className="h-[30px] text-base text-foreground pl-2.5 pr-1.5 ring-0 focus-visible:ring-0"
                   />
                   {displayNameChanged && (
                     <InputGroupButton
@@ -496,7 +500,7 @@ export const AccountSettingsContent = () => {
                         );
                       }}
                       disabled={updateProfileMutation.isPending}
-                      className="h-[30px] rounded-lg bg-gray-50 px-3 text-sm text-gray-800 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] hover:bg-gray-200"
+                      className="h-[24px] w-[47px] rounded-lg bg-gray-50 px-3 text-sm text-gray-800 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] hover:bg-gray-200"
                     >
                       Save
                     </InputGroupButton>
@@ -523,7 +527,8 @@ export const AccountSettingsContent = () => {
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="Enter username"
-                    className="h-[30px] text-base text-foreground pl-2.5 pr-1.5"
+                    variant="secondary"
+                    // className="h-[30px] text-base text-foreground pl-2.5 pr-1.5"
                   />
                   {usernameChanged && (
                     <InputGroupButton

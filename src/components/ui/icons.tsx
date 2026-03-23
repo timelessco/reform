@@ -500,17 +500,16 @@ export const UsersIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <g opacity="0.12">
       <path
         d="M9.49996 12C11.9852 12 14 9.98528 14 7.5C14 5.01472 11.9852 3 9.49996 3C7.01468 3 4.99996 5.01472 4.99996 7.5C4.99996 9.98528 7.01468 12 9.49996 12Z"
-        fill="currentColor"
+        fill="var(--sidebar-icon-stroke)"
       />
       <path
         d="M9.49996 15C6.66933 15 4.1535 16.5446 2.55919 18.9383C2.20992 19.4628 2.03529 19.725 2.05539 20.0599C2.07105 20.3207 2.24201 20.64 2.4504 20.7976C2.71804 21 3.08613 21 3.82232 21H15.1776C15.9138 21 16.2819 21 16.5495 20.7976C16.7579 20.64 16.9289 20.3207 16.9445 20.0599C16.9646 19.725 16.79 19.4628 16.4407 18.9383C14.8464 16.5446 12.3306 15 9.49996 15Z"
-        fill="currentColor"
+        fill="var(--sidebar-icon-stroke)"
       />
     </g>
     <path
       d="M18 15.8369C19.4559 16.5683 20.7041 17.742 21.6152 19.2096C21.7956 19.5003 21.8858 19.6456 21.917 19.8468C21.9804 20.2558 21.7008 20.7585 21.3199 20.9204C21.1325 21 20.9216 21 20.5 21M16 11.5322C17.4817 10.7959 18.5 9.26686 18.5 7.5C18.5 5.73314 17.4817 4.20411 16 3.46776M14 7.5C14 9.98528 11.9852 12 9.49996 12C7.01468 12 4.99996 9.98528 4.99996 7.5C4.99996 5.01472 7.01468 3 9.49996 3C11.9852 3 14 5.01472 14 7.5ZM2.55919 18.9383C4.1535 16.5446 6.66933 15 9.49996 15C12.3306 15 14.8464 16.5446 16.4407 18.9383C16.79 19.4628 16.9646 19.725 16.9445 20.0599C16.9289 20.3207 16.7579 20.64 16.5495 20.7976C16.2819 21 15.9138 21 15.1776 21H3.82232C3.08613 21 2.71804 21 2.4504 20.7976C2.24201 20.64 2.07105 20.3207 2.05539 20.0599C2.03529 19.725 2.20992 19.4628 2.55919 18.9383Z"
-      stroke="currentColor"
-      strokeWidth="2"
+      stroke="var(--sidebar-icon-stroke)"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
@@ -675,10 +674,52 @@ export const CircleUserRoundIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 export const CircleXIcon = createConsistentLucideIcon(LucideCircleX);
 export const ClockIcon = createConsistentLucideIcon(LucideClock);
-export const CreditCardIcon = createConsistentLucideIcon(LucideCreditCard);
+export const CreditCardIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      opacity="0.12"
+      d="M2 8.2V10H22V8.2C22 7.0799 22 6.51984 21.782 6.09202C21.5903 5.7157 21.2843 5.40974 20.908 5.21799C20.4802 5 19.9201 5 18.8 5H5.2C4.0799 5 3.51984 5 3.09202 5.21799C2.7157 5.40973 2.40973 5.71569 2.21799 6.09202C2 6.51984 2 7.07989 2 8.2Z"
+      fill="var(--sidebar-icon-stroke)"
+    />
+    <path
+      d="M22 10H2M11 14H6M2 8.2L2 15.8C2 16.9201 2 17.4802 2.21799 17.908C2.40973 18.2843 2.71569 18.5903 3.09202 18.782C3.51984 19 4.07989 19 5.2 19L18.8 19C19.9201 19 20.4802 19 20.908 18.782C21.2843 18.5903 21.5903 18.2843 21.782 17.908C22 17.4802 22 16.9201 22 15.8V8.2C22 7.0799 22 6.51984 21.782 6.09202C21.5903 5.7157 21.2843 5.40974 20.908 5.21799C20.4802 5 19.9201 5 18.8 5L5.2 5C4.0799 5 3.51984 5 3.09202 5.21799C2.7157 5.40973 2.40973 5.71569 2.21799 6.09202C2 6.51984 2 7.07989 2 8.2Z"
+      stroke="var(--sidebar-icon-stroke)"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 export const EyeIcon = createConsistentLucideIcon(LucideEye);
 export const EyeOffLucideIcon = createConsistentLucideIcon(LucideEyeOff);
-export const FileCodeIcon = createConsistentLucideIcon(LucideFileCode);
+export const FileCodeIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      opacity="0.12"
+      d="M14 18.6C14 18.0399 14 17.7599 14.109 17.546C14.2049 17.3578 14.3578 17.2049 14.546 17.109C14.7599 17 15.0399 17 15.6 17H19.4C19.9601 17 20.2401 17 20.454 17.109C20.6422 17.2049 20.7951 17.3578 20.891 17.546C21 17.7599 21 18.0399 21 18.6V19.4C21 19.9601 21 20.2401 20.891 20.454C20.7951 20.6422 20.6422 20.7951 20.454 20.891C20.2401 21 19.9601 21 19.4 21H15.6C15.0399 21 14.7599 21 14.546 20.891C14.3578 20.7951 14.2049 20.6422 14.109 20.454C14 20.2401 14 19.9601 14 19.4V18.6Z"
+      fill="var(--sidebar-icon-stroke)"
+    />
+    <path
+      d="M20 10V6.8C20 5.11984 20 4.27976 19.673 3.63803C19.3854 3.07354 18.9265 2.6146 18.362 2.32698C17.7202 2 16.8802 2 15.2 2H8.8C7.11984 2 6.27976 2 5.63803 2.32698C5.07354 2.6146 4.6146 3.07354 4.32698 3.63803C4 4.27976 4 5.11984 4 6.8V17.2C4 18.8802 4 19.7202 4.32698 20.362C4.6146 20.9265 5.07354 21.3854 5.63803 21.673C6.27976 22 7.11984 22 8.8 22H10.5M13 11H8M11 15H8M16 7H8M19.25 17V15.25C19.25 14.2835 18.4665 13.5 17.5 13.5C16.5335 13.5 15.75 14.2835 15.75 15.25V17M15.6 21H19.4C19.9601 21 20.2401 21 20.454 20.891C20.6422 20.7951 20.7951 20.6422 20.891 20.454C21 20.2401 21 19.9601 21 19.4V18.6C21 18.0399 21 17.7599 20.891 17.546C20.7951 17.3578 20.6422 17.2049 20.454 17.109C20.2401 17 19.9601 17 19.4 17H15.6C15.0399 17 14.7599 17 14.546 17.109C14.3578 17.2049 14.2049 17.3578 14.109 17.546C14 17.7599 14 18.0399 14 18.6V19.4C14 19.9601 14 20.2401 14.109 20.454C14.2049 20.6422 14.3578 20.7951 14.546 20.891C14.7599 21 15.0399 21 15.6 21Z"
+      stroke="var(--sidebar-icon-stroke)"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 export const FileIcon = createConsistentLucideIcon(LucideFile);
 export const FileQuestionIcon = createConsistentLucideIcon(LucideFileQuestion);
 export const FileTextIcon = createConsistentLucideIcon(LucideFileText);

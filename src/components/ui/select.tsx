@@ -30,13 +30,13 @@ export const SelectTrigger = ({
   children,
   ...props
 }: SelectPrimitive.Trigger.Props & {
-  size?: "sm" | "default";
+  size?: "sm" | "md" | "default";
 }) => (
   <SelectPrimitive.Trigger
     data-slot="select-trigger"
     data-size={size}
     className={cn(
-      "flex items-center gap-1.5 rounded-lg text-13 outline-hidden data-placeholder:text-muted-foreground border border-input bg-transparent py-2 pe-2 ps-2.5 transition-colors select-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-8 data-[size=sm]:h-7 data-[size=sm]:rounded-[min(var(--radius-md),10px)] *:data-[slot=select-value]:gap-1.5 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 w-fit justify-between whitespace-nowrap",
+      "flex items-center gap-1.5 rounded-lg text-13 outline-hidden data-placeholder:text-muted-foreground border border-input bg-transparent py-2 pe-2 ps-2.5 transition-colors select-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-8 data-[size=sm]:h-7 data-[size=md]:h-7.5 data-[size=sm]:rounded-[min(var(--radius-md),10px)] *:data-[slot=select-value]:gap-1.5 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0 w-fit justify-between whitespace-nowrap",
       className,
     )}
     {...props}

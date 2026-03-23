@@ -362,7 +362,10 @@ const CustomizeSection = ({
         <form.Field name="popupTrigger">
           {(field: FieldRenderApi<string>) => (
             <ConfigRow label="Open popup">
-              <Select value={field.state.value} onValueChange={field.handleChange}>
+              <Select
+                value={field.state.value}
+                onValueChange={(value) => field.handleChange(value ?? field.state.value)}
+              >
                 <SelectTrigger className={selectTriggerCls}>
                   {triggerLabels[field.state.value] ?? field.state.value}
                 </SelectTrigger>
@@ -378,7 +381,10 @@ const CustomizeSection = ({
         <form.Field name="popupPosition">
           {(field: FieldRenderApi<string>) => (
             <ConfigRow label="Popup Position">
-              <Select value={field.state.value} onValueChange={field.handleChange}>
+              <Select
+                value={field.state.value}
+                onValueChange={(value) => field.handleChange(value ?? field.state.value)}
+              >
                 <SelectTrigger className={selectTriggerCls}>
                   {positionLabels[field.state.value] ?? field.state.value}
                 </SelectTrigger>
