@@ -79,19 +79,12 @@ import {
 } from "@/contexts/editor-header-visibility-context";
 import { MinimalSidebarProvider, useMinimalSidebar } from "@/contexts/minimal-sidebar-context";
 import {
-  createFormLocal,
-  duplicateFormById,
   formCollection,
   permanentDeleteFormLocal,
   restoreFormLocal,
-  updateFormStatus,
 } from "@/db-collections/form.collections";
-import {
-  createWorkspaceLocal,
-  deleteWorkspaceLocal,
-  updateWorkspaceName,
-  workspaceCollection,
-} from "@/db-collections/workspace.collection";
+import { workspaceCollection } from "@/db-collections/workspace.collection";
+import { useClientCommandLayer } from "@/hooks/use-client-command-layer";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useNavigationSidebar } from "@/hooks/use-navigation-sidebar";
@@ -326,6 +319,7 @@ const AppSidebar = () => {
 
   // Get pre-fetched data from route loader for immediate render
   const { activeOrg, orgsData } = Route.useLoaderData();
+  const commandLayer = useClientCommandLayer(activeOrg?.id);
   const { data: workspacesData } = useOrgWorkspaces(activeOrg?.id);
 
   const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
@@ -466,7 +460,9 @@ const AppSidebar = () => {
                             orgWorkspaces[0]
                           : orgWorkspaces[0];
 
-                        const newForm = await createFormLocal(targetWorkspace.id);
+                        const newForm = await commandLayer.createForm({
+                          workspaceId: targetWorkspace.id,
+                        });
                         router.navigate({
                           to: "/workspace/$workspaceId/form-builder/$formId/edit",
                           params: {
@@ -484,7 +480,8 @@ const AppSidebar = () => {
                 <CommandItem
                   onSelect={() => {
                     if (activeOrg) {
-                      createWorkspaceLocal(activeOrg.id, "Collection")
+                      commandLayer
+                        .createWorkspace({ name: "Collection" })
                         .then((workspace) => {
                           router.navigate({
                             to: "/workspace/$workspaceId",
@@ -926,6 +923,7 @@ const SidebarInbox = () => {
 // Workspaces section - uses live queries for real-time sync (Minimal Style)
 const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => {
   const router = useRouter();
+  const commandLayer = useClientCommandLayer(activeOrgId);
   const location = useLocation();
 
   // Sort mode state with localStorage persistence
@@ -1011,7 +1009,7 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
   const handleDeleteWorkspace = useCallback(async () => {
     if (!workspaceToDelete || deleteConfirmName !== workspaceToDelete.name) return;
     try {
-      await deleteWorkspaceLocal(workspaceToDelete.id);
+      await commandLayer.deleteWorkspace({ workspaceId: workspaceToDelete.id });
       setDeleteDialogOpen(false);
       setWorkspaceToDelete(null);
       setDeleteConfirmName("");
@@ -1019,19 +1017,22 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
     } catch (error) {
       console.error("Failed to delete workspace:", error);
     }
-  }, [workspaceToDelete, deleteConfirmName, router]);
+  }, [commandLayer, workspaceToDelete, deleteConfirmName, router]);
 
   const handleRenameWorkspace = useCallback(async () => {
     if (!workspaceToRename || !newWorkspaceName.trim()) return;
     try {
-      await updateWorkspaceName(workspaceToRename.id, newWorkspaceName.trim());
+      await commandLayer.renameWorkspace({
+        workspaceId: workspaceToRename.id,
+        name: newWorkspaceName.trim(),
+      });
       setRenameDialogOpen(false);
       setWorkspaceToRename(null);
       setNewWorkspaceName("");
     } catch (error) {
       console.error("Failed to rename workspace:", error);
     }
-  }, [workspaceToRename, newWorkspaceName]);
+  }, [commandLayer, workspaceToRename, newWorkspaceName]);
 
   const handleRenameKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -1057,7 +1058,7 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
   const handleDuplicateForm = useCallback(
     async (form: WorkspaceWithForms["forms"][0]) => {
       try {
-        const newForm = await duplicateFormById(form.id);
+        const newForm = await commandLayer.duplicateForm({ formId: form.id });
         toast.success("Form duplicated");
         router.navigate({
           to: "/workspace/$workspaceId/form-builder/$formId/edit",
@@ -1068,7 +1069,7 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
         toast.error("Failed to duplicate form");
       }
     },
-    [router],
+    [commandLayer, router],
   );
 
   const handleDeleteForm = useCallback((form: WorkspaceWithForms["forms"][0]) => {
@@ -1079,7 +1080,7 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
   const handleConfirmDeleteForm = useCallback(async () => {
     if (!formToDelete) return;
     try {
-      await updateFormStatus(formToDelete.id, "archived");
+      await commandLayer.archiveForm({ formId: formToDelete.id });
       toast.success("Form deleted");
       // Navigate to dashboard if user is on the deleted form's page
       if (location.pathname.includes(`/form-builder/${formToDelete.id}`)) {
@@ -1091,7 +1092,7 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
       console.error("Failed to delete form:", error);
       toast.error("Failed to delete form");
     }
-  }, [formToDelete, location.pathname, router]);
+  }, [commandLayer, formToDelete, location.pathname, router]);
 
   return (
     <>
@@ -1144,6 +1145,13 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
                   submissionCounts={submissionCounts}
                   sortMode={sortMode}
                   onSortChange={handleSortChange}
+                  onCreateForm={async () => {
+                    const newForm = await commandLayer.createForm({ workspaceId: workspace.id });
+                    router.navigate({
+                      to: "/workspace/$workspaceId/form-builder/$formId/edit",
+                      params: { workspaceId: workspace.id, formId: newForm.id },
+                    });
+                  }}
                   onRename={() => openRenameDialog(workspace)}
                   onDelete={() => openDeleteDialog(workspace)}
                   onDuplicateForm={handleDuplicateForm}

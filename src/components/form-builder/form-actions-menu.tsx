@@ -25,9 +25,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { duplicateForm, updateDoc, updateFormStatus } from "@/db-collections/form.collections";
+import { updateDoc } from "@/db-collections/form.collections";
 import type { Form } from "@/db-collections/form.collections";
-import { useNavigate } from "@tanstack/react-router";
+import { useClientCommandLayer } from "@/hooks/use-client-command-layer";
+import { useLoaderData, useNavigate } from "@tanstack/react-router";
 import { CopyIcon, MoreHorizontalIcon, TagIcon, Trash2Icon } from "@/components/ui/icons";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
@@ -39,6 +40,8 @@ interface FormActionsMenuProps {
 
 export const FormActionsMenu = ({ form, workspaceId }: FormActionsMenuProps) => {
   const navigate = useNavigate();
+  const { activeOrg } = useLoaderData({ from: "/_authenticated" });
+  const commandLayer = useClientCommandLayer(activeOrg?.id);
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [newTitle, setNewTitle] = useState(form?.title || "");
@@ -60,7 +63,7 @@ export const FormActionsMenu = ({ form, workspaceId }: FormActionsMenuProps) => 
   const handleDuplicate = useCallback(async () => {
     if (!form) return;
     try {
-      const newForm = await duplicateForm(form);
+      const newForm = await commandLayer.duplicateForm({ formId: form.id });
       toast.success("Form duplicated");
       navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
@@ -69,12 +72,12 @@ export const FormActionsMenu = ({ form, workspaceId }: FormActionsMenuProps) => 
     } catch {
       toast.error("Failed to duplicate form");
     }
-  }, [form, navigate, workspaceId]);
+  }, [commandLayer, form, navigate, workspaceId]);
 
   const handleDelete = useCallback(async () => {
     if (!form) return;
     try {
-      await updateFormStatus(form.id, "archived");
+      await commandLayer.archiveForm({ formId: form.id });
       toast.success("Form deleted");
       navigate({
         to: "/workspace/$workspaceId",
@@ -83,7 +86,7 @@ export const FormActionsMenu = ({ form, workspaceId }: FormActionsMenuProps) => 
     } catch {
       toast.error("Failed to delete form");
     }
-  }, [form, navigate, workspaceId]);
+  }, [commandLayer, form, navigate, workspaceId]);
 
   const handleRename = useCallback(async () => {
     if (!form || !newTitle.trim()) return;

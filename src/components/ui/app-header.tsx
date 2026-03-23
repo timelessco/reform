@@ -25,7 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { updateFormStatus } from "@/db-collections/form.collections";
+import { useClientCommandLayer } from "@/hooks/use-client-command-layer";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { discardChanges, publishForm, useHasUnpublishedChanges } from "@/hooks/use-form-versions";
 import {
@@ -37,7 +37,7 @@ import { useSession } from "@/lib/auth-client";
 import { HOTKEYS, formatForDisplay } from "@/lib/hotkeys";
 import { cn, parseTimestampAsUTC } from "@/lib/utils";
 import { useHotkey } from "@tanstack/react-hotkeys";
-import { Link, useLocation, useNavigate, useParams } from "@tanstack/react-router";
+import { Link, useLoaderData, useLocation, useNavigate, useParams } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -62,6 +62,8 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const { data: sessionData } = useSession();
   const session = sessionData;
   const navigate = useNavigate();
+  const { activeOrg } = useLoaderData({ from: "/_authenticated" });
+  const commandLayer = useClientCommandLayer(activeOrg?.id);
 
   // Editor sidebar state
   const {
@@ -150,7 +152,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const handleDeleteForm = async () => {
     if (!formId) return;
     try {
-      await updateFormStatus(formId, "archived");
+      await commandLayer.archiveForm({ formId });
       toast.success("Form moved to trash");
       navigate({ to: "/dashboard" });
     } catch {

@@ -14,16 +14,9 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  createFormLocal,
-  duplicateFormById,
-  updateFormStatus,
-} from "@/db-collections/form.collections";
 import { useSession } from "@/lib/auth-client";
-import {
-  useCreateDashboardWorkspace,
-  useDashboardWorkspaceSummary,
-} from "@/hooks/use-dashboard-workspace-summary";
+import { useClientCommandLayer } from "@/hooks/use-client-command-layer";
+import { useDashboardWorkspaceSummary } from "@/hooks/use-dashboard-workspace-summary";
 import { clearLocalDraftIds } from "@/lib/local-draft";
 import { syncLocalDataToCloud } from "@/lib/sync";
 import { parseTimestampAsUTC } from "@/lib/utils";
@@ -58,7 +51,7 @@ const DashboardPage = () => {
 
   const { data: session } = useSession();
   const { data: dashboardSummary, isLoading } = useDashboardWorkspaceSummary(activeOrg?.id);
-  const createWorkspaceMutation = useCreateDashboardWorkspace(activeOrg?.id);
+  const commandLayer = useClientCommandLayer(activeOrg?.id);
 
   const orgWorkspaces = useMemo(
     () => dashboardSummary?.workspaces ?? [],
@@ -104,13 +97,13 @@ const DashboardPage = () => {
   const handleCreateWorkspace = useCallback(async () => {
     if (!activeOrg?.id) return;
     try {
-      await createWorkspaceMutation.mutateAsync({ name: "New Collection" });
+      await commandLayer.createWorkspace({ name: "New Collection" });
       toast.success("Workspace created");
     } catch (error) {
       console.error("Failed to create workspace:", error);
       toast.error("Failed to create workspace");
     }
-  }, [activeOrg?.id, createWorkspaceMutation]);
+  }, [activeOrg?.id, commandLayer]);
 
   const handleCreateForm = useCallback(async () => {
     if (orgWorkspaces.length === 0) return;
@@ -118,7 +111,7 @@ const DashboardPage = () => {
     setIsCreating(true);
     try {
       const defaultWorkspace = orgWorkspaces[0];
-      const newForm = await createFormLocal(defaultWorkspace.id);
+      const newForm = await commandLayer.createForm({ workspaceId: defaultWorkspace.id });
       navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
         params: { workspaceId: defaultWorkspace.id, formId: newForm.id },
@@ -128,7 +121,7 @@ const DashboardPage = () => {
     } finally {
       setIsCreating(false);
     }
-  }, [orgWorkspaces, navigate]);
+  }, [commandLayer, orgWorkspaces, navigate]);
 
   const handleDeleteClick = useCallback((form: { id: string; title: string }) => {
     setFormToDelete(form);
@@ -138,19 +131,19 @@ const DashboardPage = () => {
   const handleConfirmDelete = useCallback(async () => {
     if (formToDelete) {
       try {
-        await updateFormStatus(formToDelete.id, "archived");
+        await commandLayer.archiveForm({ formId: formToDelete.id });
         setDeleteDialogOpen(false);
         setFormToDelete(null);
       } catch (error) {
         console.error("Failed to archive form:", error);
       }
     }
-  }, [formToDelete]);
+  }, [commandLayer, formToDelete]);
 
   const handleDuplicate = useCallback(
     async (formId: string) => {
       try {
-        const newForm = await duplicateFormById(formId);
+        const newForm = await commandLayer.duplicateForm({ formId });
         toast.success("Form duplicated");
         navigate({
           to: "/workspace/$workspaceId/form-builder/$formId/edit",
@@ -161,7 +154,7 @@ const DashboardPage = () => {
         toast.error("Failed to duplicate form");
       }
     },
-    [navigate],
+    [commandLayer, navigate],
   );
 
   const handlePrevPage = useCallback(() => setCurrentPage((p) => Math.max(1, p - 1)), []);
@@ -193,7 +186,7 @@ const DashboardPage = () => {
               variant="secondary"
               prefix={<FolderPlus className="size-4" />}
               onClick={handleCreateWorkspace}
-              disabled={isLoading || createWorkspaceMutation.isPending}
+              disabled={isLoading}
             >
               New workspace
             </Button>

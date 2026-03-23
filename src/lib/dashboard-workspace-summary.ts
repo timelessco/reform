@@ -14,8 +14,11 @@ type WorkspaceSummary = {
 type FormSummary = {
   id: string;
   title: string | null;
+  status: string;
   updatedAt: string;
   workspaceId: string;
+  icon?: string | null;
+  customization?: Record<string, string> | null;
 };
 
 type WorkspaceWithForms = WorkspaceSummary & {

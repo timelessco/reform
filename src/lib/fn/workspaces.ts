@@ -181,8 +181,11 @@ export const getWorkspacesWithForms = createServerFn({ method: "GET" })
         .select({
           id: forms.id,
           title: forms.title,
+          status: forms.status,
           updatedAt: forms.updatedAt,
           workspaceId: forms.workspaceId,
+          icon: forms.icon,
+          customization: forms.customization,
         })
         .from(forms)
         .where(not(eq(forms.status, "archived")))
@@ -198,12 +201,21 @@ export const getWorkspacesWithForms = createServerFn({ method: "GET" })
         acc[form.workspaceId].push({
           ...form,
           updatedAt: form.updatedAt.toISOString(),
+          customization: (form.customization ?? {}) as Record<string, string>,
         });
         return acc;
       },
       {} as Record<
         string,
-        { id: string; title: string | null; updatedAt: string; workspaceId: string }[]
+        {
+          id: string;
+          title: string | null;
+          status: string;
+          updatedAt: string;
+          workspaceId: string;
+          icon: string | null;
+          customization: Record<string, string>;
+        }[]
       >,
     );
 

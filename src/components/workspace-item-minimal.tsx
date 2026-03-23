@@ -31,9 +31,8 @@ import {
   TrashIcon,
 } from "@/components/ui/icons";
 import { SidebarSection } from "@/components/ui/sidebar-section";
-import { createFormLocal } from "@/db-collections/form.collections";
 import { cn } from "@/lib/utils";
-import { useLocation, useRouter } from "@tanstack/react-router";
+import { useLocation } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
 
 export type WorkspaceWithForms = {
@@ -61,6 +60,7 @@ export interface WorkspaceItemMinimalProps {
   onSortChange: (mode: "recent" | "oldest" | "alphabetical" | "manual") => void;
   onRename: () => void;
   onDelete: () => void;
+  onCreateForm: () => Promise<void>;
   onDuplicateForm: (form: WorkspaceWithForms["forms"][0]) => void;
   onDeleteForm: (form: WorkspaceWithForms["forms"][0]) => void;
 }
@@ -72,10 +72,10 @@ export const WorkspaceItemMinimal = ({
   onSortChange,
   onRename,
   onDelete,
+  onCreateForm,
   onDuplicateForm,
   onDeleteForm,
 }: WorkspaceItemMinimalProps) => {
-  const router = useRouter();
   const [isCreatingForm, setIsCreatingForm] = useState(false);
   const [sortExpanded, setSortExpanded] = useState(false);
 
@@ -95,17 +95,13 @@ export const WorkspaceItemMinimal = ({
   const handleCreateForm = useCallback(async () => {
     setIsCreatingForm(true);
     try {
-      const newForm = await createFormLocal(workspace.id);
-      router.navigate({
-        to: "/workspace/$workspaceId/form-builder/$formId/edit",
-        params: { workspaceId: workspace.id, formId: newForm.id },
-      });
+      await onCreateForm();
     } catch (error) {
       console.error("Failed to create form:", error);
     } finally {
       setIsCreatingForm(false);
     }
-  }, [workspace.id, router]);
+  }, [onCreateForm]);
 
   return (
     <SidebarSection
