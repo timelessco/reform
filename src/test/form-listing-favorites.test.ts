@@ -51,6 +51,7 @@ const fetchFormListings = async (userId: string): Promise<FormListing[]> => {
       workspaceId: f.workspaceId,
       icon: f.icon,
       formName: f.formName,
+      submissionCount: 0,
     }));
 };
 

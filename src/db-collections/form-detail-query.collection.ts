@@ -1,4 +1,5 @@
 import { createCollection } from "@tanstack/db";
+import type { UpdateMutationFn } from "@tanstack/db";
 import type { QueryClient } from "@tanstack/query-core";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
 
@@ -19,13 +20,11 @@ export type FormDetail = {
   [key: string]: unknown; // Allow additional form fields (cover, isMultiStep, etc.)
 };
 
-type MutationHandler = (params: Record<string, unknown>) => Promise<unknown>;
-
 type FormDetailCollectionConfig = {
   queryClient: QueryClient;
   formId: string;
   queryFn: () => Promise<FormDetail | null>;
-  onUpdate?: MutationHandler;
+  onUpdate?: UpdateMutationFn<FormDetail, string | number>;
 };
 
 export const createFormDetailCollection = (config: FormDetailCollectionConfig) => {

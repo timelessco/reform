@@ -1,8 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { and, eq } from "drizzle-orm";
+import { and, count, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
-import { forms } from "@/db/schema";
+import { forms, member, submissions, workspaces } from "@/db/schema";
 import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
 import { authForm, getActiveOrgId, getTxId } from "./helpers";
@@ -204,6 +204,36 @@ export const deleteForm = createServerFn({ method: "POST" })
 
       return { form: serializeForm(form), txid };
     });
+  });
+
+export const getFormListings = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const formList = await db
+      .select({
+        id: forms.id,
+        title: forms.title,
+        status: forms.status,
+        updatedAt: forms.updatedAt,
+        createdAt: forms.createdAt,
+        workspaceId: forms.workspaceId,
+        icon: forms.icon,
+        formName: forms.formName,
+        submissionCount: count(submissions.id),
+      })
+      .from(forms)
+      .innerJoin(workspaces, eq(forms.workspaceId, workspaces.id))
+      .innerJoin(member, eq(workspaces.organizationId, member.organizationId))
+      .leftJoin(submissions, eq(submissions.formId, forms.id))
+      .where(and(eq(member.userId, context.session.user.id), isNull(forms.deletedAt)))
+      .groupBy(forms.id)
+      .orderBy(forms.updatedAt);
+
+    return formList.map((f) => ({
+      ...f,
+      updatedAt: f.updatedAt.toISOString(),
+      createdAt: f.createdAt.toISOString(),
+    }));
   });
 
 const _getFormsByWorkspace = createServerFn({ method: "GET" })

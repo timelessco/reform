@@ -1,6 +1,6 @@
 import { ChevronLeftIcon, ChevronRightIcon, SettingsIcon } from "@/components/ui/icons";
 import type { PlateElementProps } from "platejs/react";
-import { PlateElement, useEditorRef } from "platejs/react";
+import { PlateElement, useEditorRef, useEditorSelector } from "platejs/react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -56,6 +56,10 @@ export const FormButtonElement = ({ className, children, ...props }: PlateElemen
   const placeholder = getPlaceholderForRole(buttonRole);
 
   const isPrevious = buttonRole === "previous";
+  const isMultiStep = useEditorSelector(
+    (ed) => ed.children.some((node) => (node as { type?: string }).type === "pageBreak"),
+    [],
+  );
   const [isOpen, setIsOpen] = React.useState(false);
 
   // Get label from element property (fallback to children for backwards compat)
@@ -187,21 +191,24 @@ export const FormButtonElement = ({ className, children, ...props }: PlateElemen
         isPrevious ? "float-left clear-none" : "clear-both flex",
         className,
       )}
-      style={!isPrevious ? { maxWidth: "var(--bf-input-width)" } : undefined}
+      style={!isPrevious ? { maxWidth: "var(--bf-input-width, 464px)" } : undefined}
       {...props}
     >
       {/* Hidden children to maintain Slate structure */}
       <span className="hidden">{children}</span>
       {/* Non-editable button visual - onMouseDown prevents cursor placement */}
       <div
-        className={cn("inline-flex items-center gap-1 group", !isPrevious && "ml-auto")}
+        className={cn(
+          "inline-flex items-center gap-1 group",
+          !isPrevious && isMultiStep && "ml-auto",
+        )}
         contentEditable={false}
         role="presentation"
         aria-hidden="true"
         onMouseDown={handleGearMouseDown}
       >
-        {/* Gear icon on left when button floats right (so button touches right edge) */}
-        {!isPrevious && GearIcon}
+        {/* Gear icon on left when button is right-aligned (so button touches right edge) */}
+        {!isPrevious && isMultiStep && GearIcon}
         <span
           className={cn(
             "inline-flex h-8 items-center justify-center rounded-lg px-2.5 text-sm transition-colors cursor-default select-none gap-1.5",
@@ -214,8 +221,8 @@ export const FormButtonElement = ({ className, children, ...props }: PlateElemen
           <span>{displayText}</span>
           {buttonRole === "next" && <ChevronRightIcon className="h-4 w-4" />}
         </span>
-        {/* Gear icon on right when button floats left (so button touches left edge) */}
-        {isPrevious && GearIcon}
+        {/* Gear icon on right when button is left-aligned (so button touches left edge) */}
+        {(isPrevious || !isMultiStep) && GearIcon}
       </div>
     </PlateElement>
   );

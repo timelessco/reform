@@ -23,7 +23,7 @@ describe("electric removal parity", () => {
     // All authenticated surfaces have query-backed replacements
     expect(names).toContain("workspace-query");
     expect(names).toContain("form-listing-query");
-    expect(names).toContain("form-detail-query");
+    // form-detail-query merged into form-listing-query (single collection)
     expect(names).toContain("version-query");
     expect(names).toContain("submission-query");
   });

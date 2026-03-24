@@ -3,9 +3,10 @@ import { Editor, EditorContainer } from "@/components/ui/editor";
 import { createFormButtonNode } from "@/components/ui/form-button-node";
 import type { FormHeaderElementData } from "@/components/ui/form-header-node";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
+import { migrateEditorContent } from "@/lib/migrate-editor-content";
 import { useEditorHeaderVisibilitySafe } from "@/contexts/editor-header-visibility-context";
 import { EditorThemeProvider } from "@/contexts/editor-theme-context";
-import { getFormDetail } from "@/db-collections/collections";
+import { getFormListings } from "@/db-collections/collections";
 import type { Form } from "@/db-collections/collections";
 import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useForm } from "@/hooks/use-live-hooks";
@@ -24,6 +25,7 @@ interface EditorAppProps {
   defaultValue?: ReturnType<typeof normalizeNodeId>;
   initialForm?: unknown;
   versionContent?: Value;
+  versionCustomization?: Record<string, unknown>;
   readOnly?: boolean;
 }
 
@@ -45,7 +47,13 @@ const DEFAULT_EDITOR_VALUE = normalizeNodeId([
  * DEFAULT_EDITOR_VALUE on the first render (while data is loading),
  * and the editor would never update because `resetKey` doesn't change.
  */
-const EditorApp = ({ formId, workspaceId, versionContent, readOnly = false }: EditorAppProps) => {
+const EditorApp = ({
+  formId,
+  workspaceId,
+  versionContent,
+  versionCustomization,
+  readOnly = false,
+}: EditorAppProps) => {
   const { data: savedDocsRaw, isReady: isFormReady } = useForm(formId);
   // Query-backed FormDetail is structurally compatible with Form at runtime
   const savedDocs = savedDocsRaw as Form[] | undefined;
@@ -71,6 +79,7 @@ const EditorApp = ({ formId, workspaceId, versionContent, readOnly = false }: Ed
       formId={formId}
       workspaceId={workspaceId}
       versionContent={versionContent}
+      versionCustomization={versionCustomization}
       readOnly={readOnly}
       savedDocs={savedDocs}
     />
@@ -86,16 +95,21 @@ const EditorAppInner = ({
   formId,
   workspaceId,
   versionContent,
+  versionCustomization,
   readOnly,
   savedDocs,
 }: {
   formId: string;
   workspaceId?: string;
   versionContent?: Value;
+  versionCustomization?: Record<string, unknown>;
   readOnly: boolean;
   savedDocs: Form[] | undefined;
 }) => {
-  const { customization, hasCustomization, themeVars } = useFormCustomization(savedDocs?.[0]);
+  const customizationSource = versionCustomization
+    ? { customization: versionCustomization }
+    : savedDocs?.[0];
+  const { customization, hasCustomization, themeVars } = useFormCustomization(customizationSource);
 
   // Sync editor mode when app theme changes (user menu, settings)
   const { theme } = useTheme();
@@ -107,14 +121,17 @@ const EditorAppInner = ({
       : theme;
 
   useEffect(() => {
+    if (versionCustomization) return; // Don't sync theme mode when previewing a version
     if (resolvedAppTheme !== customization?.mode && formId) {
-      getFormDetail(formId).update(formId, (draft) => {
+      const collection = getFormListings();
+      if (!collection.get(formId)) return; // Not in collection yet
+      collection.update(formId, (draft) => {
         const current = (draft.customization ?? {}) as Record<string, string>;
         draft.customization = { ...current, mode: resolvedAppTheme };
         draft.updatedAt = new Date().toISOString();
       });
     }
-  }, [resolvedAppTheme, customization?.mode, formId]);
+  }, [resolvedAppTheme, customization?.mode, formId, versionCustomization]);
 
   const skipSaveRef = useRef(false);
   const lastKnownContentRef = useRef<string | null>(null);
@@ -125,7 +142,26 @@ const EditorAppInner = ({
   const headerVisibility = useEditorHeaderVisibilitySafe();
   const [resetKey, setResetKey] = useState(0);
 
-  // Detect external content change (discard, remote sync) and recreate editor.
+  // Detect version content transitions (enter/exit/switch version view).
+  // Uses render-time setState — same pattern as the external change detector below.
+  const prevVersionContentRef = useRef(versionContent);
+  const justExitedVersionRef = useRef(false);
+  if (prevVersionContentRef.current !== versionContent) {
+    prevVersionContentRef.current = versionContent;
+    if (versionContent) {
+      // Entering or switching version — reset editor with version content immediately
+      setResetKey((k) => k + 1);
+      skipSaveRef.current = true;
+      justExitedVersionRef.current = false;
+    } else {
+      // Exiting version view — don't reset yet. Mark that we exited so the
+      // external change detector forces a reset once savedDocs is available.
+      lastKnownContentRef.current = null;
+      justExitedVersionRef.current = true;
+    }
+  }
+
+  // Detect external content change (discard, restore, remote sync) and recreate editor.
   // setState during render is a documented React pattern — React aborts this
   // render and immediately re-renders with the new state.
   // Skip detection while we have a pending save — the sync-back is our own edit.
@@ -133,6 +169,13 @@ const EditorAppInner = ({
     const contentStr = JSON.stringify(savedDocs[0]?.content);
     if (lastKnownContentRef.current === null) {
       lastKnownContentRef.current = contentStr;
+      // Force reset when returning from version view so editor picks up
+      // the (potentially restored) content from savedDocs
+      if (justExitedVersionRef.current) {
+        setResetKey((k) => k + 1);
+        skipSaveRef.current = true;
+        justExitedVersionRef.current = false;
+      }
     } else if (lastKnownContentRef.current !== contentStr) {
       setResetKey((k) => k + 1);
       lastKnownContentRef.current = contentStr;
@@ -150,39 +193,11 @@ const EditorAppInner = ({
       return DEFAULT_EDITOR_VALUE;
     }
 
-    let content: Value;
-
-    if (docData.content.length > 0 && docData.content[0]?.type === "formHeader") {
-      content = docData.content as Value;
-    } else {
-      // Add formHeader at index 0 with data from doc metadata
-      content = [
-        createFormHeaderNode({
-          title: docData.title || "",
-          icon: docData.icon || null,
-          cover: docData.cover || null,
-        }) as unknown as TElement,
-        ...(docData.content as Value),
-      ];
-    }
-
-    // Migration: ensure Submit button exists for existing forms
-    const hasSubmitButton = content.some(
-      (node: TElement) => node.type === "formButton" && node.buttonRole === "submit",
-    );
-    if (!hasSubmitButton) {
-      const thankYouIndex = content.findIndex(
-        (node: TElement) => node.type === "pageBreak" && node.isThankYouPage === true,
-      );
-      const insertIndex = thankYouIndex !== -1 ? thankYouIndex : content.length;
-      content = [
-        ...content.slice(0, insertIndex),
-        createFormButtonNode("submit") as unknown as TElement,
-        ...content.slice(insertIndex),
-      ];
-    }
-
-    return content;
+    return migrateEditorContent(docData.content as Value, {
+      title: docData.title,
+      icon: docData.icon,
+      cover: docData.cover,
+    });
     // eslint-disable-next-line eslint-plugin-react-hooks/exhaustive-deps -- savedDocs intentionally excluded; resetKey triggers recompute
   }, [versionContent, resetKey]);
 
@@ -214,12 +229,15 @@ const EditorAppInner = ({
             ? (val[0] as unknown as FormHeaderElementData)
             : null;
 
+        const collection = getFormListings();
+        if (!collection.get(formId)) return; // Not in collection yet — next onChange will retry
+
         // Update the ref so external-change detection recognizes
         // the upcoming sync-back as our own edit
         lastKnownContentRef.current = JSON.stringify(val);
         pendingValueRef.current = null;
 
-        getFormDetail(formId).update(formId, (draft) => {
+        collection.update(formId, (draft) => {
           draft.content = val;
           if (workspaceId) draft.workspaceId = workspaceId;
           draft.updatedAt = new Date().toISOString();
@@ -257,13 +275,14 @@ const EditorAppInner = ({
 
   const updateThemeColor = useCallback(
     (themeColor: string) => {
-      if (formId) {
-        getFormDetail(formId).update(formId, (draft) => {
-          const current = (draft.customization ?? {}) as Record<string, string>;
-          draft.customization = { ...current, themeColor, preset: "custom" };
-          draft.updatedAt = new Date().toISOString();
-        });
-      }
+      if (!formId) return;
+      const collection = getFormListings();
+      if (!collection.get(formId)) return;
+      collection.update(formId, (draft) => {
+        const current = (draft.customization ?? {}) as Record<string, string>;
+        draft.customization = { ...current, themeColor, preset: "custom" };
+        draft.updatedAt = new Date().toISOString();
+      });
     },
     [formId],
   );

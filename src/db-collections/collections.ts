@@ -12,12 +12,12 @@ import {
   createFavoriteCollection,
 } from "./form-listing-query.collection";
 import type { FormListing, FormFavorite } from "./form-listing-query.collection";
-import { createFormDetailCollection } from "./form-detail-query.collection";
 import type { FormDetail } from "./form-detail-query.collection";
 import {
   createVersionListCollection,
   createVersionContentCollection,
 } from "./version-query.collection";
+import type { VersionListItem, VersionContent } from "./version-query.collection";
 import { createSubmissionSummaryCollection } from "./submission-query.collection";
 import { DEFAULT_FORM_CONTENT, DEFAULT_FORM_SETTINGS } from "./local-form.collection";
 import type { Form, FormBuilderSettings } from "./local-form.collection";
@@ -36,14 +36,18 @@ let _serverFns: {
   getFormListings: () => Promise<FormListing[]>;
   getFormDetail: (formId: string) => Promise<Form | null>;
   getFavorites: () => Promise<FormFavorite[]>;
-  getVersionList: (formId: string) => Promise<any[]>;
-  getVersionContent: (versionId: string) => Promise<any>;
+  getVersionList: (formId: string) => Promise<VersionListItem[]>;
+  getVersionContent: (versionId: string) => Promise<VersionContent | null>;
   getSubmissionsCount: (formId: string) => Promise<{ total: number }>;
-  createWorkspace: (data: Record<string, unknown>) => Promise<unknown>;
-  updateWorkspace: (data: Record<string, unknown>) => Promise<unknown>;
+  createWorkspace: (
+    data: Record<string, unknown>,
+  ) => Promise<{ workspace: WorkspaceSummary; txid: number }>;
+  updateWorkspace: (
+    data: Record<string, unknown>,
+  ) => Promise<{ workspace: WorkspaceSummary; txid: number }>;
   deleteWorkspace: (data: Record<string, unknown>) => Promise<unknown>;
-  createForm: (data: Record<string, unknown>) => Promise<unknown>;
-  updateForm: (data: Record<string, unknown>) => Promise<unknown>;
+  createForm: (data: Record<string, unknown>) => Promise<{ form: FormDetail; txid: number }>;
+  updateForm: (data: Record<string, unknown>) => Promise<{ form: FormDetail; txid: number }>;
   deleteForm: (data: Record<string, unknown>) => Promise<unknown>;
   addFavorite: (data: { formId: string }) => Promise<unknown>;
   removeFavorite: (data: { formId: string }) => Promise<unknown>;
@@ -55,7 +59,7 @@ let _queryClient: QueryClient | null = null;
 let _workspaces: ReturnType<typeof createWorkspaceSummaryCollection> | null = null;
 let _formListings: ReturnType<typeof createFormListingCollection> | null = null;
 let _favorites: ReturnType<typeof createFavoriteCollection> | null = null;
-const _formDetailCache = new Map<string, ReturnType<typeof createFormDetailCollection>>();
+const _enrichedFormIds = new Set<string>();
 const _versionListCache = new Map<string, ReturnType<typeof createVersionListCollection>>();
 const _versionContentCache = new Map<string, ReturnType<typeof createVersionContentCollection>>();
 const _submissionCache = new Map<string, ReturnType<typeof createSubmissionSummaryCollection>>();
@@ -73,7 +77,7 @@ export const initCollections = (
   _workspaces = createWorkspaceSummaryCollection({
     queryClient,
     queryFn: serverFns.getWorkspacesWithForms,
-    onInsert: async ({ transaction }: Record<string, any>) => {
+    onInsert: async ({ transaction }) => {
       const ws = transaction.mutations[0].modified;
       await serverFns.createWorkspace({
         id: ws.id,
@@ -81,11 +85,16 @@ export const initCollections = (
         name: ws.name,
       });
     },
-    onUpdate: async ({ transaction }: Record<string, any>) => {
+    onUpdate: async ({ transaction }) => {
       const m = transaction.mutations[0];
-      await serverFns.updateWorkspace({ id: m.original.id, ...m.changes });
+      const result = await serverFns.updateWorkspace({ id: m.original.id, ...m.changes });
+      if (result?.workspace) {
+        const workspaces = _workspaces as NonNullable<typeof _workspaces>;
+        workspaces.utils.writeUpdate(result.workspace);
+      }
+      return { refetch: false };
     },
-    onDelete: async ({ transaction }: Record<string, any>) => {
+    onDelete: async ({ transaction }) => {
       await serverFns.deleteWorkspace({ id: transaction.mutations[0].original.id });
     },
   });
@@ -93,14 +102,24 @@ export const initCollections = (
   _formListings = createFormListingCollection({
     queryClient,
     queryFn: serverFns.getFormListings,
-    onInsert: async ({ transaction }: Record<string, any>) => {
-      await serverFns.createForm(transaction.mutations[0].modified);
+    onInsert: async ({ transaction }) => {
+      await serverFns.createForm(
+        transaction.mutations[0].modified as unknown as Record<string, unknown>,
+      );
     },
-    onUpdate: async ({ transaction }: Record<string, any>) => {
+    onUpdate: async ({ transaction }) => {
       const m = transaction.mutations[0];
-      await serverFns.updateForm({ id: m.original.id, ...m.changes });
+      const result = await serverFns.updateForm({
+        id: m.original.id,
+        ...m.changes,
+      } as unknown as Record<string, unknown>);
+      if (result?.form) {
+        const formListings = _formListings as NonNullable<typeof _formListings>;
+        formListings.utils.writeUpdate(result.form);
+      }
+      return { refetch: false };
     },
-    onDelete: async ({ transaction }: Record<string, any>) => {
+    onDelete: async ({ transaction }) => {
       await serverFns.deleteForm({ id: transaction.mutations[0].original.id });
     },
   });
@@ -108,10 +127,10 @@ export const initCollections = (
   _favorites = createFavoriteCollection({
     queryClient,
     queryFn: serverFns.getFavorites,
-    onInsert: async ({ transaction }: Record<string, any>) => {
+    onInsert: async ({ transaction }) => {
       await serverFns.addFavorite({ formId: transaction.mutations[0].modified.formId });
     },
-    onDelete: async ({ transaction }: Record<string, any>) => {
+    onDelete: async ({ transaction }) => {
       await serverFns.removeFavorite({ formId: transaction.mutations[0].original.formId });
     },
   });
@@ -127,47 +146,54 @@ const ensureInit = () => {
   }
 };
 
-export const getWorkspaces = () => {
+/** Return all initialized singletons, throwing if not yet initialized. */
+const getInit = () => {
   ensureInit();
-  return _workspaces!;
+  return {
+    serverFns: _serverFns as NonNullable<typeof _serverFns>,
+    queryClient: _queryClient as NonNullable<typeof _queryClient>,
+    workspaces: _workspaces as NonNullable<typeof _workspaces>,
+    formListings: _formListings as NonNullable<typeof _formListings>,
+    favorites: _favorites as NonNullable<typeof _favorites>,
+  };
 };
 
-export const getFormListings = () => {
-  ensureInit();
-  return _formListings!;
-};
+export const getWorkspaces = () => getInit().workspaces;
 
-export const getFavorites = () => {
-  ensureInit();
-  return _favorites!;
-};
+export const getFormListings = () => getInit().formListings;
 
-export const getFormDetail = (formId: string) => {
-  ensureInit();
-  let collection = _formDetailCache.get(formId);
-  if (!collection) {
-    collection = createFormDetailCollection({
-      queryClient: _queryClient!,
-      formId,
-      queryFn: () => _serverFns!.getFormDetail(formId) as Promise<FormDetail | null>,
-      onUpdate: async ({ transaction }: Record<string, any>) => {
-        const m = transaction.mutations[0];
-        await _serverFns!.updateForm({ id: m.original.id, ...m.changes });
-      },
-    });
-    _formDetailCache.set(formId, collection);
+export const getFavorites = () => getInit().favorites;
+
+/**
+ * Fetch full form detail from the server and enrich the formListings
+ * collection record. Called client-side when the editor opens a form.
+ * The enriched data (content, settings, etc.) is preserved across
+ * listing refetches by the merge wrapper in createFormListingCollection.
+ */
+export const enrichFormDetail = async (formId: string) => {
+  const { serverFns, formListings } = getInit();
+  if (_enrichedFormIds.has(formId)) return null;
+  const detail = await serverFns.getFormDetail(formId);
+  if (detail) {
+    const existing = formListings.get(formId);
+    formListings.utils.writeUpdate({
+      ...existing,
+      ...detail,
+      id: formId,
+    } as unknown as FormListing);
+    _enrichedFormIds.add(formId);
   }
-  return collection;
+  return null;
 };
 
 export const getVersionList = (formId: string) => {
-  ensureInit();
+  const { queryClient, serverFns } = getInit();
   let collection = _versionListCache.get(formId);
   if (!collection) {
     collection = createVersionListCollection({
-      queryClient: _queryClient!,
+      queryClient,
       formId,
-      queryFn: () => _serverFns!.getVersionList(formId),
+      queryFn: () => serverFns.getVersionList(formId),
     });
     _versionListCache.set(formId, collection);
   }
@@ -175,13 +201,13 @@ export const getVersionList = (formId: string) => {
 };
 
 export const getVersionContent = (versionId: string) => {
-  ensureInit();
+  const { queryClient, serverFns } = getInit();
   let collection = _versionContentCache.get(versionId);
   if (!collection) {
     collection = createVersionContentCollection({
-      queryClient: _queryClient!,
+      queryClient,
       versionId,
-      queryFn: () => _serverFns!.getVersionContent(versionId),
+      queryFn: () => serverFns.getVersionContent(versionId),
     });
     _versionContentCache.set(versionId, collection);
   }
@@ -189,23 +215,22 @@ export const getVersionContent = (versionId: string) => {
 };
 
 export const getSubmissionSummary = (formId: string) => {
-  ensureInit();
+  const { queryClient, serverFns } = getInit();
   let collection = _submissionCache.get(formId);
   if (!collection) {
     collection = createSubmissionSummaryCollection({
-      queryClient: _queryClient!,
+      queryClient,
       formId,
-      queryFn: () => _serverFns!.getSubmissionsCount(formId),
+      queryFn: () => serverFns.getSubmissionsCount(formId),
     });
     _submissionCache.set(formId, collection);
   }
   return collection;
 };
 
-// --- Helper functions (match Electric collection API surface) ---
+// --- Helper functions ---
 
 export const createFormLocal = async (workspaceId: string, title = "Untitled"): Promise<Form> => {
-  ensureInit();
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const newForm: Form = {
@@ -240,23 +265,22 @@ export const createFormLocal = async (workspaceId: string, title = "Untitled"): 
     updatedAt: now,
   };
 
-  const detail = getFormDetail(id);
+  const { serverFns, formListings } = getInit();
   const tx = createTransaction({
     mutationFn: async () => {
-      await _serverFns!.createForm(newForm as unknown as Record<string, unknown>);
+      await serverFns.createForm(newForm as unknown as Record<string, unknown>);
     },
   });
   tx.mutate(() => {
-    detail.insert(newForm as any);
+    formListings.insert(newForm as unknown as FormListing);
   });
 
   return newForm;
 };
 
 export const duplicateFormById = (formId: string): Form => {
-  ensureInit();
-  const detail = getFormDetail(formId);
-  const sourceForm = detail.get(formId) as Form | undefined;
+  const { formListings } = getInit();
+  const sourceForm = formListings.get(formId) as Form | undefined;
   if (!sourceForm) throw new Error(`Form not found: ${formId}`);
 
   const id = crypto.randomUUID();
@@ -277,14 +301,14 @@ export const duplicateFormById = (formId: string): Form => {
     updatedAt: now,
   };
 
+  const { serverFns } = getInit();
   const tx = createTransaction({
     mutationFn: async () => {
-      await _serverFns!.createForm(newForm as unknown as Record<string, unknown>);
+      await serverFns.createForm(newForm as unknown as Record<string, unknown>);
     },
   });
   tx.mutate(() => {
-    const newDetail = getFormDetail(id);
-    newDetail.insert(newForm as any);
+    formListings.insert(newForm as unknown as FormListing);
   });
 
   return newForm;
@@ -294,17 +318,17 @@ export const duplicateFormById = (formId: string): Form => {
 export const duplicateForm = (sourceForm: Form): Form => duplicateFormById(sourceForm.id);
 
 export const updateDoc = async (id: string, updater: (draft: Form) => void) => {
-  const detail = getFormDetail(id);
+  const { formListings } = getInit();
   logger("updateDoc", id);
-  detail.update(id, (draft: any) => {
+  formListings.update(id, (draft: Record<string, unknown>) => {
     updater(draft as Form);
     draft.updatedAt = new Date().toISOString();
   });
 };
 
 export const updateFormStatus = async (id: string, status: "draft" | "published" | "archived") => {
-  const detail = getFormDetail(id);
-  detail.update(id, (draft: any) => {
+  const { formListings } = getInit();
+  formListings.update(id, (draft: Record<string, unknown>) => {
     draft.status = status;
     draft.updatedAt = new Date().toISOString();
   });
@@ -321,8 +345,8 @@ export const updateHeader = async (
     updatedAt: string;
   },
 ) => {
-  const detail = getFormDetail(id);
-  detail.update(id, (draft: any) => {
+  const { formListings } = getInit();
+  formListings.update(id, (draft: Record<string, unknown>) => {
     if (header.title !== undefined) draft.title = header.title;
     if (header.icon !== undefined) draft.icon = header.icon;
     if (header.cover !== undefined) draft.cover = header.cover;
@@ -333,17 +357,17 @@ export const updateHeader = async (
 };
 
 export const updateSettings = async (id: string, settings: Partial<FormBuilderSettings>) => {
-  const detail = getFormDetail(id);
+  const { formListings } = getInit();
   logger("updateSettings", id, Object.keys(settings));
-  detail.update(id, (draft: any) => {
-    draft.settings = { ...draft.settings, ...settings };
+  formListings.update(id, (draft: Record<string, unknown>) => {
+    draft.settings = { ...(draft.settings as Record<string, unknown>), ...settings };
     draft.updatedAt = new Date().toISOString();
   });
 };
 
 export const restoreFormLocal = async (id: string) => {
-  const detail = getFormDetail(id);
-  detail.update(id, (draft: any) => {
+  const { formListings } = getInit();
+  formListings.update(id, (draft: Record<string, unknown>) => {
     draft.status = "draft";
     draft.deletedAt = null;
     draft.updatedAt = new Date().toISOString();
@@ -351,15 +375,14 @@ export const restoreFormLocal = async (id: string) => {
 };
 
 export const permanentDeleteFormLocal = async (id: string) => {
-  const detail = getFormDetail(id);
-  detail.delete(id);
+  getInit().formListings.delete(id);
 };
 
 export const createWorkspaceLocal = async (
   organizationId: string,
   name = "Collection",
 ): Promise<WorkspaceSummary> => {
-  ensureInit();
+  const { workspaces } = getInit();
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const ws: WorkspaceSummary = {
@@ -371,30 +394,31 @@ export const createWorkspaceLocal = async (
     updatedAt: now,
     forms: [],
   };
-  _workspaces!.insert(ws);
+  workspaces.insert(ws);
   return ws;
 };
 
 export const updateWorkspaceName = async (id: string, name: string) => {
-  _workspaces!.update(id, (draft: any) => {
+  const { workspaces } = getInit();
+  workspaces.update(id, (draft: Record<string, unknown>) => {
     draft.name = name;
     draft.updatedAt = new Date().toISOString();
   });
 };
 
 export const deleteWorkspaceLocal = async (id: string) => {
-  _workspaces!.delete(id);
+  getInit().workspaces.delete(id);
 };
 
 export const toggleFavoriteLocal = async (userId: string, formId: string) => {
-  ensureInit();
+  const { favorites } = getInit();
   const id = `${userId}:${formId}`;
-  const existing = _favorites!.get(id);
+  const existing = favorites.get(id);
 
   if (existing) {
-    _favorites!.delete(id);
+    favorites.delete(id);
   } else {
-    _favorites!.insert({
+    favorites.insert({
       id,
       userId,
       formId,
@@ -403,7 +427,4 @@ export const toggleFavoriteLocal = async (userId: string, formId: string) => {
   }
 };
 
-export const getQueryClient = () => {
-  ensureInit();
-  return _queryClient!;
-};
+export const getQueryClient = () => getInit().queryClient;

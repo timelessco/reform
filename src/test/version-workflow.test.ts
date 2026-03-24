@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { QueryClient } from "@tanstack/query-core";
 import { desc, eq } from "drizzle-orm";
 import { createVersionListCollection } from "@/db-collections/version-query.collection";
 import type { VersionListItem } from "@/db-collections/version-query.collection";
-import { createFormDetailCollection } from "@/db-collections/form-detail-query.collection";
-import type { FormDetail } from "@/db-collections/form-detail-query.collection";
+import { createFormListingCollection } from "@/db-collections/form-listing-query.collection";
+import type { FormListing } from "@/db-collections/form-listing-query.collection";
 import { db } from "@/lib/db";
 import { forms, formVersions, user } from "@/db/schema";
 import {
@@ -61,24 +61,26 @@ const fetchVersionList = async (formId: string): Promise<VersionListItem[]> => {
   }));
 };
 
-const fetchFormDetail = async (formId: string): Promise<FormDetail | null> => {
+const fetchFormListings = async (formId: string): Promise<FormListing[]> => {
   const [f] = await db.select().from(forms).where(eq(forms.id, formId));
-  if (!f) return null;
-  return {
-    id: f.id,
-    title: f.title,
-    status: f.status,
-    workspaceId: f.workspaceId,
-    content: f.content as any,
-    settings: f.settings as any,
-    customization: (f.customization ?? {}) as any,
-    formName: f.formName,
-    schemaName: f.schemaName,
-    icon: f.icon,
-    createdAt: f.createdAt.toISOString(),
-    updatedAt: f.updatedAt.toISOString(),
-    createdByUserId: f.createdByUserId,
-  };
+  if (!f) return [];
+  return [
+    {
+      id: f.id,
+      title: f.title,
+      status: f.status,
+      workspaceId: f.workspaceId,
+      content: f.content as unknown as unknown[],
+      settings: f.settings as unknown as Record<string, unknown>,
+      customization: (f.customization ?? {}) as Record<string, unknown>,
+      formName: f.formName,
+      schemaName: f.schemaName,
+      icon: f.icon,
+      createdAt: f.createdAt.toISOString(),
+      updatedAt: f.updatedAt.toISOString(),
+      submissionCount: 0,
+    },
+  ];
 };
 
 describe("version workflow", () => {
@@ -128,20 +130,19 @@ describe("version workflow", () => {
     expect(after.size).toBe(2);
   });
 
-  it("restore updates form detail optimistically", async () => {
-    const detail = createFormDetailCollection({
+  it("restore updates form data optimistically", async () => {
+    const detail = createFormListingCollection({
       queryClient,
-      formId,
-      queryFn: () => fetchFormDetail(formId),
+      queryFn: () => fetchFormListings(formId),
       onUpdate: async () => ({ refetch: false }),
     });
 
     await detail.stateWhenReady();
 
     // Simulate restore: update form title/content to version's values
-    detail.update(formId, (draft: FormDetail) => {
+    detail.update(formId, (draft: FormListing) => {
       draft.title = "Form v1";
-      draft.content = [{ type: "p", children: [{ text: "Version 1" }] }] as any;
+      draft.content = [{ type: "p", children: [{ text: "Version 1" }] }] as unknown[];
     });
 
     const form = detail.get(formId);
@@ -149,25 +150,24 @@ describe("version workflow", () => {
   });
 
   it("discard reverts form to published state optimistically", async () => {
-    const detail = createFormDetailCollection({
+    const detail = createFormListingCollection({
       queryClient,
-      formId,
-      queryFn: () => fetchFormDetail(formId),
+      queryFn: () => fetchFormListings(formId),
       onUpdate: async () => ({ refetch: false }),
     });
 
     await detail.stateWhenReady();
 
     // Simulate: user edited draft
-    detail.update(formId, (draft: FormDetail) => {
+    detail.update(formId, (draft: FormListing) => {
       draft.title = "Unsaved Edit";
     });
     expect(detail.get(formId)).toMatchObject({ title: "Unsaved Edit" });
 
     // Simulate discard: revert to published version content
-    detail.update(formId, (draft: FormDetail) => {
+    detail.update(formId, (draft: FormListing) => {
       draft.title = "Form v1";
-      draft.content = [{ type: "p", children: [{ text: "Version 1" }] }] as any;
+      draft.content = [{ type: "p", children: [{ text: "Version 1" }] }] as unknown[];
     });
     expect(detail.get(formId)).toMatchObject({ title: "Form v1" });
   });

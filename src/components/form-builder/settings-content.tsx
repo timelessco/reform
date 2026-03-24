@@ -10,7 +10,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
-import { getFormDetail } from "@/db-collections/collections";
+import { getFormListings } from "@/db-collections/collections";
 import { localFormCollection } from "@/db-collections/local-form.collection";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
 import { APP_NAME } from "@/lib/app-config";
@@ -50,7 +50,9 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
   const localFormResult = useLocalForm(isLocal ? formId : undefined);
   const formResult = isLocal ? localFormResult : cloudForm;
   const formDoc = formResult.data?.[0] ?? null;
-  const collection = isLocal ? localFormCollection : getFormDetail(formId);
+  const collection = (isLocal ? localFormCollection : getFormListings()) as ReturnType<
+    typeof getFormListings
+  >;
 
   const form = useAppForm({
     defaultValues: formDoc

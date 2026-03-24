@@ -2,7 +2,7 @@ import { createTransaction, eq, useLiveQuery } from "@tanstack/react-db";
 import { useMemo } from "react";
 import {
   isInitialized,
-  getFormDetail,
+  getFormListings,
   getVersionList,
   getVersionContent,
   getQueryClient,
@@ -95,7 +95,7 @@ export const publishForm = (formId: string) => {
   });
 
   tx.mutate(() => {
-    getFormDetail(formId).update(formId, (draft) => {
+    getFormListings().update(formId, (draft) => {
       draft.status = "published";
       draft.updatedAt = new Date().toISOString();
     });
@@ -106,29 +106,31 @@ export const publishForm = (formId: string) => {
 
 /**
  * Restore a version's content to the form draft.
- * Optimistically updates content/title/customization from the local version data.
+ * Bypasses createTransaction to avoid optimistic overlay timing issues —
+ * calls the server API, then uses writeUpdate to synchronously update
+ * the collection's sync store so the editor picks up restored content
+ * immediately when exiting version view.
  */
-export const restoreVersion = (formId: string, versionId: string) => {
+export const restoreVersion = async (formId: string, versionId: string) => {
   const versionCollection = getVersionContent(versionId);
   const version = versionCollection.get(versionId);
   if (!version) throw new Error("Version not found in local state");
 
-  const tx = createTransaction({
-    mutationFn: async () => {
-      await restoreFormVersion({ data: { formId, versionId } });
-    },
-  });
+  // Persist to server
+  await restoreFormVersion({ data: { formId, versionId } });
 
-  tx.mutate(() => {
-    getFormDetail(formId).update(formId, (draft) => {
-      draft.content = version.content;
-      draft.title = version.title;
-      draft.customization = version.customization ?? {};
-      draft.updatedAt = new Date().toISOString();
+  // Directly write restored data to the sync store (synchronous, no optimistic overlay)
+  const detail = getFormListings();
+  const currentForm = detail.get(formId);
+  if (currentForm) {
+    detail.utils.writeUpdate({
+      ...currentForm,
+      content: version.content,
+      title: version.title,
+      customization: version.customization ?? {},
+      updatedAt: new Date().toISOString(),
     });
-  });
-
-  return tx;
+  }
 };
 
 /**
@@ -136,7 +138,7 @@ export const restoreVersion = (formId: string, versionId: string) => {
  * Optimistically updates content/title/customization from the published version.
  */
 export const discardChanges = (formId: string) => {
-  const detail = getFormDetail(formId);
+  const detail = getFormListings();
   const form = detail.get(formId);
   if (!form?.lastPublishedVersionId) throw new Error("No published version to revert to");
 

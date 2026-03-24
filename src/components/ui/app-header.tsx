@@ -35,7 +35,7 @@ import { cn, parseTimestampAsUTC } from "@/lib/utils";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { Link, useLocation, useNavigate, useParams } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { LogoToggle } from "./logo";
 import { useSidebarSafe } from "./sidebar";
@@ -107,13 +107,6 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
       openShare();
     }
   };
-
-  // Close editor-only sidebars when navigating away from the edit route
-  useEffect(() => {
-    if (!isEditRoute && (activeSidebar === "history" || activeSidebar === "customize")) {
-      closeSidebar();
-    }
-  }, [isEditRoute, activeSidebar, closeSidebar]);
 
   // Single source: Electric live data (useForm)
   const { data: workspace } = useWorkspace(workspaceId);

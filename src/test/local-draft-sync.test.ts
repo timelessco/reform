@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { QueryClient } from "@tanstack/query-core";
 import { eq } from "drizzle-orm";
-import { createFormDetailCollection } from "@/db-collections/form-detail-query.collection";
-import type { FormDetail } from "@/db-collections/form-detail-query.collection";
+import { createFormListingCollection } from "@/db-collections/form-listing-query.collection";
+import type { FormListing } from "@/db-collections/form-listing-query.collection";
 import { db } from "@/lib/db";
 import { forms } from "@/db/schema";
 import {
@@ -14,24 +14,26 @@ import {
   cleanupTestOrg,
 } from "@/test/helpers";
 
-const fetchFormDetail = async (formId: string): Promise<FormDetail | null> => {
+const fetchFormListings = async (formId: string): Promise<FormListing[]> => {
   const [f] = await db.select().from(forms).where(eq(forms.id, formId));
-  if (!f) return null;
-  return {
-    id: f.id,
-    title: f.title,
-    status: f.status,
-    workspaceId: f.workspaceId,
-    content: f.content as any,
-    settings: f.settings as any,
-    customization: (f.customization ?? {}) as any,
-    formName: f.formName,
-    schemaName: f.schemaName,
-    icon: f.icon,
-    createdAt: f.createdAt.toISOString(),
-    updatedAt: f.updatedAt.toISOString(),
-    createdByUserId: f.createdByUserId,
-  };
+  if (!f) return [];
+  return [
+    {
+      id: f.id,
+      title: f.title,
+      status: f.status,
+      workspaceId: f.workspaceId,
+      content: f.content as unknown as unknown[],
+      settings: f.settings as unknown as Record<string, unknown>,
+      customization: (f.customization ?? {}) as Record<string, unknown>,
+      formName: f.formName,
+      schemaName: f.schemaName,
+      icon: f.icon,
+      createdAt: f.createdAt.toISOString(),
+      updatedAt: f.updatedAt.toISOString(),
+      submissionCount: 0,
+    },
+  ];
 };
 
 describe("local draft sync without Electric txids", () => {
@@ -62,46 +64,38 @@ describe("local draft sync without Electric txids", () => {
   });
 
   it("refetch-based confirmation: form exists after server write", async () => {
-    // Simulate: local draft was synced to server (form already in DB)
-    // Refetch the collection to confirm it landed
-    const collection = createFormDetailCollection({
+    const collection = createFormListingCollection({
       queryClient,
-      formId,
-      queryFn: () => fetchFormDetail(formId),
+      queryFn: () => fetchFormListings(formId),
     });
 
     const state = await collection.stateWhenReady();
     const confirmed = state.get(formId);
 
-    // Confirmation: form exists in refetched state
     expect(confirmed).toBeDefined();
     expect(confirmed).toMatchObject({ id: formId });
   });
 
   it("refetch returns empty when server write failed (form not in DB)", async () => {
     const missingId = "00000000-0000-0000-0000-000000000000";
-    const collection = createFormDetailCollection({
+    const collection = createFormListingCollection({
       queryClient,
-      formId: missingId,
-      queryFn: () => fetchFormDetail(missingId),
+      queryFn: () => fetchFormListings(missingId),
     });
 
     const state = await collection.stateWhenReady();
-    // Not confirmed — local draft should be preserved
     expect(state.size).toBe(0);
   });
 
   it("invalidate + refetch confirms data after server write", async () => {
-    const collection = createFormDetailCollection({
+    const collection = createFormListingCollection({
       queryClient,
-      formId,
-      queryFn: () => fetchFormDetail(formId),
+      queryFn: () => fetchFormListings(formId),
     });
 
     await collection.stateWhenReady();
 
-    // Simulate: server write happened, now invalidate to refetch
-    await queryClient.invalidateQueries({ queryKey: ["form-detail", formId] });
+    await queryClient.invalidateQueries({ queryKey: ["form-listings"] });
     await new Promise((r) => setTimeout(r, 200));
 
     const state = await collection.stateWhenReady();

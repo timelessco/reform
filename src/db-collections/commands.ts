@@ -10,7 +10,6 @@ import {
   createFavoriteCollection,
 } from "./form-listing-query.collection";
 import type { FormListing, FormFavorite } from "./form-listing-query.collection";
-import { createFormDetailCollection } from "./form-detail-query.collection";
 import type { FormDetail } from "./form-detail-query.collection";
 
 type ServerFns = {
@@ -39,7 +38,7 @@ export const createCommandLayer = (config: CommandLayerConfig) => {
   const workspaces = createWorkspaceSummaryCollection({
     queryClient,
     queryFn: serverFns.getWorkspacesWithForms,
-    onInsert: async ({ transaction }: Record<string, any>) => {
+    onInsert: async ({ transaction }) => {
       const ws = transaction.mutations[0].modified;
       await serverFns.createWorkspace({
         id: ws.id,
@@ -47,11 +46,14 @@ export const createCommandLayer = (config: CommandLayerConfig) => {
         name: ws.name,
       });
     },
-    onUpdate: async ({ transaction }: Record<string, any>) => {
+    onUpdate: async ({ transaction }) => {
       const m = transaction.mutations[0];
-      await serverFns.updateWorkspace({ id: m.original.id, ...m.changes });
+      await serverFns.updateWorkspace({
+        id: m.original.id,
+        name: m.changes.name ?? m.original.name,
+      });
     },
-    onDelete: async ({ transaction }: Record<string, any>) => {
+    onDelete: async ({ transaction }) => {
       await serverFns.deleteWorkspace({ id: transaction.mutations[0].original.id });
     },
   });
@@ -59,14 +61,18 @@ export const createCommandLayer = (config: CommandLayerConfig) => {
   const formListings = createFormListingCollection({
     queryClient,
     queryFn: serverFns.getFormListings,
-    onInsert: async ({ transaction }: Record<string, any>) => {
-      await serverFns.createForm(transaction.mutations[0].modified);
+    onInsert: async ({ transaction }) => {
+      const modified = transaction.mutations[0].modified;
+      await serverFns.createForm(modified as unknown as Record<string, unknown>);
     },
-    onUpdate: async ({ transaction }: Record<string, any>) => {
+    onUpdate: async ({ transaction }) => {
       const m = transaction.mutations[0];
-      await serverFns.updateForm({ id: m.original.id, ...m.changes });
+      await serverFns.updateForm({ id: m.original.id, ...m.changes } as unknown as Record<
+        string,
+        unknown
+      >);
     },
-    onDelete: async ({ transaction }: Record<string, any>) => {
+    onDelete: async ({ transaction }) => {
       await serverFns.deleteForm({ id: transaction.mutations[0].original.id });
     },
   });
@@ -74,29 +80,17 @@ export const createCommandLayer = (config: CommandLayerConfig) => {
   const favorites = createFavoriteCollection({
     queryClient,
     queryFn: serverFns.getFavorites,
-    onInsert: async ({ transaction }: Record<string, any>) => {
+    onInsert: async ({ transaction }) => {
       await serverFns.addFavorite({ formId: transaction.mutations[0].modified.formId });
     },
-    onDelete: async ({ transaction }: Record<string, any>) => {
+    onDelete: async ({ transaction }) => {
       await serverFns.removeFavorite({ formId: transaction.mutations[0].original.formId });
     },
   });
-
-  const getFormDetail = (formId: string) =>
-    createFormDetailCollection({
-      queryClient,
-      formId,
-      queryFn: () => serverFns.getFormDetail(formId),
-      onUpdate: async ({ transaction }: Record<string, any>) => {
-        const m = transaction.mutations[0];
-        await serverFns.updateForm({ id: m.original.id, ...m.changes });
-      },
-    });
 
   return {
     workspaces,
     formListings,
     favorites,
-    getFormDetail,
   };
 };

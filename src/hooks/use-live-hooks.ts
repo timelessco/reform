@@ -1,11 +1,12 @@
 import { eq, or, useLiveQuery } from "@tanstack/react-db";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import {
   isInitialized,
   getWorkspaces,
   getFormListings,
   getFavorites,
-  getFormDetail,
+  enrichFormDetail,
 } from "@/db-collections/collections";
 import { localFormCollection } from "@/db-collections/local-form.collection";
 
@@ -99,17 +100,28 @@ export const useOrgForms = (_organizationId?: string) =>
 
 /**
  * Custom hook for real-time form sync by ID.
- * Uses getFormDetail for full form data (used in editor).
+ * Queries the unified formListings collection and enriches with full
+ * detail (content, settings, etc.) on demand via a TanStack Query.
  */
 export const useForm = (formId?: string) => {
-  const collection = formId && isInitialized() ? getFormDetail(formId) : undefined;
-  return useLiveQuery(
+  const result = useLiveQuery(
     (q) => {
-      if (!formId || !collection) return undefined;
-      return q.from({ form: collection }).where(({ form }) => eq(form.id, formId));
+      if (!formId || !isInitialized()) return undefined;
+      return q.from({ form: getFormListings() }).where(({ form }) => eq(form.id, formId));
     },
     [formId],
   );
+
+  // Enrich with full detail if content not yet loaded
+  const needsEnrichment = !!formId && isInitialized() && result.data?.[0]?.content === undefined;
+  useQuery({
+    queryKey: ["form-enrich", formId],
+    queryFn: () => enrichFormDetail(formId as string),
+    enabled: needsEnrichment,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  return result;
 };
 
 /**
@@ -211,7 +223,26 @@ export const useArchivedForms = () =>
   }, []);
 
 /**
- * Returns an empty submission count map.
- * Submission counts are now fetched via getSubmissionsCountQueryOption in components.
+ * Returns a Map of formId → submission count derived from form listings.
  */
-export const useSubmissionCounts = () => useMemo(() => new Map<string, number>(), []);
+export const useSubmissionCounts = () => {
+  const { data: allForms } = useLiveQuery((q) => {
+    if (!isInitialized()) return undefined;
+    return q.from({ form: getFormListings() }).select(({ form }) => ({
+      id: form.id,
+      submissionCount: form.submissionCount,
+    }));
+  }, []);
+
+  return useMemo(() => {
+    const map = new Map<string, number>();
+    if (allForms) {
+      for (const form of allForms) {
+        if (form.submissionCount > 0) {
+          map.set(form.id, form.submissionCount);
+        }
+      }
+    }
+    return map;
+  }, [allForms]);
+};

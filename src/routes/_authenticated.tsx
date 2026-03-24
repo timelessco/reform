@@ -84,6 +84,7 @@ import {
   deleteWorkspaceLocal,
   duplicateFormById,
   initCollections,
+  isInitialized as isCollectionsInitialized,
   permanentDeleteFormLocal,
   restoreFormLocal,
   updateFormStatus,
@@ -95,8 +96,17 @@ import {
   deleteWorkspace,
   getWorkspaces,
 } from "@/lib/fn/workspaces";
-import { createForm, updateForm, deleteForm } from "@/lib/fn/forms";
-import { addFavorite, removeFavorite } from "@/lib/fn/favorites";
+import {
+  createForm,
+  updateForm,
+  deleteForm,
+  getFormListings as getFormListingsServer,
+} from "@/lib/fn/forms";
+import {
+  addFavorite,
+  removeFavorite,
+  getFavorites as getFavoritesServer,
+} from "@/lib/fn/favorites";
 import { getFormVersions, getFormVersionContent } from "@/lib/fn/form-versions";
 import { getSubmissionsCount } from "@/lib/fn/submissions";
 import { useCommandPalette } from "@/hooks/use-command-palette";
@@ -115,8 +125,10 @@ import { HOTKEYS } from "@/lib/hotkeys";
 import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/middleware/auth";
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
+import type { QueryClient } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Outlet, useLocation, useParams, useRouter } from "@tanstack/react-router";
+import { createClientOnlyFn } from "@tanstack/react-start";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type * as React from "react";
@@ -158,7 +170,55 @@ const LazyCustomizeSidebar = lazy(() =>
   })),
 );
 
+const initCollectionsOnClient = createClientOnlyFn((queryClient: QueryClient) => {
+  if (isCollectionsInitialized()) return;
+
+  initCollections(queryClient, {
+    getWorkspacesWithForms: async () => {
+      const result = await getWorkspaces();
+      // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
+      return { workspaces: result.workspaces.map((ws: any) => ({ ...ws, forms: [] })) };
+    },
+    getFormListings: async () => await getFormListingsServer(),
+    getFormDetail: async (formId: string) => {
+      const { getFormbyIdQueryOption } = await import("@/lib/fn/forms");
+      const result = await queryClient.ensureQueryData(getFormbyIdQueryOption(formId));
+      // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
+      return (result as { form?: any })?.form ?? null;
+    },
+    getFavorites: async () => await getFavoritesServer(),
+    getVersionList: async (formId: string) => {
+      const result = await getFormVersions({ data: { formId } });
+      return result.versions;
+    },
+    getVersionContent: async (versionId: string) => {
+      const result = await getFormVersionContent({ data: { versionId } });
+      return result.version;
+    },
+    getSubmissionsCount: async (formId: string) => {
+      const result = await getSubmissionsCount({ data: { formId } });
+      return { total: result.total };
+    },
+    // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
+    createWorkspace: async (data) => await createWorkspace({ data: data as any }),
+    // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
+    updateWorkspace: async (data) => await updateWorkspace({ data: data as any }),
+    // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
+    deleteWorkspace: async (data) => await deleteWorkspace({ data: data as any }),
+    // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
+    createForm: async (data) => await createForm({ data: data as any }),
+    // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
+    updateForm: async (data) => await updateForm({ data: data as any }),
+    // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
+    deleteForm: async (data) => await deleteForm({ data: data as any }),
+    addFavorite: async (data) => await addFavorite({ data }),
+    removeFavorite: async (data) => await removeFavorite({ data }),
+  });
+});
+
 const AuthLayout = () => {
+  const queryClient = useQueryClient();
+  initCollectionsOnClient(queryClient);
   const { pathname } = useLocation();
   const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
 
@@ -178,50 +238,15 @@ export const Route = createFileRoute("/_authenticated")({
   server: {
     middleware: [authMiddleware],
   },
-  component: AuthLayout,
   loader: async ({ context }) => {
     const { activeOrg, orgsData } = await context.queryClient.ensureQueryData({
       ...orgDataForLayoutQueryOptions(),
       revalidateIfStale: true,
     });
-    if (typeof window !== "undefined") {
-      initCollections(context.queryClient, {
-        getWorkspacesWithForms: async () => {
-          const result = await getWorkspaces();
-          return { workspaces: result.workspaces.map((ws) => ({ ...ws, forms: [] })) };
-        },
-        getFormListings: async () => [],
-        getFormDetail: async (formId: string) => {
-          const { getFormbyIdQueryOption } = await import("@/lib/fn/forms");
-          const result = await context.queryClient.ensureQueryData(getFormbyIdQueryOption(formId));
-          return (result as { form?: any })?.form ?? null;
-        },
-        getFavorites: async () => [],
-        getVersionList: async (formId: string) => {
-          const result = await getFormVersions({ data: { formId } });
-          return result.versions;
-        },
-        getVersionContent: async (versionId: string) => {
-          const result = await getFormVersionContent({ data: { versionId } });
-          return result.version;
-        },
-        getSubmissionsCount: async (formId: string) => {
-          const result = await getSubmissionsCount({ data: { formId } });
-          return { total: result.total };
-        },
-        createWorkspace: async (data) => await createWorkspace({ data: data as any }),
-        updateWorkspace: async (data) => await updateWorkspace({ data: data as any }),
-        deleteWorkspace: async (data) => await deleteWorkspace({ data: data as any }),
-        createForm: async (data) => await createForm({ data: data as any }),
-        updateForm: async (data) => await updateForm({ data: data as any }),
-        deleteForm: async (data) => await deleteForm({ data: data as any }),
-        addFavorite: async (data) => await addFavorite({ data }),
-        removeFavorite: async (data) => await removeFavorite({ data }),
-      });
-    }
     return { activeOrg, orgsData };
   },
   staleTime: 500000, // 500 seconds
+  component: AuthLayout,
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,
@@ -240,7 +265,14 @@ const AuthLayoutContent = () => {
   const { activeSidebar } = useEditorSidebar();
 
   const isFormBuilder = pathname.includes("/form-builder/");
-  const showEditorSidebar = !!(activeSidebar && isFormBuilder && formId);
+  // "history" and "customize" sidebars are edit-route-only (derived guard replaces useEffect cleanup)
+  const isEditOnlySidebar = activeSidebar === "history" || activeSidebar === "customize";
+  const showEditorSidebar = !!(
+    activeSidebar &&
+    isFormBuilder &&
+    formId &&
+    (!isEditOnlySidebar || isEditRoute)
+  );
   const isDistractionHeaderHidden = isEditRoute && !isHeaderVisible;
 
   // Right sidebar width state (persisted, like left sidebar)

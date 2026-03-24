@@ -1,11 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { QueryClient } from "@tanstack/query-core";
 import { eq } from "drizzle-orm";
-import {
-  createFormDetailCollection,
-  resolveFormRoute,
-} from "@/db-collections/form-detail-query.collection";
-import type { FormDetail } from "@/db-collections/form-detail-query.collection";
+import { resolveFormRoute } from "@/db-collections/form-detail-query.collection";
+import { createFormListingCollection } from "@/db-collections/form-listing-query.collection";
+import type { FormListing } from "@/db-collections/form-listing-query.collection";
 import { db } from "@/lib/db";
 import { forms } from "@/db/schema";
 import {
@@ -18,28 +16,30 @@ import {
   cleanupTestOrg,
 } from "@/test/helpers";
 
-/** Fetch form detail directly from DB (bypasses auth middleware) */
-const fetchFormDetail = async (formId: string): Promise<FormDetail | null> => {
+/** Fetch form listings directly from DB (bypasses auth middleware) */
+const fetchFormListings = async (formId: string): Promise<FormListing[]> => {
   const [form] = await db.select().from(forms).where(eq(forms.id, formId));
-  if (!form) return null;
-  return {
-    id: form.id,
-    title: form.title,
-    status: form.status,
-    workspaceId: form.workspaceId,
-    content: form.content as unknown[],
-    settings: form.settings as Record<string, unknown>,
-    customization: (form.customization ?? {}) as Record<string, unknown>,
-    formName: form.formName,
-    schemaName: form.schemaName,
-    icon: form.icon,
-    createdAt: form.createdAt.toISOString(),
-    updatedAt: form.updatedAt.toISOString(),
-    createdByUserId: form.createdByUserId,
-  };
+  if (!form) return [];
+  return [
+    {
+      id: form.id,
+      title: form.title,
+      status: form.status,
+      workspaceId: form.workspaceId,
+      content: form.content as unknown[],
+      settings: form.settings as Record<string, unknown>,
+      customization: (form.customization ?? {}) as Record<string, unknown>,
+      formName: form.formName,
+      schemaName: form.schemaName,
+      icon: form.icon,
+      createdAt: form.createdAt.toISOString(),
+      updatedAt: form.updatedAt.toISOString(),
+      submissionCount: 0,
+    },
+  ];
 };
 
-describe("form detail collection", () => {
+describe("form data in unified collection", () => {
   const ownerId = crypto.randomUUID();
   const memberId = crypto.randomUUID();
   let orgId: string;
@@ -75,11 +75,10 @@ describe("form detail collection", () => {
     await cleanupTestOrg(orgId);
   });
 
-  it("loads full form detail with content", async () => {
-    const collection = createFormDetailCollection({
+  it("loads form with content through formListings", async () => {
+    const collection = createFormListingCollection({
       queryClient,
-      formId,
-      queryFn: () => fetchFormDetail(formId),
+      queryFn: () => fetchFormListings(formId),
     });
 
     const state = await collection.stateWhenReady();
@@ -94,27 +93,25 @@ describe("form detail collection", () => {
   });
 
   it("returns empty collection for nonexistent form", async () => {
-    const collection = createFormDetailCollection({
+    const collection = createFormListingCollection({
       queryClient,
-      formId: "00000000-0000-0000-0000-000000000000",
-      queryFn: () => fetchFormDetail("00000000-0000-0000-0000-000000000000"),
+      queryFn: () => fetchFormListings("00000000-0000-0000-0000-000000000000"),
     });
 
     const state = await collection.stateWhenReady();
     expect(state.size).toBe(0);
   });
 
-  it("optimistic update modifies form detail", async () => {
-    const collection = createFormDetailCollection({
+  it("optimistic update modifies form data", async () => {
+    const collection = createFormListingCollection({
       queryClient,
-      formId,
-      queryFn: () => fetchFormDetail(formId),
+      queryFn: () => fetchFormListings(formId),
       onUpdate: async () => ({ refetch: false }),
     });
 
     await collection.stateWhenReady();
 
-    collection.update(formId, (draft: FormDetail) => {
+    collection.update(formId, (draft: FormListing) => {
       draft.title = "Updated Detail Title";
       draft.status = "published";
     });

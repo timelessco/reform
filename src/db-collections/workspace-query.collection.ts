@@ -1,4 +1,5 @@
 import { createCollection } from "@tanstack/db";
+import type { InsertMutationFn, UpdateMutationFn, DeleteMutationFn } from "@tanstack/db";
 import type { QueryClient } from "@tanstack/query-core";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
 
@@ -19,15 +20,13 @@ export type WorkspaceSummary = {
   forms: FormSummary[];
 };
 
-type MutationHandler = (params: Record<string, unknown>) => Promise<unknown>;
-
 type WorkspaceSummaryCollectionConfig = {
   queryClient: QueryClient;
   /** Server function to fetch workspaces with forms. Injected for testability. */
   queryFn: () => Promise<{ workspaces: WorkspaceSummary[] }>;
-  onInsert?: MutationHandler;
-  onUpdate?: MutationHandler;
-  onDelete?: MutationHandler;
+  onInsert?: InsertMutationFn<WorkspaceSummary, string | number>;
+  onUpdate?: UpdateMutationFn<WorkspaceSummary, string | number>;
+  onDelete?: DeleteMutationFn<WorkspaceSummary, string | number>;
 };
 
 export const createWorkspaceSummaryCollection = (config: WorkspaceSummaryCollectionConfig) => {

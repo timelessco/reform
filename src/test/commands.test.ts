@@ -50,7 +50,7 @@ const fetchWorkspacesWithForms = async (
       acc[f.workspaceId].push({ ...f, updatedAt: f.updatedAt.toISOString() });
       return acc;
     },
-    {} as Record<string, any[]>,
+    {} as Record<string, unknown[]>,
   );
   return {
     workspaces: wsList.map((ws) => ({
@@ -89,6 +89,7 @@ const fetchFormListings = async (userId: string): Promise<FormListing[]> => {
       workspaceId: f.workspaceId,
       icon: f.icon,
       formName: f.formName,
+      submissionCount: 0,
     }));
 };
 
@@ -100,9 +101,9 @@ const fetchFormDetail = async (formId: string): Promise<FormDetail | null> => {
     title: f.title,
     status: f.status,
     workspaceId: f.workspaceId,
-    content: f.content as any,
-    settings: f.settings as any,
-    customization: (f.customization ?? {}) as any,
+    content: f.content as unknown as unknown[],
+    settings: f.settings as unknown as Record<string, unknown>,
+    customization: (f.customization ?? {}) as Record<string, unknown>,
     formName: f.formName,
     schemaName: f.schemaName,
     icon: f.icon,
@@ -232,7 +233,7 @@ describe("command layer", () => {
     expect(addFav).toHaveBeenCalledWith(expect.objectContaining({ formId }));
   });
 
-  it("form detail loads through command layer", async () => {
+  it("form listings include form data through command layer", async () => {
     const cmds = createCommandLayer({
       queryClient,
       serverFns: {
@@ -251,8 +252,7 @@ describe("command layer", () => {
       },
     });
 
-    const detail = cmds.getFormDetail(formId);
-    const state = await detail.stateWhenReady();
+    const state = await cmds.formListings.stateWhenReady();
     expect(state.get(formId)).toMatchObject({ id: formId, status: "draft" });
   });
 });

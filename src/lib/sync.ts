@@ -7,6 +7,7 @@ import {
   createWorkspaceLocal,
   getQueryClient,
 } from "@/db-collections/collections";
+import type { FormListing } from "@/db-collections/collections";
 import { createForm } from "@/lib/fn/forms";
 
 /**
@@ -128,7 +129,7 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
         });
 
         tx.mutate(() => {
-          getFormListings().insert(newFormData as any);
+          getFormListings().insert(newFormData as unknown as FormListing);
           localFormCollection.delete(localForm.id);
         });
 

@@ -34,7 +34,7 @@ export const StepForm = ({
   layout = "public",
   autoJump = false,
 }: StepFormProps) => {
-  const { currentStep, goToPrevStep, isSubmitting } = useStepForm();
+  const { currentStep, totalSteps, goToPrevStep, isSubmitting } = useStepForm();
   const fields = useMemo(() => getFieldsFromSegments(segments), [segments]);
   const editableFields = useMemo(() => getEditableFieldsFromSegments(segments), [segments]);
 
@@ -170,6 +170,7 @@ export const StepForm = ({
                   isSubmitting={isSubmitting}
                   onPrevious={currentStep > 0 ? goToPrevStep : undefined}
                   layout={layout}
+                  totalSteps={totalSteps}
                 />
               );
             }
@@ -253,12 +254,14 @@ const RenderStepButton = ({
   onPrevious,
   grouped = false,
   layout = "public",
+  totalSteps = 1,
 }: {
   field: ButtonField;
   isSubmitting: boolean;
   onPrevious?: () => void;
   grouped?: boolean;
   layout?: "public" | "editor";
+  totalSteps?: number;
 }) => {
   const { t } = useTranslation();
   const buttonRole = field.buttonRole || "submit";
@@ -308,6 +311,7 @@ const RenderStepButton = ({
   }
 
   // Submit button - type="submit" triggers form validation and final submit
+  const isMultiStep = totalSteps > 1;
   const submitButton = (
     <Button
       type="submit"
@@ -320,7 +324,10 @@ const RenderStepButton = ({
   return grouped ? (
     submitButton
   ) : (
-    <div className="flex justify-end" style={{ maxWidth: "var(--bf-input-width)" }}>
+    <div
+      className={`flex ${isMultiStep ? "justify-end" : "justify-start"}`}
+      style={{ maxWidth: "var(--bf-input-width)" }}
+    >
       {submitButton}
     </div>
   );
