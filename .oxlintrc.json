@@ -86,7 +86,8 @@
       "rules": {
         "vitest/no-disabled-tests": "warn",
         "vitest/no-focused-tests": "error",
-        "vitest/expect-expect": "warn"
+        "vitest/expect-expect": "warn",
+        "jest/no-hooks": "off"
       }
     }
   ],

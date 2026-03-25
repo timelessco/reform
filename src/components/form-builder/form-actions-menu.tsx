@@ -25,8 +25,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { duplicateForm, updateDoc, updateFormStatus } from "@/db-collections/form.collections";
-import type { Form } from "@/db-collections/form.collections";
+import { duplicateForm, updateDoc, updateFormStatus } from "@/db-collections/collections";
+import type { Form } from "@/db-collections/collections";
 import { useNavigate } from "@tanstack/react-router";
 import { CopyIcon, MoreHorizontalIcon, TagIcon, Trash2Icon } from "@/components/ui/icons";
 import { useCallback, useState } from "react";

@@ -18,8 +18,8 @@ import {
   createFormLocal,
   duplicateFormById,
   updateFormStatus,
-} from "@/db-collections/form.collections";
-import { createWorkspaceLocal } from "@/db-collections/workspace.collection";
+  createWorkspaceLocal,
+} from "@/db-collections/collections";
 import { useOrgForms, useOrgWorkspaces } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
 import { clearLocalDraftIds } from "@/lib/local-draft";
@@ -60,17 +60,14 @@ const DashboardPage = () => {
   const { data: liveForms, isLoading: formsLoading } = useOrgForms(activeOrg?.id);
 
   const isLoading = wsLoading || formsLoading;
-  const isElectricReady = !isLoading && liveWorkspaces !== undefined && liveForms !== undefined;
+  const isDataReady = !isLoading && liveWorkspaces !== undefined && liveForms !== undefined;
 
   const orgWorkspaces = useMemo(
-    () => (isElectricReady ? liveWorkspaces || [] : []),
-    [isElectricReady, liveWorkspaces],
+    () => (isDataReady ? liveWorkspaces || [] : []),
+    [isDataReady, liveWorkspaces],
   );
 
-  const orgForms = useMemo(
-    () => (isElectricReady ? liveForms || [] : []),
-    [isElectricReady, liveForms],
-  );
+  const orgForms = useMemo(() => (isDataReady ? liveForms || [] : []), [isDataReady, liveForms]);
 
   const workspaceNameMap = useMemo(
     () => new Map(orgWorkspaces.map((ws) => [ws.id, ws.name])),
@@ -252,7 +249,6 @@ const DashboardPage = () => {
                         workspaceId: form.workspaceId,
                         formId: form.id,
                       }}
-                      preloadDelay={1000}
                       preload="intent"
                     >
                       <div className="flex items-center justify-between">
@@ -437,7 +433,7 @@ const DashboardPage = () => {
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
-  ssr: false,
+  ssr: "data-only",
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,

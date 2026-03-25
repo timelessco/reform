@@ -15,9 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FormsFormIdRouteImport } from './routes/forms/$formId'
-import { Route as ApiElectricRouteImport } from './routes/api/electric'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedAcceptInviteRouteImport } from './routes/_authenticated/accept-invite'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as FormsI8nFormIdRouteImport } from './routes/forms/$i8n.$formId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -61,22 +59,11 @@ const FormsFormIdRoute = FormsFormIdRouteImport.update({
   path: '/forms/$formId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiElectricRoute = ApiElectricRouteImport.update({
-  id: '/api/electric',
-  path: '/api/electric',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedAcceptInviteRoute =
-  AuthenticatedAcceptInviteRouteImport.update({
-    id: '/accept-invite',
-    path: '/accept-invite',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedSettingsRouteRoute =
   AuthenticatedSettingsRouteRouteImport.update({
     id: '/settings',
@@ -165,9 +152,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/verify-email': typeof VerifyEmailRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
-  '/accept-invite': typeof AuthenticatedAcceptInviteRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/api/electric': typeof ApiElectricRoute
   '/forms/$formId': typeof FormsFormIdRoute
   '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -188,9 +173,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/verify-email': typeof VerifyEmailRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
-  '/accept-invite': typeof AuthenticatedAcceptInviteRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/api/electric': typeof ApiElectricRoute
   '/forms/$formId': typeof FormsFormIdRoute
   '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -213,9 +196,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/verify-email': typeof VerifyEmailRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
-  '/_authenticated/accept-invite': typeof AuthenticatedAcceptInviteRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/api/electric': typeof ApiElectricRoute
   '/forms/$formId': typeof FormsFormIdRoute
   '/_authenticated/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -238,9 +219,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/verify-email'
     | '/settings'
-    | '/accept-invite'
     | '/dashboard'
-    | '/api/electric'
     | '/forms/$formId'
     | '/workspace/$workspaceId'
     | '/settings/api-keys'
@@ -261,9 +240,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/verify-email'
     | '/settings'
-    | '/accept-invite'
     | '/dashboard'
-    | '/api/electric'
     | '/forms/$formId'
     | '/workspace/$workspaceId'
     | '/settings/api-keys'
@@ -285,9 +262,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/verify-email'
     | '/_authenticated/settings'
-    | '/_authenticated/accept-invite'
     | '/_authenticated/dashboard'
-    | '/api/electric'
     | '/forms/$formId'
     | '/_authenticated/workspace/$workspaceId'
     | '/_authenticated/settings/api-keys'
@@ -309,7 +284,6 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
-  ApiElectricRoute: typeof ApiElectricRoute
   FormsFormIdRoute: typeof FormsFormIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   FormsI8nFormIdRoute: typeof FormsI8nFormIdRoute
@@ -359,25 +333,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FormsFormIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/electric': {
-      id: '/api/electric'
-      path: '/api/electric'
-      fullPath: '/api/electric'
-      preLoaderRoute: typeof ApiElectricRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/accept-invite': {
-      id: '/_authenticated/accept-invite'
-      path: '/accept-invite'
-      fullPath: '/accept-invite'
-      preLoaderRoute: typeof AuthenticatedAcceptInviteRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/settings': {
@@ -535,14 +495,12 @@ const AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
-  AuthenticatedAcceptInviteRoute: typeof AuthenticatedAcceptInviteRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedWorkspaceWorkspaceIdRouteRoute: typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
-  AuthenticatedAcceptInviteRoute: AuthenticatedAcceptInviteRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedWorkspaceWorkspaceIdRouteRoute:
     AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren,
@@ -558,7 +516,6 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   VerifyEmailRoute: VerifyEmailRoute,
-  ApiElectricRoute: ApiElectricRoute,
   FormsFormIdRoute: FormsFormIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   FormsI8nFormIdRoute: FormsI8nFormIdRoute,

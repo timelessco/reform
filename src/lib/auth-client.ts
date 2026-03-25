@@ -1,6 +1,6 @@
+import { apiKeyClient } from "@better-auth/api-key/client";
 import { polarClient } from "@polar-sh/better-auth";
 import {
-  apiKeyClient,
   emailOTPClient,
   organizationClient,
   twoFactorClient,

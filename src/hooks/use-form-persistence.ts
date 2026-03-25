@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useDebouncedCallback } from "@tanstack/react-pacer";
+import { useCallback } from "react";
 
 const STORAGE_KEY_PREFIX = "betterforms_";
 const DEBOUNCE_MS = 500;
 
 export const useFormPersistence = (formId: string, enabled: boolean) => {
   const storageKey = `${STORAGE_KEY_PREFIX}${formId}`;
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // Load initial data from localStorage
   const loadSavedData = useCallback((): Record<string, unknown> | null => {
@@ -28,26 +28,17 @@ export const useFormPersistence = (formId: string, enabled: boolean) => {
   }, [storageKey, enabled]);
 
   // Save data to localStorage (debounced)
-  const saveData = useCallback(
+  const saveData = useDebouncedCallback(
     (data: Record<string, unknown>) => {
-      if (!enabled) return;
       if (typeof window === "undefined") return;
 
-      // Clear existing debounce
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(data));
+      } catch {
+        // Storage quota exceeded or unavailable - silently fail
       }
-
-      // Debounce the save
-      debounceRef.current = setTimeout(() => {
-        try {
-          localStorage.setItem(storageKey, JSON.stringify(data));
-        } catch {
-          // Storage quota exceeded or unavailable - silently fail
-        }
-      }, DEBOUNCE_MS);
     },
-    [storageKey, enabled],
+    { wait: DEBOUNCE_MS, enabled },
   );
 
   // Clear saved data (on successful submission)
@@ -60,16 +51,6 @@ export const useFormPersistence = (formId: string, enabled: boolean) => {
       // Silently fail
     }
   }, [storageKey]);
-
-  // Cleanup debounce on unmount
-  useEffect(
-    () => () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-    },
-    [],
-  );
 
   return { loadSavedData, saveData, clearSavedData };
 };
