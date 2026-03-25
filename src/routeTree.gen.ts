@@ -16,7 +16,6 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FormsFormIdRouteImport } from './routes/forms/$formId'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedAcceptInviteRouteImport } from './routes/_authenticated/accept-invite'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as FormsI8nFormIdRouteImport } from './routes/forms/$i8n.$formId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -65,12 +64,6 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedAcceptInviteRoute =
-  AuthenticatedAcceptInviteRouteImport.update({
-    id: '/accept-invite',
-    path: '/accept-invite',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedSettingsRouteRoute =
   AuthenticatedSettingsRouteRouteImport.update({
     id: '/settings',
@@ -159,7 +152,6 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/verify-email': typeof VerifyEmailRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
-  '/accept-invite': typeof AuthenticatedAcceptInviteRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/forms/$formId': typeof FormsFormIdRoute
   '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
@@ -181,7 +173,6 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/verify-email': typeof VerifyEmailRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
-  '/accept-invite': typeof AuthenticatedAcceptInviteRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/forms/$formId': typeof FormsFormIdRoute
   '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
@@ -205,7 +196,6 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/verify-email': typeof VerifyEmailRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
-  '/_authenticated/accept-invite': typeof AuthenticatedAcceptInviteRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/forms/$formId': typeof FormsFormIdRoute
   '/_authenticated/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
@@ -229,7 +219,6 @@ export interface FileRouteTypes {
     | '/signup'
     | '/verify-email'
     | '/settings'
-    | '/accept-invite'
     | '/dashboard'
     | '/forms/$formId'
     | '/workspace/$workspaceId'
@@ -251,7 +240,6 @@ export interface FileRouteTypes {
     | '/signup'
     | '/verify-email'
     | '/settings'
-    | '/accept-invite'
     | '/dashboard'
     | '/forms/$formId'
     | '/workspace/$workspaceId'
@@ -274,7 +262,6 @@ export interface FileRouteTypes {
     | '/signup'
     | '/verify-email'
     | '/_authenticated/settings'
-    | '/_authenticated/accept-invite'
     | '/_authenticated/dashboard'
     | '/forms/$formId'
     | '/_authenticated/workspace/$workspaceId'
@@ -351,13 +338,6 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/accept-invite': {
-      id: '/_authenticated/accept-invite'
-      path: '/accept-invite'
-      fullPath: '/accept-invite'
-      preLoaderRoute: typeof AuthenticatedAcceptInviteRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/settings': {
@@ -515,14 +495,12 @@ const AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
-  AuthenticatedAcceptInviteRoute: typeof AuthenticatedAcceptInviteRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedWorkspaceWorkspaceIdRouteRoute: typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
-  AuthenticatedAcceptInviteRoute: AuthenticatedAcceptInviteRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedWorkspaceWorkspaceIdRouteRoute:
     AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren,

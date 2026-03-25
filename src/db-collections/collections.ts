@@ -1,8 +1,3 @@
-/**
- * Singleton collection registry for query-backed collections.
- * Replaces Electric-backed singletons with query-backed equivalents.
- * Call initCollections(queryClient) once in _authenticated.tsx loader.
- */
 import type { QueryClient } from "@tanstack/query-core";
 import { createTransaction } from "@tanstack/react-db";
 import { createWorkspaceSummaryCollection } from "./workspace-query.collection";
@@ -12,11 +7,28 @@ import {
   createFavoriteCollection,
 } from "./form-listing-query.collection";
 import type { FormListing, FormFavorite } from "./form-listing-query.collection";
-import type { FormDetail } from "./form-detail-query.collection";
+import type { createForm, updateForm, deleteForm } from "@/lib/fn/forms";
+import type { createWorkspace, updateWorkspace, deleteWorkspace } from "@/lib/fn/workspaces";
+import type { addFavorite, removeFavorite } from "@/lib/fn/favorites";
 import {
   createVersionListCollection,
   createVersionContentCollection,
 } from "./version-query.collection";
+
+// Utility types to extract input/output from TanStack server functions
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- `any` required: function constraints need contravariant params
+type ServerFn = (...args: any[]) => any;
+type ServerFnInput<T extends ServerFn> = NonNullable<Parameters<T>[0]>["data"];
+type ServerFnOutput<T extends ServerFn> = Awaited<ReturnType<T>>;
+
+/** Convert null values to undefined so collection data aligns with Zod-validated server fn inputs */
+type NullToUndefined<T> = {
+  [K in keyof T]: null extends T[K] ? Exclude<T[K], null> | undefined : T[K];
+};
+const stripNulls = <T extends Record<string, unknown>>(obj: T) =>
+  Object.fromEntries(
+    Object.entries(obj).map(([k, v]) => [k, v === null ? undefined : v]),
+  ) as NullToUndefined<T>;
 import type { VersionListItem, VersionContent } from "./version-query.collection";
 import { createSubmissionSummaryCollection } from "./submission-query.collection";
 import { DEFAULT_FORM_CONTENT, DEFAULT_FORM_SETTINGS } from "./local-form.collection";
@@ -40,17 +52,29 @@ let _serverFns: {
   getVersionContent: (versionId: string) => Promise<VersionContent | null>;
   getSubmissionsCount: (formId: string) => Promise<{ total: number }>;
   createWorkspace: (
-    data: Record<string, unknown>,
-  ) => Promise<{ workspace: WorkspaceSummary; txid: number }>;
+    data: ServerFnInput<typeof createWorkspace>,
+  ) => Promise<ServerFnOutput<typeof createWorkspace>>;
   updateWorkspace: (
-    data: Record<string, unknown>,
-  ) => Promise<{ workspace: WorkspaceSummary; txid: number }>;
-  deleteWorkspace: (data: Record<string, unknown>) => Promise<unknown>;
-  createForm: (data: Record<string, unknown>) => Promise<{ form: FormDetail; txid: number }>;
-  updateForm: (data: Record<string, unknown>) => Promise<{ form: FormDetail; txid: number }>;
-  deleteForm: (data: Record<string, unknown>) => Promise<unknown>;
-  addFavorite: (data: { formId: string }) => Promise<unknown>;
-  removeFavorite: (data: { formId: string }) => Promise<unknown>;
+    data: ServerFnInput<typeof updateWorkspace>,
+  ) => Promise<ServerFnOutput<typeof updateWorkspace>>;
+  deleteWorkspace: (
+    data: ServerFnInput<typeof deleteWorkspace>,
+  ) => Promise<ServerFnOutput<typeof deleteWorkspace>>;
+  createForm: (
+    data: ServerFnInput<typeof createForm>,
+  ) => Promise<ServerFnOutput<typeof createForm>>;
+  updateForm: (
+    data: ServerFnInput<typeof updateForm>,
+  ) => Promise<ServerFnOutput<typeof updateForm>>;
+  deleteForm: (
+    data: ServerFnInput<typeof deleteForm>,
+  ) => Promise<ServerFnOutput<typeof deleteForm>>;
+  addFavorite: (
+    data: ServerFnInput<typeof addFavorite>,
+  ) => Promise<ServerFnOutput<typeof addFavorite>>;
+  removeFavorite: (
+    data: ServerFnInput<typeof removeFavorite>,
+  ) => Promise<ServerFnOutput<typeof removeFavorite>>;
 } | null = null;
 
 let _queryClient: QueryClient | null = null;
@@ -90,7 +114,10 @@ export const initCollections = (
       const result = await serverFns.updateWorkspace({ id: m.original.id, ...m.changes });
       if (result?.workspace) {
         const workspaces = _workspaces as NonNullable<typeof _workspaces>;
-        workspaces.utils.writeUpdate(result.workspace);
+        workspaces.utils.writeUpdate({
+          ...result.workspace,
+          forms: m.original.forms,
+        });
       }
       return { refetch: false };
     },
@@ -103,16 +130,17 @@ export const initCollections = (
     queryClient,
     queryFn: serverFns.getFormListings,
     onInsert: async ({ transaction }) => {
-      await serverFns.createForm(
-        transaction.mutations[0].modified as unknown as Record<string, unknown>,
-      );
+      const modified = transaction.mutations[0].modified;
+      await serverFns.createForm(stripNulls(modified) as ServerFnInput<typeof createForm>);
     },
     onUpdate: async ({ transaction }) => {
       const m = transaction.mutations[0];
-      const result = await serverFns.updateForm({
-        id: m.original.id,
-        ...m.changes,
-      } as unknown as Record<string, unknown>);
+      const result = await serverFns.updateForm(
+        stripNulls({
+          id: m.original.id,
+          ...m.changes,
+        }) as ServerFnInput<typeof updateForm>,
+      );
       if (result?.form) {
         const formListings = _formListings as NonNullable<typeof _formListings>;
         formListings.utils.writeUpdate(result.form);
@@ -164,12 +192,6 @@ export const getFormListings = () => getInit().formListings;
 
 export const getFavorites = () => getInit().favorites;
 
-/**
- * Fetch full form detail from the server and enrich the formListings
- * collection record. Called client-side when the editor opens a form.
- * The enriched data (content, settings, etc.) is preserved across
- * listing refetches by the merge wrapper in createFormListingCollection.
- */
 export const enrichFormDetail = async (formId: string) => {
   const { serverFns, formListings } = getInit();
   if (_enrichedFormIds.has(formId)) return null;
@@ -228,8 +250,6 @@ export const getSubmissionSummary = (formId: string) => {
   return collection;
 };
 
-// --- Helper functions ---
-
 export const createFormLocal = async (workspaceId: string, title = "Untitled"): Promise<Form> => {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
@@ -268,7 +288,7 @@ export const createFormLocal = async (workspaceId: string, title = "Untitled"): 
   const { serverFns, formListings } = getInit();
   const tx = createTransaction({
     mutationFn: async () => {
-      await serverFns.createForm(newForm as unknown as Record<string, unknown>);
+      await serverFns.createForm(newForm);
     },
   });
   tx.mutate(() => {
@@ -304,7 +324,7 @@ export const duplicateFormById = (formId: string): Form => {
   const { serverFns } = getInit();
   const tx = createTransaction({
     mutationFn: async () => {
-      await serverFns.createForm(newForm as unknown as Record<string, unknown>);
+      await serverFns.createForm(newForm);
     },
   });
   tx.mutate(() => {

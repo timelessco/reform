@@ -1,4 +1,4 @@
-import { and, eq, exists, sql } from "drizzle-orm";
+import { and, eq, exists } from "drizzle-orm";
 import { forms, member, workspaces } from "@/db/schema";
 import { db } from "@/lib/db";
 
@@ -74,22 +74,4 @@ export const authForm = async (formId: string, userId: string, organizationId: s
     throw new Error("Form not found or access denied");
   }
   return { form: form[0] };
-};
-
-type DbLike = { execute: typeof db.execute };
-
-/**
- * Get PostgreSQL transaction ID. Must be called inside the same transaction as the mutation
- * for Electric sync to match correctly (see TanStack Electric docs).
- */
-export const getTxId = async (tx?: DbLike): Promise<number> => {
-  const client = tx ?? db;
-  // Use ::xid::text (no ::int) - TanStack docs: "The ::xid cast strips off the epoch,
-  // giving you the raw 32-bit value that matches what PostgreSQL sends in logical replication"
-  const result = await client.execute<{ txid: string }>(
-    sql`SELECT pg_current_xact_id()::xid::text as txid`,
-  );
-  const txid = result.rows[0]?.txid;
-  if (txid === undefined) throw new Error("Failed to get transaction ID");
-  return parseInt(txid, 10);
 };

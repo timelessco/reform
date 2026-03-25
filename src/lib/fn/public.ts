@@ -4,7 +4,6 @@ import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { forms, formVersions, submissions, user } from "@/db/schema";
 import { db } from "@/lib/db";
-import { getTxId } from "./helpers";
 import type { PublicFormSettings } from "@/types/form-settings";
 
 /**
@@ -251,20 +250,17 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
     const id = crypto.randomUUID();
     const now = new Date();
 
-    const result = await db.transaction(async (tx) => {
-      await tx.insert(submissions).values({
-        id,
-        formId: data.formId,
-        formVersionId: form.lastPublishedVersionId,
-        data: data.data,
-        isCompleted: data.isCompleted,
-        createdAt: now,
-        updatedAt: now,
-      });
-
-      const txid = await getTxId(tx);
-      return { submissionId: id, success: true, txid };
+    await db.insert(submissions).values({
+      id,
+      formId: data.formId,
+      formVersionId: form.lastPublishedVersionId,
+      data: data.data,
+      isCompleted: data.isCompleted,
+      createdAt: now,
+      updatedAt: now,
     });
+
+    const result = { submissionId: id, success: true };
 
     // Fire-and-forget email notifications
     sendEmailNotifications(

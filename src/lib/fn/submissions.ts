@@ -5,7 +5,7 @@ import { z } from "zod";
 import { submissions } from "@/db/schema";
 import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
-import { authForm, getActiveOrgId, getTxId } from "./helpers";
+import { authForm, getActiveOrgId } from "./helpers";
 
 // Serialized submission type for client consumption
 export type SerializedSubmission = {
@@ -48,11 +48,8 @@ export const deleteSubmission = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const orgId = getActiveOrgId(context.session);
     await authForm(data.formId, context.session.user.id, orgId);
-    return await db.transaction(async (tx) => {
-      await tx.delete(submissions).where(eq(submissions.id, data.id));
-      const txid = await getTxId(tx);
-      return { success: true, txid };
-    });
+    await db.delete(submissions).where(eq(submissions.id, data.id));
+    return { success: true };
   });
 
 // DELETE submissions bulk
@@ -68,13 +65,10 @@ export const deleteSubmissionsBulk = createServerFn({ method: "POST" })
     const orgId = getActiveOrgId(context.session);
     await authForm(data.formId, context.session.user.id, orgId);
     if (data.submissionIds.length === 0) {
-      return { success: true, deleted: 0, txid: 0 };
+      return { success: true, deleted: 0 };
     }
-    return await db.transaction(async (tx) => {
-      await tx.delete(submissions).where(inArray(submissions.id, data.submissionIds));
-      const txid = await getTxId(tx);
-      return { success: true, deleted: data.submissionIds.length, txid };
-    });
+    await db.delete(submissions).where(inArray(submissions.id, data.submissionIds));
+    return { success: true, deleted: data.submissionIds.length };
   });
 
 // Cursor pagination types and constants

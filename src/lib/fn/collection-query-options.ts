@@ -26,7 +26,7 @@ const FIVE_MINUTES = 1000 * 60 * 5;
  */
 export const workspacesCollectionQueryOptions = () =>
   queryOptions({
-    queryKey: ["workspaces-with-forms"],
+    queryKey: ["workspaces-with-forms"] as const,
     queryFn: async () => {
       const result = await getWorkspaces();
       return result.workspaces.map((ws) => ({ ...ws, forms: [] as const }));
@@ -39,7 +39,7 @@ export const workspacesCollectionQueryOptions = () =>
  */
 export const formListingsCollectionQueryOptions = () =>
   queryOptions({
-    queryKey: ["form-listings"],
+    queryKey: ["form-listings"] as const,
     queryFn: () => getFormListings(),
     staleTime: FIVE_MINUTES,
   });
@@ -49,7 +49,7 @@ export const formListingsCollectionQueryOptions = () =>
  */
 export const favoritesCollectionQueryOptions = () =>
   queryOptions({
-    queryKey: ["favorites"],
+    queryKey: ["favorites"] as const,
     queryFn: () => getFavorites(),
     staleTime: FIVE_MINUTES,
   });

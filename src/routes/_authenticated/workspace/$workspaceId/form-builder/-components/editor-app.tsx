@@ -16,6 +16,7 @@ import { Loader2Icon } from "@/components/ui/icons";
 import { normalizeNodeId } from "platejs";
 import type { TElement, Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
+import { useDebouncedCallback } from "@tanstack/react-pacer";
 import type { KeyboardEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -138,7 +139,6 @@ const EditorAppInner = ({
   const savedDocsRef = useRef(savedDocs);
   savedDocsRef.current = savedDocs;
   const pendingValueRef = useRef<Value | null>(null);
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const headerVisibility = useEditorHeaderVisibilitySafe();
   const [resetKey, setResetKey] = useState(0);
 
@@ -209,6 +209,35 @@ const EditorAppInner = ({
     [resetKey],
   );
 
+  const debouncedSave = useDebouncedCallback(
+    (val: Value) => {
+      const headerNode =
+        val.length > 0 && val[0]?.type === "formHeader"
+          ? (val[0] as unknown as FormHeaderElementData)
+          : null;
+
+      const collection = getFormListings();
+      if (!collection.get(formId)) return; // Not in collection yet — next onChange will retry
+
+      // Update the ref so external-change detection recognizes
+      // the upcoming sync-back as our own edit
+      lastKnownContentRef.current = JSON.stringify(val);
+      pendingValueRef.current = null;
+
+      collection.update(formId, (draft) => {
+        draft.content = val;
+        if (workspaceId) draft.workspaceId = workspaceId;
+        draft.updatedAt = new Date().toISOString();
+        if (headerNode) {
+          if (headerNode.title !== undefined) draft.title = headerNode.title;
+          if (headerNode.icon !== undefined) draft.icon = headerNode.icon ?? null;
+          if (headerNode.cover !== undefined) draft.cover = headerNode.cover ?? null;
+        }
+      });
+    },
+    { wait: 500 },
+  );
+
   const handleChange = useCallback(
     ({ value }: { value: Value }) => {
       if (readOnly) return;
@@ -219,37 +248,9 @@ const EditorAppInner = ({
       }
 
       pendingValueRef.current = value;
-      clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(() => {
-        const val = pendingValueRef.current;
-        if (!val) return;
-
-        const headerNode =
-          val.length > 0 && val[0]?.type === "formHeader"
-            ? (val[0] as unknown as FormHeaderElementData)
-            : null;
-
-        const collection = getFormListings();
-        if (!collection.get(formId)) return; // Not in collection yet — next onChange will retry
-
-        // Update the ref so external-change detection recognizes
-        // the upcoming sync-back as our own edit
-        lastKnownContentRef.current = JSON.stringify(val);
-        pendingValueRef.current = null;
-
-        collection.update(formId, (draft) => {
-          draft.content = val;
-          if (workspaceId) draft.workspaceId = workspaceId;
-          draft.updatedAt = new Date().toISOString();
-          if (headerNode) {
-            if (headerNode.title !== undefined) draft.title = headerNode.title;
-            if (headerNode.icon !== undefined) draft.icon = headerNode.icon ?? null;
-            if (headerNode.cover !== undefined) draft.cover = headerNode.cover ?? null;
-          }
-        });
-      }, 500);
+      debouncedSave(value);
     },
-    [formId, workspaceId, readOnly],
+    [readOnly, debouncedSave],
   );
 
   const handleEditorKeyDown = useCallback(

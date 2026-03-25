@@ -5,7 +5,7 @@ import { z } from "zod";
 import { forms, formVersions, user } from "@/db/schema";
 import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
-import { authForm, getActiveOrgId, getTxId } from "./helpers";
+import { authForm, getActiveOrgId } from "./helpers";
 
 // Maximum number of versions to keep per form (TODO: make plan-based)
 const MAX_VERSIONS_PER_FORM = 20;
@@ -106,12 +106,9 @@ export const publishFormVersion = createServerFn({ method: "POST" })
         await tx.delete(formVersions).where(inArray(formVersions.id, versionsToDelete));
       }
 
-      const txid = await getTxId(tx);
-
       return {
         version: serializeVersion(newVersion),
         versionNumber: nextVersionNumber,
-        txid,
       };
     });
   });
@@ -209,29 +206,24 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
 
     // Update form draft with version content + customization
     // Note: We don't update publishedContentHash so the form shows "has changes"
-    return await db.transaction(async (tx) => {
-      await tx
-        .update(forms)
-        .set({
-          content: version.content,
-          title: version.title,
-          customization: version.customization ?? {},
-          updatedAt: new Date(),
-        })
-        .where(eq(forms.id, data.formId));
+    await db
+      .update(forms)
+      .set({
+        content: version.content,
+        title: version.title,
+        customization: version.customization ?? {},
+        updatedAt: new Date(),
+      })
+      .where(eq(forms.id, data.formId));
 
-      const txid = await getTxId(tx);
-
-      return {
-        success: true,
-        txid,
-        version: {
-          content: version.content as object[],
-          settings: version.settings as Record<string, object>,
-          title: version.title,
-        },
-      };
-    });
+    return {
+      success: true,
+      version: {
+        content: version.content as object[],
+        settings: version.settings as Record<string, object>,
+        title: version.title,
+      },
+    };
   });
 
 /**
@@ -264,30 +256,25 @@ export const discardFormChanges = createServerFn({ method: "POST" })
     const contentHash = computeContentHash(version.content);
 
     // Update form draft with version content, customization, AND hash (so no "changes" indicator)
-    return await db.transaction(async (tx) => {
-      await tx
-        .update(forms)
-        .set({
-          content: version.content,
-          title: version.title,
-          customization: version.customization ?? {},
-          publishedContentHash: contentHash,
-          updatedAt: new Date(),
-        })
-        .where(eq(forms.id, data.formId));
+    await db
+      .update(forms)
+      .set({
+        content: version.content,
+        title: version.title,
+        customization: version.customization ?? {},
+        publishedContentHash: contentHash,
+        updatedAt: new Date(),
+      })
+      .where(eq(forms.id, data.formId));
 
-      const txid = await getTxId(tx);
-
-      return {
-        success: true,
-        txid,
-        version: {
-          content: version.content as object[],
-          settings: version.settings as Record<string, object>,
-          title: version.title,
-        },
-      };
-    });
+    return {
+      success: true,
+      version: {
+        content: version.content as object[],
+        settings: version.settings as Record<string, object>,
+        title: version.title,
+      },
+    };
   });
 
 /**

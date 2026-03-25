@@ -2,9 +2,8 @@ import { EmojiInlineIndexSearch, insertEmoji } from "@platejs/emoji";
 import { EmojiPlugin } from "@platejs/emoji/react";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement, usePluginOption } from "platejs/react";
+import { useDebouncedValue } from "@tanstack/react-pacer";
 import * as React from "react";
-
-import { useDebounce } from "@/hooks/use-debounce";
 
 import {
   InlineCombobox,
@@ -21,7 +20,7 @@ export const EmojiInputElement = (props: PlateElementProps) => {
   const { children, editor, element } = props;
   const data = usePluginOption(EmojiPlugin, "data");
   const [value, setValue] = React.useState("");
-  const debouncedValue = useDebounce(value, 100);
+  const [debouncedValue] = useDebouncedValue(value, { wait: 100 });
   const isPending = value !== debouncedValue;
 
   const filteredEmojis = React.useMemo(() => {
