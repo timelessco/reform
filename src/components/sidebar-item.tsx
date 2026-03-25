@@ -1,11 +1,14 @@
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
+import type { RegisteredRouter, ValidateLinkOptions } from "@tanstack/react-router";
 import * as React from "react";
 import { SidebarMenuButton } from "./ui/sidebar";
 
-export interface SidebarItemProps {
-  to?: string;
-  params?: Record<string, string>;
+export interface SidebarItemProps<
+  TRouter extends RegisteredRouter = RegisteredRouter,
+  TOptions = unknown,
+> {
+  linkOptions?: ValidateLinkOptions<TRouter, TOptions>;
   label: string;
   isNested?: boolean;
   isActive?: boolean;
@@ -13,17 +16,19 @@ export interface SidebarItemProps {
   prefix?: React.ReactNode;
 }
 
-export const SidebarItem = ({
-  to,
-  params,
+export function SidebarItem<TRouter extends RegisteredRouter, TOptions>(
+  props: SidebarItemProps<TRouter, TOptions> & { children?: React.ReactNode },
+): React.ReactNode;
+export function SidebarItem({
+  linkOptions,
   label,
   isActive,
   onClick,
   prefix,
   children,
-}: SidebarItemProps & { children?: React.ReactNode }) => {
-  const Component: React.ElementType = to ? Link : SidebarMenuButton;
-  const componentProps = to ? { to, params } : { type: "button" as const };
+}: SidebarItemProps & { children?: React.ReactNode }): React.ReactNode {
+  const Component: React.ElementType = linkOptions ? Link : SidebarMenuButton;
+  const componentProps = linkOptions ?? { type: "button" as const };
 
   return (
     <Component
@@ -45,4 +50,4 @@ export const SidebarItem = ({
       {children}
     </Component>
   );
-};
+}

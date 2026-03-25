@@ -477,7 +477,7 @@ const AppSidebar = () => {
                   <SidebarItem
                     prefix={<HomeIcon className="size-[18px] text-muted-foreground" />}
                     label="All"
-                    to="/dashboard"
+                    linkOptions={{ to: "/dashboard" }}
                     isActive={location.pathname === "/dashboard"}
                   />
                   {/* </SidebarMenuButton> */}
@@ -1200,11 +1200,6 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
         {favoriteForms.length > 0 && (
           <SidebarSection label="Favorites" initialOpen action={<></>}>
             {favoriteForms.map((form) => {
-              const favTo =
-                form.status === "published"
-                  ? "/workspace/$workspaceId/form-builder/$formId/submissions"
-                  : "/workspace/$workspaceId/form-builder/$formId/edit";
-              const favParams = { workspaceId: form.workspaceId, formId: form.id };
               const isFavActive = location.pathname.startsWith(
                 `/workspace/${form.workspaceId}/form-builder/${form.id}`,
               );
@@ -1212,8 +1207,13 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
                 <SidebarItem
                   key={form.id}
                   label={form.title || "Untitled"}
-                  to={favTo}
-                  params={favParams}
+                  linkOptions={{
+                    to:
+                      form.status === "published"
+                        ? "/workspace/$workspaceId/form-builder/$formId/submissions"
+                        : "/workspace/$workspaceId/form-builder/$formId/edit",
+                    params: { workspaceId: form.workspaceId, formId: form.id },
+                  }}
                   isActive={isFavActive}
                   prefix={
                     <ThemedFormIcon
