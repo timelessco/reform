@@ -41,6 +41,7 @@ export const createWorkspaceSummaryCollection = (config: WorkspaceSummaryCollect
       },
       queryClient,
       getKey: (item): string | number => item.id,
+      staleTime: 1000 * 60 * 5,
       onInsert,
       onUpdate,
       onDelete,
