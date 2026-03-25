@@ -1117,7 +1117,8 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
       setDeleteConfirmName("");
       router.navigate({ to: "/dashboard" });
     } catch (error) {
-      console.error("Failed to delete workspace:", error);
+      const message = error instanceof Error ? error.message : "Failed to delete workspace";
+      toast.error(message);
     }
   }, [workspaceToDelete, deleteConfirmName, router]);
 

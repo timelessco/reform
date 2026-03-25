@@ -14,7 +14,7 @@ import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { desc, eq, inArray, not } from "drizzle-orm";
+import { and, count, desc, eq, inArray, not } from "drizzle-orm";
 import { z } from "zod";
 import { authWorkspace, getActiveOrgId } from "./helpers";
 
@@ -91,35 +91,46 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
     const orgId = getActiveOrgId(context.session);
     await authWorkspace(data.id, context.session.user.id, orgId);
 
-    // Cascade-delete all forms and their dependent records
-    const workspaceForms = await db
-      .select({ id: forms.id })
-      .from(forms)
-      .where(eq(forms.workspaceId, data.id));
-    const formIds = workspaceForms.map((f) => f.id);
-
-    if (formIds.length > 0) {
-      await Promise.all([
-        db.delete(formAnalyticsDaily).where(inArray(formAnalyticsDaily.formId, formIds)),
-        db.delete(formDropoffDaily).where(inArray(formDropoffDaily.formId, formIds)),
-        db.delete(formQuestionProgress).where(inArray(formQuestionProgress.formId, formIds)),
-        db.delete(formVisits).where(inArray(formVisits.formId, formIds)),
-        db.delete(formFavorites).where(inArray(formFavorites.formId, formIds)),
-        db.delete(submissions).where(inArray(submissions.formId, formIds)),
-        db.delete(formVersions).where(inArray(formVersions.formId, formIds)),
-      ]);
-      await db.delete(forms).where(inArray(forms.id, formIds));
+    // Ensure at least one workspace remains in the organization
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(workspaces)
+      .where(eq(workspaces.organizationId, orgId));
+    if (total <= 1) {
+      throw new Error("Cannot delete the last workspace. You must have at least one workspace.");
     }
 
-    const [workspace] = await db.delete(workspaces).where(eq(workspaces.id, data.id)).returning();
+    return await db.transaction(async (tx) => {
+      // Cascade-delete all forms and their dependent records
+      const workspaceForms = await tx
+        .select({ id: forms.id })
+        .from(forms)
+        .where(eq(forms.workspaceId, data.id));
+      const formIds = workspaceForms.map((f) => f.id);
 
-    return {
-      workspace: {
-        ...workspace,
-        createdAt: workspace.createdAt.toISOString(),
-        updatedAt: workspace.updatedAt.toISOString(),
-      },
-    };
+      if (formIds.length > 0) {
+        await Promise.all([
+          tx.delete(formAnalyticsDaily).where(inArray(formAnalyticsDaily.formId, formIds)),
+          tx.delete(formDropoffDaily).where(inArray(formDropoffDaily.formId, formIds)),
+          tx.delete(formQuestionProgress).where(inArray(formQuestionProgress.formId, formIds)),
+          tx.delete(formVisits).where(inArray(formVisits.formId, formIds)),
+          tx.delete(formFavorites).where(inArray(formFavorites.formId, formIds)),
+          tx.delete(submissions).where(inArray(submissions.formId, formIds)),
+          tx.delete(formVersions).where(inArray(formVersions.formId, formIds)),
+        ]);
+        await tx.delete(forms).where(inArray(forms.id, formIds));
+      }
+
+      const [workspace] = await tx.delete(workspaces).where(eq(workspaces.id, data.id)).returning();
+
+      return {
+        workspace: {
+          ...workspace,
+          createdAt: workspace.createdAt.toISOString(),
+          updatedAt: workspace.updatedAt.toISOString(),
+        },
+      };
+    });
   });
 
 export const getWorkspaceById = createServerFn({ method: "GET" })
