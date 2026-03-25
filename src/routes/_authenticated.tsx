@@ -90,25 +90,6 @@ import {
   updateFormStatus,
   updateWorkspaceName,
 } from "@/db-collections/collections";
-import {
-  createWorkspace,
-  updateWorkspace,
-  deleteWorkspace,
-  getWorkspaces,
-} from "@/lib/fn/workspaces";
-import {
-  createForm,
-  updateForm,
-  deleteForm,
-  getFormListings as getFormListingsServer,
-} from "@/lib/fn/forms";
-import {
-  addFavorite,
-  removeFavorite,
-  getFavorites as getFavoritesServer,
-} from "@/lib/fn/favorites";
-import { getFormVersions, getFormVersionContent } from "@/lib/fn/form-versions";
-import { getSubmissionsCount } from "@/lib/fn/submissions";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import {
@@ -120,7 +101,31 @@ import {
 } from "@/hooks/use-live-hooks";
 import { settingsDialogStore } from "@/hooks/use-settings-dialog";
 import { auth, useSession } from "@/lib/auth-client";
+import {
+  addFavorite,
+  getFavorites as getFavoritesServer,
+  removeFavorite,
+} from "@/lib/fn/favorites";
+import { getFormVersionContent, getFormVersions } from "@/lib/fn/form-versions";
+import {
+  createForm,
+  deleteForm,
+  getFormListings as getFormListingsServer,
+  updateForm,
+} from "@/lib/fn/forms";
 import { orgDataForLayoutQueryOptions } from "@/lib/fn/org";
+import {
+  workspacesCollectionQueryOptions,
+  formListingsCollectionQueryOptions,
+  favoritesCollectionQueryOptions,
+} from "@/lib/fn/collection-query-options";
+import { getSubmissionsCount } from "@/lib/fn/submissions";
+import {
+  createWorkspace,
+  deleteWorkspace,
+  getWorkspaces,
+  updateWorkspace,
+} from "@/lib/fn/workspaces";
 import { HOTKEYS } from "@/lib/hotkeys";
 import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/middleware/auth";
@@ -199,18 +204,12 @@ const initCollectionsOnClient = createClientOnlyFn((queryClient: QueryClient) =>
       const result = await getSubmissionsCount({ data: { formId } });
       return { total: result.total };
     },
-    // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
-    createWorkspace: async (data) => await createWorkspace({ data: data as any }),
-    // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
-    updateWorkspace: async (data) => await updateWorkspace({ data: data as any }),
-    // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
-    deleteWorkspace: async (data) => await deleteWorkspace({ data: data as any }),
-    // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
-    createForm: async (data) => await createForm({ data: data as any }),
-    // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
-    updateForm: async (data) => await updateForm({ data: data as any }),
-    // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
-    deleteForm: async (data) => await deleteForm({ data: data as any }),
+    createWorkspace: async (data) => await createWorkspace({ data: data }),
+    updateWorkspace: async (data) => await updateWorkspace({ data: data }),
+    deleteWorkspace: async (data) => await deleteWorkspace({ data: data }),
+    createForm: async (data) => await createForm({ data: data }),
+    updateForm: async (data) => await updateForm({ data: data }),
+    deleteForm: async (data) => await deleteForm({ data: data }),
     addFavorite: async (data) => await addFavorite({ data }),
     removeFavorite: async (data) => await removeFavorite({ data }),
   });
@@ -239,11 +238,18 @@ export const Route = createFileRoute("/_authenticated")({
     middleware: [authMiddleware],
   },
   loader: async ({ context }) => {
-    const { activeOrg, orgsData } = await context.queryClient.ensureQueryData({
-      ...orgDataForLayoutQueryOptions(),
-      revalidateIfStale: true,
-    });
-    return { activeOrg, orgsData };
+    const [orgResult] = await Promise.all([
+      context.queryClient.ensureQueryData({
+        ...orgDataForLayoutQueryOptions(),
+        revalidateIfStale: true,
+      }),
+      // Prefetch collection data using the same query keys TanStack DB will use.
+      // This seeds the query cache so collections find warm data on init.
+      context.queryClient.ensureQueryData(workspacesCollectionQueryOptions()),
+      context.queryClient.ensureQueryData(formListingsCollectionQueryOptions()),
+      context.queryClient.ensureQueryData(favoritesCollectionQueryOptions()),
+    ]);
+    return { activeOrg: orgResult.activeOrg, orgsData: orgResult.orgsData };
   },
   staleTime: 500000, // 500 seconds
   component: AuthLayout,
