@@ -2,7 +2,8 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { getFormListings } from "@/db-collections/collections";
-import { getFormStatus } from "@/lib/fn/forms";
+import { getFormVersions } from "@/lib/fn/form-versions";
+import { getFormbyIdQueryOption, getFormStatus } from "@/lib/fn/forms";
 import type { FormStatus } from "@/lib/fn/forms";
 import { createFileRoute, isRedirect, Outlet, redirect, useLocation } from "@tanstack/react-router";
 
@@ -78,6 +79,19 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
           });
         }
       }
+    },
+    loader: async ({ context, params }) => {
+      await Promise.all([
+        // Prefetch full form detail so the editor doesn't show a loading state
+        context.queryClient.ensureQueryData(getFormbyIdQueryOption(params.formId)),
+        // Prefetch version list so version history sidebar loads instantly
+        context.queryClient.ensureQueryData({
+          queryKey: ["form-versions", params.formId],
+          queryFn: () =>
+            getFormVersions({ data: { formId: params.formId } }).then((r) => r.versions),
+          staleTime: 1000 * 60 * 5,
+        }),
+      ]);
     },
     staleTime: 30_000,
     gcTime: 5 * 60_000,
