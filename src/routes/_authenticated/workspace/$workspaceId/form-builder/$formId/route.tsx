@@ -80,15 +80,18 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
         }
       }
     },
-    loader: ({ context, params }) => {
-      // Use prefetchQuery (not ensureQueryData) — it never throws, so draft
-      // forms without versions or access-denied cases degrade gracefully.
-      context.queryClient.prefetchQuery(getFormbyIdQueryOption(params.formId));
-      context.queryClient.prefetchQuery({
-        queryKey: ["form-versions", params.formId],
-        queryFn: () => getFormVersions({ data: { formId: params.formId } }).then((r) => r.versions),
-        staleTime: 1000 * 60 * 5,
-      });
+    loader: async ({ context, params }) => {
+      await Promise.all([
+        // Prefetch full form detail so the editor doesn't show a loading state
+        context.queryClient.ensureQueryData(getFormbyIdQueryOption(params.formId)),
+        // Prefetch version list so version history sidebar loads instantly
+        context.queryClient.ensureQueryData({
+          queryKey: ["form-versions", params.formId],
+          queryFn: () =>
+            getFormVersions({ data: { formId: params.formId } }).then((r) => r.versions),
+          staleTime: 1000 * 60 * 5,
+        }),
+      ]);
     },
     staleTime: 30_000,
     gcTime: 5 * 60_000,
