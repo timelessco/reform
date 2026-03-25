@@ -249,7 +249,6 @@ const DashboardPage = () => {
                         workspaceId: form.workspaceId,
                         formId: form.id,
                       }}
-                      preloadDelay={1000}
                       preload="intent"
                     >
                       <div className="flex items-center justify-between">
@@ -434,7 +433,7 @@ const DashboardPage = () => {
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
-  ssr: false,
+  ssr: "data-only",
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,

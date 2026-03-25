@@ -162,7 +162,7 @@ export const Route = createFileRoute(
       // On error, allow edit route to load
     }
   },
-  ssr: false,
+  ssr: "data-only",
   component: DesignPage,
   pendingComponent: () => <div>Loading...</div>,
   errorComponent: ErrorBoundary,
