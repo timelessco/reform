@@ -16,5 +16,5 @@ export const Route = createFileRoute(
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,
-  ssr: false,
+  ssr: "data-only",
 });

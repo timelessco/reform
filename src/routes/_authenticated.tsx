@@ -80,18 +80,16 @@ import {
 import { MinimalSidebarProvider, useMinimalSidebar } from "@/contexts/minimal-sidebar-context";
 import {
   createFormLocal,
+  createWorkspaceLocal,
+  deleteWorkspaceLocal,
   duplicateFormById,
-  formCollection,
+  initCollections,
+  isInitialized as isCollectionsInitialized,
   permanentDeleteFormLocal,
   restoreFormLocal,
   updateFormStatus,
-} from "@/db-collections/form.collections";
-import {
-  createWorkspaceLocal,
-  deleteWorkspaceLocal,
   updateWorkspaceName,
-  workspaceCollection,
-} from "@/db-collections/workspace.collection";
+} from "@/db-collections/collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import {
@@ -103,13 +101,39 @@ import {
 } from "@/hooks/use-live-hooks";
 import { settingsDialogStore } from "@/hooks/use-settings-dialog";
 import { auth, useSession } from "@/lib/auth-client";
+import {
+  addFavorite,
+  getFavorites as getFavoritesServer,
+  removeFavorite,
+} from "@/lib/fn/favorites";
+import { getFormVersionContent, getFormVersions } from "@/lib/fn/form-versions";
+import {
+  createForm,
+  deleteForm,
+  getFormListings as getFormListingsServer,
+  updateForm,
+} from "@/lib/fn/forms";
 import { orgDataForLayoutQueryOptions } from "@/lib/fn/org";
+import {
+  workspacesCollectionQueryOptions,
+  formListingsCollectionQueryOptions,
+  favoritesCollectionQueryOptions,
+} from "@/lib/fn/collection-query-options";
+import { getSubmissionsCount } from "@/lib/fn/submissions";
+import {
+  createWorkspace,
+  deleteWorkspace,
+  getWorkspaces,
+  updateWorkspace,
+} from "@/lib/fn/workspaces";
 import { HOTKEYS } from "@/lib/hotkeys";
 import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/middleware/auth";
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
+import type { QueryClient } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Outlet, useLocation, useParams, useRouter } from "@tanstack/react-router";
+import { createClientOnlyFn } from "@tanstack/react-start";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type * as React from "react";
@@ -151,7 +175,49 @@ const LazyCustomizeSidebar = lazy(() =>
   })),
 );
 
+const initCollectionsOnClient = createClientOnlyFn((queryClient: QueryClient) => {
+  if (isCollectionsInitialized()) return;
+
+  initCollections(queryClient, {
+    getWorkspacesWithForms: async () => {
+      const result = await getWorkspaces();
+      // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
+      return { workspaces: result.workspaces.map((ws: any) => ({ ...ws, forms: [] })) };
+    },
+    getFormListings: async () => await getFormListingsServer(),
+    getFormDetail: async (formId: string) => {
+      const { getFormbyIdQueryOption } = await import("@/lib/fn/forms");
+      const result = await queryClient.ensureQueryData(getFormbyIdQueryOption(formId));
+      // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
+      return (result as { form?: any })?.form ?? null;
+    },
+    getFavorites: async () => await getFavoritesServer(),
+    getVersionList: async (formId: string) => {
+      const result = await getFormVersions({ data: { formId } });
+      return result.versions;
+    },
+    getVersionContent: async (versionId: string) => {
+      const result = await getFormVersionContent({ data: { versionId } });
+      return result.version;
+    },
+    getSubmissionsCount: async (formId: string) => {
+      const result = await getSubmissionsCount({ data: { formId } });
+      return { total: result.total };
+    },
+    createWorkspace: async (data) => await createWorkspace({ data: data }),
+    updateWorkspace: async (data) => await updateWorkspace({ data: data }),
+    deleteWorkspace: async (data) => await deleteWorkspace({ data: data }),
+    createForm: async (data) => await createForm({ data: data }),
+    updateForm: async (data) => await updateForm({ data: data }),
+    deleteForm: async (data) => await deleteForm({ data: data }),
+    addFavorite: async (data) => await addFavorite({ data }),
+    removeFavorite: async (data) => await removeFavorite({ data }),
+  });
+});
+
 const AuthLayout = () => {
+  const queryClient = useQueryClient();
+  initCollectionsOnClient(queryClient);
   const { pathname } = useLocation();
   const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
 
@@ -171,18 +237,22 @@ export const Route = createFileRoute("/_authenticated")({
   server: {
     middleware: [authMiddleware],
   },
-  component: AuthLayout,
   loader: async ({ context }) => {
-    const { activeOrg, orgsData } = await context.queryClient.ensureQueryData({
-      ...orgDataForLayoutQueryOptions(),
-      revalidateIfStale: true,
-    });
-    if (typeof window !== "undefined") {
-      await Promise.all([workspaceCollection.preload(), formCollection.preload()]);
-    }
-    return { activeOrg, orgsData };
+    const [orgResult] = await Promise.all([
+      context.queryClient.ensureQueryData({
+        ...orgDataForLayoutQueryOptions(),
+        revalidateIfStale: true,
+      }),
+      // Prefetch collection data using the same query keys TanStack DB will use.
+      // This seeds the query cache so collections find warm data on init.
+      context.queryClient.ensureQueryData(workspacesCollectionQueryOptions()),
+      context.queryClient.ensureQueryData(formListingsCollectionQueryOptions()),
+      context.queryClient.ensureQueryData(favoritesCollectionQueryOptions()),
+    ]);
+    return { activeOrg: orgResult.activeOrg, orgsData: orgResult.orgsData };
   },
   staleTime: 500000, // 500 seconds
+  component: AuthLayout,
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
   notFoundComponent: NotFound,
@@ -201,7 +271,14 @@ const AuthLayoutContent = () => {
   const { activeSidebar } = useEditorSidebar();
 
   const isFormBuilder = pathname.includes("/form-builder/");
-  const showEditorSidebar = !!(activeSidebar && isFormBuilder && formId);
+  // "history" and "customize" sidebars are edit-route-only (derived guard replaces useEffect cleanup)
+  const isEditOnlySidebar = activeSidebar === "history" || activeSidebar === "customize";
+  const showEditorSidebar = !!(
+    activeSidebar &&
+    isFormBuilder &&
+    formId &&
+    (!isEditOnlySidebar || isEditRoute)
+  );
   const isDistractionHeaderHidden = isEditRoute && !isHeaderVisible;
 
   // Right sidebar width state (persisted, like left sidebar)
@@ -341,7 +418,6 @@ const AppSidebar = () => {
   const signOutMutation = useMutation(
     auth.signOut.mutationOptions({
       onSuccess: () => {
-        localStorage.removeItem("electricAuthToken");
         router.invalidate();
         router.navigate({ to: "/" });
       },
@@ -401,7 +477,7 @@ const AppSidebar = () => {
                   <SidebarItem
                     prefix={<HomeIcon className="size-[18px] text-muted-foreground" />}
                     label="All"
-                    to="/dashboard"
+                    linkOptions={{ to: "/dashboard" }}
                     isActive={location.pathname === "/dashboard"}
                   />
                   {/* </SidebarMenuButton> */}
@@ -959,13 +1035,13 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
   // Get user's favorite forms
   const favoriteForms = useFavoriteForms(session?.user?.id);
 
-  // Determine if Electric has synced
+  // Determine if data has loaded
   const isLoading = workspacesLoading || formsLoading;
-  const isElectricReady = !isLoading && workspacesData !== undefined && formsData !== undefined;
+  const isDataReady = !isLoading && workspacesData !== undefined && formsData !== undefined;
 
   // Combine workspaces with their forms, filtered by active organization
   const workspaces: WorkspaceWithForms[] = useMemo(() => {
-    if (!activeOrgId || !isElectricReady) return [];
+    if (!activeOrgId || !isDataReady) return [];
 
     const formsByWorkspace = (formsData || []).reduce(
       (acc, form) => {
@@ -998,7 +1074,7 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
         },
       ),
     }));
-  }, [workspacesData, formsData, activeOrgId, isElectricReady, sortMode]);
+  }, [workspacesData, formsData, activeOrgId, isDataReady, sortMode]);
 
   // State for workspace dialogs
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -1041,7 +1117,8 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
       setDeleteConfirmName("");
       router.navigate({ to: "/dashboard" });
     } catch (error) {
-      console.error("Failed to delete workspace:", error);
+      const message = error instanceof Error ? error.message : "Failed to delete workspace";
+      toast.error(message);
     }
   }, [workspaceToDelete, deleteConfirmName, router]);
 
@@ -1124,10 +1201,6 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
         {favoriteForms.length > 0 && (
           <SidebarSection label="Favorites" initialOpen action={<></>}>
             {favoriteForms.map((form) => {
-              const favTo =
-                form.status === "published"
-                  ? `/workspace/${form.workspaceId}/form-builder/${form.id}/submissions`
-                  : `/workspace/${form.workspaceId}/form-builder/${form.id}/edit`;
               const isFavActive = location.pathname.startsWith(
                 `/workspace/${form.workspaceId}/form-builder/${form.id}`,
               );
@@ -1135,7 +1208,13 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
                 <SidebarItem
                   key={form.id}
                   label={form.title || "Untitled"}
-                  to={favTo}
+                  linkOptions={{
+                    to:
+                      form.status === "published"
+                        ? "/workspace/$workspaceId/form-builder/$formId/submissions"
+                        : "/workspace/$workspaceId/form-builder/$formId/edit",
+                    params: { workspaceId: form.workspaceId, formId: form.id },
+                  }}
                   isActive={isFavActive}
                   prefix={
                     <ThemedFormIcon

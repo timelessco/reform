@@ -163,7 +163,6 @@ const Draggable = (props: PlateElementProps) => {
 
   const { isAboutToDrag, isDragging, nodeRef, previewRef, handleRef } = useDraggable({
     element,
-    preview: { disable: true },
     onDropHandler: (_, { dragItem }) => {
       const id = (dragItem as { id: string[] | string }).id;
 
@@ -178,37 +177,29 @@ const Draggable = (props: PlateElementProps) => {
   const isInTable = path.length === 4;
 
   const [previewTop, setPreviewTop] = React.useState(0);
-  // Track previous states to detect transitions
-  const wasDraggingRef = React.useRef(isDragging);
-  const wasAboutToDragRef = React.useRef(isAboutToDrag);
 
   const resetPreview = React.useCallback(() => {
-    const previewEl = previewRef.current;
-    if (previewEl) {
-      previewEl.replaceChildren();
-      previewEl.classList.add("hidden");
+    const el = previewRef.current;
+    if (el) {
+      el.replaceChildren();
+      el.classList.add("hidden");
     }
   }, [previewRef]);
 
-  // Reset preview only when transitioning from dragging to not dragging
+  // Clean up preview when drag ends
   React.useEffect(() => {
-    const justStoppedDragging = !isDragging && wasDraggingRef.current;
-    wasDraggingRef.current = isDragging;
-
-    if (justStoppedDragging) {
+    if (!isDragging) {
       resetPreview();
     }
-  }, [isDragging, resetPreview]);
+    // eslint-disable-next-line eslint-plugin-react-hooks/exhaustive-deps -- only on isDragging change
+  }, [isDragging]);
 
-  // Show preview only when transitioning to about-to-drag state
+  // Make preview visible just before drag starts so HTML5 backend can capture it
   React.useEffect(() => {
-    const justStartedAboutToDrag = isAboutToDrag && !wasAboutToDragRef.current;
-    wasAboutToDragRef.current = isAboutToDrag;
-
-    if (justStartedAboutToDrag) {
+    if (isAboutToDrag) {
       previewRef.current?.classList.remove("opacity-0");
     }
-    // eslint-disable-next-line eslint-plugin-react-hooks/exhaustive-deps -- previewRef.current is a mutable ref
+    // eslint-disable-next-line eslint-plugin-react-hooks/exhaustive-deps -- only on isAboutToDrag change
   }, [isAboutToDrag]);
 
   const handleAddBlock = React.useCallback(
@@ -633,28 +624,20 @@ const calculatePreviewTop = (
   const firstDomNode = editor.api.toDOMNode(firstSelectedChild);
 
   if (!firstDomNode) return 0;
-  // Get editor's top padding
+
   const editorPaddingTop = Number(window.getComputedStyle(editable).paddingTop.replace("px", ""));
 
-  // Calculate distance from first selected node to editor top
   const firstNodeToEditorDistance =
     firstDomNode.getBoundingClientRect().top -
     editable.getBoundingClientRect().top -
     editorPaddingTop;
 
-  // Get margin top of first selected node
-  const firstMarginTopString = window.getComputedStyle(firstDomNode).marginTop;
-  const marginTop = Number(firstMarginTopString.replace("px", ""));
+  const marginTop = Number(window.getComputedStyle(firstDomNode).marginTop.replace("px", ""));
 
-  // Calculate distance from current node to editor top
   const currentToEditorDistance =
     child.getBoundingClientRect().top - editable.getBoundingClientRect().top - editorPaddingTop;
 
-  const currentMarginTopString = window.getComputedStyle(child).marginTop;
-  const currentMarginTop = Number(currentMarginTopString.replace("px", ""));
+  const currentMarginTop = Number(window.getComputedStyle(child).marginTop.replace("px", ""));
 
-  const previewElementsTopDistance =
-    currentToEditorDistance - firstNodeToEditorDistance + marginTop - currentMarginTop;
-
-  return previewElementsTopDistance;
+  return currentToEditorDistance - firstNodeToEditorDistance + marginTop - currentMarginTop;
 };

@@ -1,8 +1,7 @@
 /* eslint-disable react-hooks/refs -- Ref usage for color picker component refs */
 
 import { useComposedRef } from "@udecode/cn";
-// @ts-expect-error - lodash debounce types issue
-import debounce from "lodash/debounce";
+import { useDebouncedCallback } from "@tanstack/react-pacer";
 import { EraserIcon, PlusIcon } from "@/components/ui/icons";
 import { useEditorRef, useEditorSelector } from "platejs/react";
 import React from "react";
@@ -79,7 +78,7 @@ export const FontColorToolbarButton = ({
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
       <DropdownMenuTrigger render={<ToolbarButton pressed={open} tooltip={tooltip} />}>
-        {children}
+        {children as React.ReactNode}
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="start">
@@ -195,8 +194,7 @@ const ColorCustom = ({
     [customColor, customColors],
   );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const updateCustomColorDebounced = React.useCallback(debounce(updateCustomColor, 100), []);
+  const updateCustomColorDebounced = useDebouncedCallback(updateCustomColor, { wait: 100 });
 
   const handleColorInputChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -298,7 +296,7 @@ const ColorDropdownMenuItem = ({
         className,
       )}
       style={{ backgroundColor: value }}
-      onSelect={(e: Event) => {
+      onSelect={(e) => {
         e.preventDefault();
         updateColor(value);
       }}

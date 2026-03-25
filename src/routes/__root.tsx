@@ -25,6 +25,7 @@ const RootDocument = ({ children }: { children: React.ReactNode }) => (
   <html lang="en" suppressHydrationWarning>
     <head>
       {/* Theme init script - static trusted content, not user input */}
+      {/** biome-ignore lint/security/noDangerouslySetInnerHtml: Needed for theme initialization */}
       <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       <HeadContent />
     </head>

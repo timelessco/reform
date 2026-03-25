@@ -31,7 +31,7 @@ import {
   TrashIcon,
 } from "@/components/ui/icons";
 import { SidebarSection } from "@/components/ui/sidebar-section";
-import { createFormLocal } from "@/db-collections/form.collections";
+import { createFormLocal } from "@/db-collections/collections";
 import { cn } from "@/lib/utils";
 import { useLocation, useRouter } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
@@ -39,13 +39,13 @@ import { useCallback, useState } from "react";
 export type WorkspaceWithForms = {
   id: string;
   organizationId: string;
-  createdByUserId?: string;
+  createdByUserId?: string | null;
   name: string;
   createdAt: string;
   updatedAt: string;
   forms: Array<{
     id: string;
-    title: string;
+    title: string | null;
     updatedAt: string;
     workspaceId: string;
     icon?: string | null;
@@ -224,9 +224,12 @@ const WorkspaceFormMinimal = ({
 }: WorkspaceFormMinimalProps) => {
   const location = useLocation();
   const isPublishedForm = form.status === "published";
-  const to = isPublishedForm
-    ? `/workspace/${workspaceId}/form-builder/${form.id}/submissions`
-    : `/workspace/${workspaceId}/form-builder/${form.id}/edit`;
+  const linkOptions = {
+    to: isPublishedForm
+      ? "/workspace/$workspaceId/form-builder/$formId/submissions"
+      : "/workspace/$workspaceId/form-builder/$formId/edit",
+    params: { workspaceId, formId: form.id },
+  } as const;
   const isActive = location.pathname.startsWith(
     `/workspace/${workspaceId}/form-builder/${form.id}`,
   );
@@ -240,7 +243,7 @@ const WorkspaceFormMinimal = ({
   return (
     <ContextMenu>
       <ContextMenuTrigger render={<div />}>
-        <SidebarItem label={label} to={to} isActive={isActive} prefix={prefix}>
+        <SidebarItem label={label} linkOptions={linkOptions} isActive={isActive} prefix={prefix}>
           {showCount && (
             <span className="text-[11px] text-muted-foreground tabular-nums shrink-0 tracking-5 font-case">
               {submissionCount}

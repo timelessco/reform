@@ -25,8 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { toggleFavoriteLocal } from "@/db-collections/favorite.collection";
-import { updateFormStatus } from "@/db-collections/form.collections";
+import { toggleFavoriteLocal, updateFormStatus } from "@/db-collections/collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { discardChanges, publishForm, useHasUnpublishedChanges } from "@/hooks/use-form-versions";
 import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
@@ -36,7 +35,7 @@ import { cn, parseTimestampAsUTC } from "@/lib/utils";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { Link, useLocation, useNavigate, useParams } from "@tanstack/react-router";
 import { format, formatDistanceToNow } from "date-fns";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { LogoToggle } from "./logo";
 import { useSidebarSafe } from "./sidebar";
@@ -108,13 +107,6 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
       openShare();
     }
   };
-
-  // Close editor-only sidebars when navigating away from the edit route
-  useEffect(() => {
-    if (!isEditRoute && (activeSidebar === "history" || activeSidebar === "customize")) {
-      closeSidebar();
-    }
-  }, [isEditRoute, activeSidebar, closeSidebar]);
 
   // Single source: Electric live data (useForm)
   const { data: workspace } = useWorkspace(workspaceId);

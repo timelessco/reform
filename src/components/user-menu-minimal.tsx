@@ -59,7 +59,6 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
   const signOutMutation = useMutation(
     auth.signOut.mutationOptions({
       onSuccess: () => {
-        localStorage.removeItem("electricAuthToken");
         router.invalidate();
         router.navigate({ to: "/" });
       },

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { NotFound } from "@/components/ui/not-found";
 import { useFormVersionContent } from "@/hooks/use-form-versions";
-import { formCollection } from "@/db-collections/form.collections";
+import { getFormListings } from "@/db-collections/collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
 import { getFormStatus } from "@/lib/fn/forms";
@@ -42,6 +42,7 @@ const DesignPage = () => {
   const formatDateTime = (dateString: string) => format(new Date(dateString), "MMM d, h:mm a");
 
   const versionContent = versionData?.content as Value | undefined;
+  const versionCustomization = versionData?.customization as Record<string, unknown> | undefined;
 
   return (
     <div className="flex flex-1 min-h-0 overflow-hidden">
@@ -91,10 +92,11 @@ const DesignPage = () => {
               }
             >
               <EditorApp
-                key={isViewingVersion ? `version-${selectedVersionId}` : formId}
+                key={formId}
                 formId={formId}
                 workspaceId={workspaceId}
                 versionContent={isViewingVersion ? versionContent : undefined}
+                versionCustomization={isViewingVersion ? versionCustomization : undefined}
                 readOnly={isViewingVersion}
               />
             </Suspense>
@@ -139,7 +141,7 @@ export const Route = createFileRoute(
 
     try {
       // Try collection cache first (instant, no network)
-      const cachedForm = formCollection.state.get(params.formId);
+      const cachedForm = getFormListings().get(params.formId);
       let status = cachedForm?.status as FormStatus | undefined;
 
       // Fall back to server fetch if not in collection yet
@@ -160,7 +162,7 @@ export const Route = createFileRoute(
       // On error, allow edit route to load
     }
   },
-  ssr: false,
+  ssr: "data-only",
   component: DesignPage,
   pendingComponent: () => <div>Loading...</div>,
   errorComponent: ErrorBoundary,

@@ -1,7 +1,13 @@
 import { createTransaction } from "@tanstack/react-db";
 import { logger } from "@/lib/utils";
-import { localFormCollection, formCollection } from "@/db-collections/form.collections";
-import { workspaceCollection, createWorkspaceLocal } from "@/db-collections/workspace.collection";
+import { localFormCollection } from "@/db-collections/local-form.collection";
+import {
+  getFormListings,
+  getWorkspaces,
+  createWorkspaceLocal,
+  getQueryClient,
+} from "@/db-collections/collections";
+import type { FormListing } from "@/db-collections/collections";
 import { createForm } from "@/lib/fn/forms";
 
 /**
@@ -17,8 +23,8 @@ type SyncResult = {
  *
  * For each local form, creates a transaction that:
  * - mutationFn: calls createForm() (creates form with all settings in a single row),
- *   then awaits txid for Electric sync.
- * - tx.mutate(): optimistically inserts form into formCollection, deletes from local collection.
+ *   then invalidates queries for sync.
+ * - tx.mutate(): optimistically inserts form into formListings, deletes from local collection.
  *
  * @param organizationId - The organization ID to sync forms to
  */
@@ -42,16 +48,16 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
     }
 
     // Get existing workspaces or create one
-    const existingWorkspaces = await workspaceCollection.toArrayWhenReady();
+    const existingWorkspaces = Array.from((await getWorkspaces().stateWhenReady()).values());
     const orgWorkspaces = existingWorkspaces.filter((ws) => ws.organizationId === organizationId);
 
     let targetWorkspaceId: string;
     if (orgWorkspaces.length === 0) {
-      logger("No workspace found, creating via Electric collection...");
+      logger("No workspace found, creating via collection...");
       try {
         const newWorkspace = await createWorkspaceLocal(organizationId, "My workspace");
         targetWorkspaceId = newWorkspace.id;
-        logger(`Created workspace ${targetWorkspaceId} via Electric collection`);
+        logger(`Created workspace ${targetWorkspaceId} via collection`);
       } catch (wsError) {
         console.error("Failed to create workspace:", wsError);
         throw wsError;
@@ -113,18 +119,17 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
 
         const tx = createTransaction({
           mutationFn: async () => {
-            const createResult = await createForm({
+            await createForm({
               data: newFormData,
             });
-            const txid = (createResult as { txid: number }).txid;
 
-            // Keep optimistic overlay alive until Electric sync confirms the data.
-            await formCollection.utils.awaitTxId(txid);
+            // Invalidate queries so the new form appears in listings
+            await getQueryClient().invalidateQueries({ queryKey: ["form-listings"] });
           },
         });
 
         tx.mutate(() => {
-          formCollection.insert(newFormData);
+          getFormListings().insert(newFormData as unknown as FormListing);
           localFormCollection.delete(localForm.id);
         });
 

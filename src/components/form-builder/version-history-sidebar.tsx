@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { useFormVersions, restoreVersion } from "@/hooks/use-form-versions";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
-import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
 import {
@@ -29,6 +28,37 @@ import {
 
 const stopPropagation = (e: React.MouseEvent) => e.stopPropagation();
 
+const getPublisherInfo = (
+  publishedBy?: { id: string; name: string | null; image: string | null } | null,
+) => {
+  if (!publishedBy) {
+    return { name: "Unknown", image: undefined, initial: "?" };
+  }
+  return {
+    name: publishedBy.name ?? "Unknown",
+    image: publishedBy.image ?? undefined,
+    initial: publishedBy.name?.charAt(0) ?? "?",
+  };
+};
+
+const formatRelativeTime = (dateString: string) => {
+  const distance = formatDistanceToNow(new Date(dateString), {
+    addSuffix: false,
+  });
+  if (distance.includes("less than") || distance.includes("second")) return "Now";
+  return (
+    distance
+      .replace(/ minutes?/, "m")
+      .replace(/ hours?/, "h")
+      .replace(/ days?/, "d")
+      .replace(/ months?/, "mo")
+      .replace(/ years?/, "y")
+      .replace(/about /, "")
+      .replace(/over /, "")
+      .replace(/almost /, "") + " ago"
+  );
+};
+
 interface VersionHistorySidebarProps {
   formId: string;
 }
@@ -37,8 +67,6 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
   const { data: versions } = useFormVersions(formId);
   const { closeSidebar } = useEditorSidebar();
   const { selectedVersionId, selectVersion, exitVersionView } = useVersionHistorySidebar();
-  const { data: sessionData } = useSession();
-  const currentUser = sessionData?.user;
   const [isRestoring, setIsRestoring] = useState(false);
   const [restoreConfirmVersionId, setRestoreConfirmVersionId] = useState<string | null>(null);
 
@@ -46,8 +74,7 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
     async (versionId: string) => {
       setIsRestoring(true);
       try {
-        const tx = restoreVersion(formId, versionId);
-        await tx.isPersisted.promise;
+        await restoreVersion(formId, versionId);
         toast.success("Version restored. Publish again to make it live.");
         exitVersionView();
       } catch {
@@ -73,39 +100,6 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
   const versionList = versions ?? [];
 
   const effectiveVersionId = selectedVersionId ?? versionList[0]?.id ?? null;
-
-  const getPublisherInfo = (publishedByUserId: string) => {
-    if (currentUser && publishedByUserId === currentUser.id) {
-      return {
-        name: currentUser.name ?? "You",
-        image: currentUser.image ?? undefined,
-        initial: currentUser.name?.charAt(0) ?? "?",
-      };
-    }
-    return {
-      name: publishedByUserId.slice(0, 8),
-      image: undefined,
-      initial: publishedByUserId.charAt(0).toUpperCase(),
-    };
-  };
-
-  const formatRelativeTime = (dateString: string) => {
-    const distance = formatDistanceToNow(new Date(dateString), {
-      addSuffix: false,
-    });
-    if (distance.includes("less than") || distance.includes("second")) return "Now";
-    return (
-      distance
-        .replace(/ minutes?/, "m")
-        .replace(/ hours?/, "h")
-        .replace(/ days?/, "d")
-        .replace(/ months?/, "mo")
-        .replace(/ years?/, "y")
-        .replace(/about /, "")
-        .replace(/over /, "")
-        .replace(/almost /, "") + " ago"
-    );
-  };
 
   return (
     <Sidebar
@@ -141,7 +135,7 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
 
         <div className="flex flex-col gap-1">
           {versionList.map((version, index) => {
-            const publisher = getPublisherInfo(version.publishedByUserId);
+            const publisher = getPublisherInfo(version.publishedBy);
             const isSelected = effectiveVersionId === version.id;
             const isCurrent = index === 0;
 

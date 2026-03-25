@@ -14,7 +14,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsIndicator, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { formCollection, localFormCollection } from "@/db-collections/form.collections";
+import { getFormListings } from "@/db-collections/collections";
+import { localFormCollection } from "@/db-collections/local-form.collection";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
 import { FONT_REGISTRY } from "@/lib/font-registry";
@@ -97,8 +98,9 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
   const localFormResult = useLocalForm(isLocal ? formId : undefined);
   const formResult = isLocal ? localFormResult : cloudForm;
   const formDoc = formResult.data?.[0] ?? null;
-  const collection = isLocal ? localFormCollection : formCollection;
-
+  const collection = (isLocal ? localFormCollection : getFormListings()) as ReturnType<
+    typeof getFormListings
+  >;
   const customization = useMemo(
     () => (formDoc?.customization ?? {}) as Record<string, string>,
     [formDoc?.customization],

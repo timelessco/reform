@@ -1,9 +1,14 @@
-import { count, eq, or, useLiveQuery } from "@tanstack/react-db";
+import { eq, or, useLiveQuery } from "@tanstack/react-db";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { favoriteCollection } from "@/db-collections/favorite.collection";
-import { formCollection, localFormCollection } from "@/db-collections/form.collections";
-import { submissionCollection } from "@/db-collections/submission.collections";
-import { workspaceCollection } from "@/db-collections/workspace.collection";
+import {
+  isInitialized,
+  getWorkspaces,
+  getFormListings,
+  getFavorites,
+  enrichFormDetail,
+} from "@/db-collections/collections";
+import { localFormCollection } from "@/db-collections/local-form.collection";
 
 /**
  * Custom hook for real-time workspaces sync filtered by organization ID.
@@ -11,9 +16,9 @@ import { workspaceCollection } from "@/db-collections/workspace.collection";
 export const useOrgWorkspaces = (organizationId?: string) =>
   useLiveQuery(
     (q) => {
-      if (!organizationId) return undefined;
+      if (!organizationId || !isInitialized()) return undefined;
       return q
-        .from({ ws: workspaceCollection })
+        .from({ ws: getWorkspaces() })
         .where(({ ws }) => eq(ws.organizationId, organizationId))
         .select(({ ws }) => ({
           id: ws.id,
@@ -33,9 +38,8 @@ export const useOrgWorkspaces = (organizationId?: string) =>
 export const useWorkspace = (workspaceId?: string) => {
   const result = useLiveQuery(
     (q) => {
-      if (!workspaceId) return undefined;
-      let query = q.from({ ws: workspaceCollection });
-      query = query.where(({ ws }) => eq(ws.id, workspaceId));
+      if (!workspaceId || !isInitialized()) return undefined;
+      const query = q.from({ ws: getWorkspaces() }).where(({ ws }) => eq(ws.id, workspaceId));
       return query.select(({ ws }) => ({
         id: ws.id,
         organizationId: ws.organizationId,
@@ -56,9 +60,9 @@ export const useWorkspace = (workspaceId?: string) => {
 export const useFormsForWorkspace = (workspaceId?: string) =>
   useLiveQuery(
     (q) => {
-      if (!workspaceId) return undefined;
+      if (!workspaceId || !isInitialized()) return undefined;
       return q
-        .from({ form: formCollection })
+        .from({ form: getFormListings() })
         .where(({ form }) => eq(form.workspaceId, workspaceId))
         .where(({ form }) => or(eq(form.status, "draft"), eq(form.status, "published")))
         .select(({ form }) => ({
@@ -74,41 +78,51 @@ export const useFormsForWorkspace = (workspaceId?: string) =>
 
 /**
  * Custom hook for real-time forms sync filtered by organization.
+ * The query-backed formListings collection already filters by org membership server-side.
  */
-export const useOrgForms = (organizationId?: string) =>
-  useLiveQuery(
-    (q) => {
-      if (!organizationId) return undefined;
-      return q
-        .from({ form: formCollection })
-        .innerJoin({ ws: workspaceCollection }, ({ form, ws }) => eq(form.workspaceId, ws.id))
-        .where(({ ws }) => eq(ws.organizationId, organizationId))
-        .where(({ form }) => or(eq(form.status, "draft"), eq(form.status, "published")))
-        .select(({ form }) => ({
-          id: form.id,
-          title: form.title,
-          workspaceId: form.workspaceId,
-          status: form.status,
-          updatedAt: form.updatedAt,
-          icon: form.icon,
-          customization: form.customization,
-        }))
-        .orderBy(({ form }) => form.updatedAt, "desc");
-    },
-    [organizationId],
-  );
+export const useOrgForms = (_organizationId?: string) =>
+  useLiveQuery((q) => {
+    if (!isInitialized()) return undefined;
+    return q
+      .from({ form: getFormListings() })
+      .where(({ form }) => or(eq(form.status, "draft"), eq(form.status, "published")))
+      .select(({ form }) => ({
+        id: form.id,
+        title: form.title,
+        workspaceId: form.workspaceId,
+        status: form.status,
+        updatedAt: form.updatedAt,
+        icon: form.icon,
+        customization: form.customization,
+      }))
+      .orderBy(({ form }) => form.updatedAt, "desc");
+  }, []);
 
 /**
  * Custom hook for real-time form sync by ID.
+ * Queries the unified formListings collection and enriches with full
+ * detail (content, settings, etc.) on demand via a TanStack Query.
  */
-export const useForm = (formId?: string) =>
-  useLiveQuery(
+export const useForm = (formId?: string) => {
+  const result = useLiveQuery(
     (q) => {
-      if (!formId) return undefined;
-      return q.from({ form: formCollection }).where(({ form }) => eq(form.id, formId));
+      if (!formId || !isInitialized()) return undefined;
+      return q.from({ form: getFormListings() }).where(({ form }) => eq(form.id, formId));
     },
     [formId],
   );
+
+  // Enrich with full detail if content not yet loaded
+  const needsEnrichment = !!formId && isInitialized() && result.data?.[0]?.content === undefined;
+  useQuery({
+    queryKey: ["form-enrich", formId],
+    queryFn: () => enrichFormDetail(formId as string),
+    enabled: needsEnrichment,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  return result;
+};
 
 /**
  * Custom hook for real-time local form draft sync by ID.
@@ -128,9 +142,9 @@ export const useLocalForm = (formId?: string) =>
 export const useFavorites = (userId?: string) =>
   useLiveQuery(
     (q) => {
-      if (!userId) return undefined;
+      if (!userId || !isInitialized()) return undefined;
       return q
-        .from({ fav: favoriteCollection })
+        .from({ fav: getFavorites() })
         .where(({ fav }) => eq(fav.userId, userId))
         .select(({ fav }) => ({
           id: fav.id,
@@ -148,9 +162,9 @@ export const useFavorites = (userId?: string) =>
 export const useIsFavorite = (userId?: string, formId?: string) => {
   const { data } = useLiveQuery(
     (q) => {
-      if (!userId || !formId) return undefined;
+      if (!userId || !formId || !isInitialized()) return undefined;
       return q
-        .from({ fav: favoriteCollection })
+        .from({ fav: getFavorites() })
         .where(({ fav }) => eq(fav.userId, userId))
         .where(({ fav }) => eq(fav.formId, formId))
         .select(({ fav }) => ({ id: fav.id }));
@@ -162,74 +176,73 @@ export const useIsFavorite = (userId?: string, formId?: string) => {
 
 /**
  * Get user's favorite forms with full form data.
+ * Fetches favorites and form listings separately and combines them.
  */
 export const useFavoriteForms = (userId?: string) => {
-  const { data } = useLiveQuery(
-    (q) => {
-      if (!userId) return undefined;
-      return q
-        .from({ fav: favoriteCollection })
-        .innerJoin({ form: formCollection }, ({ fav, form }) => eq(fav.formId, form.id))
-        .where(({ fav }) => eq(fav.userId, userId))
-        .where(({ form }) => or(eq(form.status, "draft"), eq(form.status, "published")))
-        .select(({ form }) => ({
-          id: form.id,
-          title: form.title,
-          workspaceId: form.workspaceId,
-          status: form.status,
-          updatedAt: form.updatedAt,
-          icon: form.icon,
-          customization: form.customization,
-        }));
-    },
-    [userId],
-  );
-  return data ?? [];
+  const { data: favs } = useFavorites(userId);
+  const { data: allForms } = useLiveQuery((q) => {
+    if (!isInitialized()) return undefined;
+    return q
+      .from({ form: getFormListings() })
+      .where(({ form }) => or(eq(form.status, "draft"), eq(form.status, "published")))
+      .select(({ form }) => ({
+        id: form.id,
+        title: form.title,
+        workspaceId: form.workspaceId,
+        status: form.status,
+        updatedAt: form.updatedAt,
+        icon: form.icon,
+        customization: form.customization,
+      }));
+  }, []);
+
+  return useMemo(() => {
+    if (!favs || !allForms) return [];
+    const favFormIds = new Set(favs.map((f) => f.formId));
+    return allForms.filter((f) => favFormIds.has(f.id));
+  }, [favs, allForms]);
 };
 
 /**
  * Custom hook for archived (trashed) forms with deletedAt field.
  */
 export const useArchivedForms = () =>
-  useLiveQuery(
-    (q) =>
-      q
-        .from({ form: formCollection })
-        .where(({ form }) => eq(form.status, "archived"))
-        .select(({ form }) => ({
-          id: form.id,
-          title: form.title,
-          workspaceId: form.workspaceId,
-          status: form.status,
-          updatedAt: form.updatedAt,
-          deletedAt: form.deletedAt,
-        })),
-    [],
-  );
+  useLiveQuery((q) => {
+    if (!isInitialized()) return undefined;
+    return q
+      .from({ form: getFormListings() })
+      .where(({ form }) => eq(form.status, "archived"))
+      .select(({ form }) => ({
+        id: form.id,
+        title: form.title,
+        workspaceId: form.workspaceId,
+        status: form.status,
+        updatedAt: form.updatedAt,
+        deletedAt: form.deletedAt,
+      }));
+  }, []);
 
 /**
- * Custom hook for real-time submission counts by formId.
- * Returns a Map<formId, count> for efficient lookups.
+ * Returns a Map of formId → submission count derived from form listings.
  */
 export const useSubmissionCounts = () => {
-  const { data } = useLiveQuery(
-    (q) =>
-      q
-        .from({ sub: submissionCollection })
-        .groupBy(({ sub }) => sub.formId)
-        .select(({ sub }) => ({
-          formId: sub.formId,
-          count: count(sub.id),
-        })),
-    [],
-  );
+  const { data: allForms } = useLiveQuery((q) => {
+    if (!isInitialized()) return undefined;
+    return q.from({ form: getFormListings() }).select(({ form }) => ({
+      id: form.id,
+      submissionCount: form.submissionCount,
+    }));
+  }, []);
 
   return useMemo(() => {
-    if (!data) return new Map<string, number>();
-    const counts = new Map<string, number>();
-    for (const row of data) {
-      counts.set(row.formId, row.count);
+    const map = new Map<string, number>();
+    if (allForms) {
+      for (const form of allForms) {
+        if (form.submissionCount > 0) {
+          map.set(form.id, form.submissionCount);
+        }
+      }
     }
-    return counts;
-  }, [data]);
+    return map;
+  }, [allForms]);
 };
