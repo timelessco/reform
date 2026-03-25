@@ -1202,8 +1202,9 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
             {favoriteForms.map((form) => {
               const favTo =
                 form.status === "published"
-                  ? `/workspace/${form.workspaceId}/form-builder/${form.id}/submissions`
-                  : `/workspace/${form.workspaceId}/form-builder/${form.id}/edit`;
+                  ? "/workspace/$workspaceId/form-builder/$formId/submissions"
+                  : "/workspace/$workspaceId/form-builder/$formId/edit";
+              const favParams = { workspaceId: form.workspaceId, formId: form.id };
               const isFavActive = location.pathname.startsWith(
                 `/workspace/${form.workspaceId}/form-builder/${form.id}`,
               );
@@ -1212,6 +1213,7 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
                   key={form.id}
                   label={form.title || "Untitled"}
                   to={favTo}
+                  params={favParams}
                   isActive={isFavActive}
                   prefix={
                     <ThemedFormIcon

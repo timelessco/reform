@@ -5,6 +5,7 @@ import { SidebarMenuButton } from "./ui/sidebar";
 
 export interface SidebarItemProps {
   to?: string;
+  params?: Record<string, string>;
   label: string;
   isNested?: boolean;
   isActive?: boolean;
@@ -14,6 +15,7 @@ export interface SidebarItemProps {
 
 export const SidebarItem = ({
   to,
+  params,
   label,
   isActive,
   onClick,
@@ -21,7 +23,7 @@ export const SidebarItem = ({
   children,
 }: SidebarItemProps & { children?: React.ReactNode }) => {
   const Component: React.ElementType = to ? Link : SidebarMenuButton;
-  const componentProps = to ? { to } : { type: "button" as const };
+  const componentProps = to ? { to, params } : { type: "button" as const };
 
   return (
     <Component

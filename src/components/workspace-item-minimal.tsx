@@ -225,8 +225,9 @@ const WorkspaceFormMinimal = ({
   const location = useLocation();
   const isPublishedForm = form.status === "published";
   const to = isPublishedForm
-    ? `/workspace/${workspaceId}/form-builder/${form.id}/submissions`
-    : `/workspace/${workspaceId}/form-builder/${form.id}/edit`;
+    ? "/workspace/$workspaceId/form-builder/$formId/submissions"
+    : "/workspace/$workspaceId/form-builder/$formId/edit";
+  const routeParams = { workspaceId, formId: form.id };
   const isActive = location.pathname.startsWith(
     `/workspace/${workspaceId}/form-builder/${form.id}`,
   );
@@ -240,7 +241,7 @@ const WorkspaceFormMinimal = ({
   return (
     <ContextMenu>
       <ContextMenuTrigger render={<div />}>
-        <SidebarItem label={label} to={to} isActive={isActive} prefix={prefix}>
+        <SidebarItem label={label} to={to} params={routeParams} isActive={isActive} prefix={prefix}>
           {showCount && (
             <span className="text-[11px] text-muted-foreground tabular-nums shrink-0 tracking-5 font-case">
               {submissionCount}
