@@ -13,6 +13,20 @@ export const getOrgDataForLayout = createServerFn({ method: "GET" }).handler(asy
     auth.api.getFullOrganization({ headers }),
     auth.api.listOrganizations({ headers }),
   ]);
+
+  // If no active org but user has orgs, activate the first one server-side
+  // This avoids client-side setActive loops (e.g. after magic link login)
+  if (!activeOrg && orgsData && orgsData.length > 0) {
+    const activated = await auth.api.setActiveOrganization({
+      headers,
+      body: { organizationId: orgsData[0].id },
+    });
+    if (activated) {
+      const freshActiveOrg = await auth.api.getFullOrganization({ headers });
+      return { activeOrg: freshActiveOrg, orgsData };
+    }
+  }
+
   return { activeOrg, orgsData };
 });
 

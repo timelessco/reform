@@ -34,7 +34,7 @@ const RootDocument = ({ children }: { children: React.ReactNode }) => (
       className="min-h-screen bg-background text-foreground antialiased font-sans"
     >
       <HotkeysProvider defaultOptions={{ hotkey: { preventDefault: true } }}>
-        <ThemeProvider defaultTheme="light">
+        <ThemeProvider defaultTheme="system">
           {children}
           <Toaster richColors />
           {process.env.NODE_ENV === "development" && (

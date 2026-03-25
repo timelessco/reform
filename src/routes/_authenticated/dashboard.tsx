@@ -16,14 +16,14 @@ import { NotFound } from "@/components/ui/not-found";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   createFormLocal,
-  duplicateFormById,
   updateFormStatus,
   createWorkspaceLocal,
 } from "@/db-collections/collections";
+import { useDuplicateForm } from "@/hooks/use-duplicate-form";
 import { useOrgForms, useOrgWorkspaces } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
 import { clearLocalDraftIds } from "@/lib/local-draft";
-import { syncLocalDataToCloud } from "@/lib/sync";
+import { hasLocalDataToSync, syncLocalDataToCloud } from "@/lib/sync";
 import { parseTimestampAsUTC } from "@/lib/utils";
 import { createFileRoute, Link, useLoaderData, useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
@@ -40,11 +40,53 @@ import {
 import { FolderPlus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-
 const FORMS_PER_PAGE = 10;
+
+const SYNC_MESSAGES = [
+  "Syncing your local forms to the cloud",
+  "Uploading form data",
+  "Almost there",
+];
+
+const SyncOverlay = () => {
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [dotCount, setDotCount] = useState(0);
+
+  useEffect(() => {
+    const dotInterval = setInterval(() => {
+      setDotCount((d) => (d + 1) % 4);
+    }, 500);
+    return () => clearInterval(dotInterval);
+  }, []);
+
+  useEffect(() => {
+    const messageInterval = setInterval(() => {
+      setMessageIndex((i) => (i + 1) % SYNC_MESSAGES.length);
+    }, 2500);
+    return () => clearInterval(messageInterval);
+  }, []);
+
+  const dots = ".".repeat(dotCount);
+
+  return (
+    <div className="flex flex-col items-center justify-center py-20 gap-4">
+      <Loader2Icon className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="h-6 overflow-hidden">
+        <p
+          key={messageIndex}
+          className="text-sm text-muted-foreground animate-in slide-in-from-bottom-2 fade-in duration-300"
+        >
+          <span>{SYNC_MESSAGES[messageIndex]}</span>
+          <span className="inline-block w-5 text-left">{dots}</span>
+        </p>
+      </div>
+    </div>
+  );
+};
 
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const duplicateFormFn = useDuplicateForm();
   const { activeOrg } = useLoaderData({ from: "/_authenticated" });
   const [isCreating, setIsCreating] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -53,8 +95,10 @@ const DashboardPage = () => {
     title: string;
   } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [duplicatingFormId, setDuplicatingFormId] = useState<string | null>(null);
 
   const { data: session } = useSession();
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const { data: liveWorkspaces, isLoading: wsLoading } = useOrgWorkspaces(activeOrg?.id);
   const { data: liveForms, isLoading: formsLoading } = useOrgForms(activeOrg?.id);
@@ -80,28 +124,29 @@ const DashboardPage = () => {
 
   useEffect(() => {
     const syncData = async () => {
-      const shouldSyncSocial = sessionStorage.getItem("shouldSyncAfterSocialLogin") === "true";
-      const shouldSyncLogin = sessionStorage.getItem("shouldSyncAfterLogin") === "true";
-      const shouldSync = shouldSyncSocial || shouldSyncLogin;
+      if (!session?.user || !activeOrg?.id) return;
 
-      if (!shouldSync || !session?.user || !activeOrg?.id) return;
+      const hasData = await hasLocalDataToSync();
+      if (!hasData) return;
 
-      if (shouldSyncSocial) sessionStorage.removeItem("shouldSyncAfterSocialLogin");
-      if (shouldSyncLogin) sessionStorage.removeItem("shouldSyncAfterLogin");
-
+      setIsSyncing(true);
       try {
         const result = await syncLocalDataToCloud(activeOrg.id);
         if (result?.syncedForms && result.syncedForms.length > 0) {
           clearLocalDraftIds();
+          // Clear the session flag so sync doesn't re-trigger
+          sessionStorage.removeItem("shouldSyncAfterLogin");
           toast.success("Local data synced!");
         }
       } catch (error) {
         console.error("Failed to sync local data:", error);
         toast.error("Signed in but failed to sync local data");
+      } finally {
+        setIsSyncing(false);
       }
     };
     syncData();
-  }, [session, activeOrg?.id]);
+  }, [session?.user?.id, activeOrg?.id]);
 
   const handleCreateWorkspace = useCallback(async () => {
     if (!activeOrg?.id) return;
@@ -151,19 +196,16 @@ const DashboardPage = () => {
 
   const handleDuplicate = useCallback(
     async (formId: string) => {
+      setDuplicatingFormId(formId);
       try {
-        const newForm = await duplicateFormById(formId);
-        toast.success("Form duplicated");
-        navigate({
-          to: "/workspace/$workspaceId/form-builder/$formId/edit",
-          params: { workspaceId: newForm.workspaceId, formId: newForm.id },
-        });
-      } catch (error) {
-        console.error("Failed to duplicate form:", error);
+        await duplicateFormFn(formId);
+      } catch {
         toast.error("Failed to duplicate form");
+      } finally {
+        setDuplicatingFormId(null);
       }
     },
-    [navigate],
+    [duplicateFormFn],
   );
 
   const handlePrevPage = useCallback(() => setCurrentPage((p) => Math.max(1, p - 1)), []);
@@ -218,117 +260,128 @@ const DashboardPage = () => {
 
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-4">
-            {isLoading
-              ? [1, 2, 3, 4, 5].map((i) => (
-                  <div
-                    key={`skeleton-${i}`}
-                    className="flex flex-col p-2 -mx-2 rounded-xl animate-pulse"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="flex flex-col gap-2">
-                          <div className="h-5 w-48 rounded bg-muted" />
-                          <div className="h-3 w-32 rounded bg-muted" />
-                        </div>
+            {isSyncing ? (
+              <SyncOverlay />
+            ) : isLoading ? (
+              [1, 2, 3, 4, 5].map((i) => (
+                <div
+                  key={`skeleton-${i}`}
+                  className="flex flex-col p-2 -mx-2 rounded-xl animate-pulse"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex flex-col gap-2">
+                        <div className="h-5 w-48 rounded bg-muted" />
+                        <div className="h-3 w-32 rounded bg-muted" />
                       </div>
                     </div>
                   </div>
-                ))
-              : paginatedForms.map((form) => (
-                  <div
-                    key={form.id}
-                    className="group flex flex-col p-2 -mx-2 rounded-lg hover:bg-muted/30 transition-[background-color] duration-200 cursor-pointer"
+                </div>
+              ))
+            ) : (
+              paginatedForms.map((form) => (
+                <div
+                  key={form.id}
+                  className="group flex flex-col p-2 -mx-2 rounded-lg hover:bg-muted/30 transition-[background-color] duration-200 cursor-pointer"
+                >
+                  <Link
+                    to={
+                      form.status === "published"
+                        ? "/workspace/$workspaceId/form-builder/$formId/submissions"
+                        : "/workspace/$workspaceId/form-builder/$formId/edit"
+                    }
+                    params={{
+                      workspaceId: form.workspaceId,
+                      formId: form.id,
+                    }}
+                    preload="intent"
                   >
-                    <Link
-                      to={
-                        form.status === "published"
-                          ? "/workspace/$workspaceId/form-builder/$formId/submissions"
-                          : "/workspace/$workspaceId/form-builder/$formId/edit"
-                      }
-                      params={{
-                        workspaceId: form.workspaceId,
-                        formId: form.id,
-                      }}
-                      preload="intent"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold  transition-colors">
-                                {form.title || "Untitled"}
-                              </span>
-                              <Badge
-                                variant="secondary"
-                                className={`text-[10px] h-4 px-1.5 font-normal ${
-                                  form.status === "published"
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-muted/80 text-muted-foreground"
-                                } rounded-full`}
-                              >
-                                {form.status === "published" ? "Published" : "Draft"}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
-                              <span>
-                                {workspaceNameMap.get(form.workspaceId) || "Unknown workspace"}
-                              </span>
-                              <span className="w-0.5 h-0.5 rounded-full bg-muted-foreground/30"></span>
-                              <span>{formatLastEdited(form.updatedAt)}</span>
-                            </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold  transition-colors">
+                              {form.title || "Untitled"}
+                            </span>
+                            <Badge
+                              variant="secondary"
+                              className={`text-[10px] h-4 px-1.5 font-normal ${
+                                form.status === "published"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-muted/80 text-muted-foreground"
+                              } rounded-full`}
+                            >
+                              {form.status === "published" ? "Published" : "Draft"}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                            <span>
+                              {workspaceNameMap.get(form.workspaceId) || "Unknown workspace"}
+                            </span>
+                            <span className="w-0.5 h-0.5 rounded-full bg-muted-foreground/30"></span>
+                            <span>{formatLastEdited(form.updatedAt)}</span>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger
-                                render={
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label="Duplicate form"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleDuplicate(form.id);
-                                    }}
-                                  />
-                                }
-                              >
-                                <CopyIcon className="h-4 w-4 text-muted-foreground" />
-                              </TooltipTrigger>
-                              <TooltipContent>Duplicate</TooltipContent>
-                            </Tooltip>
-
-                            <Tooltip>
-                              <TooltipTrigger
-                                render={
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label="Delete form"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleDeleteClick({
-                                        id: form.id,
-                                        title: form.title || "Untitled",
-                                      });
-                                    }}
-                                  />
-                                }
-                              >
-                                <Trash2Icon className="h-4 w-4 text-muted-foreground" />
-                              </TooltipTrigger>
-                              <TooltipContent>Delete</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
                       </div>
-                    </Link>
-                  </div>
-                ))}
+
+                      <div
+                        className={`flex items-center gap-1 transition-opacity ${duplicatingFormId === form.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                      >
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label="Duplicate form"
+                                  disabled={duplicatingFormId === form.id}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDuplicate(form.id);
+                                  }}
+                                />
+                              }
+                            >
+                              {duplicatingFormId === form.id ? (
+                                <Loader2Icon className="h-4 w-4 animate-spin text-muted-foreground" />
+                              ) : (
+                                <CopyIcon className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </TooltipTrigger>
+                            <TooltipContent>Duplicate</TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label="Delete form"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleDeleteClick({
+                                      id: form.id,
+                                      title: form.title || "Untitled",
+                                    });
+                                  }}
+                                />
+                              }
+                            >
+                              <Trash2Icon className="h-4 w-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>Delete</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              ))
+            )}
           </div>
 
           {!isLoading && totalPages > 1 && (

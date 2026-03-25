@@ -27,7 +27,7 @@ const buttonVariants = cva(buttonBaseClasses.join(" "), {
       outline:
         "border-border bg-background hover:bg-(--color-gray-alpha-100) hover:text-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 aria-expanded:bg-muted aria-expanded:text-foreground",
       secondary:
-        "bg-secondary hover:bg-secondary/80 aria-expanded:bg-secondary border-none shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)]",
+        "bg-secondary hover:bg-secondary/80 aria-expanded:bg-secondary border-none shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)]  text-secondary-foreground",
       ghost:
         "hover:bg-secondary hover:text-secondary-foreground dark:hover:bg-muted/50 aria-expanded:bg-muted aria-expanded:text-foreground",
       destructive:
@@ -47,7 +47,7 @@ const buttonVariants = cva(buttonBaseClasses.join(" "), {
         "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3.5 cursor-pointer",
       "icon-sm":
         "size-6.5 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg cursor-pointer [&_svg:not([class*='size-'])]:size-4",
-      "icon-lg": "size-9 cursor-pointer",
+      "icon-lg": "size-9.5 cursor-pointer",
     },
   },
   defaultVariants: {

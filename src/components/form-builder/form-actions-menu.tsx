@@ -25,8 +25,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { duplicateForm, updateDoc, updateFormStatus } from "@/db-collections/collections";
+import { updateDoc, updateFormStatus } from "@/db-collections/collections";
 import type { Form } from "@/db-collections/collections";
+import { useDuplicateForm } from "@/hooks/use-duplicate-form";
 import { useNavigate } from "@tanstack/react-router";
 import { CopyIcon, MoreHorizontalIcon, TagIcon, Trash2Icon } from "@/components/ui/icons";
 import { useCallback, useState } from "react";
@@ -39,6 +40,7 @@ interface FormActionsMenuProps {
 
 export const FormActionsMenu = ({ form, workspaceId }: FormActionsMenuProps) => {
   const navigate = useNavigate();
+  const duplicateForm = useDuplicateForm();
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [newTitle, setNewTitle] = useState(form?.title || "");
@@ -60,16 +62,11 @@ export const FormActionsMenu = ({ form, workspaceId }: FormActionsMenuProps) => 
   const handleDuplicate = useCallback(async () => {
     if (!form) return;
     try {
-      const newForm = await duplicateForm(form);
-      toast.success("Form duplicated");
-      navigate({
-        to: "/workspace/$workspaceId/form-builder/$formId/edit",
-        params: { workspaceId, formId: newForm.id },
-      });
+      await duplicateForm(form.id);
     } catch {
       toast.error("Failed to duplicate form");
     }
-  }, [form, navigate, workspaceId]);
+  }, [form, duplicateForm]);
 
   const handleDelete = useCallback(async () => {
     if (!form) return;

@@ -38,35 +38,41 @@ export const ThemeProvider = ({
   React.useEffect(() => {
     const root = window.document.documentElement;
 
-    // Disable all transitions during theme switch so everything flips instantly
-    const style = document.createElement("style");
-    style.textContent = "*, *::before, *::after { transition: none !important; }";
-    document.head.appendChild(style);
+    const applyTheme = (resolved: "light" | "dark") => {
+      // Disable all transitions during theme switch so everything flips instantly
+      const style = document.createElement("style");
+      style.textContent = "*, *::before, *::after { transition: none !important; }";
+      document.head.appendChild(style);
 
-    root.classList.remove("light", "dark");
+      root.classList.remove("light", "dark");
+      root.classList.add(resolved);
+      root.style.colorScheme = resolved;
 
-    const resolved =
+      // Force a reflow so the browser applies all new styles without transitions
+      void root.offsetHeight;
+
+      // Re-enable transitions on the next frame
+      requestAnimationFrame(() => {
+        if (style.parentNode) document.head.removeChild(style);
+      });
+    };
+
+    const resolve = () =>
       theme === "system"
         ? window.matchMedia("(prefers-color-scheme: dark)").matches
           ? "dark"
           : "light"
         : theme;
 
-    root.classList.add(resolved);
-    root.style.colorScheme = resolved;
+    applyTheme(resolve());
 
-    // Force a reflow so the browser applies all new styles without transitions
-    void root.offsetHeight;
-
-    // Re-enable transitions on the next frame
-    const rafId = requestAnimationFrame(() => {
-      if (style.parentNode) document.head.removeChild(style);
-    });
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      if (style.parentNode) style.parentNode.removeChild(style);
-    };
+    // Listen for OS theme changes when in "system" mode
+    if (theme === "system") {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const handleChange = () => applyTheme(resolve());
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
   }, [theme]);
 
   const handleSetTheme = React.useCallback(

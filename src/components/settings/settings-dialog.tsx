@@ -8,7 +8,6 @@ import {
   CircleUserIcon,
   DownloadIcon,
   SparklesIcon,
-  UsersIcon,
   CreditCardIcon,
   FileCodeIcon,
 } from "../ui/icons";
@@ -24,7 +23,7 @@ const navItems: {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 }[] = [
   { key: "account", label: "Account", icon: CircleUserIcon },
-  { key: "members", label: "Members", icon: UsersIcon },
+  // { key: "members", label: "Members", icon: UsersIcon }, // TODO: Re-enable for multi-org support
   { key: "billing", label: "Billing", icon: CreditCardIcon },
   { key: "api-keys", label: "API Keys", icon: FileCodeIcon },
   { key: "ai-features", label: "AI Features", icon: SparklesIcon },

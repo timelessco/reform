@@ -11,6 +11,46 @@ export const FormHeaderPlugin = createPlatePlugin({
     isSelectable: false,
     component: FormHeaderElement,
   },
+  handlers: {
+    onKeyDown: ({ editor, event }) => {
+      if (event.key !== "ArrowUp") return;
+
+      const block = editor.api.block();
+      if (!block) return;
+
+      const [, path] = block;
+
+      // Only act when cursor is in the first content block (right after header)
+      if (path[0] !== 1) return;
+
+      const selection = editor.selection;
+      if (!selection || !editor.api.isCollapsed(selection)) return;
+
+      // Check if cursor is at the very start of the block
+      // eslint-disable-next-line typescript-eslint/no-explicit-any
+      const edges = editor.api.edges(path) as any;
+      const start = edges?.[0];
+      if (
+        !start ||
+        !PathApi.equals(selection.anchor.path, start.path) ||
+        selection.anchor.offset !== start.offset
+      ) {
+        return;
+      }
+
+      // Focus the title textarea
+      const titleTextarea = document.querySelector<HTMLTextAreaElement>(
+        "[data-bf-header] textarea",
+      );
+      if (titleTextarea) {
+        event.preventDefault();
+        titleTextarea.focus();
+        // Place cursor at end of title text
+        const len = titleTextarea.value.length;
+        titleTextarea.setSelectionRange(len, len);
+      }
+    },
+  },
   // eslint-disable-next-line typescript-eslint/no-explicit-any
   extendEditor: ({ editor }: any) => {
     // eslint-disable-next-line typescript-eslint/no-explicit-any

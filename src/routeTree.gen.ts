@@ -9,11 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VerifyEmailRouteImport } from './routes/verify-email'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginIndexRouteImport } from './routes/login/index'
+import { Route as LoginEmailRouteImport } from './routes/login/email'
 import { Route as FormsFormIdRouteImport } from './routes/forms/$formId'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
@@ -30,21 +29,6 @@ import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSubmissionsR
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/settings'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/edit'
 
-const VerifyEmailRoute = VerifyEmailRouteImport.update({
-  id: '/verify-email',
-  path: '/verify-email',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -52,6 +36,16 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginIndexRoute = LoginIndexRouteImport.update({
+  id: '/login/',
+  path: '/login/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginEmailRoute = LoginEmailRouteImport.update({
+  id: '/login/email',
+  path: '/login/email',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FormsFormIdRoute = FormsFormIdRouteImport.update({
@@ -148,12 +142,11 @@ const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/signup': typeof SignupRoute
-  '/verify-email': typeof VerifyEmailRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/forms/$formId': typeof FormsFormIdRoute
+  '/login/email': typeof LoginEmailRoute
+  '/login/': typeof LoginIndexRoute
   '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
@@ -169,12 +162,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/signup': typeof SignupRoute
-  '/verify-email': typeof VerifyEmailRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/forms/$formId': typeof FormsFormIdRoute
+  '/login/email': typeof LoginEmailRoute
+  '/login': typeof LoginIndexRoute
   '/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
@@ -192,12 +184,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/login': typeof LoginRoute
-  '/signup': typeof SignupRoute
-  '/verify-email': typeof VerifyEmailRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/forms/$formId': typeof FormsFormIdRoute
+  '/login/email': typeof LoginEmailRoute
+  '/login/': typeof LoginIndexRoute
   '/_authenticated/workspace/$workspaceId': typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteWithChildren
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
   '/_authenticated/settings/billing': typeof AuthenticatedSettingsBillingRoute
@@ -215,12 +206,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/login'
-    | '/signup'
-    | '/verify-email'
     | '/settings'
     | '/dashboard'
     | '/forms/$formId'
+    | '/login/email'
+    | '/login/'
     | '/workspace/$workspaceId'
     | '/settings/api-keys'
     | '/settings/billing'
@@ -236,12 +226,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/login'
-    | '/signup'
-    | '/verify-email'
     | '/settings'
     | '/dashboard'
     | '/forms/$formId'
+    | '/login/email'
+    | '/login'
     | '/workspace/$workspaceId'
     | '/settings/api-keys'
     | '/settings/billing'
@@ -258,12 +247,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
-    | '/login'
-    | '/signup'
-    | '/verify-email'
     | '/_authenticated/settings'
     | '/_authenticated/dashboard'
     | '/forms/$formId'
+    | '/login/email'
+    | '/login/'
     | '/_authenticated/workspace/$workspaceId'
     | '/_authenticated/settings/api-keys'
     | '/_authenticated/settings/billing'
@@ -281,37 +269,15 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  LoginRoute: typeof LoginRoute
-  SignupRoute: typeof SignupRoute
-  VerifyEmailRoute: typeof VerifyEmailRoute
   FormsFormIdRoute: typeof FormsFormIdRoute
+  LoginEmailRoute: typeof LoginEmailRoute
+  LoginIndexRoute: typeof LoginIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   FormsI8nFormIdRoute: typeof FormsI8nFormIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/verify-email': {
-      id: '/verify-email'
-      path: '/verify-email'
-      fullPath: '/verify-email'
-      preLoaderRoute: typeof VerifyEmailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -324,6 +290,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/': {
+      id: '/login/'
+      path: '/login'
+      fullPath: '/login/'
+      preLoaderRoute: typeof LoginIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login/email': {
+      id: '/login/email'
+      path: '/login/email'
+      fullPath: '/login/email'
+      preLoaderRoute: typeof LoginEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forms/$formId': {
@@ -513,10 +493,9 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  LoginRoute: LoginRoute,
-  SignupRoute: SignupRoute,
-  VerifyEmailRoute: VerifyEmailRoute,
   FormsFormIdRoute: FormsFormIdRoute,
+  LoginEmailRoute: LoginEmailRoute,
+  LoginIndexRoute: LoginIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   FormsI8nFormIdRoute: FormsI8nFormIdRoute,
 }

@@ -2,8 +2,8 @@ import * as schema from "@/db/schema";
 import { db } from "@/lib/db";
 import {
   sendChangeEmailConfirmationEmail,
+  sendMagicLinkEmail,
   sendOrgInvitationEmail,
-  sendOTPEmail,
 } from "@/lib/email";
 import { logger } from "@/lib/utils";
 import { APP_NAME } from "@/lib/app-config";
@@ -12,7 +12,7 @@ import { Polar } from "@polar-sh/sdk";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { apiKey } from "@better-auth/api-key";
-import { emailOTP, organization, testUtils, twoFactor, username } from "better-auth/plugins";
+import { magicLink, organization, testUtils } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { eq } from "drizzle-orm";
 
@@ -28,9 +28,7 @@ export const auth = betterAuth({
     schema,
   }),
   emailAndPassword: {
-    enabled: true,
-    requireEmailVerification: true,
-    autoSignIn: true,
+    enabled: false,
   },
   // experimental : {
   //   joins: true,
@@ -48,12 +46,6 @@ export const auth = betterAuth({
       },
     },
   },
-  emailVerification: {
-    autoSignInAfterVerification: true,
-    afterEmailVerification: async () => {
-      logger("[Auth] Email verified");
-    },
-  },
   databaseHooks: {
     user: {
       create: {
@@ -63,11 +55,12 @@ export const auth = betterAuth({
             const orgId = crypto.randomUUID();
 
             // Create organization
+            const orgName = user.name || user.email.split("@")[0];
             const [org] = await db
               .insert(schema.organization)
               .values({
                 id: orgId,
-                name: user.name,
+                name: orgName,
                 slug: user.id,
                 createdAt: now,
               })
@@ -128,6 +121,10 @@ export const auth = betterAuth({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     },
+    apple: {
+      clientId: process.env.APPLE_CLIENT_ID as string,
+      clientSecret: process.env.APPLE_CLIENT_SECRET as string,
+    },
   },
   trustedOrigins: [
     "https://*.vercel.app",
@@ -136,22 +133,13 @@ export const auth = betterAuth({
   ],
   plugins: [
     ...(process.env.NODE_ENV === "test" ? [testUtils()] : []),
-    username(),
-    emailOTP({
-      async sendVerificationOTP({ email, otp, type }) {
+    magicLink({
+      async sendMagicLink({ email, url }) {
         if (import.meta.env.DEV) {
-          logger(`[Auth] Sending OTP to ${email} (type: ${type}) : ${otp}`);
+          logger(`[Auth] Magic link for ${email}: ${url}`);
         } else {
-          void sendOTPEmail(email, otp, type);
+          await sendMagicLinkEmail(email, url);
         }
-      },
-      otpLength: 6,
-      expiresIn: 300,
-      sendVerificationOnSignUp: true,
-    }),
-    twoFactor({
-      totpOptions: {
-        digits: 6,
       },
     }),
     apiKey(),

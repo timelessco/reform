@@ -5,6 +5,32 @@ import { logger } from "@/lib/utils";
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM_EMAIL = `${APP_NAME} <noreply@share.recollect.so>`;
 
+export const sendMagicLinkEmail = async (email: string, url: string) => {
+  const { error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: email,
+    subject: `Sign in to ${APP_NAME}`,
+    html: `
+			<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+				<h2 style="color: #333;">Sign in to ${APP_NAME}</h2>
+				<p style="font-size: 16px; color: #555;">Click the button below to sign in:</p>
+				<p style="margin: 24px 0;">
+					<a href="${url}" style="display: inline-block; background-color: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Sign in</a>
+				</p>
+				<p style="font-size: 14px; color: #888;">This link expires in 5 minutes.</p>
+				<p style="font-size: 14px; color: #888;">Or copy this link:</p>
+				<p style="font-size: 14px; color: #0066cc; word-break: break-all;">${url}</p>
+				<hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+				<p style="font-size: 12px; color: #999;">If you didn't request this link, you can safely ignore this email.</p>
+			</div>
+		`,
+  });
+
+  if (error) {
+    logger("[Email] Failed to send magic link:", error);
+  }
+};
+
 export const sendOTPEmail = async (email: string, otp: string, type: string) => {
   // type: "sign-in" | "email-verification" | "forget-password"
   const subject =

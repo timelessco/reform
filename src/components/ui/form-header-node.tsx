@@ -692,7 +692,7 @@ export const FormHeaderElement = (props: PlateElementProps) => {
             <Popover open={iconPopoverOpen} onOpenChange={setIconPopoverOpen}>
               {hasLogo && (
                 <div
-                  className={cn("relative z-10 mb-1", hasCover ? "" : "mt-4 sm:mt-6")}
+                  className={cn("relative z-10 mb-1", hasCover ? "-mt-[50px]" : "mt-4 sm:mt-6")}
                   data-bf-logo-emoji-container={
                     hasCover && icon && !isValidUrl(icon) ? "true" : undefined
                   }
@@ -858,6 +858,17 @@ export const FormHeaderElement = (props: PlateElementProps) => {
                 onChange={(e) => handleTitleChange(e.target.value)}
                 onFocus={autoResizeTitle}
                 onKeyDown={(e) => {
+                  if (e.key === "Tab" && !e.shiftKey) {
+                    e.preventDefault();
+                    const firstBlockPath = [1];
+                    // eslint-disable-next-line typescript-eslint/no-explicit-any
+                    const startPoint = (editor.api as any).edges(firstBlockPath)?.[0];
+                    if (startPoint) {
+                      editor.tf.select(startPoint);
+                      editor.tf.focus();
+                    }
+                    return;
+                  }
                   if (e.key === "Enter") {
                     e.preventDefault();
                     // Check if onboarding content is present (by type)

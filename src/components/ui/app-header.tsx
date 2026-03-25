@@ -495,15 +495,12 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                   <DropdownMenuItem onClick={() => navigate({ to: "/login" })}>
                     <span className="flex-1 text-left">Sign in</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate({ to: "/signup" })}>
-                    <span className="flex-1 text-left">Sign up</span>
-                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button
                 size="sm"
                 className="pl-2.5 pr-2 py-1.5 ml-1 text-[14px] transition-all rounded-[8px] shadow-[0px_1px_1px_0px_rgba(0,0,0,0.06)] border-none bg-black hover:bg-stone-800 text-white dark:bg-white dark:text-black dark:hover:bg-stone-200"
-                onClick={() => navigate({ to: "/signup" })}
+                onClick={() => navigate({ to: "/login" })}
               >
                 Publish
               </Button>

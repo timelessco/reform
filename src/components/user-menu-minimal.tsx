@@ -1,11 +1,9 @@
-import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTheme } from "@/components/ThemeProvider";
 import { auth, useSession } from "@/lib/auth-client";
 import { settingsDialogStore } from "@/hooks/use-settings-dialog";
-import { getUserMembershipsQueryOptions } from "@/lib/fn/workspaces";
 import { cn } from "@/lib/utils";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useLoaderData, useRouter } from "@tanstack/react-router";
 import {
   ChevronDownIcon,
@@ -14,9 +12,8 @@ import {
   SettingsIcon,
   SunIcon,
   Trash2Icon,
-  UsersIcon,
 } from "@/components/ui/icons";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Button } from "./ui/button";
 
 const getInitials = (name?: string | null) => {
@@ -35,48 +32,18 @@ export interface UserMenuMinimalProps {
 
 export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { theme, setTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
 
   const { data: session } = useSession();
-  const { activeOrg, orgsData: orgs } = useLoaderData({ from: "/_authenticated" });
-  const { data: membersData } = useQuery({
-    ...auth.organization.listMembers.queryOptions(),
-    staleTime: 1000 * 60 * 5,
-  });
-  const { data: membershipsData } = useQuery(getUserMembershipsQueryOptions());
+  const { activeOrg } = useLoaderData({ from: "/_authenticated" });
   const displayName = activeOrg?.name ?? session?.user?.name ?? "User";
-
-  const roleByOrgId = useMemo(() => {
-    const map: Record<string, string> = {};
-    membershipsData?.memberships?.forEach((m) => {
-      map[m.organizationId] = m.role;
-    });
-    return map;
-  }, [membershipsData]);
 
   const signOutMutation = useMutation(
     auth.signOut.mutationOptions({
       onSuccess: () => {
         router.invalidate();
         router.navigate({ to: "/" });
-      },
-    }),
-  );
-
-  const setActiveOrgMutation = useMutation(
-    auth.organization.setActive.mutationOptions({
-      onSuccess: async () => {
-        await queryClient.invalidateQueries({
-          queryKey: ["organization", "getFullOrganization"],
-          refetchType: "all",
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["workspaces-with-forms"],
-          refetchType: "all",
-        });
-        router.navigate({ to: "/dashboard" });
       },
     }),
   );
@@ -106,15 +73,6 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
       icon: Trash2Icon,
       action: () => {
         onOpenTrash();
-        setIsOpen(false);
-      },
-    },
-    {
-      key: "members",
-      label: "Members",
-      icon: UsersIcon,
-      action: () => {
-        settingsDialogStore.open("members");
         setIsOpen(false);
       },
     },
@@ -182,10 +140,7 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-[13px] text-foreground truncate">{displayName}</span>
-              <span className="text-[11px] text-muted-foreground">
-                Free Plan · {membersData?.members?.length ?? 0}{" "}
-                {membersData?.members?.length === 1 ? "member" : "members"}
-              </span>
+              <span className="text-[11px] text-muted-foreground">Free Plan</span>
             </div>
           </div>
 
@@ -205,46 +160,6 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
                 >
                   <Icon className={menuItemIconClass} />
                   <span className="flex-1 text-left">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="my-1 h-px bg-border" />
-
-          {/* Organizations section */}
-          <div className="flex flex-col">
-            <div className="px-2 py-1.5 rounded-lg text-xs text-muted-foreground truncate">
-              {session?.user?.email}
-            </div>
-            {orgs?.map((org: { id: string; name: string }) => {
-              const role = roleByOrgId[org.id];
-              return (
-                <button
-                  type="button"
-                  key={org.id}
-                  onClick={() => {
-                    setActiveOrgMutation.mutate({ organizationId: org.id });
-                    setIsOpen(false);
-                  }}
-                  className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 overflow-hidden text-[13px] transition-colors text-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                  aria-label={`Switch to ${org.name}`}
-                >
-                  <div className="h-5 w-5 rounded bg-sidebar-active flex items-center justify-center text-[9px] font-bold text-sidebar-foreground shrink-0">
-                    {getInitials(org.name)}
-                  </div>
-                  <span className="flex-1 text-left truncate">{org.name}</span>
-                  {role && (
-                    <Badge
-                      variant={role === "owner" ? "default" : "outline"}
-                      className="text-[9px] px-1.5 py-0 h-4 capitalize"
-                    >
-                      {role}
-                    </Badge>
-                  )}
-                  {org.id === activeOrg?.id && (
-                    <div className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                  )}
                 </button>
               );
             })}

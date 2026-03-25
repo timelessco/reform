@@ -14,9 +14,7 @@ import {
   ImageCropContent,
   ImageCropReset,
 } from "@/components/ui/image-crop";
-import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import {
   Select,
   SelectContent,
@@ -42,96 +40,6 @@ import { toast } from "sonner";
 import { MailIcon, TeleVisionIcon } from "../ui/icons";
 
 // --- Custom Hooks ---
-
-type TwoFactorStep = 1 | 2;
-
-interface TwoFactorSetupApi {
-  step: TwoFactorStep;
-  totpUri: string;
-  backupCodes: string[];
-  otpCode: string;
-  setOtpCode: (code: string) => void;
-  password: string;
-  setPassword: (password: string) => void;
-  enable2fa: () => void;
-  verify2fa: () => void;
-  isDialogOpen: boolean;
-  openDialog: () => void;
-  closeDialog: () => void;
-  setDialogOpen: (open: boolean) => void;
-  isEnabling: boolean;
-  isVerifying: boolean;
-  qrCodeUrl: string;
-}
-
-const useTwoFactorSetup = (): TwoFactorSetupApi => {
-  const queryClient = useQueryClient();
-  const [is2faDialogOpen, setIs2faDialogOpen] = useState(false);
-  const [twoFaStep, setTwoFaStep] = useState<TwoFactorStep>(1);
-  const [totpUri, setTotpUri] = useState("");
-  const [backupCodes, setBackupCodes] = useState<string[]>([]);
-  const [otpCode, setOtpCode] = useState("");
-  const [password, setPassword] = useState("");
-
-  const setup2faMutation = useMutation(
-    auth.twoFactor.enable.mutationOptions({
-      onSuccess: (res) => {
-        setTotpUri(res.totpURI);
-        setBackupCodes(res.backupCodes || []);
-        setTwoFaStep(2);
-      },
-      onError: (error) => {
-        toast.error(error.message || "Failed to start 2FA setup");
-      },
-    }),
-  );
-
-  const verifyTotpMutation = useMutation(
-    auth.twoFactor.verifyTotp.mutationOptions({
-      onSuccess: () => {
-        toast.success("Two-factor authentication enabled");
-        setIs2faDialogOpen(false);
-        setTwoFaStep(1);
-        setPassword("");
-        setOtpCode("");
-        setTotpUri("");
-        setBackupCodes([]);
-        queryClient.invalidateQueries({ queryKey: auth.getSession.queryKey() });
-      },
-      onError: (error) => {
-        toast.error(error.message || "Invalid OTP code. Please try again.");
-      },
-    }),
-  );
-
-  const qrCodeUrl = totpUri
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(totpUri)}`
-    : "";
-
-  const setDialogOpen = (open: boolean) => {
-    setIs2faDialogOpen(open);
-    if (!open) setTwoFaStep(1);
-  };
-
-  return {
-    step: twoFaStep,
-    totpUri,
-    backupCodes,
-    otpCode,
-    setOtpCode,
-    password,
-    setPassword,
-    enable2fa: () => setup2faMutation.mutate({ password }),
-    verify2fa: () => verifyTotpMutation.mutate({ code: otpCode }),
-    isDialogOpen: is2faDialogOpen,
-    openDialog: () => setIs2faDialogOpen(true),
-    closeDialog: () => setDialogOpen(false),
-    setDialogOpen,
-    isEnabling: setup2faMutation.isPending,
-    isVerifying: verifyTotpMutation.isPending,
-    qrCodeUrl,
-  };
-};
 
 interface EmailChangeApi {
   isOpen: boolean;
@@ -297,7 +205,6 @@ export const AccountSettingsContent = () => {
   const usernameId = useId();
 
   // Custom hooks for extracted concerns
-  const twoFa = useTwoFactorSetup();
   const emailChange = useEmailChange((fieldName, value) => {
     profileForm.setFieldValue(fieldName as "newEmail", value);
   });
@@ -389,11 +296,6 @@ export const AccountSettingsContent = () => {
   const handleDisconnectGoogle = useCallback(
     () => handleDisconnectAccount("google"),
     [handleDisconnectAccount],
-  );
-
-  const handlePasswordChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => twoFa.setPassword(e.target.value),
-    [twoFa],
   );
 
   if (isSessionPending) {
@@ -727,106 +629,6 @@ export const AccountSettingsContent = () => {
             <span className="text-destructive text-sm">Delete my account</span>
           </Button>
         </section>
-
-        {/* 2FA Dialog */}
-        <Dialog open={twoFa.isDialogOpen} onOpenChange={twoFa.setDialogOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Set up two-factor authentication</DialogTitle>
-              <DialogDescription>Follow the steps below to secure your account.</DialogDescription>
-            </DialogHeader>
-
-            <div className="py-4 space-y-6">
-              {twoFa.step === 1 && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <p className="text-sm">1. Confirm your password to continue</p>
-                    <Input
-                      type="password"
-                      placeholder="Your password"
-                      value={twoFa.password}
-                      onChange={handlePasswordChange}
-                      aria-label="Current password"
-                      autoComplete="current-password"
-                    />
-                  </div>
-                  <Button
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                    onClick={twoFa.enable2fa}
-                    disabled={!twoFa.password || twoFa.isEnabling}
-                  >
-                    {twoFa.isEnabling ? (
-                      <Loader2Icon className="animate-spin mr-2 h-4 w-4" />
-                    ) : null}
-                    Next
-                  </Button>
-                </div>
-              )}
-
-              {twoFa.step === 2 && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                  <div className="space-y-2">
-                    <p className="text-sm">2. Scan the QR code with your authenticator app</p>
-                    <div className="flex justify-center p-4 bg-white rounded-lg border border-border shadow-sm">
-                      {twoFa.qrCodeUrl ? (
-                        <img
-                          src={twoFa.qrCodeUrl}
-                          alt="QR Code"
-                          width={160}
-                          height={160}
-                          className="w-40 h-40"
-                        />
-                      ) : (
-                        <div className="w-40 h-40 bg-muted animate-pulse rounded-md" />
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-sm text-amber-600">Backup codes</p>
-                    <p className="text-xs text-muted-foreground">
-                      Save these codes securely. Each code can be used once to access your account
-                      if you lose your authenticator.
-                    </p>
-                    <div className="grid grid-cols-2 gap-2 p-3 bg-muted/50 rounded-lg border border-border">
-                      {twoFa.backupCodes.map((code) => (
-                        <code key={code} className="text-sm font-mono">
-                          {code}
-                        </code>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-sm">3. Enter the code from your app</p>
-                    <div className="flex justify-center">
-                      <InputOTP maxLength={6} value={twoFa.otpCode} onChange={twoFa.setOtpCode}>
-                        <InputOTPGroup>
-                          <InputOTPSlot index={0} />
-                          <InputOTPSlot index={1} />
-                          <InputOTPSlot index={2} />
-                          <InputOTPSlot index={3} />
-                          <InputOTPSlot index={4} />
-                          <InputOTPSlot index={5} />
-                        </InputOTPGroup>
-                      </InputOTP>
-                    </div>
-                  </div>
-                  <Button
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                    onClick={twoFa.verify2fa}
-                    disabled={twoFa.otpCode.length < 6 || twoFa.isVerifying}
-                  >
-                    {twoFa.isVerifying ? (
-                      <Loader2Icon className="animate-spin mr-2 h-4 w-4" />
-                    ) : null}
-                    Enable 2FA
-                  </Button>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
 
         {/* Avatar Crop Dialog */}
         <Dialog open={avatarUpload.isDialogOpen} onOpenChange={avatarUpload.setDialogOpen}>

@@ -144,6 +144,12 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
     }
 
     logger(`Successfully synced ${syncedForms.length} forms via createTransaction`);
+
+    // Nuke the localStorage collection entirely so sync never re-runs on reload
+    if (syncedForms.length > 0 && typeof window !== "undefined") {
+      localStorage.removeItem("draft-form");
+    }
+
     return {
       success: true,
       syncedForms,

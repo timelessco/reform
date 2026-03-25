@@ -298,7 +298,7 @@ export const createFormLocal = async (workspaceId: string, title = "Untitled"): 
   return newForm;
 };
 
-export const duplicateFormById = (formId: string): Form => {
+export const duplicateFormById = (formId: string): { form: Form; persisted: Promise<void> } => {
   const { formListings } = getInit();
   const sourceForm = formListings.get(formId) as Form | undefined;
   if (!sourceForm) throw new Error(`Form not found: ${formId}`);
@@ -331,11 +331,11 @@ export const duplicateFormById = (formId: string): Form => {
     formListings.insert(newForm as unknown as FormListing);
   });
 
-  return newForm;
+  return { form: newForm, persisted: tx.isPersisted.promise.then(() => undefined) };
 };
 
 /** @deprecated Use duplicateFormById instead */
-export const duplicateForm = (sourceForm: Form): Form => duplicateFormById(sourceForm.id);
+export const duplicateForm = (sourceForm: Form) => duplicateFormById(sourceForm.id);
 
 export const updateDoc = async (id: string, updater: (draft: Form) => void) => {
   const { formListings } = getInit();

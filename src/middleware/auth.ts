@@ -16,10 +16,6 @@ export const authMiddleware = createMiddleware().server(async ({ next }) => {
     });
   }
 
-  if (!session.user.emailVerified) {
-    throw redirect({ to: "/verify-email" });
-  }
-
   return await next({
     context: {
       session,

@@ -82,7 +82,6 @@ import {
   createFormLocal,
   createWorkspaceLocal,
   deleteWorkspaceLocal,
-  duplicateFormById,
   initCollections,
   isInitialized as isCollectionsInitialized,
   permanentDeleteFormLocal,
@@ -113,6 +112,7 @@ import {
   getFormListings as getFormListingsServer,
   updateForm,
 } from "@/lib/fn/forms";
+import { useDuplicateForm } from "@/hooks/use-duplicate-form";
 import { orgDataForLayoutQueryOptions } from "@/lib/fn/org";
 import {
   workspacesCollectionQueryOptions,
@@ -392,7 +392,6 @@ const AppSidebar = () => {
   const { isInboxOpen, toggleInbox } = useMinimalSidebar();
   const location = useLocation();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const {
     toggle: togglePalette,
     isOpen: isPaletteOpen,
@@ -407,13 +406,12 @@ const AppSidebar = () => {
   const [trashDialogOpen, setTrashDialogOpen] = useState(false);
 
   // Get pre-fetched data from route loader for immediate render
-  const { activeOrg, orgsData } = Route.useLoaderData();
+  const { activeOrg } = Route.useLoaderData();
   const { data: workspacesData } = useOrgWorkspaces(activeOrg?.id);
 
-  const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
-  const pendingCount = (invitations ?? []).filter(
-    (inv: { status: string }) => inv.status === "pending",
-  ).length;
+  // TODO: Re-enable for multi-org support
+  // const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
+  const pendingCount = 0;
 
   const signOutMutation = useMutation(
     auth.signOut.mutationOptions({
@@ -423,31 +421,6 @@ const AppSidebar = () => {
       },
     }),
   );
-
-  const setActiveOrgMutation = useMutation(
-    auth.organization.setActive.mutationOptions({
-      onSuccess: async () => {
-        // Invalidate and wait for refetch before navigating
-        await queryClient.invalidateQueries({
-          queryKey: ["organization", "getFullOrganization"],
-          refetchType: "all",
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["workspaces-with-forms"],
-          refetchType: "all",
-        });
-        router.navigate({ to: "/dashboard" });
-      },
-    }),
-  );
-
-  // Set active organization if user has orgs but none is active (runs for all auth routes)
-  // orgsData comes from the server loader (session already validated), no need to gate on client session
-  useEffect(() => {
-    if (!activeOrg && orgsData && orgsData.length > 0) {
-      setActiveOrgMutation.mutate({ organizationId: orgsData[0].id });
-    }
-  }, [activeOrg, orgsData, setActiveOrgMutation]);
 
   useHotkey(HOTKEYS.TOGGLE_COMMAND_PALETTE, () => togglePalette(), {
     ignoreInputs: true,
@@ -1008,6 +981,7 @@ const SidebarInbox = () => {
 const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => {
   const router = useRouter();
   const location = useLocation();
+  const duplicateForm = useDuplicateForm();
   const { data: session } = useSession();
 
   // Sort mode state with localStorage persistence
@@ -1158,18 +1132,12 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
   const handleDuplicateForm = useCallback(
     async (form: WorkspaceWithForms["forms"][0]) => {
       try {
-        const newForm = await duplicateFormById(form.id);
-        toast.success("Form duplicated");
-        router.navigate({
-          to: "/workspace/$workspaceId/form-builder/$formId/edit",
-          params: { workspaceId: newForm.workspaceId, formId: newForm.id },
-        });
-      } catch (error) {
-        console.error("Failed to duplicate form:", error);
+        await duplicateForm(form.id);
+      } catch {
         toast.error("Failed to duplicate form");
       }
     },
-    [router],
+    [duplicateForm],
   );
 
   const handleDeleteForm = useCallback((form: WorkspaceWithForms["forms"][0]) => {
