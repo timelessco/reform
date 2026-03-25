@@ -1,11 +1,22 @@
-import { forms, member, workspaces } from "@/db/schema";
+import {
+  formAnalyticsDaily,
+  formDropoffDaily,
+  formFavorites,
+  formQuestionProgress,
+  forms,
+  formVersions,
+  formVisits,
+  member,
+  submissions,
+  workspaces,
+} from "@/db/schema";
 import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { desc, eq, inArray, not } from "drizzle-orm";
 import { z } from "zod";
-import { authWorkspace, getActiveOrgId, getTxId } from "./helpers";
+import { authWorkspace, getActiveOrgId } from "./helpers";
 
 const workspaceSchema = z.object({
   id: z.string().uuid(),
@@ -26,30 +37,25 @@ export const createWorkspace = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const now = new Date();
 
-    return await db.transaction(async (tx) => {
-      const [workspace] = await tx
-        .insert(workspaces)
-        .values({
-          id: data.id ?? crypto.randomUUID(),
-          organizationId: data.organizationId,
-          createdByUserId: context.session.user.id,
-          name: data.name,
-          createdAt: now,
-          updatedAt: now,
-        })
-        .returning();
+    const [workspace] = await db
+      .insert(workspaces)
+      .values({
+        id: data.id ?? crypto.randomUUID(),
+        organizationId: data.organizationId,
+        createdByUserId: context.session.user.id,
+        name: data.name,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
 
-      const txid = await getTxId(tx);
-
-      return {
-        workspace: {
-          ...workspace,
-          createdAt: workspace.createdAt.toISOString(),
-          updatedAt: workspace.updatedAt.toISOString(),
-        },
-        txid,
-      };
-    });
+    return {
+      workspace: {
+        ...workspace,
+        createdAt: workspace.createdAt.toISOString(),
+        updatedAt: workspace.updatedAt.toISOString(),
+      },
+    };
   });
 
 export const updateWorkspace = createServerFn({ method: "POST" })
@@ -60,27 +66,22 @@ export const updateWorkspace = createServerFn({ method: "POST" })
     const orgId = getActiveOrgId(context.session);
     await authWorkspace(id, context.session.user.id, orgId);
 
-    return await db.transaction(async (tx) => {
-      const [workspace] = await tx
-        .update(workspaces)
-        .set({
-          ...updateData,
-          updatedAt: new Date(),
-        })
-        .where(eq(workspaces.id, id))
-        .returning();
+    const [workspace] = await db
+      .update(workspaces)
+      .set({
+        ...updateData,
+        updatedAt: new Date(),
+      })
+      .where(eq(workspaces.id, id))
+      .returning();
 
-      const txid = await getTxId(tx);
-
-      return {
-        workspace: {
-          ...workspace,
-          createdAt: workspace.createdAt.toISOString(),
-          updatedAt: workspace.updatedAt.toISOString(),
-        },
-        txid,
-      };
-    });
+    return {
+      workspace: {
+        ...workspace,
+        createdAt: workspace.createdAt.toISOString(),
+        updatedAt: workspace.updatedAt.toISOString(),
+      },
+    };
   });
 
 export const deleteWorkspace = createServerFn({ method: "POST" })
@@ -90,20 +91,35 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
     const orgId = getActiveOrgId(context.session);
     await authWorkspace(data.id, context.session.user.id, orgId);
 
-    return await db.transaction(async (tx) => {
-      const [workspace] = await tx.delete(workspaces).where(eq(workspaces.id, data.id)).returning();
+    // Cascade-delete all forms and their dependent records
+    const workspaceForms = await db
+      .select({ id: forms.id })
+      .from(forms)
+      .where(eq(forms.workspaceId, data.id));
+    const formIds = workspaceForms.map((f) => f.id);
 
-      const txid = await getTxId(tx);
+    if (formIds.length > 0) {
+      await Promise.all([
+        db.delete(formAnalyticsDaily).where(inArray(formAnalyticsDaily.formId, formIds)),
+        db.delete(formDropoffDaily).where(inArray(formDropoffDaily.formId, formIds)),
+        db.delete(formQuestionProgress).where(inArray(formQuestionProgress.formId, formIds)),
+        db.delete(formVisits).where(inArray(formVisits.formId, formIds)),
+        db.delete(formFavorites).where(inArray(formFavorites.formId, formIds)),
+        db.delete(submissions).where(inArray(submissions.formId, formIds)),
+        db.delete(formVersions).where(inArray(formVersions.formId, formIds)),
+      ]);
+      await db.delete(forms).where(inArray(forms.id, formIds));
+    }
 
-      return {
-        workspace: {
-          ...workspace,
-          createdAt: workspace.createdAt.toISOString(),
-          updatedAt: workspace.updatedAt.toISOString(),
-        },
-        txid,
-      };
-    });
+    const [workspace] = await db.delete(workspaces).where(eq(workspaces.id, data.id)).returning();
+
+    return {
+      workspace: {
+        ...workspace,
+        createdAt: workspace.createdAt.toISOString(),
+        updatedAt: workspace.updatedAt.toISOString(),
+      },
+    };
   });
 
 export const getWorkspaceById = createServerFn({ method: "GET" })
