@@ -101,13 +101,14 @@ export const initCollections = (
   _workspaces = createWorkspaceSummaryCollection({
     queryClient,
     queryFn: serverFns.getWorkspacesWithForms,
-    onInsert: async ({ transaction }) => {
+    onInsert: async ({ transaction, collection }) => {
       const ws = transaction.mutations[0].modified;
       await serverFns.createWorkspace({
         id: ws.id,
         organizationId: ws.organizationId,
         name: ws.name,
       });
+      await collection.utils.refetch();
     },
     onUpdate: async ({ transaction }) => {
       const m = transaction.mutations[0];
@@ -119,19 +120,20 @@ export const initCollections = (
           forms: m.original.forms,
         });
       }
-      return { refetch: false };
     },
-    onDelete: async ({ transaction }) => {
+    onDelete: async ({ transaction, collection }) => {
       await serverFns.deleteWorkspace({ id: transaction.mutations[0].original.id });
+      await collection.utils.refetch();
     },
   });
 
   _formListings = createFormListingCollection({
     queryClient,
     queryFn: serverFns.getFormListings,
-    onInsert: async ({ transaction }) => {
+    onInsert: async ({ transaction, collection }) => {
       const modified = transaction.mutations[0].modified;
       await serverFns.createForm(stripNulls(modified) as ServerFnInput<typeof createForm>);
+      await collection.utils.refetch();
     },
     onUpdate: async ({ transaction }) => {
       const m = transaction.mutations[0];
@@ -145,21 +147,23 @@ export const initCollections = (
         const formListings = _formListings as NonNullable<typeof _formListings>;
         formListings.utils.writeUpdate(result.form);
       }
-      return { refetch: false };
     },
-    onDelete: async ({ transaction }) => {
+    onDelete: async ({ transaction, collection }) => {
       await serverFns.deleteForm({ id: transaction.mutations[0].original.id });
+      await collection.utils.refetch();
     },
   });
 
   _favorites = createFavoriteCollection({
     queryClient,
     queryFn: serverFns.getFavorites,
-    onInsert: async ({ transaction }) => {
+    onInsert: async ({ transaction, collection }) => {
       await serverFns.addFavorite({ formId: transaction.mutations[0].modified.formId });
+      await collection.utils.refetch();
     },
-    onDelete: async ({ transaction }) => {
+    onDelete: async ({ transaction, collection }) => {
       await serverFns.removeFavorite({ formId: transaction.mutations[0].original.formId });
+      await collection.utils.refetch();
     },
   });
 };

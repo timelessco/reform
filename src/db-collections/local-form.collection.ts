@@ -1,8 +1,11 @@
 /**
  * Local-only form collection (localStorage-backed) for unauthenticated drafts.
- * This is NOT Electric-backed and must be preserved across the migration.
+ * In v0.6, localStorageCollectionOptions moved from @tanstack/react-db to @tanstack/db.
+ *
+ * TODO: Migrate to persistedCollectionOptions + SQLite WASM once
+ * the browser-db-sqlite-persistence package is compatible with tanstack/db 0.6.
  */
-import { createCollection, localStorageCollectionOptions } from "@tanstack/react-db";
+import { createCollection, localStorageCollectionOptions } from "@tanstack/db";
 import { z } from "zod";
 import { createFormHeaderNode } from "@/lib/form-header-factory";
 
