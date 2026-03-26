@@ -87,10 +87,14 @@ export const useHasUnpublishedChanges = (formId: string | undefined) => {
  * Publish the current form draft. Optimistically sets status to "published".
  */
 export const publishForm = (formId: string) => {
+  const queryClient = getQueryClient();
   const tx = createTransaction({
     mutationFn: async () => {
       await publishFormVersion({ data: { formId } });
-      await getQueryClient().invalidateQueries({ queryKey: ["form-versions", formId] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["form-versions", formId] }),
+        getFormListings().utils.refetch(),
+      ]);
     },
   });
 
@@ -149,6 +153,7 @@ export const discardChanges = (formId: string) => {
   const tx = createTransaction({
     mutationFn: async () => {
       await discardFormChanges({ data: { formId } });
+      await detail.utils.refetch();
     },
   });
 

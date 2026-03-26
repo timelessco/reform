@@ -89,8 +89,13 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   };
 
   const toggleShareSidebar = () => {
+    // If already open, close regardless of which route we're on
+    if (isShareSidebarOpen) {
+      closeSidebar();
+      return;
+    }
+    // Not on edit route — navigate to edit with share sidebar open
     if (!isEditRoute && workspaceId && formId) {
-      // Set collection state BEFORE navigating (synchronous, survives route change)
       openShare();
       enterPreview();
       navigate({
@@ -100,15 +105,11 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
       });
       return;
     }
-    if (isShareSidebarOpen) {
-      closeSidebar(); // Also exits preview mode when share was open
-    } else {
-      enterPreview();
-      openShare();
-    }
+    enterPreview();
+    openShare();
   };
 
-  // Single source: Electric live data (useForm)
+  // Single source: live query data (useForm)
   const { data: workspace } = useWorkspace(workspaceId);
   const { data: savedDocs, isLoading: isLoadingSavedDocs } = useForm(formId);
   // Version management
@@ -152,6 +153,8 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
         const tx = publishForm(formId);
         await tx.isPersisted.promise;
         toast.success("Form published");
+        // Navigate to submissions, then open share sidebar for immediate link sharing
+        openShare();
         navigate({
           to: "/workspace/$workspaceId/form-builder/$formId/submissions",
           params: { workspaceId, formId },
@@ -221,7 +224,10 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   });
 
   useHotkey(HOTKEYS.TOGGLE_SHARE_SIDEBAR, () => toggleShareSidebar(), {
-    enabled: isFormBuilder && isEditRoute && savedDocs?.[0]?.status === "published",
+    enabled:
+      isFormBuilder &&
+      isEditRoute &&
+      (savedDocs?.[0]?.status === "published" || hasPublishedVersion),
   });
 
   const isLeftSidebarOpen = state === "expanded";
@@ -562,7 +568,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                   </Tooltip>
                 )}
 
-                {savedDocs?.[0]?.status === "published" && (
+                {(savedDocs?.[0]?.status === "published" || hasPublishedVersion) && (
                   <Button
                     variant="ghost"
                     size="sm"

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
@@ -22,12 +23,15 @@ import {
 import { useDuplicateForm } from "@/hooks/use-duplicate-form";
 import { useOrgForms, useOrgWorkspaces } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth-client";
+import { HOTKEYS, formatForDisplay } from "@/lib/hotkeys";
 import { clearLocalDraftIds } from "@/lib/local-draft";
 import { hasLocalDataToSync, syncLocalDataToCloud } from "@/lib/sync";
 import { parseTimestampAsUTC } from "@/lib/utils";
 import { createFileRoute, Link, useLoaderData, useNavigate } from "@tanstack/react-router";
+import { useHotkey } from "@tanstack/react-hotkeys";
 import { formatDistanceToNow } from "date-fns";
 import {
+  CheckIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   CopyIcon,
@@ -36,9 +40,10 @@ import {
   Loader2Icon,
   PlusIcon,
   Trash2Icon,
+  XIcon,
 } from "@/components/ui/icons";
 import { FolderPlus } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 const FORMS_PER_PAGE = 10;
 
@@ -90,15 +95,18 @@ const DashboardPage = () => {
   const { activeOrg } = useLoaderData({ from: "/_authenticated" });
   const [isCreating, setIsCreating] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [formToDelete, setFormToDelete] = useState<{
     id: string;
     title: string;
   } | null>(null);
+  const [selectedFormIds, setSelectedFormIds] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const [duplicatingFormId, setDuplicatingFormId] = useState<string | null>(null);
 
   const { data: session } = useSession();
   const [isSyncing, setIsSyncing] = useState(false);
+  const hasSyncedRef = useRef(false);
 
   const { data: liveWorkspaces, isLoading: wsLoading } = useOrgWorkspaces(activeOrg?.id);
   const { data: liveForms, isLoading: formsLoading } = useOrgForms(activeOrg?.id);
@@ -125,19 +133,23 @@ const DashboardPage = () => {
   useEffect(() => {
     const syncData = async () => {
       if (!session?.user || !activeOrg?.id) return;
+      if (hasSyncedRef.current) return;
 
       const hasData = await hasLocalDataToSync();
-      if (!hasData) return;
+      if (!hasData) {
+        hasSyncedRef.current = true;
+        return;
+      }
 
       setIsSyncing(true);
       try {
         const result = await syncLocalDataToCloud(activeOrg.id);
         if (result?.syncedForms && result.syncedForms.length > 0) {
           clearLocalDraftIds();
-          // Clear the session flag so sync doesn't re-trigger
           sessionStorage.removeItem("shouldSyncAfterLogin");
           toast.success("Local data synced!");
         }
+        hasSyncedRef.current = true;
       } catch (error) {
         console.error("Failed to sync local data:", error);
         toast.error("Signed in but failed to sync local data");
@@ -165,7 +177,7 @@ const DashboardPage = () => {
     setIsCreating(true);
     try {
       const defaultWorkspace = orgWorkspaces[0];
-      const newForm = await createFormLocal(defaultWorkspace.id);
+      const { form: newForm } = createFormLocal(defaultWorkspace.id);
       navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
         params: { workspaceId: defaultWorkspace.id, formId: newForm.id },
@@ -218,6 +230,71 @@ const DashboardPage = () => {
   const formatLastEdited = (timestamp: string) =>
     `Edited ${formatDistanceToNow(parseTimestampAsUTC(timestamp) ?? new Date())} ago`;
 
+  const hasSelection = selectedFormIds.size > 0;
+
+  const handleToggleSelect = useCallback((formId: string) => {
+    setSelectedFormIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(formId)) {
+        next.delete(formId);
+      } else {
+        next.add(formId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    if (selectedFormIds.size === paginatedForms.length) {
+      setSelectedFormIds(new Set());
+    } else {
+      setSelectedFormIds(new Set(paginatedForms.map((f) => f.id)));
+    }
+  }, [selectedFormIds.size, paginatedForms]);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedFormIds(new Set());
+  }, []);
+
+  const handleBulkDelete = useCallback(() => {
+    if (selectedFormIds.size === 0) return;
+    setBulkDeleteDialogOpen(true);
+  }, [selectedFormIds.size]);
+
+  const handleConfirmBulkDelete = useCallback(async () => {
+    const count = selectedFormIds.size;
+    try {
+      const promises = [...selectedFormIds].map((id) => updateFormStatus(id, "archived"));
+      await Promise.all(promises);
+      setSelectedFormIds(new Set());
+      setBulkDeleteDialogOpen(false);
+      toast.success(`${count} form${count !== 1 ? "s" : ""} deleted`);
+    } catch {
+      toast.error("Failed to delete some forms");
+    }
+  }, [selectedFormIds]);
+
+  useEffect(() => {
+    setSelectedFormIds(new Set());
+  }, [currentPage]);
+
+  useHotkey(HOTKEYS.DASHBOARD_SELECT_ALL, handleSelectAll, {
+    conflictBehavior: "replace",
+    ignoreInputs: true,
+  });
+
+  useHotkey(HOTKEYS.DASHBOARD_DELETE, handleBulkDelete, {
+    enabled: hasSelection,
+    conflictBehavior: "replace",
+    ignoreInputs: true,
+  });
+
+  useHotkey(HOTKEYS.DASHBOARD_CLEAR_SELECTION, handleClearSelection, {
+    enabled: hasSelection,
+    conflictBehavior: "replace",
+    ignoreInputs: true,
+  });
+
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-background text-foreground">
       <main className="flex-1 p-6 md:p-12 lg:p-20 max-w-6xl mx-auto w-full">
@@ -259,7 +336,7 @@ const DashboardPage = () => {
         </div>
 
         <div className="space-y-6">
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-2">
             {isSyncing ? (
               <SyncOverlay />
             ) : isLoading ? (
@@ -279,108 +356,136 @@ const DashboardPage = () => {
                 </div>
               ))
             ) : (
-              paginatedForms.map((form) => (
-                <div
-                  key={form.id}
-                  className="group flex flex-col p-2 -mx-2 rounded-lg hover:bg-muted/30 transition-[background-color] duration-200 cursor-pointer"
-                >
-                  <Link
-                    to={
-                      form.status === "published"
-                        ? "/workspace/$workspaceId/form-builder/$formId/submissions"
-                        : "/workspace/$workspaceId/form-builder/$formId/edit"
-                    }
-                    params={{
-                      workspaceId: form.workspaceId,
-                      formId: form.id,
-                    }}
-                    preload="intent"
+              paginatedForms.map((form) => {
+                const isSelected = selectedFormIds.has(form.id);
+                return (
+                  <Card
+                    key={form.id}
+                    className={`group py-2 px-3 gap-0 ring-0 transition-[background-color,box-shadow] duration-200 cursor-pointer hover:bg-muted/30 ${isSelected ? "bg-muted/50" : ""}`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold  transition-colors">
-                              {form.title || "Untitled"}
-                            </span>
-                            <Badge
-                              variant="secondary"
-                              className={`text-[10px] h-4 px-1.5 font-normal ${
-                                form.status === "published"
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-muted/80 text-muted-foreground"
-                              } rounded-full`}
-                            >
-                              {form.status === "published" ? "Published" : "Draft"}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
-                            <span>
-                              {workspaceNameMap.get(form.workspaceId) || "Unknown workspace"}
-                            </span>
-                            <span className="w-0.5 h-0.5 rounded-full bg-muted-foreground/30"></span>
-                            <span>{formatLastEdited(form.updatedAt)}</span>
+                    <Link
+                      to={
+                        form.status === "published"
+                          ? "/workspace/$workspaceId/form-builder/$formId/submissions"
+                          : "/workspace/$workspaceId/form-builder/$formId/edit"
+                      }
+                      params={{
+                        workspaceId: form.workspaceId,
+                        formId: form.id,
+                      }}
+                      preload="intent"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold transition-colors">
+                                {form.title || "Untitled"}
+                              </span>
+                              <Badge
+                                variant="secondary"
+                                className={`text-[10px] h-4 px-1.5 font-normal ${
+                                  form.status === "published"
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-muted/80 text-muted-foreground"
+                                } rounded-full`}
+                              >
+                                {form.status === "published" ? "Published" : "Draft"}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                              <span>
+                                {workspaceNameMap.get(form.workspaceId) || "Unknown workspace"}
+                              </span>
+                              <span className="w-0.5 h-0.5 rounded-full bg-muted-foreground/30"></span>
+                              <span>{formatLastEdited(form.updatedAt)}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div
-                        className={`flex items-center gap-1 transition-opacity ${duplicatingFormId === form.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
-                      >
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger
-                              render={
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-label="Duplicate form"
-                                  disabled={duplicatingFormId === form.id}
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleDuplicate(form.id);
-                                  }}
-                                />
-                              }
-                            >
-                              {duplicatingFormId === form.id ? (
-                                <Loader2Icon className="h-4 w-4 animate-spin text-muted-foreground" />
-                              ) : (
-                                <CopyIcon className="h-4 w-4 text-muted-foreground" />
-                              )}
-                            </TooltipTrigger>
-                            <TooltipContent>Duplicate</TooltipContent>
-                          </Tooltip>
+                        <div
+                          className={`flex items-center gap-1 transition-opacity ${duplicatingFormId === form.id || isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                        >
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger
+                                render={
+                                  <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    aria-label="Duplicate form"
+                                    disabled={duplicatingFormId === form.id}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleDuplicate(form.id);
+                                    }}
+                                  />
+                                }
+                              >
+                                {duplicatingFormId === form.id ? (
+                                  <Loader2Icon className="h-4 w-4 animate-spin text-muted-foreground" />
+                                ) : (
+                                  <CopyIcon className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </TooltipTrigger>
+                              <TooltipContent>Duplicate</TooltipContent>
+                            </Tooltip>
 
-                          <Tooltip>
-                            <TooltipTrigger
-                              render={
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-label="Delete form"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleDeleteClick({
-                                      id: form.id,
-                                      title: form.title || "Untitled",
-                                    });
-                                  }}
-                                />
-                              }
-                            >
-                              <Trash2Icon className="h-4 w-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>Delete</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger
+                                render={
+                                  <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    aria-label="Delete form"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleDeleteClick({
+                                        id: form.id,
+                                        title: form.title || "Untitled",
+                                      });
+                                    }}
+                                  />
+                                }
+                              >
+                                <Trash2Icon className="h-4 w-4 text-muted-foreground" />
+                              </TooltipTrigger>
+                              <TooltipContent>Delete</TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                              <TooltipTrigger
+                                render={
+                                  <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    aria-label={isSelected ? "Deselect form" : "Select form"}
+                                    className={
+                                      isSelected
+                                        ? "bg-muted-foreground/20 text-foreground hover:bg-muted-foreground/30 border border-muted-foreground/30"
+                                        : "text-muted-foreground"
+                                    }
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleToggleSelect(form.id);
+                                    }}
+                                  />
+                                }
+                              >
+                                <CheckIcon className="size-3.5" />
+                              </TooltipTrigger>
+                              <TooltipContent>{isSelected ? "Deselect" : "Select"}</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                </div>
-              ))
+                    </Link>
+                  </Card>
+                );
+              })
             )}
           </div>
 
@@ -450,16 +555,76 @@ const DashboardPage = () => {
         </div>
       </main>
 
-      <div className="fixed bottom-6 right-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-10 w-10 rounded-full bg-muted/50 hover:bg-secondary shadow-sm border"
-          aria-label="Help"
-        >
-          <HelpCircleIcon className="h-5 w-5 text-muted-foreground" />
-        </Button>
-      </div>
+      {/* Floating Bulk Action Bar */}
+      {hasSelection && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[min(560px,90vw)] animate-in slide-in-from-bottom-4 fade-in duration-300">
+          <div className="flex items-center justify-between px-4 py-3 bg-background rounded-2xl border border-border/40 shadow-card-elevated">
+            <div className="flex items-center gap-2.5">
+              <div className="flex items-center justify-center h-6 w-6 rounded-md bg-foreground text-background">
+                <CheckIcon className="h-4 w-4" strokeWidth={3} />
+              </div>
+              <span className="text-sm font-medium">{selectedFormIds.size} selected</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={handleBulkDelete}>
+                Delete
+                <span className="text-xs text-muted-foreground ml-1">
+                  {formatForDisplay(HOTKEYS.DASHBOARD_DELETE)}
+                </span>
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="border border-border/50"
+                onClick={handleClearSelection}
+              >
+                <XIcon className="h-3.5 w-3.5" />
+                Clear
+                <span className="text-xs text-muted-foreground ml-1">
+                  {formatForDisplay(HOTKEYS.DASHBOARD_CLEAR_SELECTION)}
+                </span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!hasSelection && (
+        <div className="fixed bottom-6 right-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 rounded-full bg-muted/50 hover:bg-secondary shadow-sm border"
+            aria-label="Help"
+          >
+            <HelpCircleIcon className="h-5 w-5 text-muted-foreground" />
+          </Button>
+        </div>
+      )}
+
+      <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete {selectedFormIds.size} form
+              {selectedFormIds.size !== 1 ? "s" : ""}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedFormIds.size} form
+              {selectedFormIds.size !== 1 ? "s" : ""}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmBulkDelete}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>

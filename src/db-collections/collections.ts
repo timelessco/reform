@@ -111,15 +111,7 @@ export const initCollections = (
     },
     onUpdate: async ({ transaction }) => {
       const m = transaction.mutations[0];
-      const result = await serverFns.updateWorkspace({ id: m.original.id, ...m.changes });
-      if (result?.workspace) {
-        const workspaces = _workspaces as NonNullable<typeof _workspaces>;
-        workspaces.utils.writeUpdate({
-          ...result.workspace,
-          forms: m.original.forms,
-        });
-      }
-      return { refetch: false };
+      await serverFns.updateWorkspace({ id: m.original.id, ...m.changes });
     },
     onDelete: async ({ transaction }) => {
       await serverFns.deleteWorkspace({ id: transaction.mutations[0].original.id });
@@ -135,17 +127,12 @@ export const initCollections = (
     },
     onUpdate: async ({ transaction }) => {
       const m = transaction.mutations[0];
-      const result = await serverFns.updateForm(
+      await serverFns.updateForm(
         stripNulls({
           id: m.original.id,
           ...m.changes,
         }) as ServerFnInput<typeof updateForm>,
       );
-      if (result?.form) {
-        const formListings = _formListings as NonNullable<typeof _formListings>;
-        formListings.utils.writeUpdate(result.form);
-      }
-      return { refetch: false };
     },
     onDelete: async ({ transaction }) => {
       await serverFns.deleteForm({ id: transaction.mutations[0].original.id });
@@ -250,7 +237,10 @@ export const getSubmissionSummary = (formId: string) => {
   return collection;
 };
 
-export const createFormLocal = async (workspaceId: string, title = "Untitled"): Promise<Form> => {
+export const createFormLocal = (
+  workspaceId: string,
+  title = "Untitled",
+): { form: Form; persisted: Promise<void> } => {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const newForm: Form = {
@@ -289,13 +279,14 @@ export const createFormLocal = async (workspaceId: string, title = "Untitled"): 
   const tx = createTransaction({
     mutationFn: async () => {
       await serverFns.createForm(newForm);
+      await formListings.utils.refetch();
     },
   });
   tx.mutate(() => {
     formListings.insert(newForm as unknown as FormListing);
   });
 
-  return newForm;
+  return { form: newForm, persisted: tx.isPersisted.promise.then(() => undefined) };
 };
 
 export const duplicateFormById = (formId: string): { form: Form; persisted: Promise<void> } => {
@@ -325,6 +316,7 @@ export const duplicateFormById = (formId: string): { form: Form; persisted: Prom
   const tx = createTransaction({
     mutationFn: async () => {
       await serverFns.createForm(newForm);
+      await formListings.utils.refetch();
     },
   });
   tx.mutate(() => {

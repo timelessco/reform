@@ -212,7 +212,7 @@
     0 44px 52px -10px rgba(0, 0, 0, 0.1);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
-  
+
 }
 
 .dark {
@@ -754,4 +754,14 @@
 ::view-transition-new(preview-content) {
   animation-duration: 200ms;
   animation-timing-function: ease-out;
+}
+
+/* Card elevated shadow - raw box-shadow bypasses Tailwind's color-mix processing */
+.shadow-card-elevated {
+  box-shadow:
+    0 64px 74px 0 rgba(0, 0, 0, 0.08),
+    0 18px 35px 0 rgba(0, 0, 0, 0.04),
+    0 8.5px 25px 0 rgba(0, 0, 0, 0.03),
+    0 4.5px 18px 0 rgba(0, 0, 0, 0.02),
+    0 2px 9.5px 0 rgba(0, 0, 0, 0.01);
 }

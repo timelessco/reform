@@ -81,6 +81,11 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
       }
     },
     loader: async ({ context, params }) => {
+      // Skip server fetch if collection already has this form (e.g. after optimistic create/duplicate).
+      // The component reads from useLiveQuery, so the optimistic data is sufficient.
+      const cachedForm = getFormListings().get(params.formId);
+      if (cachedForm) return;
+
       await Promise.all([
         // Prefetch full form detail so the editor doesn't show a loading state
         context.queryClient.ensureQueryData(getFormbyIdQueryOption(params.formId)),

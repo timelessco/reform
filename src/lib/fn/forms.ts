@@ -278,7 +278,7 @@ export const duplicateForm = createServerFn({ method: "POST" })
         icon: originalForm.icon,
         cover: originalForm.cover,
         isMultiStep: originalForm.isMultiStep,
-        status: originalForm.status,
+        status: "draft",
         // Copy form settings fields from original
         language: originalForm.language,
         redirectOnCompletion: originalForm.redirectOnCompletion,

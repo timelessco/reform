@@ -16,6 +16,10 @@ export const HOTKEYS = {
   TOGGLE_PREVIEW: "Mod+Shift+E",
   TOGGLE_SHARE_SIDEBAR: "Mod+Shift+S",
   DISMISS_SIDEBARS: "Mod+.",
+  // Dashboard — scoped
+  DASHBOARD_SELECT_ALL: "Mod+A",
+  DASHBOARD_DELETE: "Delete",
+  DASHBOARD_CLEAR_SELECTION: "Escape",
   // Submissions page — scoped
   SUBMISSIONS_SELECT_ALL: "Mod+A",
   SUBMISSIONS_EXPORT: "Mod+E",

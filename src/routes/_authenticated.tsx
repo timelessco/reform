@@ -182,7 +182,12 @@ const initCollectionsOnClient = createClientOnlyFn((queryClient: QueryClient) =>
     getWorkspacesWithForms: async () => {
       const result = await getWorkspaces();
       // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
-      return { workspaces: result.workspaces.map((ws: any) => ({ ...ws, forms: [] })) };
+      return {
+        workspaces: result.workspaces.map((ws: any) => ({
+          ...ws,
+          forms: [],
+        })),
+      };
     },
     getFormListings: async () => await getFormListingsServer(),
     getFormDetail: async (formId: string) => {
@@ -520,7 +525,7 @@ const AppSidebar = () => {
                             orgWorkspaces[0]
                           : orgWorkspaces[0];
 
-                        const newForm = await createFormLocal(targetWorkspace.id);
+                        const { form: newForm } = createFormLocal(targetWorkspace.id);
                         router.navigate({
                           to: "/workspace/$workspaceId/form-builder/$formId/edit",
                           params: {
@@ -637,7 +642,7 @@ const TrashDialog = ({
     return archivedFormsData
       .filter((form) => orgWorkspaceIds.has(form.workspaceId))
       .filter(
-        (form) => !searchQuery || form.title.toLowerCase().includes(searchQuery.toLowerCase()),
+        (form) => !searchQuery || form?.title.toLowerCase().includes(searchQuery.toLowerCase()),
       )
       .toSorted(
         (a, b) =>

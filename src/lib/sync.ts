@@ -1,12 +1,7 @@
 import { createTransaction } from "@tanstack/react-db";
 import { logger } from "@/lib/utils";
 import { localFormCollection } from "@/db-collections/local-form.collection";
-import {
-  getFormListings,
-  getWorkspaces,
-  createWorkspaceLocal,
-  getQueryClient,
-} from "@/db-collections/collections";
+import { getFormListings, getWorkspaces, createWorkspaceLocal } from "@/db-collections/collections";
 import type { FormListing } from "@/db-collections/collections";
 import { createForm } from "@/lib/fn/forms";
 
@@ -122,9 +117,7 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
             await createForm({
               data: newFormData,
             });
-
-            // Invalidate queries so the new form appears in listings
-            await getQueryClient().invalidateQueries({ queryKey: ["form-listings"] });
+            await getFormListings().utils.refetch();
           },
         });
 
