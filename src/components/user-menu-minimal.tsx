@@ -8,6 +8,7 @@ import { useLoaderData, useRouter } from "@tanstack/react-router";
 import {
   ChevronDownIcon,
   LogOutIcon,
+  MonitorIcon,
   MoonIcon,
   SettingsIcon,
   SunIcon,
@@ -60,10 +61,15 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
     },
     {
       key: "theme",
-      label: theme === "dark" ? "Light mode" : "Dark mode",
-      icon: theme === "dark" ? SunIcon : MoonIcon,
+      label: { dark: "Light mode", light: "System theme", system: "Dark mode" }[theme ?? "system"],
+      icon: { dark: SunIcon, light: MonitorIcon, system: MoonIcon }[theme ?? "system"],
       action: () => {
-        setTheme(theme === "dark" ? "light" : "dark");
+        setTheme(
+          { dark: "light", light: "system", system: "dark" }[theme ?? "system"] as
+            | "light"
+            | "system"
+            | "dark",
+        );
         setIsOpen(false);
       },
     },

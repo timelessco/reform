@@ -12,24 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
-import Loader from "@/components/ui/loader";
-import { NotFound } from "@/components/ui/not-found";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  createFormLocal,
-  updateFormStatus,
-  createWorkspaceLocal,
-} from "@/db-collections/collections";
-import { useDuplicateForm } from "@/hooks/use-duplicate-form";
-import { useOrgForms, useOrgWorkspaces } from "@/hooks/use-live-hooks";
-import { useSession } from "@/lib/auth-client";
-import { HOTKEYS, formatForDisplay } from "@/lib/hotkeys";
-import { clearLocalDraftIds } from "@/lib/local-draft";
-import { hasLocalDataToSync, syncLocalDataToCloud } from "@/lib/sync";
-import { parseTimestampAsUTC } from "@/lib/utils";
-import { createFileRoute, Link, useLoaderData, useNavigate } from "@tanstack/react-router";
-import { useHotkey } from "@tanstack/react-hotkeys";
-import { formatDistanceToNow } from "date-fns";
 import {
   CheckIcon,
   ChevronLeftIcon,
@@ -42,8 +24,26 @@ import {
   Trash2Icon,
   XIcon,
 } from "@/components/ui/icons";
+import Loader from "@/components/ui/loader";
+import { NotFound } from "@/components/ui/not-found";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  createFormLocal,
+  createWorkspaceLocal,
+  updateFormStatus,
+} from "@/db-collections/collections";
+import { useDuplicateForm } from "@/hooks/use-duplicate-form";
+import { useOrgForms, useOrgWorkspaces } from "@/hooks/use-live-hooks";
+import { useSession } from "@/lib/auth-client";
+import { formatForDisplay, HOTKEYS } from "@/lib/hotkeys";
+import { clearLocalDraftIds } from "@/lib/local-draft";
+import { hasLocalDataToSync, syncLocalDataToCloud } from "@/lib/sync";
+import { parseTimestampAsUTC } from "@/lib/utils";
+import { useHotkey } from "@tanstack/react-hotkeys";
+import { createFileRoute, Link, useLoaderData, useNavigate } from "@tanstack/react-router";
+import { formatDistanceToNow } from "date-fns";
 import { FolderPlus } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 const FORMS_PER_PAGE = 10;
 
@@ -89,6 +89,9 @@ const SyncOverlay = () => {
   );
 };
 
+// Module-level flag survives component unmount/remount during navigation
+let _hasSynced = false;
+
 const DashboardPage = () => {
   const navigate = useNavigate();
   const duplicateFormFn = useDuplicateForm();
@@ -106,7 +109,6 @@ const DashboardPage = () => {
 
   const { data: session } = useSession();
   const [isSyncing, setIsSyncing] = useState(false);
-  const hasSyncedRef = useRef(false);
 
   const { data: liveWorkspaces, isLoading: wsLoading } = useOrgWorkspaces(activeOrg?.id);
   const { data: liveForms, isLoading: formsLoading } = useOrgForms(activeOrg?.id);
@@ -133,11 +135,11 @@ const DashboardPage = () => {
   useEffect(() => {
     const syncData = async () => {
       if (!session?.user || !activeOrg?.id) return;
-      if (hasSyncedRef.current) return;
+      if (_hasSynced) return;
 
       const hasData = await hasLocalDataToSync();
       if (!hasData) {
-        hasSyncedRef.current = true;
+        _hasSynced = true;
         return;
       }
 
@@ -149,7 +151,7 @@ const DashboardPage = () => {
           sessionStorage.removeItem("shouldSyncAfterLogin");
           toast.success("Local data synced!");
         }
-        hasSyncedRef.current = true;
+        _hasSynced = true;
       } catch (error) {
         console.error("Failed to sync local data:", error);
         toast.error("Signed in but failed to sync local data");

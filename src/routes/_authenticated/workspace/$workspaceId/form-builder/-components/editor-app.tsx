@@ -59,8 +59,8 @@ const EditorApp = ({
   // Query-backed FormDetail is structurally compatible with Form at runtime
   const savedDocs = savedDocsRaw as Form[] | undefined;
 
-  // Guard: don't mount the editor until we have actual form data
-  if (!versionContent && !savedDocs?.length) {
+  // Guard: don't mount the editor until we have actual form content (not just listing metadata)
+  if (!versionContent && (!savedDocs?.length || !savedDocs[0]?.content)) {
     // Collection ready but form not found → genuinely doesn't exist
     if (isFormReady) {
       return (

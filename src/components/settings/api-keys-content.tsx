@@ -51,9 +51,10 @@ import { APP_NAME } from "@/lib/app-config";
 export const ApiKeysContent = () => {
   const queryClient = useQueryClient();
 
-  const { data: apiKeys = [] } = useQuery({
+  const { data: apiKeysData } = useQuery({
     ...auth.apiKey.list.queryOptions(),
   });
+  const apiKeys = Array.isArray(apiKeysData) ? apiKeysData : [];
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -150,8 +151,11 @@ export const ApiKeysContent = () => {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex justify-end">
-        <Button onClick={handleOpenCreateDialog} size="sm" className="h-[30px] rounded-lg gap-1.5">
-          <PlusIcon className="size-3.5" />
+        <Button
+          onClick={handleOpenCreateDialog}
+          size="sm"
+          prefix={<PlusIcon className="size-3.5" />}
+        >
           Create API key
         </Button>
       </div>
@@ -193,7 +197,9 @@ export const ApiKeysContent = () => {
                     {key.start}...{key.prefix}
                   </TableCell>
                   <TableCell className="py-2.5 px-3 text-muted-foreground text-xs">
-                    {formatDistanceToNow(new Date(key.createdAt), { addSuffix: true })}
+                    {formatDistanceToNow(new Date(key.createdAt), {
+                      addSuffix: true,
+                    })}
                   </TableCell>
                   <TableCell className="py-2.5 px-3">
                     <DropdownMenu>

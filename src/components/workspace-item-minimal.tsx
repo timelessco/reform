@@ -203,7 +203,7 @@ const getFormIcon = (
 interface WorkspaceFormMinimalProps {
   form: {
     id: string;
-    title: string;
+    title: string | null;
     icon?: string | null;
     workspaceId: string;
     status: string;

@@ -1,21 +1,14 @@
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useCallback } from "react";
 import type { SettingsTab } from "@/hooks/use-settings-dialog";
 import { useSettingsDialog } from "@/hooks/use-settings-dialog";
+import { useCallback } from "react";
 import { SidebarItem } from "../sidebar-item";
-import {
-  CircleUserIcon,
-  DownloadIcon,
-  SparklesIcon,
-  CreditCardIcon,
-  FileCodeIcon,
-} from "../ui/icons";
+import { CircleUserIcon, CreditCardIcon, FileCodeIcon } from "../ui/icons";
 import { AccountSettingsContent } from "./account-settings-content";
-import { ImportContent } from "./import-content";
-import { MembersContent } from "./members-content";
-import { BillingContent } from "./billing-content";
 import { ApiKeysContent } from "./api-keys-content";
+import { BillingContent } from "./billing-content";
+import { MembersContent } from "./members-content";
 
 const navItems: {
   key: SettingsTab;
@@ -23,11 +16,8 @@ const navItems: {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 }[] = [
   { key: "account", label: "Account", icon: CircleUserIcon },
-  // { key: "members", label: "Members", icon: UsersIcon }, // TODO: Re-enable for multi-org support
   { key: "billing", label: "Billing", icon: CreditCardIcon },
   { key: "api-keys", label: "API Keys", icon: FileCodeIcon },
-  { key: "ai-features", label: "AI Features", icon: SparklesIcon },
-  { key: "import", label: "Import", icon: DownloadIcon },
 ];
 
 const tabTitles: Record<SettingsTab, string> = {
@@ -35,8 +25,6 @@ const tabTitles: Record<SettingsTab, string> = {
   members: "Members",
   billing: "Billing",
   "api-keys": "API Keys",
-  "ai-features": "AI Features",
-  import: "Import",
 };
 
 const TabContent = ({ tab }: { tab: SettingsTab }) => {
@@ -49,14 +37,6 @@ const TabContent = ({ tab }: { tab: SettingsTab }) => {
       return <BillingContent />;
     case "api-keys":
       return <ApiKeysContent />;
-    case "ai-features":
-      return (
-        <div className="flex flex-col items-center justify-center py-16 text-sm text-muted-foreground">
-          AI Features settings coming soon.
-        </div>
-      );
-    case "import":
-      return <ImportContent />;
   }
 };
 

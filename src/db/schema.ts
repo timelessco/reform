@@ -121,6 +121,7 @@ export const apikey = pgTable("apikey", {
   prefix: text(),
   key: text().notNull(),
   userId: text().notNull(),
+  referenceId: text(),
   refillInterval: integer(),
   refillAmount: integer(),
   lastRefillAt: timestamp({ withTimezone: true }),

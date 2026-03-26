@@ -1,7 +1,7 @@
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import { getFormListings } from "@/db-collections/collections";
+import { getFormListings, isInitialized } from "@/db-collections/collections";
 import { getFormVersions } from "@/lib/fn/form-versions";
 import { getFormbyIdQueryOption, getFormStatus } from "@/lib/fn/forms";
 import type { FormStatus } from "@/lib/fn/forms";
@@ -83,8 +83,11 @@ export const Route = createFileRoute("/_authenticated/workspace/$workspaceId/for
     loader: async ({ context, params }) => {
       // Skip server fetch if collection already has this form (e.g. after optimistic create/duplicate).
       // The component reads from useLiveQuery, so the optimistic data is sufficient.
-      const cachedForm = getFormListings().get(params.formId);
-      if (cachedForm) return;
+      // Guard: collections may not be initialized yet (SSR or first load before parent layout runs).
+      if (isInitialized()) {
+        const cachedForm = getFormListings().get(params.formId);
+        if (cachedForm?.content) return;
+      }
 
       await Promise.all([
         // Prefetch full form detail so the editor doesn't show a loading state

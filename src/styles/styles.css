@@ -287,7 +287,7 @@
 
   /* Shadcn/ui Tokens */
   --background: var(--color-gray-0);
-  --card: var(--color-gray-200);
+  --card: var(--color-gray-0);
   --card-foreground: var(--color-gray-950);
   --popover: var(--color-gray-50);
   --popover-foreground: var(--color-gray-800);

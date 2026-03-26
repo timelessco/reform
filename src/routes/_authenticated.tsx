@@ -33,6 +33,7 @@ import {
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import {
   BellIcon,
+  CheckIcon,
   FileTextIcon,
   HelpCircleIcon,
   HomeIcon,
@@ -619,7 +620,6 @@ const AppSidebar = () => {
 };
 
 // Trash Dialog Component
-// Trash Dialog Component
 const TrashDialog = ({
   open,
   onOpenChange,
@@ -630,10 +630,11 @@ const TrashDialog = ({
   activeOrgId?: string;
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
   const { data: archivedFormsData } = useArchivedForms();
   const { data: orgWorkspacesData } = useOrgWorkspaces(activeOrgId);
 
-  // Get archived forms filtered by active organization
   const archivedForms = useMemo(() => {
     if (!activeOrgId || !archivedFormsData || !orgWorkspacesData) return [];
 
@@ -642,7 +643,8 @@ const TrashDialog = ({
     return archivedFormsData
       .filter((form) => orgWorkspaceIds.has(form.workspaceId))
       .filter(
-        (form) => !searchQuery || form?.title.toLowerCase().includes(searchQuery.toLowerCase()),
+        (form) =>
+          !searchQuery || (form?.title ?? "").toLowerCase().includes(searchQuery.toLowerCase()),
       )
       .toSorted(
         (a, b) =>
@@ -651,7 +653,6 @@ const TrashDialog = ({
       );
   }, [archivedFormsData, orgWorkspacesData, activeOrgId, searchQuery]);
 
-  // Create a map of workspace names
   const workspaceNames = useMemo(() => {
     if (!orgWorkspacesData) return {};
     return orgWorkspacesData.reduce(
@@ -663,30 +664,120 @@ const TrashDialog = ({
     );
   }, [orgWorkspacesData]);
 
-  const handleSearchChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value),
-    [],
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen) setSelectedIds(new Set());
+      onOpenChange(nextOpen);
+    },
+    [onOpenChange],
   );
 
-  const handleRestore = async (formId: string) => {
-    try {
-      await restoreFormLocal(formId);
-    } catch (error) {
-      console.error("Failed to restore form:", error);
-    }
-  };
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setSelectedIds(new Set());
+  }, []);
 
-  const handlePermanentDelete = async (formId: string) => {
-    try {
-      await permanentDeleteFormLocal(formId);
-    } catch (error) {
-      console.error("Failed to delete form:", error);
+  const handleToggleSelect = useCallback((formId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(formId)) {
+        next.delete(formId);
+      } else {
+        next.add(formId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    if (selectedIds.size === archivedForms.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(archivedForms.map((f) => f.id)));
     }
-  };
+  }, [selectedIds.size, archivedForms]);
+
+  const removeFromSelection = useCallback((formId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(formId);
+      return next;
+    });
+  }, []);
+
+  const handleRestore = useCallback(
+    async (formId: string) => {
+      try {
+        await restoreFormLocal(formId);
+        removeFromSelection(formId);
+      } catch (error) {
+        console.error("Failed to restore form:", error);
+      }
+    },
+    [removeFromSelection],
+  );
+
+  const handlePermanentDelete = useCallback(
+    async (formId: string) => {
+      try {
+        await permanentDeleteFormLocal(formId);
+        removeFromSelection(formId);
+      } catch (error) {
+        console.error("Failed to delete form:", error);
+      }
+    },
+    [removeFromSelection],
+  );
+
+  const handleBulkDelete = useCallback(async () => {
+    const count = selectedIds.size;
+    if (count === 0) return;
+    setIsDeleting(true);
+    try {
+      await Promise.all([...selectedIds].map((id) => permanentDeleteFormLocal(id)));
+      setSelectedIds(new Set());
+    } catch (error) {
+      console.error("Failed to delete forms:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [selectedIds]);
+
+  const hasSelection = selectedIds.size > 0;
+
+  useHotkey("Mod+A", handleSelectAll, {
+    enabled: open,
+    conflictBehavior: "replace",
+    ignoreInputs: true,
+  });
+
+  useHotkey("Delete", handleBulkDelete, {
+    enabled: open && hasSelection,
+    conflictBehavior: "replace",
+    ignoreInputs: true,
+  });
+
+  useHotkey(
+    "Escape",
+    () => {
+      if (hasSelection) {
+        setSelectedIds(new Set());
+      } else {
+        handleOpenChange(false);
+      }
+    },
+    {
+      enabled: open,
+      conflictBehavior: "replace",
+    },
+  );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] p-0 gap-0 bg-background border-foreground/10">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent
+        showCloseButton={false}
+        className="sm:max-w-[500px] p-0 gap-0 bg-background border-foreground/10"
+      >
         {/* Search Input */}
         <div className="p-3 border-b border-foreground/5">
           <Input
@@ -707,63 +798,118 @@ const TrashDialog = ({
             </div>
           ) : (
             <div className="p-1">
-              {archivedForms.map((form) => (
-                <div
-                  key={form.id}
-                  className="group flex items-center justify-between px-3 py-2 hover:bg-muted/50 rounded-md transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <FileTextIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[13px] text-foreground truncate">
-                        {form.title || "Untitled"}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground/60 truncate">
-                        {workspaceNames[form.workspaceId] || "Unknown workspace"}
-                      </p>
+              {archivedForms.map((form) => {
+                const isSelected = selectedIds.has(form.id);
+                return (
+                  <div
+                    key={form.id}
+                    className={`group flex items-center justify-between px-3 py-2 rounded-md transition-colors cursor-pointer ${isSelected ? "bg-muted/50" : "hover:bg-muted/50"}`}
+                    onClick={() => handleToggleSelect(form.id)}
+                    role="option"
+                    aria-selected={isSelected}
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="flex items-center justify-center h-5 w-5 rounded shrink-0">
+                        {isSelected ? (
+                          <div className="flex items-center justify-center h-5 w-5 rounded bg-foreground text-background transition-colors">
+                            <CheckIcon className="h-3.5 w-3.5" strokeWidth={3} />
+                          </div>
+                        ) : (
+                          <>
+                            <FileTextIcon className="h-4 w-4 text-muted-foreground group-hover:hidden" />
+                            <div className="hidden group-hover:flex items-center justify-center h-5 w-5 rounded border border-muted-foreground/30 text-muted-foreground transition-colors">
+                              <CheckIcon className="h-3.5 w-3.5" />
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] text-foreground truncate">
+                          {form.title || "Untitled"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground/60 truncate">
+                          {workspaceNames[form.workspaceId] || "Unknown workspace"}
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      className={`flex items-center gap-1 transition-opacity ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                    >
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRestore(form.id);
+                        }}
+                        className="h-7 w-7"
+                        title="Restore"
+                        aria-label="Restore"
+                      >
+                        <Undo2Icon className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePermanentDelete(form.id);
+                        }}
+                        className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
+                        title="Delete permanently"
+                        aria-label="Delete permanently"
+                      >
+                        <Trash2Icon className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => handleRestore(form.id)}
-                      className="h-7 w-7"
-                      title="Restore"
-                      aria-label="Restore"
-                    >
-                      <Undo2Icon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => handlePermanentDelete(form.id)}
-                      className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
-                      title="Delete permanently"
-                      aria-label="Delete permanently"
-                    >
-                      <Trash2Icon className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* Footer */}
+        {/* Footer — switches between selection actions and info text */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-foreground/5 bg-muted/20">
-          <p className="text-[11px] text-muted-foreground/60">
-            Pages in Trash for over 30 days will be automatically deleted
-          </p>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="h-7 w-7 text-muted-foreground/40 hover:text-muted-foreground"
-            aria-label="Help"
-          >
-            <HelpCircleIcon className="h-4 w-4" />
-          </Button>
+          {hasSelection ? (
+            <>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSelectAll}
+                  className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                >
+                  {selectedIds.size === archivedForms.length ? "Deselect all" : "Select all"}
+                </button>
+                <span className="text-[11px] text-muted-foreground/60">
+                  {selectedIds.size} selected
+                </span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBulkDelete}
+                disabled={isDeleting}
+                className="h-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              >
+                {isDeleting ? "Deleting..." : "Delete selected"}
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="text-[11px] text-muted-foreground/60">
+                Pages in Trash for over 30 days will be automatically deleted
+              </p>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="h-7 w-7 text-muted-foreground/40 hover:text-muted-foreground"
+                aria-label="Help"
+              >
+                <HelpCircleIcon className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
