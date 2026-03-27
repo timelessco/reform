@@ -18,7 +18,7 @@ import { EmojiKit } from "@/components/editor/plugins/emoji-kit";
 import { ExitBreakKit } from "@/components/editor/plugins/exit-break-kit";
 import { FloatingToolbarKit } from "@/components/editor/plugins/floating-toolbar-kit";
 import { FontKit } from "@/components/editor/plugins/font-kit";
-import { FormBlocksKit } from "@/components/editor/plugins/form-blocks-kit";
+import { FormBlocksKit, TabGuardPlugin } from "@/components/editor/plugins/form-blocks-kit";
 import { FormHeaderKit } from "@/components/editor/plugins/form-header-kit";
 import { LineHeightKit } from "@/components/editor/plugins/line-height-kit";
 import { LinkKit } from "@/components/editor/plugins/link-kit";
@@ -59,6 +59,9 @@ export const EditorKit = [
   ...ListKit,
   ...AlignKit,
   ...LineHeightKit,
+
+  // Tab guard must come after IndentPlugin (ListKit/ToggleKit) to wrap outermost
+  TabGuardPlugin,
 
   // Collaboration
   ...DiscussionKit,

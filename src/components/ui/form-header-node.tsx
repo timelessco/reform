@@ -858,6 +858,17 @@ export const FormHeaderElement = (props: PlateElementProps) => {
                 onChange={(e) => handleTitleChange(e.target.value)}
                 onFocus={autoResizeTitle}
                 onKeyDown={(e) => {
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    const firstBlockPath = [1];
+                    // eslint-disable-next-line typescript-eslint/no-explicit-any
+                    const startPoint = (editor.api as any).edges(firstBlockPath)?.[0];
+                    if (startPoint) {
+                      editor.tf.select(startPoint);
+                      editor.tf.focus();
+                    }
+                    return;
+                  }
                   if (e.key === "Tab" && !e.shiftKey) {
                     e.preventDefault();
                     const firstBlockPath = [1];

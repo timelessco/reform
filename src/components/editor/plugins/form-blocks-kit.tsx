@@ -1126,6 +1126,26 @@ const GlobalKeyboardNavigationPlugin = createPlatePlugin({
   },
 });
 
+/**
+ * Must be registered AFTER IndentPlugin (from ListKit/ToggleKit) so that this
+ * tab override wraps outermost and can short-circuit before IndentPlugin indents.
+ */
+export const TabGuardPlugin = createPlatePlugin({
+  key: "tabGuard",
+}).overrideEditor(({ editor, tf: { tab } }) => ({
+  transforms: {
+    // eslint-disable-next-line typescript-eslint/no-explicit-any
+    tab: (options: any) => {
+      // eslint-disable-next-line typescript-eslint/no-explicit-any
+      const event = (editor as any).dom?.currentKeyboardEvent;
+
+      if (event?.defaultPrevented) return;
+
+      return tab(options);
+    },
+  },
+}));
+
 export const FormBlocksKit = [
   GlobalKeyboardNavigationPlugin,
   FormLabelPlugin,
