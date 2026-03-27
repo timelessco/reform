@@ -410,10 +410,12 @@ const AppSidebar = () => {
 
   // Trash dialog state
   const [trashDialogOpen, setTrashDialogOpen] = useState(false);
+  const [paletteSearch, setPaletteSearch] = useState("");
 
   // Get pre-fetched data from route loader for immediate render
   const { activeOrg } = Route.useLoaderData();
   const { data: workspacesData } = useOrgWorkspaces(activeOrg?.id);
+  const { data: formsData } = useOrgForms(activeOrg?.id);
 
   // TODO: Re-enable for multi-org support
   // const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
@@ -506,9 +508,19 @@ const AppSidebar = () => {
 
       {/* Command Palette - rendered only on client to avoid cmdk React 19 SSR issue */}
       {typeof window !== "undefined" && (
-        <CommandDialog open={isPaletteOpen} onOpenChange={setIsPaletteOpen}>
+        <CommandDialog
+          open={isPaletteOpen}
+          onOpenChange={(open) => {
+            setIsPaletteOpen(open);
+            if (!open) setPaletteSearch("");
+          }}
+        >
           <Command>
-            <CommandInput placeholder="Search for forms and help articles" />
+            <CommandInput
+              placeholder="Search for forms and help articles"
+              value={paletteSearch}
+              onValueChange={setPaletteSearch}
+            />
             <CommandList>
               <CommandEmpty>No results found.</CommandEmpty>
               <CommandGroup heading="Actions">
@@ -560,6 +572,33 @@ const AppSidebar = () => {
                   <span>New workspace</span>
                 </CommandItem>
               </CommandGroup>
+              {paletteSearch.trim().length > 0 && formsData && formsData.length > 0 && (
+                <>
+                  <CommandSeparator />
+                  <CommandGroup heading="Forms">
+                    {formsData.map((form) => (
+                      <CommandItem
+                        key={form.id}
+                        value={`${form.title || "Untitled form"} ${form.id}`}
+                        onSelect={() => {
+                          setIsPaletteOpen(false);
+                          setPaletteSearch("");
+                          router.navigate({
+                            to: "/workspace/$workspaceId/form-builder/$formId/edit",
+                            params: {
+                              workspaceId: form.workspaceId,
+                              formId: form.id,
+                            },
+                          });
+                        }}
+                      >
+                        <FileTextIcon className="size-4" />
+                        <span>{form.title || "Untitled form"}</span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </>
+              )}
               <CommandSeparator />
               <CommandGroup heading="Navigation">
                 <CommandItem
