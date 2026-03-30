@@ -1,6 +1,6 @@
 import { ImageIcon, CircleUserRoundIcon, SettingsIcon, Trash2Icon } from "@/components/ui/icons";
 import { IconPickerContent, IconPickerPreview } from "@/components/icon-picker";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorRef } from "platejs/react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import { createFormButtonNode } from "@/components/ui/form-button-node";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsIndicator, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEditorTheme } from "@/contexts/editor-theme-context";
+import { usePretextAutoResize } from "@/hooks/use-pretext-auto-resize";
+import { FONT_REGISTRY } from "@/lib/font-registry";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import {
@@ -482,22 +484,29 @@ export const FormHeaderElement = (props: PlateElementProps) => {
     [editor, element],
   );
 
-  const titleRef = useRef<HTMLTextAreaElement>(null);
-
-  const autoResizeTitle = useCallback(() => {
-    const el = titleRef.current;
-    if (el) {
-      el.style.height = "auto";
-      el.style.height = `${el.scrollHeight}px`;
-    }
-  }, []);
-
+  // Resolve font for Pretext measurement — build CSS font shorthand from customization
   const titleFontSize = editorCustomization?.titleFontSize;
   const titleFont = editorCustomization?.titleFont;
 
-  useEffect(() => {
-    autoResizeTitle();
-  }, [title, titleFontSize, titleFont, autoResizeTitle]);
+  const pretextFont = useMemo(() => {
+    const size = titleFontSize || "48px";
+    const fontName = titleFont || "Timeless Serif";
+    const family = FONT_REGISTRY[fontName]?.cssValue || `"${fontName}"`;
+    // CSS font shorthand: weight size family
+    return `252 ${size} ${family}`;
+  }, [titleFontSize, titleFont]);
+
+  const pretextLineHeight = useMemo(() => {
+    const size = Number.parseFloat(titleFontSize || "48");
+    return size * 1.25; // leading-tight = 1.25
+  }, [titleFontSize]);
+
+  const titleRef = usePretextAutoResize({
+    text: title,
+    font: pretextFont,
+    lineHeightPx: pretextLineHeight,
+    paddingY: 16, // py-2 top + bottom = 8 + 8 = 16
+  });
 
   const handleTitleChange = useCallback(
     (newTitle: string) => {
@@ -856,7 +865,6 @@ export const FormHeaderElement = (props: PlateElementProps) => {
                 placeholder="Create your form."
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
-                onFocus={autoResizeTitle}
                 onKeyDown={(e) => {
                   if (e.key === "ArrowDown") {
                     e.preventDefault();
