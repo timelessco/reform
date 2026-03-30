@@ -234,7 +234,7 @@ const PreviewFormHeader = ({
     return (
       <div ref={headerRef} className="mb-4 sm:mb-8 w-full">
         {hasCover && renderCover()}
-
+        <div className="h-[92px]"></div>
         {/* Match editor's left-aligned layout — no inner padding so title width matches the editor's content area */}
         <div
           className="mx-auto w-full"
@@ -246,7 +246,7 @@ const PreviewFormHeader = ({
             <h1
               data-bf-title
               style={{ textWrap: "pretty" }}
-              className={`text-4xl sm:text-[48px] font-serif font-light -tracking-[0.03em] text-foreground ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
+              className={`text-4xl sm:text-[48px] font-serif font-light -tracking-[0.03em] text-foreground ${hasIcon ? "mt-3 sm:mt-4" : ""}`}
             >
               {title}
             </h1>
@@ -550,7 +550,7 @@ const FormPreviewContent = ({
 
       {/* Step Form */}
       <div
-        className={cn("overflow-hidden mx-auto", layout === "editor" ? "w-full px-4" : "px-4")}
+        className={cn("mx-auto", layout === "editor" ? "w-full" : "px-4")}
         style={{ maxWidth: PAGE_MAX_WIDTH[layout] }}
         data-bf-form-container
       >
@@ -573,7 +573,6 @@ const FormPreviewContent = ({
               stepIndex={currentStep}
               segments={currentStepSegments}
               isLastStep={isLastStep}
-              layout={layout}
               autoJump={settings?.autoJump}
             />
           </motion.div>

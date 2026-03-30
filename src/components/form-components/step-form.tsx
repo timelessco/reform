@@ -9,7 +9,7 @@ import {
   getEditableFieldsFromSegments,
   getFieldsFromSegments,
 } from "@/lib/transform-plate-for-preview";
-import type { PreviewSegment } from "@/lib/transform-plate-for-preview";
+import type { FieldSegment, PreviewSegment } from "@/lib/transform-plate-for-preview";
 import { StaticContentBlock } from "./static-content-block";
 import { RenderStepPreviewInput } from "./render-step-preview-input";
 
@@ -19,7 +19,6 @@ interface StepFormProps {
   stepIndex: number;
   segments: PreviewSegment[];
   isLastStep: boolean;
-  layout?: "public" | "editor";
   autoJump?: boolean;
 }
 
@@ -27,13 +26,7 @@ interface StepFormProps {
  * Individual step form component with its own form instance.
  * Uses StepFormContext for navigation and data accumulation.
  */
-export const StepForm = ({
-  stepIndex,
-  segments,
-  isLastStep,
-  layout = "public",
-  autoJump = false,
-}: StepFormProps) => {
+export const StepForm = ({ stepIndex, segments, isLastStep, autoJump = false }: StepFormProps) => {
   const { currentStep, totalSteps, goToPrevStep, isSubmitting } = useStepForm();
   const fields = useMemo(() => getFieldsFromSegments(segments), [segments]);
   const editableFields = useMemo(() => getEditableFieldsFromSegments(segments), [segments]);
@@ -129,7 +122,6 @@ export const StepForm = ({
                     isSubmitting={isSubmitting}
                     onPrevious={currentStep > 0 ? goToPrevStep : undefined}
                     grouped
-                    layout={layout}
                   />
                 )}
                 {prevButton ? (
@@ -138,7 +130,6 @@ export const StepForm = ({
                     isSubmitting={isSubmitting}
                     onPrevious={currentStep > 0 ? goToPrevStep : undefined}
                     grouped
-                    layout={layout}
                   />
                 ) : (
                   <div /> // Spacer for justify-between
@@ -169,7 +160,6 @@ export const StepForm = ({
                   field={field}
                   isSubmitting={isSubmitting}
                   onPrevious={currentStep > 0 ? goToPrevStep : undefined}
-                  layout={layout}
                   totalSteps={totalSteps}
                 />
               );
@@ -203,40 +193,27 @@ type ButtonField = {
 type GroupedSegment = PreviewSegment | { type: "buttonGroup"; buttons: ButtonField[] };
 
 /**
- * Groups segments for rendering, combining adjacent button FieldSegments into groups.
+ * Groups segments for rendering, combining all button FieldSegments into a single group.
+ * Buttons are collected from anywhere in the step and rendered together at the end,
+ * ensuring Previous and Next/Submit always appear on the same row.
  */
 const groupSegmentsForRendering = (segments: PreviewSegment[]): GroupedSegment[] => {
   const result: GroupedSegment[] = [];
-  let i = 0;
+  const allButtons: ButtonField[] = [];
 
-  while (i < segments.length) {
-    const seg = segments[i];
-
-    // Check if this is a button field segment
+  for (const seg of segments) {
     if (seg.type === "field" && seg.field.fieldType === "Button") {
-      const buttons: ButtonField[] = [seg.field as ButtonField];
-
-      // Collect consecutive button segments
-      while (i + 1 < segments.length) {
-        const next = segments[i + 1];
-        if (next.type === "field" && next.field.fieldType === "Button") {
-          i++;
-          buttons.push(next.field as ButtonField);
-        } else {
-          break;
-        }
-      }
-
-      // If multiple buttons, group them; otherwise keep single
-      if (buttons.length > 1) {
-        result.push({ type: "buttonGroup", buttons });
-      } else {
-        result.push(seg);
-      }
+      allButtons.push(seg.field as ButtonField);
     } else {
       result.push(seg);
     }
-    i++;
+  }
+
+  // Append buttons as a group (or single) at the end
+  if (allButtons.length > 1) {
+    result.push({ type: "buttonGroup", buttons: allButtons });
+  } else if (allButtons.length === 1) {
+    result.push({ type: "field", field: allButtons[0] } as FieldSegment);
   }
 
   return result;
@@ -253,14 +230,12 @@ const RenderStepButton = ({
   isSubmitting,
   onPrevious,
   grouped = false,
-  layout = "public",
   totalSteps = 1,
 }: {
   field: ButtonField;
   isSubmitting: boolean;
   onPrevious?: () => void;
   grouped?: boolean;
-  layout?: "public" | "editor";
   totalSteps?: number;
 }) => {
   const { t } = useTranslation();
@@ -269,6 +244,9 @@ const RenderStepButton = ({
     buttonRole === "next" ? t("next") : buttonRole === "previous" ? t("previous") : t("submit");
   const buttonText = field.buttonText || defaultText;
 
+  // Matches editor button: h-8, 13px font, px-2.5
+  const buttonStyle = { fontSize: "13px" } as const;
+
   // Previous button - onClick handler from context
   if (buttonRole === "previous") {
     const button = (
@@ -276,7 +254,9 @@ const RenderStepButton = ({
         type="button"
         variant="outline"
         onClick={onPrevious}
-        prefix={<ChevronLeftIcon className="h-4 w-4" />}
+        style={buttonStyle}
+        className="h-8 px-2.5 rounded-lg gap-1.5"
+        prefix={<ChevronLeftIcon className="size-4" />}
       >
         {buttonText}
       </Button>
@@ -295,7 +275,9 @@ const RenderStepButton = ({
     const button = (
       <Button
         type="submit"
-        suffix={<ChevronRightIcon className="h-4 w-4" />}
+        style={buttonStyle}
+        className="h-8 px-2.5 rounded-lg gap-1.5"
+        suffix={<ChevronRightIcon className="size-4" />}
         disabled={isSubmitting}
       >
         {buttonText}
@@ -315,7 +297,8 @@ const RenderStepButton = ({
   const submitButton = (
     <Button
       type="submit"
-      suffix={layout !== "editor" ? <ChevronRightIcon className="h-4 w-4" /> : undefined}
+      style={buttonStyle}
+      className="h-8 px-2.5 rounded-lg gap-1.5"
       disabled={isSubmitting}
     >
       {isSubmitting ? t("submitting") : buttonText}

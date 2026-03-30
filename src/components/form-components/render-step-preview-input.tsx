@@ -68,7 +68,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                 autoComplete="off"
                 aria-invalid={hasErrors}
                 className={cn(
-                  "max-w-md min-h-24 rounded-[var(--radius-lg)] border-0 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
+                  "w-full min-h-24 rounded-[var(--radius-lg)] border-0 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
                   hasErrors && "ring-destructive/20 ring-[3px]",
                 )}
               />
@@ -110,7 +110,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                 autoComplete="off"
                 aria-invalid={hasErrors}
                 className={cn(
-                  "max-w-md rounded-(--radius-lg) border-0 h-7 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
+                  "w-full rounded-(--radius-lg) border-0 h-7 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
                   hasErrors && "ring-destructive/20 ring-[3px]",
                 )}
               />

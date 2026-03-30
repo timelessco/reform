@@ -140,13 +140,12 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
             const isCurrent = index === 0;
 
             return (
-              <Button
-                variant="ghost"
-                size="lg"
+              <button
+                type="button"
                 key={version.id}
                 onClick={() => selectVersion(version.id)}
                 className={cn(
-                  "flex gap-1.5 h-auto items-start pl-2 py-2 rounded-lg w-full text-left relative",
+                  "flex gap-1.5 h-auto items-start pl-2 py-2 rounded-lg w-full text-left relative cursor-pointer",
                   isSelected ? "bg-accent" : "hover:bg-accent/50",
                 )}
               >
@@ -177,10 +176,8 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         render={
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-[26px] rounded-lg"
+                          <span
+                            className="inline-flex items-center justify-center size-[26px] rounded-lg hover:bg-accent cursor-pointer"
                             onClick={stopPropagation}
                             aria-label="Version actions"
                           />
@@ -220,7 +217,7 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
                     </span>
                   </div>
                 )}
-              </Button>
+              </button>
             );
           })}
         </div>
