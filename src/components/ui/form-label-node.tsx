@@ -42,7 +42,7 @@ export const FormLabelElement = ({ className, children, ...props }: PlateElement
             size="icon-sm"
             onClick={toggleRequired}
             className={cn(
-              "flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded-full bg-muted text-xs text-red-500 hover:bg-muted-foreground hover:text-muted",
+              "flex size-4 shrink-0 cursor-pointer text-center self-center content-center items-center justify-center rounded-full bg-muted text-xs text-red-500 hover:bg-muted-foreground hover:text-muted",
               "ml-2",
             )}
             contentEditable={false}
