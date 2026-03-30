@@ -1,10 +1,13 @@
 import {
+  AtSignIcon,
   Code2,
   Columns3Icon,
+  HashIcon,
   Heading1Icon,
   Heading2Icon,
   Heading3Icon,
   LightbulbIcon,
+  PhoneIcon,
   PilcrowIcon,
   Quote,
   Square,
@@ -15,10 +18,13 @@ import {
   AlignLeftIcon,
   CalendarIcon,
   ChevronRightIcon,
+  ClockIcon,
   FileIcon,
+  LinkIcon,
   ListIcon,
   ListOrderedIcon,
   SmileIcon,
+  UploadIcon,
 } from "@/components/ui/icons";
 import { KEYS } from "platejs";
 import type { TComboboxInputElement } from "platejs";
@@ -215,6 +221,48 @@ const groups: Group[] = [
         keywords: ["form", "textarea", "multiline", "long", "paragraph", "description"],
         label: "Text Area",
         value: "formTextarea",
+      },
+      {
+        icon: <AtSignIcon />,
+        keywords: ["form", "email", "address", "mail"],
+        label: "Email",
+        value: "formEmail",
+      },
+      {
+        icon: <PhoneIcon />,
+        keywords: ["form", "phone", "telephone", "number", "call", "mobile"],
+        label: "Phone number",
+        value: "formPhone",
+      },
+      {
+        icon: <HashIcon />,
+        keywords: ["form", "number", "numeric", "integer", "amount"],
+        label: "Number",
+        value: "formNumber",
+      },
+      {
+        icon: <LinkIcon />,
+        keywords: ["form", "link", "url", "website", "href"],
+        label: "Link",
+        value: "formLink",
+      },
+      {
+        icon: <CalendarIcon />,
+        keywords: ["form", "date", "calendar", "day", "month", "year"],
+        label: "Date",
+        value: "formDate",
+      },
+      {
+        icon: <ClockIcon />,
+        keywords: ["form", "time", "clock", "hour", "minute"],
+        label: "Time",
+        value: "formTime",
+      },
+      {
+        icon: <UploadIcon />,
+        keywords: ["form", "file", "upload", "attachment", "document"],
+        label: "File upload",
+        value: "formFileUpload",
       },
     ].map((item) => ({
       ...item,

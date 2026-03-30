@@ -110,22 +110,34 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
         const labelText = extractTextContent(node.children as Array<{ text?: string }>);
         const isRequired = Boolean(node.required);
 
-        // Peek ahead for formInput/formTextarea
+        // Map node types to field types
+        const typeMap: Record<string, string> = {
+          formInput: "Input",
+          formTextarea: "Textarea",
+          formEmail: "Email",
+          formPhone: "Phone",
+          formNumber: "Number",
+          formLink: "Link",
+          formDate: "Date",
+          formTime: "Time",
+          formFileUpload: "FileUpload",
+        };
+
+        // Peek ahead for recognized form input type
         const nextNode = nodes[i + 1];
         let placeholder = "";
         let minLength: number | undefined;
         let maxLength: number | undefined;
         let defaultValue: string | undefined;
-        let fieldType: "Input" | "Textarea" = "Input";
-
-        if (nextNode && (nextNode.type === "formInput" || nextNode.type === "formTextarea")) {
-          fieldType = nextNode.type === "formTextarea" ? "Textarea" : "Input";
+        let fieldType: string = "Input";
+        if (nextNode && typeMap[nextNode.type as string]) {
+          fieldType = typeMap[nextNode.type as string];
           const inputText = extractTextContent(nextNode.children as Array<{ text?: string }>);
           placeholder = inputText || (nextNode.placeholder as string) || "";
           minLength = nextNode.minLength as number | undefined;
           maxLength = nextNode.maxLength as number | undefined;
           defaultValue = nextNode.defaultValue as string | undefined;
-          i++; // Skip the formInput/formTextarea
+          i++; // Skip the form input node
         }
 
         // Use Plate element ID as stable field name
@@ -133,20 +145,19 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
         const baseName = slugify(labelText);
         const name = stableId || `${baseName}_${fieldIndex}`;
 
-        segments.push({
-          type: "field",
-          field: {
-            id: name,
-            name,
-            fieldType,
-            label: labelText || "Untitled Field",
-            placeholder: placeholder || undefined,
-            required: isRequired,
-            minLength,
-            maxLength,
-            defaultValue,
-          },
-        });
+        const field: PlateFormField = {
+          id: name,
+          name,
+          fieldType: fieldType as PlateFormField["fieldType"],
+          label: labelText || "Untitled Field",
+          placeholder: placeholder || undefined,
+          required: isRequired,
+          minLength,
+          maxLength,
+          defaultValue,
+        } as PlateFormField;
+
+        segments.push({ type: "field", field });
         fieldIndex++;
         break;
       }
@@ -178,9 +189,16 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
         break;
       }
 
-      // Skip standalone formInput/formTextarea (handled with formLabel above)
+      // Skip standalone form input nodes (handled with formLabel above)
       case "formInput":
       case "formTextarea":
+      case "formEmail":
+      case "formPhone":
+      case "formNumber":
+      case "formLink":
+      case "formDate":
+      case "formTime":
+      case "formFileUpload":
         break;
 
       default:
@@ -209,7 +227,17 @@ export const getFieldsFromSegments = (segments: PreviewSegment[]): PlateFormFiel
  * Extracts only editable (non-button) fields from segments.
  * Used for form field count checks and auto-jump logic.
  */
+const EDITABLE_FIELD_TYPES = new Set([
+  "Input",
+  "Textarea",
+  "Email",
+  "Phone",
+  "Number",
+  "Link",
+  "Date",
+  "Time",
+  "FileUpload",
+]);
+
 export const getEditableFieldsFromSegments = (segments: PreviewSegment[]): PlateFormField[] =>
-  getFieldsFromSegments(segments).filter(
-    (f) => f.fieldType === "Input" || f.fieldType === "Textarea",
-  );
+  getFieldsFromSegments(segments).filter((f) => EDITABLE_FIELD_TYPES.has(f.fieldType));

@@ -34,10 +34,22 @@ import { cn } from "@/lib/utils";
 
 type BlockFieldType = "formInput" | "formButton" | "static" | "unknown";
 
+const FORM_INPUT_NODE_TYPES = new Set([
+  "formInput",
+  "formTextarea",
+  "formEmail",
+  "formPhone",
+  "formNumber",
+  "formLink",
+  "formDate",
+  "formTime",
+  "formFileUpload",
+]);
+
 // Get field type category for the menu
 const getFieldType = (nodeType: string | undefined): BlockFieldType => {
   if (!nodeType) return "unknown";
-  if (["formLabel", "formInput", "formTextarea"].includes(nodeType)) return "formInput";
+  if (nodeType === "formLabel" || FORM_INPUT_NODE_TYPES.has(nodeType)) return "formInput";
   if (nodeType === "formButton") return "formButton";
   if (["h1", "h2", "h3", "p", "blockquote", "hr"].includes(nodeType)) return "static";
   return "unknown";
@@ -106,7 +118,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   // Get label node (for formInput/formTextarea, look at previous sibling)
   const labelNode = React.useMemo(() => {
     if (nodeType === "formLabel" || nodeType === "formButton") return firstNode;
-    if (["formInput", "formTextarea"].includes(nodeType ?? "") && firstPath) {
+    if (FORM_INPUT_NODE_TYPES.has(nodeType ?? "") && firstPath) {
       // Look at previous sibling for label
       const prevPath = [...firstPath];
       prevPath[prevPath.length - 1] -= 1;
@@ -124,14 +136,14 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
 
   // Get input node (for formLabel, look at next sibling)
   const inputNode = React.useMemo(() => {
-    if (["formInput", "formTextarea"].includes(nodeType ?? "")) return firstNode;
+    if (FORM_INPUT_NODE_TYPES.has(nodeType ?? "")) return firstNode;
     if (nodeType === "formLabel" && firstPath) {
       // Look at next sibling for input or textarea
       const nextPath = [...firstPath];
       nextPath[nextPath.length - 1] += 1;
       try {
         const next = editor.api.node(nextPath);
-        if (next && ["formInput", "formTextarea"].includes(next[0]?.type as string)) {
+        if (next && FORM_INPUT_NODE_TYPES.has(next[0]?.type as string)) {
           return next[0] as typeof firstNode;
         }
       } catch {
@@ -144,7 +156,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   // Helper to get the input path
   const getInputPath = React.useCallback(() => {
     if (!firstPath) return null;
-    if (["formInput", "formTextarea"].includes(nodeType ?? "")) return firstPath;
+    if (FORM_INPUT_NODE_TYPES.has(nodeType ?? "")) return firstPath;
     if (nodeType === "formLabel") {
       const inputPath = [...firstPath];
       inputPath[inputPath.length - 1] += 1;
@@ -175,7 +187,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   const handleToggleRequired = React.useCallback(() => {
     if (!labelNode || !firstPath) return;
     const labelPath = nodeType === "formLabel" ? firstPath : [...firstPath];
-    if (["formInput", "formTextarea"].includes(nodeType ?? "")) {
+    if (FORM_INPUT_NODE_TYPES.has(nodeType ?? "")) {
       labelPath[labelPath.length - 1] -= 1;
     }
     const currentRequired = Boolean(labelNode.required);
@@ -262,7 +274,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     if (!labelNode || !firstPath || !fieldName.trim()) return;
     const labelPath =
       nodeType === "formLabel" || nodeType === "formButton" ? firstPath : [...firstPath];
-    if (["formInput", "formTextarea"].includes(nodeType ?? "")) {
+    if (FORM_INPUT_NODE_TYPES.has(nodeType ?? "")) {
       labelPath[labelPath.length - 1] -= 1;
     }
     editor.tf.withoutNormalizing(() => {

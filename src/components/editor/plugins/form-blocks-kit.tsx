@@ -7,10 +7,24 @@ import { FormInputElement } from "@/components/ui/form-input-node";
 import { FormLabelElement } from "@/components/ui/form-label-node";
 import { FormTextareaElement } from "@/components/ui/form-textarea-node";
 import { PageBreakElement } from "@/components/ui/page-break-node";
+import { FormEmailElement } from "@/components/ui/form-email-node";
+import { FormPhoneElement } from "@/components/ui/form-phone-node";
+import { FormNumberElement } from "@/components/ui/form-number-node";
+import { FormLinkElement } from "@/components/ui/form-link-node";
+import { FormDateElement } from "@/components/ui/form-date-node";
+import { FormTimeElement } from "@/components/ui/form-time-node";
+import { FormFileUploadElement } from "@/components/ui/form-file-upload-node";
 
 const FORM_FIELD_TYPES = new Set([
   "formInput",
   "formTextarea",
+  "formEmail",
+  "formPhone",
+  "formNumber",
+  "formLink",
+  "formDate",
+  "formTime",
+  "formFileUpload",
   "formButton",
   "formLabel",
   "pageBreak",
@@ -255,7 +269,13 @@ const handleFormBlockKeyDown = (editor: PlateEditor, event: React.KeyboardEvent)
     const nextIndex = path[0] + 1;
     const nextNode = children[nextIndex];
 
-    if (nextNode && (nextNode.type === "formInput" || nextNode.type === "formTextarea")) {
+    if (
+      nextNode &&
+      FORM_FIELD_TYPES.has(nextNode.type) &&
+      nextNode.type !== "formLabel" &&
+      nextNode.type !== "formButton" &&
+      nextNode.type !== "pageBreak"
+    ) {
       event.preventDefault();
       event.stopPropagation();
       moveToPath(editor, [nextIndex]);
@@ -933,6 +953,69 @@ export const PageBreakPlugin = createPlatePlugin({
   },
 });
 
+export const FormEmailPlugin = createPlatePlugin({
+  key: "formEmail",
+  node: { isElement: true, component: FormEmailElement },
+  options: { gutterPosition: "center" },
+  handlers: {
+    onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+  },
+});
+
+export const FormPhonePlugin = createPlatePlugin({
+  key: "formPhone",
+  node: { isElement: true, component: FormPhoneElement },
+  options: { gutterPosition: "center" },
+  handlers: {
+    onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+  },
+});
+
+export const FormNumberPlugin = createPlatePlugin({
+  key: "formNumber",
+  node: { isElement: true, component: FormNumberElement },
+  options: { gutterPosition: "center" },
+  handlers: {
+    onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+  },
+});
+
+export const FormLinkPlugin = createPlatePlugin({
+  key: "formLink",
+  node: { isElement: true, component: FormLinkElement },
+  options: { gutterPosition: "center" },
+  handlers: {
+    onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+  },
+});
+
+export const FormDatePlugin = createPlatePlugin({
+  key: "formDate",
+  node: { isElement: true, isVoid: true, component: FormDateElement },
+  options: { gutterPosition: "center" },
+  handlers: {
+    onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+  },
+});
+
+export const FormTimePlugin = createPlatePlugin({
+  key: "formTime",
+  node: { isElement: true, isVoid: true, component: FormTimeElement },
+  options: { gutterPosition: "center" },
+  handlers: {
+    onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+  },
+});
+
+export const FormFileUploadPlugin = createPlatePlugin({
+  key: "formFileUpload",
+  node: { isElement: true, isVoid: true, component: FormFileUploadElement },
+  options: { gutterPosition: "center" },
+  handlers: {
+    onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+  },
+});
+
 /**
  * Global keyboard navigation plugin to skip form buttons when navigating with Tab/Arrow keys.
  * This applies to ALL blocks, not just form blocks.
@@ -1152,5 +1235,12 @@ export const FormBlocksKit = [
   FormInputPlugin,
   FormButtonPlugin,
   FormTextareaPlugin,
+  FormEmailPlugin,
+  FormPhonePlugin,
+  FormNumberPlugin,
+  FormLinkPlugin,
+  FormDatePlugin,
+  FormTimePlugin,
+  FormFileUploadPlugin,
   PageBreakPlugin,
 ];

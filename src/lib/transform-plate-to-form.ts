@@ -57,6 +57,64 @@ export type PlateFormField =
   | {
       id: string;
       name: string;
+      fieldType: "Email";
+      label?: string;
+      placeholder?: string;
+      required?: boolean;
+    }
+  | {
+      id: string;
+      name: string;
+      fieldType: "Phone";
+      label?: string;
+      placeholder?: string;
+      required?: boolean;
+    }
+  | {
+      id: string;
+      name: string;
+      fieldType: "Number";
+      label?: string;
+      placeholder?: string;
+      required?: boolean;
+      min?: number;
+      max?: number;
+    }
+  | {
+      id: string;
+      name: string;
+      fieldType: "Link";
+      label?: string;
+      placeholder?: string;
+      required?: boolean;
+    }
+  | {
+      id: string;
+      name: string;
+      fieldType: "Date";
+      label?: string;
+      placeholder?: string;
+      required?: boolean;
+    }
+  | {
+      id: string;
+      name: string;
+      fieldType: "Time";
+      label?: string;
+      placeholder?: string;
+      required?: boolean;
+    }
+  | {
+      id: string;
+      name: string;
+      fieldType: "FileUpload";
+      label?: string;
+      required?: boolean;
+      accept?: string;
+    }
+  | {
+      id: string;
+      name: string;
       fieldType: "Button";
       buttonText?: string;
       buttonRole: "next" | "previous" | "submit";
@@ -241,23 +299,35 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
         const labelText = extractTextContent(node.children as Array<{ text?: string }>);
         const isRequired = Boolean(node.required);
 
-        // Check if next node is a formInput or formTextarea
+        // Map node types to field types
+        const typeMap: Record<string, string> = {
+          formInput: "Input",
+          formTextarea: "Textarea",
+          formEmail: "Email",
+          formPhone: "Phone",
+          formNumber: "Number",
+          formLink: "Link",
+          formDate: "Date",
+          formTime: "Time",
+          formFileUpload: "FileUpload",
+        };
+
+        // Check if next node is a recognized form input type
         const nextNode = value[i + 1];
         let placeholder = "";
         let minLength: number | undefined;
         let maxLength: number | undefined;
         let defaultValue: string | undefined;
-        let fieldType: "Input" | "Textarea" = "Input";
-
-        if (nextNode && (nextNode.type === "formInput" || nextNode.type === "formTextarea")) {
-          fieldType = nextNode.type === "formTextarea" ? "Textarea" : "Input";
+        let fieldType: string = "Input";
+        if (nextNode && typeMap[nextNode.type as string]) {
+          fieldType = typeMap[nextNode.type as string];
           const inputText = extractTextContent(nextNode.children as Array<{ text?: string }>);
           placeholder = inputText || (nextNode.placeholder as string) || "";
           minLength = nextNode.minLength as number | undefined;
           maxLength = nextNode.maxLength as number | undefined;
           defaultValue = nextNode.defaultValue as string | undefined;
 
-          i++; // Skip the formInput/formTextarea in the next iteration
+          i++; // Skip the form input node in the next iteration
         }
 
         // Use Plate.js element ID as stable field name (doesn't change when fields are reordered)
@@ -266,17 +336,19 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
         // Fallback to position-based name for backward compatibility with old content
         const name = stableId || `${baseName}_${fieldIndex}`;
 
-        elements.push({
+        const field: PlateFormField = {
           id: name,
           name,
-          fieldType,
+          fieldType: fieldType as PlateFormField["fieldType"],
           label: labelText || "Untitled Field",
           placeholder: placeholder || undefined,
           required: isRequired,
           minLength,
           maxLength,
           defaultValue,
-        });
+        } as PlateFormField;
+
+        elements.push(field);
         fieldIndex++;
         break;
       }
@@ -373,9 +445,16 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
         break;
       }
 
-      // Skip formInput/formTextarea if standalone (already handled with formLabel)
+      // Skip form input nodes if standalone (already handled with formLabel)
       case "formInput":
       case "formTextarea":
+      case "formEmail":
+      case "formPhone":
+      case "formNumber":
+      case "formLink":
+      case "formDate":
+      case "formTime":
+      case "formFileUpload":
         break;
 
       // Button field

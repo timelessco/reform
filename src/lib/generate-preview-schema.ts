@@ -25,28 +25,64 @@ export const generateZodSchemaFromFields = (
       continue;
     }
 
-    let schema: z.ZodString = z.string();
+    let fieldSchema: ZodType;
 
-    // Apply minLength constraint
-    if (field.minLength !== undefined && field.minLength > 0) {
-      schema = schema.min(field.minLength, `Minimum ${field.minLength} characters required`);
-    }
+    switch (field.fieldType) {
+      case "Email":
+        fieldSchema = z
+          .string({ error: "This field is required" })
+          .email("Please enter a valid email address");
+        break;
+      case "Link":
+        fieldSchema = z.string({ error: "This field is required" }).url("Please enter a valid URL");
+        break;
+      case "Number":
+        fieldSchema = z.coerce.number({ error: "Please enter a valid number" });
+        break;
+      case "Date":
+        fieldSchema = z
+          .string({ error: "This field is required" })
+          .nonempty("Please select a date");
+        break;
+      case "Time":
+        fieldSchema = z
+          .string({ error: "This field is required" })
+          .nonempty("Please select a time");
+        break;
+      case "FileUpload":
+        fieldSchema = z
+          .string({ error: "This field is required" })
+          .nonempty("Please upload a file");
+        break;
+      default: {
+        // Input, Textarea, Phone, and other string-based types
+        let schema: z.ZodString = z.string();
 
-    // Apply maxLength constraint
-    if (field.maxLength !== undefined && field.maxLength > 0) {
-      schema = schema.max(field.maxLength, `Maximum ${field.maxLength} characters allowed`);
-    }
+        // Apply minLength constraint
+        if ("minLength" in field && field.minLength !== undefined && field.minLength > 0) {
+          schema = schema.min(field.minLength, `Minimum ${field.minLength} characters required`);
+        }
 
-    // Required fields must have at least 1 character
-    if (field.required) {
-      // Only add min(1) if no minLength is set
-      if (field.minLength === undefined) {
-        schema = schema.min(1, "This field is required");
+        // Apply maxLength constraint
+        if ("maxLength" in field && field.maxLength !== undefined && field.maxLength > 0) {
+          schema = schema.max(field.maxLength, `Maximum ${field.maxLength} characters allowed`);
+        }
+
+        // Required fields must have at least 1 character
+        if (field.required && !("minLength" in field && field.minLength !== undefined)) {
+          schema = schema.min(1, "This field is required");
+        }
+
+        fieldSchema = schema;
+        break;
       }
-      schemaShape[field.name] = schema;
+    }
+
+    // Handle required vs optional
+    if (field.required) {
+      schemaShape[field.name] = fieldSchema;
     } else {
-      // Optional fields
-      schemaShape[field.name] = schema.optional();
+      schemaShape[field.name] = fieldSchema.optional();
     }
   }
 
@@ -69,7 +105,7 @@ export const generateDefaultValuesFromFields = (
     if (field.fieldType === "Button") {
       continue;
     }
-    defaults[field.name] = field.defaultValue ?? "";
+    defaults[field.name] = "defaultValue" in field && field.defaultValue ? field.defaultValue : "";
   }
 
   return defaults;
