@@ -160,7 +160,7 @@ const DashboardPage = () => {
       }
     };
     syncData();
-  }, [session?.user?.id, activeOrg?.id]);
+  }, [session?.user, activeOrg?.id]);
 
   const handleCreateWorkspace = useCallback(async () => {
     if (!activeOrg?.id) return;

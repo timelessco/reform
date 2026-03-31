@@ -176,9 +176,11 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         render={
-                          <span
-                            className="inline-flex items-center justify-center size-[26px] rounded-lg hover:bg-accent cursor-pointer"
+                          <button
+                            type="button"
+                            className="inline-flex items-center justify-center size-[26px] rounded-lg hover:bg-accent cursor-pointer bg-transparent border-0 p-0"
                             onClick={stopPropagation}
+                            onKeyDown={(e) => e.stopPropagation()}
                             aria-label="Version actions"
                           />
                         }
