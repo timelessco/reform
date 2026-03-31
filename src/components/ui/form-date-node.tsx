@@ -3,6 +3,7 @@ import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorSelector, useFocused } from "platejs/react";
 
 import { CalendarIcon } from "@/components/ui/icons";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export const FormDateElement = ({ className, children, ...props }: PlateElementProps) => {
@@ -27,23 +28,35 @@ export const FormDateElement = ({ className, children, ...props }: PlateElementP
 
   return (
     <PlateElement
-      attributes={{ ...attributes, "data-bf-input": "true" }}
+      attributes={{
+        ...attributes,
+        placeholder: placeholder ?? "Select a date",
+        "data-bf-input": "true",
+      }}
       className={cn(
-        "relative my-1 flex h-7 w-full max-w-[464px] items-center rounded-[var(--radius-lg)] border-0 bg-card pl-[10px] pr-[8px] text-sm shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] cursor-default",
+        "relative my-1 flex h-7 w-full max-w-[464px] items-center overflow-hidden rounded-[var(--radius-lg)] border-0 bg-card pl-[10px] pr-[8px] text-sm shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] cursor-text caret-current",
         isSelected && focused && "ring-ring/50 ring-[3px]",
         className,
       )}
       element={element}
       {...rest}
     >
-      <div className="hidden">{children}</div>
-      <div
-        contentEditable={false}
-        className="flex items-center gap-2 text-muted-foreground/50 select-none"
-      >
-        <CalendarIcon className="size-3.5" />
-        <span>{placeholder ?? "Select a date"}</span>
-      </div>
+      <span className="flex-1 min-w-0 outline-none text-muted-foreground/50 line-clamp-1 break-all">
+        {children}
+      </span>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <span
+              contentEditable={false}
+              className="shrink-0 flex items-center justify-center text-muted-foreground select-none ml-1"
+            />
+          }
+        >
+          <CalendarIcon className="size-3.5" />
+        </TooltipTrigger>
+        <TooltipContent side="left">Date</TooltipContent>
+      </Tooltip>
     </PlateElement>
   );
 };

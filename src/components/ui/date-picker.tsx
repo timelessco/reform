@@ -3,7 +3,6 @@ import { format } from "date-fns";
 import { CalendarIcon } from "@/components/ui/icons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface DatePickerProps {
@@ -38,20 +37,19 @@ export const DatePicker = ({ value, onChange, className }: DatePickerProps) => {
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger
-        nativeButton={false}
         render={
-          <Button
-            variant="outline"
+          <button
+            type="button"
             data-empty={!date}
             className={cn(
-              "justify-start text-left font-normal w-[160px] text-sm",
+              "inline-flex items-center justify-start text-left font-normal w-full h-[30px] rounded-lg border-0 bg-background pl-2.5 pr-1.5 text-sm shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] dark:shadow-none dark:border dark:border-border",
               !date && "text-muted-foreground",
               className,
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {displayText}
-          </Button>
+          </button>
         }
       />
       <PopoverContent className="w-auto p-0" align="start">

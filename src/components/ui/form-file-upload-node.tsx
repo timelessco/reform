@@ -28,7 +28,7 @@ export const FormFileUploadElement = ({ className, children, ...props }: PlateEl
     <PlateElement
       attributes={{ ...attributes, "data-bf-input": "true" }}
       className={cn(
-        "relative my-1 flex min-h-20 w-full max-w-[464px] flex-col items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-border/60 bg-card/50 p-4 cursor-default",
+        "relative my-1 flex min-h-20 w-full max-w-[464px] flex-col items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-border/60 bg-card/50 p-4 cursor-default shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)]",
         isSelected && focused && "ring-ring/50 ring-[3px]",
         className,
       )}

@@ -14,6 +14,7 @@ import { FormLinkElement } from "@/components/ui/form-link-node";
 import { FormDateElement } from "@/components/ui/form-date-node";
 import { FormTimeElement } from "@/components/ui/form-time-node";
 import { FormFileUploadElement } from "@/components/ui/form-file-upload-node";
+import { FormOptionItemElement } from "@/components/ui/form-option-item-node";
 
 const FORM_FIELD_TYPES = new Set([
   "formInput",
@@ -25,6 +26,7 @@ const FORM_FIELD_TYPES = new Set([
   "formDate",
   "formTime",
   "formFileUpload",
+  "formOptionItem",
   "formButton",
   "formLabel",
   "pageBreak",
@@ -190,6 +192,33 @@ const handleFormBlockKeyDown = (editor: PlateEditor, event: React.KeyboardEvent)
 
   const [node, path] = block;
 
+  // Tab on formOptionItem → skip all remaining options, jump to next form block
+  if (event.key === "Tab" && !event.shiftKey && node.type === "formOptionItem") {
+    event.preventDefault();
+    event.stopPropagation();
+    event.nativeEvent.stopImmediatePropagation();
+
+    const children = editor.children as TElement[];
+    let targetIndex = path[0] + 1;
+    while (targetIndex < children.length && children[targetIndex].type === "formOptionItem") {
+      targetIndex++;
+    }
+    // targetIndex now points to the first non-option node
+    if (targetIndex < children.length) {
+      const targetNode = children[targetIndex];
+      if (targetNode.type !== "formButton" && targetNode.type !== "pageBreak") {
+        moveToPath(editor, [targetIndex]);
+      } else {
+        // Find next non-button after that
+        const nextPath = findNextNonButtonPath(editor, [targetIndex]);
+        if (nextPath) {
+          moveToPath(editor, nextPath);
+        }
+      }
+    }
+    return;
+  }
+
   // Tab or ArrowDown → move to next sibling block (skip buttons)
   if ((event.key === "Tab" && !event.shiftKey) || event.key === "ArrowDown") {
     const nextPath = findNextNonButtonPath(editor, path);
@@ -283,6 +312,25 @@ const handleFormBlockKeyDown = (editor: PlateEditor, event: React.KeyboardEvent)
     }
   }
 
+  // Enter on formOptionItem → insert new option below
+  if (event.key === "Enter" && !event.shiftKey && node.type === "formOptionItem") {
+    event.preventDefault();
+    event.stopPropagation();
+    event.nativeEvent.stopImmediatePropagation();
+
+    const nextPath = PathApi.next(path);
+    editor.tf.insertNodes(
+      {
+        type: "formOptionItem",
+        variant: node.variant || "checkbox",
+        children: [{ text: "" }],
+      } as TElement,
+      { at: nextPath },
+    );
+    moveToPath(editor, nextPath);
+    return;
+  }
+
   // Enter → create new paragraph (position depends on cursor location)
   if (event.key === "Enter" && !event.shiftKey) {
     event.preventDefault();
@@ -335,6 +383,32 @@ const handleFormBlockKeyDown = (editor: PlateEditor, event: React.KeyboardEvent)
     event.preventDefault();
     event.stopPropagation();
     editor.tf.insertNodes({ text: "\n" });
+    return;
+  }
+
+  // Backspace on empty formOptionItem → delete unless it's the only option
+  if (event.key === "Backspace" && editor.api.isEmpty(node) && node.type === "formOptionItem") {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const children = editor.children as TElement[];
+    const prevNode = children[path[0] - 1];
+    const nextNode = children[path[0] + 1];
+    const isPrevLabel = prevNode?.type === "formLabel";
+    const isNextOption = nextNode?.type === "formOptionItem";
+
+    // If this is the only option (prev is label, next is not option), keep it
+    if (isPrevLabel && !isNextOption) {
+      return;
+    }
+
+    // Move focus to previous sibling, then delete
+    const prevPath: Path = [path[0] - 1];
+    editor.tf.removeNodes({ at: path });
+    const edges = editor.api.edges(prevPath);
+    if (edges?.[1]) {
+      editor.tf.select(edges[1]);
+    }
     return;
   }
 
@@ -717,6 +791,7 @@ export const FormButtonPlugin = createPlatePlugin({
                   "formLabel",
                   "formRadioGroup",
                   "formCheckbox",
+                  "formOptionItem",
                   "formSelect",
                   "formDatePicker",
                 ].includes(n.type)
@@ -786,6 +861,7 @@ export const FormButtonPlugin = createPlatePlugin({
                     "formLabel",
                     "formRadioGroup",
                     "formCheckbox",
+                    "formOptionItem",
                     "formSelect",
                     "formDatePicker",
                   ].includes(n.type)
@@ -991,7 +1067,7 @@ export const FormLinkPlugin = createPlatePlugin({
 
 export const FormDatePlugin = createPlatePlugin({
   key: "formDate",
-  node: { isElement: true, isVoid: true, component: FormDateElement },
+  node: { isElement: true, component: FormDateElement },
   options: { gutterPosition: "center" },
   handlers: {
     onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
@@ -1000,7 +1076,7 @@ export const FormDatePlugin = createPlatePlugin({
 
 export const FormTimePlugin = createPlatePlugin({
   key: "formTime",
-  node: { isElement: true, isVoid: true, component: FormTimeElement },
+  node: { isElement: true, component: FormTimeElement },
   options: { gutterPosition: "center" },
   handlers: {
     onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
@@ -1010,6 +1086,15 @@ export const FormTimePlugin = createPlatePlugin({
 export const FormFileUploadPlugin = createPlatePlugin({
   key: "formFileUpload",
   node: { isElement: true, isVoid: true, component: FormFileUploadElement },
+  options: { gutterPosition: "center" },
+  handlers: {
+    onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+  },
+});
+
+export const FormOptionItemPlugin = createPlatePlugin({
+  key: "formOptionItem",
+  node: { isElement: true, component: FormOptionItemElement },
   options: { gutterPosition: "center" },
   handlers: {
     onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
@@ -1242,5 +1327,6 @@ export const FormBlocksKit = [
   FormDatePlugin,
   FormTimePlugin,
   FormFileUploadPlugin,
+  FormOptionItemPlugin,
   PageBreakPlugin,
 ];

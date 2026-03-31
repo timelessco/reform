@@ -2,6 +2,7 @@ import type { LucideProps } from "lucide-react";
 import {
   AlertCircle as LucideAlertCircle,
   AlignCenter as LucideAlignCenter,
+  AtSign as LucideAtSign,
   AlignLeft as LucideAlignLeft,
   AlignRight as LucideAlignRight,
   ArrowDownToLine as LucideArrowDownToLine,
@@ -14,24 +15,24 @@ import {
   Bold as LucideBold,
   Braces as LucideBraces,
   Check as LucideCheck,
+  CheckCheck as LucideCheckCheck,
   CheckCircle2 as LucideCheckCircle2,
   ChevronLeft as LucideChevronLeft,
   ChevronRight as LucideChevronRight,
   ChevronUp as LucideChevronUp,
   ChevronsRight as LucideChevronsRight,
+  ChevronsUpDown as LucideChevronsUpDown,
   CircleCheck as LucideCircleCheck,
   CirclePlus as LucideCirclePlus,
   CircleX as LucideCircleX,
   Clock as LucideClock,
   CornerDownLeft as LucideCornerDownLeft,
-  CreditCard as LucideCreditCard,
   Crop as LucideCrop,
   Eraser as LucideEraser,
   ExternalLink as LucideExternalLink,
   Eye as LucideEye,
   EyeOff as LucideEyeOff,
   File as LucideFile,
-  FileCode as LucideFileCode,
   FileQuestion as LucideFileQuestion,
   FileText as LucideFileText,
   FileUp as LucideFileUp,
@@ -42,6 +43,7 @@ import {
   FolderSearch as LucideFolderSearch,
   GripHorizontal as LucideGripHorizontal,
   GripVertical as LucideGripVertical,
+  Hash as LucideHash,
   HelpCircle as LucideHelpCircle,
   Indent as LucideIndent,
   Info as LucideInfo,
@@ -66,6 +68,7 @@ import {
   PanelLeft as LucidePanelLeft,
   Pen as LucidePen,
   Pencil as LucidePencil,
+  Phone as LucidePhone,
   PencilLine as LucidePencilLine,
   Radical as LucideRadical,
   Redo2 as LucideRedo2,
@@ -74,6 +77,7 @@ import {
   RotateCcw as LucideRotateCcw,
   Save as LucideSave,
   Shield as LucideShield,
+  SquareCheck as LucideSquareCheck,
   Strikethrough as LucideStrikethrough,
   Tag as LucideTag,
   Text as LucideText,
@@ -910,3 +914,9 @@ export const Undo2Icon = createConsistentLucideIcon(LucideUndo2);
 export const UnlinkIcon = createConsistentLucideIcon(LucideUnlink);
 export const WrapTextIcon = createConsistentLucideIcon(LucideWrapText);
 export const AlertCircleIcon = createConsistentLucideIcon(LucideAlertCircle);
+export const AtSignIcon = createConsistentLucideIcon(LucideAtSign);
+export const HashIcon = createConsistentLucideIcon(LucideHash);
+export const PhoneIcon = createConsistentLucideIcon(LucidePhone);
+export const SquareCheckIcon = createConsistentLucideIcon(LucideSquareCheck);
+export const CheckCheckIcon = createConsistentLucideIcon(LucideCheckCheck);
+export const ChevronsUpDownIcon = createConsistentLucideIcon(LucideChevronsUpDown);

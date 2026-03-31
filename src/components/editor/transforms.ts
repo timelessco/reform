@@ -93,7 +93,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
     editor.tf.insertNodes(
       {
         type: "formLabel",
-        required: false,
+        required: true,
         placeholder: "Type a question",
         children: [{ text: "" }],
       } as TElement,
@@ -121,7 +121,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
       [
         {
           type: "formLabel",
-          required: false,
+          required: true,
           placeholder: "Type a question",
           children: [{ text: "" }],
         },
@@ -140,7 +140,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
       [
         {
           type: "formLabel",
-          required: false,
+          required: true,
           placeholder: "Type a question",
           children: [{ text: "" }],
         },
@@ -159,7 +159,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
       [
         {
           type: "formLabel",
-          required: false,
+          required: true,
           placeholder: "Type a question",
           children: [{ text: "" }],
         },
@@ -178,7 +178,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
       [
         {
           type: "formLabel",
-          required: false,
+          required: true,
           placeholder: "Type a question",
           children: [{ text: "" }],
         },
@@ -197,7 +197,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
       [
         {
           type: "formLabel",
-          required: false,
+          required: true,
           placeholder: "Type a question",
           children: [{ text: "" }],
         },
@@ -216,7 +216,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
       [
         {
           type: "formLabel",
-          required: false,
+          required: true,
           placeholder: "Type a question",
           children: [{ text: "" }],
         },
@@ -235,11 +235,87 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
       [
         {
           type: "formLabel",
-          required: false,
+          required: true,
           placeholder: "Type a question",
           children: [{ text: "" }],
         },
         { type: "formFileUpload", children: [{ text: "" }] },
+      ] as any,
+      { at: labelPath },
+    );
+    editor.tf.select({ path: [...labelPath, 0], offset: 0 });
+  },
+  formCheckbox: (editor) => {
+    const block = editor.api.block();
+    if (!block) return;
+    const [, path] = block;
+    const labelPath = PathApi.next(path);
+    editor.tf.insertNodes(
+      [
+        {
+          type: "formLabel",
+          required: true,
+          placeholder: "Type a question",
+          children: [{ text: "" }],
+        },
+        { type: "formOptionItem", variant: "checkbox", children: [{ text: "" }] },
+      ] as any,
+      { at: labelPath },
+    );
+    editor.tf.select({ path: [...labelPath, 0], offset: 0 });
+  },
+  formMultiChoice: (editor) => {
+    const block = editor.api.block();
+    if (!block) return;
+    const [, path] = block;
+    const labelPath = PathApi.next(path);
+    editor.tf.insertNodes(
+      [
+        {
+          type: "formLabel",
+          required: true,
+          placeholder: "Type a question",
+          children: [{ text: "" }],
+        },
+        { type: "formOptionItem", variant: "multiChoice", children: [{ text: "" }] },
+      ] as any,
+      { at: labelPath },
+    );
+    editor.tf.select({ path: [...labelPath, 0], offset: 0 });
+  },
+  formMultiSelect: (editor) => {
+    const block = editor.api.block();
+    if (!block) return;
+    const [, path] = block;
+    const labelPath = PathApi.next(path);
+    editor.tf.insertNodes(
+      [
+        {
+          type: "formLabel",
+          required: true,
+          placeholder: "Type a question",
+          children: [{ text: "" }],
+        },
+        { type: "formOptionItem", variant: "multiSelect", children: [{ text: "" }] },
+      ] as any,
+      { at: labelPath },
+    );
+    editor.tf.select({ path: [...labelPath, 0], offset: 0 });
+  },
+  formRanking: (editor) => {
+    const block = editor.api.block();
+    if (!block) return;
+    const [, path] = block;
+    const labelPath = PathApi.next(path);
+    editor.tf.insertNodes(
+      [
+        {
+          type: "formLabel",
+          required: true,
+          placeholder: "Type a question",
+          children: [{ text: "" }],
+        },
+        { type: "formOptionItem", variant: "ranking", children: [{ text: "" }] },
       ] as any,
       { at: labelPath },
     );

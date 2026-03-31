@@ -123,8 +123,47 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
           formFileUpload: "FileUpload",
         };
 
-        // Peek ahead for recognized form input type
+        // Check if next nodes are formOptionItem (compound field)
         const nextNode = nodes[i + 1];
+        if (nextNode && (nextNode.type as string) === "formOptionItem") {
+          const variant = (nextNode.variant as string) || "checkbox";
+          const variantToFieldType: Record<string, string> = {
+            checkbox: "Checkbox",
+            multiChoice: "MultiChoice",
+            multiSelect: "MultiSelect",
+            ranking: "Ranking",
+          };
+
+          const options: { value: string; label: string }[] = [];
+          let j = i + 1;
+          while (j < nodes.length && (nodes[j].type as string) === "formOptionItem") {
+            const optText = extractTextContent(nodes[j].children as Array<{ text?: string }>);
+            const label = optText || `Option ${options.length + 1}`;
+            options.push({ value: slugify(label) || `option_${options.length + 1}`, label });
+            j++;
+          }
+          i = j - 1;
+
+          const stableId = (node as { id?: string }).id;
+          const baseName = slugify(labelText);
+          const name = stableId || `${baseName}_${fieldIndex}`;
+
+          segments.push({
+            type: "field",
+            field: {
+              id: name,
+              name,
+              fieldType: variantToFieldType[variant] || "Checkbox",
+              label: labelText || "Untitled Field",
+              required: isRequired,
+              options,
+            } as PlateFormField,
+          });
+          fieldIndex++;
+          break;
+        }
+
+        // Peek ahead for recognized form input type
         let placeholder = "";
         let minLength: number | undefined;
         let maxLength: number | undefined;
@@ -237,6 +276,10 @@ const EDITABLE_FIELD_TYPES = new Set([
   "Date",
   "Time",
   "FileUpload",
+  "Checkbox",
+  "MultiChoice",
+  "MultiSelect",
+  "Ranking",
 ]);
 
 export const getEditableFieldsFromSegments = (segments: PreviewSegment[]): PlateFormField[] =>

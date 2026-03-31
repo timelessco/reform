@@ -1,13 +1,10 @@
 import {
-  AtSignIcon,
   Code2,
   Columns3Icon,
-  HashIcon,
   Heading1Icon,
   Heading2Icon,
   Heading3Icon,
   LightbulbIcon,
-  PhoneIcon,
   PilcrowIcon,
   Quote,
   Square,
@@ -16,14 +13,20 @@ import {
 } from "lucide-react";
 import {
   AlignLeftIcon,
+  AtSignIcon,
   CalendarIcon,
   ChevronRightIcon,
   ClockIcon,
   FileIcon,
+  HashIcon,
   LinkIcon,
   ListIcon,
   ListOrderedIcon,
+  PhoneIcon,
+  CheckCheckIcon,
+  ChevronsUpDownIcon,
   SmileIcon,
+  SquareCheckIcon,
   UploadIcon,
 } from "@/components/ui/icons";
 import { KEYS } from "platejs";
@@ -263,6 +266,30 @@ const groups: Group[] = [
         keywords: ["form", "file", "upload", "attachment", "document"],
         label: "File upload",
         value: "formFileUpload",
+      },
+      {
+        icon: <SquareCheckIcon />,
+        keywords: ["form", "checkbox", "check", "option", "multiple", "select"],
+        label: "Checkbox",
+        value: "formCheckbox",
+      },
+      {
+        icon: <SquareCheckIcon />,
+        keywords: ["form", "multi", "choice", "radio", "single", "select", "option"],
+        label: "Multi Choice",
+        value: "formMultiChoice",
+      },
+      {
+        icon: <CheckCheckIcon />,
+        keywords: ["form", "multi", "select", "dropdown", "tag", "option"],
+        label: "Multi Select",
+        value: "formMultiSelect",
+      },
+      {
+        icon: <ChevronsUpDownIcon />,
+        keywords: ["form", "ranking", "rank", "order", "sort", "priority"],
+        label: "Ranking",
+        value: "formRanking",
       },
     ].map((item) => ({
       ...item,

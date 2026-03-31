@@ -54,6 +54,28 @@ export const generateZodSchemaFromFields = (
           .string({ error: "This field is required" })
           .nonempty("Please upload a file");
         break;
+      case "Checkbox":
+      case "MultiSelect":
+        if (field.required) {
+          fieldSchema = z.array(z.string()).nonempty("Please select at least one option");
+        } else {
+          fieldSchema = z.array(z.string()).default([]);
+        }
+        break;
+      case "MultiChoice":
+        if (field.required) {
+          fieldSchema = z.string().min(1, "Please select an option");
+        } else {
+          fieldSchema = z.string().default("");
+        }
+        break;
+      case "Ranking":
+        if (field.required) {
+          fieldSchema = z.array(z.string()).nonempty("Please rank the options");
+        } else {
+          fieldSchema = z.array(z.string()).default([]);
+        }
+        break;
       default: {
         // Input, Textarea, Phone, and other string-based types
         let schema: z.ZodString = z.string();
@@ -105,7 +127,18 @@ export const generateDefaultValuesFromFields = (
     if (field.fieldType === "Button") {
       continue;
     }
-    defaults[field.name] = "defaultValue" in field && field.defaultValue ? field.defaultValue : "";
+    if (
+      field.fieldType === "Checkbox" ||
+      field.fieldType === "MultiSelect" ||
+      field.fieldType === "Ranking"
+    ) {
+      defaults[field.name] = [];
+    } else if (field.fieldType === "MultiChoice") {
+      defaults[field.name] = "";
+    } else {
+      defaults[field.name] =
+        "defaultValue" in field && field.defaultValue ? field.defaultValue : "";
+    }
   }
 
   return defaults;
