@@ -641,17 +641,17 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
             <span className="flex-1 text-left">Delete</span>
             <DropdownMenuShortcut>Del</DropdownMenuShortcut>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleDuplicate}>
+          <DropdownMenuItem className="text-foreground/80" onClick={handleDuplicate}>
             <CopyIcon />
             <span className="flex-1 text-left">Duplicate</span>
             <DropdownMenuShortcut>⌘D</DropdownMenuShortcut>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleHideMenu}>
+          <DropdownMenuItem className="text-foreground/80" onClick={handleHideMenu}>
             <EyeOffIcon />
             <span className="flex-1 text-left">Hide</span>
             <DropdownMenuShortcut>⌘⌥H</DropdownMenuShortcut>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleHideMenu}>
+          <DropdownMenuItem className="text-foreground/80" onClick={handleHideMenu}>
             <PlusIcon />
             <span className="flex-1 text-left">Add conditional logic</span>
             <DropdownMenuShortcut>⌘⌥L</DropdownMenuShortcut>
@@ -661,6 +661,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
           {/* Turn Into Submenu */}
           <DropdownMenuSub open={turnIntoOpen}>
             <DropdownMenuSubTrigger
+              className="text-foreground/80"
               onPointerEnter={handleTurnIntoPointerEnter}
               onPointerLeave={handleTurnIntoPointerLeave}
             >

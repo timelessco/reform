@@ -14,7 +14,7 @@ import { db } from "@/lib/db";
 import { authMiddleware } from "@/middleware/auth";
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { and, count, desc, eq, inArray, not } from "drizzle-orm";
+import { count, desc, eq, inArray, not } from "drizzle-orm";
 import { z } from "zod";
 import { authWorkspace, getActiveOrgId } from "./helpers";
 

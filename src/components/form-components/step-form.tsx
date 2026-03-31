@@ -89,7 +89,7 @@ export const StepForm = ({ stepIndex, segments, isLastStep, autoJump = false }: 
         ref={formRef}
         noValidate
         data-bf-field-list
-        className="space-y-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className=" focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {/* Auto-jump watcher */}
         {autoJump && !isLastStep && (

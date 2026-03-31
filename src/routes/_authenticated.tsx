@@ -844,6 +844,9 @@ const TrashDialog = ({
                     key={form.id}
                     className={`group flex items-center justify-between px-3 py-2 rounded-md transition-colors cursor-pointer ${isSelected ? "bg-muted/50" : "hover:bg-muted/50"}`}
                     onClick={() => handleToggleSelect(form.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") handleToggleSelect(form.id);
+                    }}
                     role="option"
                     aria-selected={isSelected}
                   >

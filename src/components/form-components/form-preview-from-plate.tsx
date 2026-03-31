@@ -168,16 +168,15 @@ const PreviewFormHeader = ({
   };
 
   // Render icon - can be default-icon, sprite icon name, or image URL
+  const iconWrapClass = cn("relative z-10 mb-1", hasCover ? "-mt-[50px]" : "mt-4 sm:mt-6");
+
   const renderIcon = () => {
     if (!icon) return null;
 
     // Handle 'default-icon'
     if (icon === DEFAULT_ICON) {
       return (
-        <div
-          className={hasCover ? "relative z-10" : ""}
-          data-bf-logo-emoji-container={hasCover ? "true" : undefined}
-        >
+        <div className={iconWrapClass} data-bf-logo-emoji-container={hasCover ? "true" : undefined}>
           <span data-bf-logo-icon={isLogoMinimal ? "minimal" : ""}>
             <IconPickerPreview
               icon={null}
@@ -194,10 +193,7 @@ const PreviewFormHeader = ({
     // Handle image URL
     if (isValidUrl(icon) && !iconError) {
       return (
-        <div
-          className={hasCover ? "relative z-10 block" : ""}
-          data-bf-logo-container={hasCover ? "true" : undefined}
-        >
+        <div className={iconWrapClass} data-bf-logo-container={hasCover ? "true" : undefined}>
           <img
             src={icon}
             alt="Form icon"
@@ -213,10 +209,7 @@ const PreviewFormHeader = ({
 
     // Handle sprite icon name
     return (
-      <div
-        className={hasCover ? "relative z-10 block" : ""}
-        data-bf-logo-emoji-container={hasCover ? "true" : undefined}
-      >
+      <div className={iconWrapClass} data-bf-logo-emoji-container={hasCover ? "true" : undefined}>
         <span data-bf-logo-icon={isLogoMinimal ? "minimal" : ""}>
           <IconPickerPreview
             icon={icon}
@@ -234,19 +227,28 @@ const PreviewFormHeader = ({
     return (
       <div ref={headerRef} className="mb-4 sm:mb-8 w-full">
         {hasCover && renderCover()}
-        <div className="h-[92px]"></div>
-        {/* Match editor's left-aligned layout — no inner padding so title width matches the editor's content area */}
         <div
           className="mx-auto w-full"
           style={{ maxWidth: PAGE_MAX_WIDTH.editor }}
           data-bf-form-container
         >
           {hasIcon && renderIcon()}
+          {/* Spacer matching the editor's hover toolbar (Customize / Add icon / Add cover buttons + margin) */}
+          <div
+            className={cn(
+              "flex gap-1 mb-2",
+              !hasCover && !hasIcon && "mt-8 sm:mt-12",
+              hasCover && !hasIcon && "mt-4",
+              !hasCover && hasIcon && "mt-0",
+            )}
+          >
+            <div className="h-8" />
+          </div>
           {hasTitle && (
             <h1
               data-bf-title
               style={{ textWrap: "pretty" }}
-              className={`text-4xl sm:text-[48px] font-serif font-light -tracking-[0.03em] text-foreground ${hasIcon ? "mt-3 sm:mt-4" : ""}`}
+              className="text-4xl sm:text-[48px] font-serif font-light -tracking-[0.03em] text-foreground"
             >
               {title}
             </h1>
@@ -355,9 +357,9 @@ export const FormPreviewFromPlate = ({
   const hasHeaderNode = headerFromContent !== null;
 
   const title = hideTitle ? "" : hasHeaderNode ? headerFromContent.title : legacyTitle;
-  const icon = hasHeaderNode ? (headerFromContent.icon ?? legacyIcon) : legacyIcon;
+  const icon = hasHeaderNode ? (headerFromContent.icon ?? undefined) : legacyIcon;
   const iconColor = hasHeaderNode ? headerFromContent.iconColor : null;
-  const cover = hasHeaderNode ? (headerFromContent.cover ?? legacyCover) : legacyCover;
+  const cover = hasHeaderNode ? (headerFromContent.cover ?? undefined) : legacyCover;
 
   // Transform Plate content into chunked preview segments
   const { steps, thankYouNodes } = useMemo(() => transformPlateForPreview(content), [content]);
@@ -551,7 +553,12 @@ const FormPreviewContent = ({
       {/* Step Form */}
       <div
         className={cn("mx-auto", layout === "editor" ? "w-full" : "px-4")}
-        style={{ maxWidth: PAGE_MAX_WIDTH[layout] }}
+        style={{
+          maxWidth: PAGE_MAX_WIDTH[layout],
+          ...(layout === "editor"
+            ? ({ "--bf-spacing": "0.5rem" } as React.CSSProperties)
+            : undefined),
+        }}
         data-bf-form-container
       >
         <AnimatePresence mode="wait" custom={direction}>
