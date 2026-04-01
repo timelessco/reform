@@ -344,8 +344,33 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
           formFileUpload: "FileUpload",
         };
 
-        // Check if next nodes are formOptionItem (compound field)
+        // Check if next node is formMultiSelectInput (new badge-based multi-select)
         const nextNode = value[i + 1];
+        if (nextNode && (nextNode.type as string) === "formMultiSelectInput") {
+          const rawOptions = (nextNode.options as string[]) ?? [];
+          const options = rawOptions.map((opt, idx) => ({
+            value: slugify(opt) || `option_${idx + 1}`,
+            label: opt || `Option ${idx + 1}`,
+          }));
+          i++; // Skip the formMultiSelectInput node
+
+          const stableId = (node as { id?: string }).id;
+          const baseName = slugify(labelText);
+          const name = stableId || `${baseName}_${fieldIndex}`;
+
+          elements.push({
+            id: name,
+            name,
+            fieldType: "MultiSelect",
+            label: labelText || "Untitled Field",
+            required: isRequired,
+            options,
+          } as PlateFormField);
+          fieldIndex++;
+          break;
+        }
+
+        // Check if next nodes are formOptionItem (compound field)
         if (nextNode && (nextNode.type as string) === "formOptionItem") {
           const variant = (nextNode.variant as string) || "checkbox";
           const variantToFieldType: Record<string, string> = {
@@ -523,6 +548,7 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
       case "formDate":
       case "formTime":
       case "formFileUpload":
+      case "formMultiSelectInput":
         break;
 
       // Button field

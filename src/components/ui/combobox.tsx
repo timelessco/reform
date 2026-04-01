@@ -56,12 +56,17 @@ export const ComboboxInput = ({
   showTrigger?: boolean;
   showClear?: boolean;
 }) => (
-  <InputGroup className={cn("w-auto", className)}>
+  <InputGroup
+    className={cn(
+      "w-auto min-w-[80px] bg-accent flex-1 rounded-xl px-2.5 py-1.75 text-base outline-none placeholder:text-gray-alpha-600",
+      className,
+    )}
+  >
     <ComboboxPrimitive.Input
       render={
         <InputGroupInput
           disabled={disabled}
-          className="min-w-[80px] flex-1 bg-transparent px-2.5 text-13 outline-none placeholder:text-gray-alpha-600"
+          className="min-w-[80px] outline-none placeholder:text-gray-alpha-600"
         />
       }
       {...props}

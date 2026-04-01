@@ -14,6 +14,7 @@ import { FormLinkElement } from "@/components/ui/form-link-node";
 import { FormDateElement } from "@/components/ui/form-date-node";
 import { FormTimeElement } from "@/components/ui/form-time-node";
 import { FormFileUploadElement } from "@/components/ui/form-file-upload-node";
+import { FormMultiSelectInputElement } from "@/components/ui/form-multi-select-input-node";
 import { FormOptionItemElement } from "@/components/ui/form-option-item-node";
 
 const FORM_FIELD_TYPES = new Set([
@@ -26,6 +27,7 @@ const FORM_FIELD_TYPES = new Set([
   "formDate",
   "formTime",
   "formFileUpload",
+  "formMultiSelectInput",
   "formOptionItem",
   "formButton",
   "formLabel",
@@ -35,7 +37,7 @@ const FORM_FIELD_TYPES = new Set([
 // Button types that should not be deleted
 const PROTECTED_BUTTON_TYPES = new Set(["formButton"]);
 
-const moveToPath = (editor: PlateEditor, path: Path): boolean => {
+export const moveToPath = (editor: PlateEditor, path: Path): boolean => {
   const node = editor.api.node(path);
   if (node) {
     editor.tf.select({ path: [...path, 0], offset: 0 });
@@ -49,7 +51,7 @@ const moveToPath = (editor: PlateEditor, path: Path): boolean => {
  * - If next is a "submit" button (last page), return null (stay in place)
  * - If next is a "next/previous" button, skip to first element after page break
  */
-const findNextNonButtonPath = (editor: PlateEditor, currentPath: Path): Path | null => {
+export const findNextNonButtonPath = (editor: PlateEditor, currentPath: Path): Path | null => {
   const children = editor.children as TElement[];
   const currentIndex = currentPath[0];
 
@@ -152,7 +154,7 @@ const tryDeletePageBreakWithEmptyBlock = (editor: PlateEditor, blockPath: Path):
   return true;
 };
 
-const findPrevNonButtonPath = (editor: PlateEditor, currentPath: Path): Path | null => {
+export const findPrevNonButtonPath = (editor: PlateEditor, currentPath: Path): Path | null => {
   const children = editor.children as TElement[];
   const currentIndex = currentPath[0];
 
@@ -397,8 +399,9 @@ const handleFormBlockKeyDown = (editor: PlateEditor, event: React.KeyboardEvent)
     const isPrevLabel = prevNode?.type === "formLabel";
     const isNextOption = nextNode?.type === "formOptionItem";
 
-    // If this is the only option (prev is label, next is not option), keep it
+    // If this is the only option (prev is label, next is not option), convert to empty paragraph
     if (isPrevLabel && !isNextOption) {
+      editor.tf.setNodes({ type: "p", variant: undefined } as any, { at: path });
       return;
     }
 
@@ -1099,6 +1102,40 @@ export const FormOptionItemPlugin = createPlatePlugin({
   handlers: {
     onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
   },
+}).overrideEditor(({ editor, tf: { insertBreak } }) => ({
+  transforms: {
+    insertBreak: () => {
+      const block = editor.api.block();
+      if (block && block[0].type === "formOptionItem") {
+        const [node, path] = block;
+        const nextPath = PathApi.next(path);
+        editor.tf.insertNodes(
+          {
+            type: "formOptionItem",
+            variant: (node as TElement).variant || "checkbox",
+            children: [{ text: "" }],
+          } as TElement,
+          { at: nextPath },
+        );
+        moveToPath(editor, nextPath);
+        return;
+      }
+      insertBreak();
+    },
+  },
+}));
+
+export const FormMultiSelectInputPlugin = createPlatePlugin({
+  key: "formMultiSelectInput",
+  node: {
+    isElement: true,
+    isVoid: true,
+    component: FormMultiSelectInputElement,
+  },
+  options: { gutterPosition: "center" },
+  handlers: {
+    onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+  },
 });
 
 /**
@@ -1256,10 +1293,14 @@ const handleGlobalKeyDown = (editor: PlateEditor, event: React.KeyboardEvent): v
   }
 
   // Enter → if next block is a form button, insert new paragraph before it
+  // Skip formOptionItem — its own handler in handleFormBlockKeyDown handles Enter
   if (event.key === "Enter" && !event.shiftKey) {
     const children = editor.children as TElement[];
     const currentIndex = path[0];
     const currentNode = children[currentIndex];
+
+    // Let formOptionItem's dedicated handler take over
+    if (currentNode && currentNode.type === "formOptionItem") return;
 
     // If cursor is somehow ON a button, block Enter entirely
     if (currentNode && (currentNode.type === "formButton" || currentNode.type === "pageBreak")) {
@@ -1328,5 +1369,6 @@ export const FormBlocksKit = [
   FormTimePlugin,
   FormFileUploadPlugin,
   FormOptionItemPlugin,
+  FormMultiSelectInputPlugin,
   PageBreakPlugin,
 ];

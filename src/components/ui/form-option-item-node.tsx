@@ -67,11 +67,10 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
   const focused = useFocused();
 
   // Single consolidated selector for all derived state
-  const { optionIndex, isLastInGroup, isGroupFocused, hasContent } = useEditorSelector(
+  const { optionIndex, isLastInGroup, isGroupFocused } = useEditorSelector(
     (ed) => {
       const path = ed.api.findPath(element);
-      if (!path)
-        return { optionIndex: 0, isLastInGroup: false, isGroupFocused: false, hasContent: false };
+      if (!path) return { optionIndex: 0, isLastInGroup: false, isGroupFocused: false };
 
       const nodes = ed.children as TElement[];
 
@@ -86,24 +85,32 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
       const nextNode = nodes[path[0] + 1];
       const isLast = !nextNode || nextNode.type !== "formOptionItem";
 
-      // Group focused: any formOptionItem has editor focus
+      // Group focused: a formOptionItem in the SAME contiguous group has focus
       let groupFocused = false;
       if (ed.selection) {
-        const focusNode = nodes[ed.selection.focus.path[0]];
-        groupFocused = focusNode?.type === "formOptionItem";
+        const focusIndex = ed.selection.focus.path[0];
+        const focusNode = nodes[focusIndex];
+        if (focusNode?.type === "formOptionItem") {
+          // Find this group's start and end indices
+          let groupStart = path[0];
+          while (groupStart > 0 && nodes[groupStart - 1].type === "formOptionItem") groupStart--;
+          let groupEnd = path[0];
+          while (groupEnd < nodes.length - 1 && nodes[groupEnd + 1].type === "formOptionItem")
+            groupEnd++;
+          groupFocused = focusIndex >= groupStart && focusIndex <= groupEnd;
+        }
       }
 
       return {
         optionIndex: idx,
         isLastInGroup: isLast,
         isGroupFocused: groupFocused,
-        hasContent: !ed.api.isEmpty(element),
       };
     },
     [elementId],
   );
 
-  const showGhost = isLastInGroup && isGroupFocused && focused && hasContent;
+  const showGhost = isLastInGroup && isGroupFocused && focused;
 
   // For multiSelect, apply colored background to the option row
   const colorStyle =
@@ -115,7 +122,7 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
     <PlateElement
       attributes={{ ...attributes, "data-bf-input": "true" }}
       className={cn(
-        "my-0.5 w-full max-w-[464px] cursor-text caret-current rounded-md before:left-[30px]",
+        "my-0.5 w-full max-w-[464px] cursor-text caret-current rounded-md before:left-[30px] before:top-[14px] before:-translate-y-1/2 before:text-sm",
         colorStyle && cn(colorStyle.bg, colorStyle.text),
         className,
       )}

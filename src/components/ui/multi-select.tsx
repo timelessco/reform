@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { MULTI_SELECT_COLORS } from "@/components/ui/form-option-item-node";
-import { CheckIcon, ChevronDownIcon } from "@/components/ui/icons";
+import { ChevronDownIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
 interface MultiSelectOption {
@@ -111,16 +111,6 @@ export const MultiSelect = ({
                 )}
                 onClick={() => toggleOption(opt.value)}
               >
-                <span
-                  className={cn(
-                    "flex size-4 items-center justify-center rounded border",
-                    isSelected
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-input",
-                  )}
-                >
-                  {isSelected && <CheckIcon className="size-3" />}
-                </span>
                 <span>{opt.label}</span>
               </button>
             );

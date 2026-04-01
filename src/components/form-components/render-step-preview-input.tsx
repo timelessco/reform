@@ -11,6 +11,7 @@ import { PhoneInput } from "@/components/reui/phone-input";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import type { AppForm } from "@/hooks/use-form-builder";
 import type { PlateFormField } from "@/lib/transform-plate-to-form";
+import { Button } from "../ui/button";
 
 interface RenderStepPreviewInputProps {
   element: PlateFormField;
@@ -55,12 +56,31 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
 
           return (
             <div className="space-y-2">
-              <Label htmlFor={element.name}>
-                {element.label}
+              <Label htmlFor={element.name} className="w-full">
+                <span className="flex-1">{element.label}</span>
                 {element.required && (
-                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 ml-2">
-                    *
-                  </span>
+                  <Button
+                    disabled={true}
+                    variant="ghost"
+                    size="icon-sm"
+                    className={cn(
+                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
+                      "ml-auto mr-1",
+                    )}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
+                        fill="#ef4444"
+                      />
+                    </svg>
+                  </Button>
                 )}
               </Label>
               <Textarea
@@ -76,7 +96,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                 aria-invalid={hasErrors}
                 className={cn(
                   "w-full min-h-24 rounded-[var(--radius-lg)] border-0 bg-card dark:bg-muted/30 pl-[10px] pr-[8px] shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] placeholder:text-muted-foreground/50",
-                  hasErrors && "ring-destructive/20 ring-[3px]",
+                  hasErrors && "ring-1 ring-destructive",
                 )}
               />
               {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
@@ -97,12 +117,31 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
 
           return (
             <div className="space-y-2">
-              <Label htmlFor={element.name}>
-                {element.label}
+              <Label htmlFor={element.name} className="w-full">
+                <span className="flex-1">{element.label}</span>
                 {element.required && (
-                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 ml-2">
-                    *
-                  </span>
+                  <Button
+                    disabled={true}
+                    variant="ghost"
+                    size="icon-sm"
+                    className={cn(
+                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
+                      "ml-auto mr-1",
+                    )}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
+                        fill="#ef4444"
+                      />
+                    </svg>
+                  </Button>
                 )}
               </Label>
               <Input
@@ -118,7 +157,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                 aria-invalid={hasErrors}
                 className={cn(
                   "w-full rounded-(--radius-lg) border-none h-7 bg-card dark:bg-muted/30 pl-[10px] pr-[8px] shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] placeholder:text-muted-foreground/50",
-                  hasErrors && "ring-destructive/20 ring-[3px]",
+                  hasErrors && "ring-1 ring-destructive",
                 )}
               />
               {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
@@ -138,12 +177,31 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
           return (
             <div className="space-y-2">
-              <Label htmlFor={element.name}>
-                {element.label}
+              <Label htmlFor={element.name} className="w-full">
+                <span className="flex-1">{element.label}</span>
                 {element.required && (
-                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 ml-2">
-                    *
-                  </span>
+                  <Button
+                    disabled={true}
+                    variant="ghost"
+                    size="icon-sm"
+                    className={cn(
+                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
+                      "ml-auto mr-1",
+                    )}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
+                        fill="#ef4444"
+                      />
+                    </svg>
+                  </Button>
                 )}
               </Label>
               <Input
@@ -158,7 +216,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                 aria-invalid={hasErrors}
                 className={cn(
                   "w-full rounded-(--radius-lg) border-0 h-7 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
-                  hasErrors && "ring-destructive/20 ring-[3px]",
+                  hasErrors && "ring-1 ring-destructive",
                 )}
               />
               {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
@@ -178,12 +236,31 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
           return (
             <div className="space-y-2">
-              <Label htmlFor={element.name}>
-                {element.label}
+              <Label htmlFor={element.name} className="w-full">
+                <span className="flex-1">{element.label}</span>
                 {element.required && (
-                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 ml-2">
-                    *
-                  </span>
+                  <Button
+                    disabled={true}
+                    variant="ghost"
+                    size="icon-sm"
+                    className={cn(
+                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
+                      "ml-auto mr-1",
+                    )}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
+                        fill="#ef4444"
+                      />
+                    </svg>
+                  </Button>
                 )}
               </Label>
               <PhoneInput
@@ -194,7 +271,6 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                 onBlur={f.handleBlur}
                 aria-invalid={hasErrors}
                 variant="sm"
-                className={cn(hasErrors && "[&_*]:ring-destructive/20 [&_*]:ring-[3px]")}
               />
               {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
             </div>
@@ -213,12 +289,31 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
           return (
             <div className="space-y-2">
-              <Label htmlFor={element.name}>
-                {element.label}
+              <Label htmlFor={element.name} className="w-full">
+                <span className="flex-1">{element.label}</span>
                 {element.required && (
-                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 ml-2">
-                    *
-                  </span>
+                  <Button
+                    disabled={true}
+                    variant="ghost"
+                    size="icon-sm"
+                    className={cn(
+                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
+                      "ml-auto mr-1",
+                    )}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
+                        fill="#ef4444"
+                      />
+                    </svg>
+                  </Button>
                 )}
               </Label>
               <Input
@@ -228,12 +323,17 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                 placeholder={element.placeholder}
                 value={(f.state.value as string | undefined) ?? ""}
                 onChange={(e) => f.handleChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "e" || e.key === "E" || e.key === "+" || e.key === "-") {
+                    e.preventDefault();
+                  }
+                }}
                 onBlur={f.handleBlur}
                 autoComplete="off"
                 aria-invalid={hasErrors}
                 className={cn(
                   "w-full rounded-(--radius-lg) border-0 h-7 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
-                  hasErrors && "ring-destructive/20 ring-[3px]",
+                  hasErrors && "ring-1 ring-destructive",
                 )}
               />
               {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
@@ -253,12 +353,31 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
           return (
             <div className="space-y-2">
-              <Label htmlFor={element.name}>
-                {element.label}
+              <Label htmlFor={element.name} className="w-full">
+                <span className="flex-1">{element.label}</span>
                 {element.required && (
-                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 ml-2">
-                    *
-                  </span>
+                  <Button
+                    disabled={true}
+                    variant="ghost"
+                    size="icon-sm"
+                    className={cn(
+                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
+                      "ml-auto mr-1",
+                    )}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
+                        fill="#ef4444"
+                      />
+                    </svg>
+                  </Button>
                 )}
               </Label>
               <Input
@@ -273,7 +392,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                 aria-invalid={hasErrors}
                 className={cn(
                   "w-full rounded-(--radius-lg) border-0 h-7 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
-                  hasErrors && "ring-destructive/20 ring-[3px]",
+                  hasErrors && "ring-1 ring-destructive",
                 )}
               />
               {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
@@ -293,17 +412,37 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
           return (
             <div className="space-y-2">
-              <Label htmlFor={element.name}>
-                {element.label}
+              <Label htmlFor={element.name} className="w-full">
+                <span className="flex-1">{element.label}</span>
                 {element.required && (
-                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 ml-2">
-                    *
-                  </span>
+                  <Button
+                    disabled={true}
+                    variant="ghost"
+                    size="icon-sm"
+                    className={cn(
+                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
+                      "ml-auto mr-1",
+                    )}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
+                        fill="#ef4444"
+                      />
+                    </svg>
+                  </Button>
                 )}
               </Label>
               <DatePicker
                 value={(f.state.value as string) ?? null}
                 onChange={(val) => f.handleChange(val ?? "")}
+                className={cn(hasErrors && "ring-1 ring-destructive")}
               />
               {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
             </div>
@@ -322,12 +461,31 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
           return (
             <div className="space-y-2">
-              <Label htmlFor={element.name}>
-                {element.label}
+              <Label htmlFor={element.name} className="w-full">
+                <span className="flex-1">{element.label}</span>
                 {element.required && (
-                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 ml-2">
-                    *
-                  </span>
+                  <Button
+                    disabled={true}
+                    variant="ghost"
+                    size="icon-sm"
+                    className={cn(
+                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
+                      "ml-auto mr-1",
+                    )}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
+                        fill="#ef4444"
+                      />
+                    </svg>
+                  </Button>
                 )}
               </Label>
               <Input
@@ -342,7 +500,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                 aria-invalid={hasErrors}
                 className={cn(
                   "w-full rounded-(--radius-lg) border-0 h-7 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
-                  hasErrors && "ring-destructive/20 ring-[3px]",
+                  hasErrors && "ring-1 ring-destructive",
                 )}
               />
               {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
@@ -369,17 +527,42 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
 
           return (
             <div className="space-y-2">
-              <Label htmlFor={element.name}>
-                {element.label}
+              <Label htmlFor={element.name} className="w-full">
+                <span className="flex-1">{element.label}</span>
                 {element.required && (
-                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 ml-2">
-                    *
-                  </span>
+                  <Button
+                    disabled={true}
+                    variant="ghost"
+                    size="icon-sm"
+                    className={cn(
+                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
+                      "ml-auto mr-1",
+                    )}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
+                        fill="#ef4444"
+                      />
+                    </svg>
+                  </Button>
                 )}
               </Label>
               <div className="flex flex-col gap-2">
                 {element.options.map((option) => (
-                  <label key={option.value} className="flex items-center gap-2 cursor-pointer">
+                  <label
+                    key={option.value}
+                    className={cn(
+                      "flex items-center gap-2 cursor-pointer",
+                      hasErrors && "text-destructive",
+                    )}
+                  >
                     <Checkbox
                       checked={selectedValues.includes(option.value)}
                       onCheckedChange={(checked) => {
@@ -389,6 +572,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                           f.handleChange(selectedValues.filter((v: string) => v !== option.value));
                         }
                       }}
+                      aria-invalid={hasErrors}
                     />
                     <span className="text-sm">{option.label}</span>
                   </label>
@@ -414,12 +598,31 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
 
           return (
             <div className="space-y-2">
-              <Label htmlFor={element.name}>
-                {element.label}
+              <Label htmlFor={element.name} className="w-full">
+                <span className="flex-1">{element.label}</span>
                 {element.required && (
-                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 ml-2">
-                    *
-                  </span>
+                  <Button
+                    disabled={true}
+                    variant="ghost"
+                    size="icon-sm"
+                    className={cn(
+                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
+                      "ml-auto mr-1",
+                    )}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
+                        fill="#ef4444"
+                      />
+                    </svg>
+                  </Button>
                 )}
               </Label>
               <div className="flex flex-col gap-2">
@@ -433,6 +636,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                       onClick={() => f.handleChange(isSelected ? "" : option.value)}
                       className={cn(
                         "flex items-center gap-2 py-1 text-sm transition-colors text-left cursor-pointer",
+                        hasErrors && "text-destructive",
                       )}
                     >
                       <span
@@ -441,6 +645,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                           isSelected
                             ? "bg-primary text-primary-foreground"
                             : "bg-muted text-muted-foreground",
+                          hasErrors && !isSelected && "ring-1 ring-destructive",
                         )}
                       >
                         {letter}
@@ -469,18 +674,38 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
 
           return (
             <div className="space-y-2">
-              <Label htmlFor={element.name}>
-                {element.label}
+              <Label htmlFor={element.name} className="w-full">
+                <span className="flex-1">{element.label}</span>
                 {element.required && (
-                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 ml-2">
-                    *
-                  </span>
+                  <Button
+                    disabled={true}
+                    variant="ghost"
+                    size="icon-sm"
+                    className={cn(
+                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
+                      "ml-auto mr-1",
+                    )}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
+                        fill="#ef4444"
+                      />
+                    </svg>
+                  </Button>
                 )}
               </Label>
               <MultiSelect
                 options={element.options}
                 value={selectedValues}
                 onChange={(val) => f.handleChange(val)}
+                className={cn(hasErrors && "[&>button]:ring-1 [&>button]:ring-destructive")}
               />
               {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
             </div>
@@ -520,12 +745,31 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
 
           return (
             <div className="space-y-2">
-              <Label htmlFor={element.name}>
-                {element.label}
+              <Label htmlFor={element.name} className="w-full">
+                <span className="flex-1">{element.label}</span>
                 {element.required && (
-                  <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 ml-2">
-                    *
-                  </span>
+                  <Button
+                    disabled={true}
+                    variant="ghost"
+                    size="icon-sm"
+                    className={cn(
+                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
+                      "ml-auto mr-1",
+                    )}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
+                        fill="#ef4444"
+                      />
+                    </svg>
+                  </Button>
                 )}
               </Label>
               <div className="flex flex-col gap-2">
@@ -545,6 +789,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                       onClick={() => handleRankClick(option.value)}
                       className={cn(
                         "flex items-center gap-2 py-1 text-sm transition-colors text-left cursor-pointer",
+                        hasErrors && "text-destructive",
                       )}
                     >
                       {isRanked ? (
@@ -552,7 +797,12 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                           {rankIndex + 1}
                         </span>
                       ) : (
-                        <span className="flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-border text-muted-foreground">
+                        <span
+                          className={cn(
+                            "flex size-4 shrink-0 items-center justify-center rounded-[4px] border border-border text-muted-foreground",
+                            hasErrors && "border-destructive ring-1 ring-destructive",
+                          )}
+                        >
                           <ChevronsUpDownIcon className="size-2.5" />
                         </span>
                       )}
@@ -607,18 +857,38 @@ const FileUploadPreview = ({ element, form }: RenderStepPreviewInputProps) => {
         const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
         return (
           <div className="space-y-2">
-            <Label htmlFor={element.name}>
-              {label}
+            <Label htmlFor={element.name} className="w-full">
+              <span className="flex-1">{label}</span>
               {required && (
-                <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-xs text-red-500 ml-2">
-                  *
-                </span>
+                <Button
+                  disabled={true}
+                  variant="ghost"
+                  size="icon-sm"
+                  className={cn(
+                    "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
+                    "ml-auto mr-1",
+                  )}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
+                      fill="#ef4444"
+                    />
+                  </svg>
+                </Button>
               )}
             </Label>
             <button
               type="button"
               className={cn(
                 "relative flex min-h-20 w-full flex-col items-center justify-center rounded-lg border border-dashed border-border/60 bg-card/50 p-4 cursor-pointer hover:bg-accent/50 transition-colors shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)]",
+                hasErrors && "border-destructive ring-1 ring-destructive",
               )}
               onClick={!file ? openFileDialog : undefined}
               onDragEnter={handleDragEnter}

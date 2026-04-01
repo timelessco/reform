@@ -128,7 +128,18 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
     );
   }
 
-  if (!enabled) return;
+  if (!enabled) {
+    // formHeader needs a wrapper with slate-blockWrapper so DnD can calculate
+    // drop positions above the first content block
+    if (element.type === "formHeader") {
+      return (innerProps) => (
+        <div className="relative">
+          <div className="slate-blockWrapper">{innerProps.children}</div>
+        </div>
+      );
+    }
+    return;
+  }
 
   return (innerProps) => <Draggable {...innerProps} />;
 };

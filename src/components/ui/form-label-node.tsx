@@ -42,12 +42,23 @@ export const FormLabelElement = ({ className, children, ...props }: PlateElement
             size="icon-sm"
             onClick={toggleRequired}
             className={cn(
-              "flex size-4 shrink-0 cursor-pointer text-center self-center content-center items-center justify-center rounded-full bg-muted text-xs text-red-500 hover:bg-muted-foreground hover:text-muted",
-              "ml-2",
+              "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
+              "ml-auto mr-1",
             )}
             contentEditable={false}
           >
-            *
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
+                fill="white"
+              />
+            </svg>
           </Button>
         )}
       </div>

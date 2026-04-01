@@ -490,32 +490,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
         >
           {/* Field Name Header */}
           <div className="flex items-center gap-2 px-2 py-1.5">
-            <GripVerticalIcon
-              className="h-3.5 w-3.5 text-muted-foreground shrink-0"
-              strokeWidth={1.5}
-              aria-hidden="true"
-            />
-            {isEditingName ? (
-              <Input
-                value={fieldName}
-                onChange={handleFieldNameChange}
-                onBlur={handleUpdateFieldName}
-                onKeyDown={handleFieldNameKeyDown}
-                className="h-7 text-[13px] flex-1 rounded-lg"
-                aria-label="Field name"
-                autoFocus
-              />
-            ) : (
-              <span className="text-[13px] flex-1 truncate text-foreground">{fieldName}</span>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              prefix={<Pencil2Icon />}
-              className="h-6 w-6 shrink-0 rounded-lg hover:bg-black/5"
-              onClick={handleToggleEditName}
-              aria-label="Edit field"
-            ></Button>
+            <span className="text-[13px] flex-1 truncate text-foreground">{fieldName}</span>
           </div>
           <DropdownMenuSeparator />
 

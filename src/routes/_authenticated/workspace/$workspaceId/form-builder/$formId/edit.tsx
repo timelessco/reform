@@ -72,6 +72,7 @@ const DesignPage = () => {
         )}
 
         <div
+          data-editor-scroll
           className={cn(
             "flex-1 overflow-x-hidden",
             previewMode ? "h-full overflow-hidden" : "overflow-y-auto",

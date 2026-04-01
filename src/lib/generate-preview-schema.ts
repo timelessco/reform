@@ -34,7 +34,9 @@ export const generateZodSchemaFromFields = (
           .email("Please enter a valid email address");
         break;
       case "Link":
-        fieldSchema = z.string({ error: "This field is required" }).url("Please enter a valid URL");
+        fieldSchema = z
+          .string({ error: "This field is required" })
+          .regex(/^(https?:\/\/)?[\w.-]+\.\w{2,}(\/\S*)?$/, "Please enter a valid URL");
         break;
       case "Number":
         fieldSchema = z.coerce.number({ error: "Please enter a valid number" });

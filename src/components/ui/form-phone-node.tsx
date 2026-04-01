@@ -30,19 +30,13 @@ export const FormPhoneElement = ({ className, children, ...props }: PlateElement
     <PlateElement
       attributes={{ ...attributes, placeholder, "data-bf-input": "true" }}
       className={cn(
-        "relative my-1 flex h-7 w-full max-w-[464px] items-center overflow-hidden rounded-[var(--radius-lg)] border-0 bg-card pl-[10px] pr-[8px] text-sm shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] cursor-text caret-current",
+        "relative my-1 flex h-7 w-full max-w-[464px] items-center overflow-hidden rounded-[var(--radius-lg)] border-0 bg-card dark:bg-muted/30 pl-[10px] pr-[8px] text-sm shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] cursor-text caret-current",
         isSelected && focused && "ring-ring/50 ring-[3px]",
         className,
       )}
       element={element}
       {...rest}
     >
-      <span
-        contentEditable={false}
-        className="shrink-0 text-muted-foreground/70 text-sm select-none pr-1 border-r border-border/50 mr-1.5"
-      >
-        +1
-      </span>
       <span className="flex-1 min-w-0 outline-none text-muted-foreground/50 line-clamp-1 break-all">
         {children}
       </span>

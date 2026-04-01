@@ -259,6 +259,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           children: [{ text: "" }],
         },
         { type: "formOptionItem", variant: "checkbox", children: [{ text: "" }] },
+        { type: "p", children: [{ text: "" }] },
       ] as any,
       { at: labelPath },
     );
@@ -278,6 +279,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           children: [{ text: "" }],
         },
         { type: "formOptionItem", variant: "multiChoice", children: [{ text: "" }] },
+        { type: "p", children: [{ text: "" }] },
       ] as any,
       { at: labelPath },
     );
@@ -296,7 +298,8 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           placeholder: "Type a question",
           children: [{ text: "" }],
         },
-        { type: "formOptionItem", variant: "multiSelect", children: [{ text: "" }] },
+        { type: "formMultiSelectInput", options: [], children: [{ text: "" }] },
+        { type: "p", children: [{ text: "" }] },
       ] as any,
       { at: labelPath },
     );
@@ -316,6 +319,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           children: [{ text: "" }],
         },
         { type: "formOptionItem", variant: "ranking", children: [{ text: "" }] },
+        { type: "p", children: [{ text: "" }] },
       ] as any,
       { at: labelPath },
     );

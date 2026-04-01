@@ -285,12 +285,12 @@ const groups: Group[] = [
         label: "Multi Select",
         value: "formMultiSelect",
       },
-      {
-        icon: <ChevronsUpDownIcon />,
-        keywords: ["form", "ranking", "rank", "order", "sort", "priority"],
-        label: "Ranking",
-        value: "formRanking",
-      },
+      // {
+      //   icon: <ChevronsUpDownIcon />,
+      //   keywords: ["form", "ranking", "rank", "order", "sort", "priority"],
+      //   label: "Ranking",
+      //   value: "formRanking",
+      // },
     ].map((item) => ({
       ...item,
       onSelect: (editor, value) => {

@@ -16,7 +16,7 @@ import {
   ComboboxTrigger,
   ComboboxValue,
 } from "@/components/ui/combobox";
-import { Input } from "@/components/ui/input";
+import { InputGroupInput } from "@/components/ui/input-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { GlobeIcon } from "lucide-react";
 
@@ -59,9 +59,11 @@ function PhoneInput({
     >
       <BasePhoneInput.default
         className={cn(
-          "flex",
-          props["aria-invalid"] &&
-            "[&_*[data-slot=combobox-trigger]]:border-destructive [&_*[data-slot=combobox-trigger]]:ring-destructive/50",
+          "flex flex-row-reverse [&]:rounded-lg [&]:border [&]:border-input [&]:has-[[data-slot=input-group-control]:focus-visible]:border-ring [&]:has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 [&]:has-[[data-slot=input-group-control]:focus-visible]:ring-3",
+          phoneInputSize === "sm" && "[&]:h-7",
+          phoneInputSize === "lg" && "[&]:h-9",
+          phoneInputSize === "default" && "[&]:h-8",
+          props["aria-invalid"] && "[&]:ring-1 [&]:ring-destructive [&]:border-destructive",
           className,
         )}
         flagComponent={FlagComponent}
@@ -76,13 +78,13 @@ function PhoneInput({
   );
 }
 
-function InputComponent({ className, ...props }: React.ComponentProps<typeof Input>) {
+function InputComponent({ className, ...props }: React.ComponentProps<"input">) {
   const { variant } = useContext(PhoneInputContext);
 
   return (
-    <Input
+    <InputGroupInput
       className={cn(
-        "ring-none! rounded-s-none outline-none! focus:z-1",
+        "rounded-none border-0 bg-transparent shadow-none ring-0! focus-visible:ring-0 outline-none! flex-1 aria-invalid:ring-0",
         variant === "sm" && "h-7",
         variant === "lg" && "h-9",
         className,
@@ -92,7 +94,10 @@ function InputComponent({ className, ...props }: React.ComponentProps<typeof Inp
   );
 }
 
-type CountryEntry = { label: string; value: BasePhoneInput.Country | undefined };
+type CountryEntry = {
+  label: string;
+  value: BasePhoneInput.Country | undefined;
+};
 
 type CountrySelectProps = {
   disabled?: boolean;
@@ -130,10 +135,10 @@ function CountrySelect({
       <ComboboxTrigger
         render={
           <Button
-            variant="outline"
+            variant="ghost"
             size={variant}
             className={cn(
-              "rounded-s-lg rounded-e-none flex gap-1 border-e-0 px-2.5 py-0 leading-none hover:bg-transparent focus:z-10 data-pressed:bg-transparent",
+              "rounded-none border-0 shadow-none px-2 py-0 leading-none hover:bg-transparent focus:z-10 data-pressed:bg-transparent",
               disabled && "opacity-50",
             )}
             disabled={disabled}
@@ -146,6 +151,7 @@ function CountrySelect({
         }
       />
       <ComboboxContent
+        align="end"
         className={cn("w-xs *:data-[slot=input-group]:bg-transparent", popupClassName)}
       >
         <ComboboxInput
@@ -153,7 +159,7 @@ function CountrySelect({
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
           showTrigger={false}
-          className="border-input focus-visible:border-border rounded-none border-0 px-0 py-2.5 shadow-none ring-0! outline-none! focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="border-input bg-accent focus-visible:border-border rounded-none border-0 px-0 py-2.5 shadow-none ring-0! outline-none! focus-visible:ring-0 focus-visible:ring-offset-0"
         />
         <ComboboxSeparator />
         <ComboboxEmpty className="px-4 py-2.5 text-sm">No country found.</ComboboxEmpty>

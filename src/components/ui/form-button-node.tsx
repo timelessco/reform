@@ -187,7 +187,6 @@ export const FormButtonElement = ({ className, children, ...props }: PlateElemen
   return (
     <PlateElement
       className={cn("m-0 px-0 py-1", isPrevious ? "float-left" : "overflow-hidden flex", className)}
-      style={!isPrevious ? { maxWidth: "var(--bf-input-width, 464px)" } : undefined}
       {...props}
     >
       {/* Hidden children to maintain Slate structure */}
