@@ -17,7 +17,7 @@ import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
 import { APP_NAME } from "@/lib/app-config";
 import { defaultFormSettings } from "@/types/form-settings";
 import { EyeIcon, EyeOffIcon } from "@/components/ui/icons";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { SidebarSection } from "@/components/ui/sidebar-section";
 import {
   ConfigCard,
@@ -51,6 +51,11 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
   const localFormResult = useLocalForm(isLocal ? formId : undefined);
   const formResult = isLocal ? localFormResult : cloudForm;
   const formDoc = formResult.data?.[0] ?? null;
+  const hasEmailField = useMemo(() => {
+    const content = (formDoc as Record<string, unknown> | null)?.content;
+    if (!Array.isArray(content)) return false;
+    return content.some((node: { type?: string }) => node.type === "formEmail");
+  }, [formDoc]);
   const collection = (isLocal ? localFormCollection : getFormListings()) as ReturnType<
     typeof getFormListings
   >;
@@ -304,7 +309,11 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
 
               <ConfigRow
                 label="Respondent emails"
-                description="Send a confirmation email to respondents."
+                description={
+                  hasEmailField
+                    ? "Send a confirmation email to respondents."
+                    : "Add an email field to your form to enable this."
+                }
                 variant="switch"
               >
                 <div className="flex items-center gap-1.5">
@@ -318,8 +327,9 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                     {(field) => (
                       <Switch
                         aria-label="Respondent email notifications"
-                        checked={!!field.state.value}
+                        checked={!!field.state.value && hasEmailField}
                         onCheckedChange={field.handleChange}
+                        disabled={!hasEmailField}
                         size="default"
                       />
                     )}
@@ -329,7 +339,7 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
 
               <form.Subscribe selector={selectRespondentEmailNotifications}>
                 {(respondentEmailNotifications) =>
-                  respondentEmailNotifications ? (
+                  respondentEmailNotifications && hasEmailField ? (
                     <>
                       <ConfigRow label="Subject">
                         <form.AppField name="respondentEmailSubject">

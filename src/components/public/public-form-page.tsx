@@ -41,6 +41,7 @@ export interface PublicFormEmbedConfig {
   background: "transparent" | "solid";
   alignment: "center" | "left";
   dynamicHeight: boolean;
+  dynamicWidth: boolean;
 }
 
 export const defaultPublicFormEmbedConfig: PublicFormEmbedConfig = {
@@ -48,6 +49,7 @@ export const defaultPublicFormEmbedConfig: PublicFormEmbedConfig = {
   background: "solid",
   alignment: "center",
   dynamicHeight: false,
+  dynamicWidth: false,
 };
 
 interface PublicFormPageProps {
@@ -120,6 +122,7 @@ export const PublicFormPage = ({
   const hideTitle = embedConfig.title === "hidden";
   const alignLeft = embedConfig.alignment === "left";
   const dynamicHeight = embedConfig.dynamicHeight;
+  const dynamicWidth = embedConfig.dynamicWidth;
   const containerRef = useRef<HTMLDivElement>(null);
   const [submitted, setSubmitted] = useState(() => {
     if (form?.settings?.preventDuplicateSubmissions) {
@@ -289,6 +292,7 @@ export const PublicFormPage = ({
         transparentBackground || isPopup ? "bg-transparent" : "bg-white",
         alignLeft && "text-left",
       )}
+      style={dynamicWidth ? ({ "--bf-page-width": "100%" } as React.CSSProperties) : undefined}
       aria-live="polite"
     >
       <FormPreviewFromPlate

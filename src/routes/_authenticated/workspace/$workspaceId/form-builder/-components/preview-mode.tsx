@@ -32,6 +32,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
   const darkOverlay = (search.embedDarkOverlay as boolean) ?? false;
   const showEmoji = (search.embedEmoji as boolean) ?? true;
   const alignLeft = (search.embedAlignLeft as boolean) ?? false;
+  const dynamicWidth = (search.embedDynamicWidth as boolean) ?? false;
 
   const [isPopupOpen, setIsPopupOpen] = useState(true);
   const handleClosePopup = useCallback(() => setIsPopupOpen(false), []);
@@ -146,6 +147,11 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                               "overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20",
                             alignLeft ? "max-w-[600px]" : "",
                           )}
+                          style={
+                            dynamicWidth
+                              ? ({ "--bf-page-width": "100%" } as React.CSSProperties)
+                              : undefined
+                          }
                         >
                           <FormPreviewFromPlate
                             content={content}

@@ -1089,7 +1089,7 @@ export const FormTimePlugin = createPlatePlugin({
 export const FormFileUploadPlugin = createPlatePlugin({
   key: "formFileUpload",
   node: { isElement: true, isVoid: true, component: FormFileUploadElement },
-  options: { gutterPosition: "center" },
+  options: { gutterPosition: "top" },
   handlers: {
     onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
   },

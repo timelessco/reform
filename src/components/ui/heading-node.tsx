@@ -4,6 +4,8 @@ import type { VariantProps } from "class-variance-authority";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement } from "platejs/react";
 
+import { RequiredBadgeWrapper } from "@/components/ui/required-badge-wrapper";
+
 const headingVariants = cva("relative mb-1", {
   variants: {
     variant: {
@@ -21,9 +23,11 @@ export const HeadingElement = ({
   variant = "h1",
   ...props
 }: PlateElementProps & VariantProps<typeof headingVariants>) => (
-  <PlateElement as={variant ?? "h1"} className={headingVariants({ variant })} {...props}>
-    {props.children}
-  </PlateElement>
+  <RequiredBadgeWrapper path={props.path}>
+    <PlateElement as={variant ?? "h1"} className={headingVariants({ variant })} {...props}>
+      {props.children}
+    </PlateElement>
+  </RequiredBadgeWrapper>
 );
 
 export const H1Element = (props: PlateElementProps) => <HeadingElement variant="h1" {...props} />;

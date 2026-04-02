@@ -1,5 +1,12 @@
 import type { Value } from "platejs";
 import type { FormElement, StaticFormElement } from "@/types/form-types";
+import {
+  ALLOWED_LABEL_TYPES,
+  FORM_INPUT_NODE_TYPES,
+  INPUT_TYPE_TO_FIELD_TYPE,
+  VARIANT_TO_FIELD_TYPE,
+  resolveRequired,
+} from "@/lib/form-field-constants";
 
 type _PreviewElement = FormElement | StaticFormElement;
 
@@ -37,6 +44,7 @@ export type PlateFormField =
       name: string;
       fieldType: "Input";
       label?: string;
+      labelType?: string;
       placeholder?: string;
       required?: boolean;
       minLength?: number;
@@ -48,6 +56,7 @@ export type PlateFormField =
       name: string;
       fieldType: "Textarea";
       label?: string;
+      labelType?: string;
       placeholder?: string;
       required?: boolean;
       minLength?: number;
@@ -59,6 +68,7 @@ export type PlateFormField =
       name: string;
       fieldType: "Email";
       label?: string;
+      labelType?: string;
       placeholder?: string;
       required?: boolean;
     }
@@ -67,6 +77,7 @@ export type PlateFormField =
       name: string;
       fieldType: "Phone";
       label?: string;
+      labelType?: string;
       placeholder?: string;
       required?: boolean;
     }
@@ -75,6 +86,7 @@ export type PlateFormField =
       name: string;
       fieldType: "Number";
       label?: string;
+      labelType?: string;
       placeholder?: string;
       required?: boolean;
       min?: number;
@@ -85,6 +97,7 @@ export type PlateFormField =
       name: string;
       fieldType: "Link";
       label?: string;
+      labelType?: string;
       placeholder?: string;
       required?: boolean;
     }
@@ -93,6 +106,7 @@ export type PlateFormField =
       name: string;
       fieldType: "Date";
       label?: string;
+      labelType?: string;
       placeholder?: string;
       required?: boolean;
     }
@@ -101,6 +115,7 @@ export type PlateFormField =
       name: string;
       fieldType: "Time";
       label?: string;
+      labelType?: string;
       placeholder?: string;
       required?: boolean;
     }
@@ -109,6 +124,7 @@ export type PlateFormField =
       name: string;
       fieldType: "FileUpload";
       label?: string;
+      labelType?: string;
       required?: boolean;
       accept?: string;
     }
@@ -117,6 +133,7 @@ export type PlateFormField =
       name: string;
       fieldType: "Checkbox";
       label?: string;
+      labelType?: string;
       required?: boolean;
       options: { value: string; label: string }[];
     }
@@ -125,6 +142,7 @@ export type PlateFormField =
       name: string;
       fieldType: "MultiChoice";
       label?: string;
+      labelType?: string;
       required?: boolean;
       options: { value: string; label: string }[];
     }
@@ -133,6 +151,7 @@ export type PlateFormField =
       name: string;
       fieldType: "MultiSelect";
       label?: string;
+      labelType?: string;
       required?: boolean;
       options: { value: string; label: string }[];
     }
@@ -141,6 +160,7 @@ export type PlateFormField =
       name: string;
       fieldType: "Ranking";
       label?: string;
+      labelType?: string;
       required?: boolean;
       options: { value: string; label: string }[];
     }
@@ -302,375 +322,395 @@ const extractTableRows = (node: PlateNode): { cells: string[]; isHeader: boolean
 };
 
 /**
- * Transforms Plate.js editor Value into form elements suitable for preview.
+ * Transforms Plate.js editor Value into form elements suitable for export.
+ *
+ * Uses an "input-looks-back" heuristic: each form input node looks at value[i-1]
+ * to find its label. Label-like nodes (formLabel, h1-h3, p, blockquote) peek ahead
+ * at value[i+1] — if the next node is a form input, the label skips itself so the
+ * input can claim it.
  *
  * Supports:
- * - formLabel + formInput pairs -> Input fields
- * - formLabel + formTextarea pairs -> Textarea fields
- * - h1, h2, h3 -> Static headings
+ * - formInput/formTextarea/formEmail/etc. with preceding label -> typed fields
+ * - formMultiSelectInput with preceding label -> MultiSelect field
+ * - formOptionItem runs with preceding label -> Checkbox/MultiChoice/etc.
+ * - h1, h2, h3 -> Static headings (unless consumed as labels)
  * - hr -> Separator
- * - p, blockquote -> Description text
+ * - p, blockquote -> Description text (unless consumed as labels)
  *
  * @param value - Plate editor content array
- * @returns Array of elements for preview rendering
+ * @returns Array of elements for form rendering
  */
 export const transformPlateStateToFormElements = (value: Value): TransformedElement[] => {
   const elements: TransformedElement[] = [];
   let fieldIndex = 0;
+
+  /** Indices of label nodes consumed by a following input — skip when processing static content */
+  const consumedIndices = new Set<number>();
+
+  /**
+   * Look back at value[i-1] to find a label.
+   * If the previous node is in ALLOWED_LABEL_TYPES, extract its text,
+   * mark it as consumed, and remove it from elements if it was the last pushed item.
+   */
+  const lookBackForLabel = (
+    i: number,
+  ): { labelText: string; labelNode: Record<string, unknown> } | null => {
+    if (i <= 0) return null;
+    const prev = value[i - 1];
+    const prevType = prev.type as string;
+    if (!ALLOWED_LABEL_TYPES.has(prevType)) return null;
+
+    const labelText = extractTextContent(prev.children as Array<{ text?: string }>);
+    consumedIndices.add(i - 1);
+
+    // Pop the label from elements if it was the most-recently pushed static item
+    if (elements.length > 0) {
+      const last = elements[elements.length - 1];
+      if ("static" in last && last.static) {
+        // Check if the last static element corresponds to this label node
+        const lastId = last.id;
+        const expectedPrefixes = ["h1_", "h2_", "h3_", "desc_", "empty_"];
+        const isStaticLabel = expectedPrefixes.some((p) => lastId.startsWith(p));
+        if (isStaticLabel) {
+          // For formLabel nodes we always pop; for heading/p/blockquote we check content match
+          if (prevType === "formLabel") {
+            elements.pop();
+          } else {
+            const lastContent = "content" in last ? (last as { content: string }).content : "";
+            if (lastContent === labelText || labelText === "") {
+              elements.pop();
+            }
+          }
+        }
+      }
+    }
+
+    return { labelText, labelNode: prev as Record<string, unknown> };
+  };
 
   let i = 0;
   while (i < value.length) {
     const node = value[i];
     const nodeType = node.type as string;
 
-    switch (nodeType) {
-      case "formHeader":
-        break;
-
-      case "formLabel": {
-        const labelText = extractTextContent(node.children as Array<{ text?: string }>);
-        const isRequired = Boolean(node.required);
-
-        // Map node types to field types
-        const typeMap: Record<string, string> = {
-          formInput: "Input",
-          formTextarea: "Textarea",
-          formEmail: "Email",
-          formPhone: "Phone",
-          formNumber: "Number",
-          formLink: "Link",
-          formDate: "Date",
-          formTime: "Time",
-          formFileUpload: "FileUpload",
-        };
-
-        // Check if next node is formMultiSelectInput (new badge-based multi-select)
-        const nextNode = value[i + 1];
-        if (nextNode && (nextNode.type as string) === "formMultiSelectInput") {
-          const rawOptions = (nextNode.options as string[]) ?? [];
-          const options = rawOptions.map((opt, idx) => ({
-            value: slugify(opt) || `option_${idx + 1}`,
-            label: opt || `Option ${idx + 1}`,
-          }));
-          i++; // Skip the formMultiSelectInput node
-
-          const stableId = (node as { id?: string }).id;
-          const baseName = slugify(labelText);
-          const name = stableId || `${baseName}_${fieldIndex}`;
-
-          elements.push({
-            id: name,
-            name,
-            fieldType: "MultiSelect",
-            label: labelText || "Untitled Field",
-            required: isRequired,
-            options,
-          } as PlateFormField);
-          fieldIndex++;
-          break;
-        }
-
-        // Check if next nodes are formOptionItem (compound field)
-        if (nextNode && (nextNode.type as string) === "formOptionItem") {
-          const variant = (nextNode.variant as string) || "checkbox";
-          const variantToFieldType: Record<string, string> = {
-            checkbox: "Checkbox",
-            multiChoice: "MultiChoice",
-            multiSelect: "MultiSelect",
-            ranking: "Ranking",
-          };
-
-          const options: { value: string; label: string }[] = [];
-          let j = i + 1;
-          while (j < value.length && (value[j].type as string) === "formOptionItem") {
-            const optText = extractTextContent(value[j].children as Array<{ text?: string }>);
-            const label = optText || `Option ${options.length + 1}`;
-            options.push({ value: slugify(label) || `option_${options.length + 1}`, label });
-            j++;
-          }
-          i = j - 1; // Skip consumed option nodes
-
-          const stableId = (node as { id?: string }).id;
-          const baseName = slugify(labelText);
-          const name = stableId || `${baseName}_${fieldIndex}`;
-
-          elements.push({
-            id: name,
-            name,
-            fieldType: variantToFieldType[variant] || "Checkbox",
-            label: labelText || "Untitled Field",
-            required: isRequired,
-            options,
-          } as PlateFormField);
-          fieldIndex++;
-          break;
-        }
-
-        // Check if next node is a recognized form input type
-        let placeholder = "";
-        let minLength: number | undefined;
-        let maxLength: number | undefined;
-        let defaultValue: string | undefined;
-        let fieldType: string = "Input";
-        if (nextNode && typeMap[nextNode.type as string]) {
-          fieldType = typeMap[nextNode.type as string];
-          const inputText = extractTextContent(nextNode.children as Array<{ text?: string }>);
-          placeholder = inputText || (nextNode.placeholder as string) || "";
-          minLength = nextNode.minLength as number | undefined;
-          maxLength = nextNode.maxLength as number | undefined;
-          defaultValue = nextNode.defaultValue as string | undefined;
-
-          i++; // Skip the form input node in the next iteration
-        }
-
-        // Use Plate.js element ID as stable field name (doesn't change when fields are reordered)
-        const stableId = (node as { id?: string }).id;
-        const baseName = slugify(labelText);
-        // Fallback to position-based name for backward compatibility with old content
-        const name = stableId || `${baseName}_${fieldIndex}`;
-
-        const field: PlateFormField = {
-          id: name,
-          name,
-          fieldType: fieldType as PlateFormField["fieldType"],
-          label: labelText || "Untitled Field",
-          placeholder: placeholder || undefined,
-          required: isRequired,
-          minLength,
-          maxLength,
-          defaultValue,
-        } as PlateFormField;
-
-        elements.push(field);
-        fieldIndex++;
-        break;
-      }
-
-      // Headings -> Static elements
-      case "h1": {
-        const content = extractTextContent(node.children as Array<{ text?: string }>);
-        if (content) {
-          elements.push({
-            id: `h1_${elements.length}`,
-            name: `h1_${elements.length}`,
-            fieldType: "H1",
-            content,
-            static: true,
-          });
-        }
-        break;
-      }
-
-      case "h2": {
-        const content = extractTextContent(node.children as Array<{ text?: string }>);
-        if (content) {
-          elements.push({
-            id: `h2_${elements.length}`,
-            name: `h2_${elements.length}`,
-            fieldType: "H2",
-            content,
-            static: true,
-          });
-        }
-        break;
-      }
-
-      case "h3": {
-        const content = extractTextContent(node.children as Array<{ text?: string }>);
-        if (content) {
-          elements.push({
-            id: `h3_${elements.length}`,
-            name: `h3_${elements.length}`,
-            fieldType: "H3",
-            content,
-            static: true,
-          });
-        }
-        break;
-      }
-
-      // Horizontal rule -> Separator
-      case "hr": {
-        elements.push({
-          id: `sep_${elements.length}`,
-          name: `sep_${elements.length}`,
-          fieldType: "Separator",
-          static: true,
-        });
-        break;
-      }
-
-      // Page break -> PageBreak
-      case "pageBreak": {
-        const isThankYouPage = Boolean(node.isThankYouPage);
-        elements.push({
-          id: `page_${elements.length}`,
-          name: `page_${elements.length}`,
-          fieldType: "PageBreak",
-          isThankYouPage,
-          static: true,
-        });
-        break;
-      }
-
-      // Paragraphs/blockquotes -> Description or EmptyBlock
-      case "p":
-      case "blockquote": {
-        const content = extractTextContent(node.children as Array<{ text?: string }>);
-        if (content) {
-          // Non-empty paragraph -> Description
-          elements.push({
-            id: `desc_${elements.length}`,
-            name: `desc_${elements.length}`,
-            fieldType: "FieldDescription",
-            content,
-            static: true,
-          });
-        } else {
-          // Empty paragraph -> EmptyBlock (for spacing)
-          elements.push({
-            id: `empty_${elements.length}`,
-            name: `empty_${elements.length}`,
-            fieldType: "EmptyBlock",
-            static: true,
-          });
-        }
-        break;
-      }
-
-      // Skip form input nodes if standalone (already handled with formLabel)
-      case "formInput":
-      case "formTextarea":
-      case "formEmail":
-      case "formPhone":
-      case "formNumber":
-      case "formLink":
-      case "formDate":
-      case "formTime":
-      case "formFileUpload":
-      case "formMultiSelectInput":
-        break;
-
-      // Button field
-      case "formButton": {
-        // Get button text from label property (new), children (old), or buttonText (legacy)
-        const childText = extractTextContent(node.children as Array<{ text?: string }>);
-        const btnText =
-          (node.label as string | undefined) ||
-          childText ||
-          (node.buttonText as string | undefined);
-        const btnRole = (node.buttonRole as "next" | "previous" | "submit") || "submit";
-        const defaultText =
-          btnRole === "next" ? "Next" : btnRole === "previous" ? "Previous" : "Submit";
-        const name = `button_${fieldIndex}`;
-        elements.push({
-          id: name,
-          name,
-          fieldType: "Button",
-          buttonText: btnText || defaultText,
-          buttonRole: btnRole,
-        });
-        fieldIndex++;
-        break;
-      }
-
-      // Unordered list
-      case "ul": {
-        const items = extractListItems(node);
-        if (items.length > 0) {
-          elements.push({
-            id: `ul_${elements.length}`,
-            name: `ul_${elements.length}`,
-            fieldType: "UnorderedList",
-            items,
-            static: true,
-          });
-        }
-        break;
-      }
-
-      // Ordered list
-      case "ol": {
-        const items = extractListItems(node);
-        if (items.length > 0) {
-          elements.push({
-            id: `ol_${elements.length}`,
-            name: `ol_${elements.length}`,
-            fieldType: "OrderedList",
-            items,
-            static: true,
-          });
-        }
-        break;
-      }
-
-      // Toggle (collapsible)
-      case "toggle": {
-        // First child is typically the toggle title, rest is content
-        const children = node.children as PlateNode[];
-        let title = "";
-        const contentNodes: PlateNode[] = [];
-
-        if (children && children.length > 0) {
-          // Extract title from first element
-          if (children[0].children) {
-            title = extractTextContent(children[0].children);
-          } else if (children[0].text) {
-            title = children[0].text;
-          }
-          // Rest are content
-          contentNodes.push(...children.slice(1));
-        }
-
-        // Recursively transform toggle content
-        const toggleContent = transformPlateStateToFormElements(contentNodes as Value);
-
-        elements.push({
-          id: `toggle_${elements.length}`,
-          name: `toggle_${elements.length}`,
-          fieldType: "Toggle",
-          title: title || "Toggle",
-          children: toggleContent,
-          static: true,
-        });
-        break;
-      }
-
-      // Table
-      case "table": {
-        const rows = extractTableRows(node);
-        if (rows.length > 0) {
-          elements.push({
-            id: `table_${elements.length}`,
-            name: `table_${elements.length}`,
-            fieldType: "Table",
-            rows,
-            static: true,
-          });
-        }
-        break;
-      }
-
-      // Callout
-      case "callout": {
-        const content = extractTextContent(node.children as Array<{ text?: string }>);
-        const emoji = node.emoji as string | undefined;
-        elements.push({
-          id: `callout_${elements.length}`,
-          name: `callout_${elements.length}`,
-          fieldType: "Callout",
-          emoji,
-          content: content || "",
-          static: true,
-        });
-        break;
-      }
-
-      default:
-        // Skip unsupported node types
-        break;
+    // --- Skip formHeader (handled separately) ---
+    if (nodeType === "formHeader") {
+      i++;
+      continue;
     }
 
+    // --- Simple input types (formInput, formTextarea, formEmail, etc.) ---
+    if (INPUT_TYPE_TO_FIELD_TYPE[nodeType]) {
+      const label = lookBackForLabel(i);
+      const labelText = label?.labelText ?? "";
+      const labelNode = label?.labelNode ?? null;
+      const isRequired = resolveRequired(node as Record<string, unknown>, labelNode);
+
+      const inputText = extractTextContent(node.children as Array<{ text?: string }>);
+      const placeholder = inputText || (node.placeholder as string) || "";
+      const minLength = node.minLength as number | undefined;
+      const maxLength = node.maxLength as number | undefined;
+      const defaultValue = node.defaultValue as string | undefined;
+
+      const stableId =
+        (label?.labelNode as { id?: string } | undefined)?.id ?? (node as { id?: string }).id;
+      const baseName = slugify(labelText);
+      const name = stableId || `${baseName}_${fieldIndex}`;
+
+      elements.push({
+        id: name,
+        name,
+        fieldType: INPUT_TYPE_TO_FIELD_TYPE[nodeType] as PlateFormField["fieldType"],
+        label: labelText || "Untitled Field",
+        placeholder: placeholder || undefined,
+        required: isRequired,
+        minLength,
+        maxLength,
+        defaultValue,
+      } as PlateFormField);
+      fieldIndex++;
+      i++;
+      continue;
+    }
+
+    // --- formMultiSelectInput (badge-based multi-select) ---
+    if (nodeType === "formMultiSelectInput") {
+      const label = lookBackForLabel(i);
+      const labelText = label?.labelText ?? "";
+      const labelNode = label?.labelNode ?? null;
+      const isRequired = resolveRequired(node as Record<string, unknown>, labelNode);
+
+      const rawOptions = (node.options as string[]) ?? [];
+      const options = rawOptions.map((opt, idx) => ({
+        value: slugify(opt) || `option_${idx + 1}`,
+        label: opt || `Option ${idx + 1}`,
+      }));
+
+      const stableId =
+        (label?.labelNode as { id?: string } | undefined)?.id ?? (node as { id?: string }).id;
+      const baseName = slugify(labelText);
+      const name = stableId || `${baseName}_${fieldIndex}`;
+
+      elements.push({
+        id: name,
+        name,
+        fieldType: "MultiSelect",
+        label: labelText || "Untitled Field",
+        required: isRequired,
+        options,
+      } as PlateFormField);
+      fieldIndex++;
+      i++;
+      continue;
+    }
+
+    // --- formOptionItem (compound field — collect consecutive option items) ---
+    if (nodeType === "formOptionItem") {
+      const label = lookBackForLabel(i);
+      const labelText = label?.labelText ?? "";
+      const labelNode = label?.labelNode ?? null;
+      const isRequired = resolveRequired(node as Record<string, unknown>, labelNode);
+
+      const variant = (node.variant as string) || "checkbox";
+
+      const options: { value: string; label: string }[] = [];
+      let j = i;
+      while (j < value.length && (value[j].type as string) === "formOptionItem") {
+        const optText = extractTextContent(value[j].children as Array<{ text?: string }>);
+        const optLabel = optText || `Option ${options.length + 1}`;
+        options.push({
+          value: slugify(optLabel) || `option_${options.length + 1}`,
+          label: optLabel,
+        });
+        j++;
+      }
+
+      const stableId =
+        (label?.labelNode as { id?: string } | undefined)?.id ?? (node as { id?: string }).id;
+      const baseName = slugify(labelText);
+      const name = stableId || `${baseName}_${fieldIndex}`;
+
+      elements.push({
+        id: name,
+        name,
+        fieldType: VARIANT_TO_FIELD_TYPE[variant] || "Checkbox",
+        label: labelText || "Untitled Field",
+        required: isRequired,
+        options,
+      } as PlateFormField);
+      fieldIndex++;
+      i = j; // Advance past all consumed option nodes
+      continue;
+    }
+
+    // --- formButton ---
+    if (nodeType === "formButton") {
+      const childText = extractTextContent(node.children as Array<{ text?: string }>);
+      const btnText =
+        (node.label as string | undefined) || childText || (node.buttonText as string | undefined);
+      const btnRole = (node.buttonRole as "next" | "previous" | "submit") || "submit";
+      const defaultText =
+        btnRole === "next" ? "Next" : btnRole === "previous" ? "Previous" : "Submit";
+      const name = `button_${fieldIndex}`;
+      elements.push({
+        id: name,
+        name,
+        fieldType: "Button",
+        buttonText: btnText || defaultText,
+        buttonRole: btnRole,
+      });
+      fieldIndex++;
+      i++;
+      continue;
+    }
+
+    // --- Headings (h1/h2/h3) and text blocks (p/blockquote) ---
+    // If the NEXT node is a form input type, skip rendering as static —
+    // the input will consume this node as its label via lookBackForLabel.
+    if (ALLOWED_LABEL_TYPES.has(nodeType) && nodeType !== "formLabel") {
+      const nextNode = i + 1 < value.length ? value[i + 1] : null;
+      const nextType = nextNode ? (nextNode.type as string) : "";
+      if (FORM_INPUT_NODE_TYPES.has(nextType)) {
+        // Will be consumed as a label by the next input — skip static rendering
+        i++;
+        continue;
+      }
+
+      // Render as static content
+      const content = extractTextContent(node.children as Array<{ text?: string }>);
+      if (nodeType === "h1" || nodeType === "h2" || nodeType === "h3") {
+        if (content) {
+          elements.push({
+            id: `${nodeType}_${elements.length}`,
+            name: `${nodeType}_${elements.length}`,
+            fieldType: nodeType.toUpperCase() as "H1" | "H2" | "H3",
+            content,
+            static: true,
+          });
+        }
+      } else if (content) {
+        // p or blockquote with content -> Description
+        elements.push({
+          id: `desc_${elements.length}`,
+          name: `desc_${elements.length}`,
+          fieldType: "FieldDescription",
+          content,
+          static: true,
+        });
+      } else {
+        // Empty p or blockquote -> EmptyBlock
+        elements.push({
+          id: `empty_${elements.length}`,
+          name: `empty_${elements.length}`,
+          fieldType: "EmptyBlock",
+          static: true,
+        });
+      }
+      i++;
+      continue;
+    }
+
+    // --- formLabel as standalone (no following input) ---
+    // If a formLabel is NOT followed by an input, it might be consumed by
+    // a later input's lookBackForLabel. If it IS followed by an input,
+    // the input case above won't reach here because we skip formLabel in ALLOWED_LABEL_TYPES check.
+    // Handle formLabel: peek ahead — if next is input, skip (input will consume it);
+    // otherwise render nothing (bare label without input).
+    if (nodeType === "formLabel") {
+      const nextNode = i + 1 < value.length ? value[i + 1] : null;
+      const nextType = nextNode ? (nextNode.type as string) : "";
+      if (FORM_INPUT_NODE_TYPES.has(nextType)) {
+        // Will be consumed as a label by the next input
+        i++;
+        continue;
+      }
+      // Standalone formLabel with no input — skip it (no static rendering for bare labels)
+      i++;
+      continue;
+    }
+
+    // --- Remaining static elements (not label-like) ---
+
+    // Horizontal rule -> Separator
+    if (nodeType === "hr") {
+      elements.push({
+        id: `sep_${elements.length}`,
+        name: `sep_${elements.length}`,
+        fieldType: "Separator",
+        static: true,
+      });
+      i++;
+      continue;
+    }
+
+    // Page break -> PageBreak
+    if (nodeType === "pageBreak") {
+      const isThankYouPage = Boolean(node.isThankYouPage);
+      elements.push({
+        id: `page_${elements.length}`,
+        name: `page_${elements.length}`,
+        fieldType: "PageBreak",
+        isThankYouPage,
+        static: true,
+      });
+      i++;
+      continue;
+    }
+
+    // Unordered list
+    if (nodeType === "ul") {
+      const items = extractListItems(node);
+      if (items.length > 0) {
+        elements.push({
+          id: `ul_${elements.length}`,
+          name: `ul_${elements.length}`,
+          fieldType: "UnorderedList",
+          items,
+          static: true,
+        });
+      }
+      i++;
+      continue;
+    }
+
+    // Ordered list
+    if (nodeType === "ol") {
+      const items = extractListItems(node);
+      if (items.length > 0) {
+        elements.push({
+          id: `ol_${elements.length}`,
+          name: `ol_${elements.length}`,
+          fieldType: "OrderedList",
+          items,
+          static: true,
+        });
+      }
+      i++;
+      continue;
+    }
+
+    // Toggle (collapsible)
+    if (nodeType === "toggle") {
+      const children = node.children as PlateNode[];
+      let title = "";
+      const contentNodes: PlateNode[] = [];
+
+      if (children && children.length > 0) {
+        if (children[0].children) {
+          title = extractTextContent(children[0].children);
+        } else if (children[0].text) {
+          title = children[0].text;
+        }
+        contentNodes.push(...children.slice(1));
+      }
+
+      const toggleContent = transformPlateStateToFormElements(contentNodes as Value);
+
+      elements.push({
+        id: `toggle_${elements.length}`,
+        name: `toggle_${elements.length}`,
+        fieldType: "Toggle",
+        title: title || "Toggle",
+        children: toggleContent,
+        static: true,
+      });
+      i++;
+      continue;
+    }
+
+    // Table
+    if (nodeType === "table") {
+      const rows = extractTableRows(node);
+      if (rows.length > 0) {
+        elements.push({
+          id: `table_${elements.length}`,
+          name: `table_${elements.length}`,
+          fieldType: "Table",
+          rows,
+          static: true,
+        });
+      }
+      i++;
+      continue;
+    }
+
+    // Callout
+    if (nodeType === "callout") {
+      const content = extractTextContent(node.children as Array<{ text?: string }>);
+      const emoji = node.emoji as string | undefined;
+      elements.push({
+        id: `callout_${elements.length}`,
+        name: `callout_${elements.length}`,
+        fieldType: "Callout",
+        emoji,
+        content: content || "",
+        static: true,
+      });
+      i++;
+      continue;
+    }
+
+    // Skip unsupported node types (and already-consumed indices)
     i++;
   }
 

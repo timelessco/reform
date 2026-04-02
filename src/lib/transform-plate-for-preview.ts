@@ -1,4 +1,10 @@
 import type { Value } from "platejs";
+import {
+  ALLOWED_LABEL_TYPES,
+  INPUT_TYPE_TO_FIELD_TYPE,
+  VARIANT_TO_FIELD_TYPE,
+  resolveRequired,
+} from "@/lib/form-field-constants";
 import { extractTextContent, slugify } from "./transform-plate-to-form";
 import type { PlateFormField } from "./transform-plate-to-form";
 
@@ -91,6 +97,9 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
   let staticBuffer: Value = [];
   let fieldIndex = 0;
 
+  /** Indices of label nodes that have been claimed by an input — skip in default branch */
+  const consumedIndices = new Set<number>();
+
   const flushStatic = () => {
     if (staticBuffer.length > 0) {
       segments.push({ type: "static", nodes: staticBuffer });
@@ -98,183 +107,186 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
     }
   };
 
+  /**
+   * Look back at nodes[i-1] to find a label.
+   * If the previous node is in ALLOWED_LABEL_TYPES, extract its text and
+   * mark it as consumed (removing it from the static buffer if present).
+   * Returns { labelText, labelNode } or null.
+   */
+  const lookBackForLabel = (
+    i: number,
+  ): { labelText: string; labelNode: Record<string, unknown> } | null => {
+    if (i <= 0) return null;
+    const prev = nodes[i - 1];
+    const prevType = prev.type as string;
+    if (!ALLOWED_LABEL_TYPES.has(prevType)) return null;
+
+    const labelText = extractTextContent(prev.children as Array<{ text?: string }>);
+    consumedIndices.add(i - 1);
+
+    // Pop the label from the static buffer if it was the most-recently pushed item
+    if (staticBuffer.length > 0 && staticBuffer[staticBuffer.length - 1] === prev) {
+      staticBuffer.pop();
+    }
+
+    return { labelText, labelNode: prev as Record<string, unknown> };
+  };
+
   let i = 0;
   while (i < nodes.length) {
     const node = nodes[i];
     const nodeType = node.type as string;
 
-    switch (nodeType) {
-      case "formLabel": {
-        flushStatic();
+    // --- Simple input types (formInput, formTextarea, formEmail, etc.) ---
+    if (INPUT_TYPE_TO_FIELD_TYPE[nodeType]) {
+      const label = lookBackForLabel(i);
+      flushStatic();
+      const labelText = label?.labelText ?? "";
+      const labelNode = label?.labelNode ?? null;
+      const isRequired = resolveRequired(node as Record<string, unknown>, labelNode);
 
-        const labelText = extractTextContent(node.children as Array<{ text?: string }>);
-        const isRequired = Boolean(node.required);
+      const inputText = extractTextContent(node.children as Array<{ text?: string }>);
+      const placeholder = inputText || (node.placeholder as string) || "";
+      const minLength = node.minLength as number | undefined;
+      const maxLength = node.maxLength as number | undefined;
+      const defaultValue = node.defaultValue as string | undefined;
 
-        // Map node types to field types
-        const typeMap: Record<string, string> = {
-          formInput: "Input",
-          formTextarea: "Textarea",
-          formEmail: "Email",
-          formPhone: "Phone",
-          formNumber: "Number",
-          formLink: "Link",
-          formDate: "Date",
-          formTime: "Time",
-          formFileUpload: "FileUpload",
-        };
+      const stableId =
+        (label?.labelNode as { id?: string } | undefined)?.id ?? (node as { id?: string }).id;
+      const baseName = slugify(labelText);
+      const name = stableId || `${baseName}_${fieldIndex}`;
 
-        // Check if next node is formMultiSelectInput (new badge-based multi-select)
-        const nextNode = nodes[i + 1];
-        if (nextNode && (nextNode.type as string) === "formMultiSelectInput") {
-          const rawOptions = (nextNode.options as string[]) ?? [];
-          const options = rawOptions.map((opt, idx) => ({
-            value: slugify(opt) || `option_${idx + 1}`,
-            label: opt || `Option ${idx + 1}`,
-          }));
-          i++; // Skip the formMultiSelectInput node
-
-          const stableId = (node as { id?: string }).id;
-          const baseName = slugify(labelText);
-          const name = stableId || `${baseName}_${fieldIndex}`;
-
-          segments.push({
-            type: "field",
-            field: {
-              id: name,
-              name,
-              fieldType: "MultiSelect",
-              label: labelText || "Untitled Field",
-              required: isRequired,
-              options,
-            } as PlateFormField,
-          });
-          fieldIndex++;
-          break;
-        }
-
-        // Check if next nodes are formOptionItem (compound field)
-        if (nextNode && (nextNode.type as string) === "formOptionItem") {
-          const variant = (nextNode.variant as string) || "checkbox";
-          const variantToFieldType: Record<string, string> = {
-            checkbox: "Checkbox",
-            multiChoice: "MultiChoice",
-            multiSelect: "MultiSelect",
-            ranking: "Ranking",
-          };
-
-          const options: { value: string; label: string }[] = [];
-          let j = i + 1;
-          while (j < nodes.length && (nodes[j].type as string) === "formOptionItem") {
-            const optText = extractTextContent(nodes[j].children as Array<{ text?: string }>);
-            const label = optText || `Option ${options.length + 1}`;
-            options.push({ value: slugify(label) || `option_${options.length + 1}`, label });
-            j++;
-          }
-          i = j - 1;
-
-          const stableId = (node as { id?: string }).id;
-          const baseName = slugify(labelText);
-          const name = stableId || `${baseName}_${fieldIndex}`;
-
-          segments.push({
-            type: "field",
-            field: {
-              id: name,
-              name,
-              fieldType: variantToFieldType[variant] || "Checkbox",
-              label: labelText || "Untitled Field",
-              required: isRequired,
-              options,
-            } as PlateFormField,
-          });
-          fieldIndex++;
-          break;
-        }
-
-        // Peek ahead for recognized form input type
-        let placeholder = "";
-        let minLength: number | undefined;
-        let maxLength: number | undefined;
-        let defaultValue: string | undefined;
-        let fieldType: string = "Input";
-        if (nextNode && typeMap[nextNode.type as string]) {
-          fieldType = typeMap[nextNode.type as string];
-          const inputText = extractTextContent(nextNode.children as Array<{ text?: string }>);
-          placeholder = inputText || (nextNode.placeholder as string) || "";
-          minLength = nextNode.minLength as number | undefined;
-          maxLength = nextNode.maxLength as number | undefined;
-          defaultValue = nextNode.defaultValue as string | undefined;
-          i++; // Skip the form input node
-        }
-
-        // Use Plate element ID as stable field name
-        const stableId = (node as { id?: string }).id;
-        const baseName = slugify(labelText);
-        const name = stableId || `${baseName}_${fieldIndex}`;
-
-        const field: PlateFormField = {
+      segments.push({
+        type: "field",
+        field: {
           id: name,
           name,
-          fieldType: fieldType as PlateFormField["fieldType"],
+          fieldType: INPUT_TYPE_TO_FIELD_TYPE[nodeType] as PlateFormField["fieldType"],
           label: labelText || "Untitled Field",
+          labelType: label?.labelNode.type as string | undefined,
           placeholder: placeholder || undefined,
           required: isRequired,
           minLength,
           maxLength,
           defaultValue,
-        } as PlateFormField;
-
-        segments.push({ type: "field", field });
-        fieldIndex++;
-        break;
-      }
-
-      case "formButton": {
-        flushStatic();
-
-        const childText = extractTextContent(node.children as Array<{ text?: string }>);
-        const btnText =
-          (node.label as string | undefined) ||
-          childText ||
-          (node.buttonText as string | undefined);
-        const btnRole = (node.buttonRole as "next" | "previous" | "submit") || "submit";
-        const defaultText =
-          btnRole === "next" ? "Next" : btnRole === "previous" ? "Previous" : "Submit";
-        const name = `button_${fieldIndex}`;
-
-        segments.push({
-          type: "field",
-          field: {
-            id: name,
-            name,
-            fieldType: "Button",
-            buttonText: btnText || defaultText,
-            buttonRole: btnRole,
-          },
-        });
-        fieldIndex++;
-        break;
-      }
-
-      // Skip standalone form input nodes (handled with formLabel above)
-      case "formInput":
-      case "formTextarea":
-      case "formEmail":
-      case "formPhone":
-      case "formNumber":
-      case "formLink":
-      case "formDate":
-      case "formTime":
-      case "formFileUpload":
-      case "formMultiSelectInput":
-        break;
-
-      default:
-        // Everything else is static content — accumulate into buffer
-        staticBuffer.push(node);
-        break;
+        } as PlateFormField,
+      });
+      fieldIndex++;
+      i++;
+      continue;
     }
 
+    // --- formMultiSelectInput (badge-based multi-select) ---
+    if (nodeType === "formMultiSelectInput") {
+      const label = lookBackForLabel(i);
+      flushStatic();
+      const labelText = label?.labelText ?? "";
+      const labelNode = label?.labelNode ?? null;
+      const isRequired = resolveRequired(node as Record<string, unknown>, labelNode);
+
+      const rawOptions = (node.options as string[]) ?? [];
+      const options = rawOptions.map((opt, idx) => ({
+        value: slugify(opt) || `option_${idx + 1}`,
+        label: opt || `Option ${idx + 1}`,
+      }));
+
+      const stableId =
+        (label?.labelNode as { id?: string } | undefined)?.id ?? (node as { id?: string }).id;
+      const baseName = slugify(labelText);
+      const name = stableId || `${baseName}_${fieldIndex}`;
+
+      segments.push({
+        type: "field",
+        field: {
+          id: name,
+          name,
+          fieldType: "MultiSelect",
+          label: labelText || "Untitled Field",
+          labelType: label?.labelNode.type as string | undefined,
+          required: isRequired,
+          options,
+        } as PlateFormField,
+      });
+      fieldIndex++;
+      i++;
+      continue;
+    }
+
+    // --- formOptionItem (compound field — collect consecutive option items) ---
+    if (nodeType === "formOptionItem") {
+      const label = lookBackForLabel(i);
+      flushStatic();
+      const labelText = label?.labelText ?? "";
+      const labelNode = label?.labelNode ?? null;
+      const isRequired = resolveRequired(node as Record<string, unknown>, labelNode);
+
+      const variant = (node.variant as string) || "checkbox";
+
+      const options: { value: string; label: string }[] = [];
+      let j = i;
+      while (j < nodes.length && (nodes[j].type as string) === "formOptionItem") {
+        const optText = extractTextContent(nodes[j].children as Array<{ text?: string }>);
+        const optLabel = optText || `Option ${options.length + 1}`;
+        options.push({
+          value: slugify(optLabel) || `option_${options.length + 1}`,
+          label: optLabel,
+        });
+        j++;
+      }
+
+      const stableId =
+        (label?.labelNode as { id?: string } | undefined)?.id ?? (node as { id?: string }).id;
+      const baseName = slugify(labelText);
+      const name = stableId || `${baseName}_${fieldIndex}`;
+
+      segments.push({
+        type: "field",
+        field: {
+          id: name,
+          name,
+          fieldType: VARIANT_TO_FIELD_TYPE[variant] || "Checkbox",
+          label: labelText || "Untitled Field",
+          labelType: label?.labelNode.type as string | undefined,
+          required: isRequired,
+          options,
+        } as PlateFormField,
+      });
+      fieldIndex++;
+      i = j; // Advance past all consumed option nodes
+      continue;
+    }
+
+    // --- formButton — unchanged ---
+    if (nodeType === "formButton") {
+      flushStatic();
+
+      const childText = extractTextContent(node.children as Array<{ text?: string }>);
+      const btnText =
+        (node.label as string | undefined) || childText || (node.buttonText as string | undefined);
+      const btnRole = (node.buttonRole as "next" | "previous" | "submit") || "submit";
+      const defaultText =
+        btnRole === "next" ? "Next" : btnRole === "previous" ? "Previous" : "Submit";
+      const name = `button_${fieldIndex}`;
+
+      segments.push({
+        type: "field",
+        field: {
+          id: name,
+          name,
+          fieldType: "Button",
+          buttonText: btnText || defaultText,
+          buttonRole: btnRole,
+        },
+      });
+      fieldIndex++;
+      i++;
+      continue;
+    }
+
+    // --- Default: static content (skip if already consumed as a label) ---
+    if (!consumedIndices.has(i)) {
+      staticBuffer.push(node);
+    }
     i++;
   }
 

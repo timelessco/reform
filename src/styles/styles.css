@@ -687,12 +687,6 @@
   max-width: var(--bf-input-width);
 }
 
-/* Input width: preview form inputs (Input/Textarea inside .bf-themed) */
-.bf-themed [data-bf-field-list] input,
-.bf-themed [data-bf-field-list] textarea {
-  max-width: var(--bf-input-width);
-}
-
 /* Typography bridge */
 .bf-themed {
   font-size: var(--bf-font-size);

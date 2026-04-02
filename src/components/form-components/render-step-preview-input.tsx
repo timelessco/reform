@@ -11,7 +11,6 @@ import { PhoneInput } from "@/components/reui/phone-input";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import type { AppForm } from "@/hooks/use-form-builder";
 import type { PlateFormField } from "@/lib/transform-plate-to-form";
-import { Button } from "../ui/button";
 
 interface RenderStepPreviewInputProps {
   element: PlateFormField;
@@ -41,6 +40,82 @@ const extractErrorMessage = (error: unknown): string => {
   return "Invalid value";
 };
 
+/** Renders the label text with the correct HTML element based on labelType */
+const FieldLabelText = ({
+  text,
+  labelType,
+  htmlFor,
+  required,
+}: {
+  text: string;
+  labelType?: string;
+  htmlFor: string;
+  required?: boolean;
+}) => {
+  const requiredBadge = required ? (
+    <span
+      className={cn(
+        "flex size-4 shrink-0 items-center justify-center rounded-[8px] bg-destructive/15 text-destructive",
+        "ml-auto mr-1",
+      )}
+    >
+      <svg
+        width="10"
+        height="10"
+        viewBox="0 0 16 16"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
+          fill="currentColor"
+        />
+      </svg>
+    </span>
+  ) : null;
+
+  if (labelType === "h1") {
+    return (
+      <div className="flex w-full items-center">
+        <h1 className="flex-1 mt-[0.40em] pb-1 font-bold font-heading text-4xl">{text}</h1>
+        {requiredBadge}
+      </div>
+    );
+  }
+  if (labelType === "h2") {
+    return (
+      <div className="flex w-full items-center">
+        <h2 className="flex-1 mt-[0.40em] pb-px font-heading font-semibold text-2xl">{text}</h2>
+        {requiredBadge}
+      </div>
+    );
+  }
+  if (labelType === "h3") {
+    return (
+      <div className="flex w-full items-center">
+        <h3 className="flex-1 mt-[0.30em] pb-px font-heading font-semibold text-xl">{text}</h3>
+        {requiredBadge}
+      </div>
+    );
+  }
+  if (labelType === "blockquote") {
+    return (
+      <div className="flex w-full items-center">
+        <blockquote className="flex-1 my-1 border-l-2 pl-6 italic">{text}</blockquote>
+        {requiredBadge}
+      </div>
+    );
+  }
+
+  // Default: formLabel, p, or undefined — use standard Label
+  return (
+    <Label htmlFor={htmlFor} className="w-full">
+      <span className="flex-1">{text}</span>
+      {requiredBadge}
+    </Label>
+  );
+};
+
 /**
  * Renders a form field (Input or Textarea) in the step form.
  * Buttons are handled separately in StepForm.
@@ -55,34 +130,13 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
 
           return (
-            <div className="space-y-2">
-              <Label htmlFor={element.name} className="w-full">
-                <span className="flex-1">{element.label}</span>
-                {element.required && (
-                  <Button
-                    disabled={true}
-                    variant="ghost"
-                    size="icon-sm"
-                    className={cn(
-                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
-                      "ml-auto mr-1",
-                    )}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
-                        fill="#ef4444"
-                      />
-                    </svg>
-                  </Button>
-                )}
-              </Label>
+            <div className="space-y-2" data-bf-input="true">
+              <FieldLabelText
+                text={element.label ?? ""}
+                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                htmlFor={element.name}
+                required={element.required}
+              />
               <Textarea
                 id={element.name}
                 name={element.name}
@@ -95,7 +149,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                 autoComplete="off"
                 aria-invalid={hasErrors}
                 className={cn(
-                  "w-full min-h-24 rounded-[var(--radius-lg)] border-0 bg-card dark:bg-muted/30 pl-[10px] pr-[8px] shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] placeholder:text-muted-foreground/50",
+                  "w-full min-h-24 rounded-[var(--radius-lg)] border-0 bg-card pl-[10px] pr-[8px] shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] placeholder:text-muted-foreground/50",
                   hasErrors && "ring-1 ring-destructive",
                 )}
               />
@@ -116,34 +170,13 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
 
           return (
-            <div className="space-y-2">
-              <Label htmlFor={element.name} className="w-full">
-                <span className="flex-1">{element.label}</span>
-                {element.required && (
-                  <Button
-                    disabled={true}
-                    variant="ghost"
-                    size="icon-sm"
-                    className={cn(
-                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
-                      "ml-auto mr-1",
-                    )}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
-                        fill="#ef4444"
-                      />
-                    </svg>
-                  </Button>
-                )}
-              </Label>
+            <div className="space-y-2" data-bf-input="true">
+              <FieldLabelText
+                text={element.label ?? ""}
+                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                htmlFor={element.name}
+                required={element.required}
+              />
               <Input
                 id={element.name}
                 name={element.name}
@@ -156,7 +189,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                 autoComplete="off"
                 aria-invalid={hasErrors}
                 className={cn(
-                  "w-full rounded-(--radius-lg) border-none h-7 bg-card dark:bg-muted/30 pl-[10px] pr-[8px] shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] placeholder:text-muted-foreground/50",
+                  "w-full rounded-lg border-none h-7 bg-card pl-[10px] pr-[8px] shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] placeholder:text-muted-foreground/50",
                   hasErrors && "ring-1 ring-destructive",
                 )}
               />
@@ -176,34 +209,13 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
           return (
-            <div className="space-y-2">
-              <Label htmlFor={element.name} className="w-full">
-                <span className="flex-1">{element.label}</span>
-                {element.required && (
-                  <Button
-                    disabled={true}
-                    variant="ghost"
-                    size="icon-sm"
-                    className={cn(
-                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
-                      "ml-auto mr-1",
-                    )}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
-                        fill="#ef4444"
-                      />
-                    </svg>
-                  </Button>
-                )}
-              </Label>
+            <div className="space-y-2" data-bf-input="true">
+              <FieldLabelText
+                text={element.label ?? ""}
+                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                htmlFor={element.name}
+                required={element.required}
+              />
               <Input
                 id={element.name}
                 name={element.name}
@@ -235,34 +247,13 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
           return (
-            <div className="space-y-2">
-              <Label htmlFor={element.name} className="w-full">
-                <span className="flex-1">{element.label}</span>
-                {element.required && (
-                  <Button
-                    disabled={true}
-                    variant="ghost"
-                    size="icon-sm"
-                    className={cn(
-                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
-                      "ml-auto mr-1",
-                    )}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
-                        fill="#ef4444"
-                      />
-                    </svg>
-                  </Button>
-                )}
-              </Label>
+            <div className="space-y-2" data-bf-input="true">
+              <FieldLabelText
+                text={element.label ?? ""}
+                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                htmlFor={element.name}
+                required={element.required}
+              />
               <PhoneInput
                 id={element.name}
                 placeholder={element.placeholder}
@@ -288,34 +279,13 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
           return (
-            <div className="space-y-2">
-              <Label htmlFor={element.name} className="w-full">
-                <span className="flex-1">{element.label}</span>
-                {element.required && (
-                  <Button
-                    disabled={true}
-                    variant="ghost"
-                    size="icon-sm"
-                    className={cn(
-                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
-                      "ml-auto mr-1",
-                    )}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
-                        fill="#ef4444"
-                      />
-                    </svg>
-                  </Button>
-                )}
-              </Label>
+            <div className="space-y-2" data-bf-input="true">
+              <FieldLabelText
+                text={element.label ?? ""}
+                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                htmlFor={element.name}
+                required={element.required}
+              />
               <Input
                 id={element.name}
                 name={element.name}
@@ -352,34 +322,13 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
           return (
-            <div className="space-y-2">
-              <Label htmlFor={element.name} className="w-full">
-                <span className="flex-1">{element.label}</span>
-                {element.required && (
-                  <Button
-                    disabled={true}
-                    variant="ghost"
-                    size="icon-sm"
-                    className={cn(
-                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
-                      "ml-auto mr-1",
-                    )}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
-                        fill="#ef4444"
-                      />
-                    </svg>
-                  </Button>
-                )}
-              </Label>
+            <div className="space-y-2" data-bf-input="true">
+              <FieldLabelText
+                text={element.label ?? ""}
+                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                htmlFor={element.name}
+                required={element.required}
+              />
               <Input
                 id={element.name}
                 name={element.name}
@@ -411,34 +360,13 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
           return (
-            <div className="space-y-2">
-              <Label htmlFor={element.name} className="w-full">
-                <span className="flex-1">{element.label}</span>
-                {element.required && (
-                  <Button
-                    disabled={true}
-                    variant="ghost"
-                    size="icon-sm"
-                    className={cn(
-                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
-                      "ml-auto mr-1",
-                    )}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
-                        fill="#ef4444"
-                      />
-                    </svg>
-                  </Button>
-                )}
-              </Label>
+            <div className="space-y-2" data-bf-input="true">
+              <FieldLabelText
+                text={element.label ?? ""}
+                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                htmlFor={element.name}
+                required={element.required}
+              />
               <DatePicker
                 value={(f.state.value as string) ?? null}
                 onChange={(val) => f.handleChange(val ?? "")}
@@ -460,34 +388,13 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
           return (
-            <div className="space-y-2">
-              <Label htmlFor={element.name} className="w-full">
-                <span className="flex-1">{element.label}</span>
-                {element.required && (
-                  <Button
-                    disabled={true}
-                    variant="ghost"
-                    size="icon-sm"
-                    className={cn(
-                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
-                      "ml-auto mr-1",
-                    )}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
-                        fill="#ef4444"
-                      />
-                    </svg>
-                  </Button>
-                )}
-              </Label>
+            <div className="space-y-2" data-bf-input="true">
+              <FieldLabelText
+                text={element.label ?? ""}
+                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                htmlFor={element.name}
+                required={element.required}
+              />
               <Input
                 id={element.name}
                 name={element.name}
@@ -526,34 +433,13 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const selectedValues = (f.state.value as string[] | undefined) ?? [];
 
           return (
-            <div className="space-y-2">
-              <Label htmlFor={element.name} className="w-full">
-                <span className="flex-1">{element.label}</span>
-                {element.required && (
-                  <Button
-                    disabled={true}
-                    variant="ghost"
-                    size="icon-sm"
-                    className={cn(
-                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
-                      "ml-auto mr-1",
-                    )}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
-                        fill="#ef4444"
-                      />
-                    </svg>
-                  </Button>
-                )}
-              </Label>
+            <div className="space-y-2" data-bf-input="true">
+              <FieldLabelText
+                text={element.label ?? ""}
+                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                htmlFor={element.name}
+                required={element.required}
+              />
               <div className="flex flex-col gap-2">
                 {element.options.map((option) => (
                   <label
@@ -597,34 +483,13 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const LETTERS = LETTER_LABELS;
 
           return (
-            <div className="space-y-2">
-              <Label htmlFor={element.name} className="w-full">
-                <span className="flex-1">{element.label}</span>
-                {element.required && (
-                  <Button
-                    disabled={true}
-                    variant="ghost"
-                    size="icon-sm"
-                    className={cn(
-                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
-                      "ml-auto mr-1",
-                    )}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
-                        fill="#ef4444"
-                      />
-                    </svg>
-                  </Button>
-                )}
-              </Label>
+            <div className="space-y-2" data-bf-input="true">
+              <FieldLabelText
+                text={element.label ?? ""}
+                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                htmlFor={element.name}
+                required={element.required}
+              />
               <div className="flex flex-col gap-2">
                 {element.options.map((option, idx) => {
                   const isSelected = selectedValue === option.value;
@@ -673,34 +538,13 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const selectedValues = (f.state.value as string[] | undefined) ?? [];
 
           return (
-            <div className="space-y-2">
-              <Label htmlFor={element.name} className="w-full">
-                <span className="flex-1">{element.label}</span>
-                {element.required && (
-                  <Button
-                    disabled={true}
-                    variant="ghost"
-                    size="icon-sm"
-                    className={cn(
-                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
-                      "ml-auto mr-1",
-                    )}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
-                        fill="#ef4444"
-                      />
-                    </svg>
-                  </Button>
-                )}
-              </Label>
+            <div className="space-y-2" data-bf-input="true">
+              <FieldLabelText
+                text={element.label ?? ""}
+                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                htmlFor={element.name}
+                required={element.required}
+              />
               <MultiSelect
                 options={element.options}
                 value={selectedValues}
@@ -744,34 +588,13 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           };
 
           return (
-            <div className="space-y-2">
-              <Label htmlFor={element.name} className="w-full">
-                <span className="flex-1">{element.label}</span>
-                {element.required && (
-                  <Button
-                    disabled={true}
-                    variant="ghost"
-                    size="icon-sm"
-                    className={cn(
-                      "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
-                      "ml-auto mr-1",
-                    )}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
-                        fill="#ef4444"
-                      />
-                    </svg>
-                  </Button>
-                )}
-              </Label>
+            <div className="space-y-2" data-bf-input="true">
+              <FieldLabelText
+                text={element.label ?? ""}
+                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                htmlFor={element.name}
+                required={element.required}
+              />
               <div className="flex flex-col gap-2">
                 {/* Show ranked items first (in rank order), then unranked items */}
                 {[
@@ -856,38 +679,17 @@ const FileUploadPreview = ({ element, form }: RenderStepPreviewInputProps) => {
         const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
         const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
         return (
-          <div className="space-y-2">
-            <Label htmlFor={element.name} className="w-full">
-              <span className="flex-1">{label}</span>
-              {required && (
-                <Button
-                  disabled={true}
-                  variant="ghost"
-                  size="icon-sm"
-                  className={cn(
-                    "flex size-4 shrink-0 cursor-pointer px-1 py-1.5 items-center justify-center overflow-hidden rounded-lg bg-neutral-300 text-white hover:bg-neutral-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
-                    "ml-auto mr-1",
-                  )}
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M12.3892 5.68944L12.793 6.92754L9.02484 8.21946L11.4741 11.53L10.4244 12.3375L7.94824 8.91925L5.57971 12.3106L4.53002 11.5031L6.89855 8.21946L3.15735 6.95445L3.58799 5.68944L7.27536 7.00828V3.02484H8.64803V6.98137L12.3892 5.68944Z"
-                      fill="#ef4444"
-                    />
-                  </svg>
-                </Button>
-              )}
-            </Label>
+          <div className="space-y-2" data-bf-input="true">
+            <FieldLabelText
+              text={label}
+              labelType={"labelType" in element ? (element.labelType as string) : undefined}
+              htmlFor={element.name}
+              required={required}
+            />
             <button
               type="button"
               className={cn(
-                "relative flex min-h-20 w-full flex-col items-center justify-center rounded-lg border border-dashed border-border/60 bg-card/50 p-4 cursor-pointer hover:bg-accent/50 transition-colors shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)]",
+                "relative flex min-h-20 w-full flex-col items-center justify-center rounded-lg border border-dashed border-border/60 bg-card p-4 cursor-pointer hover:bg-accent/50 transition-colors shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)]",
                 hasErrors && "border-destructive ring-1 ring-destructive",
               )}
               onClick={!file ? openFileDialog : undefined}

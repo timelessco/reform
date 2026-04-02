@@ -42,7 +42,7 @@ export const DatePicker = ({ value, onChange, className }: DatePickerProps) => {
             type="button"
             data-empty={!date}
             className={cn(
-              "inline-flex items-center justify-start text-left font-normal w-full h-[30px] rounded-lg border-0 bg-background pl-2.5 pr-1.5 text-sm shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] dark:shadow-none dark:border dark:border-border",
+              "inline-flex items-center justify-start text-left font-normal w-full h-[30px] rounded-lg border-0 bg-card pl-2.5 pr-1.5 text-sm shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)]",
               !date && "text-muted-foreground",
               className,
             )}

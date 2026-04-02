@@ -30,7 +30,7 @@ export const FormNumberElement = ({ className, children, ...props }: PlateElemen
     <PlateElement
       attributes={{ ...attributes, placeholder, "data-bf-input": "true" }}
       className={cn(
-        "relative my-1 flex h-7 w-full max-w-[464px] items-center overflow-hidden rounded-[var(--radius-lg)] border-0 bg-card dark:bg-muted/30 pl-[10px] pr-[8px] text-sm shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] cursor-text caret-current",
+        "relative  flex h-7 w-full max-w-[464px] items-center overflow-hidden rounded-[var(--radius-lg)] border-0 bg-card pl-[10px] pr-[8px] text-sm shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] cursor-text caret-current",
         isSelected && focused && "ring-ring/50 ring-[3px]",
         className,
       )}

@@ -17,6 +17,8 @@ interface StyleNumberInputProps {
   displayUnit?: string;
   className?: string;
   valueWidth?: string;
+  /** Show the scrubber track, knob, hash marks, and spring/rubber-band effects. Default true. */
+  scrubber?: boolean;
 }
 
 export const StyleNumberInput = ({
@@ -30,6 +32,7 @@ export const StyleNumberInput = ({
   displayUnit,
   className,
   valueWidth = "60px",
+  scrubber = true,
 }: StyleNumberInputProps) => {
   const match = value?.toString().match(/^(-?\d*\.?\d+)(.*)$/);
   const numValue = match ? parseFloat(match[1]) : 0;
@@ -139,7 +142,7 @@ export const StyleNumberInput = ({
       onChange(`${clamped}${unit}`);
 
       // Rubber banding when dragging past edges
-      setRubberBand(computeRubberBand(e.clientX));
+      if (scrubber) setRubberBand(computeRubberBand(e.clientX));
     }
   };
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -152,16 +155,20 @@ export const StyleNumberInput = ({
       const clamped = Math.max(min, Math.min(max, snapped));
       const newPct = percentFromValue(clamped);
 
-      if (animRef.current) animRef.current.stop();
-      animRef.current = animate(fillPercent, newPct, {
-        type: "spring",
-        stiffness: 300,
-        damping: 25,
-        mass: 0.8,
-        onComplete: () => {
-          animRef.current = null;
-        },
-      });
+      if (scrubber) {
+        if (animRef.current) animRef.current.stop();
+        animRef.current = animate(fillPercent, newPct, {
+          type: "spring",
+          stiffness: 300,
+          damping: 25,
+          mass: 0.8,
+          onComplete: () => {
+            animRef.current = null;
+          },
+        });
+      } else {
+        fillPercent.jump(newPct);
+      }
       onChange(`${clamped}${unit}`);
     }
 
@@ -190,63 +197,75 @@ export const StyleNumberInput = ({
       onPointerUp={handlePointerUp}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      animate={{
-        scaleX: rubberBand > 0 ? 1 + rubberBand * 0.002 : 1,
-        x:
-          stretchDirection === "left"
-            ? -rubberBand * 0.4
-            : stretchDirection === "right"
-              ? rubberBand * 0.4
-              : 0,
-      }}
-      transition={
-        rubberBand > 0
-          ? { duration: 0 }
-          : { type: "spring", stiffness: 400, damping: 20, mass: 0.5 }
+      animate={
+        scrubber
+          ? {
+              scaleX: rubberBand > 0 ? 1 + rubberBand * 0.002 : 1,
+              x:
+                stretchDirection === "left"
+                  ? -rubberBand * 0.4
+                  : stretchDirection === "right"
+                    ? rubberBand * 0.4
+                    : 0,
+            }
+          : undefined
       }
-      style={{
-        transformOrigin: stretchDirection === "left" ? "right center" : "left center",
-      }}
+      transition={
+        scrubber
+          ? rubberBand > 0
+            ? { duration: 0 }
+            : { type: "spring", stiffness: 400, damping: 20, mass: 0.5 }
+          : undefined
+      }
+      style={
+        scrubber
+          ? { transformOrigin: stretchDirection === "left" ? "right center" : "left center" }
+          : undefined
+      }
     >
-      {/* Filled track — extends past knob, rounded edge wraps around it */}
-      <motion.div
-        className="absolute left-0 top-[2px] bottom-[2px] rounded-r-xl pointer-events-none bg-secondary"
-        style={{ width: fillWidth, maxWidth: "100%" }}
-      />
+      {scrubber && (
+        <>
+          {/* Filled track — extends past knob, rounded edge wraps around it */}
+          <motion.div
+            className="absolute left-0 top-[2px] bottom-[2px] rounded-r-xl pointer-events-none bg-secondary"
+            style={{ width: fillWidth, maxWidth: "100%" }}
+          />
 
-      {/* Handle knob — sits inside the fill area with margin */}
-      <motion.div
-        className="absolute my-1.5 top-[3px] bottom-[3px] w-[4px] rounded-full z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150"
-        style={{ left: handleLeft }}
-        animate={{
-          backgroundColor: isDragging
-            ? "color-mix(in srgb, var(--color-foreground) 55%, transparent)"
-            : isActive
-              ? "color-mix(in srgb, var(--color-foreground) 40%, transparent)"
-              : "color-mix(in srgb, var(--color-foreground) 28%, transparent)",
-        }}
-        transition={{ duration: 0.1 }}
-      />
+          {/* Handle knob — sits inside the fill area with margin */}
+          <motion.div
+            className="absolute my-1.5 top-[3px] bottom-[3px] w-[4px] rounded-full z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+            style={{ left: handleLeft }}
+            animate={{
+              backgroundColor: isDragging
+                ? "color-mix(in srgb, var(--color-foreground) 55%, transparent)"
+                : isActive
+                  ? "color-mix(in srgb, var(--color-foreground) 40%, transparent)"
+                  : "color-mix(in srgb, var(--color-foreground) 28%, transparent)",
+            }}
+            transition={{ duration: 0.1 }}
+          />
 
-      {/* Hash marks at 10%–90% — only visible on hover */}
-      <div className="absolute inset-0 flex items-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-        {Array.from({ length: 9 }, (_, i) => {
-          const markPercent = (i + 1) * 10;
-          const isFilled = markPercent <= percentage;
-          return (
-            <div
-              key={i}
-              className="absolute w-px h-2.5 rounded-full transition-opacity duration-150"
-              style={{
-                left: `${markPercent}%`,
-                backgroundColor: isFilled
-                  ? "color-mix(in srgb, var(--color-foreground) 30%, transparent)"
-                  : "color-mix(in srgb, var(--color-foreground) 12%, transparent)",
-              }}
-            />
-          );
-        })}
-      </div>
+          {/* Hash marks at 10%–90% — only visible on hover */}
+          <div className="absolute inset-0 flex items-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+            {Array.from({ length: 9 }, (_, i) => {
+              const markPercent = (i + 1) * 10;
+              const isFilled = markPercent <= percentage;
+              return (
+                <div
+                  key={i}
+                  className="absolute w-px h-2.5 rounded-full transition-opacity duration-150"
+                  style={{
+                    left: `${markPercent}%`,
+                    backgroundColor: isFilled
+                      ? "color-mix(in srgb, var(--color-foreground) 30%, transparent)"
+                      : "color-mix(in srgb, var(--color-foreground) 12%, transparent)",
+                  }}
+                />
+              );
+            })}
+          </div>
+        </>
+      )}
 
       <div className="relative pl-2  text-base font-normal flex-1 z-10 pointer-events-none transition-colors group-hover:text-foreground">
         {label}
