@@ -770,7 +770,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                 </span>
                 <Select
                   value={(inputNode?.allowedFileTypes as string) ?? "all"}
-                  onValueChange={handleUpdateAllowedFileTypes}
+                  onValueChange={(v) => v && handleUpdateAllowedFileTypes(v)}
                 >
                   <SelectTrigger className="h-6 w-[100px] text-[12px] rounded-md border-border/60">
                     <SelectValue />
