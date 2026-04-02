@@ -337,6 +337,56 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     [getInputPath, editor.tf],
   );
 
+  const handleUpdateMinSelections = React.useCallback(
+    (value: string) => {
+      const inputPath = getInputPath();
+      if (!inputPath) return;
+      const num = parseInt(value, 10) || 0;
+      if (num === 0) {
+        editor.tf.unsetNodes(["minSelections"], { at: inputPath });
+      } else {
+        editor.tf.setNodes({ minSelections: num }, { at: inputPath });
+      }
+    },
+    [getInputPath, editor.tf],
+  );
+
+  const handleUpdateMaxSelections = React.useCallback(
+    (value: string) => {
+      const inputPath = getInputPath();
+      if (!inputPath) return;
+      const num = parseInt(value, 10) || 0;
+      if (num === 0) {
+        editor.tf.unsetNodes(["maxSelections"], { at: inputPath });
+      } else {
+        editor.tf.setNodes({ maxSelections: num }, { at: inputPath });
+      }
+    },
+    [getInputPath, editor.tf],
+  );
+
+  const handleToggleRandomizeOrder = React.useCallback(() => {
+    const inputPath = getInputPath();
+    if (!inputPath) return;
+    const current = Boolean(inputNode?.randomizeOrder);
+    if (current) {
+      editor.tf.unsetNodes(["randomizeOrder"], { at: inputPath });
+    } else {
+      editor.tf.setNodes({ randomizeOrder: true }, { at: inputPath });
+    }
+  }, [getInputPath, inputNode?.randomizeOrder, editor.tf]);
+
+  const handleToggleAllowOther = React.useCallback(() => {
+    const inputPath = getInputPath();
+    if (!inputPath) return;
+    const current = Boolean(inputNode?.allowOther);
+    if (current) {
+      editor.tf.unsetNodes(["allowOther"], { at: inputPath });
+    } else {
+      editor.tf.setNodes({ allowOther: true }, { at: inputPath });
+    }
+  }, [getInputPath, inputNode?.allowOther, editor.tf]);
+
   const handleToggleDefaultValue = React.useCallback(() => {
     const inputPath = getInputPath();
     if (!inputPath) return;
@@ -784,6 +834,96 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                 </Select>
               </DropdownMenuItem>
 
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          {/* Checkbox options */}
+          {fieldType === "optionCheckbox" && (
+            <>
+              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+                <StyleNumberInput
+                  label="Min selections"
+                  value={String(inputNode?.minSelections ?? 0)}
+                  onChange={handleUpdateMinSelections}
+                  min={0}
+                  max={50}
+                  step={1}
+                  unit=""
+                  displayUnit=""
+                  className="!h-[30px] !text-[13px]"
+                />
+              </div>
+              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+                <StyleNumberInput
+                  label="Max selections"
+                  value={String(inputNode?.maxSelections ?? 0)}
+                  onChange={handleUpdateMaxSelections}
+                  min={0}
+                  max={50}
+                  step={1}
+                  unit=""
+                  displayUnit=""
+                  className="!h-[30px] !text-[13px]"
+                />
+              </div>
+              <DropdownMenuItem closeOnClick={false} onClick={handleToggleRandomizeOrder}>
+                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                  Randomize order
+                </span>
+                <Switch
+                  aria-label="Randomize order"
+                  size="sm"
+                  checked={Boolean(inputNode?.randomizeOrder)}
+                  onCheckedChange={handleToggleRandomizeOrder}
+                  onClick={handleStopPropagation}
+                />
+              </DropdownMenuItem>
+              <DropdownMenuItem closeOnClick={false} onClick={handleToggleAllowOther}>
+                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                  &quot;Other&quot; option
+                </span>
+                <Switch
+                  aria-label="Other option"
+                  size="sm"
+                  checked={Boolean(inputNode?.allowOther)}
+                  onCheckedChange={handleToggleAllowOther}
+                  onClick={handleStopPropagation}
+                />
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          {/* Multi Select badge options */}
+          {fieldType === "formMultiSelect" && (
+            <>
+              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+                <StyleNumberInput
+                  label="Min selections"
+                  value={String(inputNode?.minSelections ?? 0)}
+                  onChange={handleUpdateMinSelections}
+                  min={0}
+                  max={50}
+                  step={1}
+                  unit=""
+                  displayUnit=""
+                  className="!h-[30px] !text-[13px]"
+                />
+              </div>
+              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+                <StyleNumberInput
+                  label="Max selections"
+                  value={String(inputNode?.maxSelections ?? 0)}
+                  onChange={handleUpdateMaxSelections}
+                  min={0}
+                  max={50}
+                  step={1}
+                  unit=""
+                  displayUnit=""
+                  className="!h-[30px] !text-[13px]"
+                />
+              </div>
               <DropdownMenuSeparator />
             </>
           )}
