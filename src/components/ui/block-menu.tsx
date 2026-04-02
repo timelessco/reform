@@ -28,6 +28,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { StyleNumberInput } from "@/components/ui/style-controls";
 import { Switch } from "@/components/ui/switch";
 import { useEditorTheme } from "@/contexts/editor-theme-context";
@@ -296,6 +303,39 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
       editor.tf.setNodes({ allowDecimals: true }, { at: inputPath });
     }
   }, [getInputPath, inputNode?.allowDecimals, editor.tf]);
+
+  const handleUpdateMaxFileSize = React.useCallback(
+    (value: string) => {
+      const inputPath = getInputPath();
+      if (!inputPath) return;
+      const num = parseInt(value, 10) || 10;
+      editor.tf.setNodes({ maxFileSize: num }, { at: inputPath });
+    },
+    [getInputPath, editor.tf],
+  );
+
+  const handleUpdateMaxFiles = React.useCallback(
+    (value: string) => {
+      const inputPath = getInputPath();
+      if (!inputPath) return;
+      const num = parseInt(value, 10) || 0;
+      if (num === 0) {
+        editor.tf.unsetNodes(["maxFiles"], { at: inputPath });
+      } else {
+        editor.tf.setNodes({ maxFiles: num }, { at: inputPath });
+      }
+    },
+    [getInputPath, editor.tf],
+  );
+
+  const handleUpdateAllowedFileTypes = React.useCallback(
+    (value: string) => {
+      const inputPath = getInputPath();
+      if (!inputPath) return;
+      editor.tf.setNodes({ allowedFileTypes: value }, { at: inputPath });
+    },
+    [getInputPath, editor.tf],
+  );
 
   const handleToggleDefaultValue = React.useCallback(() => {
     const inputPath = getInputPath();
@@ -687,6 +727,61 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   onCheckedChange={handleToggleAllowDecimals}
                   onClick={handleStopPropagation}
                 />
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          {/* File upload options */}
+          {fieldType === "formFileUpload" && (
+            <>
+              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+                <StyleNumberInput
+                  label="Max file size"
+                  value={`${inputNode?.maxFileSize ?? 10}MB`}
+                  onChange={handleUpdateMaxFileSize}
+                  min={1}
+                  max={50}
+                  step={1}
+                  unit="MB"
+                  displayUnit="MB"
+                  className="!h-[30px] !text-[13px]"
+                />
+              </div>
+
+              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+                <StyleNumberInput
+                  label="Max files"
+                  value={String(inputNode?.maxFiles ?? 0)}
+                  onChange={handleUpdateMaxFiles}
+                  min={0}
+                  max={20}
+                  step={1}
+                  unit=""
+                  displayUnit=""
+                  className="!h-[30px] !text-[13px]"
+                />
+              </div>
+
+              <DropdownMenuItem closeOnClick={false}>
+                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                  File types
+                </span>
+                <Select
+                  value={(inputNode?.allowedFileTypes as string) ?? "all"}
+                  onValueChange={handleUpdateAllowedFileTypes}
+                >
+                  <SelectTrigger className="h-6 w-[100px] text-[12px] rounded-md border-border/60">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All files</SelectItem>
+                    <SelectItem value="images">Images</SelectItem>
+                    <SelectItem value="documents">Documents</SelectItem>
+                    <SelectItem value="spreadsheets">Spreadsheets</SelectItem>
+                  </SelectContent>
+                </Select>
               </DropdownMenuItem>
 
               <DropdownMenuSeparator />
