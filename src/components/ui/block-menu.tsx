@@ -415,20 +415,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     [firstPath, nodeType, editor.tf],
   );
 
-  const handleUpdateFieldName = React.useCallback(() => {
-    if (!labelNode || !firstPath || !fieldName.trim()) return;
-    const labelPath =
-      nodeType === "formLabel" || nodeType === "formButton" ? firstPath : [...firstPath];
-    if (FORM_INPUT_NODE_TYPES.has(nodeType ?? "")) {
-      labelPath[labelPath.length - 1] -= 1;
-    }
-    editor.tf.withoutNormalizing(() => {
-      editor.tf.insertNodes({ text: fieldName.trim() }, { at: [...labelPath, 0], select: false });
-      editor.tf.removeNodes({ at: [...labelPath, 1] });
-    });
-    setIsEditingName(false);
-  }, [labelNode, firstPath, fieldName, nodeType, editor.tf]);
-
   // Common actions
   const handleDelete = React.useCallback(() => {
     editor.getTransforms(BlockSelectionPlugin).blockSelection.removeNodes();
