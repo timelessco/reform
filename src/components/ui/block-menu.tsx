@@ -258,6 +258,45 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     [getInputPath, editor.tf],
   );
 
+  const handleUpdateMinValue = React.useCallback(
+    (value: string) => {
+      const inputPath = getInputPath();
+      if (!inputPath) return;
+      const num = parseInt(value, 10) || 0;
+      if (num === 0) {
+        editor.tf.unsetNodes(["minValue"], { at: inputPath });
+      } else {
+        editor.tf.setNodes({ minValue: num }, { at: inputPath });
+      }
+    },
+    [getInputPath, editor.tf],
+  );
+
+  const handleUpdateMaxValue = React.useCallback(
+    (value: string) => {
+      const inputPath = getInputPath();
+      if (!inputPath) return;
+      const num = parseInt(value, 10) || 0;
+      if (num === 0) {
+        editor.tf.unsetNodes(["maxValue"], { at: inputPath });
+      } else {
+        editor.tf.setNodes({ maxValue: num }, { at: inputPath });
+      }
+    },
+    [getInputPath, editor.tf],
+  );
+
+  const handleToggleAllowDecimals = React.useCallback(() => {
+    const inputPath = getInputPath();
+    if (!inputPath) return;
+    const current = Boolean(inputNode?.allowDecimals);
+    if (current) {
+      editor.tf.unsetNodes(["allowDecimals"], { at: inputPath });
+    } else {
+      editor.tf.setNodes({ allowDecimals: true }, { at: inputPath });
+    }
+  }, [getInputPath, inputNode?.allowDecimals, editor.tf]);
+
   const handleToggleDefaultValue = React.useCallback(() => {
     const inputPath = getInputPath();
     if (!inputPath) return;
@@ -575,6 +614,80 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   className="!h-[30px] !text-[13px]"
                 />
               </div>
+
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          {/* Number field options */}
+          {fieldType === "formNumber" && (
+            <>
+              <DropdownMenuItem closeOnClick={false} onClick={handleToggleDefaultValue}>
+                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                  Default answer
+                </span>
+                <Switch
+                  aria-label="Default answer"
+                  size="sm"
+                  checked={hasDefaultValue}
+                  onCheckedChange={handleToggleDefaultValue}
+                  onClick={handleStopPropagation}
+                />
+              </DropdownMenuItem>
+              {hasDefaultValue && (
+                <div className="px-2 pb-2">
+                  <Input
+                    type="number"
+                    value={currentDefaultValue || ""}
+                    onChange={handleDefaultValueChange}
+                    onKeyDown={handleInputKeyDown}
+                    placeholder="Enter default value"
+                    className="h-7 text-[13px] rounded-lg"
+                    aria-label="Default value"
+                  />
+                </div>
+              )}
+
+              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+                <StyleNumberInput
+                  label="Min value"
+                  value={String(inputNode?.minValue ?? 0)}
+                  onChange={handleUpdateMinValue}
+                  min={0}
+                  max={999999}
+                  step={1}
+                  unit=""
+                  displayUnit=""
+                  className="!h-[30px] !text-[13px]"
+                />
+              </div>
+
+              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+                <StyleNumberInput
+                  label="Max value"
+                  value={String(inputNode?.maxValue ?? 0)}
+                  onChange={handleUpdateMaxValue}
+                  min={0}
+                  max={999999}
+                  step={1}
+                  unit=""
+                  displayUnit=""
+                  className="!h-[30px] !text-[13px]"
+                />
+              </div>
+
+              <DropdownMenuItem closeOnClick={false} onClick={handleToggleAllowDecimals}>
+                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                  Allow decimals
+                </span>
+                <Switch
+                  aria-label="Allow decimals"
+                  size="sm"
+                  checked={Boolean(inputNode?.allowDecimals)}
+                  onCheckedChange={handleToggleAllowDecimals}
+                  onClick={handleStopPropagation}
+                />
+              </DropdownMenuItem>
 
               <DropdownMenuSeparator />
             </>
