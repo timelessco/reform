@@ -107,12 +107,7 @@ const EditorAppInner = ({
   readOnly: boolean;
   savedDocs: Form[] | undefined;
 }) => {
-  const customizationSource = versionCustomization
-    ? { customization: versionCustomization }
-    : savedDocs?.[0];
-  const { customization, hasCustomization, themeVars } = useFormCustomization(customizationSource);
-
-  // Sync editor mode when app theme changes (user menu, settings)
+  // Resolve effective theme mode (handles "system" → actual preference)
   const { theme } = useTheme();
   const resolvedAppTheme =
     theme === "system"
@@ -121,18 +116,36 @@ const EditorAppInner = ({
         : "light"
       : theme;
 
+  // Build customization source with mode overridden to match app theme immediately.
+  // This avoids a stale frame while the async collection update propagates.
+  const customizationSource = useMemo(() => {
+    if (versionCustomization) return { customization: versionCustomization };
+    const doc = savedDocs?.[0];
+    if (!doc) return doc;
+    const raw = (doc.customization ?? {}) as Record<string, string>;
+    if (raw.mode === resolvedAppTheme) return doc;
+    return { ...doc, customization: { ...raw, mode: resolvedAppTheme } };
+  }, [versionCustomization, savedDocs, resolvedAppTheme]);
+
+  const { customization, hasCustomization, themeVars } = useFormCustomization(customizationSource);
+
+  // Persist the resolved mode to the collection so customize sidebar stays in sync
   useEffect(() => {
-    if (versionCustomization) return; // Don't sync theme mode when previewing a version
-    if (resolvedAppTheme !== customization?.mode && formId) {
+    if (versionCustomization) return;
+    if (
+      resolvedAppTheme !==
+        (savedDocs?.[0]?.customization as Record<string, string> | undefined)?.mode &&
+      formId
+    ) {
       const collection = getFormListings();
-      if (!collection.get(formId)) return; // Not in collection yet
+      if (!collection.get(formId)) return;
       collection.update(formId, (draft) => {
         const current = (draft.customization ?? {}) as Record<string, string>;
         draft.customization = { ...current, mode: resolvedAppTheme };
         draft.updatedAt = new Date().toISOString();
       });
     }
-  }, [resolvedAppTheme, customization?.mode, formId, versionCustomization]);
+  }, [resolvedAppTheme, savedDocs, formId, versionCustomization]);
 
   const skipSaveRef = useRef(false);
   const lastKnownContentRef = useRef<string | null>(null);

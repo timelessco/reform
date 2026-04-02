@@ -1,13 +1,10 @@
+import type { Path, TElement } from "platejs";
 import type { PlateElementProps } from "platejs/react";
 
 import { PlateElement, useEditorRef, useEditorSelector, useFocused } from "platejs/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import {
-  findNextNonButtonPath,
-  findPrevNonButtonPath,
-  moveToPath,
-} from "@/components/editor/plugins/form-blocks-kit";
+import { findPrevNonButtonPath, moveToPath } from "@/components/editor/plugins/form-blocks-kit";
 import { XIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
@@ -96,11 +93,37 @@ export const FormMultiSelectInputElement = ({
       inputRef.current?.blur();
       const path = editor.api.findPath(element);
       if (path) {
-        const targetPath = e.shiftKey
-          ? findPrevNonButtonPath(editor, path)
-          : findNextNonButtonPath(editor, path);
-        if (targetPath) {
-          moveToPath(editor, targetPath);
+        if (e.shiftKey) {
+          const prevPath = findPrevNonButtonPath(editor, path);
+          if (prevPath) {
+            moveToPath(editor, prevPath);
+          }
+        } else {
+          // Find next content block on the SAME page (stop at formButton/pageBreak)
+          const children = editor.children as TElement[];
+          let samePage: Path | null = null;
+          let boundaryIndex = children.length;
+          for (let i = path[0] + 1; i < children.length; i++) {
+            const node = children[i];
+            if (node.type === "formButton" || node.type === "pageBreak") {
+              boundaryIndex = i;
+              break;
+            }
+            if (node.type !== "formHeader") {
+              samePage = [i];
+              break;
+            }
+          }
+          if (samePage) {
+            moveToPath(editor, samePage);
+          } else {
+            // No content block before page boundary — create one
+            const insertPath: Path = [boundaryIndex];
+            editor.tf.insertNodes({ type: "p", children: [{ text: "" }] } as TElement, {
+              at: insertPath,
+            });
+            moveToPath(editor, insertPath);
+          }
         }
       }
     }

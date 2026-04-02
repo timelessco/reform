@@ -259,22 +259,24 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
       <SidebarContent>
         <div className="p-2 space-y-3">
           {/* Theme section */}
+          <ConfigCard>
+            <ConfigRow label="Preset">
+              <Select value={activePreset} onValueChange={(v) => v && selectStyle(v)}>
+                <SelectTrigger className={selectTriggerCls}>
+                  {STYLE_OPTIONS.find((o) => o.value === activePreset)?.label ?? activePreset}
+                </SelectTrigger>
+                <SelectContent>
+                  {STYLE_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </ConfigRow>
+          </ConfigCard>
           <SidebarSection label="Theme" className="pb-2.75" action={<></>}>
             <ConfigCard>
-              <ConfigRow label="Style">
-                <Select value={activePreset} onValueChange={(v) => v && selectStyle(v)}>
-                  <SelectTrigger className={selectTriggerCls}>
-                    {STYLE_OPTIONS.find((o) => o.value === activePreset)?.label ?? activePreset}
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STYLE_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>
-                        {o.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </ConfigRow>
               <ConfigRow label="Accent">
                 <Select
                   value={activeThemeColor}

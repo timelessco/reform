@@ -28,30 +28,52 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { StyleNumberInput } from "@/components/ui/style-controls";
 import { Switch } from "@/components/ui/switch";
 import { useEditorTheme } from "@/contexts/editor-theme-context";
+import { ALLOWED_LABEL_TYPES, FORM_INPUT_NODE_TYPES } from "@/lib/form-field-constants";
 import { cn } from "@/lib/utils";
 
-type BlockFieldType = "formInput" | "formButton" | "static" | "unknown";
+type BlockFieldType =
+  | "textLike" // formInput, formTextarea, formEmail, formPhone, formLink
+  | "formNumber"
+  | "formDate"
+  | "formTime"
+  | "formFileUpload"
+  | "optionCheckbox" // formOptionItem variant="checkbox"
+  | "optionMultiChoice" // formOptionItem variant="multiChoice"
+  | "optionRanking" // formOptionItem variant="ranking"
+  | "formMultiSelect" // formMultiSelectInput
+  | "formButton"
+  | "static"
+  | "unknown";
 
-const FORM_INPUT_NODE_TYPES = new Set([
+const TEXT_LIKE_TYPES = new Set([
   "formInput",
   "formTextarea",
   "formEmail",
   "formPhone",
-  "formNumber",
   "formLink",
-  "formDate",
-  "formTime",
-  "formFileUpload",
 ]);
 
 // Get field type category for the menu
-const getFieldType = (nodeType: string | undefined): BlockFieldType => {
-  if (!nodeType) return "unknown";
-  if (nodeType === "formLabel" || FORM_INPUT_NODE_TYPES.has(nodeType)) return "formInput";
-  if (nodeType === "formButton") return "formButton";
-  if (["h1", "h2", "h3", "p", "blockquote", "hr"].includes(nodeType)) return "static";
+const getFieldType = (node: { type?: string; variant?: string } | undefined): BlockFieldType => {
+  if (!node?.type) return "unknown";
+  const t = node.type;
+  if (TEXT_LIKE_TYPES.has(t)) return "textLike";
+  if (t === "formNumber") return "formNumber";
+  if (t === "formDate") return "formDate";
+  if (t === "formTime") return "formTime";
+  if (t === "formFileUpload") return "formFileUpload";
+  if (t === "formMultiSelectInput") return "formMultiSelect";
+  if (t === "formOptionItem") {
+    const v = node.variant || "checkbox";
+    if (v === "multiChoice") return "optionMultiChoice";
+    if (v === "ranking") return "optionRanking";
+    return "optionCheckbox";
+  }
+  if (t === "formButton") return "formButton";
+  if (["h1", "h2", "h3", "p", "blockquote", "hr"].includes(t)) return "static";
   return "unknown";
 };
 
@@ -101,6 +123,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   const firstNode = selectedNodes[0]?.[0] as
     | {
         type?: string;
+        variant?: string;
         required?: boolean;
         placeholder?: string;
         minLength?: number;
@@ -108,12 +131,21 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
         defaultValue?: string;
         buttonText?: string;
         children?: Array<{ text?: string }>;
+        minValue?: number;
+        maxValue?: number;
+        allowDecimals?: boolean;
+        maxFileSize?: number;
+        maxFiles?: number;
+        allowedFileTypes?: string;
+        minSelections?: number;
+        maxSelections?: number;
+        randomizeOrder?: boolean;
+        allowOther?: boolean;
       }
     | undefined;
   const firstPath = selectedNodes[0]?.[1];
 
   const nodeType = firstNode?.type;
-  const fieldType = getFieldType(nodeType);
 
   // Get label node (for formInput/formTextarea, look at previous sibling)
   const labelNode = React.useMemo(() => {
@@ -124,7 +156,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
       prevPath[prevPath.length - 1] -= 1;
       try {
         const prev = editor.api.node(prevPath);
-        if (prev && prev[0]?.type === "formLabel") {
+        if (prev && ALLOWED_LABEL_TYPES.has(prev[0]?.type as string)) {
           return prev[0] as typeof firstNode;
         }
       } catch {
@@ -137,7 +169,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   // Get input node (for formLabel, look at next sibling)
   const inputNode = React.useMemo(() => {
     if (FORM_INPUT_NODE_TYPES.has(nodeType ?? "")) return firstNode;
-    if (nodeType === "formLabel" && firstPath) {
+    if (ALLOWED_LABEL_TYPES.has(nodeType ?? "") && firstPath) {
       // Look at next sibling for input or textarea
       const nextPath = [...firstPath];
       nextPath[nextPath.length - 1] += 1;
@@ -153,11 +185,18 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     return null;
   }, [nodeType, firstNode, firstPath, editor]);
 
+  // Resolve field type from inputNode when available (e.g., when clicking a label)
+  const fieldType = React.useMemo(() => {
+    if (inputNode) return getFieldType(inputNode as { type?: string; variant?: string });
+    return getFieldType(firstNode as { type?: string; variant?: string });
+  }, [inputNode, firstNode]);
+
   // Helper to get the input path
   const getInputPath = React.useCallback(() => {
     if (!firstPath) return null;
     if (FORM_INPUT_NODE_TYPES.has(nodeType ?? "")) return firstPath;
-    if (nodeType === "formLabel") {
+    if (nodeType === "formOptionItem") return firstPath;
+    if (ALLOWED_LABEL_TYPES.has(nodeType ?? "")) {
       const inputPath = [...firstPath];
       inputPath[inputPath.length - 1] += 1;
       return inputPath;
@@ -185,51 +224,36 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
 
   // Handlers for form input options
   const handleToggleRequired = React.useCallback(() => {
-    if (!labelNode || !firstPath) return;
-    const labelPath = nodeType === "formLabel" ? firstPath : [...firstPath];
-    if (FORM_INPUT_NODE_TYPES.has(nodeType ?? "")) {
-      labelPath[labelPath.length - 1] -= 1;
-    }
-    const currentRequired = Boolean(labelNode.required);
-    editor.tf.setNodes({ required: !currentRequired }, { at: labelPath });
-  }, [labelNode, firstPath, nodeType, editor.tf]);
-
-  const handleToggleMinLength = React.useCallback(() => {
     const inputPath = getInputPath();
     if (!inputPath) return;
-    const hasMinLength = inputNode?.minLength !== undefined;
-    if (hasMinLength) {
-      editor.tf.unsetNodes(["minLength"], { at: inputPath });
-    } else {
-      editor.tf.setNodes({ minLength: 1 }, { at: inputPath });
-    }
-  }, [getInputPath, inputNode?.minLength, editor.tf]);
+    const currentRequired = Boolean(inputNode?.required);
+    editor.tf.setNodes({ required: !currentRequired }, { at: inputPath });
+  }, [getInputPath, inputNode?.required, editor.tf]);
 
   const handleUpdateMinLength = React.useCallback(
-    (value: number) => {
+    (value: string) => {
       const inputPath = getInputPath();
       if (!inputPath) return;
-      editor.tf.setNodes({ minLength: value }, { at: inputPath });
+      const num = parseInt(value, 10) || 0;
+      if (num === 0) {
+        editor.tf.unsetNodes(["minLength"], { at: inputPath });
+      } else {
+        editor.tf.setNodes({ minLength: num }, { at: inputPath });
+      }
     },
     [getInputPath, editor.tf],
   );
 
-  const handleToggleMaxLength = React.useCallback(() => {
-    const inputPath = getInputPath();
-    if (!inputPath) return;
-    const hasMaxLength = inputNode?.maxLength !== undefined;
-    if (hasMaxLength) {
-      editor.tf.unsetNodes(["maxLength"], { at: inputPath });
-    } else {
-      editor.tf.setNodes({ maxLength: 100 }, { at: inputPath });
-    }
-  }, [getInputPath, inputNode?.maxLength, editor.tf]);
-
   const handleUpdateMaxLength = React.useCallback(
-    (value: number) => {
+    (value: string) => {
       const inputPath = getInputPath();
       if (!inputPath) return;
-      editor.tf.setNodes({ maxLength: value }, { at: inputPath });
+      const num = parseInt(value, 10) || 0;
+      if (num === 0) {
+        editor.tf.unsetNodes(["maxLength"], { at: inputPath });
+      } else {
+        editor.tf.setNodes({ maxLength: num }, { at: inputPath });
+      }
     },
     [getInputPath, editor.tf],
   );
@@ -366,12 +390,8 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   );
 
   // Get current node properties
-  const isRequired = Boolean(labelNode?.required);
-  const hasMinLength = inputNode?.minLength !== undefined;
-  const hasMaxLength = inputNode?.maxLength !== undefined;
+  const isRequired = Boolean(inputNode?.required);
   const hasDefaultValue = inputNode?.defaultValue !== undefined;
-  const currentMinLength = inputNode?.minLength;
-  const currentMaxLength = inputNode?.maxLength;
   const currentDefaultValue = inputNode?.defaultValue;
 
   const handleOpenChange = React.useCallback(
@@ -429,16 +449,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     [handleUpdateDefaultValue],
   );
 
-  const handleMinLengthChange = React.useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => handleUpdateMinLength(Number(e.target.value)),
-    [handleUpdateMinLength],
-  );
-
-  const handleMaxLengthChange = React.useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => handleUpdateMaxLength(Number(e.target.value)),
-    [handleUpdateMaxLength],
-  );
-
   const handleButtonTextChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => handleUpdateButtonText(e.target.value),
     [handleUpdateButtonText],
@@ -494,22 +504,25 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
           </div>
           <DropdownMenuSeparator />
 
-          {/* Field-Specific Options */}
-          {fieldType === "formInput" && (
-            <>
-              <DropdownMenuItem closeOnClick={false} onClick={handleToggleRequired}>
-                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
-                  Required
-                </span>
-                <Switch
-                  aria-label="Required"
-                  size="sm"
-                  checked={isRequired}
-                  onCheckedChange={handleToggleRequired}
-                  onClick={handleStopPropagation}
-                />
-              </DropdownMenuItem>
+          {/* Universal Required switch for all form field types */}
+          {fieldType !== "static" && fieldType !== "formButton" && fieldType !== "unknown" && (
+            <DropdownMenuItem closeOnClick={false} onClick={handleToggleRequired}>
+              <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                Required
+              </span>
+              <Switch
+                aria-label="Required"
+                size="sm"
+                checked={isRequired}
+                onCheckedChange={handleToggleRequired}
+                onClick={handleStopPropagation}
+              />
+            </DropdownMenuItem>
+          )}
 
+          {/* Text-like field options */}
+          {fieldType === "textLike" && (
+            <>
               <DropdownMenuItem closeOnClick={false} onClick={handleToggleDefaultValue}>
                 <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
                   Default answer
@@ -535,63 +548,40 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                 </div>
               )}
 
-              <DropdownMenuItem closeOnClick={false} onClick={handleToggleMinLength}>
-                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
-                  Min characters
-                </span>
-                <Switch
-                  aria-label="Min characters"
-                  size="sm"
-                  checked={hasMinLength}
-                  onCheckedChange={handleToggleMinLength}
-                  onClick={handleStopPropagation}
+              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+                <StyleNumberInput
+                  label="Min characters"
+                  value={String(inputNode?.minLength ?? 0)}
+                  onChange={handleUpdateMinLength}
+                  min={0}
+                  max={1000}
+                  step={1}
+                  unit=""
+                  displayUnit=""
+                  className="!h-[30px] !text-[13px]"
                 />
-              </DropdownMenuItem>
-              {hasMinLength && (
-                <div className="px-2 pb-2">
-                  <Input
-                    type="number"
-                    min={1}
-                    value={currentMinLength || 1}
-                    onChange={handleMinLengthChange}
-                    onKeyDown={handleInputKeyDown}
-                    placeholder="Min"
-                    className="h-7 text-[13px] rounded-lg"
-                    aria-label="Minimum length"
-                  />
-                </div>
-              )}
+              </div>
 
-              <DropdownMenuItem closeOnClick={false} onClick={handleToggleMaxLength}>
-                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
-                  Max characters
-                </span>
-                <Switch
-                  aria-label="Max characters"
-                  size="sm"
-                  checked={hasMaxLength}
-                  onCheckedChange={handleToggleMaxLength}
-                  onClick={handleStopPropagation}
+              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+                <StyleNumberInput
+                  label="Max characters"
+                  value={String(inputNode?.maxLength ?? 0)}
+                  onChange={handleUpdateMaxLength}
+                  min={0}
+                  max={1000}
+                  step={1}
+                  unit=""
+                  displayUnit=""
+                  className="!h-[30px] !text-[13px]"
                 />
-              </DropdownMenuItem>
-              {hasMaxLength && (
-                <div className="px-2 pb-2">
-                  <Input
-                    type="number"
-                    min={1}
-                    value={currentMaxLength || 100}
-                    onChange={handleMaxLengthChange}
-                    onKeyDown={handleInputKeyDown}
-                    placeholder="Max"
-                    className="h-7 text-[13px] rounded-lg"
-                    aria-label="Maximum length"
-                  />
-                </div>
-              )}
+              </div>
 
               <DropdownMenuSeparator />
             </>
           )}
+
+          {/* Date/Time fields only get Required (handled above) + separator */}
+          {(fieldType === "formDate" || fieldType === "formTime") && <DropdownMenuSeparator />}
 
           {/* Button-Specific Options */}
           {fieldType === "formButton" && (
