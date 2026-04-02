@@ -646,7 +646,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  className="!h-[30px] !text-[13px]"
+                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
                 />
               </div>
 
@@ -660,7 +660,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  className="!h-[30px] !text-[13px]"
+                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
                 />
               </div>
 
@@ -707,7 +707,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  className="!h-[30px] !text-[13px]"
+                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
                 />
               </div>
 
@@ -721,7 +721,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  className="!h-[30px] !text-[13px]"
+                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
                 />
               </div>
 
@@ -755,7 +755,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit="MB"
                   displayUnit="MB"
-                  className="!h-[30px] !text-[13px]"
+                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
                 />
               </div>
 
@@ -769,7 +769,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  className="!h-[30px] !text-[13px]"
+                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
                 />
               </div>
 
@@ -810,7 +810,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  className="!h-[30px] !text-[13px]"
+                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
                 />
               </div>
               <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
@@ -823,7 +823,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  className="!h-[30px] !text-[13px]"
+                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
                 />
               </div>
               <DropdownMenuItem closeOnClick={false} onClick={handleToggleRandomizeOrder}>
@@ -867,7 +867,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  className="!h-[30px] !text-[13px]"
+                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
                 />
               </div>
               <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
@@ -880,7 +880,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  className="!h-[30px] !text-[13px]"
+                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
                 />
               </div>
               <DropdownMenuSeparator />
