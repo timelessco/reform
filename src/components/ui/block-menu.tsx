@@ -3,19 +3,11 @@ import {
   BlockMenuPlugin,
   BlockSelectionPlugin,
 } from "@platejs/selection/react";
-import {
-  CopyIcon,
-  EyeOffIcon,
-  GripVerticalIcon,
-  Pencil2Icon,
-  PlusIcon,
-  TrashIcon,
-} from "@/components/ui/icons";
+import { CopyIcon, EyeOffIcon, PlusIcon, TrashIcon } from "@/components/ui/icons";
 import { KEYS } from "platejs";
 import { useEditorPlugin, useEditorSelector, useHotkeys, usePluginOption } from "platejs/react";
 import * as React from "react";
 
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -546,25 +538,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     [handleTurnInto],
   );
 
-  const handleFieldNameChange = React.useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setFieldName(e.target.value),
-    [],
-  );
-
-  const handleFieldNameKeyDown = React.useCallback(
-    (e: React.KeyboardEvent) => {
-      e.stopPropagation();
-      if (e.key === "Enter") handleUpdateFieldName();
-      if (e.key === "Escape") setIsEditingName(false);
-    },
-    [handleUpdateFieldName],
-  );
-
-  const handleToggleEditName = React.useCallback(
-    () => setIsEditingName(!isEditingName),
-    [isEditingName],
-  );
-
   const handleStopPropagation = React.useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
   }, []);
@@ -927,6 +900,40 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
               <DropdownMenuSeparator />
             </>
           )}
+
+          {/* Multi-choice (radio) options */}
+          {fieldType === "optionMultiChoice" && (
+            <>
+              <DropdownMenuItem closeOnClick={false} onClick={handleToggleRandomizeOrder}>
+                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                  Randomize order
+                </span>
+                <Switch
+                  aria-label="Randomize order"
+                  size="sm"
+                  checked={Boolean(inputNode?.randomizeOrder)}
+                  onCheckedChange={handleToggleRandomizeOrder}
+                  onClick={handleStopPropagation}
+                />
+              </DropdownMenuItem>
+              <DropdownMenuItem closeOnClick={false} onClick={handleToggleAllowOther}>
+                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                  &quot;Other&quot; option
+                </span>
+                <Switch
+                  aria-label="Other option"
+                  size="sm"
+                  checked={Boolean(inputNode?.allowOther)}
+                  onCheckedChange={handleToggleAllowOther}
+                  onClick={handleStopPropagation}
+                />
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          {/* Ranking - only Required (handled above) */}
+          {fieldType === "optionRanking" && <DropdownMenuSeparator />}
 
           {/* Date/Time fields only get Required (handled above) + separator */}
           {(fieldType === "formDate" || fieldType === "formTime") && <DropdownMenuSeparator />}
