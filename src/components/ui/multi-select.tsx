@@ -53,7 +53,7 @@ export const MultiSelect = ({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex min-h-[30px] w-full items-center gap-1 rounded-lg border-0 bg-background px-2 py-1 text-sm shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] dark:shadow-none dark:border dark:border-border"
+        className="flex min-h-[30px] w-full items-center gap-1 rounded-lg border-0 bg-card px-2 py-1 text-sm shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)]"
       >
         <div className="flex flex-1 flex-wrap gap-1">
           {selectedOptions.length > 0 ? (
