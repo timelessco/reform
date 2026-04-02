@@ -636,7 +636,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                 </div>
               )}
 
-              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+              <div onPointerDown={handleStopPropagation}>
                 <StyleNumberInput
                   label="Min characters"
                   value={String(inputNode?.minLength ?? 0)}
@@ -646,23 +646,27 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
+                  scrubber={false}
+                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
               </div>
 
-              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
-                <StyleNumberInput
-                  label="Max characters"
-                  value={String(inputNode?.maxLength ?? 0)}
-                  onChange={handleUpdateMaxLength}
-                  min={0}
-                  max={1000}
-                  step={1}
-                  unit=""
-                  displayUnit=""
-                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
-                />
-              </div>
+              {inputNode?.type !== "formTextarea" && (
+                <div onPointerDown={handleStopPropagation}>
+                  <StyleNumberInput
+                    label="Max characters"
+                    value={String(inputNode?.maxLength ?? 0)}
+                    onChange={handleUpdateMaxLength}
+                    min={0}
+                    max={1000}
+                    step={1}
+                    unit=""
+                    displayUnit=""
+                    scrubber={false}
+                    className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
+                  />
+                </div>
+              )}
 
               <DropdownMenuSeparator />
             </>
@@ -697,7 +701,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                 </div>
               )}
 
-              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+              <div onPointerDown={handleStopPropagation}>
                 <StyleNumberInput
                   label="Min value"
                   value={String(inputNode?.minValue ?? 0)}
@@ -707,11 +711,12 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
+                  scrubber={false}
+                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
               </div>
 
-              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+              <div onPointerDown={handleStopPropagation}>
                 <StyleNumberInput
                   label="Max value"
                   value={String(inputNode?.maxValue ?? 0)}
@@ -721,7 +726,8 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
+                  scrubber={false}
+                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
               </div>
 
@@ -745,7 +751,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
           {/* File upload options */}
           {fieldType === "formFileUpload" && (
             <>
-              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+              <div onPointerDown={handleStopPropagation}>
                 <StyleNumberInput
                   label="Max file size"
                   value={`${inputNode?.maxFileSize ?? 10}MB`}
@@ -755,11 +761,12 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit="MB"
                   displayUnit="MB"
-                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
+                  scrubber={false}
+                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
               </div>
 
-              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+              <div onPointerDown={handleStopPropagation}>
                 <StyleNumberInput
                   label="Max files"
                   value={String(inputNode?.maxFiles ?? 0)}
@@ -769,7 +776,8 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
+                  scrubber={false}
+                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
               </div>
 
@@ -800,7 +808,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
           {/* Checkbox options */}
           {fieldType === "optionCheckbox" && (
             <>
-              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+              <div onPointerDown={handleStopPropagation}>
                 <StyleNumberInput
                   label="Min selections"
                   value={String(inputNode?.minSelections ?? 0)}
@@ -810,10 +818,11 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
+                  scrubber={false}
+                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
               </div>
-              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+              <div onPointerDown={handleStopPropagation}>
                 <StyleNumberInput
                   label="Max selections"
                   value={String(inputNode?.maxSelections ?? 0)}
@@ -823,7 +832,8 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
+                  scrubber={false}
+                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
               </div>
               <DropdownMenuItem closeOnClick={false} onClick={handleToggleRandomizeOrder}>
@@ -857,7 +867,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
           {/* Multi Select badge options */}
           {fieldType === "formMultiSelect" && (
             <>
-              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+              <div onPointerDown={handleStopPropagation}>
                 <StyleNumberInput
                   label="Min selections"
                   value={String(inputNode?.minSelections ?? 0)}
@@ -867,10 +877,11 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
+                  scrubber={false}
+                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
               </div>
-              <div className="px-2 py-1" onPointerDown={(e) => e.stopPropagation()}>
+              <div onPointerDown={handleStopPropagation}>
                 <StyleNumberInput
                   label="Max selections"
                   value={String(inputNode?.maxSelections ?? 0)}
@@ -880,7 +891,8 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  className="!rounded-none !border-0 bg-secondary !h-[30px] !text-[13px]"
+                  scrubber={false}
+                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
               </div>
               <DropdownMenuSeparator />
