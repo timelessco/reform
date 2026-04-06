@@ -2,8 +2,16 @@
 "use client";
 
 import { Clock } from "lucide-react";
-// Minimal Slot implementation replacing radix-ui dependency.
-// Merges parent props onto a single React element child (the `asChild` pattern).
+import * as React from "react";
+import { useComposedRefs } from "@/lib/compose-refs";
+import { cn } from "@/lib/utils";
+import { VisuallyHiddenInput } from "@/components/visually-hidden-input";
+import { useAsRef } from "@/hooks/use-as-ref";
+import { useIsomorphicLayoutEffect } from "@/hooks/use-isomorphic-layout-effect";
+import { useLazyRef } from "@/hooks/use-lazy-ref";
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+// Minimal Slot replacing radix-ui dependency — merges props onto a single child element (asChild pattern).
 const SlotPrimitive = {
   Slot: React.forwardRef<HTMLElement, React.PropsWithChildren<Record<string, unknown>>>(
     ({ children, ...props }, ref) => {
@@ -14,14 +22,6 @@ const SlotPrimitive = {
     },
   ),
 };
-import * as React from "react";
-import { useComposedRefs } from "@/lib/compose-refs";
-import { cn } from "@/lib/utils";
-import { VisuallyHiddenInput } from "@/components/visually-hidden-input";
-import { useAsRef } from "@/hooks/use-as-ref";
-import { useIsomorphicLayoutEffect } from "@/hooks/use-isomorphic-layout-effect";
-import { useLazyRef } from "@/hooks/use-lazy-ref";
-import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const ROOT_NAME = "TimePicker";
 const LABEL_NAME = "TimePickerLabel";
