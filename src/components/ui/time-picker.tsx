@@ -2,7 +2,18 @@
 "use client";
 
 import { Clock } from "lucide-react";
-import { Slot as SlotPrimitive } from "radix-ui";
+// Minimal Slot implementation replacing radix-ui dependency.
+// Merges parent props onto a single React element child (the `asChild` pattern).
+const SlotPrimitive = {
+  Slot: React.forwardRef<HTMLElement, React.PropsWithChildren<Record<string, unknown>>>(
+    ({ children, ...props }, ref) => {
+      if (React.isValidElement(children)) {
+        return React.cloneElement(children, { ...props, ref } as Record<string, unknown>);
+      }
+      return <>{children}</>;
+    },
+  ),
+};
 import * as React from "react";
 import { useComposedRefs } from "@/lib/compose-refs";
 import { cn } from "@/lib/utils";
