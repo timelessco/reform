@@ -646,7 +646,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  scrubber={false}
                   className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
               </div>
@@ -662,7 +661,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                     step={1}
                     unit=""
                     displayUnit=""
-                    scrubber={false}
                     className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                   />
                 </div>
@@ -711,7 +709,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  scrubber={false}
                   className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
               </div>
@@ -726,7 +723,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  scrubber={false}
                   className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
               </div>
@@ -761,7 +757,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit="MB"
                   displayUnit="MB"
-                  scrubber={false}
                   className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
               </div>
@@ -776,7 +771,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  scrubber={false}
                   className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
               </div>
@@ -818,7 +812,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  scrubber={false}
                   className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
               </div>
@@ -832,7 +825,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  scrubber={false}
                   className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
               </div>
@@ -877,7 +869,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  scrubber={false}
                   className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
               </div>
@@ -891,7 +882,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   step={1}
                   unit=""
                   displayUnit=""
-                  scrubber={false}
                   className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
               </div>

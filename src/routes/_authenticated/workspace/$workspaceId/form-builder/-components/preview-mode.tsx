@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useForm } from "@/hooks/use-live-hooks";
+import { useResolvedTheme } from "@/components/ThemeProvider";
 import { cn } from "@/lib/utils";
 
 const noop = async () => {};
@@ -16,7 +17,13 @@ const noop = async () => {};
 export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspaceId: string }) => {
   const { data: savedDocs, isLoading } = useForm(formId);
   const doc = savedDocs?.[0];
-  const { customization, hasCustomization, themeVars } = useFormCustomization(doc);
+
+  const resolvedAppTheme = useResolvedTheme();
+
+  const { customization, hasCustomization, themeVars } = useFormCustomization(
+    doc,
+    resolvedAppTheme,
+  );
   const content = (doc?.content as Value) || [];
 
   // Read embed config from search params
@@ -67,7 +74,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
     <div
       className={cn(
         hasCustomization && "bf-themed",
-        customization?.mode === "dark" && "dark",
+        resolvedAppTheme === "dark" && "dark",
         "w-full h-full flex flex-col transition-colors duration-300 bg-background text-foreground",
         embedType === "fullpage" ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden",
       )}

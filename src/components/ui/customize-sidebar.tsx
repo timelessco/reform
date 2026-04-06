@@ -3,7 +3,7 @@ import {
   ConfigRow,
   selectTriggerCls,
 } from "@/components/form-builder/embed-config-panel";
-import { useTheme } from "@/components/ThemeProvider";
+import { useTheme, useResolvedTheme } from "@/components/ThemeProvider";
 import { Button } from "@/components/ui/button";
 import { InfoIcon, XIcon } from "@/components/ui/icons";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
@@ -171,10 +171,12 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
     [updateFields],
   );
 
+  const resolvedAppTheme = useResolvedTheme();
+
   const handleModeToggle = useCallback(
     (targetMode: string) => {
       const sourceMode = targetMode === "dark" ? "light" : "dark";
-      const updates: Record<string, string> = { mode: targetMode };
+      const updates: Record<string, string> = {};
 
       // One-time migration: move unprefixed overrides to source mode's prefix
       for (const tokenName of TOKEN_NAMES) {
@@ -185,15 +187,17 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
         }
       }
 
-      updateFields(updates);
-      // Sync the app theme with the editor mode
+      if (Object.keys(updates).length > 0) {
+        updateFields(updates);
+      }
+      // App theme is the single source of truth for mode
       setTheme(targetMode as "dark" | "light");
     },
     [updateFields, customization, setTheme],
   );
 
   const activePreset = customization.preset || "vega";
-  const activeMode = customization.mode || "light";
+  const activeMode = resolvedAppTheme;
   const activeThemeColor = getValue("themeColor");
   const activeBaseColors = activeMode === "dark" ? DARK_BASE_COLORS : BASE_COLORS;
   const activeBaseColor = getValue("baseColor");

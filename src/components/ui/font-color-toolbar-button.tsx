@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/refs -- Ref usage for color picker component refs */
 
-import { useComposedRef } from "@udecode/cn";
+import { useComposedRefs } from "@/lib/compose-refs";
 import { useDebouncedCallback } from "@tanstack/react-pacer";
 import { EraserIcon, PlusIcon } from "@/components/ui/icons";
 import { useEditorRef, useEditorSelector } from "platejs/react";
@@ -253,7 +253,7 @@ const ColorInput = ({
       })}
       <input
         {...props}
-        ref={useComposedRef(props.ref, inputRef)}
+        ref={useComposedRefs(props.ref, inputRef)}
         className={cn("size-0 overflow-hidden border-0 p-0", className)}
         value={value}
         type="color"

@@ -138,16 +138,8 @@ import { createClientOnlyFn } from "@tanstack/react-start";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type * as React from "react";
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useIsomorphicLayoutEffect } from "@/hooks/use-isomorphic-layout-effect";
 import { toast } from "sonner";
 
 const LazySettingsDialog = lazy(() =>
@@ -981,7 +973,7 @@ const SidebarInbox = () => {
   }, [isInboxOpen]);
 
   // Apply exit class after mount so transition runs (visible -> slide out)
-  useLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (!isExiting) return;
     const id = requestAnimationFrame(() => {
       requestAnimationFrame(() => setApplyExitClass(true));

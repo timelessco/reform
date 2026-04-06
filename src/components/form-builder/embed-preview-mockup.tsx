@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useIsomorphicLayoutEffect } from "@/hooks/use-isomorphic-layout-effect";
 import { motion, AnimatePresence } from "motion/react";
 import { XIcon } from "@/components/ui/icons";
 import { iconMap, SPRITE_PATH } from "@/components/icon-picker/icon-data";
@@ -154,7 +155,7 @@ export const EmbedPreviewMockup = ({
   const isResizing = useRef(false);
 
   // Measure content area — only re-measure on resize for fullpage
-  useLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const el = contentRef.current;
     if (!el) return;
     let initialMeasure = true;

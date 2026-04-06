@@ -14,6 +14,7 @@ import { useDataGrid } from "@/components/ui/data-grid";
 import { Cell, Column, flexRender, Header, HeaderGroup, Row, Table } from "@tanstack/react-table";
 import { cva } from "class-variance-authority";
 
+import { composeRefs } from "@/lib/compose-refs";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
@@ -64,17 +65,6 @@ const getPinningStyles = <TData,>(column: Column<TData>): CSSProperties => {
     width: column.getSize(),
     zIndex: isPinned ? 1 : 0,
   };
-};
-
-const assignRef = <T,>(ref: Ref<T> | undefined, value: T | null) => {
-  if (!ref) return;
-
-  if (typeof ref === "function") {
-    ref(value);
-    return;
-  }
-
-  (ref as { current: T | null }).current = value;
 };
 
 type DataGridTablePinnedBoundary = "top" | "bottom";
@@ -509,10 +499,7 @@ const DataGridTableBodyRow = <TData,>({
 
   return (
     <tr
-      ref={(node) => {
-        assignRef(rowRef, node);
-        assignRef(dndRef, node);
-      }}
+      ref={composeRefs(rowRef, dndRef)}
       style={{ ...(dndStyle ? dndStyle : null) }}
       data-state={table.options.enableRowSelection && row.getIsSelected() ? "selected" : undefined}
       data-row-pinned={isRowPinned || undefined}

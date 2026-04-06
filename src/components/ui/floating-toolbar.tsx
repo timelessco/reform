@@ -1,6 +1,6 @@
 import { flip, offset, useFloatingToolbar, useFloatingToolbarState } from "@platejs/floating";
 import type { FloatingToolbarState } from "@platejs/floating";
-import { useComposedRef } from "@udecode/cn";
+import { useComposedRefs } from "@/lib/compose-refs";
 import { KEYS } from "platejs";
 import { useEditorId, useEventEditorValue, usePluginOption } from "platejs/react";
 import type * as React from "react";
@@ -47,7 +47,7 @@ export const FloatingToolbar = ({
     ref: floatingRef,
   } = useFloatingToolbar(floatingToolbarState);
 
-  const ref = useComposedRef<HTMLDivElement>(
+  const ref = useComposedRefs<HTMLDivElement>(
     props.ref as React.Ref<HTMLDivElement>,
     floatingRef as React.Ref<HTMLDivElement>,
   );

@@ -7,8 +7,15 @@ import { loadGoogleFont } from "@/lib/load-google-font";
  * Deduplicates the repeated pattern across landing-editor, editor-app, and preview-mode.
  * Dynamically loads Google Fonts when selected.
  */
-export const useFormCustomization = (doc: { customization?: unknown } | null | undefined) => {
-  const customization = (doc?.customization ?? null) as Record<string, string> | null;
+export const useFormCustomization = (
+  doc: { customization?: unknown } | null | undefined,
+  themeMode?: string,
+) => {
+  const rawCustomization = (doc?.customization ?? null) as Record<string, string> | null;
+  const customization =
+    themeMode && rawCustomization && rawCustomization.mode !== themeMode
+      ? { ...rawCustomization, mode: themeMode }
+      : rawCustomization;
   const hasCustomization = !!(customization && Object.keys(customization).length > 0);
   // Use a stable primitive dep so the memo doesn't miss when the store emits a new object reference
   const customizationKey = customization ? JSON.stringify(customization) : null;

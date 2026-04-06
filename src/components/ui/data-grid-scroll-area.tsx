@@ -1,6 +1,7 @@
 "use client";
 
 import { PointerEvent, ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { useLazyRef } from "@/hooks/use-lazy-ref";
 import { useDataGrid } from "@/components/ui/data-grid";
 import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
 
@@ -73,12 +74,12 @@ const DataGridScrollArea = ({
     startY: number;
   } | null>(null);
   const metricsRef = useRef<ScrollbarMetrics>(INITIAL_METRICS);
-  const observedElementsRef = useRef<ObservedElements>({
+  const observedElementsRef = useLazyRef<ObservedElements>(() => ({
     header: null,
     horizontalScrollbar: null,
     table: null,
     tableViewport: null,
-  });
+  }));
 
   const showHorizontal = orientation !== "vertical";
   const showVertical = orientation !== "horizontal";

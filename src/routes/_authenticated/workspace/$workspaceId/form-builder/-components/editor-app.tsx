@@ -10,7 +10,7 @@ import { getFormListings } from "@/db-collections/collections";
 import type { Form } from "@/db-collections/collections";
 import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useForm } from "@/hooks/use-live-hooks";
-import { useTheme } from "@/components/ThemeProvider";
+import { useResolvedTheme } from "@/components/ThemeProvider";
 import { cn } from "@/lib/utils";
 import { Loader2Icon } from "@/components/ui/icons";
 import { normalizeNodeId } from "platejs";
@@ -18,7 +18,7 @@ import type { TElement, Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
 import { useDebouncedCallback } from "@tanstack/react-pacer";
 import type { KeyboardEvent } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 interface EditorAppProps {
   formId: string;
@@ -107,50 +107,18 @@ const EditorAppInner = ({
   readOnly: boolean;
   savedDocs: Form[] | undefined;
 }) => {
-  // Resolve effective theme mode (handles "system" → actual preference)
-  const { theme } = useTheme();
-  const resolvedAppTheme =
-    theme === "system"
-      ? typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light"
-      : theme;
+  const resolvedAppTheme = useResolvedTheme();
 
-  // Build customization source with mode overridden to match app theme immediately.
-  // This avoids a stale frame while the async collection update propagates.
-  const customizationSource = useMemo(() => {
-    if (versionCustomization) return { customization: versionCustomization };
-    const doc = savedDocs?.[0];
-    if (!doc) return doc;
-    const raw = (doc.customization ?? {}) as Record<string, string>;
-    if (raw.mode === resolvedAppTheme) return doc;
-    return { ...doc, customization: { ...raw, mode: resolvedAppTheme } };
-  }, [versionCustomization, savedDocs, resolvedAppTheme]);
-
-  const { customization, hasCustomization, themeVars } = useFormCustomization(customizationSource);
-
-  // Persist the resolved mode to the collection so customize sidebar stays in sync
-  useEffect(() => {
-    if (versionCustomization) return;
-    if (
-      resolvedAppTheme !==
-        (savedDocs?.[0]?.customization as Record<string, string> | undefined)?.mode &&
-      formId
-    ) {
-      const collection = getFormListings();
-      if (!collection.get(formId)) return;
-      collection.update(formId, (draft) => {
-        const current = (draft.customization ?? {}) as Record<string, string>;
-        draft.customization = { ...current, mode: resolvedAppTheme };
-        draft.updatedAt = new Date().toISOString();
-      });
-    }
-  }, [resolvedAppTheme, savedDocs, formId, versionCustomization]);
+  const customizationDoc = versionCustomization
+    ? { customization: versionCustomization }
+    : savedDocs?.[0];
+  const { customization, hasCustomization, themeVars } = useFormCustomization(
+    customizationDoc,
+    resolvedAppTheme,
+  );
 
   const skipSaveRef = useRef(false);
   const lastKnownContentRef = useRef<string | null>(null);
-  const savedDocsRef = useRef(savedDocs);
-  savedDocsRef.current = savedDocs;
   const pendingValueRef = useRef<Value | null>(null);
   const headerVisibility = useEditorHeaderVisibilitySafe();
   const [resetKey, setResetKey] = useState(0);
@@ -317,7 +285,7 @@ const EditorAppInner = ({
         className={cn(
           "min-h-full w-full overflow-x-hidden bg-background text-foreground",
           hasCustomization && "bf-themed",
-          customization?.mode === "dark" && "dark",
+          resolvedAppTheme === "dark" && "dark",
         )}
         style={hasCustomization ? themeVars : undefined}
       >

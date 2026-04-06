@@ -1,5 +1,7 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
+import { useIsomorphicLayoutEffect } from "@/hooks/use-isomorphic-layout-effect";
+import { useLazyRef } from "@/hooks/use-lazy-ref";
 import { cn } from "@/lib/utils";
 import { AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from "@/components/ui/icons";
 import { motion, useMotionValue, useTransform, animate, AnimatePresence } from "motion/react";
@@ -227,7 +229,7 @@ export const StyleNumberInput = ({
         <>
           {/* Filled track — extends past knob, rounded edge wraps around it */}
           <motion.div
-            className="absolute left-0 top-[2px] bottom-[2px] rounded-r-xl pointer-events-none bg-secondary"
+            className="absolute left-0 top-0 bottom-0 rounded-[inherit] pointer-events-none bg-secondary"
             style={{ width: fillWidth, maxWidth: "100%" }}
           />
 
@@ -585,14 +587,14 @@ export const StyleToggle = ({
   className?: string;
 }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const buttonRefs = React.useRef<Map<boolean, HTMLButtonElement>>(new Map());
+  const buttonRefs = useLazyRef(() => new Map<boolean, HTMLButtonElement>());
   const [pillStyle, setPillStyle] = React.useState<{
     left: number;
     width: number;
   } | null>(null);
   const hasAnimated = React.useRef(false);
 
-  React.useLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const button = buttonRefs.current.get(value);
     const container = containerRef.current;
     if (button && container) {
@@ -675,14 +677,14 @@ export const StyleAlignToggle = ({
   className?: string;
 }) => {
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const buttonRefs = React.useRef<Map<string, HTMLButtonElement>>(new Map());
+  const buttonRefs = useLazyRef(() => new Map<string, HTMLButtonElement>());
   const [pillStyle, setPillStyle] = React.useState<{
     left: number;
     width: number;
   } | null>(null);
   const hasAnimated = React.useRef(false);
 
-  React.useLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const button = buttonRefs.current.get(value);
     const container = containerRef.current;
     if (button && container) {

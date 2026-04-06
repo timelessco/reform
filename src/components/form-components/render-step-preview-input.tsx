@@ -7,6 +7,17 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
+import {
+  TimePicker,
+  TimePickerContent,
+  TimePickerHour,
+  TimePickerInput,
+  TimePickerInputGroup,
+  TimePickerMinute,
+  TimePickerSecond,
+  TimePickerSeparator,
+  TimePickerTrigger,
+} from "@/components/ui/time-picker";
 import { PhoneInput } from "@/components/reui/phone-input";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import type { AppForm } from "@/hooks/use-form-builder";
@@ -395,21 +406,33 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                 htmlFor={element.name}
                 required={element.required}
               />
-              <Input
-                id={element.name}
+              <TimePicker
                 name={element.name}
-                type="time"
-                placeholder={element.placeholder}
-                value={(f.state.value as string | undefined) ?? ""}
-                onChange={(e) => f.handleChange(e.target.value)}
-                onBlur={f.handleBlur}
-                autoComplete="off"
-                aria-invalid={hasErrors}
-                className={cn(
-                  "w-full rounded-(--radius-lg) border-0 h-7 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
-                  hasErrors && "ring-1 ring-destructive",
-                )}
-              />
+                value={(f.state.value as string | undefined) ?? "00:00:00"}
+                onValueChange={(v) => f.handleChange(v)}
+                showSeconds
+                invalid={hasErrors}
+              >
+                <TimePickerInputGroup
+                  className={cn(
+                    "rounded-(--radius-lg) border-0 h-7 bg-card px-[10px] shadow-form-input",
+                    hasErrors && "ring-1 ring-destructive",
+                  )}
+                  onBlur={f.handleBlur}
+                >
+                  <TimePickerInput segment="hour" className="text-sm" />
+                  <TimePickerSeparator />
+                  <TimePickerInput segment="minute" className="text-sm" />
+                  <TimePickerSeparator />
+                  <TimePickerInput segment="second" className="text-sm" />
+                  <TimePickerTrigger />
+                </TimePickerInputGroup>
+                <TimePickerContent>
+                  <TimePickerHour />
+                  <TimePickerMinute />
+                  <TimePickerSecond />
+                </TimePickerContent>
+              </TimePicker>
               {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
             </div>
           );
