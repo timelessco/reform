@@ -124,7 +124,6 @@
     "pdf-lib": "^1.17.1",
     "pg": "^8.20.0",
     "platejs": "^52.3.4",
-    "radix-ui": "^1.4.3",
     "react": "^19.2.4",
     "react-day-picker": "^9.14.0",
     "react-dnd": "^16.0.1",
