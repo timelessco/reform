@@ -1,5 +1,6 @@
 import { useRef } from "react";
 
+import { useResolvedTheme } from "@/components/ThemeProvider";
 import { getThemeStyleVars } from "@/lib/generate-theme-css";
 import { cn, isValidUrl, DEFAULT_ICON, DEFAULT_ICON_NAME } from "@/lib/utils";
 import { BLACK_COLOR, iconMap, WHITE_COLOR } from "./icon-data";
@@ -84,9 +85,13 @@ export const ThemedFormIcon = ({
   iconSize?: string;
   size?: string;
 }) => {
+  const resolvedAppTheme = useResolvedTheme();
+  const themedCustomization = customization
+    ? { ...customization, mode: resolvedAppTheme }
+    : customization;
   const themeVars =
-    customization && Object.keys(customization).length > 0
-      ? getThemeStyleVars(customization)
+    themedCustomization && Object.keys(themedCustomization).length > 0
+      ? getThemeStyleVars(themedCustomization)
       : undefined;
 
   if (icon && isValidUrl(icon)) {
@@ -101,10 +106,12 @@ export const ThemedFormIcon = ({
   }
 
   const iconName = icon && icon !== DEFAULT_ICON ? icon : DEFAULT_ICON_NAME;
-  const isDark = customization?.mode === "dark";
 
   return (
-    <div style={themeVars} className={cn(themeVars && "bf-themed", themeVars && isDark && "dark")}>
+    <div
+      style={themeVars}
+      className={cn(themeVars && "bf-themed", themeVars && resolvedAppTheme === "dark" && "dark")}
+    >
       <IconPickerPreview
         icon={iconName}
         iconColor={undefined}

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useAsRef } from "@/hooks/use-as-ref";
 import { useFormPersistence } from "@/hooks/use-form-persistence";
 
 type StepFormContextValue = {
@@ -79,8 +80,7 @@ export const StepFormProvider = ({
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   }, []);
 
-  const formDataRef = React.useRef(formData);
-  formDataRef.current = formData;
+  const formDataRef = useAsRef(formData);
 
   const submitForm = React.useCallback(
     async (finalStepData: Record<string, unknown>) => {
@@ -97,6 +97,7 @@ export const StepFormProvider = ({
         setIsSubmitting(false);
       }
     },
+    // eslint-disable-next-line eslint-plugin-react-hooks/exhaustive-deps -- formDataRef is a stable ref
     [onSubmit, clearSavedData],
   );
 

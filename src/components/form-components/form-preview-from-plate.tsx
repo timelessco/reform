@@ -4,6 +4,7 @@ import { ProgressBar } from "@/components/public/progress-bar";
 import { Button } from "@/components/ui/button";
 import { StepFormProvider, useStepForm } from "@/contexts/step-form-context";
 import { useTranslation } from "@/contexts/translation-context";
+import { CUSTOMIZATION_AUTO_DEFAULTS } from "@/lib/customization-defaults";
 import { extractFormHeader } from "@/lib/transform-plate-to-form";
 import { transformPlateForPreview } from "@/lib/transform-plate-for-preview";
 import type { PreviewSegment } from "@/lib/transform-plate-for-preview";
@@ -81,8 +82,8 @@ interface FormPreviewFromPlateProps {
 const isHexColor = (str: string): boolean => /^#([0-9A-Fa-f]{3}){1,2}$/.test(str);
 
 const PAGE_MAX_WIDTH = {
-  editor: "var(--bf-page-width, 700px)",
-  public: "var(--bf-page-width, 42rem)",
+  editor: `var(--bf-page-width, ${CUSTOMIZATION_AUTO_DEFAULTS.pageWidth})`,
+  public: `var(--bf-page-width, ${CUSTOMIZATION_AUTO_DEFAULTS.pageWidth})`,
 } as const;
 
 /**
@@ -228,7 +229,7 @@ const PreviewFormHeader = ({
       <div ref={headerRef} className="mb-4 sm:mb-8 w-full">
         {hasCover && renderCover()}
         <div
-          className="mx-auto w-full"
+          className="mx-auto w-full px-8"
           style={{ maxWidth: PAGE_MAX_WIDTH.editor }}
           data-bf-form-container
         >
@@ -496,7 +497,7 @@ const FormPreviewContent = ({
           customization={customization}
         />
         <div
-          className={cn("w-full mx-auto", layout === "editor" ? "px-4" : "px-4 sm:px-0")}
+          className={cn("w-full mx-auto", layout === "editor" ? "px-8" : "px-4 sm:px-0")}
           style={{ maxWidth: PAGE_MAX_WIDTH[layout] }}
           data-bf-form-container
         >
@@ -542,7 +543,7 @@ const FormPreviewContent = ({
       {/* Progress Bar */}
       {settings?.progressBar && totalSteps > 1 && (
         <div
-          className={cn("mb-6 mx-auto", layout === "editor" ? "w-full px-4" : "px-4")}
+          className={cn("mb-6 mx-auto", layout === "editor" ? "w-full px-8" : "px-4")}
           style={{ maxWidth: PAGE_MAX_WIDTH[layout] }}
           data-bf-form-container
         >
@@ -552,7 +553,7 @@ const FormPreviewContent = ({
 
       {/* Step Form */}
       <div
-        className={cn("mx-auto", layout === "editor" ? "w-full" : "px-4")}
+        className={cn("mx-auto", layout === "editor" ? "w-full px-8" : "px-4")}
         style={{
           maxWidth: PAGE_MAX_WIDTH[layout],
           ...(layout === "editor"

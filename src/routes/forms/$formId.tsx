@@ -1,6 +1,7 @@
 import { APP_NAME } from "@/lib/app-config";
+import { useResolvedTheme, useTheme } from "@/components/ThemeProvider";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { z } from "zod";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { PublicFormPage } from "@/components/public/public-form-page";
@@ -16,6 +17,19 @@ const PublicFormRoute = () => {
   const { formId } = Route.useParams();
   const search = Route.useSearch();
 
+  // Follow system theme live — ThemeProvider handles prefers-color-scheme changes
+  const { setTheme } = useTheme();
+  useEffect(() => {
+    setTheme("system");
+    document.body.style.backgroundColor = "var(--color-background)";
+    return () => {
+      document.body.style.backgroundColor = "";
+    };
+  }, [setTheme]);
+
+  // Resolved system theme for CSS variable generation
+  const resolvedTheme = useResolvedTheme();
+
   // Support both transparentBackground and transparent params
   const isTransparent = search.transparentBackground || search.transparent || false;
 
@@ -24,9 +38,15 @@ const PublicFormRoute = () => {
     background: isTransparent ? "transparent" : "solid",
     alignment: search.alignLeft ? "left" : "center",
     dynamicHeight: search.dynamicHeight,
+    dynamicWidth: search.dynamicWidth,
   };
 
-  const customization = loaderData?.form?.customization ?? null;
+  // Override customization mode with resolved system theme so tokens match
+  const rawCustomization = loaderData?.form?.customization ?? null;
+  const customization = useMemo(
+    () => (rawCustomization ? { ...rawCustomization, mode: resolvedTheme } : rawCustomization),
+    [rawCustomization, resolvedTheme],
+  );
   const themeCss = useMemo(() => generateThemeCss(customization), [customization]);
   const googleFontUrl = useMemo(() => getGoogleFontLinkUrl(customization), [customization]);
 
@@ -66,8 +86,8 @@ export const Route = createFileRoute("/forms/$formId")({
     ],
     scripts: [
       {
-        // Inline script to force light theme before paint — prevents dark mode flash
-        children: `document.documentElement.classList.remove("dark");document.documentElement.classList.add("light");`,
+        // Apply system theme before paint — prevents flash
+        children: `(function(){var d=document.documentElement,m=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";d.classList.remove("light","dark");d.classList.add(m);d.style.colorScheme=m;})();`,
       },
     ],
   }),
@@ -94,6 +114,8 @@ export const Route = createFileRoute("/forms/$formId")({
       originPage: z.string().optional(),
       // Dynamic height for standard iframe embeds
       dynamicHeight: z.coerce.boolean().optional().default(false),
+      // Dynamic width — form fields fill full width with padding
+      dynamicWidth: z.coerce.boolean().optional().default(false),
     }),
   ),
 });

@@ -8,6 +8,7 @@ import { EditorThemeProvider } from "@/contexts/editor-theme-context";
 import { useEditorHeaderVisibilitySafe } from "@/contexts/editor-header-visibility-context";
 import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
 import { useFormCustomization } from "@/hooks/use-form-customization";
+import { useResolvedTheme } from "@/components/ThemeProvider";
 import { EditorKit } from "@/components/editor/editor-kit";
 import { ClientOnly } from "@/components/client-only";
 import { FormSettingsSidebar } from "@/components/form-builder/form-settings-sidebar";
@@ -198,7 +199,8 @@ const LocalEditorApp = () => {
     }
   }
 
-  const { customization, hasCustomization, themeVars } = useFormCustomization(savedDocs?.[0]);
+  const resolvedAppTheme = useResolvedTheme();
+  const { hasCustomization, themeVars } = useFormCustomization(savedDocs?.[0], resolvedAppTheme);
   const themeCtx = useMemo(() => ({ themeVars, hasCustomization }), [themeVars, hasCustomization]);
 
   const skipSaveRef = useRef(false);
@@ -276,7 +278,7 @@ const LocalEditorApp = () => {
         className={cn(
           "min-h-full w-full overflow-x-hidden bg-background text-foreground",
           hasCustomization && "bf-themed",
-          customization?.mode === "dark" && "dark",
+          resolvedAppTheme === "dark" && "dark",
         )}
         style={hasCustomization ? themeVars : undefined}
       >
@@ -296,9 +298,13 @@ const LocalEditorApp = () => {
 const LocalPreviewMode = () => {
   const localFormId = getLocalFormId();
   const { data: savedDocs } = useLocalForm(localFormId);
+  const resolvedAppTheme = useResolvedTheme();
 
   const doc = savedDocs?.[0];
-  const { customization, hasCustomization, themeVars } = useFormCustomization(doc);
+  const { customization, hasCustomization, themeVars } = useFormCustomization(
+    doc,
+    resolvedAppTheme,
+  );
   const content = (doc?.content as Value) || [];
 
   if (savedDocs === undefined) return <Loader />;
@@ -308,7 +314,7 @@ const LocalPreviewMode = () => {
       className={cn(
         "w-full h-full flex flex-col overflow-y-auto overflow-x-hidden bg-background transition-colors duration-300",
         hasCustomization && "bf-themed",
-        customization?.mode === "dark" && "dark",
+        resolvedAppTheme === "dark" && "dark",
       )}
       style={hasCustomization ? themeVars : undefined}
     >

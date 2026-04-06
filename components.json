@@ -23,6 +23,7 @@
   },
   "registries": {
     "@ncdai": "https://chanhdai.com/r/{name}.json",
-    "@reui": "https://reui.io/r/{style}/{name}.json"
+    "@reui": "https://reui.io/r/{style}/{name}.json",
+    "@diceui": "https://diceui.com/r/{name}.json"
   }
 }

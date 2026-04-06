@@ -22,6 +22,7 @@ const PublicFormRoute = () => {
     background: isTransparent ? "transparent" : "solid",
     alignment: search.alignLeft ? "left" : "center",
     dynamicHeight: search.dynamicHeight,
+    dynamicWidth: search.dynamicWidth,
   };
 
   return (
@@ -84,6 +85,8 @@ export const Route = createFileRoute("/forms/$i8n/$formId")({
       originPage: z.string().optional(),
       // Dynamic height for standard iframe embeds
       dynamicHeight: z.coerce.boolean().optional().default(false),
+      // Dynamic width — form fields fill full width with padding
+      dynamicWidth: z.coerce.boolean().optional().default(false),
     }),
   ),
 });

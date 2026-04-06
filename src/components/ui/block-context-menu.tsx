@@ -56,7 +56,18 @@ export const BlockContextMenu = ({ children }: { children: React.ReactNode }) =>
 
   const selectedNodes = editor.getApi(BlockSelectionPlugin).blockSelection.getNodes();
   const hasFormLabel = selectedNodes.some(([node]) => node.type === "formLabel");
-  const isRequired = selectedNodes.some(([node]) => node.type === "formLabel" && node.required);
+  // Read required from the next sibling input node (not the label)
+  const isRequired = selectedNodes.some(([node, path]) => {
+    if (node.type !== "formLabel") return false;
+    const nextPath = [...path];
+    nextPath[nextPath.length - 1] += 1;
+    try {
+      const next = editor.api.node(nextPath);
+      return next ? Boolean(next[0]?.required) : false;
+    } catch {
+      return false;
+    }
+  });
 
   const handleRequiredToggle = React.useCallback(() => {
     editor
@@ -64,7 +75,17 @@ export const BlockContextMenu = ({ children }: { children: React.ReactNode }) =>
       .blockSelection.getNodes()
       .forEach(([node, path]) => {
         if (node.type === "formLabel") {
-          editor.tf.setNodes({ required: !node.required }, { at: path });
+          // Write required to the next sibling input node
+          const nextPath = [...path];
+          nextPath[nextPath.length - 1] += 1;
+          try {
+            const next = editor.api.node(nextPath);
+            if (next) {
+              editor.tf.setNodes({ required: !next[0]?.required }, { at: nextPath });
+            }
+          } catch {
+            // No next sibling
+          }
         }
       });
   }, [editor]);

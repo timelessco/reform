@@ -3,7 +3,7 @@ import {
   ConfigRow,
   selectTriggerCls,
 } from "@/components/form-builder/embed-config-panel";
-import { useTheme } from "@/components/ThemeProvider";
+import { useTheme, useResolvedTheme } from "@/components/ThemeProvider";
 import { Button } from "@/components/ui/button";
 import { InfoIcon, XIcon } from "@/components/ui/icons";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
@@ -126,11 +126,23 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
   );
 
   const updateFields = useCallback(
-    (fields: Record<string, string>) => {
+    (fields: Record<string, string | null>) => {
       if (formDoc?.id) {
         collection.update(formDoc.id, (draft) => {
-          const current = (draft.customization ?? {}) as Record<string, string>;
-          draft.customization = { ...current, ...fields };
+          const nextCustomization = {
+            ...((draft.customization ?? {}) as Record<string, string>),
+          };
+
+          for (const [key, value] of Object.entries(fields)) {
+            if (value === null) {
+              delete nextCustomization[key];
+            } else {
+              nextCustomization[key] = value;
+            }
+          }
+
+          draft.customization =
+            Object.keys(nextCustomization).length > 0 ? nextCustomization : null;
           draft.updatedAt = new Date().toISOString();
         });
       }
@@ -171,10 +183,26 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
     [updateFields],
   );
 
+  const updateScrubberField = useCallback(
+    (field: string, value: string) => {
+      updateFields({ [field]: value });
+    },
+    [updateFields],
+  );
+
+  const resetScrubberField = useCallback(
+    (field: string) => {
+      updateFields({ [field]: null });
+    },
+    [updateFields],
+  );
+
+  const resolvedAppTheme = useResolvedTheme();
+
   const handleModeToggle = useCallback(
     (targetMode: string) => {
       const sourceMode = targetMode === "dark" ? "light" : "dark";
-      const updates: Record<string, string> = { mode: targetMode };
+      const updates: Record<string, string> = {};
 
       // One-time migration: move unprefixed overrides to source mode's prefix
       for (const tokenName of TOKEN_NAMES) {
@@ -185,15 +213,17 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
         }
       }
 
-      updateFields(updates);
-      // Sync the app theme with the editor mode
+      if (Object.keys(updates).length > 0) {
+        updateFields(updates);
+      }
+      // App theme is the single source of truth for mode
       setTheme(targetMode as "dark" | "light");
     },
     [updateFields, customization, setTheme],
   );
 
   const activePreset = customization.preset || "vega";
-  const activeMode = customization.mode || "light";
+  const activeMode = resolvedAppTheme;
   const activeThemeColor = getValue("themeColor");
   const activeBaseColors = activeMode === "dark" ? DARK_BASE_COLORS : BASE_COLORS;
   const activeBaseColor = getValue("baseColor");
@@ -259,22 +289,24 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
       <SidebarContent>
         <div className="p-2 space-y-3">
           {/* Theme section */}
+          <ConfigCard>
+            <ConfigRow label="Preset">
+              <Select value={activePreset} onValueChange={(v) => v && selectStyle(v)}>
+                <SelectTrigger className={selectTriggerCls}>
+                  {STYLE_OPTIONS.find((o) => o.value === activePreset)?.label ?? activePreset}
+                </SelectTrigger>
+                <SelectContent>
+                  {STYLE_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </ConfigRow>
+          </ConfigCard>
           <SidebarSection label="Theme" className="pb-2.75" action={<></>}>
             <ConfigCard>
-              <ConfigRow label="Style">
-                <Select value={activePreset} onValueChange={(v) => v && selectStyle(v)}>
-                  <SelectTrigger className={selectTriggerCls}>
-                    {STYLE_OPTIONS.find((o) => o.value === activePreset)?.label ?? activePreset}
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STYLE_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>
-                        {o.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </ConfigRow>
               <ConfigRow label="Accent">
                 <Select
                   value={activeThemeColor}
@@ -354,8 +386,11 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
             <ConfigCard>
               <StyleNumberInput
                 label="Page Width"
-                value={getValue("pageWidth") || "50%"}
-                onChange={(v) => updateWithCustomPreset("pageWidth", v)}
+                value={customization.pageWidth}
+                onChange={(v) => updateScrubberField("pageWidth", v)}
+                allowAuto
+                isAuto={!customization.pageWidth}
+                onAutoChange={() => resetScrubberField("pageWidth")}
                 min={30}
                 max={100}
                 step={5}
@@ -364,8 +399,11 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
               />
               <StyleNumberInput
                 label="Cover Height"
-                value={getValue("coverHeight") || "200px"}
-                onChange={(v) => updateWithCustomPreset("coverHeight", v)}
+                value={customization.coverHeight}
+                onChange={(v) => updateScrubberField("coverHeight", v)}
+                allowAuto
+                isAuto={!customization.coverHeight}
+                onAutoChange={() => resetScrubberField("coverHeight")}
                 min={100}
                 max={400}
                 step={10}
@@ -375,8 +413,11 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
               />
               <StyleNumberInput
                 label="Logo Width"
-                value={getValue("logoWidth") || "100px"}
-                onChange={(v) => updateWithCustomPreset("logoWidth", v)}
+                value={customization.logoWidth}
+                onChange={(v) => updateScrubberField("logoWidth", v)}
+                allowAuto
+                isAuto={!customization.logoWidth}
+                onAutoChange={() => resetScrubberField("logoWidth")}
                 min={0}
                 max={100}
                 step={4}
@@ -386,8 +427,11 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
               />
               <StyleNumberInput
                 label="Input Width"
-                value={getValue("inputWidth") || "60%"}
-                onChange={(v) => updateWithCustomPreset("inputWidth", v)}
+                value={customization.inputWidth}
+                onChange={(v) => updateScrubberField("inputWidth", v)}
+                allowAuto
+                isAuto={!customization.inputWidth}
+                onAutoChange={() => resetScrubberField("inputWidth")}
                 min={20}
                 max={100}
                 step={5}
@@ -402,8 +446,11 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
             <ConfigCard>
               <StyleNumberInput
                 label="Font Size"
-                value={getValue("baseFontSize") || "16px"}
-                onChange={(v) => updateWithCustomPreset("baseFontSize", v)}
+                value={customization.baseFontSize}
+                onChange={(v) => updateScrubberField("baseFontSize", v)}
+                allowAuto
+                isAuto={!customization.baseFontSize}
+                onAutoChange={() => resetScrubberField("baseFontSize")}
                 min={12}
                 max={24}
                 step={1}
@@ -413,8 +460,11 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
               />
               <StyleNumberInput
                 label="Letter Spacing"
-                value={getValue("letterSpacing") || "0.02em"}
-                onChange={(v) => updateWithCustomPreset("letterSpacing", v)}
+                value={customization.letterSpacing}
+                onChange={(v) => updateScrubberField("letterSpacing", v)}
+                allowAuto
+                isAuto={!customization.letterSpacing}
+                onAutoChange={() => resetScrubberField("letterSpacing")}
                 min={0}
                 max={0.2}
                 step={0.005}
@@ -454,8 +504,11 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
               </ConfigRow>
               <StyleNumberInput
                 label="Font Size"
-                value={getValue("titleFontSize") || "48px"}
-                onChange={(v) => updateWithCustomPreset("titleFontSize", v)}
+                value={customization.titleFontSize}
+                onChange={(v) => updateScrubberField("titleFontSize", v)}
+                allowAuto
+                isAuto={!customization.titleFontSize}
+                onAutoChange={() => resetScrubberField("titleFontSize")}
                 min={24}
                 max={72}
                 step={2}
@@ -465,8 +518,11 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
               />
               <StyleNumberInput
                 label="Letter Spacing"
-                value={getValue("titleLetterSpacing") || "-1.44px"}
-                onChange={(v) => updateWithCustomPreset("titleLetterSpacing", v)}
+                value={customization.titleLetterSpacing}
+                onChange={(v) => updateScrubberField("titleLetterSpacing", v)}
+                allowAuto
+                isAuto={!customization.titleLetterSpacing}
+                onAutoChange={() => resetScrubberField("titleLetterSpacing")}
                 min={-3}
                 max={3}
                 step={0.25}

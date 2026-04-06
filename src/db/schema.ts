@@ -268,6 +268,47 @@ export const formFavorites = pgTable(
   ],
 );
 
+export const formNotificationPreferences = pgTable(
+  "form_notification_preferences",
+  {
+    id: text().primaryKey(), // Format: ${userId}:${formId}
+    userId: text().notNull(),
+    formId: text()
+      .notNull()
+      .references(() => forms.id, { onDelete: "cascade" }),
+    inAppNotifications: boolean().notNull().default(false),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("idx_form_notification_preferences_user_id").on(t.userId),
+    index("idx_form_notification_preferences_user_id_form_id").on(t.userId, t.formId),
+  ],
+);
+
+export const formSubmissionNotifications = pgTable(
+  "form_submission_notifications",
+  {
+    id: text().primaryKey(), // Format: ${userId}:${formId}
+    userId: text().notNull(),
+    formId: text()
+      .notNull()
+      .references(() => forms.id, { onDelete: "cascade" }),
+    unreadCount: integer().notNull().default(0),
+    isRead: boolean().notNull().default(true),
+    firstUnreadAt: timestamp({ withTimezone: true }),
+    latestSubmissionAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    latestSubmissionId: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("idx_form_submission_notifications_user_id").on(t.userId),
+    index("idx_form_submission_notifications_user_id_form_id").on(t.userId, t.formId),
+    index("idx_form_submission_notifications_user_id_is_read").on(t.userId, t.isRead),
+  ],
+);
+
 // ============================================================================
 // Form Visits Table (Analytics - Raw Events)
 // ============================================================================
@@ -433,6 +474,8 @@ export const relations = defineRelations(
     formAnalyticsDaily,
     formDropoffDaily,
     formFavorites,
+    formNotificationPreferences,
+    formSubmissionNotifications,
   },
   (r) => ({
     // User has many sessions, accounts, and forms they created
@@ -482,6 +525,14 @@ export const relations = defineRelations(
       favorites: r.many.formFavorites({
         from: r.user.id,
         to: r.formFavorites.userId,
+      }),
+      formNotificationPreferences: r.many.formNotificationPreferences({
+        from: r.user.id,
+        to: r.formNotificationPreferences.userId,
+      }),
+      formSubmissionNotifications: r.many.formSubmissionNotifications({
+        from: r.user.id,
+        to: r.formSubmissionNotifications.userId,
       }),
     },
     // Session belongs to one user
@@ -600,6 +651,14 @@ export const relations = defineRelations(
         from: r.forms.id,
         to: r.formFavorites.formId,
       }),
+      notificationPreferences: r.many.formNotificationPreferences({
+        from: r.forms.id,
+        to: r.formNotificationPreferences.formId,
+      }),
+      submissionNotifications: r.many.formSubmissionNotifications({
+        from: r.forms.id,
+        to: r.formSubmissionNotifications.formId,
+      }),
     },
     // Form Version belongs to one form and one user (publisher)
     formVersions: {
@@ -670,6 +729,26 @@ export const relations = defineRelations(
         to: r.forms.id,
       }),
     },
+    formNotificationPreferences: {
+      user: r.one.user({
+        from: r.formNotificationPreferences.userId,
+        to: r.user.id,
+      }),
+      form: r.one.forms({
+        from: r.formNotificationPreferences.formId,
+        to: r.forms.id,
+      }),
+    },
+    formSubmissionNotifications: {
+      user: r.one.user({
+        from: r.formSubmissionNotifications.userId,
+        to: r.user.id,
+      }),
+      form: r.one.forms({
+        from: r.formSubmissionNotifications.formId,
+        to: r.forms.id,
+      }),
+    },
   }),
 );
 
@@ -693,3 +772,5 @@ export const InvitationZod = createSelectSchema(invitation);
 
 // Form Favorites schema
 export const FormFavoriteZod = createSelectSchema(formFavorites);
+export const FormNotificationPreferenceZod = createSelectSchema(formNotificationPreferences);
+export const FormSubmissionNotificationZod = createSelectSchema(formSubmissionNotifications);

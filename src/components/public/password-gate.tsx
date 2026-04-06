@@ -64,15 +64,15 @@ export const PasswordGate = ({ formId, children }: PasswordGateProps) => {
   }
 
   return (
-    <div className="relative min-h-screen">
-      {/* Blurred form behind */}
-      <div className="pointer-events-none select-none" aria-hidden="true">
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Blurred form behind — clipped to viewport so it doesn't cause scroll */}
+      <div className="pointer-events-none select-none h-screen overflow-hidden" aria-hidden="true">
         <div className="blur-md opacity-50">{children}</div>
       </div>
 
-      {/* Password overlay */}
-      <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-sm">
-        <div className="w-full max-w-sm mx-4 rounded-lg border bg-white p-6 shadow-lg">
+      {/* Password overlay — fixed to viewport */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+        <div className="w-full max-w-sm mx-4 rounded-lg border border-border bg-card text-card-foreground p-6 shadow-lg">
           <div className="space-y-4">
             <div className="flex justify-center">
               <div className="rounded-full bg-muted p-3">

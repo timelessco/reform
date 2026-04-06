@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { CheckIcon } from "@/components/ui/icons";
 import { Search } from "lucide-react";
 
@@ -17,7 +16,7 @@ export const Command = ({ className, ...props }: React.ComponentProps<typeof Com
   <CommandPrimitive
     data-slot="command"
     className={cn(
-      "bg-popover text-popover-foreground rounded-xl! p-1 flex size-full flex-col overflow-hidden",
+      "bg-popover text-popover-foreground rounded-2xl flex size-full flex-col overflow-hidden",
       className,
     )}
     {...props}
@@ -44,7 +43,7 @@ export const CommandDialog = ({
       <DialogDescription>{description}</DialogDescription>
     </DialogHeader>
     <DialogContent
-      className={cn("rounded-xl! top-1/3 translate-y-0 overflow-hidden p-0", className)}
+      className={cn("rounded-lg top-1/3 translate-y-0 overflow-hidden p-0", className)}
       showCloseButton={showCloseButton}
     >
       {children}
@@ -56,20 +55,18 @@ export const CommandInput = ({
   className,
   ...props
 }: React.ComponentProps<typeof CommandPrimitive.Input>) => (
-  <div data-slot="command-input-wrapper" className="p-1 pb-0">
-    <ButtonGroup className="w-full border-none rounded-lg">
-      <ButtonGroupText className="h-7 w-full rounded-lg border border-transparent bg-accent/60 px-2.5 gap-1.5 text-[13px]">
-        <Search className="size-4" strokeWidth={2} color="var(--color-gray-alpha-600)" />
-        <CommandPrimitive.Input
-          data-slot="command-input"
-          className={cn(
-            "min-w-0 flex-1 bg-transparent border-0 p-0 outline-none text-[13px] placeholder:text-(--color-gray-alpha-600) placeholder:text-normal placeholder:text-[0.8rem] disabled:cursor-not-allowed disabled:opacity-50",
-            className,
-          )}
-          {...props}
-        />
-      </ButtonGroupText>
-    </ButtonGroup>
+  <div data-slot="command-input-wrapper" className="p-1.5 pb-0">
+    <div className="flex h-[30px] w-full items-center gap-1.5 overflow-hidden rounded-xl bg-accent px-2.5 py-1.75">
+      <Search className="size-4 shrink-0 text-muted-foreground" strokeWidth={2} />
+      <CommandPrimitive.Input
+        data-slot="command-input"
+        className={cn(
+          "min-w-0 flex-1 bg-transparent border-0 p-0 outline-none text-base text-foreground placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
+          className,
+        )}
+        {...props}
+      />
+    </div>
   </div>
 );
 

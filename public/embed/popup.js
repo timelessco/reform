@@ -1,134 +1,126 @@
 "use strict";
 (() => {
-  function I() {
-    let t = document.getElementsByTagName("script");
-    for (let e = t.length - 1; e >= 0; e--) {
-      let n = t[e].src;
-      if (n?.includes("/embed/popup.js"))
-        try {
-          return new URL(n).origin;
-        } catch {}
-    }
-    return window.location.origin;
-  }
-  function M(t, e) {
-    let n = I(),
-      o = new URLSearchParams();
-    if (
-      (o.set("popup", "1"),
-      o.set("originPage", window.location.pathname),
-      e.hideTitle && o.set("hideTitle", "1"),
-      e.alignLeft && o.set("alignLeft", "1"),
-      o.set("transparent", "1"),
-      e.hiddenFields)
-    )
-      for (let [a, l] of Object.entries(e.hiddenFields)) o.set(a, l);
-    return (
-      new URLSearchParams(window.location.search).forEach((a, l) => {
-        o.has(l) || o.set(l, a);
-      }),
-      `${n}/forms/${t}?${o.toString()}`
-    );
-  }
-  function h(t, e, n) {
-    let o = document.createElement("iframe");
-    ((o.className = "bf-iframe"),
-      o.setAttribute("title", "Reform"),
-      o.setAttribute("frameborder", "0"),
-      o.setAttribute("allow", "fullscreen"),
-      o.setAttribute("data-bf-form-id", t),
-      (o.style.height = "400px"));
-    let i = M(t, e);
-    return ((o.src = i), n.appendChild(o), o);
-  }
-  function y(t, e) {
-    let n = e + 2;
-    t.style.height = `${n}px`;
-  }
-  function x(t) {
-    t.remove();
-  }
+  var I = () => {
+      let t = document.getElementsByTagName("script");
+      for (let e = t.length - 1; e >= 0; e--) {
+        let n = t[e].src;
+        if (n?.includes("/embed/popup.js"))
+          try {
+            return new URL(n).origin;
+          } catch {}
+      }
+      return window.location.origin;
+    },
+    M = (t, e) => {
+      let n = I(),
+        o = new URLSearchParams();
+      if (
+        (o.set("popup", "1"),
+        o.set("originPage", window.location.pathname),
+        e.hideTitle && o.set("hideTitle", "1"),
+        e.alignLeft && o.set("alignLeft", "1"),
+        o.set("transparent", "1"),
+        e.hiddenFields)
+      )
+        for (let [a, l] of Object.entries(e.hiddenFields)) o.set(a, l);
+      return (
+        new URLSearchParams(window.location.search).forEach((a, l) => {
+          o.has(l) || o.set(l, a);
+        }),
+        `${n}/forms/${t}?${o.toString()}`
+      );
+    },
+    h = (t, e, n) => {
+      let o = document.createElement("iframe");
+      ((o.className = "bf-iframe"),
+        o.setAttribute("title", "Reform"),
+        o.setAttribute("frameborder", "0"),
+        o.setAttribute("allow", "fullscreen"),
+        o.setAttribute("data-bf-form-id", t),
+        (o.style.height = "400px"));
+      let i = M(t, e);
+      return ((o.src = i), n.appendChild(o), o);
+    },
+    y = (t, e) => {
+      let n = e + 2;
+      t.style.height = `${n}px`;
+    },
+    x = (t) => {
+      t.remove();
+    };
   var A =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Close popup</title><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-  function v(t, e, n) {
-    let o = e.layout === "modal" || e.position === "center",
-      i = e.overlay !== !1 || o,
-      a = e.position || "bottom-right",
-      l = e.width || 376,
-      s = document.createElement("div");
-    ((s.className = `bf-overlay ${i ? "" : "bf-overlay--no-bg"}`),
-      s.setAttribute("data-bf-form-id", t),
-      i &&
-        s.addEventListener("click", (O) => {
-          O.target === s && n();
-        }));
-    let r = document.createElement("div");
-    ((r.className = `bf-popup bf-popup--${o ? "center" : a}`),
-      (r.style.width = `${l}px`),
-      (r.style.maxHeight = "600px"));
-    let p = document.createElement("button");
-    ((p.className = "bf-close-btn"),
-      (p.innerHTML = A),
-      p.setAttribute("aria-label", "Close form"),
-      p.addEventListener("click", n));
-    let f = document.createElement("div");
-    f.className = "bf-iframe-container";
-    let d = document.createElement("div");
-    ((d.className = "bf-loading"), (d.innerHTML = '<div class="bf-loading-spinner"></div>'));
-    let c;
-    return (
-      e.emoji?.text &&
-        ((c = document.createElement("div")),
-        (c.className = `bf-emoji ${R(e.emoji.animation)}`),
-        (c.textContent = e.emoji.text)),
-      r.appendChild(p),
-      r.appendChild(d),
-      r.appendChild(f),
-      c && r.appendChild(c),
-      s.appendChild(r),
-      i && (document.body.style.overflow = "hidden"),
-      document.body.appendChild(s),
-      {
-        overlay: s,
-        popup: r,
-        iframeContainer: f,
-        closeBtn: p,
-        loadingEl: d,
-        emojiEl: c,
+  var v = (t, e, n) => {
+      let o = e.layout === "modal" || e.position === "center",
+        i = e.overlay !== !1 || o,
+        a = e.position || "bottom-right",
+        l = e.width || 376,
+        s = document.createElement("div");
+      ((s.className = `bf-overlay ${i ? "" : "bf-overlay--no-bg"}`),
+        s.setAttribute("data-bf-form-id", t),
+        i &&
+          s.addEventListener("click", (O) => {
+            O.target === s && n();
+          }));
+      let r = document.createElement("div");
+      ((r.className = `bf-popup bf-popup--${o ? "center" : a}`),
+        Object.assign(r.style, { width: `${l}px`, maxHeight: "600px" }));
+      let p = document.createElement("button");
+      ((p.className = "bf-close-btn"),
+        (p.innerHTML = A),
+        p.setAttribute("aria-label", "Close form"),
+        p.addEventListener("click", n));
+      let f = document.createElement("div");
+      f.className = "bf-iframe-container";
+      let d = document.createElement("div");
+      ((d.className = "bf-loading"), (d.innerHTML = '<div class="bf-loading-spinner"></div>'));
+      let c;
+      return (
+        e.emoji?.text &&
+          ((c = document.createElement("div")),
+          (c.className = `bf-emoji ${R(e.emoji.animation)}`),
+          (c.textContent = e.emoji.text)),
+        r.appendChild(p),
+        r.appendChild(d),
+        r.appendChild(f),
+        c && r.appendChild(c),
+        s.appendChild(r),
+        i && (document.body.style.overflow = "hidden"),
+        document.body.appendChild(s),
+        { overlay: s, popup: r, iframeContainer: f, closeBtn: p, loadingEl: d, emojiEl: c }
+      );
+    },
+    w = (t) => {
+      ((document.body.style.overflow = ""),
+        (t.style.opacity = "0"),
+        (t.style.transition = "opacity 0.15s ease"),
+        setTimeout(() => {
+          t.remove();
+        }, 150));
+    },
+    E = (t, e) => {
+      let n = window.innerHeight - 40,
+        o = Math.min(e, n);
+      t.style.maxHeight = `${o}px`;
+    },
+    L = (t) => {
+      t.style.display = "none";
+    },
+    R = (t) => {
+      switch (t) {
+        case "wave":
+          return "bf-emoji--wave";
+        case "bounce":
+          return "bf-emoji--bounce";
+        case "pulse":
+          return "bf-emoji--pulse";
+        default:
+          return "";
       }
-    );
-  }
-  function w(t) {
-    ((document.body.style.overflow = ""),
-      (t.style.opacity = "0"),
-      (t.style.transition = "opacity 0.15s ease"),
-      setTimeout(() => {
-        t.remove();
-      }, 150));
-  }
-  function E(t, e) {
-    let n = window.innerHeight - 40,
-      o = Math.min(e, n);
-    t.style.maxHeight = `${o}px`;
-  }
-  function L(t) {
-    t.style.display = "none";
-  }
-  function R(t) {
-    switch (t) {
-      case "wave":
-        return "bf-emoji--wave";
-      case "bounce":
-        return "bf-emoji--bounce";
-      case "pulse":
-        return "bf-emoji--pulse";
-      default:
-        return "";
-    }
-  }
-  function j(t) {
-    t && (t.style.display = "none");
-  }
+    },
+    j = (t) => {
+      t && (t.style.display = "none");
+    };
   var S = `
 /* Keyframe Animations */
 @keyframes bf-wave {
@@ -333,219 +325,213 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-`;
-  function T() {
-    if (document.getElementById("bf-popup-styles")) return;
-    let t = document.createElement("style");
-    ((t.id = "bf-popup-styles"), (t.textContent = S), document.head.appendChild(t));
-  }
-  function F(t) {
-    let e = {},
-      n = t.dataset.layout;
-    (n === "modal" || n === "default") && (e.layout = n);
-    let o = t.dataset.position;
-    (o === "bottom-right" || o === "bottom-left" || o === "center") && (e.position = o);
-    let i = t.dataset.width;
-    (i && (e.width = parseInt(i, 10)),
-      t.dataset.alignLeft === "1" && (e.alignLeft = !0),
-      t.dataset.hideTitle === "1" && (e.hideTitle = !0),
-      t.dataset.overlay === "1" && (e.overlay = !0));
-    let a = t.dataset.emojiText,
-      l = t.dataset.emojiAnimation;
-    a && (e.emoji = { text: a, animation: l || "none" });
-    let s = t.dataset.autoClose;
-    s && (e.autoClose = parseInt(s, 10));
-    let r = {};
-    for (let [p, f] of Object.entries(t.dataset))
-      [
-        "formId",
-        "layout",
-        "position",
-        "width",
-        "alignLeft",
-        "hideTitle",
-        "overlay",
-        "emojiText",
-        "emojiAnimation",
-        "autoClose",
-      ].includes(p) ||
-        (f !== void 0 && (r[p] = f));
-    return (Object.keys(r).length > 0 && (e.hiddenFields = r), e);
-  }
-  function g(t) {
-    let e = new URLSearchParams(t.replace(/^#/, "")),
-      n = e.get("form-open"),
-      o = {},
-      i = e.get("position");
-    ((i === "bottom-right" || i === "bottom-left" || i === "center") && (o.position = i),
-      e.get("align-left") === "1" && (o.alignLeft = !0),
-      e.get("hide-title") === "1" && (o.hideTitle = !0),
-      e.get("overlay") === "1" && (o.overlay = !0));
-    let a = e.get("width");
-    a && (o.width = parseInt(a, 10));
-    let l = e.get("emoji-text"),
-      s = e.get("emoji-animation");
-    l && (o.emoji = { text: l, animation: s || "none" });
-    let r = e.get("auto-close");
-    r && (o.autoClose = parseInt(r, 10));
-    let p = {},
-      f = [
-        "form-open",
-        "position",
-        "align-left",
-        "hide-title",
-        "overlay",
-        "width",
-        "emoji-text",
-        "emoji-animation",
-        "auto-close",
-      ];
-    return (
-      e.forEach((d, c) => {
-        f.includes(c) || (p[c] = d);
-      }),
-      Object.keys(p).length > 0 && (o.hiddenFields = p),
-      { formId: n, options: o }
-    );
-  }
-  function k(t) {
-    document.addEventListener("click", (e) => {
-      let n = e.target,
-        o = n.closest("[data-form-id]");
-      if (o) {
-        e.preventDefault();
-        let a = o.dataset.formId;
-        if (a) {
-          let l = F(o);
-          t(a, l);
+`,
+    T = () => {
+      if (document.getElementById("bf-popup-styles")) return;
+      let t = document.createElement("style");
+      ((t.id = "bf-popup-styles"), (t.textContent = S), document.head.appendChild(t));
+    };
+  var F = (t) => {
+      let e = {},
+        n = t.dataset.layout;
+      (n === "modal" || n === "default") && (e.layout = n);
+      let o = t.dataset.position;
+      (o === "bottom-right" || o === "bottom-left" || o === "center") && (e.position = o);
+      let i = t.dataset.width;
+      (i && (e.width = parseInt(i, 10)),
+        t.dataset.alignLeft === "1" && (e.alignLeft = !0),
+        t.dataset.hideTitle === "1" && (e.hideTitle = !0),
+        t.dataset.overlay === "1" && (e.overlay = !0));
+      let a = t.dataset.emojiText,
+        l = t.dataset.emojiAnimation;
+      a && (e.emoji = { text: a, animation: l || "none" });
+      let s = t.dataset.autoClose;
+      s && (e.autoClose = parseInt(s, 10));
+      let r = {};
+      for (let [p, f] of Object.entries(t.dataset))
+        [
+          "formId",
+          "layout",
+          "position",
+          "width",
+          "alignLeft",
+          "hideTitle",
+          "overlay",
+          "emojiText",
+          "emojiAnimation",
+          "autoClose",
+        ].includes(p) ||
+          (f !== void 0 && (r[p] = f));
+      return (Object.keys(r).length > 0 && (e.hiddenFields = r), e);
+    },
+    g = (t) => {
+      let e = new URLSearchParams(t.replace(/^#/, "")),
+        n = e.get("form-open"),
+        o = {},
+        i = e.get("position");
+      ((i === "bottom-right" || i === "bottom-left" || i === "center") && (o.position = i),
+        e.get("align-left") === "1" && (o.alignLeft = !0),
+        e.get("hide-title") === "1" && (o.hideTitle = !0),
+        e.get("overlay") === "1" && (o.overlay = !0));
+      let a = e.get("width");
+      a && (o.width = parseInt(a, 10));
+      let l = e.get("emoji-text"),
+        s = e.get("emoji-animation");
+      l && (o.emoji = { text: l, animation: s || "none" });
+      let r = e.get("auto-close");
+      r && (o.autoClose = parseInt(r, 10));
+      let p = {},
+        f = new Set([
+          "form-open",
+          "position",
+          "align-left",
+          "hide-title",
+          "overlay",
+          "width",
+          "emoji-text",
+          "emoji-animation",
+          "auto-close",
+        ]);
+      return (
+        e.forEach((d, c) => {
+          f.has(c) || (p[c] = d);
+        }),
+        Object.keys(p).length > 0 && (o.hiddenFields = p),
+        { formId: n, options: o }
+      );
+    },
+    k = (t) => {
+      document.addEventListener("click", (e) => {
+        let n = e.target,
+          o = n.closest("[data-form-id]");
+        if (o) {
+          e.preventDefault();
+          let a = o.dataset.formId;
+          if (a) {
+            let l = F(o);
+            t(a, l);
+          }
+          return;
         }
-        return;
-      }
-      let i = n.closest("a");
-      if (i?.href?.includes("form-open=")) {
-        e.preventDefault();
-        let a = i.href.indexOf("#");
-        if (a !== -1) {
-          let l = i.href.substring(a),
-            { formId: s, options: r } = g(l);
-          s && t(s, r);
+        let i = n.closest("a");
+        if (i?.href?.includes("form-open=")) {
+          e.preventDefault();
+          let a = i.href.indexOf("#");
+          if (a !== -1) {
+            let l = i.href.substring(a),
+              { formId: s, options: r } = g(l);
+            s && t(s, r);
+          }
         }
-      }
-    });
-  }
-  function C(t) {
-    let { hash: e } = window.location;
-    if (e?.includes("form-open=")) {
-      let { formId: n, options: o } = g(e);
-      n &&
-        setTimeout(() => {
-          t(n, o);
-        }, 100);
-    }
-  }
-  function H(t) {
-    window.addEventListener("hashchange", () => {
+      });
+    },
+    C = (t) => {
       let { hash: e } = window.location;
       if (e?.includes("form-open=")) {
         let { formId: n, options: o } = g(e);
-        n && t(n, o);
+        n &&
+          setTimeout(() => {
+            t(n, o);
+          }, 100);
       }
-    });
-  }
-  var m = new Map();
-  function u(t, e = {}) {
-    if (m.has(t)) {
-      console.warn(`[Reform] Popup for form ${t} is already open`);
-      return;
-    }
-    let n = v(t, e, () => b(t)),
-      o = h(t, e, n.iframeContainer),
-      i = {
-        formId: t,
-        options: e,
-        container: n.popup,
-        iframe: o,
-        overlay: n.overlay,
-      };
-    if (
-      (m.set(t, i),
-      o.addEventListener("load", () => {
-        L(n.loadingEl);
-      }),
-      e.onOpen)
-    )
+    },
+    H = (t) => {
+      window.addEventListener("hashchange", () => {
+        let { hash: e } = window.location;
+        if (e?.includes("form-open=")) {
+          let { formId: n, options: o } = g(e);
+          n && t(n, o);
+        }
+      });
+    };
+  var m = new Map(),
+    u = (t, e = {}) => {
+      if (m.has(t)) {
+        console.warn(`[Reform] Popup for form ${t} is already open`);
+        return;
+      }
+      let n = v(t, e, () => b(t)),
+        o = h(t, e, n.iframeContainer),
+        i = { formId: t, options: e, container: n.popup, iframe: o, overlay: n.overlay };
+      if (
+        (m.set(t, i),
+        o.addEventListener("load", () => {
+          L(n.loadingEl);
+        }),
+        e.onOpen)
+      )
+        try {
+          e.onOpen();
+        } catch (a) {
+          console.error("[Reform] onOpen callback error:", a);
+        }
+    },
+    b = (t) => {
+      let e = m.get(t);
+      if (e && (x(e.iframe), e.overlay && w(e.overlay), m.delete(t), e.options.onClose))
+        try {
+          e.options.onClose();
+        } catch (n) {
+          console.error("[Reform] onClose callback error:", n);
+        }
+    },
+    U = (t) => {
+      let e;
       try {
-        e.onOpen();
-      } catch (a) {
-        console.error("[Reform] onOpen callback error:", a);
+        e = typeof t.data == "string" ? JSON.parse(t.data) : t.data;
+      } catch {
+        return;
       }
-  }
-  function b(t) {
-    let e = m.get(t);
-    if (e && (x(e.iframe), e.overlay && w(e.overlay), m.delete(t), e.options.onClose))
-      try {
-        e.options.onClose();
-      } catch (n) {
-        console.error("[Reform] onClose callback error:", n);
-      }
-  }
-  function U(t) {
-    let e;
-    try {
-      e = typeof t.data == "string" ? JSON.parse(t.data) : t.data;
-    } catch {
-      return;
-    }
-    if (!e?.event?.startsWith("Reform.")) return;
-    let n;
-    for (let o of m.values())
-      if (o.iframe.contentWindow === t.source) {
-        n = o;
-        break;
-      }
-    if (n)
-      switch (e.event) {
-        case "Reform.FormLoaded":
+      if (!e?.event?.startsWith("Reform.")) return;
+      let n;
+      for (let o of m.values())
+        if (o.iframe.contentWindow === t.source) {
+          n = o;
           break;
-        case "Reform.Resize":
-          typeof e.height == "number" && (y(n.iframe, e.height), E(n.container, e.height));
-          break;
-        case "Reform.FormSubmitted":
-          if (n.options.onSubmit)
-            try {
-              n.options.onSubmit(e.payload);
-            } catch (o) {
-              console.error("[Reform] onSubmit callback error:", o);
+        }
+      if (n)
+        switch (e.event) {
+          case "Reform.FormLoaded":
+            break;
+          case "Reform.Resize":
+            typeof e.height == "number" && (y(n.iframe, e.height), E(n.container, e.height));
+            break;
+          case "Reform.FormSubmitted":
+            if (n.options.onSubmit)
+              try {
+                n.options.onSubmit(e.payload);
+              } catch (o) {
+                console.error("[Reform] onSubmit callback error:", o);
+              }
+            n.options.autoClose &&
+              n.options.autoClose > 0 &&
+              setTimeout(() => {
+                b(n?.formId);
+              }, n.options.autoClose);
+            break;
+          case "Reform.PageView":
+            if (n.options.onPageView && "page" in e)
+              try {
+                n.options.onPageView(e.page);
+              } catch (o) {
+                console.error("[Reform] onPageView callback error:", o);
+              }
+            if ("page" in e && e.page > 1) {
+              let o = n.overlay;
+              if (o) {
+                let i = o.querySelector(".bf-emoji");
+                i && j(i);
+              }
             }
-          n.options.autoClose &&
-            n.options.autoClose > 0 &&
-            setTimeout(() => {
-              b(n?.formId);
-            }, n.options.autoClose);
-          break;
-        case "Reform.PageView":
-          if (n.options.onPageView && "page" in e)
-            try {
-              n.options.onPageView(e.page);
-            } catch (o) {
-              console.error("[Reform] onPageView callback error:", o);
-            }
-          if ("page" in e && e.page > 1) {
-            let o = n.overlay;
-            if (o) {
-              let i = o.querySelector(".bf-emoji");
-              i && j(i);
-            }
-          }
-          break;
-        case "Reform.Close":
-          b(n.formId);
-          break;
-      }
-  }
-  function P() {
-    (T(), k(u), C(u), H(u), window.addEventListener("message", U));
-  }
+            break;
+          case "Reform.Close":
+            b(n.formId);
+            break;
+        }
+    },
+    P = () => {
+      (T(), k(u), C(u), H(u), window.addEventListener("message", U));
+    };
   window.Reform = { openPopup: u, closePopup: b };
   document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", P) : P();
 })();

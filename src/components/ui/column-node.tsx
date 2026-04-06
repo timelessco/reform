@@ -2,7 +2,7 @@ import { useDraggable, useDropLine } from "@platejs/dnd";
 import { setColumns } from "@platejs/layout";
 import { ResizableProvider } from "@platejs/resizable";
 import { BlockSelectionPlugin } from "@platejs/selection/react";
-import { useComposedRef } from "@udecode/cn";
+import { useComposedRefs } from "@/lib/compose-refs";
 import { GripHorizontalIcon, Trash2Icon } from "@/components/ui/icons";
 import type { LucideProps } from "@/components/ui/icons";
 import type { TColumnElement } from "platejs";
@@ -60,7 +60,7 @@ export const ColumnElement = withHOC(
 
         <PlateElement
           {...props}
-          ref={useComposedRef(props.ref, previewRef)}
+          ref={useComposedRefs(props.ref, previewRef)}
           className="h-full px-2 pt-2 group-first/column:pl-0 group-last/column:pr-0"
         >
           <div

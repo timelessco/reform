@@ -7,10 +7,28 @@ import { FormInputElement } from "@/components/ui/form-input-node";
 import { FormLabelElement } from "@/components/ui/form-label-node";
 import { FormTextareaElement } from "@/components/ui/form-textarea-node";
 import { PageBreakElement } from "@/components/ui/page-break-node";
+import { FormEmailElement } from "@/components/ui/form-email-node";
+import { FormPhoneElement } from "@/components/ui/form-phone-node";
+import { FormNumberElement } from "@/components/ui/form-number-node";
+import { FormLinkElement } from "@/components/ui/form-link-node";
+import { FormDateElement } from "@/components/ui/form-date-node";
+import { FormTimeElement } from "@/components/ui/form-time-node";
+import { FormFileUploadElement } from "@/components/ui/form-file-upload-node";
+import { FormMultiSelectInputElement } from "@/components/ui/form-multi-select-input-node";
+import { FormOptionItemElement } from "@/components/ui/form-option-item-node";
 
 const FORM_FIELD_TYPES = new Set([
   "formInput",
   "formTextarea",
+  "formEmail",
+  "formPhone",
+  "formNumber",
+  "formLink",
+  "formDate",
+  "formTime",
+  "formFileUpload",
+  "formMultiSelectInput",
+  "formOptionItem",
   "formButton",
   "formLabel",
   "pageBreak",
@@ -19,7 +37,7 @@ const FORM_FIELD_TYPES = new Set([
 // Button types that should not be deleted
 const PROTECTED_BUTTON_TYPES = new Set(["formButton"]);
 
-const moveToPath = (editor: PlateEditor, path: Path): boolean => {
+export const moveToPath = (editor: PlateEditor, path: Path): boolean => {
   const node = editor.api.node(path);
   if (node) {
     editor.tf.select({ path: [...path, 0], offset: 0 });
@@ -33,7 +51,7 @@ const moveToPath = (editor: PlateEditor, path: Path): boolean => {
  * - If next is a "submit" button (last page), return null (stay in place)
  * - If next is a "next/previous" button, skip to first element after page break
  */
-const findNextNonButtonPath = (editor: PlateEditor, currentPath: Path): Path | null => {
+export const findNextNonButtonPath = (editor: PlateEditor, currentPath: Path): Path | null => {
   const children = editor.children as TElement[];
   const currentIndex = currentPath[0];
 
@@ -136,7 +154,7 @@ const tryDeletePageBreakWithEmptyBlock = (editor: PlateEditor, blockPath: Path):
   return true;
 };
 
-const findPrevNonButtonPath = (editor: PlateEditor, currentPath: Path): Path | null => {
+export const findPrevNonButtonPath = (editor: PlateEditor, currentPath: Path): Path | null => {
   const children = editor.children as TElement[];
   const currentIndex = currentPath[0];
 
@@ -175,6 +193,33 @@ const handleFormBlockKeyDown = (editor: PlateEditor, event: React.KeyboardEvent)
   (event as any).__formBlockHandled = true;
 
   const [node, path] = block;
+
+  // Tab on formOptionItem → skip all remaining options, jump to next form block
+  if (event.key === "Tab" && !event.shiftKey && node.type === "formOptionItem") {
+    event.preventDefault();
+    event.stopPropagation();
+    event.nativeEvent.stopImmediatePropagation();
+
+    const children = editor.children as TElement[];
+    let targetIndex = path[0] + 1;
+    while (targetIndex < children.length && children[targetIndex].type === "formOptionItem") {
+      targetIndex++;
+    }
+    // targetIndex now points to the first non-option node
+    if (targetIndex < children.length) {
+      const targetNode = children[targetIndex];
+      if (targetNode.type !== "formButton" && targetNode.type !== "pageBreak") {
+        moveToPath(editor, [targetIndex]);
+      } else {
+        // Find next non-button after that
+        const nextPath = findNextNonButtonPath(editor, [targetIndex]);
+        if (nextPath) {
+          moveToPath(editor, nextPath);
+        }
+      }
+    }
+    return;
+  }
 
   // Tab or ArrowDown → move to next sibling block (skip buttons)
   if ((event.key === "Tab" && !event.shiftKey) || event.key === "ArrowDown") {
@@ -255,12 +300,37 @@ const handleFormBlockKeyDown = (editor: PlateEditor, event: React.KeyboardEvent)
     const nextIndex = path[0] + 1;
     const nextNode = children[nextIndex];
 
-    if (nextNode && (nextNode.type === "formInput" || nextNode.type === "formTextarea")) {
+    if (
+      nextNode &&
+      FORM_FIELD_TYPES.has(nextNode.type) &&
+      nextNode.type !== "formLabel" &&
+      nextNode.type !== "formButton" &&
+      nextNode.type !== "pageBreak"
+    ) {
       event.preventDefault();
       event.stopPropagation();
       moveToPath(editor, [nextIndex]);
       return;
     }
+  }
+
+  // Enter on formOptionItem → insert new option below
+  if (event.key === "Enter" && !event.shiftKey && node.type === "formOptionItem") {
+    event.preventDefault();
+    event.stopPropagation();
+    event.nativeEvent.stopImmediatePropagation();
+
+    const nextPath = PathApi.next(path);
+    editor.tf.insertNodes(
+      {
+        type: "formOptionItem",
+        variant: node.variant || "checkbox",
+        children: [{ text: "" }],
+      } as TElement,
+      { at: nextPath },
+    );
+    moveToPath(editor, nextPath);
+    return;
   }
 
   // Enter → create new paragraph (position depends on cursor location)
@@ -315,6 +385,33 @@ const handleFormBlockKeyDown = (editor: PlateEditor, event: React.KeyboardEvent)
     event.preventDefault();
     event.stopPropagation();
     editor.tf.insertNodes({ text: "\n" });
+    return;
+  }
+
+  // Backspace on empty formOptionItem → delete unless it's the only option
+  if (event.key === "Backspace" && editor.api.isEmpty(node) && node.type === "formOptionItem") {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const children = editor.children as TElement[];
+    const prevNode = children[path[0] - 1];
+    const nextNode = children[path[0] + 1];
+    const isPrevLabel = prevNode?.type === "formLabel";
+    const isNextOption = nextNode?.type === "formOptionItem";
+
+    // If this is the only option (prev is label, next is not option), convert to empty paragraph
+    if (isPrevLabel && !isNextOption) {
+      editor.tf.setNodes({ type: "p", variant: undefined } as any, { at: path });
+      return;
+    }
+
+    // Move focus to previous sibling, then delete
+    const prevPath: Path = [path[0] - 1];
+    editor.tf.removeNodes({ at: path });
+    const edges = editor.api.edges(prevPath);
+    if (edges?.[1]) {
+      editor.tf.select(edges[1]);
+    }
     return;
   }
 
@@ -697,6 +794,7 @@ export const FormButtonPlugin = createPlatePlugin({
                   "formLabel",
                   "formRadioGroup",
                   "formCheckbox",
+                  "formOptionItem",
                   "formSelect",
                   "formDatePicker",
                 ].includes(n.type)
@@ -766,6 +864,7 @@ export const FormButtonPlugin = createPlatePlugin({
                     "formLabel",
                     "formRadioGroup",
                     "formCheckbox",
+                    "formOptionItem",
                     "formSelect",
                     "formDatePicker",
                   ].includes(n.type)
@@ -933,6 +1032,112 @@ export const PageBreakPlugin = createPlatePlugin({
   },
 });
 
+export const FormEmailPlugin = createPlatePlugin({
+  key: "formEmail",
+  node: { isElement: true, component: FormEmailElement },
+  options: { gutterPosition: "center" },
+  handlers: {
+    onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+  },
+});
+
+export const FormPhonePlugin = createPlatePlugin({
+  key: "formPhone",
+  node: { isElement: true, component: FormPhoneElement },
+  options: { gutterPosition: "center" },
+  handlers: {
+    onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+  },
+});
+
+export const FormNumberPlugin = createPlatePlugin({
+  key: "formNumber",
+  node: { isElement: true, component: FormNumberElement },
+  options: { gutterPosition: "center" },
+  handlers: {
+    onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+  },
+});
+
+export const FormLinkPlugin = createPlatePlugin({
+  key: "formLink",
+  node: { isElement: true, component: FormLinkElement },
+  options: { gutterPosition: "center" },
+  handlers: {
+    onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+  },
+});
+
+export const FormDatePlugin = createPlatePlugin({
+  key: "formDate",
+  node: { isElement: true, component: FormDateElement },
+  options: { gutterPosition: "center" },
+  handlers: {
+    onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+  },
+});
+
+export const FormTimePlugin = createPlatePlugin({
+  key: "formTime",
+  node: { isElement: true, component: FormTimeElement },
+  options: { gutterPosition: "center" },
+  handlers: {
+    onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+  },
+});
+
+export const FormFileUploadPlugin = createPlatePlugin({
+  key: "formFileUpload",
+  node: { isElement: true, isVoid: true, component: FormFileUploadElement },
+  options: { gutterPosition: "top" },
+  handlers: {
+    onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+  },
+});
+
+export const FormOptionItemPlugin = createPlatePlugin({
+  key: "formOptionItem",
+  node: { isElement: true, component: FormOptionItemElement },
+  options: { gutterPosition: "center" },
+  handlers: {
+    onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+  },
+}).overrideEditor(({ editor, tf: { insertBreak } }) => ({
+  transforms: {
+    insertBreak: () => {
+      const block = editor.api.block();
+      if (block && block[0].type === "formOptionItem") {
+        const [node, path] = block;
+        const nextPath = PathApi.next(path);
+        editor.tf.insertNodes(
+          {
+            type: "formOptionItem",
+            variant: (node as TElement).variant || "checkbox",
+            children: [{ text: "" }],
+          } as TElement,
+          { at: nextPath },
+        );
+        moveToPath(editor, nextPath);
+        return;
+      }
+      insertBreak();
+    },
+  },
+}));
+
+export const FormMultiSelectInputPlugin = createPlatePlugin({
+  key: "formMultiSelectInput",
+  node: {
+    isElement: true,
+    isVoid: true,
+    component: FormMultiSelectInputElement,
+  },
+  options: { gutterPosition: "center" },
+  handlers: {
+    onKeyDown: ({ editor, event }) => handleFormBlockKeyDown(editor, event),
+  },
+});
+
 /**
  * Global keyboard navigation plugin to skip form buttons when navigating with Tab/Arrow keys.
  * This applies to ALL blocks, not just form blocks.
@@ -1088,10 +1293,14 @@ const handleGlobalKeyDown = (editor: PlateEditor, event: React.KeyboardEvent): v
   }
 
   // Enter → if next block is a form button, insert new paragraph before it
+  // Skip formOptionItem — its own handler in handleFormBlockKeyDown handles Enter
   if (event.key === "Enter" && !event.shiftKey) {
     const children = editor.children as TElement[];
     const currentIndex = path[0];
     const currentNode = children[currentIndex];
+
+    // Let formOptionItem's dedicated handler take over
+    if (currentNode && currentNode.type === "formOptionItem") return;
 
     // If cursor is somehow ON a button, block Enter entirely
     if (currentNode && (currentNode.type === "formButton" || currentNode.type === "pageBreak")) {
@@ -1152,5 +1361,14 @@ export const FormBlocksKit = [
   FormInputPlugin,
   FormButtonPlugin,
   FormTextareaPlugin,
+  FormEmailPlugin,
+  FormPhonePlugin,
+  FormNumberPlugin,
+  FormLinkPlugin,
+  FormDatePlugin,
+  FormTimePlugin,
+  FormFileUploadPlugin,
+  FormOptionItemPlugin,
+  FormMultiSelectInputPlugin,
   PageBreakPlugin,
 ];

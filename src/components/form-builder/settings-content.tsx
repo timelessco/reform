@@ -15,9 +15,15 @@ import { getFormListings } from "@/db-collections/collections";
 import { localFormCollection } from "@/db-collections/local-form.collection";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
 import { APP_NAME } from "@/lib/app-config";
+import {
+  getFormInAppNotificationPreferenceQueryOptions,
+  setFormInAppNotificationPreference,
+} from "@/lib/fn/notifications";
 import { defaultFormSettings } from "@/types/form-settings";
 import { EyeIcon, EyeOffIcon } from "@/components/ui/icons";
-import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { SidebarSection } from "@/components/ui/sidebar-section";
 import {
   ConfigCard,
@@ -46,14 +52,90 @@ const selectCloseOnDate = (state: { values: { closeOnDate: unknown } }) => state
 const selectLimitSubmissions = (state: { values: { limitSubmissions: unknown } }) =>
   state.values.limitSubmissions;
 
+type BrowserNotificationPermission = NotificationPermission | "unsupported";
+
+const getBrowserNotificationPermission = (): BrowserNotificationPermission => {
+  if (typeof window === "undefined" || !("Notification" in window)) {
+    return "unsupported";
+  }
+
+  return Notification.permission;
+};
+
+const getBrowserPermissionLabel = (permission: BrowserNotificationPermission) => {
+  switch (permission) {
+    case "granted":
+      return "Allowed";
+    case "denied":
+      return "Blocked in browser";
+    case "unsupported":
+      return "Unsupported in this browser";
+    case "default":
+    default:
+      return "Not enabled in browser";
+  }
+};
+
 export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?: boolean }) => {
   const cloudForm = useForm(isLocal ? undefined : formId);
   const localFormResult = useLocalForm(isLocal ? formId : undefined);
   const formResult = isLocal ? localFormResult : cloudForm;
   const formDoc = formResult.data?.[0] ?? null;
+  const hasEmailField = useMemo(() => {
+    const content = (formDoc as Record<string, unknown> | null)?.content;
+    if (!Array.isArray(content)) return false;
+    return content.some((node: { type?: string }) => node.type === "formEmail");
+  }, [formDoc]);
   const collection = (isLocal ? localFormCollection : getFormListings()) as ReturnType<
     typeof getFormListings
   >;
+  const queryClient = useQueryClient();
+  const [browserPermission, setBrowserPermission] = useState<BrowserNotificationPermission>(
+    getBrowserNotificationPermission,
+  );
+
+  const inAppNotificationPreference = useQuery({
+    ...getFormInAppNotificationPreferenceQueryOptions(formId),
+    enabled: !isLocal,
+  });
+
+  const setInAppNotificationPreferenceMutation = useMutation({
+    mutationFn: async (enabled: boolean) =>
+      setFormInAppNotificationPreference({
+        data: { formId, enabled },
+      }),
+    onSuccess: (result) => {
+      queryClient.setQueryData(["form-in-app-notification-preference", formId], result);
+      queryClient.invalidateQueries({ queryKey: ["submission-notifications"] });
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : "Failed to update in-app notifications";
+      toast.error(message);
+    },
+  });
+
+  const handleInAppNotificationsChange = async (checked: boolean) => {
+    await setInAppNotificationPreferenceMutation.mutateAsync(checked);
+
+    if (!checked) {
+      setBrowserPermission(getBrowserNotificationPermission());
+      return;
+    }
+
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      setBrowserPermission("unsupported");
+      return;
+    }
+
+    if (Notification.permission === "default") {
+      const permission = await Notification.requestPermission();
+      setBrowserPermission(permission);
+      return;
+    }
+
+    setBrowserPermission(Notification.permission);
+  };
 
   const form = useAppForm({
     defaultValues: formDoc
@@ -260,18 +342,18 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
             </ConfigCard>
           </SidebarSection>
 
-          {/* Email Notifications Section */}
-          <SidebarSection label="Email Notifications" className="pb-2.75" action={<></>}>
+          {/* Notifications Section */}
+          <SidebarSection label="Notifications" className="pb-2.75" action={<></>}>
             <ConfigCard>
               <ConfigRow
-                label="Self notifications"
+                label="Email notifications"
                 description="Get an email for new form submissions."
                 variant="switch"
               >
                 <form.AppField name="selfEmailNotifications">
                   {(field) => (
                     <Switch
-                      aria-label="Self notifications"
+                      aria-label="Email notifications"
                       checked={!!field.state.value}
                       onCheckedChange={field.handleChange}
                       size="default"
@@ -302,9 +384,42 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                 }
               </form.Subscribe>
 
+              {!isLocal && inAppNotificationPreference.data?.canManageInAppNotifications ? (
+                <>
+                  <ConfigRow
+                    label="In-app notifications"
+                    description="Show new submission alerts in your inbox and browser."
+                    variant="switch"
+                  >
+                    <Switch
+                      aria-label="In-app notifications"
+                      checked={!!inAppNotificationPreference.data.inAppNotifications}
+                      onCheckedChange={handleInAppNotificationsChange}
+                      disabled={setInAppNotificationPreferenceMutation.isPending}
+                      size="default"
+                    />
+                  </ConfigRow>
+
+                  {inAppNotificationPreference.data.inAppNotifications ? (
+                    <ConfigRow
+                      label="Browser status"
+                      description="Native browser popups require browser permission."
+                    >
+                      <span className="text-sm text-foreground">
+                        {getBrowserPermissionLabel(browserPermission)}
+                      </span>
+                    </ConfigRow>
+                  ) : null}
+                </>
+              ) : null}
+
               <ConfigRow
                 label="Respondent emails"
-                description="Send a confirmation email to respondents."
+                description={
+                  hasEmailField
+                    ? "Send a confirmation email to respondents."
+                    : "Add an email field to your form to enable this."
+                }
                 variant="switch"
               >
                 <div className="flex items-center gap-1.5">
@@ -318,8 +433,9 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                     {(field) => (
                       <Switch
                         aria-label="Respondent email notifications"
-                        checked={!!field.state.value}
+                        checked={!!field.state.value && hasEmailField}
                         onCheckedChange={field.handleChange}
+                        disabled={!hasEmailField}
                         size="default"
                       />
                     )}
@@ -329,7 +445,7 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
 
               <form.Subscribe selector={selectRespondentEmailNotifications}>
                 {(respondentEmailNotifications) =>
-                  respondentEmailNotifications ? (
+                  respondentEmailNotifications && hasEmailField ? (
                     <>
                       <ConfigRow label="Subject">
                         <form.AppField name="respondentEmailSubject">
@@ -431,9 +547,7 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                           <Textarea
                             placeholder="This form is now closed."
                             value={(field.state.value as string) || ""}
-                            onChange={(e) =>
-                              field.handleChange(e.target.value || "This form is now closed.")
-                            }
+                            onChange={(e) => field.handleChange(e.target.value)}
                             className="w-full min-h-[50px] text-sm !rounded-md !bg-background border-border/60"
                             aria-label="Closed message"
                           />

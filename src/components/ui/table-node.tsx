@@ -31,7 +31,6 @@ import { KEYS, PathApi } from "platejs";
 import type { TElement, TTableCellElement, TTableElement, TTableRowElement } from "platejs";
 import {
   PlateElement,
-  useComposedRef,
   useEditorPlugin,
   useEditorRef,
   useEditorSelector,
@@ -58,6 +57,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import { useComposedRefs } from "@/lib/compose-refs";
 import { cn } from "@/lib/utils";
 
 import { blockSelectionVariants } from "./block-selection";
@@ -401,7 +401,7 @@ export const TableRowElement = ({ children, ...props }: PlateElementProps<TTable
   return (
     <PlateElement
       {...props}
-      ref={useComposedRef(props.ref, previewRef, nodeRef)}
+      ref={useComposedRefs(props.ref, previewRef, nodeRef)}
       as="tr"
       className={cn("group/row", isDragging && "opacity-50")}
       attributes={{

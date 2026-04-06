@@ -52,20 +52,16 @@ export const usePreviewForm = ({
       onDynamicAsyncDebounceMs: 300,
     },
     onSubmit: async ({ value }) => {
-      try {
-        // Log form values for debugging
-        logger("Form submitted with values:", value);
+      // Log form values for debugging
+      logger("Form submitted with values:", value);
 
-        // Use custom handler if provided, otherwise default behavior
-        if (customOnSubmit) {
-          await customOnSubmit(value);
-        } else {
-          // Default: simulate async submission
-          await new Promise((resolve) => setTimeout(resolve, 500));
-          toast.success("Form submitted successfully!");
-        }
-      } catch {
-        toast.error("Failed to submit form. Please try again.");
+      // Use custom handler if provided, otherwise default behavior
+      if (customOnSubmit) {
+        await customOnSubmit(value);
+      } else {
+        // Default: simulate async submission
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        toast.success("Form submitted successfully!");
       }
     },
     canSubmitWhenInvalid: false,
@@ -148,7 +144,9 @@ export const useStepPreviewForm = ({
           goToNextStep(value);
         }
       } catch (error) {
-        toast.error("Failed to process step. Please try again.");
+        const message =
+          error instanceof Error ? error.message : "Failed to process step. Please try again.";
+        toast.error(message);
         throw error;
       }
     },

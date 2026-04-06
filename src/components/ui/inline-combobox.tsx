@@ -21,8 +21,9 @@ import { filterWords } from "@platejs/combobox";
 import { useComboboxInput, useHTMLInputCursorState } from "@platejs/combobox/react";
 import type { UseComboboxInputResult } from "@platejs/combobox/react";
 import { cva } from "class-variance-authority";
-import { useComposedRef, useEditorRef } from "platejs/react";
+import { useEditorRef } from "platejs/react";
 
+import { useComposedRefs } from "@/lib/compose-refs";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { cn } from "@/lib/utils";
 
@@ -211,7 +212,7 @@ const InlineComboboxInput = ({
   const store = useComboboxContext()!;
   const value = store.useState("value");
 
-  const ref = useComposedRef(propRef, contextRef);
+  const ref = useComposedRefs(propRef, contextRef);
 
   /**
    * To create an auto-resizing input, we render a visually hidden span

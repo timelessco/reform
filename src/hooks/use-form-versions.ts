@@ -90,7 +90,12 @@ export const publishForm = (formId: string) => {
   const queryClient = getQueryClient();
   const tx = createTransaction({
     mutationFn: async () => {
-      await publishFormVersion({ data: { formId } });
+      const result = await publishFormVersion({ data: { formId } });
+      // Pre-populate version content cache so useHasUnpublishedChanges
+      // can compare immediately without waiting for a separate fetch
+      if (result?.version) {
+        queryClient.setQueryData(["form-version-content", result.version.id], [result.version]);
+      }
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["form-versions", formId] }),
         getFormListings().utils.refetch(),

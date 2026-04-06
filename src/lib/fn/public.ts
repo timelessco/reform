@@ -5,6 +5,7 @@ import { z } from "zod";
 import { forms, formVersions, submissions, user } from "@/db/schema";
 import { db } from "@/lib/db";
 import type { PublicFormSettings } from "@/types/form-settings";
+import { recordOwnerSubmissionNotification } from "./notifications.server";
 
 /**
  * Public server functions - NO authentication required
@@ -259,6 +260,14 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
       createdAt: now,
       updatedAt: now,
     });
+
+    // Fire-and-forget: don't block submission response for notification bookkeeping
+    recordOwnerSubmissionNotification({
+      formId: data.formId,
+      userId: form.createdByUserId,
+      submissionId: id,
+      createdAt: now,
+    }).catch(() => {});
 
     const result = { submissionId: id, success: true };
 

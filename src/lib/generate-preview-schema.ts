@@ -25,28 +25,88 @@ export const generateZodSchemaFromFields = (
       continue;
     }
 
-    let schema: z.ZodString = z.string();
+    let fieldSchema: ZodType;
 
-    // Apply minLength constraint
-    if (field.minLength !== undefined && field.minLength > 0) {
-      schema = schema.min(field.minLength, `Minimum ${field.minLength} characters required`);
-    }
+    switch (field.fieldType) {
+      case "Email":
+        fieldSchema = z
+          .string({ error: "This field is required" })
+          .email("Please enter a valid email address");
+        break;
+      case "Link":
+        fieldSchema = z
+          .string({ error: "This field is required" })
+          .regex(/^(https?:\/\/)?[\w.-]+\.\w{2,}(\/\S*)?$/, "Please enter a valid URL");
+        break;
+      case "Number":
+        fieldSchema = z.coerce.number({ error: "Please enter a valid number" });
+        break;
+      case "Date":
+        fieldSchema = z
+          .string({ error: "This field is required" })
+          .nonempty("Please select a date");
+        break;
+      case "Time":
+        fieldSchema = z
+          .string({ error: "This field is required" })
+          .nonempty("Please select a time");
+        break;
+      case "FileUpload":
+        fieldSchema = z
+          .string({ error: "This field is required" })
+          .nonempty("Please upload a file");
+        break;
+      case "Checkbox":
+      case "MultiSelect":
+        if (field.required) {
+          fieldSchema = z.array(z.string()).nonempty("Please select at least one option");
+        } else {
+          fieldSchema = z.array(z.string()).default([]);
+        }
+        break;
+      case "MultiChoice":
+        if (field.required) {
+          fieldSchema = z.string().min(1, "Please select an option");
+        } else {
+          fieldSchema = z.string().default("");
+        }
+        break;
+      case "Ranking":
+        if (field.required) {
+          fieldSchema = z.array(z.string()).nonempty("Please rank the options");
+        } else {
+          fieldSchema = z.array(z.string()).default([]);
+        }
+        break;
+      default: {
+        // Input, Textarea, Phone, and other string-based types
+        let schema: z.ZodString = z.string();
 
-    // Apply maxLength constraint
-    if (field.maxLength !== undefined && field.maxLength > 0) {
-      schema = schema.max(field.maxLength, `Maximum ${field.maxLength} characters allowed`);
-    }
+        // Apply minLength constraint
+        if ("minLength" in field && field.minLength !== undefined && field.minLength > 0) {
+          schema = schema.min(field.minLength, `Minimum ${field.minLength} characters required`);
+        }
 
-    // Required fields must have at least 1 character
-    if (field.required) {
-      // Only add min(1) if no minLength is set
-      if (field.minLength === undefined) {
-        schema = schema.min(1, "This field is required");
+        // Apply maxLength constraint
+        if ("maxLength" in field && field.maxLength !== undefined && field.maxLength > 0) {
+          schema = schema.max(field.maxLength, `Maximum ${field.maxLength} characters allowed`);
+        }
+
+        // Required fields must have at least 1 character
+        if (field.required && !("minLength" in field && field.minLength !== undefined)) {
+          schema = schema.min(1, "This field is required");
+        }
+
+        fieldSchema = schema;
+        break;
       }
-      schemaShape[field.name] = schema;
+    }
+
+    // Handle required vs optional
+    if (field.required) {
+      schemaShape[field.name] = fieldSchema;
     } else {
-      // Optional fields
-      schemaShape[field.name] = schema.optional();
+      schemaShape[field.name] = fieldSchema.optional();
     }
   }
 
@@ -69,7 +129,18 @@ export const generateDefaultValuesFromFields = (
     if (field.fieldType === "Button") {
       continue;
     }
-    defaults[field.name] = field.defaultValue ?? "";
+    if (
+      field.fieldType === "Checkbox" ||
+      field.fieldType === "MultiSelect" ||
+      field.fieldType === "Ranking"
+    ) {
+      defaults[field.name] = [];
+    } else if (field.fieldType === "MultiChoice") {
+      defaults[field.name] = "";
+    } else {
+      defaults[field.name] =
+        "defaultValue" in field && field.defaultValue ? field.defaultValue : "";
+    }
   }
 
   return defaults;

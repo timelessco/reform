@@ -10,7 +10,7 @@ import { getFormListings } from "@/db-collections/collections";
 import type { Form } from "@/db-collections/collections";
 import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useForm } from "@/hooks/use-live-hooks";
-import { useTheme } from "@/components/ThemeProvider";
+import { useResolvedTheme } from "@/components/ThemeProvider";
 import { cn } from "@/lib/utils";
 import { Loader2Icon } from "@/components/ui/icons";
 import { normalizeNodeId } from "platejs";
@@ -18,7 +18,7 @@ import type { TElement, Value } from "platejs";
 import { Plate, usePlateEditor } from "platejs/react";
 import { useDebouncedCallback } from "@tanstack/react-pacer";
 import type { KeyboardEvent } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 interface EditorAppProps {
   formId: string;
@@ -107,37 +107,18 @@ const EditorAppInner = ({
   readOnly: boolean;
   savedDocs: Form[] | undefined;
 }) => {
-  const customizationSource = versionCustomization
+  const resolvedAppTheme = useResolvedTheme();
+
+  const customizationDoc = versionCustomization
     ? { customization: versionCustomization }
     : savedDocs?.[0];
-  const { customization, hasCustomization, themeVars } = useFormCustomization(customizationSource);
-
-  // Sync editor mode when app theme changes (user menu, settings)
-  const { theme } = useTheme();
-  const resolvedAppTheme =
-    theme === "system"
-      ? typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light"
-      : theme;
-
-  useEffect(() => {
-    if (versionCustomization) return; // Don't sync theme mode when previewing a version
-    if (resolvedAppTheme !== customization?.mode && formId) {
-      const collection = getFormListings();
-      if (!collection.get(formId)) return; // Not in collection yet
-      collection.update(formId, (draft) => {
-        const current = (draft.customization ?? {}) as Record<string, string>;
-        draft.customization = { ...current, mode: resolvedAppTheme };
-        draft.updatedAt = new Date().toISOString();
-      });
-    }
-  }, [resolvedAppTheme, customization?.mode, formId, versionCustomization]);
+  const { customization, hasCustomization, themeVars } = useFormCustomization(
+    customizationDoc,
+    resolvedAppTheme,
+  );
 
   const skipSaveRef = useRef(false);
   const lastKnownContentRef = useRef<string | null>(null);
-  const savedDocsRef = useRef(savedDocs);
-  savedDocsRef.current = savedDocs;
   const pendingValueRef = useRef<Value | null>(null);
   const headerVisibility = useEditorHeaderVisibilitySafe();
   const [resetKey, setResetKey] = useState(0);
@@ -304,7 +285,7 @@ const EditorAppInner = ({
         className={cn(
           "min-h-full w-full overflow-x-hidden bg-background text-foreground",
           hasCustomization && "bf-themed",
-          customization?.mode === "dark" && "dark",
+          resolvedAppTheme === "dark" && "dark",
         )}
         style={hasCustomization ? themeVars : undefined}
       >

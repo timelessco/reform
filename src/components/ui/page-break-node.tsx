@@ -122,7 +122,6 @@ export const PageBreakElement = (props: PlateElementProps) => {
                 checked={isThankYouPage}
                 onCheckedChange={handleThankYouToggle}
                 disabled={readOnly}
-                size="small"
                 onMouseDown={(e) => e.stopPropagation()}
               />
             </div>

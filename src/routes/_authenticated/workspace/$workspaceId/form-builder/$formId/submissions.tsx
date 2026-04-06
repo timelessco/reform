@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getLatestPublishedVersion } from "@/lib/fn/form-versions";
+import { EDITABLE_FIELD_TYPES } from "@/lib/transform-plate-for-preview";
 import {
   deleteSubmission,
   deleteSubmissionsBulk,
@@ -77,10 +78,102 @@ const formatSubmissionValue = (value: unknown): string => {
     return String(value);
   }
 
+  if (Array.isArray(value)) {
+    return value.join(", ");
+  }
+
   try {
     return JSON.stringify(value);
   } catch {
     return String(value);
+  }
+};
+
+const SubmissionCell = ({ value, fieldType }: { value: unknown; fieldType: string }) => {
+  const text = formatSubmissionValue(value);
+  if (text === "-") {
+    return <span className="text-[13px] text-muted-foreground">-</span>;
+  }
+
+  switch (fieldType) {
+    case "Email":
+      return (
+        <a
+          href={`mailto:${text}`}
+          className="text-[13px] truncate max-w-[300px] block text-primary hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {text}
+        </a>
+      );
+    case "Link":
+      return (
+        <a
+          href={text.startsWith("http") ? text : `https://${text}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[13px] truncate max-w-[300px] block text-primary hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {text}
+        </a>
+      );
+    case "Date":
+      return (
+        <span className="text-[13px] truncate max-w-[300px] block tabular-nums">
+          {(() => {
+            try {
+              return new Date(text).toLocaleDateString();
+            } catch {
+              return text;
+            }
+          })()}
+        </span>
+      );
+    case "Time":
+    case "Phone":
+    case "Number":
+      return <span className="text-[13px] truncate max-w-[300px] block tabular-nums">{text}</span>;
+    case "Checkbox":
+    case "MultiChoice":
+    case "MultiSelect":
+    case "Ranking":
+    default: {
+      const items = Array.isArray(value) ? value : null;
+      if (!items) {
+        return <span className="text-[13px] truncate max-w-[300px] block">{text}</span>;
+      }
+      return (
+        <div className="flex flex-wrap gap-1 max-w-[300px]">
+          {items.map((item) => (
+            <span
+              key={String(item)}
+              className="inline-flex items-center rounded-md bg-secondary px-1.5 py-0.5 text-[11px] text-secondary-foreground"
+            >
+              {String(item)}
+            </span>
+          ))}
+        </div>
+      );
+    }
+    case "FileUpload": {
+      const files = Array.isArray(value) ? value : [text];
+      return (
+        <div className="flex flex-wrap gap-1 max-w-[300px]">
+          {files.map((file) => {
+            const label = typeof file === "string" ? file.split("/").pop() : String(file);
+            return (
+              <span
+                key={label}
+                className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground"
+              >
+                {label}
+              </span>
+            );
+          })}
+        </div>
+      );
+    }
   }
 };
 
@@ -286,16 +379,14 @@ const SubmissionsPage = () => {
     if (formElements) {
       const editableFields = getEditableFields(formElements);
 
-      // Only include Input and Textarea fields (not Button)
-      const inputFields = editableFields.filter(
-        (field) => field.fieldType === "Input" || field.fieldType === "Textarea",
+      const inputFields = editableFields.filter((field) =>
+        EDITABLE_FIELD_TYPES.has(field.fieldType),
       );
 
-      inputFields.forEach((field) => {
+      for (const field of inputFields) {
         const status: FieldStatus = "current";
         counts.current++;
 
-        // Only add if status filter includes this status
         if (fieldStatusFilter.has(status)) {
           baseColumns.push(
             toSubmissionColumn(
@@ -304,26 +395,24 @@ const SubmissionsPage = () => {
                 header: ({ column }) => (
                   <DataGridColumnHeader
                     column={column}
-                    title={field.label || field.name}
+                    title={("label" in field ? field.label : "") || field.name}
                     icon={
                       <span className="block h-2.5 w-2.5 rounded-full border-[1.5px] border-emerald-500" />
                     }
                   />
                 ),
                 cell: (info) => (
-                  <span className="text-[13px] truncate max-w-[300px] block">
-                    {formatSubmissionValue(info.getValue())}
-                  </span>
+                  <SubmissionCell value={info.getValue()} fieldType={field.fieldType} />
                 ),
                 size: 150,
                 meta: {
-                  headerTitle: field.label || field.name,
+                  headerTitle: ("label" in field ? field.label : "") || field.name,
                 },
               }),
             ),
           );
         }
-      });
+      }
     }
 
     // Add columns for orphaned fields (deleted from current version but have data)
@@ -346,11 +435,7 @@ const SubmissionsPage = () => {
                   }
                 />
               ),
-              cell: (info) => (
-                <span className="text-[13px] truncate max-w-[300px] block text-muted-foreground">
-                  {formatSubmissionValue(info.getValue())}
-                </span>
-              ),
+              cell: (info) => <SubmissionCell value={info.getValue()} fieldType="unknown" />,
               size: 150,
               meta: {
                 headerTitle: fieldName,
@@ -654,7 +739,7 @@ const SubmissionsPage = () => {
           <div className="w-full flex-1 flex flex-col min-h-0 overflow-hidden">
             <DataGridContainer
               border={false}
-              className="flex-1 min-h-0 border-b border-border overflow-auto content-start"
+              className="flex-1 min-h-0 border-b border-border overflow-x-auto overflow-y-hidden content-start"
             >
               <DataGridVirtualTable
                 onFetchMore={fetchNextPage}

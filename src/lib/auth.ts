@@ -21,7 +21,13 @@ const polarClient = new Polar({
   server: "sandbox", // TODO: Change to production
 });
 
+const getServerBaseURL = () => {
+  const url = process.env.BETTER_AUTH_URL || process.env.VERCEL_URL || "http://localhost:3000";
+  return url.startsWith("http") ? url : `https://${url}`;
+};
+
 export const auth = betterAuth({
+  baseURL: getServerBaseURL(),
   appName: APP_NAME,
   database: drizzleAdapter(db, {
     provider: "pg",

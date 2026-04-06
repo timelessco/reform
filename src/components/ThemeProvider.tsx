@@ -101,3 +101,13 @@ export const useTheme = () => {
 
   return context;
 };
+
+/** Resolves "system" to the actual "dark" | "light" preference. */
+export const useResolvedTheme = (): "dark" | "light" => {
+  const { theme } = useTheme();
+  return theme === "system"
+    ? typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light"
+    : theme;
+};

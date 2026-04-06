@@ -59,6 +59,7 @@ export const generateEmbedUrl = (formId: string, options: EmbedOptions): string 
   if (options.display.alignment === "left") params.append("align", "left");
   if (!options.display.branding) params.append("branding", "false");
   if (options.display.dynamicHeight) params.append("dynamicHeight", "true");
+  if (options.display.dynamicWidth) params.append("dynamicWidth", "true");
   const queryString = params.toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 };

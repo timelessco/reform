@@ -3,19 +3,11 @@ import {
   BlockMenuPlugin,
   BlockSelectionPlugin,
 } from "@platejs/selection/react";
-import {
-  CopyIcon,
-  EyeOffIcon,
-  GripVerticalIcon,
-  Pencil2Icon,
-  PlusIcon,
-  TrashIcon,
-} from "@/components/ui/icons";
+import { CopyIcon, EyeOffIcon, PlusIcon, TrashIcon } from "@/components/ui/icons";
 import { KEYS } from "platejs";
 import { useEditorPlugin, useEditorSelector, useHotkeys, usePluginOption } from "platejs/react";
 import * as React from "react";
 
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,18 +20,59 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { StyleNumberInput } from "@/components/ui/style-controls";
 import { Switch } from "@/components/ui/switch";
 import { useEditorTheme } from "@/contexts/editor-theme-context";
+import { ALLOWED_LABEL_TYPES, FORM_INPUT_NODE_TYPES } from "@/lib/form-field-constants";
 import { cn } from "@/lib/utils";
 
-type BlockFieldType = "formInput" | "formButton" | "static" | "unknown";
+type BlockFieldType =
+  | "textLike" // formInput, formTextarea, formEmail, formPhone, formLink
+  | "formNumber"
+  | "formDate"
+  | "formTime"
+  | "formFileUpload"
+  | "optionCheckbox" // formOptionItem variant="checkbox"
+  | "optionMultiChoice" // formOptionItem variant="multiChoice"
+  | "optionRanking" // formOptionItem variant="ranking"
+  | "formMultiSelect" // formMultiSelectInput
+  | "formButton"
+  | "static"
+  | "unknown";
+
+const TEXT_LIKE_TYPES = new Set([
+  "formInput",
+  "formTextarea",
+  "formEmail",
+  "formPhone",
+  "formLink",
+]);
 
 // Get field type category for the menu
-const getFieldType = (nodeType: string | undefined): BlockFieldType => {
-  if (!nodeType) return "unknown";
-  if (["formLabel", "formInput", "formTextarea"].includes(nodeType)) return "formInput";
-  if (nodeType === "formButton") return "formButton";
-  if (["h1", "h2", "h3", "p", "blockquote", "hr"].includes(nodeType)) return "static";
+const getFieldType = (node: { type?: string; variant?: string } | undefined): BlockFieldType => {
+  if (!node?.type) return "unknown";
+  const t = node.type;
+  if (TEXT_LIKE_TYPES.has(t)) return "textLike";
+  if (t === "formNumber") return "formNumber";
+  if (t === "formDate") return "formDate";
+  if (t === "formTime") return "formTime";
+  if (t === "formFileUpload") return "formFileUpload";
+  if (t === "formMultiSelectInput") return "formMultiSelect";
+  if (t === "formOptionItem") {
+    const v = node.variant || "checkbox";
+    if (v === "multiChoice") return "optionMultiChoice";
+    if (v === "ranking") return "optionRanking";
+    return "optionCheckbox";
+  }
+  if (t === "formButton") return "formButton";
+  if (["h1", "h2", "h3", "p", "blockquote", "hr"].includes(t)) return "static";
   return "unknown";
 };
 
@@ -89,6 +122,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   const firstNode = selectedNodes[0]?.[0] as
     | {
         type?: string;
+        variant?: string;
         required?: boolean;
         placeholder?: string;
         minLength?: number;
@@ -96,23 +130,32 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
         defaultValue?: string;
         buttonText?: string;
         children?: Array<{ text?: string }>;
+        minValue?: number;
+        maxValue?: number;
+        allowDecimals?: boolean;
+        maxFileSize?: number;
+        maxFiles?: number;
+        allowedFileTypes?: string;
+        minSelections?: number;
+        maxSelections?: number;
+        randomizeOrder?: boolean;
+        allowOther?: boolean;
       }
     | undefined;
   const firstPath = selectedNodes[0]?.[1];
 
   const nodeType = firstNode?.type;
-  const fieldType = getFieldType(nodeType);
 
   // Get label node (for formInput/formTextarea, look at previous sibling)
   const labelNode = React.useMemo(() => {
     if (nodeType === "formLabel" || nodeType === "formButton") return firstNode;
-    if (["formInput", "formTextarea"].includes(nodeType ?? "") && firstPath) {
+    if (FORM_INPUT_NODE_TYPES.has(nodeType ?? "") && firstPath) {
       // Look at previous sibling for label
       const prevPath = [...firstPath];
       prevPath[prevPath.length - 1] -= 1;
       try {
         const prev = editor.api.node(prevPath);
-        if (prev && prev[0]?.type === "formLabel") {
+        if (prev && ALLOWED_LABEL_TYPES.has(prev[0]?.type as string)) {
           return prev[0] as typeof firstNode;
         }
       } catch {
@@ -124,14 +167,14 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
 
   // Get input node (for formLabel, look at next sibling)
   const inputNode = React.useMemo(() => {
-    if (["formInput", "formTextarea"].includes(nodeType ?? "")) return firstNode;
-    if (nodeType === "formLabel" && firstPath) {
+    if (FORM_INPUT_NODE_TYPES.has(nodeType ?? "")) return firstNode;
+    if (ALLOWED_LABEL_TYPES.has(nodeType ?? "") && firstPath) {
       // Look at next sibling for input or textarea
       const nextPath = [...firstPath];
       nextPath[nextPath.length - 1] += 1;
       try {
         const next = editor.api.node(nextPath);
-        if (next && ["formInput", "formTextarea"].includes(next[0]?.type as string)) {
+        if (next && FORM_INPUT_NODE_TYPES.has(next[0]?.type as string)) {
           return next[0] as typeof firstNode;
         }
       } catch {
@@ -141,11 +184,18 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     return null;
   }, [nodeType, firstNode, firstPath, editor]);
 
+  // Resolve field type from inputNode when available (e.g., when clicking a label)
+  const fieldType = React.useMemo(() => {
+    if (inputNode) return getFieldType(inputNode as { type?: string; variant?: string });
+    return getFieldType(firstNode as { type?: string; variant?: string });
+  }, [inputNode, firstNode]);
+
   // Helper to get the input path
   const getInputPath = React.useCallback(() => {
     if (!firstPath) return null;
-    if (["formInput", "formTextarea"].includes(nodeType ?? "")) return firstPath;
-    if (nodeType === "formLabel") {
+    if (FORM_INPUT_NODE_TYPES.has(nodeType ?? "")) return firstPath;
+    if (nodeType === "formOptionItem") return firstPath;
+    if (ALLOWED_LABEL_TYPES.has(nodeType ?? "")) {
       const inputPath = [...firstPath];
       inputPath[inputPath.length - 1] += 1;
       return inputPath;
@@ -173,54 +223,161 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
 
   // Handlers for form input options
   const handleToggleRequired = React.useCallback(() => {
-    if (!labelNode || !firstPath) return;
-    const labelPath = nodeType === "formLabel" ? firstPath : [...firstPath];
-    if (["formInput", "formTextarea"].includes(nodeType ?? "")) {
-      labelPath[labelPath.length - 1] -= 1;
-    }
-    const currentRequired = Boolean(labelNode.required);
-    editor.tf.setNodes({ required: !currentRequired }, { at: labelPath });
-  }, [labelNode, firstPath, nodeType, editor.tf]);
-
-  const handleToggleMinLength = React.useCallback(() => {
     const inputPath = getInputPath();
     if (!inputPath) return;
-    const hasMinLength = inputNode?.minLength !== undefined;
-    if (hasMinLength) {
-      editor.tf.unsetNodes(["minLength"], { at: inputPath });
-    } else {
-      editor.tf.setNodes({ minLength: 1 }, { at: inputPath });
-    }
-  }, [getInputPath, inputNode?.minLength, editor.tf]);
+    const currentRequired = Boolean(inputNode?.required);
+    editor.tf.setNodes({ required: !currentRequired }, { at: inputPath });
+  }, [getInputPath, inputNode?.required, editor.tf]);
 
   const handleUpdateMinLength = React.useCallback(
-    (value: number) => {
+    (value: string) => {
       const inputPath = getInputPath();
       if (!inputPath) return;
-      editor.tf.setNodes({ minLength: value }, { at: inputPath });
+      const num = parseInt(value, 10) || 0;
+      if (num === 0) {
+        editor.tf.unsetNodes(["minLength"], { at: inputPath });
+      } else {
+        editor.tf.setNodes({ minLength: num }, { at: inputPath });
+      }
     },
     [getInputPath, editor.tf],
   );
-
-  const handleToggleMaxLength = React.useCallback(() => {
-    const inputPath = getInputPath();
-    if (!inputPath) return;
-    const hasMaxLength = inputNode?.maxLength !== undefined;
-    if (hasMaxLength) {
-      editor.tf.unsetNodes(["maxLength"], { at: inputPath });
-    } else {
-      editor.tf.setNodes({ maxLength: 100 }, { at: inputPath });
-    }
-  }, [getInputPath, inputNode?.maxLength, editor.tf]);
 
   const handleUpdateMaxLength = React.useCallback(
-    (value: number) => {
+    (value: string) => {
       const inputPath = getInputPath();
       if (!inputPath) return;
-      editor.tf.setNodes({ maxLength: value }, { at: inputPath });
+      const num = parseInt(value, 10) || 0;
+      if (num === 0) {
+        editor.tf.unsetNodes(["maxLength"], { at: inputPath });
+      } else {
+        editor.tf.setNodes({ maxLength: num }, { at: inputPath });
+      }
     },
     [getInputPath, editor.tf],
   );
+
+  const handleUpdateMinValue = React.useCallback(
+    (value: string) => {
+      const inputPath = getInputPath();
+      if (!inputPath) return;
+      const num = parseInt(value, 10) || 0;
+      if (num === 0) {
+        editor.tf.unsetNodes(["minValue"], { at: inputPath });
+      } else {
+        editor.tf.setNodes({ minValue: num }, { at: inputPath });
+      }
+    },
+    [getInputPath, editor.tf],
+  );
+
+  const handleUpdateMaxValue = React.useCallback(
+    (value: string) => {
+      const inputPath = getInputPath();
+      if (!inputPath) return;
+      const num = parseInt(value, 10) || 0;
+      if (num === 0) {
+        editor.tf.unsetNodes(["maxValue"], { at: inputPath });
+      } else {
+        editor.tf.setNodes({ maxValue: num }, { at: inputPath });
+      }
+    },
+    [getInputPath, editor.tf],
+  );
+
+  const handleToggleAllowDecimals = React.useCallback(() => {
+    const inputPath = getInputPath();
+    if (!inputPath) return;
+    const current = Boolean(inputNode?.allowDecimals);
+    if (current) {
+      editor.tf.unsetNodes(["allowDecimals"], { at: inputPath });
+    } else {
+      editor.tf.setNodes({ allowDecimals: true }, { at: inputPath });
+    }
+  }, [getInputPath, inputNode?.allowDecimals, editor.tf]);
+
+  const handleUpdateMaxFileSize = React.useCallback(
+    (value: string) => {
+      const inputPath = getInputPath();
+      if (!inputPath) return;
+      const num = parseInt(value, 10) || 10;
+      editor.tf.setNodes({ maxFileSize: num }, { at: inputPath });
+    },
+    [getInputPath, editor.tf],
+  );
+
+  const handleUpdateMaxFiles = React.useCallback(
+    (value: string) => {
+      const inputPath = getInputPath();
+      if (!inputPath) return;
+      const num = parseInt(value, 10) || 0;
+      if (num === 0) {
+        editor.tf.unsetNodes(["maxFiles"], { at: inputPath });
+      } else {
+        editor.tf.setNodes({ maxFiles: num }, { at: inputPath });
+      }
+    },
+    [getInputPath, editor.tf],
+  );
+
+  const handleUpdateAllowedFileTypes = React.useCallback(
+    (value: string) => {
+      const inputPath = getInputPath();
+      if (!inputPath) return;
+      editor.tf.setNodes({ allowedFileTypes: value }, { at: inputPath });
+    },
+    [getInputPath, editor.tf],
+  );
+
+  const handleUpdateMinSelections = React.useCallback(
+    (value: string) => {
+      const inputPath = getInputPath();
+      if (!inputPath) return;
+      const num = parseInt(value, 10) || 0;
+      if (num === 0) {
+        editor.tf.unsetNodes(["minSelections"], { at: inputPath });
+      } else {
+        editor.tf.setNodes({ minSelections: num }, { at: inputPath });
+      }
+    },
+    [getInputPath, editor.tf],
+  );
+
+  const handleUpdateMaxSelections = React.useCallback(
+    (value: string) => {
+      const inputPath = getInputPath();
+      if (!inputPath) return;
+      const num = parseInt(value, 10) || 0;
+      if (num === 0) {
+        editor.tf.unsetNodes(["maxSelections"], { at: inputPath });
+      } else {
+        editor.tf.setNodes({ maxSelections: num }, { at: inputPath });
+      }
+    },
+    [getInputPath, editor.tf],
+  );
+
+  const handleToggleRandomizeOrder = React.useCallback(() => {
+    const inputPath = getInputPath();
+    if (!inputPath) return;
+    const current = Boolean(inputNode?.randomizeOrder);
+    if (current) {
+      editor.tf.unsetNodes(["randomizeOrder"], { at: inputPath });
+    } else {
+      editor.tf.setNodes({ randomizeOrder: true }, { at: inputPath });
+    }
+  }, [getInputPath, inputNode?.randomizeOrder, editor.tf]);
+
+  const handleToggleAllowOther = React.useCallback(() => {
+    const inputPath = getInputPath();
+    if (!inputPath) return;
+    const current = Boolean(inputNode?.allowOther);
+    if (current) {
+      editor.tf.unsetNodes(["allowOther"], { at: inputPath });
+    } else {
+      editor.tf.setNodes({ allowOther: true }, { at: inputPath });
+    }
+  }, [getInputPath, inputNode?.allowOther, editor.tf]);
 
   const handleToggleDefaultValue = React.useCallback(() => {
     const inputPath = getInputPath();
@@ -257,20 +414,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     },
     [firstPath, nodeType, editor.tf],
   );
-
-  const handleUpdateFieldName = React.useCallback(() => {
-    if (!labelNode || !firstPath || !fieldName.trim()) return;
-    const labelPath =
-      nodeType === "formLabel" || nodeType === "formButton" ? firstPath : [...firstPath];
-    if (["formInput", "formTextarea"].includes(nodeType ?? "")) {
-      labelPath[labelPath.length - 1] -= 1;
-    }
-    editor.tf.withoutNormalizing(() => {
-      editor.tf.insertNodes({ text: fieldName.trim() }, { at: [...labelPath, 0], select: false });
-      editor.tf.removeNodes({ at: [...labelPath, 1] });
-    });
-    setIsEditingName(false);
-  }, [labelNode, firstPath, fieldName, nodeType, editor.tf]);
 
   // Common actions
   const handleDelete = React.useCallback(() => {
@@ -354,12 +497,8 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   );
 
   // Get current node properties
-  const isRequired = Boolean(labelNode?.required);
-  const hasMinLength = inputNode?.minLength !== undefined;
-  const hasMaxLength = inputNode?.maxLength !== undefined;
+  const isRequired = Boolean(inputNode?.required);
   const hasDefaultValue = inputNode?.defaultValue !== undefined;
-  const currentMinLength = inputNode?.minLength;
-  const currentMaxLength = inputNode?.maxLength;
   const currentDefaultValue = inputNode?.defaultValue;
 
   const handleOpenChange = React.useCallback(
@@ -385,25 +524,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     [handleTurnInto],
   );
 
-  const handleFieldNameChange = React.useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setFieldName(e.target.value),
-    [],
-  );
-
-  const handleFieldNameKeyDown = React.useCallback(
-    (e: React.KeyboardEvent) => {
-      e.stopPropagation();
-      if (e.key === "Enter") handleUpdateFieldName();
-      if (e.key === "Escape") setIsEditingName(false);
-    },
-    [handleUpdateFieldName],
-  );
-
-  const handleToggleEditName = React.useCallback(
-    () => setIsEditingName(!isEditingName),
-    [isEditingName],
-  );
-
   const handleStopPropagation = React.useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
   }, []);
@@ -415,16 +535,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   const handleDefaultValueChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => handleUpdateDefaultValue(e.target.value),
     [handleUpdateDefaultValue],
-  );
-
-  const handleMinLengthChange = React.useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => handleUpdateMinLength(Number(e.target.value)),
-    [handleUpdateMinLength],
-  );
-
-  const handleMaxLengthChange = React.useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => handleUpdateMaxLength(Number(e.target.value)),
-    [handleUpdateMaxLength],
   );
 
   const handleButtonTextChange = React.useCallback(
@@ -478,51 +588,29 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
         >
           {/* Field Name Header */}
           <div className="flex items-center gap-2 px-2 py-1.5">
-            <GripVerticalIcon
-              className="h-3.5 w-3.5 text-muted-foreground shrink-0"
-              strokeWidth={1.5}
-              aria-hidden="true"
-            />
-            {isEditingName ? (
-              <Input
-                value={fieldName}
-                onChange={handleFieldNameChange}
-                onBlur={handleUpdateFieldName}
-                onKeyDown={handleFieldNameKeyDown}
-                className="h-7 text-[13px] flex-1 rounded-lg"
-                aria-label="Field name"
-                autoFocus
-              />
-            ) : (
-              <span className="text-[13px] flex-1 truncate text-foreground">{fieldName}</span>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              prefix={<Pencil2Icon />}
-              className="h-6 w-6 shrink-0 rounded-lg hover:bg-black/5"
-              onClick={handleToggleEditName}
-              aria-label="Edit field"
-            ></Button>
+            <span className="text-[13px] flex-1 truncate text-foreground">{fieldName}</span>
           </div>
           <DropdownMenuSeparator />
 
-          {/* Field-Specific Options */}
-          {fieldType === "formInput" && (
-            <>
-              <DropdownMenuItem closeOnClick={false} onClick={handleToggleRequired}>
-                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
-                  Required
-                </span>
-                <Switch
-                  aria-label="Required"
-                  size="sm"
-                  checked={isRequired}
-                  onCheckedChange={handleToggleRequired}
-                  onClick={handleStopPropagation}
-                />
-              </DropdownMenuItem>
+          {/* Universal Required switch for all form field types */}
+          {fieldType !== "static" && fieldType !== "formButton" && fieldType !== "unknown" && (
+            <DropdownMenuItem closeOnClick={false} onClick={handleToggleRequired}>
+              <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                Required
+              </span>
+              <Switch
+                aria-label="Required"
+                size="sm"
+                checked={isRequired}
+                onCheckedChange={handleToggleRequired}
+                onClick={handleStopPropagation}
+              />
+            </DropdownMenuItem>
+          )}
 
+          {/* Text-like field options */}
+          {fieldType === "textLike" && (
+            <>
               <DropdownMenuItem closeOnClick={false} onClick={handleToggleDefaultValue}>
                 <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
                   Default answer
@@ -548,56 +636,32 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                 </div>
               )}
 
-              <DropdownMenuItem closeOnClick={false} onClick={handleToggleMinLength}>
-                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
-                  Min characters
-                </span>
-                <Switch
-                  aria-label="Min characters"
-                  size="sm"
-                  checked={hasMinLength}
-                  onCheckedChange={handleToggleMinLength}
-                  onClick={handleStopPropagation}
+              <div onPointerDown={handleStopPropagation}>
+                <StyleNumberInput
+                  label="Min characters"
+                  value={String(inputNode?.minLength ?? 0)}
+                  onChange={handleUpdateMinLength}
+                  min={0}
+                  max={1000}
+                  step={1}
+                  unit=""
+                  displayUnit=""
+                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                 />
-              </DropdownMenuItem>
-              {hasMinLength && (
-                <div className="px-2 pb-2">
-                  <Input
-                    type="number"
-                    min={1}
-                    value={currentMinLength || 1}
-                    onChange={handleMinLengthChange}
-                    onKeyDown={handleInputKeyDown}
-                    placeholder="Min"
-                    className="h-7 text-[13px] rounded-lg"
-                    aria-label="Minimum length"
-                  />
-                </div>
-              )}
+              </div>
 
-              <DropdownMenuItem closeOnClick={false} onClick={handleToggleMaxLength}>
-                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
-                  Max characters
-                </span>
-                <Switch
-                  aria-label="Max characters"
-                  size="sm"
-                  checked={hasMaxLength}
-                  onCheckedChange={handleToggleMaxLength}
-                  onClick={handleStopPropagation}
-                />
-              </DropdownMenuItem>
-              {hasMaxLength && (
-                <div className="px-2 pb-2">
-                  <Input
-                    type="number"
-                    min={1}
-                    value={currentMaxLength || 100}
-                    onChange={handleMaxLengthChange}
-                    onKeyDown={handleInputKeyDown}
-                    placeholder="Max"
-                    className="h-7 text-[13px] rounded-lg"
-                    aria-label="Maximum length"
+              {inputNode?.type !== "formTextarea" && (
+                <div onPointerDown={handleStopPropagation}>
+                  <StyleNumberInput
+                    label="Max characters"
+                    value={String(inputNode?.maxLength ?? 0)}
+                    onChange={handleUpdateMaxLength}
+                    min={0}
+                    max={1000}
+                    step={1}
+                    unit=""
+                    displayUnit=""
+                    className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
                   />
                 </div>
               )}
@@ -605,6 +669,262 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
               <DropdownMenuSeparator />
             </>
           )}
+
+          {/* Number field options */}
+          {fieldType === "formNumber" && (
+            <>
+              <DropdownMenuItem closeOnClick={false} onClick={handleToggleDefaultValue}>
+                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                  Default answer
+                </span>
+                <Switch
+                  aria-label="Default answer"
+                  size="sm"
+                  checked={hasDefaultValue}
+                  onCheckedChange={handleToggleDefaultValue}
+                  onClick={handleStopPropagation}
+                />
+              </DropdownMenuItem>
+              {hasDefaultValue && (
+                <div className="px-2 pb-2">
+                  <Input
+                    type="number"
+                    value={currentDefaultValue || ""}
+                    onChange={handleDefaultValueChange}
+                    onKeyDown={handleInputKeyDown}
+                    placeholder="Enter default value"
+                    className="h-7 text-[13px] rounded-lg"
+                    aria-label="Default value"
+                  />
+                </div>
+              )}
+
+              <div onPointerDown={handleStopPropagation}>
+                <StyleNumberInput
+                  label="Min value"
+                  value={String(inputNode?.minValue ?? 0)}
+                  onChange={handleUpdateMinValue}
+                  min={0}
+                  max={999999}
+                  step={1}
+                  unit=""
+                  displayUnit=""
+                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
+                />
+              </div>
+
+              <div onPointerDown={handleStopPropagation}>
+                <StyleNumberInput
+                  label="Max value"
+                  value={String(inputNode?.maxValue ?? 0)}
+                  onChange={handleUpdateMaxValue}
+                  min={0}
+                  max={999999}
+                  step={1}
+                  unit=""
+                  displayUnit=""
+                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
+                />
+              </div>
+
+              <DropdownMenuItem closeOnClick={false} onClick={handleToggleAllowDecimals}>
+                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                  Allow decimals
+                </span>
+                <Switch
+                  aria-label="Allow decimals"
+                  size="sm"
+                  checked={Boolean(inputNode?.allowDecimals)}
+                  onCheckedChange={handleToggleAllowDecimals}
+                  onClick={handleStopPropagation}
+                />
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          {/* File upload options */}
+          {fieldType === "formFileUpload" && (
+            <>
+              <div onPointerDown={handleStopPropagation}>
+                <StyleNumberInput
+                  label="Max file size"
+                  value={`${inputNode?.maxFileSize ?? 10}MB`}
+                  onChange={handleUpdateMaxFileSize}
+                  min={1}
+                  max={50}
+                  step={1}
+                  unit="MB"
+                  displayUnit="MB"
+                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
+                />
+              </div>
+
+              <div onPointerDown={handleStopPropagation}>
+                <StyleNumberInput
+                  label="Max files"
+                  value={String(inputNode?.maxFiles ?? 0)}
+                  onChange={handleUpdateMaxFiles}
+                  min={0}
+                  max={20}
+                  step={1}
+                  unit=""
+                  displayUnit=""
+                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
+                />
+              </div>
+
+              <DropdownMenuItem closeOnClick={false}>
+                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                  File types
+                </span>
+                <Select
+                  value={(inputNode?.allowedFileTypes as string) ?? "all"}
+                  onValueChange={(v) => v && handleUpdateAllowedFileTypes(v)}
+                >
+                  <SelectTrigger className="h-6 w-[100px] text-[12px] rounded-md border-border/60">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All files</SelectItem>
+                    <SelectItem value="images">Images</SelectItem>
+                    <SelectItem value="documents">Documents</SelectItem>
+                    <SelectItem value="spreadsheets">Spreadsheets</SelectItem>
+                  </SelectContent>
+                </Select>
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          {/* Checkbox options */}
+          {fieldType === "optionCheckbox" && (
+            <>
+              <div onPointerDown={handleStopPropagation}>
+                <StyleNumberInput
+                  label="Min selections"
+                  value={String(inputNode?.minSelections ?? 0)}
+                  onChange={handleUpdateMinSelections}
+                  min={0}
+                  max={50}
+                  step={1}
+                  unit=""
+                  displayUnit=""
+                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
+                />
+              </div>
+              <div onPointerDown={handleStopPropagation}>
+                <StyleNumberInput
+                  label="Max selections"
+                  value={String(inputNode?.maxSelections ?? 0)}
+                  onChange={handleUpdateMaxSelections}
+                  min={0}
+                  max={50}
+                  step={1}
+                  unit=""
+                  displayUnit=""
+                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
+                />
+              </div>
+              <DropdownMenuItem closeOnClick={false} onClick={handleToggleRandomizeOrder}>
+                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                  Randomize order
+                </span>
+                <Switch
+                  aria-label="Randomize order"
+                  size="sm"
+                  checked={Boolean(inputNode?.randomizeOrder)}
+                  onCheckedChange={handleToggleRandomizeOrder}
+                  onClick={handleStopPropagation}
+                />
+              </DropdownMenuItem>
+              <DropdownMenuItem closeOnClick={false} onClick={handleToggleAllowOther}>
+                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                  &quot;Other&quot; option
+                </span>
+                <Switch
+                  aria-label="Other option"
+                  size="sm"
+                  checked={Boolean(inputNode?.allowOther)}
+                  onCheckedChange={handleToggleAllowOther}
+                  onClick={handleStopPropagation}
+                />
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          {/* Multi Select badge options */}
+          {fieldType === "formMultiSelect" && (
+            <>
+              <div onPointerDown={handleStopPropagation}>
+                <StyleNumberInput
+                  label="Min selections"
+                  value={String(inputNode?.minSelections ?? 0)}
+                  onChange={handleUpdateMinSelections}
+                  min={0}
+                  max={50}
+                  step={1}
+                  unit=""
+                  displayUnit=""
+                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
+                />
+              </div>
+              <div onPointerDown={handleStopPropagation}>
+                <StyleNumberInput
+                  label="Max selections"
+                  value={String(inputNode?.maxSelections ?? 0)}
+                  onChange={handleUpdateMaxSelections}
+                  min={0}
+                  max={50}
+                  step={1}
+                  unit=""
+                  displayUnit=""
+                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
+                />
+              </div>
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          {/* Multi-choice (radio) options */}
+          {fieldType === "optionMultiChoice" && (
+            <>
+              <DropdownMenuItem closeOnClick={false} onClick={handleToggleRandomizeOrder}>
+                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                  Randomize order
+                </span>
+                <Switch
+                  aria-label="Randomize order"
+                  size="sm"
+                  checked={Boolean(inputNode?.randomizeOrder)}
+                  onCheckedChange={handleToggleRandomizeOrder}
+                  onClick={handleStopPropagation}
+                />
+              </DropdownMenuItem>
+              <DropdownMenuItem closeOnClick={false} onClick={handleToggleAllowOther}>
+                <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
+                  &quot;Other&quot; option
+                </span>
+                <Switch
+                  aria-label="Other option"
+                  size="sm"
+                  checked={Boolean(inputNode?.allowOther)}
+                  onCheckedChange={handleToggleAllowOther}
+                  onClick={handleStopPropagation}
+                />
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          {/* Ranking - only Required (handled above) */}
+          {fieldType === "optionRanking" && <DropdownMenuSeparator />}
+
+          {/* Date/Time fields only get Required (handled above) + separator */}
+          {(fieldType === "formDate" || fieldType === "formTime") && <DropdownMenuSeparator />}
 
           {/* Button-Specific Options */}
           {fieldType === "formButton" && (

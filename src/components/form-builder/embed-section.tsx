@@ -21,6 +21,7 @@ export const searchToFormValues = (
     (search.embedType as EmbedType) ?? ((search.demo as boolean) ? "standard" : "fullpage"),
   height: (search.embedHeight as number) ?? defaultEmbedFormFields.height,
   dynamicHeight: (search.embedDynamicHeight as boolean) ?? defaultEmbedFormFields.dynamicHeight,
+  dynamicWidth: (search.embedDynamicWidth as boolean) ?? defaultEmbedFormFields.dynamicWidth,
   hideTitle: (search.embedHideTitle as boolean) ?? defaultEmbedFormFields.hideTitle,
   alignLeft: (search.embedAlignLeft as boolean) ?? defaultEmbedFormFields.alignLeft,
   transparentBackground:
@@ -51,6 +52,7 @@ export const formValuesToSearch = (v: EmbedFormValues) => ({
   embedType: v.embedType,
   embedHeight: v.height,
   embedDynamicHeight: v.dynamicHeight,
+  embedDynamicWidth: v.dynamicWidth,
   embedHideTitle: v.hideTitle,
   embedAlignLeft: v.alignLeft,
   embedTransparent: v.transparentBackground,

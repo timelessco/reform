@@ -128,7 +128,18 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
     );
   }
 
-  if (!enabled) return;
+  if (!enabled) {
+    // formHeader needs a wrapper with slate-blockWrapper so DnD can calculate
+    // drop positions above the first content block
+    if (element.type === "formHeader") {
+      return (innerProps) => (
+        <div className="relative">
+          <div className="slate-blockWrapper">{innerProps.children}</div>
+        </div>
+      );
+    }
+    return;
+  }
 
   return (innerProps) => <Draggable {...innerProps} />;
 };
@@ -145,7 +156,11 @@ const Draggable = (props: PlateElementProps) => {
     const plugin = getPluginByType(editor, element.type);
     if (plugin?.options?.gutterPosition) return plugin.options.gutterPosition as "center" | "top";
 
-    if (["formTextarea", KEYS.codeBlock, KEYS.blockquote, KEYS.table].includes(element.type)) {
+    if (
+      ["formTextarea", "formFileUpload", KEYS.codeBlock, KEYS.blockquote, KEYS.table].includes(
+        element.type,
+      )
+    ) {
       return "top";
     }
 
@@ -323,7 +338,7 @@ const Gutter = ({
       className={cn(
         "slate-gutterLeft",
         "-translate-x-full absolute h-full z-50 flex cursor-text hover:opacity-100",
-        gutterPosition === "top" ? "top-0 items-start pt-1.5" : "top-0 items-center",
+        gutterPosition === "top" ? "top-0 items-start" : "top-0 items-center",
         !selected && "sm:opacity-0",
         getPluginByType(editor, element.type)?.node.isContainer
           ? "group-hover/container:opacity-100"

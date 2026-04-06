@@ -2,6 +2,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/u
 import { StyleNumberInput } from "@/components/ui/style-controls";
 import { Switch } from "@/components/ui/switch";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
+import { cn } from "@udecode/cn";
 import { useRef, useState } from "react";
 
 /** Common display config shared across all embed types */
@@ -10,6 +11,7 @@ export interface EmbedDisplayConfig {
   background: "transparent" | "solid";
   alignment: "center" | "left";
   dynamicHeight: boolean;
+  dynamicWidth: boolean;
   trackEvents: boolean;
   branding: boolean;
 }
@@ -40,6 +42,7 @@ export const defaultDisplayConfig: EmbedDisplayConfig = {
   background: "solid",
   alignment: "center",
   dynamicHeight: true,
+  dynamicWidth: false,
   trackEvents: false,
   branding: true,
 };
@@ -69,6 +72,7 @@ export const defaultEmbedOptions: EmbedOptions = {
 export interface EmbedFormFields {
   height: number;
   dynamicHeight: boolean;
+  dynamicWidth: boolean;
   hideTitle: boolean;
   alignLeft: boolean;
   transparentBackground: boolean;
@@ -89,6 +93,7 @@ export interface EmbedFormFields {
 export const defaultEmbedFormFields: EmbedFormFields = {
   height: 558,
   dynamicHeight: true,
+  dynamicWidth: false,
   hideTitle: false,
   alignLeft: false,
   transparentBackground: false,
@@ -114,6 +119,7 @@ export const formFieldsToEmbedOptions = (fields: EmbedFormFields): EmbedOptions 
     background: fields.transparentBackground ? "transparent" : "solid",
     alignment: fields.alignLeft ? "left" : "center",
     dynamicHeight: fields.dynamicHeight,
+    dynamicWidth: fields.dynamicWidth,
     trackEvents: fields.trackEvents,
     branding: fields.branding,
   },
@@ -135,6 +141,7 @@ export const formFieldsToEmbedOptions = (fields: EmbedFormFields): EmbedOptions 
 export const embedOptionsToFormFields = (options: EmbedOptions): EmbedFormFields => ({
   height: options.height,
   dynamicHeight: options.display.dynamicHeight,
+  dynamicWidth: options.display.dynamicWidth,
   hideTitle: options.display.title === "hidden",
   alignLeft: options.display.alignment === "left",
   transparentBackground: options.display.background === "transparent",
@@ -167,8 +174,21 @@ interface EmbedConfigPanelProps {
 
 /* ─── Layout helpers matching Figma node 24119:5595 ─── */
 
-export const ConfigCard = ({ children }: { children: React.ReactNode }) => (
-  <div className="flex flex-col gap-px overflow-hidden rounded-lg">{children}</div>
+export const ConfigCard = ({
+  children,
+  variant = "rounded",
+}: {
+  children: React.ReactNode;
+  variant?: "rounded" | "square";
+}) => (
+  <div
+    className={cn(
+      "flex flex-col gap-px overflow-hidden",
+      variant === "rounded" ? "rounded-lg" : "rounded-none",
+    )}
+  >
+    {children}
+  </div>
 );
 
 /**
@@ -488,6 +508,19 @@ const CustomizeSection = ({
             <ConfigRow label="Dynamic Height" variant="switch">
               <Switch
                 aria-label="Dynamic Height"
+                checked={field.state.value}
+                onCheckedChange={field.handleChange}
+                size="default"
+              />
+            </ConfigRow>
+          )}
+        </form.Field>
+
+        <form.Field name="dynamicWidth">
+          {(field: FieldRenderApi<boolean>) => (
+            <ConfigRow label="Dynamic Width" variant="switch">
+              <Switch
+                aria-label="Dynamic Width"
                 checked={field.state.value}
                 onCheckedChange={field.handleChange}
                 size="default"

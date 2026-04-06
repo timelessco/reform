@@ -12,7 +12,7 @@ export const PopoverTrigger = ({ render, ...props }: PopoverPrimitive.Trigger.Pr
 );
 
 export const PopoverAnchor = ({
-  render: _render,
+  render,
   virtualRef,
   children,
   className,
@@ -32,6 +32,14 @@ export const PopoverAnchor = ({
       >
         {children}
       </PopoverPrimitive.Positioner>
+    );
+  }
+  if (render) {
+    return (
+      <div data-slot="popover-anchor" className={cn(className)} {...props}>
+        {render}
+        {children}
+      </div>
     );
   }
   return (

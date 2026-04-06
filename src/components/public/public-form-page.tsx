@@ -41,6 +41,7 @@ export interface PublicFormEmbedConfig {
   background: "transparent" | "solid";
   alignment: "center" | "left";
   dynamicHeight: boolean;
+  dynamicWidth: boolean;
 }
 
 export const defaultPublicFormEmbedConfig: PublicFormEmbedConfig = {
@@ -48,6 +49,7 @@ export const defaultPublicFormEmbedConfig: PublicFormEmbedConfig = {
   background: "solid",
   alignment: "center",
   dynamicHeight: false,
+  dynamicWidth: false,
 };
 
 interface PublicFormPageProps {
@@ -120,6 +122,7 @@ export const PublicFormPage = ({
   const hideTitle = embedConfig.title === "hidden";
   const alignLeft = embedConfig.alignment === "left";
   const dynamicHeight = embedConfig.dynamicHeight;
+  const dynamicWidth = embedConfig.dynamicWidth;
   const containerRef = useRef<HTMLDivElement>(null);
   const [submitted, setSubmitted] = useState(() => {
     if (form?.settings?.preventDuplicateSubmissions) {
@@ -239,6 +242,16 @@ export const PublicFormPage = ({
   );
 
   // Handle error states
+  // Handle gated states (closed, date expired, limit reached) — check before !form
+  // because the server returns form: null for closed forms
+  if (gated && gated.type !== "password_required") {
+    return (
+      <TranslationProvider language={resolvedLanguage}>
+        <FormClosed message={gated.message} />
+      </TranslationProvider>
+    );
+  }
+
   if (error === "not_found" || !form) {
     return (
       <TranslationProvider language={resolvedLanguage}>
@@ -252,15 +265,6 @@ export const PublicFormPage = ({
     return (
       <TranslationProvider language={resolvedLanguage}>
         <FormNotPublished />
-      </TranslationProvider>
-    );
-  }
-
-  // Handle gated states (closed, date expired, limit reached)
-  if (gated && gated.type !== "password_required") {
-    return (
-      <TranslationProvider language={resolvedLanguage}>
-        <FormClosed message={gated.message} />
       </TranslationProvider>
     );
   }
@@ -282,13 +286,14 @@ export const PublicFormPage = ({
     <div
       ref={containerRef}
       className={cn(
-        "pb-8 overflow-x-hidden",
+        "pb-8 overflow-x-hidden text-foreground",
         form.customization && Object.keys(form.customization).length > 0 && "bf-themed",
         // Don't use min-h-screen for popup mode - it causes resize loop
         !isPopup && "min-h-screen",
-        transparentBackground || isPopup ? "bg-transparent" : "bg-white",
+        transparentBackground || isPopup ? "bg-transparent" : "bg-background",
         alignLeft && "text-left",
       )}
+      style={dynamicWidth ? ({ "--bf-page-width": "100%" } as React.CSSProperties) : undefined}
       aria-live="polite"
     >
       <FormPreviewFromPlate

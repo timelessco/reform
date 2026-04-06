@@ -72,6 +72,7 @@ const DesignPage = () => {
         )}
 
         <div
+          data-editor-scroll
           className={cn(
             "flex-1 overflow-x-hidden",
             previewMode ? "h-full overflow-hidden" : "overflow-y-auto",
@@ -116,6 +117,7 @@ export const Route = createFileRoute(
       embedType: z.enum(["standard", "popup", "fullpage"]).catch("standard").optional(),
       embedHeight: z.coerce.number().catch(558).optional(),
       embedDynamicHeight: z.coerce.boolean().catch(true).optional(),
+      embedDynamicWidth: z.coerce.boolean().catch(false).optional(),
       embedHideTitle: z.coerce.boolean().catch(false).optional(),
       embedAlignLeft: z.coerce.boolean().catch(false).optional(),
       embedTransparent: z.coerce.boolean().catch(false).optional(),

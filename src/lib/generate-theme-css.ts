@@ -9,6 +9,7 @@ import {
   DESTRUCTIVE_TOKENS,
 } from "./theme-presets";
 import { FONT_MAP, getGoogleFontUrl } from "./font-registry";
+import { CUSTOMIZATION_AUTO_DEFAULTS } from "./customization-defaults";
 
 /**
  * Layout fields that map to --bf-* layout CSS variables.
@@ -150,12 +151,17 @@ const buildThemeVarEntries = (customization: Record<string, string>): [string, s
     entries.push(["--bf-title-font-style", "italic"]);
   }
 
-  // Layout vars
+  // Layout vars: use auto defaults for scrubber-backed fields, then override with explicit values
   for (const [field, cssVar] of Object.entries(LAYOUT_FIELDS)) {
     if (customization[field]) {
       const val =
         field === "pageWidth" ? migratePageWidth(customization[field]) : customization[field];
       entries.push([cssVar, val]);
+    } else if (field in CUSTOMIZATION_AUTO_DEFAULTS) {
+      entries.push([
+        cssVar,
+        CUSTOMIZATION_AUTO_DEFAULTS[field as keyof typeof CUSTOMIZATION_AUTO_DEFAULTS],
+      ]);
     }
   }
 
@@ -211,6 +217,8 @@ export const getLayoutOnlyVars = (
     if (customization[field]) {
       vars[cssVar] =
         field === "pageWidth" ? migratePageWidth(customization[field]) : customization[field];
+    } else if (field in CUSTOMIZATION_AUTO_DEFAULTS) {
+      vars[cssVar] = CUSTOMIZATION_AUTO_DEFAULTS[field as keyof typeof CUSTOMIZATION_AUTO_DEFAULTS];
     }
   }
   applyLogoMinimalFlag(customization, vars);

@@ -13,12 +13,21 @@ import {
 } from "lucide-react";
 import {
   AlignLeftIcon,
+  AtSignIcon,
   CalendarIcon,
   ChevronRightIcon,
+  ClockIcon,
   FileIcon,
+  HashIcon,
+  LinkIcon,
   ListIcon,
   ListOrderedIcon,
+  PhoneIcon,
+  CheckCheckIcon,
+  ChevronsUpDownIcon,
   SmileIcon,
+  SquareCheckIcon,
+  UploadIcon,
 } from "@/components/ui/icons";
 import { KEYS } from "platejs";
 import type { TComboboxInputElement } from "platejs";
@@ -216,6 +225,72 @@ const groups: Group[] = [
         label: "Text Area",
         value: "formTextarea",
       },
+      {
+        icon: <AtSignIcon />,
+        keywords: ["form", "email", "address", "mail"],
+        label: "Email",
+        value: "formEmail",
+      },
+      {
+        icon: <PhoneIcon />,
+        keywords: ["form", "phone", "telephone", "number", "call", "mobile"],
+        label: "Phone number",
+        value: "formPhone",
+      },
+      {
+        icon: <HashIcon />,
+        keywords: ["form", "number", "numeric", "integer", "amount"],
+        label: "Number",
+        value: "formNumber",
+      },
+      {
+        icon: <LinkIcon />,
+        keywords: ["form", "link", "url", "website", "href"],
+        label: "Link",
+        value: "formLink",
+      },
+      {
+        icon: <CalendarIcon />,
+        keywords: ["form", "date", "calendar", "day", "month", "year"],
+        label: "Date",
+        value: "formDate",
+      },
+      {
+        icon: <ClockIcon />,
+        keywords: ["form", "time", "clock", "hour", "minute"],
+        label: "Time",
+        value: "formTime",
+      },
+      {
+        icon: <UploadIcon />,
+        keywords: ["form", "file", "upload", "attachment", "document"],
+        label: "File upload",
+        value: "formFileUpload",
+      },
+      {
+        icon: <SquareCheckIcon />,
+        keywords: ["form", "checkbox", "check", "option", "multiple", "select"],
+        label: "Checkbox",
+        value: "formCheckbox",
+      },
+      {
+        icon: <SquareCheckIcon />,
+        keywords: ["form", "multi", "choice", "radio", "single", "select", "option"],
+        label: "Multi Choice",
+        value: "formMultiChoice",
+      },
+      {
+        icon: <CheckCheckIcon />,
+        keywords: ["form", "multi", "select", "dropdown", "tag", "option"],
+        label: "Multi Select",
+        value: "formMultiSelect",
+      },
+      // {
+      //   icon: <ChevronsUpDownIcon />,
+      //   keywords: ["form", "ranking", "rank", "order", "sort", "priority"],
+      //   label: "Ranking",
+      //   value: "formRanking",
+      // },
     ].map((item) => ({
       ...item,
       onSelect: (editor, value) => {

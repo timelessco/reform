@@ -18,7 +18,6 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as FormsI8nFormIdRouteImport } from './routes/forms/$i8n.$formId'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsMyAccountRouteImport } from './routes/_authenticated/settings/my-account'
 import { Route as AuthenticatedSettingsMembersRouteImport } from './routes/_authenticated/settings/members'
 import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_authenticated/settings/billing'
@@ -74,12 +73,6 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedSettingsNotificationsRoute =
-  AuthenticatedSettingsNotificationsRouteImport.update({
-    id: '/notifications',
-    path: '/notifications',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any)
 const AuthenticatedSettingsMyAccountRoute =
   AuthenticatedSettingsMyAccountRouteImport.update({
     id: '/my-account',
@@ -152,7 +145,6 @@ export interface FileRoutesByFullPath {
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/members': typeof AuthenticatedSettingsMembersRoute
   '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
-  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/forms/$i8n/$formId': typeof FormsI8nFormIdRoute
   '/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
@@ -172,7 +164,6 @@ export interface FileRoutesByTo {
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/members': typeof AuthenticatedSettingsMembersRoute
   '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
-  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/forms/$i8n/$formId': typeof FormsI8nFormIdRoute
   '/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
@@ -194,7 +185,6 @@ export interface FileRoutesById {
   '/_authenticated/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/_authenticated/settings/members': typeof AuthenticatedSettingsMembersRoute
   '/_authenticated/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
-  '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/forms/$i8n/$formId': typeof FormsI8nFormIdRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
@@ -216,7 +206,6 @@ export interface FileRouteTypes {
     | '/settings/billing'
     | '/settings/members'
     | '/settings/my-account'
-    | '/settings/notifications'
     | '/api/auth/$'
     | '/forms/$i8n/$formId'
     | '/workspace/$workspaceId/form-builder/$formId'
@@ -236,7 +225,6 @@ export interface FileRouteTypes {
     | '/settings/billing'
     | '/settings/members'
     | '/settings/my-account'
-    | '/settings/notifications'
     | '/api/auth/$'
     | '/forms/$i8n/$formId'
     | '/workspace/$workspaceId/form-builder/$formId'
@@ -257,7 +245,6 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/billing'
     | '/_authenticated/settings/members'
     | '/_authenticated/settings/my-account'
-    | '/_authenticated/settings/notifications'
     | '/api/auth/$'
     | '/forms/$i8n/$formId'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId'
@@ -341,13 +328,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/settings/notifications': {
-      id: '/_authenticated/settings/notifications'
-      path: '/notifications'
-      fullPath: '/settings/notifications'
-      preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
-      parentRoute: typeof AuthenticatedSettingsRouteRoute
-    }
     '/_authenticated/settings/my-account': {
       id: '/_authenticated/settings/my-account'
       path: '/my-account'
@@ -419,7 +399,6 @@ interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsBillingRoute: typeof AuthenticatedSettingsBillingRoute
   AuthenticatedSettingsMembersRoute: typeof AuthenticatedSettingsMembersRoute
   AuthenticatedSettingsMyAccountRoute: typeof AuthenticatedSettingsMyAccountRoute
-  AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
 }
 
 const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteChildren =
@@ -428,8 +407,6 @@ const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteCh
     AuthenticatedSettingsBillingRoute: AuthenticatedSettingsBillingRoute,
     AuthenticatedSettingsMembersRoute: AuthenticatedSettingsMembersRoute,
     AuthenticatedSettingsMyAccountRoute: AuthenticatedSettingsMyAccountRoute,
-    AuthenticatedSettingsNotificationsRoute:
-      AuthenticatedSettingsNotificationsRoute,
   }
 
 const AuthenticatedSettingsRouteRouteWithChildren =
