@@ -114,6 +114,7 @@ import {
   updateForm,
 } from "@/lib/fn/forms";
 import { useDuplicateForm } from "@/hooks/use-duplicate-form";
+import { useSubmissionNotifications } from "@/hooks/use-submission-notifications";
 import { orgDataForLayoutQueryOptions } from "@/lib/fn/org";
 import {
   workspacesCollectionQueryOptions,
@@ -137,6 +138,7 @@ import { createFileRoute, Outlet, useLocation, useParams, useRouter } from "@tan
 import { createClientOnlyFn } from "@tanstack/react-start";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { formatDistanceToNow } from "date-fns";
 import type * as React from "react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIsomorphicLayoutEffect } from "@/hooks/use-isomorphic-layout-effect";
@@ -167,6 +169,11 @@ const LazyCustomizeSidebar = lazy(() =>
     default: m.CustomizeSidebar,
   })),
 );
+
+const formatNotificationTime = (value: string) =>
+  formatDistanceToNow(new Date(value), {
+    addSuffix: true,
+  });
 
 const initCollectionsOnClient = createClientOnlyFn((queryClient: QueryClient) => {
   if (isCollectionsInitialized()) return;
@@ -408,10 +415,13 @@ const AppSidebar = () => {
   const { activeOrg } = Route.useLoaderData();
   const { data: workspacesData } = useOrgWorkspaces(activeOrg?.id);
   const { data: formsData } = useOrgForms(activeOrg?.id);
-
-  // TODO: Re-enable for multi-org support
-  // const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
-  const pendingCount = 0;
+  const { unreadSubmissionCount } = useSubmissionNotifications({ poll: true });
+  const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
+  const pendingInvitationCount = useMemo(
+    () => (invitations ?? []).filter((inv: { status: string }) => inv.status === "pending").length,
+    [invitations],
+  );
+  const pendingCount = unreadSubmissionCount + pendingInvitationCount;
 
   const signOutMutation = useMutation(
     auth.signOut.mutationOptions({
@@ -470,7 +480,7 @@ const AppSidebar = () => {
                     label="Notifications"
                   >
                     {pendingCount > 0 && (
-                      <span className="text-[10px] bg-primary text-primary-foreground py-0.5 rounded-full font-semibold shrink-0 tabular-nums">
+                      <span className="text-[10px] w-4 text-center bg-primary text-primary-foreground py-0.5 rounded-full font-semibold shrink-0 tabular-nums">
                         {pendingCount}
                       </span>
                     )}
@@ -998,6 +1008,16 @@ const SidebarInbox = () => {
 
   // Fetch invitations received by current user
   const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
+  const {
+    notifications,
+    readNotificationCount,
+    openNotification,
+    clearNotification,
+    clearAllReadNotifications,
+    isClearingAllRead,
+    clearingFormId,
+    readingFormId,
+  } = useSubmissionNotifications();
 
   // Helper to refetch invitations on error (stale data)
   const handleError = (error: unknown) => {
@@ -1041,6 +1061,8 @@ const SidebarInbox = () => {
   const pendingInvitations = (invitations ?? []).filter(
     (inv: { status: string }) => inv.status === "pending",
   );
+  const hasNotifications = notifications.length > 0;
+  const hasPendingInvitations = pendingInvitations.length > 0;
 
   return (
     <div
@@ -1071,8 +1093,91 @@ const SidebarInbox = () => {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-2 no-scrollbar">
         <div className="px-1 overflow-hidden">
+          {hasNotifications && (
+            <>
+              <div className="mb-3 flex items-center justify-between px-2">
+                <p className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest">
+                  Submissions
+                </p>
+                {readNotificationCount > 0 ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                    disabled={isClearingAllRead}
+                    onClick={() => void clearAllReadNotifications()}
+                  >
+                    {isClearingAllRead ? "Clearing..." : "Clear all read"}
+                  </Button>
+                ) : null}
+              </div>
+
+              <div className="mb-4 flex flex-col gap-px overflow-hidden rounded-lg">
+                {notifications.map((notification) => {
+                  const isUnread = !notification.isRead && notification.unreadCount > 0;
+                  const isBusy =
+                    readingFormId === notification.formId || clearingFormId === notification.formId;
+
+                  return (
+                    <button
+                      key={notification.id}
+                      type="button"
+                      className="group flex w-full min-h-8.5 items-center gap-3 bg-secondary pl-2.5 pr-[6px] py-1.75 text-left transition-colors hover:bg-muted/80"
+                      onClick={() => void openNotification(notification)}
+                      disabled={readingFormId === notification.formId}
+                    >
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-foreground/5">
+                        <ThemedFormIcon
+                          icon={notification.formIcon}
+                          customization={undefined}
+                          size="14"
+                          iconSize="8"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-base font-normal">
+                          {notification.formTitle || "Untitled"}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        {isUnread ? (
+                          <span className="text-[11px] tabular-nums text-foreground">
+                            {notification.unreadCount === 1
+                              ? "1 new"
+                              : `${notification.unreadCount} new`}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground/50">
+                            {formatNotificationTime(notification.latestSubmissionAt)}
+                          </span>
+                        )}
+                        {notification.isRead ? (
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            className="h-5 w-5 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity hover:text-foreground"
+                            disabled={isBusy}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void clearNotification(notification.formId);
+                            }}
+                            aria-label="Clear notification"
+                          >
+                            <XIcon className="h-3 w-3" />
+                          </Button>
+                        ) : (
+                          <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
           {/* Invitations Section */}
-          {pendingInvitations.length > 0 && (
+          {hasPendingInvitations && (
             <>
               <p className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest mb-3 px-2">
                 Invitations
@@ -1150,11 +1255,16 @@ const SidebarInbox = () => {
               </div>
             </>
           )}
-          <div className="space-y-1">
-            <div className="flex items-center justify-center py-8 text-muted-foreground/40">
-              <p className="text-base">No other notifications</p>
+
+          {!hasNotifications && !hasPendingInvitations ? (
+            <div className="flex flex-col items-center justify-center gap-1 py-8 text-center">
+              <p className="text-base text-muted-foreground/50">No notifications yet</p>
+              <p className="max-w-[220px] text-[11px] text-muted-foreground/40">
+                Submission notifications appear here for forms where in-app notifications are
+                enabled.
+              </p>
             </div>
-          </div>
+          ) : null}
         </div>
       </div>
     </div>

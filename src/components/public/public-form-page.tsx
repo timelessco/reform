@@ -242,6 +242,16 @@ export const PublicFormPage = ({
   );
 
   // Handle error states
+  // Handle gated states (closed, date expired, limit reached) — check before !form
+  // because the server returns form: null for closed forms
+  if (gated && gated.type !== "password_required") {
+    return (
+      <TranslationProvider language={resolvedLanguage}>
+        <FormClosed message={gated.message} />
+      </TranslationProvider>
+    );
+  }
+
   if (error === "not_found" || !form) {
     return (
       <TranslationProvider language={resolvedLanguage}>
@@ -255,15 +265,6 @@ export const PublicFormPage = ({
     return (
       <TranslationProvider language={resolvedLanguage}>
         <FormNotPublished />
-      </TranslationProvider>
-    );
-  }
-
-  // Handle gated states (closed, date expired, limit reached)
-  if (gated && gated.type !== "password_required") {
-    return (
-      <TranslationProvider language={resolvedLanguage}>
-        <FormClosed message={gated.message} />
       </TranslationProvider>
     );
   }
@@ -285,11 +286,11 @@ export const PublicFormPage = ({
     <div
       ref={containerRef}
       className={cn(
-        "pb-8 overflow-x-hidden",
+        "pb-8 overflow-x-hidden text-foreground",
         form.customization && Object.keys(form.customization).length > 0 && "bf-themed",
         // Don't use min-h-screen for popup mode - it causes resize loop
         !isPopup && "min-h-screen",
-        transparentBackground || isPopup ? "bg-transparent" : "bg-white",
+        transparentBackground || isPopup ? "bg-transparent" : "bg-background",
         alignLeft && "text-left",
       )}
       style={dynamicWidth ? ({ "--bf-page-width": "100%" } as React.CSSProperties) : undefined}

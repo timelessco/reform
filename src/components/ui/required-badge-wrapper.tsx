@@ -62,7 +62,7 @@ export const RequiredBadgeWrapper = ({
   }
 
   return (
-    <div className="relative">
+    <div className="relative" style={{ maxWidth: "var(--bf-input-width)" }}>
       {children}
       <button
         type="button"

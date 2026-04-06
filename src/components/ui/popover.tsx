@@ -36,7 +36,7 @@ export const PopoverAnchor = ({
   }
   if (render) {
     return (
-      <div data-slot="popover-anchor">
+      <div data-slot="popover-anchor" className={cn(className)} {...props}>
         {render}
         {children}
       </div>

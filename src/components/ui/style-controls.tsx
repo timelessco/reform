@@ -8,7 +8,7 @@ import { motion, useMotionValue, useTransform, animate, AnimatePresence } from "
 
 interface StyleNumberInputProps {
   label: string;
-  value: string;
+  value?: string | null;
   onChange: (value: string) => void;
   min?: number;
   max?: number;
@@ -21,6 +21,12 @@ interface StyleNumberInputProps {
   valueWidth?: string;
   /** Show the scrubber track, knob, hash marks, and spring/rubber-band effects. Default true. */
   scrubber?: boolean;
+  /** Enables a hidden auto state at the far-left edge. */
+  allowAuto?: boolean;
+  /** Whether the control is currently using the auto/default state. */
+  isAuto?: boolean;
+  /** Called when the far-left auto state is selected. */
+  onAutoChange?: () => void;
 }
 
 export const StyleNumberInput = ({
@@ -35,11 +41,15 @@ export const StyleNumberInput = ({
   className,
   valueWidth = "60px",
   scrubber = true,
+  allowAuto = false,
+  isAuto = false,
+  onAutoChange,
 }: StyleNumberInputProps) => {
   const match = value?.toString().match(/^(-?\d*\.?\d+)(.*)$/);
-  const numValue = match ? parseFloat(match[1]) : 0;
+  const numValue = match ? parseFloat(match[1]) : min;
   const unit = forcedUnit ?? (match ? match[2] : "");
   const shownUnit = displayUnit ?? unit;
+  const hasAutoSlot = allowAuto && typeof onAutoChange === "function";
 
   const [isInteracting, setIsInteracting] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
@@ -57,19 +67,37 @@ export const StyleNumberInput = ({
   const CLICK_THRESHOLD = 3;
   // Dead zone: px past the edge before rubber banding kicks in
   const DEAD_ZONE = 12;
+  const AUTO_SLOT_PERCENT = hasAutoSlot ? 8 : 0;
 
   const visualMax = max === Infinity ? 1000 : max;
   const visualMin = min === -Infinity ? 0 : min;
-  const percentage = Math.max(
-    0,
-    Math.min(100, ((numValue - visualMin) / (visualMax - visualMin)) * 100),
-  );
+  const valueRange = Math.max(visualMax - visualMin, Number.EPSILON);
+  const numericTrackPercent = 100 - AUTO_SLOT_PERCENT;
+  const totalStepCount = Math.max(0, Math.round((max - min) / step));
+  const hashMarks = React.useMemo(() => {
+    if (totalStepCount <= 1) return [];
+
+    const MAX_VISIBLE_HASH_MARKS = 12;
+    const stepStride = Math.max(1, Math.ceil(totalStepCount / MAX_VISIBLE_HASH_MARKS));
+    const marks: number[] = [];
+
+    for (let stepIndex = stepStride; stepIndex < totalStepCount; stepIndex += stepStride) {
+      marks.push(AUTO_SLOT_PERCENT + (stepIndex / totalStepCount) * numericTrackPercent);
+    }
+
+    return marks;
+  }, [AUTO_SLOT_PERCENT, numericTrackPercent, totalStepCount]);
+  const percentage = isAuto
+    ? 0
+    : AUTO_SLOT_PERCENT +
+      Math.max(0, Math.min(1, (numValue - visualMin) / valueRange)) * numericTrackPercent;
 
   // Motion values for imperative animation
   const fillPercent = useMotionValue(percentage);
-  // Fill extends 8px past the knob so its rounded edge wraps around the knob
-  const fillWidth = useTransform(fillPercent, (pct) => `calc(${pct}% + 8px)`);
-  const handleLeft = useTransform(fillPercent, (pct) => `max(3px, calc(${pct}% - 2.5px))`);
+  const fillWidth = useTransform(fillPercent, (pct) => (pct <= 0 ? "0px" : `calc(${pct}% + 8px)`));
+  const handleLeft = useTransform(fillPercent, (pct) =>
+    pct <= 0 ? "3px" : `max(3px, calc(${pct}% - 2.5px))`,
+  );
 
   // Sync fill from props when not interacting
   React.useEffect(() => {
@@ -78,15 +106,29 @@ export const StyleNumberInput = ({
     }
   }, [percentage, isInteracting, fillPercent]);
 
-  const positionToValue = React.useCallback(
+  const positionToState = React.useCallback(
     (clientX: number) => {
       const rect = wrapperRectRef.current;
-      if (!rect) return numValue;
+      if (!rect) {
+        return isAuto ? ({ kind: "auto" } as const) : ({ kind: "value", value: numValue } as const);
+      }
+
       const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-      const rawValue = visualMin + pct * (visualMax - visualMin);
-      return Math.max(min, Math.min(max, rawValue));
+
+      if (hasAutoSlot && pct <= AUTO_SLOT_PERCENT / 100) {
+        return { kind: "auto" } as const;
+      }
+
+      const numericPct = hasAutoSlot
+        ? Math.max(0, Math.min(1, (pct - AUTO_SLOT_PERCENT / 100) / (1 - AUTO_SLOT_PERCENT / 100)))
+        : pct;
+      const rawValue = visualMin + numericPct * valueRange;
+      return {
+        kind: "value",
+        value: Math.max(min, Math.min(max, rawValue)),
+      } as const;
     },
-    [min, max, visualMin, visualMax, numValue],
+    [AUTO_SLOT_PERCENT, hasAutoSlot, isAuto, max, min, numValue, valueRange, visualMin],
   );
 
   // Compute rubber band overflow (px past track edge, with diminishing returns)
@@ -103,12 +145,37 @@ export const StyleNumberInput = ({
   }, []);
 
   const percentFromValue = React.useCallback(
-    (v: number) => ((v - visualMin) / (visualMax - visualMin)) * 100,
-    [visualMin, visualMax],
+    (v: number) =>
+      AUTO_SLOT_PERCENT +
+      Math.max(0, Math.min(1, (v - visualMin) / valueRange)) * numericTrackPercent,
+    [AUTO_SLOT_PERCENT, numericTrackPercent, valueRange, visualMin],
   );
+
+  const commitValue = React.useCallback(
+    (clientX: number) => {
+      const nextState = positionToState(clientX);
+      if (nextState.kind === "auto") {
+        if (animRef.current) {
+          animRef.current.stop();
+          animRef.current = null;
+        }
+        fillPercent.jump(0);
+        onAutoChange?.();
+        return { kind: "auto", percent: 0 } as const;
+      }
+
+      const snapped = Math.round(nextState.value / step) * step;
+      const clamped = Math.max(min, Math.min(max, snapped));
+      const newPct = percentFromValue(clamped);
+      onChange(`${clamped}${unit}`);
+      return { kind: "value", percent: newPct } as const;
+    },
+    [fillPercent, max, min, onAutoChange, onChange, percentFromValue, positionToState, step, unit],
+  );
+
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    e.currentTarget.setPointerCapture(e.pointerId);
     pointerDownPos.current = { x: e.clientX, y: e.clientY };
     isClickRef.current = true;
     setIsInteracting(true);
@@ -132,16 +199,12 @@ export const StyleNumberInput = ({
     }
 
     if (!isClickRef.current) {
-      const newValue = positionToValue(e.clientX);
-      const snapped = Math.round(newValue / step) * step;
-      const clamped = Math.max(min, Math.min(max, snapped));
-      const newPct = percentFromValue(clamped);
+      const nextState = commitValue(e.clientX);
       if (animRef.current) {
         animRef.current.stop();
         animRef.current = null;
       }
-      fillPercent.jump(newPct);
-      onChange(`${clamped}${unit}`);
+      fillPercent.jump(nextState.percent);
 
       // Rubber banding when dragging past edges
       if (scrubber) setRubberBand(computeRubberBand(e.clientX));
@@ -152,14 +215,11 @@ export const StyleNumberInput = ({
 
     if (isClickRef.current) {
       // Click → spring animate to clicked position
-      const rawValue = positionToValue(e.clientX);
-      const snapped = Math.round(rawValue / step) * step;
-      const clamped = Math.max(min, Math.min(max, snapped));
-      const newPct = percentFromValue(clamped);
+      const nextState = commitValue(e.clientX);
 
       if (scrubber) {
         if (animRef.current) animRef.current.stop();
-        animRef.current = animate(fillPercent, newPct, {
+        animRef.current = animate(fillPercent, nextState.percent, {
           type: "spring",
           stiffness: 300,
           damping: 25,
@@ -169,9 +229,8 @@ export const StyleNumberInput = ({
           },
         });
       } else {
-        fillPercent.jump(newPct);
+        fillPercent.jump(nextState.percent);
       }
-      onChange(`${clamped}${unit}`);
     }
 
     setIsInteracting(false);
@@ -183,7 +242,7 @@ export const StyleNumberInput = ({
   const isActive = isHovered || isInteracting;
 
   // Rubber band stretch direction: which edge is being pushed
-  const isAtMin = numValue <= min;
+  const isAtMin = isAuto || numValue <= min;
   const isAtMax = numValue >= max;
   const stretchDirection = rubberBand > 0 ? (isAtMin ? "left" : isAtMax ? "right" : null) : null;
 
@@ -247,14 +306,13 @@ export const StyleNumberInput = ({
             transition={{ duration: 0.1 }}
           />
 
-          {/* Hash marks at 10%–90% — only visible on hover */}
+          {/* Hash marks based on the actual numeric step positions */}
           <div className="absolute inset-0 flex items-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-            {Array.from({ length: 9 }, (_, i) => {
-              const markPercent = (i + 1) * 10;
+            {hashMarks.map((markPercent) => {
               const isFilled = markPercent <= percentage;
               return (
                 <div
-                  key={i}
+                  key={markPercent}
                   className="absolute w-px h-2.5 rounded-full transition-opacity duration-150"
                   style={{
                     left: `${markPercent}%`,
@@ -280,10 +338,9 @@ export const StyleNumberInput = ({
           isActive ? "text-foreground" : "text-muted-foreground",
         )}
         style={{ width: valueWidth }}
-        aria-label={`${label}: ${numValue}${shownUnit}`}
+        aria-label={isAuto ? `${label}: Auto` : `${label}: ${numValue}${shownUnit}`}
       >
-        {numValue}
-        {shownUnit}
+        {isAuto ? "Auto" : `${numValue}${shownUnit}`}
       </div>
     </motion.div>
   );

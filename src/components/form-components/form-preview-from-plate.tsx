@@ -4,6 +4,7 @@ import { ProgressBar } from "@/components/public/progress-bar";
 import { Button } from "@/components/ui/button";
 import { StepFormProvider, useStepForm } from "@/contexts/step-form-context";
 import { useTranslation } from "@/contexts/translation-context";
+import { CUSTOMIZATION_AUTO_DEFAULTS } from "@/lib/customization-defaults";
 import { extractFormHeader } from "@/lib/transform-plate-to-form";
 import { transformPlateForPreview } from "@/lib/transform-plate-for-preview";
 import type { PreviewSegment } from "@/lib/transform-plate-for-preview";
@@ -81,8 +82,8 @@ interface FormPreviewFromPlateProps {
 const isHexColor = (str: string): boolean => /^#([0-9A-Fa-f]{3}){1,2}$/.test(str);
 
 const PAGE_MAX_WIDTH = {
-  editor: "var(--bf-page-width, 700px)",
-  public: "var(--bf-page-width, 42rem)",
+  editor: `var(--bf-page-width, ${CUSTOMIZATION_AUTO_DEFAULTS.pageWidth})`,
+  public: `var(--bf-page-width, ${CUSTOMIZATION_AUTO_DEFAULTS.pageWidth})`,
 } as const;
 
 /**

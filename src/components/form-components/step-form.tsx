@@ -252,7 +252,6 @@ const RenderStepButton = ({
     const button = (
       <Button
         type="button"
-        variant="outline"
         onClick={onPrevious}
         style={buttonStyle}
         className="h-8 px-2.5 rounded-lg gap-1.5"

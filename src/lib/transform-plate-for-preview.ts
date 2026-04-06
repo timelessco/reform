@@ -307,7 +307,7 @@ export const getFieldsFromSegments = (segments: PreviewSegment[]): PlateFormFiel
  * Extracts only editable (non-button) fields from segments.
  * Used for form field count checks and auto-jump logic.
  */
-const EDITABLE_FIELD_TYPES = new Set([
+export const EDITABLE_FIELD_TYPES = new Set([
   "Input",
   "Textarea",
   "Email",

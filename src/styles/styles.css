@@ -606,11 +606,7 @@
   --color-ring: var(--bf-ring);
 
   font-family: var(--bf-font);
-  color: #09090b;
-}
-
-.bf-themed.dark {
-  color: var(--bf-foreground, #fafafa);
+  color: var(--bf-foreground, #09090b);
 }
 
 /* Layout bridge: consume --bf-* layout vars on data-attribute targets.
@@ -636,7 +632,7 @@
 }
 
 .bf-themed [data-bf-cover] {
-  height: var(--bf-cover-height, 200px);
+  height: var(--bf-cover-height);
 }
 
 /* Logo/icon positioning: half overlapping cover, half below.
@@ -652,8 +648,8 @@
 
 /* Logo image sizing */
 .bf-themed [data-bf-logo] {
-  width: var(--bf-logo-width, 120px);
-  height: var(--bf-logo-width, 120px);
+  width: var(--bf-logo-width);
+  height: var(--bf-logo-width);
 }
 
 /* Icon picker logo: fixed 100px container keeps icon position stable.
@@ -667,8 +663,8 @@
 }
 
 .bf-themed [data-bf-logo-icon] > div {
-  width: max(48px, var(--bf-logo-width, 100px)) !important;
-  height: max(48px, var(--bf-logo-width, 100px)) !important;
+  width: max(48px, var(--bf-logo-width)) !important;
+  height: max(48px, var(--bf-logo-width)) !important;
 }
 
 /* Keep the icon SVG at fixed size regardless of circle size */
@@ -695,7 +691,7 @@
 /* Override global * { letter-spacing: 0.01em } inside themed forms */
 .bf-themed,
 .bf-themed * {
-  letter-spacing: var(--bf-letter-spacing, 0.01em);
+  letter-spacing: var(--bf-letter-spacing);
 }
 
 /* Header is excluded from body typography — revert to base layer defaults */
@@ -709,14 +705,14 @@
 .bf-themed [data-bf-header] textarea,
 .bf-themed [data-bf-title] {
   font-family: var(--bf-title-font, "Timeless Serif", ui-serif, Georgia, serif);
-  font-size: var(--bf-title-font-size, clamp(2.25rem, 6vw, 48px));
-  letter-spacing: var(--bf-title-letter-spacing, -0.03em);
+  font-size: var(--bf-title-font-size);
+  letter-spacing: var(--bf-title-letter-spacing);
   font-style: var(--bf-title-font-style, normal);
 }
 
 /* Font-size: editor blocks (inputs, labels, buttons, textareas, paragraphs — NOT headings/header) */
 .bf-themed [data-slate-editor] {
-  font-size: var(--bf-font-size, 1rem);
+  font-size: var(--bf-font-size);
 }
 
 .bf-themed [data-slate-editor] [data-slate-node="element"]:not(h1, h2, h3, h4, h5, h6):not([data-bf-header]),
@@ -727,7 +723,7 @@
 /* Font-size: preview form content (NOT headings) */
 .bf-themed [data-bf-field-list] *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6),
 .bf-themed [data-bf-form-container] > :not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
-  font-size: var(--bf-font-size, 1rem);
+  font-size: var(--bf-font-size);
 }
 
 /* PlateStatic content manages its own font-sizes via node components.

@@ -1510,8 +1510,9 @@ function TimePickerContent(props: TimePickerContentProps) {
         side={side}
         align={align}
         sideOffset={sideOffset}
+        anchor={inputGroupRef}
         {...contentProps}
-        className={cn("flex w-auto p-0", className)}
+        className={cn("!flex-row w-auto gap-0 p-0", className)}
       >
         {children}
       </PopoverContent>
