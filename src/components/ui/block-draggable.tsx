@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-const UNDRAGGABLE_KEYS = [KEYS.column, KEYS.tr, KEYS.td, "formHeader", "formButton", "pageBreak"];
+const UNDRAGGABLE_KEYS = [KEYS.column, KEYS.tr, KEYS.td, "formButton"];
 
 export const BlockDraggable: RenderNodeWrapper = (props) => {
   const { editor, element, path } = props;
@@ -129,15 +129,6 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
   }
 
   if (!enabled) {
-    // formHeader needs a wrapper with slate-blockWrapper so DnD can calculate
-    // drop positions above the first content block
-    if (element.type === "formHeader") {
-      return (innerProps) => (
-        <div className="relative">
-          <div className="slate-blockWrapper">{innerProps.children}</div>
-        </div>
-      );
-    }
     return;
   }
 
@@ -149,6 +140,8 @@ const Draggable = (props: PlateElementProps) => {
   const blockSelectionApi = editor.getApi(BlockSelectionPlugin).blockSelection;
 
   const isFormButton = element.type === "formButton";
+  const isFormHeader = element.type === "formHeader";
+  const isPageBreak = element.type === "pageBreak";
 
   const gutterPosition = React.useMemo(() => {
     if (element.gutterPosition) return element.gutterPosition as "center" | "top";
@@ -261,7 +254,7 @@ const Draggable = (props: PlateElementProps) => {
         getPluginByType(editor, element.type)?.node.isContainer ? "group/container" : "group",
       )}
     >
-      {!isInTable && !isFormButton && (
+      {!isInTable && !isFormButton && !isFormHeader && !isPageBreak && (
         <Gutter gutterPosition={gutterPosition} className="mr-1">
           <div
             className={cn(
