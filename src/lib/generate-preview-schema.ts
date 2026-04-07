@@ -72,7 +72,7 @@ export const generateZodSchemaFromFields = (
           ? uploadedFileSchema.refine((v) => v && v.url.length > 0, {
               message: "Please upload a file",
             })
-          : uploadedFileSchema.optional();
+          : z.union([z.literal(""), uploadedFileSchema]).optional();
         break;
       }
       case "Checkbox":
