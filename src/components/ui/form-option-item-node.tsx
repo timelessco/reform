@@ -127,7 +127,6 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
       attributes={{ ...attributes, "data-bf-input": "true" }}
       className={cn(
         "relative my-0.5 w-full max-w-[464px] cursor-text caret-current rounded-md before:left-[30px] before:top-[14px] before:-translate-y-1/2 before:text-sm",
-        showGhost && "mb-[30px]",
         colorStyle && cn(colorStyle.bg, colorStyle.text),
         className,
       )}
