@@ -23,7 +23,11 @@ const LETTER_LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const OptionIcon = ({ variant, index }: { variant: OptionVariant; index: number }) => {
   switch (variant) {
     case "checkbox":
-      return <Checkbox disabled className="pointer-events-none" />;
+      return (
+        <span className="flex size-5 shrink-0 items-center justify-center">
+          <Checkbox disabled className="pointer-events-none after:hidden" />
+        </span>
+      );
     case "multiChoice": {
       const letter = LETTER_LABELS[index % LETTER_LABELS.length];
       return (
@@ -122,7 +126,8 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
     <PlateElement
       attributes={{ ...attributes, "data-bf-input": "true" }}
       className={cn(
-        "my-0.5 w-full max-w-[464px] cursor-text caret-current rounded-md before:left-[30px] before:top-[14px] before:-translate-y-1/2 before:text-sm",
+        "relative my-0.5 w-full max-w-[464px] cursor-text caret-current rounded-md before:left-[30px] before:top-[14px] before:-translate-y-1/2 before:text-sm",
+        showGhost && "mb-[30px]",
         colorStyle && cn(colorStyle.bg, colorStyle.text),
         className,
       )}
@@ -139,7 +144,7 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
       {showGhost && (
         <div
           contentEditable={false}
-          className="flex h-7 items-center gap-2 pl-[2px] opacity-40 select-none pointer-events-none"
+          className="absolute left-0 right-0 top-full flex h-7 items-center gap-2 pl-[2px] opacity-40 select-none pointer-events-none"
         >
           <OptionIcon variant={variant} index={optionIndex + 1} />
           <span className="text-sm text-muted-foreground">Add option</span>

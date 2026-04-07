@@ -645,7 +645,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                   >
                     {isPublishing ? (
                       <Loader2Icon className="h-4 w-4 animate-spin" />
-                    ) : savedDocs?.[0]?.status === "published" ? (
+                    ) : savedDocs?.[0]?.status === "published" && !hasUnpublishedChanges ? (
                       "Published"
                     ) : (
                       "Publish"

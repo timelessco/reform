@@ -1,7 +1,6 @@
 import { APP_NAME } from "@/lib/app-config";
-import { useResolvedTheme, useTheme } from "@/components/ThemeProvider";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { zodValidator } from "@tanstack/zod-adapter";
 import { PublicFormPage } from "@/components/public/public-form-page";
@@ -12,23 +11,75 @@ import { NotFound } from "@/components/ui/not-found";
 import { getPublishedFormById } from "@/lib/fn/public";
 import { generateThemeCss, getGoogleFontLinkUrl } from "@/lib/generate-theme-css";
 
+type PublicTheme = "light" | "dark" | "system";
+
+const themeStorageKey = (formId: string) => `bf-form-theme:${formId}`;
+
+const resolveSystemTheme = (): "light" | "dark" => {
+  if (typeof window === "undefined") return "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+};
+
 const PublicFormRoute = () => {
   const loaderData = Route.useLoaderData();
   const { formId } = Route.useParams();
   const search = Route.useSearch();
 
-  // Follow system theme live — ThemeProvider handles prefers-color-scheme changes
-  const { setTheme } = useTheme();
+  const rawCustomization = loaderData?.form?.customization ?? null;
+  const defaultMode = ((rawCustomization?.defaultMode as PublicTheme | undefined) ??
+    "system") as PublicTheme;
+
+  // Viewer's chosen theme — initialized from localStorage override or defaultMode
+  const [viewerTheme, setViewerTheme] = useState<PublicTheme>(() => {
+    if (typeof window === "undefined") return defaultMode;
+    const saved = window.localStorage.getItem(themeStorageKey(formId)) as PublicTheme | null;
+    return saved ?? defaultMode;
+  });
+
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(() => {
+    if (viewerTheme === "system") return resolveSystemTheme();
+    return viewerTheme;
+  });
+
+  // Apply theme class to documentElement (scoped to this route's lifetime)
   useEffect(() => {
-    setTheme("system");
+    const root = document.documentElement;
+    const apply = (resolved: "light" | "dark") => {
+      root.classList.remove("light", "dark");
+      root.classList.add(resolved);
+      root.style.colorScheme = resolved;
+      setResolvedTheme(resolved);
+    };
+
+    apply(viewerTheme === "system" ? resolveSystemTheme() : viewerTheme);
+
+    if (viewerTheme === "system") {
+      const mq = window.matchMedia("(prefers-color-scheme: dark)");
+      const handler = () => apply(mq.matches ? "dark" : "light");
+      mq.addEventListener("change", handler);
+      return () => mq.removeEventListener("change", handler);
+    }
+  }, [viewerTheme]);
+
+  // Background color for body
+  useEffect(() => {
     document.body.style.backgroundColor = "var(--color-background)";
     return () => {
       document.body.style.backgroundColor = "";
     };
-  }, [setTheme]);
+  }, []);
 
-  // Resolved system theme for CSS variable generation
-  const resolvedTheme = useResolvedTheme();
+  const handleThemeChange = useCallback(
+    (next: PublicTheme) => {
+      setViewerTheme(next);
+      try {
+        window.localStorage.setItem(themeStorageKey(formId), next);
+      } catch {
+        // ignore storage failures (private mode etc.)
+      }
+    },
+    [formId],
+  );
 
   // Support both transparentBackground and transparent params
   const isTransparent = search.transparentBackground || search.transparent || false;
@@ -41,14 +92,16 @@ const PublicFormRoute = () => {
     dynamicWidth: search.dynamicWidth,
   };
 
-  // Override customization mode with resolved system theme so tokens match
-  const rawCustomization = loaderData?.form?.customization ?? null;
+  // Override customization mode with resolved theme so tokens match
   const customization = useMemo(
     () => (rawCustomization ? { ...rawCustomization, mode: resolvedTheme } : rawCustomization),
     [rawCustomization, resolvedTheme],
   );
   const themeCss = useMemo(() => generateThemeCss(customization), [customization]);
   const googleFontUrl = useMemo(() => getGoogleFontLinkUrl(customization), [customization]);
+
+  // Show toggle only when creator picked "system" and we're not in popup/transparent embed
+  const showThemeToggle = defaultMode === "system" && !search.popup && !isTransparent;
 
   return (
     <>
@@ -61,6 +114,11 @@ const PublicFormRoute = () => {
         formId={formId}
         isPopup={search.popup}
         embedConfig={embedConfig}
+        themeToggle={
+          showThemeToggle
+            ? { current: resolvedTheme, onChange: (m) => handleThemeChange(m) }
+            : undefined
+        }
       />
     </>
   );
@@ -70,27 +128,33 @@ export const Route = createFileRoute("/forms/$formId")({
   // SSR loader - fetches form data on the server for SEO
   loader: async ({ params }) => getPublishedFormById({ data: { id: params.formId } }),
   // SEO meta tags
-  head: ({ loaderData }) => ({
-    meta: [
-      {
-        title: loaderData?.form?.title
-          ? `${loaderData.form.title} | ${APP_NAME}`
-          : `Form | ${APP_NAME}`,
-      },
-      {
-        name: "description",
-        content: loaderData?.form?.title
-          ? `Fill out ${loaderData.form.title}`
-          : "Fill out this form",
-      },
-    ],
-    scripts: [
-      {
-        // Apply system theme before paint — prevents flash
-        children: `(function(){var d=document.documentElement,m=window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";d.classList.remove("light","dark");d.classList.add(m);d.style.colorScheme=m;})();`,
-      },
-    ],
-  }),
+  head: ({ loaderData, params }) => {
+    const defaultMode =
+      (loaderData?.form?.customization as Record<string, string> | undefined)?.defaultMode ||
+      "system";
+    const formId = params.formId;
+    return {
+      meta: [
+        {
+          title: loaderData?.form?.title
+            ? `${loaderData.form.title} | ${APP_NAME}`
+            : `Form | ${APP_NAME}`,
+        },
+        {
+          name: "description",
+          content: loaderData?.form?.title
+            ? `Fill out ${loaderData.form.title}`
+            : "Fill out this form",
+        },
+      ],
+      scripts: [
+        {
+          // Apply theme before paint — viewer override > creator default > system
+          children: `(function(){try{var d=document.documentElement;var override=null;try{override=window.localStorage.getItem("bf-form-theme:${formId}");}catch(e){}var def=${JSON.stringify(defaultMode)};var pick=override||def;var m=pick==="system"?(window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"):pick;d.classList.remove("light","dark");d.classList.add(m);d.style.colorScheme=m;}catch(e){}})();`,
+        },
+      ],
+    };
+  },
   staleTime: 60_000,
   gcTime: 5 * 60_000,
   pendingMs: 500,

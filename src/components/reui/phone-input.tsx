@@ -59,7 +59,7 @@ function PhoneInput({
     >
       <BasePhoneInput.default
         className={cn(
-          "flex flex-row-reverse [&]:rounded-lg [&]:border [&]:border-input [&]:has-[[data-slot=input-group-control]:focus-visible]:border-ring [&]:has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 [&]:has-[[data-slot=input-group-control]:focus-visible]:ring-3",
+          "flex flex-row-reverse [&]:rounded-lg [&]:bg-card [&]:text-foreground [&]:shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] dark:[&]:shadow-none dark:[&]:border dark:[&]:border-border [&]:has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 [&]:has-[[data-slot=input-group-control]:focus-visible]:ring-3",
           phoneInputSize === "sm" && "[&]:h-7",
           phoneInputSize === "lg" && "[&]:h-9",
           phoneInputSize === "default" && "[&]:h-8",

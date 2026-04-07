@@ -757,6 +757,16 @@ export const relations = defineRelations(
 // ============================================================================
 
 export const WorkspaceZod = createSelectSchema(workspaces);
+// ============================================================================
+// Upload Rate Limits (for public form file uploads)
+// ============================================================================
+
+export const uploadRateLimits = pgTable("upload_rate_limits", {
+  ip: text("ip").primaryKey(),
+  windowStart: timestamp("window_start", { withTimezone: true }).notNull().defaultNow(),
+  count: integer("count").notNull().default(0),
+});
+
 export const FormZod = createSelectSchema(forms);
 export const FormVersionZod = createSelectSchema(formVersions);
 export const SubmissionZod = createSelectSchema(submissions);
