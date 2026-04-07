@@ -34,7 +34,7 @@ export const FormSettingsSidebar = ({ formId, isLocal }: FormSettingsSidebarProp
       </SidebarHeader>
 
       <SidebarContent>
-        <div className="p-2">
+        <div className="p-2 [&_button[data-empty]]:!w-auto [&_button[data-empty]]:max-w-[55%]">
           <SettingsContent formId={formId} isLocal={isLocal} />
         </div>
       </SidebarContent>
