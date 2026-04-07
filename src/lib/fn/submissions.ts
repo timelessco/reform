@@ -115,7 +115,6 @@ export const getSubmissionsByFormIdPaginated = createServerFn({ method: "GET" })
       .where(whereCondition)
       .orderBy(desc(submissions.createdAt), desc(submissions.id))
       .limit(limit + 1);
-
     const hasNextPage = rows.length > limit;
     const pageRows = hasNextPage ? rows.slice(0, limit) : rows;
     const lastRow = pageRows.at(-1);

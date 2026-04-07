@@ -68,6 +68,12 @@ const RADIUS_OPTIONS: { label: string; value: string }[] = [
   { label: "Large", value: "large" },
 ];
 
+const DEFAULT_MODE_OPTIONS: { label: string; value: string }[] = [
+  { label: "Light", value: "light" },
+  { label: "Dark", value: "dark" },
+  { label: "System", value: "system" },
+];
+
 const CONFIG_INPUT_CLS = "!rounded-none !border-0 bg-secondary !h-[34px]";
 
 const ColorSwatch = ({ color }: { color?: string }) => {
@@ -371,6 +377,25 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
                   </SelectTrigger>
                   <SelectContent>
                     {RADIUS_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </ConfigRow>
+              <ConfigRow label="Default Theme">
+                <Select
+                  value={customization.defaultMode || "system"}
+                  onValueChange={(v) => v && updateFields({ defaultMode: v })}
+                >
+                  <SelectTrigger className={selectTriggerCls}>
+                    {DEFAULT_MODE_OPTIONS.find(
+                      (o) => o.value === (customization.defaultMode || "system"),
+                    )?.label ?? "System"}
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEFAULT_MODE_OPTIONS.map((o) => (
                       <SelectItem key={o.value} value={o.value}>
                         {o.label}
                       </SelectItem>

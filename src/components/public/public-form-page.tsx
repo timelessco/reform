@@ -1,4 +1,5 @@
-import { FileQuestionIcon, LockIcon } from "@/components/ui/icons";
+import { FileQuestionIcon, LockIcon, MoonIcon, SunIcon } from "@/components/ui/icons";
+import { Button } from "@/components/ui/button";
 import type { Value } from "platejs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -61,6 +62,11 @@ interface PublicFormPageProps {
   isPopup?: boolean;
   /** Embed display configuration */
   embedConfig?: PublicFormEmbedConfig;
+  /** Optional viewer-side theme toggle (shown only when creator selected "system") */
+  themeToggle?: {
+    current: "light" | "dark";
+    onChange: (next: "light" | "dark" | "system") => void;
+  };
 }
 
 /**
@@ -117,6 +123,7 @@ export const PublicFormPage = ({
   gated,
   isPopup = false,
   embedConfig = defaultPublicFormEmbedConfig,
+  themeToggle,
 }: PublicFormPageProps) => {
   const transparentBackground = embedConfig.background === "transparent";
   const hideTitle = embedConfig.title === "hidden";
@@ -219,6 +226,7 @@ export const PublicFormPage = ({
           } catch {
             // localStorage unavailable
           }
+          setSubmitted(true);
         }
 
         // Notify parent of submission (for popup embeds)
@@ -296,6 +304,26 @@ export const PublicFormPage = ({
       style={dynamicWidth ? ({ "--bf-page-width": "100%" } as React.CSSProperties) : undefined}
       aria-live="polite"
     >
+      {themeToggle && (
+        <div className="fixed right-4 top-4 z-50">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={
+              themeToggle.current === "dark" ? "Switch to light theme" : "Switch to dark theme"
+            }
+            onClick={() => themeToggle.onChange(themeToggle.current === "dark" ? "light" : "dark")}
+            className="rounded-full bg-background/80 backdrop-blur border border-border/60 shadow-sm"
+          >
+            {themeToggle.current === "dark" ? (
+              <SunIcon className="h-4 w-4" />
+            ) : (
+              <MoonIcon className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      )}
       <FormPreviewFromPlate
         content={form.content as Value}
         title={hideTitle ? undefined : form.title}

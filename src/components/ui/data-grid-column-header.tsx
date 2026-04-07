@@ -74,12 +74,13 @@ export const DataGridColumnHeader = <TData, TValue>({
   const headerLabel = (
     <div
       className={cn(
-        "text-secondary-foreground/80 font-normal inline-flex h-full items-center gap-1.5 text-[0.8125rem] [&_svg]:size-3.5 [&_svg]:opacity-60",
+        "text-secondary-foreground/80 font-normal inline-flex h-full items-center gap-1.5 text-[0.8125rem] min-w-0 [&_svg]:size-3.5 [&_svg]:opacity-60",
         className,
       )}
+      title={title}
     >
-      {icon}
-      {title}
+      <span className="shrink-0 inline-flex">{icon}</span>
+      <span className="truncate">{title}</span>
     </div>
   );
 
@@ -137,9 +138,9 @@ export const DataGridColumnHeader = <TData, TValue>({
 
   const headerButtonContent = (
     <>
-      <span className="inline-flex items-center gap-1.5">
-        {icon}
-        {title}
+      <span className="inline-flex items-center gap-1.5 min-w-0" title={title}>
+        <span className="shrink-0 inline-flex">{icon}</span>
+        <span className="truncate">{title}</span>
       </span>
       {column.getCanSort() &&
         (column.getIsSorted() === "desc" ? (

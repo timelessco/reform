@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils";
+import { MULTI_SELECT_COLORS } from "@/components/ui/form-option-item-node";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getLatestPublishedVersion } from "@/lib/fn/form-versions";
 import { EDITABLE_FIELD_TYPES } from "@/lib/transform-plate-for-preview";
+import { formatBytes } from "@/hooks/use-file-upload";
 import {
   deleteSubmission,
   deleteSubmissionsBulk,
@@ -44,7 +47,14 @@ import type {
 } from "@tanstack/react-table";
 
 import { ChevronDownIcon, FilterIcon, Trash2Icon, XIcon } from "@/components/ui/icons";
-import { Columns, Download, Search } from "lucide-react";
+import { Columns, Download, FileText, Paperclip, Search } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { Value } from "platejs";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useHotkey } from "@tanstack/react-hotkeys";
@@ -89,7 +99,64 @@ const formatSubmissionValue = (value: unknown): string => {
   }
 };
 
-const SubmissionCell = ({ value, fieldType }: { value: unknown; fieldType: string }) => {
+type UploadedFileValue = {
+  url: string;
+  name: string;
+  size: number;
+  type: string;
+};
+
+const isUploadedFileValue = (value: unknown): value is UploadedFileValue =>
+  !!value &&
+  typeof value === "object" &&
+  "url" in value &&
+  typeof (value as { url: unknown }).url === "string";
+
+const FileTypeIcon = ({ type, className }: { type: string; className?: string }) => {
+  if (type === "application/pdf") {
+    return <FileText className={cn("text-red-500", className)} />;
+  }
+  if (
+    type === "application/msword" ||
+    type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  ) {
+    return <FileText className={cn("text-blue-500", className)} />;
+  }
+  return <Paperclip className={cn("text-muted-foreground", className)} />;
+};
+
+const csvFormat = (value: unknown): string => {
+  if (isUploadedFileValue(value)) return value.url;
+  if (value === null || value === undefined) return "";
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "";
+    }
+  }
+  return String(value);
+};
+
+type FieldOption = { value: string; label: string };
+
+const SubmissionCell = ({
+  value,
+  fieldType,
+  onPreview,
+  options,
+}: {
+  value: unknown;
+  fieldType: string;
+  onPreview?: (file: UploadedFileValue) => void;
+  options?: FieldOption[];
+}) => {
+  const labelFor = (raw: unknown): string => {
+    const s = String(raw);
+    if (!options) return s;
+    const match = options.find((o) => o.value === s);
+    return match?.label ?? s;
+  };
   const text = formatSubmissionValue(value);
   if (text === "-") {
     return <span className="text-[13px] text-muted-foreground">-</span>;
@@ -141,37 +208,70 @@ const SubmissionCell = ({ value, fieldType }: { value: unknown; fieldType: strin
     default: {
       const items = Array.isArray(value) ? value : null;
       if (!items) {
-        return <span className="text-[13px] truncate max-w-[300px] block">{text}</span>;
+        return <span className="text-[13px] truncate max-w-[300px] block">{labelFor(value)}</span>;
       }
+      const useColors = fieldType === "MultiSelect" && options;
       return (
         <div className="flex flex-wrap gap-1 max-w-[300px]">
-          {items.map((item) => (
-            <span
-              key={String(item)}
-              className="inline-flex items-center rounded-md bg-secondary px-1.5 py-0.5 text-[11px] text-secondary-foreground"
-            >
-              {String(item)}
-            </span>
-          ))}
-        </div>
-      );
-    }
-    case "FileUpload": {
-      const files = Array.isArray(value) ? value : [text];
-      return (
-        <div className="flex flex-wrap gap-1 max-w-[300px]">
-          {files.map((file) => {
-            const label = typeof file === "string" ? file.split("/").pop() : String(file);
+          {items.map((item) => {
+            const colorIdx = useColors ? options.findIndex((o) => o.value === String(item)) : -1;
+            const color =
+              colorIdx >= 0 ? MULTI_SELECT_COLORS[colorIdx % MULTI_SELECT_COLORS.length] : null;
             return (
               <span
-                key={label}
-                className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground"
+                key={String(item)}
+                className={cn(
+                  "inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px]",
+                  color ? cn(color.bg, color.text) : "bg-secondary text-secondary-foreground",
+                )}
               >
-                {label}
+                {labelFor(item)}
               </span>
             );
           })}
         </div>
+      );
+    }
+    case "FileUpload": {
+      // Legacy: bare string filename from old submissions
+      if (typeof value === "string") {
+        return (
+          <span className="text-[13px] text-muted-foreground italic truncate max-w-[180px] block">
+            {value}
+          </span>
+        );
+      }
+      if (!isUploadedFileValue(value)) {
+        return <span className="text-[13px] text-muted-foreground">-</span>;
+      }
+      const file = value;
+      const isImage = file.type.startsWith("image/");
+      return (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPreview?.(file);
+          }}
+          title={`${file.name} • ${formatBytes(file.size)}`}
+          className="flex w-full items-center justify-center gap-2 max-w-[180px] group cursor-pointer"
+        >
+          {isImage ? (
+            <img
+              src={file.url}
+              alt=""
+              loading="lazy"
+              className="h-8 w-auto max-w-[64px] rounded object-contain border border-border/40 shrink-0"
+            />
+          ) : (
+            <FileTypeIcon type={file.type} className="h-8 w-8 shrink-0" />
+          )}
+          {!isImage && (
+            <span className="text-[13px] truncate text-muted-foreground group-hover:text-foreground">
+              {file.name}
+            </span>
+          )}
+        </button>
       );
     }
   }
@@ -193,6 +293,9 @@ const SubmissionsPage = () => {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({});
   const [columnOrder, setColumnOrder] = useState<string[]>([]);
+  const [previewFile, setPreviewFile] = useState<UploadedFileValue | null>(null);
+  const openPreview = useCallback((file: UploadedFileValue) => setPreviewFile(file), []);
+  const closePreview = useCallback(() => setPreviewFile(null), []);
   const handleSetActiveTabAll = useCallback(() => setActiveTab("all"), []);
   const handleSetActiveTabCompleted = useCallback(() => setActiveTab("completed"), []);
   const handleSetActiveTabPartial = useCallback(() => setActiveTab("partial"), []);
@@ -275,7 +378,7 @@ const SubmissionsPage = () => {
     if (formElements) {
       const editableFields = getEditableFields(formElements);
       editableFields
-        .filter((field) => field.fieldType === "Input" || field.fieldType === "Textarea")
+        .filter((field) => EDITABLE_FIELD_TYPES.has(field.fieldType))
         .forEach((field) => currentFieldNames.add(field.name));
     }
 
@@ -402,7 +505,12 @@ const SubmissionsPage = () => {
                   />
                 ),
                 cell: (info) => (
-                  <SubmissionCell value={info.getValue()} fieldType={field.fieldType} />
+                  <SubmissionCell
+                    value={info.getValue()}
+                    fieldType={field.fieldType}
+                    onPreview={openPreview}
+                    options={"options" in field ? (field.options as FieldOption[]) : undefined}
+                  />
                 ),
                 size: 150,
                 meta: {
@@ -435,7 +543,13 @@ const SubmissionsPage = () => {
                   }
                 />
               ),
-              cell: (info) => <SubmissionCell value={info.getValue()} fieldType="unknown" />,
+              cell: (info) => (
+                <SubmissionCell
+                  value={info.getValue()}
+                  fieldType="FileUpload"
+                  onPreview={openPreview}
+                />
+              ),
               size: 150,
               meta: {
                 headerTitle: fieldName,
@@ -447,7 +561,7 @@ const SubmissionsPage = () => {
     });
 
     return { columns: baseColumns, fieldCounts: counts };
-  }, [formElements, orphanedFieldNames, fieldStatusFilter, handleDelete]);
+  }, [formElements, orphanedFieldNames, fieldStatusFilter, handleDelete, openPreview]);
 
   const table = useReactTable({
     data: submissions,
@@ -512,8 +626,8 @@ const SubmissionsPage = () => {
             .getVisibleCells()
             .filter((cell: Cell<SerializedSubmission, unknown>) => cell.column.id !== "select")
             .map((cell: Cell<SerializedSubmission, unknown>) => {
-              const val = cell.getValue();
-              return `"${val ?? ""}"`;
+              const formatted = csvFormat(cell.getValue()).replaceAll('"', '""');
+              return `"${formatted}"`;
             })
             .join(","),
         )
@@ -665,6 +779,55 @@ const SubmissionsPage = () => {
           </div>
         </div>
       </div>
+
+      {/* File preview dialog */}
+      <Dialog open={previewFile !== null} onOpenChange={(open) => !open && closePreview()}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+          {previewFile && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="sr-only">File preview</DialogTitle>
+                <DialogDescription className="sr-only">
+                  Preview of the uploaded file
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex-1 min-h-0 flex items-center justify-center bg-muted/30 rounded-md overflow-auto">
+                {previewFile.type.startsWith("image/") ? (
+                  <img
+                    src={previewFile.url}
+                    alt={previewFile.name}
+                    className="max-w-full max-h-[70vh] object-contain"
+                  />
+                ) : previewFile.type === "application/pdf" ? (
+                  <iframe
+                    src={previewFile.url}
+                    title={previewFile.name}
+                    className="w-full h-[70vh] border-0"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-4 py-12">
+                    <FileTypeIcon type={previewFile.type} className="h-16 w-16" />
+                    <p className="text-sm text-muted-foreground">
+                      Preview not available for this file type.
+                    </p>
+                    <a
+                      href={previewFile.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download={previewFile.name}
+                    >
+                      <Button variant="outline" size="sm">
+                        <Download className="h-4 w-4 mr-2" />
+                        Download
+                      </Button>
+                    </a>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Table Container with DataGrid */}
       <div className="flex-1 flex flex-col min-h-0 min-w-0">

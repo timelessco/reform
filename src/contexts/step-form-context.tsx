@@ -13,6 +13,8 @@ type StepFormContextValue = {
   direction: number;
   submitForm: (finalStepData: Record<string, unknown>) => Promise<void>;
   reset: () => void;
+  /** Form ID for upload server fn (empty when not in a published form context, e.g. builder preview) */
+  formId: string;
 };
 
 const StepFormContext = React.createContext<StepFormContextValue | null>(null);
@@ -121,6 +123,7 @@ export const StepFormProvider = ({
       direction,
       submitForm,
       reset,
+      formId,
     }),
     [
       currentStep,
@@ -133,6 +136,7 @@ export const StepFormProvider = ({
       direction,
       submitForm,
       reset,
+      formId,
     ],
   );
 

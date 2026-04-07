@@ -29,33 +29,52 @@ export const generateZodSchemaFromFields = (
 
     switch (field.fieldType) {
       case "Email":
-        fieldSchema = z
-          .string({ error: "This field is required" })
-          .email("Please enter a valid email address");
+        fieldSchema = field.required
+          ? z
+              .string({ error: "This field is required" })
+              .min(1, "This field is required")
+              .email("Please enter a valid email address")
+          : z.union([z.literal(""), z.string().email("Please enter a valid email address")]);
         break;
-      case "Link":
-        fieldSchema = z
-          .string({ error: "This field is required" })
-          .regex(/^(https?:\/\/)?[\w.-]+\.\w{2,}(\/\S*)?$/, "Please enter a valid URL");
+      case "Link": {
+        const urlRegex = /^(https?:\/\/)?[\w.-]+\.\w{2,}(\/\S*)?$/;
+        fieldSchema = field.required
+          ? z
+              .string({ error: "This field is required" })
+              .min(1, "This field is required")
+              .regex(urlRegex, "Please enter a valid URL")
+          : z.union([z.literal(""), z.string().regex(urlRegex, "Please enter a valid URL")]);
         break;
+      }
       case "Number":
-        fieldSchema = z.coerce.number({ error: "Please enter a valid number" });
+        fieldSchema = field.required
+          ? z.coerce.number({ error: "Please enter a valid number" })
+          : z.union([z.literal(""), z.coerce.number({ error: "Please enter a valid number" })]);
         break;
       case "Date":
-        fieldSchema = z
-          .string({ error: "This field is required" })
-          .nonempty("Please select a date");
+        fieldSchema = field.required
+          ? z.string({ error: "This field is required" }).nonempty("Please select a date")
+          : z.string().optional();
         break;
       case "Time":
-        fieldSchema = z
-          .string({ error: "This field is required" })
-          .nonempty("Please select a time");
+        fieldSchema = field.required
+          ? z.string({ error: "This field is required" }).nonempty("Please select a time")
+          : z.string().optional();
         break;
-      case "FileUpload":
-        fieldSchema = z
-          .string({ error: "This field is required" })
-          .nonempty("Please upload a file");
+      case "FileUpload": {
+        const uploadedFileSchema = z.object({
+          url: z.string(),
+          name: z.string(),
+          size: z.number(),
+          type: z.string(),
+        });
+        fieldSchema = field.required
+          ? uploadedFileSchema.refine((v) => v && v.url.length > 0, {
+              message: "Please upload a file",
+            })
+          : uploadedFileSchema.optional();
         break;
+      }
       case "Checkbox":
       case "MultiSelect":
         if (field.required) {
