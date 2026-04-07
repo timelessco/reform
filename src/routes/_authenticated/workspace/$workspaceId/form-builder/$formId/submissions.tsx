@@ -13,14 +13,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getLatestPublishedVersion } from "@/lib/fn/form-versions";
 import { EDITABLE_FIELD_TYPES } from "@/lib/transform-plate-for-preview";
 import { formatBytes } from "@/hooks/use-file-upload";
 import {
   deleteSubmission,
   deleteSubmissionsBulk,
+  getSubmissionsBootstrap,
   getSubmissionsByFormIdPaginated,
-  getSubmissionsCountQueryOption,
 } from "@/lib/fn/submissions";
 import type { SerializedSubmission, SubmissionCursor } from "@/lib/fn/submissions";
 import {
@@ -62,6 +61,7 @@ import { HOTKEYS, formatForDisplay } from "@/lib/hotkeys";
 
 // Field status types for color coding
 type FieldStatus = "current" | "deleted";
+const EMPTY_LABELS: Record<string, string> = {};
 type PaginatedSubmissionsPage = {
   submissions: SerializedSubmission[];
   nextCursor?: SubmissionCursor;
@@ -305,14 +305,17 @@ const SubmissionsPage = () => {
   );
   const handleClearSelection = useCallback(() => setRowSelection({}), []);
 
-  // 1. Fetch Published Form Structure (to derive columns from published version, not draft)
-  const { data: publishedData } = useQuery({
-    queryKey: ["publishedFormVersion", formId],
-    queryFn: () => getLatestPublishedVersion({ data: { formId } }),
+  // 1. Bootstrap: published form content + total count + historical field labels (1 round-trip)
+  const { data: bootstrapData } = useQuery({
+    queryKey: ["submissionsBootstrap", formId],
+    queryFn: () => getSubmissionsBootstrap({ data: { formId } }),
     staleTime: 1000 * 60 * 10,
   });
-  const publishedContent = publishedData?.form?.content;
-  // 2. Fetch Submissions via infinite query
+  const publishedContent = bootstrapData?.form?.content;
+  const totalCount = bootstrapData?.totalCount ?? 0;
+  const historicalLabels = bootstrapData?.fieldLabels ?? EMPTY_LABELS;
+
+  // 2. Fetch Submissions via infinite query (independent of bootstrap)
   const {
     data: submissionsData,
     fetchNextPage,
@@ -328,8 +331,6 @@ const SubmissionsPage = () => {
     refetchOnWindowFocus: true,
     staleTime: 30_000,
   });
-  const { data: countData } = useQuery(getSubmissionsCountQueryOption(formId));
-  const totalCount = countData?.total ?? 0;
 
   const allSubmissions: SerializedSubmission[] = useMemo(
     () => submissionsData?.pages?.flatMap((page) => page?.submissions ?? []) ?? [],
@@ -527,6 +528,7 @@ const SubmissionsPage = () => {
     counts.deleted = orphanedFieldNames.size;
     orphanedFieldNames.forEach((fieldName) => {
       const status: FieldStatus = "deleted";
+      const resolvedLabel = historicalLabels[fieldName] ?? fieldName;
 
       // Only add if status filter includes this status
       if (fieldStatusFilter.has(status)) {
@@ -537,7 +539,7 @@ const SubmissionsPage = () => {
               header: ({ column }) => (
                 <DataGridColumnHeader
                   column={column}
-                  title={fieldName}
+                  title={resolvedLabel}
                   icon={
                     <span className="block h-2.5 w-2.5 rounded-full border-[1.5px] border-red-500" />
                   }
@@ -552,7 +554,7 @@ const SubmissionsPage = () => {
               ),
               size: 150,
               meta: {
-                headerTitle: fieldName,
+                headerTitle: resolvedLabel,
               },
             }),
           ),
@@ -561,7 +563,14 @@ const SubmissionsPage = () => {
     });
 
     return { columns: baseColumns, fieldCounts: counts };
-  }, [formElements, orphanedFieldNames, fieldStatusFilter, handleDelete, openPreview]);
+  }, [
+    formElements,
+    orphanedFieldNames,
+    fieldStatusFilter,
+    handleDelete,
+    openPreview,
+    historicalLabels,
+  ]);
 
   const table = useReactTable({
     data: submissions,
@@ -923,15 +932,12 @@ export const Route = createFileRoute(
 )({
   component: SubmissionsPage,
   loader: async ({ context, params }) => {
-    const [publishedData] = await Promise.all([
+    await Promise.all([
       context.queryClient.ensureQueryData({
-        queryKey: ["publishedFormVersion", params.formId],
-        queryFn: () => getLatestPublishedVersion({ data: { formId: params.formId } }),
+        queryKey: ["submissionsBootstrap", params.formId],
+        queryFn: () => getSubmissionsBootstrap({ data: { formId: params.formId } }),
         revalidateIfStale: true,
       }),
-      context.queryClient
-        .ensureQueryData(getSubmissionsCountQueryOption(params.formId))
-        .catch(() => ({ total: 0 })),
       context.queryClient.ensureInfiniteQueryData({
         queryKey: ["submissions", params.formId],
         queryFn: () => getPaginatedSubmissionsPage(params.formId, undefined),
@@ -939,7 +945,6 @@ export const Route = createFileRoute(
         getNextPageParam: (lastPage: PaginatedSubmissionsPage) => lastPage.nextCursor,
       }),
     ]);
-    return { publishedData };
   },
   staleTime: 30_000,
   gcTime: 5 * 60_000,

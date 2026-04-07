@@ -2,8 +2,13 @@ import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { and, count, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
 import { z } from "zod";
-import { submissions } from "@/db/schema";
+import type { Value } from "platejs";
+import { forms, formVersions, submissions } from "@/db/schema";
 import { db } from "@/lib/db";
+import {
+  getEditableFields,
+  transformPlateStateToFormElements,
+} from "@/lib/transform-plate-to-form";
 import { authMiddleware } from "@/middleware/auth";
 import { authForm, getActiveOrgId } from "./helpers";
 
@@ -147,6 +152,81 @@ export const getSubmissionsCount = createServerFn({ method: "GET" })
       .where(eq(submissions.formId, data.formId));
 
     return { total: result?.total ?? 0 };
+  });
+
+/**
+ * Bootstrap data for the submissions page: published form content, total count,
+ * and a complete name → label map across ALL historical versions.
+ *
+ * Replaces three separate queries (published version, count, historical labels)
+ * with one round-trip and removes the orphan-detection waterfall.
+ */
+export const getSubmissionsBootstrap = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .inputValidator(z.object({ formId: z.string().uuid() }))
+  .handler(async ({ data, context }) => {
+    const orgId = getActiveOrgId(context.session);
+    await authForm(data.formId, context.session.user.id, orgId);
+
+    const [publishedRow, countRow, allVersions] = await Promise.all([
+      db
+        .select({
+          id: forms.id,
+          status: forms.status,
+          icon: forms.icon,
+          cover: forms.cover,
+          lastPublishedVersionId: forms.lastPublishedVersionId,
+          versionTitle: formVersions.title,
+          versionContent: formVersions.content,
+          versionSettings: formVersions.settings,
+          versionCustomization: formVersions.customization,
+        })
+        .from(forms)
+        .leftJoin(formVersions, eq(forms.lastPublishedVersionId, formVersions.id))
+        .where(and(eq(forms.id, data.formId), eq(forms.status, "published")))
+        .then((rows) => rows[0]),
+      db
+        .select({ total: count() })
+        .from(submissions)
+        .where(eq(submissions.formId, data.formId))
+        .then((rows) => rows[0]),
+      db
+        .select({ content: formVersions.content })
+        .from(formVersions)
+        .where(eq(formVersions.formId, data.formId))
+        .orderBy(desc(formVersions.version)),
+    ]);
+
+    // Resolve labels across every historical version. Newest version wins on conflict.
+    const fieldLabels: Record<string, string> = {};
+    for (const v of allVersions) {
+      const elements = transformPlateStateToFormElements(v.content as Value);
+      for (const field of getEditableFields(elements)) {
+        if ("label" in field && field.label && !(field.name in fieldLabels)) {
+          fieldLabels[field.name] = field.label;
+        }
+      }
+    }
+
+    const form =
+      publishedRow && publishedRow.lastPublishedVersionId && publishedRow.versionContent
+        ? {
+            id: publishedRow.id,
+            title: publishedRow.versionTitle ?? "",
+            content: publishedRow.versionContent as object[],
+            settings: publishedRow.versionSettings as Record<string, object>,
+            customization: (publishedRow.versionCustomization ?? {}) as Record<string, string>,
+            icon: publishedRow.icon,
+            cover: publishedRow.cover,
+            status: publishedRow.status,
+          }
+        : null;
+
+    return {
+      form,
+      totalCount: countRow?.total ?? 0,
+      fieldLabels,
+    };
   });
 
 // Query options
