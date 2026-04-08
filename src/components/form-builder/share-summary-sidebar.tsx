@@ -12,6 +12,7 @@ import { Tabs, TabsIndicator, TabsList, TabsTrigger } from "@/components/ui/tabs
 import { useForm } from "@/hooks/use-live-hooks";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { publishForm } from "@/hooks/use-form-versions";
+import { getFormListings } from "@/db-collections/collections";
 import { formFieldsToEmbedOptions, EmbedConfigPanel } from "./embed-config-panel";
 import { EmbedCodeDialog, searchToFormValues, formValuesToSearch, tabs } from "./embed-section";
 import { EmbedPreviewMockup } from "./embed-preview-mockup";
@@ -33,7 +34,11 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
   const handleOpenCodeDialog = useCallback(() => setCodeDialogOpen(true), []);
 
   const form = useTanstackForm({
-    defaultValues: searchToFormValues(search, doc?.icon),
+    defaultValues: searchToFormValues(
+      search,
+      doc?.icon,
+      Boolean((doc as { branding?: unknown } | undefined)?.branding ?? true),
+    ),
     listeners: {
       onChange: ({ formApi }) => {
         const v = formApi.state.values;
@@ -49,6 +54,20 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
       onChangeDebounceMs: 150,
     },
   });
+
+  // Persist Reform Branding toggle (Pro, server-controlled) to forms.branding
+  // so every embed reflects the change immediately via form settings.
+  const handleBrandingChange = useCallback(
+    (value: boolean) => {
+      if (!doc?.id) return;
+      const collection = getFormListings();
+      collection.update(doc.id, (draft: { branding?: boolean; updatedAt?: string }) => {
+        draft.branding = value;
+        draft.updatedAt = new Date().toISOString();
+      });
+    },
+    [doc?.id],
+  );
 
   const handlePublish = useCallback(async () => {
     try {
@@ -177,7 +196,13 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
 
                     {/* Pro Features section */}
                     <SidebarSection label="Pro Features" action={<></>}>
-                      <EmbedConfigPanel form={form} embedType={embedType} section="pro" />
+                      <EmbedConfigPanel
+                        form={form}
+                        embedType={embedType}
+                        section="pro"
+                        docBranding={Boolean((doc as { branding?: unknown }).branding ?? true)}
+                        onBrandingChange={handleBrandingChange}
+                      />
                     </SidebarSection>
 
                     {/* Get Code button — inside scrollable content, after Pro Features */}

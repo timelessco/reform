@@ -1,14 +1,13 @@
 import { APP_NAME } from "@/lib/app-config";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CheckIcon, CopyIcon } from "@/components/ui/icons";
+import { CopyButton } from "@/components/copy-button/copy-button";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 import { cn } from "@/lib/utils";
@@ -57,7 +56,10 @@ export const generateEmbedUrl = (formId: string, options: EmbedOptions): string 
   if (options.display.title === "hidden") params.append("hideTitle", "true");
   if (options.display.background === "transparent") params.append("transparent", "true");
   if (options.display.alignment === "left") params.append("align", "left");
-  if (!options.display.branding) params.append("branding", "false");
+  // Note: "Made with Reform" branding is a server-controlled Pro feature. It
+  // cannot be toggled via the embed URL or script data-attributes — the source
+  // of truth is the form's own `settings.branding` column, managed from the
+  // Settings panel.
   if (options.display.dynamicHeight) params.append("dynamicHeight", "true");
   if (options.display.dynamicWidth) params.append("dynamicWidth", "true");
   const queryString = params.toString();
@@ -117,57 +119,12 @@ const generateEmbedCode = (
 <a href="${embedUrl}">Open Form</a>`;
 };
 
-const CopyButton = ({ text }: { text: string }) => {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [text]);
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon"
-      onClick={handleCopy}
-      aria-label="Copy to clipboard"
-      className="absolute top-3 right-3 h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-    >
-      {copied ? <CheckIcon className="w-3.5 h-3.5" /> : <CopyIcon className="w-3.5 h-3.5" />}
-    </Button>
-  );
-};
-
-const InlineCopyBar = ({ value }: { value: string }) => {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(value);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [value]);
-  return (
-    <div className="flex gap-1.5">
-      <Input
-        value={value}
-        readOnly
-        aria-label="Embed URL"
-        className="h-9 text-[11px] bg-muted/30 focus-visible:ring-primary border-transparent focus:border-primary transition-all pr-2 font-mono"
-      />
-      <Button
-        size="icon"
-        className="h-9 w-9 shrink-0"
-        onClick={handleCopy}
-        aria-label="Copy to clipboard"
-      >
-        {copied ? (
-          <CheckIcon className="h-3.5 w-3.5 text-green-500" />
-        ) : (
-          <CopyIcon className="h-3.5 w-3.5" />
-        )}
-      </Button>
-    </div>
-  );
-};
+const InlineCopyBar = ({ value }: { value: string }) => (
+  <div className="flex items-center gap-2">
+    <Input value={value} readOnly aria-label="Embed URL" className="font-mono text-xs" />
+    <CopyButton text={value} variant="outline" />
+  </div>
+);
 
 const CodeBlock = ({
   code,
@@ -186,17 +143,17 @@ const CodeBlock = ({
   }
 
   return (
-    <div className="relative group mt-3 w-full max-w-full overflow-hidden">
+    <div className="relative group mt-3 w-full min-w-0 max-w-full overflow-hidden">
       <pre
         className={cn(
-          "w-full max-w-full bg-muted/30 border border-border/50 rounded-xl p-4 text-[12px] font-mono text-foreground/90 scrollbar-hide whitespace-pre-wrap break-words overflow-x-hidden [tab-size:2]",
+          "w-full min-w-0 max-w-full bg-muted/30 border border-border/50 rounded-xl p-4 pr-12 text-[12px] font-mono text-foreground/90 whitespace-pre-wrap [word-break:break-word] [overflow-wrap:anywhere] [tab-size:2]",
           hljsClassName,
         )}
       >
         <code dangerouslySetInnerHTML={{ __html: highlighted }} />
       </pre>
-      <div className="absolute top-0 right-0 p-1">
-        <CopyButton text={code} />
+      <div className="absolute top-2 right-2">
+        <CopyButton text={code} variant="outline" />
       </div>
     </div>
   );
@@ -216,32 +173,28 @@ export const EmbedCodeDialog = ({
     [embedType, options, formId, docTitle],
   );
 
-  const emojiParams = options.popup.emoji
-    ? `&emoji-text=${encodeURIComponent(options.popup.emojiIcon)}&emoji-animation=${options.popup.emojiAnimation}`
-    : "";
   const isAlignLeft = options.display.alignment === "left";
   const isHideTitle = options.display.title === "hidden";
   const isDarkOverlay = options.popup.overlay === "dark";
-  const hashUrl = `#form-open=${formId}&position=${options.popup.position}&align-left=${isAlignLeft ? 1 : 0}&hide-title=${isHideTitle ? 1 : 0}&overlay=${isDarkOverlay ? 1 : 0}${emojiParams}&auto-close=${options.popup.hideOnSubmit ? options.popup.hideOnSubmitDelay * 1000 : 0}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-background border-border p-0 [&>button]:text-muted-foreground">
-        <div className="p-8 pb-10 space-y-8">
+        <div className="p-6 space-y-5 min-w-0">
           <DialogHeader className="text-left">
             <DialogTitle className="text-xl font-bold text-foreground">
               Add to your website
             </DialogTitle>
             <p className="text-muted-foreground text-[13px] mt-1.5">
               {embedType === "popup"
-                ? `Enable the ${APP_NAME} popup on your site with a single script and trigger via button attributes or direct JS.`
+                ? `Drop a single script on your site. ${APP_NAME} auto-renders a floating bubble at the position you configured; clicking it opens the form.`
                 : "Integrate this form seamlessly into your website using the snippet below."}
             </p>
           </DialogHeader>
 
-          <div className="space-y-10">
+          <div className="space-y-6">
             {embedType === "standard" ? (
-              <div className="space-y-10">
+              <div className="space-y-5">
                 <div>
                   <h3 className="text-foreground font-semibold text-[13px] mb-2.5">Embed code</h3>
                   <p className="text-muted-foreground text-[12px] mb-3.5">
@@ -265,71 +218,34 @@ export const EmbedCodeDialog = ({
                 </div>
               </div>
             ) : embedType === "popup" ? (
-              <>
-                <div>
-                  <CodeBlock
-                    code={`<script async src="${window.location.origin}/embed/popup.js"></script>`}
-                    language="html"
-                  />
-                </div>
-
-                <div>
-                  <p className="text-muted-foreground text-[12px] mt-6 mb-4">
-                    To{" "}
-                    <strong className="text-foreground font-semibold">
-                      open the popup on clicking a button
-                    </strong>
-                    , add{" "}
-                    <code className="text-foreground font-mono bg-muted px-1.5 py-0.5 rounded text-[11px] border border-border/50">
-                      data-form-id
-                    </code>
-                    attributes to any clickable element.
-                  </p>
-                  <div className="bg-brand/5 border-l-4 border-brand rounded-r-lg p-4 mb-4">
-                    <div className="text-[11px] text-foreground/80 font-mono space-y-1">
-                      <div className="text-muted-foreground/60">{"// Data attributes"}</div>
-                      <div className="break-all">
-                        data-form-id="{formId}"{` data-position="${options.popup.position}"`}
-                        {isAlignLeft && ` data-align-left="1"`}
-                        {isHideTitle && ` data-hide-title="1"`}
-                        {isDarkOverlay && ` data-overlay="1"`}
-                        {options.popup.emoji &&
-                          ` data-emoji-text="${options.popup.emojiIcon}" data-emoji-animation="${options.popup.emojiAnimation}"`}
-                        {options.popup.hideOnSubmit &&
-                          ` data-auto-close="${options.popup.hideOnSubmitDelay * 1000}"`}
-                      </div>
-                    </div>
-                  </div>
-                  <CodeBlock
-                    code={`// Example
-<button type="button"
+              <div>
+                <p className="text-muted-foreground text-[12px] mb-4">
+                  Paste this{" "}
+                  <strong className="text-foreground font-semibold">single script tag</strong> into
+                  your site's{" "}
+                  <code className="text-foreground font-mono bg-muted px-1.5 py-0.5 rounded text-[11px] border border-border/50">{`<head>`}</code>
+                  . All popup settings are read from{" "}
+                  <code className="text-foreground font-mono bg-muted px-1.5 py-0.5 rounded text-[11px] border border-border/50">
+                    data-*
+                  </code>{" "}
+                  attributes on the script itself — no separate button required.
+                </p>
+                <CodeBlock
+                  code={`<script
+  async
+  src="${window.location.origin}/embed/popup.js"
   data-form-id="${formId}"
-  data-position="${options.popup.position}"${isAlignLeft ? `\n  data-align-left="1"` : ""}${isHideTitle ? `\n  data-hide-title="1"` : ""}${isDarkOverlay ? `\n  data-overlay="1"` : ""}${options.popup.emoji ? `\n  data-emoji-text="${options.popup.emojiIcon}"\n  data-emoji-animation="${options.popup.emojiAnimation}"` : ""}${options.popup.hideOnSubmit ? `\n  data-auto-close="${options.popup.hideOnSubmitDelay * 1000}"` : ""}
->
-  Click me
-</button>`}
-                    language="html"
-                  />
-                </div>
-
-                <div>
-                  <p className="text-muted-foreground text-[12px] mt-8 mb-4">
-                    Alternatively,{" "}
-                    <strong className="text-foreground font-semibold">open via a link</strong> with
-                    a custom URL hash.
-                  </p>
-                  <div className="bg-brand/5 border-l-4 border-brand rounded-r-lg p-4 mb-4">
-                    <div className="text-[11px] text-foreground/80 font-mono space-y-1">
-                      <div className="text-muted-foreground/60">{"// Link href"}</div>
-                      <div className="break-all">{hashUrl}</div>
-                    </div>
-                  </div>
-                  <CodeBlock
-                    code={`// Example\n<a href="${hashUrl}">\n  Click me\n</a>`}
-                    language="html"
-                  />
-                </div>
-              </>
+  data-position="${options.popup.position}"
+  data-width="${options.popup.width}"${isAlignLeft ? `\n  data-align-left="1"` : ""}${isHideTitle ? `\n  data-hide-title="1"` : ""}${isDarkOverlay ? `\n  data-dark-overlay="1"` : ""}${options.popup.hideOnSubmit ? `\n  data-auto-close="${options.popup.hideOnSubmitDelay * 1000}"` : ""}
+></script>`}
+                  language="html"
+                />
+                <p className="text-muted-foreground text-[12px] mt-6 mb-2">
+                  The script auto-renders a floating bubble at the configured position, preloads the
+                  form in the background, and expands into the popup when the bubble is clicked. The
+                  bubble uses your form's icon automatically.
+                </p>
+              </div>
             ) : (
               /* Full page */
               <div>
@@ -368,10 +284,21 @@ export const EmbedCodeDialog = ({
                     {embedType === "popup" && (
                       <div className="pt-2">
                         <p className="mb-3">
-                          Data attributes on triggers become hidden fields automatically.
+                          Any extra{" "}
+                          <code className="text-foreground font-mono bg-muted px-1 rounded">
+                            data-*
+                          </code>{" "}
+                          attribute on the script tag (other than the known config keys) is
+                          forwarded to the form as a hidden field.
                         </p>
                         <CodeBlock
-                          code={`<button type="button" data-form-id="${formId}" data-ref="downloads" data-email="alice@example.com">Click me</button>`}
+                          code={`<script
+  async
+  src="${window.location.origin}/embed/popup.js"
+  data-form-id="${formId}"
+  data-ref="downloads"
+  data-email="alice@example.com"
+></script>`}
                           language="html"
                         />
                       </div>
@@ -405,95 +332,32 @@ Reform.loadEmbeds();`}
                     ) : (
                       <div className="space-y-4">
                         <p>
-                          Open and close popups via{" "}
+                          The script auto-renders its own bubble trigger and handles opening the
+                          popup on click. You can also open or close it programmatically via{" "}
                           <code className="text-foreground font-mono bg-muted px-1 rounded">
                             window.Reform
                           </code>
                           .
                         </p>
                         <CodeBlock
-                          code={`// Include the script
-<script src="${window.location.origin}/widgets/embed.js"></script>
+                          code={`// Open the popup
+Reform.open();
 
-// Open popup
-Reform.openPopup('${formId}', options);
-
-// Close popup
-Reform.closePopup('${formId}');`}
+// Close the popup
+Reform.close();`}
                           language="javascript"
                         />
+                        <p className="pt-2">
+                          All popup configuration (position, width, dark overlay, hidden fields,
+                          etc.) is read from{" "}
+                          <code className="text-foreground font-mono bg-muted px-1 rounded">
+                            data-*
+                          </code>{" "}
+                          attributes on the script tag when the page loads — there's nothing to pass
+                          at the call site.
+                        </p>
                       </div>
                     )}
-
-                    <div className="space-y-4 pt-4 border-t border-border/30">
-                      <h4 className="text-foreground font-semibold text-[13px]">
-                        Available options
-                      </h4>
-                      <CodeBlock
-                        code={`type PopupOptions = {
-  key?: string;
-  layout?: 'default' | 'modal';
-  width?: number;
-  alignLeft?: boolean;
-  hideTitle?: boolean;
-  overlay?: boolean;
-  emoji?: {
-    text: string;
-    animation: 'none' | 'wave' | 'tada' | 'heart-beat' | 'spin' | 'flash' | 'bounce' | 'rubber-band' | 'head-shake';
-  };
-  autoClose?: number;
-  hiddenFields?: { [key: string]: any };
-  onOpen?: () => void;
-  onClose?: () => void;
-  onPageView?: (page: number) => void;
-  onSubmit?: (payload: any) => void;
-};`}
-                        language="typescript"
-                      />
-                    </div>
-
-                    <div className="space-y-5 pt-6">
-                      <h4 className="text-foreground font-semibold text-[13px] italic opacity-80 border-b border-border/30 pb-2">
-                        Examples
-                      </h4>
-                      <div className="space-y-3">
-                        <p className="text-[12px] text-foreground/80">
-                          1. Open as centered modal with delay
-                        </p>
-                        <CodeBlock
-                          code={`Reform.openPopup('${formId}', {
-  layout: 'modal',
-  width: ${options.popup.width},
-  autoClose: 5000,
-});`}
-                          language="javascript"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <p className="text-[12px] text-foreground/80">
-                          2. Set custom hidden fields
-                        </p>
-                        <CodeBlock
-                          code={`Reform.openPopup('${formId}', {
-  hiddenFields: {
-    ref: 'downloads',
-    email: 'alice@example.com'
-  }
-});`}
-                          language="javascript"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <p className="text-[12px] text-foreground/80">3. Handle events</p>
-                        <CodeBlock
-                          code={`Reform.openPopup('${formId}', {
-  onOpen: () => console.log('Opened'),
-  onSubmit: (payload) => console.log('Submitted', payload)
-});`}
-                          language="javascript"
-                        />
-                      </div>
-                    </div>
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>

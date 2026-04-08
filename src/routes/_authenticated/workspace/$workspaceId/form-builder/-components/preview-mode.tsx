@@ -247,11 +247,11 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
 
                     {/* Popup branding */}
                     {branding && (
-                      <div className="py-3 flex justify-center bg-primary/10 border-t border-border shrink-0">
-                        <div className="flex items-center gap-1.5 text-[12px] font-semibold text-primary">
+                      <div className="py-3 flex justify-center bg-muted/60 border-t border-border shrink-0">
+                        <div className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground">
                           <span>Made with</span>
-                          <SparklesIcon className="h-3 w-3 fill-primary text-primary" />
-                          <span>{APP_NAME}</span>
+                          <SparklesIcon className="h-3 w-3 fill-muted-foreground text-muted-foreground" />
+                          <span className="text-foreground">{APP_NAME}</span>
                         </div>
                       </div>
                     )}

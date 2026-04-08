@@ -170,6 +170,11 @@ interface EmbedConfigPanelProps {
   // eslint-disable-next-line typescript-eslint/no-explicit-any
   form: { Field: any; Subscribe: any };
   section: "customize" | "pro";
+  /** Current server-side value of forms.branding for this form. When provided,
+   * the Reform Branding toggle in the Pro section reads this value directly
+   * instead of local form state, and writes back through `onBrandingChange`. */
+  docBranding?: boolean;
+  onBrandingChange?: (value: boolean) => void;
 }
 
 /* ─── Layout helpers matching Figma node 24119:5595 ─── */
@@ -342,11 +347,17 @@ export const selectTriggerCls =
 
 /* ─── Public entry point ─── */
 
-export const EmbedConfigPanel = ({ embedType, form, section }: EmbedConfigPanelProps) => {
+export const EmbedConfigPanel = ({
+  embedType,
+  form,
+  section,
+  docBranding,
+  onBrandingChange,
+}: EmbedConfigPanelProps) => {
   if (section === "customize") {
     return <CustomizeSection embedType={embedType} form={form} />;
   }
-  return <ProSection form={form} />;
+  return <ProSection form={form} docBranding={docBranding} onBrandingChange={onBrandingChange} />;
 };
 
 /* ─── Label maps ─── */
@@ -590,8 +601,16 @@ const CustomizeSection = ({
   );
 };
 
-// eslint-disable-next-line typescript-eslint/no-explicit-any
-const ProSection = ({ form }: { form: { Field: any } }) => (
+const ProSection = ({
+  form,
+  docBranding,
+  onBrandingChange,
+}: {
+  // eslint-disable-next-line typescript-eslint/no-explicit-any
+  form: { Field: any };
+  docBranding?: boolean;
+  onBrandingChange?: (value: boolean) => void;
+}) => (
   <ConfigCard>
     <form.Field name="trackEvents">
       {(field: FieldRenderApi<boolean>) => (
@@ -606,13 +625,20 @@ const ProSection = ({ form }: { form: { Field: any } }) => (
       )}
     </form.Field>
 
+    {/* Reform Branding — server-controlled Pro feature. The switch stays
+        bound to the local form field (so the URL and live editor preview
+        update instantly), and when `onBrandingChange` is provided the change
+        is also persisted to `forms.branding` so every embed reflects it. */}
     <form.Field name="branding">
       {(field: FieldRenderApi<boolean>) => (
         <ConfigRow label="Reform Branding" variant="switch">
           <Switch
             aria-label="Reform Branding"
-            checked={field.state.value}
-            onCheckedChange={field.handleChange}
+            checked={docBranding ?? field.state.value}
+            onCheckedChange={(value: boolean) => {
+              field.handleChange(value);
+              onBrandingChange?.(value);
+            }}
             size="default"
           />
         </ConfigRow>

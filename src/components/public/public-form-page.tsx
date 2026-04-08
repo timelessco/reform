@@ -294,10 +294,14 @@ export const PublicFormPage = ({
     <div
       ref={containerRef}
       className={cn(
-        "pb-8 overflow-x-hidden text-foreground",
+        "overflow-x-hidden text-foreground",
+        // Reserve space at the bottom for the fixed branding footer when shown
+        settings.branding ? "pb-16" : "pb-8",
         form.customization && Object.keys(form.customization).length > 0 && "bf-themed",
-        // Don't use min-h-screen for popup mode - it causes resize loop
-        !isPopup && "min-h-screen",
+        // Don't apply min-h-screen for popup or dynamic-height embeds — it
+        // stretches the form to 100vh of the iframe viewport, creating a
+        // second inner scrollbar on top of the host page's scroll.
+        !isPopup && !dynamicHeight && "min-h-screen",
         transparentBackground || isPopup ? "bg-transparent" : "bg-background",
         alignLeft && "text-left",
       )}

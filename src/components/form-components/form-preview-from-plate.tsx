@@ -265,7 +265,7 @@ const PreviewFormHeader = ({
       {hasCover && renderCover()}
 
       <div
-        className="mx-auto px-0 sm:px-4"
+        className="mx-auto px-4"
         style={{ maxWidth: PAGE_MAX_WIDTH.public }}
         data-bf-form-container
       >
@@ -497,7 +497,7 @@ const FormPreviewContent = ({
           customization={customization}
         />
         <div
-          className={cn("w-full mx-auto", layout === "editor" ? "px-8 md:px-0" : "px-0 sm:px-4")}
+          className={cn("w-full mx-auto", layout === "editor" ? "px-8 md:px-0" : "px-4")}
           style={{ maxWidth: PAGE_MAX_WIDTH[layout] }}
           data-bf-form-container
         >
@@ -543,10 +543,7 @@ const FormPreviewContent = ({
       {/* Progress Bar */}
       {settings?.progressBar && totalSteps > 1 && (
         <div
-          className={cn(
-            "mb-6 mx-auto",
-            layout === "editor" ? "w-full px-8 md:px-0" : "px-0 md:px-4",
-          )}
+          className={cn("mb-6 mx-auto", layout === "editor" ? "w-full px-8 md:px-0" : "px-4")}
           style={{ maxWidth: PAGE_MAX_WIDTH[layout] }}
           data-bf-form-container
         >
@@ -556,7 +553,7 @@ const FormPreviewContent = ({
 
       {/* Step Form */}
       <div
-        className={cn("mx-auto", layout === "editor" ? "w-full px-8 md:px-0" : "px-0 md:px-4")}
+        className={cn("mx-auto", layout === "editor" ? "w-full px-8 md:px-0" : "px-4")}
         style={{
           maxWidth: PAGE_MAX_WIDTH[layout],
           ...(layout === "editor"

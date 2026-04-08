@@ -16,6 +16,7 @@ export const tabs: { value: EmbedType; label: string }[] = [
 export const searchToFormValues = (
   search: Record<string, unknown>,
   formIcon?: string | null,
+  formBranding?: boolean,
 ): EmbedFormValues => ({
   embedType:
     (search.embedType as EmbedType) ?? ((search.demo as boolean) ? "standard" : "fullpage"),
@@ -26,7 +27,7 @@ export const searchToFormValues = (
   alignLeft: (search.embedAlignLeft as boolean) ?? defaultEmbedFormFields.alignLeft,
   transparentBackground:
     (search.embedTransparent as boolean) ?? defaultEmbedFormFields.transparentBackground,
-  branding: (search.embedBranding as boolean) ?? defaultEmbedFormFields.branding,
+  branding: (search.embedBranding as boolean) ?? formBranding ?? defaultEmbedFormFields.branding,
   trackEvents: (search.embedTrackEvents as boolean) ?? defaultEmbedFormFields.trackEvents,
   customDomain: defaultEmbedFormFields.customDomain,
   popupTrigger:

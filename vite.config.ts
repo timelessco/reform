@@ -4,10 +4,36 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
+import type { Plugin } from "vite";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import viteTsConfigPaths from "vite-tsconfig-paths";
+
+// Custom Cache-Control headers for the public embed script so updates
+// propagate quickly to embedders without requiring a versioned URL.
+const setEmbedHeader = (
+  req: IncomingMessage,
+  res: ServerResponse,
+  next: (err?: unknown) => void,
+) => {
+  if (req.url?.startsWith("/embed/popup.js")) {
+    res.setHeader("Cache-Control", "public, max-age=300, must-revalidate");
+  }
+  next();
+};
+
+const embedCacheHeadersPlugin = (): Plugin => ({
+  name: "embed-cache-headers",
+  configureServer(server) {
+    server.middlewares.use(setEmbedHeader);
+  },
+  configurePreviewServer(server) {
+    server.middlewares.use(setEmbedHeader);
+  },
+});
 
 const config = defineConfig({
   plugins: [
+    embedCacheHeadersPlugin(),
     devtools({
       editor: {
         name: "Cursor",

@@ -17,12 +17,14 @@ import { Route as FormsFormIdRouteImport } from './routes/forms/$formId'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as FormsI8nFormIdRouteImport } from './routes/forms/$i8n.$formId'
+import { Route as ApiIconsNameRouteImport } from './routes/api/icons/$name'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedSettingsMyAccountRouteImport } from './routes/_authenticated/settings/my-account'
 import { Route as AuthenticatedSettingsMembersRouteImport } from './routes/_authenticated/settings/members'
 import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_authenticated/settings/billing'
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings/api-keys'
 import { Route as AuthenticatedWorkspaceWorkspaceIdRouteRouteImport } from './routes/_authenticated/workspace/$workspaceId/route'
+import { Route as ApiFormsFormIdMetaRouteImport } from './routes/api/forms/$formId/meta'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/route'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSubmissionsRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/submissions'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/settings'
@@ -68,6 +70,11 @@ const FormsI8nFormIdRoute = FormsI8nFormIdRouteImport.update({
   path: '/forms/$i8n/$formId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiIconsNameRoute = ApiIconsNameRouteImport.update({
+  id: '/api/icons/$name',
+  path: '/api/icons/$name',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -103,6 +110,11 @@ const AuthenticatedWorkspaceWorkspaceIdRouteRoute =
     path: '/workspace/$workspaceId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiFormsFormIdMetaRoute = ApiFormsFormIdMetaRouteImport.update({
+  id: '/api/forms/$formId/meta',
+  path: '/api/forms/$formId/meta',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRoute =
   AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteImport.update({
     id: '/form-builder/$formId',
@@ -146,7 +158,9 @@ export interface FileRoutesByFullPath {
   '/settings/members': typeof AuthenticatedSettingsMembersRoute
   '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/icons/$name': typeof ApiIconsNameRoute
   '/forms/$i8n/$formId': typeof FormsI8nFormIdRoute
+  '/api/forms/$formId/meta': typeof ApiFormsFormIdMetaRoute
   '/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
   '/workspace/$workspaceId/form-builder/$formId/edit': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute
   '/workspace/$workspaceId/form-builder/$formId/settings': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
@@ -165,7 +179,9 @@ export interface FileRoutesByTo {
   '/settings/members': typeof AuthenticatedSettingsMembersRoute
   '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/icons/$name': typeof ApiIconsNameRoute
   '/forms/$i8n/$formId': typeof FormsI8nFormIdRoute
+  '/api/forms/$formId/meta': typeof ApiFormsFormIdMetaRoute
   '/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
   '/workspace/$workspaceId/form-builder/$formId/edit': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute
   '/workspace/$workspaceId/form-builder/$formId/settings': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
@@ -186,7 +202,9 @@ export interface FileRoutesById {
   '/_authenticated/settings/members': typeof AuthenticatedSettingsMembersRoute
   '/_authenticated/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/icons/$name': typeof ApiIconsNameRoute
   '/forms/$i8n/$formId': typeof FormsI8nFormIdRoute
+  '/api/forms/$formId/meta': typeof ApiFormsFormIdMetaRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdRouteRouteWithChildren
   '/_authenticated/workspace/$workspaceId/form-builder/$formId/edit': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute
   '/_authenticated/workspace/$workspaceId/form-builder/$formId/settings': typeof AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRoute
@@ -207,7 +225,9 @@ export interface FileRouteTypes {
     | '/settings/members'
     | '/settings/my-account'
     | '/api/auth/$'
+    | '/api/icons/$name'
     | '/forms/$i8n/$formId'
+    | '/api/forms/$formId/meta'
     | '/workspace/$workspaceId/form-builder/$formId'
     | '/workspace/$workspaceId/form-builder/$formId/edit'
     | '/workspace/$workspaceId/form-builder/$formId/settings'
@@ -226,7 +246,9 @@ export interface FileRouteTypes {
     | '/settings/members'
     | '/settings/my-account'
     | '/api/auth/$'
+    | '/api/icons/$name'
     | '/forms/$i8n/$formId'
+    | '/api/forms/$formId/meta'
     | '/workspace/$workspaceId/form-builder/$formId'
     | '/workspace/$workspaceId/form-builder/$formId/edit'
     | '/workspace/$workspaceId/form-builder/$formId/settings'
@@ -246,7 +268,9 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/members'
     | '/_authenticated/settings/my-account'
     | '/api/auth/$'
+    | '/api/icons/$name'
     | '/forms/$i8n/$formId'
+    | '/api/forms/$formId/meta'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId/edit'
     | '/_authenticated/workspace/$workspaceId/form-builder/$formId/settings'
@@ -260,7 +284,9 @@ export interface RootRouteChildren {
   LoginEmailRoute: typeof LoginEmailRoute
   LoginIndexRoute: typeof LoginIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiIconsNameRoute: typeof ApiIconsNameRoute
   FormsI8nFormIdRoute: typeof FormsI8nFormIdRoute
+  ApiFormsFormIdMetaRoute: typeof ApiFormsFormIdMetaRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -321,6 +347,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FormsI8nFormIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/icons/$name': {
+      id: '/api/icons/$name'
+      path: '/api/icons/$name'
+      fullPath: '/api/icons/$name'
+      preLoaderRoute: typeof ApiIconsNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -362,6 +395,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/workspace/$workspaceId'
       preLoaderRoute: typeof AuthenticatedWorkspaceWorkspaceIdRouteRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/forms/$formId/meta': {
+      id: '/api/forms/$formId/meta'
+      path: '/api/forms/$formId/meta'
+      fullPath: '/api/forms/$formId/meta'
+      preLoaderRoute: typeof ApiFormsFormIdMetaRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/workspace/$workspaceId/form-builder/$formId': {
       id: '/_authenticated/workspace/$workspaceId/form-builder/$formId'
@@ -474,7 +514,9 @@ const rootRouteChildren: RootRouteChildren = {
   LoginEmailRoute: LoginEmailRoute,
   LoginIndexRoute: LoginIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiIconsNameRoute: ApiIconsNameRoute,
   FormsI8nFormIdRoute: FormsI8nFormIdRoute,
+  ApiFormsFormIdMetaRoute: ApiFormsFormIdMetaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
