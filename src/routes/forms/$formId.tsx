@@ -8,7 +8,7 @@ import type { PublicFormEmbedConfig } from "@/routes/forms/-components/public-fo
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import { getPublishedFormById } from "@/lib/server-fn/public";
+import { getPublishedFormById } from "@/lib/server-fn/public-form-view";
 import { generateThemeCss, getGoogleFontLinkUrl } from "@/lib/theme/generate-theme-css";
 
 type PublicTheme = "light" | "dark" | "system";

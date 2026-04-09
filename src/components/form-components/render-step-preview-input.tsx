@@ -23,8 +23,8 @@ import { PhoneInput } from "@/components/ui/phone-input";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { useStepForm } from "@/contexts/step-form-context";
 import type { AppForm } from "@/hooks/use-form-builder";
-import { uploadFormFile } from "@/lib/server-fn/form-uploads";
-import type { UploadedFormFile } from "@/lib/server-fn/form-uploads";
+import { uploadFormFile } from "@/lib/server-fn/public-file-uploads";
+import type { UploadedFormFile } from "@/lib/server-fn/public-file-uploads";
 import type { PlateFormField } from "@/lib/editor/transform-plate-to-form";
 import { useRef, useState } from "react";
 

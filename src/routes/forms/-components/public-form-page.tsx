@@ -8,7 +8,7 @@ import { BrandingFooter } from "./branding-footer";
 import { AlreadySubmitted, FormClosed } from "@/routes/forms/-components/form-closed";
 import { PasswordGate } from "@/routes/forms/-components/password-gate";
 import { TranslationProvider, useTranslation } from "@/contexts/translation-context";
-import { createPublicSubmission } from "@/lib/server-fn/public";
+import { createPublicSubmission } from "@/lib/server-fn/public-submissions";
 import { getTranslations } from "@/lib/translations";
 import { cn } from "@/lib/utils";
 import {

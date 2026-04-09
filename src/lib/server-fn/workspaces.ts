@@ -15,7 +15,7 @@ import { authMiddleware } from "@/lib/auth/middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { count, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { authWorkspace, getActiveOrgId } from "./helpers";
+import { authWorkspace, getActiveOrgId } from "./auth-helpers";
 
 const workspaceSchema = z.object({
   id: z.string().uuid(),

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { toast } from "sonner";
-import { uploadEditorMedia } from "@/lib/server-fn/upload";
+import { uploadEditorMedia } from "@/lib/server-fn/uploads";
 
 export type UploadedFile = {
   key: string;

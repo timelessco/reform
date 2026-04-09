@@ -7,7 +7,7 @@ import {
   cleanupTestUser,
   cleanupTestOrg,
 } from "@/test/helpers";
-import { authWorkspace } from "@/lib/server-fn/helpers";
+import { authWorkspace } from "@/lib/server-fn/auth-helpers";
 
 describe("authWorkspace", () => {
   const ownerId = crypto.randomUUID();

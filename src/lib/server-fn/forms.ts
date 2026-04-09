@@ -5,7 +5,7 @@ import { z } from "zod";
 import { forms, member, submissions, workspaces } from "@/db/schema";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { authForm, getActiveOrgId } from "./helpers";
+import { authForm, getActiveOrgId } from "./auth-helpers";
 
 const serializeForm = (form: typeof forms.$inferSelect) => ({
   ...form,

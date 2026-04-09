@@ -39,7 +39,6 @@ export const FormSchema = z.object({
   title: z.string().default("Untitled"),
   formName: z.string().default("draft"),
   schemaName: z.string().default("draftFormSchema"),
-  // eslint-disable-next-line typescript-eslint/no-explicit-any -- Plate editor content is deeply nested with variable structure
   content: z.array(z.any()).default([]),
   settings: SettingsSchema.optional(),
   icon: z.string().nullable().optional(),
@@ -73,7 +72,6 @@ export const FormSchema = z.object({
   preventDuplicateSubmissions: z.coerce.boolean().default(false),
   dataRetention: z.coerce.boolean().default(false),
   dataRetentionDays: z.coerce.number().nullable().optional(),
-  // eslint-disable-next-line typescript-eslint/no-explicit-any -- customization values have variable types
   customization: z.record(z.string(), z.any()).default({}),
   createdAt: timestampField,
   updatedAt: timestampField,

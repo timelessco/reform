@@ -120,7 +120,7 @@ import {
   workspacesCollectionQueryOptions,
   formListingsCollectionQueryOptions,
   favoritesCollectionQueryOptions,
-} from "@/lib/server-fn/collection-query-options";
+} from "@/lib/server-fn/query-options";
 import { getSubmissionsCount } from "@/lib/server-fn/submissions";
 import {
   createWorkspace,
