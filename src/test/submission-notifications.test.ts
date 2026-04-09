@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { recordOwnerSubmissionNotification } from "@/lib/server-fn/notifications";
+import { recordOwnerSubmissionNotification } from "@/lib/server-fn/notifications-helpers.server";
 import { formNotificationPreferences, formSubmissionNotifications, forms } from "@/db/schema";
 import {
   cleanupTestOrg,

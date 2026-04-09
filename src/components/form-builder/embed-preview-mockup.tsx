@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useIsomorphicLayoutEffect } from "@/hooks/use-isomorphic-layout-effect";
 import { motion, AnimatePresence } from "motion/react";
 import { XIcon } from "@/components/ui/icons";
-import { iconMap, SPRITE_PATH } from "@/components/icon-picker/icon-data";
+import { iconMap } from "@/components/icon-picker/icon-data";
+import { SPRITE_PATH } from "@/lib/config/app-config";
 import { isValidUrl } from "@/lib/utils";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 

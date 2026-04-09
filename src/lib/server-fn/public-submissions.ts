@@ -3,7 +3,7 @@ import { count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { forms, submissions, user } from "@/db/schema";
 import { db } from "@/db";
-import { recordOwnerSubmissionNotification } from "./notifications";
+import { recordOwnerSubmissionNotification } from "./notifications-helpers.server";
 
 /**
  * Public submission endpoint (no authentication).

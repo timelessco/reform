@@ -2,7 +2,8 @@ import { useRef } from "react";
 
 import { useResolvedTheme } from "@/components/theme-provider";
 import { getThemeStyleVars } from "@/lib/theme/generate-theme-css";
-import { cn, isValidUrl, DEFAULT_ICON, DEFAULT_ICON_NAME } from "@/lib/utils";
+import { DEFAULT_ICON } from "@/lib/config/app-config";
+import { cn, DEFAULT_ICON_NAME, isValidUrl } from "@/lib/utils";
 import { BLACK_COLOR, iconMap, WHITE_COLOR } from "./icon-data";
 import type { IconPickerPreviewProps } from "./types";
 
