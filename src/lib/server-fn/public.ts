@@ -3,7 +3,7 @@ import { notFound } from "@tanstack/react-router";
 import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { forms, formVersions, submissions, user } from "@/db/schema";
-import { db } from "@/lib/db/db";
+import { db } from "@/db/client";
 import type { PublicFormSettings } from "@/types/form-settings";
 import { recordOwnerSubmissionNotification } from "./notifications.server";
 

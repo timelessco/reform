@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils";
 import { localFormCollection } from "@/db-collections/local-form.collection";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useLocalForm } from "@/hooks/use-live-hooks";
-import { getLocalFormId, getLocalWorkspaceId } from "@/lib/db/local-draft";
+import { getLocalFormId, getLocalWorkspaceId } from "@/db/local-draft";
 
 // Initial state — form header, a label, a form input, and a submit button
 const landingValue = normalizeNodeId([

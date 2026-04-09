@@ -6,7 +6,7 @@ import {
   createVersionContentCollection,
 } from "@/db-collections/version-query.collection";
 import type { VersionListItem, VersionContent } from "@/db-collections/version-query.collection";
-import { db } from "@/lib/db/db";
+import { db } from "@/db/client";
 import { formVersions, user } from "@/db/schema";
 import {
   getTestUtils,

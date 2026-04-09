@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { resolveFormRoute } from "@/db-collections/form-detail-query.collection";
 import { createFormListingCollection } from "@/db-collections/form-listing-query.collection";
 import type { FormListing } from "@/db-collections/form-listing-query.collection";
-import { db } from "@/lib/db/db";
+import { db } from "@/db/client";
 import { forms } from "@/db/schema";
 import {
   getTestUtils,

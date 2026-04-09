@@ -1,5 +1,5 @@
 import * as schema from "@/db/schema";
-import { db } from "@/lib/db/db";
+import { db } from "@/db/client";
 import {
   sendChangeEmailConfirmationEmail,
   sendMagicLinkEmail,

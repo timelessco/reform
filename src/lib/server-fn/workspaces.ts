@@ -10,7 +10,7 @@ import {
   submissions,
   workspaces,
 } from "@/db/schema";
-import { db } from "@/lib/db/db";
+import { db } from "@/db/client";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { count, eq, inArray } from "drizzle-orm";

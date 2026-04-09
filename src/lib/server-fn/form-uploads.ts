@@ -5,7 +5,7 @@ import { and, eq, sql } from "drizzle-orm";
 import type { Value } from "platejs";
 import { z } from "zod";
 import { forms, formVersions, uploadRateLimits } from "@/db/schema";
-import { db } from "@/lib/db/db";
+import { db } from "@/db/client";
 import {
   getEditableFields,
   transformPlateStateToFormElements,
