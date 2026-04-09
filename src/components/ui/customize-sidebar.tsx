@@ -15,7 +15,7 @@ import { Tabs, TabsIndicator, TabsList, TabsTrigger } from "@/components/ui/tabs
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getFormListings } from "@/collections";
-import { localFormCollection } from "@/collections/local/form";
+import { getLocalFormCollection } from "@/collections/local/form";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
 import { FONT_REGISTRY } from "@/lib/theme/font-registry";
@@ -104,7 +104,7 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
   const localFormResult = useLocalForm(isLocal ? formId : undefined);
   const formResult = isLocal ? localFormResult : cloudForm;
   const formDoc = formResult.data?.[0] ?? null;
-  const collection = (isLocal ? localFormCollection : getFormListings()) as ReturnType<
+  const collection = (isLocal ? getLocalFormCollection() : getFormListings()) as ReturnType<
     typeof getFormListings
   >;
   const customization = useMemo(
