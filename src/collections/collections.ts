@@ -1,19 +1,13 @@
 import type { QueryClient } from "@tanstack/query-core";
 import { createTransaction } from "@tanstack/react-db";
-import { createWorkspaceSummaryCollection } from "./workspace-query.collection";
-import type { WorkspaceSummary } from "./workspace-query.collection";
-import {
-  createFormListingCollection,
-  createFavoriteCollection,
-} from "./form-listing-query.collection";
-import type { FormListing, FormFavorite } from "./form-listing-query.collection";
+import { createWorkspaceSummaryCollection } from "./query/workspace";
+import type { WorkspaceSummary } from "./query/workspace";
+import { createFormListingCollection, createFavoriteCollection } from "./query/form-listing";
+import type { FormListing, FormFavorite } from "./query/form-listing";
 import type { createForm, updateForm, deleteForm } from "@/lib/server-fn/forms";
 import type { createWorkspace, updateWorkspace, deleteWorkspace } from "@/lib/server-fn/workspaces";
 import type { addFavorite, removeFavorite } from "@/lib/server-fn/favorites";
-import {
-  createVersionListCollection,
-  createVersionContentCollection,
-} from "./version-query.collection";
+import { createVersionListCollection, createVersionContentCollection } from "./query/version";
 
 // Utility types to extract input/output from TanStack server functions
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- `any` required: function constraints need contravariant params
@@ -29,14 +23,14 @@ const stripNulls = <T extends Record<string, unknown>>(obj: T) =>
   Object.fromEntries(
     Object.entries(obj).map(([k, v]) => [k, v === null ? undefined : v]),
   ) as NullToUndefined<T>;
-import type { VersionListItem, VersionContent } from "./version-query.collection";
-import { DEFAULT_FORM_CONTENT, DEFAULT_FORM_SETTINGS } from "./local-form.collection";
-import type { Form } from "./local-form.collection";
+import type { VersionListItem, VersionContent } from "./query/version";
+import { DEFAULT_FORM_CONTENT, DEFAULT_FORM_SETTINGS } from "./local/form";
+import type { Form } from "./local/form";
 
 // Re-export types consumers need
-export type { Form } from "./local-form.collection";
-export type { WorkspaceSummary } from "./workspace-query.collection";
-export type { FormListing, FormFavorite } from "./form-listing-query.collection";
+export type { Form } from "./local/form";
+export type { WorkspaceSummary } from "./query/workspace";
+export type { FormListing, FormFavorite } from "./query/form-listing";
 
 // --- Server function imports (lazy to avoid circular deps) ---
 let _serverFns: {

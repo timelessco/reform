@@ -9,8 +9,8 @@ import {
   cleanupTestUser,
   cleanupTestOrg,
 } from "@/test/helpers";
-import { createWorkspaceSummaryCollection } from "@/db-collections/workspace-query.collection";
-import type { WorkspaceSummary } from "@/db-collections/workspace-query.collection";
+import { createWorkspaceSummaryCollection } from "@/collections/query/workspace";
+import type { WorkspaceSummary } from "@/collections/query/workspace";
 import { db } from "@/db/client";
 import { forms, member, workspaces } from "@/db/schema";
 import { desc, eq, inArray, not } from "drizzle-orm";

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { QueryClient } from "@tanstack/query-core";
 import { count, eq } from "drizzle-orm";
-import { createSubmissionSummaryCollection } from "@/db-collections/submission-query.collection";
+import { createSubmissionSummaryCollection } from "@/collections/query/submission";
 import { db } from "@/db/client";
 import { submissions } from "@/db/schema";
 import {

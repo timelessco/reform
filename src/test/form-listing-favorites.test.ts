@@ -4,8 +4,8 @@ import { and, eq, not } from "drizzle-orm";
 import {
   createFormListingCollection,
   createFavoriteCollection,
-} from "@/db-collections/form-listing-query.collection";
-import type { FormListing, FormFavorite } from "@/db-collections/form-listing-query.collection";
+} from "@/collections/query/form-listing";
+import type { FormListing, FormFavorite } from "@/collections/query/form-listing";
 import { db } from "@/db/client";
 import { forms, formFavorites, member, workspaces } from "@/db/schema";
 import {

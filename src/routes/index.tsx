@@ -20,7 +20,7 @@ export const Route = createFileRoute("/")({
   },
   loader: async () => {
     if (typeof window !== "undefined") {
-      const { localFormCollection } = await import("@/db-collections");
+      const { localFormCollection } = await import("@/collections");
       await localFormCollection.preload();
     }
   },

@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { QueryClient } from "@tanstack/query-core";
 import { desc, eq } from "drizzle-orm";
-import { createVersionListCollection } from "@/db-collections/version-query.collection";
-import type { VersionListItem } from "@/db-collections/version-query.collection";
-import { createFormListingCollection } from "@/db-collections/form-listing-query.collection";
-import type { FormListing } from "@/db-collections/form-listing-query.collection";
+import { createVersionListCollection } from "@/collections/query/version";
+import type { VersionListItem } from "@/collections/query/version";
+import { createFormListingCollection } from "@/collections/query/form-listing";
+import type { FormListing } from "@/collections/query/form-listing";
 import { db } from "@/db/client";
 import { forms, formVersions, user } from "@/db/schema";
 import {

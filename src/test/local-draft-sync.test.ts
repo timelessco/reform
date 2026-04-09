@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { QueryClient } from "@tanstack/query-core";
 import { eq } from "drizzle-orm";
-import { createFormListingCollection } from "@/db-collections/form-listing-query.collection";
-import type { FormListing } from "@/db-collections/form-listing-query.collection";
+import { createFormListingCollection } from "@/collections/query/form-listing";
+import type { FormListing } from "@/collections/query/form-listing";
 import { db } from "@/db/client";
 import { forms } from "@/db/schema";
 import {

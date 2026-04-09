@@ -4,8 +4,8 @@ import { desc, eq } from "drizzle-orm";
 import {
   createVersionListCollection,
   createVersionContentCollection,
-} from "@/db-collections/version-query.collection";
-import type { VersionListItem, VersionContent } from "@/db-collections/version-query.collection";
+} from "@/collections/query/version";
+import type { VersionListItem, VersionContent } from "@/collections/query/version";
 import { db } from "@/db/client";
 import { formVersions, user } from "@/db/schema";
 import {

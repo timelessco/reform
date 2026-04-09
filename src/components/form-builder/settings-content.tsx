@@ -11,8 +11,8 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
-import { getFormListings } from "@/db-collections/collections";
-import { localFormCollection } from "@/db-collections/local-form.collection";
+import { getFormListings } from "@/collections/collections";
+import { localFormCollection } from "@/collections/local/form";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
 import { APP_NAME } from "@/lib/config/app-config";
 import {

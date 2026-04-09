@@ -1,7 +1,7 @@
 import { eq, useLiveQuery } from "@tanstack/react-db";
 import { useCallback } from "react";
-import { editorUICollection } from "@/db-collections/editor-ui.collection";
-import type { SettingsTab, ShareTab, SidebarType } from "@/db-collections/editor-ui.collection";
+import { editorUICollection } from "@/collections/local/editor-ui";
+import type { SettingsTab, ShareTab, SidebarType } from "@/collections/local/editor-ui";
 
 export type { SettingsTab, SidebarType };
 export type EmbedType = "standard" | "popup" | "fullpage";

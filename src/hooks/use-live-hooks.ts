@@ -7,8 +7,8 @@ import {
   getFormListings,
   getFavorites,
   enrichFormDetail,
-} from "@/db-collections/collections";
-import { localFormCollection } from "@/db-collections/local-form.collection";
+} from "@/collections/collections";
+import { localFormCollection } from "@/collections/local/form";
 
 /**
  * Custom hook for real-time workspaces sync filtered by organization ID.

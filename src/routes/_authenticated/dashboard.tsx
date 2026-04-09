@@ -27,11 +27,7 @@ import {
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  createFormLocal,
-  createWorkspaceLocal,
-  updateFormStatus,
-} from "@/db-collections/collections";
+import { createFormLocal, createWorkspaceLocal, updateFormStatus } from "@/collections/collections";
 import { useDuplicateForm } from "@/hooks/use-duplicate-form";
 import { useOrgForms, useOrgWorkspaces } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth/auth-client";

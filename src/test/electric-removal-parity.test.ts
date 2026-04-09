@@ -2,13 +2,10 @@ import { describe, it, expect } from "vitest";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-const QUERY_COLLECTIONS_DIR = path.resolve("src/db-collections");
+const QUERY_COLLECTIONS_DIR = path.resolve("src/collections/query");
 
-/** Verify query-backed collections exist and don't import Electric */
-const getQueryCollectionFiles = () => {
-  const files = fs.readdirSync(QUERY_COLLECTIONS_DIR);
-  return files.filter((f) => f.endsWith(".collection.ts") && f.includes("query"));
-};
+const getQueryCollectionFiles = () =>
+  fs.readdirSync(QUERY_COLLECTIONS_DIR).filter((f) => f.endsWith(".ts"));
 
 const getFileContent = (filename: string) =>
   fs.readFileSync(path.join(QUERY_COLLECTIONS_DIR, filename), "utf-8");
@@ -16,20 +13,16 @@ const getFileContent = (filename: string) =>
 describe("electric removal parity", () => {
   it("query-backed collections cover all authenticated surfaces", () => {
     const queryFiles = getQueryCollectionFiles();
-    const names = queryFiles.map((f) => f.replace(".collection.ts", "").replace(".ts", ""));
+    const names = queryFiles.map((f) => f.replace(".ts", ""));
 
-    // All authenticated surfaces have query-backed replacements
-    expect(names).toContain("workspace-query");
-    expect(names).toContain("form-listing-query");
-    // form-detail-query merged into form-listing-query (single collection)
-    expect(names).toContain("version-query");
-    expect(names).toContain("submission-query");
+    expect(names).toContain("workspace");
+    expect(names).toContain("form-listing");
+    expect(names).toContain("version");
+    expect(names).toContain("submission");
   });
 
-  it("new query-backed collections have no Electric imports", () => {
-    const queryFiles = getQueryCollectionFiles();
-
-    for (const file of queryFiles) {
+  it("query-backed collections have no Electric imports", () => {
+    for (const file of getQueryCollectionFiles()) {
       const content = getFileContent(file);
       expect(content).not.toContain("electric-db-collection");
       expect(content).not.toContain("@electric-sql");
@@ -37,12 +30,9 @@ describe("electric removal parity", () => {
     }
   });
 
-  it("new collections use queryCollectionOptions not electricCollectionOptions", () => {
-    const queryFiles = getQueryCollectionFiles();
-
-    for (const file of queryFiles) {
+  it("query collections use queryCollectionOptions not electricCollectionOptions", () => {
+    for (const file of getQueryCollectionFiles()) {
       const content = getFileContent(file);
-      // All query collections should never use electricCollectionOptions
       expect(content).not.toContain("electricCollectionOptions");
     }
   });
