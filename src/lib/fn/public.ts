@@ -330,7 +330,7 @@ const sendEmailNotifications = async (
   submissionData: Record<string, unknown>,
 ) => {
   const { sendFormSubmissionNotification, sendRespondentConfirmation } =
-    await import("@/lib/integrations/email");
+    await import("@/integrations/email");
 
   // Self email notification
   if (settings.selfEmailNotifications) {

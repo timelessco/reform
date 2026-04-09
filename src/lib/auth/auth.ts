@@ -4,7 +4,7 @@ import {
   sendChangeEmailConfirmationEmail,
   sendMagicLinkEmail,
   sendOrgInvitationEmail,
-} from "@/lib/integrations/email";
+} from "@/integrations/email";
 import { logger } from "@/lib/utils";
 import { APP_NAME } from "@/lib/config/app-config";
 import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
