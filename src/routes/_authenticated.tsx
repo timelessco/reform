@@ -181,12 +181,14 @@ const initCollectionsOnClient = createClientOnlyFn((queryClient: QueryClient) =>
   initCollections(queryClient, {
     getWorkspacesWithForms: async () => {
       const result = await getWorkspaces();
-      // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
       return {
-        workspaces: result.workspaces.map((ws: any) => ({
-          ...ws,
-          forms: [],
-        })),
+        workspaces: result.workspaces.map(
+          // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
+          (ws: any) => ({
+            ...ws,
+            forms: [],
+          }),
+        ),
       };
     },
     getFormListings: async () => await getFormListingsServer(),

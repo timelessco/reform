@@ -126,7 +126,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           children: [{ text: "" }],
         },
         { type: "formEmail", placeholder: "email@example.com", children: [{ text: "" }] },
-      ] as any,
+      ] as unknown as TElement[],
       { at: labelPath },
     );
     editor.tf.select({ path: [...labelPath, 0], offset: 0 });
@@ -145,7 +145,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           children: [{ text: "" }],
         },
         { type: "formPhone", placeholder: "+1 (555) 000-0000", children: [{ text: "" }] },
-      ] as any,
+      ] as unknown as TElement[],
       { at: labelPath },
     );
     editor.tf.select({ path: [...labelPath, 0], offset: 0 });
@@ -164,7 +164,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           children: [{ text: "" }],
         },
         { type: "formNumber", placeholder: "0", children: [{ text: "" }] },
-      ] as any,
+      ] as unknown as TElement[],
       { at: labelPath },
     );
     editor.tf.select({ path: [...labelPath, 0], offset: 0 });
@@ -183,7 +183,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           children: [{ text: "" }],
         },
         { type: "formLink", placeholder: "https://example.com", children: [{ text: "" }] },
-      ] as any,
+      ] as unknown as TElement[],
       { at: labelPath },
     );
     editor.tf.select({ path: [...labelPath, 0], offset: 0 });
@@ -202,7 +202,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           children: [{ text: "" }],
         },
         { type: "formDate", placeholder: "Select a date", children: [{ text: "" }] },
-      ] as any,
+      ] as unknown as TElement[],
       { at: labelPath },
     );
     editor.tf.select({ path: [...labelPath, 0], offset: 0 });
@@ -221,7 +221,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           children: [{ text: "" }],
         },
         { type: "formTime", placeholder: "Select a time", children: [{ text: "" }] },
-      ] as any,
+      ] as unknown as TElement[],
       { at: labelPath },
     );
     editor.tf.select({ path: [...labelPath, 0], offset: 0 });
@@ -240,7 +240,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           children: [{ text: "" }],
         },
         { type: "formFileUpload", children: [{ text: "" }] },
-      ] as any,
+      ] as unknown as TElement[],
       { at: labelPath },
     );
     editor.tf.select({ path: [...labelPath, 0], offset: 0 });
@@ -260,7 +260,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         },
         { type: "formOptionItem", variant: "checkbox", children: [{ text: "" }] },
         { type: "p", children: [{ text: "" }] },
-      ] as any,
+      ] as unknown as TElement[],
       { at: labelPath },
     );
     editor.tf.select({ path: [...labelPath, 0], offset: 0 });
@@ -280,7 +280,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         },
         { type: "formOptionItem", variant: "multiChoice", children: [{ text: "" }] },
         { type: "p", children: [{ text: "" }] },
-      ] as any,
+      ] as unknown as TElement[],
       { at: labelPath },
     );
     editor.tf.select({ path: [...labelPath, 0], offset: 0 });
@@ -300,7 +300,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         },
         { type: "formMultiSelectInput", options: [], children: [{ text: "" }] },
         { type: "p", children: [{ text: "" }] },
-      ] as any,
+      ] as unknown as TElement[],
       { at: labelPath },
     );
     editor.tf.select({ path: [...labelPath, 0], offset: 0 });
@@ -320,7 +320,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         },
         { type: "formOptionItem", variant: "ranking", children: [{ text: "" }] },
         { type: "p", children: [{ text: "" }] },
-      ] as any,
+      ] as unknown as TElement[],
       { at: labelPath },
     );
     editor.tf.select({ path: [...labelPath, 0], offset: 0 });

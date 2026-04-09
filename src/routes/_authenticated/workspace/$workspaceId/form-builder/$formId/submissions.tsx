@@ -47,13 +47,7 @@ import type {
 
 import { ChevronDownIcon, FilterIcon, Trash2Icon, XIcon } from "@/components/ui/icons";
 import { Columns, Download, FileText, Paperclip, Search } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Value } from "platejs";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useHotkey } from "@tanstack/react-hotkeys";
@@ -806,6 +800,7 @@ const SubmissionsPage = () => {
                     src={previewFile.url}
                     title={previewFile.name}
                     className="w-full h-[70vh] border-0"
+                    sandbox="allow-same-origin"
                   />
                 ) : (
                   <div className="flex flex-col items-center gap-4 py-12">

@@ -24,7 +24,7 @@ import type { PublicFormSettings } from "@/types/form-settings";
 interface PublicForm {
   id: string;
   title: string;
-  content: any;
+  content: unknown;
   customization?: Record<string, string>;
   icon: string | null;
   cover: string | null;
@@ -210,7 +210,7 @@ export const PublicFormPage = ({
   }, [isPopup, dynamicHeight, formId]);
 
   const handleSubmit = useCallback(
-    async (values: Record<string, any>) => {
+    async (values: Record<string, unknown>) => {
       try {
         await createPublicSubmission({
           data: {

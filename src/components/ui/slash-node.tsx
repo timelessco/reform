@@ -24,7 +24,6 @@ import {
   ListOrderedIcon,
   PhoneIcon,
   CheckCheckIcon,
-  ChevronsUpDownIcon,
   SmileIcon,
   SquareCheckIcon,
   UploadIcon,

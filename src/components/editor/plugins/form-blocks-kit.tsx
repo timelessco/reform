@@ -401,7 +401,9 @@ const handleFormBlockKeyDown = (editor: PlateEditor, event: React.KeyboardEvent)
 
     // If this is the only option (prev is label, next is not option), convert to empty paragraph
     if (isPrevLabel && !isNextOption) {
-      editor.tf.setNodes({ type: "p", variant: undefined } as any, { at: path });
+      editor.tf.setNodes({ type: "p", variant: undefined } as unknown as Partial<TElement>, {
+        at: path,
+      });
       return;
     }
 

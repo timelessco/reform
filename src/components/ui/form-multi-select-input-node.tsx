@@ -100,11 +100,11 @@ export const FormMultiSelectInputElement = ({
           }
         } else {
           // Find next content block on the SAME page (stop at formButton/pageBreak)
-          const children = editor.children as TElement[];
+          const editorChildren = editor.children as TElement[];
           let samePage: Path | null = null;
-          let boundaryIndex = children.length;
-          for (let i = path[0] + 1; i < children.length; i++) {
-            const node = children[i];
+          let boundaryIndex = editorChildren.length;
+          for (let i = path[0] + 1; i < editorChildren.length; i++) {
+            const node = editorChildren[i];
             if (node.type === "formButton" || node.type === "pageBreak") {
               boundaryIndex = i;
               break;

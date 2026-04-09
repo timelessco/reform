@@ -684,15 +684,17 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
 const fileToBase64 = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.addEventListener("load", () => {
       const result = reader.result;
       if (typeof result === "string") {
         resolve(result);
       } else {
         reject(new Error("Failed to read file"));
       }
-    };
-    reader.onerror = () => reject(reader.error ?? new Error("Failed to read file"));
+    });
+    reader.addEventListener("error", () =>
+      reject(reader.error ?? new Error("Failed to read file")),
+    );
     reader.readAsDataURL(file);
   });
 
