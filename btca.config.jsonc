@@ -1,7 +1,20 @@
 {
   "$schema": "https://btca.dev/btca.schema.json",
-  "model": "glm-5v-turbo",
-  "provider": "opencode",
-  "resources": [],
   "dataDirectory": ".btca",
+  "resources": [
+    {
+      "type": "git",
+      "name": "plate",
+      "url": "https://github.com/udecode/plate",
+      "branch": "main"
+    }
+  ],
+  "model": "glm-5-turbo",
+  "provider": "openai-compat",
+  "providerOptions": {
+    "openai-compat": {
+      "baseURL": "https://api.z.ai/api/coding/paas/v4",
+      "name": "z.ai"
+    }
+  }
 }
