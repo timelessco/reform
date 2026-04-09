@@ -85,8 +85,10 @@ const SyncOverlay = () => {
   );
 };
 
-// Module-level flag survives component unmount/remount during navigation
-let _hasSynced = false;
+// Keyed by userId so switching accounts re-triggers sync. Survives dashboard
+// remounts during SPA navigation but is wiped on full page reload (which is
+// fine — logout performs a hard redirect back to `/`).
+let _lastSyncedUserId: string | null = null;
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -130,12 +132,30 @@ const DashboardPage = () => {
 
   useEffect(() => {
     const syncData = async () => {
-      if (!session?.user || !activeOrg?.id) return;
-      if (_hasSynced) return;
+      const userId = session?.user?.id;
+      if (!userId || !activeOrg?.id) return;
+      if (_lastSyncedUserId === userId) return;
+
+      // Fast path: users who signed up without ever creating an anon draft
+      // skip OPFS init entirely. The flag is set by the landing editor when
+      // it seeds a draft.
+      if (sessionStorage.getItem("shouldSyncAfterLogin") !== "1") {
+        _lastSyncedUserId = userId;
+        return;
+      }
+
+      // Lazy-init the local collection: this is the first authenticated
+      // touchpoint, and the landing route's bootstrap didn't mount on the
+      // post-auth redirect.
+      const { initLocalFormCollection } = await import("@/collections/local/form");
+      const { getPersistence } = await import("@/collections/_persistence");
+      const bundle = await getPersistence();
+      await initLocalFormCollection(bundle?.persistence ?? null);
 
       const hasData = await hasLocalDataToSync();
       if (!hasData) {
-        _hasSynced = true;
+        sessionStorage.removeItem("shouldSyncAfterLogin");
+        _lastSyncedUserId = userId;
         return;
       }
 
@@ -147,16 +167,16 @@ const DashboardPage = () => {
           sessionStorage.removeItem("shouldSyncAfterLogin");
           toast.success("Local data synced!");
         }
-        _hasSynced = true;
+        _lastSyncedUserId = userId;
       } catch (error) {
-        console.error("Failed to sync local data:", error);
+        console.error("[dashboard] Failed to sync local data:", error);
         toast.error("Signed in but failed to sync local data");
       } finally {
         setIsSyncing(false);
       }
     };
     syncData();
-  }, [session?.user, activeOrg?.id]);
+  }, [session?.user?.id, activeOrg?.id]);
 
   const handleCreateWorkspace = useCallback(async () => {
     if (!activeOrg?.id) return;
