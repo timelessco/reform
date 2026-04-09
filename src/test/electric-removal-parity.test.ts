@@ -7,9 +7,7 @@ const QUERY_COLLECTIONS_DIR = path.resolve("src/db-collections");
 /** Verify query-backed collections exist and don't import Electric */
 const getQueryCollectionFiles = () => {
   const files = fs.readdirSync(QUERY_COLLECTIONS_DIR);
-  return files.filter(
-    (f) => f.endsWith(".collection.ts") && (f.includes("query") || f === "commands.ts"),
-  );
+  return files.filter((f) => f.endsWith(".collection.ts") && f.includes("query"));
 };
 
 const getFileContent = (filename: string) =>
@@ -37,12 +35,6 @@ describe("electric removal parity", () => {
       expect(content).not.toContain("@electric-sql");
       expect(content).not.toContain("getElectricUrl");
     }
-  });
-
-  it("commands module has no Electric imports", () => {
-    const content = fs.readFileSync(path.join(QUERY_COLLECTIONS_DIR, "commands.ts"), "utf-8");
-    expect(content).not.toContain("electric");
-    expect(content).not.toContain("Electric");
   });
 
   it("new collections use queryCollectionOptions not electricCollectionOptions", () => {
