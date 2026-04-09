@@ -39,3 +39,41 @@ export const uploadAvatar = createServerFn({ method: "POST" })
 
     return { url: blob.url };
   });
+
+/**
+ * Upload media file (image, video, audio, pdf, etc.) for the form editor canvas.
+ * Requires auth. Used by the Plate editor's media placeholder node.
+ */
+export const uploadEditorMedia = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(
+    z.object({
+      base64: z.string().min(1),
+      filename: z.string().min(1).max(255),
+      contentType: z.string().min(1).max(127),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    const userId = context.session.user.id;
+
+    const base64Data = data.base64.replace(/^data:[^;]+;base64,/, "");
+    const buffer = Buffer.from(base64Data, "base64");
+
+    if (buffer.length === 0) {
+      throw new Error("empty_file");
+    }
+
+    const key = `editor/${userId}/${crypto.randomUUID()}-${data.filename}`;
+    const blob = await put(key, buffer, {
+      access: "public",
+      contentType: data.contentType,
+      token: process.env.BETTER_FORM_READ_WRITE_TOKEN,
+    });
+
+    return {
+      url: blob.url,
+      name: data.filename,
+      size: buffer.length,
+      type: data.contentType,
+    };
+  });
