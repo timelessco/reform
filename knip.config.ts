@@ -15,6 +15,7 @@ export default {
     "src/components/ui/**", // shadcn - used dynamically
     "src/components/editor/plugins/**", // plate plugins - library exports
     "src/types/**", // type exports
+    "vite.config.ts", // config file default export
   ],
   ignoreDependencies: [
     "@tanstack/router-plugin", // vite plugin
@@ -22,7 +23,12 @@ export default {
     "tw-animate-css", // tailwind plugin
     "2026-01-08-platjs", // self-reference
     "katex", // used in CSS
+    "@sentry/tanstackstart-react", // used in instrument.server.mjs (knip entry misses it)
+    "shadcn", // imported in src/styles/styles.css
+    "tailwindcss", // vite plugin + CSS @import
+    "type-fest", // HasRequiredKeys type import in auth-query.ts
   ],
+  ignoreExportsUsedInFile: true,
   rules: {
     unlisted: "off", // dev deps in config files are expected
   },

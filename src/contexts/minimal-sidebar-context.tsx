@@ -84,5 +84,3 @@ export const useMinimalSidebar = () => {
   }
   return context;
 };
-
-export const useMinimalSidebarSafe = () => useContext(MinimalSidebarContext);

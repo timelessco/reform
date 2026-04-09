@@ -12,9 +12,8 @@ import {
 } from "@/db/schema";
 import { db } from "@/lib/db/db";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { count, desc, eq, inArray, not } from "drizzle-orm";
+import { count, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { authWorkspace, getActiveOrgId } from "./helpers";
 
@@ -133,29 +132,6 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
     });
   });
 
-export const getWorkspaceById = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .inputValidator(z.object({ id: z.string().uuid() }))
-  .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
-    const [_, [workspace]] = await Promise.all([
-      authWorkspace(data.id, context.session.user.id, orgId),
-      db.select().from(workspaces).where(eq(workspaces.id, data.id)),
-    ]);
-
-    if (!workspace) {
-      throw new Error("Workspace not found");
-    }
-
-    return {
-      workspace: {
-        ...workspace,
-        createdAt: workspace.createdAt.toISOString(),
-        updatedAt: workspace.updatedAt.toISOString(),
-      },
-    };
-  });
-
 export const getWorkspaces = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
@@ -181,94 +157,4 @@ export const getWorkspaces = createServerFn({ method: "GET" })
         updatedAt: workspace.updatedAt.toISOString(),
       })),
     };
-  });
-
-const getWorkspacesWithForms = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .handler(async ({ context }) => {
-    // Get organizations the user is a member of
-    const userMemberships = await db
-      .select({ organizationId: member.organizationId })
-      .from(member)
-      .where(eq(member.userId, context.session.user.id));
-
-    if (userMemberships.length === 0) {
-      return { workspaces: [] };
-    }
-
-    const orgIds = userMemberships.map((m) => m.organizationId);
-
-    // Run workspace + forms queries in parallel
-    const [workspaceList, formsList] = await Promise.all([
-      db
-        .select()
-        .from(workspaces)
-        .where(inArray(workspaces.organizationId, orgIds))
-        .orderBy(workspaces.createdAt),
-      db
-        .select({
-          id: forms.id,
-          title: forms.title,
-          updatedAt: forms.updatedAt,
-          workspaceId: forms.workspaceId,
-        })
-        .from(forms)
-        .where(not(eq(forms.status, "archived")))
-        .orderBy(desc(forms.updatedAt)),
-    ]);
-
-    // Group forms by workspaceId
-    const formsByWorkspace = formsList.reduce(
-      (acc, form) => {
-        if (!acc[form.workspaceId]) {
-          acc[form.workspaceId] = [];
-        }
-        acc[form.workspaceId].push({
-          ...form,
-          updatedAt: form.updatedAt.toISOString(),
-        });
-        return acc;
-      },
-      {} as Record<
-        string,
-        { id: string; title: string | null; updatedAt: string; workspaceId: string }[]
-      >,
-    );
-
-    return {
-      workspaces: workspaceList.map((workspace) => ({
-        ...workspace,
-        createdAt: workspace.createdAt.toISOString(),
-        updatedAt: workspace.updatedAt.toISOString(),
-        forms: formsByWorkspace[workspace.id] || [],
-      })),
-    };
-  });
-
-export const getWorkspacesWithFormsQueryOptions = () =>
-  queryOptions({
-    queryKey: ["workspaces-with-forms"],
-    queryFn: () => getWorkspacesWithForms(),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-
-const getUserMemberships = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .handler(async ({ context }) => {
-    const memberships = await db
-      .select({
-        organizationId: member.organizationId,
-        role: member.role,
-      })
-      .from(member)
-      .where(eq(member.userId, context.session.user.id));
-
-    return { memberships };
-  });
-
-export const getUserMembershipsQueryOptions = () =>
-  queryOptions({
-    queryKey: ["user-memberships"],
-    queryFn: () => getUserMemberships(),
-    staleTime: 1000 * 60 * 5, // 5 minutes
   });

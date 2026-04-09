@@ -1,5 +1,4 @@
 import type { Value } from "platejs";
-import type { FormElement, StaticFormElement } from "@/types/form-types";
 import {
   ALLOWED_LABEL_TYPES,
   FORM_INPUT_NODE_TYPES,
@@ -7,8 +6,6 @@ import {
   VARIANT_TO_FIELD_TYPE,
   resolveRequired,
 } from "@/lib/form-schema/form-field-constants";
-
-type _PreviewElement = FormElement | StaticFormElement;
 
 /** Loose Plate node shape for tree traversal in extractors */
 interface PlateNode {
@@ -722,84 +719,3 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
  */
 export const getEditableFields = (elements: TransformedElement[]): PlateFormField[] =>
   elements.filter((el): el is PlateFormField => !("static" in el) || !el.static);
-
-/**
- * Generates default form values from a list of form fields.
- * Used to initialize TanStack Form with empty values.
- */
-const _generateDefaultValues = (elements: TransformedElement[]): Record<string, unknown> => {
-  const defaults: Record<string, unknown> = {};
-
-  for (const el of elements) {
-    if (!("static" in el) || !el.static) {
-      defaults[(el as PlateFormField).name] = "";
-    }
-  }
-
-  return defaults;
-};
-
-/**
- * Result of splitting elements into steps
- */
-type StepSplitResult = {
-  /** Array of steps, each containing elements for that step */
-  steps: TransformedElement[][];
-  /** Content to show after form submission (from thank you page break) */
-  thankYouContent: TransformedElement[] | null;
-};
-
-/**
- * Splits transformed elements into steps based on PageBreak elements.
- * - Regular PageBreak = step divider
- * - PageBreak with isThankYouPage = marks content after it as thank you content
- *
- * @param elements - Array of transformed elements
- * @returns Object with steps array and optional thankYouContent
- */
-export const splitElementsIntoSteps = (elements: TransformedElement[]): StepSplitResult => {
-  const steps: TransformedElement[][] = [];
-  let currentStep: TransformedElement[] = [];
-  let thankYouContent: TransformedElement[] | null = null;
-  let isCollectingThankYou = false;
-
-  for (const element of elements) {
-    // Check if this is a PageBreak
-    if ("static" in element && element.fieldType === "PageBreak") {
-      // Save current step if it has content
-      if (currentStep.length > 0) {
-        steps.push(currentStep);
-        currentStep = [];
-      }
-
-      // If this is a thank you page break, start collecting thank you content
-      if (element.isThankYouPage) {
-        isCollectingThankYou = true;
-      }
-      // Don't add the PageBreak element itself to any step
-      continue;
-    }
-
-    // Add element to appropriate collection
-    if (isCollectingThankYou) {
-      if (!thankYouContent) {
-        thankYouContent = [];
-      }
-      thankYouContent.push(element);
-    } else {
-      currentStep.push(element);
-    }
-  }
-
-  // Don't forget the last step (if not collecting thank you content)
-  if (currentStep.length > 0 && !isCollectingThankYou) {
-    steps.push(currentStep);
-  }
-
-  // If no steps were created but we have content, it's a single step
-  if (steps.length === 0 && currentStep.length > 0) {
-    steps.push(currentStep);
-  }
-
-  return { steps, thankYouContent };
-};

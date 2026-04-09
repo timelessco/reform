@@ -1,10 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
-import { Popover } from "@base-ui/react/popover";
 import { matchSorter } from "match-sorter";
 
 import { ColorPicker } from "./color-picker";
 import { iconOptions } from "./icon-data";
-import { IconPickerPreview } from "./icon-picker-preview";
 import type { IconPickerProps } from "./types";
 
 const ICONS_PER_PAGE = 99;
@@ -73,37 +71,6 @@ export const IconPickerContent = ({
     </div>
   );
 };
-
-export const IconPicker = ({
-  buttonIconSize = 20,
-  iconColor,
-  iconValue,
-  onColorChange,
-  onIconChange,
-}: IconPickerProps) => (
-  <Popover.Root>
-    <Popover.Trigger className="cursor-pointer">
-      <IconPickerPreview
-        icon={iconValue}
-        iconColor={iconColor}
-        iconSize="12"
-        size={buttonIconSize.toString()}
-      />
-    </Popover.Trigger>
-    <Popover.Portal>
-      <Popover.Positioner className="z-10" sideOffset={8}>
-        <Popover.Popup className="rounded-xl shadow-custom-1 ring-1 ring-black/5 outline-hidden">
-          <IconPickerContent
-            iconColor={iconColor}
-            iconValue={iconValue}
-            onColorChange={onColorChange}
-            onIconChange={onIconChange}
-          />
-        </Popover.Popup>
-      </Popover.Positioner>
-    </Popover.Portal>
-  </Popover.Root>
-);
 
 // --- Internal sub-components ---
 

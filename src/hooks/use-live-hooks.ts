@@ -55,28 +55,6 @@ export const useWorkspace = (workspaceId?: string) => {
 };
 
 /**
- * Custom hook for real-time forms sync filtered by workspace ID.
- */
-export const useFormsForWorkspace = (workspaceId?: string) =>
-  useLiveQuery(
-    (q) => {
-      if (!workspaceId || !isInitialized()) return undefined;
-      return q
-        .from({ form: getFormListings() })
-        .where(({ form }) => eq(form.workspaceId, workspaceId))
-        .where(({ form }) => or(eq(form.status, "draft"), eq(form.status, "published")))
-        .select(({ form }) => ({
-          id: form.id,
-          title: form.title,
-          workspaceId: form.workspaceId,
-          status: form.status,
-          updatedAt: form.updatedAt,
-        }));
-    },
-    [workspaceId],
-  );
-
-/**
  * Custom hook for real-time forms sync filtered by organization.
  * The query-backed formListings collection already filters by org membership server-side.
  */

@@ -30,17 +30,13 @@ const stripNulls = <T extends Record<string, unknown>>(obj: T) =>
     Object.entries(obj).map(([k, v]) => [k, v === null ? undefined : v]),
   ) as NullToUndefined<T>;
 import type { VersionListItem, VersionContent } from "./version-query.collection";
-import { createSubmissionSummaryCollection } from "./submission-query.collection";
 import { DEFAULT_FORM_CONTENT, DEFAULT_FORM_SETTINGS } from "./local-form.collection";
-import type { Form, FormBuilderSettings } from "./local-form.collection";
-import { logger } from "@/lib/utils";
+import type { Form } from "./local-form.collection";
 
 // Re-export types consumers need
-export type { Form, FormBuilderSettings } from "./local-form.collection";
+export type { Form } from "./local-form.collection";
 export type { WorkspaceSummary } from "./workspace-query.collection";
 export type { FormListing, FormFavorite } from "./form-listing-query.collection";
-export type { FormDetail } from "./form-detail-query.collection";
-export { resolveFormRoute } from "./form-detail-query.collection";
 
 // --- Server function imports (lazy to avoid circular deps) ---
 let _serverFns: {
@@ -86,7 +82,6 @@ let _favorites: ReturnType<typeof createFavoriteCollection> | null = null;
 const _enrichedFormIds = new Set<string>();
 const _versionListCache = new Map<string, ReturnType<typeof createVersionListCollection>>();
 const _versionContentCache = new Map<string, ReturnType<typeof createVersionContentCollection>>();
-const _submissionCache = new Map<string, ReturnType<typeof createSubmissionSummaryCollection>>();
 
 // --- Init ---
 
@@ -223,20 +218,6 @@ export const getVersionContent = (versionId: string) => {
   return collection;
 };
 
-export const getSubmissionSummary = (formId: string) => {
-  const { queryClient, serverFns } = getInit();
-  let collection = _submissionCache.get(formId);
-  if (!collection) {
-    collection = createSubmissionSummaryCollection({
-      queryClient,
-      formId,
-      queryFn: () => serverFns.getSubmissionsCount(formId),
-    });
-    _submissionCache.set(formId, collection);
-  }
-  return collection;
-};
-
 export const createFormLocal = (
   workspaceId: string,
   title = "Untitled",
@@ -326,53 +307,10 @@ export const duplicateFormById = (formId: string): { form: Form; persisted: Prom
   return { form: newForm, persisted: tx.isPersisted.promise.then(() => undefined) };
 };
 
-/** @deprecated Use duplicateFormById instead */
-export const duplicateForm = (sourceForm: Form) => duplicateFormById(sourceForm.id);
-
-export const updateDoc = async (id: string, updater: (draft: Form) => void) => {
-  const { formListings } = getInit();
-  logger("updateDoc", id);
-  formListings.update(id, (draft: Record<string, unknown>) => {
-    updater(draft as Form);
-    draft.updatedAt = new Date().toISOString();
-  });
-};
-
 export const updateFormStatus = async (id: string, status: "draft" | "published" | "archived") => {
   const { formListings } = getInit();
   formListings.update(id, (draft: Record<string, unknown>) => {
     draft.status = status;
-    draft.updatedAt = new Date().toISOString();
-  });
-};
-
-export const updateHeader = async (
-  id: string,
-  header: {
-    title?: string;
-    icon?: string;
-    cover?: string;
-    workspaceId: string;
-    createdAt: string;
-    updatedAt: string;
-  },
-) => {
-  const { formListings } = getInit();
-  formListings.update(id, (draft: Record<string, unknown>) => {
-    if (header.title !== undefined) draft.title = header.title;
-    if (header.icon !== undefined) draft.icon = header.icon;
-    if (header.cover !== undefined) draft.cover = header.cover;
-    if (header.workspaceId !== undefined) draft.workspaceId = header.workspaceId;
-    if (header.createdAt !== undefined) draft.createdAt = header.createdAt;
-    if (header.updatedAt !== undefined) draft.updatedAt = header.updatedAt;
-  });
-};
-
-export const updateSettings = async (id: string, settings: Partial<FormBuilderSettings>) => {
-  const { formListings } = getInit();
-  logger("updateSettings", id, Object.keys(settings));
-  formListings.update(id, (draft: Record<string, unknown>) => {
-    draft.settings = { ...(draft.settings as Record<string, unknown>), ...settings };
     draft.updatedAt = new Date().toISOString();
   });
 };

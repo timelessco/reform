@@ -325,10 +325,6 @@ export const STYLES: Record<string, StyleConfig> = {
   },
 };
 
-export const STYLE_NAMES = Object.keys(STYLES);
-export const BASE_COLOR_NAMES = Object.keys(BASE_COLORS);
-export const THEME_COLOR_NAMES = Object.keys(THEME_COLORS);
-
 // Constant destructive tokens (same across all presets)
 export const DESTRUCTIVE_TOKENS = {
   destructive: "#ef4444",

@@ -12,18 +12,16 @@ pre-commit:
         - "**/*.jsonc"
         - "**/*.css"
       stage_fixed: true
-    - name: typecheck
-      run: bun x tsc --noEmit
-      glob:
-        - "**/*.ts"
-        - "**/*.tsx"
     - name: knip
       run: bun x knip --strict --use-tsconfig-files
       glob:
         - "**/*.ts"
         - "**/*.tsx"
+
+pre-push:
+  parallel: true
+  jobs:
+    - name: typecheck
+      run: bun x tsc --noEmit
     - name: test
       run: bun run test
-      glob:
-        - "**/*.ts"
-        - "**/*.tsx"

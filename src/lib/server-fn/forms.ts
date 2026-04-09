@@ -17,19 +17,6 @@ const serializeForm = (form: typeof forms.$inferSelect) => ({
   customization: (form.customization ?? {}) as Record<string, object>,
 });
 
-export type SerializedForm = ReturnType<typeof serializeForm>;
-
-const serializeFormListing = (form: typeof forms.$inferSelect) => ({
-  id: form.id,
-  title: form.title,
-  status: form.status,
-  updatedAt: form.updatedAt.toISOString(),
-  createdAt: form.createdAt.toISOString(),
-  workspaceId: form.workspaceId,
-  icon: form.icon,
-  formName: form.formName,
-});
-
 export const createForm = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
@@ -225,116 +212,6 @@ export const getFormListings = createServerFn({ method: "GET" })
       updatedAt: f.updatedAt.toISOString(),
       createdAt: f.createdAt.toISOString(),
     }));
-  });
-
-const _getFormsByWorkspace = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .inputValidator(z.object({ workspaceId: z.string().uuid() }))
-  .handler(async ({ data, context }) => {
-    const formList = await db
-      .select()
-      .from(forms)
-      .where(
-        and(
-          eq(forms.workspaceId, data.workspaceId),
-          eq(forms.createdByUserId, context.session.user.id),
-        ),
-      )
-      .orderBy(forms.updatedAt);
-
-    return { forms: formList.map(serializeFormListing) };
-  });
-
-export const duplicateForm = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
-  .inputValidator(z.object({ id: z.string().uuid() }))
-  .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
-    const authPromise = authForm(data.id, context.session.user.id, orgId);
-
-    // Get the original form (start fetch in parallel with auth)
-    const [originalForm] = await db.select().from(forms).where(eq(forms.id, data.id));
-    await authPromise;
-
-    if (!originalForm) {
-      throw new Error("Form not found");
-    }
-
-    const now = new Date();
-    const newId = crypto.randomUUID();
-    const title = originalForm.title ? `${originalForm.title} copy` : "Untitled copy";
-
-    const [newForm] = await db
-      .insert(forms)
-      .values({
-        id: newId,
-        createdByUserId: context.session.user.id,
-        workspaceId: originalForm.workspaceId,
-        title,
-        formName: originalForm.formName,
-        schemaName: originalForm.schemaName,
-        content: originalForm.content,
-        settings: originalForm.settings,
-        icon: originalForm.icon,
-        cover: originalForm.cover,
-        isMultiStep: originalForm.isMultiStep,
-        status: "draft",
-        // Copy form settings fields from original
-        language: originalForm.language,
-        redirectOnCompletion: originalForm.redirectOnCompletion,
-        redirectUrl: originalForm.redirectUrl,
-        redirectDelay: originalForm.redirectDelay,
-        progressBar: originalForm.progressBar,
-        branding: originalForm.branding,
-        autoJump: originalForm.autoJump,
-        saveAnswersForLater: originalForm.saveAnswersForLater,
-        selfEmailNotifications: originalForm.selfEmailNotifications,
-        notificationEmail: originalForm.notificationEmail,
-        respondentEmailNotifications: originalForm.respondentEmailNotifications,
-        respondentEmailSubject: originalForm.respondentEmailSubject,
-        respondentEmailBody: originalForm.respondentEmailBody,
-        passwordProtect: originalForm.passwordProtect,
-        password: originalForm.password,
-        closeForm: originalForm.closeForm,
-        closedFormMessage: originalForm.closedFormMessage,
-        closeOnDate: originalForm.closeOnDate,
-        closeDate: originalForm.closeDate,
-        limitSubmissions: originalForm.limitSubmissions,
-        maxSubmissions: originalForm.maxSubmissions,
-        preventDuplicateSubmissions: originalForm.preventDuplicateSubmissions,
-        dataRetention: originalForm.dataRetention,
-        dataRetentionDays: originalForm.dataRetentionDays,
-        customization: originalForm.customization,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
-
-    return { form: serializeForm(newForm) };
-  });
-
-const _moveFormToWorkspace = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
-  .inputValidator(
-    z.object({
-      formId: z.string().uuid(),
-      targetWorkspaceId: z.string().uuid(),
-    }),
-  )
-  .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
-    await authForm(data.formId, context.session.user.id, orgId);
-
-    const [form] = await db
-      .update(forms)
-      .set({
-        workspaceId: data.targetWorkspaceId,
-        updatedAt: new Date(),
-      })
-      .where(eq(forms.id, data.formId))
-      .returning();
-
-    return { form: serializeForm(form) };
   });
 
 const _getFormById = createServerFn({ method: "GET" })

@@ -3,7 +3,6 @@ import { StyleNumberInput } from "@/components/ui/style-controls";
 import { Switch } from "@/components/ui/switch";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 import { cn } from "@udecode/cn";
-import { useRef, useState } from "react";
 
 /** Common display config shared across all embed types */
 export interface EmbedDisplayConfig {
@@ -36,35 +35,6 @@ export interface EmbedOptions {
   popup: EmbedPopupConfig;
   customDomain: boolean;
 }
-
-export const defaultDisplayConfig: EmbedDisplayConfig = {
-  title: "visible",
-  background: "solid",
-  alignment: "center",
-  dynamicHeight: true,
-  dynamicWidth: false,
-  trackEvents: false,
-  branding: true,
-};
-
-export const defaultPopupConfig: EmbedPopupConfig = {
-  overlay: "light",
-  hideOnSubmit: false,
-  hideOnSubmitDelay: 0,
-  trigger: "button",
-  position: "bottom-right",
-  width: 376,
-  emoji: true,
-  emojiIcon: "\u{1F44B}",
-  emojiAnimation: "wave",
-};
-
-export const defaultEmbedOptions: EmbedOptions = {
-  height: 558,
-  display: defaultDisplayConfig,
-  popup: defaultPopupConfig,
-  customDomain: false,
-};
 
 /* ─── Flat field interface for TanStack Form bindings ─── */
 
@@ -137,28 +107,6 @@ export const formFieldsToEmbedOptions = (fields: EmbedFormFields): EmbedOptions 
   customDomain: fields.customDomain,
 });
 
-/** Convert structured EmbedOptions back to flat form fields */
-export const embedOptionsToFormFields = (options: EmbedOptions): EmbedFormFields => ({
-  height: options.height,
-  dynamicHeight: options.display.dynamicHeight,
-  dynamicWidth: options.display.dynamicWidth,
-  hideTitle: options.display.title === "hidden",
-  alignLeft: options.display.alignment === "left",
-  transparentBackground: options.display.background === "transparent",
-  trackEvents: options.display.trackEvents,
-  branding: options.display.branding,
-  customDomain: options.customDomain,
-  popupTrigger: options.popup.trigger,
-  popupPosition: options.popup.position,
-  popupWidth: options.popup.width,
-  darkOverlay: options.popup.overlay === "dark",
-  emoji: options.popup.emoji,
-  emojiIcon: options.popup.emojiIcon,
-  emojiAnimation: options.popup.emojiAnimation,
-  hideOnSubmit: options.popup.hideOnSubmit,
-  hideOnSubmitDelay: options.popup.hideOnSubmitDelay,
-});
-
 /** Minimal field API shape from TanStack Form render callbacks */
 interface FieldRenderApi<T = unknown> {
   state: { value: T };
@@ -227,114 +175,6 @@ export const ConfigRow = ({
     {children}
   </div>
 );
-
-/** Drag-to-scrub + click-to-edit, styled as Figma value button: h-6 px-2 rounded-[5px] */
-const _ScrubValue = ({
-  value,
-  onChange,
-  min,
-  max,
-  step = 1,
-  unit = "px",
-}: {
-  value: number;
-  onChange: (v: number) => void;
-  min: number;
-  max: number;
-  step?: number;
-  unit?: string;
-}) => {
-  // eslint-disable-next-line eslint-plugin-react-hooks/rules-of-hooks
-  const [editing, setEditing] = useState(false);
-  // eslint-disable-next-line eslint-plugin-react-hooks/rules-of-hooks
-  const [draft, setDraft] = useState("");
-  // eslint-disable-next-line eslint-plugin-react-hooks/rules-of-hooks
-  const startX = useRef(0);
-  // eslint-disable-next-line eslint-plugin-react-hooks/rules-of-hooks
-  const startVal = useRef(0);
-  // eslint-disable-next-line eslint-plugin-react-hooks/rules-of-hooks
-  const hasDragged = useRef(false);
-  // eslint-disable-next-line eslint-plugin-react-hooks/rules-of-hooks
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const clamp = (v: number) => Math.max(min, Math.min(max, Math.round(v / step) * step));
-
-  const handlePointerDown = (e: React.PointerEvent) => {
-    if (editing) return;
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    startX.current = e.clientX;
-    startVal.current = value;
-    hasDragged.current = false;
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!(e.target as HTMLElement).hasPointerCapture(e.pointerId)) return;
-    const dx = e.clientX - startX.current;
-    if (Math.abs(dx) > 3) hasDragged.current = true;
-    if (hasDragged.current) {
-      onChange(clamp(startVal.current + dx));
-    }
-  };
-
-  const handlePointerUp = () => {
-    if (!hasDragged.current && !editing) {
-      setDraft(String(value));
-      setEditing(true);
-      requestAnimationFrame(() => inputRef.current?.select());
-    }
-  };
-
-  const commit = () => {
-    const num = parseInt(draft);
-    if (!isNaN(num)) onChange(clamp(num));
-    setEditing(false);
-  };
-
-  if (editing) {
-    return (
-      <input
-        ref={inputRef}
-        autoFocus
-        value={draft}
-        onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, ""))}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") commit();
-          if (e.key === "Escape") setEditing(false);
-        }}
-        aria-label={`${unit} value`}
-        className="h-6 w-16 shrink-0 rounded-[5px] px-2 text-right text-[13px] bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-ring tabular-nums"
-      />
-    );
-  }
-
-  return (
-    <span
-      role="slider"
-      tabIndex={0}
-      aria-label="Scrub value"
-      aria-valuemin={min}
-      aria-valuemax={max}
-      aria-valuenow={value}
-      className="h-6 shrink-0 inline-flex items-center rounded-[5px] px-2 text-[13px] whitespace-nowrap cursor-ew-resize select-none focus-visible:ring-2 focus-visible:ring-ring"
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onKeyDown={(e) => {
-        if (e.key === "ArrowRight" || e.key === "ArrowUp") {
-          e.preventDefault();
-          onChange(clamp(value + step));
-        } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
-          e.preventDefault();
-          onChange(clamp(value - step));
-        }
-      }}
-    >
-      {value}
-      {unit}
-    </span>
-  );
-};
 
 /* ─── Select trigger class (shared) ─── */
 /**

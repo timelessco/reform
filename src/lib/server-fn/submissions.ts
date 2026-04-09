@@ -1,4 +1,3 @@
-import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { and, count, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -28,23 +27,6 @@ const serializeSubmission = (s: typeof submissions.$inferSelect) => ({
   updatedAt: s.updatedAt.toISOString(),
   data: s.data as Record<string, object>,
 });
-
-// GET submissions by form
-const getSubmissionsByFormId = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .inputValidator(z.object({ formId: z.string().uuid() }))
-  .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
-    const [_, list] = await Promise.all([
-      authForm(data.formId, context.session.user.id, orgId),
-      db
-        .select()
-        .from(submissions)
-        .where(eq(submissions.formId, data.formId))
-        .orderBy(desc(submissions.createdAt)),
-    ]);
-    return { submissions: list.map(serializeSubmission) };
-  });
 
 // DELETE submission
 export const deleteSubmission = createServerFn({ method: "POST" })
@@ -227,20 +209,4 @@ export const getSubmissionsBootstrap = createServerFn({ method: "GET" })
       totalCount: countRow?.total ?? 0,
       fieldLabels,
     };
-  });
-
-// Query options
-export const getSubmissionsByFormIdQueryOption = (formId: string) =>
-  queryOptions({
-    queryKey: ["submissions", formId],
-    queryFn: () => getSubmissionsByFormId({ data: { formId } }),
-    refetchOnWindowFocus: true,
-    staleTime: 30_000,
-  });
-
-export const getSubmissionsCountQueryOption = (formId: string) =>
-  queryOptions({
-    queryKey: ["submissions", formId, "count"],
-    queryFn: () => getSubmissionsCount({ data: { formId } }),
-    staleTime: 30_000,
   });

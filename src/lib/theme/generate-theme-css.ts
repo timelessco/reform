@@ -186,13 +186,6 @@ export const getThemeStyleVars = (
   return vars as CSSProperties;
 };
 
-export const isLogoMinimalSize = (
-  customization: Record<string, string> | null | undefined,
-): boolean => {
-  if (!customization?.logoWidth) return false;
-  return Number.parseInt(customization.logoWidth) <= 0;
-};
-
 const applyLogoMinimalFlag = (
   customization: Record<string, string>,
   vars: Record<string, string>,
@@ -200,29 +193,6 @@ const applyLogoMinimalFlag = (
   if (customization.logoWidth && Number.parseInt(customization.logoWidth) <= 0) {
     vars["--bf-logo-minimal"] = "1";
   }
-};
-
-/**
- * Returns a React style object with ONLY layout --bf-* vars.
- * Used in the editor canvas so it gets correct dimensions
- * without overriding color tokens (which would conflict with editor chrome).
- */
-export const getLayoutOnlyVars = (
-  customization: Record<string, string> | null | undefined,
-): CSSProperties => {
-  if (!customization || Object.keys(customization).length === 0) return {};
-
-  const vars: Record<string, string> = {};
-  for (const [field, cssVar] of Object.entries(LAYOUT_FIELDS)) {
-    if (customization[field]) {
-      vars[cssVar] =
-        field === "pageWidth" ? migratePageWidth(customization[field]) : customization[field];
-    } else if (field in CUSTOMIZATION_AUTO_DEFAULTS) {
-      vars[cssVar] = CUSTOMIZATION_AUTO_DEFAULTS[field as keyof typeof CUSTOMIZATION_AUTO_DEFAULTS];
-    }
-  }
-  applyLogoMinimalFlag(customization, vars);
-  return vars as CSSProperties;
 };
 
 /**

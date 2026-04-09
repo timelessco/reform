@@ -31,36 +31,6 @@ export const sendMagicLinkEmail = async (email: string, url: string) => {
   }
 };
 
-export const sendOTPEmail = async (email: string, otp: string, type: string) => {
-  // type: "sign-in" | "email-verification" | "forget-password"
-  const subject =
-    type === "email-verification"
-      ? "Verify your email"
-      : type === "forget-password"
-        ? "Reset your password"
-        : `Sign in to ${APP_NAME}`;
-
-  const { error } = await resend.emails.send({
-    from: FROM_EMAIL,
-    to: email,
-    subject,
-    html: `
-			<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-				<h2 style="color: #333;">${subject}</h2>
-				<p style="font-size: 16px; color: #555;">Your verification code is:</p>
-				<p style="font-size: 32px; font-weight: bold; letter-spacing: 4px; color: #000; margin: 24px 0;">${otp}</p>
-				<p style="font-size: 14px; color: #888;">This code expires in 5 minutes.</p>
-				<hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-				<p style="font-size: 12px; color: #999;">If you didn't request this code, you can safely ignore this email.</p>
-			</div>
-		`,
-  });
-
-  if (error) {
-    logger("[Email] Failed to send OTP:", error);
-  }
-};
-
 export const sendOrgInvitationEmail = async (
   email: string,
   orgName: string,

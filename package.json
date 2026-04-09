@@ -70,7 +70,6 @@
     "@polar-sh/better-auth": "^1.8.3",
     "@polar-sh/sdk": "^0.42.5",
     "@sentry/tanstackstart-react": "^10.44.0",
-    "@t3-oss/env-core": "^0.13.10",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/db": "^0.5.33",
     "@tanstack/query-db-collection": "^1.0.30",

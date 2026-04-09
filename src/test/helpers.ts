@@ -1,7 +1,6 @@
 import * as schema from "@/db/schema";
 import { db } from "@/lib/db/db";
 import { auth } from "@/lib/auth/auth";
-import { eq } from "drizzle-orm";
 
 interface TestHelpers {
   createUser: (overrides?: Record<string, unknown>) => { id: string; [key: string]: unknown };
@@ -96,8 +95,4 @@ export const cleanupTestUser = async (userId: string) => {
 export const cleanupTestOrg = async (orgId: string) => {
   const t = await getTestUtils();
   await t.deleteOrganization(orgId);
-};
-
-export const removeMembership = async (userId: string) => {
-  await db.delete(schema.member).where(eq(schema.member.userId, userId));
 };

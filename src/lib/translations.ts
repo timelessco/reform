@@ -132,15 +132,7 @@ const languageCodeMap: Record<string, string> = {
   French: "fr",
 };
 
-const codeLanguageMap: Record<string, string> = {
-  en: "English",
-  es: "Spanish",
-  fr: "French",
-};
-
 export const languageToCode = (language: string): string => languageCodeMap[language] ?? "en";
-
-export const codeToLanguage = (code: string): string => codeLanguageMap[code] ?? "English";
 
 export const getTranslations = (langOrCode: string): Translations => {
   // Accept either language name or code

@@ -1,13 +1,9 @@
-import type { ReactNode } from "react";
-import { APP_NAME } from "@/lib/config/app-config";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export const FAQItem = ({ question, answer }: { question: string; answer: string }) => (
   <Accordion>
@@ -20,74 +16,4 @@ export const FAQItem = ({ question, answer }: { question: string; answer: string
       </AccordionContent>
     </AccordionItem>
   </Accordion>
-);
-
-const SocialButton = ({ label, icon }: { label: string; icon: ReactNode }) => (
-  <Button
-    variant="secondary"
-    className="flex items-center justify-center gap-2 w-full py-2.5 h-auto rounded-full text-[14px] font-bold hover:bg-secondary/40 border border-foreground/5"
-  >
-    {icon}
-    {label}
-  </Button>
-);
-
-export const RightSidebar = () => (
-  <ScrollArea className="w-80 shrink-0 max-h-[calc(100vh-2.5rem)]">
-    <aside className="flex flex-col bg-background p-8 select-none">
-      <div className="mb-12">
-        <h2 className="text-xl font-bold mb-6">Got questions?</h2>
-        <div className="flex flex-col">
-          <FAQItem
-            question="How do I embed my form in a Notion page?"
-            answer="Simply copy the share link and paste it into any Notion block. Select 'Create Embed' from the menu to instantly render your form inside Notion."
-          />
-          <FAQItem
-            question="Is Agentation a complete alternative to Google Forms?"
-            answer="Yes, and more. We offer advanced Notion-like blocks, AI generation, and a much cleaner aesthetic for modern workflows."
-          />
-          <FAQItem
-            question="Can I use AI to generate form blocks automatically?"
-            answer="Absolutely. Just type '/ai' in the editor followed by your prompt, and our engine will draft fields and questions for you."
-          />
-          <FAQItem
-            question="How can I better organize my forms into workspaces?"
-            answer="Workspaces allow you to group forms by project or team. You can switch between them using the workspace selector in the head margin."
-          />
-          <FAQItem
-            question={`Does Agentation support multi-step forms like ${APP_NAME} or Typeform?`}
-            answer="Yes, you can add 'Page' blocks to create immersive multi-step experiences with conditional logic support coming soon."
-          />
-        </div>
-      </div>
-
-      <div className="bg-foreground text-background p-6 rounded-3xl mb-12">
-        <h3 className="text-[15px] font-bold mb-6 text-center">
-          Subscribe to our product updates & news:
-        </h3>
-        <div className="space-y-3">
-          <SocialButton label="Threads" icon={<span className="text-lg">@</span>} />
-          <SocialButton label="x.com" icon={<span className="font-serif italic text-lg">X</span>} />
-        </div>
-      </div>
-
-      <nav aria-label="Sidebar links" className="mt-auto grid grid-cols-2 gap-y-3 gap-x-4">
-        <FooterLink label="Features" />
-        <FooterLink label="Printable" />
-        <FooterLink label="Workflow" />
-        <FooterLink label="Pricing" />
-        <FooterLink label="Privacy Policy" />
-        <FooterLink label="Terms of Use" />
-      </nav>
-    </aside>
-  </ScrollArea>
-);
-
-const FooterLink = ({ label }: { label: string }) => (
-  <Button
-    variant="link"
-    className="text-[14px] text-muted-foreground hover:text-foreground p-0 h-auto"
-  >
-    {label}
-  </Button>
 );
