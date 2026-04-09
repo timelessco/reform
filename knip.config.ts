@@ -3,7 +3,7 @@ import type { KnipConfig } from "knip";
 export default {
   entry: [
     "src/routes/**/*.{ts,tsx}", // Routes as entry points
-    "src/scripts/*.ts", // Embed scripts
+    "src/embed/*.ts", // Embed scripts
     "instrument.server.mjs", // Sentry
   ],
   project: ["src/**/*.{ts,tsx}"],

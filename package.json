@@ -21,7 +21,7 @@
     "db:push": "drizzle-kit push",
     "db:pull": "drizzle-kit pull",
     "db:studio": "drizzle-kit studio",
-    "build:embed": "esbuild src/scripts/embed-popup.ts --bundle --minify --outfile=public/embed/popup.js --target=es2020 --format=iife",
+    "build:embed": "esbuild src/embed/embed-popup.ts --bundle --minify --outfile=public/embed/popup.js --target=es2020 --format=iife",
     "build": "bun run build:embed && NODE_OPTIONS='--max-old-space-size=8192' vite build",
     "start": "node .output/server/index.mjs",
     "fix": "ultracite fix"
