@@ -12,7 +12,7 @@ import { Tabs, TabsIndicator, TabsList, TabsTrigger } from "@/components/ui/tabs
 import { useForm } from "@/hooks/use-live-hooks";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { publishForm } from "@/hooks/use-form-versions";
-import { getFormListings } from "@/collections/collections";
+import { getFormListings } from "@/collections";
 import { formFieldsToEmbedOptions, EmbedConfigPanel } from "./embed-config-panel";
 import { EmbedCodeDialog, searchToFormValues, formValuesToSearch, tabs } from "./embed-section";
 import { EmbedPreviewMockup } from "./embed-preview-mockup";

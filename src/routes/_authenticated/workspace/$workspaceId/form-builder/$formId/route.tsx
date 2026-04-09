@@ -1,7 +1,7 @@
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import { getFormListings, isInitialized } from "@/collections/collections";
+import { getFormListings, isInitialized } from "@/collections";
 import { getFormVersions } from "@/lib/server-fn/form-versions";
 import { getFormbyIdQueryOption, getFormStatus } from "@/lib/server-fn/forms";
 import type { FormStatus } from "@/lib/server-fn/forms";

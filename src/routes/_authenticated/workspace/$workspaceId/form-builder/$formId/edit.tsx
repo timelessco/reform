@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { NotFound } from "@/components/ui/not-found";
 import { useFormVersionContent } from "@/hooks/use-form-versions";
-import { getFormListings } from "@/collections/collections";
+import { getFormListings } from "@/collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useVersionHistorySidebar } from "@/hooks/use-version-history-sidebar";
 import { getFormStatus } from "@/lib/server-fn/forms";

@@ -1,6 +1,6 @@
 import { and, eq, exists } from "drizzle-orm";
 import { forms, member, workspaces } from "@/db/schema";
-import { db } from "@/db/client";
+import { db } from "@/db";
 
 export const getActiveOrgId = (session: { session: Record<string, unknown> }): string => {
   const orgId = session.session.activeOrganizationId as string | undefined;

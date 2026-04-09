@@ -1,4 +1,4 @@
-import { duplicateFormById } from "@/collections/collections";
+import { duplicateFormById } from "@/collections";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { toast } from "sonner";

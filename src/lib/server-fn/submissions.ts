@@ -3,7 +3,7 @@ import { and, count, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Value } from "platejs";
 import { forms, formVersions, submissions } from "@/db/schema";
-import { db } from "@/db/client";
+import { db } from "@/db";
 import {
   getEditableFields,
   transformPlateStateToFormElements,

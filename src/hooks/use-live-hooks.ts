@@ -7,7 +7,7 @@ import {
   getFormListings,
   getFavorites,
   enrichFormDetail,
-} from "@/collections/collections";
+} from "@/collections";
 import { localFormCollection } from "@/collections/local/form";
 
 /**

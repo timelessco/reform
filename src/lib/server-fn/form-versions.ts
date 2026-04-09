@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { forms, formVersions, user } from "@/db/schema";
-import { db } from "@/db/client";
+import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { authForm, getActiveOrgId } from "./helpers";
 

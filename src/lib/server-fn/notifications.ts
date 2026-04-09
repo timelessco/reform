@@ -8,7 +8,7 @@ import {
   forms,
   workspaces,
 } from "@/db/schema";
-import { db } from "@/db/client";
+import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { authForm, getActiveOrgId } from "./helpers";
 

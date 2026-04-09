@@ -11,7 +11,7 @@ import {
 } from "@/test/helpers";
 import { createWorkspaceSummaryCollection } from "@/collections/query/workspace";
 import type { WorkspaceSummary } from "@/collections/query/workspace";
-import { db } from "@/db/client";
+import { db } from "@/db";
 import { forms, member, workspaces } from "@/db/schema";
 import { desc, eq, inArray, not } from "drizzle-orm";
 

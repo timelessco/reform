@@ -31,7 +31,7 @@ import {
   TrashIcon,
 } from "@/components/ui/icons";
 import { SidebarSection } from "@/components/ui/sidebar-section";
-import { createFormLocal } from "@/collections/collections";
+import { createFormLocal } from "@/collections";
 import { cn } from "@/lib/utils";
 import { useLocation, useRouter } from "@tanstack/react-router";
 import { useCallback, useState } from "react";

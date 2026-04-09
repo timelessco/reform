@@ -5,7 +5,7 @@ import { createVersionListCollection } from "@/collections/query/version";
 import type { VersionListItem } from "@/collections/query/version";
 import { createFormListingCollection } from "@/collections/query/form-listing";
 import type { FormListing } from "@/collections/query/form-listing";
-import { db } from "@/db/client";
+import { db } from "@/db";
 import { forms, formVersions, user } from "@/db/schema";
 import {
   getTestUtils,

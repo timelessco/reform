@@ -1,5 +1,5 @@
 import * as schema from "@/db/schema";
-import { db } from "@/db/client";
+import { db } from "@/db";
 import { auth } from "@/lib/auth/auth";
 
 interface TestHelpers {

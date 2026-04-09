@@ -89,7 +89,7 @@ import {
   restoreFormLocal,
   updateFormStatus,
   updateWorkspaceName,
-} from "@/collections/collections";
+} from "@/collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import {

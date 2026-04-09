@@ -6,7 +6,7 @@ import {
   getVersionList,
   getVersionContent,
   getQueryClient,
-} from "@/collections/collections";
+} from "@/collections";
 import {
   discardFormChanges,
   publishFormVersion,

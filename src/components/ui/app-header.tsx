@@ -25,7 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { toggleFavoriteLocal, updateFormStatus } from "@/collections/collections";
+import { toggleFavoriteLocal, updateFormStatus } from "@/collections";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { discardChanges, publishForm, useHasUnpublishedChanges } from "@/hooks/use-form-versions";
 import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
