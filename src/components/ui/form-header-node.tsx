@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/image-crop";
 import type { FormHeaderElementData } from "@/lib/form-schema/form-header-factory";
 import { THEME_COLORS } from "@/lib/theme/theme-presets";
-import { cn, isValidUrl, DEFAULT_ICON } from "@/lib/utils";
+import { DEFAULT_ICON } from "@/lib/config/app-config";
+import { cn, isValidUrl } from "@/lib/utils";
 export {
   createFormHeaderNode,
   type FormHeaderElementData,

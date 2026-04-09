@@ -1,10 +1,5 @@
+import { SPRITE_PATH } from "@/lib/config/app-config";
 import type { IconOption } from "./types";
-
-/**
- * Path to the SVG sprite file.
- * Update this if your sprite is at a different location.
- */
-export const SPRITE_PATH = "/sprite.svg";
 
 export const WHITE_COLOR = "#ffffff";
 export const BLACK_COLOR = "#000000";

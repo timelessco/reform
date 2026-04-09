@@ -8,7 +8,8 @@ import { CUSTOMIZATION_AUTO_DEFAULTS } from "@/lib/theme/customization-defaults"
 import { extractFormHeader } from "@/lib/editor/transform-plate-to-form";
 import { transformPlateForPreview } from "@/lib/editor/transform-plate-for-preview";
 import type { PreviewSegment } from "@/lib/editor/transform-plate-for-preview";
-import { cn, isValidUrl, DEFAULT_ICON } from "@/lib/utils";
+import { DEFAULT_ICON } from "@/lib/config/app-config";
+import { cn, isValidUrl } from "@/lib/utils";
 import type { PublicFormSettings } from "@/types/form-settings";
 import { IconPickerPreview } from "@/components/icon-picker";
 import { AnimatePresence, motion } from "motion/react";

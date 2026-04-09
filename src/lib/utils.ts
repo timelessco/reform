@@ -12,8 +12,6 @@ export const parseTimestampAsUTC = (value: string | undefined): Date | null => {
   return new Date(value.replace(" ", "T") + "Z");
 };
 
-/** Default icon sentinel used in form headers */
-export const DEFAULT_ICON = "default-icon";
 /** Fallback sprite icon name when no icon is set */
 export const DEFAULT_ICON_NAME = "file-06";
 
