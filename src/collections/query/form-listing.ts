@@ -1,5 +1,7 @@
 import { createCollection } from "@tanstack/db";
 import type { InsertMutationFn, UpdateMutationFn, DeleteMutationFn } from "@tanstack/db";
+import { persistedCollectionOptions } from "@tanstack/browser-db-sqlite-persistence";
+import type { PersistedCollectionPersistence } from "@tanstack/browser-db-sqlite-persistence";
 import type { QueryClient } from "@tanstack/query-core";
 import { queryCollectionOptions } from "@tanstack/query-db-collection";
 
@@ -33,13 +35,14 @@ export type FormFavorite = {
 type FormListingCollectionConfig = {
   queryClient: QueryClient;
   queryFn: () => Promise<FormListing[]>;
+  persistence?: PersistedCollectionPersistence | null;
   onInsert?: InsertMutationFn<FormListing, string | number>;
   onUpdate?: UpdateMutationFn<FormListing, string | number>;
   onDelete?: DeleteMutationFn<FormListing, string | number>;
 };
 
 export const createFormListingCollection = (config: FormListingCollectionConfig) => {
-  const { queryClient, queryFn, onInsert, onUpdate, onDelete } = config;
+  const { queryClient, queryFn, persistence, onInsert, onUpdate, onDelete } = config;
 
   // Closure ref set after collection creation — used by enrichedQueryFn
   // to merge lightweight listing data with existing enriched records,
@@ -58,18 +61,27 @@ export const createFormListingCollection = (config: FormListingCollectionConfig)
     });
   };
 
-  const collection = createCollection(
-    queryCollectionOptions<FormListing, unknown, string[], string | number>({
-      queryKey: ["form-listings"],
-      queryFn: enrichedQueryFn,
-      queryClient,
-      getKey: (item): string | number => item.id,
-      staleTime: 1000 * 60 * 5,
-      onInsert,
-      onUpdate,
-      onDelete,
-    }),
-  );
+  const baseOptions = queryCollectionOptions<FormListing, unknown, string[], string | number>({
+    id: "form-listings",
+    queryKey: ["form-listings"],
+    queryFn: enrichedQueryFn,
+    queryClient,
+    getKey: (item): string | number => item.id,
+    staleTime: 1000 * 60 * 5,
+    onInsert,
+    onUpdate,
+    onDelete,
+  });
+
+  const collection = persistence
+    ? createCollection(
+        persistedCollectionOptions({
+          ...baseOptions,
+          persistence,
+          schemaVersion: 1,
+        }) as unknown as typeof baseOptions,
+      )
+    : createCollection(baseOptions);
 
   collectionRef = collection;
   return collection;
@@ -78,22 +90,33 @@ export const createFormListingCollection = (config: FormListingCollectionConfig)
 type FavoriteCollectionConfig = {
   queryClient: QueryClient;
   queryFn: () => Promise<FormFavorite[]>;
+  persistence?: PersistedCollectionPersistence | null;
   onInsert?: InsertMutationFn<FormFavorite, string | number>;
   onDelete?: DeleteMutationFn<FormFavorite, string | number>;
 };
 
 export const createFavoriteCollection = (config: FavoriteCollectionConfig) => {
-  const { queryClient, queryFn, onInsert, onDelete } = config;
+  const { queryClient, queryFn, persistence, onInsert, onDelete } = config;
 
-  return createCollection(
-    queryCollectionOptions<FormFavorite, unknown, string[], string | number>({
-      queryKey: ["favorites"],
-      queryFn: async () => queryFn(),
-      queryClient,
-      getKey: (item): string | number => item.id,
-      staleTime: 1000 * 60 * 5,
-      onInsert,
-      onDelete,
-    }),
-  );
+  const baseOptions = queryCollectionOptions<FormFavorite, unknown, string[], string | number>({
+    id: "favorites",
+    queryKey: ["favorites"],
+    queryFn: async () => queryFn(),
+    queryClient,
+    getKey: (item): string | number => item.id,
+    staleTime: 1000 * 60 * 5,
+    onInsert,
+    onDelete,
+  });
+
+  if (!persistence) {
+    return createCollection(baseOptions);
+  }
+
+  const persistedOptions = persistedCollectionOptions({
+    ...baseOptions,
+    persistence,
+    schemaVersion: 1,
+  });
+  return createCollection(persistedOptions as unknown as typeof baseOptions);
 };

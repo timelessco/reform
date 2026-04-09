@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/right-sidebar-resize-handle";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import { localFormCollection } from "@/collections/local/form";
+import { getLocalFormCollection } from "@/collections/local/form";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useLocalForm } from "@/hooks/use-live-hooks";
 import { getLocalFormId, getLocalWorkspaceId } from "@/db/local-draft";
@@ -179,9 +179,15 @@ const LocalEditorApp = () => {
   if (!seededRef.current) {
     seededRef.current = true;
     const existing = savedDocs?.find((d) => d.id === localFormId);
+    // Signal to the post-login dashboard that there's anon data worth
+    // migrating — set regardless of whether we insert a fresh record or
+    // the draft already exists in OPFS from a previous session. Lets
+    // authenticated routes skip OPFS init entirely when no draft has
+    // ever been created, keeping login → dashboard fast for first-timers.
+    localStorage.setItem("bf-has-local-draft", "1");
     if (!existing) {
       try {
-        localFormCollection.insert({
+        getLocalFormCollection().insert({
           id: localFormId,
           workspaceId: getLocalWorkspaceId(),
           formName: "draft",
@@ -190,11 +196,14 @@ const LocalEditorApp = () => {
           status: "draft" as const,
           content: [],
           title: "Draft Form",
+          // zod schema defaults don't apply in sync-absent persisted mode,
+          // so seed the fields the editor and theme reader expect.
+          customization: {},
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
       } catch {
-        // Record already exists (race condition) — safe to ignore
+        // Record already exists (race) — safe to ignore
       }
     }
   }
@@ -238,7 +247,7 @@ const LocalEditorApp = () => {
           ? (value[0] as unknown as FormHeaderElementData)
           : null;
 
-      localFormCollection.update(localFormId, (draft) => {
+      getLocalFormCollection().update(localFormId, (draft) => {
         draft.content = value;
         draft.updatedAt = new Date().toISOString();
         if (headerNode) {

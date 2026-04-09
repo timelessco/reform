@@ -85,8 +85,22 @@ const SyncOverlay = () => {
   );
 };
 
-// Module-level flag survives component unmount/remount during navigation
-let _hasSynced = false;
+// Two persisted signals control the post-login draft migration:
+//
+//   bf-has-local-draft   : set by the landing editor whenever a draft is
+//                          created or already exists in OPFS. Cleared by
+//                          a successful sync or on logout.
+//   bf-last-synced-user  : userId of the last account the local drafts
+//                          were migrated into. Prevents re-sync on hard
+//                          reload and when navigating back to /dashboard
+//                          after SPA navigation. Reset on logout so a
+//                          subsequent signup-with-draft flow still runs.
+//
+// Both live in localStorage (not sessionStorage) so the magic-link
+// callback — which is a full page navigation through /api/auth/... —
+// preserves them across the redirect.
+const HAS_LOCAL_DRAFT_KEY = "bf-has-local-draft";
+const LAST_SYNCED_USER_KEY = "bf-last-synced-user";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -130,12 +144,33 @@ const DashboardPage = () => {
 
   useEffect(() => {
     const syncData = async () => {
-      if (!session?.user || !activeOrg?.id) return;
-      if (_hasSynced) return;
+      const userId = session?.user?.id;
+      if (!userId || !activeOrg?.id) return;
+
+      // Persisted "already migrated" check — survives reloads and tab
+      // navigation so a hard refresh on /dashboard never re-runs sync.
+      if (localStorage.getItem(LAST_SYNCED_USER_KEY) === userId) return;
+
+      // Fast path: no draft has ever been created in this browser, skip
+      // OPFS init entirely.
+      if (localStorage.getItem(HAS_LOCAL_DRAFT_KEY) !== "1") {
+        localStorage.setItem(LAST_SYNCED_USER_KEY, userId);
+        return;
+      }
+
+      // Lazy-init the local collection: this is the first authenticated
+      // touchpoint, and the landing route's bootstrap didn't mount on the
+      // post-auth redirect.
+      const { initLocalFormCollection } = await import("@/collections/local/form");
+      const { getPersistence } = await import("@/collections/_persistence");
+      const bundle = await getPersistence();
+      await initLocalFormCollection(bundle?.persistence ?? null);
 
       const hasData = await hasLocalDataToSync();
       if (!hasData) {
-        _hasSynced = true;
+        // OPFS had nothing; clear the stale signal.
+        localStorage.removeItem(HAS_LOCAL_DRAFT_KEY);
+        localStorage.setItem(LAST_SYNCED_USER_KEY, userId);
         return;
       }
 
@@ -144,19 +179,19 @@ const DashboardPage = () => {
         const result = await syncLocalDataToCloud(activeOrg.id);
         if (result?.syncedForms && result.syncedForms.length > 0) {
           clearLocalDraftIds();
-          sessionStorage.removeItem("shouldSyncAfterLogin");
+          localStorage.removeItem(HAS_LOCAL_DRAFT_KEY);
           toast.success("Local data synced!");
         }
-        _hasSynced = true;
+        localStorage.setItem(LAST_SYNCED_USER_KEY, userId);
       } catch (error) {
-        console.error("Failed to sync local data:", error);
+        console.error("[dashboard] Failed to sync local data:", error);
         toast.error("Signed in but failed to sync local data");
       } finally {
         setIsSyncing(false);
       }
     };
     syncData();
-  }, [session?.user, activeOrg?.id]);
+  }, [session?.user?.id, activeOrg?.id]);
 
   const handleCreateWorkspace = useCallback(async () => {
     if (!activeOrg?.id) return;

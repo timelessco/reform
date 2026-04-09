@@ -8,7 +8,7 @@ import {
   getFavorites,
   enrichFormDetail,
 } from "@/collections";
-import { localFormCollection } from "@/collections/local/form";
+import { getLocalFormCollection, isLocalFormCollectionReady } from "@/collections/local/form";
 
 /**
  * Custom hook for real-time workspaces sync filtered by organization ID.
@@ -108,8 +108,8 @@ export const useForm = (formId?: string) => {
 export const useLocalForm = (formId?: string) =>
   useLiveQuery(
     (q) => {
-      if (!formId) return undefined;
-      return q.from({ doc: localFormCollection }).where(({ doc }) => eq(doc.id, formId));
+      if (!formId || !isLocalFormCollectionReady()) return undefined;
+      return q.from({ doc: getLocalFormCollection() }).where(({ doc }) => eq(doc.id, formId));
     },
     [formId],
   );

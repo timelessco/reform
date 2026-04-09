@@ -42,7 +42,26 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
 
   const signOutMutation = useMutation(
     auth.signOut.mutationOptions({
-      onSuccess: () => {
+      onSuccess: async () => {
+        try {
+          const [{ disposePersistence, clearPersistenceStorage }, { disposeLocalFormCollection }] =
+            await Promise.all([
+              import("@/collections/_persistence"),
+              import("@/collections/local/form"),
+            ]);
+          // Order matters: drop the collection ref first so lingering writes
+          // can't fire against a torn-down coordinator, then dispose the
+          // persistence bundle, then wipe the on-disk database.
+          disposeLocalFormCollection();
+          await disposePersistence();
+          await clearPersistenceStorage();
+          // Clear the draft-migration signals so a subsequent signup with
+          // a fresh draft flow through this browser still triggers sync.
+          localStorage.removeItem("bf-has-local-draft");
+          localStorage.removeItem("bf-last-synced-user");
+        } catch (err) {
+          console.warn("[auth] failed to clear local persistence on logout", err);
+        }
         router.invalidate();
         router.navigate({ to: "/" });
       },

@@ -2,16 +2,22 @@ import type { QueryClient } from "@tanstack/query-core";
 import { createFavoriteCollection, createFormListingCollection } from "./query/form-listing";
 import { createWorkspaceSummaryCollection } from "./query/workspace";
 import type { createForm, updateForm } from "@/lib/server-fn/forms";
+import { getPersistence } from "./_persistence";
 import { state, stripNulls } from "./_state";
 import type { ServerFnInput, ServerFns } from "./_state";
 
-export const initCollections = (queryClient: QueryClient, serverFns: ServerFns) => {
-  state.queryClient = queryClient;
-  state.serverFns = serverFns;
+export const initCollections = async (queryClient: QueryClient, serverFns: ServerFns) => {
+  // Collections are committed to state atomically at the end so
+  // isInitialized() doesn't flip true mid-build — otherwise a live-query
+  // hook could race and see a null singleton between `serverFns` being set
+  // and the collection being built.
+  const persistenceBundle = await getPersistence();
+  const persistence = persistenceBundle?.persistence ?? null;
 
-  state.workspaces = createWorkspaceSummaryCollection({
+  const workspaces = createWorkspaceSummaryCollection({
     queryClient,
     queryFn: serverFns.getWorkspacesWithForms,
+    persistence,
     onInsert: async ({ transaction }) => {
       const ws = transaction.mutations[0].modified;
       await serverFns.createWorkspace({
@@ -29,9 +35,10 @@ export const initCollections = (queryClient: QueryClient, serverFns: ServerFns) 
     },
   });
 
-  state.formListings = createFormListingCollection({
+  const formListings = createFormListingCollection({
     queryClient,
     queryFn: serverFns.getFormListings,
+    persistence,
     onInsert: async ({ transaction }) => {
       const modified = transaction.mutations[0].modified;
       await serverFns.createForm(stripNulls(modified) as ServerFnInput<typeof createForm>);
@@ -50,9 +57,10 @@ export const initCollections = (queryClient: QueryClient, serverFns: ServerFns) 
     },
   });
 
-  state.favorites = createFavoriteCollection({
+  const favorites = createFavoriteCollection({
     queryClient,
     queryFn: serverFns.getFavorites,
+    persistence,
     onInsert: async ({ transaction }) => {
       await serverFns.addFavorite({ formId: transaction.mutations[0].modified.formId });
     },
@@ -60,4 +68,10 @@ export const initCollections = (queryClient: QueryClient, serverFns: ServerFns) 
       await serverFns.removeFavorite({ formId: transaction.mutations[0].original.formId });
     },
   });
+
+  state.workspaces = workspaces;
+  state.formListings = formListings;
+  state.favorites = favorites;
+  state.queryClient = queryClient;
+  state.serverFns = serverFns;
 };

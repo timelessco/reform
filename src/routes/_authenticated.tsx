@@ -175,10 +175,10 @@ const formatNotificationTime = (value: string) =>
     addSuffix: true,
   });
 
-const initCollectionsOnClient = createClientOnlyFn((queryClient: QueryClient) => {
+const initCollectionsOnClient = createClientOnlyFn(async (queryClient: QueryClient) => {
   if (isCollectionsInitialized()) return;
 
-  initCollections(queryClient, {
+  await initCollections(queryClient, {
     getWorkspacesWithForms: async () => {
       const result = await getWorkspaces();
       return {
@@ -224,9 +224,22 @@ const initCollectionsOnClient = createClientOnlyFn((queryClient: QueryClient) =>
 
 const AuthLayout = () => {
   const queryClient = useQueryClient();
-  initCollectionsOnClient(queryClient);
+  const [collectionsReady, setCollectionsReady] = useState(isCollectionsInitialized());
+  useEffect(() => {
+    if (collectionsReady) return;
+    let cancelled = false;
+    void initCollectionsOnClient(queryClient).then(() => {
+      if (!cancelled) setCollectionsReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [queryClient, collectionsReady]);
+
   const { pathname } = useLocation();
   const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
+
+  if (!collectionsReady) return <Loader />;
 
   return (
     <SidebarProvider style={{ "--app-header-height": "40px" } as React.CSSProperties}>

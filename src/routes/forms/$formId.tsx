@@ -92,9 +92,13 @@ const PublicFormRoute = () => {
     dynamicWidth: search.dynamicWidth,
   };
 
-  // Override customization mode with resolved theme so tokens match
+  // Always inject `mode` into the customization record so the theme
+  // resolver picks the correct base palette — even for forms with no
+  // per-form overrides. Gating on `rawCustomization` truthiness would
+  // skip the override for forms stored with `customization: null`,
+  // which then render a light-theme shell against a dark app.
   const customization = useMemo(
-    () => (rawCustomization ? { ...rawCustomization, mode: resolvedTheme } : rawCustomization),
+    () => ({ ...rawCustomization, mode: resolvedTheme }),
     [rawCustomization, resolvedTheme],
   );
   const themeCss = useMemo(() => generateThemeCss(customization), [customization]);
