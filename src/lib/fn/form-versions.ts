@@ -4,7 +4,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { forms, formVersions, user } from "@/db/schema";
 import { db } from "@/lib/db/db";
-import { authMiddleware } from "@/middleware/auth";
+import { authMiddleware } from "@/lib/auth/middleware";
 import { authForm, getActiveOrgId } from "./helpers";
 
 // Maximum number of versions to keep per form (TODO: make plan-based)

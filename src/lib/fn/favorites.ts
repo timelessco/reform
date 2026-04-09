@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { formFavorites } from "@/db/schema";
 import { db } from "@/lib/db/db";
-import { authMiddleware } from "@/middleware/auth";
+import { authMiddleware } from "@/lib/auth/middleware";
 
 export const getFavorites = createServerFn({ method: "GET" })
   .middleware([authMiddleware])

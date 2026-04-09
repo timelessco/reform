@@ -9,7 +9,7 @@ import {
   workspaces,
 } from "@/db/schema";
 import { db } from "@/lib/db/db";
-import { authMiddleware } from "@/middleware/auth";
+import { authMiddleware } from "@/lib/auth/middleware";
 import { authForm, getActiveOrgId } from "./helpers";
 
 type NotificationRow = typeof formSubmissionNotifications.$inferSelect;

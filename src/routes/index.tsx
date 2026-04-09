@@ -4,7 +4,7 @@ import { lazy, Suspense } from "react";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import { guestMiddleware } from "@/middleware/auth";
+import { guestMiddleware } from "@/lib/auth/middleware";
 
 const LandingEditor = lazy(() => import("./-components/landing-editor"));
 

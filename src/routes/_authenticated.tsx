@@ -130,7 +130,7 @@ import {
 } from "@/lib/fn/workspaces";
 import { HOTKEYS } from "@/lib/hotkeys";
 import { cn } from "@/lib/utils";
-import { authMiddleware } from "@/middleware/auth";
+import { authMiddleware } from "@/lib/auth/middleware";
 import { formatForDisplay, useHotkey } from "@tanstack/react-hotkeys";
 import type { QueryClient } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

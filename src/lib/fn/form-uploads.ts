@@ -1,5 +1,5 @@
-import { put } from "@vercel/blob";
 import { createServerFn } from "@tanstack/react-start";
+import { putBlob } from "@/integrations/blob";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { and, eq, sql } from "drizzle-orm";
 import type { Value } from "platejs";
@@ -198,11 +198,7 @@ export const uploadFormFile = createServerFn({ method: "POST" })
     // 5. Upload to Vercel Blob
     const ext = EXT_BY_MIME[data.contentType.toLowerCase()] ?? "bin";
     const key = `submissions/${data.formId}/${data.draftId}/${crypto.randomUUID()}.${ext}`;
-    const blob = await put(key, buffer, {
-      access: "public",
-      contentType: data.contentType,
-      token: process.env.BETTER_FORM_READ_WRITE_TOKEN,
-    });
+    const blob = await putBlob(key, buffer, data.contentType);
 
     return {
       url: blob.url,

@@ -9,7 +9,7 @@ import {
   getEditableFields,
   transformPlateStateToFormElements,
 } from "@/lib/editor/transform-plate-to-form";
-import { authMiddleware } from "@/middleware/auth";
+import { authMiddleware } from "@/lib/auth/middleware";
 import { authForm, getActiveOrgId } from "./helpers";
 
 // Serialized submission type for client consumption

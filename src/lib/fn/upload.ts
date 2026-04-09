@@ -1,7 +1,7 @@
-import { put } from "@vercel/blob";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { authMiddleware } from "@/middleware/auth";
+import { putBlob } from "@/integrations/blob";
+import { authMiddleware } from "@/lib/auth/middleware";
 
 /**
  * Upload avatar image to Vercel Blob storage
@@ -30,12 +30,7 @@ export const uploadAvatar = createServerFn({ method: "POST" })
     const extension = contentType.split("/")[1] || "png";
     const filename = data.filename || `avatar-${userId}-${Date.now()}.${extension}`;
 
-    // Upload to Vercel Blob
-    const blob = await put(`avatars/${filename}`, buffer, {
-      access: "public",
-      contentType,
-      token: process.env.BETTER_FORM_READ_WRITE_TOKEN,
-    });
+    const blob = await putBlob(`avatars/${filename}`, buffer, contentType);
 
     return { url: blob.url };
   });
@@ -64,11 +59,7 @@ export const uploadEditorMedia = createServerFn({ method: "POST" })
     }
 
     const key = `editor/${userId}/${crypto.randomUUID()}-${data.filename}`;
-    const blob = await put(key, buffer, {
-      access: "public",
-      contentType: data.contentType,
-      token: process.env.BETTER_FORM_READ_WRITE_TOKEN,
-    });
+    const blob = await putBlob(key, buffer, data.contentType);
 
     return {
       url: blob.url,

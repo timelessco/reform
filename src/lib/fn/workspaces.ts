@@ -11,7 +11,7 @@ import {
   workspaces,
 } from "@/db/schema";
 import { db } from "@/lib/db/db";
-import { authMiddleware } from "@/middleware/auth";
+import { authMiddleware } from "@/lib/auth/middleware";
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
 import { count, desc, eq, inArray, not } from "drizzle-orm";
