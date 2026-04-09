@@ -19,7 +19,7 @@ import { Editor, EditorContainer } from "@/components/ui/editor";
 import { createFormButtonNode } from "@/components/ui/form-button-node";
 import { createFormHeaderNode } from "@/components/ui/form-header-node";
 import type { FormHeaderElementData } from "@/components/ui/form-header-node";
-import { migrateEditorContent } from "@/lib/migrate-editor-content";
+import { migrateEditorContent } from "@/lib/editor/migrate-editor-content";
 import Loader from "@/components/ui/loader";
 import {
   RIGHT_SIDEBAR_WIDTH_DEFAULT,
@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils";
 import { localFormCollection } from "@/db-collections/local-form.collection";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useLocalForm } from "@/hooks/use-live-hooks";
-import { getLocalFormId, getLocalWorkspaceId } from "@/lib/local-draft";
+import { getLocalFormId, getLocalWorkspaceId } from "@/lib/db/local-draft";
 
 // Initial state — form header, a label, a form input, and a submit button
 const landingValue = normalizeNodeId([

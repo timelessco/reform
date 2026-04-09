@@ -100,7 +100,7 @@ import {
   useSubmissionCounts,
 } from "@/hooks/use-live-hooks";
 import { settingsDialogStore } from "@/hooks/use-settings-dialog";
-import { auth, useSession } from "@/lib/auth-client";
+import { auth, useSession } from "@/lib/auth/auth-client";
 import {
   addFavorite,
   getFavorites as getFavoritesServer,

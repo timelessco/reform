@@ -29,7 +29,7 @@ import { toggleFavoriteLocal, updateFormStatus } from "@/db-collections/collecti
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { discardChanges, publishForm, useHasUnpublishedChanges } from "@/hooks/use-form-versions";
 import { useForm, useIsFavorite, useWorkspace } from "@/hooks/use-live-hooks";
-import { useSession } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth/auth-client";
 import { HOTKEYS, formatForDisplay } from "@/lib/hotkeys";
 import { cn, parseTimestampAsUTC } from "@/lib/utils";
 import { useHotkey } from "@tanstack/react-hotkeys";

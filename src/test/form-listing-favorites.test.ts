@@ -6,7 +6,7 @@ import {
   createFavoriteCollection,
 } from "@/db-collections/form-listing-query.collection";
 import type { FormListing, FormFavorite } from "@/db-collections/form-listing-query.collection";
-import { db } from "@/lib/db";
+import { db } from "@/lib/db/db";
 import { forms, formFavorites, member, workspaces } from "@/db/schema";
 import {
   getTestUtils,

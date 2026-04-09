@@ -1,12 +1,12 @@
 import * as schema from "@/db/schema";
-import { db } from "@/lib/db";
+import { db } from "@/lib/db/db";
 import {
   sendChangeEmailConfirmationEmail,
   sendMagicLinkEmail,
   sendOrgInvitationEmail,
-} from "@/lib/email";
+} from "@/lib/integrations/email";
 import { logger } from "@/lib/utils";
-import { APP_NAME } from "@/lib/app-config";
+import { APP_NAME } from "@/lib/config/app-config";
 import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { betterAuth } from "better-auth";

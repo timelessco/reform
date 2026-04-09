@@ -7,7 +7,7 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 import { guestMiddleware } from "@/middleware/auth";
 import { Logo } from "@/components/ui/logo";
 

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { publicCorsHeaders } from "@/lib/embed-cors";
+import { publicCorsHeaders } from "@/lib/config/embed-cors";
 
 const CORS_HEADERS = {
   ...publicCorsHeaders,

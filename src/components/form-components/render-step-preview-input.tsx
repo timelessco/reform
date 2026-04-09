@@ -25,7 +25,7 @@ import { useStepForm } from "@/contexts/step-form-context";
 import type { AppForm } from "@/hooks/use-form-builder";
 import { uploadFormFile } from "@/lib/fn/form-uploads";
 import type { UploadedFormFile } from "@/lib/fn/form-uploads";
-import type { PlateFormField } from "@/lib/transform-plate-to-form";
+import type { PlateFormField } from "@/lib/editor/transform-plate-to-form";
 import { useRef, useState } from "react";
 
 interface RenderStepPreviewInputProps {

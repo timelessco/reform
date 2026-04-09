@@ -3,7 +3,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import type { ClientUploadedFileData, UploadFilesOptions } from "uploadthing/types";
 import { z } from "zod";
-import type { OurFileRouter } from "@/lib/uploadthing";
+import type { OurFileRouter } from "@/lib/integrations/uploadthing";
 
 type UploadedFile<T = unknown> = ClientUploadedFileData<T>;
 

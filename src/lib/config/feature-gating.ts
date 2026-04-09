@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth-client";
+import { auth } from "@/lib/auth/auth-client";
 
 type PlanSlug = "free" | "pro" | "business";
 

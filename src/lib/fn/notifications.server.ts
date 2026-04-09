@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { formNotificationPreferences, formSubmissionNotifications } from "@/db/schema";
-import { db } from "@/lib/db";
+import { db } from "@/lib/db/db";
 
 export const recordOwnerSubmissionNotification = async ({
   formId,

@@ -4,7 +4,7 @@ import {
   INPUT_TYPE_TO_FIELD_TYPE,
   VARIANT_TO_FIELD_TYPE,
   resolveRequired,
-} from "@/lib/form-field-constants";
+} from "@/lib/form-schema/form-field-constants";
 import { extractTextContent, slugify } from "./transform-plate-to-form";
 import type { PlateFormField } from "./transform-plate-to-form";
 

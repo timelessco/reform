@@ -4,7 +4,7 @@
  */
 import { createCollection, localStorageCollectionOptions } from "@tanstack/react-db";
 import { z } from "zod";
-import { createFormHeaderNode } from "@/lib/form-header-factory";
+import { createFormHeaderNode } from "@/lib/form-schema/form-header-factory";
 
 /** Parse Postgres timestamp (no TZ) as UTC before converting to ISO. */
 const parseAsUTC = (val: string): string => {

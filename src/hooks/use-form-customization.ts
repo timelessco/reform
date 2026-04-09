@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
-import { getThemeStyleVars, getGoogleFontLinkUrl } from "@/lib/generate-theme-css";
-import { loadGoogleFont } from "@/lib/load-google-font";
+import { getThemeStyleVars, getGoogleFontLinkUrl } from "@/lib/theme/generate-theme-css";
+import { loadGoogleFont } from "@/lib/theme/load-google-font";
 
 /**
  * Extracts and memoizes customization/theme data from a form document.

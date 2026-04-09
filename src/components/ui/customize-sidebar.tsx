@@ -18,10 +18,10 @@ import { getFormListings } from "@/db-collections/collections";
 import { localFormCollection } from "@/db-collections/local-form.collection";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
-import { FONT_REGISTRY } from "@/lib/font-registry";
-import { TOKEN_NAMES } from "@/lib/generate-theme-css";
-import { loadGoogleFont } from "@/lib/load-google-font";
-import { BASE_COLORS, DARK_BASE_COLORS, STYLES, THEME_COLORS } from "@/lib/theme-presets";
+import { FONT_REGISTRY } from "@/lib/theme/font-registry";
+import { TOKEN_NAMES } from "@/lib/theme/generate-theme-css";
+import { loadGoogleFont } from "@/lib/theme/load-google-font";
+import { BASE_COLORS, DARK_BASE_COLORS, STYLES, THEME_COLORS } from "@/lib/theme/theme-presets";
 import { useCallback, useMemo } from "react";
 
 const FONT_OPTIONS = Object.keys(FONT_REGISTRY).map((name) => ({

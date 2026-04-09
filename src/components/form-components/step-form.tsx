@@ -8,8 +8,8 @@ import { useStepPreviewForm } from "@/hooks/use-preview-form";
 import {
   getEditableFieldsFromSegments,
   getFieldsFromSegments,
-} from "@/lib/transform-plate-for-preview";
-import type { FieldSegment, PreviewSegment } from "@/lib/transform-plate-for-preview";
+} from "@/lib/editor/transform-plate-for-preview";
+import type { FieldSegment, PreviewSegment } from "@/lib/editor/transform-plate-for-preview";
 import { StaticContentBlock } from "./static-content-block";
 import { RenderStepPreviewInput } from "./render-step-preview-input";
 

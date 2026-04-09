@@ -1,4 +1,4 @@
-import { APP_NAME } from "@/lib/app-config";
+import { APP_NAME } from "@/lib/config/app-config";
 import { Input } from "@/components/ui/input";
 import { CopyButton } from "@/components/ui/copy-button";
 import {

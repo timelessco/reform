@@ -4,7 +4,7 @@ import { useEditorRef, useEditorSelector } from "platejs/react";
 import { useCallback, useMemo } from "react";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { FORM_INPUT_NODE_TYPES } from "@/lib/form-field-constants";
+import { FORM_INPUT_NODE_TYPES } from "@/lib/form-schema/form-field-constants";
 import { cn } from "@/lib/utils";
 
 type RequiredBadgeWrapperProps = {

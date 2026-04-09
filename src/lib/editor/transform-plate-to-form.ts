@@ -6,7 +6,7 @@ import {
   INPUT_TYPE_TO_FIELD_TYPE,
   VARIANT_TO_FIELD_TYPE,
   resolveRequired,
-} from "@/lib/form-field-constants";
+} from "@/lib/form-schema/form-field-constants";
 
 type _PreviewElement = FormElement | StaticFormElement;
 

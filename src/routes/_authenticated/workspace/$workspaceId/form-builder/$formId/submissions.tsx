@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { EDITABLE_FIELD_TYPES } from "@/lib/transform-plate-for-preview";
+import { EDITABLE_FIELD_TYPES } from "@/lib/editor/transform-plate-for-preview";
 import { formatBytes } from "@/hooks/use-file-upload";
 import {
   deleteSubmission,
@@ -25,7 +25,7 @@ import type { SerializedSubmission, SubmissionCursor } from "@/lib/fn/submission
 import {
   getEditableFields,
   transformPlateStateToFormElements,
-} from "@/lib/transform-plate-to-form";
+} from "@/lib/editor/transform-plate-to-form";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {

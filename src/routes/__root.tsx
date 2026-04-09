@@ -7,7 +7,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { Toaster } from "@/components/ui/sonner";
-import type { Session } from "../lib/auth";
+import type { Session } from "@/lib/auth/auth";
 import appCss from "../styles/styles.css?url";
 
 const LazyDevtools = lazy(() =>

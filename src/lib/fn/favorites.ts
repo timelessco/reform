@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { formFavorites } from "@/db/schema";
-import { db } from "@/lib/db";
+import { db } from "@/lib/db/db";
 import { authMiddleware } from "@/middleware/auth";
 
 export const getFavorites = createServerFn({ method: "GET" })

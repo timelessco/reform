@@ -1,4 +1,4 @@
-import { APP_NAME } from "@/lib/app-config";
+import { APP_NAME } from "@/lib/config/app-config";
 import { Link, useSearch } from "@tanstack/react-router";
 import { SparklesIcon, XIcon } from "@/components/ui/icons";
 import { SPRITE_PATH, iconMap } from "@/components/icon-picker/icon-data";

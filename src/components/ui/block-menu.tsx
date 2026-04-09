@@ -30,7 +30,7 @@ import {
 import { StyleNumberInput } from "@/components/ui/style-controls";
 import { Switch } from "@/components/ui/switch";
 import { useEditorTheme } from "@/contexts/editor-theme-context";
-import { ALLOWED_LABEL_TYPES, FORM_INPUT_NODE_TYPES } from "@/lib/form-field-constants";
+import { ALLOWED_LABEL_TYPES, FORM_INPUT_NODE_TYPES } from "@/lib/form-schema/form-field-constants";
 import { cn } from "@/lib/utils";
 
 type BlockFieldType =

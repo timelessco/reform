@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import { auth, authClient } from "@/lib/auth-client";
+import { auth, authClient } from "@/lib/auth/auth-client";
 
 const BillingPage = () => {
   const { data: customerState, isLoading } = useQuery({

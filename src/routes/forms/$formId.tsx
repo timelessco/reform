@@ -1,4 +1,4 @@
-import { APP_NAME } from "@/lib/app-config";
+import { APP_NAME } from "@/lib/config/app-config";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
@@ -9,7 +9,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { getPublishedFormById } from "@/lib/fn/public";
-import { generateThemeCss, getGoogleFontLinkUrl } from "@/lib/generate-theme-css";
+import { generateThemeCss, getGoogleFontLinkUrl } from "@/lib/theme/generate-theme-css";
 
 type PublicTheme = "light" | "dark" | "system";
 

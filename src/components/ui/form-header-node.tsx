@@ -17,10 +17,13 @@ import {
   ImageCropApply,
   ImageCropReset,
 } from "@/components/ui/image-crop";
-import type { FormHeaderElementData } from "@/lib/form-header-factory";
-import { THEME_COLORS } from "@/lib/theme-presets";
+import type { FormHeaderElementData } from "@/lib/form-schema/form-header-factory";
+import { THEME_COLORS } from "@/lib/theme/theme-presets";
 import { cn, isValidUrl, DEFAULT_ICON } from "@/lib/utils";
-export { createFormHeaderNode, type FormHeaderElementData } from "@/lib/form-header-factory";
+export {
+  createFormHeaderNode,
+  type FormHeaderElementData,
+} from "@/lib/form-schema/form-header-factory";
 
 // Static derivations from THEME_COLORS — hoisted to module scope to avoid re-computing on every render
 const ACCENT_COLORS = Object.values(THEME_COLORS).map((t) => t.primary);

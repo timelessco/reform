@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { and, eq } from "drizzle-orm";
 import { forms } from "@/db/schema";
-import { db } from "@/lib/db";
-import { FORM_ID_RE, publicCorsHeaders } from "@/lib/embed-cors";
+import { db } from "@/lib/db/db";
+import { FORM_ID_RE, publicCorsHeaders } from "@/lib/config/embed-cors";
 
 const CACHE_CONTROL = "public, max-age=60";
 

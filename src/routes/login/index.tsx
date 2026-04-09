@@ -4,7 +4,7 @@ import { zodValidator } from "@tanstack/zod-adapter";
 import { Loader2Icon } from "@/components/ui/icons";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 import { guestMiddleware } from "@/middleware/auth";
 import { Logo } from "@/components/ui/logo";
 import { toast } from "sonner";

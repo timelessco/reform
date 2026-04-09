@@ -45,8 +45,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { auth } from "@/lib/auth-client";
-import { APP_NAME } from "@/lib/app-config";
+import { auth } from "@/lib/auth/auth-client";
+import { APP_NAME } from "@/lib/config/app-config";
 
 export const ApiKeysContent = () => {
   const queryClient = useQueryClient();

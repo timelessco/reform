@@ -34,10 +34,10 @@ import {
 } from "@/db-collections/collections";
 import { useDuplicateForm } from "@/hooks/use-duplicate-form";
 import { useOrgForms, useOrgWorkspaces } from "@/hooks/use-live-hooks";
-import { useSession } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth/auth-client";
 import { formatForDisplay, HOTKEYS } from "@/lib/hotkeys";
-import { clearLocalDraftIds } from "@/lib/local-draft";
-import { hasLocalDataToSync, syncLocalDataToCloud } from "@/lib/sync";
+import { clearLocalDraftIds } from "@/lib/db/local-draft";
+import { hasLocalDataToSync, syncLocalDataToCloud } from "@/lib/db/sync";
 import { parseTimestampAsUTC } from "@/lib/utils";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { createFileRoute, Link, useLoaderData, useNavigate } from "@tanstack/react-router";

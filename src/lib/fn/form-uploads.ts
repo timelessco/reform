@@ -5,11 +5,11 @@ import { and, eq, sql } from "drizzle-orm";
 import type { Value } from "platejs";
 import { z } from "zod";
 import { forms, formVersions, uploadRateLimits } from "@/db/schema";
-import { db } from "@/lib/db";
+import { db } from "@/lib/db/db";
 import {
   getEditableFields,
   transformPlateStateToFormElements,
-} from "@/lib/transform-plate-to-form";
+} from "@/lib/editor/transform-plate-to-form";
 
 /**
  * Public form file uploads — NO auth required.

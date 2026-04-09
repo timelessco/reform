@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { APP_NAME } from "@/lib/app-config";
+import { APP_NAME } from "@/lib/config/app-config";
 import {
   Accordion,
   AccordionContent,

@@ -4,11 +4,11 @@ import { and, count, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Value } from "platejs";
 import { forms, formVersions, submissions } from "@/db/schema";
-import { db } from "@/lib/db";
+import { db } from "@/lib/db/db";
 import {
   getEditableFields,
   transformPlateStateToFormElements,
-} from "@/lib/transform-plate-to-form";
+} from "@/lib/editor/transform-plate-to-form";
 import { authMiddleware } from "@/middleware/auth";
 import { authForm, getActiveOrgId } from "./helpers";
 

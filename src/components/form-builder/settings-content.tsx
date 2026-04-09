@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getFormListings } from "@/db-collections/collections";
 import { localFormCollection } from "@/db-collections/local-form.collection";
 import { useForm, useLocalForm } from "@/hooks/use-live-hooks";
-import { APP_NAME } from "@/lib/app-config";
+import { APP_NAME } from "@/lib/config/app-config";
 import {
   getFormInAppNotificationPreferenceQueryOptions,
   setFormInAppNotificationPreference,

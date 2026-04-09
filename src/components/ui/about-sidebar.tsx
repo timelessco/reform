@@ -1,5 +1,5 @@
 import { XIcon } from "@/components/ui/icons";
-import { APP_NAME } from "@/lib/app-config";
+import { APP_NAME } from "@/lib/config/app-config";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FAQItem } from "@/components/footer";

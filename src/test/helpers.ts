@@ -1,6 +1,6 @@
 import * as schema from "@/db/schema";
-import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
+import { db } from "@/lib/db/db";
+import { auth } from "@/lib/auth/auth";
 import { eq } from "drizzle-orm";
 
 interface TestHelpers {

@@ -1,5 +1,5 @@
 import { Resend } from "resend";
-import { APP_NAME } from "@/lib/app-config";
+import { APP_NAME } from "@/lib/config/app-config";
 import { logger } from "@/lib/utils";
 
 const resend = new Resend(process.env.RESEND_API_KEY);

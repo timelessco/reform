@@ -10,7 +10,7 @@ import {
   submissions,
   workspaces,
 } from "@/db/schema";
-import { db } from "@/lib/db";
+import { db } from "@/lib/db/db";
 import { authMiddleware } from "@/middleware/auth";
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";

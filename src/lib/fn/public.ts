@@ -3,7 +3,7 @@ import { notFound } from "@tanstack/react-router";
 import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { forms, formVersions, submissions, user } from "@/db/schema";
-import { db } from "@/lib/db";
+import { db } from "@/lib/db/db";
 import type { PublicFormSettings } from "@/types/form-settings";
 import { recordOwnerSubmissionNotification } from "./notifications.server";
 
@@ -330,7 +330,7 @@ const sendEmailNotifications = async (
   submissionData: Record<string, unknown>,
 ) => {
   const { sendFormSubmissionNotification, sendRespondentConfirmation } =
-    await import("@/lib/email");
+    await import("@/lib/integrations/email");
 
   // Self email notification
   if (settings.selfEmailNotifications) {

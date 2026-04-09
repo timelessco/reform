@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { InputGroup, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { useAppForm } from "@/components/ui/tanstack-form";
-import { auth } from "@/lib/auth-client";
+import { auth } from "@/lib/auth/auth-client";
 
 export const MembersContent = () => {
   const queryClient = useQueryClient();

@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAppForm } from "@/components/ui/tanstack-form";
-import { auth, useSession } from "@/lib/auth-client";
+import { auth, useSession } from "@/lib/auth/auth-client";
 import { uploadAvatar } from "@/lib/fn/upload";
 import { useStore } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

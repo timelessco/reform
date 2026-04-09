@@ -3,7 +3,7 @@ import { useCallback } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { auth, authClient } from "@/lib/auth-client";
+import { auth, authClient } from "@/lib/auth/auth-client";
 import { useLoaderData } from "@tanstack/react-router";
 import { Loader2Icon } from "@/components/ui/icons";
 

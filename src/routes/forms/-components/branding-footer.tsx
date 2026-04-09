@@ -1,5 +1,5 @@
 import { SparklesIcon } from "@/components/ui/icons";
-import { APP_NAME, APP_WEBSITE_URL } from "@/lib/app-config";
+import { APP_NAME, APP_WEBSITE_URL } from "@/lib/config/app-config";
 
 export const BrandingFooter = () => (
   <div className="fixed bottom-0 left-0 right-0 z-50 py-3 flex justify-center bg-muted/60 backdrop-blur border-t border-border">

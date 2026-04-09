@@ -58,8 +58,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { APP_NAME, APP_API_DOCS_URL } from "@/lib/app-config";
-import { auth, useSession } from "@/lib/auth-client";
+import { APP_NAME, APP_API_DOCS_URL } from "@/lib/config/app-config";
+import { auth, useSession } from "@/lib/auth/auth-client";
 
 const APIKeysPage = () => {
   const queryClient = useQueryClient();

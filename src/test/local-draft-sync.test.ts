@@ -3,7 +3,7 @@ import { QueryClient } from "@tanstack/query-core";
 import { eq } from "drizzle-orm";
 import { createFormListingCollection } from "@/db-collections/form-listing-query.collection";
 import type { FormListing } from "@/db-collections/form-listing-query.collection";
-import { db } from "@/lib/db";
+import { db } from "@/lib/db/db";
 import { forms } from "@/db/schema";
 import {
   getTestUtils,
