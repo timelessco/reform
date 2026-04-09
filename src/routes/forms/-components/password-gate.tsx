@@ -55,7 +55,7 @@ export const PasswordGate = ({ formId, children }: PasswordGateProps) => {
         setError(t("somethingWentWrong"));
       }
     });
-  }, [formId, password]);
+  }, [formId, password, t]);
 
   if (unlocked) {
     return <>{children}</>;

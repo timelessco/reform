@@ -164,6 +164,7 @@ const DataGridScrollArea = ({
     setHasCustomVerticalOverflow((prev) =>
       prev === nextMetrics.hasVerticalOverflow ? prev : nextMetrics.hasVerticalOverflow,
     );
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- ref.current values are intentionally not deps
   }, [resetMetrics, showHorizontal, usesCustomVerticalScrollbar]);
 
   useEffect(() => {
@@ -218,6 +219,7 @@ const DataGridScrollArea = ({
       viewport.removeEventListener("scroll", scheduleSync);
       clearDragState();
     };
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- ref.current values are intentionally not deps
   }, [clearDragState, resetMetrics, syncCustomVerticalScrollbar, usesCustomVerticalScrollbar]);
 
   const scrollToThumbOffset = (nextThumbTop: number) => {
