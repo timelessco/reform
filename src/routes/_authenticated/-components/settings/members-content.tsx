@@ -34,7 +34,7 @@ export const MembersContent = () => {
         });
         toast.success("Invitation sent successfully");
       },
-      onError: (error: Error) => {
+      onError: (error) => {
         toast.error(error.message || "Failed to send invitation");
       },
     }),
@@ -48,7 +48,7 @@ export const MembersContent = () => {
         });
         toast.success("Invitation cancelled");
       },
-      onError: (error: Error) => {
+      onError: (error) => {
         toast.error(error.message || "Failed to cancel invitation");
       },
     }),

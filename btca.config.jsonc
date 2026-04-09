@@ -6,15 +6,15 @@
       "type": "git",
       "name": "plate",
       "url": "https://github.com/udecode/plate",
-      "branch": "main"
-    }
+      "branch": "main",
+    },
   ],
   "model": "glm-5-turbo",
   "provider": "openai-compat",
   "providerOptions": {
     "openai-compat": {
       "baseURL": "https://api.z.ai/api/coding/paas/v4",
-      "name": "z.ai"
-    }
-  }
+      "name": "z.ai",
+    },
+  },
 }

@@ -64,12 +64,13 @@ import { auth, useSession } from "@/lib/auth/auth-client";
 const APIKeysPage = () => {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const { apiKeys: initialApiKeys } = Route.useLoaderData();
+  const loaderData = Route.useLoaderData();
 
-  const { data: apiKeys = [] } = useQuery({
+  const { data: apiKeysData } = useQuery({
     ...auth.apiKey.list.queryOptions(),
-    initialData: initialApiKeys,
+    initialData: loaderData,
   });
+  const apiKeys = apiKeysData?.apiKeys ?? [];
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -417,13 +418,12 @@ export const Route = createFileRoute("/_authenticated/settings/api-keys")({
   component: APIKeysPage,
   loader: async ({ context }) => {
     if (typeof window === "undefined") {
-      return { apiKeys: [] };
+      return { apiKeys: [], total: 0, limit: undefined, offset: undefined };
     }
-    const apiKeys = await context.queryClient.ensureQueryData({
+    return await context.queryClient.ensureQueryData({
       ...auth.apiKey.list.queryOptions(),
       revalidateIfStale: true,
     });
-    return { apiKeys };
   },
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,

@@ -70,6 +70,7 @@ export const ExportToolbarButton = (props: React.ComponentProps<typeof DropdownM
 
   const exportToPdf = React.useCallback(async () => {
     const canvas = await getCanvas();
+    if (!canvas) return;
 
     const PDFLib = await import("pdf-lib");
     const pdfDoc = await PDFLib.PDFDocument.create();
@@ -89,6 +90,7 @@ export const ExportToolbarButton = (props: React.ComponentProps<typeof DropdownM
 
   const exportToImage = React.useCallback(async () => {
     const canvas = await getCanvas();
+    if (!canvas) return;
     await downloadFile(canvas.toDataURL("image/png"), "plate.png");
   }, [getCanvas, downloadFile]);
 

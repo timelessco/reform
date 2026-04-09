@@ -230,7 +230,6 @@ export const useSubmissionNotifications = ({ poll = false }: HookOptions = {}) =
             ? "1 new submission"
             : `${notification.unreadCount} new submissions`,
         tag: `submission:${notification.formId}`,
-        renotify: false,
       });
 
       popup.addEventListener("click", () => {

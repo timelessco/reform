@@ -225,7 +225,7 @@ export const ToolbarSplitButtonPrimary = ({
       "group-data-[pressed=true]:bg-accent group-data-[pressed=true]:text-accent-foreground",
       className,
     )}
-    {...props}
+    {...(props as React.ComponentPropsWithoutRef<typeof Button>)}
   >
     {children}
   </Button>

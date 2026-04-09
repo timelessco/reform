@@ -162,7 +162,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                         >
                           <FormPreviewFromPlate
                             content={content}
-                            title={hideTitle ? "" : doc.title}
+                            title={hideTitle ? "" : (doc.title ?? undefined)}
                             icon={showEmoji ? (doc.icon ?? undefined) : undefined}
                             cover={doc.cover ?? undefined}
                             onSubmit={noop}
@@ -236,7 +236,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                     <div className="overflow-y-auto overflow-x-hidden max-h-[650px]">
                       <FormPreviewFromPlate
                         content={content}
-                        title={hideTitle ? "" : doc.title}
+                        title={hideTitle ? "" : (doc.title ?? undefined)}
                         icon={showEmoji ? (doc.icon ?? undefined) : undefined}
                         cover={doc.cover ?? undefined}
                         onSubmit={noop}
@@ -307,7 +307,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
           <div className="flex-1 w-full">
             <FormPreviewFromPlate
               content={content}
-              title={hideTitle ? "" : doc.title}
+              title={hideTitle ? "" : (doc.title ?? undefined)}
               icon={doc.icon ?? undefined}
               cover={doc.cover ?? undefined}
               onSubmit={noop}

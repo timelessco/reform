@@ -24,7 +24,7 @@ export const FormHeaderPlugin = createPlatePlugin({
       if (path[0] !== 1) return;
 
       const selection = editor.selection;
-      if (!selection || !editor.api.isCollapsed(selection)) return;
+      if (!selection || !editor.api.isCollapsed()) return;
 
       // Check if cursor is at the very start of the block
       // eslint-disable-next-line typescript-eslint/no-explicit-any
@@ -103,7 +103,7 @@ export const FormHeaderPlugin = createPlatePlugin({
       // Prevent deleting backwards INTO the header
       if (path && path[0] === 1) {
         const selection = editorRef.selection;
-        if (selection && editorRef.api.isCollapsed(selection)) {
+        if (selection && editorRef.api.isCollapsed()) {
           // eslint-disable-next-line typescript-eslint/no-explicit-any
           const edges = editorRef.api.edges(path) as any;
           const start = edges?.[0];

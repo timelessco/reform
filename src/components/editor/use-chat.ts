@@ -30,8 +30,6 @@ type MessageDataPart = {
   comment?: TComment;
 };
 
-type _Chat = UseChatHelpers<ChatMessage>;
-
 type ChatMessage = UIMessage<{}, MessageDataPart>;
 
 export const useChat = () => {
@@ -1469,7 +1467,7 @@ const createCommentChunks = (editor: PlateEditor, faker: Faker) => {
       selectionFallback: true,
       sort: true,
     })
-    .map(([block]: [TNode]) => block);
+    .map(([block]) => block);
 
   const isSelectingSome = editor.getOption(BlockSelectionPlugin, "isSelectingSome");
 

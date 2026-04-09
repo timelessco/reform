@@ -6,7 +6,7 @@
  */
 import { z } from "zod";
 import type { ZodType } from "zod";
-import type { PlateFormField } from "./transform-plate-to-form";
+import type { PlateFormField } from "@/lib/editor/transform-plate-to-form";
 
 /**
  * Generates a Zod schema from an array of PlateFormField.

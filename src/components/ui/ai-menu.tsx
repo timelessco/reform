@@ -593,6 +593,7 @@ export const AIMenuItems = ({
                 className="[&_svg]:text-muted-foreground"
                 value={menuItem.value}
                 onSelect={() => {
+                  if (!aiEditor) return;
                   menuItem.onSelect?.({
                     aiEditor,
                     editor,

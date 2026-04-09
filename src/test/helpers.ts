@@ -30,7 +30,7 @@ let _test: TestHelpers;
 export const getTestUtils = async (): Promise<TestHelpers> => {
   if (!_test) {
     const ctx = await auth.$context;
-    _test = ctx.test as TestHelpers;
+    _test = ctx.test as unknown as TestHelpers;
   }
   return _test;
 };

@@ -2,6 +2,7 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
+import * as React from "react";
 import { createContext, use, useCallback, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -357,7 +358,7 @@ export const SidebarTrigger = ({
   const { toggleSidebar } = useSidebar();
 
   const handleClick = useCallback(
-    (event: React.MouseEvent<HTMLButtonElement>) => {
+    (event: Parameters<NonNullable<typeof onClick>>[0]) => {
       onClick?.(event);
       toggleSidebar();
     },

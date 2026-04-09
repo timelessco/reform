@@ -266,7 +266,7 @@ const extractListItems = (node: PlateNode): string[] => {
       // List item content is typically in a "lic" (list item content) node
       for (const child of li.children) {
         if (child.type === "lic" || child.type === "p") {
-          const text = extractTextContent(child.children);
+          const text = extractTextContent((child.children ?? []) as Array<{ text?: string }>);
           if (text) items.push(text);
         } else if (child.text !== undefined) {
           // Direct text child

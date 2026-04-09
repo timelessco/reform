@@ -104,7 +104,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   // Track previous open state to detect open transition
   const wasOpenRef = React.useRef(false);
   const blockMenuTriggerRef = React.useRef<HTMLDivElement | null>(null);
-  const turnIntoCloseTimer = React.useRef<ReturnType<typeof setTimeout>>();
+  const turnIntoCloseTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Get the selected node info reactive to editor state changes
   const selectedNodes = useEditorSelector(

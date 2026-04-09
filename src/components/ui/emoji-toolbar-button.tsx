@@ -203,12 +203,11 @@ const EmojiPickerContent = ({
   const getRowWidth = settings.perLine.value * settings.buttonSize.value;
 
   const isCategoryVisible = React.useCallback(
-    (categoryId: string) =>
-      visibleCategories.size === 0
-        ? true
-        : visibleCategories.has(categoryId)
-          ? visibleCategories.get(categoryId)
-          : false,
+    (categoryId: string) => {
+      if (visibleCategories.size === 0) return true;
+      const key = categoryId as Parameters<typeof visibleCategories.has>[0];
+      return visibleCategories.has(key) ? visibleCategories.get(key) : false;
+    },
     [visibleCategories],
   );
 
