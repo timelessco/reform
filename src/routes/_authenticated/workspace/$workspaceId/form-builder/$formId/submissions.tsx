@@ -791,15 +791,9 @@ const SubmissionsPage = () => {
 
       {/* File preview dialog */}
       <Dialog open={previewFile !== null} onOpenChange={(open) => !open && closePreview()}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0 rounded-lg">
           {previewFile && (
             <>
-              <DialogHeader>
-                <DialogTitle className="sr-only">File preview</DialogTitle>
-                <DialogDescription className="sr-only">
-                  Preview of the uploaded file
-                </DialogDescription>
-              </DialogHeader>
               <div className="flex-1 min-h-0 flex items-center justify-center bg-muted/30 rounded-md overflow-auto">
                 {previewFile.type.startsWith("image/") ? (
                   <img

@@ -19,7 +19,7 @@ import {
   TimePickerSeparator,
   TimePickerTrigger,
 } from "@/components/ui/time-picker";
-import { PhoneInput } from "@/components/reui/phone-input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { useStepForm } from "@/contexts/step-form-context";
 import type { AppForm } from "@/hooks/use-form-builder";
@@ -698,7 +698,12 @@ const fileToBase64 = (file: File): Promise<string> =>
 
 type FileUploadState =
   | { status: "idle" }
-  | { status: "uploading"; localPreview: string | null; fileName: string; isImage: boolean }
+  | {
+      status: "uploading";
+      localPreview: string | null;
+      fileName: string;
+      isImage: boolean;
+    }
   | { status: "done"; value: UploadedFormFile; localPreview: string | null }
   | { status: "error"; message: string };
 
@@ -721,7 +726,9 @@ const FileUploadPreview = ({ element, form }: RenderStepPreviewInputProps) => {
 
   const { formId } = useStepForm();
   const draftIdRef = useRef<string>(crypto.randomUUID());
-  const [uploadState, setUploadState] = useState<FileUploadState>({ status: "idle" });
+  const [uploadState, setUploadState] = useState<FileUploadState>({
+    status: "idle",
+  });
 
   const handleUpload = async (picked: File) => {
     if (!formId) {

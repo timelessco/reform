@@ -32,12 +32,13 @@ import {
   AlertCircleIcon,
   ImageIcon,
   Loader2Icon,
+  MailIcon,
   RotateCcwIcon,
+  TeleVisionIcon,
   TriangleAlertIcon,
 } from "@/components/ui/icons";
 import { useCallback, useId, useRef, useState } from "react";
 import { toast } from "sonner";
-import { MailIcon, TeleVisionIcon } from "../ui/icons";
 
 // --- Custom Hooks ---
 

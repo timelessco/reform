@@ -1299,8 +1299,29 @@ const handleGlobalKeyDown = (editor: PlateEditor, event: React.KeyboardEvent): v
     const currentIndex = path[0];
     const currentNode = children[currentIndex];
 
-    // Let formOptionItem's dedicated handler take over
-    if (currentNode && currentNode.type === "formOptionItem") return;
+    // Handle formOptionItem Enter here at priority 1000 so it always wins
+    // over the pageBreak/button fallback below — otherwise, when an option
+    // is the last block before a pageBreak, Enter jumps to the next page
+    // instead of creating a new option.
+    if (currentNode && currentNode.type === "formOptionItem") {
+      event.preventDefault();
+      event.stopPropagation();
+      event.nativeEvent.stopImmediatePropagation();
+      // eslint-disable-next-line typescript-eslint/no-explicit-any
+      (event as any).__formBlockHandled = true;
+
+      const nextPath = PathApi.next(path);
+      editor.tf.insertNodes(
+        {
+          type: "formOptionItem",
+          variant: (currentNode as TElement).variant || "checkbox",
+          children: [{ text: "" }],
+        } as TElement,
+        { at: nextPath },
+      );
+      moveToPath(editor, nextPath);
+      return;
+    }
 
     // If cursor is somehow ON a button, block Enter entirely
     if (currentNode && (currentNode.type === "formButton" || currentNode.type === "pageBreak")) {

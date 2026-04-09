@@ -1,7 +1,8 @@
 import type { TElement } from "platejs";
 import type { PlateElementProps } from "platejs/react";
 
-import { PlateElement, useEditorSelector, useFocused } from "platejs/react";
+import { PlateElement, useEditorRef, useEditorSelector } from "platejs/react";
+import { useLayoutEffect } from "react";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { CheckCheckIcon, ChevronsUpDownIcon } from "@/components/ui/icons";
@@ -68,8 +69,6 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
   const variant = (element.variant as OptionVariant) || "checkbox";
   const elementId = (element as { id?: string }).id;
 
-  const focused = useFocused();
-
   // Single consolidated selector for all derived state
   const { optionIndex, isLastInGroup, isGroupFocused } = useEditorSelector(
     (ed) => {
@@ -114,7 +113,36 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
     [elementId],
   );
 
-  const showGhost = isLastInGroup && isGroupFocused && focused;
+  const showGhost = isLastInGroup && isGroupFocused;
+
+  // When the ghost is visible, push the NEXT block (pageBreak / formButton / etc.)
+  // down so the ghost doesn't overlap it. We walk up to the block-draggable
+  // wrapper and add margin-top to its next sibling instead of expanding this
+  // element, which would displace the drag-handle gutter (h-full of the block
+  // wrapper).
+  const editor = useEditorRef();
+  useLayoutEffect(() => {
+    let domNode: HTMLElement | null = null;
+    try {
+      // eslint-disable-next-line typescript-eslint/no-explicit-any
+      domNode = (editor.api as any).toDOMNode?.(element) ?? null;
+    } catch {
+      domNode = null;
+    }
+    if (!domNode) return;
+    const blockWrapper = domNode.closest(".slate-blockWrapper");
+    const draggableWrapper = blockWrapper?.parentElement;
+    const nextSibling = draggableWrapper?.nextElementSibling as HTMLElement | null;
+    if (!nextSibling) return;
+    if (showGhost) {
+      nextSibling.style.marginTop = "30px";
+    } else {
+      nextSibling.style.marginTop = "";
+    }
+    return () => {
+      nextSibling.style.marginTop = "";
+    };
+  }, [editor, element, showGhost]);
 
   // For multiSelect, apply colored background to the option row
   const colorStyle =

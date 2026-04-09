@@ -71,9 +71,9 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { SidebarSection } from "@/components/ui/sidebar-section";
-import { UserMenuMinimal } from "@/components/user-menu-minimal";
-import type { WorkspaceWithForms } from "@/components/workspace-item-minimal";
-import { WorkspaceItemMinimal } from "@/components/workspace-item-minimal";
+import { UserMenuMinimal } from "./_authenticated/-components/user-menu-minimal";
+import type { WorkspaceWithForms } from "./_authenticated/-components/workspace-item-minimal";
+import { WorkspaceItemMinimal } from "./_authenticated/-components/workspace-item-minimal";
 import {
   EditorHeaderVisibilityProvider,
   useEditorHeaderVisibility,
@@ -145,7 +145,7 @@ import { useIsomorphicLayoutEffect } from "@/hooks/use-isomorphic-layout-effect"
 import { toast } from "sonner";
 
 const LazySettingsDialog = lazy(() =>
-  import("@/components/settings/settings-dialog").then((m) => ({
+  import("./_authenticated/-components/settings/settings-dialog").then((m) => ({
     default: m.SettingsDialog,
   })),
 );

@@ -285,7 +285,7 @@ const RenderStepButton = ({
     return grouped ? (
       button
     ) : (
-      <div className="flex justify-end" style={{ maxWidth: "var(--bf-input-width)" }}>
+      <div className="flex justify-end mb-4" style={{ maxWidth: "var(--bf-input-width)" }}>
         {button}
       </div>
     );

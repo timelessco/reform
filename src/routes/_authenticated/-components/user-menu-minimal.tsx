@@ -15,7 +15,7 @@ import {
   Trash2Icon,
 } from "@/components/ui/icons";
 import { useState } from "react";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 
 const getInitials = (name?: string | null) => {
   if (!name) return "U";

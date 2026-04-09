@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { createContext, use, useMemo } from "react";
 
-import AvatarUpload from "@/components/file-upload/avatar-upload";
+import AvatarUpload from "@/components/ui/avatar-upload";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

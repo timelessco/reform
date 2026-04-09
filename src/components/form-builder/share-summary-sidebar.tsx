@@ -4,7 +4,7 @@ import { RocketIcon, XIcon } from "@/components/ui/icons";
 import { useCallback, useState } from "react";
 import { flushSync } from "react-dom";
 import { toast } from "sonner";
-import { CopyButton } from "@/components/copy-button/copy-button";
+import { CopyButton } from "@/components/ui/copy-button";
 import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
 import { SidebarSection } from "@/components/ui/sidebar-section";

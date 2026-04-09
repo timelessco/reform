@@ -6,7 +6,7 @@ import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { guestMiddleware } from "@/middleware/auth";
 
-const LandingEditor = lazy(() => import("@/components/landing-editor"));
+const LandingEditor = lazy(() => import("./-components/landing-editor"));
 
 const RouteComponent = () => (
   <Suspense fallback={<Loader />}>

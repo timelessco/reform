@@ -1,6 +1,6 @@
 import { APP_NAME } from "@/lib/app-config";
 import { Input } from "@/components/ui/input";
-import { CopyButton } from "@/components/copy-button/copy-button";
+import { CopyButton } from "@/components/ui/copy-button";
 import {
   Accordion,
   AccordionContent,

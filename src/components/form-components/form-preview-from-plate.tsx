@@ -1,6 +1,6 @@
 import { StaticContentBlock } from "@/components/form-components/static-content-block";
 import { StepForm } from "@/components/form-components/step-form";
-import { ProgressBar } from "@/components/public/progress-bar";
+import { ProgressBar } from "@/routes/forms/-components/progress-bar";
 import { Button } from "@/components/ui/button";
 import { StepFormProvider, useStepForm } from "@/contexts/step-form-context";
 import { useTranslation } from "@/contexts/translation-context";

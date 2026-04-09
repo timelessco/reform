@@ -4,9 +4,9 @@ import type { Value } from "platejs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
-import { BrandingFooter } from "@/components/public/branding-footer";
-import { AlreadySubmitted, FormClosed } from "@/components/public/form-closed";
-import { PasswordGate } from "@/components/public/password-gate";
+import { BrandingFooter } from "./branding-footer";
+import { AlreadySubmitted, FormClosed } from "@/routes/forms/-components/form-closed";
+import { PasswordGate } from "@/routes/forms/-components/password-gate";
 import { TranslationProvider, useTranslation } from "@/contexts/translation-context";
 import { createPublicSubmission } from "@/lib/fn/public";
 import { getTranslations } from "@/lib/translations";
@@ -18,7 +18,8 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { type PublicFormSettings, defaultPublicFormSettings } from "@/types/form-settings";
+import { defaultPublicFormSettings } from "@/types/form-settings";
+import type { PublicFormSettings } from "@/types/form-settings";
 
 interface PublicForm {
   id: string;

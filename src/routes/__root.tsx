@@ -11,7 +11,7 @@ import type { Session } from "../lib/auth";
 import appCss from "../styles/styles.css?url";
 
 const LazyDevtools = lazy(() =>
-  import("../components/devtools").then((m) => ({ default: m.Devtools })),
+  import("./-components/devtools").then((m) => ({ default: m.Devtools })),
 );
 
 interface MyRouterContext {
