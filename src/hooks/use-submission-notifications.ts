@@ -3,8 +3,8 @@ import {
   clearSubmissionNotification,
   getSubmissionNotificationsQueryOptions,
   markSubmissionNotificationRead,
-} from "@/lib/fn/notifications";
-import type { SerializedSubmissionNotification } from "@/lib/fn/notifications";
+} from "@/lib/server-fn/notifications";
+import type { SerializedSubmissionNotification } from "@/lib/server-fn/notifications";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";

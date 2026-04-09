@@ -14,9 +14,9 @@
  */
 
 import { queryOptions } from "@tanstack/react-query";
-import { getFormListings } from "@/lib/fn/forms";
-import { getFavorites } from "@/lib/fn/favorites";
-import { getWorkspaces } from "@/lib/fn/workspaces";
+import { getFormListings } from "@/lib/server-fn/forms";
+import { getFavorites } from "@/lib/server-fn/favorites";
+import { getWorkspaces } from "@/lib/server-fn/workspaces";
 
 const FIVE_MINUTES = 1000 * 60 * 5;
 

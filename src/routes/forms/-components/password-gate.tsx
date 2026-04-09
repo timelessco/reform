@@ -3,7 +3,7 @@ import { useCallback, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/contexts/translation-context";
-import { verifyFormPassword } from "@/lib/fn/public";
+import { verifyFormPassword } from "@/lib/server-fn/public";
 
 interface PasswordGateProps {
   formId: string;

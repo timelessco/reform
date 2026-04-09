@@ -8,7 +8,7 @@ import {
   cleanupTestUser,
   cleanupTestOrg,
 } from "@/test/helpers";
-import { authForm } from "@/lib/fn/helpers";
+import { authForm } from "@/lib/server-fn/helpers";
 
 describe("authForm", () => {
   const ownerId = crypto.randomUUID();

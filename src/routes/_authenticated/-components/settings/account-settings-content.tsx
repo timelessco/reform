@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { useAppForm } from "@/components/ui/tanstack-form";
 import { auth, useSession } from "@/lib/auth/auth-client";
-import { uploadAvatar } from "@/lib/fn/upload";
+import { uploadAvatar } from "@/lib/server-fn/upload";
 import { useStore } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Camera } from "lucide-react";

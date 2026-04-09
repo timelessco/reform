@@ -3,7 +3,7 @@ import { logger } from "@/lib/utils";
 import { localFormCollection } from "@/db-collections/local-form.collection";
 import { getFormListings, getWorkspaces, createWorkspaceLocal } from "@/db-collections/collections";
 import type { FormListing } from "@/db-collections/collections";
-import { createForm } from "@/lib/fn/forms";
+import { createForm } from "@/lib/server-fn/forms";
 
 /**
  * Result type for syncLocalDataToCloud

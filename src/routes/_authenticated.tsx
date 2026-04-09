@@ -105,29 +105,29 @@ import {
   addFavorite,
   getFavorites as getFavoritesServer,
   removeFavorite,
-} from "@/lib/fn/favorites";
-import { getFormVersionContent, getFormVersions } from "@/lib/fn/form-versions";
+} from "@/lib/server-fn/favorites";
+import { getFormVersionContent, getFormVersions } from "@/lib/server-fn/form-versions";
 import {
   createForm,
   deleteForm,
   getFormListings as getFormListingsServer,
   updateForm,
-} from "@/lib/fn/forms";
+} from "@/lib/server-fn/forms";
 import { useDuplicateForm } from "@/hooks/use-duplicate-form";
 import { useSubmissionNotifications } from "@/hooks/use-submission-notifications";
-import { orgDataForLayoutQueryOptions } from "@/lib/fn/org";
+import { orgDataForLayoutQueryOptions } from "@/lib/server-fn/org";
 import {
   workspacesCollectionQueryOptions,
   formListingsCollectionQueryOptions,
   favoritesCollectionQueryOptions,
-} from "@/lib/fn/collection-query-options";
-import { getSubmissionsCount } from "@/lib/fn/submissions";
+} from "@/lib/server-fn/collection-query-options";
+import { getSubmissionsCount } from "@/lib/server-fn/submissions";
 import {
   createWorkspace,
   deleteWorkspace,
   getWorkspaces,
   updateWorkspace,
-} from "@/lib/fn/workspaces";
+} from "@/lib/server-fn/workspaces";
 import { HOTKEYS } from "@/lib/hotkeys";
 import { cn } from "@/lib/utils";
 import { authMiddleware } from "@/lib/auth/middleware";
@@ -193,7 +193,7 @@ const initCollectionsOnClient = createClientOnlyFn((queryClient: QueryClient) =>
     },
     getFormListings: async () => await getFormListingsServer(),
     getFormDetail: async (formId: string) => {
-      const { getFormbyIdQueryOption } = await import("@/lib/fn/forms");
+      const { getFormbyIdQueryOption } = await import("@/lib/server-fn/forms");
       const result = await queryClient.ensureQueryData(getFormbyIdQueryOption(formId));
       // oxlint-disable-next-line typescript-eslint/no-explicit-any -- server type bridge
       return (result as { form?: any })?.form ?? null;

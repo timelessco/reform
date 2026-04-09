@@ -20,8 +20,8 @@ import {
   deleteSubmissionsBulk,
   getSubmissionsBootstrap,
   getSubmissionsByFormIdPaginated,
-} from "@/lib/fn/submissions";
-import type { SerializedSubmission, SubmissionCursor } from "@/lib/fn/submissions";
+} from "@/lib/server-fn/submissions";
+import type { SerializedSubmission, SubmissionCursor } from "@/lib/server-fn/submissions";
 import {
   getEditableFields,
   transformPlateStateToFormElements,

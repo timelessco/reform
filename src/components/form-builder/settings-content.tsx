@@ -18,7 +18,7 @@ import { APP_NAME } from "@/lib/config/app-config";
 import {
   getFormInAppNotificationPreferenceQueryOptions,
   setFormInAppNotificationPreference,
-} from "@/lib/fn/notifications";
+} from "@/lib/server-fn/notifications";
 import { defaultFormSettings } from "@/types/form-settings";
 import { EyeIcon, EyeOffIcon } from "@/components/ui/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";

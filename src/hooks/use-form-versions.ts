@@ -7,7 +7,11 @@ import {
   getVersionContent,
   getQueryClient,
 } from "@/db-collections/collections";
-import { discardFormChanges, publishFormVersion, restoreFormVersion } from "@/lib/fn/form-versions";
+import {
+  discardFormChanges,
+  publishFormVersion,
+  restoreFormVersion,
+} from "@/lib/server-fn/form-versions";
 import { useForm } from "./use-live-hooks";
 
 /**

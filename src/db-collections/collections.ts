@@ -7,9 +7,9 @@ import {
   createFavoriteCollection,
 } from "./form-listing-query.collection";
 import type { FormListing, FormFavorite } from "./form-listing-query.collection";
-import type { createForm, updateForm, deleteForm } from "@/lib/fn/forms";
-import type { createWorkspace, updateWorkspace, deleteWorkspace } from "@/lib/fn/workspaces";
-import type { addFavorite, removeFavorite } from "@/lib/fn/favorites";
+import type { createForm, updateForm, deleteForm } from "@/lib/server-fn/forms";
+import type { createWorkspace, updateWorkspace, deleteWorkspace } from "@/lib/server-fn/workspaces";
+import type { addFavorite, removeFavorite } from "@/lib/server-fn/favorites";
 import {
   createVersionListCollection,
   createVersionContentCollection,
