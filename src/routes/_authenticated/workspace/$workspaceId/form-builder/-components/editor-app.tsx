@@ -10,7 +10,7 @@ import { getFormListings } from "@/db-collections/collections";
 import type { Form } from "@/db-collections/collections";
 import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useForm } from "@/hooks/use-live-hooks";
-import { useResolvedTheme } from "@/components/ThemeProvider";
+import { useResolvedTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 import { Loader2Icon } from "@/components/ui/icons";
 import { normalizeNodeId } from "platejs";

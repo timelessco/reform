@@ -1,4 +1,4 @@
-import { useTheme } from "@/components/ThemeProvider";
+import { useTheme } from "@/components/theme-provider";
 import { Toaster as Sonner } from "sonner";
 import type { ToasterProps } from "sonner";
 import {

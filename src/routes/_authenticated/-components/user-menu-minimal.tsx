@@ -1,5 +1,5 @@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useTheme } from "@/components/ThemeProvider";
+import { useTheme } from "@/components/theme-provider";
 import { auth, useSession } from "@/lib/auth-client";
 import { settingsDialogStore } from "@/hooks/use-settings-dialog";
 import { cn } from "@/lib/utils";

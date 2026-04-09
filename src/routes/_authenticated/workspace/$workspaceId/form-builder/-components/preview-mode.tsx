@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useForm } from "@/hooks/use-live-hooks";
-import { useResolvedTheme } from "@/components/ThemeProvider";
+import { useResolvedTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 
 const noop = async () => {};

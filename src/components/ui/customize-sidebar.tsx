@@ -3,7 +3,7 @@ import {
   ConfigRow,
   selectTriggerCls,
 } from "@/components/form-builder/embed-config-panel";
-import { useTheme, useResolvedTheme } from "@/components/ThemeProvider";
+import { useTheme, useResolvedTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { InfoIcon, XIcon } from "@/components/ui/icons";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";

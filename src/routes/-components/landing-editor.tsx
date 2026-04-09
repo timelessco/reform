@@ -8,7 +8,7 @@ import { EditorThemeProvider } from "@/contexts/editor-theme-context";
 import { useEditorHeaderVisibilitySafe } from "@/contexts/editor-header-visibility-context";
 import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
 import { useFormCustomization } from "@/hooks/use-form-customization";
-import { useResolvedTheme } from "@/components/ThemeProvider";
+import { useResolvedTheme } from "@/components/theme-provider";
 import { EditorKit } from "@/components/editor/editor-kit";
 import { ClientOnly } from "@/components/client-only";
 import { FormSettingsSidebar } from "@/components/form-builder/form-settings-sidebar";
