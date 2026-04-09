@@ -179,6 +179,12 @@ const LocalEditorApp = () => {
   if (!seededRef.current) {
     seededRef.current = true;
     const existing = savedDocs?.find((d) => d.id === localFormId);
+    // Signal to the post-login dashboard that there's anon data worth
+    // migrating — set regardless of whether we insert a fresh record or
+    // the draft already exists in OPFS from a previous session. Lets
+    // authenticated routes skip OPFS init entirely when no draft has
+    // ever been created, keeping login → dashboard fast for first-timers.
+    localStorage.setItem("bf-has-local-draft", "1");
     if (!existing) {
       try {
         getLocalFormCollection().insert({
@@ -196,10 +202,6 @@ const LocalEditorApp = () => {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
-        // Signal to the post-login dashboard that there's anon data worth
-        // migrating. Lets authenticated routes skip OPFS init entirely when
-        // no draft exists, keeping login → dashboard fast for first-timers.
-        sessionStorage.setItem("shouldSyncAfterLogin", "1");
       } catch {
         // Record already exists (race) — safe to ignore
       }

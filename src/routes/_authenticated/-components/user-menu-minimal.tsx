@@ -55,7 +55,10 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
           disposeLocalFormCollection();
           await disposePersistence();
           await clearPersistenceStorage();
-          sessionStorage.removeItem("shouldSyncAfterLogin");
+          // Clear the draft-migration signals so a subsequent signup with
+          // a fresh draft flow through this browser still triggers sync.
+          localStorage.removeItem("bf-has-local-draft");
+          localStorage.removeItem("bf-last-synced-user");
         } catch (err) {
           console.warn("[auth] failed to clear local persistence on logout", err);
         }
