@@ -29,7 +29,7 @@ export const AIFormGenPlugin = createPlatePlugin({
   options: { isOpen: false as boolean },
   shortcuts: {
     toggle: {
-      keys: "mod+shift+g",
+      keys: "mod+shift+k",
       handler: ({ editor }) => {
         const current = editor.getOption(AIFormGenPlugin, "isOpen");
         editor.setOption(AIFormGenPlugin, "isOpen", !current);
@@ -145,7 +145,7 @@ const AIFormGenMenu = () => {
             </TooltipTrigger>
             <TooltipContent side="left">
               <p>AI Form Generator</p>
-              <p className="text-xs text-muted-foreground">⌘⇧G</p>
+              <p className="text-xs text-muted-foreground">⌘⇧K</p>
             </TooltipContent>
           </Tooltip>
         </div>
