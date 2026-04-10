@@ -31,9 +31,9 @@ export const AIFormGenBubble = ({
     if (!file.type.startsWith("image/")) return;
     if (file.size > MAX_FILE_SIZE) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.addEventListener("load", () => {
       setAttachedImage({ url: reader.result as string, name: file.name });
-    };
+    });
     reader.readAsDataURL(file);
   }, []);
 
