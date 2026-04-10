@@ -16,6 +16,7 @@ import { DiscussionKit } from "@/components/editor/plugins/discussion-kit";
 import { DndKit } from "@/components/editor/plugins/dnd-kit";
 import { EmojiKit } from "@/components/editor/plugins/emoji-kit";
 import { ExitBreakKit } from "@/components/editor/plugins/exit-break-kit";
+import { AIFormGenKit } from "@/components/editor/plugins/ai-form-gen-kit";
 import { FloatingToolbarKit } from "@/components/editor/plugins/floating-toolbar-kit";
 import { FontKit } from "@/components/editor/plugins/font-kit";
 import { FormBlocksKit, TabGuardPlugin } from "@/components/editor/plugins/form-blocks-kit";
@@ -85,4 +86,7 @@ export const EditorKit = [
   ...BlockPlaceholderKit,
   // ...FixedToolbarKit,
   ...FloatingToolbarKit,
+
+  // AI
+  ...AIFormGenKit,
 ];
