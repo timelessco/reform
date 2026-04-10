@@ -145,7 +145,7 @@ const AIFormGenMenu = () => {
             </TooltipTrigger>
             <TooltipContent side="left">
               <p>AI Form Generator</p>
-              <p className="text-xs text-muted-foreground">⌘⇧A</p>
+              <p className="text-xs text-muted-foreground">⌘⇧G</p>
             </TooltipContent>
           </Tooltip>
         </div>
