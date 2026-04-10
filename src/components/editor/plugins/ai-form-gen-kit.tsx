@@ -7,6 +7,8 @@ import { createPlatePlugin, useEditorRef, usePluginOption } from "platejs/react"
 import { useCallback, useRef } from "react";
 
 import { AIFormGenBubble } from "@/components/ui/ai-form-gen-bubble";
+import { SparklesIcon } from "@/components/ui/icons";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { buildFormBlockNodes, buildFormSectionNodes } from "@/lib/editor/ai-form-nodes";
 
 type FormBlockArgs = {
@@ -109,14 +111,44 @@ const AIFormGenMenu = () => {
     insertPathRef.current = null;
   }, [editor]);
 
-  if (!isOpen) {
-    return null;
-  }
-
   const isGenerating = status === "streaming" || status === "submitted";
 
+  const handleToggle = useCallback(() => {
+    editor.setOption(AIFormGenPlugin, "isOpen", !isOpen);
+  }, [editor, isOpen]);
+
   return (
-    <AIFormGenBubble onSubmit={handleSubmit} onClose={handleClose} isGenerating={isGenerating} />
+    <>
+      {!isOpen && (
+        <div className="fixed bottom-6 right-6 z-40">
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <button
+                  type="button"
+                  onClick={handleToggle}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
+                  aria-label="AI Form Generator"
+                />
+              }
+            >
+              <SparklesIcon className="size-5" />
+            </TooltipTrigger>
+            <TooltipContent side="left">
+              <p>AI Form Generator</p>
+              <p className="text-xs text-muted-foreground">⌘⇧A</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )}
+      {isOpen && (
+        <AIFormGenBubble
+          onSubmit={handleSubmit}
+          onClose={handleClose}
+          isGenerating={isGenerating}
+        />
+      )}
+    </>
   );
 };
 
