@@ -1,6 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { createFileRoute } from "@tanstack/react-router";
-import { streamText, tool } from "ai";
+import { convertToModelMessages, streamText, tool } from "ai";
+import type { UIMessage } from "ai";
 import { z } from "zod";
 import { auth } from "@/lib/auth/auth";
 
@@ -59,7 +60,7 @@ export const Route = createFileRoute("/api/ai/form-generate")({
         }
 
         const body = (await request.json()) as {
-          messages?: Array<{ role: string; content: string }>;
+          messages?: UIMessage[];
           editorContent?: string;
         };
 
@@ -79,13 +80,13 @@ export const Route = createFileRoute("/api/ai/form-generate")({
           ? `${SYSTEM_PROMPT}\n\nCurrent form content:\n${body.editorContent}`
           : SYSTEM_PROMPT;
 
+        // Convert UIMessages (from useChat) to CoreMessages (for streamText)
+        const modelMessages = convertToModelMessages(messages);
+
         const result = streamText({
           model: provider(modelId),
           system: systemWithContext,
-          messages: messages.map((m) => ({
-            role: m.role as "user" | "assistant",
-            content: m.content,
-          })),
+          messages: modelMessages,
           toolChoice: "required",
           tools: {
             addFormBlock: tool({
