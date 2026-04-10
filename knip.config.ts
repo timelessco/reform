@@ -14,6 +14,7 @@ export default {
     "src/routeTree.gen.ts",
     "src/components/ui/**", // shadcn - used dynamically
     "src/components/editor/plugins/**", // plate plugins - library exports
+    "src/lib/editor/ai-form-nodes.ts", // AI form builder - consumed by upcoming AI generation task
     "src/types/**", // type exports
     "vite.config.ts", // config file default export
   ],
