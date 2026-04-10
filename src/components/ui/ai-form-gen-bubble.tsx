@@ -26,7 +26,7 @@ export const AIFormGenBubble = ({ onSubmit, onClose, isGenerating }: AIFormGenBu
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" || (e.key === "k" && (e.metaKey || e.ctrlKey) && e.shiftKey)) {
         e.preventDefault();
         onClose();
       }
