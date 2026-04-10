@@ -29,7 +29,7 @@ export const AIFormGenPlugin = createPlatePlugin({
   options: { isOpen: false as boolean },
   shortcuts: {
     toggle: {
-      keys: "mod+shift+a",
+      keys: "mod+shift+g",
       handler: ({ editor }) => {
         const current = editor.getOption(AIFormGenPlugin, "isOpen");
         editor.setOption(AIFormGenPlugin, "isOpen", !current);
