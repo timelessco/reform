@@ -80,10 +80,10 @@ const AIFormGenMenu = () => {
     }),
     onToolCall: ({ toolCall }) => {
       if (toolCall.toolName === "addFormBlock") {
-        const nodes = buildFormBlockNodes(toolCall.args as FormBlockArgs);
+        const nodes = buildFormBlockNodes(toolCall.input as FormBlockArgs);
         insertNodesAtPath(nodes);
       } else if (toolCall.toolName === "addFormSection") {
-        const nodes = buildFormSectionNodes(toolCall.args as FormSectionArgs);
+        const nodes = buildFormSectionNodes(toolCall.input as FormSectionArgs);
         insertNodesAtPath(nodes);
       }
     },
