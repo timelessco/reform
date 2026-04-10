@@ -54,15 +54,16 @@ const AIFormGenMenu = () => {
     }
   }, [editor]);
 
-  // Capture cursor position when the bubble opens (before focus shifts to input)
+  // Save the full editor selection when the bubble opens (before focus shifts)
+  const savedSelectionRef = useRef<typeof editor.selection>(null);
   const capturedPathRef = useRef<number[] | null>(null);
   if (isOpen && !capturedPathRef.current) {
+    savedSelectionRef.current = editor.selection ? { ...editor.selection } : null;
     const block = editor.api.block();
     if (block) {
       const [, path] = block;
       capturedPathRef.current = PathApi.next(path);
     } else {
-      // Fallback: insert at the end of the document
       capturedPathRef.current = [editor.children.length];
     }
   } else if (!isOpen) {
@@ -119,15 +120,13 @@ const AIFormGenMenu = () => {
     editor.setOption(AIFormGenPlugin, "isOpen", false);
     insertPathRef.current = null;
 
-    // Restore focus to editor at the saved cursor position
-    if (capturedPathRef.current) {
-      const restorePath = capturedPathRef.current;
-      // Select the block before the captured insertion point (i.e., where cursor was)
-      const prevIndex = restorePath[0] > 0 ? restorePath[0] - 1 : 0;
-      editor.tf.select({ path: [prevIndex, 0], offset: 0 });
+    // Restore focus to editor at the exact position before opening
+    if (savedSelectionRef.current) {
+      editor.tf.setSelection(savedSelectionRef.current);
     }
     editor.tf.focus();
-  }, [editor, capturedPathRef]);
+    savedSelectionRef.current = null;
+  }, [editor]);
 
   const isGenerating = status === "streaming" || status === "submitted";
 
