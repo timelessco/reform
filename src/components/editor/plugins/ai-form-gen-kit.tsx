@@ -10,6 +10,7 @@ import { AIFormGenBubble } from "@/components/ui/ai-form-gen-bubble";
 import { SparklesIcon } from "@/components/ui/icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { buildFormBlockNodes, buildFormSectionNodes } from "@/lib/editor/ai-form-nodes";
+import { matchIcon } from "@/lib/editor/ai-icon-matcher";
 
 type FormBlockArgs = {
   fieldType: string;
@@ -26,7 +27,7 @@ type FormSectionArgs = {
 
 export const AIFormGenPlugin = createPlatePlugin({
   key: "aiFormGen",
-  options: { isOpen: false as boolean },
+  options: { isOpen: false as boolean, formId: "" as string },
   shortcuts: {
     toggle: {
       keys: "mod+shift+k",
@@ -99,6 +100,48 @@ const AIFormGenMenu = () => {
       } else if (toolCall.toolName === "addFormSection") {
         const nodes = buildFormSectionNodes(toolCall.input as FormSectionArgs);
         insertNodesAtPath(nodes);
+      } else if (toolCall.toolName === "setFormHeader") {
+        const { title, iconKeyword, coverColor } = toolCall.input as {
+          title?: string;
+          iconKeyword?: string;
+          coverColor?: string;
+        };
+        const headerNode = editor.children[0] as TElement;
+        if (headerNode?.type === "formHeader") {
+          const updates: Record<string, unknown> = {};
+          if (title) updates.title = title;
+          if (iconKeyword) {
+            const iconName = matchIcon(iconKeyword);
+            if (iconName) updates.icon = iconName;
+          }
+          if (coverColor) updates.cover = coverColor;
+          editor.tf.setNodes(updates, { at: [0] });
+        }
+      } else if (toolCall.toolName === "setFormTheme") {
+        const { tokens, font, radius } = toolCall.input as {
+          tokens?: Record<string, string>;
+          font?: string;
+          radius?: string;
+        };
+        const formId = editor.getOption(AIFormGenPlugin, "formId");
+        if (!formId) return;
+        import("@/collections").then(({ getFormListings }) => {
+          const collection = getFormListings();
+          if (!collection.get(formId)) return;
+          collection.update(formId, (draft) => {
+            const current = (draft.customization ?? {}) as Record<string, string>;
+            const next: Record<string, string> = { ...current, preset: "custom" };
+            if (tokens) {
+              for (const [key, value] of Object.entries(tokens)) {
+                next[key] = value;
+              }
+            }
+            if (font) next.font = font;
+            if (radius) next.radius = radius;
+            draft.customization = next;
+            draft.updatedAt = new Date().toISOString();
+          });
+        });
       }
     },
     onFinish: () => {
