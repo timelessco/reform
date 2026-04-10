@@ -21,9 +21,12 @@ const FIELD_TYPES = [
   "ranking",
 ] as const;
 
-const SYSTEM_PROMPT = `You are a form builder assistant. Given a description of a form, generate the appropriate form fields using the available tools.
+const SYSTEM_PROMPT = `You are a form builder assistant. Given a description of a form, generate the appropriate form fields and configure the form's appearance using the available tools.
 
 Rules:
+- Use setFormHeader to set the form's title, icon, and cover color. Always call this when creating a new form.
+- Use setFormTheme to customize the form's visual theme with raw CSS color tokens. Call this when the user provides a design reference image or asks for a specific visual style. Generate tokens for BOTH light and dark modes using the "light:token" and "dark:token" prefix format.
+- When an image is provided, analyze its colors, mood, and style to extract a cohesive theme.
 - Use addFormSection to create logical groupings with headings when the form has multiple distinct sections.
 - Use addFormBlock to create individual form fields.
 - Choose the most appropriate fieldType for each field.
@@ -120,6 +123,46 @@ export const Route = createFileRoute("/api/ai/form-generate")({
                   .enum(["1", "2", "3"])
                   .optional()
                   .describe("Heading level: '1' for h1, '2' for h2, '3' for h3. Default '2'."),
+              }),
+            }),
+            setFormHeader: tool({
+              description:
+                "Set the form's header — title, icon, and cover background color. Call this when creating or updating a form's identity.",
+              inputSchema: z.object({
+                title: z.string().optional().describe("The form title text"),
+                iconKeyword: z
+                  .string()
+                  .optional()
+                  .describe(
+                    "A keyword to match an icon (e.g., 'mail', 'heart', 'shield', 'calendar', 'shopping', 'user', 'star')",
+                  ),
+                coverColor: z
+                  .string()
+                  .optional()
+                  .describe("Hex color for the cover/banner background (e.g., '#1e293b')"),
+              }),
+            }),
+            setFormTheme: tool({
+              description:
+                "Set the form's visual theme with raw CSS color tokens. Generate tokens for BOTH light and dark modes. Use 'light:tokenName' and 'dark:tokenName' prefixed keys.",
+              inputSchema: z.object({
+                tokens: z
+                  .record(z.string())
+                  .describe(
+                    "Map of CSS token names to hex color values. Required tokens for each mode: background, foreground, primary, primary-foreground, secondary, secondary-foreground, muted, muted-foreground, accent, accent-foreground, destructive, destructive-foreground, border, input, ring. Prefix with 'light:' or 'dark:' for mode-specific values (e.g., 'light:primary': '#2563eb', 'dark:primary': '#3b82f6').",
+                  ),
+                font: z
+                  .string()
+                  .optional()
+                  .describe(
+                    "Google Font family name (e.g., 'Inter', 'Poppins', 'Playfair Display')",
+                  ),
+                radius: z
+                  .enum(["0", "0.375rem", "0.625rem", "0.875rem"])
+                  .optional()
+                  .describe(
+                    "Border radius: '0' for none, '0.375rem' for small, '0.625rem' for medium, '0.875rem' for large",
+                  ),
               }),
             }),
           },
