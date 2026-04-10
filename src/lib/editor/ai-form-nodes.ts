@@ -45,10 +45,11 @@ const buildStandardFieldNodes = (
   defaultPlaceholder?: string,
 ): TElement[] => {
   const label = buildLabelNode(args.label, args.required ?? false);
-  const placeholder = args.placeholder ?? defaultPlaceholder;
 
-  const fieldNode = placeholder
-    ? ({ type: nodeType, placeholder, children: [{ text: "" }] } as TElement)
+  // Always use the default placeholder — AI-provided placeholders are ignored
+  // because the placeholder is an editable UI hint, not AI-generated content
+  const fieldNode = defaultPlaceholder
+    ? ({ type: nodeType, placeholder: defaultPlaceholder, children: [{ text: "" }] } as TElement)
     : ({ type: nodeType, children: [{ text: "" }] } as TElement);
 
   return [label, fieldNode];

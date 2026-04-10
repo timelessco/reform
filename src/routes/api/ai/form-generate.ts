@@ -102,7 +102,6 @@ export const Route = createFileRoute("/api/ai/form-generate")({
                 fieldType: z.enum(FIELD_TYPES),
                 label: z.string().describe("The label text for the field"),
                 required: z.boolean().optional().describe("Whether the field is required"),
-                placeholder: z.string().optional().describe("Placeholder text for the field"),
                 options: z
                   .array(z.string())
                   .optional()
