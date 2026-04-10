@@ -17,16 +17,12 @@ export const AIFormGenBubble = ({ onSubmit, onClose, isGenerating }: AIFormGenBu
     inputRef.current?.focus();
   }, []);
 
-  const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      const trimmed = value.trim();
-      if (trimmed && !isGenerating) {
-        onSubmit(trimmed);
-      }
-    },
-    [value, isGenerating, onSubmit],
-  );
+  const submitValue = useCallback(() => {
+    const trimmed = value.trim();
+    if (trimmed && !isGenerating) {
+      onSubmit(trimmed);
+    }
+  }, [value, isGenerating, onSubmit]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -34,8 +30,12 @@ export const AIFormGenBubble = ({ onSubmit, onClose, isGenerating }: AIFormGenBu
         e.preventDefault();
         onClose();
       }
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        submitValue();
+      }
     },
-    [onClose],
+    [onClose, submitValue],
   );
 
   return (
@@ -54,24 +54,22 @@ export const AIFormGenBubble = ({ onSubmit, onClose, isGenerating }: AIFormGenBu
         )}
       </div>
 
-      <form className="flex flex-1" onSubmit={handleSubmit}>
-        <input
-          ref={inputRef}
-          id="ai-form-gen-input"
-          type="text"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={isGenerating}
-          placeholder="Describe the form you want to generate..."
-          className={cn(
-            "flex-1 bg-transparent text-sm outline-none",
-            "placeholder:text-muted-foreground/60",
-            "disabled:cursor-not-allowed disabled:opacity-50",
-          )}
-          aria-label="AI form generation prompt"
-        />
-      </form>
+      <input
+        ref={inputRef}
+        id="ai-form-gen-input"
+        type="text"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        disabled={isGenerating}
+        placeholder="Describe the form you want to generate..."
+        className={cn(
+          "flex-1 bg-transparent text-sm outline-none",
+          "placeholder:text-muted-foreground/60",
+          "disabled:cursor-not-allowed disabled:opacity-50",
+        )}
+        aria-label="AI form generation prompt"
+      />
 
       <button
         type="button"
