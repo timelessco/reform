@@ -59,12 +59,13 @@ export const Route = createFileRoute("/api/ai/form-generate")({
         }
 
         const body = (await request.json()) as {
-          prompt?: string;
+          messages?: Array<{ role: string; content: string }>;
           editorContent?: string;
         };
 
-        if (!body.prompt || typeof body.prompt !== "string") {
-          return new Response(JSON.stringify({ error: "prompt is required" }), {
+        const messages = body.messages;
+        if (!messages || messages.length === 0) {
+          return new Response(JSON.stringify({ error: "messages are required" }), {
             status: 400,
             headers: { "Content-Type": "application/json" },
           });
@@ -73,14 +74,18 @@ export const Route = createFileRoute("/api/ai/form-generate")({
         const provider = createProvider();
         const modelId = process.env.AI_MODEL ?? "gpt-4o-mini";
 
-        const userMessage = body.editorContent
-          ? `${body.prompt}\n\nExisting form content for context:\n${body.editorContent}`
-          : body.prompt;
+        // Prepend editor context to the system prompt if available
+        const systemWithContext = body.editorContent
+          ? `${SYSTEM_PROMPT}\n\nCurrent form content:\n${body.editorContent}`
+          : SYSTEM_PROMPT;
 
         const result = streamText({
           model: provider(modelId),
-          system: SYSTEM_PROMPT,
-          messages: [{ role: "user", content: userMessage }],
+          system: systemWithContext,
+          messages: messages.map((m) => ({
+            role: m.role as "user" | "assistant",
+            content: m.content,
+          })),
           toolChoice: "required",
           tools: {
             addFormBlock: tool({
