@@ -118,7 +118,16 @@ const AIFormGenMenu = () => {
   const handleClose = useCallback(() => {
     editor.setOption(AIFormGenPlugin, "isOpen", false);
     insertPathRef.current = null;
-  }, [editor]);
+
+    // Restore focus to editor at the saved cursor position
+    if (capturedPathRef.current) {
+      const restorePath = capturedPathRef.current;
+      // Select the block before the captured insertion point (i.e., where cursor was)
+      const prevIndex = restorePath[0] > 0 ? restorePath[0] - 1 : 0;
+      editor.tf.select({ path: [prevIndex, 0], offset: 0 });
+    }
+    editor.tf.focus();
+  }, [editor, capturedPathRef]);
 
   const isGenerating = status === "streaming" || status === "submitted";
 
