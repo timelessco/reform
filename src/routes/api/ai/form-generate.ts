@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { createOpenAI } from "@ai-sdk/openai";
+import { createFileRoute } from "@tanstack/react-router";
 import { streamText, tool } from "ai";
 import { z } from "zod";
 import { auth } from "@/lib/auth/auth";
@@ -85,7 +85,7 @@ export const Route = createFileRoute("/api/ai/form-generate")({
           tools: {
             addFormBlock: tool({
               description: "Add a form field block with the specified type and label",
-              parameters: z.object({
+              inputSchema: z.object({
                 fieldType: z.enum(FIELD_TYPES),
                 label: z.string().describe("The label text for the field"),
                 required: z.boolean().optional().describe("Whether the field is required"),
@@ -98,7 +98,7 @@ export const Route = createFileRoute("/api/ai/form-generate")({
             }),
             addFormSection: tool({
               description: "Add a section heading to organize form fields",
-              parameters: z.object({
+              inputSchema: z.object({
                 title: z.string().describe("The section heading text"),
                 level: z
                   .union([z.literal(1), z.literal(2), z.literal(3)])
@@ -109,7 +109,7 @@ export const Route = createFileRoute("/api/ai/form-generate")({
           },
         });
 
-        return result.toDataStreamResponse();
+        return result.toUIMessageStreamResponse();
       },
     },
   },
