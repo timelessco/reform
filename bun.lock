@@ -5,6 +5,7 @@
     "": {
       "name": "start-app",
       "dependencies": {
+        "@ai-sdk/google": "2",
         "@ai-sdk/openai": "2",
         "@ai-sdk/react": "2.0.28",
         "@ariakit/react": "^0.4.23",
@@ -159,6 +160,8 @@
     "@adobe/css-tools": ["@adobe/css-tools@4.4.4", "", {}, "sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg=="],
 
     "@ai-sdk/gateway": ["@ai-sdk/gateway@1.0.15", "", { "dependencies": { "@ai-sdk/provider": "2.0.0", "@ai-sdk/provider-utils": "3.0.7" }, "peerDependencies": { "zod": "^3.25.76 || ^4" } }, "sha512-xySXoQ29+KbGuGfmDnABx+O6vc7Gj7qugmj1kGpn0rW0rQNn6UKUuvscKMzWyv1Uv05GyC1vqHq8ZhEOLfXscQ=="],
+
+    "@ai-sdk/google": ["@ai-sdk/google@2.0.67", "", { "dependencies": { "@ai-sdk/provider": "2.0.1", "@ai-sdk/provider-utils": "3.0.23" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-A7iZeJf3RbNIrFBKsskd2s4c52tK0S0nX4rGlehjVHSYBvIZzrX+RW3Oxe7WnpeI0aON+5dVsqfGLFNYNGWEXw=="],
 
     "@ai-sdk/openai": ["@ai-sdk/openai@2.0.102", "", { "dependencies": { "@ai-sdk/provider": "2.0.1", "@ai-sdk/provider-utils": "3.0.23" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-tYarHJhyMioGegsnhpqz1/tKoCAJJ6zBHoIQaredNkt8V3o/JXj2647NnEOJVe7WHQXGvCfzbfnP1TADFhPmcA=="],
 

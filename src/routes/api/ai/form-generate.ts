@@ -32,16 +32,24 @@ Rules:
 - For multiChoice, multiSelect, and ranking fields, always provide an options array.
 - Generate fields in a logical order that makes sense for the form's purpose.`;
 
-const createProvider = () => {
+const getModel = async () => {
   const provider = process.env.AI_PROVIDER ?? "openai";
   const apiKey = process.env.AI_API_KEY ?? "";
+  const modelId = process.env.AI_MODEL ?? "gpt-4o-mini";
   const baseURL = process.env.AI_BASE_URL;
 
-  return createOpenAI({
-    name: provider,
+  if (provider === "google") {
+    const { createGoogleGenerativeAI } = await import("@ai-sdk/google");
+    const google = createGoogleGenerativeAI({ apiKey });
+    return google(modelId);
+  }
+
+  // Default: OpenAI (also works with OpenAI-compatible APIs via AI_BASE_URL)
+  const openai = createOpenAI({
     apiKey,
     ...(baseURL ? { baseURL } : {}),
   });
+  return openai(modelId);
 };
 
 export const Route = createFileRoute("/api/ai/form-generate")({
@@ -72,8 +80,7 @@ export const Route = createFileRoute("/api/ai/form-generate")({
           });
         }
 
-        const provider = createProvider();
-        const modelId = process.env.AI_MODEL ?? "gpt-4o-mini";
+        const model = await getModel();
 
         // Prepend editor context to the system prompt if available
         const systemWithContext = body.editorContent
@@ -84,7 +91,7 @@ export const Route = createFileRoute("/api/ai/form-generate")({
         const modelMessages = convertToModelMessages(messages);
 
         const result = streamText({
-          model: provider(modelId),
+          model,
           system: systemWithContext,
           messages: modelMessages,
           toolChoice: "required",
