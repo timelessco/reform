@@ -54,16 +54,25 @@ const AIFormGenMenu = () => {
     }
   }, [editor]);
 
+  // Capture cursor position when the bubble opens (before focus shifts to input)
+  const capturedPathRef = useRef<number[] | null>(null);
+  if (isOpen && !capturedPathRef.current) {
+    const block = editor.api.block();
+    if (block) {
+      const [, path] = block;
+      capturedPathRef.current = PathApi.next(path);
+    } else {
+      // Fallback: insert at the end of the document
+      capturedPathRef.current = [editor.children.length];
+    }
+  } else if (!isOpen) {
+    capturedPathRef.current = null;
+  }
+
   const insertNodesAtPath = useCallback(
     (nodes: TElement[]) => {
       if (!insertPathRef.current) {
-        const block = editor.api.block();
-        if (block) {
-          const [, path] = block;
-          insertPathRef.current = PathApi.next(path);
-        } else {
-          insertPathRef.current = [0];
-        }
+        insertPathRef.current = capturedPathRef.current ?? [editor.children.length];
       }
 
       for (const node of nodes) {
@@ -71,7 +80,7 @@ const AIFormGenMenu = () => {
         insertPathRef.current = PathApi.next(insertPathRef.current);
       }
     },
-    [editor],
+    [editor, capturedPathRef],
   );
 
   const { sendMessage, status } = useChat({
