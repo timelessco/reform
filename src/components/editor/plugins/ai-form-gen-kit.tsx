@@ -119,15 +119,12 @@ const AIFormGenMenu = () => {
     editor.setOption(AIFormGenPlugin, "isOpen", false);
     insertPathRef.current = null;
 
-    // Restore focus to editor at the saved cursor position
-    if (capturedPathRef.current) {
-      const restorePath = capturedPathRef.current;
-      // Select the block before the captured insertion point (i.e., where cursor was)
-      const prevIndex = restorePath[0] > 0 ? restorePath[0] - 1 : 0;
-      editor.tf.select({ path: [prevIndex, 0], offset: 0 });
-    }
-    editor.tf.focus();
-  }, [editor, capturedPathRef]);
+    // Plate preserves editor.selection even when DOM focus leaves the editor.
+    // Just refocus — it will restore to the existing selection automatically.
+    setTimeout(() => {
+      editor.tf.focus();
+    }, 0);
+  }, [editor]);
 
   const isGenerating = status === "streaming" || status === "submitted";
 
@@ -145,6 +142,7 @@ const AIFormGenMenu = () => {
                 <button
                   type="button"
                   onClick={handleToggle}
+                  onMouseDown={(e) => e.preventDefault()}
                   className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
                   aria-label="AI Form Generator"
                 />
