@@ -1,0 +1,116 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { createOpenAI } from "@ai-sdk/openai";
+import { streamText, tool } from "ai";
+import { z } from "zod";
+import { auth } from "@/lib/auth/auth";
+
+const FIELD_TYPES = [
+  "input",
+  "textarea",
+  "email",
+  "phone",
+  "number",
+  "link",
+  "date",
+  "time",
+  "fileUpload",
+  "checkbox",
+  "multiChoice",
+  "multiSelect",
+  "ranking",
+] as const;
+
+const SYSTEM_PROMPT = `You are a form builder assistant. Given a description of a form, generate the appropriate form fields using the available tools.
+
+Rules:
+- Use addFormSection to create logical groupings with headings when the form has multiple distinct sections.
+- Use addFormBlock to create individual form fields.
+- Choose the most appropriate fieldType for each field.
+- Set required to true for fields that are typically mandatory (e.g. name, email).
+- Provide helpful placeholder text where appropriate.
+- For multiChoice, multiSelect, and ranking fields, always provide an options array.
+- Generate fields in a logical order that makes sense for the form's purpose.`;
+
+const createProvider = () => {
+  const provider = process.env.AI_PROVIDER ?? "openai";
+  const apiKey = process.env.AI_API_KEY ?? "";
+  const baseURL = process.env.AI_BASE_URL;
+
+  return createOpenAI({
+    name: provider,
+    apiKey,
+    ...(baseURL ? { baseURL } : {}),
+  });
+};
+
+export const Route = createFileRoute("/api/ai/form-generate")({
+  server: {
+    handlers: {
+      POST: async ({ request }: { request: Request }) => {
+        const session = await auth.api.getSession({
+          headers: request.headers,
+        });
+
+        if (!session) {
+          return new Response(JSON.stringify({ error: "unauthorized" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const body = (await request.json()) as {
+          prompt?: string;
+          editorContent?: string;
+        };
+
+        if (!body.prompt || typeof body.prompt !== "string") {
+          return new Response(JSON.stringify({ error: "prompt is required" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const provider = createProvider();
+        const modelId = process.env.AI_MODEL ?? "gpt-4o-mini";
+
+        const userMessage = body.editorContent
+          ? `${body.prompt}\n\nExisting form content for context:\n${body.editorContent}`
+          : body.prompt;
+
+        const result = streamText({
+          model: provider(modelId),
+          system: SYSTEM_PROMPT,
+          messages: [{ role: "user", content: userMessage }],
+          toolChoice: "required",
+          tools: {
+            addFormBlock: tool({
+              description: "Add a form field block with the specified type and label",
+              parameters: z.object({
+                fieldType: z.enum(FIELD_TYPES),
+                label: z.string().describe("The label text for the field"),
+                required: z.boolean().optional().describe("Whether the field is required"),
+                placeholder: z.string().optional().describe("Placeholder text for the field"),
+                options: z
+                  .array(z.string())
+                  .optional()
+                  .describe("Options for multiChoice, multiSelect, and ranking fields"),
+              }),
+            }),
+            addFormSection: tool({
+              description: "Add a section heading to organize form fields",
+              parameters: z.object({
+                title: z.string().describe("The section heading text"),
+                level: z
+                  .union([z.literal(1), z.literal(2), z.literal(3)])
+                  .optional()
+                  .describe("Heading level (1, 2, or 3)"),
+              }),
+            }),
+          },
+        });
+
+        return result.toDataStreamResponse();
+      },
+    },
+  },
+});
