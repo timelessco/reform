@@ -4,7 +4,7 @@ import { DefaultChatTransport } from "ai";
 import { PathApi } from "platejs";
 import type { TElement } from "platejs";
 import { createPlatePlugin, useEditorRef, usePluginOption } from "platejs/react";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { AIFormGenBubble } from "@/components/ui/ai-form-gen-bubble";
 import { SparklesIcon } from "@/components/ui/icons";
@@ -45,6 +45,8 @@ const AIFormGenMenu = () => {
   const editor = useEditorRef();
   const isOpen = usePluginOption(AIFormGenPlugin, "isOpen");
   const insertPathRef = useRef<number[] | null>(null);
+  const insertedCountRef = useRef(0);
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
   const getEditorMarkdown = useCallback((): string => {
     try {
@@ -78,6 +80,7 @@ const AIFormGenMenu = () => {
       for (const node of nodes) {
         editor.tf.insertNodes(node, { at: insertPathRef.current });
         insertPathRef.current = PathApi.next(insertPathRef.current);
+        insertedCountRef.current++;
       }
     },
     [editor, capturedPathRef],
@@ -99,17 +102,31 @@ const AIFormGenMenu = () => {
       }
     },
     onFinish: () => {
+      insertedCountRef.current = 0;
       insertPathRef.current = null;
       editor.setOption(AIFormGenPlugin, "isOpen", false);
     },
     onError: () => {
+      // Rollback: undo all inserted nodes by calling editor.undo() for each
+      const count = insertedCountRef.current;
+      if (count > 0) {
+        editor.tf.withoutNormalizing(() => {
+          for (let i = 0; i < count; i++) {
+            editor.tf.undo();
+          }
+        });
+      }
+      insertedCountRef.current = 0;
       insertPathRef.current = null;
+      setGenerationError("Generation failed. Changes have been rolled back.");
     },
   });
 
   const handleSubmit = useCallback(
     (prompt: string) => {
       insertPathRef.current = null;
+      insertedCountRef.current = 0;
+      setGenerationError(null);
       sendMessage({ text: prompt });
     },
     [sendMessage],
@@ -162,6 +179,7 @@ const AIFormGenMenu = () => {
           onSubmit={handleSubmit}
           onClose={handleClose}
           isGenerating={isGenerating}
+          error={generationError}
         />
       )}
     </>
