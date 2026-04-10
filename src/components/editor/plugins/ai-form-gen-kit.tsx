@@ -166,11 +166,21 @@ const AIFormGenMenu = () => {
   });
 
   const handleSubmit = useCallback(
-    (prompt: string) => {
+    (prompt: string, image?: { url: string; name: string } | null) => {
       insertPathRef.current = null;
       insertedCountRef.current = 0;
       setGenerationError(null);
-      sendMessage({ text: prompt });
+
+      if (image) {
+        // Extract media type from data URL (e.g., "data:image/png;base64,...")
+        const mediaType = image.url.split(";")[0]?.split(":")[1] ?? "image/png";
+        sendMessage({
+          text: prompt,
+          files: [{ type: "file", mediaType, url: image.url, filename: image.name }],
+        });
+      } else {
+        sendMessage({ text: prompt });
+      }
     },
     [sendMessage],
   );
