@@ -147,7 +147,7 @@ export const Route = createFileRoute("/api/ai/form-generate")({
                 "Set the form's visual theme with raw CSS color tokens. Generate tokens for BOTH light and dark modes. Use 'light:tokenName' and 'dark:tokenName' prefixed keys.",
               inputSchema: z.object({
                 tokens: z
-                  .record(z.string())
+                  .record(z.string(), z.string())
                   .describe(
                     "Map of CSS token names to hex color values. Required tokens for each mode: background, foreground, primary, primary-foreground, secondary, secondary-foreground, muted, muted-foreground, accent, accent-foreground, destructive, destructive-foreground, border, input, ring. Prefix with 'light:' or 'dark:' for mode-specific values (e.g., 'light:primary': '#2563eb', 'dark:primary': '#3b82f6').",
                   ),
