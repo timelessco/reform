@@ -114,9 +114,9 @@ export const Route = createFileRoute("/api/ai/form-generate")({
               inputSchema: z.object({
                 title: z.string().describe("The section heading text"),
                 level: z
-                  .union([z.literal(1), z.literal(2), z.literal(3)])
+                  .enum(["1", "2", "3"])
                   .optional()
-                  .describe("Heading level (1, 2, or 3)"),
+                  .describe("Heading level: '1' for h1, '2' for h2, '3' for h3. Default '2'."),
               }),
             }),
           },

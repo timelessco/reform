@@ -10,7 +10,7 @@ type FormBlockArgs = {
 
 type FormSectionArgs = {
   title: string;
-  level?: 1 | 2 | 3;
+  level?: string | number;
 };
 
 const FIELD_TYPE_MAP: Record<string, { nodeType: string; defaultPlaceholder?: string }> = {
@@ -110,8 +110,8 @@ export const buildFormBlockNodes = (args: FormBlockArgs): TElement[] => {
 };
 
 export const buildFormSectionNodes = (args: FormSectionArgs): TElement[] => {
-  const level = args.level ?? 2;
-  const type = `h${level}`;
+  const level = Number(args.level ?? 2);
+  const type = `h${level >= 1 && level <= 3 ? level : 2}`;
 
   return [{ type, children: [{ text: args.title }] } as TElement];
 };
