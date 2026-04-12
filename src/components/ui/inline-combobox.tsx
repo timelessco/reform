@@ -274,6 +274,7 @@ const InlineComboboxContent = ({
   const [showPreview, setShowPreview] = React.useState(false);
   const [activeValue, setActiveValue] = React.useState<string | null>(null);
   const [popoverRect, setPopoverRect] = React.useState<{ top: number; right: number } | null>(null);
+  const [popoverNode, setPopoverNode] = React.useState<HTMLDivElement | null>(null);
 
   const hasPreview = preview !== undefined;
 
@@ -288,12 +289,17 @@ const InlineComboboxContent = ({
     setActiveValue(activeItem?.value ?? null);
   }, [activeId, store, hasPreview]);
 
-  // Measure available space and track popover position on mount
-  const popoverRef = React.useCallback(
-    (node: HTMLDivElement | null) => {
-      if (!node || !hasPreview) return;
+  // Store popover node via ref callback (state so effect re-runs when node mounts)
+  const popoverRef = React.useCallback((node: HTMLDivElement | null) => {
+    setPopoverNode(node);
+  }, []);
 
-      const rect = node.getBoundingClientRect();
+  // Observe popover position — Ariakit positions asynchronously via style attribute
+  React.useEffect(() => {
+    if (!popoverNode || !hasPreview) return;
+
+    const measure = () => {
+      const rect = popoverNode.getBoundingClientRect();
       const totalNeeded = POPOVER_WIDTH + PREVIEW_GAP + PREVIEW_WIDTH;
       const availableWidth = window.innerWidth - rect.left;
       const canFit = availableWidth >= totalNeeded;
@@ -302,9 +308,14 @@ const InlineComboboxContent = ({
       if (canFit) {
         setPopoverRect({ top: rect.top, right: rect.right });
       }
-    },
-    [hasPreview],
-  );
+    };
+
+    const observer = new MutationObserver(measure);
+    observer.observe(popoverNode, { attributes: true, attributeFilter: ["style"] });
+    measure();
+
+    return () => observer.disconnect();
+  }, [popoverNode, hasPreview]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!store) return;
