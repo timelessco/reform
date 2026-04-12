@@ -263,7 +263,12 @@ type InlineComboboxContentProps = React.ComponentProps<typeof ComboboxPopover> &
   preview?: (props: { activeValue: string | null }) => React.ReactNode;
 };
 
-const InlineComboboxContent = ({ className, preview, ...props }: InlineComboboxContentProps) => {
+const InlineComboboxContent = ({
+  children,
+  className,
+  preview,
+  ...props
+}: InlineComboboxContentProps) => {
   // Portal prevents CSS from leaking into popover
   const store = useComboboxContext();
   const [showPreview, setShowPreview] = React.useState(false);
@@ -337,7 +342,7 @@ const InlineComboboxContent = ({ className, preview, ...props }: InlineComboboxC
             className="max-h-[288px] overflow-y-auto"
             style={{ width: showPreviewPanel ? LIST_WIDTH : undefined }}
           >
-            {props.children}
+            {children}
           </div>
 
           {showPreviewPanel && (
