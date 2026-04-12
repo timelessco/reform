@@ -50,11 +50,11 @@ import {
 type Group = {
   group: string;
   items: {
-    description: string;
     icon: ReactNode;
     value: string;
     onSelect: (editor: PlateEditor, value: string) => void;
     className?: string;
+    description?: string;
     focusEditor?: boolean;
     keywords?: string[];
     label?: string;
