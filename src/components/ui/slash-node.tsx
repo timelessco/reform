@@ -36,6 +36,20 @@ import { useCallback } from "react";
 import type { ReactNode } from "react";
 
 import { insertBlock, insertInlineElement } from "@/components/editor/transforms";
+import {
+  BlockquotePreview,
+  BulletedListPreview,
+  CalloutPreview,
+  CodeBlockPreview,
+  Heading1Preview,
+  Heading2Preview,
+  Heading3Preview,
+  NumberedListPreview,
+  TablePreview,
+  TextPreview,
+  TodoListPreview,
+  TogglePreview,
+} from "./slash-preview-mockups";
 
 import {
   InlineCombobox,
@@ -328,6 +342,21 @@ const groups: Group[] = [
   },
 ];
 
+const previewMap: Record<string, () => ReactNode> = {
+  [KEYS.p]: TextPreview,
+  [KEYS.h1]: Heading1Preview,
+  [KEYS.h2]: Heading2Preview,
+  [KEYS.h3]: Heading3Preview,
+  [KEYS.ul]: BulletedListPreview,
+  [KEYS.ol]: NumberedListPreview,
+  [KEYS.listTodo]: TodoListPreview,
+  [KEYS.toggle]: TogglePreview,
+  [KEYS.codeBlock]: CodeBlockPreview,
+  [KEYS.table]: TablePreview,
+  [KEYS.blockquote]: BlockquotePreview,
+  [KEYS.callout]: CalloutPreview,
+};
+
 const findItemByValue = (activeValue: string | null) => {
   if (!activeValue) return null;
 
@@ -350,9 +379,13 @@ export const SlashInputElement = (props: PlateElementProps<TComboboxInputElement
 
     if (!item) return null;
 
+    const PreviewComponent = activeValue ? previewMap[activeValue] : null;
+
     return (
       <div className="p-3">
-        <div className="h-[130px] rounded-md bg-muted/50" />
+        <div className="overflow-hidden rounded-md bg-muted/50">
+          {PreviewComponent ? <PreviewComponent /> : <div className="h-[130px]" />}
+        </div>
         <div className="mt-2">
           <div className="text-sm font-medium">{item.label ?? item.value}</div>
           <div className="text-xs text-muted-foreground line-clamp-1">{item.description}</div>
