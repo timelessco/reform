@@ -156,3 +156,291 @@ export const CalloutPreview = () => (
     </div>
   </div>
 );
+
+// ─── Task 4: Advanced, Inline & Layout Preview Mockups ───
+
+export const ThreeColumnsPreview = () => (
+  <div className="flex h-[130px] items-center gap-0 px-3">
+    <div className="flex flex-1 flex-col gap-2 px-2">
+      <SkeletonBar width="w-full" className="h-[5px]" />
+      <SkeletonBar width="w-[80%]" className="h-[5px]" />
+    </div>
+    <div className="h-16 w-px shrink-0 bg-border" />
+    <div className="flex flex-1 flex-col gap-2 px-2">
+      <SkeletonBar width="w-full" className="h-[5px]" />
+      <SkeletonBar width="w-[70%]" className="h-[5px]" />
+      <SkeletonBar width="w-[50%]" className="h-[5px]" />
+    </div>
+    <div className="h-16 w-px shrink-0 bg-border" />
+    <div className="flex flex-1 flex-col gap-2 px-2">
+      <SkeletonBar width="w-full" className="h-[5px]" />
+      <SkeletonBar width="w-[60%]" className="h-[5px]" />
+    </div>
+  </div>
+);
+
+export const DateInlinePreview = () => (
+  <div className="flex h-[130px] flex-col justify-center gap-2.5 px-3">
+    <div className="flex flex-wrap items-center gap-1">
+      <SkeletonBar width="w-[30%]" className="h-[5px]" />
+      <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5">
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          className="text-muted-foreground"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <rect x="3" y="4" width="18" height="18" rx="2" />
+          <line x1="3" y1="10" x2="21" y2="10" />
+          <line x1="8" y1="2" x2="8" y2="6" />
+          <line x1="16" y1="2" x2="16" y2="6" />
+        </svg>
+        <span className="text-xs text-muted-foreground">Apr 12, 2026</span>
+      </span>
+      <SkeletonBar width="w-[25%]" className="h-[5px]" />
+    </div>
+    <SkeletonBar width="w-[90%]" className="h-[5px]" />
+  </div>
+);
+
+export const NewPagePreview = () => (
+  <div className="flex h-[130px] items-center px-3">
+    <div className="w-full border-t border-dashed border-muted-foreground/40" />
+  </div>
+);
+
+export const ThankYouPagePreview = () => (
+  <div className="flex h-[130px] flex-col items-center justify-center gap-2 px-3">
+    <span className="text-2xl">😊</span>
+    <span className="text-sm font-medium">Thank you!</span>
+    <SkeletonBar width="w-[50%]" className="h-[5px]" />
+  </div>
+);
+
+// ─── Task 5: Form Block Preview Mockups (Text-like Fields) ───
+
+const FormFieldLabel = () => <SkeletonBar width="w-[40%]" className="mb-2 h-[6px]" />;
+
+export const FormTextInputPreview = () => (
+  <div className="flex h-[130px] flex-col justify-center px-3">
+    <FormFieldLabel />
+    <div className="flex h-8 items-center rounded-md border border-input px-2">
+      <span className="text-xs text-muted-foreground/60">John Doe</span>
+    </div>
+  </div>
+);
+
+export const FormTextAreaPreview = () => (
+  <div className="flex h-[130px] flex-col justify-center px-3">
+    <FormFieldLabel />
+    <div className="flex h-16 items-start rounded-md border border-input px-2 pt-2">
+      <span className="text-xs text-muted-foreground/60">Tell us more...</span>
+    </div>
+  </div>
+);
+
+export const FormEmailPreview = () => (
+  <div className="flex h-[130px] flex-col justify-center px-3">
+    <FormFieldLabel />
+    <div className="flex h-8 items-center gap-1.5 rounded-md border border-input px-2">
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        className="shrink-0 text-muted-foreground"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <circle cx="12" cy="12" r="4" />
+        <path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8" />
+      </svg>
+      <span className="text-xs text-muted-foreground/60">name@example.com</span>
+    </div>
+  </div>
+);
+
+export const FormPhonePreview = () => (
+  <div className="flex h-[130px] flex-col justify-center px-3">
+    <FormFieldLabel />
+    <div className="flex h-8 items-center gap-1.5 rounded-md border border-input px-2">
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        className="shrink-0 text-muted-foreground"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+      </svg>
+      <span className="text-xs text-muted-foreground/60">+1 (555) 000-0000</span>
+    </div>
+  </div>
+);
+
+export const FormNumberPreview = () => (
+  <div className="flex h-[130px] flex-col justify-center px-3">
+    <FormFieldLabel />
+    <div className="flex h-8 w-24 items-center justify-between rounded-md border border-input px-2">
+      <span className="text-xs text-muted-foreground/60">0</span>
+      <div className="flex flex-col gap-0.5">
+        <svg
+          width="8"
+          height="8"
+          viewBox="0 0 12 12"
+          className="text-muted-foreground"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M2 8L6 4L10 8" />
+        </svg>
+        <svg
+          width="8"
+          height="8"
+          viewBox="0 0 12 12"
+          className="text-muted-foreground"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M2 4L6 8L10 4" />
+        </svg>
+      </div>
+    </div>
+  </div>
+);
+
+export const FormLinkPreview = () => (
+  <div className="flex h-[130px] flex-col justify-center px-3">
+    <FormFieldLabel />
+    <div className="flex h-8 items-center gap-1.5 rounded-md border border-input px-2">
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        className="shrink-0 text-muted-foreground"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+      </svg>
+      <span className="text-xs text-muted-foreground/60">https://</span>
+    </div>
+  </div>
+);
+
+export const FormDatePreview = () => (
+  <div className="flex h-[130px] flex-col justify-center px-3">
+    <FormFieldLabel />
+    <div className="flex h-8 items-center gap-1.5 rounded-md border border-input px-2">
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        className="shrink-0 text-muted-foreground"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <line x1="3" y1="10" x2="21" y2="10" />
+        <line x1="8" y1="2" x2="8" y2="6" />
+        <line x1="16" y1="2" x2="16" y2="6" />
+      </svg>
+      <span className="text-xs text-muted-foreground/60">MM/DD/YYYY</span>
+    </div>
+  </div>
+);
+
+export const FormTimePreview = () => (
+  <div className="flex h-[130px] flex-col justify-center px-3">
+    <FormFieldLabel />
+    <div className="flex h-8 items-center gap-1.5 rounded-md border border-input px-2">
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        className="shrink-0 text-muted-foreground"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+      <span className="text-xs text-muted-foreground/60">HH:MM</span>
+    </div>
+  </div>
+);
+
+export const FormFileUploadPreview = () => (
+  <div className="flex h-[130px] flex-col justify-center px-3">
+    <FormFieldLabel />
+    <div className="flex h-16 flex-col items-center justify-center gap-1 rounded-md border border-dashed border-input">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        className="text-muted-foreground"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="17 8 12 3 7 8" />
+        <line x1="12" y1="3" x2="12" y2="15" />
+      </svg>
+      <span className="text-xs text-muted-foreground/60">Drop file here</span>
+    </div>
+  </div>
+);
+
+// ─── Task 6: Form Block Preview Mockups (Selection Fields) ───
+
+const checkboxOptions = ["Option A", "Option B", "Option C"] as const;
+
+export const FormCheckboxPreview = () => (
+  <div className="flex h-[130px] flex-col justify-center px-3">
+    <FormFieldLabel />
+    <div className="flex flex-col gap-2">
+      {checkboxOptions.map((label) => (
+        <div key={label} className="flex items-center gap-2">
+          <div className="size-3 shrink-0 rounded-[3px] border border-input" />
+          <span className="text-xs text-muted-foreground">{label}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+export const FormMultiChoicePreview = () => (
+  <div className="flex h-[130px] flex-col justify-center px-3">
+    <FormFieldLabel />
+    <div className="flex flex-col gap-2">
+      {checkboxOptions.map((label) => (
+        <div key={label} className="flex items-center gap-2">
+          <div className="size-3 shrink-0 rounded-full border border-input" />
+          <span className="text-xs text-muted-foreground">{label}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+export const FormMultiSelectPreview = () => (
+  <div className="flex h-[130px] flex-col justify-center px-3">
+    <FormFieldLabel />
+    <div className="flex h-8 items-center gap-1.5 rounded-md border border-input px-2">
+      <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">Tag 1</span>
+      <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">Tag 2</span>
+    </div>
+  </div>
+);
