@@ -255,9 +255,9 @@ const InlineComboboxInput = ({
 
 InlineComboboxInput.displayName = "InlineComboboxInput";
 
-const PREVIEW_MIN_WIDTH = 500;
-const LIST_WIDTH = 280;
-const PREVIEW_WIDTH = 220;
+const PREVIEW_GAP = 8;
+const POPOVER_WIDTH = 300;
+const PREVIEW_WIDTH = 260;
 
 type InlineComboboxContentProps = React.ComponentProps<typeof ComboboxPopover> & {
   preview?: (props: { activeValue: string | null }) => React.ReactNode;
@@ -273,6 +273,7 @@ const InlineComboboxContent = ({
   const store = useComboboxContext();
   const [showPreview, setShowPreview] = React.useState(false);
   const [activeValue, setActiveValue] = React.useState<string | null>(null);
+  const [popoverRect, setPopoverRect] = React.useState<{ top: number; right: number } | null>(null);
 
   const hasPreview = preview !== undefined;
 
@@ -287,14 +288,20 @@ const InlineComboboxContent = ({
     setActiveValue(activeItem?.value ?? null);
   }, [activeId, store, hasPreview]);
 
-  // Measure available space on mount via ref callback
+  // Measure available space and track popover position on mount
   const popoverRef = React.useCallback(
     (node: HTMLDivElement | null) => {
       if (!node || !hasPreview) return;
 
       const rect = node.getBoundingClientRect();
+      const totalNeeded = POPOVER_WIDTH + PREVIEW_GAP + PREVIEW_WIDTH;
       const availableWidth = window.innerWidth - rect.left;
-      setShowPreview(availableWidth >= PREVIEW_MIN_WIDTH);
+      const canFit = availableWidth >= totalNeeded;
+      setShowPreview(canFit);
+
+      if (canFit) {
+        setPopoverRect({ top: rect.top, right: rect.right });
+      }
     },
     [hasPreview],
   );
@@ -331,26 +338,27 @@ const InlineComboboxContent = ({
         <ComboboxPopover
           ref={popoverRef}
           className={cn(
-            "z-500 max-h-[288px] rounded-md bg-popover shadow-md",
-            showPreviewPanel ? "flex w-[500px] flex-row" : "w-[300px]",
+            "z-500 max-h-[288px] w-[300px] overflow-y-auto rounded-md bg-popover shadow-md",
             className,
           )}
           onKeyDownCapture={handleKeyDown}
           {...props}
         >
-          <div
-            className="max-h-[288px] overflow-y-auto"
-            style={{ width: showPreviewPanel ? LIST_WIDTH : undefined }}
-          >
-            {children}
-          </div>
-
-          {showPreviewPanel && (
-            <div className="overflow-y-auto border-l" style={{ width: PREVIEW_WIDTH }}>
-              {preview({ activeValue })}
-            </div>
-          )}
+          {children}
         </ComboboxPopover>
+
+        {showPreviewPanel && popoverRect && (
+          <div
+            className="fixed z-500 rounded-xl bg-popover shadow-md"
+            style={{
+              top: popoverRect.top,
+              left: popoverRect.right + PREVIEW_GAP,
+              width: PREVIEW_WIDTH,
+            }}
+          >
+            {preview({ activeValue })}
+          </div>
+        )}
       </InlineComboboxPreviewContext.Provider>
     </Portal>
   );
