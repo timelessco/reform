@@ -297,13 +297,14 @@ const InlineComboboxContent = ({
     <Portal>
       <ComboboxPopover
         className={cn(
-          "z-500 max-h-[288px] w-[300px] overflow-y-auto rounded-md bg-popover shadow-md",
+          "z-500 w-[300px] rounded-md bg-popover shadow-md",
+          hasPreview ? "overflow-visible" : "overflow-y-auto max-h-[288px]",
           className,
         )}
         onKeyDownCapture={handleKeyDown}
         {...props}
       >
-        {children}
+        <div className={hasPreview ? "max-h-[288px] overflow-y-auto" : undefined}>{children}</div>
 
         {/* Preview card positioned relative to the popover */}
         {hasPreview && (
