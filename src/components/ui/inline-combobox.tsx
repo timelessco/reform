@@ -466,8 +466,5 @@ export {
   InlineComboboxGroupLabel,
   InlineComboboxInput,
   InlineComboboxItem,
-  InlineComboboxPreviewContext,
   InlineComboboxRow,
 };
-
-export type { InlineComboboxPreviewContextValue };
