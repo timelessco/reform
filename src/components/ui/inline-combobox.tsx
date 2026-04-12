@@ -46,6 +46,16 @@ const InlineComboboxContext = React.createContext<InlineComboboxContextValue>(
   null as unknown as InlineComboboxContextValue,
 );
 
+type InlineComboboxPreviewContextValue = {
+  activeValue: string | null;
+  showPreview: boolean;
+};
+
+const InlineComboboxPreviewContext = React.createContext<InlineComboboxPreviewContextValue>({
+  activeValue: null,
+  showPreview: false,
+});
+
 const defaultFilter: FilterFn = ({ group, keywords = [], label, value }, search) => {
   const uniqueTerms = new Set([value, ...keywords, group, label].filter(Boolean));
 
@@ -245,19 +255,54 @@ const InlineComboboxInput = ({
 
 InlineComboboxInput.displayName = "InlineComboboxInput";
 
-const InlineComboboxContent: typeof ComboboxPopover = ({ className, ...props }) => {
+const PREVIEW_MIN_WIDTH = 500;
+const LIST_WIDTH = 280;
+const PREVIEW_WIDTH = 220;
+
+type InlineComboboxContentProps = React.ComponentProps<typeof ComboboxPopover> & {
+  preview?: (props: { activeValue: string | null }) => React.ReactNode;
+};
+
+const InlineComboboxContent = ({ className, preview, ...props }: InlineComboboxContentProps) => {
   // Portal prevents CSS from leaking into popover
   const store = useComboboxContext();
+  const [showPreview, setShowPreview] = React.useState(false);
+  const [activeValue, setActiveValue] = React.useState<string | null>(null);
+
+  const hasPreview = preview !== undefined;
+
+  // Track active item value from Ariakit store
+  const activeId = store?.useState("activeId");
+
+  React.useEffect(() => {
+    if (!store || !hasPreview) return;
+
+    const state = store.getState();
+    const activeItem = state.items.find((item) => item.id === activeId);
+    setActiveValue(activeItem?.value ?? null);
+  }, [activeId, store, hasPreview]);
+
+  // Measure available space on mount via ref callback
+  const popoverRef = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      if (!node || !hasPreview) return;
+
+      const rect = node.getBoundingClientRect();
+      const availableWidth = window.innerWidth - rect.left;
+      setShowPreview(availableWidth >= PREVIEW_MIN_WIDTH);
+    },
+    [hasPreview],
+  );
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!store) return;
 
     const state = store.getState();
-    const { items, activeId } = state;
+    const { items, activeId: currentActiveId } = state;
 
     if (!items.length) return;
 
-    const currentIndex = items.findIndex((item) => item.id === activeId);
+    const currentIndex = items.findIndex((item) => item.id === currentActiveId);
 
     if (event.key === "ArrowUp" && currentIndex <= 0) {
       event.preventDefault();
@@ -268,16 +313,40 @@ const InlineComboboxContent: typeof ComboboxPopover = ({ className, ...props }) 
     }
   };
 
+  const previewContextValue = React.useMemo(
+    () => ({ activeValue, showPreview }),
+    [activeValue, showPreview],
+  );
+
+  const showPreviewPanel = hasPreview && showPreview;
+
   return (
     <Portal>
-      <ComboboxPopover
-        className={cn(
-          "z-500 max-h-[288px] w-[300px] overflow-y-auto rounded-md bg-popover shadow-md",
-          className,
-        )}
-        onKeyDownCapture={handleKeyDown}
-        {...props}
-      />
+      <InlineComboboxPreviewContext.Provider value={previewContextValue}>
+        <ComboboxPopover
+          ref={popoverRef}
+          className={cn(
+            "z-500 max-h-[288px] rounded-md bg-popover shadow-md",
+            showPreviewPanel ? "flex w-[500px] flex-row" : "w-[300px]",
+            className,
+          )}
+          onKeyDownCapture={handleKeyDown}
+          {...props}
+        >
+          <div
+            className="max-h-[288px] overflow-y-auto"
+            style={{ width: showPreviewPanel ? LIST_WIDTH : undefined }}
+          >
+            {props.children}
+          </div>
+
+          {showPreviewPanel && (
+            <div className="overflow-y-auto border-l" style={{ width: PREVIEW_WIDTH }}>
+              {preview({ activeValue })}
+            </div>
+          )}
+        </ComboboxPopover>
+      </InlineComboboxPreviewContext.Provider>
     </Portal>
   );
 };
@@ -392,5 +461,8 @@ export {
   InlineComboboxGroupLabel,
   InlineComboboxInput,
   InlineComboboxItem,
+  InlineComboboxPreviewContext,
   InlineComboboxRow,
 };
+
+export type { InlineComboboxPreviewContextValue };
