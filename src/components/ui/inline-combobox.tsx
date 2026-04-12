@@ -46,16 +46,6 @@ const InlineComboboxContext = React.createContext<InlineComboboxContextValue>(
   null as unknown as InlineComboboxContextValue,
 );
 
-type InlineComboboxPreviewContextValue = {
-  activeValue: string | null;
-  showPreview: boolean;
-};
-
-const InlineComboboxPreviewContext = React.createContext<InlineComboboxPreviewContextValue>({
-  activeValue: null,
-  showPreview: false,
-});
-
 const defaultFilter: FilterFn = ({ group, keywords = [], label, value }, search) => {
   const uniqueTerms = new Set([value, ...keywords, group, label].filter(Boolean));
 
@@ -256,7 +246,6 @@ const InlineComboboxInput = ({
 InlineComboboxInput.displayName = "InlineComboboxInput";
 
 const PREVIEW_GAP = 8;
-const POPOVER_WIDTH = 300;
 const PREVIEW_WIDTH = 260;
 
 type InlineComboboxContentProps = React.ComponentProps<typeof ComboboxPopover> & {
@@ -269,12 +258,8 @@ const InlineComboboxContent = ({
   preview,
   ...props
 }: InlineComboboxContentProps) => {
-  // Portal prevents CSS from leaking into popover
   const store = useComboboxContext();
-  const [showPreview, setShowPreview] = React.useState(false);
   const [activeValue, setActiveValue] = React.useState<string | null>(null);
-  const [popoverRect, setPopoverRect] = React.useState<{ top: number; right: number } | null>(null);
-  const [popoverNode, setPopoverNode] = React.useState<HTMLDivElement | null>(null);
 
   const hasPreview = preview !== undefined;
 
@@ -288,34 +273,6 @@ const InlineComboboxContent = ({
     const activeItem = state.items.find((item) => item.id === activeId);
     setActiveValue(activeItem?.value ?? null);
   }, [activeId, store, hasPreview]);
-
-  // Store popover node via ref callback (state so effect re-runs when node mounts)
-  const popoverRef = React.useCallback((node: HTMLDivElement | null) => {
-    setPopoverNode(node);
-  }, []);
-
-  // Observe popover position — Ariakit positions asynchronously via style attribute
-  React.useEffect(() => {
-    if (!popoverNode || !hasPreview) return;
-
-    const measure = () => {
-      const rect = popoverNode.getBoundingClientRect();
-      const totalNeeded = POPOVER_WIDTH + PREVIEW_GAP + PREVIEW_WIDTH;
-      const availableWidth = window.innerWidth - rect.left;
-      const canFit = availableWidth >= totalNeeded;
-      setShowPreview(canFit);
-
-      if (canFit) {
-        setPopoverRect({ top: rect.top, right: rect.right });
-      }
-    };
-
-    const observer = new MutationObserver(measure);
-    observer.observe(popoverNode, { attributes: true, attributeFilter: ["style"] });
-    measure();
-
-    return () => observer.disconnect();
-  }, [popoverNode, hasPreview]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!store) return;
@@ -336,41 +293,33 @@ const InlineComboboxContent = ({
     }
   };
 
-  const previewContextValue = React.useMemo(
-    () => ({ activeValue, showPreview }),
-    [activeValue, showPreview],
-  );
-
-  const showPreviewPanel = hasPreview && showPreview;
-
   return (
     <Portal>
-      <InlineComboboxPreviewContext.Provider value={previewContextValue}>
-        <ComboboxPopover
-          ref={popoverRef}
-          className={cn(
-            "z-500 max-h-[288px] w-[300px] overflow-y-auto rounded-md bg-popover shadow-md",
-            className,
-          )}
-          onKeyDownCapture={handleKeyDown}
-          {...props}
-        >
-          {children}
-        </ComboboxPopover>
+      <ComboboxPopover
+        className={cn(
+          "z-500 max-h-[288px] w-[300px] overflow-y-auto rounded-md bg-popover shadow-md",
+          className,
+        )}
+        onKeyDownCapture={handleKeyDown}
+        {...props}
+      >
+        {children}
 
-        {showPreviewPanel && popoverRect && (
+        {/* Preview card positioned relative to the popover */}
+        {hasPreview && (
           <div
-            className="fixed z-500 rounded-xl bg-popover shadow-md"
-            style={{
-              top: popoverRect.top,
-              left: popoverRect.right + PREVIEW_GAP,
-              width: PREVIEW_WIDTH,
-            }}
+            className="pointer-events-none absolute top-0 left-full"
+            style={{ paddingLeft: PREVIEW_GAP }}
           >
-            {preview({ activeValue })}
+            <div
+              className="pointer-events-auto rounded-xl bg-popover shadow-md"
+              style={{ width: PREVIEW_WIDTH }}
+            >
+              {preview({ activeValue })}
+            </div>
           </div>
         )}
-      </InlineComboboxPreviewContext.Provider>
+      </ComboboxPopover>
     </Portal>
   );
 };
