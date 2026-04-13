@@ -8,6 +8,7 @@ import { CircleUserIcon, CreditCardIcon, FileCodeIcon, GlobeIcon } from "@/compo
 import { AccountSettingsContent } from "./account-settings-content";
 import { ApiKeysContent } from "./api-keys-content";
 import { BillingContent } from "./billing-content";
+import { DomainsContent } from "./domains-content";
 import { MembersContent } from "./members-content";
 
 const navItems: {
@@ -40,11 +41,7 @@ const TabContent = ({ tab }: { tab: SettingsTab }) => {
     case "api-keys":
       return <ApiKeysContent />;
     case "domains":
-      return (
-        <div className="text-sm text-muted-foreground">
-          Custom domains settings will appear here.
-        </div>
-      );
+      return <DomainsContent />;
   }
 };
 
