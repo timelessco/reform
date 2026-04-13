@@ -257,6 +257,7 @@ const generateSlug = (title: string): string =>
     .replace(/^-|-$/g, "")
     .slice(0, 60) || "form";
 
+/** @public - consumed by upcoming domain settings UI */
 export const updateFormSlug = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ formId: z.string().uuid(), slug: z.string() }))
@@ -324,6 +325,7 @@ export const updateFormSlug = createServerFn({ method: "POST" })
     return { form: serializeForm(updatedForm) };
   });
 
+/** @public - consumed by upcoming domain settings UI */
 export const assignFormDomain = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
