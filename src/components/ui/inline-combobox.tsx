@@ -259,40 +259,42 @@ const InlineComboboxContent = ({
   ...props
 }: InlineComboboxContentProps) => {
   const store = useComboboxContext();
-  const [activeValue, setActiveValue] = React.useState<string | null>(null);
-  const [previewTop, setPreviewTop] = React.useState(0);
   const scrollElRef = React.useRef<HTMLDivElement | null>(null);
+  const previewElRef = React.useRef<HTMLDivElement | null>(null);
 
   const hasPreview = preview !== undefined;
 
-  // Track active item value and vertical position from Ariakit store
+  // Track active item value from Ariakit store — derived, no state needed
   const activeId = store?.useState("activeId");
-
-  React.useEffect(() => {
-    if (!store || !hasPreview) return;
-
+  const activeValue = React.useMemo(() => {
+    if (!store || !hasPreview || !activeId) return null;
     const state = store.getState();
-    const activeItem = state.items.find((item) => item.id === activeId);
-    setActiveValue(activeItem?.value ?? null);
+    return state.items.find((item) => item.id === activeId)?.value ?? null;
+  }, [activeId, store, hasPreview]);
 
-    // Position preview relative to active item's visible position in scroll area
+  // Imperative DOM updates: center-scroll + preview position — no state, no re-renders
+  React.useEffect(() => {
     const scrollEl = scrollElRef.current;
-    if (!scrollEl || !activeId) return;
+    const previewEl = previewElRef.current;
+    if (!scrollEl || !activeId || !hasPreview) return;
 
     const activeEl = scrollEl.querySelector<HTMLElement>(`[data-active-item=true]`);
-    if (activeEl) {
-      // Scroll the active item to center of visible area (middle-focused scroll)
-      const itemTop = activeEl.offsetTop;
-      const itemHeight = activeEl.offsetHeight;
-      const scrollHeight = scrollEl.clientHeight;
-      const idealScroll = itemTop - scrollHeight / 2 + itemHeight / 2;
-      scrollEl.scrollTo({ top: Math.max(0, idealScroll), behavior: "smooth" });
+    if (!activeEl) return;
 
-      // Align preview top with the active item's visible position (after scroll)
-      const visibleTop = itemTop - Math.max(0, idealScroll);
-      setPreviewTop(Math.max(0, visibleTop));
+    // Center-focused scroll
+    const itemTop = activeEl.offsetTop;
+    const itemHeight = activeEl.offsetHeight;
+    const scrollHeight = scrollEl.clientHeight;
+    const idealScroll = itemTop - scrollHeight / 2 + itemHeight / 2;
+    const clampedScroll = Math.max(0, idealScroll);
+    scrollEl.scrollTo({ top: clampedScroll, behavior: "smooth" });
+
+    // Position preview via direct DOM mutation (no state update)
+    if (previewEl) {
+      const visibleTop = Math.max(0, itemTop - clampedScroll);
+      previewEl.style.top = `${visibleTop}px`;
     }
-  }, [activeId, store, hasPreview]);
+  }, [activeId, hasPreview]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!store) return;
@@ -331,8 +333,9 @@ const InlineComboboxContent = ({
         {/* Preview card positioned relative to the active item */}
         {hasPreview && (
           <div
-            className="pointer-events-none absolute left-full transition-[top] duration-100 ease-out"
-            style={{ paddingLeft: PREVIEW_GAP, top: previewTop }}
+            ref={previewElRef}
+            className="pointer-events-none absolute top-0 left-full transition-[top] duration-100 ease-out"
+            style={{ paddingLeft: PREVIEW_GAP }}
           >
             <div
               className="pointer-events-auto rounded-xl bg-popover shadow-md"
