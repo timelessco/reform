@@ -18,6 +18,8 @@ export default {
     "src/lib/editor/ai-icon-matcher.ts", // AI icon matcher - consumed by upcoming AI generation task
     "src/lib/config/plan-config.ts", // Custom domains feature - consumed by upcoming tasks
     "src/lib/vercel-domains.ts", // Custom domains feature - consumed by upcoming tasks
+    "src/lib/server-fn/custom-domains.ts", // Custom domains feature - consumed by upcoming tasks
+    "src/lib/server-fn/forms.ts", // Custom domains slug/domain exports - consumed by upcoming tasks
     "src/types/**", // type exports
     "vite.config.ts", // config file default export
   ],

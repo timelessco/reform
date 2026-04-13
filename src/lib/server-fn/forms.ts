@@ -1,8 +1,9 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { and, count, eq, isNull } from "drizzle-orm";
+import { and, count, eq, isNull, ne } from "drizzle-orm";
 import { z } from "zod";
-import { forms, member, submissions, workspaces } from "@/db/schema";
+import { customDomains, forms, member, submissions, workspaces } from "@/db/schema";
+import { RESERVED_SLUGS } from "@/lib/config/plan-config";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { authForm, getActiveOrgId } from "./auth-helpers";
@@ -244,6 +245,140 @@ type FormStatusQueryResult = {
     status?: FormStatus;
   };
 };
+
+const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
+
+const generateSlug = (title: string): string =>
+  title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60) || "form";
+
+export const updateFormSlug = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(z.object({ formId: z.string().uuid(), slug: z.string() }))
+  .handler(async ({ data, context }) => {
+    const { formId, slug } = data;
+    const orgId = getActiveOrgId(context.session);
+    await authForm(formId, context.session.user.id, orgId);
+
+    if (!SLUG_PATTERN.test(slug)) {
+      throw new Error(
+        "Invalid slug format. Use lowercase letters, numbers, and hyphens only. Cannot start or end with a hyphen.",
+      );
+    }
+
+    if (slug.length < 2 || slug.length > 60) {
+      throw new Error("Slug must be between 2 and 60 characters");
+    }
+
+    if (RESERVED_SLUGS.has(slug)) {
+      throw new Error("This slug is reserved and cannot be used");
+    }
+
+    // Look up the form to get its workspace, then the org
+    const [formRecord] = await db
+      .select({ workspaceId: forms.workspaceId })
+      .from(forms)
+      .where(eq(forms.id, formId));
+
+    if (!formRecord) {
+      throw new Error("Form not found");
+    }
+
+    const [workspace] = await db
+      .select({ organizationId: workspaces.organizationId })
+      .from(workspaces)
+      .where(eq(workspaces.id, formRecord.workspaceId));
+
+    if (!workspace) {
+      throw new Error("Workspace not found");
+    }
+
+    // Check uniqueness within the org
+    const existing = await db
+      .select({ id: forms.id })
+      .from(forms)
+      .innerJoin(workspaces, eq(forms.workspaceId, workspaces.id))
+      .where(
+        and(
+          eq(workspaces.organizationId, workspace.organizationId),
+          eq(forms.slug, slug),
+          ne(forms.id, formId),
+        ),
+      );
+
+    if (existing.length > 0) {
+      throw new Error("Slug already in use");
+    }
+
+    const [updatedForm] = await db
+      .update(forms)
+      .set({ slug, updatedAt: new Date() })
+      .where(eq(forms.id, formId))
+      .returning();
+
+    return { form: serializeForm(updatedForm) };
+  });
+
+export const assignFormDomain = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(
+    z.object({
+      formId: z.string().uuid(),
+      customDomainId: z.string().nullable(),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    const { formId, customDomainId } = data;
+    const orgId = getActiveOrgId(context.session);
+    await authForm(formId, context.session.user.id, orgId);
+
+    if (customDomainId !== null) {
+      // Verify the domain exists and belongs to the same org
+      const [domain] = await db
+        .select()
+        .from(customDomains)
+        .where(eq(customDomains.id, customDomainId));
+
+      if (!domain) {
+        throw new Error("Custom domain not found");
+      }
+
+      if (domain.organizationId !== orgId) {
+        throw new Error("Custom domain does not belong to this organization");
+      }
+
+      if (domain.status !== "verified") {
+        throw new Error("Custom domain is not verified");
+      }
+
+      // If the form has no slug, auto-generate one from the title
+      const [formRecord] = await db
+        .select({ slug: forms.slug, title: forms.title })
+        .from(forms)
+        .where(eq(forms.id, formId));
+
+      if (formRecord && !formRecord.slug) {
+        const autoSlug = generateSlug(formRecord.title);
+        await db
+          .update(forms)
+          .set({ slug: autoSlug, updatedAt: new Date() })
+          .where(eq(forms.id, formId));
+      }
+    }
+
+    const [updatedForm] = await db
+      .update(forms)
+      .set({ customDomainId, updatedAt: new Date() })
+      .where(eq(forms.id, formId))
+      .returning();
+
+    return { form: serializeForm(updatedForm) };
+  });
 
 export const getFormStatus = async (
   queryClient: import("@tanstack/react-query").QueryClient,
