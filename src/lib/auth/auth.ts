@@ -22,7 +22,13 @@ const polarClient = new Polar({
 });
 
 const getServerBaseURL = () => {
-  const url = process.env.BETTER_AUTH_URL || process.env.VERCEL_URL || "http://localhost:3000";
+  // Prefer VERCEL_BRANCH_URL for stable git-branch URLs (e.g. better-forms-git-dev-timelessco.vercel.app)
+  // VERCEL_URL gives random deployment URLs that change per deploy
+  const url =
+    process.env.BETTER_AUTH_URL ||
+    process.env.VERCEL_BRANCH_URL ||
+    process.env.VERCEL_URL ||
+    "http://localhost:3000";
   return url.startsWith("http") ? url : `https://${url}`;
 };
 
