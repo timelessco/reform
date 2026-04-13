@@ -262,6 +262,8 @@ const InlineComboboxContent = ({
   const [activeValue, setActiveValue] = React.useState<string | null>(null);
   const [previewTop, setPreviewTop] = React.useState(0);
   const popoverElRef = React.useRef<HTMLDivElement | null>(null);
+  const scrollElRef = React.useRef<HTMLDivElement | null>(null);
+  const previewElRef = React.useRef<HTMLDivElement | null>(null);
 
   const hasPreview = preview !== undefined;
 
@@ -275,13 +277,18 @@ const InlineComboboxContent = ({
     const activeItem = state.items.find((item) => item.id === activeId);
     setActiveValue(activeItem?.value ?? null);
 
-    // Find the active DOM element and compute its offset relative to the popover
+    // Position preview relative to active item's visible position in scroll area
+    const scrollEl = scrollElRef.current;
     const popoverEl = popoverElRef.current;
-    if (!popoverEl || !activeId) return;
+    if (!scrollEl || !popoverEl || !activeId) return;
 
-    const activeEl = popoverEl.querySelector<HTMLElement>(`[data-active-item=true]`);
+    const activeEl = scrollEl.querySelector<HTMLElement>(`[data-active-item=true]`);
     if (activeEl) {
-      setPreviewTop(activeEl.offsetTop);
+      const visibleTop = activeEl.offsetTop - scrollEl.scrollTop;
+      const popoverHeight = popoverEl.clientHeight;
+      const previewHeight = previewElRef.current?.clientHeight ?? 200;
+      const maxTop = popoverHeight - previewHeight;
+      setPreviewTop(Math.max(0, Math.min(visibleTop, maxTop)));
     }
   }, [activeId, store, hasPreview]);
 
@@ -316,11 +323,14 @@ const InlineComboboxContent = ({
         onKeyDownCapture={handleKeyDown}
         {...props}
       >
-        <div className={hasPreview ? "max-h-[288px] overflow-y-auto" : undefined}>{children}</div>
+        <div ref={scrollElRef} className={hasPreview ? "max-h-[288px] overflow-y-auto" : undefined}>
+          {children}
+        </div>
 
         {/* Preview card positioned relative to the active item */}
         {hasPreview && (
           <div
+            ref={previewElRef}
             className="pointer-events-none absolute left-full transition-[top] duration-100 ease-out"
             style={{ paddingLeft: PREVIEW_GAP, top: previewTop }}
           >
