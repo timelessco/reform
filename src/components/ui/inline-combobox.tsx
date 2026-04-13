@@ -261,9 +261,7 @@ const InlineComboboxContent = ({
   const store = useComboboxContext();
   const [activeValue, setActiveValue] = React.useState<string | null>(null);
   const [previewTop, setPreviewTop] = React.useState(0);
-  const popoverElRef = React.useRef<HTMLDivElement | null>(null);
   const scrollElRef = React.useRef<HTMLDivElement | null>(null);
-  const previewElRef = React.useRef<HTMLDivElement | null>(null);
 
   const hasPreview = preview !== undefined;
 
@@ -279,19 +277,13 @@ const InlineComboboxContent = ({
 
     // Position preview relative to active item's visible position in scroll area
     const scrollEl = scrollElRef.current;
-    const popoverEl = popoverElRef.current;
-    if (!scrollEl || !popoverEl || !activeId) return;
+    if (!scrollEl || !activeId) return;
 
     const activeEl = scrollEl.querySelector<HTMLElement>(`[data-active-item=true]`);
     if (activeEl) {
-      const itemVisibleTop = activeEl.offsetTop - scrollEl.scrollTop;
-      const itemHeight = activeEl.offsetHeight;
-      const popoverHeight = popoverEl.clientHeight;
-      const previewHeight = previewElRef.current?.clientHeight ?? 200;
-      // Center the preview vertically on the active item
-      const centered = itemVisibleTop + itemHeight / 2 - previewHeight / 2;
-      const maxTop = popoverHeight - previewHeight;
-      setPreviewTop(Math.max(0, Math.min(centered, maxTop)));
+      // Align preview top with the active item's visible position
+      const visibleTop = activeEl.offsetTop - scrollEl.scrollTop;
+      setPreviewTop(Math.max(0, visibleTop));
     }
   }, [activeId, store, hasPreview]);
 
@@ -317,7 +309,6 @@ const InlineComboboxContent = ({
   return (
     <Portal>
       <ComboboxPopover
-        ref={popoverElRef}
         className={cn(
           "z-500 w-[300px] rounded-xl bg-popover shadow-md",
           hasPreview ? "overflow-visible" : "overflow-y-auto max-h-[288px]",
@@ -333,7 +324,6 @@ const InlineComboboxContent = ({
         {/* Preview card positioned relative to the active item */}
         {hasPreview && (
           <div
-            ref={previewElRef}
             className="pointer-events-none absolute left-full transition-[top] duration-100 ease-out"
             style={{ paddingLeft: PREVIEW_GAP, top: previewTop }}
           >
