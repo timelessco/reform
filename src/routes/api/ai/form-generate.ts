@@ -91,7 +91,7 @@ export const Route = createFileRoute("/api/ai/form-generate")({
           : SYSTEM_PROMPT;
 
         // Convert UIMessages (from useChat) to CoreMessages (for streamText)
-        const modelMessages = convertToModelMessages(messages);
+        const modelMessages = await Promise.resolve(convertToModelMessages(messages));
 
         const result = streamText({
           model,

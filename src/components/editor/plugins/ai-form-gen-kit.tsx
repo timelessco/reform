@@ -130,7 +130,10 @@ const AIFormGenMenu = () => {
           if (!collection.get(formId)) return;
           collection.update(formId, (draft) => {
             const current = (draft.customization ?? {}) as Record<string, string>;
-            const next: Record<string, string> = { ...current, preset: "custom" };
+            const next: Record<string, string> = {
+              ...current,
+              preset: "custom",
+            };
             if (tokens) {
               for (const [key, value] of Object.entries(tokens)) {
                 next[key] = value;
@@ -213,12 +216,12 @@ const AIFormGenMenu = () => {
                   type="button"
                   onClick={handleToggle}
                   onMouseDown={(e) => e.preventDefault()}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
+                  className="flex size-8 items-center justify-center rounded-full bg-background shadow-lg transition-colors hover:bg-background/90"
                   aria-label="AI Form Generator"
                 />
               }
             >
-              <SparklesIcon className="size-5" />
+              <SparklesIcon className="size-4" />
             </TooltipTrigger>
             <TooltipContent side="left">
               <p>AI Form Generator</p>
