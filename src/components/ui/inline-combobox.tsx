@@ -290,13 +290,10 @@ const InlineComboboxContent = ({
     scrollEl.scrollTo({ top: clampedScroll, behavior: "smooth" });
 
     // Position preview via direct DOM mutation (no state update)
-    // Clamp so preview bottom doesn't extend past the popover bottom
+    // Only clamp at top; preview freely extends below for bottom items
     if (previewEl) {
-      const visibleTop = itemTop - clampedScroll;
-      const previewHeight = previewEl.offsetHeight;
-      const maxTop = scrollHeight - previewHeight;
-      const clamped = Math.max(0, Math.min(visibleTop, maxTop));
-      previewEl.style.top = `${clamped}px`;
+      const visibleTop = Math.max(0, itemTop - clampedScroll);
+      previewEl.style.top = `${visibleTop}px`;
     }
   }, [activeId, hasPreview]);
 
