@@ -286,7 +286,8 @@ const InlineComboboxContent = ({
     const itemHeight = activeEl.offsetHeight;
     const scrollHeight = scrollEl.clientHeight;
     const idealScroll = itemTop - scrollHeight / 2 + itemHeight / 2;
-    const clampedScroll = Math.max(0, idealScroll);
+    const maxScroll = scrollEl.scrollHeight - scrollHeight;
+    const clampedScroll = Math.max(0, Math.min(idealScroll, maxScroll));
     scrollEl.scrollTo({ top: clampedScroll, behavior: "smooth" });
 
     // Position preview via direct DOM mutation (no state update)
