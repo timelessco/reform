@@ -281,8 +281,15 @@ const InlineComboboxContent = ({
 
     const activeEl = scrollEl.querySelector<HTMLElement>(`[data-active-item=true]`);
     if (activeEl) {
-      // Align preview top with the active item's visible position
-      const visibleTop = activeEl.offsetTop - scrollEl.scrollTop;
+      // Scroll the active item to center of visible area (middle-focused scroll)
+      const itemTop = activeEl.offsetTop;
+      const itemHeight = activeEl.offsetHeight;
+      const scrollHeight = scrollEl.clientHeight;
+      const idealScroll = itemTop - scrollHeight / 2 + itemHeight / 2;
+      scrollEl.scrollTo({ top: Math.max(0, idealScroll), behavior: "smooth" });
+
+      // Align preview top with the active item's visible position (after scroll)
+      const visibleTop = itemTop - Math.max(0, idealScroll);
       setPreviewTop(Math.max(0, visibleTop));
     }
   }, [activeId, store, hasPreview]);
