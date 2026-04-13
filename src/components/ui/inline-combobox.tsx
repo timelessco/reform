@@ -260,10 +260,12 @@ const InlineComboboxContent = ({
 }: InlineComboboxContentProps) => {
   const store = useComboboxContext();
   const [activeValue, setActiveValue] = React.useState<string | null>(null);
+  const [previewTop, setPreviewTop] = React.useState(0);
+  const popoverElRef = React.useRef<HTMLDivElement | null>(null);
 
   const hasPreview = preview !== undefined;
 
-  // Track active item value from Ariakit store
+  // Track active item value and vertical position from Ariakit store
   const activeId = store?.useState("activeId");
 
   React.useEffect(() => {
@@ -272,6 +274,15 @@ const InlineComboboxContent = ({
     const state = store.getState();
     const activeItem = state.items.find((item) => item.id === activeId);
     setActiveValue(activeItem?.value ?? null);
+
+    // Find the active DOM element and compute its offset relative to the popover
+    const popoverEl = popoverElRef.current;
+    if (!popoverEl || !activeId) return;
+
+    const activeEl = popoverEl.querySelector<HTMLElement>(`[data-active-item=true]`);
+    if (activeEl) {
+      setPreviewTop(activeEl.offsetTop);
+    }
   }, [activeId, store, hasPreview]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -296,6 +307,7 @@ const InlineComboboxContent = ({
   return (
     <Portal>
       <ComboboxPopover
+        ref={popoverElRef}
         className={cn(
           "z-500 w-[300px] rounded-xl bg-popover shadow-md",
           hasPreview ? "overflow-visible" : "overflow-y-auto max-h-[288px]",
@@ -306,11 +318,11 @@ const InlineComboboxContent = ({
       >
         <div className={hasPreview ? "max-h-[288px] overflow-y-auto" : undefined}>{children}</div>
 
-        {/* Preview card positioned relative to the popover */}
+        {/* Preview card positioned relative to the active item */}
         {hasPreview && (
           <div
-            className="pointer-events-none absolute top-0 left-full"
-            style={{ paddingLeft: PREVIEW_GAP }}
+            className="pointer-events-none absolute left-full transition-[top] duration-100 ease-out"
+            style={{ paddingLeft: PREVIEW_GAP, top: previewTop }}
           >
             <div
               className="pointer-events-auto rounded-xl bg-popover shadow-md"
