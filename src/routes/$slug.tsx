@@ -8,7 +8,7 @@ import { PublicFormPage } from "@/routes/forms/-components/public-form-page";
 import type { PublicFormEmbedConfig } from "@/routes/forms/-components/public-form-page";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
-import { NotFound } from "@/components/ui/not-found";
+import { CustomDomainNotFound } from "@/components/ui/custom-domain-not-found";
 import {
   isAppHost,
   resolveCustomDomain,
@@ -178,7 +178,7 @@ export const Route = createFileRoute("/$slug")({
   component: CustomDomainSlugRoute,
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
-  notFoundComponent: NotFound,
+  notFoundComponent: CustomDomainNotFound,
   validateSearch: zodValidator(
     z.object({
       transparentBackground: z.boolean().optional().default(false),
