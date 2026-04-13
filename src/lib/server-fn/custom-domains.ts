@@ -17,7 +17,19 @@ const serializeDomain = (domain: typeof customDomains.$inferSelect) => ({
 export const listOrgDomains = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ orgId: z.string() }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    // Verify caller belongs to the org
+    const [membership] = await db
+      .select()
+      .from(member)
+      .where(
+        and(eq(member.userId, context.session.user.id), eq(member.organizationId, data.orgId)),
+      );
+
+    if (!membership) {
+      throw new Error("Not authorized to view domains for this organization");
+    }
+
     const domains = await db
       .select()
       .from(customDomains)
@@ -63,11 +75,12 @@ export const addDomain = createServerFn({ method: "POST" })
 
     // Add domain to Vercel
     let vercelDomainId: string | undefined;
+    let vercelFailed = false;
     try {
       const vercelResult = await vercelDomains.add(data.domain);
       vercelDomainId = vercelResult.domain;
     } catch {
-      // Continue with DB insert even if Vercel fails
+      vercelFailed = true;
     }
 
     const now = new Date();
@@ -77,14 +90,19 @@ export const addDomain = createServerFn({ method: "POST" })
         id: crypto.randomUUID(),
         organizationId: data.orgId,
         domain: data.domain,
-        status: "pending",
+        status: vercelFailed ? "failed" : "pending",
         vercelDomainId: vercelDomainId ?? null,
         createdAt: now,
         updatedAt: now,
       })
       .returning();
 
-    return serializeDomain(domain);
+    return {
+      ...serializeDomain(domain),
+      warning: vercelFailed
+        ? "Domain saved but Vercel registration failed. You can retry verification later."
+        : undefined,
+    };
   });
 
 export const removeDomain = createServerFn({ method: "POST" })
@@ -124,14 +142,15 @@ export const removeDomain = createServerFn({ method: "POST" })
       // Continue with DB cleanup even if Vercel fails
     }
 
-    // Clear customDomainId on all forms using this domain
-    await db
-      .update(forms)
-      .set({ customDomainId: null })
-      .where(eq(forms.customDomainId, data.domainId));
+    // Clear customDomainId on all forms and delete domain atomically
+    await db.transaction(async (tx) => {
+      await tx
+        .update(forms)
+        .set({ customDomainId: null })
+        .where(eq(forms.customDomainId, data.domainId));
 
-    // Delete the domain row
-    await db.delete(customDomains).where(eq(customDomains.id, data.domainId));
+      await tx.delete(customDomains).where(eq(customDomains.id, data.domainId));
+    });
 
     return { success: true };
   });
@@ -251,7 +270,13 @@ export const getDomainByHost = createServerFn({ method: "POST" })
   .inputValidator(z.object({ host: z.string() }))
   .handler(async ({ data }) => {
     const [domain] = await db
-      .select()
+      .select({
+        id: customDomains.id,
+        domain: customDomains.domain,
+        siteTitle: customDomains.siteTitle,
+        faviconUrl: customDomains.faviconUrl,
+        ogImageUrl: customDomains.ogImageUrl,
+      })
       .from(customDomains)
       .where(and(eq(customDomains.domain, data.host), eq(customDomains.status, "verified")));
 
@@ -259,7 +284,7 @@ export const getDomainByHost = createServerFn({ method: "POST" })
       return null;
     }
 
-    return serializeDomain(domain);
+    return domain;
   });
 
 export const orgDomainsQueryOptions = (orgId: string) =>

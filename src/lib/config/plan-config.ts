@@ -10,4 +10,14 @@ export const DOMAIN_LIMITS = {
   maxDomainsPerOrg: 5,
 } as const;
 
-export const RESERVED_SLUGS = new Set(["f", "api", "health"]);
+export const RESERVED_SLUGS = new Set([
+  "f",
+  "api",
+  "health",
+  "login",
+  "forms",
+  "settings",
+  "_authenticated",
+  "workspace",
+  "accept-invite",
+]);

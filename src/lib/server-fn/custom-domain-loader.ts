@@ -17,6 +17,7 @@ const APP_HOST_PATTERNS = [/\.vercel\.app$/];
 export const isAppHost = (host: string): boolean => {
   const hostname = host.split(":")[0]; // strip port
   if (APP_HOSTS.has(hostname)) return true;
+  if (process.env.APP_DOMAIN && hostname === process.env.APP_DOMAIN) return true;
   return APP_HOST_PATTERNS.some((re) => re.test(hostname));
 };
 

@@ -365,7 +365,25 @@ export const assignFormDomain = createServerFn({ method: "POST" })
         .where(eq(forms.id, formId));
 
       if (formRecord && !formRecord.slug) {
-        const autoSlug = generateSlug(formRecord.title);
+        let autoSlug = generateSlug(formRecord.title);
+
+        // Check uniqueness within the org (same pattern as updateFormSlug)
+        const existing = await db
+          .select({ id: forms.id })
+          .from(forms)
+          .innerJoin(workspaces, eq(forms.workspaceId, workspaces.id))
+          .where(
+            and(
+              eq(workspaces.organizationId, orgId),
+              eq(forms.slug, autoSlug),
+              ne(forms.id, formId),
+            ),
+          );
+
+        if (existing.length > 0) {
+          autoSlug = `${autoSlug}-${formId.slice(0, 4)}`;
+        }
+
         await db
           .update(forms)
           .set({ slug: autoSlug, updatedAt: new Date() })
