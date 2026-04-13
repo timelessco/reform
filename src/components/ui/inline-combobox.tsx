@@ -284,11 +284,14 @@ const InlineComboboxContent = ({
 
     const activeEl = scrollEl.querySelector<HTMLElement>(`[data-active-item=true]`);
     if (activeEl) {
-      const visibleTop = activeEl.offsetTop - scrollEl.scrollTop;
+      const itemVisibleTop = activeEl.offsetTop - scrollEl.scrollTop;
+      const itemHeight = activeEl.offsetHeight;
       const popoverHeight = popoverEl.clientHeight;
       const previewHeight = previewElRef.current?.clientHeight ?? 200;
+      // Center the preview vertically on the active item
+      const centered = itemVisibleTop + itemHeight / 2 - previewHeight / 2;
       const maxTop = popoverHeight - previewHeight;
-      setPreviewTop(Math.max(0, Math.min(visibleTop, maxTop)));
+      setPreviewTop(Math.max(0, Math.min(centered, maxTop)));
     }
   }, [activeId, store, hasPreview]);
 
