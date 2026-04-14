@@ -2,6 +2,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { devtools } from "@tanstack/devtools-vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
+import rsc from "@vitejs/plugin-rsc";
 import { nitro } from "nitro/vite";
 import { defineConfig } from "vite";
 import type { Plugin } from "vite";
@@ -79,7 +80,11 @@ const config = defineConfig({
     tailwindcss(),
     tanstackStart({
       router: {},
+      rsc: {
+        enabled: true,
+      },
     }),
+    rsc(),
     viteReact(),
   ],
   resolve: {
@@ -98,7 +103,67 @@ const config = defineConfig({
   },
   ssr: {
     noExternal: [/^@platejs\//, "katex", "react-tweet"],
-    external: ["dexie", "tanstack-dexie-db-collection", "fsevents"],
+    external: [
+      "dexie",
+      "tanstack-dexie-db-collection",
+      "fsevents",
+      "pg",
+      "pg-native",
+      "pg-types",
+      "pg-cloudflare",
+      "pgpass",
+      "postgres-bytea",
+      "postgres-array",
+      "postgres-date",
+      "postgres-interval",
+      "drizzle-orm",
+      "drizzle-orm/node-postgres",
+    ],
+  },
+  environments: {
+    rsc: {
+      resolve: {
+        external: [
+          "pg",
+          "pg-native",
+          "pg-types",
+          "pg-cloudflare",
+          "pgpass",
+          "postgres-bytea",
+          "postgres-array",
+          "postgres-date",
+          "postgres-interval",
+          "drizzle-orm",
+          "drizzle-orm/node-postgres",
+        ],
+      },
+    },
+  },
+  optimizeDeps: {
+    // Defense against server-only deps leaking into the client dep-prebundler.
+    // If a server fn module is ever scanned for client (during route-tree
+    // analysis), these node-only packages would otherwise be eagerly bundled
+    // and crash on Buffer/process references at module load.
+    // `@base-ui/react` is excluded per the RSC plugin's inconsistent-
+    // optimization warning (client components consumed across SSR + RSC
+    // envs).
+    exclude: [
+      "pg",
+      "pg-native",
+      "pg-types",
+      "pg-cloudflare",
+      "pgpass",
+      "postgres-bytea",
+      "postgres-array",
+      "postgres-date",
+      "postgres-interval",
+      "drizzle-orm/node-postgres",
+      "@base-ui/react",
+    ],
+    // Force-include CJS-only `use-sync-external-store` so Vite extracts its
+    // named exports correctly. The shim uses a `module.exports = require(...)`
+    // indirection that Vite's auto-scan misses after the lockfile churn.
+    include: ["use-sync-external-store/shim", "use-sync-external-store/shim/with-selector"],
   },
 });
 
