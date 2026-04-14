@@ -89,11 +89,7 @@ export const createOverlay = (
     popup.appendChild(emojiEl);
   }
 
-  if (isModal) {
-    overlay.appendChild(popup);
-  } else {
-    overlay.appendChild(popup);
-  }
+  overlay.appendChild(popup);
 
   // Prevent body scroll when overlay is visible
   if (showOverlay) {
@@ -130,11 +126,15 @@ export const destroyOverlay = (overlay: HTMLElement): void => {
 };
 
 /**
- * Update popup height based on iframe content
+ * Update popup height based on iframe content. Clamps to min(600, viewport-40)
+ * to match updateIframeHeight so popup + iframe stay in sync. Setting both
+ * `height` and `maxHeight` keeps the popup sized exactly to the clamped value
+ * even when the reported content is shorter.
  */
 export const updatePopupHeight = (popup: HTMLElement, height: number): void => {
-  const maxHeight = window.innerHeight - 40; // 20px margin top and bottom
-  const clampedHeight = Math.min(height, maxHeight);
+  const max = Math.min(DEFAULT_MAX_HEIGHT, window.innerHeight - 40);
+  const clampedHeight = Math.min(height, max);
+  popup.style.height = `${clampedHeight}px`;
   popup.style.maxHeight = `${clampedHeight}px`;
 };
 

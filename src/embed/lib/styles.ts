@@ -154,6 +154,39 @@ const STYLES = `
   animation: bf-spin 0.8s linear infinite;
 }
 
+/* Auto-mounted floating Bubble — script-tag trigger */
+.bf-bubble {
+  position: fixed;
+  z-index: 2147483000;
+  width: 56px;
+  height: 56px;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  background-color: #111827;
+  color: #ffffff;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.25), 0 8px 10px -6px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  animation: bf-fadeIn 0.2s ease-out;
+}
+.bf-bubble:hover { transform: scale(1.06); }
+.bf-bubble--bottom-right { bottom: 20px; right: 20px; }
+.bf-bubble--bottom-left { bottom: 20px; left: 20px; }
+.bf-bubble--center { bottom: 20px; right: 20px; }
+.bf-bubble__icon {
+  width: 28px;
+  height: 28px;
+  display: block;
+  object-fit: contain;
+}
+.bf-bubble__emoji { font-size: 28px; line-height: 1; }
+.bf-bubble--hidden { opacity: 0; pointer-events: none; transform: scale(0.6); }
+
 /* Emoji Bubble */
 .bf-emoji {
   position: absolute;
