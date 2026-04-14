@@ -4,6 +4,8 @@ import type { Value } from "platejs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
+import { FormPreviewRSC } from "@/components/form-components/form-preview-rsc";
+import type { StepRSC } from "@/components/form-components/form-preview-rsc";
 import { BrandingFooter } from "./branding-footer";
 import { AlreadySubmitted, FormClosed } from "@/routes/forms/-components/form-closed";
 import { PasswordGate } from "@/routes/forms/-components/password-gate";
@@ -68,6 +70,13 @@ interface PublicFormPageProps {
     current: "light" | "dark";
     onChange: (next: "light" | "dark" | "system") => void;
   };
+  // When present, renders via FormPreviewRSC — static prose is server-rendered
+  // so the client bundle no longer ships platejs/static.
+  rsc?: {
+    steps: StepRSC[];
+    thankYou: unknown | null;
+    stepCount: number;
+  };
 }
 
 /**
@@ -122,6 +131,7 @@ export const PublicFormPage = ({
   error,
   formId,
   gated,
+  rsc,
   isPopup = false,
   embedConfig = defaultPublicFormEmbedConfig,
   themeToggle,
@@ -329,17 +339,33 @@ export const PublicFormPage = ({
           </Button>
         </div>
       )}
-      <FormPreviewFromPlate
-        content={form.content as Value}
-        title={hideTitle ? undefined : form.title}
-        icon={hideTitle ? undefined : (form.icon ?? undefined)}
-        cover={hideTitle ? undefined : (form.cover ?? undefined)}
-        onSubmit={handleSubmit}
-        hideTitle={hideTitle}
-        settings={settings}
-        formId={formId}
-        customization={form.customization}
-      />
+      {rsc ? (
+        <FormPreviewRSC
+          steps={rsc.steps}
+          thankYou={rsc.thankYou}
+          stepCount={rsc.stepCount}
+          title={hideTitle ? undefined : form.title}
+          icon={hideTitle ? undefined : form.icon}
+          cover={hideTitle ? undefined : form.cover}
+          onSubmit={handleSubmit}
+          hideTitle={hideTitle}
+          settings={settings}
+          formId={formId}
+          customization={form.customization}
+        />
+      ) : (
+        <FormPreviewFromPlate
+          content={form.content as Value}
+          title={hideTitle ? undefined : form.title}
+          icon={hideTitle ? undefined : (form.icon ?? undefined)}
+          cover={hideTitle ? undefined : (form.cover ?? undefined)}
+          onSubmit={handleSubmit}
+          hideTitle={hideTitle}
+          settings={settings}
+          formId={formId}
+          customization={form.customization}
+        />
+      )}
       {settings.branding && <BrandingFooter />}
     </div>
   );

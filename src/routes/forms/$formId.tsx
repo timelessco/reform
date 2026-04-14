@@ -8,8 +8,8 @@ import type { PublicFormEmbedConfig } from "@/routes/forms/-components/public-fo
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import { getPublishedFormById } from "@/lib/server-fn/public-form-view";
-import { generateThemeCss, getGoogleFontLinkUrl } from "@/lib/theme/generate-theme-css";
+import { getPublicFormViewRSC } from "@/lib/server-fn/public-form-view-rsc";
+import { generateDualThemeCss, getGoogleFontLinkUrl } from "@/lib/theme/generate-theme-css";
 
 type PublicTheme = "light" | "dark" | "system";
 
@@ -92,13 +92,10 @@ const PublicFormRoute = () => {
     dynamicWidth: search.dynamicWidth,
   };
 
-  // Override customization mode with resolved theme so tokens match
-  const customization = useMemo(
-    () => (rawCustomization ? { ...rawCustomization, mode: resolvedTheme } : rawCustomization),
-    [rawCustomization, resolvedTheme],
-  );
-  const themeCss = useMemo(() => generateThemeCss(customization), [customization]);
-  const googleFontUrl = useMemo(() => getGoogleFontLinkUrl(customization), [customization]);
+  // Dual-mode CSS — both light and dark tokens are emitted; the root `.dark`
+  // class picks one purely in CSS, avoiding any hydration flash.
+  const themeCss = useMemo(() => generateDualThemeCss(rawCustomization), [rawCustomization]);
+  const googleFontUrl = useMemo(() => getGoogleFontLinkUrl(rawCustomization), [rawCustomization]);
 
   // Show toggle only when creator picked "system" and we're not in popup/transparent embed
   const showThemeToggle = defaultMode === "system" && !search.popup && !isTransparent;
@@ -114,6 +111,15 @@ const PublicFormRoute = () => {
         formId={formId}
         isPopup={search.popup}
         embedConfig={embedConfig}
+        rsc={
+          loaderData?.form
+            ? {
+                steps: loaderData.steps,
+                thankYou: loaderData.thankYou,
+                stepCount: loaderData.stepCount,
+              }
+            : undefined
+        }
         themeToggle={
           showThemeToggle
             ? { current: resolvedTheme, onChange: (m) => handleThemeChange(m) }
@@ -126,7 +132,7 @@ const PublicFormRoute = () => {
 
 export const Route = createFileRoute("/forms/$formId")({
   // SSR loader - fetches form data on the server for SEO
-  loader: async ({ params }) => getPublishedFormById({ data: { id: params.formId } }),
+  loader: async ({ params }) => getPublicFormViewRSC({ data: { id: params.formId } }),
   // SEO meta tags
   head: ({ loaderData, params }) => {
     const defaultMode =
