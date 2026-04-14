@@ -9,6 +9,7 @@
  * 3. Or use the JS API: Reform.openPopup('your-form-id', options)
  */
 
+import { setupAutoBubble } from "./lib/bubble";
 import { createIframe, destroyIframe, updateIframeHeight } from "./lib/iframe";
 import {
   createOverlay,
@@ -208,6 +209,9 @@ const init = (): void => {
 
   // Setup message listener for iframe communication
   window.addEventListener("message", handleMessage);
+
+  // If the script tag carries `data-form-id`, mount the floating bubble.
+  setupAutoBubble(openPopup);
 };
 
 // Create global API

@@ -12,5 +12,42 @@
       data-width="376"
     ></script>
   </head>
-  <body></body>
+  <body>
+    <div></div>
+    <!-- <iframe
+      data-reform-src="http://localhost:3000/forms/7817f8e4-a66d-46b5-947b-9707a9f3a571?dynamicHeight=true"
+      loading="lazy"
+      width="100%"
+      height="558"
+      frameborder="0"
+      marginheight="0"
+      marginwidth="0"
+      title="pretex"
+    ></iframe>
+    <script>
+      window.addEventListener("message", function (e) {
+        try {
+          var d = JSON.parse(e.data);
+          if (d.event === "Reform.Resize") {
+            var f = document.querySelector("iframe[data-reform-src]");
+            if (f && typeof d.height === "number") f.style.height = d.height + "px";
+          }
+        } catch {}
+      });
+      var d = document,
+        w = "http://localhost:3000/widgets/embed.js",
+        v = function () {
+          "undefined" != typeof Reform
+            ? Reform.loadEmbeds()
+            : d.querySelectorAll("iframe[data-reform-src]:not([src])").forEach(function (e) {
+                e.src = e.dataset.reformSrc;
+              });
+        };
+      if ("undefined" != typeof Reform) v();
+      else if (d.querySelector('script[src="' + w + '"]') == null) {
+        var s = d.createElement("script");
+        ((s.src = w), (s.onload = v), (s.onerror = v), d.body.appendChild(s));
+      }
+    </script> -->
+  </body>
 </html>
