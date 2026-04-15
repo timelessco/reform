@@ -11,19 +11,13 @@ const APP_HOSTS = new Set(["localhost", "127.0.0.1"]);
 const APP_HOST_PATTERNS = [/\.vercel\.app$/];
 
 /**
- * Extract the user-facing host from request headers, preferring
- * `x-forwarded-host` (set by Vercel/proxies) over the raw `host` header
- * (which can be an internal hostname in serverless environments).
+ * Extract the user-facing host from a Headers object, preferring
+ * `x-forwarded-host` (set by Vercel/proxies) over the raw `host` header.
+ * Accepts the native Headers instance returned by TanStack Start's
+ * getRequestHeaders() — NOT a plain object.
  */
-export const getRequestHost = (headers: Record<string, string | string[] | undefined>): string => {
-  const pick = (value: string | string[] | undefined): string | undefined => {
-    if (!value) return undefined;
-    return Array.isArray(value) ? value[0] : value.split(",")[0]?.trim();
-  };
-  return (
-    pick(headers["x-forwarded-host"]) ?? pick(headers.host) ?? pick(headers[":authority"]) ?? ""
-  );
-};
+export const getRequestHost = (headers: Headers): string =>
+  headers.get("x-forwarded-host") ?? headers.get("host") ?? headers.get(":authority") ?? "";
 
 /**
  * Returns true when the Host header belongs to the app itself
@@ -75,6 +69,38 @@ export const resolveCustomDomain = async (host: string): Promise<ResolvedDomain>
   }
 
   return domain;
+};
+
+/**
+ * Dev-friendly fallback: when the request is from an app host (localhost,
+ * Vercel preview), look up the custom domain assigned to a form by slug.
+ * Lets developers preview custom-domain forms without simulating the host.
+ */
+export const resolveDomainForSlug = async (slug: string): Promise<ResolvedDomain> => {
+  const [row] = await db
+    .select({
+      id: customDomains.id,
+      organizationId: customDomains.organizationId,
+      domain: customDomains.domain,
+      siteTitle: customDomains.siteTitle,
+      faviconUrl: customDomains.faviconUrl,
+      ogImageUrl: customDomains.ogImageUrl,
+    })
+    .from(customDomains)
+    .innerJoin(forms, eq(forms.customDomainId, customDomains.id))
+    .where(
+      and(
+        eq(forms.slug, slug),
+        eq(forms.status, "published"),
+        eq(customDomains.status, "verified"),
+      ),
+    );
+
+  if (!row) {
+    throw notFound();
+  }
+
+  return row;
 };
 
 /**

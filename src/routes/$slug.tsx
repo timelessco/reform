@@ -13,6 +13,7 @@ import {
   getRequestHost,
   isAppHost,
   resolveCustomDomain,
+  resolveDomainForSlug,
   loadFormForCustomDomain,
 } from "@/lib/server-fn/custom-domain-loader";
 import { generateThemeCss, getGoogleFontLinkUrl } from "@/lib/theme/generate-theme-css";
@@ -33,16 +34,12 @@ const resolveSystemTheme = (): "light" | "dark" => {
 const getFormByCustomDomainSlug = createServerFn({ method: "GET" })
   .inputValidator(z.object({ slug: z.string() }))
   .handler(async ({ data }) => {
-    const headers = getRequestHeaders();
-    const host = getRequestHost(headers);
-    console.log("[$slug] host=", host, "slug=", data.slug);
+    const host = getRequestHost(getRequestHeaders());
 
-    if (isAppHost(host)) {
-      throw notFound();
-    }
+    const domain = isAppHost(host)
+      ? await resolveDomainForSlug(data.slug)
+      : await resolveCustomDomain(host);
 
-    const domain = await resolveCustomDomain(host);
-    console.log("[$slug] resolved domain=", domain.id, domain.domain);
     return loadFormForCustomDomain(domain, data.slug, "slug");
   });
 
