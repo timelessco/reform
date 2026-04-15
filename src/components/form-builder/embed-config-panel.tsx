@@ -1,8 +1,13 @@
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { StyleNumberInput } from "@/components/ui/style-controls";
 import { Switch } from "@/components/ui/switch";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 import { cn } from "@udecode/cn";
+import { useCallback, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { orgDomainsQueryOptions } from "@/lib/server-fn/custom-domains";
+import { assignFormDomain, updateFormSlug } from "@/lib/server-fn/forms";
 
 /** Common display config shared across all embed types */
 export interface EmbedDisplayConfig {
@@ -123,6 +128,13 @@ interface EmbedConfigPanelProps {
    * instead of local form state, and writes back through `onBrandingChange`. */
   docBranding?: boolean;
   onBrandingChange?: (value: boolean) => void;
+  /** Custom domain props for the Pro section */
+  orgId?: string;
+  formId?: string;
+  customDomainId?: string | null;
+  formSlug?: string | null;
+  formTitle?: string | null;
+  onDomainAssigned?: (domainId: string | null, slug: string | null) => void;
 }
 
 /* ─── Layout helpers matching Figma node 24119:5595 ─── */
@@ -193,11 +205,29 @@ export const EmbedConfigPanel = ({
   section,
   docBranding,
   onBrandingChange,
+  orgId,
+  formId,
+  customDomainId,
+  formSlug,
+  formTitle,
+  onDomainAssigned,
 }: EmbedConfigPanelProps) => {
   if (section === "customize") {
     return <CustomizeSection embedType={embedType} form={form} />;
   }
-  return <ProSection form={form} docBranding={docBranding} onBrandingChange={onBrandingChange} />;
+  return (
+    <ProSection
+      form={form}
+      docBranding={docBranding}
+      onBrandingChange={onBrandingChange}
+      orgId={orgId}
+      formId={formId}
+      customDomainId={customDomainId}
+      formSlug={formSlug}
+      formTitle={formTitle}
+      onDomainAssigned={onDomainAssigned}
+    />
+  );
 };
 
 /* ─── Label maps ─── */
@@ -441,57 +471,186 @@ const CustomizeSection = ({
   );
 };
 
+const generateSlugFromTitle = (title: string): string =>
+  title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60) || "form";
+
 const ProSection = ({
   form,
   docBranding,
   onBrandingChange,
+  orgId,
+  formId,
+  customDomainId,
+  formSlug,
+  formTitle,
+  onDomainAssigned,
 }: {
   // eslint-disable-next-line typescript-eslint/no-explicit-any
   form: { Field: any };
   docBranding?: boolean;
   onBrandingChange?: (value: boolean) => void;
-}) => (
-  <ConfigCard>
-    <form.Field name="trackEvents">
-      {(field: FieldRenderApi<boolean>) => (
-        <ConfigRow label="Analytics" variant="switch">
-          <Switch
-            aria-label="Analytics"
-            checked={field.state.value}
-            onCheckedChange={field.handleChange}
-            size="default"
-          />
-        </ConfigRow>
-      )}
-    </form.Field>
+  orgId?: string;
+  formId?: string;
+  customDomainId?: string | null;
+  formSlug?: string | null;
+  formTitle?: string | null;
+  onDomainAssigned?: (domainId: string | null, slug: string | null) => void;
+}) => {
+  const queryClient = useQueryClient();
 
-    {/* Reform Branding — server-controlled Pro feature. The switch stays
-        bound to the local form field (so the URL and live editor preview
-        update instantly), and when `onBrandingChange` is provided the change
-        is also persisted to `forms.branding` so every embed reflects it. */}
-    <form.Field name="branding">
-      {(field: FieldRenderApi<boolean>) => (
-        <ConfigRow label="Reform Branding" variant="switch">
-          <Switch
-            aria-label="Reform Branding"
-            checked={docBranding ?? field.state.value}
-            onCheckedChange={(value: boolean) => {
-              field.handleChange(value);
-              onBrandingChange?.(value);
-            }}
-            size="default"
-          />
-        </ConfigRow>
-      )}
-    </form.Field>
+  const { data: domains } = useQuery({
+    ...orgDomainsQueryOptions(orgId ?? ""),
+    enabled: !!orgId,
+  });
 
-    <ConfigRow label="Custom Domain">
-      <Select value="varman.co" disabled>
-        <SelectTrigger className={`${selectTriggerCls} opacity-50`}>varman.co</SelectTrigger>
-        <SelectContent>
-          <SelectItem value="varman.co">varman.co</SelectItem>
-        </SelectContent>
-      </Select>
-    </ConfigRow>
-  </ConfigCard>
-);
+  const verifiedDomains = useMemo(
+    () => (domains ?? []).filter((d) => d.status === "verified"),
+    [domains],
+  );
+
+  const selectedDomain = useMemo(
+    () => verifiedDomains.find((d) => d.id === customDomainId),
+    [verifiedDomains, customDomainId],
+  );
+
+  const defaultSlug = useMemo(
+    () => formSlug || (formTitle ? generateSlugFromTitle(formTitle) : "form"),
+    [formSlug, formTitle],
+  );
+
+  const [slugValue, setSlugValue] = useState(defaultSlug);
+
+  // Keep slug input in sync when the form slug changes externally
+  const displaySlug = formSlug ?? slugValue;
+
+  const assignDomainMutation = useMutation({
+    mutationFn: (domainId: string | null) => {
+      if (!formId) throw new Error("Form ID required");
+      return assignFormDomain({ data: { formId, customDomainId: domainId } });
+    },
+    onSuccess: (result, domainId) => {
+      const slug = (result.form as { slug?: string | null }).slug ?? null;
+      onDomainAssigned?.(domainId, slug);
+      if (slug) setSlugValue(slug);
+      queryClient.invalidateQueries({ queryKey: ["forms", formId] });
+    },
+  });
+
+  const updateSlugMutation = useMutation({
+    mutationFn: (slug: string) => {
+      if (!formId) throw new Error("Form ID required");
+      return updateFormSlug({ data: { formId, slug } });
+    },
+    onSuccess: (_result, slug) => {
+      onDomainAssigned?.(customDomainId ?? null, slug);
+      queryClient.invalidateQueries({ queryKey: ["forms", formId] });
+    },
+  });
+
+  const handleDomainChange = useCallback(
+    (value: string | null) => {
+      const domainId = value && value !== "none" ? value : null;
+      assignDomainMutation.mutate(domainId);
+    },
+    [assignDomainMutation],
+  );
+
+  const handleSlugBlur = useCallback(() => {
+    const trimmed = slugValue.trim();
+    if (trimmed && trimmed !== formSlug) {
+      updateSlugMutation.mutate(trimmed);
+    }
+  }, [slugValue, formSlug, updateSlugMutation]);
+
+  const handleSlugChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSlugValue(e.target.value);
+  }, []);
+
+  return (
+    <ConfigCard>
+      <form.Field name="trackEvents">
+        {(field: FieldRenderApi<boolean>) => (
+          <ConfigRow label="Analytics" variant="switch">
+            <Switch
+              aria-label="Analytics"
+              checked={field.state.value}
+              onCheckedChange={field.handleChange}
+              size="default"
+            />
+          </ConfigRow>
+        )}
+      </form.Field>
+
+      {/* Reform Branding — server-controlled Pro feature. The switch stays
+          bound to the local form field (so the URL and live editor preview
+          update instantly), and when `onBrandingChange` is provided the change
+          is also persisted to `forms.branding` so every embed reflects it. */}
+      <form.Field name="branding">
+        {(field: FieldRenderApi<boolean>) => (
+          <ConfigRow label="Reform Branding" variant="switch">
+            <Switch
+              aria-label="Reform Branding"
+              checked={docBranding ?? field.state.value}
+              onCheckedChange={(value: boolean) => {
+                field.handleChange(value);
+                onBrandingChange?.(value);
+              }}
+              size="default"
+            />
+          </ConfigRow>
+        )}
+      </form.Field>
+
+      <ConfigRow label="Custom Domain">
+        <Select
+          value={customDomainId ?? "none"}
+          onValueChange={handleDomainChange}
+          disabled={!orgId || verifiedDomains.length === 0}
+        >
+          <SelectTrigger
+            className={cn(
+              selectTriggerCls,
+              !orgId || verifiedDomains.length === 0 ? "opacity-50" : "",
+            )}
+          >
+            {selectedDomain?.domain ?? "None"}
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">None</SelectItem>
+            {verifiedDomains.map((d) => (
+              <SelectItem key={d.id} value={d.id}>
+                {d.domain}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </ConfigRow>
+
+      {selectedDomain && (
+        <>
+          <ConfigRow label="Slug">
+            <Input
+              aria-label="Form slug"
+              value={displaySlug}
+              onChange={handleSlugChange}
+              onBlur={handleSlugBlur}
+              className="h-6 w-32 text-xs font-mono px-2 py-0 border-none bg-transparent shadow-none"
+              placeholder="my-form"
+            />
+          </ConfigRow>
+          <div className="bg-secondary px-2.5 py-1.5">
+            <p className="text-xs text-muted-foreground font-mono truncate">
+              {`https://${selectedDomain.domain}/${displaySlug}`}
+            </p>
+          </div>
+        </>
+      )}
+    </ConfigCard>
+  );
+};

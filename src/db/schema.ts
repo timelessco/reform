@@ -202,6 +202,8 @@ export const forms = pgTable(
     dataRetention: boolean().default(false).notNull(),
     dataRetentionDays: integer(),
     customization: jsonb().default({}),
+    slug: text(),
+    customDomainId: text(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
@@ -209,6 +211,28 @@ export const forms = pgTable(
     index("idx_forms_workspace_id").on(t.workspaceId),
     index("idx_forms_workspace_id_status").on(t.workspaceId, t.status),
     index("idx_forms_id_created_by").on(t.id, t.createdByUserId),
+    index("idx_forms_slug_custom_domain").on(t.slug, t.customDomainId),
+  ],
+);
+
+// Custom Domains table for white-label form hosting
+export const customDomains = pgTable(
+  "custom_domains",
+  {
+    id: text().primaryKey(),
+    organizationId: text().notNull(),
+    domain: text().notNull().unique(),
+    status: text().notNull().default("pending"),
+    vercelDomainId: text(),
+    siteTitle: text(),
+    faviconUrl: text(),
+    ogImageUrl: text(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("custom_domains_org_idx").on(t.organizationId),
+    index("custom_domains_domain_idx").on(t.domain),
   ],
 );
 
@@ -476,6 +500,7 @@ export const relations = defineRelations(
     formFavorites,
     formNotificationPreferences,
     formSubmissionNotifications,
+    customDomains,
   },
   (r) => ({
     // User has many sessions, accounts, and forms they created
@@ -577,6 +602,10 @@ export const relations = defineRelations(
         from: r.organization.id,
         to: r.invitation.organizationId,
       }),
+      customDomains: r.many.customDomains({
+        from: r.organization.id,
+        to: r.customDomains.organizationId,
+      }),
     },
     // Member belongs to one user and one organization
     member: {
@@ -658,6 +687,10 @@ export const relations = defineRelations(
       submissionNotifications: r.many.formSubmissionNotifications({
         from: r.forms.id,
         to: r.formSubmissionNotifications.formId,
+      }),
+      customDomain: r.one.customDomains({
+        from: r.forms.customDomainId,
+        to: r.customDomains.id,
       }),
     },
     // Form Version belongs to one form and one user (publisher)
@@ -749,6 +782,17 @@ export const relations = defineRelations(
         to: r.forms.id,
       }),
     },
+    // Custom Domain belongs to one organization and has many forms
+    customDomains: {
+      organization: r.one.organization({
+        from: r.customDomains.organizationId,
+        to: r.organization.id,
+      }),
+      forms: r.many.forms({
+        from: r.customDomains.id,
+        to: r.forms.customDomainId,
+      }),
+    },
   }),
 );
 
@@ -782,5 +826,6 @@ export const InvitationZod = createSelectSchema(invitation);
 
 // Form Favorites schema
 export const FormFavoriteZod = createSelectSchema(formFavorites);
+export const CustomDomainZod = createSelectSchema(customDomains);
 export const FormNotificationPreferenceZod = createSelectSchema(formNotificationPreferences);
 export const FormSubmissionNotificationZod = createSelectSchema(formSubmissionNotifications);

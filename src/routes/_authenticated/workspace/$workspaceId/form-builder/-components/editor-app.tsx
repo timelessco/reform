@@ -1,4 +1,5 @@
 import { EditorKit } from "@/components/editor/editor-kit";
+import { AIFormGenPlugin } from "@/components/editor/plugins/ai-form-gen-kit";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { createFormButtonNode } from "@/components/ui/form-button-node";
 import type { FormHeaderElementData } from "@/components/ui/form-header-node";
@@ -189,6 +190,9 @@ const EditorAppInner = ({
     },
     [resetKey],
   );
+
+  // Provide formId to AI form generation plugin for collection updates
+  editor.setOption(AIFormGenPlugin, "formId", formId);
 
   const debouncedSave = useDebouncedCallback(
     (val: Value) => {

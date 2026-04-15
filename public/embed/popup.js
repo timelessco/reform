@@ -1,96 +1,212 @@
 "use strict";
 (() => {
-  var I = () => {
+  var M = /^[a-zA-Z0-9_-]{1,128}$/,
+    A = new Set([
+      "formId",
+      "position",
+      "width",
+      "darkOverlay",
+      "overlay",
+      "hideTitle",
+      "alignLeft",
+      "autoClose",
+    ]),
+    R = /^(?:\p{Extended_Pictographic}\uFE0F?){1,3}$/u,
+    F = () => {
+      let t = document.getElementsByTagName("script");
+      for (let e = t.length - 1; e >= 0; e--)
+        if ((t[e].src || "").includes("/embed/popup.js")) return t[e];
+      return null;
+    },
+    _ = (t) => {
+      if (t?.src)
+        try {
+          return new URL(t.src).origin;
+        } catch {}
+      return window.location.origin;
+    },
+    S = (t) => {
+      let e = t.dataset || {},
+        o = e.formId && M.test(e.formId) ? e.formId : "";
+      if (!o) return null;
+      let n = Object.create(null);
+      for (let [s, a] of Object.entries(e)) !A.has(s) && typeof a == "string" && (n[s] = a);
+      let i = e.position;
+      return {
+        formId: o,
+        position: i === "bottom-left" || i === "center" ? i : "bottom-right",
+        width: e.width ? parseInt(e.width, 10) : 376,
+        darkOverlay: e.darkOverlay === "1" || e.overlay === "1",
+        hideTitle: e.hideTitle === "1",
+        alignLeft: e.alignLeft === "1",
+        autoClose: e.autoClose ? parseInt(e.autoClose, 10) : 0,
+        hiddenFields: n,
+      };
+    },
+    B = async (t, e) => {
+      try {
+        let o = await fetch(`${t}/api/forms/${encodeURIComponent(e)}/meta`, {
+          method: "GET",
+          credentials: "omit",
+        });
+        return o.ok ? await o.json() : null;
+      } catch {
+        return null;
+      }
+    },
+    N = (t, e, o) => {
+      for (; t.firstChild; ) t.removeChild(t.firstChild);
+      if (o && /^(https?:\/\/|\/)/.test(o)) {
+        let i = document.createElement("img");
+        ((i.className = "bf-bubble__icon"), (i.src = o), (i.alt = ""), t.appendChild(i));
+        return;
+      }
+      if (o && R.test(o)) {
+        let i = document.createElement("span");
+        ((i.className = "bf-bubble__emoji"), (i.textContent = o), t.appendChild(i));
+        return;
+      }
+      let n = o && /^[a-z0-9-]+$/i.test(o) ? o : "file-04";
+      fetch(`${e}/api/icons/${n}.svg`)
+        .then((i) => (i.ok ? i.text() : null))
+        .then((i) => {
+          if (!i) return;
+          let s = new DOMParser().parseFromString(i, "image/svg+xml").documentElement;
+          if (!s || s.tagName.toLowerCase() !== "svg") return;
+          s.setAttribute("class", "bf-bubble__icon");
+          let a = document.importNode(s, !0);
+          for (; t.firstChild; ) t.removeChild(t.firstChild);
+          t.appendChild(a);
+        })
+        .catch(() => {});
+    },
+    $ = (t, e, o) => {
+      let n = document.createElement("button");
+      return (
+        (n.type = "button"),
+        (n.className = `bf-bubble bf-bubble--${t.position}`),
+        n.setAttribute("aria-label", e?.title || "Open form"),
+        N(n, o, e?.icon),
+        document.body.appendChild(n),
+        n
+      );
+    },
+    g = async (t) => {
+      let e = F();
+      if (!e) return;
+      let o = S(e);
+      if (!o) return;
+      let n = _(e),
+        i = await B(n, o.formId),
+        r = $(o, i, n);
+      r.addEventListener("click", () => {
+        (r.classList.add("bf-bubble--hidden"),
+          t(o.formId, {
+            position: o.position,
+            width: o.width,
+            hideTitle: o.hideTitle,
+            alignLeft: o.alignLeft,
+            overlay: o.darkOverlay,
+            autoClose: o.autoClose,
+            hiddenFields: o.hiddenFields,
+            onClose: () => {
+              r.classList.remove("bf-bubble--hidden");
+            },
+          }));
+      });
+    };
+  var U = () => {
       let t = document.getElementsByTagName("script");
       for (let e = t.length - 1; e >= 0; e--) {
-        let n = t[e].src;
-        if (n?.includes("/embed/popup.js"))
+        let o = t[e].src;
+        if (o?.includes("/embed/popup.js"))
           try {
-            return new URL(n).origin;
+            return new URL(o).origin;
           } catch {}
       }
       return window.location.origin;
     },
-    M = (t, e) => {
-      let n = I(),
-        o = new URLSearchParams();
+    D = (t, e) => {
+      let o = U(),
+        n = new URLSearchParams();
       if (
-        (o.set("popup", "1"),
-        o.set("originPage", window.location.pathname),
-        e.hideTitle && o.set("hideTitle", "1"),
-        e.alignLeft && o.set("alignLeft", "1"),
-        o.set("transparent", "1"),
+        (n.set("popup", "1"),
+        n.set("originPage", window.location.pathname),
+        e.hideTitle && n.set("hideTitle", "1"),
+        e.alignLeft && n.set("alignLeft", "1"),
+        n.set("transparent", "1"),
         e.hiddenFields)
       )
-        for (let [a, l] of Object.entries(e.hiddenFields)) o.set(a, l);
+        for (let [r, s] of Object.entries(e.hiddenFields)) n.set(r, s);
       return (
-        new URLSearchParams(window.location.search).forEach((a, l) => {
-          o.has(l) || o.set(l, a);
+        new URLSearchParams(window.location.search).forEach((r, s) => {
+          n.has(s) || n.set(s, r);
         }),
-        `${n}/forms/${t}?${o.toString()}`
+        `${o}/forms/${t}?${n.toString()}`
       );
     },
-    h = (t, e, n) => {
-      let o = document.createElement("iframe");
-      ((o.className = "bf-iframe"),
-        o.setAttribute("title", "Reform"),
-        o.setAttribute("frameborder", "0"),
-        o.setAttribute("allow", "fullscreen"),
-        o.setAttribute("data-bf-form-id", t),
-        (o.style.height = "400px"));
-      let i = M(t, e);
-      return ((o.src = i), n.appendChild(o), o);
-    },
-    y = (t, e) => {
-      let n = e + 2;
+    y = (t, e, o) => {
+      let n = document.createElement("iframe");
+      ((n.className = "bf-iframe"),
+        n.setAttribute("title", "Reform"),
+        n.setAttribute("frameborder", "0"),
+        n.setAttribute("allow", "fullscreen"),
+        n.setAttribute("data-bf-form-id", t),
+        (n.style.height = "400px"));
+      let i = D(t, e);
+      return ((n.src = i), o.appendChild(n), n);
+    };
+  var x = (t, e) => {
+      let o = Math.min(600, window.innerHeight - 40),
+        n = Math.min(e + 2, o);
       t.style.height = `${n}px`;
     },
-    x = (t) => {
+    v = (t) => {
       t.remove();
     };
-  var A =
+  var z =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Close popup</title><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-  var v = (t, e, n) => {
-      let o = e.layout === "modal" || e.position === "center",
-        i = e.overlay !== !1 || o,
-        a = e.position || "bottom-right",
-        l = e.width || 376,
-        s = document.createElement("div");
-      ((s.className = `bf-overlay ${i ? "" : "bf-overlay--no-bg"}`),
-        s.setAttribute("data-bf-form-id", t),
+  var w = (t, e, o) => {
+      let n = e.layout === "modal" || e.position === "center",
+        i = e.overlay !== !1 || n,
+        r = e.position || "bottom-right",
+        s = e.width || 376,
+        a = document.createElement("div");
+      ((a.className = `bf-overlay ${i ? "" : "bf-overlay--no-bg"}`),
+        a.setAttribute("data-bf-form-id", t),
         i &&
-          s.addEventListener("click", (O) => {
-            O.target === s && n();
+          a.addEventListener("click", (H) => {
+            H.target === a && o();
           }));
-      let r = document.createElement("div");
-      ((r.className = `bf-popup bf-popup--${o ? "center" : a}`),
-        Object.assign(r.style, { width: `${l}px`, maxHeight: "600px" }));
-      let p = document.createElement("button");
-      ((p.className = "bf-close-btn"),
-        (p.innerHTML = A),
-        p.setAttribute("aria-label", "Close form"),
-        p.addEventListener("click", n));
-      let f = document.createElement("div");
-      f.className = "bf-iframe-container";
+      let l = document.createElement("div");
+      ((l.className = `bf-popup bf-popup--${n ? "center" : r}`),
+        Object.assign(l.style, { width: `${s}px`, maxHeight: "600px" }));
+      let c = document.createElement("button");
+      ((c.className = "bf-close-btn"),
+        (c.innerHTML = z),
+        c.setAttribute("aria-label", "Close form"),
+        c.addEventListener("click", o));
       let d = document.createElement("div");
-      ((d.className = "bf-loading"), (d.innerHTML = '<div class="bf-loading-spinner"></div>'));
-      let c;
+      d.className = "bf-iframe-container";
+      let f = document.createElement("div");
+      ((f.className = "bf-loading"), (f.innerHTML = '<div class="bf-loading-spinner"></div>'));
+      let p;
       return (
         e.emoji?.text &&
-          ((c = document.createElement("div")),
-          (c.className = `bf-emoji ${R(e.emoji.animation)}`),
-          (c.textContent = e.emoji.text)),
-        r.appendChild(p),
-        r.appendChild(d),
-        r.appendChild(f),
-        c && r.appendChild(c),
-        s.appendChild(r),
+          ((p = document.createElement("div")),
+          (p.className = `bf-emoji ${G(e.emoji.animation)}`),
+          (p.textContent = e.emoji.text)),
+        l.appendChild(c),
+        l.appendChild(f),
+        l.appendChild(d),
+        p && l.appendChild(p),
+        a.appendChild(l),
         i && (document.body.style.overflow = "hidden"),
-        document.body.appendChild(s),
-        { overlay: s, popup: r, iframeContainer: f, closeBtn: p, loadingEl: d, emojiEl: c }
+        document.body.appendChild(a),
+        { overlay: a, popup: l, iframeContainer: d, closeBtn: c, loadingEl: f, emojiEl: p }
       );
     },
-    w = (t) => {
+    E = (t) => {
       ((document.body.style.overflow = ""),
         (t.style.opacity = "0"),
         (t.style.transition = "opacity 0.15s ease"),
@@ -98,15 +214,15 @@
           t.remove();
         }, 150));
     },
-    E = (t, e) => {
-      let n = window.innerHeight - 40,
-        o = Math.min(e, n);
-      t.style.maxHeight = `${o}px`;
+    C = (t, e) => {
+      let o = Math.min(600, window.innerHeight - 40),
+        n = Math.min(e, o);
+      ((t.style.height = `${n}px`), (t.style.maxHeight = `${n}px`));
     },
     L = (t) => {
       t.style.display = "none";
     },
-    R = (t) => {
+    G = (t) => {
       switch (t) {
         case "wave":
           return "bf-emoji--wave";
@@ -118,10 +234,10 @@
           return "";
       }
     },
-    j = (t) => {
+    T = (t) => {
       t && (t.style.display = "none");
     };
-  var S = `
+  var V = `
 /* Keyframe Animations */
 @keyframes bf-wave {
   0%, 100% { transform: rotate(0deg); }
@@ -272,6 +388,39 @@
   animation: bf-spin 0.8s linear infinite;
 }
 
+/* Auto-mounted floating Bubble \u2014 script-tag trigger */
+.bf-bubble {
+  position: fixed;
+  z-index: 2147483000;
+  width: 56px;
+  height: 56px;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  background-color: #111827;
+  color: #ffffff;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.25), 0 8px 10px -6px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  animation: bf-fadeIn 0.2s ease-out;
+}
+.bf-bubble:hover { transform: scale(1.06); }
+.bf-bubble--bottom-right { bottom: 20px; right: 20px; }
+.bf-bubble--bottom-left { bottom: 20px; left: 20px; }
+.bf-bubble--center { bottom: 20px; right: 20px; }
+.bf-bubble__icon {
+  width: 28px;
+  height: 28px;
+  display: block;
+  object-fit: contain;
+}
+.bf-bubble__emoji { font-size: 28px; line-height: 1; }
+.bf-bubble--hidden { opacity: 0; pointer-events: none; transform: scale(0.6); }
+
 /* Emoji Bubble */
 .bf-emoji {
   position: absolute;
@@ -326,29 +475,29 @@
   scrollbar-width: none;
 }
 `,
-    T = () => {
+    I = () => {
       if (document.getElementById("bf-popup-styles")) return;
       let t = document.createElement("style");
-      ((t.id = "bf-popup-styles"), (t.textContent = S), document.head.appendChild(t));
+      ((t.id = "bf-popup-styles"), (t.textContent = V), document.head.appendChild(t));
     };
-  var F = (t) => {
+  var W = (t) => {
       let e = {},
-        n = t.dataset.layout;
-      (n === "modal" || n === "default") && (e.layout = n);
-      let o = t.dataset.position;
-      (o === "bottom-right" || o === "bottom-left" || o === "center") && (e.position = o);
+        o = t.dataset.layout;
+      (o === "modal" || o === "default") && (e.layout = o);
+      let n = t.dataset.position;
+      (n === "bottom-right" || n === "bottom-left" || n === "center") && (e.position = n);
       let i = t.dataset.width;
       (i && (e.width = parseInt(i, 10)),
         t.dataset.alignLeft === "1" && (e.alignLeft = !0),
         t.dataset.hideTitle === "1" && (e.hideTitle = !0),
         t.dataset.overlay === "1" && (e.overlay = !0));
-      let a = t.dataset.emojiText,
-        l = t.dataset.emojiAnimation;
-      a && (e.emoji = { text: a, animation: l || "none" });
-      let s = t.dataset.autoClose;
-      s && (e.autoClose = parseInt(s, 10));
-      let r = {};
-      for (let [p, f] of Object.entries(t.dataset))
+      let r = t.dataset.emojiText,
+        s = t.dataset.emojiAnimation;
+      r && (e.emoji = { text: r, animation: s || "none" });
+      let a = t.dataset.autoClose;
+      a && (e.autoClose = parseInt(a, 10));
+      let l = {};
+      for (let [c, d] of Object.entries(t.dataset))
         [
           "formId",
           "layout",
@@ -360,28 +509,28 @@
           "emojiText",
           "emojiAnimation",
           "autoClose",
-        ].includes(p) ||
-          (f !== void 0 && (r[p] = f));
-      return (Object.keys(r).length > 0 && (e.hiddenFields = r), e);
+        ].includes(c) ||
+          (d !== void 0 && (l[c] = d));
+      return (Object.keys(l).length > 0 && (e.hiddenFields = l), e);
     },
-    g = (t) => {
+    h = (t) => {
       let e = new URLSearchParams(t.replace(/^#/, "")),
-        n = e.get("form-open"),
-        o = {},
+        o = e.get("form-open"),
+        n = {},
         i = e.get("position");
-      ((i === "bottom-right" || i === "bottom-left" || i === "center") && (o.position = i),
-        e.get("align-left") === "1" && (o.alignLeft = !0),
-        e.get("hide-title") === "1" && (o.hideTitle = !0),
-        e.get("overlay") === "1" && (o.overlay = !0));
-      let a = e.get("width");
-      a && (o.width = parseInt(a, 10));
-      let l = e.get("emoji-text"),
-        s = e.get("emoji-animation");
-      l && (o.emoji = { text: l, animation: s || "none" });
-      let r = e.get("auto-close");
-      r && (o.autoClose = parseInt(r, 10));
-      let p = {},
-        f = new Set([
+      ((i === "bottom-right" || i === "bottom-left" || i === "center") && (n.position = i),
+        e.get("align-left") === "1" && (n.alignLeft = !0),
+        e.get("hide-title") === "1" && (n.hideTitle = !0),
+        e.get("overlay") === "1" && (n.overlay = !0));
+      let r = e.get("width");
+      r && (n.width = parseInt(r, 10));
+      let s = e.get("emoji-text"),
+        a = e.get("emoji-animation");
+      s && (n.emoji = { text: s, animation: a || "none" });
+      let l = e.get("auto-close");
+      l && (n.autoClose = parseInt(l, 10));
+      let c = {},
+        d = new Set([
           "form-open",
           "position",
           "align-left",
@@ -393,89 +542,89 @@
           "auto-close",
         ]);
       return (
-        e.forEach((d, c) => {
-          f.has(c) || (p[c] = d);
+        e.forEach((f, p) => {
+          d.has(p) || (c[p] = f);
         }),
-        Object.keys(p).length > 0 && (o.hiddenFields = p),
-        { formId: n, options: o }
+        Object.keys(c).length > 0 && (n.hiddenFields = c),
+        { formId: o, options: n }
       );
     },
-    k = (t) => {
+    j = (t) => {
       document.addEventListener("click", (e) => {
-        let n = e.target,
-          o = n.closest("[data-form-id]");
-        if (o) {
+        let o = e.target,
+          n = o.closest("[data-form-id]");
+        if (n) {
           e.preventDefault();
-          let a = o.dataset.formId;
-          if (a) {
-            let l = F(o);
-            t(a, l);
+          let r = n.dataset.formId;
+          if (r) {
+            let s = W(n);
+            t(r, s);
           }
           return;
         }
-        let i = n.closest("a");
+        let i = o.closest("a");
         if (i?.href?.includes("form-open=")) {
           e.preventDefault();
-          let a = i.href.indexOf("#");
-          if (a !== -1) {
-            let l = i.href.substring(a),
-              { formId: s, options: r } = g(l);
-            s && t(s, r);
+          let r = i.href.indexOf("#");
+          if (r !== -1) {
+            let s = i.href.substring(r),
+              { formId: a, options: l } = h(s);
+            a && t(a, l);
           }
         }
       });
     },
-    C = (t) => {
+    k = (t) => {
       let { hash: e } = window.location;
       if (e?.includes("form-open=")) {
-        let { formId: n, options: o } = g(e);
-        n &&
+        let { formId: o, options: n } = h(e);
+        o &&
           setTimeout(() => {
-            t(n, o);
+            t(o, n);
           }, 100);
       }
     },
-    H = (t) => {
+    O = (t) => {
       window.addEventListener("hashchange", () => {
         let { hash: e } = window.location;
         if (e?.includes("form-open=")) {
-          let { formId: n, options: o } = g(e);
-          n && t(n, o);
+          let { formId: o, options: n } = h(e);
+          o && t(o, n);
         }
       });
     };
-  var m = new Map(),
-    u = (t, e = {}) => {
-      if (m.has(t)) {
+  var u = new Map(),
+    m = (t, e = {}) => {
+      if (u.has(t)) {
         console.warn(`[Reform] Popup for form ${t} is already open`);
         return;
       }
-      let n = v(t, e, () => b(t)),
-        o = h(t, e, n.iframeContainer),
-        i = { formId: t, options: e, container: n.popup, iframe: o, overlay: n.overlay };
+      let o = w(t, e, () => b(t)),
+        n = y(t, e, o.iframeContainer),
+        i = { formId: t, options: e, container: o.popup, iframe: n, overlay: o.overlay };
       if (
-        (m.set(t, i),
-        o.addEventListener("load", () => {
-          L(n.loadingEl);
+        (u.set(t, i),
+        n.addEventListener("load", () => {
+          L(o.loadingEl);
         }),
         e.onOpen)
       )
         try {
           e.onOpen();
-        } catch (a) {
-          console.error("[Reform] onOpen callback error:", a);
+        } catch (r) {
+          console.error("[Reform] onOpen callback error:", r);
         }
     },
     b = (t) => {
-      let e = m.get(t);
-      if (e && (x(e.iframe), e.overlay && w(e.overlay), m.delete(t), e.options.onClose))
+      let e = u.get(t);
+      if (e && (v(e.iframe), e.overlay && E(e.overlay), u.delete(t), e.options.onClose))
         try {
           e.options.onClose();
-        } catch (n) {
-          console.error("[Reform] onClose callback error:", n);
+        } catch (o) {
+          console.error("[Reform] onClose callback error:", o);
         }
     },
-    U = (t) => {
+    Y = (t) => {
       let e;
       try {
         e = typeof t.data == "string" ? JSON.parse(t.data) : t.data;
@@ -483,55 +632,62 @@
         return;
       }
       if (!e?.event?.startsWith("Reform.")) return;
-      let n;
-      for (let o of m.values())
-        if (o.iframe.contentWindow === t.source) {
-          n = o;
+      let o;
+      for (let n of u.values())
+        if (n.iframe.contentWindow === t.source) {
+          o = n;
           break;
         }
-      if (n)
+      if (o)
         switch (e.event) {
           case "Reform.FormLoaded":
             break;
           case "Reform.Resize":
-            typeof e.height == "number" && (y(n.iframe, e.height), E(n.container, e.height));
+            typeof e.height == "number" && (x(o.iframe, e.height), C(o.container, e.height));
             break;
           case "Reform.FormSubmitted":
-            if (n.options.onSubmit)
+            if (o.options.onSubmit)
               try {
-                n.options.onSubmit(e.payload);
-              } catch (o) {
-                console.error("[Reform] onSubmit callback error:", o);
+                o.options.onSubmit(e.payload);
+              } catch (n) {
+                console.error("[Reform] onSubmit callback error:", n);
               }
-            n.options.autoClose &&
-              n.options.autoClose > 0 &&
+            o.options.autoClose &&
+              o.options.autoClose > 0 &&
               setTimeout(() => {
-                b(n?.formId);
-              }, n.options.autoClose);
+                b(o?.formId);
+              }, o.options.autoClose);
             break;
           case "Reform.PageView":
-            if (n.options.onPageView && "page" in e)
+            if (o.options.onPageView && "page" in e)
               try {
-                n.options.onPageView(e.page);
-              } catch (o) {
-                console.error("[Reform] onPageView callback error:", o);
+                o.options.onPageView(e.page);
+              } catch (n) {
+                console.error("[Reform] onPageView callback error:", n);
               }
             if ("page" in e && e.page > 1) {
-              let o = n.overlay;
-              if (o) {
-                let i = o.querySelector(".bf-emoji");
-                i && j(i);
+              let n = o.overlay;
+              if (n) {
+                let i = n.querySelector(".bf-emoji");
+                i && T(i);
               }
             }
             break;
           case "Reform.Close":
-            b(n.formId);
+            b(o.formId);
             break;
         }
     },
     P = () => {
-      (T(), k(u), C(u), H(u), window.addEventListener("message", U));
+      (I(),
+        j(m),
+        k(m),
+        O(m),
+        window.addEventListener("message", Y),
+        g(m).catch((t) => {
+          console.error("[Reform] setupAutoBubble error:", t);
+        }));
     };
-  window.Reform = { openPopup: u, closePopup: b };
+  window.Reform = { openPopup: m, closePopup: b };
   document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", P) : P();
 })();

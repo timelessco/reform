@@ -41,6 +41,7 @@ import {
   Folder as LucideFolder,
   FolderOpen as LucideFolderOpen,
   FolderSearch as LucideFolderSearch,
+  Globe as LucideGlobe,
   GripHorizontal as LucideGripHorizontal,
   GripVertical as LucideGripVertical,
   Hash as LucideHash,
@@ -892,6 +893,7 @@ export const EraserIcon = createConsistentLucideIcon(LucideEraser);
 export const ExternalLinkIcon = createConsistentLucideIcon(LucideExternalLink);
 export const FileUpIcon = createConsistentLucideIcon(LucideFileUp);
 export const FilmIcon = createConsistentLucideIcon(LucideFilm);
+export const GlobeIcon = createConsistentLucideIcon(LucideGlobe);
 export const GripHorizontalIcon = createConsistentLucideIcon(LucideGripHorizontal);
 export const GripVerticalIcon = createConsistentLucideIcon(LucideGripVertical);
 export const IndentIcon = createConsistentLucideIcon(LucideIndent);

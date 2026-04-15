@@ -100,12 +100,19 @@ export const createIframe = (
   return iframe;
 };
 
+/** Hard cap on popup height — matches the original bubble-mode clamp. */
+const IFRAME_HEIGHT_MAX = 600;
+/** Leave margin top+bottom so the popup never touches the viewport edges. */
+const IFRAME_VIEWPORT_MARGIN = 40;
+
 /**
- * Update iframe height
+ * Update iframe height. Clamps to min(600, viewport - 40) so the iframe
+ * never overflows the popup container. If the form content is taller than
+ * the clamp, the iframe's own page scroll handles overflow.
  */
 export const updateIframeHeight = (iframe: HTMLIFrameElement, height: number): void => {
-  // Add some padding to prevent scrollbars
-  const adjustedHeight = height + 2;
+  const max = Math.min(IFRAME_HEIGHT_MAX, window.innerHeight - IFRAME_VIEWPORT_MARGIN);
+  const adjustedHeight = Math.min(height + 2, max);
   iframe.style.height = `${adjustedHeight}px`;
 };
 

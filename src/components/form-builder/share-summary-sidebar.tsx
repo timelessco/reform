@@ -1,9 +1,10 @@
 import { useForm as useTanstackForm } from "@tanstack/react-form";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { RocketIcon, XIcon } from "@/components/ui/icons";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import { CopyButton } from "@/components/ui/copy-button";
 import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from "@/components/ui/sidebar";
@@ -13,6 +14,8 @@ import { useForm } from "@/hooks/use-live-hooks";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { publishForm } from "@/hooks/use-form-versions";
 import { getFormListings } from "@/collections";
+import { useSession } from "@/lib/auth/auth-client";
+import { orgDomainsQueryOptions } from "@/lib/server-fn/custom-domains";
 import { formFieldsToEmbedOptions, EmbedConfigPanel } from "./embed-config-panel";
 import { EmbedCodeDialog, searchToFormValues, formValuesToSearch, tabs } from "./embed-section";
 import { EmbedPreviewMockup } from "./embed-preview-mockup";
@@ -27,6 +30,8 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
   const { closeSidebar } = useEditorSidebar();
   const { data: savedDocs } = useForm(formId);
   const doc = savedDocs?.[0];
+  const { data: session } = useSession();
+  const orgId = session?.session?.activeOrganizationId ?? undefined;
 
   const search = useSearch({ strict: false });
   const navigate = useNavigate();
@@ -69,6 +74,33 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
     [doc?.id],
   );
 
+  // Track domain assignment state for this form
+  const docCustomDomainId = (doc as { customDomainId?: string | null } | undefined)?.customDomainId;
+  const docSlug = (doc as { slug?: string | null } | undefined)?.slug;
+
+  const [domainState, setDomainState] = useState<{
+    domainId: string | null;
+    slug: string | null;
+  }>({ domainId: docCustomDomainId ?? null, slug: docSlug ?? null });
+
+  // Keep local state in sync with doc changes
+  const activeDomainId = docCustomDomainId ?? domainState.domainId;
+  const activeSlug = docSlug ?? domainState.slug;
+
+  const { data: domains } = useQuery({
+    ...orgDomainsQueryOptions(orgId ?? ""),
+    enabled: !!orgId,
+  });
+
+  const selectedDomainName = useMemo(
+    () => (domains ?? []).find((d) => d.id === activeDomainId)?.domain,
+    [domains, activeDomainId],
+  );
+
+  const handleDomainAssigned = useCallback((domainId: string | null, slug: string | null) => {
+    setDomainState({ domainId, slug });
+  }, []);
+
   const handlePublish = useCallback(async () => {
     try {
       const tx = publishForm(formId);
@@ -83,7 +115,10 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
   if (!doc) return null;
 
   const isDraft = doc.status === "draft";
-  const shareUrl = `${window.location.origin}/forms/${doc.id}`;
+  const shareUrl =
+    selectedDomainName && activeSlug
+      ? `https://${selectedDomainName}/${activeSlug}`
+      : `${window.location.origin}/forms/${doc.id}`;
 
   return (
     <Sidebar
@@ -202,6 +237,12 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
                         section="pro"
                         docBranding={Boolean((doc as { branding?: unknown }).branding ?? true)}
                         onBrandingChange={handleBrandingChange}
+                        orgId={orgId}
+                        formId={formId}
+                        customDomainId={activeDomainId}
+                        formSlug={activeSlug}
+                        formTitle={doc.title}
+                        onDomainAssigned={handleDomainAssigned}
                       />
                     </SidebarSection>
 
@@ -222,6 +263,8 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
                       options={options}
                       formId={formId}
                       docTitle={doc.title || undefined}
+                      customDomain={selectedDomainName}
+                      formSlug={activeSlug ?? undefined}
                     />
                   </div>
                 );

@@ -1,4 +1,4 @@
-import { ChevronLeftIcon, ChevronRightIcon, SettingsIcon } from "@/components/ui/icons";
+import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, SettingsIcon } from "@/components/ui/icons";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorRef, useEditorSelector } from "platejs/react";
 import * as React from "react";
@@ -213,6 +213,7 @@ export const FormButtonElement = ({ className, children, ...props }: PlateElemen
           )}
         >
           {isPrevious && <ChevronLeftIcon className="h-4 w-4" />}
+          {buttonRole === "submit" && <CheckIcon className="h-4 w-4" />}
           <span>{displayText}</span>
           {buttonRole === "next" && <ChevronRightIcon className="h-4 w-4" />}
         </span>

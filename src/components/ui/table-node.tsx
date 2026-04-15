@@ -78,7 +78,11 @@ export const TableElement = withHOC(
     const readOnly = useReadOnly();
     const isSelectionAreaVisible = usePluginOption(BlockSelectionPlugin, "isSelectionAreaVisible");
     const hasControls = !readOnly && !isSelectionAreaVisible;
-    const { isSelectingCell, marginLeft, props: tableProps } = useTableElement();
+    const {
+      isSelectingCell,
+      marginLeft,
+      props: tableProps,
+    } = useTableElement() as ReturnType<typeof useTableElement> & { isSelectingCell?: boolean };
 
     const isSelectingTable = useBlockSelected(props.element.id as string);
 

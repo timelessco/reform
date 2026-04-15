@@ -1,12 +1,25 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, isNotFound, notFound } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
+import { getRequestHeaders } from "@tanstack/react-start/server";
 import { lazy, Suspense } from "react";
 
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
-import { NotFound } from "@/components/ui/not-found";
+import { CustomDomainNotFound } from "@/components/ui/custom-domain-not-found";
 import { guestMiddleware } from "@/lib/auth/middleware";
+import { getRequestHost, isAppHost } from "@/lib/server-fn/custom-domain-loader";
 
 const LandingEditor = lazy(() => import("./-components/landing-editor"));
+
+const checkHostIsApp = createServerFn({ method: "GET" }).handler(() => {
+  const headers = getRequestHeaders();
+  const host = getRequestHost(headers);
+  console.log("[index] host=", host);
+  if (!isAppHost(host)) {
+    throw notFound();
+  }
+  return { ok: true } as const;
+});
 
 const RouteComponent = () => (
   <Suspense fallback={<Loader />}>
@@ -19,6 +32,12 @@ export const Route = createFileRoute("/")({
     middleware: [guestMiddleware],
   },
   loader: async () => {
+    try {
+      await checkHostIsApp();
+    } catch (e) {
+      if (isNotFound(e)) throw notFound();
+      throw e;
+    }
     if (typeof window !== "undefined") {
       const { localFormCollection } = await import("@/collections");
       await localFormCollection.preload();
@@ -27,5 +46,5 @@ export const Route = createFileRoute("/")({
   component: RouteComponent,
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,
-  notFoundComponent: NotFound,
+  notFoundComponent: CustomDomainNotFound,
 });
