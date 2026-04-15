@@ -10,13 +10,19 @@ interface AIFormGenBubbleProps {
   onClose: () => void;
   isGenerating: boolean;
   error?: string | null;
+  selectionContext?: string | null;
+  onRemoveSelection?: () => void;
 }
+
+const SELECTION_PREVIEW_MAX = 80;
 
 export const AIFormGenBubble = ({
   onSubmit,
   onClose,
   isGenerating,
   error,
+  selectionContext,
+  onRemoveSelection,
 }: AIFormGenBubbleProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -86,6 +92,26 @@ export const AIFormGenBubble = ({
       )}
     >
       {error && <p className="text-xs text-destructive">{error}</p>}
+      {selectionContext && (
+        <div className="flex items-center gap-1.5 rounded-lg bg-muted/50 px-2 py-1 text-xs text-muted-foreground">
+          <SparklesIcon className="size-3.5 shrink-0" />
+          <span className="max-w-[400px] truncate">
+            {selectionContext.length > SELECTION_PREVIEW_MAX
+              ? `${selectionContext.slice(0, SELECTION_PREVIEW_MAX)}…`
+              : selectionContext}
+          </span>
+          {onRemoveSelection && (
+            <button
+              type="button"
+              onClick={onRemoveSelection}
+              className="ml-0.5 rounded p-0.5 hover:bg-muted"
+              aria-label="Remove selection context"
+            >
+              <XIcon className="size-3" />
+            </button>
+          )}
+        </div>
+      )}
       {attachedImage && (
         <div className="flex items-center gap-1.5 rounded-lg bg-muted/50 px-2 py-1 text-xs text-muted-foreground">
           <ImageIcon className="size-3.5" />

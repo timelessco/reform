@@ -16,6 +16,13 @@
     @apply bg-background text-foreground;
   }
 
+  /* When the form-builder editor is themed, propagate its background to html/body
+     so overscroll-bounce reveals the same color instead of the default app bg. */
+  html:has(.bf-themed),
+  body:has(.bf-themed) {
+    background-color: var(--bf-background);
+  }
+
   /* Hide number input spinners globally */
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {

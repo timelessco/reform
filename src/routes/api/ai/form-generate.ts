@@ -1,39 +1,16 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { createFileRoute } from "@tanstack/react-router";
-import { convertToModelMessages, streamText, tool } from "ai";
+import { convertToModelMessages, generateText, streamObject, tool } from "ai";
 import type { UIMessage } from "ai";
 import { z } from "zod";
 import { auth } from "@/lib/auth/auth";
-
-const FIELD_TYPES = [
-  "input",
-  "textarea",
-  "email",
-  "phone",
-  "number",
-  "link",
-  "date",
-  "time",
-  "fileUpload",
-  "checkbox",
-  "multiChoice",
-  "multiSelect",
-  "ranking",
-] as const;
-
-const SYSTEM_PROMPT = `You are a form builder assistant. Given a description of a form, generate the appropriate form fields and configure the form's appearance using the available tools.
-
-Rules:
-- Use setFormHeader to set the form's title, icon, and cover color. Always call this when creating a new form.
-- Use setFormTheme to customize the form's visual theme with raw CSS color tokens. Call this when the user provides a design reference image or asks for a specific visual style. Generate tokens for BOTH light and dark modes using the "light:token" and "dark:token" prefix format.
-- When an image is provided, analyze its colors, mood, and style to extract a cohesive theme.
-- Use addFormSection to create logical groupings with headings when the form has multiple distinct sections.
-- Use addFormBlock to create individual form fields.
-- Choose the most appropriate fieldType for each field.
-- Set required to true for fields that are typically mandatory (e.g. name, email).
-- Provide helpful placeholder text where appropriate.
-- For multiChoice, multiSelect, and ranking fields, always provide an options array.
-- Generate fields in a logical order that makes sense for the form's purpose.`;
+import { formGenSchema, RADIUS_OPTIONS, themeTokensSchema } from "@/lib/ai/ops-schema";
+import {
+  FORM_APPEND_SYSTEM_PROMPT,
+  FORM_EDIT_SYSTEM_PROMPT,
+  FORM_GEN_SYSTEM_PROMPT,
+  FORM_THEME_SYSTEM_PROMPT,
+} from "@/lib/ai/system-prompts";
 
 const getModel = async () => {
   const provider = process.env.AI_PROVIDER ?? "openai";
@@ -47,7 +24,6 @@ const getModel = async () => {
     return google(modelId);
   }
 
-  // Default: OpenAI (also works with OpenAI-compatible APIs via AI_BASE_URL)
   const openai = createOpenAI({
     apiKey,
     ...(baseURL ? { baseURL } : {}),
@@ -73,6 +49,8 @@ export const Route = createFileRoute("/api/ai/form-generate")({
         const body = (await request.json()) as {
           messages?: UIMessage[];
           editorContent?: string;
+          selectionContext?: string;
+          mode?: "create" | "append" | "replace" | "theme";
         };
 
         const messages = body.messages;
@@ -85,90 +63,93 @@ export const Route = createFileRoute("/api/ai/form-generate")({
 
         const model = await getModel();
 
-        // Prepend editor context to the system prompt if available
-        const systemWithContext = body.editorContent
-          ? `${SYSTEM_PROMPT}\n\nCurrent form content:\n${body.editorContent}`
-          : SYSTEM_PROMPT;
+        const mode = body.mode ?? "create";
+        const basePrompt =
+          mode === "theme"
+            ? FORM_THEME_SYSTEM_PROMPT
+            : mode === "replace"
+              ? FORM_EDIT_SYSTEM_PROMPT
+              : mode === "append"
+                ? FORM_APPEND_SYSTEM_PROMPT
+                : FORM_GEN_SYSTEM_PROMPT;
 
-        // Convert UIMessages (from useChat) to CoreMessages (for streamText)
+        const contextParts: string[] = [];
+        if (body.editorContent) {
+          contextParts.push(`Current form content:\n${body.editorContent}`);
+        }
+        if (body.selectionContext) {
+          if (mode === "replace") {
+            contextParts.push(
+              `The user selected these blocks and asked for an edit — emit replacement ops for ONLY these:\n"""\n${body.selectionContext}\n"""`,
+            );
+          } else if (mode === "append") {
+            contextParts.push(
+              `The user has selected these blocks for context — they want to ADD new content (do NOT remove or regenerate the selection):\n"""\n${body.selectionContext}\n"""`,
+            );
+          } else {
+            contextParts.push(
+              `The user has selected the following block as context for their request:\n"""\n${body.selectionContext}\n"""`,
+            );
+          }
+        }
+        const systemWithContext = contextParts.length
+          ? `${basePrompt}\n\n${contextParts.join("\n\n")}`
+          : basePrompt;
+
         const modelMessages = await Promise.resolve(convertToModelMessages(messages));
 
-        const result = streamText({
+        // ── Theme mode: tool-call (one-shot, non-streaming) ─────────────────
+        // Theme is atomic — no benefit to streaming, and tool-call gives the
+        // model a clear contract (call setFormTheme exactly once with full args).
+        if (mode === "theme") {
+          const setFormThemeArgs = z.object({
+            tokens: themeTokensSchema,
+            font: z.string(),
+            radius: z.enum(RADIUS_OPTIONS),
+          });
+
+          let captured: z.infer<typeof setFormThemeArgs> | null = null;
+
+          await generateText({
+            model,
+            system: systemWithContext,
+            messages: modelMessages,
+            toolChoice: "required",
+            tools: {
+              setFormTheme: tool({
+                description:
+                  "Apply a complete visual theme to the form (colors, font, radius). Call exactly once with all 30 token values, font, and radius.",
+                inputSchema: setFormThemeArgs,
+                execute: async (args) => {
+                  captured = args;
+                  return { ok: true };
+                },
+              }),
+            },
+          });
+
+          if (!captured) {
+            return new Response(JSON.stringify({ error: "model_did_not_emit_theme" }), {
+              status: 502,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
+          return new Response(JSON.stringify({ theme: captured }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        // ── All other modes: structured-output streaming ────────────────────
+        const result = streamObject({
           model,
+          schema: formGenSchema,
           system: systemWithContext,
           messages: modelMessages,
-          toolChoice: "required",
-          tools: {
-            addFormBlock: tool({
-              description: "Add a form field block with the specified type and label",
-              inputSchema: z.object({
-                fieldType: z.enum(FIELD_TYPES),
-                label: z.string().describe("The label text for the field"),
-                required: z.boolean().optional().describe("Whether the field is required"),
-                placeholder: z
-                  .string()
-                  .optional()
-                  .describe("Default value text pre-filled in the field that users can edit"),
-                options: z
-                  .array(z.string())
-                  .optional()
-                  .describe("Options for multiChoice, multiSelect, and ranking fields"),
-              }),
-            }),
-            addFormSection: tool({
-              description: "Add a section heading to organize form fields",
-              inputSchema: z.object({
-                title: z.string().describe("The section heading text"),
-                level: z
-                  .enum(["1", "2", "3"])
-                  .optional()
-                  .describe("Heading level: '1' for h1, '2' for h2, '3' for h3. Default '2'."),
-              }),
-            }),
-            setFormHeader: tool({
-              description:
-                "Set the form's header — title, icon, and cover background color. Call this when creating or updating a form's identity.",
-              inputSchema: z.object({
-                title: z.string().optional().describe("The form title text"),
-                iconKeyword: z
-                  .string()
-                  .optional()
-                  .describe(
-                    "A keyword to match an icon (e.g., 'mail', 'heart', 'shield', 'calendar', 'shopping', 'user', 'star')",
-                  ),
-                coverColor: z
-                  .string()
-                  .optional()
-                  .describe("Hex color for the cover/banner background (e.g., '#1e293b')"),
-              }),
-            }),
-            setFormTheme: tool({
-              description:
-                "Set the form's visual theme with raw CSS color tokens. Generate tokens for BOTH light and dark modes. Use 'light:tokenName' and 'dark:tokenName' prefixed keys.",
-              inputSchema: z.object({
-                tokens: z
-                  .record(z.string(), z.string())
-                  .describe(
-                    "Map of CSS token names to hex color values. Required tokens for each mode: background, foreground, primary, primary-foreground, secondary, secondary-foreground, muted, muted-foreground, accent, accent-foreground, destructive, destructive-foreground, border, input, ring. Prefix with 'light:' or 'dark:' for mode-specific values (e.g., 'light:primary': '#2563eb', 'dark:primary': '#3b82f6').",
-                  ),
-                font: z
-                  .string()
-                  .optional()
-                  .describe(
-                    "Google Font family name (e.g., 'Inter', 'Poppins', 'Playfair Display')",
-                  ),
-                radius: z
-                  .enum(["0", "0.375rem", "0.625rem", "0.875rem"])
-                  .optional()
-                  .describe(
-                    "Border radius: '0' for none, '0.375rem' for small, '0.625rem' for medium, '0.875rem' for large",
-                  ),
-              }),
-            }),
-          },
         });
 
-        return result.toUIMessageStreamResponse();
+        return result.toTextStreamResponse();
       },
     },
   },
