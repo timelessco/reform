@@ -14,26 +14,8 @@ import {
 } from "@/components/ui/icons";
 import { useCallback, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useSession } from "@/lib/auth/auth-client";
 import { DOMAIN_LIMITS } from "@/lib/config/plan-config";
@@ -113,9 +95,15 @@ export const DomainsContent = () => {
   const siteTitleInputId = useId();
 
   const [newDomain, setNewDomain] = useState("");
-  const [dnsInfo, setDnsInfo] = useState<{ domain: string; subdomain: string } | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Domain | null>(null);
-  const [configTarget, setConfigTarget] = useState<Domain | null>(null);
+  const [dnsInfo, setDnsInfo] = useState<{
+    domain: string;
+    subdomain: string;
+  } | null>(null);
+  const [verificationRecords, setVerificationRecords] = useState<
+    { type: string; domain: string; value: string }[] | null
+  >(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [expandedConfigId, setExpandedConfigId] = useState<string | null>(null);
   const [siteTitle, setSiteTitle] = useState("");
   const [faviconUrl, setFaviconUrl] = useState("");
   const [ogImageUrl, setOgImageUrl] = useState("");
@@ -161,7 +149,12 @@ export const DomainsContent = () => {
       const parts = result.domain.split(".");
       const subdomain = parts.length > 2 ? parts[0] : result.domain;
       setDnsInfo({ domain: result.domain, subdomain });
-      toast.success("Domain added successfully");
+      setVerificationRecords(result.verification?.length ? result.verification : null);
+      if (result.warning) {
+        toast.error(result.warning);
+      } else {
+        toast.success("Domain added successfully");
+      }
     },
     onError: (error: unknown) => {
       toast.error(error instanceof Error ? error.message : "Failed to add domain");
@@ -172,7 +165,7 @@ export const DomainsContent = () => {
     mutationFn: (domainId: string) => removeDomain({ data: { domainId } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["org-domains", orgId] });
-      setDeleteTarget(null);
+      setConfirmDeleteId(null);
       toast.success("Domain removed");
     },
     onError: (error: unknown) => {
@@ -185,8 +178,14 @@ export const DomainsContent = () => {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["org-domains", orgId] });
       if (result.status === "verified") {
+        setVerificationRecords(null);
         toast.success("Domain verified!");
-      } else if (result.status === "failed") {
+        return;
+      }
+      if (result.verification?.length) {
+        setVerificationRecords(result.verification);
+      }
+      if (result.status === "failed") {
         toast.error("Domain verification failed. Check your DNS records.");
       } else {
         toast("Domain is still pending verification. DNS changes can take up to 48 hours.");
@@ -206,7 +205,7 @@ export const DomainsContent = () => {
     }) => updateDomainMeta({ data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["org-domains", orgId] });
-      setConfigTarget(null);
+      setExpandedConfigId(null);
       toast.success("Domain settings saved");
     },
     onError: (error: unknown) => {
@@ -238,21 +237,23 @@ export const DomainsContent = () => {
   }, []);
 
   const handleOpenConfig = useCallback((domain: Domain) => {
-    setConfigTarget(domain);
+    setExpandedConfigId(domain.id);
     setSiteTitle(domain.siteTitle ?? "");
     setFaviconUrl(domain.faviconUrl ?? "");
     setOgImageUrl(domain.ogImageUrl ?? "");
   }, []);
 
-  const handleSaveConfig = useCallback(() => {
-    if (!configTarget) return;
-    updateMetaMutation.mutate({
-      domainId: configTarget.id,
-      siteTitle: siteTitle || undefined,
-      faviconUrl: faviconUrl || undefined,
-      ogImageUrl: ogImageUrl || undefined,
-    });
-  }, [configTarget, siteTitle, faviconUrl, ogImageUrl, updateMetaMutation]);
+  const handleSaveConfig = useCallback(
+    (domainId: string) => {
+      updateMetaMutation.mutate({
+        domainId,
+        siteTitle: siteTitle || undefined,
+        faviconUrl: faviconUrl || undefined,
+        ogImageUrl: ogImageUrl || undefined,
+      });
+    },
+    [siteTitle, faviconUrl, ogImageUrl, updateMetaMutation],
+  );
 
   const handleSiteTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => setSiteTitle(e.target.value),
@@ -304,9 +305,7 @@ export const DomainsContent = () => {
 
   const handleFaviconButtonClick = useCallback(() => faviconInputRef.current?.click(), []);
   const handleOgButtonClick = useCallback(() => ogInputRef.current?.click(), []);
-  const handleConfigDialogOpenChange = useCallback((open: boolean) => {
-    if (!open) setConfigTarget(null);
-  }, []);
+  const handleCloseConfig = useCallback(() => setExpandedConfigId(null), []);
 
   if (isSessionPending) {
     return (
@@ -327,7 +326,6 @@ export const DomainsContent = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Add domain form */}
       <div className="rounded-xl border p-4 space-y-3">
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium" htmlFor={domainInputId}>
@@ -362,7 +360,6 @@ export const DomainsContent = () => {
           </Button>
         </div>
 
-        {/* DNS instructions callout */}
         {dnsInfo && (
           <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
             <p className="text-sm font-medium">Add this CNAME record at your DNS provider:</p>
@@ -397,9 +394,54 @@ export const DomainsContent = () => {
             </div>
           </div>
         )}
+
+        {verificationRecords && verificationRecords.length > 0 && (
+          <div className="rounded-lg border border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-900/50 p-4 space-y-3">
+            <div>
+              <p className="text-sm font-medium">Additional verification required</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                This domain is claimed by another Vercel project. Add the record(s) below at your
+                DNS provider exactly as shown, then click Retry.
+              </p>
+            </div>
+            {verificationRecords.map((rec) => (
+              <div
+                key={`${rec.type}-${rec.domain}-${rec.value}`}
+                className="grid grid-cols-[auto_1fr_auto] gap-x-4 gap-y-1 text-xs"
+              >
+                <span className="text-muted-foreground font-medium">Type</span>
+                <span className="font-mono">{rec.type}</span>
+                <span />
+
+                <span className="text-muted-foreground font-medium">Name</span>
+                <span className="font-mono break-all">{rec.domain}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5"
+                  onClick={() => handleCopyValue(rec.domain)}
+                  aria-label="Copy record name"
+                >
+                  <CopyIcon className="size-3" />
+                </Button>
+
+                <span className="text-muted-foreground font-medium">Value</span>
+                <span className="font-mono break-all">{rec.value}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5"
+                  onClick={() => handleCopyValue(rec.value)}
+                  aria-label="Copy record value"
+                >
+                  <CopyIcon className="size-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Domain list */}
       {isLoadingDomains ? (
         <div className="flex items-center justify-center py-8">
           <Loader2Icon className="size-5 animate-spin text-muted-foreground" />
@@ -411,221 +453,218 @@ export const DomainsContent = () => {
         </div>
       ) : (
         <div className="space-y-2">
-          {(domains as Domain[]).map((domain) => (
-            <div
-              key={domain.id}
-              className="flex items-center justify-between rounded-xl border px-4 py-3"
-            >
-              <div className="flex items-center gap-3">
-                <GlobeIcon className="size-4 text-muted-foreground" />
-                <span className="text-sm font-medium">{domain.domain}</span>
-                <StatusBadge status={domain.status} />
+          {(domains as Domain[]).map((domain) => {
+            const isConfirmingDelete = confirmDeleteId === domain.id;
+            const isConfiguring = expandedConfigId === domain.id;
+            return (
+              <div key={domain.id} className="rounded-xl border">
+                <div className="flex items-center justify-between px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <GlobeIcon className="size-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">{domain.domain}</span>
+                    <StatusBadge status={domain.status} />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {isConfirmingDelete ? (
+                      <>
+                        <span className="text-xs text-muted-foreground mr-1">Are you sure?</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setConfirmDeleteId(null)}
+                          disabled={removeMutation.isPending}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => removeMutation.mutate(domain.id)}
+                          disabled={removeMutation.isPending}
+                          prefix={
+                            removeMutation.isPending ? (
+                              <Loader2Icon className="size-3 animate-spin" />
+                            ) : undefined
+                          }
+                        >
+                          Remove
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        {domain.status === "pending" && (
+                          <Button
+                            variant="outline"
+                            size="icon-sm"
+                            onClick={() => checkMutation.mutate(domain.id)}
+                            disabled={checkMutation.isPending}
+                            prefix={
+                              checkMutation.isPending ? (
+                                <Loader2Icon className="size-4 animate-spin" />
+                              ) : (
+                                <RefreshCwIcon className="size-4" />
+                              )
+                            }
+                          >
+                            Check Status
+                          </Button>
+                        )}
+                        {domain.status === "verified" && (
+                          <Button
+                            variant="outline"
+                            size="icon-sm"
+                            onClick={() =>
+                              isConfiguring ? handleCloseConfig() : handleOpenConfig(domain)
+                            }
+                            prefix={<SettingsIcon className="size-4" />}
+                          ></Button>
+                        )}
+                        {domain.status === "failed" && (
+                          <Button
+                            variant="outline"
+                            size="icon-sm"
+                            onClick={() => checkMutation.mutate(domain.id)}
+                            disabled={checkMutation.isPending}
+                            prefix={
+                              checkMutation.isPending ? (
+                                <Loader2Icon className="size-4 animate-spin" />
+                              ) : (
+                                <RefreshCwIcon className="size-4" />
+                              )
+                            }
+                          >
+                            Retry
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => setConfirmDeleteId(domain.id)}
+                          aria-label={`Remove ${domain.domain}`}
+                        >
+                          <Trash2Icon className="size-3.5" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {isConfiguring && (
+                  <div className="border-t px-4 py-4 space-y-4 bg-muted/20">
+                    <div>
+                      <label className="text-sm mb-1.5 block" htmlFor={siteTitleInputId}>
+                        Site title
+                      </label>
+                      <Input
+                        id={siteTitleInputId}
+                        placeholder="My Forms"
+                        value={siteTitle}
+                        onChange={handleSiteTitleChange}
+                      />
+                    </div>
+
+                    <div>
+                      <span className="text-sm mb-1.5 block">Favicon</span>
+                      <div className="flex items-center gap-3">
+                        {faviconUrl && (
+                          <img
+                            src={faviconUrl}
+                            alt="Favicon preview"
+                            className="size-8 rounded border object-contain"
+                          />
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleFaviconButtonClick}
+                          disabled={isUploadingFavicon}
+                          prefix={
+                            isUploadingFavicon ? (
+                              <Loader2Icon className="size-3 animate-spin" />
+                            ) : (
+                              <UploadIcon className="size-3" />
+                            )
+                          }
+                        >
+                          {faviconUrl ? "Replace" : "Upload"} favicon
+                        </Button>
+                        <input
+                          ref={faviconInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleFaviconChange}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-sm mb-1.5 block">OG image</span>
+                      <div className="flex flex-col gap-2">
+                        {ogImageUrl && (
+                          <img
+                            src={ogImageUrl}
+                            alt="Open Graph preview"
+                            className="h-24 w-full rounded border object-cover"
+                          />
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleOgButtonClick}
+                          disabled={isUploadingOg}
+                          className="w-fit"
+                          prefix={
+                            isUploadingOg ? (
+                              <Loader2Icon className="size-3 animate-spin" />
+                            ) : (
+                              <UploadIcon className="size-3" />
+                            )
+                          }
+                        >
+                          {ogImageUrl ? "Replace" : "Upload"} OG image
+                        </Button>
+                        <input
+                          ref={ogInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleOgChange}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCloseConfig}
+                        className="rounded-lg"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleSaveConfig(domain.id)}
+                        disabled={updateMetaMutation.isPending}
+                        className="rounded-lg"
+                        prefix={
+                          updateMetaMutation.isPending ? (
+                            <Loader2Icon className="size-3 animate-spin" />
+                          ) : undefined
+                        }
+                      >
+                        Save
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-1.5">
-                {domain.status === "pending" && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => checkMutation.mutate(domain.id)}
-                    disabled={checkMutation.isPending}
-                    prefix={
-                      checkMutation.isPending ? (
-                        <Loader2Icon className="size-3 animate-spin" />
-                      ) : (
-                        <RefreshCwIcon className="size-3" />
-                      )
-                    }
-                  >
-                    Check Status
-                  </Button>
-                )}
-                {domain.status === "verified" && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleOpenConfig(domain)}
-                    prefix={<SettingsIcon className="size-3" />}
-                  >
-                    Configure
-                  </Button>
-                )}
-                {domain.status === "failed" && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => checkMutation.mutate(domain.id)}
-                    disabled={checkMutation.isPending}
-                    prefix={
-                      checkMutation.isPending ? (
-                        <Loader2Icon className="size-3 animate-spin" />
-                      ) : (
-                        <RefreshCwIcon className="size-3" />
-                      )
-                    }
-                  >
-                    Retry
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={() => setDeleteTarget(domain)}
-                  aria-label={`Remove ${domain.domain}`}
-                >
-                  <Trash2Icon className="size-3.5" />
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
-
-      {/* Delete confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove domain?</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs">
-              This will remove <strong>{deleteTarget?.domain}</strong> and unlink it from all forms.
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-lg">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteTarget && removeMutation.mutate(deleteTarget.id)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-lg"
-              disabled={removeMutation.isPending}
-            >
-              {removeMutation.isPending && <Loader2Icon className="animate-spin mr-2 h-4 w-4" />}
-              Remove
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Configure dialog */}
-      <Dialog open={!!configTarget} onOpenChange={handleConfigDialogOpenChange}>
-        <DialogContent className="sm:max-w-[420px]">
-          <DialogHeader>
-            <DialogTitle>Configure {configTarget?.domain}</DialogTitle>
-            <DialogDescription className="text-xs">
-              Customize the appearance of your custom domain.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            {/* Site title */}
-            <div>
-              <label className="text-sm mb-1.5 block" htmlFor={siteTitleInputId}>
-                Site title
-              </label>
-              <Input
-                id={siteTitleInputId}
-                placeholder="My Forms"
-                value={siteTitle}
-                onChange={handleSiteTitleChange}
-              />
-            </div>
-
-            {/* Favicon upload */}
-            <div>
-              <span className="text-sm mb-1.5 block">Favicon</span>
-              <div className="flex items-center gap-3">
-                {faviconUrl && (
-                  <img
-                    src={faviconUrl}
-                    alt="Favicon preview"
-                    className="size-8 rounded border object-contain"
-                  />
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleFaviconButtonClick}
-                  disabled={isUploadingFavicon}
-                  prefix={
-                    isUploadingFavicon ? (
-                      <Loader2Icon className="size-3 animate-spin" />
-                    ) : (
-                      <UploadIcon className="size-3" />
-                    )
-                  }
-                >
-                  {faviconUrl ? "Replace" : "Upload"} favicon
-                </Button>
-                <input
-                  ref={faviconInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFaviconChange}
-                />
-              </div>
-            </div>
-
-            {/* OG image upload */}
-            <div>
-              <span className="text-sm mb-1.5 block">OG image</span>
-              <div className="flex flex-col gap-2">
-                {ogImageUrl && (
-                  <img
-                    src={ogImageUrl}
-                    alt="Open Graph preview"
-                    className="h-24 w-full rounded border object-cover"
-                  />
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleOgButtonClick}
-                  disabled={isUploadingOg}
-                  className="w-fit"
-                  prefix={
-                    isUploadingOg ? (
-                      <Loader2Icon className="size-3 animate-spin" />
-                    ) : (
-                      <UploadIcon className="size-3" />
-                    )
-                  }
-                >
-                  {ogImageUrl ? "Replace" : "Upload"} OG image
-                </Button>
-                <input
-                  ref={ogInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleOgChange}
-                />
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setConfigTarget(null)}
-              className="rounded-lg"
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleSaveConfig}
-              disabled={updateMetaMutation.isPending}
-              className="rounded-lg"
-            >
-              {updateMetaMutation.isPending && (
-                <Loader2Icon className="animate-spin mr-2 h-4 w-4" />
-              )}
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
