@@ -11,6 +11,21 @@ const APP_HOSTS = new Set(["localhost", "127.0.0.1"]);
 const APP_HOST_PATTERNS = [/\.vercel\.app$/];
 
 /**
+ * Extract the user-facing host from request headers, preferring
+ * `x-forwarded-host` (set by Vercel/proxies) over the raw `host` header
+ * (which can be an internal hostname in serverless environments).
+ */
+export const getRequestHost = (headers: Record<string, string | string[] | undefined>): string => {
+  const pick = (value: string | string[] | undefined): string | undefined => {
+    if (!value) return undefined;
+    return Array.isArray(value) ? value[0] : value.split(",")[0]?.trim();
+  };
+  return (
+    pick(headers["x-forwarded-host"]) ?? pick(headers.host) ?? pick(headers[":authority"]) ?? ""
+  );
+};
+
+/**
  * Returns true when the Host header belongs to the app itself
  * (localhost, Vercel previews, etc.) — NOT a custom domain.
  */
