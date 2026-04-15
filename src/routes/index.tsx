@@ -12,9 +12,7 @@ import { getRequestHost, isAppHost } from "@/lib/server-fn/custom-domain-loader"
 const LandingEditor = lazy(() => import("./-components/landing-editor"));
 
 const checkHostIsApp = createServerFn({ method: "GET" }).handler(() => {
-  const headers = getRequestHeaders();
-  const host = getRequestHost(headers);
-  console.log("[index] host=", host);
+  const host = getRequestHost(getRequestHeaders());
   if (!isAppHost(host)) {
     throw notFound();
   }
