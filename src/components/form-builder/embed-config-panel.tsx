@@ -554,8 +554,8 @@ const ProSection = ({
   });
 
   const handleDomainChange = useCallback(
-    (value: string) => {
-      const domainId = value === "none" ? null : value;
+    (value: string | null) => {
+      const domainId = value && value !== "none" ? value : null;
       assignDomainMutation.mutate(domainId);
     },
     [assignDomainMutation],
