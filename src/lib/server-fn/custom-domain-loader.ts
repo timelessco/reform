@@ -133,27 +133,12 @@ export const loadFormForCustomDomain = async (
     .select({
       id: forms.id,
       status: forms.status,
-      icon: forms.icon,
-      cover: forms.cover,
       lastPublishedVersionId: forms.lastPublishedVersionId,
+      // Group 4 (live) — branding is always false for custom domains anyway
       draftTitle: forms.title,
       draftContent: forms.content,
-      progressBar: forms.progressBar,
-      branding: forms.branding,
-      autoJump: forms.autoJump,
-      saveAnswersForLater: forms.saveAnswersForLater,
-      redirectOnCompletion: forms.redirectOnCompletion,
-      redirectUrl: forms.redirectUrl,
-      redirectDelay: forms.redirectDelay,
-      language: forms.language,
-      passwordProtect: forms.passwordProtect,
-      closeForm: forms.closeForm,
-      closedFormMessage: forms.closedFormMessage,
-      closeOnDate: forms.closeOnDate,
-      closeDate: forms.closeDate,
-      limitSubmissions: forms.limitSubmissions,
-      maxSubmissions: forms.maxSubmissions,
-      preventDuplicateSubmissions: forms.preventDuplicateSubmissions,
+      draftIcon: forms.icon,
+      draftCover: forms.cover,
     })
     .from(forms)
     .where(conditions);
@@ -162,23 +147,32 @@ export const loadFormForCustomDomain = async (
     throw notFound();
   }
 
+  // Load version snapshot (source of truth for Groups 1-3)
+  const [version] = form.lastPublishedVersionId
+    ? await db.select().from(formVersions).where(eq(formVersions.id, form.lastPublishedVersionId))
+    : [undefined];
+
+  const snapshotSettings = (version?.settings ?? {}) as Partial<
+    Omit<PublicFormSettings, "branding">
+  >;
+
   const settings: PublicFormSettings = {
-    progressBar: form.progressBar,
+    progressBar: snapshotSettings.progressBar ?? false,
     branding: false, // custom domains always hide branding
-    autoJump: form.autoJump,
-    saveAnswersForLater: form.saveAnswersForLater,
-    redirectOnCompletion: form.redirectOnCompletion,
-    redirectUrl: form.redirectUrl,
-    redirectDelay: form.redirectDelay,
-    language: form.language,
-    passwordProtect: form.passwordProtect,
-    closeForm: form.closeForm,
-    closedFormMessage: form.closedFormMessage,
-    closeOnDate: form.closeOnDate,
-    closeDate: form.closeDate,
-    limitSubmissions: form.limitSubmissions,
-    maxSubmissions: form.maxSubmissions,
-    preventDuplicateSubmissions: form.preventDuplicateSubmissions,
+    autoJump: snapshotSettings.autoJump ?? false,
+    saveAnswersForLater: snapshotSettings.saveAnswersForLater ?? true,
+    redirectOnCompletion: snapshotSettings.redirectOnCompletion ?? false,
+    redirectUrl: snapshotSettings.redirectUrl ?? null,
+    redirectDelay: snapshotSettings.redirectDelay ?? 0,
+    language: snapshotSettings.language ?? "English",
+    passwordProtect: snapshotSettings.passwordProtect ?? false,
+    closeForm: snapshotSettings.closeForm ?? false,
+    closedFormMessage: snapshotSettings.closedFormMessage ?? "This form is now closed.",
+    closeOnDate: snapshotSettings.closeOnDate ?? false,
+    closeDate: snapshotSettings.closeDate ?? null,
+    limitSubmissions: snapshotSettings.limitSubmissions ?? false,
+    maxSubmissions: snapshotSettings.maxSubmissions ?? null,
+    preventDuplicateSubmissions: snapshotSettings.preventDuplicateSubmissions ?? false,
   };
 
   // --- Gating checks (same logic as getPublishedFormById) ---
@@ -228,41 +222,33 @@ export const loadFormForCustomDomain = async (
     ? { type: "password_required" as const, message: null }
     : null;
 
-  // If form has a published version, use version content
-  if (form.lastPublishedVersionId) {
-    const [version] = await db
-      .select()
-      .from(formVersions)
-      .where(eq(formVersions.id, form.lastPublishedVersionId));
-
-    if (version) {
-      return {
-        form: {
-          id: form.id,
-          title: version.title,
-          content: version.content as object[],
-          customization: (version.customization ?? {}) as Record<string, string>,
-          icon: form.icon,
-          cover: form.cover,
-          status: form.status,
-          settings,
-        },
-        error: null,
-        gated,
-        domainMeta: buildDomainMeta(domain),
-      };
-    }
+  if (version) {
+    return {
+      form: {
+        id: form.id,
+        title: version.title,
+        content: version.content as object[],
+        customization: (version.customization ?? {}) as Record<string, string>,
+        icon: version.icon,
+        cover: version.cover,
+        status: form.status,
+        settings,
+      },
+      error: null,
+      gated,
+      domainMeta: buildDomainMeta(domain),
+    };
   }
 
-  // Fallback for forms without versions
+  // Fallback for forms without versions (backward compat — shouldn't happen after backfill)
   return {
     form: {
       id: form.id,
       title: form.draftTitle,
       content: form.draftContent as object[],
       customization: {} as Record<string, string>,
-      icon: form.icon,
-      cover: form.cover,
+      icon: form.draftIcon,
+      cover: form.draftCover,
       status: form.status,
       settings,
     },

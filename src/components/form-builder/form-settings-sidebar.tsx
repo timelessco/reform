@@ -35,6 +35,9 @@ export const FormSettingsSidebar = ({ formId, isLocal }: FormSettingsSidebarProp
 
       <SidebarContent>
         <div className="p-2 [&_button[data-empty]]:!w-auto [&_button[data-empty]]:max-w-[55%]">
+          <p className="px-2 pb-2 text-[11px] text-muted-foreground/80">
+            Changes apply to the public form on next publish.
+          </p>
           <SettingsContent formId={formId} isLocal={isLocal} />
         </div>
       </SidebarContent>

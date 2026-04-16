@@ -39,8 +39,50 @@ export const useFormVersionContent = (versionId: string | undefined) =>
   );
 
 /**
+ * Flat settings keys that are part of the published version snapshot (Group 2).
+ * Group 4 fields (slug, customDomainId, branding) are intentionally excluded —
+ * those are live and update the public form immediately without a republish.
+ */
+const VERSIONED_SETTINGS_KEYS = [
+  "progressBar",
+  "autoJump",
+  "saveAnswersForLater",
+  "redirectOnCompletion",
+  "redirectUrl",
+  "redirectDelay",
+  "language",
+  "passwordProtect",
+  "password",
+  "closeForm",
+  "closedFormMessage",
+  "closeOnDate",
+  "closeDate",
+  "limitSubmissions",
+  "maxSubmissions",
+  "preventDuplicateSubmissions",
+  "selfEmailNotifications",
+  "notificationEmail",
+  "respondentEmailNotifications",
+  "respondentEmailSubject",
+  "respondentEmailBody",
+  "dataRetention",
+  "dataRetentionDays",
+] as const;
+
+const pickSettings = (src: Record<string, unknown>): Record<string, unknown> => {
+  const out: Record<string, unknown> = {};
+  for (const key of VERSIONED_SETTINGS_KEYS) {
+    out[key] = src[key] ?? null;
+  }
+  return out;
+};
+
+/**
  * Hook to detect if the current draft has unpublished changes.
- * Compares current content hash with the last published hash.
+ * Compares a single serialized object covering every versioned field
+ * (content, customization, title, icon, cover, Group 2 settings) against
+ * the latest published version snapshot. Group 4 fields are not compared —
+ * they apply to the public form live.
  */
 export const useHasUnpublishedChanges = (formId: string | undefined) => {
   const { data: formData } = useForm(formId);
@@ -51,33 +93,40 @@ export const useHasUnpublishedChanges = (formId: string | undefined) => {
 
   // Fetch the latest version's full content for comparison
   const { data: versionContentData } = useFormVersionContent(latestVersionMeta?.id);
-  const latestVersionContent = versionContentData?.[0];
+  const latestVersion = versionContentData?.[0];
 
   const hasPublished = !!form?.lastPublishedVersionId;
-  const publishedContentHash = form?.publishedContentHash;
-  const currentContentStr = form ? JSON.stringify(form.content) : null;
-  const publishedContentStr = latestVersionContent
-    ? JSON.stringify(latestVersionContent.content)
-    : null;
-  const currentCustomizationStr = form ? JSON.stringify(form.customization ?? {}) : null;
-  const publishedCustomizationStr = latestVersionContent
-    ? JSON.stringify(latestVersionContent.customization ?? {})
-    : null;
+
+  const currentSnapshotStr = useMemo(() => {
+    if (!form) return null;
+    const flat = form as unknown as Record<string, unknown>;
+    return JSON.stringify({
+      content: form.content ?? [],
+      customization: form.customization ?? {},
+      title: form.title ?? "",
+      icon: form.icon ?? null,
+      cover: form.cover ?? null,
+      settings: pickSettings(flat),
+    });
+  }, [form]);
+
+  const publishedSnapshotStr = useMemo(() => {
+    if (!latestVersion) return null;
+    return JSON.stringify({
+      content: latestVersion.content ?? [],
+      customization: latestVersion.customization ?? {},
+      title: latestVersion.title ?? "",
+      icon: (latestVersion as unknown as { icon?: string | null }).icon ?? null,
+      cover: (latestVersion as unknown as { cover?: string | null }).cover ?? null,
+      settings: pickSettings((latestVersion.settings ?? {}) as Record<string, unknown>),
+    });
+  }, [latestVersion]);
 
   return useMemo(() => {
-    if (!formId || !publishedContentHash || !hasPublished) return false;
-    if (!publishedContentStr) return false;
-    if (currentContentStr !== publishedContentStr) return true;
-    return currentCustomizationStr !== publishedCustomizationStr;
-  }, [
-    formId,
-    publishedContentHash,
-    hasPublished,
-    currentContentStr,
-    publishedContentStr,
-    currentCustomizationStr,
-    publishedCustomizationStr,
-  ]);
+    if (!formId || !hasPublished) return false;
+    if (!currentSnapshotStr || !publishedSnapshotStr) return false;
+    return currentSnapshotStr !== publishedSnapshotStr;
+  }, [formId, hasPublished, currentSnapshotStr, publishedSnapshotStr]);
 };
 
 // ============================================================================
@@ -147,8 +196,9 @@ export const restoreVersion = async (formId: string, versionId: string) => {
 };
 
 /**
- * Discard changes and revert to last published version.
- * Optimistically updates content/title/customization from the published version.
+ * Discard changes and revert every versioned field (Groups 1–3) on the live
+ * draft back to the latest published version snapshot. Group 4 fields (slug,
+ * customDomainId, branding) stay as-is — they're live and never versioned.
  */
 export const discardChanges = (formId: string) => {
   const detail = getFormListings();
@@ -159,6 +209,8 @@ export const discardChanges = (formId: string) => {
   const version = versionCollection.get(form.lastPublishedVersionId as string);
   if (!version) throw new Error("Published version not found in local state");
 
+  const snapshotSettings = (version.settings ?? {}) as Record<string, unknown>;
+
   const tx = createTransaction({
     mutationFn: async () => {
       await discardFormChanges({ data: { formId } });
@@ -168,9 +220,17 @@ export const discardChanges = (formId: string) => {
 
   tx.mutate(() => {
     detail.update(formId, (draft) => {
+      // Group 1 — content/appearance
       draft.content = version.content;
-      draft.title = version.title;
+      draft.title = version.title ?? "";
       draft.customization = version.customization ?? {};
+      // Group 3 — visual assets
+      draft.icon = version.icon;
+      draft.cover = version.cover;
+      // Group 2 — reset every versioned behavior setting to the snapshot value
+      for (const key of VERSIONED_SETTINGS_KEYS) {
+        (draft as unknown as Record<string, unknown>)[key] = snapshotSettings[key] ?? null;
+      }
       draft.updatedAt = new Date().toISOString();
     });
   });

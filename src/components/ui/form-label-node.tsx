@@ -1,6 +1,6 @@
 import type { PlateElementProps } from "platejs/react";
 
-import { PlateElement } from "platejs/react";
+import { PlateElement, useSelected } from "platejs/react";
 
 import { RequiredBadgeWrapper } from "@/components/ui/required-badge-wrapper";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ export const FormLabelElement = ({ className, children, ...props }: PlateElement
   const { editor, element, path } = props;
   const placeholder = element.placeholder as string | undefined;
   const isEmpty = editor.api.isEmpty(element);
+  const isSelected = useSelected();
 
   return (
     <RequiredBadgeWrapper path={path}>
@@ -20,7 +21,7 @@ export const FormLabelElement = ({ className, children, ...props }: PlateElement
         {...props}
       >
         <div className="flex my-2 items-center gap-1">
-          {isEmpty && placeholder && (
+          {isEmpty && placeholder && isSelected && (
             <span className="absolute text-muted-foreground/90 pointer-events-none select-none">
               {placeholder}
             </span>

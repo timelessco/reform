@@ -213,8 +213,8 @@ export const FormButtonElement = ({ className, children, ...props }: PlateElemen
           )}
         >
           {isPrevious && <ChevronLeftIcon className="h-4 w-4" />}
-          {buttonRole === "submit" && <CheckIcon className="h-4 w-4" />}
           <span>{displayText}</span>
+          {buttonRole === "submit" && <CheckIcon className="h-4 w-4" />}
           {buttonRole === "next" && <ChevronRightIcon className="h-4 w-4" />}
         </span>
         {/* Gear icon on right when button is left-aligned (so button touches left edge) */}

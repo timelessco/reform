@@ -22,7 +22,22 @@ export const initCollections = (queryClient: QueryClient, serverFns: ServerFns) 
     },
     onUpdate: async ({ transaction }) => {
       const m = transaction.mutations[0];
-      await serverFns.updateWorkspace({ id: m.original.id, ...m.changes });
+      const changes = m.changes as Record<string, unknown>;
+      // sortIndex is per-user, routed to dedicated endpoint; other fields go to updateWorkspace
+      const { sortIndex, ...rest } = changes;
+      const pending: Promise<unknown>[] = [];
+      if (typeof sortIndex === "string") {
+        pending.push(
+          serverFns.reorderWorkspace({
+            workspaceId: m.original.id,
+            sortIndex,
+          }),
+        );
+      }
+      if (Object.keys(rest).length > 0) {
+        pending.push(serverFns.updateWorkspace({ id: m.original.id, ...rest }));
+      }
+      await Promise.all(pending);
     },
     onDelete: async ({ transaction }) => {
       await serverFns.deleteWorkspace({ id: transaction.mutations[0].original.id });
@@ -54,7 +69,21 @@ export const initCollections = (queryClient: QueryClient, serverFns: ServerFns) 
     queryClient,
     queryFn: serverFns.getFavorites,
     onInsert: async ({ transaction }) => {
-      await serverFns.addFavorite({ formId: transaction.mutations[0].modified.formId });
+      const modified = transaction.mutations[0].modified;
+      await serverFns.addFavorite({
+        formId: modified.formId,
+        sortIndex: modified.sortIndex ?? undefined,
+      });
+    },
+    onUpdate: async ({ transaction }) => {
+      const m = transaction.mutations[0];
+      const changes = m.changes as Record<string, unknown>;
+      if (typeof changes.sortIndex === "string") {
+        await serverFns.reorderFavorite({
+          formId: m.original.formId,
+          sortIndex: changes.sortIndex,
+        });
+      }
     },
     onDelete: async ({ transaction }) => {
       await serverFns.removeFavorite({ formId: transaction.mutations[0].original.formId });

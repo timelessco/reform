@@ -3,18 +3,16 @@ import { SidebarItem } from "@/components/sidebar-item";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuPortal,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -24,17 +22,45 @@ import {
   ChevronDownIcon,
   ClockRewindIcon,
   CopyIcon,
+  FolderIcon,
   Loader2Icon,
   MoreHorizontalIcon,
   Pencil2Icon,
   PlusIcon,
+  StarIcon,
   TrashIcon,
 } from "@/components/ui/icons";
 import { SidebarSection } from "@/components/ui/sidebar-section";
-import { createFormLocal } from "@/collections";
+import {
+  createFormLocal,
+  moveFormToWorkspaceLocal,
+  renameFormLocal,
+  toggleFavoriteLocal,
+} from "@/collections";
+import { useIsFavorite } from "@/hooks/use-live-hooks";
+import { useSession } from "@/lib/auth/auth-client";
 import { cn } from "@/lib/utils";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
+import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useLocation, useRouter } from "@tanstack/react-router";
-import { useCallback, useState } from "react";
+import type * as React from "react";
+import { useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 export type WorkspaceWithForms = {
   id: string;
@@ -43,6 +69,7 @@ export type WorkspaceWithForms = {
   name: string;
   createdAt: string;
   updatedAt: string;
+  sortIndex?: string | null;
   forms: Array<{
     id: string;
     title: string | null;
@@ -50,12 +77,14 @@ export type WorkspaceWithForms = {
     workspaceId: string;
     icon?: string | null;
     status: string;
+    sortIndex?: string | null;
     customization?: Record<string, string> | null;
   }>;
 };
 
 export interface WorkspaceItemMinimalProps {
   workspace: WorkspaceWithForms;
+  allWorkspaces: Array<Pick<WorkspaceWithForms, "id" | "name">>;
   submissionCounts: Map<string, number>;
   sortMode: string;
   onSortChange: (mode: "recent" | "oldest" | "alphabetical" | "manual") => void;
@@ -63,10 +92,12 @@ export interface WorkspaceItemMinimalProps {
   onDelete: () => void;
   onDuplicateForm: (form: WorkspaceWithForms["forms"][0]) => void;
   onDeleteForm: (form: WorkspaceWithForms["forms"][0]) => void;
+  onFormDragEnd: (workspaceId: string, event: DragEndEvent) => void;
 }
 
 export const WorkspaceItemMinimal = ({
   workspace,
+  allWorkspaces,
   submissionCounts,
   sortMode,
   onSortChange,
@@ -74,10 +105,26 @@ export const WorkspaceItemMinimal = ({
   onDelete,
   onDuplicateForm,
   onDeleteForm,
+  onFormDragEnd,
 }: WorkspaceItemMinimalProps) => {
   const router = useRouter();
   const [isCreatingForm, setIsCreatingForm] = useState(false);
   const [sortExpanded, setSortExpanded] = useState(false);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging: isThisDragging,
+  } = useSortable({ id: workspace.id, data: { type: "workspace" } });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isThisDragging ? 0.5 : 1,
+  };
 
   const handlePopoverOpenChange = useCallback((open: boolean) => {
     if (!open) setSortExpanded(false);
@@ -107,90 +154,121 @@ export const WorkspaceItemMinimal = ({
     }
   }, [workspace.id, router]);
 
+  const handleFormDragEnd = useCallback(
+    (event: DragEndEvent) => onFormDragEnd(workspace.id, event),
+    [onFormDragEnd, workspace.id],
+  );
+
+  const formSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const formIds = useMemo(() => workspace.forms.map((f) => f.id), [workspace.forms]);
+  const otherWorkspaces = useMemo(
+    () => allWorkspaces.filter((w) => w.id !== workspace.id),
+    [allWorkspaces, workspace.id],
+  );
+
   return (
-    <SidebarSection
-      label={workspace.name}
-      initialOpen={true}
-      action={
-        <DropdownMenu onOpenChange={handlePopoverOpenChange}>
-          <DropdownMenuTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="p-[5px] mr-1 rounded-lg overflow-hidden hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
-                title="More options"
-              />
-            }
-          >
-            <MoreHorizontalIcon />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48" sideOffset={4}>
-            <Collapsible open={sortExpanded} onOpenChange={setSortExpanded}>
-              <CollapsibleTrigger className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 w-full overflow-hidden text-[13px] transition-colors cursor-pointer text-foreground">
-                <currentSort.icon className="size-4 shrink-0" />
-                <span className="flex-1 text-left">{currentSort.label}</span>
-                <ChevronDownIcon
-                  className={cn("size-3 shrink-0 transition-transform duration-200")}
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <SidebarSection
+        label={workspace.name}
+        initialOpen={true}
+        action={
+          <DropdownMenu onOpenChange={handlePopoverOpenChange}>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="p-[5px] mr-1 rounded-lg overflow-hidden hover:bg-sidebar-active text-muted-foreground hover:text-foreground"
+                  title="More options"
+                  onPointerDown={(e) => e.stopPropagation()}
                 />
-              </CollapsibleTrigger>
-              <CollapsibleContent className="overflow-hidden h-(--collapsible-panel-height) transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0">
-                <div className="flex flex-col pt-1">
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-                    {sortOptions.map((option) => (
-                      <DropdownMenuItem
-                        key={option.value}
-                        closeOnClick={false}
-                        onClick={() => {
-                          onSortChange(option.value);
-                          setSortExpanded(false);
-                        }}
-                        className={cn(sortMode === option.value && "bg-black/5")}
-                      >
-                        <option.icon />
-                        <span className="flex-1 text-left">{option.label}</span>
-                        {sortMode === option.value && <CheckIcon className="size-3 shrink-0" />}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuGroup>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Workspace</DropdownMenuLabel>
-              <DropdownMenuItem onClick={handleCreateForm} disabled={isCreatingForm}>
-                {isCreatingForm ? <Loader2Icon className="size-4 animate-spin" /> : <PlusIcon />}
-                <span className="flex-1 text-left">New form</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onRename}>
-                <Pencil2Icon />
-                <span className="flex-1 text-left">Rename</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={onDelete}>
-                <TrashIcon />
-                <span className="flex-1 text-left">Delete</span>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      }
-    >
-      {workspace.forms.map((form) => (
-        <WorkspaceFormMinimal
-          key={form.id}
-          form={form}
-          workspaceId={workspace.id}
-          submissionCount={submissionCounts.get(form.id) || 0}
-          onDuplicate={() => onDuplicateForm(form)}
-          onDelete={() => onDeleteForm(form)}
-        />
-      ))}
-      {workspace.forms.length === 0 && (
-        <span className="text-muted-foreground/50 text-[11px] px-8 py-1 italic">No forms yet</span>
-      )}
-    </SidebarSection>
+              }
+            >
+              <MoreHorizontalIcon />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48" sideOffset={4}>
+              <Collapsible open={sortExpanded} onOpenChange={setSortExpanded}>
+                <CollapsibleTrigger className="h-[26px] px-2 py-[5.5px] rounded-lg inline-flex items-center gap-1.5 w-full overflow-hidden text-[13px] transition-colors cursor-pointer text-foreground">
+                  <currentSort.icon className="size-4 shrink-0" />
+                  <span className="flex-1 text-left">{currentSort.label}</span>
+                  <ChevronDownIcon
+                    className={cn("size-3 shrink-0 transition-transform duration-200")}
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="overflow-hidden h-(--collapsible-panel-height) transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0">
+                  <div className="flex flex-col pt-1">
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                      {sortOptions.map((option) => (
+                        <DropdownMenuItem
+                          key={option.value}
+                          closeOnClick={false}
+                          onClick={() => {
+                            onSortChange(option.value);
+                            setSortExpanded(false);
+                          }}
+                          className={cn(sortMode === option.value && "bg-black/5")}
+                        >
+                          <option.icon />
+                          <span className="flex-1 text-left">{option.label}</span>
+                          {sortMode === option.value && <CheckIcon className="size-3 shrink-0" />}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuGroup>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Workspace</DropdownMenuLabel>
+                <DropdownMenuItem onClick={handleCreateForm} disabled={isCreatingForm}>
+                  {isCreatingForm ? <Loader2Icon className="size-4 animate-spin" /> : <PlusIcon />}
+                  <span className="flex-1 text-left">New form</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onRename}>
+                  <Pencil2Icon />
+                  <span className="flex-1 text-left">Rename</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={onDelete}>
+                  <TrashIcon />
+                  <span className="flex-1 text-left">Delete</span>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        }
+      >
+        <DndContext
+          sensors={formSensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleFormDragEnd}
+          modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+        >
+          <SortableContext items={formIds} strategy={verticalListSortingStrategy}>
+            {workspace.forms.map((form) => (
+              <WorkspaceFormMinimal
+                key={form.id}
+                form={form}
+                workspaceId={workspace.id}
+                submissionCount={submissionCounts.get(form.id) || 0}
+                otherWorkspaces={otherWorkspaces}
+                onDuplicate={() => onDuplicateForm(form)}
+                onDelete={() => onDeleteForm(form)}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
+        {workspace.forms.length === 0 && (
+          <span className="text-muted-foreground/50 text-[11px] px-8 py-1 italic">
+            No forms yet
+          </span>
+        )}
+      </SidebarSection>
+    </div>
   );
 };
 
@@ -199,6 +277,11 @@ const getFormIcon = (
   icon?: string | null,
   customization?: Record<string, string> | null,
 ) => <ThemedFormIcon icon={icon} customization={customization} />;
+
+const stopBubble = (e: React.SyntheticEvent) => {
+  e.preventDefault();
+  e.stopPropagation();
+};
 
 interface WorkspaceFormMinimalProps {
   form: {
@@ -211,6 +294,7 @@ interface WorkspaceFormMinimalProps {
   };
   workspaceId: string;
   submissionCount: number;
+  otherWorkspaces: Array<{ id: string; name: string }>;
   onDuplicate: () => void;
   onDelete: () => void;
 }
@@ -219,10 +303,27 @@ const WorkspaceFormMinimal = ({
   form,
   workspaceId,
   submissionCount,
+  otherWorkspaces,
   onDuplicate,
   onDelete,
 }: WorkspaceFormMinimalProps) => {
   const location = useLocation();
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
+  const isFav = useIsFavorite(userId, form.id);
+  const [renameOpen, setRenameOpen] = useState(false);
+
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: form.id,
+    data: { type: "form", workspaceId },
+  });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
   const isPublishedForm = form.status === "published";
   const linkOptions = {
     to: isPublishedForm
@@ -240,41 +341,144 @@ const WorkspaceFormMinimal = ({
   const isPublished = form.status === "published";
   const showCount = isPublished && submissionCount > 0;
 
+  const handleToggleFavorite = useCallback(() => {
+    if (!userId) return;
+    toggleFavoriteLocal(userId, form.id).catch(() => toast.error("Failed to update favorite"));
+  }, [userId, form.id]);
+
+  const handleMoveToWorkspace = useCallback(
+    (targetWorkspaceId: string) => {
+      moveFormToWorkspaceLocal(form.id, targetWorkspaceId).catch(() =>
+        toast.error("Failed to move form"),
+      );
+    },
+    [form.id],
+  );
+
   return (
-    <ContextMenu>
-      <ContextMenuTrigger render={<div />}>
-        <SidebarItem label={label} linkOptions={linkOptions} isActive={isActive} prefix={prefix}>
-          {showCount && (
-            <span className="text-[11px] text-muted-foreground tabular-nums shrink-0 tracking-5 font-case">
-              {submissionCount}
-            </span>
-          )}
-        </SidebarItem>
-      </ContextMenuTrigger>
-      <ContextMenuContent className="w-[195px] rounded-2xl p-1 shadow-popover border-0 outline-hidden">
-        <div className="text-[12px] text-muted-foreground px-2 py-1.5">Form</div>
-        <ContextMenuItem
-          onClick={(e) => {
-            e.stopPropagation();
-            onDuplicate();
-          }}
-          className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] transition-colors text-foreground/80 [&_svg]:size-3.5"
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="group/row relative"
+    >
+      <SidebarItem label={label} linkOptions={linkOptions} isActive={isActive} prefix={prefix}>
+        {showCount && (
+          <span className="text-[11px] text-muted-foreground tabular-nums shrink-0 tracking-5 font-case transition-opacity group-hover/row:opacity-0 group-has-[[data-state=open]]/row:opacity-0">
+            {submissionCount}
+          </span>
+        )}
+      </SidebarItem>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <button
+              type="button"
+              aria-label="Form options"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={stopBubble}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center size-5 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-active opacity-0 group-hover/row:opacity-100 data-[state=open]:opacity-100 transition-opacity"
+            />
+          }
         >
-          <CopyIcon className="h-3.5 w-3.5 shrink-0" />
-          <span className="flex-1 text-left">Duplicate</span>
-        </ContextMenuItem>
-        <ContextMenuItem
-          variant="destructive"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          className="w-full justify-start gap-1.5 rounded-lg px-2 py-1.5 h-[26px] text-[13px] transition-colors text-red-500/70 hover:bg-red-500/5 focus:bg-red-500/5[&_svg]:size-3.5"
+          <MoreHorizontalIcon className="size-3.5" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="start"
+          sideOffset={4}
+          className="w-48"
+          onClick={(e) => e.stopPropagation()}
         >
-          <TrashIcon className="h-3.5 w-3.5 shrink-0" />
-          <span className="flex-1 text-left">Delete</span>
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Form</DropdownMenuLabel>
+            <DropdownMenuItem onClick={onDuplicate}>
+              <CopyIcon />
+              <span className="flex-1 text-left">Duplicate</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setRenameOpen(true)}>
+              <Pencil2Icon />
+              <span className="flex-1 text-left">Rename</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleToggleFavorite} disabled={!userId}>
+              <StarIcon className="size-3.5" />
+              <span className="flex-1 text-left">
+                {isFav ? "Remove from favorites" : "Add to favorites"}
+              </span>
+            </DropdownMenuItem>
+            {otherWorkspaces.length > 0 && (
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <FolderIcon className="size-3.5" />
+                  <span className="flex-1 text-left">Move to workspace</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent className="w-48">
+                    {otherWorkspaces.map((ws) => (
+                      <DropdownMenuItem key={ws.id} onClick={() => handleMoveToWorkspace(ws.id)}>
+                        <span className="flex-1 text-left truncate">{ws.name}</span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+            )}
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive" onClick={onDelete}>
+            <TrashIcon />
+            <span className="flex-1 text-left">Delete</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {renameOpen && (
+        <InlineRenameForm
+          initialValue={form.title || ""}
+          onClose={() => setRenameOpen(false)}
+          onSubmit={(next) => {
+            renameFormLocal(form.id, next).catch(() => toast.error("Failed to rename form"));
+            setRenameOpen(false);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+const InlineRenameForm = ({
+  initialValue,
+  onSubmit,
+  onClose,
+}: {
+  initialValue: string;
+  onSubmit: (value: string) => void;
+  onClose: () => void;
+}) => {
+  const [value, setValue] = useState(initialValue);
+
+  return (
+    <form
+      className="px-2 py-1"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const trimmed = value.trim();
+        if (trimmed) onSubmit(trimmed);
+        else onClose();
+      }}
+    >
+      <input
+        // biome-ignore lint/a11y/noAutofocus: rename input should focus immediately
+        autoFocus
+        type="text"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={onClose}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onClose();
+        }}
+        className="w-full bg-secondary rounded-md px-2 py-1 text-[13px] outline-hidden ring-1 ring-foreground/20"
+        aria-label="Rename form"
+      />
+    </form>
   );
 };

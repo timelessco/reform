@@ -19,34 +19,21 @@ import type { PublicFormSettings } from "@/types/form-settings";
 export const getPublishedFormById = createServerFn({ method: "GET" })
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ data }) => {
-    // Get form with its current published version and settings
+    // Read only the live (Group 4) fields + version pointer from forms. Everything
+    // else (content, title, icon, cover, Group 2 settings) comes from the
+    // published version snapshot so changes don't leak to the public URL until
+    // the user republishes.
     const [form] = await db
       .select({
         id: forms.id,
         status: forms.status,
-        icon: forms.icon,
-        cover: forms.cover,
         lastPublishedVersionId: forms.lastPublishedVersionId,
-        // Fallback fields for forms without versions (backward compatibility)
+        // Group 4 (live): branding toggle, plus draft fallbacks for forms without versions
+        branding: forms.branding,
         draftTitle: forms.title,
         draftContent: forms.content,
-        // Settings fields (now on forms table)
-        progressBar: forms.progressBar,
-        branding: forms.branding,
-        autoJump: forms.autoJump,
-        saveAnswersForLater: forms.saveAnswersForLater,
-        redirectOnCompletion: forms.redirectOnCompletion,
-        redirectUrl: forms.redirectUrl,
-        redirectDelay: forms.redirectDelay,
-        language: forms.language,
-        passwordProtect: forms.passwordProtect,
-        closeForm: forms.closeForm,
-        closedFormMessage: forms.closedFormMessage,
-        closeOnDate: forms.closeOnDate,
-        closeDate: forms.closeDate,
-        limitSubmissions: forms.limitSubmissions,
-        maxSubmissions: forms.maxSubmissions,
-        preventDuplicateSubmissions: forms.preventDuplicateSubmissions,
+        draftIcon: forms.icon,
+        draftCover: forms.cover,
       })
       .from(forms)
       .where(and(eq(forms.id, data.id), eq(forms.status, "published")));
@@ -55,27 +42,36 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
       throw notFound();
     }
 
-    // Read settings directly from the form row
+    // Load version snapshot (source of truth for Groups 1-3)
+    const [version] = form.lastPublishedVersionId
+      ? await db.select().from(formVersions).where(eq(formVersions.id, form.lastPublishedVersionId))
+      : [undefined];
+
+    const snapshotSettings = (version?.settings ?? {}) as Partial<
+      Omit<PublicFormSettings, "branding">
+    >;
+
+    // Merge: Group 2 fields from version snapshot, branding (Group 4) live
     const settings: PublicFormSettings = {
-      progressBar: form.progressBar,
+      progressBar: snapshotSettings.progressBar ?? false,
       branding: form.branding,
-      autoJump: form.autoJump,
-      saveAnswersForLater: form.saveAnswersForLater,
-      redirectOnCompletion: form.redirectOnCompletion,
-      redirectUrl: form.redirectUrl,
-      redirectDelay: form.redirectDelay,
-      language: form.language,
-      passwordProtect: form.passwordProtect,
-      closeForm: form.closeForm,
-      closedFormMessage: form.closedFormMessage,
-      closeOnDate: form.closeOnDate,
-      closeDate: form.closeDate,
-      limitSubmissions: form.limitSubmissions,
-      maxSubmissions: form.maxSubmissions,
-      preventDuplicateSubmissions: form.preventDuplicateSubmissions,
+      autoJump: snapshotSettings.autoJump ?? false,
+      saveAnswersForLater: snapshotSettings.saveAnswersForLater ?? true,
+      redirectOnCompletion: snapshotSettings.redirectOnCompletion ?? false,
+      redirectUrl: snapshotSettings.redirectUrl ?? null,
+      redirectDelay: snapshotSettings.redirectDelay ?? 0,
+      language: snapshotSettings.language ?? "English",
+      passwordProtect: snapshotSettings.passwordProtect ?? false,
+      closeForm: snapshotSettings.closeForm ?? false,
+      closedFormMessage: snapshotSettings.closedFormMessage ?? "This form is now closed.",
+      closeOnDate: snapshotSettings.closeOnDate ?? false,
+      closeDate: snapshotSettings.closeDate ?? null,
+      limitSubmissions: snapshotSettings.limitSubmissions ?? false,
+      maxSubmissions: snapshotSettings.maxSubmissions ?? null,
+      preventDuplicateSubmissions: snapshotSettings.preventDuplicateSubmissions ?? false,
     };
 
-    // --- Gating checks ---
+    // --- Gating checks (based on snapshot settings — changes here require republish) ---
     // 1. Form manually closed
     if (settings.closeForm) {
       return {
@@ -124,40 +120,33 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
       ? { type: "password_required" as const, message: null }
       : null;
 
-    // If form has a published version, use version content
-    if (form.lastPublishedVersionId) {
-      const [version] = await db
-        .select()
-        .from(formVersions)
-        .where(eq(formVersions.id, form.lastPublishedVersionId));
-
-      if (version) {
-        return {
-          form: {
-            id: form.id,
-            title: version.title,
-            content: version.content as object[],
-            customization: (version.customization ?? {}) as Record<string, string>,
-            icon: form.icon,
-            cover: form.cover,
-            status: form.status,
-            settings,
-          },
-          error: null,
-          gated,
-        };
-      }
+    if (version) {
+      return {
+        form: {
+          id: form.id,
+          title: version.title,
+          content: version.content as object[],
+          customization: (version.customization ?? {}) as Record<string, string>,
+          icon: version.icon,
+          cover: version.cover,
+          status: form.status,
+          settings,
+        },
+        error: null,
+        gated,
+      };
     }
 
-    // Fallback for forms without versions (backward compatibility)
+    // Fallback for forms without versions (backward compatibility — shouldn't
+    // happen after backfill migration but kept for safety)
     return {
       form: {
         id: form.id,
         title: form.draftTitle,
         content: form.draftContent as object[],
         customization: {} as Record<string, string>,
-        icon: form.icon,
-        cover: form.cover,
+        icon: form.draftIcon,
+        cover: form.draftCover,
         status: form.status,
         settings,
       },

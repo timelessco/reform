@@ -12,14 +12,20 @@
       "type": "git",
       "name": "tanstack-db",
       "url": "https://github.com/tanstack/db",
-      "branch": "main"
+      "branch": "main",
     },
     {
       "type": "git",
       "name": "tanstack-ai",
       "url": "https://github.com/tanstack/ai",
-      "branch": "main"
-    }
+      "branch": "main",
+    },
+    {
+      "type": "git",
+      "name": "json-render",
+      "url": "https://github.com/vercel-labs/json-render",
+      "branch": "main",
+    },
   ],
   "model": "glm-5-turbo",
   "provider": "openai-compat",

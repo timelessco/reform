@@ -14,8 +14,13 @@ import type {
 import type { createWorkspaceSummaryCollection, WorkspaceSummary } from "./query/workspace";
 import type { Form } from "./local/form";
 import type { createForm, updateForm, deleteForm } from "@/lib/server-fn/forms";
-import type { createWorkspace, updateWorkspace, deleteWorkspace } from "@/lib/server-fn/workspaces";
-import type { addFavorite, removeFavorite } from "@/lib/server-fn/favorites";
+import type {
+  createWorkspace,
+  updateWorkspace,
+  deleteWorkspace,
+  reorderWorkspace,
+} from "@/lib/server-fn/workspaces";
+import type { addFavorite, removeFavorite, reorderFavorite } from "@/lib/server-fn/favorites";
 
 // Utility types to extract input/output from TanStack server functions
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- `any` required: function constraints need contravariant params
@@ -65,6 +70,12 @@ export type ServerFns = {
   removeFavorite: (
     data: ServerFnInput<typeof removeFavorite>,
   ) => Promise<ServerFnOutput<typeof removeFavorite>>;
+  reorderFavorite: (
+    data: ServerFnInput<typeof reorderFavorite>,
+  ) => Promise<ServerFnOutput<typeof reorderFavorite>>;
+  reorderWorkspace: (
+    data: ServerFnInput<typeof reorderWorkspace>,
+  ) => Promise<ServerFnOutput<typeof reorderWorkspace>>;
 };
 
 // --- Singleton state ---

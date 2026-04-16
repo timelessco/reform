@@ -18,25 +18,35 @@ export const RequiredBadgeWrapper = ({
 }: RequiredBadgeWrapperProps): React.ReactNode => {
   const editor = useEditorRef();
 
-  // Stable index for the next sibling — avoids new array reference each render
-  const nextSiblingIndex = path[path.length - 1] + 1;
+  // Serialize the path so memos invalidate whenever any segment changes
+  // (nesting depth, parent index, or own index).
+  const pathKey = path.join(",");
 
   const nextSiblingPath = useMemo(
-    () => [...path.slice(0, -1), nextSiblingIndex] as Path,
-    // path from Plate is stable per element, but use index as the real dep
+    () => [...path.slice(0, -1), path[path.length - 1] + 1] as Path,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [nextSiblingIndex],
+    [pathKey],
   );
 
   const labelPath = useMemo(
     () => [...path] as Path,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [nextSiblingIndex],
+    [pathKey],
   );
 
   const { isNextSiblingFormInput, isRequired } = useEditorSelector(
     (ed) => {
       try {
+        // Skip the badge entirely when the label node is empty — an empty
+        // block isn't a real label, so there's nothing to mark required.
+        const labelEntry = ed.api.node(labelPath);
+        const labelNode = labelEntry?.[0] as
+          | { required?: boolean; children?: Array<{ text?: string }> }
+          | undefined;
+        if (!labelNode || ed.api.isEmpty(labelEntry?.[0])) {
+          return { isNextSiblingFormInput: false, isRequired: false };
+        }
+
         const entry = ed.api.node(nextSiblingPath);
         if (!entry) {
           return { isNextSiblingFormInput: false, isRequired: false };
@@ -53,11 +63,9 @@ export const RequiredBadgeWrapper = ({
         if (inputRequired != null) {
           return { isNextSiblingFormInput: true, isRequired: Boolean(inputRequired) };
         }
-        const labelEntry = ed.api.node(labelPath);
-        const labelNode = labelEntry?.[0] as { required?: boolean } | undefined;
         return {
           isNextSiblingFormInput: true,
-          isRequired: Boolean(labelNode?.required),
+          isRequired: Boolean(labelNode.required),
         };
       } catch {
         return { isNextSiblingFormInput: false, isRequired: false };

@@ -17,6 +17,7 @@ export type WorkspaceSummary = {
   createdByUserId: string | null;
   createdAt: string;
   updatedAt: string;
+  sortIndex?: string | null;
   forms: FormSummary[];
 };
 

@@ -59,6 +59,7 @@ export const createForm = createServerFn({ method: "POST" })
       dataRetention: z.boolean().optional(),
       dataRetentionDays: z.number().nullable().optional(),
       customization: z.record(z.string(), z.unknown()).optional(),
+      sortIndex: z.string().nullable().optional(),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -104,6 +105,7 @@ export const createForm = createServerFn({ method: "POST" })
         dataRetention: data.dataRetention,
         dataRetentionDays: data.dataRetentionDays,
         customization: data.customization,
+        sortIndex: data.sortIndex,
         createdAt: now,
         updatedAt: now,
       })
@@ -154,6 +156,7 @@ export const updateForm = createServerFn({ method: "POST" })
       dataRetention: z.boolean().optional(),
       dataRetentionDays: z.number().nullable().optional(),
       customization: z.record(z.string(), z.unknown()).optional(),
+      sortIndex: z.string().nullable().optional(),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -198,6 +201,7 @@ export const getFormListings = createServerFn({ method: "GET" })
         workspaceId: forms.workspaceId,
         icon: forms.icon,
         formName: forms.formName,
+        sortIndex: forms.sortIndex,
         submissionCount: count(submissions.id),
       })
       .from(forms)

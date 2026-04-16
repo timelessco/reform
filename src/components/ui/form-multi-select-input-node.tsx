@@ -1,10 +1,15 @@
-import type { Path, TElement } from "platejs";
+import { PathApi } from "platejs";
+import type { TElement } from "platejs";
 import type { PlateElementProps } from "platejs/react";
 
 import { PlateElement, useEditorRef, useEditorSelector, useFocused } from "platejs/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { findPrevNonButtonPath, moveToPath } from "@/components/editor/plugins/form-blocks-kit";
+import {
+  findNextNonButtonPath,
+  findPrevNonButtonPath,
+  moveToPath,
+} from "@/components/editor/plugins/form-blocks-kit";
 import { XIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +26,7 @@ export const FormMultiSelectInputElement = ({
   const elementId = (element as { id?: string }).id;
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState("");
+  const [focusedChipIndex, setFocusedChipIndex] = useState<number | null>(null);
 
   const focused = useFocused();
   const isSelected = useEditorSelector(
@@ -56,12 +62,75 @@ export const FormMultiSelectInputElement = ({
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Chip-navigation mode: arrows move between chips, Backspace/Delete removes focused chip.
+    if (focusedChipIndex !== null) {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setFocusedChipIndex(Math.max(0, focusedChipIndex - 1));
+        return;
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        if (focusedChipIndex >= options.length - 1) {
+          setFocusedChipIndex(null);
+        } else {
+          setFocusedChipIndex(focusedChipIndex + 1);
+        }
+        return;
+      }
+      if (e.key === "Backspace" || e.key === "Delete") {
+        e.preventDefault();
+        const newOptions = options.filter((_, i) => i !== focusedChipIndex);
+        setNodeOptions(newOptions);
+        if (newOptions.length === 0) {
+          setFocusedChipIndex(null);
+        } else {
+          setFocusedChipIndex(Math.min(focusedChipIndex, newOptions.length - 1));
+        }
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setFocusedChipIndex(null);
+        return;
+      }
+      // Any other key — exit chip-nav mode and let the input process it
+      setFocusedChipIndex(null);
+    }
+
+    // ArrowLeft at input start with existing chips → enter chip-navigation mode
+    if (
+      e.key === "ArrowLeft" &&
+      inputRef.current?.selectionStart === 0 &&
+      inputRef.current?.selectionEnd === 0 &&
+      options.length > 0
+    ) {
+      e.preventDefault();
+      setFocusedChipIndex(options.length - 1);
+      return;
+    }
+
     if (e.key === "Enter") {
       e.preventDefault();
       e.stopPropagation();
       e.nativeEvent.stopImmediatePropagation();
       const trimmed = inputValue.trim();
-      if (!trimmed || options.includes(trimmed)) return;
+
+      // Empty input → create a new paragraph below (same as Enter on any form field)
+      if (!trimmed) {
+        inputRef.current?.blur();
+        const path = editor.api.findPath(element);
+        if (!path) return;
+        const nextPath = PathApi.next(path);
+        editor.tf.insertNodes({ type: "p", children: [{ text: "" }] } as TElement, {
+          at: nextPath,
+        });
+        moveToPath(editor, nextPath);
+        editor.tf.focus();
+        return;
+      }
+
+      if (options.includes(trimmed)) return;
       setNodeOptions([...options, trimmed]);
       setInputValue("");
     } else if (e.key === "Backspace" && inputValue === "") {
@@ -87,44 +156,21 @@ export const FormMultiSelectInputElement = ({
           }
         }
       }
-    } else if (e.key === "Tab") {
+    } else if (e.key === "Tab" || e.key === "ArrowDown" || e.key === "ArrowUp") {
+      // ArrowLeft/Right should navigate within the input natively; Up/Down and Tab
+      // bridge to block-level navigation.
+      const goPrev = e.key === "ArrowUp" || (e.key === "Tab" && e.shiftKey);
       e.preventDefault();
       e.stopPropagation();
       inputRef.current?.blur();
       const path = editor.api.findPath(element);
-      if (path) {
-        if (e.shiftKey) {
-          const prevPath = findPrevNonButtonPath(editor, path);
-          if (prevPath) {
-            moveToPath(editor, prevPath);
-          }
-        } else {
-          // Find next content block on the SAME page (stop at formButton/pageBreak)
-          const editorChildren = editor.children as TElement[];
-          let samePage: Path | null = null;
-          let boundaryIndex = editorChildren.length;
-          for (let i = path[0] + 1; i < editorChildren.length; i++) {
-            const node = editorChildren[i];
-            if (node.type === "formButton" || node.type === "pageBreak") {
-              boundaryIndex = i;
-              break;
-            }
-            if (node.type !== "formHeader") {
-              samePage = [i];
-              break;
-            }
-          }
-          if (samePage) {
-            moveToPath(editor, samePage);
-          } else {
-            // No content block before page boundary — create one
-            const insertPath: Path = [boundaryIndex];
-            editor.tf.insertNodes({ type: "p", children: [{ text: "" }] } as TElement, {
-              at: insertPath,
-            });
-            moveToPath(editor, insertPath);
-          }
-        }
+      if (!path) return;
+      const target = goPrev
+        ? findPrevNonButtonPath(editor, path)
+        : findNextNonButtonPath(editor, path);
+      if (target) {
+        moveToPath(editor, target);
+        editor.tf.focus();
       }
     }
   };
@@ -150,14 +196,32 @@ export const FormMultiSelectInputElement = ({
         role="group"
         className="flex flex-1 flex-wrap items-center gap-1"
         onClick={() => inputRef.current?.focus()}
+        onKeyDownCapture={(e) => {
+          // Catch Tab from any child (including chip × buttons) before browser moves focus
+          if (e.key === "Tab") {
+            e.preventDefault();
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+            inputRef.current?.blur();
+            const path = editor.api.findPath(element);
+            if (!path) return;
+            const target = e.shiftKey
+              ? findPrevNonButtonPath(editor, path)
+              : findNextNonButtonPath(editor, path);
+            if (target) {
+              moveToPath(editor, target);
+              editor.tf.focus();
+            }
+          }
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") inputRef.current?.focus();
         }}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {options.map((opt) => {
-          const optIndex = options.indexOf(opt);
+        {options.map((opt, optIndex) => {
           const color = MULTI_SELECT_COLORS[optIndex % MULTI_SELECT_COLORS.length];
+          const isChipFocused = focusedChipIndex === optIndex;
           return (
             <span
               key={opt}
@@ -165,11 +229,13 @@ export const FormMultiSelectInputElement = ({
                 "inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium",
                 color.bg,
                 color.text,
+                isChipFocused && "ring-2 ring-ring",
               )}
             >
               {opt}
               <button
                 type="button"
+                tabIndex={-1}
                 className="ml-1 inline-flex size-3 items-center justify-center rounded-full hover:bg-black/10"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -188,6 +254,7 @@ export const FormMultiSelectInputElement = ({
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
+          onFocus={() => setFocusedChipIndex(null)}
           onMouseDown={(e) => e.stopPropagation()}
           placeholder={
             options.length === 0 ? "Type and press Enter to add options" : "Add option..."

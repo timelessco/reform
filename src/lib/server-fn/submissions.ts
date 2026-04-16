@@ -155,13 +155,13 @@ export const getSubmissionsBootstrap = createServerFn({ method: "GET" })
         .select({
           id: forms.id,
           status: forms.status,
-          icon: forms.icon,
-          cover: forms.cover,
           lastPublishedVersionId: forms.lastPublishedVersionId,
           versionTitle: formVersions.title,
           versionContent: formVersions.content,
           versionSettings: formVersions.settings,
           versionCustomization: formVersions.customization,
+          versionIcon: formVersions.icon,
+          versionCover: formVersions.cover,
         })
         .from(forms)
         .leftJoin(formVersions, eq(forms.lastPublishedVersionId, formVersions.id))
@@ -198,8 +198,8 @@ export const getSubmissionsBootstrap = createServerFn({ method: "GET" })
             content: publishedRow.versionContent as object[],
             settings: publishedRow.versionSettings as Record<string, object>,
             customization: (publishedRow.versionCustomization ?? {}) as Record<string, string>,
-            icon: publishedRow.icon,
-            cover: publishedRow.cover,
+            icon: publishedRow.versionIcon,
+            cover: publishedRow.versionCover,
             status: publishedRow.status,
           }
         : null;

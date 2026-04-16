@@ -27,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { StyleNumberInput } from "@/components/ui/style-controls";
 import { Switch } from "@/components/ui/switch";
 import { useEditorTheme } from "@/contexts/editor-theme-context";
 import { ALLOWED_LABEL_TYPES, FORM_INPUT_NODE_TYPES } from "@/lib/form-schema/form-field-constants";
@@ -86,6 +85,49 @@ const extractLabelText = (node: { children?: Array<{ text?: string }> }): string
       .trim() || "Untitled"
   );
 };
+
+const stopMouseEventPropagation = (e: React.MouseEvent) => {
+  e.stopPropagation();
+};
+
+const stopKeyEventPropagation = (e: React.KeyboardEvent) => {
+  e.stopPropagation();
+};
+
+type NumberRowProps = {
+  label: string;
+  value: number | undefined;
+  onChange: (raw: string) => void;
+  min?: number;
+  max?: number;
+  suffix?: string;
+  /** Shown as placeholder when value is unset — hints the effective default
+   *  without actually persisting it. Pick per-field (see call sites). */
+  defaultHint?: number;
+};
+
+// Dropdown row: label on the left, compact number input on the right.
+// Uses DropdownMenuItem so padding + hover match the Required/File-types
+// rows above; Input is stripped to a subtle bordered box (no shadow) to
+// blend into the menu instead of standing out.
+const NumberRow = ({ label, value, onChange, min, max, suffix, defaultHint }: NumberRowProps) => (
+  <DropdownMenuItem closeOnClick={false} onPointerDown={stopMouseEventPropagation}>
+    <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">{label}</span>
+    <Input
+      type="number"
+      min={min}
+      max={max}
+      value={value ?? ""}
+      placeholder={defaultHint !== undefined ? String(defaultHint) : undefined}
+      onChange={(e) => onChange(e.target.value || "0")}
+      onKeyDown={stopKeyEventPropagation}
+      onClick={stopMouseEventPropagation}
+      aria-label={label}
+      className="h-[20px] w-[48px] shrink-0 text-[12px] text-right px-1 rounded-[4px] border border-transparent dark:border-transparent shadow-none bg-transparent focus:border-border/70 focus-visible:border-border/70 dark:focus:border-border/70 dark:focus-visible:border-border/70 focus-visible:ring-0 placeholder:text-muted-foreground/60"
+    />
+    {suffix && <span className="shrink-0 text-[11px] text-muted-foreground/80">{suffix}</span>}
+  </DropdownMenuItem>
+);
 
 export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   const { api, editor } = useEditorPlugin(BlockMenuPlugin);
@@ -636,34 +678,24 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                 </div>
               )}
 
-              <div onPointerDown={handleStopPropagation}>
-                <StyleNumberInput
-                  label="Min characters"
-                  value={String(inputNode?.minLength ?? 0)}
-                  onChange={handleUpdateMinLength}
-                  min={0}
-                  max={1000}
-                  step={1}
-                  unit=""
-                  displayUnit=""
-                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
-                />
-              </div>
+              <NumberRow
+                label="Min characters"
+                value={inputNode?.minLength}
+                onChange={handleUpdateMinLength}
+                min={0}
+                max={1000}
+                defaultHint={0}
+              />
 
               {inputNode?.type !== "formTextarea" && (
-                <div onPointerDown={handleStopPropagation}>
-                  <StyleNumberInput
-                    label="Max characters"
-                    value={String(inputNode?.maxLength ?? 0)}
-                    onChange={handleUpdateMaxLength}
-                    min={0}
-                    max={1000}
-                    step={1}
-                    unit=""
-                    displayUnit=""
-                    className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
-                  />
-                </div>
+                <NumberRow
+                  label="Max characters"
+                  value={inputNode?.maxLength}
+                  onChange={handleUpdateMaxLength}
+                  min={0}
+                  max={1000}
+                  defaultHint={100}
+                />
               )}
 
               <DropdownMenuSeparator />
@@ -699,33 +731,23 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                 </div>
               )}
 
-              <div onPointerDown={handleStopPropagation}>
-                <StyleNumberInput
-                  label="Min value"
-                  value={String(inputNode?.minValue ?? 0)}
-                  onChange={handleUpdateMinValue}
-                  min={0}
-                  max={999999}
-                  step={1}
-                  unit=""
-                  displayUnit=""
-                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
-                />
-              </div>
+              <NumberRow
+                label="Min value"
+                value={inputNode?.minValue}
+                onChange={handleUpdateMinValue}
+                min={0}
+                max={999999}
+                defaultHint={0}
+              />
 
-              <div onPointerDown={handleStopPropagation}>
-                <StyleNumberInput
-                  label="Max value"
-                  value={String(inputNode?.maxValue ?? 0)}
-                  onChange={handleUpdateMaxValue}
-                  min={0}
-                  max={999999}
-                  step={1}
-                  unit=""
-                  displayUnit=""
-                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
-                />
-              </div>
+              <NumberRow
+                label="Max value"
+                value={inputNode?.maxValue}
+                onChange={handleUpdateMaxValue}
+                min={0}
+                max={999999}
+                defaultHint={100}
+              />
 
               <DropdownMenuItem closeOnClick={false} onClick={handleToggleAllowDecimals}>
                 <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
@@ -747,33 +769,24 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
           {/* File upload options */}
           {fieldType === "formFileUpload" && (
             <>
-              <div onPointerDown={handleStopPropagation}>
-                <StyleNumberInput
-                  label="Max file size"
-                  value={`${inputNode?.maxFileSize ?? 10}MB`}
-                  onChange={handleUpdateMaxFileSize}
-                  min={1}
-                  max={50}
-                  step={1}
-                  unit="MB"
-                  displayUnit="MB"
-                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
-                />
-              </div>
+              <NumberRow
+                label="Max file size"
+                value={inputNode?.maxFileSize}
+                onChange={handleUpdateMaxFileSize}
+                min={1}
+                max={50}
+                suffix="MB"
+                defaultHint={10}
+              />
 
-              <div onPointerDown={handleStopPropagation}>
-                <StyleNumberInput
-                  label="Max files"
-                  value={String(inputNode?.maxFiles ?? 0)}
-                  onChange={handleUpdateMaxFiles}
-                  min={0}
-                  max={20}
-                  step={1}
-                  unit=""
-                  displayUnit=""
-                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
-                />
-              </div>
+              <NumberRow
+                label="Max files"
+                value={inputNode?.maxFiles}
+                onChange={handleUpdateMaxFiles}
+                min={0}
+                max={20}
+                defaultHint={1}
+              />
 
               <DropdownMenuItem closeOnClick={false}>
                 <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
@@ -802,32 +815,22 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
           {/* Checkbox options */}
           {fieldType === "optionCheckbox" && (
             <>
-              <div onPointerDown={handleStopPropagation}>
-                <StyleNumberInput
-                  label="Min selections"
-                  value={String(inputNode?.minSelections ?? 0)}
-                  onChange={handleUpdateMinSelections}
-                  min={0}
-                  max={50}
-                  step={1}
-                  unit=""
-                  displayUnit=""
-                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
-                />
-              </div>
-              <div onPointerDown={handleStopPropagation}>
-                <StyleNumberInput
-                  label="Max selections"
-                  value={String(inputNode?.maxSelections ?? 0)}
-                  onChange={handleUpdateMaxSelections}
-                  min={0}
-                  max={50}
-                  step={1}
-                  unit=""
-                  displayUnit=""
-                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
-                />
-              </div>
+              <NumberRow
+                label="Min selections"
+                value={inputNode?.minSelections}
+                onChange={handleUpdateMinSelections}
+                min={0}
+                max={50}
+                defaultHint={0}
+              />
+              <NumberRow
+                label="Max selections"
+                value={inputNode?.maxSelections}
+                onChange={handleUpdateMaxSelections}
+                min={0}
+                max={50}
+                defaultHint={3}
+              />
               <DropdownMenuItem closeOnClick={false} onClick={handleToggleRandomizeOrder}>
                 <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
                   Randomize order
@@ -859,32 +862,22 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
           {/* Multi Select badge options */}
           {fieldType === "formMultiSelect" && (
             <>
-              <div onPointerDown={handleStopPropagation}>
-                <StyleNumberInput
-                  label="Min selections"
-                  value={String(inputNode?.minSelections ?? 0)}
-                  onChange={handleUpdateMinSelections}
-                  min={0}
-                  max={50}
-                  step={1}
-                  unit=""
-                  displayUnit=""
-                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
-                />
-              </div>
-              <div onPointerDown={handleStopPropagation}>
-                <StyleNumberInput
-                  label="Max selections"
-                  value={String(inputNode?.maxSelections ?? 0)}
-                  onChange={handleUpdateMaxSelections}
-                  min={0}
-                  max={50}
-                  step={1}
-                  unit=""
-                  displayUnit=""
-                  className="!border-0 !bg-transparent hover:!bg-accent !h-[26px] !text-sm !rounded-lg !px-2 text-foreground/80 hover:text-accent-foreground"
-                />
-              </div>
+              <NumberRow
+                label="Min selections"
+                value={inputNode?.minSelections}
+                onChange={handleUpdateMinSelections}
+                min={0}
+                max={50}
+                defaultHint={0}
+              />
+              <NumberRow
+                label="Max selections"
+                value={inputNode?.maxSelections}
+                onChange={handleUpdateMaxSelections}
+                min={0}
+                max={50}
+                defaultHint={3}
+              />
               <DropdownMenuSeparator />
             </>
           )}

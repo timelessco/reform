@@ -59,11 +59,12 @@ function PhoneInput({
     >
       <BasePhoneInput.default
         className={cn(
-          "flex flex-row-reverse [&]:rounded-lg [&]:bg-card [&]:text-foreground [&]:shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] dark:[&]:shadow-none dark:[&]:border dark:[&]:border-border [&]:has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 [&]:has-[[data-slot=input-group-control]:focus-visible]:ring-3",
+          "flex flex-row [&]:rounded-lg [&]:bg-card [&]:text-foreground [&]:shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] dark:[&]:shadow-none dark:[&]:border dark:[&]:border-border [&]:has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 [&]:has-[[data-slot=input-group-control]:focus-visible]:ring-3",
           phoneInputSize === "sm" && "[&]:h-7",
           phoneInputSize === "lg" && "[&]:h-9",
           phoneInputSize === "default" && "[&]:h-8",
-          props["aria-invalid"] && "[&]:ring-1 [&]:ring-destructive [&]:border-destructive",
+          props["aria-invalid"] &&
+            "[&]:border [&]:border-destructive [&]:ring-2 [&]:ring-destructive/40 [&]:shadow-none",
           className,
         )}
         flagComponent={FlagComponent}

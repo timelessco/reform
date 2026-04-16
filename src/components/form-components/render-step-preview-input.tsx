@@ -15,7 +15,7 @@ import {
   TimePickerInput,
   TimePickerInputGroup,
   TimePickerMinute,
-  TimePickerSecond,
+  TimePickerPeriod,
   TimePickerSeparator,
   TimePickerTrigger,
 } from "@/components/ui/time-picker";
@@ -421,14 +421,14 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
               />
               <TimePicker
                 name={element.name}
-                value={(f.state.value as string | undefined) ?? "00:00:00"}
+                value={(f.state.value as string | undefined) ?? "00:00"}
                 onValueChange={(v) => f.handleChange(v)}
-                showSeconds
+                locale="en-US"
                 invalid={hasErrors}
               >
                 <TimePickerInputGroup
                   className={cn(
-                    "rounded-(--radius-lg) border-0 h-7 bg-card px-[10px] shadow-form-input",
+                    "rounded-(--radius-lg) border-0 h-7 bg-card px-[10px] shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] dark:shadow-none dark:border dark:border-border",
                     hasErrors && "ring-1 ring-destructive",
                   )}
                   onBlur={f.handleBlur}
@@ -436,14 +436,13 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                   <TimePickerInput segment="hour" className="text-sm" />
                   <TimePickerSeparator />
                   <TimePickerInput segment="minute" className="text-sm" />
-                  <TimePickerSeparator />
-                  <TimePickerInput segment="second" className="text-sm" />
+                  <TimePickerInput segment="period" className="text-sm ml-1" />
                   <TimePickerTrigger />
                 </TimePickerInputGroup>
                 <TimePickerContent>
                   <TimePickerHour />
                   <TimePickerMinute />
-                  <TimePickerSecond />
+                  <TimePickerPeriod />
                 </TimePickerContent>
               </TimePicker>
               {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}

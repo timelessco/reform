@@ -77,6 +77,8 @@ const fetchVersionContent = async (versionId: string): Promise<VersionContent | 
     settings: v.settings as Record<string, object>,
     customization: (v.customization ?? {}) as Record<string, string>,
     title: v.title,
+    icon: v.icon ?? null,
+    cover: v.cover ?? null,
     publishedAt: v.publishedAt.toISOString(),
     createdAt: v.createdAt.toISOString(),
   };

@@ -294,6 +294,9 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
       {/* Scrollable content */}
       <SidebarContent>
         <div className="p-2 space-y-3">
+          <p className="px-1 pb-1 text-[11px] text-muted-foreground/80">
+            Changes apply to the public form on next publish.
+          </p>
           {/* Theme section */}
           <ConfigCard>
             <ConfigRow label="Preset">
