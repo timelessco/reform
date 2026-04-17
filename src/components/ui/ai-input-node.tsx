@@ -1,44 +1,60 @@
 import { MarkdownPlugin } from "@platejs/markdown";
 import { BlockSelectionPlugin } from "@platejs/selection/react";
 import { CornerUpLeftIcon } from "lucide-react";
-import { KEYS, PathApi } from "platejs";
-import type { PlateElementProps } from "platejs/react";
-import { PlateElement, useEditorRef, usePluginOption } from "platejs/react";
+import { useEditorRef, usePluginOption } from "platejs/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useFormGenStream } from "@/components/editor/hooks/use-form-gen-stream";
-import { AIInputPlugin } from "@/components/editor/plugins/ai-input-kit";
+import { AIInputPlugin, hideAIInput } from "@/components/editor/plugins/ai-input-kit";
+import type { AIInputState } from "@/components/editor/plugins/ai-input-kit";
 import { CheckIcon, ImageIcon, Loader2Icon, SparklesIcon, XIcon } from "@/components/ui/icons";
+import { Popover, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024;
 
 type AttachedImage = { url: string; name: string };
 
-export const AIInputElement = (props: PlateElementProps) => {
-  const { element } = props;
+/**
+ * Rendered once as the plugin's `afterEditable` slot. Only mounts the popover
+ * body when state.open is true — closing unmounts the body, resetting prompt
+ * state without leaving any node behind in the editor tree.
+ */
+export const AIInputOverlay = () => {
+  const state = usePluginOption(AIInputPlugin, "ui");
+  if (!state.open) return null;
+  return <AIInputPopoverBody state={state} />;
+};
+
+const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
   const editor = useEditorRef();
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const anchorRef = useRef<HTMLElement | null>(state.anchor);
   const [input, setInput] = useState("");
   const [attachedImage, setAttachedImage] = useState<AttachedImage | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Track the last submitted prompt so "Try again" can re-run it
   const lastPromptRef = useRef<{ prompt: string; image: AttachedImage | null }>({
     prompt: "",
     image: null,
   });
-  // True when streaming has finished and a preview is awaiting accept/reject
   const [hasPendingPreview, setHasPendingPreview] = useState(false);
+  const [anchorRect, setAnchorRect] = useState<{ width: number; height: number }>({
+    width: 0,
+    height: 0,
+  });
 
   const formId = usePluginOption(AIInputPlugin, "formId");
-  const path = editor.api.findPath(element);
 
-  // Selection context captured at the moment the ai_input was inserted
-  // (e.g. via Cmd+J with selected blocks or text). Stored on the element node.
-  const elementSelectionContext = (element as unknown as { selectionContext?: string | null })
-    .selectionContext;
-  const elementSelectedPaths = (element as unknown as { selectedPaths?: number[][] }).selectedPaths;
+  useEffect(() => {
+    anchorRef.current = state.anchor;
+    if (state.anchor) {
+      setAnchorRect({
+        width: state.anchor.offsetWidth,
+        height: state.anchor.offsetHeight,
+      });
+    }
+  }, [state.anchor]);
 
   const getEditorContent = useCallback((): string => {
     try {
@@ -48,19 +64,14 @@ export const AIInputElement = (props: PlateElementProps) => {
     }
   }, [editor]);
 
-  const getCapturedPath = useCallback((): number[] => {
-    if (!path) return [editor.children.length];
-    return PathApi.next(path);
-  }, [editor, path]);
-
+  const getCapturedPath = useCallback((): number[] => state.insertAt, [state.insertAt]);
   const getSelectionContext = useCallback(
-    (): string | null => elementSelectionContext ?? null,
-    [elementSelectionContext],
+    (): string | null => state.selectionContext,
+    [state.selectionContext],
   );
-
   const getSelectedBlockPaths = useCallback(
-    (): number[][] => elementSelectedPaths ?? [],
-    [elementSelectedPaths],
+    (): number[][] => state.selectedPaths,
+    [state.selectedPaths],
   );
 
   const clearBlockSelection = useCallback(() => {
@@ -71,31 +82,10 @@ export const AIInputElement = (props: PlateElementProps) => {
     }
   }, [editor]);
 
-  const removeSelf = useCallback(() => {
-    // Recompute path at call time — rollback() may have shifted nodes around
-    const currentPath = editor.api.findPath(element);
-    if (!currentPath) return;
-    try {
-      editor.tf.withoutSaving(() => {
-        editor.tf.removeNodes({ at: currentPath });
-      });
-    } catch {
-      // path may be stale
-    }
+  const hide = useCallback(() => {
+    hideAIInput(editor);
     clearBlockSelection();
-  }, [editor, element, clearBlockSelection]);
-
-  const revert = useCallback(() => {
-    if (!path) return;
-    editor.tf.withoutSaving(() => {
-      editor.tf.setNodes({ type: KEYS.p, children: [{ text: "" }] }, { at: path });
-    });
-    clearBlockSelection();
-    setTimeout(() => {
-      editor.tf.select(path);
-      editor.tf.focus();
-    }, 0);
-  }, [editor, path, clearBlockSelection]);
+  }, [editor, clearBlockSelection]);
 
   const {
     submit: submitFormGen,
@@ -164,13 +154,13 @@ export const AIInputElement = (props: PlateElementProps) => {
 
   const handleAccept = useCallback(() => {
     setHasPendingPreview(false);
-    removeSelf();
-  }, [removeSelf]);
+    hide();
+  }, [hide]);
 
   const handleReject = useCallback(() => {
     discardPreview();
-    removeSelf();
-  }, [discardPreview, removeSelf]);
+    hide();
+  }, [discardPreview, hide]);
 
   const handleTryAgain = useCallback(() => {
     discardPreview();
@@ -183,9 +173,9 @@ export const AIInputElement = (props: PlateElementProps) => {
     discardPreview();
   }, [discardPreview, stop]);
 
+  // Mirror the previous window-level keybinds so Enter/Cmd+Z/Cmd+R work during a pending preview.
   useEffect(() => {
     if (!hasPendingPreview) return;
-
     const onKeyDown = (e: KeyboardEvent) => {
       const isMod = e.metaKey || e.ctrlKey;
       if (e.key === "Enter" && !e.shiftKey && !isMod) {
@@ -210,12 +200,12 @@ export const AIInputElement = (props: PlateElementProps) => {
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        revert();
+        hide();
         return;
       }
       if (e.key === "Backspace" && input.length === 0 && !attachedImage) {
         e.preventDefault();
-        revert();
+        hide();
         return;
       }
       if (e.key === "Enter" && !e.shiftKey) {
@@ -223,7 +213,7 @@ export const AIInputElement = (props: PlateElementProps) => {
         handleSubmit();
       }
     },
-    [revert, input, attachedImage, handleSubmit],
+    [hide, input, attachedImage, handleSubmit],
   );
 
   const handleFileChange = useCallback(
@@ -238,129 +228,151 @@ export const AIInputElement = (props: PlateElementProps) => {
     [processFile, runPrompt],
   );
 
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (open) return;
+      // Rollback any in-flight stream / pending preview before dismissing.
+      if (isLoading) {
+        stop?.();
+        rollback();
+      } else if (hasPendingPreview) {
+        rollback();
+      }
+      hide();
+    },
+    [isLoading, hasPendingPreview, stop, rollback, hide],
+  );
+
   return (
-    <PlateElement {...props} as="div">
-      <div
-        className={cn(
-          "rounded-lg border bg-background shadow-sm transition-colors",
-          error && "border-destructive",
-        )}
-        contentEditable={false}
+    <Popover open onOpenChange={handleOpenChange}>
+      <PopoverContent
+        anchor={anchorRef}
+        align="start"
+        side="bottom"
+        sideOffset={-anchorRect.height}
+        className="z-50 p-0"
+        style={{ width: anchorRect.width || undefined }}
       >
-        {error && <p className="px-3 pt-2 text-xs text-destructive">{error}</p>}
+        <div
+          className={cn(
+            "rounded-lg border bg-background shadow-sm transition-colors",
+            error && "border-destructive",
+          )}
+        >
+          {error && <p className="px-3 pt-2 text-xs text-destructive">{error}</p>}
 
-        {elementSelectionContext && !hasPendingPreview && (
-          <div className="flex items-center gap-1.5 border-b px-3 py-1.5 text-xs text-muted-foreground">
-            <SparklesIcon className="size-3.5 shrink-0" />
-            <span className="max-w-[400px] truncate">
-              {elementSelectedPaths && elementSelectedPaths.length > 0
-                ? `${elementSelectedPaths.length} block${elementSelectedPaths.length > 1 ? "s" : ""} selected`
-                : elementSelectionContext.length > 80
-                  ? `${elementSelectionContext.slice(0, 80)}…`
-                  : elementSelectionContext}
-            </span>
-          </div>
-        )}
-
-        {attachedImage && (
-          <div className="flex items-center gap-1.5 border-b px-3 py-1.5 text-xs text-muted-foreground">
-            <ImageIcon className="size-3.5" />
-            <span className="max-w-[150px] truncate">{attachedImage.name}</span>
-            <button
-              type="button"
-              onClick={() => setAttachedImage(null)}
-              className="ml-0.5 rounded p-0.5 hover:bg-muted"
-              aria-label="Remove image"
-            >
-              ×
-            </button>
-          </div>
-        )}
-
-        {hasPendingPreview ? (
-          <div className="flex items-center gap-1 px-2 py-1.5">
-            <button
-              type="button"
-              onClick={handleAccept}
-              className="group flex items-center gap-1.5 rounded-md px-2 py-1 text-sm hover:bg-muted"
-            >
-              <CheckIcon className="size-4 text-emerald-600" />
-              Accept
-              <kbd className="ml-1 rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground group-hover:bg-background">
-                ↵
-              </kbd>
-            </button>
-            <button
-              type="button"
-              onClick={handleReject}
-              className="group flex items-center gap-1.5 rounded-md px-2 py-1 text-sm hover:bg-muted"
-            >
-              <XIcon className="size-4 text-destructive" />
-              Discard
-              <kbd className="ml-1 rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground group-hover:bg-background">
-                ⌘Z
-              </kbd>
-            </button>
-            <button
-              type="button"
-              onClick={handleTryAgain}
-              className="group flex items-center gap-1.5 rounded-md px-2 py-1 text-sm hover:bg-muted"
-            >
-              <CornerUpLeftIcon className="size-4 text-muted-foreground" />
-              Try again
-              <kbd className="ml-1 rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground group-hover:bg-background">
-                ⌘R
-              </kbd>
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 px-3">
-            <div className="flex shrink-0 items-center text-muted-foreground">
-              {isLoading ? (
-                <Loader2Icon className="size-4 animate-spin" />
-              ) : (
-                <SparklesIcon className="size-4" />
-              )}
+          {state.selectionContext && !hasPendingPreview && (
+            <div className="flex items-center gap-1.5 border-b px-3 py-1.5 text-xs text-muted-foreground">
+              <SparklesIcon className="size-3.5 shrink-0" />
+              <span className="max-w-[400px] truncate">
+                {state.selectedPaths.length > 0
+                  ? `${state.selectedPaths.length} block${state.selectedPaths.length > 1 ? "s" : ""} selected`
+                  : state.selectionContext.length > 80
+                    ? `${state.selectionContext.slice(0, 80)}…`
+                    : state.selectionContext}
+              </span>
             </div>
+          )}
 
-            <input
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              disabled={isLoading}
-              placeholder={isLoading ? "Generating..." : "Ask AI anything..."}
-              className={cn(
-                "flex h-9 w-full bg-transparent text-sm outline-none",
-                "placeholder:text-muted-foreground/60",
-                "disabled:cursor-not-allowed disabled:opacity-50",
-              )}
-              aria-label="AI prompt"
-            />
-
-            {isLoading && (
+          {attachedImage && (
+            <div className="flex items-center gap-1.5 border-b px-3 py-1.5 text-xs text-muted-foreground">
+              <ImageIcon className="size-3.5" />
+              <span className="max-w-[150px] truncate">{attachedImage.name}</span>
               <button
                 type="button"
-                onClick={handleStop}
-                className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-muted-foreground text-xs hover:bg-muted"
-                aria-label="Stop generation"
+                onClick={() => setAttachedImage(null)}
+                className="ml-0.5 rounded p-0.5 hover:bg-muted"
+                aria-label="Remove image"
               >
-                <XIcon className="size-3.5" />
-                Stop
+                ×
               </button>
-            )}
-          </div>
-        )}
+            </div>
+          )}
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={handleFileChange}
-        />
-      </div>
-      {props.children}
-    </PlateElement>
+          {hasPendingPreview ? (
+            <div className="flex items-center gap-1 px-2 py-1.5">
+              <button
+                type="button"
+                onClick={handleAccept}
+                className="group flex items-center gap-1.5 rounded-md px-2 py-1 text-sm hover:bg-muted"
+              >
+                <CheckIcon className="size-4 text-emerald-600" />
+                Accept
+                <kbd className="ml-1 rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground group-hover:bg-background">
+                  ↵
+                </kbd>
+              </button>
+              <button
+                type="button"
+                onClick={handleReject}
+                className="group flex items-center gap-1.5 rounded-md px-2 py-1 text-sm hover:bg-muted"
+              >
+                <XIcon className="size-4 text-destructive" />
+                Discard
+                <kbd className="ml-1 rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground group-hover:bg-background">
+                  ⌘Z
+                </kbd>
+              </button>
+              <button
+                type="button"
+                onClick={handleTryAgain}
+                className="group flex items-center gap-1.5 rounded-md px-2 py-1 text-sm hover:bg-muted"
+              >
+                <CornerUpLeftIcon className="size-4 text-muted-foreground" />
+                Try again
+                <kbd className="ml-1 rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground group-hover:bg-background">
+                  ⌘R
+                </kbd>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3">
+              <div className="flex shrink-0 items-center text-muted-foreground">
+                {isLoading ? (
+                  <Loader2Icon className="size-4 animate-spin" />
+                ) : (
+                  <SparklesIcon className="size-4" />
+                )}
+              </div>
+
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isLoading}
+                placeholder={isLoading ? "Generating..." : "Ask AI anything..."}
+                className={cn(
+                  "flex h-9 w-full bg-transparent text-sm outline-none",
+                  "placeholder:text-muted-foreground/60",
+                  "disabled:cursor-not-allowed disabled:opacity-50",
+                )}
+                aria-label="AI prompt"
+              />
+
+              {isLoading && (
+                <button
+                  type="button"
+                  onClick={handleStop}
+                  className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-muted-foreground text-xs hover:bg-muted"
+                  aria-label="Stop generation"
+                >
+                  <XIcon className="size-3.5" />
+                  Stop
+                </button>
+              )}
+            </div>
+          )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };

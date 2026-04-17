@@ -36,6 +36,7 @@ import { PlateElement } from "platejs/react";
 import { useCallback } from "react";
 import type { ReactNode } from "react";
 
+import { triggerAIInput } from "@/components/editor/plugins/ai-input-kit";
 import { insertBlock, insertInlineElement } from "@/components/editor/transforms";
 import {
   AskAIPreview,
@@ -104,10 +105,7 @@ const groups: Group[] = [
         label: "Ask AI",
         value: "ai_input",
         onSelect: (editor) => {
-          const block = editor.api.block();
-          if (!block) return;
-          const [, path] = block;
-          editor.tf.setNodes({ type: "ai_input", children: [{ text: "" }] }, { at: path });
+          triggerAIInput(editor);
         },
       },
     ],

@@ -4,7 +4,7 @@ import { isHotkey, KEYS, NodeApi, PathApi } from "platejs";
 import type { SlateEditor, TElement } from "platejs";
 import { createPlatePlugin } from "platejs/react";
 
-import { AIInputElement } from "@/components/ui/ai-input-node";
+import { AIInputOverlay } from "@/components/ui/ai-input-node";
 
 const isEmptyParagraph = (editor: SlateEditor): boolean => {
   const block = editor.api.block();
@@ -13,17 +13,32 @@ const isEmptyParagraph = (editor: SlateEditor): boolean => {
   return node.type === KEYS.p && NodeApi.string(node).length === 0;
 };
 
-type AIInputContext = {
+export type AIInputState = {
+  open: boolean;
+  /** DOM node the popover is anchored to (a block element). */
+  anchor: HTMLElement | null;
+  /** Path where the first AI-generated block should land. */
+  insertAt: number[];
+  /** Selected text/blocks snapshot at the time of invocation. */
   selectionContext: string | null;
   selectedPaths: number[][];
-  insertAt: number[];
-  replace?: boolean;
 };
 
-const captureContext = (editor: SlateEditor): AIInputContext => {
+const INITIAL_STATE: AIInputState = {
+  open: false,
+  anchor: null,
+  insertAt: [],
+  selectionContext: null,
+  selectedPaths: [],
+};
+
+type CaptureResult = Omit<AIInputState, "open" | "anchor"> & { anchorPath: number[] | null };
+
+const captureContext = (editor: SlateEditor): CaptureResult => {
   let selectionContext: string | null = null;
   let selectedPaths: number[][] = [];
   let insertAt: number[] = [];
+  let anchorPath: number[] | null = null;
 
   const blockSelectionNodes = editor
     .getApi(BlockSelectionPlugin)
@@ -32,6 +47,7 @@ const captureContext = (editor: SlateEditor): AIInputContext => {
   if (blockSelectionNodes && blockSelectionNodes.length > 0) {
     selectedPaths = blockSelectionNodes.map((entry: [unknown, number[]]) => [...entry[1]]);
     const lastPath = selectedPaths[selectedPaths.length - 1];
+    anchorPath = lastPath;
     insertAt = PathApi.next(lastPath);
 
     const parts: string[] = [];
@@ -44,7 +60,7 @@ const captureContext = (editor: SlateEditor): AIInputContext => {
       }
     }
     if (parts.length > 0) selectionContext = parts.join("\n");
-    return { selectionContext, selectedPaths, insertAt };
+    return { selectionContext, selectedPaths, insertAt, anchorPath };
   }
 
   const block = editor.api.block();
@@ -55,46 +71,53 @@ const captureContext = (editor: SlateEditor): AIInputContext => {
     } catch {
       // skip
     }
+    anchorPath = block ? [...block[1]] : null;
     insertAt = block ? PathApi.next(block[1]) : [editor.children.length];
-    return { selectionContext, selectedPaths, insertAt };
+    return { selectionContext, selectedPaths, insertAt, anchorPath };
   }
 
-  insertAt = block ? PathApi.next(block[1]) : [editor.children.length];
-  // If cursor is in an empty paragraph, replace it instead of inserting after
   if (block) {
-    const [node, path] = block;
-    if (node.type === KEYS.p && NodeApi.string(node).length === 0) {
-      return { selectionContext, selectedPaths, insertAt: path, replace: true };
+    anchorPath = [...block[1]];
+    // Empty paragraph: let AI insert in its place (pushes the empty p down).
+    if (isEmptyParagraph(editor)) {
+      insertAt = [...block[1]];
+    } else {
+      insertAt = PathApi.next(block[1]);
     }
+  } else {
+    insertAt = [editor.children.length];
   }
-  return { selectionContext, selectedPaths, insertAt };
+
+  return { selectionContext, selectedPaths, insertAt, anchorPath };
+};
+
+const resolveAnchor = (editor: SlateEditor, anchorPath: number[] | null): HTMLElement | null => {
+  if (!anchorPath) return null;
+  try {
+    const entry = editor.api.node(anchorPath);
+    if (!entry) return null;
+    const dom = editor.api.toDOMNode(entry[0]);
+    return (dom as HTMLElement) ?? null;
+  } catch {
+    return null;
+  }
 };
 
 export const triggerAIInput = (editor: SlateEditor) => {
-  const ctx = captureContext(editor);
-  const node = {
-    type: "ai_input",
-    children: [{ text: "" }],
-    selectionContext: ctx.selectionContext,
-    selectedPaths: ctx.selectedPaths,
-  } as unknown as TElement;
+  const { anchorPath, ...rest } = captureContext(editor);
+  const anchor = resolveAnchor(editor, anchorPath);
+  editor.setOption(AIInputPlugin, "ui", { ...rest, anchor, open: true });
+};
 
-  editor.tf.withoutSaving(() => {
-    if (ctx.replace) {
-      editor.tf.setNodes(node, { at: ctx.insertAt });
-    } else {
-      editor.tf.insertNodes(node, { at: ctx.insertAt });
-    }
-  });
+export const hideAIInput = (editor: SlateEditor) => {
+  editor.setOption(AIInputPlugin, "ui", INITIAL_STATE);
 };
 
 export const AIInputPlugin = createPlatePlugin({
   key: "ai_input",
-  options: { formId: "" as string },
-  node: {
-    isElement: true,
-    isVoid: true,
-    type: "ai_input",
+  options: {
+    formId: "" as string,
+    ui: INITIAL_STATE,
   },
   handlers: {
     onKeyDown: ({ editor, event }) => {
@@ -105,15 +128,13 @@ export const AIInputPlugin = createPlatePlugin({
       }
       if (event.key === " " && isEmptyParagraph(editor)) {
         event.preventDefault();
-        const block = editor.api.block();
-        if (!block) return;
-        const [, path] = block;
-        editor.tf.withoutSaving(() => {
-          editor.tf.setNodes({ type: "ai_input", children: [{ text: "" }] }, { at: path });
-        });
+        triggerAIInput(editor);
       }
     },
   },
-}).withComponent(AIInputElement);
+  render: {
+    afterEditable: AIInputOverlay,
+  },
+});
 
 export const AIInputKit = [AIPlugin, AIInputPlugin];
