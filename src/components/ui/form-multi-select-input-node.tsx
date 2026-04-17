@@ -10,7 +10,8 @@ import {
   findPrevNonButtonPath,
   moveToPath,
 } from "@/components/editor/plugins/form-blocks-kit";
-import { XIcon } from "@/components/ui/icons";
+import { TagIcon, XIcon } from "@/components/ui/icons";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { MULTI_SELECT_COLORS } from "./form-option-item-node";
@@ -255,6 +256,15 @@ export const FormMultiSelectInputElement = ({
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => setFocusedChipIndex(null)}
+          onBlur={(e) => {
+            const next = e.relatedTarget as Node | null;
+            if (next && e.currentTarget.closest('[data-bf-input="true"]')?.contains(next)) {
+              return;
+            }
+            if (editor.selection) {
+              editor.tf.deselect();
+            }
+          }}
           onMouseDown={(e) => e.stopPropagation()}
           placeholder={
             options.length === 0 ? "Type and press Enter to add options" : "Add option..."
@@ -262,6 +272,19 @@ export const FormMultiSelectInputElement = ({
           className="min-w-[80px] flex-1 border-0 bg-transparent p-0 text-sm text-muted-foreground/50 outline-none placeholder:text-muted-foreground/50"
         />
       </div>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <span
+              contentEditable={false}
+              className="shrink-0 flex items-center justify-center text-muted-foreground select-none ml-1 mr-1"
+            />
+          }
+        >
+          <TagIcon className="size-3.5" />
+        </TooltipTrigger>
+        <TooltipContent side="left">Multi-select</TooltipContent>
+      </Tooltip>
     </PlateElement>
   );
 };

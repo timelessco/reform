@@ -80,7 +80,7 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
       // Option index: count consecutive formOptionItem siblings before this one
       let idx = 0;
       for (let i = path[0] - 1; i >= 0; i--) {
-        if (nodes[i].type === "formOptionItem") idx++;
+        if (nodes[i]?.type === "formOptionItem") idx++;
         else break;
       }
 
@@ -96,9 +96,9 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
         if (focusNode?.type === "formOptionItem") {
           // Find this group's start and end indices
           let groupStart = path[0];
-          while (groupStart > 0 && nodes[groupStart - 1].type === "formOptionItem") groupStart--;
+          while (groupStart > 0 && nodes[groupStart - 1]?.type === "formOptionItem") groupStart--;
           let groupEnd = path[0];
-          while (groupEnd < nodes.length - 1 && nodes[groupEnd + 1].type === "formOptionItem")
+          while (groupEnd < nodes.length - 1 && nodes[groupEnd + 1]?.type === "formOptionItem")
             groupEnd++;
           groupFocused = focusIndex >= groupStart && focusIndex <= groupEnd;
         }

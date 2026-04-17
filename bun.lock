@@ -16,7 +16,7 @@
         "@dnd-kit/sortable": "^10.0.0",
         "@dnd-kit/utilities": "^3.2.2",
         "@emoji-mart/data": "1.2.1",
-        "@platejs/ai": "^52.3.1",
+        "@platejs/ai": "^52.3.22",
         "@platejs/autoformat": "^52.3.4",
         "@platejs/basic-nodes": "^52.0.11",
         "@platejs/basic-styles": "^52.0.11",
@@ -698,7 +698,7 @@
 
     "@pdf-lib/upng": ["@pdf-lib/upng@1.0.1", "", { "dependencies": { "pako": "^1.0.10" } }, "sha512-dQK2FUMQtowVP00mtIksrlZhdFXQZPC+taih1q4CvPZ5vqdxR/LKBaFg0oAfzd1GlHZXXSPdQfzQnt+ViGvEIQ=="],
 
-    "@platejs/ai": ["@platejs/ai@52.3.1", "", { "dependencies": { "@platejs/markdown": "52.3.1", "@platejs/selection": "52.0.16", "@platejs/suggestion": "52.0.11", "fastest-levenshtein": "1.0.16", "lodash": "^4.17.21", "react-compiler-runtime": "^1.0.0" }, "peerDependencies": { "platejs": ">=52.0.15", "react": ">=18.0.0", "react-dom": ">=18.0.0" } }, "sha512-qAbQx+kWboNbqIGspUVARYgdSptzuRzMeAdryw7ZnBcbKhTnCPuqbCtR/qNb3EnfyqNSaJPeZd8g7mgjYN4N/A=="],
+    "@platejs/ai": ["@platejs/ai@52.3.22", "", { "dependencies": { "@platejs/markdown": "^52.3.22", "@platejs/selection": "^52.3.10", "@platejs/suggestion": "^52.3.10", "@platejs/table": "^52.3.20", "fastest-levenshtein": "1.0.16", "lodash": "^4.17.21", "react-compiler-runtime": "^1.0.0" }, "peerDependencies": { "platejs": ">=52.0.15", "react": ">=18.0.0", "react-dom": ">=18.0.0" } }, "sha512-ELaOz3s9eXMXWZqG27s13uwMFse6AnJtQdiTyAWL4qDhs21LxBMqfa/YuAPBeiiOjyz2Mj6uN/yYmzdb4MJBjQ=="],
 
     "@platejs/autoformat": ["@platejs/autoformat@52.3.4", "", { "dependencies": { "lodash": "^4.17.21", "react-compiler-runtime": "^1.0.0" }, "peerDependencies": { "platejs": ">=52.3.4", "react": ">=18.0.0", "react-dom": ">=18.0.0" } }, "sha512-QNx/+2wLEz8riePjaDgtwE5FRxRa7ZmudHLUrkogQfzsDXWeTLeS8xV7HUgGTeAp5fhnDat4/ZcmCS9mFkuGJQ=="],
 
@@ -2970,7 +2970,13 @@
 
     "@opentelemetry/sql-common/@opentelemetry/core": ["@opentelemetry/core@2.5.1", "", { "dependencies": { "@opentelemetry/semantic-conventions": "^1.29.0" }, "peerDependencies": { "@opentelemetry/api": ">=1.0.0 <1.10.0" } }, "sha512-Dwlc+3HAZqpgTYq0MUyZABjFkcrKTePwuiFVLjahGD8cx3enqihmpAmdgNFO1R4m/sIe5afjJrA25Prqy4NXlA=="],
 
-    "@platejs/ai/@platejs/markdown": ["@platejs/markdown@52.3.1", "", { "dependencies": { "marked": "^15.0.12", "mdast-util-math": "3.0.0", "mdast-util-mdx": "3.0.0", "react-compiler-runtime": "^1.0.0", "remark-mdx": "^3.1.0", "remark-parse": "^11.0.0", "remark-stringify": "^11.0.0", "ts-essentials": "10.1.0", "unified": "^11.0.5" }, "peerDependencies": { "platejs": ">=52.0.11", "react": ">=18.0.0", "react-dom": ">=18.0.0" } }, "sha512-/cqjrpKwEkbzcICiH+3euAMjm6Cac2MhGzZ1mb16Jbiud8CElsLWErxIIaKP+bm2s4329DPh18H0lKVuTHXXoA=="],
+    "@platejs/ai/@platejs/markdown": ["@platejs/markdown@52.3.22", "", { "dependencies": { "lodash": "^4.17.23", "marked": "^15.0.12", "mdast-util-math": "3.0.0", "mdast-util-mdx": "3.0.0", "react-compiler-runtime": "^1.0.0", "remark-mdx": "^3.1.0", "remark-parse": "^11.0.0", "remark-stringify": "^11.0.0", "ts-essentials": "10.1.0", "unified": "^11.0.5", "unist-util-visit": "5.0.0" }, "peerDependencies": { "platejs": ">=52.0.11", "react": ">=18.0.0", "react-dom": ">=18.0.0" } }, "sha512-6NU+T9T4lrs3XVSKNumpDwW+ldvrY307zqGcv6apZKE65A0ehecUfwRfmD6oIq1jAuS5j9cp8dODPg4/9Sx1Pg=="],
+
+    "@platejs/ai/@platejs/selection": ["@platejs/selection@52.3.10", "", { "dependencies": { "copy-to-clipboard": "^3.3.3", "react-compiler-runtime": "^1.0.0" }, "peerDependencies": { "platejs": ">=52.0.11", "react": ">=18.0.0", "react-dom": ">=18.0.0" } }, "sha512-2P2PD0fy+lupa9+x6gVhFz5/magtD1AyksrVzWGWRJauT8HQdrnCaz4aesbxwBr1L6d4EeB01rID7AHJpswlig=="],
+
+    "@platejs/ai/@platejs/suggestion": ["@platejs/suggestion@52.3.10", "", { "dependencies": { "@platejs/diff": "^52.3.10", "lodash": "^4.17.21", "react-compiler-runtime": "^1.0.0" }, "peerDependencies": { "platejs": ">=52.0.11", "react": ">=18.0.0", "react-dom": ">=18.0.0" } }, "sha512-w5vIStx+ClQjjhARzN0Yzgkx3m3wtJGhvZ70TCTfIemIq4e4ZZ4reo8cnuyDncHtKeUrRsgllA7ZLnn4Ml3oSg=="],
+
+    "@platejs/ai/@platejs/table": ["@platejs/table@52.3.20", "", { "dependencies": { "@platejs/resizable": "^52.3.10", "lodash": "^4.17.21", "react-compiler-runtime": "^1.0.0" }, "peerDependencies": { "platejs": ">=52.0.11", "react": ">=18.0.0", "react-dom": ">=18.0.0" } }, "sha512-OeKLkY9ilfncsmIhRlbWU/hAO9+gchswhUdEoYlKQBWKl9DJfDFw2XmZRGooWCfkbogmzi+3fhU5r0/Vmky9EQ=="],
 
     "@platejs/core/nanoid": ["nanoid@5.1.6", "", { "bin": { "nanoid": "bin/nanoid.js" } }, "sha512-c7+7RQ+dMB5dPwwCp4ee1/iV/q2P6aK1mTZcfr1BTuVlyW9hJYiMPybJCcnBlQtuSmTIWNeazm/zqNoZSSElBg=="],
 
@@ -3275,6 +3281,10 @@
     "@floating-ui/react/@floating-ui/react-dom/@floating-ui/dom": ["@floating-ui/dom@1.7.5", "", { "dependencies": { "@floating-ui/core": "^1.7.4", "@floating-ui/utils": "^0.2.10" } }, "sha512-N0bD2kIPInNHUHehXhMke1rBGs1dwqvC9O9KYMyyjK7iXt7GAhnro7UlcuYcGdS/yYOlq0MAVgrow8IbWJwyqg=="],
 
     "@opentelemetry/instrumentation-pg/@types/pg/@types/node": ["@types/node@22.19.13", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-akNQMv0wW5uyRpD2v2IEyRSZiR+BeGuoB6L310EgGObO44HSMNT8z1xzio28V8qOrgYaopIDNA18YgdXd+qTiw=="],
+
+    "@platejs/ai/@platejs/suggestion/@platejs/diff": ["@platejs/diff@52.3.10", "", { "dependencies": { "diff-match-patch-ts": "^0.6.0", "lodash": "^4.17.21", "react-compiler-runtime": "^1.0.0" }, "peerDependencies": { "platejs": ">=52.0.11", "react": ">=18.0.0", "react-dom": ">=18.0.0" } }, "sha512-IDRk8iV+YD8q0MsyuR30jCfXVPoMXLslacErNjMEucTVpd8Me4zaEb0txXkwIbaGt0ClzHNVeeXLoJwPJtxhsw=="],
+
+    "@platejs/ai/@platejs/table/@platejs/resizable": ["@platejs/resizable@52.3.10", "", { "dependencies": { "react-compiler-runtime": "^1.0.0" }, "peerDependencies": { "platejs": ">=52.0.11", "react": ">=18.0.0", "react-dom": ">=18.0.0" } }, "sha512-Txs82HPdLmDdXLEsdusHSBIJ3qaf1uTnano82tsclIcuV6I9ypNfECx+VWPHsvC4476lC+gkCkevJyv8roYnsA=="],
 
     "@platejs/math/katex/commander": ["commander@8.3.0", "", {}, "sha512-OkTL9umf+He2DZkUq8f8J9of7yL6RJKI24dVITBmNfZBmri9zYZQrKkuXiKhyfPSu8tUhnVBB1iKXevvnlR4Ww=="],
 

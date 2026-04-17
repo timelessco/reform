@@ -3,6 +3,7 @@ import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorSelector, useFocused } from "platejs/react";
 
 import { UploadIcon } from "@/components/ui/icons";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export const FormFileUploadElement = ({ className, children, ...props }: PlateElementProps) => {
@@ -44,6 +45,19 @@ export const FormFileUploadElement = ({ className, children, ...props }: PlateEl
         <span className="text-sm">Click or drag to upload</span>
         <span className="text-xs">PNG, JPG, PDF up to 10MB</span>
       </div>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <span
+              contentEditable={false}
+              className="absolute top-2 right-2 flex items-center justify-center text-muted-foreground select-none"
+            />
+          }
+        >
+          <UploadIcon className="size-3.5" />
+        </TooltipTrigger>
+        <TooltipContent side="left">File upload</TooltipContent>
+      </Tooltip>
     </PlateElement>
   );
 };

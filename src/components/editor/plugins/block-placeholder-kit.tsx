@@ -7,7 +7,7 @@ export const BlockPlaceholderKit = [
       className:
         "before:absolute before:cursor-text before:text-muted-foreground/80 before:content-[attr(placeholder)]",
       placeholders: {
-        [KEYS.p]: "Type something...",
+        [KEYS.p]: "Press 'space' for AI or '/' for commands",
         formInput: "Type a placeholder",
         formTextarea: "Type a placeholder",
         formEmail: "Type a placeholder",

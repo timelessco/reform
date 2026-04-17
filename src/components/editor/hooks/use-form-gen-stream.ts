@@ -252,7 +252,7 @@ export const useFormGenStream = ({
       applyFinalThemeOps(finalObject);
       finalizeStream();
       onFinish?.();
-      resetStreamState();
+      // rollback() needs insertedCountRef — reset happens on next submit/rollback.
     },
     onError: (err: Error) => {
       rollback();
@@ -482,6 +482,7 @@ export const useFormGenStream = ({
   return {
     submit,
     stop,
+    rollback,
     isLoading: isLoading || isThemeLoading,
     error,
   };

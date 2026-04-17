@@ -25,6 +25,7 @@ import {
   moveToPath,
 } from "@/components/editor/plugins/form-blocks-kit";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { FORM_INPUT_NODE_TYPES } from "@/lib/form-schema/form-field-constants";
 import { cn } from "@/lib/utils";
 
 const UNDRAGGABLE_KEYS = [KEYS.column, KEYS.tr, KEYS.td, "formButton"];
@@ -250,6 +251,32 @@ const Draggable = (props: PlateElementProps) => {
     };
   }, [editor, element, nodeRef]);
 
+  const isFormInput = FORM_INPUT_NODE_TYPES.has(element.type as string);
+  const wrapperChromeAttrs = isFormButton || isFormHeader ? { "data-bf-chrome": "" } : {};
+
+  // Standalone = not preceded by a formLabel. Drives breathing-room padding on
+  // the wrapper so stacked label-less inputs don't collide.
+  const isStandaloneInput = React.useMemo(() => {
+    if (!isFormInput) return false;
+    // Textarea and file-upload carry their own min-height.
+    if (element.type === "formTextarea" || element.type === "formFileUpload") return false;
+    const siblings = editor.children as TElement[];
+    const idx = path[0];
+    if (typeof idx !== "number") return false;
+    const prev = siblings[idx - 1];
+    if (!prev) return true;
+    if (prev.type === "formLabel") return false;
+    // Option items cluster under a single label — inherit standalone from first.
+    if (element.type === "formOptionItem" && prev.type === "formOptionItem") return false;
+    return true;
+  }, [editor.children, path, element.type, isFormInput]);
+
+  const wrapperInputAttrs = isFormInput
+    ? isStandaloneInput
+      ? { "data-bf-input": "true", "data-bf-standalone": "true" }
+      : { "data-bf-input": "true" }
+    : {};
+
   return (
     <div
       className={cn(
@@ -258,6 +285,8 @@ const Draggable = (props: PlateElementProps) => {
         isDragging && "opacity-50",
         getPluginByType(editor, element.type)?.node.isContainer ? "group/container" : "group",
       )}
+      {...wrapperChromeAttrs}
+      {...wrapperInputAttrs}
     >
       {!isInTable && !isFormButton && !isFormHeader && !isPageBreak && (
         <Gutter gutterPosition={gutterPosition} className="mr-1">

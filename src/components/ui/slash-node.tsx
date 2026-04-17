@@ -25,6 +25,7 @@ import {
   PhoneIcon,
   CheckCheckIcon,
   SmileIcon,
+  SparklesIcon,
   SquareCheckIcon,
   UploadIcon,
 } from "@/components/ui/icons";
@@ -37,6 +38,7 @@ import type { ReactNode } from "react";
 
 import { insertBlock, insertInlineElement } from "@/components/editor/transforms";
 import {
+  AskAIPreview,
   BlockquotePreview,
   BulletedListPreview,
   CalloutPreview,
@@ -92,6 +94,24 @@ type Group = {
 };
 
 const groups: Group[] = [
+  {
+    group: "AI",
+    items: [
+      {
+        description: "Ask AI to help with your form",
+        icon: <SparklesIcon />,
+        keywords: ["ai", "generate", "prompt", "ask"],
+        label: "Ask AI",
+        value: "ai_input",
+        onSelect: (editor) => {
+          const block = editor.api.block();
+          if (!block) return;
+          const [, path] = block;
+          editor.tf.setNodes({ type: "ai_input", children: [{ text: "" }] }, { at: path });
+        },
+      },
+    ],
+  },
   {
     group: "Basic blocks",
     items: [
@@ -359,6 +379,7 @@ const groups: Group[] = [
 ];
 
 const previewMap: Record<string, () => ReactNode> = {
+  ai_input: AskAIPreview,
   [KEYS.p]: TextPreview,
   [KEYS.h1]: Heading1Preview,
   [KEYS.h2]: Heading2Preview,
