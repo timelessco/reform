@@ -294,7 +294,7 @@ const PreviewFormHeader = ({
 const RenderThankYouContent = ({ nodes, onReset }: { nodes: Value; onReset?: () => void }) => {
   const { t } = useTranslation();
   return (
-    <div data-bf-field-list className="space-y-4">
+    <div data-bf-field-list>
       <StaticContentBlock nodes={nodes} />
       {onReset && (
         <div className="flex justify-center pt-4">

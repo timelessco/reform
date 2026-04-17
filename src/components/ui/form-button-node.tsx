@@ -186,12 +186,9 @@ export const FormButtonElement = ({ className, children, ...props }: PlateElemen
 
   return (
     <PlateElement
-      className={cn(
-        "m-0 px-0 py-2.5",
-        isPrevious ? "float-left" : "overflow-hidden flex",
-        className,
-      )}
+      className={cn("m-0 px-0", isPrevious ? "float-left" : "overflow-hidden flex", className)}
       {...props}
+      attributes={{ ...props.attributes, "data-bf-chrome": "" }}
     >
       {/* Hidden children to maintain Slate structure */}
       <span className="hidden">{children}</span>

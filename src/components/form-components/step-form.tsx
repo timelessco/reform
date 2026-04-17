@@ -167,7 +167,7 @@ export const StepForm = ({ stepIndex, segments, isLastStep, autoJump = false }: 
 
             // Input/Textarea — delegate to existing renderer
             return (
-              <div key={field.id} className="w-full">
+              <div key={field.id} className="w-full" data-bf-input>
                 <RenderStepPreviewInput element={field} form={form} />
               </div>
             );

@@ -56,6 +56,13 @@ const extractErrorMessage = (error: unknown): string => {
   return "Invalid value";
 };
 
+const getAriaLabelFallback = (element: PlateFormField): string | undefined => {
+  const label = "label" in element ? element.label : undefined;
+  if (label) return undefined;
+  const placeholder = "placeholder" in element ? element.placeholder : undefined;
+  return placeholder || "Field";
+};
+
 /** Renders the label text with the correct HTML element based on labelType */
 const FieldLabelText = ({
   text,
@@ -68,6 +75,8 @@ const FieldLabelText = ({
   htmlFor: string;
   required?: boolean;
 }) => {
+  if (!text) return null;
+
   const requiredBadge = required ? (
     <Tooltip>
       <TooltipTrigger
@@ -100,32 +109,32 @@ const FieldLabelText = ({
 
   if (labelType === "h1") {
     return (
-      <div className="flex w-full items-center">
-        <h1 className="flex-1 mt-[0.40em] pb-1 font-bold font-heading text-4xl">{text}</h1>
+      <div className="flex w-full items-center py-2.5">
+        <h1 className="flex-1 font-bold font-heading text-4xl">{text}</h1>
         {requiredBadge}
       </div>
     );
   }
   if (labelType === "h2") {
     return (
-      <div className="flex w-full items-center">
-        <h2 className="flex-1 mt-[0.40em] pb-px font-heading font-semibold text-2xl">{text}</h2>
+      <div className="flex w-full items-center py-2.5">
+        <h2 className="flex-1 font-heading font-semibold text-2xl">{text}</h2>
         {requiredBadge}
       </div>
     );
   }
   if (labelType === "h3") {
     return (
-      <div className="flex w-full items-center">
-        <h3 className="flex-1 mt-[0.30em] pb-px font-heading font-semibold text-xl">{text}</h3>
+      <div className="flex w-full items-center py-2.5">
+        <h3 className="flex-1 font-heading font-semibold text-xl">{text}</h3>
         {requiredBadge}
       </div>
     );
   }
   if (labelType === "blockquote") {
     return (
-      <div className="flex w-full items-center">
-        <blockquote className="flex-1 my-1 border-l-2 pl-6 italic">{text}</blockquote>
+      <div className="flex w-full items-center py-2.5">
+        <blockquote className="flex-1 border-l-2 pl-6 italic">{text}</blockquote>
         {requiredBadge}
       </div>
     );
@@ -133,7 +142,7 @@ const FieldLabelText = ({
 
   // Default: formLabel, p, or undefined — use standard Label
   return (
-    <Label htmlFor={htmlFor} className="w-full">
+    <Label htmlFor={htmlFor} className="w-full py-2.5">
       <span className="flex-1">{text}</span>
       {requiredBadge}
     </Label>
@@ -154,10 +163,10 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
 
           return (
-            <div className="space-y-2" data-bf-input="true">
+            <div data-bf-input="true" data-bf-standalone={element.label ? undefined : "true"}>
               <FieldLabelText
                 text={element.label ?? ""}
-                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                labelType={element.labelType}
                 htmlFor={element.name}
                 required={element.required}
               />
@@ -172,6 +181,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                 maxLength={element.maxLength}
                 autoComplete="off"
                 aria-invalid={hasErrors}
+                aria-label={getAriaLabelFallback(element)}
                 className={cn(
                   "w-full min-h-24 rounded-[var(--radius-lg)] border-0 bg-card pl-[10px] pr-[8px] shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] placeholder:text-muted-foreground/50",
                   hasErrors && "ring-1 ring-destructive",
@@ -194,10 +204,10 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
 
           return (
-            <div className="space-y-2" data-bf-input="true">
+            <div data-bf-input="true" data-bf-standalone={element.label ? undefined : "true"}>
               <FieldLabelText
                 text={element.label ?? ""}
-                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                labelType={element.labelType}
                 htmlFor={element.name}
                 required={element.required}
               />
@@ -212,6 +222,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                 maxLength={element.maxLength}
                 autoComplete="off"
                 aria-invalid={hasErrors}
+                aria-label={getAriaLabelFallback(element)}
                 className={cn(
                   "w-full rounded-lg border-none h-7 bg-card pl-[10px] pr-[8px] shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] placeholder:text-muted-foreground/50",
                   hasErrors && "ring-1 ring-destructive",
@@ -233,10 +244,10 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
           return (
-            <div className="space-y-2" data-bf-input="true">
+            <div data-bf-input="true" data-bf-standalone={element.label ? undefined : "true"}>
               <FieldLabelText
                 text={element.label ?? ""}
-                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                labelType={element.labelType}
                 htmlFor={element.name}
                 required={element.required}
               />
@@ -250,6 +261,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                 onBlur={f.handleBlur}
                 autoComplete="off"
                 aria-invalid={hasErrors}
+                aria-label={getAriaLabelFallback(element)}
                 className={cn(
                   "w-full rounded-(--radius-lg) border-0 h-7 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
                   hasErrors && "ring-1 ring-destructive",
@@ -271,10 +283,10 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
           return (
-            <div className="space-y-2" data-bf-input="true">
+            <div data-bf-input="true" data-bf-standalone={element.label ? undefined : "true"}>
               <FieldLabelText
                 text={element.label ?? ""}
-                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                labelType={element.labelType}
                 htmlFor={element.name}
                 required={element.required}
               />
@@ -285,6 +297,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                 onChange={(value) => f.handleChange(value)}
                 onBlur={f.handleBlur}
                 aria-invalid={hasErrors}
+                aria-label={getAriaLabelFallback(element)}
                 variant="sm"
               />
               {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
@@ -303,10 +316,10 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
           return (
-            <div className="space-y-2" data-bf-input="true">
+            <div data-bf-input="true" data-bf-standalone={element.label ? undefined : "true"}>
               <FieldLabelText
                 text={element.label ?? ""}
-                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                labelType={element.labelType}
                 htmlFor={element.name}
                 required={element.required}
               />
@@ -325,6 +338,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                 onBlur={f.handleBlur}
                 autoComplete="off"
                 aria-invalid={hasErrors}
+                aria-label={getAriaLabelFallback(element)}
                 className={cn(
                   "w-full rounded-(--radius-lg) border-0 h-7 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
                   hasErrors && "ring-1 ring-destructive",
@@ -346,10 +360,10 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
           return (
-            <div className="space-y-2" data-bf-input="true">
+            <div data-bf-input="true" data-bf-standalone={element.label ? undefined : "true"}>
               <FieldLabelText
                 text={element.label ?? ""}
-                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                labelType={element.labelType}
                 htmlFor={element.name}
                 required={element.required}
               />
@@ -363,6 +377,7 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
                 onBlur={f.handleBlur}
                 autoComplete="off"
                 aria-invalid={hasErrors}
+                aria-label={getAriaLabelFallback(element)}
                 className={cn(
                   "w-full rounded-(--radius-lg) border-0 h-7 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
                   hasErrors && "ring-1 ring-destructive",
@@ -384,10 +399,10 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
           return (
-            <div className="space-y-2" data-bf-input="true">
+            <div data-bf-input="true" data-bf-standalone={element.label ? undefined : "true"}>
               <FieldLabelText
                 text={element.label ?? ""}
-                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                labelType={element.labelType}
                 htmlFor={element.name}
                 required={element.required}
               />
@@ -412,10 +427,10 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
           const errorMessage = hasErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";
           return (
-            <div className="space-y-2" data-bf-input="true">
+            <div data-bf-input="true" data-bf-standalone={element.label ? undefined : "true"}>
               <FieldLabelText
                 text={element.label ?? ""}
-                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                labelType={element.labelType}
                 htmlFor={element.name}
                 required={element.required}
               />
@@ -468,10 +483,10 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const selectedValues = (f.state.value as string[] | undefined) ?? [];
 
           return (
-            <div className="space-y-2" data-bf-input="true">
+            <div data-bf-input="true" data-bf-standalone={element.label ? undefined : "true"}>
               <FieldLabelText
                 text={element.label ?? ""}
-                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                labelType={element.labelType}
                 htmlFor={element.name}
                 required={element.required}
               />
@@ -518,10 +533,10 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const LETTERS = LETTER_LABELS;
 
           return (
-            <div className="space-y-2" data-bf-input="true">
+            <div data-bf-input="true" data-bf-standalone={element.label ? undefined : "true"}>
               <FieldLabelText
                 text={element.label ?? ""}
-                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                labelType={element.labelType}
                 htmlFor={element.name}
                 required={element.required}
               />
@@ -573,10 +588,10 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           const selectedValues = (f.state.value as string[] | undefined) ?? [];
 
           return (
-            <div className="space-y-2" data-bf-input="true">
+            <div data-bf-input="true" data-bf-standalone={element.label ? undefined : "true"}>
               <FieldLabelText
                 text={element.label ?? ""}
-                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                labelType={element.labelType}
                 htmlFor={element.name}
                 required={element.required}
               />
@@ -623,10 +638,10 @@ export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInput
           };
 
           return (
-            <div className="space-y-2" data-bf-input="true">
+            <div data-bf-input="true" data-bf-standalone={element.label ? undefined : "true"}>
               <FieldLabelText
                 text={element.label ?? ""}
-                labelType={"labelType" in element ? (element.labelType as string) : undefined}
+                labelType={element.labelType}
                 htmlFor={element.name}
                 required={element.required}
               />
@@ -823,10 +838,10 @@ const FileUploadPreview = ({ element, form }: RenderStepPreviewInputProps) => {
           uploadState.status === "error" ? uploadState.message : fieldErrorMessage;
 
         return (
-          <div className="space-y-2" data-bf-input="true">
+          <div data-bf-input="true" data-bf-standalone={label ? undefined : "true"}>
             <FieldLabelText
               text={label}
-              labelType={"labelType" in element ? (element.labelType as string) : undefined}
+              labelType={"labelType" in element ? element.labelType : undefined}
               htmlFor={element.name}
               required={required}
             />

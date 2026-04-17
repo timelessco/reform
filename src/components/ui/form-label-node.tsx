@@ -20,7 +20,7 @@ export const FormLabelElement = ({ className, children, ...props }: PlateElement
         )}
         {...props}
       >
-        <div className="flex my-2 items-center gap-1">
+        <div className="flex items-center gap-1">
           {isEmpty && placeholder && isSelected && (
             <span className="absolute text-muted-foreground/90 pointer-events-none select-none">
               {placeholder}

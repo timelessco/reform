@@ -255,21 +255,21 @@ const Draggable = (props: PlateElementProps) => {
   const wrapperChromeAttrs = isFormButton || isFormHeader ? { "data-bf-chrome": "" } : {};
 
   // Standalone = not preceded by a formLabel. Drives breathing-room padding on
-  // the wrapper so stacked label-less inputs don't collide.
-  const isStandaloneInput = React.useMemo(() => {
+  // the wrapper so stacked label-less inputs don't collide. Computed inline
+  // (O(1) sibling lookup) — memoizing would need editor.children as a dep,
+  // which changes on every edit and defeats the memo.
+  const isStandaloneInput = (() => {
     if (!isFormInput) return false;
-    // Textarea and file-upload carry their own min-height.
     if (element.type === "formTextarea" || element.type === "formFileUpload") return false;
-    const siblings = editor.children as TElement[];
     const idx = path[0];
     if (typeof idx !== "number") return false;
-    const prev = siblings[idx - 1];
+    const prev = (editor.children as TElement[])[idx - 1];
     if (!prev) return true;
     if (prev.type === "formLabel") return false;
     // Option items cluster under a single label — inherit standalone from first.
     if (element.type === "formOptionItem" && prev.type === "formOptionItem") return false;
     return true;
-  }, [editor.children, path, element.type, isFormInput]);
+  })();
 
   const wrapperInputAttrs = isFormInput
     ? isStandaloneInput
