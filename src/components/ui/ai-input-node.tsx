@@ -92,6 +92,7 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
     isLoading,
     stop,
     rollback,
+    accept,
   } = useFormGenStream({
     editor,
     formId,
@@ -153,9 +154,10 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
   }, [rollback]);
 
   const handleAccept = useCallback(() => {
+    accept();
     setHasPendingPreview(false);
     hide();
-  }, [hide]);
+  }, [accept, hide]);
 
   const handleReject = useCallback(() => {
     discardPreview();

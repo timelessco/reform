@@ -16,6 +16,7 @@ import { DiscussionKit } from "@/components/editor/plugins/discussion-kit";
 import { DndKit } from "@/components/editor/plugins/dnd-kit";
 import { EmojiKit } from "@/components/editor/plugins/emoji-kit";
 import { ExitBreakKit } from "@/components/editor/plugins/exit-break-kit";
+import { AIDiffKit } from "@/components/editor/plugins/ai-diff-kit";
 import { AIInputKit } from "@/components/editor/plugins/ai-input-kit";
 import { FloatingToolbarKit } from "@/components/editor/plugins/floating-toolbar-kit";
 import { FontKit } from "@/components/editor/plugins/font-kit";
@@ -91,4 +92,5 @@ export const EditorKit = [
 
   // AI
   ...AIInputKit,
+  ...AIDiffKit,
 ];
