@@ -1,6 +1,6 @@
 import { MarkdownPlugin } from "@platejs/markdown";
 import { BlockSelectionPlugin } from "@platejs/selection/react";
-import { CornerUpLeftIcon } from "lucide-react";
+import { ArrowUpIcon, CornerUpLeftIcon } from "lucide-react";
 import { useEditorRef, usePluginOption } from "platejs/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -257,8 +257,8 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
       >
         <div
           className={cn(
-            "rounded-lg border bg-background shadow-sm transition-colors",
-            error && "border-destructive",
+            "rounded-xl bg-background ring-1 ring-foreground/10 shadow-[0_0_1px_0_rgba(0,0,0,0.19),0_1px_2px_0_rgba(0,0,0,0.07),0_6px_15px_-5px_rgba(0,0,0,0.11)] transition-colors animate-in fade-in-0 zoom-in-95 duration-150",
+            error && "ring-destructive",
           )}
         >
           {error && <p className="px-3 pt-2 text-xs text-destructive">{error}</p>}
@@ -328,15 +328,7 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 px-3">
-              <div className="flex shrink-0 items-center text-muted-foreground">
-                {isLoading ? (
-                  <Loader2Icon className="size-4 animate-spin" />
-                ) : (
-                  <SparklesIcon className="size-4" />
-                )}
-              </div>
-
+            <div className="flex items-center gap-2 pl-4 pr-1.5">
               <input
                 ref={inputRef}
                 value={input}
@@ -345,22 +337,31 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
                 disabled={isLoading}
                 placeholder={isLoading ? "Generating..." : "Ask AI anything..."}
                 className={cn(
-                  "flex h-9 w-full bg-transparent text-sm outline-none",
+                  "flex h-10 w-full bg-transparent text-sm outline-none",
                   "placeholder:text-muted-foreground/60",
                   "disabled:cursor-not-allowed disabled:opacity-50",
                 )}
                 aria-label="AI prompt"
               />
 
-              {isLoading && (
+              {isLoading ? (
                 <button
                   type="button"
                   onClick={handleStop}
-                  className="flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-muted-foreground text-xs hover:bg-muted"
+                  className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-muted/80"
                   aria-label="Stop generation"
                 >
-                  <XIcon className="size-3.5" />
-                  Stop
+                  <Loader2Icon className="size-3.5 animate-spin" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={!input.trim() && !attachedImage}
+                  className="flex size-7 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white transition-colors hover:bg-sky-600 disabled:bg-sky-500/40 disabled:cursor-not-allowed"
+                  aria-label="Submit prompt"
+                >
+                  <ArrowUpIcon className="size-4" strokeWidth={2.5} />
                 </button>
               )}
             </div>

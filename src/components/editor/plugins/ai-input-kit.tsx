@@ -9,8 +9,15 @@ import { AIInputOverlay } from "@/components/ui/ai-input-node";
 const isEmptyParagraph = (editor: SlateEditor): boolean => {
   const block = editor.api.block();
   if (!block) return false;
-  const [node] = block;
-  return node.type === KEYS.p && NodeApi.string(node).length === 0;
+  const [node, path] = block;
+  if (node.type !== KEYS.p || NodeApi.string(node).length !== 0) return false;
+  // Skip the trailing normalization paragraph that sits after a submit/next button.
+  const blockIndex = path[0];
+  if (blockIndex > 0) {
+    const prev = (editor.children as TElement[])[blockIndex - 1];
+    if (prev?.type === "formButton") return false;
+  }
+  return true;
 };
 
 export type AIInputState = {

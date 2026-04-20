@@ -1,30 +1,17 @@
 import type { PlateElementProps } from "platejs/react";
 
-import { PlateElement, useEditorSelector, useFocused } from "platejs/react";
+import { PlateElement } from "platejs/react";
 
 import { AlignLeftIcon } from "@/components/ui/icons";
+import { RequiredBadgeButton } from "@/components/ui/required-badge-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useFormInputNode } from "@/hooks/use-form-input-node";
 import { cn } from "@/lib/utils";
 
 export const FormTextareaElement = ({ className, children, ...props }: PlateElementProps) => {
   const { attributes, element, ...rest } = props;
   const placeholder = element.placeholder as string | undefined;
-
-  const focused = useFocused();
-  const isSelected = useEditorSelector(
-    (ed) => {
-      if (!ed.selection) return false;
-      const path = ed.api.findPath(element);
-      if (!path) return false;
-      const focusPath = ed.selection.focus.path;
-      if (focusPath.length < path.length) return false;
-      for (let i = 0; i < path.length; i++) {
-        if (focusPath[i] !== path[i]) return false;
-      }
-      return true;
-    },
-    [element],
-  );
+  const { focused, isSelected, required } = useFormInputNode(element);
 
   return (
     <PlateElement
@@ -53,6 +40,7 @@ export const FormTextareaElement = ({ className, children, ...props }: PlateElem
         </TooltipTrigger>
         <TooltipContent side="left">Long answer</TooltipContent>
       </Tooltip>
+      <RequiredBadgeButton required={required} path={props.path} />
     </PlateElement>
   );
 };
