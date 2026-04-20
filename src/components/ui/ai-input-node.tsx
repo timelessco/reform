@@ -358,7 +358,7 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
                   type="button"
                   onClick={handleSubmit}
                   disabled={!input.trim() && !attachedImage}
-                  className="flex size-7 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white transition-colors hover:bg-sky-600 disabled:bg-sky-500/40 disabled:cursor-not-allowed"
+                  className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:bg-primary/40 disabled:cursor-not-allowed"
                   aria-label="Submit prompt"
                 >
                   <ArrowUpIcon className="size-4" strokeWidth={2.5} />

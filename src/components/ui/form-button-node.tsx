@@ -195,7 +195,7 @@ export const FormButtonElement = ({ className, children, ...props }: PlateElemen
       {/* Non-editable button visual - onMouseDown prevents cursor placement */}
       <div
         className={cn(
-          "inline-flex items-center gap-1 group",
+          "inline-flex items-center gap-1 group py-2.5",
           !isPrevious && isMultiStep && "ml-auto",
         )}
         contentEditable={false}
