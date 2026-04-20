@@ -5,18 +5,11 @@ import { z } from "zod";
 import { forms, formVersions, user } from "@/db/schema";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
+import { computeContentHash } from "@/lib/content-hash";
 import { authForm, getActiveOrgId } from "./auth-helpers";
 
 // Maximum number of versions to keep per form (TODO: make plan-based)
 const MAX_VERSIONS_PER_FORM = 20;
-
-/**
- * Compute a hash of the content for fast change detection
- */
-const computeContentHash = (content: unknown): string => {
-  const str = JSON.stringify(content);
-  return crypto.createHash("md5").update(str).digest("hex");
-};
 
 const serializeVersion = (version: typeof formVersions.$inferSelect) => ({
   ...version,
@@ -306,7 +299,7 @@ export const discardFormChanges = createServerFn({ method: "POST" })
     // Reset every versioned field (Groups 1-3) on the live draft back to the
     // snapshot. Group 4 (slug, customDomainId, branding) intentionally left
     // untouched — those are live and never versioned.
-    await db
+    const [updatedForm] = await db
       .update(forms)
       .set({
         content: version.content,
@@ -344,10 +337,19 @@ export const discardFormChanges = createServerFn({ method: "POST" })
         publishedContentHash: contentHash,
         updatedAt: new Date(),
       })
-      .where(eq(forms.id, data.formId));
+      .where(eq(forms.id, data.formId))
+      .returning();
 
     return {
       success: true,
+      form: {
+        ...updatedForm,
+        content: updatedForm.content as object[],
+        settings: (updatedForm.settings ?? {}) as Record<string, object>,
+        customization: (updatedForm.customization ?? {}) as Record<string, string>,
+        updatedAt: updatedForm.updatedAt.toISOString(),
+        createdAt: updatedForm.createdAt.toISOString(),
+      },
       version: {
         content: version.content as object[],
         settings: version.settings as Record<string, object>,

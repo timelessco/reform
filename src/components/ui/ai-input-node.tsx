@@ -1,12 +1,14 @@
 import { MarkdownPlugin } from "@platejs/markdown";
 import { BlockSelectionPlugin } from "@platejs/selection/react";
 import { ArrowUpIcon, CornerUpLeftIcon } from "lucide-react";
+import { isHotkey } from "platejs";
 import { useEditorRef, usePluginOption } from "platejs/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useFormGenStream } from "@/components/editor/hooks/use-form-gen-stream";
 import { AIInputPlugin, hideAIInput } from "@/components/editor/plugins/ai-input-kit";
 import type { AIInputState } from "@/components/editor/plugins/ai-input-kit";
+import { Button } from "@/components/ui/button";
 import { CheckIcon, ImageIcon, Loader2Icon, SparklesIcon, XIcon } from "@/components/ui/icons";
 import { Popover, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -28,18 +30,21 @@ export const AIInputOverlay = () => {
 
 const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
   const editor = useEditorRef();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const anchorRef = useRef<HTMLElement | null>(state.anchor);
   const [input, setInput] = useState("");
-  const [attachedImage, setAttachedImage] = useState<AttachedImage | null>(null);
+  const [attachedImages, setAttachedImages] = useState<AttachedImage[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const lastPromptRef = useRef<{ prompt: string; image: AttachedImage | null }>({
+  const lastPromptRef = useRef<{ prompt: string; images: AttachedImage[] }>({
     prompt: "",
-    image: null,
+    images: [],
   });
   const [hasPendingPreview, setHasPendingPreview] = useState(false);
-  const [anchorRect, setAnchorRect] = useState<{ width: number; height: number }>({
+  const [anchorRect, setAnchorRect] = useState<{
+    width: number;
+    height: number;
+  }>({
     width: 0,
     height: 0,
   });
@@ -110,10 +115,10 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
   });
 
   const runPrompt = useCallback(
-    (prompt: string, image: AttachedImage | null) => {
+    (prompt: string, images: AttachedImage[]) => {
       setError(null);
-      lastPromptRef.current = { prompt, image };
-      submitFormGen(prompt, image);
+      lastPromptRef.current = { prompt, images };
+      submitFormGen(prompt, images);
     },
     [submitFormGen],
   );
@@ -141,12 +146,12 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
 
   const handleSubmit = useCallback(() => {
     const trimmed = input.trim();
-    if ((!trimmed && !attachedImage) || isLoading) return;
+    if ((!trimmed && attachedImages.length === 0) || isLoading) return;
     const prompt = trimmed || "Extract theme from this image";
-    runPrompt(prompt, attachedImage);
+    runPrompt(prompt, attachedImages);
     setInput("");
-    setAttachedImage(null);
-  }, [input, attachedImage, isLoading, runPrompt]);
+    setAttachedImages([]);
+  }, [input, attachedImages, isLoading, runPrompt]);
 
   const discardPreview = useCallback(() => {
     rollback();
@@ -166,8 +171,8 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
 
   const handleTryAgain = useCallback(() => {
     discardPreview();
-    const { prompt, image } = lastPromptRef.current;
-    if (prompt) runPrompt(prompt, image);
+    const { prompt, images } = lastPromptRef.current;
+    if (prompt) runPrompt(prompt, images);
   }, [discardPreview, runPrompt]);
 
   const handleStop = useCallback(() => {
@@ -199,13 +204,18 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
   }, [hasPendingPreview, handleAccept, handleReject, handleTryAgain]);
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === "Escape") {
         e.preventDefault();
         hide();
         return;
       }
-      if (e.key === "Backspace" && input.length === 0 && !attachedImage) {
+      if (isHotkey("mod+j")(e.nativeEvent)) {
+        e.preventDefault();
+        hide();
+        return;
+      }
+      if (e.key === "Backspace" && input.length === 0 && attachedImages.length === 0) {
         e.preventDefault();
         hide();
         return;
@@ -215,34 +225,38 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
         handleSubmit();
       }
     },
-    [hide, input, attachedImage, handleSubmit],
+    [hide, input, attachedImages, handleSubmit],
   );
 
   const handleFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
+      const files = Array.from(e.target.files ?? []);
       e.target.value = "";
-      if (!file) return;
-      const image = await processFile(file);
-      if (!image) return;
-      runPrompt("Extract theme from this image", image);
+      if (files.length === 0) return;
+      const processed = await Promise.all(files.map((f) => processFile(f)));
+      const valid = processed.filter((img): img is AttachedImage => img !== null);
+      if (valid.length === 0) return;
+      setAttachedImages((prev) => [...prev, ...valid]);
+      inputRef.current?.focus();
     },
-    [processFile, runPrompt],
+    [processFile],
   );
+
+  const removeImage = useCallback((index: number) => {
+    setAttachedImages((prev) => prev.filter((_, i) => i !== index));
+  }, []);
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
       if (open) return;
-      // Rollback any in-flight stream / pending preview before dismissing.
-      if (isLoading) {
-        stop?.();
-        rollback();
-      } else if (hasPendingPreview) {
-        rollback();
-      }
+      // While a stream is in flight or a diff preview is pending, block
+      // outside-click dismissal — the user must explicitly Stop (in-flight)
+      // or Accept/Discard (preview) to close. Losing these silently would
+      // kill the generation or drop the pending diff with no indication.
+      if (isLoading || hasPendingPreview) return;
       hide();
     },
-    [isLoading, hasPendingPreview, stop, rollback, hide],
+    [isLoading, hasPendingPreview, hide],
   );
 
   return (
@@ -276,18 +290,26 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
             </div>
           )}
 
-          {attachedImage && (
-            <div className="flex items-center gap-1.5 border-b px-3 py-1.5 text-xs text-muted-foreground">
-              <ImageIcon className="size-3.5" />
-              <span className="max-w-[150px] truncate">{attachedImage.name}</span>
-              <button
-                type="button"
-                onClick={() => setAttachedImage(null)}
-                className="ml-0.5 rounded p-0.5 hover:bg-muted"
-                aria-label="Remove image"
-              >
-                ×
-              </button>
+          {attachedImages.length > 0 && !hasPendingPreview && (
+            <div className="flex flex-wrap items-center gap-1.5 px-3 pt-2 pb-0.5">
+              {attachedImages.map((img, i) => (
+                <div
+                  key={img.url}
+                  className="group relative inline-flex items-center gap-1.5 rounded-full border bg-muted/40 py-0.5 pl-0.5 pr-2 text-xs text-foreground"
+                  title={img.name}
+                >
+                  <img src={img.url} alt="" className="size-5 shrink-0 rounded-full object-cover" />
+                  <span className="max-w-[140px] truncate">{img.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeImage(i)}
+                    className="ml-0.5 flex size-4 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+                    aria-label={`Remove ${img.name}`}
+                  >
+                    <XIcon className="size-3" />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
 
@@ -329,40 +351,55 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
             </div>
           ) : (
             <div className="flex items-center gap-2 pl-4 pr-1.5">
-              <input
+              <textarea
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 disabled={isLoading}
+                rows={1}
                 placeholder={isLoading ? "Generating..." : "Ask AI anything..."}
                 className={cn(
-                  "flex h-10 w-full bg-transparent text-sm outline-none",
+                  "flex field-sizing-content w-full resize-none bg-transparent py-1.5 text-sm outline-none",
+                  "max-h-40 overflow-y-auto leading-5",
                   "placeholder:text-muted-foreground/60",
                   "disabled:cursor-not-allowed disabled:opacity-50",
                 )}
                 aria-label="AI prompt"
               />
 
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+                className="rounded-full text-muted-foreground"
+                aria-label="Attach image for theme"
+                title="Attach image for theme"
+              >
+                <ImageIcon />
+              </Button>
+
               {isLoading ? (
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  size="icon-xs"
                   onClick={handleStop}
-                  className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-muted/80"
+                  className="rounded-full"
                   aria-label="Stop generation"
                 >
-                  <Loader2Icon className="size-3.5 animate-spin" />
-                </button>
+                  <Loader2Icon className="animate-spin" />
+                </Button>
               ) : (
-                <button
-                  type="button"
+                <Button
+                  size="icon-xs"
                   onClick={handleSubmit}
-                  disabled={!input.trim() && !attachedImage}
-                  className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:bg-primary/40 disabled:cursor-not-allowed"
+                  disabled={!input.trim() && attachedImages.length === 0}
+                  className="rounded-full"
                   aria-label="Submit prompt"
                 >
-                  <ArrowUpIcon className="size-4" strokeWidth={2.5} />
-                </button>
+                  <ArrowUpIcon strokeWidth={2.5} />
+                </Button>
               )}
             </div>
           )}
@@ -371,6 +408,7 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
             ref={fileInputRef}
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            multiple
             className="hidden"
             onChange={handleFileChange}
           />

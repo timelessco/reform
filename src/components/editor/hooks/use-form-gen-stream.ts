@@ -18,7 +18,7 @@ type UseObjectReturn = {
   stop: () => void;
 };
 
-type ImagePart = { url: string; name: string } | null | undefined;
+export type ImagePart = { url: string; name: string };
 
 const ADDITIVE_INTENT_PATTERN =
   /\b(add|append|insert|include|introduce|attach|create another|one more|another|additional|extra|more (steps?|pages?|sections?|fields?|questions?|options?))\b/i;
@@ -62,9 +62,9 @@ const THEME_INTENT_PATTERN =
 const FORM_BUILDING_PATTERN =
   /\b(create\s+(a|an|the)\s+(form|page|field|section|application|survey)|build\s+(a|an|the)|generate\s+(a|an|the)\s+(form|page|field|section)|add\s+(a|an|the)?\s*(field|page|step|section)|make\s+(a|an|the)\s+(form|page|application))\b/i;
 
-const buildUserMessage = (prompt: string, image?: ImagePart): UIMessage => {
+const buildUserMessage = (prompt: string, images?: ImagePart[]): UIMessage => {
   const parts: UIMessagePart[] = [{ type: "text", text: prompt }];
-  if (image) {
+  for (const image of images ?? []) {
     const mediaType = image.url.split(";")[0]?.split(":")[1] ?? "image/png";
     parts.push({
       type: "file",
@@ -423,7 +423,8 @@ export const useFormGenStream = ({
   }, [error, rollback]);
 
   const submit = useCallback(
-    (prompt: string, image?: ImagePart) => {
+    (prompt: string, images?: ImagePart[]) => {
+      const imageList = images ?? [];
       const selectedPaths = getSelectedBlockPaths?.() ?? [];
       const intent = selectedPaths.length > 0 ? detectIntent(prompt) : "append";
       const editMode = selectedPaths.length > 0 && intent === "replace";
@@ -483,7 +484,7 @@ export const useFormGenStream = ({
       // If the user asks for both a form AND a theme, fall back to create/append so the
       // form gets built; the AI can still emit set-theme as one of its ops.
       const isThemeIntent =
-        Boolean(image) &&
+        imageList.length > 0 &&
         THEME_INTENT_PATTERN.test(prompt) &&
         !FORM_BUILDING_PATTERN.test(prompt) &&
         !editMode;
@@ -496,7 +497,7 @@ export const useFormGenStream = ({
       createModeRef.current = mode === "create";
 
       const requestBody = {
-        messages: [buildUserMessage(prompt, image)],
+        messages: [buildUserMessage(prompt, imageList)],
         // Empty form has no useful context — saves input tokens on every create.
         ...(mode === "create" ? {} : { editorContent }),
         ...(selection ? { selectionContext: selection } : {}),

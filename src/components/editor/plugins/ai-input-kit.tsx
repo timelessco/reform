@@ -4,6 +4,7 @@ import { isHotkey, KEYS, NodeApi, PathApi } from "platejs";
 import type { SlateEditor, TElement } from "platejs";
 import { createPlatePlugin } from "platejs/react";
 
+import { AI_DIFF_KEY } from "@/components/editor/plugins/ai-diff-kit";
 import { AIInputOverlay } from "@/components/ui/ai-input-node";
 
 const isEmptyParagraph = (editor: SlateEditor): boolean => {
@@ -117,7 +118,33 @@ export const triggerAIInput = (editor: SlateEditor) => {
 };
 
 export const hideAIInput = (editor: SlateEditor) => {
+  // Safety net: strip lingering aiDiff marks if an edge-case close path skipped
+  // the explicit accept/rollback flow. Usually a no-op.
+  const diffEntries = Array.from(
+    editor.api.nodes({
+      at: [],
+      match: (n) => Boolean((n as Record<string, unknown>)[AI_DIFF_KEY]),
+    }),
+  ) as Array<[unknown, number[]]>;
+  if (diffEntries.length > 0) {
+    editor.tf.withoutNormalizing(() => {
+      for (const [, path] of diffEntries) {
+        editor.tf.unsetNodes(AI_DIFF_KEY, { at: path });
+      }
+    });
+  }
   editor.setOption(AIInputPlugin, "ui", INITIAL_STATE);
+  // Return focus to the editor so Escape doesn't leave focus on <body>.
+  editor.tf.focus();
+};
+
+export const toggleAIInput = (editor: SlateEditor) => {
+  const current = editor.getOption(AIInputPlugin, "ui");
+  if (current.open) {
+    hideAIInput(editor);
+    return;
+  }
+  triggerAIInput(editor);
 };
 
 export const AIInputPlugin = createPlatePlugin({
@@ -130,7 +157,7 @@ export const AIInputPlugin = createPlatePlugin({
     onKeyDown: ({ editor, event }) => {
       if (isHotkey("mod+j")(event)) {
         event.preventDefault();
-        triggerAIInput(editor);
+        toggleAIInput(editor);
         return;
       }
       if (event.key === " " && isEmptyParagraph(editor)) {

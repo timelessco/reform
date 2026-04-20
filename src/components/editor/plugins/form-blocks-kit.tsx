@@ -37,6 +37,15 @@ const FORM_FIELD_TYPES = new Set([
 // Button types that should not be deleted
 const PROTECTED_BUTTON_TYPES = new Set(["formButton"]);
 
+const VOID_FORM_INPUT_TYPES = new Set(["formFileUpload", "formMultiSelectInput"]);
+const NON_EDITABLE_BLOCK_TYPES = new Set([
+  "formButton",
+  "pageBreak",
+  "formHeader",
+  "formFileUpload",
+  "formMultiSelectInput",
+]);
+
 export const moveToPath = (editor: PlateEditor, path: Path): boolean => {
   const node = editor.api.node(path);
   if (node) {
@@ -259,7 +268,18 @@ const handleFormFieldEnter = (editor: PlateEditor, event: React.KeyboardEvent): 
   event.stopPropagation();
   event.nativeEvent.stopImmediatePropagation();
 
-  const nextPath = PathApi.next(path);
+  // When a label sits directly above a void form field, Enter should land the
+  // new paragraph *after* the whole label+input group — otherwise there's no
+  // way to escape past a trailing void input like file upload.
+  let insertIndex = path[0] + 1;
+  if (node.type === "formLabel") {
+    const siblings = editor.children as TElement[];
+    const next = siblings[insertIndex];
+    if (next && VOID_FORM_INPUT_TYPES.has(next.type)) {
+      insertIndex += 1;
+    }
+  }
+  const nextPath = [insertIndex];
   editor.tf.insertNodes({ type: "p", children: [{ text: "" }] } as TElement, {
     at: nextPath,
   });
@@ -374,6 +394,25 @@ export const FormButtonPlugin = createPlatePlugin({
 
           // Block backspace from merging into a formButton
           if (prevNode && isFormButton(prevNode)) {
+            return;
+          }
+
+          // Deleting an empty paragraph that sits directly after a void form
+          // input (file upload, multi-select) — Plate's default merge leaves
+          // selection dangling in a trailing paragraph. Remove the empty block
+          // ourselves and park the cursor at the end of the nearest editable
+          // block above.
+          const isVoidFormInput = prevNode && VOID_FORM_INPUT_TYPES.has(prevNode.type);
+          if (isVoidFormInput && editorRef.api.isEmpty(node)) {
+            editorRef.tf.removeNodes({ at: path });
+            for (let i = currentIndex - 2; i >= 0; i--) {
+              const n = children[i];
+              if (!n) continue;
+              if (NON_EDITABLE_BLOCK_TYPES.has(n.type)) continue;
+              const edges = editorRef.api.edges([i]);
+              if (edges?.[1]) editorRef.tf.select(edges[1]);
+              break;
+            }
             return;
           }
 

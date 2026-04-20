@@ -1,7 +1,8 @@
 import { useCallback } from "react";
 
-import { useEditorRef } from "platejs/react";
-import type { Path } from "platejs";
+import { NodeApi } from "platejs";
+import type { Path, TElement } from "platejs";
+import { useEditorRef, useEditorSelector } from "platejs/react";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,19 @@ type RequiredBadgeButtonProps = {
 export const RequiredBadgeButton = ({ required, path, className }: RequiredBadgeButtonProps) => {
   const editor = useEditorRef();
 
+  // Hide the badge when there's no label text above — otherwise the
+  // floating asterisk visually collides with the preceding block.
+  const hasLabelAbove = useEditorSelector(
+    (ed) => {
+      const blockIndex = path[0];
+      if (blockIndex === undefined || blockIndex <= 0) return false;
+      const prev = (ed.children as TElement[])[blockIndex - 1];
+      if (!prev || prev.type !== "formLabel") return false;
+      return NodeApi.string(prev).trim().length > 0;
+    },
+    [path[0]],
+  );
+
   const toggle = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
@@ -23,6 +37,8 @@ export const RequiredBadgeButton = ({ required, path, className }: RequiredBadge
     },
     [editor, required, path],
   );
+
+  if (!hasLabelAbove) return null;
 
   return (
     <Tooltip>

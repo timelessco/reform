@@ -172,8 +172,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
     if (formId) {
       setWorkflowState("discarding");
       try {
-        const tx = discardChanges(formId);
-        await tx.isPersisted.promise;
+        await discardChanges(formId);
         toast.info("Changes discarded, reverted to last published version");
       } catch (error) {
         toast.error("Failed to discard changes");
