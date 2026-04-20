@@ -146,7 +146,7 @@ const AIFormGenMenu = () => {
   const handleSubmit = useCallback(
     (prompt: string, image?: { url: string; name: string } | null) => {
       setGenerationError(null);
-      submit(prompt, image);
+      submit(prompt, image ? [image] : undefined);
     },
     [submit],
   );
