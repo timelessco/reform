@@ -7,6 +7,7 @@ import { RESERVED_SLUGS } from "@/lib/config/plan-config";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { authForm, getActiveOrgId } from "./auth-helpers";
+import { assertPlanForFormSettings, getOrgPlan } from "./plan-helpers";
 
 const serializeForm = (form: typeof forms.$inferSelect) => ({
   ...form,
@@ -163,6 +164,11 @@ export const updateForm = createServerFn({ method: "POST" })
     const { id, updatedAt: clientUpdatedAt, ...updateData } = data;
     const orgId = getActiveOrgId(context.session);
     await authForm(id, context.session.user.id, orgId);
+    await assertPlanForFormSettings(orgId, {
+      branding: updateData.branding,
+      respondentEmailNotifications: updateData.respondentEmailNotifications,
+      dataRetention: updateData.dataRetention,
+    });
 
     const [form] = await db
       .update(forms)
@@ -344,6 +350,11 @@ export const assignFormDomain = createServerFn({ method: "POST" })
     await authForm(formId, context.session.user.id, orgId);
 
     if (customDomainId !== null) {
+      const plan = await getOrgPlan(orgId);
+      if (plan === "free") {
+        throw new Error("Custom domains require a Pro subscription. Please upgrade to continue.");
+      }
+
       // Verify the domain exists and belongs to the same org
       const [domain] = await db
         .select()

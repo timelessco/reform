@@ -25,6 +25,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { SidebarSection } from "@/components/ui/sidebar-section";
+import { FeatureGate } from "@/components/ui/feature-gate";
 import {
   ConfigCard,
   ConfigRow,
@@ -277,16 +278,18 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                   >
                     Pro
                   </Badge>
-                  <form.AppField name="branding">
-                    {(field) => (
-                      <Switch
-                        aria-label="Branding"
-                        checked={!!field.state.value}
-                        onCheckedChange={field.handleChange}
-                        size="default"
-                      />
-                    )}
-                  </form.AppField>
+                  <FeatureGate requiredPlan="pro">
+                    <form.AppField name="branding">
+                      {(field) => (
+                        <Switch
+                          aria-label="Branding"
+                          checked={!!field.state.value}
+                          onCheckedChange={field.handleChange}
+                          size="default"
+                        />
+                      )}
+                    </form.AppField>
+                  </FeatureGate>
                 </div>
               </ConfigRow>
 
@@ -298,20 +301,22 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                 <div className="flex items-center gap-1.5">
                   <Badge
                     variant="secondary"
-                    className="bg-teal-100 text-teal-600 border-none text-[9px] h-4 px-1.5 uppercase"
+                    className="bg-teal-100 text-teal-600 border-none text-[9px] h-4 px-1.5"
                   >
-                    Biz
+                    Pro
                   </Badge>
-                  <form.AppField name="dataRetention">
-                    {(field) => (
-                      <Switch
-                        aria-label="Data retention"
-                        checked={!!field.state.value}
-                        onCheckedChange={field.handleChange}
-                        size="default"
-                      />
-                    )}
-                  </form.AppField>
+                  <FeatureGate requiredPlan="pro">
+                    <form.AppField name="dataRetention">
+                      {(field) => (
+                        <Switch
+                          aria-label="Data retention"
+                          checked={!!field.state.value}
+                          onCheckedChange={field.handleChange}
+                          size="default"
+                        />
+                      )}
+                    </form.AppField>
+                  </FeatureGate>
                 </div>
               </ConfigRow>
 
@@ -429,17 +434,19 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                   >
                     Pro
                   </Badge>
-                  <form.AppField name="respondentEmailNotifications">
-                    {(field) => (
-                      <Switch
-                        aria-label="Respondent email notifications"
-                        checked={!!field.state.value && hasEmailField}
-                        onCheckedChange={field.handleChange}
-                        disabled={!hasEmailField}
-                        size="default"
-                      />
-                    )}
-                  </form.AppField>
+                  <FeatureGate requiredPlan="pro">
+                    <form.AppField name="respondentEmailNotifications">
+                      {(field) => (
+                        <Switch
+                          aria-label="Respondent email notifications"
+                          checked={!!field.state.value && hasEmailField}
+                          onCheckedChange={field.handleChange}
+                          disabled={!hasEmailField}
+                          size="default"
+                        />
+                      )}
+                    </form.AppField>
+                  </FeatureGate>
                 </div>
               </ConfigRow>
 

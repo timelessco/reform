@@ -6,14 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { auth, authClient } from "@/lib/auth/auth-client";
 import { useLoaderData } from "@tanstack/react-router";
 import { Loader2Icon } from "@/components/ui/icons";
+import { useUserPlan } from "@/hooks/use-user-plan";
 
 export const BillingContent = () => {
   const { activeOrg } = useLoaderData({ from: "/_authenticated" });
 
-  const { data: customerState, isLoading } = useQuery({
-    ...auth.customer.state.queryOptions(),
-    staleTime: 1000 * 60 * 10,
-  });
+  const { isPro: isProPlan, isBiz: isBusinessPlan, isFree: isFreePlan, isLoading } = useUserPlan();
 
   const handleUpgrade = useCallback(
     async (planSlug: string) => {
@@ -52,13 +50,6 @@ export const BillingContent = () => {
   const handleUpgradePro = useCallback(() => handleUpgrade("Pro"), [handleUpgrade]);
   const handleUpgradeBusiness = useCallback(() => handleUpgrade("Pro-(Yearly)"), [handleUpgrade]);
 
-  const activeSubscription = customerState?.activeSubscriptions?.[0];
-  const isFreePlan = !activeSubscription;
-  const isProPlan =
-    activeSubscription?.productId === "3662224a-d998-4a73-bf82-4957198d53ea" ||
-    activeSubscription?.productId === "0be62924-d418-4dcc-8c8c-2b4929f76695";
-  const isBusinessPlan = false;
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -69,7 +60,7 @@ export const BillingContent = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      {activeSubscription && (
+      {!isFreePlan && (
         <div className="flex justify-end">
           <Button
             variant="outline"

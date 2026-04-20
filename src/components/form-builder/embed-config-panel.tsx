@@ -2,6 +2,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { StyleNumberInput } from "@/components/ui/style-controls";
 import { Switch } from "@/components/ui/switch";
+import { FeatureGate } from "@/components/ui/feature-gate";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 import { cn } from "@udecode/cn";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -598,8 +599,7 @@ const ProSection = ({
   const isSaving = assignDomainMutation.isPending || updateSlugMutation.isPending;
 
   return (
-    <>
-      {/* Non-persisted, URL-only toggle — fine to stay here */}
+    <FeatureGate requiredPlan="pro" variant="block">
       <ConfigCard>
         <form.Field name="trackEvents">
           {(field: FieldRenderApi<boolean>) => (
@@ -692,6 +692,6 @@ const ProSection = ({
           </Button>
         </div>
       </div>
-    </>
+    </FeatureGate>
   );
 };

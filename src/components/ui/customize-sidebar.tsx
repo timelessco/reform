@@ -9,6 +9,7 @@ import { InfoIcon, XIcon } from "@/components/ui/icons";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
 import { SidebarSection } from "@/components/ui/sidebar-section";
+import { FeatureGate } from "@/components/ui/feature-gate";
 import { StyleColorPicker, StyleNumberInput } from "@/components/ui/style-controls";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsIndicator, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -411,208 +412,218 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
 
           {/* Layout */}
           <SidebarSection label="Layout" action={<ProBadge />}>
-            <ConfigCard>
-              <StyleNumberInput
-                label="Page Width"
-                value={customization.pageWidth}
-                onChange={(v) => updateScrubberField("pageWidth", v)}
-                allowAuto
-                isAuto={!customization.pageWidth}
-                onAutoChange={() => resetScrubberField("pageWidth")}
-                min={30}
-                max={100}
-                step={5}
-                unit="%"
-                className={CONFIG_INPUT_CLS}
-              />
-              <StyleNumberInput
-                label="Cover Height"
-                value={customization.coverHeight}
-                onChange={(v) => updateScrubberField("coverHeight", v)}
-                allowAuto
-                isAuto={!customization.coverHeight}
-                onAutoChange={() => resetScrubberField("coverHeight")}
-                min={100}
-                max={400}
-                step={10}
-                unit="px"
-                displayUnit=""
-                className={CONFIG_INPUT_CLS}
-              />
-              <StyleNumberInput
-                label="Logo Width"
-                value={customization.logoWidth}
-                onChange={(v) => updateScrubberField("logoWidth", v)}
-                allowAuto
-                isAuto={!customization.logoWidth}
-                onAutoChange={() => resetScrubberField("logoWidth")}
-                min={0}
-                max={100}
-                step={4}
-                unit="px"
-                displayUnit=""
-                className={CONFIG_INPUT_CLS}
-              />
-              <StyleNumberInput
-                label="Input Width"
-                value={customization.inputWidth}
-                onChange={(v) => updateScrubberField("inputWidth", v)}
-                allowAuto
-                isAuto={!customization.inputWidth}
-                onAutoChange={() => resetScrubberField("inputWidth")}
-                min={20}
-                max={100}
-                step={5}
-                unit="%"
-                className={CONFIG_INPUT_CLS}
-              />
-            </ConfigCard>
+            <FeatureGate requiredPlan="pro" variant="block">
+              <ConfigCard>
+                <StyleNumberInput
+                  label="Page Width"
+                  value={customization.pageWidth}
+                  onChange={(v) => updateScrubberField("pageWidth", v)}
+                  allowAuto
+                  isAuto={!customization.pageWidth}
+                  onAutoChange={() => resetScrubberField("pageWidth")}
+                  min={30}
+                  max={100}
+                  step={5}
+                  unit="%"
+                  className={CONFIG_INPUT_CLS}
+                />
+                <StyleNumberInput
+                  label="Cover Height"
+                  value={customization.coverHeight}
+                  onChange={(v) => updateScrubberField("coverHeight", v)}
+                  allowAuto
+                  isAuto={!customization.coverHeight}
+                  onAutoChange={() => resetScrubberField("coverHeight")}
+                  min={100}
+                  max={400}
+                  step={10}
+                  unit="px"
+                  displayUnit=""
+                  className={CONFIG_INPUT_CLS}
+                />
+                <StyleNumberInput
+                  label="Logo Width"
+                  value={customization.logoWidth}
+                  onChange={(v) => updateScrubberField("logoWidth", v)}
+                  allowAuto
+                  isAuto={!customization.logoWidth}
+                  onAutoChange={() => resetScrubberField("logoWidth")}
+                  min={0}
+                  max={100}
+                  step={4}
+                  unit="px"
+                  displayUnit=""
+                  className={CONFIG_INPUT_CLS}
+                />
+                <StyleNumberInput
+                  label="Input Width"
+                  value={customization.inputWidth}
+                  onChange={(v) => updateScrubberField("inputWidth", v)}
+                  allowAuto
+                  isAuto={!customization.inputWidth}
+                  onAutoChange={() => resetScrubberField("inputWidth")}
+                  min={20}
+                  max={100}
+                  step={5}
+                  unit="%"
+                  className={CONFIG_INPUT_CLS}
+                />
+              </ConfigCard>
+            </FeatureGate>
           </SidebarSection>
 
           {/* Typography */}
           <SidebarSection label="Typography" action={<ProBadge />}>
-            <ConfigCard>
-              <StyleNumberInput
-                label="Font Size"
-                value={customization.baseFontSize}
-                onChange={(v) => updateScrubberField("baseFontSize", v)}
-                allowAuto
-                isAuto={!customization.baseFontSize}
-                onAutoChange={() => resetScrubberField("baseFontSize")}
-                min={12}
-                max={24}
-                step={1}
-                unit="px"
-                displayUnit=""
-                className={CONFIG_INPUT_CLS}
-              />
-              <StyleNumberInput
-                label="Letter Spacing"
-                value={customization.letterSpacing}
-                onChange={(v) => updateScrubberField("letterSpacing", v)}
-                allowAuto
-                isAuto={!customization.letterSpacing}
-                onAutoChange={() => resetScrubberField("letterSpacing")}
-                min={0}
-                max={0.2}
-                step={0.005}
-                unit="em"
-                displayUnit=""
-                className={CONFIG_INPUT_CLS}
-              />
-            </ConfigCard>
+            <FeatureGate requiredPlan="pro" variant="block">
+              <ConfigCard>
+                <StyleNumberInput
+                  label="Font Size"
+                  value={customization.baseFontSize}
+                  onChange={(v) => updateScrubberField("baseFontSize", v)}
+                  allowAuto
+                  isAuto={!customization.baseFontSize}
+                  onAutoChange={() => resetScrubberField("baseFontSize")}
+                  min={12}
+                  max={24}
+                  step={1}
+                  unit="px"
+                  displayUnit=""
+                  className={CONFIG_INPUT_CLS}
+                />
+                <StyleNumberInput
+                  label="Letter Spacing"
+                  value={customization.letterSpacing}
+                  onChange={(v) => updateScrubberField("letterSpacing", v)}
+                  allowAuto
+                  isAuto={!customization.letterSpacing}
+                  onAutoChange={() => resetScrubberField("letterSpacing")}
+                  min={0}
+                  max={0.2}
+                  step={0.005}
+                  unit="em"
+                  displayUnit=""
+                  className={CONFIG_INPUT_CLS}
+                />
+              </ConfigCard>
+            </FeatureGate>
           </SidebarSection>
 
           {/* Title */}
           <SidebarSection label="Title" action={<ProBadge />}>
-            <ConfigCard>
-              <ConfigRow label="Font">
-                <Select
-                  value={getValue("titleFont") || "Timeless Serif"}
-                  onValueChange={(v) => {
-                    if (!v) return;
-                    loadGoogleFont(v);
-                    updateWithCustomPreset("titleFont", v);
-                  }}
-                >
-                  <SelectTrigger className={selectTriggerCls}>
-                    {FONT_OPTIONS.find(
-                      (o) => o.value === (getValue("titleFont") || "Timeless Serif"),
-                    )?.label ??
-                      (getValue("titleFont") || "Timeless Serif")}
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FONT_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value}>
-                        {o.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </ConfigRow>
-              <StyleNumberInput
-                label="Font Size"
-                value={customization.titleFontSize}
-                onChange={(v) => updateScrubberField("titleFontSize", v)}
-                allowAuto
-                isAuto={!customization.titleFontSize}
-                onAutoChange={() => resetScrubberField("titleFontSize")}
-                min={24}
-                max={72}
-                step={2}
-                unit="px"
-                displayUnit=""
-                className={CONFIG_INPUT_CLS}
-              />
-              <StyleNumberInput
-                label="Letter Spacing"
-                value={customization.titleLetterSpacing}
-                onChange={(v) => updateScrubberField("titleLetterSpacing", v)}
-                allowAuto
-                isAuto={!customization.titleLetterSpacing}
-                onAutoChange={() => resetScrubberField("titleLetterSpacing")}
-                min={-3}
-                max={3}
-                step={0.25}
-                unit="px"
-                displayUnit=""
-                className={CONFIG_INPUT_CLS}
-              />
-              <ConfigRow label="Italic" variant="switch">
-                <Switch
-                  aria-label="Italic"
-                  checked={getValue("titleItalic") === "true"}
-                  onCheckedChange={(v: boolean) =>
-                    updateWithCustomPreset("titleItalic", v ? "true" : "")
-                  }
-                  size="default"
+            <FeatureGate requiredPlan="pro" variant="block">
+              <ConfigCard>
+                <ConfigRow label="Font">
+                  <Select
+                    value={getValue("titleFont") || "Timeless Serif"}
+                    onValueChange={(v) => {
+                      if (!v) return;
+                      loadGoogleFont(v);
+                      updateWithCustomPreset("titleFont", v);
+                    }}
+                  >
+                    <SelectTrigger className={selectTriggerCls}>
+                      {FONT_OPTIONS.find(
+                        (o) => o.value === (getValue("titleFont") || "Timeless Serif"),
+                      )?.label ??
+                        (getValue("titleFont") || "Timeless Serif")}
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONT_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </ConfigRow>
+                <StyleNumberInput
+                  label="Font Size"
+                  value={customization.titleFontSize}
+                  onChange={(v) => updateScrubberField("titleFontSize", v)}
+                  allowAuto
+                  isAuto={!customization.titleFontSize}
+                  onAutoChange={() => resetScrubberField("titleFontSize")}
+                  min={24}
+                  max={72}
+                  step={2}
+                  unit="px"
+                  displayUnit=""
+                  className={CONFIG_INPUT_CLS}
                 />
-              </ConfigRow>
-            </ConfigCard>
+                <StyleNumberInput
+                  label="Letter Spacing"
+                  value={customization.titleLetterSpacing}
+                  onChange={(v) => updateScrubberField("titleLetterSpacing", v)}
+                  allowAuto
+                  isAuto={!customization.titleLetterSpacing}
+                  onAutoChange={() => resetScrubberField("titleLetterSpacing")}
+                  min={-3}
+                  max={3}
+                  step={0.25}
+                  unit="px"
+                  displayUnit=""
+                  className={CONFIG_INPUT_CLS}
+                />
+                <ConfigRow label="Italic" variant="switch">
+                  <Switch
+                    aria-label="Italic"
+                    checked={getValue("titleItalic") === "true"}
+                    onCheckedChange={(v: boolean) =>
+                      updateWithCustomPreset("titleItalic", v ? "true" : "")
+                    }
+                    size="default"
+                  />
+                </ConfigRow>
+              </ConfigCard>
+            </FeatureGate>
           </SidebarSection>
 
           {/* Colors — with Light / Dark tabs */}
           <SidebarSection label="Colors" action={<ProBadge />}>
-            <Tabs value={activeMode} onValueChange={handleModeToggle} className="mb-2.5">
-              <TabsList className="w-full">
-                <TabsTrigger value="light">Light</TabsTrigger>
-                <TabsTrigger value="dark">Dark</TabsTrigger>
-                <TabsIndicator />
-              </TabsList>
-            </Tabs>
-            <ConfigCard>
-              <AdvancedColorPickers
-                customization={customization}
-                updateField={updateWithCustomPreset}
-              />
-            </ConfigCard>
+            <FeatureGate requiredPlan="pro" variant="block">
+              <Tabs value={activeMode} onValueChange={handleModeToggle} className="mb-2.5">
+                <TabsList className="w-full">
+                  <TabsTrigger value="light">Light</TabsTrigger>
+                  <TabsTrigger value="dark">Dark</TabsTrigger>
+                  <TabsIndicator />
+                </TabsList>
+              </Tabs>
+              <ConfigCard>
+                <AdvancedColorPickers
+                  customization={customization}
+                  updateField={updateWithCustomPreset}
+                />
+              </ConfigCard>
+            </FeatureGate>
           </SidebarSection>
 
           {/* Custom CSS — mode-aware */}
           <SidebarSection label="Custom CSS" action={<ProBadge />}>
-            <div className="rounded-lg overflow-hidden border border-border/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-              <Textarea
-                value={cssValue}
-                onChange={handleCssChange}
-                aria-label={`Custom CSS (${activeMode} mode)`}
-                className="font-mono text-[11px] h-32 bg-secondary text-foreground border-0 rounded-none focus-visible:ring-2 focus-visible:ring-ring p-3"
-                placeholder=".bf-themed { ... }"
-                spellCheck={false}
-              />
-            </div>
-            <div className="flex items-center gap-1.5 px-1 pt-2">
-              <Tooltip>
-                <TooltipTrigger
-                  render={<InfoIcon className="h-3 w-3 text-muted-foreground/60 cursor-help" />}
+            <FeatureGate requiredPlan="pro" variant="block">
+              <div className="rounded-lg overflow-hidden border border-border/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                <Textarea
+                  value={cssValue}
+                  onChange={handleCssChange}
+                  aria-label={`Custom CSS (${activeMode} mode)`}
+                  className="font-mono text-[11px] h-32 bg-secondary text-foreground border-0 rounded-none focus-visible:ring-2 focus-visible:ring-ring p-3"
+                  placeholder=".bf-themed { ... }"
+                  spellCheck={false}
                 />
-                <TooltipContent side="bottom" className="max-w-[240px] text-[11px]">
-                  Supports shadcn tokens: --bf-primary, --bf-background, --bf-foreground, etc.
-                </TooltipContent>
-              </Tooltip>
-              <span className="text-[11px] text-muted-foreground/60">
-                Use --bf-* tokens for overrides
-              </span>
-            </div>
+              </div>
+              <div className="flex items-center gap-1.5 px-1 pt-2">
+                <Tooltip>
+                  <TooltipTrigger
+                    render={<InfoIcon className="h-3 w-3 text-muted-foreground/60 cursor-help" />}
+                  />
+                  <TooltipContent side="bottom" className="max-w-[240px] text-[11px]">
+                    Supports shadcn tokens: --bf-primary, --bf-background, --bf-foreground, etc.
+                  </TooltipContent>
+                </Tooltip>
+                <span className="text-[11px] text-muted-foreground/60">
+                  Use --bf-* tokens for overrides
+                </span>
+              </div>
+            </FeatureGate>
           </SidebarSection>
         </div>
       </SidebarContent>
