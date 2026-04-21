@@ -102,7 +102,7 @@ const config = defineConfig({
     },
   },
   ssr: {
-    noExternal: [/^@platejs\//, "katex", "react-tweet"],
+    noExternal: [/^@platejs\//, "platejs", "@udecode/utils", "katex", "react-tweet"],
     external: [
       "dexie",
       "tanstack-dexie-db-collection",
@@ -136,6 +136,12 @@ const config = defineConfig({
           "drizzle-orm",
           "drizzle-orm/node-postgres",
         ],
+        // Inline platejs + its slate/utils deps so the re-export chain is
+        // resolved at bundle time. Leaving them external lets Rollup guess
+        // which sibling package a re-exported name came from (e.g. bindFirst
+        // lives in @udecode/utils but gets guessed as @platejs/slate), and
+        // the wrong guess breaks downstream consumers of the RSC output.
+        noExternal: [/^@platejs\//, "platejs", "@udecode/utils"],
       },
     },
   },

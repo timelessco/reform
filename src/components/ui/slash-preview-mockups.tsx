@@ -444,3 +444,28 @@ export const FormMultiSelectPreview = () => (
     </div>
   </div>
 );
+
+export const AskAIPreview = () => (
+  <div className="flex h-[130px] flex-col justify-center gap-2 px-3">
+    <div className="flex items-center gap-2 rounded-md border border-input px-2 py-1.5">
+      <svg
+        className="size-4 text-muted-foreground"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        viewBox="0 0 24 24"
+      >
+        <title>AI</title>
+        <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
+      </svg>
+      <SkeletonBar width="w-[70%]" className="h-[5px]" />
+    </div>
+    <div className="flex flex-col gap-1 pl-1">
+      <SkeletonBar width="w-[60%]" className="h-[4px]" />
+      <SkeletonBar width="w-[50%]" className="h-[4px]" />
+      <SkeletonBar width="w-[55%]" className="h-[4px]" />
+    </div>
+  </div>
+);

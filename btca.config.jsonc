@@ -26,6 +26,12 @@
       "url": "https://github.com/TanStack/router",
       "branch": "main",
     },
+    {
+      "type": "git",
+      "name": "json-render",
+      "url": "https://github.com/vercel-labs/json-render",
+      "branch": "main",
+    },
   ],
   "model": "glm-5-turbo",
   "provider": "openai-compat",

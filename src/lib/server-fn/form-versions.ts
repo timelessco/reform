@@ -5,18 +5,11 @@ import { z } from "zod";
 import { forms, formVersions, user } from "@/db/schema";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
+import { computeContentHash } from "@/lib/content-hash";
 import { authForm, getActiveOrgId } from "./auth-helpers";
 
 // Maximum number of versions to keep per form (TODO: make plan-based)
 const MAX_VERSIONS_PER_FORM = 20;
-
-/**
- * Compute a hash of the content for fast change detection
- */
-const computeContentHash = (content: unknown): string => {
-  const str = JSON.stringify(content);
-  return crypto.createHash("md5").update(str).digest("hex");
-};
 
 const serializeVersion = (version: typeof formVersions.$inferSelect) => ({
   ...version,
@@ -58,8 +51,46 @@ export const publishFormVersion = createServerFn({ method: "POST" })
         .limit(1);
 
       const nextVersionNumber = (lastVersion?.version ?? 0) + 1;
-      const contentHash = computeContentHash(form.content);
       const now = new Date();
+
+      // Snapshot Group 2 behavior settings (flat columns) into the version's
+      // settings jsonb so the public endpoint can read them from the snapshot
+      // instead of the live forms row. Group 4 (slug, customDomainId, branding)
+      // is intentionally excluded — those stay live.
+      const settingsSnapshot = {
+        progressBar: form.progressBar,
+        presentationMode: form.presentationMode,
+        saveAnswersForLater: form.saveAnswersForLater,
+        redirectOnCompletion: form.redirectOnCompletion,
+        redirectUrl: form.redirectUrl,
+        redirectDelay: form.redirectDelay,
+        language: form.language,
+        passwordProtect: form.passwordProtect,
+        password: form.password,
+        closeForm: form.closeForm,
+        closedFormMessage: form.closedFormMessage,
+        closeOnDate: form.closeOnDate,
+        closeDate: form.closeDate,
+        limitSubmissions: form.limitSubmissions,
+        maxSubmissions: form.maxSubmissions,
+        preventDuplicateSubmissions: form.preventDuplicateSubmissions,
+        selfEmailNotifications: form.selfEmailNotifications,
+        notificationEmail: form.notificationEmail,
+        respondentEmailNotifications: form.respondentEmailNotifications,
+        respondentEmailSubject: form.respondentEmailSubject,
+        respondentEmailBody: form.respondentEmailBody,
+        dataRetention: form.dataRetention,
+        dataRetentionDays: form.dataRetentionDays,
+      };
+
+      const contentHash = computeContentHash({
+        content: form.content,
+        customization: form.customization ?? {},
+        title: form.title,
+        icon: form.icon,
+        cover: form.cover,
+        settings: settingsSnapshot,
+      });
 
       // Create version snapshot
       const versionId = crypto.randomUUID();
@@ -71,9 +102,11 @@ export const publishFormVersion = createServerFn({ method: "POST" })
           formId: data.formId,
           version: nextVersionNumber,
           content: form.content,
-          settings: form.settings,
+          settings: settingsSnapshot,
           customization: form.customization ?? {},
           title: form.title,
+          icon: form.icon,
+          cover: form.cover,
           publishedByUserId: context.session.user.id,
           publishedAt: now,
           createdAt: now,
@@ -251,24 +284,72 @@ export const discardFormChanges = createServerFn({ method: "POST" })
     }
 
     const version = result.version;
+    const snapshotSettings = (version.settings ?? {}) as Record<string, unknown>;
 
-    // Compute hash of the version content
-    const contentHash = computeContentHash(version.content);
+    // Compute hash over the full snapshot (matches publishFormVersion)
+    const contentHash = computeContentHash({
+      content: version.content,
+      customization: version.customization ?? {},
+      title: version.title,
+      icon: version.icon,
+      cover: version.cover,
+      settings: snapshotSettings,
+    });
 
-    // Update form draft with version content, customization, AND hash (so no "changes" indicator)
-    await db
+    // Reset every versioned field (Groups 1-3) on the live draft back to the
+    // snapshot. Group 4 (slug, customDomainId, branding) intentionally left
+    // untouched — those are live and never versioned.
+    const [updatedForm] = await db
       .update(forms)
       .set({
         content: version.content,
         title: version.title,
         customization: version.customization ?? {},
+        icon: version.icon,
+        cover: version.cover,
+        // Group 2 settings — read back from snapshot jsonb
+        progressBar: (snapshotSettings.progressBar as boolean) ?? false,
+        presentationMode: (snapshotSettings.presentationMode as string) ?? "card",
+        saveAnswersForLater: (snapshotSettings.saveAnswersForLater as boolean) ?? true,
+        redirectOnCompletion: (snapshotSettings.redirectOnCompletion as boolean) ?? false,
+        redirectUrl: (snapshotSettings.redirectUrl as string | null) ?? null,
+        redirectDelay: (snapshotSettings.redirectDelay as number) ?? 0,
+        language: (snapshotSettings.language as string) ?? "English",
+        passwordProtect: (snapshotSettings.passwordProtect as boolean) ?? false,
+        password: (snapshotSettings.password as string | null) ?? null,
+        closeForm: (snapshotSettings.closeForm as boolean) ?? false,
+        closedFormMessage:
+          (snapshotSettings.closedFormMessage as string | null) ?? "This form is now closed.",
+        closeOnDate: (snapshotSettings.closeOnDate as boolean) ?? false,
+        closeDate: (snapshotSettings.closeDate as string | null) ?? null,
+        limitSubmissions: (snapshotSettings.limitSubmissions as boolean) ?? false,
+        maxSubmissions: (snapshotSettings.maxSubmissions as number | null) ?? null,
+        preventDuplicateSubmissions:
+          (snapshotSettings.preventDuplicateSubmissions as boolean) ?? false,
+        selfEmailNotifications: (snapshotSettings.selfEmailNotifications as boolean) ?? false,
+        notificationEmail: (snapshotSettings.notificationEmail as string | null) ?? null,
+        respondentEmailNotifications:
+          (snapshotSettings.respondentEmailNotifications as boolean) ?? false,
+        respondentEmailSubject: (snapshotSettings.respondentEmailSubject as string | null) ?? null,
+        respondentEmailBody: (snapshotSettings.respondentEmailBody as string | null) ?? null,
+        dataRetention: (snapshotSettings.dataRetention as boolean) ?? false,
+        dataRetentionDays: (snapshotSettings.dataRetentionDays as number | null) ?? null,
         publishedContentHash: contentHash,
         updatedAt: new Date(),
       })
-      .where(eq(forms.id, data.formId));
+      .where(eq(forms.id, data.formId))
+      .returning();
 
     return {
       success: true,
+      form: {
+        ...updatedForm,
+        content: updatedForm.content as object[],
+        settings: (updatedForm.settings ?? {}) as Record<string, object>,
+        customization: (updatedForm.customization ?? {}) as Record<string, string>,
+        updatedAt: updatedForm.updatedAt.toISOString(),
+        createdAt: updatedForm.createdAt.toISOString(),
+      },
       version: {
         content: version.content as object[],
         settings: version.settings as Record<string, object>,

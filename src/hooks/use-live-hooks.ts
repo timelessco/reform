@@ -27,6 +27,7 @@ export const useOrgWorkspaces = (organizationId?: string) =>
           name: ws.name,
           createdAt: ws.createdAt,
           updatedAt: ws.updatedAt,
+          sortIndex: ws.sortIndex,
         }));
     },
     [organizationId],
@@ -72,6 +73,7 @@ export const useOrgForms = (_organizationId?: string) =>
         updatedAt: form.updatedAt,
         icon: form.icon,
         customization: form.customization,
+        sortIndex: form.sortIndex,
       }))
       .orderBy(({ form }) => form.updatedAt, "desc");
   }, []);
@@ -128,6 +130,7 @@ export const useFavorites = (userId?: string) =>
           id: fav.id,
           userId: fav.userId,
           formId: fav.formId,
+          sortIndex: fav.sortIndex,
           createdAt: fav.createdAt,
         }));
     },
@@ -176,8 +179,19 @@ export const useFavoriteForms = (userId?: string) => {
 
   return useMemo(() => {
     if (!favs || !allForms) return [];
-    const favFormIds = new Set(favs.map((f) => f.formId));
-    return allForms.filter((f) => favFormIds.has(f.id));
+    const favByFormId = new Map(favs.map((f) => [f.formId, f]));
+    return allForms.flatMap((f) => {
+      const fav = favByFormId.get(f.id);
+      if (!fav) return [];
+      return [
+        {
+          ...f,
+          favoriteId: fav.id,
+          favoriteSortIndex: fav.sortIndex ?? null,
+          favoriteCreatedAt: fav.createdAt,
+        },
+      ];
+    });
   }, [favs, allForms]);
 };
 

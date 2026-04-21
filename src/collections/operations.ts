@@ -81,8 +81,8 @@ export const createFormLocal = (
     redirectOnCompletion: false,
     redirectDelay: 0,
     progressBar: false,
+    presentationMode: "card",
     branding: true,
-    autoJump: false,
     saveAnswersForLater: true,
     selfEmailNotifications: false,
     respondentEmailNotifications: false,
@@ -204,7 +204,7 @@ export const deleteWorkspaceLocal = async (id: string) => {
 
 // --- Favorite mutations ---
 
-export const toggleFavoriteLocal = async (userId: string, formId: string) => {
+export const toggleFavoriteLocal = async (userId: string, formId: string, sortIndex?: string) => {
   const { favorites } = getInit();
   const id = `${userId}:${formId}`;
   const existing = favorites.get(id);
@@ -216,9 +216,50 @@ export const toggleFavoriteLocal = async (userId: string, formId: string) => {
       id,
       userId,
       formId,
+      sortIndex: sortIndex ?? null,
       createdAt: new Date().toISOString(),
     });
   }
+};
+
+// --- Reorder mutations ---
+
+export const reorderFormLocal = async (formId: string, sortIndex: string) => {
+  const { formListings } = getInit();
+  formListings.update(formId, (draft: Record<string, unknown>) => {
+    draft.sortIndex = sortIndex;
+  });
+};
+
+export const reorderWorkspaceLocal = async (workspaceId: string, sortIndex: string) => {
+  const { workspaces } = getInit();
+  workspaces.update(workspaceId, (draft: Record<string, unknown>) => {
+    draft.sortIndex = sortIndex;
+  });
+};
+
+export const reorderFavoriteLocal = async (favoriteId: string, sortIndex: string) => {
+  const { favorites } = getInit();
+  favorites.update(favoriteId, (draft: Record<string, unknown>) => {
+    draft.sortIndex = sortIndex;
+  });
+};
+
+export const moveFormToWorkspaceLocal = async (formId: string, workspaceId: string) => {
+  const { formListings } = getInit();
+  formListings.update(formId, (draft: Record<string, unknown>) => {
+    draft.workspaceId = workspaceId;
+    draft.updatedAt = new Date().toISOString();
+    draft.sortIndex = null;
+  });
+};
+
+export const renameFormLocal = async (formId: string, title: string) => {
+  const { formListings } = getInit();
+  formListings.update(formId, (draft: Record<string, unknown>) => {
+    draft.title = title;
+    draft.updatedAt = new Date().toISOString();
+  });
 };
 
 // --- Type re-exports ---

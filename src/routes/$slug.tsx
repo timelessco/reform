@@ -1,4 +1,4 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute, isNotFound, notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -10,8 +10,10 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { CustomDomainNotFound } from "@/components/ui/custom-domain-not-found";
 import {
+  getRequestHost,
   isAppHost,
   resolveCustomDomain,
+  resolveDomainForSlug,
   loadFormForCustomDomain,
 } from "@/lib/server-fn/custom-domain-loader";
 import { generateThemeCss, getGoogleFontLinkUrl } from "@/lib/theme/generate-theme-css";
@@ -32,16 +34,12 @@ const resolveSystemTheme = (): "light" | "dark" => {
 const getFormByCustomDomainSlug = createServerFn({ method: "GET" })
   .inputValidator(z.object({ slug: z.string() }))
   .handler(async ({ data }) => {
-    const headers = getRequestHeaders();
-    const host = headers.host ?? headers[":authority"] ?? "";
+    const host = getRequestHost(getRequestHeaders());
 
-    // If this is a request to the app itself, throw notFound so TanStack Router
-    // falls through to the 404 page (other routes already matched first).
-    if (isAppHost(host)) {
-      throw notFound();
-    }
+    const domain = isAppHost(host)
+      ? await resolveDomainForSlug(data.slug)
+      : await resolveCustomDomain(host);
 
-    const domain = await resolveCustomDomain(host);
     return loadFormForCustomDomain(domain, data.slug, "slug");
   });
 
@@ -140,7 +138,14 @@ const CustomDomainSlugRoute = () => {
 };
 
 export const Route = createFileRoute("/$slug")({
-  loader: async ({ params }) => getFormByCustomDomainSlug({ data: { slug: params.slug } }),
+  loader: async ({ params }) => {
+    try {
+      return await getFormByCustomDomainSlug({ data: { slug: params.slug } });
+    } catch (e) {
+      if (isNotFound(e)) throw notFound();
+      throw e;
+    }
+  },
   head: ({ loaderData }) => {
     const siteTitle = loaderData?.domainMeta?.siteTitle ?? "Forms";
     const formTitle = loaderData?.form?.title;

@@ -21,6 +21,12 @@ interface MyRouterContext {
 
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("vite-ui-theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme:dark)").matches)){document.documentElement.classList.add("dark");document.documentElement.style.colorScheme="dark"}}catch(e){}})()`;
 
+// iOS Safari zooms into inputs with font-size < 16px on focus. Forcing
+// maximum-scale=1.0 on iOS only suppresses that zoom while preserving
+// pinch-to-zoom everywhere else. A MutationObserver re-applies the
+// attribute if TanStack rewrites the viewport meta during navigation.
+const IOS_AUTOZOOM_FIX_SCRIPT = `(function(){if(window.__iosAutozoomFixApplied)return;var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);if(!isIOS)return;window.__iosAutozoomFixApplied=true;var applying=false;var apply=function(){var m=document.querySelector('meta[name=viewport]');if(!m)return;var c=m.getAttribute('content')||'';if(c.indexOf('maximum-scale=1.0')!==-1)return;applying=true;if(/maximum-scale=[\\d.]+/.test(c)){m.setAttribute('content',c.replace(/maximum-scale=[\\d.]+/,'maximum-scale=1.0'))}else{m.setAttribute('content',c+', maximum-scale=1.0')}applying=false};apply();new MutationObserver(function(ms){if(applying)return;for(var i=0;i<ms.length;i++){var x=ms[i];if((x.type==='attributes'&&x.target.nodeName==='META')||x.type==='childList'){apply();return}}}).observe(document.head,{childList:true,subtree:true,attributes:true,attributeFilter:['content']})})()`;
+
 const RootDocument = ({ children }: { children: React.ReactNode }) => (
   <html lang="en" suppressHydrationWarning>
     <head>
@@ -69,8 +75,8 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         href: appCss,
       },
     ],
+    scripts: [{ children: IOS_AUTOZOOM_FIX_SCRIPT }],
   }),
-
   shellComponent: RootDocument,
   pendingComponent: Loader,
   errorComponent: ErrorBoundary,

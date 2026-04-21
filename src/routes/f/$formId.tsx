@@ -1,4 +1,4 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute, isNotFound, notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -10,6 +10,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { CustomDomainNotFound } from "@/components/ui/custom-domain-not-found";
 import {
+  getRequestHost,
   isAppHost,
   resolveCustomDomain,
   loadFormForCustomDomain,
@@ -33,7 +34,7 @@ const getFormByCustomDomainId = createServerFn({ method: "GET" })
   .inputValidator(z.object({ formId: z.string().uuid() }))
   .handler(async ({ data }) => {
     const headers = getRequestHeaders();
-    const host = headers.host ?? headers[":authority"] ?? "";
+    const host = getRequestHost(headers);
 
     if (isAppHost(host)) {
       throw notFound();
@@ -142,7 +143,14 @@ const CustomDomainFormIdRoute = () => {
 };
 
 export const Route = createFileRoute("/f/$formId")({
-  loader: async ({ params }) => getFormByCustomDomainId({ data: { formId: params.formId } }),
+  loader: async ({ params }) => {
+    try {
+      return await getFormByCustomDomainId({ data: { formId: params.formId } });
+    } catch (e) {
+      if (isNotFound(e)) throw notFound();
+      throw e;
+    }
+  },
   head: ({ loaderData, params }) => {
     const siteTitle = loaderData?.domainMeta?.siteTitle ?? "Forms";
     const formTitle = loaderData?.form?.title;

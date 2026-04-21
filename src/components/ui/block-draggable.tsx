@@ -19,7 +19,13 @@ import type { PlateEditor, PlateElementProps, RenderNodeWrapper } from "platejs/
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
+import {
+  findNextNonButtonPath,
+  findPrevNonButtonPath,
+  moveToPath,
+} from "@/components/editor/plugins/form-blocks-kit";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { FORM_INPUT_NODE_TYPES } from "@/lib/form-schema/form-field-constants";
 import { cn } from "@/lib/utils";
 
 const UNDRAGGABLE_KEYS = [KEYS.column, KEYS.tr, KEYS.td, "formButton"];
@@ -245,6 +251,32 @@ const Draggable = (props: PlateElementProps) => {
     };
   }, [editor, element, nodeRef]);
 
+  const isFormInput = FORM_INPUT_NODE_TYPES.has(element.type as string);
+  const wrapperChromeAttrs = isFormButton || isFormHeader ? { "data-bf-chrome": "" } : {};
+
+  // Standalone = not preceded by a formLabel. Drives breathing-room padding on
+  // the wrapper so stacked label-less inputs don't collide. Computed inline
+  // (O(1) sibling lookup) — memoizing would need editor.children as a dep,
+  // which changes on every edit and defeats the memo.
+  const isStandaloneInput = (() => {
+    if (!isFormInput) return false;
+    if (element.type === "formTextarea" || element.type === "formFileUpload") return false;
+    const idx = path[0];
+    if (typeof idx !== "number") return false;
+    const prev = (editor.children as TElement[])[idx - 1];
+    if (!prev) return true;
+    if (prev.type === "formLabel") return false;
+    // Option items cluster under a single label — inherit standalone from first.
+    if (element.type === "formOptionItem" && prev.type === "formOptionItem") return false;
+    return true;
+  })();
+
+  const wrapperInputAttrs = isFormInput
+    ? isStandaloneInput
+      ? { "data-bf-input": "true", "data-bf-standalone": "true" }
+      : { "data-bf-input": "true" }
+    : {};
+
   return (
     <div
       className={cn(
@@ -253,6 +285,8 @@ const Draggable = (props: PlateElementProps) => {
         isDragging && "opacity-50",
         getPluginByType(editor, element.type)?.node.isContainer ? "group/container" : "group",
       )}
+      {...wrapperChromeAttrs}
+      {...wrapperInputAttrs}
     >
       {!isInTable && !isFormButton && !isFormHeader && !isPageBreak && (
         <Gutter gutterPosition={gutterPosition} className="mr-1">
@@ -262,6 +296,20 @@ const Draggable = (props: PlateElementProps) => {
               "flex items-center gap-0 pointer-events-auto mr-1",
               isInColumn && "h-4",
             )}
+            onKeyDownCapture={(e) => {
+              // Gutter controls (+, drag) aren't real tab stops — navigate directly
+              if (e.key === "Tab") {
+                e.preventDefault();
+                e.stopPropagation();
+                const target = e.shiftKey
+                  ? findPrevNonButtonPath(editor, path)
+                  : findNextNonButtonPath(editor, path);
+                if (target) {
+                  moveToPath(editor, target);
+                  editor.tf.focus();
+                }
+              }
+            }}
           >
             {/* Plus Button - Add after (hidden for form buttons) */}
             {!isFormButton && (
@@ -271,6 +319,7 @@ const Draggable = (props: PlateElementProps) => {
                     <Button
                       variant="ghost"
                       size="icon"
+                      tabIndex={-1}
                       className="h-auto w-auto rounded-lg has-[>svg]:px-1 has-[>svg]:py-1.5 border border-transparent"
                       onClick={handleAddBlock}
                       data-plate-prevent-deselect
@@ -469,6 +518,7 @@ const DragHandle = React.memo(function DragHandle({
         render={
           <button
             type="button"
+            tabIndex={-1}
             className="flex items-center justify-center h-auto w-auto overflow-hidden rounded-lg hover:bg-accent has-[>svg]:px-1 has-[>svg]:py-1.5"
             onClick={handleClick}
             onMouseDown={handleMouseDown}

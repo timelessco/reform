@@ -1,14 +1,30 @@
 import { createServerFn } from "@tanstack/react-start";
 import { count, eq } from "drizzle-orm";
 import { z } from "zod";
-import { forms, submissions, user } from "@/db/schema";
+import { forms, formVersions, submissions, user } from "@/db/schema";
 import { db } from "@/db";
 import { recordOwnerSubmissionNotification } from "./notifications-helpers.server";
+
+type VersionSettings = {
+  closeForm?: boolean;
+  closeOnDate?: boolean;
+  closeDate?: string | null;
+  limitSubmissions?: boolean;
+  maxSubmissions?: number | null;
+  selfEmailNotifications?: boolean;
+  notificationEmail?: string | null;
+  respondentEmailNotifications?: boolean;
+  respondentEmailSubject?: string | null;
+  respondentEmailBody?: string | null;
+};
 
 /**
  * Public submission endpoint (no authentication).
  * Validates the form is published and open, writes the submission,
  * and fires-and-forgets owner notifications + email.
+ *
+ * Gating + email settings are read from the published version snapshot so the
+ * live draft's unpublished changes don't take effect until the user republishes.
  */
 export const createPublicSubmission = createServerFn({ method: "POST" })
   .inputValidator(
@@ -19,23 +35,11 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-    // Verify form exists and is published, get the current published version ID + settings
     const [form] = await db
       .select({
         status: forms.status,
         lastPublishedVersionId: forms.lastPublishedVersionId,
         createdByUserId: forms.createdByUserId,
-        // Settings fields for gating + email
-        closeForm: forms.closeForm,
-        closeOnDate: forms.closeOnDate,
-        closeDate: forms.closeDate,
-        limitSubmissions: forms.limitSubmissions,
-        maxSubmissions: forms.maxSubmissions,
-        selfEmailNotifications: forms.selfEmailNotifications,
-        notificationEmail: forms.notificationEmail,
-        respondentEmailNotifications: forms.respondentEmailNotifications,
-        respondentEmailSubject: forms.respondentEmailSubject,
-        respondentEmailBody: forms.respondentEmailBody,
       })
       .from(forms)
       .where(eq(forms.id, data.formId));
@@ -48,19 +52,32 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
       throw new Error("Form is not accepting submissions");
     }
 
+    const [version] = form.lastPublishedVersionId
+      ? await db
+          .select({ settings: formVersions.settings })
+          .from(formVersions)
+          .where(eq(formVersions.id, form.lastPublishedVersionId))
+      : [undefined];
+
+    const vSettings = (version?.settings ?? {}) as VersionSettings;
+
     // --- Server-side gating (prevent client-side bypass) ---
-    if (form.closeForm) {
+    if (vSettings.closeForm) {
       throw new Error("This form is closed");
     }
-    if (form.closeOnDate && form.closeDate && new Date(form.closeDate) < new Date()) {
+    if (
+      vSettings.closeOnDate &&
+      vSettings.closeDate &&
+      new Date(vSettings.closeDate) < new Date()
+    ) {
       throw new Error("This form is no longer accepting responses");
     }
-    if (form.limitSubmissions && form.maxSubmissions) {
+    if (vSettings.limitSubmissions && vSettings.maxSubmissions) {
       const [{ value: submissionCount }] = await db
         .select({ value: count() })
         .from(submissions)
         .where(eq(submissions.formId, data.formId));
-      if (submissionCount >= form.maxSubmissions) {
+      if (submissionCount >= vSettings.maxSubmissions) {
         throw new Error("This form has reached its maximum number of submissions");
       }
     }
@@ -86,14 +103,14 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
       createdAt: now,
     }).catch(() => {});
 
-    // Fire-and-forget email notifications
+    // Fire-and-forget email notifications (read from version snapshot)
     sendEmailNotifications(
       {
-        selfEmailNotifications: form.selfEmailNotifications,
-        notificationEmail: form.notificationEmail,
-        respondentEmailNotifications: form.respondentEmailNotifications,
-        respondentEmailSubject: form.respondentEmailSubject,
-        respondentEmailBody: form.respondentEmailBody,
+        selfEmailNotifications: vSettings.selfEmailNotifications ?? false,
+        notificationEmail: vSettings.notificationEmail ?? null,
+        respondentEmailNotifications: vSettings.respondentEmailNotifications ?? false,
+        respondentEmailSubject: vSettings.respondentEmailSubject ?? null,
+        respondentEmailBody: vSettings.respondentEmailBody ?? null,
       },
       form.createdByUserId,
       data.formId,

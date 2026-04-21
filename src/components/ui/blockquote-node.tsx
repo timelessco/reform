@@ -1,10 +1,6 @@
 import { PlateElement } from "platejs/react";
 import type { PlateElementProps } from "platejs/react";
 
-import { RequiredBadgeWrapper } from "@/components/ui/required-badge-wrapper";
-
 export const BlockquoteElement = (props: PlateElementProps) => (
-  <RequiredBadgeWrapper path={props.path}>
-    <PlateElement as="blockquote" className="my-1 border-l-2 pl-6 italic" {...props} />
-  </RequiredBadgeWrapper>
+  <PlateElement as="blockquote" className="my-1 border-l-2 pl-6 italic" {...props} />
 );

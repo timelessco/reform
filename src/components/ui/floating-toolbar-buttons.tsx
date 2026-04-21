@@ -2,6 +2,7 @@ import { BoldIcon, ItalicIcon, StrikethroughIcon, UnderlineIcon } from "@/compon
 import { KEYS } from "platejs";
 import { useEditorReadOnly } from "platejs/react";
 
+import { AIToolbarButton } from "./ai-toolbar-button";
 import { LinkToolbarButton } from "./link-toolbar-button";
 import { MarkToolbarButton } from "./mark-toolbar-button";
 import { ToolbarGroup } from "./toolbar";
@@ -14,6 +15,8 @@ export const FloatingToolbarButtons = () => {
     <>
       {!readOnly && (
         <ToolbarGroup>
+          <AIToolbarButton />
+
           <TurnIntoToolbarButton />
 
           <MarkToolbarButton nodeType={KEYS.bold} tooltip="Bold (⌘+B)">

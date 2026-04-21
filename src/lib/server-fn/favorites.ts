@@ -16,13 +16,19 @@ export const getFavorites = createServerFn({ method: "GET" })
       id: f.id,
       userId: f.userId,
       formId: f.formId,
+      sortIndex: f.sortIndex,
       createdAt: f.createdAt.toISOString(),
     }));
   });
 
 export const addFavorite = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ formId: z.string().uuid() }))
+  .inputValidator(
+    z.object({
+      formId: z.string().uuid(),
+      sortIndex: z.string().nullable().optional(),
+    }),
+  )
   .handler(async ({ data, context }) => {
     const userId = context.session.user.id;
     const id = `${userId}:${data.formId}`;
@@ -33,6 +39,7 @@ export const addFavorite = createServerFn({ method: "POST" })
         id,
         userId,
         formId: data.formId,
+        sortIndex: data.sortIndex ?? null,
         createdAt: new Date(),
       })
       .onConflictDoNothing();
@@ -46,5 +53,22 @@ export const removeFavorite = createServerFn({ method: "POST" })
 
     await db
       .delete(formFavorites)
+      .where(and(eq(formFavorites.userId, userId), eq(formFavorites.formId, data.formId)));
+  });
+
+export const reorderFavorite = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(
+    z.object({
+      formId: z.string().uuid(),
+      sortIndex: z.string(),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    const userId = context.session.user.id;
+
+    await db
+      .update(formFavorites)
+      .set({ sortIndex: data.sortIndex })
       .where(and(eq(formFavorites.userId, userId), eq(formFavorites.formId, data.formId)));
   });

@@ -25,6 +25,7 @@ import {
   PhoneIcon,
   CheckCheckIcon,
   SmileIcon,
+  SparklesIcon,
   SquareCheckIcon,
   UploadIcon,
 } from "@/components/ui/icons";
@@ -35,8 +36,10 @@ import { PlateElement } from "platejs/react";
 import { useCallback } from "react";
 import type { ReactNode } from "react";
 
+import { triggerAIInput } from "@/components/editor/plugins/ai-input-kit";
 import { insertBlock, insertInlineElement } from "@/components/editor/transforms";
 import {
+  AskAIPreview,
   BlockquotePreview,
   BulletedListPreview,
   CalloutPreview,
@@ -92,6 +95,21 @@ type Group = {
 };
 
 const groups: Group[] = [
+  {
+    group: "AI",
+    items: [
+      {
+        description: "Ask AI to help with your form",
+        icon: <SparklesIcon />,
+        keywords: ["ai", "generate", "prompt", "ask"],
+        label: "Ask AI",
+        value: "ai_input",
+        onSelect: (editor) => {
+          triggerAIInput(editor);
+        },
+      },
+    ],
+  },
   {
     group: "Basic blocks",
     items: [
@@ -359,6 +377,7 @@ const groups: Group[] = [
 ];
 
 const previewMap: Record<string, () => ReactNode> = {
+  ai_input: AskAIPreview,
   [KEYS.p]: TextPreview,
   [KEYS.h1]: Heading1Preview,
   [KEYS.h2]: Heading2Preview,

@@ -38,6 +38,8 @@ import {
   HelpCircleIcon,
   HomeIcon,
   LogOutIcon,
+  MoreHorizontalIcon,
+  Pencil2Icon,
   PlusIcon,
   SearchIcon,
   SettingsIcon,
@@ -46,6 +48,15 @@ import {
   UsersIcon,
   XIcon,
 } from "@/components/ui/icons";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import Loader from "@/components/ui/loader";
 import { LogoToggle } from "@/components/ui/logo";
@@ -86,7 +97,12 @@ import {
   initCollections,
   isInitialized as isCollectionsInitialized,
   permanentDeleteFormLocal,
+  renameFormLocal,
+  reorderFavoriteLocal,
+  reorderFormLocal,
+  reorderWorkspaceLocal,
   restoreFormLocal,
+  toggleFavoriteLocal,
   updateFormStatus,
   updateWorkspaceName,
 } from "@/collections";
@@ -105,6 +121,7 @@ import {
   addFavorite,
   getFavorites as getFavoritesServer,
   removeFavorite,
+  reorderFavorite,
 } from "@/lib/server-fn/favorites";
 import { getFormVersionContent, getFormVersions } from "@/lib/server-fn/form-versions";
 import {
@@ -126,6 +143,7 @@ import {
   createWorkspace,
   deleteWorkspace,
   getWorkspaces,
+  reorderWorkspace,
   updateWorkspace,
 } from "@/lib/server-fn/workspaces";
 import { HOTKEYS } from "@/lib/hotkeys";
@@ -136,6 +154,24 @@ import type { QueryClient } from "@tanstack/react-query";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Outlet, useLocation, useParams, useRouter } from "@tanstack/react-router";
 import { createClientOnlyFn } from "@tanstack/react-start";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
+import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { generateOrderedIndexes, sortByManualOrder } from "@/lib/sort-utils";
 
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatDistanceToNow } from "date-fns";
@@ -219,6 +255,8 @@ const initCollectionsOnClient = createClientOnlyFn((queryClient: QueryClient) =>
     deleteForm: async (data) => await deleteForm({ data: data }),
     addFavorite: async (data) => await addFavorite({ data }),
     removeFavorite: async (data) => await removeFavorite({ data }),
+    reorderFavorite: async (data) => await reorderFavorite({ data }),
+    reorderWorkspace: async (data) => await reorderWorkspace({ data }),
   });
 });
 
@@ -1326,26 +1364,113 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
       {} as Record<string, WorkspaceWithForms["forms"]>,
     );
 
-    return (workspacesData || []).map((ws) => ({
-      ...ws,
-      // Sort forms by recently edited (most recent first)
-      forms: (formsByWorkspace[ws.id] || []).toSorted(
-        (a: WorkspaceWithForms["forms"][0], b: WorkspaceWithForms["forms"][0]) => {
-          switch (sortMode) {
-            case "oldest":
-              return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
-            case "alphabetical":
-              return (a.title || "").localeCompare(b.title || "");
-            case "manual":
-              return 0;
-            case "recent":
-            default:
-              return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-          }
-        },
-      ),
-    }));
+    const orderedWorkspaces = sortByManualOrder(
+      workspacesData || [],
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+
+    return orderedWorkspaces.map((ws) => {
+      const forms = formsByWorkspace[ws.id] || [];
+      let sortedForms: WorkspaceWithForms["forms"];
+      if (sortMode === "manual") {
+        sortedForms = sortByManualOrder(
+          forms,
+          (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+        );
+      } else {
+        sortedForms = forms.toSorted(
+          (a: WorkspaceWithForms["forms"][0], b: WorkspaceWithForms["forms"][0]) => {
+            switch (sortMode) {
+              case "oldest":
+                return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+              case "alphabetical":
+                return (a.title || "").localeCompare(b.title || "");
+              case "recent":
+              default:
+                return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+            }
+          },
+        );
+      }
+      return { ...ws, forms: sortedForms };
+    });
   }, [workspacesData, formsData, activeOrgId, isDataReady, sortMode]);
+
+  const allWorkspaceSummaries = useMemo(
+    () => workspaces.map((w) => ({ id: w.id, name: w.name })),
+    [workspaces],
+  );
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const workspaceIds = useMemo(() => workspaces.map((w) => w.id), [workspaces]);
+
+  const handleWorkspaceDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      const current = workspaces;
+      const oldIdx = current.findIndex((w) => w.id === active.id);
+      const newIdx = current.findIndex((w) => w.id === over.id);
+      if (oldIdx < 0 || newIdx < 0) return;
+
+      const reordered = [...current];
+      const [moved] = reordered.splice(oldIdx, 1);
+      reordered.splice(newIdx, 0, moved);
+
+      try {
+        const indexes = generateOrderedIndexes(reordered.length);
+        reordered.forEach((ws, i) => {
+          if ((ws.sortIndex ?? null) !== indexes[i]) {
+            reorderWorkspaceLocal(ws.id, indexes[i]).catch(() =>
+              toast.error("Failed to reorder workspace"),
+            );
+          }
+        });
+      } catch (err) {
+        console.error("Failed to compute workspace sort indexes", err);
+      }
+    },
+    [workspaces],
+  );
+
+  const handleFormDragEnd = useCallback(
+    (workspaceId: string, event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      const ws = workspaces.find((w) => w.id === workspaceId);
+      if (!ws) return;
+
+      const oldIdx = ws.forms.findIndex((f) => f.id === active.id);
+      const newIdx = ws.forms.findIndex((f) => f.id === over.id);
+      if (oldIdx < 0 || newIdx < 0) return;
+
+      const reordered = [...ws.forms];
+      const [moved] = reordered.splice(oldIdx, 1);
+      reordered.splice(newIdx, 0, moved);
+
+      try {
+        const indexes = generateOrderedIndexes(reordered.length);
+        reordered.forEach((form, i) => {
+          if ((form.sortIndex ?? null) !== indexes[i]) {
+            reorderFormLocal(form.id, indexes[i]).catch(() =>
+              toast.error("Failed to reorder form"),
+            );
+          }
+        });
+        // Auto-switch sidebar to manual mode so the reorder "sticks" visually
+        if (sortMode !== "manual") handleSortChange("manual");
+      } catch (err) {
+        console.error("Failed to compute form sort indexes", err);
+      }
+    },
+    [workspaces, sortMode, handleSortChange],
+  );
 
   // State for workspace dialogs
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -1463,36 +1588,8 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
     <>
       <div className="flex flex-col">
         {/* Favorites Section */}
-        {favoriteForms.length > 0 && (
-          <SidebarSection label="Favorites" initialOpen action={<></>}>
-            {favoriteForms.map((form) => {
-              const isFavActive = location.pathname.startsWith(
-                `/workspace/${form.workspaceId}/form-builder/${form.id}`,
-              );
-              return (
-                <SidebarItem
-                  key={form.id}
-                  label={form.title || "Untitled"}
-                  linkOptions={{
-                    to:
-                      form.status === "published"
-                        ? "/workspace/$workspaceId/form-builder/$formId/submissions"
-                        : "/workspace/$workspaceId/form-builder/$formId/edit",
-                    params: { workspaceId: form.workspaceId, formId: form.id },
-                  }}
-                  isActive={isFavActive}
-                  prefix={
-                    <ThemedFormIcon
-                      icon={form.icon}
-                      customization={
-                        form.customization as Record<string, string> | null | undefined
-                      }
-                    />
-                  }
-                />
-              );
-            })}
-          </SidebarSection>
+        {favoriteForms.length > 0 && session?.user?.id && (
+          <SortableFavoritesSection userId={session.user.id} favoriteForms={favoriteForms} />
         )}
 
         <div className="mt-[15px] space-y-4">
@@ -1504,26 +1601,37 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
               </div>
             ))
           ) : (
-            <div className="space-y-4">
-              {workspaces.map((workspace) => (
-                <WorkspaceItemMinimal
-                  key={workspace.id}
-                  workspace={workspace}
-                  submissionCounts={submissionCounts}
-                  sortMode={sortMode}
-                  onSortChange={handleSortChange}
-                  onRename={() => openRenameDialog(workspace)}
-                  onDelete={() => openDeleteDialog(workspace)}
-                  onDuplicateForm={handleDuplicateForm}
-                  onDeleteForm={handleDeleteForm}
-                />
-              ))}
-              {workspaces.length === 0 && (
-                <span className="text-muted-foreground/50 text-[11px] px-2 py-1 italic">
-                  No workspaces yet
-                </span>
-              )}
-            </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleWorkspaceDragEnd}
+              modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+            >
+              <SortableContext items={workspaceIds} strategy={verticalListSortingStrategy}>
+                <div className="space-y-4">
+                  {workspaces.map((workspace) => (
+                    <WorkspaceItemMinimal
+                      key={workspace.id}
+                      workspace={workspace}
+                      allWorkspaces={allWorkspaceSummaries}
+                      submissionCounts={submissionCounts}
+                      sortMode={sortMode}
+                      onSortChange={handleSortChange}
+                      onRename={() => openRenameDialog(workspace)}
+                      onDelete={() => openDeleteDialog(workspace)}
+                      onDuplicateForm={handleDuplicateForm}
+                      onDeleteForm={handleDeleteForm}
+                      onFormDragEnd={handleFormDragEnd}
+                    />
+                  ))}
+                  {workspaces.length === 0 && (
+                    <span className="text-muted-foreground/50 text-[11px] px-2 py-1 italic">
+                      No workspaces yet
+                    </span>
+                  )}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
         </div>
       </div>
@@ -1614,5 +1722,229 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+};
+
+type FavoriteFormItem = {
+  id: string;
+  title: string | null;
+  workspaceId: string;
+  status: string;
+  updatedAt: string;
+  icon: string | null;
+  customization: unknown;
+  favoriteId: string;
+  favoriteSortIndex: string | null;
+  favoriteCreatedAt: string;
+};
+
+const SortableFavoritesSection = ({
+  userId,
+  favoriteForms,
+}: {
+  userId: string;
+  favoriteForms: FavoriteFormItem[];
+}) => {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const sorted = useMemo(
+    () =>
+      sortByManualOrder(
+        favoriteForms.map((f) => ({ ...f, sortIndex: f.favoriteSortIndex })),
+        (a, b) => new Date(a.favoriteCreatedAt).getTime() - new Date(b.favoriteCreatedAt).getTime(),
+      ),
+    [favoriteForms],
+  );
+
+  const favIds = useMemo(() => sorted.map((f) => f.favoriteId), [sorted]);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      const oldIdx = sorted.findIndex((f) => f.favoriteId === active.id);
+      const newIdx = sorted.findIndex((f) => f.favoriteId === over.id);
+      if (oldIdx < 0 || newIdx < 0) return;
+
+      const reordered = [...sorted];
+      const [moved] = reordered.splice(oldIdx, 1);
+      reordered.splice(newIdx, 0, moved);
+
+      try {
+        const indexes = generateOrderedIndexes(reordered.length);
+        reordered.forEach((fav, i) => {
+          if ((fav.favoriteSortIndex ?? null) !== indexes[i]) {
+            reorderFavoriteLocal(fav.favoriteId, indexes[i]).catch(() =>
+              toast.error("Failed to reorder favorite"),
+            );
+          }
+        });
+      } catch (err) {
+        console.error("Failed to compute favorite sort indexes", err);
+      }
+    },
+    [sorted],
+  );
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+      modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+    >
+      <SidebarSection label="Favorites" initialOpen action={<></>}>
+        <SortableContext items={favIds} strategy={verticalListSortingStrategy}>
+          {sorted.map((form) => (
+            <SortableFavoriteItem key={form.favoriteId} form={form} userId={userId} />
+          ))}
+        </SortableContext>
+      </SidebarSection>
+    </DndContext>
+  );
+};
+
+const SortableFavoriteItem = ({
+  form,
+  userId,
+}: {
+  form: FavoriteFormItem & { sortIndex: string | null };
+  userId: string;
+}) => {
+  const location = useLocation();
+  const [renameOpen, setRenameOpen] = useState(false);
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: form.favoriteId,
+    data: { type: "favorite" },
+  });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  const isFavActive = location.pathname.startsWith(
+    `/workspace/${form.workspaceId}/form-builder/${form.id}`,
+  );
+
+  const handleUnfavorite = useCallback(() => {
+    toggleFavoriteLocal(userId, form.id).catch(() => toast.error("Failed to unfavorite"));
+  }, [userId, form.id]);
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="group/row relative"
+    >
+      <SidebarItem
+        label={form.title || "Untitled"}
+        linkOptions={{
+          to:
+            form.status === "published"
+              ? "/workspace/$workspaceId/form-builder/$formId/submissions"
+              : "/workspace/$workspaceId/form-builder/$formId/edit",
+          params: { workspaceId: form.workspaceId, formId: form.id },
+        }}
+        isActive={isFavActive}
+        prefix={
+          <ThemedFormIcon
+            icon={form.icon}
+            customization={form.customization as Record<string, string> | null | undefined}
+          />
+        }
+      />
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <button
+              type="button"
+              aria-label="Favorite options"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center size-5 rounded-md text-muted-foreground hover:text-foreground hover:bg-sidebar-active opacity-0 group-hover/row:opacity-100 data-[state=open]:opacity-100 transition-opacity"
+            />
+          }
+        >
+          <MoreHorizontalIcon className="size-3.5" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="start"
+          sideOffset={4}
+          className="w-48"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Favorite</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => setRenameOpen(true)}>
+              <Pencil2Icon />
+              <span className="flex-1 text-left">Rename</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleUnfavorite}>
+              <Trash2Icon />
+              <span className="flex-1 text-left">Remove from favorites</span>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {renameOpen && (
+        <FavoriteInlineRename
+          initialValue={form.title || ""}
+          onClose={() => setRenameOpen(false)}
+          onSubmit={(next) => {
+            renameFormLocal(form.id, next).catch(() => toast.error("Failed to rename form"));
+            setRenameOpen(false);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+const FavoriteInlineRename = ({
+  initialValue,
+  onSubmit,
+  onClose,
+}: {
+  initialValue: string;
+  onSubmit: (value: string) => void;
+  onClose: () => void;
+}) => {
+  const [value, setValue] = useState(initialValue);
+  return (
+    <form
+      className="px-2 py-1"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const trimmed = value.trim();
+        if (trimmed) onSubmit(trimmed);
+        else onClose();
+      }}
+    >
+      <input
+        // biome-ignore lint/a11y/noAutofocus: rename input should focus immediately
+        autoFocus
+        type="text"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={onClose}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onClose();
+        }}
+        className="w-full bg-secondary rounded-md px-2 py-1 text-[13px] outline-hidden ring-1 ring-foreground/20"
+        aria-label="Rename form"
+      />
+    </form>
   );
 };

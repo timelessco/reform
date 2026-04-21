@@ -558,7 +558,10 @@ export const FormHeaderElement = (props: PlateElementProps) => {
   const [coverPopoverOpen, setCoverPopoverOpen] = useState(false);
 
   return (
-    <PlateElement {...props} attributes={{ ...props.attributes, "data-bf-header": "" }}>
+    <PlateElement
+      {...props}
+      attributes={{ ...props.attributes, "data-bf-header": "", "data-bf-chrome": "" }}
+    >
       <div
         contentEditable={false}
         className="group relative w-full flex flex-col mb-4 select-none rounded-none"

@@ -2,10 +2,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { StyleNumberInput } from "@/components/ui/style-controls";
 import { Switch } from "@/components/ui/switch";
+import { FeatureGate } from "@/components/ui/feature-gate";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 import { cn } from "@udecode/cn";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 import { orgDomainsQueryOptions } from "@/lib/server-fn/custom-domains";
 import { assignFormDomain, updateFormSlug } from "@/lib/server-fn/forms";
 
@@ -514,20 +516,10 @@ const ProSection = ({
     [domains],
   );
 
-  const selectedDomain = useMemo(
-    () => verifiedDomains.find((d) => d.id === customDomainId),
-    [verifiedDomains, customDomainId],
-  );
-
   const defaultSlug = useMemo(
     () => formSlug || (formTitle ? generateSlugFromTitle(formTitle) : "form"),
     [formSlug, formTitle],
   );
-
-  const [slugValue, setSlugValue] = useState(defaultSlug);
-
-  // Keep slug input in sync when the form slug changes externally
-  const displaySlug = formSlug ?? slugValue;
 
   const assignDomainMutation = useMutation({
     mutationFn: (domainId: string | null) => {
@@ -537,7 +529,6 @@ const ProSection = ({
     onSuccess: (result, domainId) => {
       const slug = (result.form as { slug?: string | null }).slug ?? null;
       onDomainAssigned?.(domainId, slug);
-      if (slug) setSlugValue(slug);
       queryClient.invalidateQueries({ queryKey: ["forms", formId] });
     },
   });
@@ -553,104 +544,154 @@ const ProSection = ({
     },
   });
 
-  const handleDomainChange = useCallback(
-    (value: string | null) => {
-      const domainId = value && value !== "none" ? value : null;
-      assignDomainMutation.mutate(domainId);
-    },
-    [assignDomainMutation],
+  // Group 4 — live DB fields. Local draft state + explicit Save button so
+  // users don't accidentally push domain/slug/branding changes on every click.
+  // Silently discarded on unmount (sidebar close / tab switch).
+  const [draftBranding, setDraftBranding] = useState<boolean>(docBranding ?? true);
+  const [draftDomainId, setDraftDomainId] = useState<string | null>(customDomainId ?? null);
+  const [draftSlug, setDraftSlug] = useState<string>(formSlug ?? defaultSlug);
+
+  // Re-sync draft with incoming props when the server-side value changes
+  // (e.g. another tab wrote, or the publish flow refetched).
+  useEffect(() => {
+    setDraftBranding(docBranding ?? true);
+  }, [docBranding]);
+  useEffect(() => {
+    setDraftDomainId(customDomainId ?? null);
+  }, [customDomainId]);
+  useEffect(() => {
+    setDraftSlug(formSlug ?? defaultSlug);
+  }, [formSlug, defaultSlug]);
+
+  const draftSelectedDomain = useMemo(
+    () => verifiedDomains.find((d) => d.id === draftDomainId),
+    [verifiedDomains, draftDomainId],
   );
 
-  const handleSlugBlur = useCallback(() => {
-    const trimmed = slugValue.trim();
-    if (trimmed && trimmed !== formSlug) {
-      updateSlugMutation.mutate(trimmed);
-    }
-  }, [slugValue, formSlug, updateSlugMutation]);
+  const isLiveDirty =
+    draftBranding !== (docBranding ?? true) ||
+    draftDomainId !== (customDomainId ?? null) ||
+    draftSlug.trim() !== (formSlug ?? defaultSlug);
 
-  const handleSlugChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSlugValue(e.target.value);
-  }, []);
+  const saveLiveSettings = useCallback(async () => {
+    if (draftBranding !== (docBranding ?? true)) {
+      onBrandingChange?.(draftBranding);
+    }
+    if (draftDomainId !== (customDomainId ?? null)) {
+      await assignDomainMutation.mutateAsync(draftDomainId);
+    }
+    const trimmed = draftSlug.trim();
+    if (draftDomainId && trimmed && trimmed !== (formSlug ?? "")) {
+      await updateSlugMutation.mutateAsync(trimmed);
+    }
+  }, [
+    draftBranding,
+    draftDomainId,
+    draftSlug,
+    docBranding,
+    customDomainId,
+    formSlug,
+    onBrandingChange,
+    assignDomainMutation,
+    updateSlugMutation,
+  ]);
+
+  const isSaving = assignDomainMutation.isPending || updateSlugMutation.isPending;
 
   return (
-    <ConfigCard>
-      <form.Field name="trackEvents">
-        {(field: FieldRenderApi<boolean>) => (
-          <ConfigRow label="Analytics" variant="switch">
-            <Switch
-              aria-label="Analytics"
-              checked={field.state.value}
-              onCheckedChange={field.handleChange}
-              size="default"
-            />
-          </ConfigRow>
-        )}
-      </form.Field>
+    <FeatureGate requiredPlan="pro" variant="block">
+      <ConfigCard>
+        <form.Field name="trackEvents">
+          {(field: FieldRenderApi<boolean>) => (
+            <ConfigRow label="Analytics" variant="switch">
+              <Switch
+                aria-label="Analytics"
+                checked={field.state.value}
+                onCheckedChange={field.handleChange}
+                size="default"
+              />
+            </ConfigRow>
+          )}
+        </form.Field>
+      </ConfigCard>
 
-      {/* Reform Branding — server-controlled Pro feature. The switch stays
-          bound to the local form field (so the URL and live editor preview
-          update instantly), and when `onBrandingChange` is provided the change
-          is also persisted to `forms.branding` so every embed reflects it. */}
-      <form.Field name="branding">
-        {(field: FieldRenderApi<boolean>) => (
+      {/* Live Settings — explicit Save gate. These fields write directly to
+          the forms row and take effect on the public URL immediately after
+          Save, without requiring a republish. */}
+      <div className="mt-3 space-y-1.5">
+        <div className="flex items-center justify-between px-1">
+          <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+            Live Settings
+          </span>
+          <span className="text-[10px] text-muted-foreground/70">Applies on save</span>
+        </div>
+        <ConfigCard>
           <ConfigRow label="Reform Branding" variant="switch">
             <Switch
               aria-label="Reform Branding"
-              checked={docBranding ?? field.state.value}
-              onCheckedChange={(value: boolean) => {
-                field.handleChange(value);
-                onBrandingChange?.(value);
-              }}
+              checked={draftBranding}
+              onCheckedChange={setDraftBranding}
               size="default"
             />
           </ConfigRow>
-        )}
-      </form.Field>
 
-      <ConfigRow label="Custom Domain">
-        <Select
-          value={customDomainId ?? "none"}
-          onValueChange={handleDomainChange}
-          disabled={!orgId || verifiedDomains.length === 0}
-        >
-          <SelectTrigger
-            className={cn(
-              selectTriggerCls,
-              !orgId || verifiedDomains.length === 0 ? "opacity-50" : "",
-            )}
-          >
-            {selectedDomain?.domain ?? "None"}
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">None</SelectItem>
-            {verifiedDomains.map((d) => (
-              <SelectItem key={d.id} value={d.id}>
-                {d.domain}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </ConfigRow>
-
-      {selectedDomain && (
-        <>
-          <ConfigRow label="Slug">
-            <Input
-              aria-label="Form slug"
-              value={displaySlug}
-              onChange={handleSlugChange}
-              onBlur={handleSlugBlur}
-              className="h-6 w-32 text-xs font-mono px-2 py-0 border-none bg-transparent shadow-none"
-              placeholder="my-form"
-            />
+          <ConfigRow label="Custom Domain">
+            <Select
+              value={draftDomainId ?? "none"}
+              onValueChange={(v) => setDraftDomainId(v && v !== "none" ? v : null)}
+              disabled={!orgId || verifiedDomains.length === 0}
+            >
+              <SelectTrigger
+                className={cn(
+                  selectTriggerCls,
+                  !orgId || verifiedDomains.length === 0 ? "opacity-50" : "",
+                )}
+              >
+                {draftSelectedDomain?.domain ?? "None"}
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {verifiedDomains.map((d) => (
+                  <SelectItem key={d.id} value={d.id}>
+                    {d.domain}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </ConfigRow>
-          <div className="bg-secondary px-2.5 py-1.5">
-            <p className="text-xs text-muted-foreground font-mono truncate">
-              {`https://${selectedDomain.domain}/${displaySlug}`}
-            </p>
-          </div>
-        </>
-      )}
-    </ConfigCard>
+
+          {draftSelectedDomain && (
+            <>
+              <ConfigRow label="Slug">
+                <Input
+                  aria-label="Form slug"
+                  value={draftSlug}
+                  onChange={(e) => setDraftSlug(e.target.value)}
+                  className="h-6 w-32 text-xs font-mono px-2 py-0 border-none bg-transparent shadow-none"
+                  placeholder="my-form"
+                />
+              </ConfigRow>
+              <div className="bg-secondary px-2.5 py-1.5">
+                <p className="text-xs text-muted-foreground font-mono truncate">
+                  {`https://${draftSelectedDomain.domain}/${draftSlug.trim() || defaultSlug}`}
+                </p>
+              </div>
+            </>
+          )}
+        </ConfigCard>
+
+        <div className="flex justify-end pt-1">
+          <Button
+            size="sm"
+            disabled={!isLiveDirty || isSaving}
+            onClick={() => {
+              saveLiveSettings().catch((err) => console.error("[LiveSettings] Save failed:", err));
+            }}
+          >
+            {isSaving ? "Saving…" : "Save"}
+          </Button>
+        </div>
+      </div>
+    </FeatureGate>
   );
 };

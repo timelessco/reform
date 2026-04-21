@@ -2,7 +2,7 @@ import { APP_NAME, SPRITE_PATH } from "@/lib/config/app-config";
 import { Link, useSearch } from "@tanstack/react-router";
 import { SparklesIcon, XIcon } from "@/components/ui/icons";
 import { iconMap } from "@/components/icon-picker/icon-data";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type { Value } from "platejs";
 import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useForm } from "@/hooks/use-live-hooks";
 import { useResolvedTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
+import { buildPublicFormSettings } from "@/types/form-settings";
+import type { PublicFormSettings } from "@/types/form-settings";
 
 const noop = async () => {};
 
@@ -25,6 +27,13 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
     resolvedAppTheme,
   );
   const content = (doc?.content as Value) || [];
+  const previewSettings = useMemo<PublicFormSettings>(
+    () =>
+      buildPublicFormSettings(doc as Partial<PublicFormSettings> | null | undefined, {
+        branding: Boolean(doc?.branding ?? true),
+      }),
+    [doc],
+  );
 
   // Read embed config from search params
   const search = useSearch({ strict: false });
@@ -168,6 +177,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                             onSubmit={noop}
                             hideTitle={hideTitle}
                             customization={customization}
+                            settings={previewSettings}
                           />
                         </div>
                       </div>
@@ -242,6 +252,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                         onSubmit={noop}
                         hideTitle={hideTitle}
                         customization={customization}
+                        settings={previewSettings}
                       />
                     </div>
 
@@ -314,6 +325,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
               hideTitle={hideTitle}
               layout="editor"
               customization={customization}
+              settings={previewSettings}
             />
 
             {branding && (

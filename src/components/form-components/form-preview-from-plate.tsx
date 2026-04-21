@@ -294,7 +294,7 @@ const PreviewFormHeader = ({
 const RenderThankYouContent = ({ nodes, onReset }: { nodes: Value; onReset?: () => void }) => {
   const { t } = useTranslation();
   return (
-    <div data-bf-field-list className="space-y-4">
+    <div data-bf-field-list>
       <StaticContentBlock nodes={nodes} />
       {onReset && (
         <div className="flex justify-center pt-4">
@@ -364,7 +364,29 @@ export const FormPreviewFromPlate = ({
   const cover = hasHeaderNode ? (headerFromContent.cover ?? undefined) : legacyCover;
 
   // Transform Plate content into chunked preview segments
-  const { steps, thankYouNodes } = useMemo(() => transformPlateForPreview(content), [content]);
+  const { steps: rawSteps, thankYouNodes } = useMemo(
+    () => transformPlateForPreview(content),
+    [content],
+  );
+
+  // Field-by-field mode: re-chunk so each field becomes its own step, with
+  // preceding static content carried into the same step as the next field.
+  const steps = useMemo(() => {
+    if (settings?.presentationMode !== "field-by-field") return rawSteps;
+    const flattened: PreviewSegment[][] = [];
+    let pending: PreviewSegment[] = [];
+    for (const step of rawSteps) {
+      for (const seg of step) {
+        pending.push(seg);
+        if (seg.type === "field") {
+          flattened.push(pending);
+          pending = [];
+        }
+      }
+    }
+    if (pending.length > 0) flattened.push(pending);
+    return flattened.length > 0 ? flattened : rawSteps;
+  }, [rawSteps, settings?.presentationMode]);
 
   // Show placeholder if no segments found
   if (steps.length === 0 || steps.flat().length === 0) {
@@ -582,7 +604,6 @@ const FormPreviewContent = ({
               stepIndex={currentStep}
               segments={currentStepSegments}
               isLastStep={isLastStep}
-              autoJump={settings?.autoJump}
             />
           </motion.div>
         </AnimatePresence>

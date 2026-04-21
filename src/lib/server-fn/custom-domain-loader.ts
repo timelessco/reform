@@ -2,6 +2,7 @@ import { notFound } from "@tanstack/react-router";
 import { and, count, eq } from "drizzle-orm";
 import { customDomains, forms, formVersions, submissions } from "@/db/schema";
 import { db } from "@/db";
+import { buildPublicFormSettings } from "@/types/form-settings";
 import type { PublicFormSettings } from "@/types/form-settings";
 
 /** Known app hostnames that should never be treated as custom domains */
@@ -9,6 +10,15 @@ const APP_HOSTS = new Set(["localhost", "127.0.0.1"]);
 
 /** Patterns for app-owned hostnames (e.g. *.vercel.app deployments) */
 const APP_HOST_PATTERNS = [/\.vercel\.app$/];
+
+/**
+ * Extract the user-facing host from a Headers object, preferring
+ * `x-forwarded-host` (set by Vercel/proxies) over the raw `host` header.
+ * Accepts the native Headers instance returned by TanStack Start's
+ * getRequestHeaders() — NOT a plain object.
+ */
+export const getRequestHost = (headers: Headers): string =>
+  headers.get("x-forwarded-host") ?? headers.get("host") ?? headers.get(":authority") ?? "";
 
 /**
  * Returns true when the Host header belongs to the app itself
@@ -63,6 +73,38 @@ export const resolveCustomDomain = async (host: string): Promise<ResolvedDomain>
 };
 
 /**
+ * Dev-friendly fallback: when the request is from an app host (localhost,
+ * Vercel preview), look up the custom domain assigned to a form by slug.
+ * Lets developers preview custom-domain forms without simulating the host.
+ */
+export const resolveDomainForSlug = async (slug: string): Promise<ResolvedDomain> => {
+  const [row] = await db
+    .select({
+      id: customDomains.id,
+      organizationId: customDomains.organizationId,
+      domain: customDomains.domain,
+      siteTitle: customDomains.siteTitle,
+      faviconUrl: customDomains.faviconUrl,
+      ogImageUrl: customDomains.ogImageUrl,
+    })
+    .from(customDomains)
+    .innerJoin(forms, eq(forms.customDomainId, customDomains.id))
+    .where(
+      and(
+        eq(forms.slug, slug),
+        eq(forms.status, "published"),
+        eq(customDomains.status, "verified"),
+      ),
+    );
+
+  if (!row) {
+    throw notFound();
+  }
+
+  return row;
+};
+
+/**
  * Load a published form that belongs to a specific custom domain's organization.
  *
  * @param domain - resolved custom domain record
@@ -92,27 +134,12 @@ export const loadFormForCustomDomain = async (
     .select({
       id: forms.id,
       status: forms.status,
-      icon: forms.icon,
-      cover: forms.cover,
       lastPublishedVersionId: forms.lastPublishedVersionId,
+      // Group 4 (live) — branding is always false for custom domains anyway
       draftTitle: forms.title,
       draftContent: forms.content,
-      progressBar: forms.progressBar,
-      branding: forms.branding,
-      autoJump: forms.autoJump,
-      saveAnswersForLater: forms.saveAnswersForLater,
-      redirectOnCompletion: forms.redirectOnCompletion,
-      redirectUrl: forms.redirectUrl,
-      redirectDelay: forms.redirectDelay,
-      language: forms.language,
-      passwordProtect: forms.passwordProtect,
-      closeForm: forms.closeForm,
-      closedFormMessage: forms.closedFormMessage,
-      closeOnDate: forms.closeOnDate,
-      closeDate: forms.closeDate,
-      limitSubmissions: forms.limitSubmissions,
-      maxSubmissions: forms.maxSubmissions,
-      preventDuplicateSubmissions: forms.preventDuplicateSubmissions,
+      draftIcon: forms.icon,
+      draftCover: forms.cover,
     })
     .from(forms)
     .where(conditions);
@@ -121,24 +148,13 @@ export const loadFormForCustomDomain = async (
     throw notFound();
   }
 
-  const settings: PublicFormSettings = {
-    progressBar: form.progressBar,
-    branding: false, // custom domains always hide branding
-    autoJump: form.autoJump,
-    saveAnswersForLater: form.saveAnswersForLater,
-    redirectOnCompletion: form.redirectOnCompletion,
-    redirectUrl: form.redirectUrl,
-    redirectDelay: form.redirectDelay,
-    language: form.language,
-    passwordProtect: form.passwordProtect,
-    closeForm: form.closeForm,
-    closedFormMessage: form.closedFormMessage,
-    closeOnDate: form.closeOnDate,
-    closeDate: form.closeDate,
-    limitSubmissions: form.limitSubmissions,
-    maxSubmissions: form.maxSubmissions,
-    preventDuplicateSubmissions: form.preventDuplicateSubmissions,
-  };
+  // Load version snapshot (source of truth for Groups 1-3)
+  const [version] = form.lastPublishedVersionId
+    ? await db.select().from(formVersions).where(eq(formVersions.id, form.lastPublishedVersionId))
+    : [undefined];
+
+  const snapshotSettings = (version?.settings ?? {}) as Partial<PublicFormSettings>;
+  const settings = buildPublicFormSettings(snapshotSettings, { branding: false });
 
   // --- Gating checks (same logic as getPublishedFormById) ---
   if (settings.closeForm) {
@@ -187,41 +203,33 @@ export const loadFormForCustomDomain = async (
     ? { type: "password_required" as const, message: null }
     : null;
 
-  // If form has a published version, use version content
-  if (form.lastPublishedVersionId) {
-    const [version] = await db
-      .select()
-      .from(formVersions)
-      .where(eq(formVersions.id, form.lastPublishedVersionId));
-
-    if (version) {
-      return {
-        form: {
-          id: form.id,
-          title: version.title,
-          content: version.content as object[],
-          customization: (version.customization ?? {}) as Record<string, string>,
-          icon: form.icon,
-          cover: form.cover,
-          status: form.status,
-          settings,
-        },
-        error: null,
-        gated,
-        domainMeta: buildDomainMeta(domain),
-      };
-    }
+  if (version) {
+    return {
+      form: {
+        id: form.id,
+        title: version.title,
+        content: version.content as object[],
+        customization: (version.customization ?? {}) as Record<string, string>,
+        icon: version.icon,
+        cover: version.cover,
+        status: form.status,
+        settings,
+      },
+      error: null,
+      gated,
+      domainMeta: buildDomainMeta(domain),
+    };
   }
 
-  // Fallback for forms without versions
+  // Fallback for forms without versions (backward compat — shouldn't happen after backfill)
   return {
     form: {
       id: form.id,
       title: form.draftTitle,
       content: form.draftContent as object[],
       customization: {} as Record<string, string>,
-      icon: form.icon,
-      cover: form.cover,
+      icon: form.draftIcon,
+      cover: form.draftCover,
       status: form.status,
       settings,
     },

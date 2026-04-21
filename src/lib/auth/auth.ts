@@ -16,7 +16,7 @@ import { magicLink, organization, testUtils } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { eq } from "drizzle-orm";
 
-const polarClient = new Polar({
+export const polarClient = new Polar({
   accessToken: process.env.POLAR_ACCESS_TOKEN ?? "",
   server: "sandbox", // TODO: Change to production
 });

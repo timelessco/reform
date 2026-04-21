@@ -183,8 +183,8 @@ export const forms = pgTable(
     redirectDelay: integer().default(0).notNull(),
     progressBar: boolean().default(false).notNull(),
     branding: boolean().default(true).notNull(),
-    autoJump: boolean().default(false).notNull(),
     saveAnswersForLater: boolean().default(true).notNull(),
+    presentationMode: text().default("card").notNull(),
     selfEmailNotifications: boolean().default(false).notNull(),
     notificationEmail: text(),
     respondentEmailNotifications: boolean().default(false).notNull(),
@@ -204,6 +204,7 @@ export const forms = pgTable(
     customization: jsonb().default({}),
     slug: text(),
     customDomainId: text(),
+    sortIndex: text(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
@@ -212,6 +213,7 @@ export const forms = pgTable(
     index("idx_forms_workspace_id_status").on(t.workspaceId, t.status),
     index("idx_forms_id_created_by").on(t.id, t.createdByUserId),
     index("idx_forms_slug_custom_domain").on(t.slug, t.customDomainId),
+    index("idx_forms_workspace_id_sort_index").on(t.workspaceId, t.sortIndex),
   ],
 );
 
@@ -244,9 +246,11 @@ export const formVersions = pgTable(
     formId: text().notNull(),
     version: integer().notNull(), // v1, v2, v3...
     content: jsonb().notNull(), // Plate.js JSON snapshot
-    settings: jsonb().notNull(), // Settings snapshot
+    settings: jsonb().notNull(), // Snapshot of all Group 2 form behavior settings
     customization: jsonb().default({}), // Theme customization snapshot
     title: text().notNull(),
+    icon: text(), // Visual asset snapshot
+    cover: text(), // Visual asset snapshot
     publishedByUserId: text().notNull(),
     publishedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
@@ -284,12 +288,27 @@ export const formFavorites = pgTable(
     formId: text()
       .notNull()
       .references(() => forms.id, { onDelete: "cascade" }),
+    sortIndex: text(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index("idx_form_favorites_user_id").on(t.userId),
     index("idx_form_favorites_user_id_form_id").on(t.userId, t.formId),
   ],
+);
+
+// Per-user workspace order (ordering is private per viewer)
+export const userWorkspaceOrder = pgTable(
+  "user_workspace_order",
+  {
+    id: text().primaryKey(), // Format: ${userId}:${workspaceId}
+    userId: text().notNull(),
+    workspaceId: text().notNull(),
+    sortIndex: text().notNull(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("idx_user_workspace_order_user_id").on(t.userId)],
 );
 
 export const formNotificationPreferences = pgTable(
@@ -501,6 +520,7 @@ export const relations = defineRelations(
     formNotificationPreferences,
     formSubmissionNotifications,
     customDomains,
+    userWorkspaceOrder,
   },
   (r) => ({
     // User has many sessions, accounts, and forms they created

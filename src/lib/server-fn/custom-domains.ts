@@ -6,6 +6,7 @@ import { customDomains, forms, member } from "@/db/schema";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { vercelDomains } from "@/lib/vercel-domains";
+import type { VercelDomainStatus, VercelDomainVerification } from "@/lib/vercel-domains";
 import { DOMAIN_LIMITS } from "@/lib/config/plan-config";
 
 const serializeDomain = (domain: typeof customDomains.$inferSelect) => ({
@@ -73,14 +74,18 @@ export const addDomain = createServerFn({ method: "POST" })
       throw new Error(`Maximum of ${DOMAIN_LIMITS.maxDomainsPerOrg} domains per organization`);
     }
 
-    // Add domain to Vercel
     let vercelDomainId: string | undefined;
     let vercelFailed = false;
+    let vercelErrorMessage: string | undefined;
+    let verification: VercelDomainVerification[] | undefined;
     try {
       const vercelResult = await vercelDomains.add(data.domain);
       vercelDomainId = vercelResult.domain;
-    } catch {
+      verification = vercelResult.verification;
+    } catch (e) {
       vercelFailed = true;
+      vercelErrorMessage = e instanceof Error ? e.message : "Unknown Vercel error";
+      console.error("[addDomain] Vercel add failed:", vercelErrorMessage);
     }
 
     const now = new Date();
@@ -99,8 +104,9 @@ export const addDomain = createServerFn({ method: "POST" })
 
     return {
       ...serializeDomain(domain),
+      verification,
       warning: vercelFailed
-        ? "Domain saved but Vercel registration failed. You can retry verification later."
+        ? `Vercel registration failed: ${vercelErrorMessage ?? "unknown error"}`
         : undefined,
     };
   });
@@ -184,26 +190,35 @@ export const checkDomainStatus = createServerFn({ method: "POST" })
       throw new Error("Not authorized to check this domain");
     }
 
-    // Check with Vercel
-    let vercelStatus: {
-      verified: boolean;
-      verification?: { type: string; domain: string; value: string }[];
-    };
+    let vercelStatus: VercelDomainStatus;
 
     try {
-      vercelStatus = await vercelDomains.check(domain.domain);
+      vercelStatus = await vercelDomains.verify(domain.domain);
     } catch {
-      // If Vercel check fails, mark as failed
-      const [updated] = await db
-        .update(customDomains)
-        .set({ status: "failed", updatedAt: new Date() })
-        .where(eq(customDomains.id, data.domainId))
-        .returning();
+      try {
+        vercelStatus = await vercelDomains.check(domain.domain);
+      } catch {
+        const [updated] = await db
+          .update(customDomains)
+          .set({ status: "failed", updatedAt: new Date() })
+          .where(eq(customDomains.id, data.domainId))
+          .returning();
 
-      return {
-        ...serializeDomain(updated),
-        verification: undefined,
-      };
+        return {
+          ...serializeDomain(updated),
+          verification: undefined,
+        };
+      }
+    }
+
+    // verify() can return 200 with verified=false but no verification array;
+    // fetch the records via check() so the UI can display the challenge.
+    if (!vercelStatus.verified && !vercelStatus.verification?.length) {
+      try {
+        vercelStatus = await vercelDomains.check(domain.domain);
+      } catch {
+        // keep prior vercelStatus
+      }
     }
 
     const newStatus = vercelStatus.verified ? "verified" : "pending";
