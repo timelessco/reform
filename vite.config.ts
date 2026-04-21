@@ -68,7 +68,7 @@ const config = defineConfig({
       vercel: {
         functions: {
           maxDuration: 799,
-          runtime: "bun1.x",
+          runtime: "nodejs22.x",
           supportsResponseStreaming: true,
         },
       },
