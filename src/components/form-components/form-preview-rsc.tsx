@@ -4,7 +4,7 @@ import { CompositeComponent } from "@tanstack/react-start/rsc";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { IconPickerPreview } from "@/components/icon-picker";
-import { RenderStepPreviewInput } from "@/components/form-components/render-step-preview-input";
+import { RenderFieldComponent } from "@/components/form-components/render-step-preview-input";
 import { Button } from "@/components/ui/button";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 import { ProgressBar } from "@/routes/forms/-components/progress-bar";
@@ -386,7 +386,7 @@ const StepFormRSC = ({
           />
         );
       }
-      return <RenderStepPreviewInput key={fieldId} element={field} form={form} />;
+      return <RenderFieldComponent key={fieldId} element={field} form={form} />;
     },
     [form, isSubmitting, currentStep, goToPrevStep, totalSteps, t],
   );

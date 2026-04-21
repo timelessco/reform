@@ -32,6 +32,20 @@ interface RenderStepPreviewInputProps {
   form: AppForm;
 }
 
+// Just the field input (lazy-loaded) with no label/wrapper. Used by the RSC
+// flow where the server-rendered composite already provides the surrounding
+// `<div data-bf-input>` + label.
+export const RenderFieldComponent = ({ element, form }: RenderStepPreviewInputProps) => {
+  if (element.fieldType === "Button") return null;
+  const Component = FIELD_RENDERERS[element.fieldType as FieldType];
+  if (!Component) return null;
+  return (
+    <Suspense fallback={null}>
+      <Component element={element as never} form={form} />
+    </Suspense>
+  );
+};
+
 export const RenderStepPreviewInput = ({ element, form }: RenderStepPreviewInputProps) => {
   if (element.fieldType === "Button") return null;
   const Component = FIELD_RENDERERS[element.fieldType as FieldType];
