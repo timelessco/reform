@@ -1,7 +1,7 @@
 // Client-side consumer of `getPublicFormViewRSC`. Imports no Plate code — the
 // static prose is pre-rendered server-side; only field widgets fill slots.
 import { CompositeComponent } from "@tanstack/react-start/rsc";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { IconPickerPreview } from "@/components/icon-picker";
 import { RenderStepPreviewInput } from "@/components/form-components/render-step-preview-input";
@@ -53,25 +53,7 @@ interface FormPreviewRSCProps {
   onSubmit?: (values: Record<string, unknown>) => Promise<void>;
 }
 
-const EDITABLE_FIELD_TYPES = new Set([
-  "Input",
-  "Textarea",
-  "Email",
-  "Phone",
-  "Number",
-  "Link",
-  "Date",
-  "Time",
-  "FileUpload",
-  "Checkbox",
-  "MultiChoice",
-  "MultiSelect",
-  "Ranking",
-]);
-
 const PAGE_MAX_WIDTH = `var(--bf-page-width, ${CUSTOMIZATION_AUTO_DEFAULTS.pageWidth})`;
-
-const selectStateValues = (state: { values: unknown }) => state.values as Record<string, unknown>;
 
 const isHexColor = (str: string): boolean => /^#([0-9A-Fa-f]{3}){1,2}$/.test(str);
 
@@ -352,20 +334,14 @@ const StepFormRSC = ({
   stepIndex,
   stepRSC,
   isLastStep,
-  autoJump,
 }: {
   stepIndex: number;
   stepRSC: StepRSC;
   isLastStep: boolean;
-  autoJump: boolean;
 }) => {
   const { currentStep, totalSteps, goToPrevStep, isSubmitting } = useStepForm();
   const { t } = useTranslation();
   const fields = stepRSC.fields;
-  const editableFields = useMemo(
-    () => fields.filter((f) => EDITABLE_FIELD_TYPES.has(f.fieldType)),
-    [fields],
-  );
 
   const { form, formName } = useStepPreviewForm({
     fields,
@@ -375,7 +351,6 @@ const StepFormRSC = ({
   });
 
   const formRef = useRef<HTMLFormElement>(null);
-  const autoJumpTriggered = useRef(false);
 
   useMountEffect(() => {
     const timer = setTimeout(() => {
@@ -388,25 +363,6 @@ const StepFormRSC = ({
     }, 300);
     return () => clearTimeout(timer);
   });
-
-  const checkAutoJump = useCallback(() => {
-    if (!autoJump || isLastStep || autoJumpTriggered.current || isSubmitting) return;
-
-    const allRequiredFilled = editableFields.every((field) => {
-      if (!("required" in field) || !field.required) return true;
-      const value = form.getFieldValue(field.name as never);
-      if (value === undefined || value === null || value === "") return false;
-      if (Array.isArray(value) && value.length === 0) return false;
-      return true;
-    });
-
-    if (allRequiredFilled && editableFields.length > 0) {
-      autoJumpTriggered.current = true;
-      setTimeout(() => {
-        form.handleSubmit();
-      }, 400);
-    }
-  }, [autoJump, isLastStep, isSubmitting, editableFields, form]);
 
   const FieldSlot = useCallback(
     ({ fieldId, field }: FieldSlotProps) => {
@@ -488,14 +444,6 @@ const StepFormRSC = ({
         data-bf-field-list
         className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        {autoJump && !isLastStep && (
-          <form.Subscribe selector={selectStateValues}>
-            {() => {
-              checkAutoJump();
-              return null;
-            }}
-          </form.Subscribe>
-        )}
         <TypedComposite src={stepRSC.src} Field={FieldSlot} ButtonGroup={ButtonGroupSlot} />
       </form.Form>
     </form.AppForm>
@@ -636,7 +584,6 @@ const FormPreviewRSCContent = ({
               stepIndex={currentStep}
               stepRSC={currentStepRSC}
               isLastStep={isLastStep}
-              autoJump={settings?.autoJump ?? false}
             />
           )}
         </div>

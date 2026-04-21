@@ -7,8 +7,6 @@ import {
   jsonb,
   boolean,
   index,
-  foreignKey,
-  primaryKey,
   unique,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
