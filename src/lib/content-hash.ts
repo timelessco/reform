@@ -14,7 +14,7 @@
 
 export const VERSIONED_SETTINGS_KEYS = [
   "progressBar",
-  "autoJump",
+  "presentationMode",
   "saveAnswersForLater",
   "redirectOnCompletion",
   "redirectUrl",

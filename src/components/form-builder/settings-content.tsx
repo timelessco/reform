@@ -250,23 +250,6 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
               </form.Subscribe>
 
               <ConfigRow
-                label="Progress bar"
-                description="Show respondents how much of the form they have completed."
-                variant="switch"
-              >
-                <form.AppField name="progressBar">
-                  {(field) => (
-                    <Switch
-                      aria-label="Progress bar"
-                      checked={!!field.state.value}
-                      onCheckedChange={field.handleChange}
-                      size="default"
-                    />
-                  )}
-                </form.AppField>
-              </ConfigRow>
-
-              <ConfigRow
                 label={`${APP_NAME} branding`}
                 description={`Show "Made with ${APP_NAME}" on your form.`}
                 variant="switch"
@@ -663,23 +646,6 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
           {/* Behavior Section */}
           <SidebarSection label="Behavior" className="pb-2.75" action={<></>}>
             <ConfigCard>
-              <ConfigRow
-                label="Auto-jump"
-                description="Auto-advance to the next page when a question is answered."
-                variant="switch"
-              >
-                <form.AppField name="autoJump">
-                  {(field) => (
-                    <Switch
-                      aria-label="Auto-jump"
-                      checked={!!field.state.value}
-                      onCheckedChange={field.handleChange}
-                      size="default"
-                    />
-                  )}
-                </form.AppField>
-              </ConfigRow>
-
               <ConfigRow
                 label="Save for later"
                 description="Save answers so respondents can continue where they left off."

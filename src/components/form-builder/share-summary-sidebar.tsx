@@ -16,9 +16,16 @@ import { publishForm } from "@/hooks/use-form-versions";
 import { getFormListings } from "@/collections";
 import { useSession } from "@/lib/auth/auth-client";
 import { orgDomainsQueryOptions } from "@/lib/server-fn/custom-domains";
-import { formFieldsToEmbedOptions, EmbedConfigPanel } from "./embed-config-panel";
+import { Switch } from "@/components/ui/switch";
+import {
+  ConfigCard,
+  ConfigRow,
+  formFieldsToEmbedOptions,
+  EmbedConfigPanel,
+} from "./embed-config-panel";
 import { EmbedCodeDialog, searchToFormValues, formValuesToSearch, tabs } from "./embed-section";
 import { EmbedPreviewMockup } from "./embed-preview-mockup";
+import type { PresentationMode } from "@/types/form-settings";
 
 const selectValues = (state: { values: ReturnType<typeof searchToFormValues> }) => state.values;
 
@@ -62,16 +69,48 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
 
   // Persist Reform Branding toggle (Pro, server-controlled) to forms.branding
   // so every embed reflects the change immediately via form settings.
+  const docPresentationMode = ((doc as { presentationMode?: PresentationMode } | undefined)
+    ?.presentationMode ?? "card") as PresentationMode;
+  const docProgressBar = Boolean((doc as { progressBar?: boolean } | undefined)?.progressBar);
+  const docBranding = Boolean((doc as { branding?: unknown } | undefined)?.branding ?? true);
+
+  const handlePresentationModeChange = useCallback(
+    (value: PresentationMode) => {
+      if (!doc?.id || docPresentationMode === value) return;
+      const collection = getFormListings();
+      collection.update(
+        doc.id,
+        (draft: { presentationMode?: PresentationMode; updatedAt?: string }) => {
+          draft.presentationMode = value;
+          draft.updatedAt = new Date().toISOString();
+        },
+      );
+    },
+    [doc?.id, docPresentationMode],
+  );
+
+  const handleProgressBarChange = useCallback(
+    (value: boolean) => {
+      if (!doc?.id || docProgressBar === value) return;
+      const collection = getFormListings();
+      collection.update(doc.id, (draft: { progressBar?: boolean; updatedAt?: string }) => {
+        draft.progressBar = value;
+        draft.updatedAt = new Date().toISOString();
+      });
+    },
+    [doc?.id, docProgressBar],
+  );
+
   const handleBrandingChange = useCallback(
     (value: boolean) => {
-      if (!doc?.id) return;
+      if (!doc?.id || docBranding === value) return;
       const collection = getFormListings();
       collection.update(doc.id, (draft: { branding?: boolean; updatedAt?: string }) => {
         draft.branding = value;
         draft.updatedAt = new Date().toISOString();
       });
     },
-    [doc?.id],
+    [doc?.id, docBranding],
   );
 
   // Track domain assignment state for this form
@@ -190,7 +229,44 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
 
       {/* Scrollable content */}
       <SidebarContent>
-        <div className="px-3">
+        <div className="px-3 space-y-3">
+          <SidebarSection label="Presentation" className="pb-2.75" action={<></>}>
+            <ConfigCard>
+              <ConfigRow
+                label="Mode"
+                description="Choose how questions are presented to respondents."
+              >
+                <Tabs
+                  value={docPresentationMode}
+                  onValueChange={(v) => handlePresentationModeChange(v as PresentationMode)}
+                >
+                  <TabsList className="h-7">
+                    <TabsTrigger value="card" className="text-xs px-2">
+                      Card
+                    </TabsTrigger>
+                    <TabsTrigger value="field-by-field" className="text-xs px-2">
+                      Field by field
+                    </TabsTrigger>
+                    <TabsIndicator />
+                  </TabsList>
+                </Tabs>
+              </ConfigRow>
+
+              <ConfigRow
+                label="Progress bar"
+                description="Show respondents how much of the form they have completed."
+                variant="switch"
+              >
+                <Switch
+                  aria-label="Progress bar"
+                  checked={docProgressBar}
+                  onCheckedChange={handleProgressBarChange}
+                  size="default"
+                />
+              </ConfigRow>
+            </ConfigCard>
+          </SidebarSection>
+
           {isDraft ? (
             <div className="flex flex-col items-center justify-center py-10 px-4 text-center space-y-6 bg-muted/20 border-2 border-dashed rounded-2xl">
               <div className="p-3 bg-primary/10 rounded-full text-primary">
@@ -235,7 +311,7 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
                         form={form}
                         embedType={embedType}
                         section="pro"
-                        docBranding={Boolean((doc as { branding?: unknown }).branding ?? true)}
+                        docBranding={docBranding}
                         onBrandingChange={handleBrandingChange}
                         orgId={orgId}
                         formId={formId}

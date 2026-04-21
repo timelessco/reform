@@ -4,6 +4,7 @@ import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { forms, formVersions, submissions } from "@/db/schema";
 import { db } from "@/db";
+import { buildPublicFormSettings } from "@/types/form-settings";
 import type { PublicFormSettings } from "@/types/form-settings";
 
 /**
@@ -47,29 +48,8 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
       ? await db.select().from(formVersions).where(eq(formVersions.id, form.lastPublishedVersionId))
       : [undefined];
 
-    const snapshotSettings = (version?.settings ?? {}) as Partial<
-      Omit<PublicFormSettings, "branding">
-    >;
-
-    // Merge: Group 2 fields from version snapshot, branding (Group 4) live
-    const settings: PublicFormSettings = {
-      progressBar: snapshotSettings.progressBar ?? false,
-      branding: form.branding,
-      autoJump: snapshotSettings.autoJump ?? false,
-      saveAnswersForLater: snapshotSettings.saveAnswersForLater ?? true,
-      redirectOnCompletion: snapshotSettings.redirectOnCompletion ?? false,
-      redirectUrl: snapshotSettings.redirectUrl ?? null,
-      redirectDelay: snapshotSettings.redirectDelay ?? 0,
-      language: snapshotSettings.language ?? "English",
-      passwordProtect: snapshotSettings.passwordProtect ?? false,
-      closeForm: snapshotSettings.closeForm ?? false,
-      closedFormMessage: snapshotSettings.closedFormMessage ?? "This form is now closed.",
-      closeOnDate: snapshotSettings.closeOnDate ?? false,
-      closeDate: snapshotSettings.closeDate ?? null,
-      limitSubmissions: snapshotSettings.limitSubmissions ?? false,
-      maxSubmissions: snapshotSettings.maxSubmissions ?? null,
-      preventDuplicateSubmissions: snapshotSettings.preventDuplicateSubmissions ?? false,
-    };
+    const snapshotSettings = (version?.settings ?? {}) as Partial<PublicFormSettings>;
+    const settings = buildPublicFormSettings(snapshotSettings, { branding: form.branding });
 
     // --- Gating checks (based on snapshot settings — changes here require republish) ---
     // 1. Form manually closed

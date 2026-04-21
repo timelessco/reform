@@ -2,6 +2,7 @@ import { notFound } from "@tanstack/react-router";
 import { and, count, eq } from "drizzle-orm";
 import { customDomains, forms, formVersions, submissions } from "@/db/schema";
 import { db } from "@/db";
+import { buildPublicFormSettings } from "@/types/form-settings";
 import type { PublicFormSettings } from "@/types/form-settings";
 
 /** Known app hostnames that should never be treated as custom domains */
@@ -152,28 +153,8 @@ export const loadFormForCustomDomain = async (
     ? await db.select().from(formVersions).where(eq(formVersions.id, form.lastPublishedVersionId))
     : [undefined];
 
-  const snapshotSettings = (version?.settings ?? {}) as Partial<
-    Omit<PublicFormSettings, "branding">
-  >;
-
-  const settings: PublicFormSettings = {
-    progressBar: snapshotSettings.progressBar ?? false,
-    branding: false, // custom domains always hide branding
-    autoJump: snapshotSettings.autoJump ?? false,
-    saveAnswersForLater: snapshotSettings.saveAnswersForLater ?? true,
-    redirectOnCompletion: snapshotSettings.redirectOnCompletion ?? false,
-    redirectUrl: snapshotSettings.redirectUrl ?? null,
-    redirectDelay: snapshotSettings.redirectDelay ?? 0,
-    language: snapshotSettings.language ?? "English",
-    passwordProtect: snapshotSettings.passwordProtect ?? false,
-    closeForm: snapshotSettings.closeForm ?? false,
-    closedFormMessage: snapshotSettings.closedFormMessage ?? "This form is now closed.",
-    closeOnDate: snapshotSettings.closeOnDate ?? false,
-    closeDate: snapshotSettings.closeDate ?? null,
-    limitSubmissions: snapshotSettings.limitSubmissions ?? false,
-    maxSubmissions: snapshotSettings.maxSubmissions ?? null,
-    preventDuplicateSubmissions: snapshotSettings.preventDuplicateSubmissions ?? false,
-  };
+  const snapshotSettings = (version?.settings ?? {}) as Partial<PublicFormSettings>;
+  const settings = buildPublicFormSettings(snapshotSettings, { branding: false });
 
   // --- Gating checks (same logic as getPublishedFormById) ---
   if (settings.closeForm) {

@@ -11,7 +11,12 @@ import { useUserPlan } from "@/hooks/use-user-plan";
 export const BillingContent = () => {
   const { activeOrg } = useLoaderData({ from: "/_authenticated" });
 
-  const { isPro: isProPlan, isBiz: isBusinessPlan, isFree: isFreePlan, isLoading } = useUserPlan();
+  const {
+    isPro: isProPlan,
+    isBiz: isBusinessPlan,
+    isFree: isFreePlan,
+    isLoading,
+  } = useUserPlan(activeOrg?.id);
 
   const handleUpgrade = useCallback(
     async (planSlug: string) => {

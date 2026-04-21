@@ -1,35 +1,28 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
-import { useCallback, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { Button } from "@/components/ui/button";
 import { useStepForm } from "@/contexts/step-form-context";
 import { useTranslation } from "@/contexts/translation-context";
 import { useStepPreviewForm } from "@/hooks/use-preview-form";
-import {
-  getEditableFieldsFromSegments,
-  getFieldsFromSegments,
-} from "@/lib/editor/transform-plate-for-preview";
+import { getFieldsFromSegments } from "@/lib/editor/transform-plate-for-preview";
 import type { FieldSegment, PreviewSegment } from "@/lib/editor/transform-plate-for-preview";
 import { StaticContentBlock } from "./static-content-block";
 import { RenderStepPreviewInput } from "./render-step-preview-input";
-
-const selectStateValues = (state: { values: unknown }) => state.values as Record<string, unknown>;
 
 interface StepFormProps {
   stepIndex: number;
   segments: PreviewSegment[];
   isLastStep: boolean;
-  autoJump?: boolean;
 }
 
 /**
  * Individual step form component with its own form instance.
  * Uses StepFormContext for navigation and data accumulation.
  */
-export const StepForm = ({ stepIndex, segments, isLastStep, autoJump = false }: StepFormProps) => {
+export const StepForm = ({ stepIndex, segments, isLastStep }: StepFormProps) => {
   const { currentStep, totalSteps, goToPrevStep, isSubmitting } = useStepForm();
   const fields = useMemo(() => getFieldsFromSegments(segments), [segments]);
-  const editableFields = useMemo(() => getEditableFieldsFromSegments(segments), [segments]);
 
   const { form, formName } = useStepPreviewForm({
     fields,
@@ -42,7 +35,6 @@ export const StepForm = ({ stepIndex, segments, isLastStep, autoJump = false }: 
   const groupedItems = useMemo(() => groupSegmentsForRendering(segments), [segments]);
 
   const formRef = useRef<HTMLFormElement>(null);
-  const autoJumpTriggered = useRef(false);
 
   // Auto-focus the first focusable element on mount
   useMountEffect(() => {
@@ -60,28 +52,6 @@ export const StepForm = ({ stepIndex, segments, isLastStep, autoJump = false }: 
     return () => clearTimeout(timer);
   });
 
-  // Auto-jump: check if all required fields are filled and auto-submit
-  const checkAutoJump = useCallback(() => {
-    if (!autoJump || isLastStep || autoJumpTriggered.current || isSubmitting) return;
-
-    // Check if all required fields have values
-    const allRequiredFilled = editableFields.every((field) => {
-      if (!("required" in field) || !field.required) return true;
-      const value = form.getFieldValue(field.name as never);
-      if (value === undefined || value === null || value === "") return false;
-      if (Array.isArray(value) && value.length === 0) return false;
-      return true;
-    });
-
-    if (allRequiredFilled && editableFields.length > 0) {
-      autoJumpTriggered.current = true;
-      // Short delay to let the user see their selection
-      setTimeout(() => {
-        form.handleSubmit();
-      }, 400);
-    }
-  }, [autoJump, isLastStep, isSubmitting, editableFields, form]);
-
   return (
     <form.AppForm>
       <form.Form
@@ -91,15 +61,6 @@ export const StepForm = ({ stepIndex, segments, isLastStep, autoJump = false }: 
         data-bf-field-list
         className=" focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        {/* Auto-jump watcher */}
-        {autoJump && !isLastStep && (
-          <form.Subscribe selector={selectStateValues}>
-            {() => {
-              checkAutoJump();
-              return null;
-            }}
-          </form.Subscribe>
-        )}
         {groupedItems.map((item) => {
           // Handle button groups (Previous + Next/Submit on same line)
           if (item.type === "buttonGroup") {

@@ -201,7 +201,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   });
 
   useHotkey(HOTKEYS.PUBLISH_FORM, () => handlePublish(), {
-    enabled: isFormBuilder && isEditRoute && !isPublishing,
+    enabled: isFormBuilder && (isEditRoute || hasUnpublishedChanges) && !isPublishing,
   });
 
   const handleEditForm = () => {
@@ -621,7 +621,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                 </DropdownMenu>
               </div>
 
-              {isEditRoute ? (
+              {isEditRoute || hasUnpublishedChanges ? (
                 <Tooltip>
                   <TooltipTrigger
                     render={

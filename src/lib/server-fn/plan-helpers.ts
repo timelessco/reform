@@ -7,7 +7,7 @@ export type ServerPlan = "free" | "pro" | "biz";
 export const getOrgPlan = async (orgId: string): Promise<ServerPlan> => {
   try {
     const iter = await polarClient.subscriptions.list({
-      externalCustomerId: orgId,
+      metadata: { referenceId: orgId },
       active: true,
     });
     for await (const page of iter) {

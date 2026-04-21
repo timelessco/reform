@@ -59,7 +59,7 @@ export const publishFormVersion = createServerFn({ method: "POST" })
       // is intentionally excluded — those stay live.
       const settingsSnapshot = {
         progressBar: form.progressBar,
-        autoJump: form.autoJump,
+        presentationMode: form.presentationMode,
         saveAnswersForLater: form.saveAnswersForLater,
         redirectOnCompletion: form.redirectOnCompletion,
         redirectUrl: form.redirectUrl,
@@ -309,7 +309,7 @@ export const discardFormChanges = createServerFn({ method: "POST" })
         cover: version.cover,
         // Group 2 settings — read back from snapshot jsonb
         progressBar: (snapshotSettings.progressBar as boolean) ?? false,
-        autoJump: (snapshotSettings.autoJump as boolean) ?? false,
+        presentationMode: (snapshotSettings.presentationMode as string) ?? "card",
         saveAnswersForLater: (snapshotSettings.saveAnswersForLater as boolean) ?? true,
         redirectOnCompletion: (snapshotSettings.redirectOnCompletion as boolean) ?? false,
         redirectUrl: (snapshotSettings.redirectUrl as string | null) ?? null,
