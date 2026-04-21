@@ -1,3 +1,5 @@
+"use client";
+
 import { experimental_useObject as useObject } from "@ai-sdk/react";
 import { PathApi } from "platejs";
 import type { TElement } from "platejs";
