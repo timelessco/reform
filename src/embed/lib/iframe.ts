@@ -30,9 +30,12 @@ const getBaseUrl = (): string => {
 };
 
 /**
- * Build the iframe URL with query parameters
+ * Build the iframe URL with query parameters.
+ * Exported so the bubble's warmup can prefetch the exact same URL — any
+ * parameter divergence causes the browser to treat it as a different
+ * resource and skip the prefetched cache entry.
  */
-const buildIframeUrl = (formId: string, options: PopupOptions): string => {
+export const buildIframeUrl = (formId: string, options: PopupOptions): string => {
   const baseUrl = getBaseUrl();
   const params = new URLSearchParams();
 

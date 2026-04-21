@@ -2,7 +2,9 @@
 // floating bubble button that opens the popup on click. Config lives on the
 // script tag's data-* attributes.
 
+import { buildIframeUrl } from "./iframe";
 import type { PopupOptions, PopupPosition } from "./types";
+import { preconnectOrigin, prefetchFormDocument, warmupFormOnIntent } from "./warmup";
 
 type OpenPopupCallback = (formId: string, options: PopupOptions) => void;
 
@@ -215,9 +217,28 @@ export const setupAutoBubble = (openPopup: OpenPopupCallback): void => {
 
   const origin = getOriginFromScript(scriptTag);
 
+  // Open the TCP+TLS connection to the form origin eagerly so the iframe
+  // request on click doesn't wait on handshake RTTs.
+  preconnectOrigin(origin);
+
   // Mount immediately with default icon; upgrade once meta arrives so the
   // bubble never waits on the network to appear.
   const bubble = createBubble(cfg, null, origin);
+
+  // On first hover/focus/touch, prefetch the exact URL the iframe will
+  // load so the browser reuses the prefetched document when the user
+  // clicks. `buildIframeUrl` is the single source of truth for the URL.
+  const popupOptions: PopupOptions = {
+    position: cfg.position,
+    width: cfg.width,
+    hideTitle: cfg.hideTitle,
+    alignLeft: cfg.alignLeft,
+    overlay: cfg.darkOverlay,
+    autoClose: cfg.autoClose,
+    hiddenFields: cfg.hiddenFields,
+  };
+  const iframeUrl = buildIframeUrl(cfg.formId, popupOptions);
+  warmupFormOnIntent(bubble, () => prefetchFormDocument(iframeUrl));
   fetchMeta(origin, cfg.formId).then((meta) => {
     if (!meta) return;
     if (meta.title) bubble.setAttribute("aria-label", meta.title);
