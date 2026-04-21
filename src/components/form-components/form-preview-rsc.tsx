@@ -1,7 +1,6 @@
 // Client-side consumer of `getPublicFormViewRSC`. Imports no Plate code — the
 // static prose is pre-rendered server-side; only field widgets fill slots.
 import { CompositeComponent } from "@tanstack/react-start/rsc";
-import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { IconPickerPreview } from "@/components/icon-picker";
@@ -116,23 +115,6 @@ const SuccessCheckmarkIcon = (
     <polyline points="22 4 12 14.01 9 11.01" />
   </svg>
 );
-
-const stepVariants = {
-  enter: (direction: number) => ({
-    x: direction > 0 ? 20 : -20,
-    opacity: 0,
-  }),
-  center: {
-    zIndex: 1,
-    x: 0,
-    opacity: 1,
-  },
-  exit: (direction: number) => ({
-    zIndex: 0,
-    x: direction < 0 ? 20 : -20,
-    opacity: 0,
-  }),
-};
 
 const PublicFormHeader = ({
   title,
@@ -448,11 +430,7 @@ const StepFormRSC = ({
           />
         );
       }
-      return (
-        <div key={fieldId} className="w-full">
-          <RenderStepPreviewInput element={field} form={form} />
-        </div>
-      );
+      return <RenderStepPreviewInput key={fieldId} element={field} form={form} />;
     },
     [form, isSubmitting, currentStep, goToPrevStep, totalSteps, t],
   );
@@ -586,11 +564,7 @@ const FormPreviewRSCContent = ({
           style={{ maxWidth: PAGE_MAX_WIDTH }}
           data-bf-form-container
         >
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             {thankYou ? (
               <div data-bf-field-list className="space-y-4">
                 <TypedComposite src={thankYou} />
@@ -619,7 +593,7 @@ const FormPreviewRSCContent = ({
                 })}
               </p>
             )}
-          </motion.div>
+          </div>
         </div>
       </div>
     );
@@ -649,31 +623,23 @@ const FormPreviewRSCContent = ({
       )}
 
       <div className="mx-auto px-4" style={{ maxWidth: PAGE_MAX_WIDTH }} data-bf-form-container>
-        <AnimatePresence mode="wait" custom={direction}>
-          <motion.div
-            key={currentStep}
-            custom={direction}
-            variants={stepVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-              x: { type: "spring", stiffness: 300, damping: 30 },
-              opacity: { duration: 0.2 },
-            }}
-            className="w-full"
-          >
-            {currentStepRSC && (
-              <StepFormRSC
-                key={currentStep}
-                stepIndex={currentStep}
-                stepRSC={currentStepRSC}
-                isLastStep={isLastStep}
-                autoJump={settings?.autoJump ?? false}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
+        <div
+          key={currentStep}
+          className={cn(
+            "w-full animate-in fade-in duration-200",
+            direction >= 0 ? "slide-in-from-right-2" : "slide-in-from-left-2",
+          )}
+        >
+          {currentStepRSC && (
+            <StepFormRSC
+              key={currentStep}
+              stepIndex={currentStep}
+              stepRSC={currentStepRSC}
+              isLastStep={isLastStep}
+              autoJump={settings?.autoJump ?? false}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

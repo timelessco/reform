@@ -91,6 +91,9 @@ const config = defineConfig({
     dedupe: ["@platejs/core"],
   },
   build: {
+    // Emit .vite/manifest.json so the server can resolve lazy field chunks
+    // and emit <link rel="modulepreload"> for the fields used on step 1.
+    manifest: true,
     rollupOptions: {
       output: {
         manualChunks(id) {

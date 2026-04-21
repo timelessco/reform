@@ -139,6 +139,7 @@ export const Route = createFileRoute("/forms/$formId")({
       (loaderData?.form?.customization as Record<string, string> | undefined)?.defaultMode ||
       "system";
     const formId = params.formId;
+    const preloadUrls = loaderData?.preloadModuleUrls ?? [];
     return {
       meta: [
         {
@@ -153,6 +154,7 @@ export const Route = createFileRoute("/forms/$formId")({
             : "Fill out this form",
         },
       ],
+      links: preloadUrls.map((href) => ({ rel: "modulepreload", href, crossOrigin: "" })),
       scripts: [
         {
           // Apply theme before paint — viewer override > creator default > system

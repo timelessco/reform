@@ -6,6 +6,7 @@ import { customDomains, forms, member, submissions, workspaces } from "@/db/sche
 import { RESERVED_SLUGS } from "@/lib/config/plan-config";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
+import { purgeFormCache } from "@/lib/server-fn/cdn-cache";
 import { authForm, getActiveOrgId } from "./auth-helpers";
 import { assertPlanForFormSettings, getOrgPlan } from "./plan-helpers";
 
@@ -179,6 +180,14 @@ export const updateForm = createServerFn({ method: "POST" })
       .where(eq(forms.id, id))
       .returning();
 
+    // `branding` is the one live (non-versioned) field that the public view
+    // reads — its changes must bust the CDN tag. Versioned fields can't be
+    // handled here; they change the public response only on republish, which
+    // owns its own purge.
+    if (updateData.branding !== undefined) {
+      void purgeFormCache(id);
+    }
+
     return { form: serializeForm(form) };
   });
 
@@ -190,6 +199,7 @@ export const deleteForm = createServerFn({ method: "POST" })
     await authForm(data.id, context.session.user.id, orgId);
 
     const [form] = await db.delete(forms).where(eq(forms.id, data.id)).returning();
+    void purgeFormCache(data.id);
 
     return { form: serializeForm(form) };
   });
