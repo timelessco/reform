@@ -16,32 +16,84 @@ import {
   destroyOverlay,
   hideEmoji,
   hideLoading,
+  revealOverlay,
   updatePopupHeight,
 } from "./lib/overlay";
 import { injectStyles } from "./lib/styles";
 import { checkHashTrigger, setupClickTriggers, setupHashChangeListener } from "./lib/triggers";
 import type { IframeEvent, PopupInstance, PopupOptions } from "./lib/types";
 
-// Registry of active popup instances
+// Registry of active popup instances. Instances may be in "hidden" state
+// (pre-mounted on hover) — they live here so message handlers and `closePopup`
+// treat them uniformly.
 const activePopups = new Map<string, PopupInstance>();
 
+const fireOnOpen = (options: PopupOptions): void => {
+  if (!options.onOpen) return;
+  try {
+    options.onOpen();
+  } catch (e) {
+    console.error("[Reform] onOpen callback error:", e);
+  }
+};
+
 /**
- * Open a popup for the given form
+ * Pre-mount the popup in a hidden state. The iframe loads, React mounts,
+ * and the form is ready — all while the user is still hovering. On click,
+ * `openPopup` just flips visibility; no spinner, no height jump, no refetch.
+ */
+export const preMountPopup = (formId: string, options: PopupOptions = {}): void => {
+  if (activePopups.has(formId)) return;
+
+  const elements = createOverlay(formId, options, () => closePopup(formId), {
+    startHidden: true,
+  });
+  const iframe = createIframe(formId, options, elements.iframeContainer);
+
+  const instance: PopupInstance = {
+    formId,
+    options,
+    container: elements.popup,
+    iframe,
+    overlay: elements.overlay,
+    hidden: true,
+  };
+  activePopups.set(formId, instance);
+
+  iframe.addEventListener("load", () => {
+    hideLoading(elements.loadingEl);
+  });
+};
+
+/**
+ * Open a popup for the given form. If a pre-mounted instance exists (from
+ * hover warmup), reveal it instead of building a new one — the iframe is
+ * already loaded and the form is already rendered.
  */
 export const openPopup = (formId: string, options: PopupOptions = {}): void => {
-  // Don't open if already open
-  if (activePopups.has(formId)) {
-    console.warn(`[Reform] Popup for form ${formId} is already open`);
+  const existing = activePopups.get(formId);
+
+  if (existing) {
+    if (!existing.hidden) {
+      console.warn(`[Reform] Popup for form ${formId} is already open`);
+      return;
+    }
+
+    // Promote hidden instance. The caller's options (onOpen/onClose/onSubmit)
+    // are authoritative now — the pre-mount used bubble-provided defaults
+    // without these callbacks.
+    existing.options = options;
+    existing.hidden = false;
+    if (existing.overlay) {
+      revealOverlay(existing.overlay, options);
+    }
+    fireOnOpen(options);
     return;
   }
 
-  // Create overlay and popup container
   const elements = createOverlay(formId, options, () => closePopup(formId));
-
-  // Create iframe
   const iframe = createIframe(formId, options, elements.iframeContainer);
 
-  // Store instance
   const instance: PopupInstance = {
     formId,
     options,
@@ -51,19 +103,11 @@ export const openPopup = (formId: string, options: PopupOptions = {}): void => {
   };
   activePopups.set(formId, instance);
 
-  // Setup iframe load handler
   iframe.addEventListener("load", () => {
     hideLoading(elements.loadingEl);
   });
 
-  // Call onOpen callback
-  if (options.onOpen) {
-    try {
-      options.onOpen();
-    } catch (e) {
-      console.error("[Reform] onOpen callback error:", e);
-    }
-  }
+  fireOnOpen(options);
 };
 
 /**
@@ -211,7 +255,7 @@ const init = (): void => {
   window.addEventListener("message", handleMessage);
 
   // If the script tag carries `data-form-id`, mount the floating bubble.
-  setupAutoBubble(openPopup);
+  setupAutoBubble(openPopup, preMountPopup);
 };
 
 // Create global API

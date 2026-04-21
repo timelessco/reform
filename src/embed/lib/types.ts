@@ -53,6 +53,8 @@ export interface PopupInstance {
   container: HTMLElement;
   iframe: HTMLIFrameElement;
   overlay?: HTMLElement;
+  /** True while pre-mounted on hover but not yet revealed to the user. */
+  hidden?: boolean;
 }
 
 /** Events sent from iframe to parent */

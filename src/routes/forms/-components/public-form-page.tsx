@@ -304,6 +304,7 @@ export const PublicFormPage = ({
   const formContent = (
     <div
       ref={containerRef}
+      id="bf-form-container"
       className={cn(
         "overflow-x-hidden text-foreground",
         // Reserve space at the bottom for the fixed branding footer when shown

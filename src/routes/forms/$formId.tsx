@@ -154,11 +154,23 @@ export const Route = createFileRoute("/forms/$formId")({
             : "Fill out this form",
         },
       ],
-      links: preloadUrls.map((href) => ({ rel: "modulepreload", href, crossOrigin: "" })),
+      links: preloadUrls.map((href) => ({
+        rel: "modulepreload",
+        href,
+        crossOrigin: "",
+      })),
       scripts: [
         {
           // Apply theme before paint — viewer override > creator default > system
           children: `(function(){try{var d=document.documentElement;var override=null;try{override=window.localStorage.getItem("bf-form-theme:${formId}");}catch(e){}var def=${JSON.stringify(defaultMode)};var pick=override||def;var m=pick==="system"?(window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"):pick;d.classList.remove("light","dark");d.classList.add(m);d.style.colorScheme=m;}catch(e){}})();`,
+        },
+        {
+          // Pre-hydration height: measure the SSR'd form container and post to
+          // the parent so the popup sizes itself before the user sees a jump.
+          // The React ResizeObserver in public-form-page takes over after
+          // hydration — this just covers the gap between iframe-load and
+          // hydration when the popup is already revealed.
+          children: `(function(){try{if(window.parent===window)return;var p=new URLSearchParams(window.location.search);var on=function(k){var v=p.get(k);return v==="1"||v==="true";};if(!on("popup")&&!on("dynamicHeight"))return;var post=function(){var el=document.getElementById("bf-form-container");if(!el)return;var h=el.scrollHeight;if(h>0)window.parent.postMessage(JSON.stringify({event:"Reform.Resize",height:h}),"*");};if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",post,{once:true});}else{post();}}catch(e){}})();`,
         },
       ],
     };

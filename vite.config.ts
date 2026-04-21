@@ -144,7 +144,12 @@ const config = defineConfig({
         // which sibling package a re-exported name came from (e.g. bindFirst
         // lives in @udecode/utils but gets guessed as @platejs/slate), and
         // the wrong guess breaks downstream consumers of the RSC output.
-        noExternal: [/^@platejs\//, "platejs", "@udecode/utils"],
+        //
+        // Must mirror `ssr.noExternal`: any Plate plugin transitive dep left
+        // external is loaded + transpiled by Bun at request time, which fails
+        // on Vercel's read-only filesystem ("bun is unable to write files").
+        // katex comes in via @platejs/math → BaseMathKit → BaseEditorKit.
+        noExternal: [/^@platejs\//, "platejs", "@udecode/utils", "katex", "react-tweet"],
       },
     },
   },
