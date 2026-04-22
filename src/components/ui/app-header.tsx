@@ -172,8 +172,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
     if (formId) {
       setWorkflowState("discarding");
       try {
-        const tx = discardChanges(formId);
-        await tx.isPersisted.promise;
+        await discardChanges(formId);
         toast.info("Changes discarded, reverted to last published version");
       } catch (error) {
         toast.error("Failed to discard changes");
@@ -202,7 +201,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   });
 
   useHotkey(HOTKEYS.PUBLISH_FORM, () => handlePublish(), {
-    enabled: isFormBuilder && isEditRoute && !isPublishing,
+    enabled: isFormBuilder && (isEditRoute || hasUnpublishedChanges) && !isPublishing,
   });
 
   const handleEditForm = () => {
@@ -622,7 +621,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                 </DropdownMenu>
               </div>
 
-              {isEditRoute ? (
+              {isEditRoute || hasUnpublishedChanges ? (
                 <Tooltip>
                   <TooltipTrigger
                     render={

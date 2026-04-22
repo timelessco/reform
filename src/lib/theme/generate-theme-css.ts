@@ -123,26 +123,34 @@ const resolveTokens = (customization: Record<string, string>): Record<string, st
 };
 
 /**
- * Builds --bf-* CSS variable entries from resolved tokens + layout fields.
+ * Mode-dependent token entries — colors that change between light and dark.
+ * Pass pre-resolved tokens to avoid re-running `resolveTokens` per call.
  */
-const buildThemeVarEntries = (customization: Record<string, string>): [string, string][] => {
-  const tokens = resolveTokens(customization);
+const buildColorTokenEntries = (tokens: Record<string, string>): [string, string][] => {
   const entries: [string, string][] = [];
-
-  // Token vars: both --bf-* (for external CSS consumers) and standard names (direct override)
   for (const tokenName of TOKEN_NAMES) {
     if (tokens[tokenName]) {
       entries.push([`--bf-${tokenName}`, tokens[tokenName]]);
       entries.push([`--${tokenName}`, tokens[tokenName]]);
     }
   }
+  return entries;
+};
 
-  // Font + radius + spacing
+/**
+ * Mode-independent entries — font, radius, spacing, title font, layout vars.
+ * Same regardless of light/dark mode.
+ */
+const buildModeAgnosticEntries = (
+  customization: Record<string, string>,
+  tokens: Record<string, string>,
+): [string, string][] => {
+  const entries: [string, string][] = [];
+
   if (tokens.font) entries.push(["--bf-font", tokens.font]);
   if (tokens.radius) entries.push(["--bf-radius", tokens.radius]);
   if (tokens.spacing) entries.push(["--bf-spacing", tokens.spacing]);
 
-  // Title font (resolved from font name → CSS value)
   if (customization.titleFont) {
     const titleFontValue = FONT_MAP[customization.titleFont] ?? FONT_MAP.Inter;
     entries.push(["--bf-title-font", titleFontValue]);
@@ -151,7 +159,6 @@ const buildThemeVarEntries = (customization: Record<string, string>): [string, s
     entries.push(["--bf-title-font-style", "italic"]);
   }
 
-  // Layout vars: use auto defaults for scrubber-backed fields, then override with explicit values
   for (const [field, cssVar] of Object.entries(LAYOUT_FIELDS)) {
     if (customization[field]) {
       const val =
@@ -166,6 +173,16 @@ const buildThemeVarEntries = (customization: Record<string, string>): [string, s
   }
 
   return entries;
+};
+
+/**
+ * Builds --bf-* CSS variable entries from resolved tokens + layout fields.
+ * Combines mode-dependent and mode-agnostic entries — used by getThemeStyleVars
+ * (inline style object) where a single mode is required.
+ */
+const buildThemeVarEntries = (customization: Record<string, string>): [string, string][] => {
+  const tokens = resolveTokens(customization);
+  return [...buildColorTokenEntries(tokens), ...buildModeAgnosticEntries(customization, tokens)];
 };
 
 /**
@@ -211,6 +228,52 @@ export const generateThemeCss = (
   const varLines = entries.map(([prop, val]) => `  ${prop}: ${val};`).join("\n");
 
   let css = `.bf-themed {\n${varLines}\n}`;
+
+  const customCss = customization.customCss?.trim();
+  if (customCss) {
+    css += `\n/* Custom CSS */\n${customCss}\n`;
+  }
+
+  return css;
+};
+
+const formatCssBlock = (selector: string, entries: [string, string][]): string => {
+  if (entries.length === 0) return "";
+  const lines = entries.map(([prop, val]) => `  ${prop}: ${val};`).join("\n");
+  return `${selector} {\n${lines}\n}`;
+};
+
+// Use this instead of generateThemeCss for SSR injection so the form doesn't
+// flash when the viewer's theme differs from the server-rendered default —
+// both sets are emitted and the root html `.dark`/`.light` class picks one
+// purely in CSS, no hydration regeneration needed.
+export const generateDualThemeCss = (
+  customization: Record<string, string> | null | undefined,
+): string => {
+  if (!customization || Object.keys(customization).length === 0) return "";
+
+  const lightTokens = resolveTokens({ ...customization, mode: "light" });
+  const darkTokens = resolveTokens({ ...customization, mode: "dark" });
+
+  const baseEntries = buildModeAgnosticEntries(customization, lightTokens);
+  const lightColorEntries = buildColorTokenEntries(lightTokens);
+  const darkColorEntries = buildColorTokenEntries(darkTokens);
+
+  const blocks: string[] = [];
+
+  if (baseEntries.length > 0) {
+    blocks.push(formatCssBlock(".bf-themed", baseEntries));
+  }
+  if (lightColorEntries.length > 0) {
+    blocks.push(
+      formatCssBlock(":root:not(.dark) .bf-themed, .light .bf-themed", lightColorEntries),
+    );
+  }
+  if (darkColorEntries.length > 0) {
+    blocks.push(formatCssBlock(":root.dark .bf-themed, .dark .bf-themed", darkColorEntries));
+  }
+
+  let css = blocks.join("\n");
 
   const customCss = customization.customCss?.trim();
   if (customCss) {

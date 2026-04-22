@@ -245,19 +245,68 @@ const InlineComboboxInput = ({
 
 InlineComboboxInput.displayName = "InlineComboboxInput";
 
-const InlineComboboxContent: typeof ComboboxPopover = ({ className, ...props }) => {
-  // Portal prevents CSS from leaking into popover
+const PREVIEW_GAP = 8;
+const PREVIEW_WIDTH = 260;
+
+type InlineComboboxContentProps = React.ComponentProps<typeof ComboboxPopover> & {
+  preview?: (props: { activeValue: string | null }) => React.ReactNode;
+};
+
+const InlineComboboxContent = ({
+  children,
+  className,
+  preview,
+  ...props
+}: InlineComboboxContentProps) => {
   const store = useComboboxContext();
+  const scrollElRef = React.useRef<HTMLDivElement | null>(null);
+  const previewElRef = React.useRef<HTMLDivElement | null>(null);
+
+  const hasPreview = preview !== undefined;
+
+  // Track active item value from Ariakit store — derived, no state needed
+  const activeId = store?.useState("activeId");
+  const activeValue = React.useMemo(() => {
+    if (!store || !hasPreview || !activeId) return null;
+    const state = store.getState();
+    return state.items.find((item) => item.id === activeId)?.value ?? null;
+  }, [activeId, store, hasPreview]);
+
+  // Imperative DOM updates: center-scroll + preview position — no state, no re-renders
+  React.useEffect(() => {
+    const scrollEl = scrollElRef.current;
+    const previewEl = previewElRef.current;
+    if (!scrollEl || !activeId || !hasPreview) return;
+
+    const activeEl = scrollEl.querySelector<HTMLElement>(`[data-active-item=true]`);
+    if (!activeEl) return;
+
+    // Center-focused scroll
+    const itemTop = activeEl.offsetTop;
+    const itemHeight = activeEl.offsetHeight;
+    const scrollHeight = scrollEl.clientHeight;
+    const idealScroll = itemTop - scrollHeight / 2 + itemHeight / 2;
+    const maxScroll = scrollEl.scrollHeight - scrollHeight;
+    const clampedScroll = Math.max(0, Math.min(idealScroll, maxScroll));
+    scrollEl.scrollTo({ top: clampedScroll, behavior: "smooth" });
+
+    // Position preview via direct DOM mutation (no state update)
+    // Only clamp at top; preview freely extends below for bottom items
+    if (previewEl) {
+      const visibleTop = Math.max(0, itemTop - clampedScroll);
+      previewEl.style.top = `${visibleTop}px`;
+    }
+  }, [activeId, hasPreview]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!store) return;
 
     const state = store.getState();
-    const { items, activeId } = state;
+    const { items, activeId: currentActiveId } = state;
 
     if (!items.length) return;
 
-    const currentIndex = items.findIndex((item) => item.id === activeId);
+    const currentIndex = items.findIndex((item) => item.id === currentActiveId);
 
     if (event.key === "ArrowUp" && currentIndex <= 0) {
       event.preventDefault();
@@ -272,18 +321,39 @@ const InlineComboboxContent: typeof ComboboxPopover = ({ className, ...props }) 
     <Portal>
       <ComboboxPopover
         className={cn(
-          "z-500 max-h-[288px] w-[300px] overflow-y-auto rounded-md bg-popover shadow-md",
+          "z-500 w-[300px] rounded-xl bg-popover shadow-md",
+          hasPreview ? "overflow-visible" : "overflow-y-auto max-h-[288px]",
           className,
         )}
         onKeyDownCapture={handleKeyDown}
         {...props}
-      />
+      >
+        <div ref={scrollElRef} className={hasPreview ? "max-h-[288px] overflow-y-auto" : undefined}>
+          {children}
+        </div>
+
+        {/* Preview card positioned relative to the active item */}
+        {hasPreview && (
+          <div
+            ref={previewElRef}
+            className="pointer-events-none absolute top-0 left-full transition-[top] duration-100 ease-out"
+            style={{ paddingLeft: PREVIEW_GAP }}
+          >
+            <div
+              className="pointer-events-auto rounded-xl bg-popover shadow-md"
+              style={{ width: PREVIEW_WIDTH }}
+            >
+              {preview({ activeValue })}
+            </div>
+          </div>
+        )}
+      </ComboboxPopover>
     </Portal>
   );
 };
 
 const comboboxItemVariants = cva(
-  "relative mx-1 flex h-[28px] select-none items-center rounded-sm px-2 text-foreground text-sm outline-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "relative mx-1 flex h-[28px] select-none items-center rounded-lg px-2 text-foreground text-sm outline-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     defaultVariants: {
       interactive: true,
@@ -291,7 +361,7 @@ const comboboxItemVariants = cva(
     variants: {
       interactive: {
         false: "",
-        true: "cursor-pointer transition-colors hover:bg-accent hover:text-accent-foreground data-[active-item=true]:bg-accent data-[active-item=true]:text-accent-foreground",
+        true: "cursor-pointer hover:bg-accent hover:text-accent-foreground data-[active-item=true]:bg-accent data-[active-item=true]:text-accent-foreground",
       },
     },
   },

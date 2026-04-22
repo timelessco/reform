@@ -1,11 +1,14 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { and, count, eq, isNull } from "drizzle-orm";
+import { and, count, eq, isNull, ne } from "drizzle-orm";
 import { z } from "zod";
-import { forms, member, submissions, workspaces } from "@/db/schema";
+import { customDomains, forms, member, submissions, workspaces } from "@/db/schema";
+import { RESERVED_SLUGS } from "@/lib/config/plan-config";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
+import { purgeFormCache } from "@/lib/server-fn/cdn-cache";
 import { authForm, getActiveOrgId } from "./auth-helpers";
+import { assertPlanForFormSettings, getOrgPlan } from "./plan-helpers";
 
 const serializeForm = (form: typeof forms.$inferSelect) => ({
   ...form,
@@ -38,8 +41,8 @@ export const createForm = createServerFn({ method: "POST" })
       redirectUrl: z.string().nullable().optional(),
       redirectDelay: z.number().optional(),
       progressBar: z.boolean().optional(),
+      presentationMode: z.enum(["card", "field-by-field"]).optional(),
       branding: z.boolean().optional(),
-      autoJump: z.boolean().optional(),
       saveAnswersForLater: z.boolean().optional(),
       selfEmailNotifications: z.boolean().optional(),
       notificationEmail: z.string().nullable().optional(),
@@ -58,6 +61,7 @@ export const createForm = createServerFn({ method: "POST" })
       dataRetention: z.boolean().optional(),
       dataRetentionDays: z.number().nullable().optional(),
       customization: z.record(z.string(), z.unknown()).optional(),
+      sortIndex: z.string().nullable().optional(),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -83,8 +87,8 @@ export const createForm = createServerFn({ method: "POST" })
         redirectUrl: data.redirectUrl,
         redirectDelay: data.redirectDelay,
         progressBar: data.progressBar,
+        presentationMode: data.presentationMode,
         branding: data.branding,
-        autoJump: data.autoJump,
         saveAnswersForLater: data.saveAnswersForLater,
         selfEmailNotifications: data.selfEmailNotifications,
         notificationEmail: data.notificationEmail,
@@ -103,6 +107,7 @@ export const createForm = createServerFn({ method: "POST" })
         dataRetention: data.dataRetention,
         dataRetentionDays: data.dataRetentionDays,
         customization: data.customization,
+        sortIndex: data.sortIndex,
         createdAt: now,
         updatedAt: now,
       })
@@ -133,8 +138,8 @@ export const updateForm = createServerFn({ method: "POST" })
       redirectUrl: z.string().nullable().optional(),
       redirectDelay: z.number().optional(),
       progressBar: z.boolean().optional(),
+      presentationMode: z.enum(["card", "field-by-field"]).optional(),
       branding: z.boolean().optional(),
-      autoJump: z.boolean().optional(),
       saveAnswersForLater: z.boolean().optional(),
       selfEmailNotifications: z.boolean().optional(),
       notificationEmail: z.string().nullable().optional(),
@@ -153,12 +158,18 @@ export const updateForm = createServerFn({ method: "POST" })
       dataRetention: z.boolean().optional(),
       dataRetentionDays: z.number().nullable().optional(),
       customization: z.record(z.string(), z.unknown()).optional(),
+      sortIndex: z.string().nullable().optional(),
     }),
   )
   .handler(async ({ data, context }) => {
     const { id, updatedAt: clientUpdatedAt, ...updateData } = data;
     const orgId = getActiveOrgId(context.session);
     await authForm(id, context.session.user.id, orgId);
+    await assertPlanForFormSettings(orgId, {
+      branding: updateData.branding,
+      respondentEmailNotifications: updateData.respondentEmailNotifications,
+      dataRetention: updateData.dataRetention,
+    });
 
     const [form] = await db
       .update(forms)
@@ -168,6 +179,14 @@ export const updateForm = createServerFn({ method: "POST" })
       })
       .where(eq(forms.id, id))
       .returning();
+
+    // `branding` is the one live (non-versioned) field that the public view
+    // reads — its changes must bust the CDN tag. Versioned fields can't be
+    // handled here; they change the public response only on republish, which
+    // owns its own purge.
+    if (updateData.branding !== undefined) {
+      void purgeFormCache(id);
+    }
 
     return { form: serializeForm(form) };
   });
@@ -180,6 +199,7 @@ export const deleteForm = createServerFn({ method: "POST" })
     await authForm(data.id, context.session.user.id, orgId);
 
     const [form] = await db.delete(forms).where(eq(forms.id, data.id)).returning();
+    void purgeFormCache(data.id);
 
     return { form: serializeForm(form) };
   });
@@ -197,6 +217,7 @@ export const getFormListings = createServerFn({ method: "GET" })
         workspaceId: forms.workspaceId,
         icon: forms.icon,
         formName: forms.formName,
+        sortIndex: forms.sortIndex,
         submissionCount: count(submissions.id),
       })
       .from(forms)
@@ -244,6 +265,165 @@ type FormStatusQueryResult = {
     status?: FormStatus;
   };
 };
+
+const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
+
+const generateSlug = (title: string): string =>
+  title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60) || "form";
+
+/** @public - consumed by upcoming domain settings UI */
+export const updateFormSlug = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(z.object({ formId: z.string().uuid(), slug: z.string() }))
+  .handler(async ({ data, context }) => {
+    const { formId, slug } = data;
+    const orgId = getActiveOrgId(context.session);
+    await authForm(formId, context.session.user.id, orgId);
+
+    if (!SLUG_PATTERN.test(slug)) {
+      throw new Error(
+        "Invalid slug format. Use lowercase letters, numbers, and hyphens only. Cannot start or end with a hyphen.",
+      );
+    }
+
+    if (slug.length < 2 || slug.length > 60) {
+      throw new Error("Slug must be between 2 and 60 characters");
+    }
+
+    if (RESERVED_SLUGS.has(slug)) {
+      throw new Error("This slug is reserved and cannot be used");
+    }
+
+    // Look up the form to get its workspace, then the org
+    const [formRecord] = await db
+      .select({ workspaceId: forms.workspaceId })
+      .from(forms)
+      .where(eq(forms.id, formId));
+
+    if (!formRecord) {
+      throw new Error("Form not found");
+    }
+
+    const [workspace] = await db
+      .select({ organizationId: workspaces.organizationId })
+      .from(workspaces)
+      .where(eq(workspaces.id, formRecord.workspaceId));
+
+    if (!workspace) {
+      throw new Error("Workspace not found");
+    }
+
+    // Check uniqueness within the org
+    const existing = await db
+      .select({ id: forms.id })
+      .from(forms)
+      .innerJoin(workspaces, eq(forms.workspaceId, workspaces.id))
+      .where(
+        and(
+          eq(workspaces.organizationId, workspace.organizationId),
+          eq(forms.slug, slug),
+          ne(forms.id, formId),
+        ),
+      );
+
+    if (existing.length > 0) {
+      throw new Error("Slug already in use");
+    }
+
+    const [updatedForm] = await db
+      .update(forms)
+      .set({ slug, updatedAt: new Date() })
+      .where(eq(forms.id, formId))
+      .returning();
+
+    return { form: serializeForm(updatedForm) };
+  });
+
+/** @public - consumed by upcoming domain settings UI */
+export const assignFormDomain = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(
+    z.object({
+      formId: z.string().uuid(),
+      customDomainId: z.string().nullable(),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    const { formId, customDomainId } = data;
+    const orgId = getActiveOrgId(context.session);
+    await authForm(formId, context.session.user.id, orgId);
+
+    if (customDomainId !== null) {
+      const plan = await getOrgPlan(orgId);
+      if (plan === "free") {
+        throw new Error("Custom domains require a Pro subscription. Please upgrade to continue.");
+      }
+
+      // Verify the domain exists and belongs to the same org
+      const [domain] = await db
+        .select()
+        .from(customDomains)
+        .where(eq(customDomains.id, customDomainId));
+
+      if (!domain) {
+        throw new Error("Custom domain not found");
+      }
+
+      if (domain.organizationId !== orgId) {
+        throw new Error("Custom domain does not belong to this organization");
+      }
+
+      if (domain.status !== "verified") {
+        throw new Error("Custom domain is not verified");
+      }
+
+      // If the form has no slug, auto-generate one from the title
+      const [formRecord] = await db
+        .select({ slug: forms.slug, title: forms.title })
+        .from(forms)
+        .where(eq(forms.id, formId));
+
+      if (formRecord && !formRecord.slug) {
+        let autoSlug = generateSlug(formRecord.title);
+
+        // Check uniqueness within the org (same pattern as updateFormSlug)
+        const existing = await db
+          .select({ id: forms.id })
+          .from(forms)
+          .innerJoin(workspaces, eq(forms.workspaceId, workspaces.id))
+          .where(
+            and(
+              eq(workspaces.organizationId, orgId),
+              eq(forms.slug, autoSlug),
+              ne(forms.id, formId),
+            ),
+          );
+
+        if (existing.length > 0) {
+          autoSlug = `${autoSlug}-${formId.slice(0, 4)}`;
+        }
+
+        await db
+          .update(forms)
+          .set({ slug: autoSlug, updatedAt: new Date() })
+          .where(eq(forms.id, formId));
+      }
+    }
+
+    const [updatedForm] = await db
+      .update(forms)
+      .set({ customDomainId, updatedAt: new Date() })
+      .where(eq(forms.id, formId))
+      .returning();
+
+    return { form: serializeForm(updatedForm) };
+  });
 
 export const getFormStatus = async (
   queryClient: import("@tanstack/react-query").QueryClient,

@@ -19,9 +19,11 @@ export type VersionContent = {
   formId: string;
   version: number;
   content: object[];
-  settings: Record<string, object>;
+  settings: Record<string, unknown>;
   customization: Record<string, string>;
   title: string | null;
+  icon: string | null;
+  cover: string | null;
   publishedAt: string;
   createdAt: string;
 };

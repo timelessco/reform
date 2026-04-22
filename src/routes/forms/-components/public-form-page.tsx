@@ -1,9 +1,17 @@
 import { FileQuestionIcon, LockIcon, MoonIcon, SunIcon } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import type { Value } from "platejs";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
-import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+// Lazy: pulls StaticContentBlock → platejs runtime + BaseEditorKit + Plate CSS
+// (~370 kB). The RSC path renders static content server-side, so this fallback
+// only runs when `rsc` is unavailable.
+const FormPreviewFromPlate = lazy(() =>
+  import("@/components/form-components/form-preview-from-plate").then((m) => ({
+    default: m.FormPreviewFromPlate,
+  })),
+);
+import { FormPreviewRSC } from "@/components/form-components/form-preview-rsc";
+import type { StepRSC } from "@/components/form-components/form-preview-rsc";
 import { BrandingFooter } from "./branding-footer";
 import { AlreadySubmitted, FormClosed } from "@/routes/forms/-components/form-closed";
 import { PasswordGate } from "@/routes/forms/-components/password-gate";
@@ -68,6 +76,13 @@ interface PublicFormPageProps {
     current: "light" | "dark";
     onChange: (next: "light" | "dark" | "system") => void;
   };
+  // When present, renders via FormPreviewRSC — static prose is server-rendered
+  // so the client bundle no longer ships platejs/static.
+  rsc?: {
+    steps: StepRSC[];
+    thankYou: unknown | null;
+    stepCount: number;
+  };
 }
 
 /**
@@ -122,6 +137,7 @@ export const PublicFormPage = ({
   error,
   formId,
   gated,
+  rsc,
   isPopup = false,
   embedConfig = defaultPublicFormEmbedConfig,
   themeToggle,
@@ -142,6 +158,8 @@ export const PublicFormPage = ({
     }
     return false;
   });
+
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const resolvedLanguage = form?.settings?.language ?? "English";
 
@@ -211,6 +229,7 @@ export const PublicFormPage = ({
 
   const handleSubmit = useCallback(
     async (values: Record<string, unknown>) => {
+      setSubmitError(null);
       try {
         await createPublicSubmission({
           data: {
@@ -243,7 +262,7 @@ export const PublicFormPage = ({
         }
       } catch (err) {
         console.error("Submission error:", err);
-        toast.error(getTranslations(resolvedLanguage).submitFailed);
+        setSubmitError(getTranslations(resolvedLanguage).submitFailed);
         throw err; // Re-throw so the form knows it failed
       }
     },
@@ -292,8 +311,9 @@ export const PublicFormPage = ({
 
   // Render the form content
   const formContent = (
-    <div
+    <main
       ref={containerRef}
+      id="bf-form-container"
       className={cn(
         "overflow-x-hidden text-foreground",
         // Reserve space at the bottom for the fixed branding footer when shown
@@ -315,33 +335,60 @@ export const PublicFormPage = ({
             type="button"
             variant="ghost"
             size="icon"
-            aria-label={
-              themeToggle.current === "dark" ? "Switch to light theme" : "Switch to dark theme"
-            }
+            aria-label="Toggle color theme"
             onClick={() => themeToggle.onChange(themeToggle.current === "dark" ? "light" : "dark")}
             className="rounded-full bg-background/80 backdrop-blur border border-border/60 shadow-sm"
           >
-            {themeToggle.current === "dark" ? (
-              <SunIcon className="h-4 w-4" />
-            ) : (
-              <MoonIcon className="h-4 w-4" />
-            )}
+            {/* Render both icons; the pre-hydration script sets `.dark` on the
+                root before paint, so CSS picks the right one. Doing this in
+                React state would mismatch SSR (server can't know the viewer's
+                system preference), triggering a full-tree re-render that
+                presents as a ~1s layout shift after hydration. */}
+            <SunIcon className="hidden h-4 w-4 dark:block" />
+            <MoonIcon className="block h-4 w-4 dark:hidden" />
           </Button>
         </div>
       )}
-      <FormPreviewFromPlate
-        content={form.content as Value}
-        title={hideTitle ? undefined : form.title}
-        icon={hideTitle ? undefined : (form.icon ?? undefined)}
-        cover={hideTitle ? undefined : (form.cover ?? undefined)}
-        onSubmit={handleSubmit}
-        hideTitle={hideTitle}
-        settings={settings}
-        formId={formId}
-        customization={form.customization}
-      />
+      {rsc ? (
+        <FormPreviewRSC
+          steps={rsc.steps}
+          thankYou={rsc.thankYou}
+          stepCount={rsc.stepCount}
+          title={hideTitle ? undefined : form.title}
+          icon={hideTitle ? undefined : form.icon}
+          cover={hideTitle ? undefined : form.cover}
+          onSubmit={handleSubmit}
+          hideTitle={hideTitle}
+          settings={settings}
+          formId={formId}
+          customization={form.customization}
+        />
+      ) : (
+        <Suspense fallback={null}>
+          <FormPreviewFromPlate
+            content={form.content as Value}
+            title={hideTitle ? undefined : form.title}
+            icon={hideTitle ? undefined : (form.icon ?? undefined)}
+            cover={hideTitle ? undefined : (form.cover ?? undefined)}
+            onSubmit={handleSubmit}
+            hideTitle={hideTitle}
+            settings={settings}
+            formId={formId}
+            customization={form.customization}
+          />
+        </Suspense>
+      )}
+      {submitError && (
+        <div
+          aria-live="assertive"
+          role="alert"
+          className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-2 text-sm text-destructive shadow-sm"
+        >
+          {submitError}
+        </div>
+      )}
       {settings.branding && <BrandingFooter />}
-    </div>
+    </main>
   );
 
   // Wrap with password gate if needed

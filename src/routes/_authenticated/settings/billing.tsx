@@ -10,12 +10,16 @@ import { NotFound } from "@/components/ui/not-found";
 import { auth, authClient } from "@/lib/auth/auth-client";
 
 const BillingPage = () => {
-  const { data: customerState, isLoading } = useQuery({
-    ...auth.customer.state.queryOptions(),
-    staleTime: 1000 * 60 * 10,
-  });
-
   const { activeOrg } = useLoaderData({ from: "/_authenticated" });
+
+  const { data: subscriptionsData, isLoading } = useQuery({
+    ...auth.customer.subscriptions.list.queryOptions({
+      query: { referenceId: activeOrg?.id ?? "", active: true },
+    }),
+    enabled: Boolean(activeOrg?.id),
+    staleTime: 1000 * 60 * 10,
+    retry: false,
+  });
 
   const handleUpgrade = useCallback(
     async (planSlug: string) => {
@@ -62,7 +66,9 @@ const BillingPage = () => {
   const handleUpgradePro = useCallback(() => handleUpgrade("Pro"), [handleUpgrade]);
   const handleUpgradeBusiness = useCallback(() => handleUpgrade("Pro-(Yearly)"), [handleUpgrade]);
 
-  const activeSubscription = customerState?.activeSubscriptions?.[0];
+  const activeSubscription = (
+    subscriptionsData as { result?: { items?: Array<{ productId: string }> } } | undefined
+  )?.result?.items?.[0];
 
   const isFreePlan = !activeSubscription;
   const isProPlan =

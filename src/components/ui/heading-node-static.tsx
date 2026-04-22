@@ -5,15 +5,15 @@ import type { SlateElementProps } from "platejs/static";
 import { SlateElement } from "platejs/static";
 import type * as React from "react";
 
-const headingVariants = cva("relative mb-1", {
+const headingVariants = cva("relative", {
   variants: {
     variant: {
-      h1: "mt-[0.40em] pb-1 font-bold font-heading text-4xl",
-      h2: "mt-[0.40em] pb-px font-heading font-semibold text-2xl",
-      h3: "mt-[0.30em] pb-px font-heading font-semibold text-xl",
-      h4: "mt-[0.25em] font-heading font-semibold text-lg",
-      h5: "mt-[0.25em] font-semibold text-lg",
-      h6: "mt-[0.25em] font-semibold text-base",
+      h1: "font-bold font-heading text-4xl",
+      h2: "font-heading font-semibold text-2xl",
+      h3: "font-heading font-semibold text-xl",
+      h4: "font-heading font-semibold text-lg",
+      h5: "font-semibold text-lg",
+      h6: "font-semibold text-base",
     },
   },
 });

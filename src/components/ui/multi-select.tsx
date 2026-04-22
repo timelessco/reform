@@ -1,3 +1,6 @@
+/* oxlint-disable jsx-a11y/prefer-tag-over-role -- outer trigger must stay a
+   div; making it a <button> would nest the inner tag-remove <button>s,
+   producing invalid HTML and React hydration errors. */
 import { useEffect, useRef, useState } from "react";
 
 import { MULTI_SELECT_COLORS } from "@/components/ui/form-option-item-node";
@@ -48,12 +51,27 @@ export const MultiSelect = ({
 
   const selectedOptions = options.filter((opt) => value.includes(opt.value));
 
+  // Outer trigger must NOT be a <button> — it contains inner "remove tag"
+  // buttons, and nested interactive elements are invalid HTML / cause
+  // React hydration errors. A div with role=button preserves a11y without
+  // the nesting violation.
   return (
     <div ref={containerRef} className={cn("relative", className)}>
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
+        aria-haspopup="listbox"
+        aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className="flex min-h-[30px] w-full items-center gap-1 rounded-lg border-0 bg-card px-2 py-1 text-sm shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)]"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen(!open);
+          } else if (e.key === "Escape" && open) {
+            setOpen(false);
+          }
+        }}
+        className="flex min-h-[30px] w-full cursor-pointer items-center gap-1 rounded-lg border-0 bg-card px-2 py-1 text-sm shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <div className="flex flex-1 flex-wrap gap-1">
           {selectedOptions.length > 0 ? (
@@ -94,7 +112,7 @@ export const MultiSelect = ({
             open && "rotate-180",
           )}
         />
-      </button>
+      </div>
 
       {open && (
         <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-lg border bg-popover p-1 shadow-md">

@@ -80,7 +80,7 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
       // Option index: count consecutive formOptionItem siblings before this one
       let idx = 0;
       for (let i = path[0] - 1; i >= 0; i--) {
-        if (nodes[i].type === "formOptionItem") idx++;
+        if (nodes[i]?.type === "formOptionItem") idx++;
         else break;
       }
 
@@ -96,9 +96,9 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
         if (focusNode?.type === "formOptionItem") {
           // Find this group's start and end indices
           let groupStart = path[0];
-          while (groupStart > 0 && nodes[groupStart - 1].type === "formOptionItem") groupStart--;
+          while (groupStart > 0 && nodes[groupStart - 1]?.type === "formOptionItem") groupStart--;
           let groupEnd = path[0];
-          while (groupEnd < nodes.length - 1 && nodes[groupEnd + 1].type === "formOptionItem")
+          while (groupEnd < nodes.length - 1 && nodes[groupEnd + 1]?.type === "formOptionItem")
             groupEnd++;
           groupFocused = focusIndex >= groupStart && focusIndex <= groupEnd;
         }
@@ -135,7 +135,9 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
     const nextSibling = draggableWrapper?.nextElementSibling as HTMLElement | null;
     if (!nextSibling) return;
     if (showGhost) {
-      nextSibling.style.marginTop = "30px";
+      // Ghost is 28px tall, offset 4px below option (top-[calc(100%+4px)]),
+      // plus another 4px gap after the ghost → total 36px margin.
+      nextSibling.style.marginTop = "36px";
     } else {
       nextSibling.style.marginTop = "";
     }
@@ -171,7 +173,7 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
       {showGhost && (
         <div
           contentEditable={false}
-          className="absolute left-0 right-0 top-full flex h-7 items-center gap-2 pl-[2px] opacity-40 select-none pointer-events-none"
+          className="absolute left-0 right-0 top-[calc(100%+4px)] flex h-7 items-center gap-2 pl-[2px] opacity-40 select-none pointer-events-none"
         >
           <OptionIcon variant={variant} index={optionIndex + 1} />
           <span className="text-sm text-muted-foreground">Add option</span>

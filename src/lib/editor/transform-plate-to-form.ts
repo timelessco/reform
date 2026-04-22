@@ -418,7 +418,7 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
         id: name,
         name,
         fieldType: INPUT_TYPE_TO_FIELD_TYPE[nodeType] as PlateFormField["fieldType"],
-        label: labelText || "Untitled Field",
+        label: labelText || undefined,
         placeholder: placeholder || undefined,
         required: isRequired,
         minLength,
@@ -452,7 +452,7 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
         id: name,
         name,
         fieldType: "MultiSelect",
-        label: labelText || "Untitled Field",
+        label: labelText || undefined,
         required: isRequired,
         options,
       } as PlateFormField);
@@ -491,7 +491,7 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
         id: name,
         name,
         fieldType: VARIANT_TO_FIELD_TYPE[variant] || "Checkbox",
-        label: labelText || "Untitled Field",
+        label: labelText || undefined,
         required: isRequired,
         options,
       } as PlateFormField);

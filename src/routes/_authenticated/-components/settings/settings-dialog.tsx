@@ -4,10 +4,11 @@ import type { SettingsTab } from "@/hooks/use-settings-dialog";
 import { useSettingsDialog } from "@/hooks/use-settings-dialog";
 import { useCallback } from "react";
 import { SidebarItem } from "@/components/sidebar-item";
-import { CircleUserIcon, CreditCardIcon, FileCodeIcon } from "@/components/ui/icons";
+import { CircleUserIcon, CreditCardIcon, FileCodeIcon, GlobeIcon } from "@/components/ui/icons";
 import { AccountSettingsContent } from "./account-settings-content";
 import { ApiKeysContent } from "./api-keys-content";
 import { BillingContent } from "./billing-content";
+import { DomainsContent } from "./domains-content";
 import { MembersContent } from "./members-content";
 
 const navItems: {
@@ -18,6 +19,7 @@ const navItems: {
   { key: "account", label: "Account", icon: CircleUserIcon },
   { key: "billing", label: "Billing", icon: CreditCardIcon },
   { key: "api-keys", label: "API Keys", icon: FileCodeIcon },
+  { key: "domains", label: "Domains", icon: GlobeIcon },
 ];
 
 const tabTitles: Record<SettingsTab, string> = {
@@ -25,6 +27,7 @@ const tabTitles: Record<SettingsTab, string> = {
   members: "Members",
   billing: "Billing",
   "api-keys": "API Keys",
+  domains: "Custom Domains",
 };
 
 const TabContent = ({ tab }: { tab: SettingsTab }) => {
@@ -37,6 +40,8 @@ const TabContent = ({ tab }: { tab: SettingsTab }) => {
       return <BillingContent />;
     case "api-keys":
       return <ApiKeysContent />;
+    case "domains":
+      return <DomainsContent />;
   }
 };
 

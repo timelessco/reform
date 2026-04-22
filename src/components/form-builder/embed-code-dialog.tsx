@@ -48,10 +48,20 @@ interface EmbedCodeDialogProps {
   options: EmbedOptions;
   formId: string;
   docTitle?: string;
+  customDomain?: string;
+  formSlug?: string;
 }
 
-export const generateEmbedUrl = (formId: string, options: EmbedOptions): string => {
-  const baseUrl = `${window.location.origin}/forms/${formId}`;
+export const generateEmbedUrl = (
+  formId: string,
+  options: EmbedOptions,
+  customDomain?: string,
+  formSlug?: string,
+): string => {
+  const baseUrl =
+    customDomain && formSlug
+      ? `https://${customDomain}/${formSlug}`
+      : `${window.location.origin}/forms/${formId}`;
   const params = new URLSearchParams();
   if (options.display.title === "hidden") params.append("hideTitle", "true");
   if (options.display.background === "transparent") params.append("transparent", "true");
@@ -71,8 +81,10 @@ const generateEmbedCode = (
   options: EmbedOptions,
   formId: string,
   docTitle?: string,
+  customDomain?: string,
+  formSlug?: string,
 ): string => {
-  const embedUrl = generateEmbedUrl(formId, options);
+  const embedUrl = generateEmbedUrl(formId, options, customDomain, formSlug);
 
   if (embedType === "standard") {
     const baseUrl = `${window.location.origin}/widgets/embed.js`;
@@ -166,11 +178,16 @@ export const EmbedCodeDialog = ({
   options,
   formId,
   docTitle,
+  customDomain,
+  formSlug,
 }: EmbedCodeDialogProps) => {
-  const embedUrl = useMemo(() => generateEmbedUrl(formId, options), [formId, options]);
+  const embedUrl = useMemo(
+    () => generateEmbedUrl(formId, options, customDomain, formSlug),
+    [formId, options, customDomain, formSlug],
+  );
   const embedCode = useMemo(
-    () => generateEmbedCode(embedType, options, formId, docTitle),
-    [embedType, options, formId, docTitle],
+    () => generateEmbedCode(embedType, options, formId, docTitle, customDomain, formSlug),
+    [embedType, options, formId, docTitle, customDomain, formSlug],
   );
 
   const isAlignLeft = options.display.alignment === "left";

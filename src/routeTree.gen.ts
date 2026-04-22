@@ -9,16 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RscTestRouteImport } from './routes/rsc-test'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as SlugRouteImport } from './routes/$slug'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginIndexRouteImport } from './routes/login/index'
 import { Route as LoginEmailRouteImport } from './routes/login/email'
 import { Route as FormsFormIdRouteImport } from './routes/forms/$formId'
+import { Route as FFormIdRouteImport } from './routes/f/$formId'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as FormsI8nFormIdRouteImport } from './routes/forms/$i8n.$formId'
 import { Route as ApiIconsNameRouteImport } from './routes/api/icons/$name'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiAiFormGenerateRouteImport } from './routes/api/ai/form-generate'
 import { Route as AuthenticatedSettingsMyAccountRouteImport } from './routes/_authenticated/settings/my-account'
 import { Route as AuthenticatedSettingsMembersRouteImport } from './routes/_authenticated/settings/members'
 import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_authenticated/settings/billing'
@@ -30,8 +34,18 @@ import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSubmissionsR
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/settings'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/edit'
 
+const RscTestRoute = RscTestRouteImport.update({
+  id: '/rsc-test',
+  path: '/rsc-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SlugRoute = SlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -52,6 +66,11 @@ const LoginEmailRoute = LoginEmailRouteImport.update({
 const FormsFormIdRoute = FormsFormIdRouteImport.update({
   id: '/forms/$formId',
   path: '/forms/$formId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FFormIdRoute = FFormIdRouteImport.update({
+  id: '/f/$formId',
+  path: '/f/$formId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -78,6 +97,11 @@ const ApiIconsNameRoute = ApiIconsNameRouteImport.update({
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiFormGenerateRoute = ApiAiFormGenerateRouteImport.update({
+  id: '/api/ai/form-generate',
+  path: '/api/ai/form-generate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedSettingsMyAccountRoute =
@@ -147,8 +171,11 @@ const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$slug': typeof SlugRoute
+  '/rsc-test': typeof RscTestRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/f/$formId': typeof FFormIdRoute
   '/forms/$formId': typeof FormsFormIdRoute
   '/login/email': typeof LoginEmailRoute
   '/login/': typeof LoginIndexRoute
@@ -157,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/members': typeof AuthenticatedSettingsMembersRoute
   '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
+  '/api/ai/form-generate': typeof ApiAiFormGenerateRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/icons/$name': typeof ApiIconsNameRoute
   '/forms/$i8n/$formId': typeof FormsI8nFormIdRoute
@@ -168,8 +196,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$slug': typeof SlugRoute
+  '/rsc-test': typeof RscTestRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/f/$formId': typeof FFormIdRoute
   '/forms/$formId': typeof FormsFormIdRoute
   '/login/email': typeof LoginEmailRoute
   '/login': typeof LoginIndexRoute
@@ -178,6 +209,7 @@ export interface FileRoutesByTo {
   '/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/settings/members': typeof AuthenticatedSettingsMembersRoute
   '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
+  '/api/ai/form-generate': typeof ApiAiFormGenerateRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/icons/$name': typeof ApiIconsNameRoute
   '/forms/$i8n/$formId': typeof FormsI8nFormIdRoute
@@ -190,9 +222,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$slug': typeof SlugRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/rsc-test': typeof RscTestRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/f/$formId': typeof FFormIdRoute
   '/forms/$formId': typeof FormsFormIdRoute
   '/login/email': typeof LoginEmailRoute
   '/login/': typeof LoginIndexRoute
@@ -201,6 +236,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/billing': typeof AuthenticatedSettingsBillingRoute
   '/_authenticated/settings/members': typeof AuthenticatedSettingsMembersRoute
   '/_authenticated/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
+  '/api/ai/form-generate': typeof ApiAiFormGenerateRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/icons/$name': typeof ApiIconsNameRoute
   '/forms/$i8n/$formId': typeof FormsI8nFormIdRoute
@@ -214,8 +250,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$slug'
+    | '/rsc-test'
     | '/settings'
     | '/dashboard'
+    | '/f/$formId'
     | '/forms/$formId'
     | '/login/email'
     | '/login/'
@@ -224,6 +263,7 @@ export interface FileRouteTypes {
     | '/settings/billing'
     | '/settings/members'
     | '/settings/my-account'
+    | '/api/ai/form-generate'
     | '/api/auth/$'
     | '/api/icons/$name'
     | '/forms/$i8n/$formId'
@@ -235,8 +275,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/$slug'
+    | '/rsc-test'
     | '/settings'
     | '/dashboard'
+    | '/f/$formId'
     | '/forms/$formId'
     | '/login/email'
     | '/login'
@@ -245,6 +288,7 @@ export interface FileRouteTypes {
     | '/settings/billing'
     | '/settings/members'
     | '/settings/my-account'
+    | '/api/ai/form-generate'
     | '/api/auth/$'
     | '/api/icons/$name'
     | '/forms/$i8n/$formId'
@@ -256,9 +300,12 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/$slug'
     | '/_authenticated'
+    | '/rsc-test'
     | '/_authenticated/settings'
     | '/_authenticated/dashboard'
+    | '/f/$formId'
     | '/forms/$formId'
     | '/login/email'
     | '/login/'
@@ -267,6 +314,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/billing'
     | '/_authenticated/settings/members'
     | '/_authenticated/settings/my-account'
+    | '/api/ai/form-generate'
     | '/api/auth/$'
     | '/api/icons/$name'
     | '/forms/$i8n/$formId'
@@ -279,10 +327,14 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SlugRoute: typeof SlugRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  RscTestRoute: typeof RscTestRoute
+  FFormIdRoute: typeof FFormIdRoute
   FormsFormIdRoute: typeof FormsFormIdRoute
   LoginEmailRoute: typeof LoginEmailRoute
   LoginIndexRoute: typeof LoginIndexRoute
+  ApiAiFormGenerateRoute: typeof ApiAiFormGenerateRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiIconsNameRoute: typeof ApiIconsNameRoute
   FormsI8nFormIdRoute: typeof FormsI8nFormIdRoute
@@ -291,11 +343,25 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/rsc-test': {
+      id: '/rsc-test'
+      path: '/rsc-test'
+      fullPath: '/rsc-test'
+      preLoaderRoute: typeof RscTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$slug': {
+      id: '/$slug'
+      path: '/$slug'
+      fullPath: '/$slug'
+      preLoaderRoute: typeof SlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -324,6 +390,13 @@ declare module '@tanstack/react-router' {
       path: '/forms/$formId'
       fullPath: '/forms/$formId'
       preLoaderRoute: typeof FormsFormIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/f/$formId': {
+      id: '/f/$formId'
+      path: '/f/$formId'
+      fullPath: '/f/$formId'
+      preLoaderRoute: typeof FFormIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dashboard': {
@@ -359,6 +432,13 @@ declare module '@tanstack/react-router' {
       path: '/api/auth/$'
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/form-generate': {
+      id: '/api/ai/form-generate'
+      path: '/api/ai/form-generate'
+      fullPath: '/api/ai/form-generate'
+      preLoaderRoute: typeof ApiAiFormGenerateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/settings/my-account': {
@@ -509,10 +589,14 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SlugRoute: SlugRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  RscTestRoute: RscTestRoute,
+  FFormIdRoute: FFormIdRoute,
   FormsFormIdRoute: FormsFormIdRoute,
   LoginEmailRoute: LoginEmailRoute,
   LoginIndexRoute: LoginIndexRoute,
+  ApiAiFormGenerateRoute: ApiAiFormGenerateRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiIconsNameRoute: ApiIconsNameRoute,
   FormsI8nFormIdRoute: FormsI8nFormIdRoute,

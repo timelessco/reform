@@ -16,13 +16,19 @@ import { magicLink, organization, testUtils } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { eq } from "drizzle-orm";
 
-const polarClient = new Polar({
+export const polarClient = new Polar({
   accessToken: process.env.POLAR_ACCESS_TOKEN ?? "",
   server: "sandbox", // TODO: Change to production
 });
 
 const getServerBaseURL = () => {
-  const url = process.env.BETTER_AUTH_URL || process.env.VERCEL_URL || "http://localhost:3000";
+  // Prefer VERCEL_BRANCH_URL for stable git-branch URLs (e.g. better-forms-git-dev-timelessco.vercel.app)
+  // VERCEL_URL gives random deployment URLs that change per deploy
+  const url =
+    process.env.BETTER_AUTH_URL ||
+    process.env.VERCEL_BRANCH_URL ||
+    process.env.VERCEL_URL ||
+    "http://localhost:3000";
   return url.startsWith("http") ? url : `https://${url}`;
 };
 

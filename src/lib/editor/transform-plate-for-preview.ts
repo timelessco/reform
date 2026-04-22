@@ -162,7 +162,7 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
           id: name,
           name,
           fieldType: INPUT_TYPE_TO_FIELD_TYPE[nodeType] as PlateFormField["fieldType"],
-          label: labelText || "Untitled Field",
+          label: labelText || undefined,
           labelType: label?.labelNode.type as string | undefined,
           placeholder: placeholder || undefined,
           required: isRequired,
@@ -201,7 +201,7 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
           id: name,
           name,
           fieldType: "MultiSelect",
-          label: labelText || "Untitled Field",
+          label: labelText || undefined,
           labelType: label?.labelNode.type as string | undefined,
           required: isRequired,
           options,
@@ -245,7 +245,7 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
           id: name,
           name,
           fieldType: VARIANT_TO_FIELD_TYPE[variant] || "Checkbox",
-          label: labelText || "Untitled Field",
+          label: labelText || undefined,
           labelType: label?.labelNode.type as string | undefined,
           required: isRequired,
           options,
@@ -303,10 +303,6 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
 export const getFieldsFromSegments = (segments: PreviewSegment[]): PlateFormField[] =>
   segments.filter((seg): seg is FieldSegment => seg.type === "field").map((seg) => seg.field);
 
-/**
- * Extracts only editable (non-button) fields from segments.
- * Used for form field count checks and auto-jump logic.
- */
 export const EDITABLE_FIELD_TYPES = new Set([
   "Input",
   "Textarea",
@@ -322,6 +318,3 @@ export const EDITABLE_FIELD_TYPES = new Set([
   "MultiSelect",
   "Ranking",
 ]);
-
-export const getEditableFieldsFromSegments = (segments: PreviewSegment[]): PlateFormField[] =>
-  getFieldsFromSegments(segments).filter((f) => EDITABLE_FIELD_TYPES.has(f.fieldType));

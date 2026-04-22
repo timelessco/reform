@@ -7,6 +7,7 @@ import {
   getVersionContent,
   getQueryClient,
 } from "@/collections";
+import { computeContentHash } from "@/lib/content-hash";
 import {
   discardFormChanges,
   publishFormVersion,
@@ -40,44 +41,33 @@ export const useFormVersionContent = (versionId: string | undefined) =>
 
 /**
  * Hook to detect if the current draft has unpublished changes.
- * Compares current content hash with the last published hash.
+ *
+ * Compares a hash of the live draft (content + customization + title + icon +
+ * cover + Group 2 settings) against `form.publishedContentHash`, which the
+ * server writes atomically at publish time (see publishFormVersion). This
+ * avoids the race window of fetching a separate version-content row and
+ * works from a single reactive source (the form listing itself).
  */
 export const useHasUnpublishedChanges = (formId: string | undefined) => {
   const { data: formData } = useForm(formId);
-  const { data: versions } = useFormVersions(formId);
-
   const form = formData?.[0];
-  const latestVersionMeta = versions?.[0];
-
-  // Fetch the latest version's full content for comparison
-  const { data: versionContentData } = useFormVersionContent(latestVersionMeta?.id);
-  const latestVersionContent = versionContentData?.[0];
-
-  const hasPublished = !!form?.lastPublishedVersionId;
-  const publishedContentHash = form?.publishedContentHash;
-  const currentContentStr = form ? JSON.stringify(form.content) : null;
-  const publishedContentStr = latestVersionContent
-    ? JSON.stringify(latestVersionContent.content)
-    : null;
-  const currentCustomizationStr = form ? JSON.stringify(form.customization ?? {}) : null;
-  const publishedCustomizationStr = latestVersionContent
-    ? JSON.stringify(latestVersionContent.customization ?? {})
-    : null;
 
   return useMemo(() => {
-    if (!formId || !publishedContentHash || !hasPublished) return false;
-    if (!publishedContentStr) return false;
-    if (currentContentStr !== publishedContentStr) return true;
-    return currentCustomizationStr !== publishedCustomizationStr;
-  }, [
-    formId,
-    publishedContentHash,
-    hasPublished,
-    currentContentStr,
-    publishedContentStr,
-    currentCustomizationStr,
-    publishedCustomizationStr,
-  ]);
+    if (!formId || !form) return false;
+    const flat = form as unknown as Record<string, unknown>;
+    const publishedHash = flat.publishedContentHash as string | null | undefined;
+    if (!flat.lastPublishedVersionId || !publishedHash) return false;
+
+    const currentHash = computeContentHash({
+      content: form.content,
+      customization: form.customization,
+      title: form.title,
+      icon: form.icon,
+      cover: form.cover,
+      settings: flat,
+    });
+    return currentHash !== publishedHash;
+  }, [formId, form]);
 };
 
 // ============================================================================
@@ -110,6 +100,18 @@ export const publishForm = (formId: string) => {
   tx.mutate(() => {
     getFormListings().update(formId, (draft) => {
       draft.status = "published";
+      // Optimistically align publishedContentHash with the about-to-be-saved
+      // snapshot so useHasUnpublishedChanges flips to "no changes" immediately,
+      // without waiting for the server roundtrip + refetch.
+      const flat = draft as unknown as Record<string, unknown>;
+      flat.publishedContentHash = computeContentHash({
+        content: draft.content,
+        customization: draft.customization,
+        title: draft.title,
+        icon: draft.icon,
+        cover: draft.cover,
+        settings: flat,
+      });
       draft.updatedAt = new Date().toISOString();
     });
   });
@@ -147,33 +149,35 @@ export const restoreVersion = async (formId: string, versionId: string) => {
 };
 
 /**
- * Discard changes and revert to last published version.
- * Optimistically updates content/title/customization from the published version.
+ * Discard changes and revert every versioned field (Groups 1–3) on the live
+ * draft back to the latest published version snapshot. Group 4 fields (slug,
+ * customDomainId, branding) stay as-is — they're live and never versioned.
+ *
+ * The server is authoritative — it reads the published version and resets
+ * every versioned column. We don't build a client-side optimistic overlay
+ * because the published version's content isn't guaranteed to be cached on
+ * the client (the version-content collection only populates once Version
+ * History is opened). After the server call, refetching the form listing
+ * pulls in the reverted state.
  */
-export const discardChanges = (formId: string) => {
+export const discardChanges = async (formId: string) => {
   const detail = getFormListings();
   const form = detail.get(formId);
   if (!form?.lastPublishedVersionId) throw new Error("No published version to revert to");
 
-  const versionCollection = getVersionContent(form.lastPublishedVersionId as string);
-  const version = versionCollection.get(form.lastPublishedVersionId as string);
-  if (!version) throw new Error("Published version not found in local state");
-
-  const tx = createTransaction({
-    mutationFn: async () => {
-      await discardFormChanges({ data: { formId } });
-      await detail.utils.refetch();
-    },
-  });
-
-  tx.mutate(() => {
-    detail.update(formId, (draft) => {
-      draft.content = version.content;
-      draft.title = version.title;
-      draft.customization = version.customization ?? {};
-      draft.updatedAt = new Date().toISOString();
-    });
-  });
-
-  return tx;
+  // Server reverts every versioned column and returns the full form row.
+  // We bypass createTransaction (mirroring restoreVersion) because there's
+  // no useful optimistic overlay to apply — the revert target isn't
+  // guaranteed cached client-side. writeUpdate syncs the row into the
+  // collection store so live queries (and the theme inline style) react.
+  const result = (await discardFormChanges({ data: { formId } })) as {
+    form?: Record<string, unknown>;
+  };
+  const current = detail.get(formId);
+  if (current && result.form) {
+    detail.utils.writeUpdate({
+      ...current,
+      ...result.form,
+    } as typeof current);
+  }
 };

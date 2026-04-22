@@ -5,7 +5,6 @@
  * form fields directly instead of reading from useFormBuilderState.
  */
 import { useMemo } from "react";
-import { toast } from "sonner";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { useStepForm } from "@/contexts/step-form-context";
 import {
@@ -62,19 +61,14 @@ export const useStepPreviewForm = ({
       onDynamicAsyncDebounceMs: 300,
     },
     onSubmit: async ({ value }) => {
-      try {
-        logger(`Step ${stepIndex + 1} submitted with values:`, value);
+      // Errors bubble to public-form-page, which renders an inline banner.
+      // No toast here — keeps the published form's bundle free of sonner.
+      logger(`Step ${stepIndex + 1} submitted with values:`, value);
 
-        if (isLastStep) {
-          await submitForm(value);
-        } else {
-          goToNextStep(value);
-        }
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Failed to process step. Please try again.";
-        toast.error(message);
-        throw error;
+      if (isLastStep) {
+        await submitForm(value);
+      } else {
+        goToNextStep(value);
       }
     },
     canSubmitWhenInvalid: false,

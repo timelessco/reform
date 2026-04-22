@@ -12,6 +12,7 @@ export type FormListing = {
   workspaceId: string;
   icon: string | null;
   formName: string;
+  sortIndex?: string | null;
   customization?: Record<string, unknown> | null;
   deletedAt?: string | null;
   submissionCount: number;
@@ -27,6 +28,7 @@ export type FormFavorite = {
   id: string;
   userId: string;
   formId: string;
+  sortIndex?: string | null;
   createdAt: string;
 };
 
@@ -79,11 +81,12 @@ type FavoriteCollectionConfig = {
   queryClient: QueryClient;
   queryFn: () => Promise<FormFavorite[]>;
   onInsert?: InsertMutationFn<FormFavorite, string | number>;
+  onUpdate?: UpdateMutationFn<FormFavorite, string | number>;
   onDelete?: DeleteMutationFn<FormFavorite, string | number>;
 };
 
 export const createFavoriteCollection = (config: FavoriteCollectionConfig) => {
-  const { queryClient, queryFn, onInsert, onDelete } = config;
+  const { queryClient, queryFn, onInsert, onUpdate, onDelete } = config;
 
   return createCollection(
     queryCollectionOptions<FormFavorite, unknown, string[], string | number>({
@@ -93,6 +96,7 @@ export const createFavoriteCollection = (config: FavoriteCollectionConfig) => {
       getKey: (item): string | number => item.id,
       staleTime: 1000 * 60 * 5,
       onInsert,
+      onUpdate,
       onDelete,
     }),
   );

@@ -25,6 +25,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { SidebarSection } from "@/components/ui/sidebar-section";
+import { FeatureGate } from "@/components/ui/feature-gate";
 import {
   ConfigCard,
   ConfigRow,
@@ -249,23 +250,6 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
               </form.Subscribe>
 
               <ConfigRow
-                label="Progress bar"
-                description="Show respondents how much of the form they have completed."
-                variant="switch"
-              >
-                <form.AppField name="progressBar">
-                  {(field) => (
-                    <Switch
-                      aria-label="Progress bar"
-                      checked={!!field.state.value}
-                      onCheckedChange={field.handleChange}
-                      size="default"
-                    />
-                  )}
-                </form.AppField>
-              </ConfigRow>
-
-              <ConfigRow
                 label={`${APP_NAME} branding`}
                 description={`Show "Made with ${APP_NAME}" on your form.`}
                 variant="switch"
@@ -277,16 +261,18 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                   >
                     Pro
                   </Badge>
-                  <form.AppField name="branding">
-                    {(field) => (
-                      <Switch
-                        aria-label="Branding"
-                        checked={!!field.state.value}
-                        onCheckedChange={field.handleChange}
-                        size="default"
-                      />
-                    )}
-                  </form.AppField>
+                  <FeatureGate requiredPlan="pro">
+                    <form.AppField name="branding">
+                      {(field) => (
+                        <Switch
+                          aria-label="Branding"
+                          checked={!!field.state.value}
+                          onCheckedChange={field.handleChange}
+                          size="default"
+                        />
+                      )}
+                    </form.AppField>
+                  </FeatureGate>
                 </div>
               </ConfigRow>
 
@@ -298,20 +284,22 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                 <div className="flex items-center gap-1.5">
                   <Badge
                     variant="secondary"
-                    className="bg-teal-100 text-teal-600 border-none text-[9px] h-4 px-1.5 uppercase"
+                    className="bg-teal-100 text-teal-600 border-none text-[9px] h-4 px-1.5"
                   >
-                    Biz
+                    Pro
                   </Badge>
-                  <form.AppField name="dataRetention">
-                    {(field) => (
-                      <Switch
-                        aria-label="Data retention"
-                        checked={!!field.state.value}
-                        onCheckedChange={field.handleChange}
-                        size="default"
-                      />
-                    )}
-                  </form.AppField>
+                  <FeatureGate requiredPlan="pro">
+                    <form.AppField name="dataRetention">
+                      {(field) => (
+                        <Switch
+                          aria-label="Data retention"
+                          checked={!!field.state.value}
+                          onCheckedChange={field.handleChange}
+                          size="default"
+                        />
+                      )}
+                    </form.AppField>
+                  </FeatureGate>
                 </div>
               </ConfigRow>
 
@@ -429,17 +417,19 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                   >
                     Pro
                   </Badge>
-                  <form.AppField name="respondentEmailNotifications">
-                    {(field) => (
-                      <Switch
-                        aria-label="Respondent email notifications"
-                        checked={!!field.state.value && hasEmailField}
-                        onCheckedChange={field.handleChange}
-                        disabled={!hasEmailField}
-                        size="default"
-                      />
-                    )}
-                  </form.AppField>
+                  <FeatureGate requiredPlan="pro">
+                    <form.AppField name="respondentEmailNotifications">
+                      {(field) => (
+                        <Switch
+                          aria-label="Respondent email notifications"
+                          checked={!!field.state.value && hasEmailField}
+                          onCheckedChange={field.handleChange}
+                          disabled={!hasEmailField}
+                          size="default"
+                        />
+                      )}
+                    </form.AppField>
+                  </FeatureGate>
                 </div>
               </ConfigRow>
 
@@ -656,23 +646,6 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
           {/* Behavior Section */}
           <SidebarSection label="Behavior" className="pb-2.75" action={<></>}>
             <ConfigCard>
-              <ConfigRow
-                label="Auto-jump"
-                description="Auto-advance to the next page when a question is answered."
-                variant="switch"
-              >
-                <form.AppField name="autoJump">
-                  {(field) => (
-                    <Switch
-                      aria-label="Auto-jump"
-                      checked={!!field.state.value}
-                      onCheckedChange={field.handleChange}
-                      size="default"
-                    />
-                  )}
-                </form.AppField>
-              </ConfigRow>
-
               <ConfigRow
                 label="Save for later"
                 description="Save answers so respondents can continue where they left off."
