@@ -1348,6 +1348,7 @@ function TimePickerInput(props: TimePickerInputProps) {
       autoCapitalize="off"
       spellCheck={false}
       translate="no"
+      aria-label={segment === "period" ? "AM/PM" : `${segment}s`}
       {...inputProps}
       disabled={isDisabled}
       readOnly={isReadOnly}
@@ -1382,6 +1383,7 @@ function TimePickerTrigger(props: ButtonProps) {
       id={triggerId}
       data-slot="time-picker-trigger"
       disabled={isDisabled}
+      aria-label="Open time picker"
       ref={composedRef}
       {...triggerProps}
       className={cn(
