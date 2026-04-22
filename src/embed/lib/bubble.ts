@@ -2,11 +2,10 @@
 // floating bubble button that opens the popup on click. Config lives on the
 // script tag's data-* attributes.
 
-import { buildIframeUrl } from "./iframe";
 import type { PopupOptions, PopupPosition } from "./types";
-import { preconnectOrigin, prefetchFormDocument, warmupFormOnIntent } from "./warmup";
+import { preconnectOrigin, warmupFormOnIntent } from "./warmup";
 
-type OpenPopupCallback = (formId: string, options: PopupOptions) => void;
+type PopupCallback = (formId: string, options: PopupOptions) => void;
 
 /** data-form-id values must be UUID-ish — guards against path traversal. */
 const FORM_ID_RE = /^[a-zA-Z0-9_-]{1,128}$/;
@@ -208,7 +207,7 @@ const createBubble = (
  * invalid — preserves the current no-bubble behavior for pages that only use
  * the `[data-form-id]`-element click trigger or the `Reform.openPopup()` API.
  */
-export const setupAutoBubble = (openPopup: OpenPopupCallback): void => {
+export const setupAutoBubble = (openPopup: PopupCallback, preMountPopup: PopupCallback): void => {
   const scriptTag = findScriptTag();
   if (!scriptTag) return;
 
@@ -225,9 +224,11 @@ export const setupAutoBubble = (openPopup: OpenPopupCallback): void => {
   // bubble never waits on the network to appear.
   const bubble = createBubble(cfg, null, origin);
 
-  // On first hover/focus/touch, prefetch the exact URL the iframe will
-  // load so the browser reuses the prefetched document when the user
-  // clicks. `buildIframeUrl` is the single source of truth for the URL.
+  // On first hover/focus/touch, pre-mount the real popup hidden. The iframe
+  // loads, React mounts, and the form is ready in the background — clicking
+  // later just reveals it. Prefetching alone didn't work because the iframe
+  // loads subresources with different credentials mode than <link rel="prefetch">,
+  // so the browser treated them as distinct cache entries and refetched on click.
   const popupOptions: PopupOptions = {
     position: cfg.position,
     width: cfg.width,
@@ -237,8 +238,7 @@ export const setupAutoBubble = (openPopup: OpenPopupCallback): void => {
     autoClose: cfg.autoClose,
     hiddenFields: cfg.hiddenFields,
   };
-  const iframeUrl = buildIframeUrl(cfg.formId, popupOptions);
-  warmupFormOnIntent(bubble, () => prefetchFormDocument(iframeUrl));
+  warmupFormOnIntent(bubble, () => preMountPopup(cfg.formId, popupOptions));
   fetchMeta(origin, cfg.formId).then((meta) => {
     if (!meta) return;
     if (meta.title) bubble.setAttribute("aria-label", meta.title);

@@ -6,6 +6,7 @@ import { forms, formVersions, user } from "@/db/schema";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { computeContentHash } from "@/lib/content-hash";
+import { purgeFormCache } from "@/lib/server-fn/cdn-cache";
 import { authForm, getActiveOrgId } from "./auth-helpers";
 
 // Maximum number of versions to keep per form (TODO: make plan-based)
@@ -34,7 +35,7 @@ export const publishFormVersion = createServerFn({ method: "POST" })
     const orgId = getActiveOrgId(context.session);
     await authForm(data.formId, context.session.user.id, orgId);
 
-    return await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       // Get current form draft
       const [form] = await tx.select().from(forms).where(eq(forms.id, data.formId));
 
@@ -144,6 +145,12 @@ export const publishFormVersion = createServerFn({ method: "POST" })
         versionNumber: nextVersionNumber,
       };
     });
+
+    // Purge CDN cache so viewers see the new version immediately. Runs after
+    // commit so a failed transaction doesn't nuke the cache for no reason.
+    void purgeFormCache(data.formId);
+
+    return result;
   });
 
 /**

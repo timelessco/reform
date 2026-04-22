@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RscTestRouteImport } from './routes/rsc-test'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as SlugRouteImport } from './routes/$slug'
 import { Route as IndexRouteImport } from './routes/index'
@@ -33,6 +34,11 @@ import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSubmissionsR
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdSettingsRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/settings'
 import { Route as AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRouteImport } from './routes/_authenticated/workspace/$workspaceId/form-builder/$formId/edit'
 
+const RscTestRoute = RscTestRouteImport.update({
+  id: '/rsc-test',
+  path: '/rsc-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
@@ -166,6 +172,7 @@ const AuthenticatedWorkspaceWorkspaceIdFormBuilderFormIdEditRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$slug': typeof SlugRoute
+  '/rsc-test': typeof RscTestRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/f/$formId': typeof FFormIdRoute
@@ -190,6 +197,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$slug': typeof SlugRoute
+  '/rsc-test': typeof RscTestRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/f/$formId': typeof FFormIdRoute
@@ -216,6 +224,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$slug': typeof SlugRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/rsc-test': typeof RscTestRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/f/$formId': typeof FFormIdRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$slug'
+    | '/rsc-test'
     | '/settings'
     | '/dashboard'
     | '/f/$formId'
@@ -266,6 +276,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$slug'
+    | '/rsc-test'
     | '/settings'
     | '/dashboard'
     | '/f/$formId'
@@ -291,6 +302,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$slug'
     | '/_authenticated'
+    | '/rsc-test'
     | '/_authenticated/settings'
     | '/_authenticated/dashboard'
     | '/f/$formId'
@@ -317,6 +329,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SlugRoute: typeof SlugRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  RscTestRoute: typeof RscTestRoute
   FFormIdRoute: typeof FFormIdRoute
   FormsFormIdRoute: typeof FormsFormIdRoute
   LoginEmailRoute: typeof LoginEmailRoute
@@ -330,6 +343,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/rsc-test': {
+      id: '/rsc-test'
+      path: '/rsc-test'
+      fullPath: '/rsc-test'
+      preLoaderRoute: typeof RscTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
@@ -571,6 +591,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SlugRoute: SlugRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  RscTestRoute: RscTestRoute,
   FFormIdRoute: FFormIdRoute,
   FormsFormIdRoute: FormsFormIdRoute,
   LoginEmailRoute: LoginEmailRoute,

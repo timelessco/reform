@@ -141,7 +141,7 @@ export const InputGroupInput = ({
     data-slot="input-group-control"
     variant={variant}
     className={cn(
-      "rounded-none border-0 bg-transparent shadow-none ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0 dark:bg-transparent dark:disabled:bg-transparent flex-1",
+      "rounded-none border-0 dark:border-0 bg-transparent shadow-none ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0 dark:bg-transparent dark:disabled:bg-transparent flex-1",
       className,
     )}
     {...props}
@@ -152,7 +152,7 @@ export const InputGroupTextarea = ({ className, ...props }: React.ComponentProps
   <Textarea
     data-slot="input-group-control"
     className={cn(
-      "rounded-none border-0 bg-transparent py-2 shadow-none ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0 dark:bg-transparent dark:disabled:bg-transparent flex-1 resize-none",
+      "rounded-none border-0 dark:border-0 bg-transparent py-2 shadow-none ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0 dark:bg-transparent dark:disabled:bg-transparent flex-1 resize-none",
       className,
     )}
     {...props}

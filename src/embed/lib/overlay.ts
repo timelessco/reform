@@ -29,6 +29,7 @@ export const createOverlay = (
   formId: string,
   options: PopupOptions,
   onClose: () => void,
+  meta: { startHidden?: boolean } = {},
 ): OverlayElements => {
   const isModal = options.layout === "modal" || options.position === "center";
   const showOverlay = options.overlay !== false || isModal;
@@ -39,6 +40,14 @@ export const createOverlay = (
   const overlay = document.createElement("div");
   overlay.className = `bf-overlay ${!showOverlay ? "bf-overlay--no-bg" : ""}`;
   overlay.setAttribute("data-bf-form-id", formId);
+
+  // Pre-mount mode: overlay sits in DOM but is invisible and non-interactive
+  // so the iframe loads + React mounts before the user clicks. Suppress the
+  // fade-in animation too — it would otherwise play once at mount and be
+  // invisible, so revealing later wouldn't animate.
+  if (meta.startHidden) {
+    applyHiddenStyles(overlay);
+  }
 
   // Click on overlay backdrop closes popup (if visible)
   if (showOverlay) {
@@ -91,8 +100,9 @@ export const createOverlay = (
 
   overlay.appendChild(popup);
 
-  // Prevent body scroll when overlay is visible
-  if (showOverlay) {
+  // Prevent body scroll when overlay is visible (deferred in startHidden mode
+  // — reveal code applies it at click time).
+  if (showOverlay && !meta.startHidden) {
     document.body.style.overflow = "hidden";
   }
 
@@ -107,6 +117,40 @@ export const createOverlay = (
     loadingEl,
     emojiEl,
   };
+};
+
+/**
+ * Reveal a pre-mounted overlay. Undoes the startHidden styles and applies
+ * scroll lock. The iframe is already loaded and React already mounted, so
+ * this is a pure style flip — no spinner, no height jump.
+ */
+export const revealOverlay = (overlay: HTMLElement, options: PopupOptions): void => {
+  const isModal = options.layout === "modal" || options.position === "center";
+  const showOverlay = options.overlay !== false || isModal;
+
+  overlay.style.visibility = "";
+  overlay.style.pointerEvents = "";
+  overlay.style.animation = "";
+
+  if (showOverlay) {
+    document.body.style.overflow = "hidden";
+  }
+};
+
+const applyHiddenStyles = (el: HTMLElement): void => {
+  el.style.visibility = "hidden";
+  el.style.pointerEvents = "none";
+  el.style.animation = "none";
+};
+
+/**
+ * Hide the overlay without removing it from the DOM so the iframe stays
+ * mounted and reopening is a pure style flip — no refetch of the form
+ * document, chunks, or fonts.
+ */
+export const hideOverlay = (overlay: HTMLElement): void => {
+  document.body.style.overflow = "";
+  applyHiddenStyles(overlay);
 };
 
 /**

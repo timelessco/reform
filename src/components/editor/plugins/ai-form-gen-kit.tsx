@@ -1,3 +1,5 @@
+"use client";
+
 import { MarkdownPlugin } from "@platejs/markdown";
 import { useBlockSelectionNodes } from "@platejs/selection/react";
 import { NodeApi, PathApi } from "platejs";

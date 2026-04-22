@@ -556,6 +556,21 @@
   font-feature-settings: "case";
 }
 
+/* Canonical text-input box used by Input/Email/Number/Link/Textarea/Time/
+   Phone/FileUpload field widgets. Light mode: subtle rgba shadow. Dark mode:
+   shadow drops, a real border takes over so the box stays legible on dark
+   surfaces. Change here to restyle every field at once. */
+@utility form-input {
+  @apply w-full rounded-lg bg-card text-foreground placeholder:text-muted-foreground/50 shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)];
+  @variant dark {
+    @apply shadow-none border border-border;
+  }
+}
+
+@utility form-input-error {
+  @apply ring-1 ring-destructive;
+}
+
 @layer utilities {
   .font-normal {
     font-weight: 450;

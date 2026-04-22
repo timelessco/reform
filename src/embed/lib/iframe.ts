@@ -39,22 +39,21 @@ export const buildIframeUrl = (formId: string, options: PopupOptions): string =>
   const baseUrl = getBaseUrl();
   const params = new URLSearchParams();
 
-  // Mark as popup mode
-  params.set("popup", "1");
-
-  // Add origin page for tracking
+  // The /forms/$formId route's validateSearch normalizes booleans to
+  // "true"/"false" and fills every optional bool with its default, then
+  // 307-redirects non-canonical URLs. Prefetch (<link rel="prefetch">) does
+  // NOT follow redirects, so a mismatched URL warms nothing and the click
+  // lands on a cold page. Emit the canonical form here — all bool params,
+  // in schema order, as "true"/"false" — so hover-prefetch and click hit
+  // the exact same cacheable URL.
+  params.set("popup", "true");
   params.set("originPage", window.location.pathname);
-
-  // Form display options
-  if (options.hideTitle) {
-    params.set("hideTitle", "1");
-  }
-  if (options.alignLeft) {
-    params.set("alignLeft", "1");
-  }
-
-  // Transparent background for seamless embedding
-  params.set("transparent", "1");
+  params.set("transparent", "true");
+  params.set("transparentBackground", "false");
+  params.set("hideTitle", options.hideTitle ? "true" : "false");
+  params.set("alignLeft", options.alignLeft ? "true" : "false");
+  params.set("dynamicHeight", "false");
+  params.set("dynamicWidth", "false");
 
   // Add hidden fields
   if (options.hiddenFields) {
@@ -66,7 +65,7 @@ export const buildIframeUrl = (formId: string, options: PopupOptions): string =>
   // Forward current page's query params (useful for UTM tracking, etc.)
   const currentParams = new URLSearchParams(window.location.search);
   currentParams.forEach((value, key) => {
-    // Don't override explicit hidden fields
+    // Don't override explicit hidden fields or canonical bool params
     if (!params.has(key)) {
       params.set(key, value);
     }

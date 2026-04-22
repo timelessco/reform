@@ -26,17 +26,35 @@ const getAdjustedColor = (color: string | undefined, isDarkMode: boolean) => {
   return color;
 };
 
+// Render a single icon via the per-icon API endpoint so the published form
+// avoids downloading the full 306 KB sprite. External `<use href>` only
+// clones the symbol's own subtree, so color is driven via CSS `color`
+// (inheritable into the referenced `fill="currentColor"`) rather than the
+// `fill` attribute (not inheritable across the reference).
+const StandaloneIcon = ({ name, color, size }: { name: string; color: string; size: string }) => (
+  <svg height={size} style={{ color }} viewBox="0 0 18 18" width={size}>
+    <use href={`/api/icons/${name}.svg#${name}`} />
+  </svg>
+);
+
 export const IconPickerPreview = ({
   icon,
   iconColor,
   iconSize = "10",
   size = "14",
   useThemeColor = false,
+  standaloneIcon = false,
 }: IconPickerPreviewProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const isDarkMode = ref.current?.closest(".dark") != null;
 
   const matchedIcon = icon ? iconMap.get(icon) : undefined;
+  const renderIcon = (color: string) => {
+    if (standaloneIcon && icon && matchedIcon) {
+      return <StandaloneIcon name={icon} color={color} size={iconSize} />;
+    }
+    return matchedIcon?.icon(color, iconSize);
+  };
 
   if (useThemeColor) {
     return (
@@ -48,7 +66,7 @@ export const IconPickerPreview = ({
           height: `${size}px`,
         }}
       >
-        {matchedIcon?.icon("currentColor", iconSize)}
+        {renderIcon("currentColor")}
       </div>
     );
   }
@@ -66,7 +84,7 @@ export const IconPickerPreview = ({
         height: `${size}px`,
       }}
     >
-      {matchedIcon?.icon(fillColor, iconSize)}
+      {renderIcon(fillColor)}
     </div>
   );
 };

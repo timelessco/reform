@@ -49,7 +49,12 @@ const extractSymbol = (sprite: string, name: string): string | null => {
   const match = sprite.match(re);
   if (!match) return null;
   const inner = sanitizeSvgFragment(match[1]);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">${inner}</svg>`;
+  // Dual-purpose output: the outer <svg> renders directly (e.g. via <img>),
+  // and the inner <symbol> is addressable via `#${name}` for external
+  // `<use href="/api/icons/${name}.svg#${name}">`. `fill="currentColor"` must
+  // live on the <symbol> itself — outer <svg> attributes don't cascade across
+  // a cross-document `<use>` reference, so without it the icon paints blank.
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><symbol id="${name}" viewBox="0 0 24 24" fill="currentColor">${inner}</symbol><use href="#${name}" fill="currentColor"/></svg>`;
   if (symbolCache.size >= MAX_CACHE_SIZE) symbolCache.clear();
   symbolCache.set(name, svg);
   return svg;
