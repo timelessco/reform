@@ -149,7 +149,11 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
               onDragOver={handleDragOver}
               onDrop={handleDrop}
             >
-              <input {...getInputProps()} className="sr-only" />
+              <input
+                {...getInputProps()}
+                className="sr-only"
+                aria-label={`${element.label || "File"} upload`}
+              />
               {hasFile ? (
                 <div className="flex flex-col items-center gap-2">
                   {previewUrl ? (
@@ -182,7 +186,7 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-1.5 text-muted-foreground/50 select-none">
+                <div className="flex flex-col items-center gap-1.5 text-muted-foreground select-none">
                   <UploadIcon className="size-5" />
                   <span className="text-sm">Click or drag to upload</span>
                   <span className="text-xs">PNG, JPG, PDF up to 10MB</span>
