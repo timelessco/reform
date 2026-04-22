@@ -104,26 +104,23 @@ const config = defineConfig({
           // pull `editor-*.js` (362 kB) and its KaTeX `editor-*.css` (7 kB)
           // just to call the helper.
           if (id.includes("vite/preload-helper")) return "vite-runtime";
-          // Pin React-adjacent shared utilities to their own chunk so Rollup
+          // Pin small shared runtime utilities to their own chunk so Rollup
           // can't absorb them into `editor`. Without this, `use-sync-external-store`
           // and `scheduler` end up owned by the editor chunk (because platejs
           // also uses them), which forces every Base UI primitive that needs
           // those utilities (e.g. `getDisabledMountTransitionStyles`, `useForm`,
           // `useDebouncedCallback`) to pull the full editor chunk + KaTeX CSS
-          // on the public form's happy path.
-          if (id.includes("node_modules/use-sync-external-store")) return "react-runtime";
-          if (id.includes("node_modules/scheduler")) return "react-runtime";
-          // Pin tiny class-name utilities that every UI component uses. Without
-          // this, Rollup's auto-chunker placed `clsx` inside the `editor` chunk
-          // (platejs happened to be its first "dominant" consumer in the graph),
-          // so every file that called `cn()` statically imported the 361 kB
-          // editor chunk just to get clsx. Same risk for tailwind-merge and cva.
+          // on the public form's happy path. Also covers tiny class-name utilities
+          // (`clsx`, `tailwind-merge`, `class-variance-authority`) that every `cn()`
+          // caller would otherwise drag into whatever chunk Rollup picks first.
+          if (id.includes("node_modules/use-sync-external-store")) return "shared-runtime";
+          if (id.includes("node_modules/scheduler")) return "shared-runtime";
           if (
             id.includes("node_modules/clsx") ||
             id.includes("node_modules/tailwind-merge") ||
             id.includes("node_modules/class-variance-authority")
           )
-            return "react-runtime";
+            return "shared-runtime";
           if (id.includes("@platejs/") || id.includes("platejs")) return "editor";
           if (id.includes("@radix-ui/")) return "ui";
           // Pin Base UI primitives to their own chunk. Without this, modules
