@@ -4,7 +4,10 @@ import { useIsomorphicLayoutEffect } from "@/hooks/use-isomorphic-layout-effect"
 import { useLazyRef } from "@/hooks/use-lazy-ref";
 import { cn } from "@/lib/utils";
 import { AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from "@/components/ui/icons";
-import { motion, useMotionValue, useTransform, animate, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
+import { ElasticSlider } from "@/components/elastic-slider/elastic-slider";
+
+const VALUE_PARSE_RE = /^(-?\d*\.?\d+)(.*)$/;
 
 interface StyleNumberInputProps {
   label: string;
@@ -39,310 +42,52 @@ export const StyleNumberInput = ({
   unit: forcedUnit,
   displayUnit,
   className,
-  valueWidth = "60px",
-  scrubber = true,
   allowAuto = false,
   isAuto = false,
   onAutoChange,
 }: StyleNumberInputProps) => {
-  const match = value?.toString().match(/^(-?\d*\.?\d+)(.*)$/);
+  const match = value?.toString().match(VALUE_PARSE_RE);
   const numValue = match ? parseFloat(match[1]) : min;
   const unit = forcedUnit ?? (match ? match[2] : "");
   const shownUnit = displayUnit ?? unit;
-  const hasAutoSlot = allowAuto && typeof onAutoChange === "function";
 
-  const [isInteracting, setIsInteracting] = React.useState(false);
-  const [isDragging, setIsDragging] = React.useState(false);
-  const [isHovered, setIsHovered] = React.useState(false);
-  const trackRef = React.useRef<HTMLDivElement>(null);
-
-  // Rubber-banding: how far past the edge the user is dragging (in px)
-  const [rubberBand, setRubberBand] = React.useState(0);
-
-  // Click-vs-drag detection refs
-  const pointerDownPos = React.useRef<{ x: number; y: number } | null>(null);
-  const isClickRef = React.useRef(true);
-  const animRef = React.useRef<ReturnType<typeof animate> | null>(null);
-  const wrapperRectRef = React.useRef<DOMRect | null>(null);
-  const CLICK_THRESHOLD = 3;
-  // Dead zone: px past the edge before rubber banding kicks in
-  const DEAD_ZONE = 12;
-  const AUTO_SLOT_PERCENT = hasAutoSlot ? 8 : 0;
-
-  const visualMax = max === Infinity ? 1000 : max;
-  const visualMin = min === -Infinity ? 0 : min;
-  const valueRange = Math.max(visualMax - visualMin, Number.EPSILON);
-  const numericTrackPercent = 100 - AUTO_SLOT_PERCENT;
-  const totalStepCount = Math.max(0, Math.round((max - min) / step));
-  const hashMarks = React.useMemo(() => {
-    if (totalStepCount <= 1) return [];
-
-    const MAX_VISIBLE_HASH_MARKS = 12;
-    const stepStride = Math.max(1, Math.ceil(totalStepCount / MAX_VISIBLE_HASH_MARKS));
-    const marks: number[] = [];
-
-    for (let stepIndex = stepStride; stepIndex < totalStepCount; stepIndex += stepStride) {
-      marks.push(AUTO_SLOT_PERCENT + (stepIndex / totalStepCount) * numericTrackPercent);
-    }
-
-    return marks;
-  }, [AUTO_SLOT_PERCENT, numericTrackPercent, totalStepCount]);
-  const percentage = isAuto
-    ? 0
-    : AUTO_SLOT_PERCENT +
-      Math.max(0, Math.min(1, (numValue - visualMin) / valueRange)) * numericTrackPercent;
-
-  // Motion values for imperative animation
-  const fillPercent = useMotionValue(percentage);
-  const fillWidth = useTransform(fillPercent, (pct) => (pct <= 0 ? "0px" : `calc(${pct}% + 8px)`));
-  const handleLeft = useTransform(fillPercent, (pct) =>
-    pct <= 0 ? "3px" : `max(3px, calc(${pct}% - 2.5px))`,
+  const formatValue = React.useCallback(
+    (n: number) => (isAuto ? "Auto" : `${n}${shownUnit}`),
+    [isAuto, shownUnit],
   );
 
-  // Sync fill from props when not interacting
-  React.useEffect(() => {
-    if (!isInteracting && !animRef.current) {
-      fillPercent.jump(percentage);
-    }
-  }, [percentage, isInteracting, fillPercent]);
-
-  const positionToState = React.useCallback(
-    (clientX: number) => {
-      const rect = wrapperRectRef.current;
-      if (!rect) {
-        return isAuto ? ({ kind: "auto" } as const) : ({ kind: "value", value: numValue } as const);
-      }
-
-      const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-
-      if (hasAutoSlot && pct <= AUTO_SLOT_PERCENT / 100) {
-        return { kind: "auto" } as const;
-      }
-
-      const numericPct = hasAutoSlot
-        ? Math.max(0, Math.min(1, (pct - AUTO_SLOT_PERCENT / 100) / (1 - AUTO_SLOT_PERCENT / 100)))
-        : pct;
-      const rawValue = visualMin + numericPct * valueRange;
-      return {
-        kind: "value",
-        value: Math.max(min, Math.min(max, rawValue)),
-      } as const;
-    },
-    [AUTO_SLOT_PERCENT, hasAutoSlot, isAuto, max, min, numValue, valueRange, visualMin],
+  const handleValueChange = React.useCallback(
+    (n: number) => onChange(`${n}${unit}`),
+    [onChange, unit],
   );
-
-  // Compute rubber band overflow (px past track edge, with diminishing returns)
-  const computeRubberBand = React.useCallback((clientX: number) => {
-    const rect = wrapperRectRef.current;
-    if (!rect) return 0;
-    const overflowLeft = rect.left - clientX;
-    const overflowRight = clientX - rect.right;
-    const overflow = Math.max(overflowLeft, overflowRight);
-    if (overflow <= DEAD_ZONE) return 0;
-    // Diminishing returns: logarithmic stretch, capped at 6px to stay within parent padding
-    const pastDead = overflow - DEAD_ZONE;
-    return Math.min(Math.log1p(pastDead) * 3, 6);
-  }, []);
-
-  const percentFromValue = React.useCallback(
-    (v: number) =>
-      AUTO_SLOT_PERCENT +
-      Math.max(0, Math.min(1, (v - visualMin) / valueRange)) * numericTrackPercent,
-    [AUTO_SLOT_PERCENT, numericTrackPercent, valueRange, visualMin],
-  );
-
-  const commitValue = React.useCallback(
-    (clientX: number) => {
-      const nextState = positionToState(clientX);
-      if (nextState.kind === "auto") {
-        if (animRef.current) {
-          animRef.current.stop();
-          animRef.current = null;
-        }
-        fillPercent.jump(0);
-        onAutoChange?.();
-        return { kind: "auto", percent: 0 } as const;
-      }
-
-      const snapped = Math.round(nextState.value / step) * step;
-      const clamped = Math.max(min, Math.min(max, snapped));
-      const newPct = percentFromValue(clamped);
-      onChange(`${clamped}${unit}`);
-      return { kind: "value", percent: newPct } as const;
-    },
-    [fillPercent, max, min, onAutoChange, onChange, percentFromValue, positionToState, step, unit],
-  );
-
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    pointerDownPos.current = { x: e.clientX, y: e.clientY };
-    isClickRef.current = true;
-    setIsInteracting(true);
-
-    // Capture rect at pointer down for stable reference during drag
-    if (trackRef.current) {
-      wrapperRectRef.current = trackRef.current.getBoundingClientRect();
-    }
-  };
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isInteracting || !pointerDownPos.current) return;
-
-    const dx = e.clientX - pointerDownPos.current.x;
-    const dy = e.clientY - pointerDownPos.current.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    // Promote to drag once past threshold
-    if (isClickRef.current && distance > CLICK_THRESHOLD) {
-      isClickRef.current = false;
-      setIsDragging(true);
-    }
-
-    if (!isClickRef.current) {
-      const nextState = commitValue(e.clientX);
-      if (animRef.current) {
-        animRef.current.stop();
-        animRef.current = null;
-      }
-      fillPercent.jump(nextState.percent);
-
-      // Rubber banding when dragging past edges
-      if (scrubber) setRubberBand(computeRubberBand(e.clientX));
-    }
-  };
-  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isInteracting) return;
-
-    if (isClickRef.current) {
-      // Click → spring animate to clicked position
-      const nextState = commitValue(e.clientX);
-
-      if (scrubber) {
-        if (animRef.current) animRef.current.stop();
-        animRef.current = animate(fillPercent, nextState.percent, {
-          type: "spring",
-          stiffness: 300,
-          damping: 25,
-          mass: 0.8,
-          onComplete: () => {
-            animRef.current = null;
-          },
-        });
-      } else {
-        fillPercent.jump(nextState.percent);
-      }
-    }
-
-    setIsInteracting(false);
-    setIsDragging(false);
-    setRubberBand(0);
-    pointerDownPos.current = null;
-  };
-
-  const isActive = isHovered || isInteracting;
-
-  // Rubber band stretch direction: which edge is being pushed
-  const isAtMin = isAuto || numValue <= min;
-  const isAtMax = numValue >= max;
-  const stretchDirection = rubberBand > 0 ? (isAtMin ? "left" : isAtMax ? "right" : null) : null;
 
   return (
-    <motion.div
-      ref={trackRef}
+    <ElasticSlider
+      label={label}
+      value={numValue}
+      onValueChange={handleValueChange}
+      min={min}
+      max={max}
+      step={step}
+      formatValue={formatValue}
+      allowAuto={allowAuto}
+      isAuto={isAuto}
+      onAutoChange={onAutoChange}
+      aria-label={isAuto ? `${label}: Auto` : `${label}: ${numValue}${shownUnit}`}
       className={cn(
-        "relative flex items-center rounded-lg overflow-hidden border border-border/60 bg-background h-[34px] text-[13px] select-none cursor-pointer group",
+        // Match the original 34px row height + override the slider's defaults to
+        // the StyleNumberInput palette (background card, secondary fill).
+        "h-[34px] [--elastic-slider-height:34px]",
+        "[--elastic-slider-bg:var(--background)]",
+        "[--elastic-slider-fill:var(--secondary)]",
+        "[--elastic-slider-fill-active:var(--secondary)]",
+        // Restore the original label/value typography.
+        "[&_[data-slot=elastic-slider-label]]:text-base [&_[data-slot=elastic-slider-label]]:font-normal [&_[data-slot=elastic-slider-label]]:start-2",
+        "[&_[data-slot=elastic-slider-value]]:text-[13px] [&_[data-slot=elastic-slider-value]]:tabular-nums [&_[data-slot=elastic-slider-value]]:end-[11px]",
         className,
       )}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      animate={
-        scrubber
-          ? {
-              scaleX: rubberBand > 0 ? 1 + rubberBand * 0.002 : 1,
-              x:
-                stretchDirection === "left"
-                  ? -rubberBand * 0.4
-                  : stretchDirection === "right"
-                    ? rubberBand * 0.4
-                    : 0,
-            }
-          : undefined
-      }
-      transition={
-        scrubber
-          ? rubberBand > 0
-            ? { duration: 0 }
-            : { type: "spring", stiffness: 400, damping: 20, mass: 0.5 }
-          : undefined
-      }
-      style={
-        scrubber
-          ? { transformOrigin: stretchDirection === "left" ? "right center" : "left center" }
-          : undefined
-      }
-    >
-      {scrubber && (
-        <>
-          {/* Filled track — extends past knob, rounded edge wraps around it */}
-          <motion.div
-            className="absolute left-0 top-0 bottom-0 rounded-[inherit] pointer-events-none bg-secondary"
-            style={{ width: fillWidth, maxWidth: "100%" }}
-          />
-
-          {/* Handle knob — sits inside the fill area with margin */}
-          <motion.div
-            className="absolute my-1.5 top-[3px] bottom-[3px] w-[4px] rounded-full z-20 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150"
-            style={{ left: handleLeft }}
-            animate={{
-              backgroundColor: isDragging
-                ? "color-mix(in srgb, var(--color-foreground) 55%, transparent)"
-                : isActive
-                  ? "color-mix(in srgb, var(--color-foreground) 40%, transparent)"
-                  : "color-mix(in srgb, var(--color-foreground) 28%, transparent)",
-            }}
-            transition={{ duration: 0.1 }}
-          />
-
-          {/* Hash marks based on the actual numeric step positions */}
-          <div className="absolute inset-0 flex items-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-            {hashMarks.map((markPercent) => {
-              const isFilled = markPercent <= percentage;
-              return (
-                <div
-                  key={markPercent}
-                  className="absolute w-px h-2.5 rounded-full transition-opacity duration-150"
-                  style={{
-                    left: `${markPercent}%`,
-                    backgroundColor: isFilled
-                      ? "color-mix(in srgb, var(--color-foreground) 30%, transparent)"
-                      : "color-mix(in srgb, var(--color-foreground) 12%, transparent)",
-                  }}
-                />
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      <div className="relative pl-2  text-base font-normal flex-1 z-10 pointer-events-none transition-colors group-hover:text-foreground">
-        {label}
-      </div>
-
-      {/* Read-only value display */}
-      <div
-        className={cn(
-          "relative flex-none h-full flex items-center justify-end pr-2.75 z-10 pointer-events-none tabular-nums font-mono transition-colors",
-          isActive ? "text-foreground" : "text-muted-foreground",
-        )}
-        style={{ width: valueWidth }}
-        aria-label={isAuto ? `${label}: Auto` : `${label}: ${numValue}${shownUnit}`}
-      >
-        {isAuto ? "Auto" : `${numValue}${shownUnit}`}
-      </div>
-    </motion.div>
+      trackClassName={cn("border border-border/60", className)}
+    />
   );
 };
 

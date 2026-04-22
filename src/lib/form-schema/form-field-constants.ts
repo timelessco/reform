@@ -30,16 +30,18 @@ export const INPUT_TYPE_TO_FIELD_TYPE: Record<string, string> = {
 };
 
 /**
- * Determine `required` from the input node, with migration fallback:
- * if the input doesn't have `required` but the preceding label is a formLabel
- * with `required`, use the formLabel's value.
+ * Determine `required` from the input node, with fallback to the preceding
+ * label node. Any node type accepted by `ALLOWED_LABEL_TYPES` (formLabel,
+ * paragraph, headings, blockquote) can carry `required` — this keeps the
+ * preview/published form consistent with the editor's required badge, which
+ * is rendered for all of those block types.
  */
 export const resolveRequired = (
   inputNode: Record<string, unknown>,
   labelNode: Record<string, unknown> | null,
 ): boolean => {
   if (inputNode.required != null) return Boolean(inputNode.required);
-  if (labelNode && (labelNode.type as string) === "formLabel") {
+  if (labelNode && ALLOWED_LABEL_TYPES.has(labelNode.type as string)) {
     return Boolean(labelNode.required);
   }
   return false;

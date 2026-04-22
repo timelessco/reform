@@ -3,8 +3,9 @@
 // script tag's data-* attributes.
 
 import type { PopupOptions, PopupPosition } from "./types";
+import { preconnectOrigin, warmupFormOnIntent } from "./warmup";
 
-type OpenPopupCallback = (formId: string, options: PopupOptions) => void;
+type PopupCallback = (formId: string, options: PopupOptions) => void;
 
 /** data-form-id values must be UUID-ish — guards against path traversal. */
 const FORM_ID_RE = /^[a-zA-Z0-9_-]{1,128}$/;
@@ -206,7 +207,7 @@ const createBubble = (
  * invalid — preserves the current no-bubble behavior for pages that only use
  * the `[data-form-id]`-element click trigger or the `Reform.openPopup()` API.
  */
-export const setupAutoBubble = (openPopup: OpenPopupCallback): void => {
+export const setupAutoBubble = (openPopup: PopupCallback, preMountPopup: PopupCallback): void => {
   const scriptTag = findScriptTag();
   if (!scriptTag) return;
 
@@ -215,9 +216,29 @@ export const setupAutoBubble = (openPopup: OpenPopupCallback): void => {
 
   const origin = getOriginFromScript(scriptTag);
 
+  // Open the TCP+TLS connection to the form origin eagerly so the iframe
+  // request on click doesn't wait on handshake RTTs.
+  preconnectOrigin(origin);
+
   // Mount immediately with default icon; upgrade once meta arrives so the
   // bubble never waits on the network to appear.
   const bubble = createBubble(cfg, null, origin);
+
+  // On first hover/focus/touch, pre-mount the real popup hidden. The iframe
+  // loads, React mounts, and the form is ready in the background — clicking
+  // later just reveals it. Prefetching alone didn't work because the iframe
+  // loads subresources with different credentials mode than <link rel="prefetch">,
+  // so the browser treated them as distinct cache entries and refetched on click.
+  const popupOptions: PopupOptions = {
+    position: cfg.position,
+    width: cfg.width,
+    hideTitle: cfg.hideTitle,
+    alignLeft: cfg.alignLeft,
+    overlay: cfg.darkOverlay,
+    autoClose: cfg.autoClose,
+    hiddenFields: cfg.hiddenFields,
+  };
+  warmupFormOnIntent(bubble, () => preMountPopup(cfg.formId, popupOptions));
   fetchMeta(origin, cfg.formId).then((meta) => {
     if (!meta) return;
     if (meta.title) bubble.setAttribute("aria-label", meta.title);

@@ -1,3 +1,5 @@
+"use client";
+
 import { useChat as useBaseChat } from "@ai-sdk/react";
 import type { Faker } from "@faker-js/faker";
 import { AIChatPlugin, aiCommentToRange } from "@platejs/ai/react";

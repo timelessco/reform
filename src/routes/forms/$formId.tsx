@@ -8,8 +8,8 @@ import type { PublicFormEmbedConfig } from "@/routes/forms/-components/public-fo
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
-import { getPublishedFormById } from "@/lib/server-fn/public-form-view";
-import { generateThemeCss, getGoogleFontLinkUrl } from "@/lib/theme/generate-theme-css";
+import { getPublicFormViewRSC } from "@/lib/server-fn/public-form-view-rsc";
+import { generateDualThemeCss, getGoogleFontLinkUrl } from "@/lib/theme/generate-theme-css";
 
 type PublicTheme = "light" | "dark" | "system";
 
@@ -92,13 +92,10 @@ const PublicFormRoute = () => {
     dynamicWidth: search.dynamicWidth,
   };
 
-  // Override customization mode with resolved theme so tokens match
-  const customization = useMemo(
-    () => (rawCustomization ? { ...rawCustomization, mode: resolvedTheme } : rawCustomization),
-    [rawCustomization, resolvedTheme],
-  );
-  const themeCss = useMemo(() => generateThemeCss(customization), [customization]);
-  const googleFontUrl = useMemo(() => getGoogleFontLinkUrl(customization), [customization]);
+  // Dual-mode CSS — both light and dark tokens are emitted; the root `.dark`
+  // class picks one purely in CSS, avoiding any hydration flash.
+  const themeCss = useMemo(() => generateDualThemeCss(rawCustomization), [rawCustomization]);
+  const googleFontUrl = useMemo(() => getGoogleFontLinkUrl(rawCustomization), [rawCustomization]);
 
   // Show toggle only when creator picked "system" and we're not in popup/transparent embed
   const showThemeToggle = defaultMode === "system" && !search.popup && !isTransparent;
@@ -114,6 +111,15 @@ const PublicFormRoute = () => {
         formId={formId}
         isPopup={search.popup}
         embedConfig={embedConfig}
+        rsc={
+          loaderData?.form
+            ? {
+                steps: loaderData.steps,
+                thankYou: loaderData.thankYou,
+                stepCount: loaderData.stepCount,
+              }
+            : undefined
+        }
         themeToggle={
           showThemeToggle
             ? { current: resolvedTheme, onChange: (m) => handleThemeChange(m) }
@@ -126,13 +132,14 @@ const PublicFormRoute = () => {
 
 export const Route = createFileRoute("/forms/$formId")({
   // SSR loader - fetches form data on the server for SEO
-  loader: async ({ params }) => getPublishedFormById({ data: { id: params.formId } }),
+  loader: async ({ params }) => getPublicFormViewRSC({ data: { id: params.formId } }),
   // SEO meta tags
   head: ({ loaderData, params }) => {
     const defaultMode =
       (loaderData?.form?.customization as Record<string, string> | undefined)?.defaultMode ||
       "system";
     const formId = params.formId;
+    const preloadUrls = loaderData?.preloadModuleUrls ?? [];
     return {
       meta: [
         {
@@ -147,10 +154,24 @@ export const Route = createFileRoute("/forms/$formId")({
             : "Fill out this form",
         },
       ],
+      links: preloadUrls.map((href) => ({
+        rel: "modulepreload",
+        href,
+        crossOrigin: "",
+      })),
       scripts: [
         {
           // Apply theme before paint — viewer override > creator default > system
           children: `(function(){try{var d=document.documentElement;var override=null;try{override=window.localStorage.getItem("bf-form-theme:${formId}");}catch(e){}var def=${JSON.stringify(defaultMode)};var pick=override||def;var m=pick==="system"?(window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"):pick;d.classList.remove("light","dark");d.classList.add(m);d.style.colorScheme=m;}catch(e){}})();`,
+        },
+        {
+          // Pre-hydration: as soon as the SSR'd form HTML is parsed, tell the
+          // parent popup (a) the measured height so it can size the iframe
+          // without a jump, and (b) that the form is visually ready so the
+          // popup spinner veil can be hidden — no need to wait for every CSS/JS
+          // chunk to finish downloading. The React ResizeObserver + useEffect
+          // in public-form-page take over after hydration.
+          children: `(function(){try{if(window.parent===window)return;var p=new URLSearchParams(window.location.search);var isPopup=(p.get("popup")==="1"||p.get("popup")==="true");var isDynamic=(p.get("dynamicHeight")==="1"||p.get("dynamicHeight")==="true");if(!isPopup&&!isDynamic)return;var post=function(){var el=document.getElementById("bf-form-container");if(!el)return;var h=el.scrollHeight;if(h>0)window.parent.postMessage(JSON.stringify({event:"Reform.Resize",height:h}),"*");if(isPopup)window.parent.postMessage(JSON.stringify({event:"Reform.FormLoaded"}),"*");};if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",post,{once:true});}else{post();}}catch(e){}})();`,
         },
       ],
     };

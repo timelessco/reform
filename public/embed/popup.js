@@ -1,7 +1,28 @@
 "use strict";
 (() => {
-  var M = /^[a-zA-Z0-9_-]{1,128}$/,
-    A = new Set([
+  var L = (t, e, n) => {
+      if (document.head.querySelector(`link[rel="${t}"][href="${e}"]`)) return;
+      let i = document.createElement("link");
+      ((i.rel = t),
+        (i.href = e),
+        n !== void 0 && (i.crossOrigin = n),
+        document.head.appendChild(i));
+    },
+    T = (t) => {
+      t !== window.location.origin && (L("preconnect", t, "anonymous"), L("dns-prefetch", t));
+    },
+    C = (t, e) => {
+      let n = !1,
+        o = () => {
+          n || ((n = !0), e());
+        },
+        i = { once: !0, passive: !0 };
+      (t.addEventListener("pointerenter", o, i),
+        t.addEventListener("focus", o, i),
+        t.addEventListener("touchstart", o, i));
+    };
+  var z = /^[a-zA-Z0-9_-]{1,128}$/,
+    G = new Set([
       "formId",
       "position",
       "width",
@@ -11,202 +32,257 @@
       "alignLeft",
       "autoClose",
     ]),
-    R = /^(?:\p{Extended_Pictographic}\uFE0F?){1,3}$/u,
-    F = () => {
+    V = /^(?:\p{Extended_Pictographic}\uFE0F?){1,3}$/u,
+    W = () => {
       let t = document.getElementsByTagName("script");
       for (let e = t.length - 1; e >= 0; e--)
         if ((t[e].src || "").includes("/embed/popup.js")) return t[e];
       return null;
     },
-    _ = (t) => {
+    Y = (t) => {
       if (t?.src)
         try {
           return new URL(t.src).origin;
         } catch {}
       return window.location.origin;
     },
-    S = (t) => {
+    X = (t) => {
       let e = t.dataset || {},
-        o = e.formId && M.test(e.formId) ? e.formId : "";
-      if (!o) return null;
-      let n = Object.create(null);
-      for (let [s, a] of Object.entries(e)) !A.has(s) && typeof a == "string" && (n[s] = a);
+        n = e.formId && z.test(e.formId) ? e.formId : "";
+      if (!n) return null;
+      let o = Object.create(null);
+      for (let [s, l] of Object.entries(e)) !G.has(s) && typeof l == "string" && (o[s] = l);
       let i = e.position;
       return {
-        formId: o,
+        formId: n,
         position: i === "bottom-left" || i === "center" ? i : "bottom-right",
         width: e.width ? parseInt(e.width, 10) : 376,
         darkOverlay: e.darkOverlay === "1" || e.overlay === "1",
         hideTitle: e.hideTitle === "1",
         alignLeft: e.alignLeft === "1",
         autoClose: e.autoClose ? parseInt(e.autoClose, 10) : 0,
-        hiddenFields: n,
+        hiddenFields: o,
       };
     },
-    B = async (t, e) => {
+    K = async (t, e) => {
       try {
-        let o = await fetch(`${t}/api/forms/${encodeURIComponent(e)}/meta`, {
+        let n = await fetch(`${t}/api/forms/${encodeURIComponent(e)}/meta`, {
           method: "GET",
           credentials: "omit",
         });
-        return o.ok ? await o.json() : null;
+        return n.ok ? await n.json() : null;
       } catch {
         return null;
       }
     },
-    N = (t, e, o) => {
-      for (; t.firstChild; ) t.removeChild(t.firstChild);
-      if (o && /^(https?:\/\/|\/)/.test(o)) {
-        let i = document.createElement("img");
-        ((i.className = "bf-bubble__icon"), (i.src = o), (i.alt = ""), t.appendChild(i));
-        return;
-      }
-      if (o && R.test(o)) {
-        let i = document.createElement("span");
-        ((i.className = "bf-bubble__emoji"), (i.textContent = o), t.appendChild(i));
-        return;
-      }
-      let n = o && /^[a-z0-9-]+$/i.test(o) ? o : "file-04";
-      fetch(`${e}/api/icons/${n}.svg`)
-        .then((i) => (i.ok ? i.text() : null))
-        .then((i) => {
-          if (!i) return;
-          let s = new DOMParser().parseFromString(i, "image/svg+xml").documentElement;
-          if (!s || s.tagName.toLowerCase() !== "svg") return;
-          s.setAttribute("class", "bf-bubble__icon");
-          let a = document.importNode(s, !0);
-          for (; t.firstChild; ) t.removeChild(t.firstChild);
-          t.appendChild(a);
-        })
-        .catch(() => {});
+    v = "http://www.w3.org/2000/svg",
+    O = () => {
+      let t = document.createElementNS(v, "svg");
+      (t.setAttribute("class", "bf-bubble__icon"),
+        t.setAttribute("viewBox", "0 0 24 24"),
+        t.setAttribute("fill", "none"),
+        t.setAttribute("stroke", "currentColor"),
+        t.setAttribute("stroke-width", "2"),
+        t.setAttribute("stroke-linecap", "round"),
+        t.setAttribute("stroke-linejoin", "round"));
+      let e = document.createElementNS(v, "path");
+      (e.setAttribute("d", "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"),
+        t.appendChild(e));
+      let n = document.createElementNS(v, "polyline");
+      return (n.setAttribute("points", "14 2 14 8 20 8"), t.appendChild(n), t);
     },
-    $ = (t, e, o) => {
-      let n = document.createElement("button");
+    b = (t, e) => {
+      for (; t.firstChild; ) t.removeChild(t.firstChild);
+      t.appendChild(e);
+    },
+    k = (t, e, n) => {
+      if (n && /^(https?:\/\/|\/)/.test(n)) {
+        let i = document.createElement("img");
+        ((i.className = "bf-bubble__icon"), (i.src = n), (i.alt = ""), b(t, i));
+        return;
+      }
+      if (n && V.test(n)) {
+        let i = document.createElement("span");
+        ((i.className = "bf-bubble__emoji"), (i.textContent = n), b(t, i));
+        return;
+      }
+      if (!(n && /^[a-z0-9-]+$/i.test(n))) {
+        b(t, O());
+        return;
+      }
+      (b(t, O()),
+        fetch(`${e}/api/icons/${n}.svg`)
+          .then((i) => (i.ok ? i.text() : null))
+          .then((i) => {
+            if (!i) return;
+            let s = new DOMParser().parseFromString(i, "image/svg+xml").documentElement;
+            !s ||
+              s.tagName.toLowerCase() !== "svg" ||
+              (s.setAttribute("class", "bf-bubble__icon"), b(t, document.importNode(s, !0)));
+          })
+          .catch(() => {}));
+    },
+    q = (t, e, n) => {
+      let o = document.createElement("button");
       return (
-        (n.type = "button"),
-        (n.className = `bf-bubble bf-bubble--${t.position}`),
-        n.setAttribute("aria-label", e?.title || "Open form"),
-        N(n, o, e?.icon),
-        document.body.appendChild(n),
-        n
+        (o.type = "button"),
+        (o.className = `bf-bubble bf-bubble--${t.position}`),
+        o.setAttribute("aria-label", e?.title || "Open form"),
+        k(o, n, e?.icon),
+        document.body.appendChild(o),
+        o
       );
     },
-    g = async (t) => {
-      let e = F();
-      if (!e) return;
-      let o = S(e);
+    H = (t, e) => {
+      let n = W();
+      if (!n) return;
+      let o = X(n);
       if (!o) return;
-      let n = _(e),
-        i = await B(n, o.formId),
-        r = $(o, i, n);
-      r.addEventListener("click", () => {
-        (r.classList.add("bf-bubble--hidden"),
-          t(o.formId, {
-            position: o.position,
-            width: o.width,
-            hideTitle: o.hideTitle,
-            alignLeft: o.alignLeft,
-            overlay: o.darkOverlay,
-            autoClose: o.autoClose,
-            hiddenFields: o.hiddenFields,
-            onClose: () => {
-              r.classList.remove("bf-bubble--hidden");
-            },
-          }));
-      });
+      let i = Y(n);
+      T(i);
+      let r = q(o, null, i),
+        s = {
+          position: o.position,
+          width: o.width,
+          hideTitle: o.hideTitle,
+          alignLeft: o.alignLeft,
+          overlay: o.darkOverlay,
+          autoClose: o.autoClose,
+          hiddenFields: o.hiddenFields,
+        };
+      (C(r, () => e(o.formId, s)),
+        K(i, o.formId).then((l) => {
+          l && (l.title && r.setAttribute("aria-label", l.title), l.icon && k(r, i, l.icon));
+        }),
+        r.addEventListener("click", () => {
+          (r.classList.add("bf-bubble--hidden"),
+            t(o.formId, {
+              position: o.position,
+              width: o.width,
+              hideTitle: o.hideTitle,
+              alignLeft: o.alignLeft,
+              overlay: o.darkOverlay,
+              autoClose: o.autoClose,
+              hiddenFields: o.hiddenFields,
+              onClose: () => {
+                r.classList.remove("bf-bubble--hidden");
+              },
+            }));
+        }));
     };
-  var U = () => {
+  var J = () => {
       let t = document.getElementsByTagName("script");
       for (let e = t.length - 1; e >= 0; e--) {
-        let o = t[e].src;
-        if (o?.includes("/embed/popup.js"))
+        let n = t[e].src;
+        if (n?.includes("/embed/popup.js"))
           try {
-            return new URL(o).origin;
+            return new URL(n).origin;
           } catch {}
       }
       return window.location.origin;
     },
-    D = (t, e) => {
-      let o = U(),
-        n = new URLSearchParams();
+    Z = (t, e) => {
+      let n = J(),
+        o = new URLSearchParams();
       if (
-        (n.set("popup", "1"),
-        n.set("originPage", window.location.pathname),
-        e.hideTitle && n.set("hideTitle", "1"),
-        e.alignLeft && n.set("alignLeft", "1"),
-        n.set("transparent", "1"),
+        (o.set("popup", "true"),
+        o.set("originPage", window.location.pathname),
+        o.set("transparent", "true"),
+        o.set("transparentBackground", "false"),
+        o.set("hideTitle", e.hideTitle ? "true" : "false"),
+        o.set("alignLeft", e.alignLeft ? "true" : "false"),
+        o.set("dynamicHeight", "false"),
+        o.set("dynamicWidth", "false"),
         e.hiddenFields)
       )
-        for (let [r, s] of Object.entries(e.hiddenFields)) n.set(r, s);
+        for (let [r, s] of Object.entries(e.hiddenFields)) o.set(r, s);
       return (
         new URLSearchParams(window.location.search).forEach((r, s) => {
-          n.has(s) || n.set(s, r);
+          o.has(s) || o.set(s, r);
         }),
-        `${o}/forms/${t}?${n.toString()}`
+        `${n}/forms/${t}?${o.toString()}`
       );
     },
-    y = (t, e, o) => {
-      let n = document.createElement("iframe");
-      ((n.className = "bf-iframe"),
-        n.setAttribute("title", "Reform"),
-        n.setAttribute("frameborder", "0"),
-        n.setAttribute("allow", "fullscreen"),
-        n.setAttribute("data-bf-form-id", t),
-        (n.style.height = "400px"));
-      let i = D(t, e);
-      return ((n.src = i), o.appendChild(n), n);
+    x = (t, e, n) => {
+      let o = document.createElement("iframe");
+      ((o.className = "bf-iframe"),
+        o.setAttribute("title", "Reform"),
+        o.setAttribute("frameborder", "0"),
+        o.setAttribute("allow", "fullscreen"),
+        o.setAttribute("data-bf-form-id", t),
+        (o.style.height = "400px"));
+      let i = Z(t, e);
+      return ((o.src = i), n.appendChild(o), o);
     };
-  var x = (t, e) => {
-      let o = Math.min(600, window.innerHeight - 40),
-        n = Math.min(e + 2, o);
-      t.style.height = `${n}px`;
+  var I = (t, e) => {
+      let n = Math.min(600, window.innerHeight - 40),
+        o = Math.min(e + 2, n);
+      t.style.height = `${o}px`;
     },
-    v = (t) => {
+    M = (t) => {
       t.remove();
     };
-  var z =
+  var Q =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Close popup</title><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
-  var w = (t, e, o) => {
-      let n = e.layout === "modal" || e.position === "center",
-        i = e.overlay !== !1 || n,
-        r = e.position || "bottom-right",
-        s = e.width || 376,
+  var E = (t, e, n, o = {}) => {
+      let i = e.layout === "modal" || e.position === "center",
+        r = e.overlay !== !1 || i,
+        s = e.position || "bottom-right",
+        l = e.width || 376,
         a = document.createElement("div");
-      ((a.className = `bf-overlay ${i ? "" : "bf-overlay--no-bg"}`),
+      ((a.className = `bf-overlay ${r ? "" : "bf-overlay--no-bg"}`),
         a.setAttribute("data-bf-form-id", t),
-        i &&
-          a.addEventListener("click", (H) => {
-            H.target === a && o();
+        o.startHidden &&
+          ((a.style.visibility = "hidden"),
+          (a.style.pointerEvents = "none"),
+          (a.style.animation = "none")),
+        r &&
+          a.addEventListener("click", (D) => {
+            D.target === a && n();
           }));
-      let l = document.createElement("div");
-      ((l.className = `bf-popup bf-popup--${n ? "center" : r}`),
-        Object.assign(l.style, { width: `${s}px`, maxHeight: "600px" }));
-      let c = document.createElement("button");
-      ((c.className = "bf-close-btn"),
-        (c.innerHTML = z),
-        c.setAttribute("aria-label", "Close form"),
-        c.addEventListener("click", o));
-      let d = document.createElement("div");
-      d.className = "bf-iframe-container";
+      let c = document.createElement("div");
+      ((c.className = `bf-popup bf-popup--${i ? "center" : s}`),
+        Object.assign(c.style, { width: `${l}px`, maxHeight: "600px" }));
+      let d = document.createElement("button");
+      ((d.className = "bf-close-btn"),
+        (d.innerHTML = Q),
+        d.setAttribute("aria-label", "Close form"),
+        d.addEventListener("click", n));
+      let m = document.createElement("div");
+      m.className = "bf-iframe-container";
       let f = document.createElement("div");
       ((f.className = "bf-loading"), (f.innerHTML = '<div class="bf-loading-spinner"></div>'));
-      let p;
+      let u;
       return (
         e.emoji?.text &&
-          ((p = document.createElement("div")),
-          (p.className = `bf-emoji ${G(e.emoji.animation)}`),
-          (p.textContent = e.emoji.text)),
-        l.appendChild(c),
-        l.appendChild(f),
-        l.appendChild(d),
-        p && l.appendChild(p),
-        a.appendChild(l),
-        i && (document.body.style.overflow = "hidden"),
+          ((u = document.createElement("div")),
+          (u.className = `bf-emoji ${ee(e.emoji.animation)}`),
+          (u.textContent = e.emoji.text)),
+        c.appendChild(d),
+        c.appendChild(f),
+        c.appendChild(m),
+        u && c.appendChild(u),
+        a.appendChild(c),
+        r && !o.startHidden && (document.body.style.overflow = "hidden"),
         document.body.appendChild(a),
-        { overlay: a, popup: l, iframeContainer: d, closeBtn: c, loadingEl: f, emojiEl: p }
+        { overlay: a, popup: c, iframeContainer: m, closeBtn: d, loadingEl: f, emojiEl: u }
       );
     },
-    E = (t) => {
+    P = (t, e) => {
+      let n = e.layout === "modal" || e.position === "center",
+        o = e.overlay !== !1 || n;
+      ((t.style.visibility = ""),
+        (t.style.pointerEvents = ""),
+        (t.style.animation = ""),
+        o && (document.body.style.overflow = "hidden"));
+    },
+    j = (t) => {
+      ((document.body.style.overflow = ""),
+        (t.style.visibility = "hidden"),
+        (t.style.pointerEvents = "none"),
+        (t.style.animation = "none"));
+    },
+    A = (t) => {
       ((document.body.style.overflow = ""),
         (t.style.opacity = "0"),
         (t.style.transition = "opacity 0.15s ease"),
@@ -214,15 +290,15 @@
           t.remove();
         }, 150));
     },
-    C = (t, e) => {
-      let o = Math.min(600, window.innerHeight - 40),
-        n = Math.min(e, o);
-      ((t.style.height = `${n}px`), (t.style.maxHeight = `${n}px`));
+    F = (t, e) => {
+      let n = Math.min(600, window.innerHeight - 40),
+        o = Math.min(e, n);
+      ((t.style.height = `${o}px`), (t.style.maxHeight = `${o}px`));
     },
-    L = (t) => {
+    y = (t) => {
       t.style.display = "none";
     },
-    G = (t) => {
+    ee = (t) => {
       switch (t) {
         case "wave":
           return "bf-emoji--wave";
@@ -234,10 +310,10 @@
           return "";
       }
     },
-    T = (t) => {
+    _ = (t) => {
       t && (t.style.display = "none");
     };
-  var V = `
+  var te = `
 /* Keyframe Animations */
 @keyframes bf-wave {
   0%, 100% { transform: rotate(0deg); }
@@ -475,17 +551,17 @@
   scrollbar-width: none;
 }
 `,
-    I = () => {
+    R = () => {
       if (document.getElementById("bf-popup-styles")) return;
       let t = document.createElement("style");
-      ((t.id = "bf-popup-styles"), (t.textContent = V), document.head.appendChild(t));
+      ((t.id = "bf-popup-styles"), (t.textContent = te), document.head.appendChild(t));
     };
-  var W = (t) => {
+  var oe = (t) => {
       let e = {},
-        o = t.dataset.layout;
-      (o === "modal" || o === "default") && (e.layout = o);
-      let n = t.dataset.position;
-      (n === "bottom-right" || n === "bottom-left" || n === "center") && (e.position = n);
+        n = t.dataset.layout;
+      (n === "modal" || n === "default") && (e.layout = n);
+      let o = t.dataset.position;
+      (o === "bottom-right" || o === "bottom-left" || o === "center") && (e.position = o);
       let i = t.dataset.width;
       (i && (e.width = parseInt(i, 10)),
         t.dataset.alignLeft === "1" && (e.alignLeft = !0),
@@ -494,9 +570,9 @@
       let r = t.dataset.emojiText,
         s = t.dataset.emojiAnimation;
       r && (e.emoji = { text: r, animation: s || "none" });
-      let a = t.dataset.autoClose;
-      a && (e.autoClose = parseInt(a, 10));
-      let l = {};
+      let l = t.dataset.autoClose;
+      l && (e.autoClose = parseInt(l, 10));
+      let a = {};
       for (let [c, d] of Object.entries(t.dataset))
         [
           "formId",
@@ -510,25 +586,25 @@
           "emojiAnimation",
           "autoClose",
         ].includes(c) ||
-          (d !== void 0 && (l[c] = d));
-      return (Object.keys(l).length > 0 && (e.hiddenFields = l), e);
+          (d !== void 0 && (a[c] = d));
+      return (Object.keys(a).length > 0 && (e.hiddenFields = a), e);
     },
-    h = (t) => {
+    w = (t) => {
       let e = new URLSearchParams(t.replace(/^#/, "")),
-        o = e.get("form-open"),
-        n = {},
+        n = e.get("form-open"),
+        o = {},
         i = e.get("position");
-      ((i === "bottom-right" || i === "bottom-left" || i === "center") && (n.position = i),
-        e.get("align-left") === "1" && (n.alignLeft = !0),
-        e.get("hide-title") === "1" && (n.hideTitle = !0),
-        e.get("overlay") === "1" && (n.overlay = !0));
+      ((i === "bottom-right" || i === "bottom-left" || i === "center") && (o.position = i),
+        e.get("align-left") === "1" && (o.alignLeft = !0),
+        e.get("hide-title") === "1" && (o.hideTitle = !0),
+        e.get("overlay") === "1" && (o.overlay = !0));
       let r = e.get("width");
-      r && (n.width = parseInt(r, 10));
+      r && (o.width = parseInt(r, 10));
       let s = e.get("emoji-text"),
-        a = e.get("emoji-animation");
-      s && (n.emoji = { text: s, animation: a || "none" });
-      let l = e.get("auto-close");
-      l && (n.autoClose = parseInt(l, 10));
+        l = e.get("emoji-animation");
+      s && (o.emoji = { text: s, animation: l || "none" });
+      let a = e.get("auto-close");
+      a && (o.autoClose = parseInt(a, 10));
       let c = {},
         d = new Set([
           "form-open",
@@ -542,89 +618,124 @@
           "auto-close",
         ]);
       return (
-        e.forEach((f, p) => {
-          d.has(p) || (c[p] = f);
+        e.forEach((m, f) => {
+          d.has(f) || (c[f] = m);
         }),
-        Object.keys(c).length > 0 && (n.hiddenFields = c),
-        { formId: o, options: n }
+        Object.keys(c).length > 0 && (o.hiddenFields = c),
+        { formId: n, options: o }
       );
     },
-    j = (t) => {
+    S = (t) => {
       document.addEventListener("click", (e) => {
-        let o = e.target,
-          n = o.closest("[data-form-id]");
-        if (n) {
+        let n = e.target,
+          o = n.closest("[data-form-id]");
+        if (o) {
           e.preventDefault();
-          let r = n.dataset.formId;
+          let r = o.dataset.formId;
           if (r) {
-            let s = W(n);
+            let s = oe(o);
             t(r, s);
           }
           return;
         }
-        let i = o.closest("a");
+        let i = n.closest("a");
         if (i?.href?.includes("form-open=")) {
           e.preventDefault();
           let r = i.href.indexOf("#");
           if (r !== -1) {
             let s = i.href.substring(r),
-              { formId: a, options: l } = h(s);
-            a && t(a, l);
+              { formId: l, options: a } = w(s);
+            l && t(l, a);
           }
         }
       });
     },
-    k = (t) => {
+    N = (t) => {
       let { hash: e } = window.location;
       if (e?.includes("form-open=")) {
-        let { formId: o, options: n } = h(e);
-        o &&
+        let { formId: n, options: o } = w(e);
+        n &&
           setTimeout(() => {
-            t(o, n);
+            t(n, o);
           }, 100);
       }
     },
-    O = (t) => {
+    B = (t) => {
       window.addEventListener("hashchange", () => {
         let { hash: e } = window.location;
         if (e?.includes("form-open=")) {
-          let { formId: o, options: n } = h(e);
-          o && t(o, n);
+          let { formId: n, options: o } = w(e);
+          n && t(n, o);
         }
       });
     };
-  var u = new Map(),
-    m = (t, e = {}) => {
-      if (u.has(t)) {
-        console.warn(`[Reform] Popup for form ${t} is already open`);
+  var p = new Map(),
+    $ = (t) => {
+      if (t.onOpen)
+        try {
+          t.onOpen();
+        } catch (e) {
+          console.error("[Reform] onOpen callback error:", e);
+        }
+    },
+    ne = (t, e = {}) => {
+      if (p.has(t)) return;
+      let n = E(t, e, () => g(t), { startHidden: !0 }),
+        o = x(t, e, n.iframeContainer),
+        i = {
+          formId: t,
+          options: e,
+          container: n.popup,
+          iframe: o,
+          overlay: n.overlay,
+          loadingEl: n.loadingEl,
+          hidden: !0,
+        };
+      (p.set(t, i),
+        o.addEventListener("load", () => {
+          y(n.loadingEl);
+        }));
+    },
+    h = (t, e = {}) => {
+      let n = p.get(t);
+      if (n) {
+        if (!n.hidden) {
+          console.warn(`[Reform] Popup for form ${t} is already open`);
+          return;
+        }
+        ((n.options = e), (n.hidden = !1), n.overlay && P(n.overlay, e), $(e));
         return;
       }
-      let o = w(t, e, () => b(t)),
-        n = y(t, e, o.iframeContainer),
-        i = { formId: t, options: e, container: o.popup, iframe: n, overlay: o.overlay };
-      if (
-        (u.set(t, i),
-        n.addEventListener("load", () => {
-          L(o.loadingEl);
+      let o = E(t, e, () => g(t)),
+        i = x(t, e, o.iframeContainer),
+        r = {
+          formId: t,
+          options: e,
+          container: o.popup,
+          iframe: i,
+          overlay: o.overlay,
+          loadingEl: o.loadingEl,
+        };
+      (p.set(t, r),
+        i.addEventListener("load", () => {
+          y(o.loadingEl);
         }),
-        e.onOpen)
-      )
-        try {
-          e.onOpen();
-        } catch (r) {
-          console.error("[Reform] onOpen callback error:", r);
-        }
+        $(e));
     },
-    b = (t) => {
-      let e = u.get(t);
-      if (e && (v(e.iframe), e.overlay && E(e.overlay), u.delete(t), e.options.onClose))
+    g = (t) => {
+      let e = p.get(t);
+      if (!(!e || e.hidden) && (e.overlay && j(e.overlay), (e.hidden = !0), e.options.onClose))
         try {
           e.options.onClose();
-        } catch (o) {
-          console.error("[Reform] onClose callback error:", o);
+        } catch (n) {
+          console.error("[Reform] onClose callback error:", n);
         }
     },
-    Y = (t) => {
+    ie = (t) => {
+      let e = p.get(t);
+      e && (M(e.iframe), e.overlay && A(e.overlay), p.delete(t));
+    },
+    re = (t) => {
       let e;
       try {
         e = typeof t.data == "string" ? JSON.parse(t.data) : t.data;
@@ -632,62 +743,56 @@
         return;
       }
       if (!e?.event?.startsWith("Reform.")) return;
-      let o;
-      for (let n of u.values())
-        if (n.iframe.contentWindow === t.source) {
-          o = n;
+      let n;
+      for (let o of p.values())
+        if (o.iframe.contentWindow === t.source) {
+          n = o;
           break;
         }
-      if (o)
+      if (n)
         switch (e.event) {
           case "Reform.FormLoaded":
+            n.loadingEl && y(n.loadingEl);
             break;
           case "Reform.Resize":
-            typeof e.height == "number" && (x(o.iframe, e.height), C(o.container, e.height));
+            typeof e.height == "number" && (I(n.iframe, e.height), F(n.container, e.height));
             break;
           case "Reform.FormSubmitted":
-            if (o.options.onSubmit)
+            if (n.options.onSubmit)
               try {
-                o.options.onSubmit(e.payload);
-              } catch (n) {
-                console.error("[Reform] onSubmit callback error:", n);
+                n.options.onSubmit(e.payload);
+              } catch (o) {
+                console.error("[Reform] onSubmit callback error:", o);
               }
-            o.options.autoClose &&
-              o.options.autoClose > 0 &&
+            n.options.autoClose &&
+              n.options.autoClose > 0 &&
               setTimeout(() => {
-                b(o?.formId);
-              }, o.options.autoClose);
+                g(n?.formId);
+              }, n.options.autoClose);
             break;
           case "Reform.PageView":
-            if (o.options.onPageView && "page" in e)
+            if (n.options.onPageView && "page" in e)
               try {
-                o.options.onPageView(e.page);
-              } catch (n) {
-                console.error("[Reform] onPageView callback error:", n);
+                n.options.onPageView(e.page);
+              } catch (o) {
+                console.error("[Reform] onPageView callback error:", o);
               }
             if ("page" in e && e.page > 1) {
-              let n = o.overlay;
-              if (n) {
-                let i = n.querySelector(".bf-emoji");
-                i && T(i);
+              let o = n.overlay;
+              if (o) {
+                let i = o.querySelector(".bf-emoji");
+                i && _(i);
               }
             }
             break;
           case "Reform.Close":
-            b(o.formId);
+            g(n.formId);
             break;
         }
     },
-    P = () => {
-      (I(),
-        j(m),
-        k(m),
-        O(m),
-        window.addEventListener("message", Y),
-        g(m).catch((t) => {
-          console.error("[Reform] setupAutoBubble error:", t);
-        }));
+    U = () => {
+      (R(), S(h), N(h), B(h), window.addEventListener("message", re), H(h, ne));
     };
-  window.Reform = { openPopup: m, closePopup: b };
-  document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", P) : P();
+  window.Reform = { openPopup: h, closePopup: g, destroyPopup: ie };
+  document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", U) : U();
 })();

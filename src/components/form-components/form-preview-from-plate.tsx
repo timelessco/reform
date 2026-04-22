@@ -9,7 +9,7 @@ import { extractFormHeader } from "@/lib/editor/transform-plate-to-form";
 import { transformPlateForPreview } from "@/lib/editor/transform-plate-for-preview";
 import type { PreviewSegment } from "@/lib/editor/transform-plate-for-preview";
 import { DEFAULT_ICON } from "@/lib/config/app-config";
-import { cn, isValidUrl } from "@/lib/utils";
+import { cn, DEFAULT_ICON_NAME, isValidUrl } from "@/lib/utils";
 import type { PublicFormSettings } from "@/types/form-settings";
 import { IconPickerPreview } from "@/components/icon-picker";
 import { AnimatePresence, motion } from "motion/react";
@@ -181,11 +181,12 @@ const PreviewFormHeader = ({
         <div className={iconWrapClass} data-bf-logo-emoji-container={hasCover ? "true" : undefined}>
           <span data-bf-logo-icon={isLogoMinimal ? "minimal" : ""}>
             <IconPickerPreview
-              icon={null}
+              icon={DEFAULT_ICON_NAME}
               iconColor={undefined}
               useThemeColor
               iconSize="48"
               size={logoCircleSize}
+              standaloneIcon
             />
           </span>
         </div>
@@ -219,6 +220,7 @@ const PreviewFormHeader = ({
             useThemeColor={!iconColor}
             iconSize="48"
             size={logoCircleSize}
+            standaloneIcon
           />
         </span>
       </div>
@@ -294,7 +296,7 @@ const PreviewFormHeader = ({
 const RenderThankYouContent = ({ nodes, onReset }: { nodes: Value; onReset?: () => void }) => {
   const { t } = useTranslation();
   return (
-    <div data-bf-field-list className="space-y-4">
+    <div data-bf-field-list>
       <StaticContentBlock nodes={nodes} />
       {onReset && (
         <div className="flex justify-center pt-4">
@@ -364,7 +366,29 @@ export const FormPreviewFromPlate = ({
   const cover = hasHeaderNode ? (headerFromContent.cover ?? undefined) : legacyCover;
 
   // Transform Plate content into chunked preview segments
-  const { steps, thankYouNodes } = useMemo(() => transformPlateForPreview(content), [content]);
+  const { steps: rawSteps, thankYouNodes } = useMemo(
+    () => transformPlateForPreview(content),
+    [content],
+  );
+
+  // Field-by-field mode: re-chunk so each field becomes its own step, with
+  // preceding static content carried into the same step as the next field.
+  const steps = useMemo(() => {
+    if (settings?.presentationMode !== "field-by-field") return rawSteps;
+    const flattened: PreviewSegment[][] = [];
+    let pending: PreviewSegment[] = [];
+    for (const step of rawSteps) {
+      for (const seg of step) {
+        pending.push(seg);
+        if (seg.type === "field") {
+          flattened.push(pending);
+          pending = [];
+        }
+      }
+    }
+    if (pending.length > 0) flattened.push(pending);
+    return flattened.length > 0 ? flattened : rawSteps;
+  }, [rawSteps, settings?.presentationMode]);
 
   // Show placeholder if no segments found
   if (steps.length === 0 || steps.flat().length === 0) {
@@ -582,7 +606,6 @@ const FormPreviewContent = ({
               stepIndex={currentStep}
               segments={currentStepSegments}
               isLastStep={isLastStep}
-              autoJump={settings?.autoJump}
             />
           </motion.div>
         </AnimatePresence>

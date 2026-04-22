@@ -186,15 +186,16 @@ export const FormButtonElement = ({ className, children, ...props }: PlateElemen
 
   return (
     <PlateElement
-      className={cn("m-0 px-0 py-1", isPrevious ? "float-left" : "overflow-hidden flex", className)}
+      className={cn("m-0 px-0", isPrevious ? "float-left" : "overflow-hidden flex", className)}
       {...props}
+      attributes={{ ...props.attributes, "data-bf-chrome": "" }}
     >
       {/* Hidden children to maintain Slate structure */}
       <span className="hidden">{children}</span>
       {/* Non-editable button visual - onMouseDown prevents cursor placement */}
       <div
         className={cn(
-          "inline-flex items-center gap-1 group",
+          "inline-flex items-center gap-1 group py-2.5",
           !isPrevious && isMultiStep && "ml-auto",
         )}
         contentEditable={false}
@@ -213,8 +214,8 @@ export const FormButtonElement = ({ className, children, ...props }: PlateElemen
           )}
         >
           {isPrevious && <ChevronLeftIcon className="h-4 w-4" />}
-          {buttonRole === "submit" && <CheckIcon className="h-4 w-4" />}
           <span>{displayText}</span>
+          {buttonRole === "submit" && <CheckIcon className="h-4 w-4" />}
           {buttonRole === "next" && <ChevronRightIcon className="h-4 w-4" />}
         </span>
         {/* Gear icon on right when button is left-aligned (so button touches left edge) */}

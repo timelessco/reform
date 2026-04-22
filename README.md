@@ -30,13 +30,12 @@ A modern form builder application that lets you create, customize, and share bea
 | Payments     | [Polar](https://polar.sh)                                                                                          |
 | File Uploads | [UploadThing](https://uploadthing.com)                                                                             |
 | Monitoring   | [Sentry](https://sentry.io)                                                                                        |
-| Server       | [Nitro](https://nitro.unjs.io) + [Caddy](https://caddyserver.com) (local HTTPS)                                    |
+| Server       | [Nitro](https://nitro.unjs.io)                                                                                     |
 
 ## Prerequisites
 
 - [Bun](https://bun.sh) (runtime and package manager)
 - [PostgreSQL](https://www.postgresql.org) database
-- [Caddy](https://caddyserver.com) (for local HTTPS development)
 
 ## Getting Started
 
@@ -74,21 +73,21 @@ A modern form builder application that lets you create, customize, and share bea
    bun dev
    ```
 
-   This starts both Caddy (HTTPS proxy) and the Vite dev server. Open the URL printed in the terminal.
+   Open the URL printed in the terminal.
 
 ## Scripts
 
-| Command           | Description                             |
-| ----------------- | --------------------------------------- |
-| `bun dev`         | Start dev server with Caddy HTTPS proxy |
-| `bun build`       | Production build                        |
-| `bun start`       | Start production server                 |
-| `bun test`        | Run tests with Vitest                   |
-| `bun lint`        | Lint with oxlint + knip                 |
-| `bun fmt`         | Format with oxfmt                       |
-| `bun check`       | Run all checks (Ultracite)              |
-| `bun fix`         | Auto-fix lint and format issues         |
-| `bun db:generate` | Generate Drizzle migrations             |
-| `bun db:migrate`  | Run database migrations                 |
-| `bun db:push`     | Push schema changes directly            |
-| `bun db:studio`   | Open Drizzle Studio                     |
+| Command           | Description                     |
+| ----------------- | ------------------------------- |
+| `bun dev`         | Start the Vite dev server       |
+| `bun build`       | Production build                |
+| `bun start`       | Start production server         |
+| `bun test`        | Run tests with Vitest           |
+| `bun lint`        | Lint with oxlint + knip         |
+| `bun fmt`         | Format with oxfmt               |
+| `bun check`       | Run all checks (Ultracite)      |
+| `bun fix`         | Auto-fix lint and format issues |
+| `bun db:generate` | Generate Drizzle migrations     |
+| `bun db:migrate`  | Run database migrations         |
+| `bun db:push`     | Push schema changes directly    |
+| `bun db:studio`   | Open Drizzle Studio             |

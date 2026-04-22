@@ -1,3 +1,5 @@
+"use client";
+
 import { MarkdownPlugin } from "@platejs/markdown";
 import { useBlockSelectionNodes } from "@platejs/selection/react";
 import { NodeApi, PathApi } from "platejs";
@@ -146,7 +148,7 @@ const AIFormGenMenu = () => {
   const handleSubmit = useCallback(
     (prompt: string, image?: { url: string; name: string } | null) => {
       setGenerationError(null);
-      submit(prompt, image);
+      submit(prompt, image ? [image] : undefined);
     },
     [submit],
   );

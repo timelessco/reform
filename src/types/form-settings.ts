@@ -10,6 +10,8 @@ export type PopupAnimation = "fade" | "slide" | "scale";
 
 export type EmbedType = "standard" | "popup" | "fullPage";
 
+export type PresentationMode = "card" | "field-by-field";
+
 // ============================================================================
 // Form Settings Interface (matches settings fields on forms table)
 // ============================================================================
@@ -20,6 +22,7 @@ export interface FormSettings {
   redirectUrl: string | null;
   redirectDelay: number;
   progressBar: boolean;
+  presentationMode: PresentationMode;
   branding: boolean;
   dataRetention: boolean;
   dataRetentionDays: number | null;
@@ -43,7 +46,6 @@ export interface FormSettings {
   preventDuplicateSubmissions: boolean;
 
   // Behavior
-  autoJump: boolean;
   saveAnswersForLater: boolean;
 
   /**
@@ -72,8 +74,8 @@ export interface FormSettings {
 export interface PublicFormSettings {
   // Display
   progressBar: boolean;
+  presentationMode: PresentationMode;
   branding: boolean;
-  autoJump: boolean;
   saveAnswersForLater: boolean;
   redirectOnCompletion: boolean;
   redirectUrl: string | null;
@@ -93,21 +95,42 @@ export interface PublicFormSettings {
 
 export const defaultPublicFormSettings: PublicFormSettings = {
   progressBar: false,
+  presentationMode: "card",
   branding: true,
-  autoJump: false,
-  saveAnswersForLater: false,
+  saveAnswersForLater: true,
   redirectOnCompletion: false,
   redirectUrl: null,
   redirectDelay: 0,
   language: "English",
   passwordProtect: false,
   closeForm: false,
-  closedFormMessage: null,
+  closedFormMessage: "This form is now closed.",
   closeOnDate: false,
   closeDate: null,
   limitSubmissions: false,
   maxSubmissions: null,
   preventDuplicateSubmissions: false,
+};
+
+/**
+ * Merge a partial source of PublicFormSettings fields (typically a
+ * version-snapshot jsonb or a live form doc) with the defaults. Any `null` or
+ * `undefined` field in `source` falls back to the default.
+ */
+export const buildPublicFormSettings = (
+  source: Partial<PublicFormSettings> | null | undefined,
+  overrides: Partial<PublicFormSettings> = {},
+): PublicFormSettings => {
+  const merged = { ...defaultPublicFormSettings };
+  if (source) {
+    for (const key of Object.keys(merged) as (keyof PublicFormSettings)[]) {
+      if (source[key] !== undefined) {
+        // biome-ignore lint/suspicious/noExplicitAny: generic merge
+        (merged as any)[key] = source[key];
+      }
+    }
+  }
+  return { ...merged, ...overrides };
 };
 
 // ============================================================================
@@ -119,6 +142,7 @@ export const defaultFormSettings: Omit<FormSettings, "createdAt" | "updatedAt"> 
   redirectUrl: null,
   redirectDelay: 0,
   progressBar: false,
+  presentationMode: "card",
   branding: true,
   dataRetention: false,
   dataRetentionDays: null,
@@ -136,7 +160,6 @@ export const defaultFormSettings: Omit<FormSettings, "createdAt" | "updatedAt"> 
   limitSubmissions: false,
   maxSubmissions: null,
   preventDuplicateSubmissions: false,
-  autoJump: false,
   saveAnswersForLater: true,
   customization: null,
 };

@@ -1,28 +1,16 @@
 import type { PlateElementProps } from "platejs/react";
 
-import { PlateElement, useEditorSelector, useFocused } from "platejs/react";
+import { PlateElement } from "platejs/react";
 
 import { UploadIcon } from "@/components/ui/icons";
+import { RequiredBadgeButton } from "@/components/ui/required-badge-button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useFormInputNode } from "@/hooks/use-form-input-node";
 import { cn } from "@/lib/utils";
 
 export const FormFileUploadElement = ({ className, children, ...props }: PlateElementProps) => {
   const { attributes, element, ...rest } = props;
-
-  const focused = useFocused();
-  const isSelected = useEditorSelector(
-    (ed) => {
-      if (!ed.selection) return false;
-      const path = ed.api.findPath(element);
-      if (!path) return false;
-      const focusPath = ed.selection.focus.path;
-      if (focusPath.length < path.length) return false;
-      for (let i = 0; i < path.length; i++) {
-        if (focusPath[i] !== path[i]) return false;
-      }
-      return true;
-    },
-    [element],
-  );
+  const { focused, isSelected, required } = useFormInputNode(element);
 
   return (
     <PlateElement
@@ -44,6 +32,20 @@ export const FormFileUploadElement = ({ className, children, ...props }: PlateEl
         <span className="text-sm">Click or drag to upload</span>
         <span className="text-xs">PNG, JPG, PDF up to 10MB</span>
       </div>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <span
+              contentEditable={false}
+              className="absolute top-2 right-2 flex items-center justify-center text-muted-foreground select-none"
+            />
+          }
+        >
+          <UploadIcon className="size-3.5" />
+        </TooltipTrigger>
+        <TooltipContent side="left">File upload</TooltipContent>
+      </Tooltip>
+      <RequiredBadgeButton required={required} path={props.path} />
     </PlateElement>
   );
 };

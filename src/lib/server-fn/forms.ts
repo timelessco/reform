@@ -6,7 +6,9 @@ import { customDomains, forms, member, submissions, workspaces } from "@/db/sche
 import { RESERVED_SLUGS } from "@/lib/config/plan-config";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
+import { purgeFormCache } from "@/lib/server-fn/cdn-cache";
 import { authForm, getActiveOrgId } from "./auth-helpers";
+import { assertPlanForFormSettings, getOrgPlan } from "./plan-helpers";
 
 const serializeForm = (form: typeof forms.$inferSelect) => ({
   ...form,
@@ -39,8 +41,8 @@ export const createForm = createServerFn({ method: "POST" })
       redirectUrl: z.string().nullable().optional(),
       redirectDelay: z.number().optional(),
       progressBar: z.boolean().optional(),
+      presentationMode: z.enum(["card", "field-by-field"]).optional(),
       branding: z.boolean().optional(),
-      autoJump: z.boolean().optional(),
       saveAnswersForLater: z.boolean().optional(),
       selfEmailNotifications: z.boolean().optional(),
       notificationEmail: z.string().nullable().optional(),
@@ -59,6 +61,7 @@ export const createForm = createServerFn({ method: "POST" })
       dataRetention: z.boolean().optional(),
       dataRetentionDays: z.number().nullable().optional(),
       customization: z.record(z.string(), z.unknown()).optional(),
+      sortIndex: z.string().nullable().optional(),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -84,8 +87,8 @@ export const createForm = createServerFn({ method: "POST" })
         redirectUrl: data.redirectUrl,
         redirectDelay: data.redirectDelay,
         progressBar: data.progressBar,
+        presentationMode: data.presentationMode,
         branding: data.branding,
-        autoJump: data.autoJump,
         saveAnswersForLater: data.saveAnswersForLater,
         selfEmailNotifications: data.selfEmailNotifications,
         notificationEmail: data.notificationEmail,
@@ -104,6 +107,7 @@ export const createForm = createServerFn({ method: "POST" })
         dataRetention: data.dataRetention,
         dataRetentionDays: data.dataRetentionDays,
         customization: data.customization,
+        sortIndex: data.sortIndex,
         createdAt: now,
         updatedAt: now,
       })
@@ -134,8 +138,8 @@ export const updateForm = createServerFn({ method: "POST" })
       redirectUrl: z.string().nullable().optional(),
       redirectDelay: z.number().optional(),
       progressBar: z.boolean().optional(),
+      presentationMode: z.enum(["card", "field-by-field"]).optional(),
       branding: z.boolean().optional(),
-      autoJump: z.boolean().optional(),
       saveAnswersForLater: z.boolean().optional(),
       selfEmailNotifications: z.boolean().optional(),
       notificationEmail: z.string().nullable().optional(),
@@ -154,12 +158,18 @@ export const updateForm = createServerFn({ method: "POST" })
       dataRetention: z.boolean().optional(),
       dataRetentionDays: z.number().nullable().optional(),
       customization: z.record(z.string(), z.unknown()).optional(),
+      sortIndex: z.string().nullable().optional(),
     }),
   )
   .handler(async ({ data, context }) => {
     const { id, updatedAt: clientUpdatedAt, ...updateData } = data;
     const orgId = getActiveOrgId(context.session);
     await authForm(id, context.session.user.id, orgId);
+    await assertPlanForFormSettings(orgId, {
+      branding: updateData.branding,
+      respondentEmailNotifications: updateData.respondentEmailNotifications,
+      dataRetention: updateData.dataRetention,
+    });
 
     const [form] = await db
       .update(forms)
@@ -169,6 +179,14 @@ export const updateForm = createServerFn({ method: "POST" })
       })
       .where(eq(forms.id, id))
       .returning();
+
+    // `branding` is the one live (non-versioned) field that the public view
+    // reads — its changes must bust the CDN tag. Versioned fields can't be
+    // handled here; they change the public response only on republish, which
+    // owns its own purge.
+    if (updateData.branding !== undefined) {
+      void purgeFormCache(id);
+    }
 
     return { form: serializeForm(form) };
   });
@@ -181,6 +199,7 @@ export const deleteForm = createServerFn({ method: "POST" })
     await authForm(data.id, context.session.user.id, orgId);
 
     const [form] = await db.delete(forms).where(eq(forms.id, data.id)).returning();
+    void purgeFormCache(data.id);
 
     return { form: serializeForm(form) };
   });
@@ -198,6 +217,7 @@ export const getFormListings = createServerFn({ method: "GET" })
         workspaceId: forms.workspaceId,
         icon: forms.icon,
         formName: forms.formName,
+        sortIndex: forms.sortIndex,
         submissionCount: count(submissions.id),
       })
       .from(forms)
@@ -340,6 +360,11 @@ export const assignFormDomain = createServerFn({ method: "POST" })
     await authForm(formId, context.session.user.id, orgId);
 
     if (customDomainId !== null) {
+      const plan = await getOrgPlan(orgId);
+      if (plan === "free") {
+        throw new Error("Custom domains require a Pro subscription. Please upgrade to continue.");
+      }
+
       // Verify the domain exists and belongs to the same org
       const [domain] = await db
         .select()

@@ -8,12 +8,13 @@ import {
   formVisits,
   member,
   submissions,
+  userWorkspaceOrder,
   workspaces,
 } from "@/db/schema";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { createServerFn } from "@tanstack/react-start";
-import { count, eq, inArray } from "drizzle-orm";
+import { and, count, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { authWorkspace, getActiveOrgId } from "./auth-helpers";
 
@@ -135,7 +136,7 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
 export const getWorkspaces = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
-    // Use a single JOIN query instead of membership -> workspaces waterfall
+    const userId = context.session.user.id;
     const workspaceList = await db
       .select({
         id: workspaces.id,
@@ -144,10 +145,18 @@ export const getWorkspaces = createServerFn({ method: "GET" })
         createdByUserId: workspaces.createdByUserId,
         createdAt: workspaces.createdAt,
         updatedAt: workspaces.updatedAt,
+        sortIndex: userWorkspaceOrder.sortIndex,
       })
       .from(workspaces)
       .innerJoin(member, eq(workspaces.organizationId, member.organizationId))
-      .where(eq(member.userId, context.session.user.id))
+      .leftJoin(
+        userWorkspaceOrder,
+        and(
+          eq(userWorkspaceOrder.workspaceId, workspaces.id),
+          eq(userWorkspaceOrder.userId, userId),
+        ),
+      )
+      .where(eq(member.userId, userId))
       .orderBy(workspaces.createdAt);
 
     return {
@@ -157,4 +166,36 @@ export const getWorkspaces = createServerFn({ method: "GET" })
         updatedAt: workspace.updatedAt.toISOString(),
       })),
     };
+  });
+
+export const reorderWorkspace = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(
+    z.object({
+      workspaceId: z.string().uuid(),
+      sortIndex: z.string(),
+    }),
+  )
+  .handler(async ({ data, context }) => {
+    const userId = context.session.user.id;
+    const orgId = getActiveOrgId(context.session);
+    await authWorkspace(data.workspaceId, userId, orgId);
+
+    const id = `${userId}:${data.workspaceId}`;
+    const now = new Date();
+
+    await db
+      .insert(userWorkspaceOrder)
+      .values({
+        id,
+        userId,
+        workspaceId: data.workspaceId,
+        sortIndex: data.sortIndex,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: userWorkspaceOrder.id,
+        set: { sortIndex: data.sortIndex, updatedAt: now },
+      });
   });

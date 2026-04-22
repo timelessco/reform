@@ -47,4 +47,11 @@ export type IconPickerPreviewProps = {
    * instead of inline iconColor. iconColor is ignored when this is true.
    */
   useThemeColor?: boolean;
+  /**
+   * When true, renders the icon via the per-icon API endpoint
+   * (`/api/icons/<name>.svg#<name>`) instead of the shared sprite. Shipping
+   * only the one icon saves ~306 KB on the published form's initial load;
+   * the sprite is still used everywhere else (icon picker, form builder).
+   */
+  standaloneIcon?: boolean;
 };

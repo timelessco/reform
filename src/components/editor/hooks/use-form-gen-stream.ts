@@ -1,8 +1,12 @@
+"use client";
+
 import { experimental_useObject as useObject } from "@ai-sdk/react";
+import { PathApi } from "platejs";
 import type { TElement } from "platejs";
 import type { PlateEditor } from "platejs/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { AI_DIFF_KEY } from "@/components/editor/plugins/ai-diff-kit";
 import { applyOp, canLiveUpdate, liveUpdateOp } from "@/lib/editor/apply-op";
 import type { AppliedOp, ApplyContext } from "@/lib/editor/apply-op";
 import { formGenSchema, isOpReady } from "@/lib/ai/ops-schema";
@@ -16,7 +20,7 @@ type UseObjectReturn = {
   stop: () => void;
 };
 
-type ImagePart = { url: string; name: string } | null | undefined;
+export type ImagePart = { url: string; name: string };
 
 const ADDITIVE_INTENT_PATTERN =
   /\b(add|append|insert|include|introduce|attach|create another|one more|another|additional|extra|more (steps?|pages?|sections?|fields?|questions?|options?))\b/i;
@@ -60,9 +64,9 @@ const THEME_INTENT_PATTERN =
 const FORM_BUILDING_PATTERN =
   /\b(create\s+(a|an|the)\s+(form|page|field|section|application|survey)|build\s+(a|an|the)|generate\s+(a|an|the)\s+(form|page|field|section)|add\s+(a|an|the)?\s*(field|page|step|section)|make\s+(a|an|the)\s+(form|page|application))\b/i;
 
-const buildUserMessage = (prompt: string, image?: ImagePart): UIMessage => {
+const buildUserMessage = (prompt: string, images?: ImagePart[]): UIMessage => {
   const parts: UIMessagePart[] = [{ type: "text", text: prompt }];
-  if (image) {
+  for (const image of images ?? []) {
     const mediaType = image.url.split(";")[0]?.split(":")[1] ?? "image/png";
     parts.push({
       type: "file",
@@ -108,7 +112,7 @@ export const useFormGenStream = ({
   const createModeRef = useRef(false);
   const nextInsertPathRef = useRef<number[]>([]);
   const insertedCountRef = useRef(0);
-  const rolledBackRef = useRef(false);
+  const settledRef = useRef(false);
   const thankYouEmittedRef = useRef(false);
   const firstContentSeenRef = useRef(false);
   // High-water mark: indices below this are frozen (no live-update possible).
@@ -126,24 +130,95 @@ export const useFormGenStream = ({
     createModeRef.current = false;
     nextInsertPathRef.current = [];
     insertedCountRef.current = 0;
-    rolledBackRef.current = false;
+    settledRef.current = false;
     thankYouEmittedRef.current = false;
     firstContentSeenRef.current = false;
   }, []);
 
+  /**
+   * Walk the tree once, invoking `visit` for every block carrying an `aiDiff`
+   * mark. `visit` returns the node's id so the caller can decide what to do
+   * after the walk (remove vs. strip). Kept as a separate helper so accept and
+   * discard share the same traversal.
+   */
+  const forEachDiffNode = useCallback(
+    (visit: (node: Record<string, unknown>, path: number[]) => void) => {
+      const entries = Array.from(
+        editor.api.nodes({
+          at: [],
+          match: (n) => Boolean((n as Record<string, unknown>)[AI_DIFF_KEY]),
+        }),
+      ) as Array<[Record<string, unknown>, number[]]>;
+      for (const [node, path] of entries) visit(node, path);
+    },
+    [editor],
+  );
+
+  /** Discard: remove every block marked `insert`; strip the `remove` mark. */
   const rollback = useCallback(() => {
-    if (rolledBackRef.current) return;
-    const count = insertedCountRef.current;
-    if (count > 0) {
-      editor.tf.withoutNormalizing(() => {
-        for (let i = 0; i < count; i++) {
-          editor.tf.undo();
+    if (settledRef.current) return;
+    const removePaths: number[][] = [];
+    const stripPaths: number[][] = [];
+    forEachDiffNode((node, path) => {
+      const mark = (node as { aiDiff?: "insert" | "remove" }).aiDiff;
+      if (mark === "insert") removePaths.push(path);
+      else if (mark === "remove") stripPaths.push(path);
+    });
+
+    editor.tf.withoutNormalizing(() => {
+      // Strip marks FIRST — paths are still valid before any removes shift
+      // indices. Then remove in descending order so earlier paths stay valid.
+      for (const p of stripPaths) {
+        try {
+          editor.tf.unsetNodes(AI_DIFF_KEY, { at: p });
+        } catch {
+          // node moved; skip
         }
-      });
-    }
-    rolledBackRef.current = true;
+      }
+      for (const p of removePaths.toSorted((a, b) => (b[0] ?? 0) - (a[0] ?? 0))) {
+        try {
+          editor.tf.removeNodes({ at: p });
+        } catch {
+          // path stale; skip
+        }
+      }
+    });
+
+    settledRef.current = true;
     resetStreamState();
-  }, [editor, resetStreamState]);
+  }, [editor, forEachDiffNode, resetStreamState]);
+
+  /** Accept: remove every block marked `remove`; strip the `insert` mark. */
+  const accept = useCallback(() => {
+    if (settledRef.current) return;
+    const removePaths: number[][] = [];
+    const stripPaths: number[][] = [];
+    forEachDiffNode((node, path) => {
+      const mark = (node as { aiDiff?: "insert" | "remove" }).aiDiff;
+      if (mark === "remove") removePaths.push(path);
+      else if (mark === "insert") stripPaths.push(path);
+    });
+
+    editor.tf.withoutNormalizing(() => {
+      for (const p of removePaths.toSorted((a, b) => (b[0] ?? 0) - (a[0] ?? 0))) {
+        try {
+          editor.tf.removeNodes({ at: p });
+        } catch {
+          // path stale; skip
+        }
+      }
+      for (const p of stripPaths) {
+        try {
+          editor.tf.unsetNodes(AI_DIFF_KEY, { at: p });
+        } catch {
+          // node moved; skip
+        }
+      }
+    });
+
+    settledRef.current = true;
+    resetStreamState();
+  }, [editor, forEachDiffNode, resetStreamState]);
 
   const lastPromptRef = useRef<string>("");
   const [isThemeLoading, setIsThemeLoading] = useState(false);
@@ -252,7 +327,7 @@ export const useFormGenStream = ({
       applyFinalThemeOps(finalObject);
       finalizeStream();
       onFinish?.();
-      resetStreamState();
+      // rollback() needs insertedCountRef — reset happens on next submit/rollback.
     },
     onError: (err: Error) => {
       rollback();
@@ -300,6 +375,20 @@ export const useFormGenStream = ({
             didInsert = true;
             if ("path" in applied && applied.path?.length) {
               lastInsertedPathRef.current = applied.path;
+              // Mark the newly-inserted block(s) so the AIDiff wrapper tints
+              // them green. add-field/add-section/add-page-break inserts
+              // `nodeCount` contiguous top-level blocks starting at `path`.
+              const count = "nodeCount" in applied ? applied.nodeCount : 1;
+              const startIdx = applied.path[0];
+              if (typeof startIdx === "number") {
+                for (let j = 0; j < count; j++) {
+                  try {
+                    editor.tf.setNodes({ [AI_DIFF_KEY]: "insert" }, { at: [startIdx + j] });
+                  } catch {
+                    // best-effort; skip missing node
+                  }
+                }
+              }
             }
           }
         } else if (canLiveUpdate(op, prev)) {
@@ -336,7 +425,8 @@ export const useFormGenStream = ({
   }, [error, rollback]);
 
   const submit = useCallback(
-    (prompt: string, image?: ImagePart) => {
+    (prompt: string, images?: ImagePart[]) => {
+      const imageList = images ?? [];
       const selectedPaths = getSelectedBlockPaths?.() ?? [];
       const intent = selectedPaths.length > 0 ? detectIntent(prompt) : "append";
       const editMode = selectedPaths.length > 0 && intent === "replace";
@@ -344,7 +434,7 @@ export const useFormGenStream = ({
       lastPromptRef.current = prompt;
       appliedRef.current.clear();
       insertedCountRef.current = 0;
-      rolledBackRef.current = false;
+      settledRef.current = false;
       firstOpRef.current = true;
       editModeRef.current = editMode;
       thankYouEmittedRef.current = false;
@@ -353,17 +443,21 @@ export const useFormGenStream = ({
       lastInsertedPathRef.current = null;
 
       if (editMode) {
-        // REPLACE: capture first selected path, remove selected blocks, insert new ops there
-        const firstPath = selectedPaths[0] ?? [editor.children.length];
-        initialPathRef.current = [...firstPath];
-        nextInsertPathRef.current = [...firstPath];
+        // REPLACE: keep originals in place marked aiDiff='remove' (shown red);
+        // insert new blocks after the last selected path (shown green). Accept
+        // prunes the originals; discard prunes the new blocks.
+        const sortedAsc = [...selectedPaths].toSorted((a, b) => (a[0] ?? 0) - (b[0] ?? 0));
+        const lastPath = sortedAsc[sortedAsc.length - 1] ?? [
+          Math.max(0, editor.children.length - 1),
+        ];
+        const insertAt = PathApi.next(lastPath);
+        initialPathRef.current = [...insertAt];
+        nextInsertPathRef.current = [...insertAt];
 
-        const sortedDesc = [...selectedPaths].toSorted((a, b) => (b[0] ?? 0) - (a[0] ?? 0));
         editor.tf.withoutNormalizing(() => {
-          for (const p of sortedDesc) {
+          for (const p of sortedAsc) {
             try {
-              editor.tf.removeNodes({ at: p });
-              insertedCountRef.current++;
+              editor.tf.setNodes({ [AI_DIFF_KEY]: "remove" }, { at: p });
             } catch {
               // path stale; skip
             }
@@ -392,7 +486,7 @@ export const useFormGenStream = ({
       // If the user asks for both a form AND a theme, fall back to create/append so the
       // form gets built; the AI can still emit set-theme as one of its ops.
       const isThemeIntent =
-        Boolean(image) &&
+        imageList.length > 0 &&
         THEME_INTENT_PATTERN.test(prompt) &&
         !FORM_BUILDING_PATTERN.test(prompt) &&
         !editMode;
@@ -405,7 +499,7 @@ export const useFormGenStream = ({
       createModeRef.current = mode === "create";
 
       const requestBody = {
-        messages: [buildUserMessage(prompt, image)],
+        messages: [buildUserMessage(prompt, imageList)],
         // Empty form has no useful context — saves input tokens on every create.
         ...(mode === "create" ? {} : { editorContent }),
         ...(selection ? { selectionContext: selection } : {}),
@@ -482,6 +576,8 @@ export const useFormGenStream = ({
   return {
     submit,
     stop,
+    rollback,
+    accept,
     isLoading: isLoading || isThemeLoading,
     error,
   };

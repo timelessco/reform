@@ -556,6 +556,21 @@
   font-feature-settings: "case";
 }
 
+/* Canonical text-input box used by Input/Email/Number/Link/Textarea/Time/
+   Phone/FileUpload field widgets. Light mode: subtle rgba shadow. Dark mode:
+   shadow drops, a real border takes over so the box stays legible on dark
+   surfaces. Change here to restyle every field at once. */
+@utility form-input {
+  @apply w-full rounded-lg bg-card text-foreground placeholder:text-muted-foreground/50 shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)];
+  @variant dark {
+    @apply shadow-none border border-border;
+  }
+}
+
+@utility form-input-error {
+  @apply ring-1 ring-destructive;
+}
+
 @layer utilities {
   .font-normal {
     font-weight: 450;
@@ -741,9 +756,35 @@
   font-size: inherit;
 }
 
-/* Spacing bridge: field list vertical spacing between children */
-.bf-themed [data-bf-field-list] > * + * {
-  margin-top: var(--bf-spacing);
+/* Uniform block padding for editor/preview/publish — single source of truth.
+   Applies to direct children only (so nested content like list items, table cells,
+   columns are unaffected). Excludes form chrome (header, button) via [data-bf-chrome]. */
+:root {
+  --bf-block-padding: 0.625rem; /* 10px = py-2.5 */
+}
+
+[data-slate-editor] > *:not([data-bf-chrome]):not([data-bf-input]),
+[data-bf-field-list] > *:not([data-bf-chrome]):not([data-bf-input]),
+[data-bf-field-list] [data-slate-node="element"]:not([data-bf-chrome]):not([data-bf-input]) {
+  padding-top: var(--bf-block-padding) !important;
+  padding-bottom: var(--bf-block-padding) !important;
+}
+
+/* Guarantee input blocks never inherit vertical block padding — labels own block padding. */
+[data-bf-input],
+[data-slate-editor] [data-bf-input],
+[data-bf-field-list] [data-bf-input] {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Standalone inputs (no preceding label) re-apply block padding so consecutive
+   unlabeled fields don't collide. */
+[data-bf-input][data-bf-standalone],
+[data-slate-editor] [data-bf-input][data-bf-standalone],
+[data-bf-field-list] [data-bf-input][data-bf-standalone] {
+  padding-top: var(--bf-block-padding) !important;
+  padding-bottom: var(--bf-block-padding) !important;
 }
 
 /* View Transition: preview mode tab switching */

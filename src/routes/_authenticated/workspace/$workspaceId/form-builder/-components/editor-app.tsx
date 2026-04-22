@@ -1,5 +1,5 @@
 import { EditorKit } from "@/components/editor/editor-kit";
-import { AIFormGenPlugin } from "@/components/editor/plugins/ai-form-gen-kit";
+import { AIInputPlugin } from "@/components/editor/plugins/ai-input-kit";
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { createFormButtonNode } from "@/components/ui/form-button-node";
 import type { FormHeaderElementData } from "@/components/ui/form-header-node";
@@ -165,9 +165,9 @@ const EditorAppInner = ({
     }
   }
 
-  // Compute initial content from liveQuery - single source of truth
+  // Compute initial content from liveQuery - single source of truth.
+  // ID normalization is handled by NodeIdPlugin in EditorKit.
   const initialContent = useMemo(() => {
-    // Version content takes priority (read-only viewing)
     if (versionContent) return versionContent;
 
     const docData = savedDocs?.[0];
@@ -191,8 +191,8 @@ const EditorAppInner = ({
     [resetKey],
   );
 
-  // Provide formId to AI form generation plugin for collection updates
-  editor.setOption(AIFormGenPlugin, "formId", formId);
+  // Provide formId to AI input plugin for form generation
+  editor.setOption(AIInputPlugin, "formId", formId);
 
   const debouncedSave = useDebouncedCallback(
     (val: Value) => {
