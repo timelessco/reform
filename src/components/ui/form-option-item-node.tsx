@@ -6,20 +6,12 @@ import { useLayoutEffect } from "react";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { CheckCheckIcon, ChevronsUpDownIcon } from "@/components/ui/icons";
+import { RequiredBadgeButton } from "@/components/ui/required-badge-button";
 import { cn } from "@/lib/utils";
 
 type OptionVariant = "checkbox" | "multiChoice" | "multiSelect" | "ranking";
 
-const MULTI_SELECT_COLORS = [
-  { bg: "bg-red-50 dark:bg-red-950/30", text: "text-red-700 dark:text-red-400" },
-  { bg: "bg-orange-50 dark:bg-orange-950/30", text: "text-orange-700 dark:text-orange-400" },
-  { bg: "bg-amber-50 dark:bg-amber-950/30", text: "text-amber-700 dark:text-amber-400" },
-  { bg: "bg-emerald-50 dark:bg-emerald-950/30", text: "text-emerald-700 dark:text-emerald-400" },
-  { bg: "bg-blue-50 dark:bg-blue-950/30", text: "text-blue-700 dark:text-blue-400" },
-  { bg: "bg-purple-50 dark:bg-purple-950/30", text: "text-purple-700 dark:text-purple-400" },
-];
-
-const LETTER_LABELS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+import { LETTER_LABELS, MULTI_SELECT_COLORS } from "@/components/ui/form-option-item-constants";
 
 const OptionIcon = ({ variant, index }: { variant: OptionVariant; index: number }) => {
   switch (variant) {
@@ -61,8 +53,6 @@ const OptionIcon = ({ variant, index }: { variant: OptionVariant; index: number 
       return null;
   }
 };
-
-export { MULTI_SELECT_COLORS, LETTER_LABELS };
 
 export const FormOptionItemElement = ({ className, children, ...props }: PlateElementProps) => {
   const { attributes, element, ...rest } = props;
@@ -179,6 +169,7 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
           <span className="text-sm text-muted-foreground">Add option</span>
         </div>
       )}
+      <RequiredBadgeButton required={Boolean(element.required)} path={props.path} />
     </PlateElement>
   );
 };

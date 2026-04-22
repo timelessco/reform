@@ -113,8 +113,25 @@ const config = defineConfig({
           // on the public form's happy path.
           if (id.includes("node_modules/use-sync-external-store")) return "react-runtime";
           if (id.includes("node_modules/scheduler")) return "react-runtime";
+          // Pin tiny class-name utilities that every UI component uses. Without
+          // this, Rollup's auto-chunker placed `clsx` inside the `editor` chunk
+          // (platejs happened to be its first "dominant" consumer in the graph),
+          // so every file that called `cn()` statically imported the 361 kB
+          // editor chunk just to get clsx. Same risk for tailwind-merge and cva.
+          if (
+            id.includes("node_modules/clsx") ||
+            id.includes("node_modules/tailwind-merge") ||
+            id.includes("node_modules/class-variance-authority")
+          )
+            return "react-runtime";
           if (id.includes("@platejs/") || id.includes("platejs")) return "editor";
           if (id.includes("@radix-ui/")) return "ui";
+          // Pin Base UI primitives to their own chunk. Without this, modules
+          // like `getDisabledMountTransitionStyles` / `useOpenInteractionType`
+          // end up grouped with `editor` by Rollup's auto-chunker, which forces
+          // every field chunk (InputField, TextareaField, …) that uses a Base
+          // UI primitive to pull the full 361 kB platejs chunk + KaTeX CSS.
+          if (id.includes("@base-ui/")) return "ui";
           if (id.includes("@sentry/")) return "sentry";
         },
       },

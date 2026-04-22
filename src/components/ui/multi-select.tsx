@@ -3,7 +3,7 @@
    producing invalid HTML and React hydration errors. */
 import { useEffect, useRef, useState } from "react";
 
-import { MULTI_SELECT_COLORS } from "@/components/ui/form-option-item-node";
+import { MULTI_SELECT_COLORS } from "@/components/ui/form-option-item-constants";
 import { ChevronDownIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 

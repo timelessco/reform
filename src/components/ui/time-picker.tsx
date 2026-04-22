@@ -694,7 +694,7 @@ function TimePickerInputGroup(props: DivProps) {
             data-invalid={invalid ? "" : undefined}
             {...inputGroupProps}
             className={cn(
-              "flex h-10 w-full cursor-text items-center gap-0.5 rounded-md border border-input bg-background px-3 py-2 shadow-xs outline-none transition-shadow",
+              "flex h-10 w-full cursor-text items-center gap-0.5 rounded-md border border-input bg-card px-3 py-2 shadow-xs outline-none transition-shadow",
               "has-[input:focus]:border-ring has-[input:focus]:ring-[3px] has-[input:focus]:ring-ring/50",
               invalid && "border-destructive ring-destructive/20",
               disabled && "cursor-not-allowed opacity-50",

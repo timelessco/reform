@@ -15,7 +15,7 @@ import { RequiredBadgeButton } from "@/components/ui/required-badge-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-import { MULTI_SELECT_COLORS } from "./form-option-item-node";
+import { MULTI_SELECT_COLORS } from "./form-option-item-constants";
 
 export const FormMultiSelectInputElement = ({
   className,

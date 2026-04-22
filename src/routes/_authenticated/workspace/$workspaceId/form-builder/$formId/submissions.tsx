@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { MULTI_SELECT_COLORS } from "@/components/ui/form-option-item-node";
+import { MULTI_SELECT_COLORS } from "@/components/ui/form-option-item-constants";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { Checkbox } from "@/components/ui/checkbox";

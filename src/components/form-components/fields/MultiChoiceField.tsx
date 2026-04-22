@@ -1,4 +1,4 @@
-import { LETTER_LABELS } from "@/components/ui/form-option-item-node";
+import { LETTER_LABELS } from "@/components/ui/form-option-item-constants";
 import { cn } from "@/lib/utils";
 import { extractErrorMessage } from "./shared";
 import type { FieldRendererProps } from "./shared";
