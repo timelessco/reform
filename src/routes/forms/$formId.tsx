@@ -161,6 +161,13 @@ export const Route = createFileRoute("/forms/$formId")({
       })),
       scripts: [
         {
+          // Skip loading inter-v on public forms — override --font-sans before
+          // paint so body's font-sans utility resolves to --bf-font (or system
+          // fallback). The @font-face inter-v declaration then matches nothing
+          // and the browser never fetches the Inter-V woff2.
+          children: `document.documentElement.style.setProperty("--font-sans",'var(--bf-font,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif)');`,
+        },
+        {
           // Apply theme before paint — viewer override > creator default > system
           children: `(function(){try{var d=document.documentElement;var override=null;try{override=window.localStorage.getItem("bf-form-theme:${formId}");}catch(e){}var def=${JSON.stringify(defaultMode)};var pick=override||def;var m=pick==="system"?(window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"):pick;d.classList.remove("light","dark");d.classList.add(m);d.style.colorScheme=m;}catch(e){}})();`,
         },
