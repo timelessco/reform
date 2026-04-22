@@ -4,9 +4,9 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import rsc from "@vitejs/plugin-rsc";
 import { nitro } from "nitro/vite";
-import { defineConfig } from "vite";
-import type { Plugin } from "vite";
 import type { IncomingMessage, ServerResponse } from "node:http";
+import type { Plugin } from "vite";
+import { defineConfig } from "vite";
 import viteTsConfigPaths from "vite-tsconfig-paths";
 
 // Custom Cache-Control headers for the public embed script so updates
