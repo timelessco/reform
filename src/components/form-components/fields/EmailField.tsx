@@ -21,10 +21,7 @@ const EmailField = ({ element, form }: FieldRendererProps<"Email">) => (
             autoComplete="off"
             aria-invalid={hasErrors}
             aria-label={getAriaLabelFallback(element)}
-            className={cn(
-              "w-full rounded-(--radius-lg) border-0 h-7 bg-card pl-[10px] pr-[8px] shadow-form-input placeholder:text-muted-foreground/50",
-              hasErrors && "ring-1 ring-destructive",
-            )}
+            className={cn("form-input h-7 pl-[10px] pr-[8px]", hasErrors && "form-input-error")}
           />
           {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}
         </>

@@ -97,6 +97,22 @@ const config = defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // Pin Vite's dynamic-import preload helper (`__vitePreload`) to its
+          // own tiny chunk. Otherwise Rollup places it in `editor` (largest
+          // shared chunk via platejs), which forces every module that uses
+          // dynamic `import()` — fields, form-preview, public-form-page — to
+          // pull `editor-*.js` (362 kB) and its KaTeX `editor-*.css` (7 kB)
+          // just to call the helper.
+          if (id.includes("vite/preload-helper")) return "vite-runtime";
+          // Pin React-adjacent shared utilities to their own chunk so Rollup
+          // can't absorb them into `editor`. Without this, `use-sync-external-store`
+          // and `scheduler` end up owned by the editor chunk (because platejs
+          // also uses them), which forces every Base UI primitive that needs
+          // those utilities (e.g. `getDisabledMountTransitionStyles`, `useForm`,
+          // `useDebouncedCallback`) to pull the full editor chunk + KaTeX CSS
+          // on the public form's happy path.
+          if (id.includes("node_modules/use-sync-external-store")) return "react-runtime";
+          if (id.includes("node_modules/scheduler")) return "react-runtime";
           if (id.includes("@platejs/") || id.includes("platejs")) return "editor";
           if (id.includes("@radix-ui/")) return "ui";
           if (id.includes("@sentry/")) return "sentry";

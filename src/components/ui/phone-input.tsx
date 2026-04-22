@@ -58,13 +58,15 @@ function PhoneInput({
       value={{ variant: phoneInputSize, popupClassName, scrollAreaClassName }}
     >
       <BasePhoneInput.default
+        // Shadow + dark-mode border recipe must mirror the `form-input`
+        // utility in src/styles/styles.css. The `[&]:` selectors bump
+        // specificity past react-phone-number-input's own defaults.
         className={cn(
           "flex flex-row [&]:rounded-lg [&]:bg-card [&]:text-foreground [&]:shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] dark:[&]:shadow-none dark:[&]:border dark:[&]:border-border [&]:has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 [&]:has-[[data-slot=input-group-control]:focus-visible]:ring-3",
           phoneInputSize === "sm" && "[&]:h-7",
           phoneInputSize === "lg" && "[&]:h-9",
           phoneInputSize === "default" && "[&]:h-8",
-          props["aria-invalid"] &&
-            "[&]:border [&]:border-destructive [&]:ring-2 [&]:ring-destructive/40 [&]:shadow-none",
+          props["aria-invalid"] && "[&]:ring-1 [&]:ring-destructive",
           className,
         )}
         flagComponent={FlagComponent}
@@ -138,6 +140,7 @@ function CountrySelect({
           <Button
             variant="ghost"
             size={variant}
+            aria-label="Select country"
             className={cn(
               "rounded-none border-0 shadow-none px-2 py-0 leading-none hover:bg-transparent focus:z-10 data-pressed:bg-transparent",
               disabled && "opacity-50",

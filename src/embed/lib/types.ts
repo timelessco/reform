@@ -53,6 +53,10 @@ export interface PopupInstance {
   container: HTMLElement;
   iframe: HTMLIFrameElement;
   overlay?: HTMLElement;
+  /** Spinner element shown over the empty iframe; hidden once the form's
+   *  SSR'd HTML is parsed (via `Reform.FormLoaded`) or the iframe's own
+   *  `load` event fires — whichever comes first. */
+  loadingEl?: HTMLElement;
   /** True while pre-mounted on hover but not yet revealed to the user. */
   hidden?: boolean;
 }
@@ -73,6 +77,7 @@ export type IframeEvent =
 interface ReformAPI {
   openPopup: (formId: string, options?: PopupOptions) => void;
   closePopup: (formId: string) => void;
+  destroyPopup: (formId: string) => void;
 }
 
 declare global {

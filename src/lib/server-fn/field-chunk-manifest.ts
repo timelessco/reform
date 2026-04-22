@@ -39,6 +39,14 @@ let cached: ViteManifest | null | undefined;
 
 const loadManifest = async (): Promise<ViteManifest | null> => {
   if (cached !== undefined) return cached;
+  // Never read the prod manifest in dev. A stale `.output/public/.vite/
+  // manifest.json` from an earlier `bun run build` otherwise leaks hashed
+  // chunk URLs (e.g. `/assets/input-C_WltorP.js`) into <link modulepreload>,
+  // and Vite's dev server 404s them since it serves source paths instead.
+  if (process.env.NODE_ENV !== "production") {
+    cached = null;
+    return null;
+  }
   for (const rel of MANIFEST_CANDIDATES) {
     try {
       const raw = await readFile(join(process.cwd(), rel), "utf8");

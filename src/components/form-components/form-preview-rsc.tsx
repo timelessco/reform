@@ -14,7 +14,7 @@ import { useMountEffect } from "@/hooks/use-mount-effect";
 import { useStepPreviewForm } from "@/hooks/use-preview-form";
 import { DEFAULT_ICON } from "@/lib/config/app-config";
 import { CUSTOMIZATION_AUTO_DEFAULTS } from "@/lib/theme/customization-defaults";
-import { cn, isValidUrl } from "@/lib/utils";
+import { cn, DEFAULT_ICON_NAME, isValidUrl } from "@/lib/utils";
 import type { PlateFormField } from "@/lib/editor/transform-plate-to-form";
 import type {
   ButtonGroupSlotProps,
@@ -168,11 +168,12 @@ const PublicFormHeader = ({
         <div className={iconWrapClass} data-bf-logo-emoji-container={hasCover ? "true" : undefined}>
           <span data-bf-logo-icon={isLogoMinimal ? "minimal" : ""}>
             <IconPickerPreview
-              icon={null}
+              icon={DEFAULT_ICON_NAME}
               iconColor={undefined}
               useThemeColor
               iconSize="48"
               size={logoCircleSize}
+              standaloneIcon
             />
           </span>
         </div>
@@ -202,6 +203,7 @@ const PublicFormHeader = ({
             useThemeColor
             iconSize="48"
             size={logoCircleSize}
+            standaloneIcon
           />
         </span>
       </div>

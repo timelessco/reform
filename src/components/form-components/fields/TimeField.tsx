@@ -28,10 +28,7 @@ const TimeField = ({ element, form }: FieldRendererProps<"Time">) => (
             invalid={hasErrors}
           >
             <TimePickerInputGroup
-              className={cn(
-                "rounded-(--radius-lg) border-0 h-7 bg-card px-[10px] shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] dark:shadow-none dark:border dark:border-border",
-                hasErrors && "ring-1 ring-destructive",
-              )}
+              className={cn("form-input h-7 px-[10px]", hasErrors && "form-input-error")}
               onBlur={f.handleBlur}
             >
               <TimePickerInput segment="hour" className="text-sm" />

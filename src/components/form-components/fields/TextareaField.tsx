@@ -23,8 +23,8 @@ const TextareaField = ({ element, form }: FieldRendererProps<"Textarea">) => (
             aria-invalid={hasErrors}
             aria-label={getAriaLabelFallback(element)}
             className={cn(
-              "w-full min-h-24 rounded-[var(--radius-lg)] border-0 bg-card pl-[10px] pr-[8px] shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] placeholder:text-muted-foreground/50",
-              hasErrors && "ring-1 ring-destructive",
+              "form-input min-h-24 pl-[10px] pr-[8px]",
+              hasErrors && "form-input-error",
             )}
           />
           {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}

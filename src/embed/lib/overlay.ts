@@ -46,9 +46,7 @@ export const createOverlay = (
   // fade-in animation too — it would otherwise play once at mount and be
   // invisible, so revealing later wouldn't animate.
   if (meta.startHidden) {
-    overlay.style.visibility = "hidden";
-    overlay.style.pointerEvents = "none";
-    overlay.style.animation = "none";
+    applyHiddenStyles(overlay);
   }
 
   // Click on overlay backdrop closes popup (if visible)
@@ -137,6 +135,22 @@ export const revealOverlay = (overlay: HTMLElement, options: PopupOptions): void
   if (showOverlay) {
     document.body.style.overflow = "hidden";
   }
+};
+
+const applyHiddenStyles = (el: HTMLElement): void => {
+  el.style.visibility = "hidden";
+  el.style.pointerEvents = "none";
+  el.style.animation = "none";
+};
+
+/**
+ * Hide the overlay without removing it from the DOM so the iframe stays
+ * mounted and reopening is a pure style flip — no refetch of the form
+ * document, chunks, or fonts.
+ */
+export const hideOverlay = (overlay: HTMLElement): void => {
+  document.body.style.overflow = "";
+  applyHiddenStyles(overlay);
 };
 
 /**

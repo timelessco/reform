@@ -16,6 +16,7 @@ import {
   destroyOverlay,
   hideEmoji,
   hideLoading,
+  hideOverlay,
   revealOverlay,
   updatePopupHeight,
 } from "./lib/overlay";
@@ -56,6 +57,7 @@ export const preMountPopup = (formId: string, options: PopupOptions = {}): void 
     container: elements.popup,
     iframe,
     overlay: elements.overlay,
+    loadingEl: elements.loadingEl,
     hidden: true,
   };
   activePopups.set(formId, instance);
@@ -100,6 +102,7 @@ export const openPopup = (formId: string, options: PopupOptions = {}): void => {
     container: elements.popup,
     iframe,
     overlay: elements.overlay,
+    loadingEl: elements.loadingEl,
   };
   activePopups.set(formId, instance);
 
@@ -115,22 +118,18 @@ export const openPopup = (formId: string, options: PopupOptions = {}): void => {
  */
 export const closePopup = (formId: string): void => {
   const instance = activePopups.get(formId);
-  if (!instance) {
+  if (!instance || instance.hidden) {
     return;
   }
 
-  // Cleanup iframe
-  destroyIframe(instance.iframe);
-
-  // Cleanup overlay
+  // Hide instead of destroy: keeps the iframe alive so reopening is a pure
+  // style flip. Without this, every close+open cycle re-downloads the form
+  // document, CSS, all lazy field chunks, and fonts.
   if (instance.overlay) {
-    destroyOverlay(instance.overlay);
+    hideOverlay(instance.overlay);
   }
+  instance.hidden = true;
 
-  // Remove from registry
-  activePopups.delete(formId);
-
-  // Call onClose callback
   if (instance.options.onClose) {
     try {
       instance.options.onClose();
@@ -138,6 +137,24 @@ export const closePopup = (formId: string): void => {
       console.error("[Reform] onClose callback error:", e);
     }
   }
+};
+
+/**
+ * Fully tear down a popup instance — removes the iframe from the DOM and
+ * drops it from the registry. Use this for long-lived single-page apps that
+ * want to reclaim memory; normal close/reopen flows should use `closePopup`.
+ */
+export const destroyPopup = (formId: string): void => {
+  const instance = activePopups.get(formId);
+  if (!instance) {
+    return;
+  }
+
+  destroyIframe(instance.iframe);
+  if (instance.overlay) {
+    destroyOverlay(instance.overlay);
+  }
+  activePopups.delete(formId);
 };
 
 /**
@@ -174,7 +191,12 @@ const handleMessage = (event: MessageEvent): void => {
 
   switch (data.event) {
     case "Reform.FormLoaded":
-      // Form has loaded, hide loading indicator is already handled by iframe load event
+      // Hide spinner as soon as SSR HTML is parsed — the iframe `load` event
+      // waits for every CSS/JS chunk, leaving the veil up after the form is
+      // already visible.
+      if (instance.loadingEl) {
+        hideLoading(instance.loadingEl);
+      }
       break;
 
     case "Reform.Resize":
@@ -262,6 +284,7 @@ const init = (): void => {
 window.Reform = {
   openPopup,
   closePopup,
+  destroyPopup,
 };
 
 // Initialize when DOM is ready
