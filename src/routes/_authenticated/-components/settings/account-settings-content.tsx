@@ -100,7 +100,7 @@ const useAvatarUpload = (): AvatarUploadApi => {
     auth.updateUser.mutationOptions({
       onSuccess: () => {
         toast.success("Profile updated successfully");
-        queryClient.invalidateQueries({ queryKey: auth.getSession.queryKey() });
+        void queryClient.invalidateQueries({ queryKey: auth.getSession.queryKey() });
       },
       onError: (error) => {
         toast.error(error.message || "Failed to update profile");
@@ -220,7 +220,7 @@ export const AccountSettingsContent = () => {
     auth.updateUser.mutationOptions({
       onSuccess: () => {
         toast.success("Profile updated successfully");
-        queryClient.invalidateQueries({ queryKey: auth.getSession.queryKey() });
+        void queryClient.invalidateQueries({ queryKey: auth.getSession.queryKey() });
       },
       onError: (error) => {
         toast.error(error.message || "Failed to update profile");
