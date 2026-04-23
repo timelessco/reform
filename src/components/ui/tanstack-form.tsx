@@ -122,7 +122,7 @@ const useFieldContext = () => {
     formMessageId: `${id}-form-item-message`,
     errors: fieldState.errors,
     isTouched: fieldState.isTouched,
-    // @ts-expect-error - spreading context is needed for provider pattern
+    // eslint-disable-next-line @typescript-eslint/no-misused-spread
     ...innerFieldContext,
   };
 };

@@ -80,7 +80,7 @@ interface PublicFormPageProps {
   // so the client bundle no longer ships platejs/static.
   rsc?: {
     steps: StepRSC[];
-    thankYou: unknown | null;
+    thankYou?: unknown;
     stepCount: number;
   };
 }
