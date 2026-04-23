@@ -239,7 +239,7 @@ export const setupAutoBubble = (openPopup: PopupCallback, preMountPopup: PopupCa
     hiddenFields: cfg.hiddenFields,
   };
   warmupFormOnIntent(bubble, () => preMountPopup(cfg.formId, popupOptions));
-  fetchMeta(origin, cfg.formId).then((meta) => {
+  void fetchMeta(origin, cfg.formId).then((meta) => {
     if (!meta) return;
     if (meta.title) bubble.setAttribute("aria-label", meta.title);
     if (meta.icon) setBubbleContent(bubble, origin, meta.icon);

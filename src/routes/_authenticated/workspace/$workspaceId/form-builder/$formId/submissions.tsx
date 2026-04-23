@@ -89,7 +89,7 @@ const formatSubmissionValue = (value: unknown): string => {
   try {
     return JSON.stringify(value);
   } catch {
-    return String(value);
+    return "{object}";
   }
 };
 
@@ -458,7 +458,7 @@ const SubmissionsPage = () => {
                   aria-label="Delete submission"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDelete(info.row.original.id);
+                    void handleDelete(info.row.original.id);
                   }}
                 >
                   <Trash2Icon className="h-3.5 w-3.5" />

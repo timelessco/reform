@@ -59,8 +59,8 @@ const BillingPage = () => {
     window.location.href = (portalData as { url: string }).url;
   }
 
-  const handleOpenPortal = useCallback(() => {
-    openPortal();
+  const handleOpenPortal = useCallback(async () => {
+    await openPortal();
   }, [openPortal]);
 
   const handleUpgradePro = useCallback(() => handleUpgrade("Pro"), [handleUpgrade]);

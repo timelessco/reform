@@ -155,7 +155,7 @@ const DashboardPage = () => {
         setIsSyncing(false);
       }
     };
-    syncData();
+    void syncData();
   }, [session?.user, activeOrg?.id]);
 
   const handleCreateWorkspace = useCallback(async () => {
@@ -176,7 +176,7 @@ const DashboardPage = () => {
     try {
       const defaultWorkspace = orgWorkspaces[0];
       const { form: newForm } = createFormLocal(defaultWorkspace.id);
-      navigate({
+      void navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
         params: { workspaceId: defaultWorkspace.id, formId: newForm.id },
       });
@@ -416,7 +416,7 @@ const DashboardPage = () => {
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      handleDuplicate(form.id);
+                                      void handleDuplicate(form.id);
                                     }}
                                   />
                                 }
