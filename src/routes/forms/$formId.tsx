@@ -26,8 +26,7 @@ const PublicFormRoute = () => {
   const search = Route.useSearch();
 
   const rawCustomization = loaderData?.form?.customization ?? null;
-  const defaultMode = ((rawCustomization?.defaultMode as PublicTheme | undefined) ??
-    "system") as PublicTheme;
+  const defaultMode = (rawCustomization?.defaultMode as PublicTheme | undefined) ?? "system";
 
   // Viewer's chosen theme — initialized from localStorage override or defaultMode
   const [viewerTheme, setViewerTheme] = useState<PublicTheme>(() => {
@@ -135,9 +134,7 @@ export const Route = createFileRoute("/forms/$formId")({
   loader: async ({ params }) => getPublicFormViewRSC({ data: { id: params.formId } }),
   // SEO meta tags
   head: ({ loaderData, params }) => {
-    const defaultMode =
-      (loaderData?.form?.customization as Record<string, string> | undefined)?.defaultMode ||
-      "system";
+    const defaultMode = loaderData?.form?.customization?.defaultMode || "system";
     const formId = params.formId;
     const preloadUrls = loaderData?.preloadModuleUrls ?? [];
     return {

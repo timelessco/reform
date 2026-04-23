@@ -175,7 +175,7 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                 <form.AppField name="language">
                   {(field) => (
                     <Select
-                      value={(field.state.value as string) || "English"}
+                      value={field.state.value || "English"}
                       onValueChange={(value) => field.handleChange(value ?? "English")}
                     >
                       <SelectTrigger className={selectTriggerCls}>
@@ -235,7 +235,7 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
                               min={0}
                               max={60}
                               placeholder="0"
-                              value={(field.state.value as number) || 0}
+                              value={field.state.value || 0}
                               onChange={(e) => field.handleChange(Number(e.target.value) || 0)}
                               className={`w-[70px] text-sm ${CONFIG_INPUT_CLS}`}
                               aria-label="Redirect delay"

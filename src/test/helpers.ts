@@ -39,7 +39,7 @@ export const createTestOrg = async (ownerId: string) => {
   const t = await getTestUtils();
   const org = t.createOrganization({ name: "Test Org", slug: `test-${ownerId}` });
   await t.saveOrganization(org);
-  await t.addMember({ userId: ownerId, organizationId: org.id as string, role: "owner" });
+  await t.addMember({ userId: ownerId, organizationId: org.id, role: "owner" });
   return org;
 };
 

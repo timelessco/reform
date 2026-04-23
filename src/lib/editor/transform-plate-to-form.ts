@@ -354,7 +354,7 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
   ): { labelText: string; labelNode: Record<string, unknown> } | null => {
     if (i <= 0) return null;
     const prev = value[i - 1];
-    const prevType = prev.type as string;
+    const prevType = prev.type;
     if (!ALLOWED_LABEL_TYPES.has(prevType)) return null;
 
     const labelText = extractTextContent(prev.children as Array<{ text?: string }>);
@@ -388,7 +388,7 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
   let i = 0;
   while (i < value.length) {
     const node = value[i];
-    const nodeType = node.type as string;
+    const nodeType = node.type;
 
     // --- Skip formHeader (handled separately) ---
     if (nodeType === "formHeader") {
@@ -472,7 +472,7 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
 
       const options: { value: string; label: string }[] = [];
       let j = i;
-      while (j < value.length && (value[j].type as string) === "formOptionItem") {
+      while (j < value.length && value[j].type === "formOptionItem") {
         const optText = extractTextContent(value[j].children as Array<{ text?: string }>);
         const optLabel = optText || `Option ${options.length + 1}`;
         options.push({
@@ -526,7 +526,7 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
     // the input will consume this node as its label via lookBackForLabel.
     if (ALLOWED_LABEL_TYPES.has(nodeType) && nodeType !== "formLabel") {
       const nextNode = i + 1 < value.length ? value[i + 1] : null;
-      const nextType = nextNode ? (nextNode.type as string) : "";
+      const nextType = nextNode ? nextNode.type : "";
       if (FORM_INPUT_NODE_TYPES.has(nextType)) {
         // Will be consumed as a label by the next input — skip static rendering
         i++;
@@ -575,7 +575,7 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
     // otherwise render nothing (bare label without input).
     if (nodeType === "formLabel") {
       const nextNode = i + 1 < value.length ? value[i + 1] : null;
-      const nextType = nextNode ? (nextNode.type as string) : "";
+      const nextType = nextNode ? nextNode.type : "";
       if (FORM_INPUT_NODE_TYPES.has(nextType)) {
         // Will be consumed as a label by the next input
         i++;

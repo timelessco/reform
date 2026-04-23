@@ -112,7 +112,7 @@ const EmailLoginPage = () => {
                         autoComplete="email"
                         name="email"
                         autoFocus
-                        value={(field.state.value as string) ?? ""}
+                        value={field.state.value ?? ""}
                         onBlur={field.handleBlur}
                         onChange={(e) => field.handleChange(e.target.value)}
                         disabled={isPending}

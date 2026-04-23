@@ -1031,7 +1031,7 @@ const SelectOptionsPopover = <T = unknown>({
   const context = useFilterContext();
 
   const isMultiSelect = field.type === "multiselect" || values.length > 1;
-  const effectiveValues = (field.value !== undefined ? (field.value as T[]) : values) || [];
+  const effectiveValues = (field.value !== undefined ? field.value : values) || [];
   const selectedOptions = field.options?.filter((opt) => effectiveValues.includes(opt.value)) || [];
   const unselectedOptions =
     field.options?.filter((opt) => !effectiveValues.includes(opt.value)) || [];
@@ -1066,7 +1066,7 @@ const SelectOptionsPopover = <T = unknown>({
                     className="group flex gap-2 items-center"
                     onSelect={() => {
                       if (isMultiSelect) {
-                        const next = effectiveValues.filter((v) => v !== option.value) as T[];
+                        const next = effectiveValues.filter((v) => v !== option.value);
                         if (field.onValueChange) {
                           field.onValueChange(next);
                         } else {
@@ -1197,7 +1197,7 @@ const SelectOptionsPopover = <T = unknown>({
                     className="group flex gap-2 items-center"
                     onSelect={() => {
                       if (isMultiSelect) {
-                        onChange(values.filter((v) => v !== option.value) as T[]);
+                        onChange(values.filter((v) => v !== option.value));
                       } else {
                         onChange([] as T[]);
                       }
@@ -1642,7 +1642,7 @@ const FilterValueSelector = <T = unknown>({
                     className="group flex gap-2 items-center"
                     onSelect={() => {
                       if (isMultiSelect) {
-                        onChange(values.filter((v) => v !== option.value) as T[]);
+                        onChange(values.filter((v) => v !== option.value));
                       } else {
                         onChange([] as T[]);
                       }
@@ -1987,7 +1987,7 @@ export const Filters = <T = unknown>({
         setTempSelectedValues([]);
       } else {
         // For multiselect, keep popover open but update temp values
-        setTempSelectedValues(values as unknown[]);
+        setTempSelectedValues(values);
       }
     },
     [filters, onChange],
@@ -2212,7 +2212,7 @@ export const Filters = <T = unknown>({
                         }
 
                         // Handle flat field configuration (backward compatibility)
-                        const field = item as FilterFieldConfig<T>;
+                        const field = item;
 
                         // Handle separator
                         if (field.type === "separator") {

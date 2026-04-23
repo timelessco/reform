@@ -251,7 +251,7 @@ const Draggable = (props: PlateElementProps) => {
     };
   }, [editor, element, nodeRef]);
 
-  const isFormInput = FORM_INPUT_NODE_TYPES.has(element.type as string);
+  const isFormInput = FORM_INPUT_NODE_TYPES.has(element.type);
   const wrapperChromeAttrs = isFormButton || isFormHeader ? { "data-bf-chrome": "" } : {};
 
   // Standalone = not preceded by a formLabel. Drives breathing-room padding on

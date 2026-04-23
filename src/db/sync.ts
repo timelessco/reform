@@ -81,7 +81,7 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
           icon: localForm.icon,
           cover: localForm.cover,
           isMultiStep: localForm.isMultiStep ?? false,
-          status: (localForm.status || "draft") as "draft" | "published" | "archived",
+          status: localForm.status || "draft",
           // Include settings fields from local form (they're now part of the form)
           language: localForm.language,
           redirectOnCompletion: localForm.redirectOnCompletion,

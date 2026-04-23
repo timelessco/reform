@@ -14,9 +14,7 @@ import type { PlateFormField } from "@/lib/editor/transform-plate-to-form";
  * @param fields - Array of form fields with validation properties
  * @returns Zod object schema for form validation
  */
-export const generateZodSchemaFromFields = (
-  fields: PlateFormField[],
-): z.ZodObject<Record<string, ZodType>> => {
+export const generateZodSchemaFromFields = (fields: PlateFormField[]): z.ZodObject => {
   const schemaShape: Record<string, ZodType> = {};
 
   for (const field of fields) {

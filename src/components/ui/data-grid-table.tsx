@@ -73,15 +73,15 @@ const getDataGridTableRowSections = <TData,>(table: Table<TData>, rowsPinnable?:
   if (!rowsPinnable) {
     return {
       topRows: [] as Row<TData>[],
-      centerRows: table.getRowModel().rows as Row<TData>[],
+      centerRows: table.getRowModel().rows,
       bottomRows: [] as Row<TData>[],
     };
   }
 
   return {
-    topRows: table.getTopRows() as Row<TData>[],
-    centerRows: table.getCenterRows() as Row<TData>[],
-    bottomRows: table.getBottomRows() as Row<TData>[],
+    topRows: table.getTopRows(),
+    centerRows: table.getCenterRows(),
+    bottomRows: table.getBottomRows(),
   };
 };
 

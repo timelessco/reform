@@ -1,15 +1,16 @@
 import { BaseTablePlugin } from "@platejs/table";
 
-import type { TTableCellElement, TTableElement } from "platejs";
 import type { SlateElementProps } from "platejs/static";
 import { SlateElement } from "platejs/static";
 import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-export const TableElementStatic = ({ children, ...props }: SlateElementProps<TTableElement>) => {
+export const TableElementStatic = ({ children, ...props }: SlateElementProps) => {
   const { disableMarginLeft } = props.editor.getOptions(BaseTablePlugin);
-  const marginLeft = disableMarginLeft ? 0 : props.element.marginLeft;
+  const marginLeft = disableMarginLeft
+    ? 0
+    : (props.element.marginLeft as string | number | undefined);
 
   return (
     <SlateElement {...props} className="overflow-x-auto py-5" style={{ paddingLeft: marginLeft }}>
@@ -31,7 +32,7 @@ export const TableRowElementStatic = (props: SlateElementProps) => (
 export const TableCellElementStatic = ({
   isHeader,
   ...props
-}: SlateElementProps<TTableCellElement> & {
+}: SlateElementProps & {
   isHeader?: boolean;
 }) => {
   const { editor, element } = props;
@@ -78,6 +79,6 @@ export const TableCellElementStatic = ({
   );
 };
 
-export const TableCellHeaderElementStatic = (props: SlateElementProps<TTableCellElement>) => (
+export const TableCellHeaderElementStatic = (props: SlateElementProps) => (
   <TableCellElementStatic {...props} isHeader />
 );

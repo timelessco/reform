@@ -99,7 +99,7 @@ describe("version history collection", () => {
       t.createUser({ id: ownerId, email: `owner-ver-${ownerId}@example.com`, name: "Owner" }),
     );
     const org = await createTestOrg(ownerId);
-    orgId = org.id as string;
+    orgId = org.id;
     const ws = await createTestWorkspace(orgId, ownerId);
     const form = await createTestForm(ws.id, ownerId);
     formId = form.id;

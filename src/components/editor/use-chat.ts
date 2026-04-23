@@ -37,7 +37,7 @@ type ChatMessage = UIMessage<{}, MessageDataPart>;
 export const useChat = () => {
   const editor = useEditorRef();
   // eslint-disable-next-line typescript-eslint/no-explicit-any
-  const options = usePluginOption(AIChatPlugin, "chatOptions" as any) as any;
+  const options = usePluginOption(AIChatPlugin, "chatOptions" as any);
 
   // remove when you implement the route /api/ai/command
   const abortControllerRef = React.useRef<AbortController | null>(null);

@@ -38,7 +38,7 @@ export const createVersionListCollection = (config: VersionListCollectionConfig)
   const { queryClient, formId, queryFn } = config;
 
   return createCollection(
-    queryCollectionOptions<VersionListItem, unknown, string[], string | number>({
+    queryCollectionOptions<VersionListItem, unknown, string[]>({
       queryKey: ["form-versions", formId],
       queryFn: async () => queryFn(),
       queryClient,
@@ -57,7 +57,7 @@ export const createVersionContentCollection = (config: VersionContentCollectionC
   const { queryClient, versionId, queryFn } = config;
 
   return createCollection(
-    queryCollectionOptions<VersionContent, unknown, string[], string | number>({
+    queryCollectionOptions<VersionContent, unknown, string[]>({
       queryKey: ["form-version-content", versionId],
       queryFn: async () => {
         const result = await queryFn();

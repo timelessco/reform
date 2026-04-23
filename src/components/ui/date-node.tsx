@@ -1,4 +1,3 @@
-import type { TDateElement } from "platejs";
 import type { PlateElementProps } from "platejs/react";
 
 import { PlateElement, useReadOnly } from "platejs/react";
@@ -8,7 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-export const DateElement = (props: PlateElementProps<TDateElement>) => {
+export const DateElement = (props: PlateElementProps) => {
   const { editor, element } = props;
 
   const readOnly = useReadOnly();
@@ -22,7 +21,9 @@ export const DateElement = (props: PlateElementProps<TDateElement>) => {
       {element.date ? (
         (() => {
           const today = new Date();
-          const elementDate = new Date(element.date);
+          const dateValue = element.date as string | undefined;
+          if (!dateValue) return null;
+          const elementDate = new Date(dateValue);
           const isToday =
             elementDate.getDate() === today.getDate() &&
             elementDate.getMonth() === today.getMonth() &&
@@ -86,7 +87,9 @@ export const DateElement = (props: PlateElementProps<TDateElement>) => {
           {element.date ? (
             (() => {
               const today = new Date();
-              const elementDate = new Date(element.date);
+              const dateValue = element.date as string | undefined;
+              if (!dateValue) return null;
+              const elementDate = new Date(dateValue);
               const isToday =
                 elementDate.getDate() === today.getDate() &&
                 elementDate.getMonth() === today.getMonth() &&

@@ -48,8 +48,7 @@ const CustomDomainSlugRoute = () => {
   const formId = loaderData?.form?.id ?? "";
 
   const rawCustomization = loaderData?.form?.customization ?? null;
-  const defaultMode = ((rawCustomization?.defaultMode as PublicTheme | undefined) ??
-    "system") as PublicTheme;
+  const defaultMode = (rawCustomization?.defaultMode as PublicTheme | undefined) ?? "system";
 
   const [viewerTheme, setViewerTheme] = useState<PublicTheme>(() => {
     if (typeof window === "undefined") return defaultMode;
@@ -149,9 +148,7 @@ export const Route = createFileRoute("/$slug")({
   head: ({ loaderData }) => {
     const siteTitle = loaderData?.domainMeta?.siteTitle ?? "Forms";
     const formTitle = loaderData?.form?.title;
-    const defaultMode =
-      (loaderData?.form?.customization as Record<string, string> | undefined)?.defaultMode ||
-      "system";
+    const defaultMode = loaderData?.form?.customization?.defaultMode || "system";
     const formId = loaderData?.form?.id ?? "";
     return {
       meta: [

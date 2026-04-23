@@ -54,7 +54,7 @@ export const FormHeaderPlugin = createPlatePlugin({
   // eslint-disable-next-line typescript-eslint/no-explicit-any
   extendEditor: ({ editor }: any) => {
     // eslint-disable-next-line typescript-eslint/no-explicit-any
-    const editorRef = editor as any;
+    const editorRef = editor;
     const { normalizeNode, deleteBackward, deleteForward, deleteFragment } = editorRef;
 
     // eslint-disable-next-line typescript-eslint/no-explicit-any
@@ -105,7 +105,7 @@ export const FormHeaderPlugin = createPlatePlugin({
         const selection = editorRef.selection;
         if (selection && editorRef.api.isCollapsed()) {
           // eslint-disable-next-line typescript-eslint/no-explicit-any
-          const edges = editorRef.api.edges(path) as any;
+          const edges = editorRef.api.edges(path);
           const start = edges?.[0];
           if (
             start &&
@@ -141,7 +141,7 @@ export const FormHeaderPlugin = createPlatePlugin({
       }
 
       // eslint-disable-next-line typescript-eslint/no-explicit-any
-      const edges = (editorRef.api.edges(selection) as any) ?? [];
+      const edges = editorRef.api.edges(selection) ?? [];
       const start = edges[0];
       const end = edges[1];
 
@@ -150,7 +150,7 @@ export const FormHeaderPlugin = createPlatePlugin({
           editorRef.tf.delete({
             at: {
               // eslint-disable-next-line typescript-eslint/no-explicit-any
-              anchor: (editorRef.api.edges([1]) as any)[0],
+              anchor: editorRef.api.edges([1])[0],
               focus: end,
             },
           });
@@ -160,7 +160,7 @@ export const FormHeaderPlugin = createPlatePlugin({
               at: [1],
             });
             // eslint-disable-next-line typescript-eslint/no-explicit-any
-            editorRef.tf.select((editorRef.api.edges([1]) as any)[0]);
+            editorRef.tf.select(editorRef.api.edges([1])[0]);
           }
           return;
         }

@@ -273,7 +273,7 @@ const SubmissionCell = ({
 
 const toSubmissionColumn = <TValue,>(
   column: ColumnDef<SerializedSubmission, TValue>,
-): ColumnDef<SerializedSubmission, unknown> => column as ColumnDef<SerializedSubmission, unknown>;
+): ColumnDef<SerializedSubmission> => column as ColumnDef<SerializedSubmission>;
 
 const SubmissionsPage = () => {
   const { formId } = Route.useParams();
@@ -380,7 +380,7 @@ const SubmissionsPage = () => {
     const orphaned = new Set<string>();
     allSubmissions.forEach((submission) => {
       if (submission.data && typeof submission.data === "object") {
-        Object.keys(submission.data as Record<string, unknown>).forEach((key) => {
+        Object.keys(submission.data).forEach((key) => {
           if (!currentFieldNames.has(key)) {
             orphaned.add(key);
           }
@@ -404,7 +404,7 @@ const SubmissionsPage = () => {
     const counts: Record<FieldStatus, number> = { current: 0, deleted: 0 };
 
     // Select column for row selection - fixed width, non-resizable to prevent overlap with actions
-    const baseColumns: ColumnDef<SerializedSubmission, unknown>[] = [
+    const baseColumns: ColumnDef<SerializedSubmission>[] = [
       {
         id: "select",
         header: ({ table }) => (
