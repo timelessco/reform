@@ -10,7 +10,7 @@ export const useDuplicateForm = () => {
     async (formId: string) => {
       const { form: newForm } = duplicateFormById(formId);
       toast.success("Form duplicated");
-      navigate({
+      void navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
         params: { workspaceId: newForm.workspaceId, formId: newForm.id },
       });

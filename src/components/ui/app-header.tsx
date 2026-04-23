@@ -98,7 +98,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
     if (!isEditRoute && workspaceId && formId) {
       openShare();
       enterPreview();
-      navigate({
+      void navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
         params: { workspaceId, formId },
         search: { force: true },
@@ -141,7 +141,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
     try {
       await updateFormStatus(formId, "archived");
       toast.success("Form moved to trash");
-      navigate({ to: "/dashboard" });
+      void navigate({ to: "/dashboard" });
     } catch {
       toast.error("Failed to delete form");
     }
@@ -155,7 +155,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
         toast.success("Form published");
         // Navigate to submissions, then open share sidebar for immediate link sharing
         openShare();
-        navigate({
+        void navigate({
           to: "/workspace/$workspaceId/form-builder/$formId/submissions",
           params: { workspaceId, formId },
         });
@@ -206,7 +206,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
 
   const handleEditForm = () => {
     if (workspaceId && formId) {
-      navigate({
+      void navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
         params: { workspaceId, formId },
         search: (prev: Record<string, unknown>) => ({ ...prev, force: true }),
@@ -265,7 +265,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
       label: "Analytics",
       onClick: () => {
         if (workspaceId && formId) {
-          navigate({
+          void navigate({
             to: "/workspace/$workspaceId/form-builder/$formId/submissions",
             params: { workspaceId, formId },
           });
@@ -732,7 +732,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                handleDiscardChanges();
+                void handleDiscardChanges();
                 setActiveDialog(null);
               }}
               className="bg-destructive text-white hover:bg-destructive/90"

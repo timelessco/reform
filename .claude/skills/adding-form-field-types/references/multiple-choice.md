@@ -1,14 +1,17 @@
 # Multiple Choice Field
 
 ## Node Properties
+
 - **type:** `"formMultipleChoice"`
 - **options:** `Array<{label: string; value: string}>` — stored as element property
 - **Additional:** `allowOther` (boolean)
 
 ## Editor Component
+
 Void element — renders radio button list. Options edited via the block menu or inline UI.
 
 ## Plugin Config
+
 ```tsx
 {
   key: "formMultipleChoice",
@@ -18,19 +21,24 @@ Void element — renders radio button list. Options edited via the block menu or
 ```
 
 ## Keyboard
+
 **Custom handling needed:**
+
 - Arrow Up/Down within options list to navigate between choices
 - Enter to add a new option
 - Backspace on empty option to delete it
 - Otherwise: falls through to shared handler
 
 ## Slash Menu
+
 - **Icon:** `CircleCheckIcon` (lucide-react)
 - **Keywords:** `["form", "multiple", "choice", "radio", "select", "option"]`
 - **Label:** `"Multiple choice"`
 
 ## Insert Transform
+
 Default options:
+
 ```tsx
 {
   type: "formMultipleChoice",
@@ -44,9 +52,11 @@ Default options:
 ```
 
 ## Validation (Zod)
+
 ```tsx
-z.string().nonempty("Please select an option")
+z.string().nonempty("Please select an option");
 ```
 
 ## Preview Component
+
 Render as radio button group with labels.
