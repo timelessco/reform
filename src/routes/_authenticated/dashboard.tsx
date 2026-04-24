@@ -359,10 +359,6 @@ const DashboardPage = () => {
                 return (
                   <Card
                     key={form.id}
-                    // `bg-transparent` overrides Card's default `bg-card` so
-                    // idle rows blend with the page background. In dark mode,
-                    // `bg-card` is a shade lighter than `bg-background` and
-                    // was making every row look pre-selected.
                     className={`group py-2 px-3 gap-0 ring-0 bg-transparent transition-[background-color,box-shadow] duration-200 cursor-pointer hover:bg-muted/30 ${isSelected ? "bg-muted/50" : ""}`}
                   >
                     <Link
