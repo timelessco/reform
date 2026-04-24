@@ -3,8 +3,11 @@ import { createSlateEditor } from "platejs";
 import type { Value } from "platejs";
 
 import { BaseEditorKit } from "@/components/editor/editor-base-kit";
+import { ServerFormIcon } from "@/components/form-components/server-form-icon";
 import { EditorStatic } from "@/components/ui/editor-static";
-import { cn } from "@/lib/utils";
+import { DEFAULT_ICON } from "@/lib/config/app-config";
+import { CUSTOMIZATION_AUTO_DEFAULTS } from "@/lib/theme/customization-defaults";
+import { cn, DEFAULT_ICON_NAME, isValidUrl } from "@/lib/utils";
 import { transformPlateForPreview } from "@/lib/editor/transform-plate-for-preview";
 import type {
   FieldSegment,
@@ -137,7 +140,7 @@ const groupSegmentsForRendering = (
   return { grouped, fields };
 };
 
-const renderStepComponent = async (segments: PreviewSegment[]) => {
+export const renderStepComponent = async (segments: PreviewSegment[]) => {
   const { grouped, fields } = groupSegmentsForRendering(segments);
 
   const keyedItems = grouped.map((item, idx) => {
@@ -205,7 +208,137 @@ const renderStepComponent = async (segments: PreviewSegment[]) => {
   return { src, fields };
 };
 
-const renderThankYouComponent = async (nodes: Value | null) => {
+const VERCEL_BLOB_HOST = ".public.blob.vercel-storage.com";
+const HEX_COLOR_RE = /^#([0-9A-Fa-f]{3}){1,2}$/;
+const PAGE_MAX_WIDTH = `var(--bf-page-width, ${CUSTOMIZATION_AUTO_DEFAULTS.pageWidth})`;
+
+const vercelImg = (url: string, w: number, q = 75) =>
+  url.includes(VERCEL_BLOB_HOST)
+    ? `/_vercel/image?url=${encodeURIComponent(url)}&w=${w}&q=${q}`
+    : url;
+
+const vercelSrcSet = (url: string, widths: number[], q = 75) =>
+  url.includes(VERCEL_BLOB_HOST)
+    ? widths.map((w) => `${vercelImg(url, w, q)} ${w}w`).join(", ")
+    : undefined;
+
+interface PublicFormHeaderData {
+  title?: string | null;
+  icon?: string | null;
+  cover?: string | null;
+  customization?: Record<string, string> | null;
+}
+
+const resolveLogoCircleSize = (customization: Record<string, string> | null | undefined) => {
+  const raw = customization?.logoWidth;
+  if (!raw) return { size: "100", minimal: false };
+  const parsed = Number.parseInt(raw);
+  return {
+    size: String(Math.max(48, parsed)),
+    minimal: parsed <= 0,
+  };
+};
+
+const resolveSpriteIconName = (icon: string) => (icon === DEFAULT_ICON ? DEFAULT_ICON_NAME : icon);
+
+export const renderHeaderComponent = async ({
+  title,
+  icon,
+  cover,
+  customization,
+}: PublicFormHeaderData) => {
+  const coverIsHex = !!cover && HEX_COLOR_RE.test(cover);
+  const coverIsUrl = !!cover && isValidUrl(cover);
+  const hasCover = coverIsHex || coverIsUrl;
+  const iconIsUrl = !!icon && isValidUrl(icon);
+  const iconIsSprite = !!icon && !iconIsUrl;
+  const hasTitle = !!title && title.trim().length > 0;
+
+  if (!hasCover && !iconIsUrl && !iconIsSprite && !hasTitle) return null;
+
+  const { size: logoCircleSize, minimal: isLogoMinimal } = resolveLogoCircleSize(customization);
+  const hasIcon = iconIsUrl || iconIsSprite;
+
+  const coverClass =
+    "relative w-screen left-[50%] right-[50%] -ml-[50vw] -mr-[50vw] h-[120px] sm:h-[200px]";
+  const iconWrapClass = cn("relative z-10 mb-1", hasCover ? "-mt-[50px]" : "mt-4 sm:mt-6");
+  const tinted = !!cover && cover.includes("tint=true");
+
+  return createCompositeComponent(() => (
+    <div className="mb-4 sm:mb-8 w-full">
+      {coverIsHex && cover && (
+        <div className={coverClass} data-bf-cover style={{ backgroundColor: cover }} />
+      )}
+      {coverIsUrl && cover && (
+        <div className={cn(coverClass, "overflow-hidden bg-muted")} data-bf-cover>
+          {tinted && (
+            <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
+          )}
+          <img
+            src={vercelImg(cover, 1200)}
+            srcSet={vercelSrcSet(cover, [640, 960, 1200, 1600])}
+            sizes="100vw"
+            alt="Form cover"
+            width={1200}
+            height={200}
+            decoding="async"
+            className={cn(
+              "w-full h-full object-cover",
+              tinted && "relative z-0 brightness-60 grayscale",
+            )}
+          />
+        </div>
+      )}
+      <div className="mx-auto px-4" style={{ maxWidth: PAGE_MAX_WIDTH }} data-bf-form-container>
+        <div className="flex flex-col">
+          {iconIsUrl && icon && (
+            <div className={iconWrapClass} data-bf-logo-container={hasCover ? "true" : undefined}>
+              <img
+                src={vercelImg(icon, 240)}
+                srcSet={vercelSrcSet(icon, [120, 240])}
+                sizes="(min-width: 640px) 120px, 100px"
+                alt="Form icon"
+                width={120}
+                height={120}
+                decoding="async"
+                className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-md object-cover"
+                data-bf-logo
+              />
+            </div>
+          )}
+          {iconIsSprite && icon && (
+            <div
+              className={iconWrapClass}
+              data-bf-logo-emoji-container={hasCover ? "true" : undefined}
+            >
+              <span data-bf-logo-icon={isLogoMinimal ? "minimal" : ""}>
+                <ServerFormIcon
+                  iconName={resolveSpriteIconName(icon)}
+                  iconSize="48"
+                  size={logoCircleSize}
+                />
+              </span>
+            </div>
+          )}
+          {hasTitle && (
+            <h1
+              data-bf-title
+              style={{ textWrap: "pretty" }}
+              className={cn(
+                "text-4xl sm:text-[48px] font-serif font-light -tracking-[0.03em] text-foreground",
+                hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8",
+              )}
+            >
+              {title}
+            </h1>
+          )}
+        </div>
+      </div>
+    </div>
+  ));
+};
+
+export const renderThankYouComponent = async (nodes: Value | null) => {
   if (!nodes || nodes.length === 0) return null;
   return createCompositeComponent(() => <ServerPlateBlock nodes={nodes} />);
 };
@@ -219,9 +352,17 @@ export const runPublicFormViewRSC = async (data: { id: string }) => {
     ? transformPlateForPreview(base.form.content as Value)
     : { steps: [], thankYouNodes: null };
 
-  const [stepComponents, thankYou] = await Promise.all([
+  const [stepComponents, thankYou, header] = await Promise.all([
     Promise.all(steps.map((segs) => renderStepComponent(segs))),
     renderThankYouComponent(thankYouNodes),
+    base.form
+      ? renderHeaderComponent({
+          title: base.form.title,
+          icon: base.form.icon,
+          cover: base.form.cover,
+          customization: base.form.customization,
+        })
+      : Promise.resolve(null),
   ]);
 
   const firstStepFieldTypes = stepComponents[0]
@@ -234,6 +375,7 @@ export const runPublicFormViewRSC = async (data: { id: string }) => {
     steps: stepComponents,
     stepCount: steps.length,
     thankYou,
+    header,
     preloadModuleUrls,
   };
 };

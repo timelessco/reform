@@ -82,6 +82,8 @@ interface PublicFormPageProps {
     steps: StepRSC[];
     thankYou?: unknown;
     stepCount: number;
+    /** Pre-rendered header composite (cover + icon + title). */
+    header?: unknown;
   };
 }
 
@@ -354,14 +356,10 @@ export const PublicFormPage = ({
           steps={rsc.steps}
           thankYou={(rsc.thankYou as string | null) ?? null}
           stepCount={rsc.stepCount}
-          title={hideTitle ? undefined : form.title}
-          icon={hideTitle ? undefined : form.icon}
-          cover={hideTitle ? undefined : form.cover}
+          header={hideTitle ? null : rsc.header}
           onSubmit={handleSubmit}
-          hideTitle={hideTitle}
           settings={settings}
           formId={formId}
-          customization={form.customization}
         />
       ) : (
         <Suspense fallback={null}>

@@ -116,6 +116,7 @@ const PublicFormRoute = () => {
                 steps: loaderData.steps,
                 thankYou: loaderData.thankYou,
                 stepCount: loaderData.stepCount,
+                header: loaderData.header,
               }
             : undefined
         }
@@ -151,23 +152,29 @@ export const Route = createFileRoute("/forms/$formId")({
             : "Fill out this form",
         },
       ],
-      links: preloadUrls.map((href) => ({
-        rel: "modulepreload",
-        href,
-        crossOrigin: "",
-      })),
-      scripts: [
+      links: [
+        // Preload the Latin subset of Inter Variable. The other subsets
+        // (latin-ext, rest) stay lazy — the browser only fetches them if
+        // the page renders a glyph outside U+0000–00FF.
         {
-          // Skip loading inter-v on public forms — override --font-sans before
-          // paint so body's font-sans utility resolves to --bf-font (or system
-          // fallback). The @font-face inter-v declaration then matches nothing
-          // and the browser never fetches the Inter-V woff2.
-          children: `document.documentElement.style.setProperty("--font-sans",'var(--bf-font,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif)');`,
+          rel: "preload",
+          href: "/fonts/inter-variable/fonts/inter-variable-latin.woff2",
+          as: "font",
+          type: "font/woff2",
+          crossOrigin: "anonymous" as const,
         },
+        ...preloadUrls.map((href) => ({
+          rel: "modulepreload",
+          href,
+          crossOrigin: "" as const,
+        })),
+      ],
+      scripts: [
         {
           // Apply theme before paint — viewer override > creator default > system
           children: `(function(){try{var d=document.documentElement;var override=null;try{override=window.localStorage.getItem("bf-form-theme:${formId}");}catch(e){}var def=${JSON.stringify(defaultMode)};var pick=override||def;var m=pick==="system"?(window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"):pick;d.classList.remove("light","dark");d.classList.add(m);d.style.colorScheme=m;}catch(e){}})();`,
         },
+
         {
           // Pre-hydration: as soon as the SSR'd form HTML is parsed, tell the
           // parent popup (a) the measured height so it can size the iframe

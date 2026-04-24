@@ -3,7 +3,6 @@
 import { CompositeComponent } from "@tanstack/react-start/rsc";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { IconPickerPreview } from "@/components/icon-picker";
 import { RenderFieldComponent } from "@/components/form-components/render-step-preview-input";
 import { Button } from "@/components/ui/button";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
@@ -12,9 +11,8 @@ import { StepFormProvider, useStepForm } from "@/contexts/step-form-context";
 import { useTranslation } from "@/contexts/translation-context";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { useStepPreviewForm } from "@/hooks/use-preview-form";
-import { DEFAULT_ICON } from "@/lib/config/app-config";
 import { CUSTOMIZATION_AUTO_DEFAULTS } from "@/lib/theme/customization-defaults";
-import { cn, DEFAULT_ICON_NAME, isValidUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import type { PlateFormField } from "@/lib/editor/transform-plate-to-form";
 import type {
   ButtonGroupSlotProps,
@@ -43,19 +41,18 @@ interface FormPreviewRSCProps {
   steps: StepRSC[];
   thankYou?: string | null;
   stepCount: number;
-  title?: string;
-  icon?: string | null;
-  cover?: string | null;
-  hideTitle?: boolean;
+  /**
+   * Pre-rendered header composite (cover + icon + title). Server-rendered so
+   * the client ships no cover/icon rendering code. `null` when the form has
+   * no header content, `undefined` when the viewer requested `hideTitle`.
+   */
+  header?: unknown;
   settings?: PublicFormSettings;
   formId: string;
-  customization?: Record<string, string> | null;
   onSubmit?: (values: Record<string, unknown>) => Promise<void>;
 }
 
 const PAGE_MAX_WIDTH = `var(--bf-page-width, ${CUSTOMIZATION_AUTO_DEFAULTS.pageWidth})`;
-
-const isHexColor = (str: string): boolean => /^#([0-9A-Fa-f]{3}){1,2}$/.test(str);
 
 const NoContentPlaceholderIcon = (
   <svg
@@ -97,139 +94,6 @@ const SuccessCheckmarkIcon = (
     <polyline points="22 4 12 14.01 9 11.01" />
   </svg>
 );
-
-const PublicFormHeader = ({
-  title,
-  icon,
-  cover,
-  hideTitle,
-  customization,
-}: {
-  title?: string;
-  icon?: string | null;
-  cover?: string | null;
-  hideTitle?: boolean;
-  customization?: Record<string, string> | null;
-}) => {
-  const [imageError, setImageError] = useState(false);
-  const [iconError, setIconError] = useState(false);
-
-  const hasCustomization = !!(customization && Object.keys(customization).length > 0);
-  const isLogoMinimal =
-    hasCustomization && !!customization?.logoWidth && Number.parseInt(customization.logoWidth) <= 0;
-  const logoCircleSize =
-    hasCustomization && customization?.logoWidth
-      ? String(Math.max(48, Number.parseInt(customization.logoWidth)))
-      : "100";
-
-  const hasCover = !!cover && (isHexColor(cover) || isValidUrl(cover)) && !imageError;
-  const hasIcon = !!icon && !iconError;
-  const hasTitle = !!title && title.trim().length > 0 && !hideTitle;
-
-  if (!hasCover && !hasIcon && !hasTitle) return null;
-
-  const coverClass =
-    "relative w-screen left-[50%] right-[50%] -ml-[50vw] -mr-[50vw] h-[120px] sm:h-[200px]";
-
-  const renderCover = () => {
-    if (!cover) return null;
-    if (isHexColor(cover)) {
-      return <div className={coverClass} data-bf-cover style={{ backgroundColor: cover }} />;
-    }
-    if (isValidUrl(cover) && !imageError) {
-      return (
-        <div className={cn(coverClass, "overflow-hidden bg-muted")} data-bf-cover>
-          {cover.includes("tint=true") && (
-            <div className="absolute inset-0 z-1 bg-primary opacity-50 mix-blend-color pointer-events-none" />
-          )}
-          <img
-            src={cover}
-            alt="Form cover"
-            width={1200}
-            height={200}
-            className={cn(
-              "w-full h-full object-cover",
-              cover.includes("tint=true") && "relative z-0 brightness-60 grayscale",
-            )}
-            onError={() => setImageError(true)}
-          />
-        </div>
-      );
-    }
-    return null;
-  };
-
-  const iconWrapClass = cn("relative z-10 mb-1", hasCover ? "-mt-[50px]" : "mt-4 sm:mt-6");
-
-  const renderIcon = () => {
-    if (!icon) return null;
-    if (icon === DEFAULT_ICON) {
-      return (
-        <div className={iconWrapClass} data-bf-logo-emoji-container={hasCover ? "true" : undefined}>
-          <span data-bf-logo-icon={isLogoMinimal ? "minimal" : ""}>
-            <IconPickerPreview
-              icon={DEFAULT_ICON_NAME}
-              iconColor={undefined}
-              useThemeColor
-              iconSize="48"
-              size={logoCircleSize}
-              standaloneIcon
-            />
-          </span>
-        </div>
-      );
-    }
-    if (isValidUrl(icon) && !iconError) {
-      return (
-        <div className={iconWrapClass} data-bf-logo-container={hasCover ? "true" : undefined}>
-          <img
-            src={icon}
-            alt="Form icon"
-            width={120}
-            height={120}
-            className="w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-md object-cover"
-            data-bf-logo
-            onError={() => setIconError(true)}
-          />
-        </div>
-      );
-    }
-    return (
-      <div className={iconWrapClass} data-bf-logo-emoji-container={hasCover ? "true" : undefined}>
-        <span data-bf-logo-icon={isLogoMinimal ? "minimal" : ""}>
-          <IconPickerPreview
-            icon={icon}
-            iconColor={undefined}
-            useThemeColor
-            iconSize="48"
-            size={logoCircleSize}
-            standaloneIcon
-          />
-        </span>
-      </div>
-    );
-  };
-
-  return (
-    <div className="mb-4 sm:mb-8 w-full">
-      {hasCover && renderCover()}
-      <div className="mx-auto px-4" style={{ maxWidth: PAGE_MAX_WIDTH }} data-bf-form-container>
-        <div className="flex flex-col">
-          {hasIcon && renderIcon()}
-          {hasTitle && (
-            <h1
-              data-bf-title
-              style={{ textWrap: "pretty" }}
-              className={`text-4xl sm:text-[48px] font-serif font-light -tracking-[0.03em] text-foreground ${hasIcon ? "mt-3 sm:mt-4" : "mt-6 sm:mt-8"}`}
-            >
-              {title}
-            </h1>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const DefaultThankYou = ({ onReset }: { onReset?: () => void }) => {
   const { t } = useTranslation();
@@ -455,21 +319,13 @@ const StepFormRSC = ({
 const FormPreviewRSCContent = ({
   steps,
   thankYou,
-  title,
-  icon,
-  cover,
-  hideTitle,
+  header,
   settings,
-  customization,
 }: {
   steps: StepRSC[];
   thankYou?: string | null;
-  title?: string;
-  icon?: string | null;
-  cover?: string | null;
-  hideTitle?: boolean;
+  header?: unknown;
   settings?: PublicFormSettings;
-  customization?: Record<string, string> | null;
 }) => {
   const { currentStep, totalSteps, isSubmitted, direction, reset } = useStepForm();
   const { t } = useTranslation();
@@ -502,13 +358,7 @@ const FormPreviewRSCContent = ({
   if (isSubmitted) {
     return (
       <div className="w-full">
-        <PublicFormHeader
-          title={title}
-          icon={icon}
-          cover={cover}
-          hideTitle={hideTitle}
-          customization={customization}
-        />
+        {header ? <TypedComposite src={header} /> : null}
         <div
           className="w-full mx-auto px-4"
           style={{ maxWidth: PAGE_MAX_WIDTH }}
@@ -554,13 +404,7 @@ const FormPreviewRSCContent = ({
 
   return (
     <div className="w-full">
-      <PublicFormHeader
-        title={title}
-        icon={icon}
-        cover={cover}
-        hideTitle={hideTitle}
-        customization={customization}
-      />
+      {header ? <TypedComposite src={header} /> : null}
 
       {settings?.progressBar && totalSteps > 1 && (
         <div
@@ -598,13 +442,9 @@ export const FormPreviewRSC = ({
   steps,
   thankYou,
   stepCount,
-  title,
-  icon,
-  cover,
-  hideTitle,
+  header,
   settings,
   formId,
-  customization,
   onSubmit,
 }: FormPreviewRSCProps) => {
   if (steps.length === 0 || stepCount === 0) {
@@ -629,12 +469,8 @@ export const FormPreviewRSC = ({
       <FormPreviewRSCContent
         steps={steps}
         thankYou={thankYou}
-        title={title}
-        icon={icon}
-        cover={cover}
-        hideTitle={hideTitle}
+        header={header}
         settings={settings}
-        customization={customization}
       />
     </StepFormProvider>
   );

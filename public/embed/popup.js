@@ -214,12 +214,12 @@
       let i = Q(e, t);
       return ((o.src = i), n.appendChild(o), o);
     };
-  var M = (e, t) => {
+  var I = (e, t) => {
       let n = Math.min(600, window.innerHeight - 40),
         o = Math.min(t + 2, n);
       e.style.height = `${o}px`;
     },
-    I = (e) => {
+    M = (e) => {
       e.remove();
     };
   var ee =
@@ -732,7 +732,7 @@
     },
     re = (e) => {
       let t = p.get(e);
-      t && (I(t.iframe), t.overlay && F(t.overlay), p.delete(e));
+      t && (M(t.iframe), t.overlay && F(t.overlay), p.delete(e));
     },
     se = (e) => {
       let t;
@@ -754,7 +754,7 @@
             n.loadingEl && y(n.loadingEl);
             break;
           case "Reform.Resize":
-            typeof t.height == "number" && (M(n.iframe, t.height), _(n.container, t.height));
+            typeof t.height == "number" && (I(n.iframe, t.height), _(n.container, t.height));
             break;
           case "Reform.FormSubmitted":
             if (n.options.onSubmit)

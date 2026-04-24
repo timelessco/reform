@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { MULTI_SELECT_COLORS } from "@/components/ui/form-option-item-constants";
 import { Button } from "@/components/ui/button";
+import { Image } from "@/components/ui/image";
 import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataGrid, DataGridContainer } from "@/components/ui/data-grid";
@@ -251,9 +252,12 @@ const SubmissionCell = ({
           className="flex w-full items-center justify-center gap-2 max-w-[180px] group cursor-pointer"
         >
           {isImage ? (
-            <img
+            <Image
               src={file.url}
               alt=""
+              width={64}
+              height={32}
+              layout="fixed"
               loading="lazy"
               className="h-8 w-auto max-w-[64px] rounded object-contain border border-border/40 shrink-0"
             />
@@ -790,9 +794,12 @@ const SubmissionsPage = () => {
             <>
               <div className="flex-1 min-h-0 flex items-center justify-center bg-muted/30 rounded-md overflow-auto">
                 {previewFile.type.startsWith("image/") ? (
-                  <img
+                  <Image
                     src={previewFile.url}
                     alt={previewFile.name}
+                    width={1600}
+                    height={1200}
+                    layout="constrained"
                     className="max-w-full max-h-[70vh] object-contain"
                   />
                 ) : previewFile.type === "application/pdf" ? (

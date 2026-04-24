@@ -55,14 +55,19 @@ export const Route = createFileRoute("/forms/$i8n/$formId")({
           : "Fill out this form",
       },
     ],
-    scripts: [
+    links: [
+      // Preload the Latin subset of Inter Variable. The other subsets
+      // (latin-ext, rest) stay lazy — the browser only fetches them if
+      // the page renders a glyph outside U+0000–00FF.
       {
-        // Skip loading inter-v on public forms — override --font-sans before
-        // paint so body's font-sans utility resolves to --bf-font (or system
-        // fallback). The @font-face inter-v declaration then matches nothing
-        // and the browser never fetches the Inter-V woff2.
-        children: `document.documentElement.style.setProperty("--font-sans",'var(--bf-font,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif)');`,
+        rel: "preload",
+        href: "/fonts/inter-variable/fonts/inter-variable-latin.woff2",
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous" as const,
       },
+    ],
+    scripts: [
       {
         // Inline script to force light theme before paint — prevents dark mode flash
         children: `document.documentElement.classList.remove("dark");document.documentElement.classList.add("light");`,
