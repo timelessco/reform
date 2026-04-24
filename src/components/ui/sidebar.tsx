@@ -3,18 +3,13 @@ import { useRender } from "@base-ui/react/use-render";
 import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
 import * as React from "react";
-import { createContext, use, useCallback, useMemo, useRef, useState } from "react";
+import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { MobileSidebarDrawer } from "@/components/ui/mobile-sidebar-drawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -25,7 +20,6 @@ import { PanelLeftIcon } from "@/components/ui/icons";
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
-const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
 
 const SIDEBAR_WIDTH_MIN = 220;
@@ -76,6 +70,13 @@ export const SidebarProvider = ({
   const isMobile = useIsMobile();
   const [openMobile, setOpenMobile] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+
+  // Auto-close the mobile drawer on navigation so tapping a nav item leaves a
+  // clean screen instead of the drawer overlaying the destination route.
+  const { pathname } = useLocation();
+  useEffect(() => {
+    if (isMobile) setOpenMobile(false);
+  }, [pathname, isMobile]);
 
   const [sidebarWidth, _setSidebarWidth] = useState(() => {
     if (typeof window === "undefined") return SIDEBAR_WIDTH_DEFAULT;
@@ -191,7 +192,6 @@ export const Sidebar = ({
   collapsible = "offcanvas",
   className,
   children,
-  dir,
   ...props
 }: React.ComponentProps<"div"> & {
   side?: "left" | "right";
@@ -223,27 +223,9 @@ export const Sidebar = ({
 
   if (isMobile) {
     return (
-      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
-        <SheetContent
-          dir={dir}
-          data-sidebar="sidebar"
-          data-slot="sidebar"
-          data-mobile="true"
-          className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
-          style={
-            {
-              "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-            } as React.CSSProperties
-          }
-          side={side}
-        >
-          <SheetHeader className="sr-only">
-            <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
-          </SheetHeader>
-          <div className="flex h-full w-full flex-col">{children}</div>
-        </SheetContent>
-      </Sheet>
+      <MobileSidebarDrawer open={openMobile} onOpenChange={setOpenMobile}>
+        {children}
+      </MobileSidebarDrawer>
     );
   }
 

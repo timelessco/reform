@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import {
+  ArrowLeftIcon,
   BellIcon,
   CheckIcon,
   FileTextIcon,
@@ -108,6 +109,8 @@ import {
 } from "@/collections";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileRightDrawer } from "@/components/ui/mobile-right-drawer";
 import {
   useArchivedForms,
   useFavoriteForms,
@@ -313,7 +316,8 @@ const AuthLayoutContent = () => {
   const { formId } = useParams({ strict: false });
 
   // Editor sidebar management
-  const { activeSidebar } = useEditorSidebar();
+  const { activeSidebar, closeSidebar } = useEditorSidebar();
+  const isMobile = useIsMobile();
 
   const isFormBuilder = pathname.includes("/form-builder/");
   // "history" and "customize" sidebars are edit-route-only (derived guard replaces useEffect cleanup)
@@ -369,14 +373,18 @@ const AuthLayoutContent = () => {
           />
         )}
         <div className="relative z-20 flex-1 min-h-0 overflow-hidden flex">
-          {/* Main content - flex-1 auto fills available space */}
+          {/* Main content - flex-1 auto fills available space.
+              On mobile the right sidebar is a floating overlay (a drawer),
+              so we don't pad the content out — that's what made the editor
+              unreadably narrow on phones. Desktop keeps the push-to-resize
+              behavior users expect on wide screens. */}
           <div
             className={cn(
               "flex-1 min-w-0 flex flex-col z-50",
               !isRightResizing && "transition-[padding] duration-200 ease-linear",
             )}
             style={{
-              paddingRight: showEditorSidebar ? rightSidebarWidth : 0,
+              paddingRight: !isMobile && showEditorSidebar ? rightSidebarWidth : 0,
             }}
           >
             <div className="relative z-0 shrink-0">
@@ -388,8 +396,9 @@ const AuthLayoutContent = () => {
           </div>
         </div>
 
-        {/* Right sidebar resize handle - fixed overlay */}
-        {showEditorSidebar && (
+        {/* Resize handle is desktop-only — there's nothing to resize when
+            the sidebar is a drawer. */}
+        {showEditorSidebar && !isMobile && (
           <RightSidebarResizeHandle
             sidebarWidth={rightSidebarWidth}
             setSidebarWidth={setRightSidebarWidth}
@@ -397,20 +406,8 @@ const AuthLayoutContent = () => {
           />
         )}
 
-        {/* Right sidebar - fixed overlay */}
-        <div
-          className={cn(
-            "fixed top-0 bottom-0 right-0 z-40 overflow-hidden bg-background",
-            !isRightResizing && "transition-[width] duration-200 ease-linear",
-            "[[data-resizing]_&]:transition-none",
-            showEditorSidebar && "border-l border-sidebar-border",
-            !showEditorSidebar && "pointer-events-none",
-          )}
-          style={{
-            width: showEditorSidebar ? `${rightSidebarWidth}px` : 0,
-          }}
-        >
-          <div className="h-full w-full">
+        {(() => {
+          const rightSidebarContent = (
             <Suspense fallback={null}>
               {activeSidebar === "settings" && formId && (
                 <LazyFormSettingsSidebar formId={formId} />
@@ -421,8 +418,31 @@ const AuthLayoutContent = () => {
               )}
               {activeSidebar === "customize" && formId && <LazyCustomizeSidebar formId={formId} />}
             </Suspense>
-          </div>
-        </div>
+          );
+          if (isMobile) {
+            return (
+              <MobileRightDrawer open={showEditorSidebar} onClose={closeSidebar}>
+                {rightSidebarContent}
+              </MobileRightDrawer>
+            );
+          }
+          return (
+            <div
+              className={cn(
+                "fixed top-0 bottom-0 right-0 z-40 overflow-hidden bg-background",
+                !isRightResizing && "transition-[width] duration-200 ease-linear",
+                "[[data-resizing]_&]:transition-none",
+                showEditorSidebar && "border-l border-sidebar-border",
+                !showEditorSidebar && "pointer-events-none",
+              )}
+              style={{
+                width: showEditorSidebar ? `${rightSidebarWidth}px` : 0,
+              }}
+            >
+              <div className="h-full w-full">{rightSidebarContent}</div>
+            </div>
+          );
+        })()}
       </SidebarInset>
     </>
   );
@@ -434,7 +454,8 @@ const AuthLayoutContent = () => {
 // App Sidebar Component using shadcn/ui
 const AppSidebar = () => {
   const { toggleSidebar } = useSidebar();
-  const { isInboxOpen, toggleInbox } = useMinimalSidebar();
+  const { isInboxOpen, toggleInbox, closeInbox } = useMinimalSidebar();
+  const isMobile = useIsMobile();
   const location = useLocation();
   const router = useRouter();
   const {
@@ -476,76 +497,100 @@ const AppSidebar = () => {
     ignoreInputs: true,
   });
 
+  // On mobile, tapping "Notifications" pushes an inbox view into the drawer
+  // instead of opening the desktop floating panel (which has no sensible
+  // anchor when the sidebar itself is a floating drawer).
+  const showMobileInbox = isMobile && isInboxOpen;
+
   return (
     <>
       <Sidebar className="border-r-[0.5px] bg-background h-screen">
-        <SidebarHeader className="h-12 pl-2 pr-2 pt-2 pb-0 flex flex-row items-center">
-          <Tooltip>
-            <TooltipTrigger render={<LogoToggle direction="left" onClick={toggleSidebar} />} />
-            <TooltipContent side="bottom" align="start">
-              <p>Collapse sidebar</p>
-              <p className="text-xs text-muted-foreground">
-                {formatForDisplay(HOTKEYS.DISMISS_SIDEBARS)}
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </SidebarHeader>
+        {showMobileInbox ? (
+          <InboxPanelBody
+            onClose={closeInbox}
+            headerLeft={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                onClick={closeInbox}
+                aria-label="Back"
+              >
+                <ArrowLeftIcon className="h-4 w-4" />
+              </Button>
+            }
+          />
+        ) : (
+          <>
+            <SidebarHeader className="h-12 pl-2 pr-2 pt-2 pb-0 flex flex-row items-center">
+              <Tooltip>
+                <TooltipTrigger render={<LogoToggle direction="left" onClick={toggleSidebar} />} />
+                <TooltipContent side="bottom" align="start">
+                  <p>Collapse sidebar</p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatForDisplay(HOTKEYS.DISMISS_SIDEBARS)}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </SidebarHeader>
 
-        <SidebarContent className="gap-0">
-          <SidebarGroup className="pt-2 py-0">
-            <SidebarGroupContent className="">
-              {/* Nav items: Figma system-flat node 23504-5047 - pixel-perfect */}
-              <SidebarMenu className="gap-0">
-                <SidebarMenuItem>
-                  <SidebarItem
-                    prefix={<HomeIcon className="size-[18px] text-muted-foreground" />}
-                    label="All"
-                    linkOptions={{ to: "/dashboard" }}
-                    isActive={location.pathname === "/dashboard"}
-                  />
-                  {/* </SidebarMenuButton> */}
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarItem
-                    onClick={togglePalette}
-                    prefix={<SearchIcon className="size-[18px] text-muted-foreground" />}
-                    label="Search"
-                  />
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarItem
-                    onClick={toggleInbox}
-                    isActive={isInboxOpen}
-                    prefix={<BellIcon className="size-[18px] text-muted-foreground" />}
-                    label="Notifications"
-                  >
-                    {pendingCount > 0 && (
-                      <span className="text-[10px] w-4 text-center bg-primary text-primary-foreground py-0.5 rounded-full font-semibold shrink-0 tabular-nums">
-                        {pendingCount}
-                      </span>
-                    )}
-                  </SidebarItem>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarItem
-                    onClick={handleOpenSettings}
-                    prefix={<SettingsIcon className="size-[18px] text-muted-foreground" />}
-                    label="Settings"
-                  />
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+            <SidebarContent className="gap-0">
+              <SidebarGroup className="pt-2 py-0">
+                <SidebarGroupContent className="">
+                  {/* Nav items: Figma system-flat node 23504-5047 - pixel-perfect */}
+                  <SidebarMenu className="gap-0">
+                    <SidebarMenuItem>
+                      <SidebarItem
+                        prefix={<HomeIcon className="size-[18px] text-muted-foreground" />}
+                        label="All"
+                        linkOptions={{ to: "/dashboard" }}
+                        isActive={location.pathname === "/dashboard"}
+                      />
+                      {/* </SidebarMenuButton> */}
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarItem
+                        onClick={togglePalette}
+                        prefix={<SearchIcon className="size-[18px] text-muted-foreground" />}
+                        label="Search"
+                      />
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarItem
+                        onClick={toggleInbox}
+                        isActive={isInboxOpen}
+                        prefix={<BellIcon className="size-[18px] text-muted-foreground" />}
+                        label="Notifications"
+                      >
+                        {pendingCount > 0 && (
+                          <span className="text-[10px] w-4 text-center bg-primary text-primary-foreground py-0.5 rounded-full font-semibold shrink-0 tabular-nums">
+                            {pendingCount}
+                          </span>
+                        )}
+                      </SidebarItem>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarItem
+                        onClick={handleOpenSettings}
+                        prefix={<SettingsIcon className="size-[18px] text-muted-foreground" />}
+                        label="Settings"
+                      />
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
 
-          <div className="mt-[13px] px-2">
-            <SidebarWorkspacesMinimal activeOrgId={activeOrg?.id} />
-          </div>
-        </SidebarContent>
+              <div className="mt-[13px] px-2">
+                <SidebarWorkspacesMinimal activeOrgId={activeOrg?.id} />
+              </div>
+            </SidebarContent>
 
-        <SidebarFooter className="p-0 flex shrink-0 flex-col gap-4 py-3 px-2">
-          <UserMenuMinimal onOpenTrash={handleOpenTrash} />
-        </SidebarFooter>
-        {/* <SidebarRail /> */}
+            <SidebarFooter className="p-0 flex shrink-0 flex-col gap-4 py-3 px-2">
+              <UserMenuMinimal onOpenTrash={handleOpenTrash} />
+            </SidebarFooter>
+            {/* <SidebarRail /> */}
+          </>
+        )}
       </Sidebar>
 
       {/* Command Palette - rendered only on client to avoid cmdk React 19 SSR issue */}
@@ -1000,51 +1045,20 @@ const TrashDialog = ({
   );
 };
 
-// Sidebar Inbox Panel Component
-// Sidebar Inbox Panel Component
-const SidebarInbox = () => {
-  const { isInboxOpen, closeInbox } = useMinimalSidebar();
-  const { state } = useSidebar();
+// Inbox body — header + notifications + invitations. Extracted so it can be
+// rendered in two contexts:
+//   1. Floating panel beside the docked desktop sidebar (via `SidebarInbox`).
+//   2. In-place inside the mobile drawer (push-navigation from the sidebar
+//      nav view, with a back button instead of a close button).
+interface InboxPanelBodyProps {
+  onClose: () => void;
+  // When supplied, rendered to the left of the title. Mobile uses this for a
+  // back-arrow; desktop passes nothing (only the right-side close button).
+  headerLeft?: React.ReactNode;
+}
+
+const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => {
   const queryClient = useQueryClient();
-  const prevOpenRef = useRef(isInboxOpen);
-  const [isExiting, setIsExiting] = useState(false);
-  const [applyExitClass, setApplyExitClass] = useState(false);
-
-  // Start exit animation when closing - set isExiting so we keep rendering (prevents flash)
-  useEffect(() => {
-    if (isInboxOpen) {
-      prevOpenRef.current = true;
-      setIsExiting(false);
-      setApplyExitClass(false);
-    } else if (prevOpenRef.current) {
-      setIsExiting(true);
-      prevOpenRef.current = false;
-    }
-  }, [isInboxOpen]);
-
-  // Apply exit class after mount so transition runs (visible -> slide out)
-  useIsomorphicLayoutEffect(() => {
-    if (!isExiting) return;
-    const id = requestAnimationFrame(() => {
-      requestAnimationFrame(() => setApplyExitClass(true));
-    });
-    return () => cancelAnimationFrame(id);
-  }, [isExiting]);
-
-  // Unmount after transition - use both transitionend and setTimeout fallback (Safari can be unreliable with transitionend)
-  const EXIT_DURATION_MS = 250;
-  useEffect(() => {
-    if (!isExiting) return;
-    const timeoutId = setTimeout(() => {
-      setIsExiting(false);
-    }, EXIT_DURATION_MS);
-    return () => clearTimeout(timeoutId);
-  }, [isExiting]);
-
-  const handleTransitionEnd = useCallback((e: React.TransitionEvent) => {
-    if (e.target !== e.currentTarget) return;
-    if (e.propertyName === "transform") setIsExiting(false);
-  }, []);
 
   // Fetch invitations received by current user
   const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
@@ -1094,9 +1108,6 @@ const SidebarInbox = () => {
     }),
   );
 
-  // Keep mounted during "closing" transition - avoid return null before effect sets isExiting (which would cause flash: close → open → close)
-  if (!isInboxOpen && !isExiting && !prevOpenRef.current) return null;
-
   // Only show pending invitations
   const pendingInvitations = (invitations ?? []).filter(
     (inv: { status: string }) => inv.status === "pending",
@@ -1105,24 +1116,19 @@ const SidebarInbox = () => {
   const hasPendingInvitations = pendingInvitations.length > 0;
 
   return (
-    <div
-      className={cn(
-        "fixed z-40 flex w-80 flex-col bg-background select-none border-r border-foreground/5 top-0 bottom-0",
-        "transition-[left,opacity] duration-150 ease-out [[data-resizing]_&]:transition-none",
-        state === "expanded" ? "left-(--sidebar-width)" : "left-(--sidebar-width-icon)",
-        applyExitClass && "opacity-0",
-      )}
-      onTransitionEnd={handleTransitionEnd}
-    >
+    <div className="flex h-full w-full flex-col">
       {/* Header */}
       <SidebarHeader className="pt-2 pb-3 pl-1 shrink-0 gap-2.25 space-y-2">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base text-foreground pl-2.5">Inbox</h2>
+        <div className="flex items-center justify-between gap-1">
+          <div className="flex items-center gap-1 min-w-0">
+            {headerLeft}
+            <h2 className="text-base text-foreground pl-2.5 truncate">Inbox</h2>
+          </div>
           <Button
             variant="ghost"
             size="icon"
-            className="text-muted-foreground hover:text-foreground"
-            onClick={closeInbox}
+            className="text-muted-foreground hover:text-foreground shrink-0"
+            onClick={onClose}
             aria-label="Close"
           >
             <XIcon className="h-4 w-4" />
@@ -1307,6 +1313,69 @@ const SidebarInbox = () => {
           ) : null}
         </div>
       </div>
+    </div>
+  );
+};
+
+/**
+ * Desktop-only floating Inbox panel. Docks beside the main sidebar (left-X
+ * positioning follows the sidebar's collapsed/expanded width). On mobile we
+ * return null — the inbox content is rendered inside the drawer instead, via
+ * push-navigation in `AppSidebar`.
+ */
+const SidebarInbox = () => {
+  const { isInboxOpen, closeInbox } = useMinimalSidebar();
+  const { state } = useSidebar();
+  const isMobile = useIsMobile();
+  const prevOpenRef = useRef(isInboxOpen);
+  const [isExiting, setIsExiting] = useState(false);
+  const [applyExitClass, setApplyExitClass] = useState(false);
+
+  useEffect(() => {
+    if (isInboxOpen) {
+      prevOpenRef.current = true;
+      setIsExiting(false);
+      setApplyExitClass(false);
+    } else if (prevOpenRef.current) {
+      setIsExiting(true);
+      prevOpenRef.current = false;
+    }
+  }, [isInboxOpen]);
+
+  useIsomorphicLayoutEffect(() => {
+    if (!isExiting) return;
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setApplyExitClass(true));
+    });
+    return () => cancelAnimationFrame(id);
+  }, [isExiting]);
+
+  const EXIT_DURATION_MS = 250;
+  useEffect(() => {
+    if (!isExiting) return;
+    const timeoutId = setTimeout(() => setIsExiting(false), EXIT_DURATION_MS);
+    return () => clearTimeout(timeoutId);
+  }, [isExiting]);
+
+  const handleTransitionEnd = useCallback((e: React.TransitionEvent) => {
+    if (e.target !== e.currentTarget) return;
+    if (e.propertyName === "transform") setIsExiting(false);
+  }, []);
+
+  if (isMobile) return null;
+  if (!isInboxOpen && !isExiting && !prevOpenRef.current) return null;
+
+  return (
+    <div
+      className={cn(
+        "fixed z-40 flex w-80 flex-col bg-background select-none border-r border-foreground/5 top-0 bottom-0",
+        "transition-[left,opacity] duration-150 ease-out [[data-resizing]_&]:transition-none",
+        state === "expanded" ? "left-(--sidebar-width)" : "left-(--sidebar-width-icon)",
+        applyExitClass && "opacity-0",
+      )}
+      onTransitionEnd={handleTransitionEnd}
+    >
+      <InboxPanelBody onClose={closeInbox} />
     </div>
   );
 };
