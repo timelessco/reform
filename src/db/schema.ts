@@ -1,4 +1,4 @@
-import { defineRelations } from "drizzle-orm";
+import { defineRelations, sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -8,6 +8,7 @@ import {
   serial,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { createSelectSchema } from "drizzle-zod";
 
@@ -270,12 +271,21 @@ export const submissions = pgTable(
     formVersionId: text(), // Links to the form version this submission was created against
     data: jsonb().notNull().default({}),
     isCompleted: boolean().notNull().default(true),
+    // Client-generated UUID (localStorage) that links debounced draft saves to a
+    // single submission row. Null for legacy rows pre-autosave.
+    draftId: text(),
+    // Highest step index the respondent reached (0-based). Null until the form
+    // is multi-step and a draft save records it.
+    lastStepReached: integer(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index("idx_submissions_form_id").on(t.formId),
     index("idx_submissions_form_id_created_at_id").on(t.formId, t.createdAt, t.id),
+    uniqueIndex("uniq_submissions_form_id_draft_id")
+      .on(t.formId, t.draftId)
+      .where(sql`${t.draftId} IS NOT NULL`),
   ],
 );
 

@@ -288,7 +288,9 @@ const SubmissionsPage = () => {
   const [globalFilter, setGlobalFilter] = useState("");
   const [fieldStatusFilter] = useState<Set<FieldStatus>>(new Set(["current", "deleted"]));
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    last_step_reached: false,
+  });
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({});
   const [columnOrder, setColumnOrder] = useState<string[]>([]);
   const [previewFile, setPreviewFile] = useState<UploadedFileValue | null>(null);
@@ -446,14 +448,21 @@ const SubmissionsPage = () => {
           header: ({ column }) => <DataGridColumnHeader column={column} title="Submitted at" />,
           cell: (info) => (
             <div className="flex items-center justify-between gap-2 group/row min-w-0">
-              <span className="text-[13px] truncate min-w-0">
-                {new Intl.DateTimeFormat(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "numeric",
-                }).format(new Date(info.getValue()))}
-              </span>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-[13px] truncate min-w-0">
+                  {new Intl.DateTimeFormat(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "numeric",
+                  }).format(new Date(info.getValue()))}
+                </span>
+                {!info.row.original.isCompleted && (
+                  <span className="shrink-0 rounded-sm border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-700 dark:text-amber-400">
+                    Drop-off
+                  </span>
+                )}
+              </div>
               <div className="flex shrink-0 items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
                 <Button
                   variant="ghost"
@@ -473,6 +482,21 @@ const SubmissionsPage = () => {
           id: "submitted_at",
           size: 200,
           minSize: 140,
+        }),
+      ),
+      // `lastStepReached` — hidden by default; users toggle via the Columns
+      // menu to see funnel drop-off points for partial submissions.
+      toSubmissionColumn(
+        columnHelper.accessor("lastStepReached", {
+          id: "last_step_reached",
+          header: ({ column }) => <DataGridColumnHeader column={column} title="Last step" />,
+          cell: (info) => {
+            const step = info.getValue();
+            if (step == null) return <span className="text-muted-foreground">-</span>;
+            return <span className="text-[13px]">Step {step + 1}</span>;
+          },
+          size: 120,
+          meta: { headerTitle: "Last step" },
         }),
       ),
     ];

@@ -78,6 +78,9 @@ interface FormPreviewFromPlateProps {
   formId?: string;
   /** Form customization record for theming */
   customization?: Record<string, string> | null;
+  /** Rehydrate step state from a server-side draft (resume-after-refresh). */
+  initialFormData?: Record<string, unknown>;
+  initialCurrentStep?: number;
 }
 
 const isHexColor = (str: string): boolean => /^#([0-9A-Fa-f]{3}){1,2}$/.test(str);
@@ -356,6 +359,8 @@ export const FormPreviewFromPlate = ({
   settings,
   formId,
   customization,
+  initialFormData,
+  initialCurrentStep,
 }: FormPreviewFromPlateProps) => {
   const headerFromContent = useMemo(() => extractFormHeader(content), [content]);
   const hasHeaderNode = headerFromContent !== null;
@@ -409,6 +414,8 @@ export const FormPreviewFromPlate = ({
       onSubmit={onSubmit}
       formId={formId}
       saveAnswersForLater={settings?.saveAnswersForLater}
+      initialFormData={initialFormData}
+      initialCurrentStep={initialCurrentStep}
     >
       <FormPreviewContent
         steps={steps}

@@ -1,8 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
-import { count, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
+import type { Value } from "platejs";
 import { forms, formVersions, submissions, user } from "@/db/schema";
 import { db } from "@/db";
+import {
+  getEditableFields,
+  transformPlateStateToFormElements,
+} from "@/lib/editor/transform-plate-to-form";
 import { recordOwnerSubmissionNotification } from "./notifications-helpers.server";
 
 type VersionSettings = {
@@ -18,10 +23,53 @@ type VersionSettings = {
   respondentEmailBody?: string | null;
 };
 
+// Max size of the `data` JSON payload in bytes for draft saves. Prevents
+// malicious clients from stuffing arbitrary blobs into anonymous public rows.
+const MAX_DRAFT_PAYLOAD_BYTES = 100_000;
+// Min interval between draft upserts per draftId. Independent of the client
+// debounce — defends against a runaway/malicious client.
+const DRAFT_RATE_LIMIT_MS = 900;
+
+// In-memory per-process rate-limit map. Good enough for a single-node deploy;
+// swap for Redis/edge KV if we scale horizontally. Bounded via opportunistic
+// eviction in the handler to prevent unbounded growth across many draftIds.
+const draftLastWriteAt = new Map<string, number>();
+const DRAFT_RATE_LIMIT_TTL_MS = DRAFT_RATE_LIMIT_MS * 20;
+const DRAFT_RATE_LIMIT_MAX_ENTRIES = 10_000;
+
+// Per-published-version cache of allowed field names. Version content is
+// immutable per id, so the transform only needs to run once per version.
+const ALLOWED_FIELDS_CACHE_MAX = 500;
+const allowedFieldsByVersion = new Map<string, Set<string>>();
+
+const getAllowedFieldNames = (versionId: string | null, content: Value): Set<string> | null => {
+  if (!versionId) return null;
+  const cached = allowedFieldsByVersion.get(versionId);
+  if (cached) return cached;
+  try {
+    const fields = getEditableFields(transformPlateStateToFormElements(content));
+    const set = new Set(fields.map((f) => f.name));
+    if (allowedFieldsByVersion.size >= ALLOWED_FIELDS_CACHE_MAX) {
+      const firstKey = allowedFieldsByVersion.keys().next().value;
+      if (firstKey) allowedFieldsByVersion.delete(firstKey);
+    }
+    allowedFieldsByVersion.set(versionId, set);
+    return set;
+  } catch {
+    return null;
+  }
+};
+
 /**
  * Public submission endpoint (no authentication).
- * Validates the form is published and open, writes the submission,
- * and fires-and-forgets owner notifications + email.
+ *
+ * Two modes:
+ *   - **Draft**: `isCompleted: false` + `draftId`. Upserts on (formId, draftId).
+ *     Shape-only validation (unknown fields rejected, types coerced), no
+ *     required/format checks. Rate-limited per draftId.
+ *   - **Final**: `isCompleted: true`. Full validation via published schema.
+ *     If a draft row exists for the same (formId, draftId), it's updated in
+ *     place. Refuses to downgrade an already-completed row.
  *
  * Gating + email settings are read from the published version snapshot so the
  * live draft's unpublished changes don't take effect until the user republishes.
@@ -32,9 +80,34 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
       formId: z.string().uuid(),
       data: z.record(z.string(), z.any()),
       isCompleted: z.boolean().default(true),
+      draftId: z.string().uuid().optional(),
+      lastStepReached: z.number().int().min(0).optional(),
     }),
   )
   .handler(async ({ data }) => {
+    // Payload size guard for drafts. Final submits trust the published schema
+    // to reject unreasonable payloads via field validators.
+    if (!data.isCompleted) {
+      const payloadSize = JSON.stringify(data.data).length;
+      if (payloadSize > MAX_DRAFT_PAYLOAD_BYTES) {
+        throw new Error("Draft payload too large");
+      }
+      if (!data.draftId) {
+        throw new Error("draftId is required for partial submissions");
+      }
+      const now = Date.now();
+      const lastAt = draftLastWriteAt.get(data.draftId) ?? 0;
+      if (now - lastAt < DRAFT_RATE_LIMIT_MS) {
+        return { submissionId: null, success: true, throttled: true };
+      }
+      draftLastWriteAt.set(data.draftId, now);
+      if (draftLastWriteAt.size > DRAFT_RATE_LIMIT_MAX_ENTRIES) {
+        for (const [key, ts] of draftLastWriteAt) {
+          if (now - ts > DRAFT_RATE_LIMIT_TTL_MS) draftLastWriteAt.delete(key);
+        }
+      }
+    }
+
     const [form] = await db
       .select({
         status: forms.status,
@@ -54,7 +127,7 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
 
     const [version] = form.lastPublishedVersionId
       ? await db
-          .select({ settings: formVersions.settings })
+          .select({ settings: formVersions.settings, content: formVersions.content })
           .from(formVersions)
           .where(eq(formVersions.id, form.lastPublishedVersionId))
       : [undefined];
@@ -73,52 +146,139 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
       throw new Error("This form is no longer accepting responses");
     }
     if (vSettings.limitSubmissions && vSettings.maxSubmissions) {
+      // Only count completed rows toward the submission cap — drafts shouldn't
+      // exhaust the quota of a form with e.g. maxSubmissions = 100.
       const [{ value: submissionCount }] = await db
         .select({ value: count() })
         .from(submissions)
-        .where(eq(submissions.formId, data.formId));
+        .where(and(eq(submissions.formId, data.formId), eq(submissions.isCompleted, true)));
       if (submissionCount >= vSettings.maxSubmissions) {
         throw new Error("This form has reached its maximum number of submissions");
       }
     }
 
-    const id = crypto.randomUUID();
+    // Shape-only sanitization for drafts only — strips keys that don't belong
+    // to the published form. Final submits already enforce shape via the
+    // client-side Zod schema, so we skip the transform on the hot path.
+    let sanitizedData = data.data;
+    if (!data.isCompleted && version?.content) {
+      const allowed = getAllowedFieldNames(form.lastPublishedVersionId, version.content as Value);
+      if (allowed && allowed.size > 0) {
+        sanitizedData = Object.fromEntries(
+          Object.entries(data.data).filter(([k]) => allowed.has(k)),
+        );
+      }
+    }
+
+    const existing = data.draftId
+      ? await db
+          .select({
+            id: submissions.id,
+            isCompleted: submissions.isCompleted,
+          })
+          .from(submissions)
+          .where(and(eq(submissions.formId, data.formId), eq(submissions.draftId, data.draftId)))
+          .limit(1)
+      : [];
+    const existingRow = existing[0];
+
+    // Defense in depth: never downgrade a completed row back to draft, even if
+    // an out-of-order debounced save arrives after submit.
+    if (existingRow?.isCompleted && !data.isCompleted) {
+      return { submissionId: existingRow.id, success: true, noop: true };
+    }
+
     const now = new Date();
+    let submissionId: string;
 
-    await db.insert(submissions).values({
-      id,
-      formId: data.formId,
-      formVersionId: form.lastPublishedVersionId,
-      data: data.data,
-      isCompleted: data.isCompleted,
-      createdAt: now,
-      updatedAt: now,
-    });
+    if (existingRow) {
+      submissionId = existingRow.id;
+      await db
+        .update(submissions)
+        .set({
+          data: sanitizedData,
+          isCompleted: data.isCompleted,
+          lastStepReached: data.lastStepReached ?? null,
+          updatedAt: now,
+          formVersionId: form.lastPublishedVersionId,
+        })
+        .where(eq(submissions.id, existingRow.id));
+    } else {
+      submissionId = crypto.randomUUID();
+      await db.insert(submissions).values({
+        id: submissionId,
+        formId: data.formId,
+        formVersionId: form.lastPublishedVersionId,
+        data: sanitizedData,
+        isCompleted: data.isCompleted,
+        draftId: data.draftId ?? null,
+        lastStepReached: data.lastStepReached ?? null,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
 
-    // Fire-and-forget: don't block submission response for notification bookkeeping
-    recordOwnerSubmissionNotification({
-      formId: data.formId,
-      userId: form.createdByUserId,
-      submissionId: id,
-      createdAt: now,
-    }).catch(() => {});
+    // Notifications + emails only fire on final submit, not on each draft save.
+    const isFinalizing = data.isCompleted && (!existingRow || !existingRow.isCompleted);
+    if (isFinalizing) {
+      recordOwnerSubmissionNotification({
+        formId: data.formId,
+        userId: form.createdByUserId,
+        submissionId,
+        createdAt: now,
+      }).catch(() => {});
 
-    // Fire-and-forget email notifications (read from version snapshot)
-    sendEmailNotifications(
-      {
-        selfEmailNotifications: vSettings.selfEmailNotifications ?? false,
-        notificationEmail: vSettings.notificationEmail ?? null,
-        respondentEmailNotifications: vSettings.respondentEmailNotifications ?? false,
-        respondentEmailSubject: vSettings.respondentEmailSubject ?? null,
-        respondentEmailBody: vSettings.respondentEmailBody ?? null,
+      sendEmailNotifications(
+        {
+          selfEmailNotifications: vSettings.selfEmailNotifications ?? false,
+          notificationEmail: vSettings.notificationEmail ?? null,
+          respondentEmailNotifications: vSettings.respondentEmailNotifications ?? false,
+          respondentEmailSubject: vSettings.respondentEmailSubject ?? null,
+          respondentEmailBody: vSettings.respondentEmailBody ?? null,
+        },
+        form.createdByUserId,
+        data.formId,
+        submissionId,
+        sanitizedData,
+      ).catch((err) => console.error("[Email] Notification error:", err));
+    }
+
+    return { submissionId, success: true };
+  });
+
+/**
+ * Fetch an in-progress draft for a given (formId, draftId) pair so the client
+ * can rehydrate the form on refresh. Returns null if no draft exists or the
+ * row is already completed (completed rows are not resumable).
+ */
+export const getPublicDraft = createServerFn({ method: "GET" })
+  .inputValidator(
+    z.object({
+      formId: z.string().uuid(),
+      draftId: z.string().uuid(),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const [row] = await db
+      .select({
+        id: submissions.id,
+        data: submissions.data,
+        isCompleted: submissions.isCompleted,
+        lastStepReached: submissions.lastStepReached,
+      })
+      .from(submissions)
+      .where(and(eq(submissions.formId, data.formId), eq(submissions.draftId, data.draftId)))
+      .limit(1);
+
+    if (!row || row.isCompleted) return { draft: null };
+    return {
+      draft: {
+        submissionId: row.id,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- passed through as opaque JSON
+        data: row.data as Record<string, any>,
+        lastStepReached: row.lastStepReached,
       },
-      form.createdByUserId,
-      data.formId,
-      id,
-      data.data,
-    ).catch((err) => console.error("[Email] Notification error:", err));
-
-    return { submissionId: id, success: true };
+    };
   });
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

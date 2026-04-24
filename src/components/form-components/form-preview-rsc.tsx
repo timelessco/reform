@@ -50,6 +50,9 @@ interface FormPreviewRSCProps {
   settings?: PublicFormSettings;
   formId: string;
   onSubmit?: (values: Record<string, unknown>) => Promise<void>;
+  /** Rehydrate step state from a server-side draft (resume-after-refresh). */
+  initialFormData?: Record<string, unknown>;
+  initialCurrentStep?: number;
 }
 
 const PAGE_MAX_WIDTH = `var(--bf-page-width, ${CUSTOMIZATION_AUTO_DEFAULTS.pageWidth})`;
@@ -446,6 +449,8 @@ export const FormPreviewRSC = ({
   settings,
   formId,
   onSubmit,
+  initialFormData,
+  initialCurrentStep,
 }: FormPreviewRSCProps) => {
   if (steps.length === 0 || stepCount === 0) {
     return (
@@ -465,6 +470,8 @@ export const FormPreviewRSC = ({
       onSubmit={onSubmit}
       formId={formId}
       saveAnswersForLater={settings?.saveAnswersForLater}
+      initialFormData={initialFormData}
+      initialCurrentStep={initialCurrentStep}
     >
       <FormPreviewRSCContent
         steps={steps}

@@ -35,6 +35,11 @@ interface StepFormProviderProps {
   formId?: string;
   /** Enable auto-save to localStorage */
   saveAnswersForLater?: boolean;
+  /** Rehydration payload for resuming a server-side draft. Takes precedence
+   * over saveAnswersForLater's localStorage cache. Caller should remount the
+   * provider (via `key`) to apply these once a draft is fetched. */
+  initialFormData?: Record<string, unknown>;
+  initialCurrentStep?: number;
 }
 
 export const StepFormProvider = ({
@@ -43,15 +48,18 @@ export const StepFormProvider = ({
   onSubmit,
   formId = "",
   saveAnswersForLater = false,
+  initialFormData,
+  initialCurrentStep,
 }: StepFormProviderProps) => {
   const { loadSavedData, saveData, clearSavedData } = useFormPersistence(
     formId,
     saveAnswersForLater,
   );
 
-  const [currentStep, setCurrentStep] = React.useState(0);
+  const [currentStep, setCurrentStep] = React.useState(initialCurrentStep ?? 0);
   const [direction, setDirection] = React.useState(0);
   const [formData, setFormData] = React.useState<Record<string, unknown>>(() => {
+    if (initialFormData) return initialFormData;
     if (saveAnswersForLater) {
       return loadSavedData() ?? {};
     }
