@@ -41,7 +41,7 @@ const TypedComposite = CompositeComponent as unknown as React.ComponentType<{
 
 interface FormPreviewRSCProps {
   steps: StepRSC[];
-  thankYou: unknown | null;
+  thankYou?: string | null;
   stepCount: number;
   title?: string;
   icon?: string | null;
@@ -463,7 +463,7 @@ const FormPreviewRSCContent = ({
   customization,
 }: {
   steps: StepRSC[];
-  thankYou: unknown | null;
+  thankYou?: string | null;
   title?: string;
   icon?: string | null;
   cover?: string | null;

@@ -80,7 +80,7 @@ interface PublicFormPageProps {
   // so the client bundle no longer ships platejs/static.
   rsc?: {
     steps: StepRSC[];
-    thankYou: unknown | null;
+    thankYou?: unknown;
     stepCount: number;
   };
 }
@@ -352,7 +352,7 @@ export const PublicFormPage = ({
       {rsc ? (
         <FormPreviewRSC
           steps={rsc.steps}
-          thankYou={rsc.thankYou}
+          thankYou={(rsc.thankYou as string | null) ?? null}
           stepCount={rsc.stepCount}
           title={hideTitle ? undefined : form.title}
           icon={hideTitle ? undefined : form.icon}

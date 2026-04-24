@@ -143,7 +143,7 @@ export const WorkspaceItemMinimal = ({
     setIsCreatingForm(true);
     try {
       const { form: newForm } = createFormLocal(workspace.id);
-      router.navigate({
+      void router.navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
         params: { workspaceId: workspace.id, formId: newForm.id },
       });

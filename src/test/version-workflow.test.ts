@@ -70,8 +70,8 @@ const fetchFormListings = async (formId: string): Promise<FormListing[]> => {
       title: f.title,
       status: f.status,
       workspaceId: f.workspaceId,
-      content: f.content as unknown as unknown[],
-      settings: f.settings as unknown as Record<string, unknown>,
+      content: f.content as unknown[],
+      settings: f.settings as Record<string, unknown>,
       customization: (f.customization ?? {}) as Record<string, unknown>,
       formName: f.formName,
       schemaName: f.schemaName,
@@ -96,7 +96,7 @@ describe("version workflow", () => {
       t.createUser({ id: ownerId, email: `owner-vw-${ownerId}@example.com`, name: "Owner" }),
     );
     const org = await createTestOrg(ownerId);
-    orgId = org.id as string;
+    orgId = org.id;
     const ws = await createTestWorkspace(orgId, ownerId);
     const form = await createTestForm(ws.id, ownerId);
     formId = form.id;

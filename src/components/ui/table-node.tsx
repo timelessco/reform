@@ -28,7 +28,7 @@ import {
   XIcon,
 } from "@/components/ui/icons";
 import { KEYS, PathApi } from "platejs";
-import type { TElement, TTableCellElement, TTableElement, TTableRowElement } from "platejs";
+import type { TElement } from "platejs";
 import {
   PlateElement,
   useEditorPlugin,
@@ -74,7 +74,7 @@ import {
 import { Toolbar, ToolbarButton, ToolbarGroup, ToolbarMenuGroup } from "./toolbar";
 export const TableElement = withHOC(
   TableProvider,
-  function TableElement({ children, ...props }: PlateElementProps<TTableElement>) {
+  function TableElement({ children, ...props }: PlateElementProps) {
     const readOnly = useReadOnly();
     const isSelectionAreaVisible = usePluginOption(BlockSelectionPlugin, "isSelectionAreaVisible");
     const hasControls = !readOnly && !isSelectionAreaVisible;
@@ -125,7 +125,7 @@ const TableFloatingToolbar = ({
 }: React.ComponentProps<typeof PopoverContent>) => {
   const { tf } = useEditorPlugin(TablePlugin);
   const selected = useSelected();
-  const element = useElement<TTableElement>();
+  const element = useElement();
   const { props: buttonProps } = useRemoveNodeButton({ element });
   const collapsedInside = useEditorSelector(
     (editor) => selected && editor.api.isCollapsed(),
@@ -380,7 +380,7 @@ const ColorDropdownMenu = ({
   );
 };
 
-export const TableRowElement = ({ children, ...props }: PlateElementProps<TTableRowElement>) => {
+export const TableRowElement = ({ children, ...props }: PlateElementProps) => {
   const { element } = props;
   const readOnly = useReadOnly();
   const selected = useSelected();
@@ -465,7 +465,7 @@ const RowDropLine = () => {
 export const TableCellElement = ({
   isHeader,
   ...props
-}: PlateElementProps<TTableCellElement> & {
+}: PlateElementProps & {
   isHeader?: boolean;
 }) => {
   const { api } = useEditorPlugin(TablePlugin);

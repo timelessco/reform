@@ -69,8 +69,8 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
 
   // Persist Reform Branding toggle (Pro, server-controlled) to forms.branding
   // so every embed reflects the change immediately via form settings.
-  const docPresentationMode = ((doc as { presentationMode?: PresentationMode } | undefined)
-    ?.presentationMode ?? "card") as PresentationMode;
+  const docPresentationMode =
+    (doc as { presentationMode?: PresentationMode } | undefined)?.presentationMode ?? "card";
   const docProgressBar = Boolean((doc as { progressBar?: boolean } | undefined)?.progressBar);
   const docBranding = Boolean((doc as { branding?: unknown } | undefined)?.branding ?? true);
 

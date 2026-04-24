@@ -46,7 +46,7 @@ const Form = ({
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       e.stopPropagation();
-      form.handleSubmit();
+      void form.handleSubmit();
     },
     [form],
   );
@@ -122,6 +122,7 @@ const useFieldContext = () => {
     formMessageId: `${id}-form-item-message`,
     errors: fieldState.errors,
     isTouched: fieldState.isTouched,
+    // eslint-disable-next-line @typescript-eslint/no-misused-spread
     ...innerFieldContext,
   };
 };

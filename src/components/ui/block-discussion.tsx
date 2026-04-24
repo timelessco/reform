@@ -5,14 +5,7 @@ import { SuggestionPlugin } from "@platejs/suggestion/react";
 import { MessagesSquareIcon } from "lucide-react";
 import { MessageSquareTextIcon, PencilLineIcon } from "@/components/ui/icons";
 import { PathApi, TextApi } from "platejs";
-import type {
-  AnyPluginConfig,
-  NodeEntry,
-  Path,
-  TCommentText,
-  TElement,
-  TSuggestionText,
-} from "platejs";
+import type { NodeEntry, Path, TCommentText, TElement, TSuggestionText } from "platejs";
 import type { PlateElementProps, RenderNodeWrapper } from "platejs/react";
 import { useEditorPlugin, useEditorRef, usePluginOption } from "platejs/react";
 import * as React from "react";
@@ -30,7 +23,7 @@ import {
 } from "./block-suggestion";
 import { Comment, CommentCreateForm } from "./comment";
 
-export const BlockDiscussion: RenderNodeWrapper<AnyPluginConfig> = (props) => {
+export const BlockDiscussion: RenderNodeWrapper = (props) => {
   const { editor, element } = props;
 
   const commentsApi = editor.getApi(CommentPlugin).comment;

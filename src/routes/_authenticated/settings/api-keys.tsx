@@ -124,7 +124,7 @@ const APIKeysPage = () => {
 
   const handleDeleteKey = useCallback(() => {
     if (!apiKeyToDelete) return;
-    void deleteMutation.mutate({
+    deleteMutation.mutate({
       keyId: apiKeyToDelete,
     });
   }, [apiKeyToDelete, deleteMutation]);

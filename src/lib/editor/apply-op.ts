@@ -126,13 +126,13 @@ const insertContentNodes = <K extends "add-field" | "add-section">(
 };
 
 const applyAddField = (op: AddFieldOp, ctx: ApplyContext): AppliedOp =>
-  insertContentNodes("add-field", op, buildFormBlockNodes(op) as TElement[], ctx);
+  insertContentNodes("add-field", op, buildFormBlockNodes(op), ctx);
 
 const applyAddSection = (op: AddSectionOp, ctx: ApplyContext): AppliedOp =>
   insertContentNodes(
     "add-section",
     op,
-    buildFormSectionNodes({ title: op.title, level: op.level }) as TElement[],
+    buildFormSectionNodes({ title: op.title, level: op.level }),
     ctx,
   );
 
@@ -274,7 +274,7 @@ export const applyOp = (op: Op, ctx: ApplyContext): AppliedOp | null => {
  */
 const nodeAt = (editor: PlateEditor, path: number[]): Record<string, unknown> | null => {
   if (path.length !== 1) return null;
-  const idx = path[0] as number;
+  const idx = path[0];
   const children = editor.children as Array<Record<string, unknown>>;
   return children[idx] ?? null;
 };

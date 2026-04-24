@@ -118,7 +118,7 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
   ): { labelText: string; labelNode: Record<string, unknown> } | null => {
     if (i <= 0) return null;
     const prev = nodes[i - 1];
-    const prevType = prev.type as string;
+    const prevType = prev.type;
     if (!ALLOWED_LABEL_TYPES.has(prevType)) return null;
 
     const labelText = extractTextContent(prev.children as Array<{ text?: string }>);
@@ -135,7 +135,7 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
   let i = 0;
   while (i < nodes.length) {
     const node = nodes[i];
-    const nodeType = node.type as string;
+    const nodeType = node.type;
 
     // --- Simple input types (formInput, formTextarea, formEmail, etc.) ---
     if (INPUT_TYPE_TO_FIELD_TYPE[nodeType]) {
@@ -224,7 +224,7 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
 
       const options: { value: string; label: string }[] = [];
       let j = i;
-      while (j < nodes.length && (nodes[j].type as string) === "formOptionItem") {
+      while (j < nodes.length && nodes[j].type === "formOptionItem") {
         const optText = extractTextContent(nodes[j].children as Array<{ text?: string }>);
         const optLabel = optText || `Option ${options.length + 1}`;
         options.push({

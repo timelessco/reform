@@ -144,7 +144,7 @@ export const DomainsContent = () => {
   const addMutation = useMutation({
     mutationFn: (domain: string) => addDomain({ data: { orgId: orgId ?? "", domain } }),
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ["org-domains", orgId] });
+      void queryClient.invalidateQueries({ queryKey: ["org-domains", orgId] });
       setNewDomain("");
       const parts = result.domain.split(".");
       const subdomain = parts.length > 2 ? parts[0] : result.domain;
@@ -204,7 +204,7 @@ export const DomainsContent = () => {
       ogImageUrl?: string;
     }) => updateDomainMeta({ data }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["org-domains", orgId] });
+      void queryClient.invalidateQueries({ queryKey: ["org-domains", orgId] });
       setExpandedConfigId(null);
       toast.success("Domain settings saved");
     },

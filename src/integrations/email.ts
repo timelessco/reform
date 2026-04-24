@@ -71,10 +71,13 @@ export const sendFormSubmissionNotification = async (
 ) => {
   // Build a simple key-value HTML table from submission data
   const rows = Object.entries(data)
-    .map(
-      ([key, value]) =>
-        `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #eee; font-weight: 500; color: #333;">${escapeHtml(key)}</td><td style="padding: 8px 12px; border-bottom: 1px solid #eee; color: #555;">${escapeHtml(String(value ?? ""))}</td></tr>`,
-    )
+    .map(([key, value]) => {
+      let displayValue = value;
+      if (typeof value === "object" && value !== null) {
+        displayValue = JSON.stringify(value);
+      }
+      return `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #eee; font-weight: 500; color: #333;">${escapeHtml(key)}</td><td style="padding: 8px 12px; border-bottom: 1px solid #eee; color: #555;">${escapeHtml(String(displayValue ?? ""))}</td></tr>`;
+    })
     .join("");
 
   const { error } = await resend.emails.send({

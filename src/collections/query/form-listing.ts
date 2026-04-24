@@ -35,9 +35,9 @@ export type FormFavorite = {
 type FormListingCollectionConfig = {
   queryClient: QueryClient;
   queryFn: () => Promise<FormListing[]>;
-  onInsert?: InsertMutationFn<FormListing, string | number>;
-  onUpdate?: UpdateMutationFn<FormListing, string | number>;
-  onDelete?: DeleteMutationFn<FormListing, string | number>;
+  onInsert?: InsertMutationFn<FormListing>;
+  onUpdate?: UpdateMutationFn<FormListing>;
+  onDelete?: DeleteMutationFn<FormListing>;
 };
 
 export const createFormListingCollection = (config: FormListingCollectionConfig) => {
@@ -61,7 +61,7 @@ export const createFormListingCollection = (config: FormListingCollectionConfig)
   };
 
   const collection = createCollection(
-    queryCollectionOptions<FormListing, unknown, string[], string | number>({
+    queryCollectionOptions<FormListing, unknown, string[]>({
       queryKey: ["form-listings"],
       queryFn: enrichedQueryFn,
       queryClient,
@@ -80,16 +80,16 @@ export const createFormListingCollection = (config: FormListingCollectionConfig)
 type FavoriteCollectionConfig = {
   queryClient: QueryClient;
   queryFn: () => Promise<FormFavorite[]>;
-  onInsert?: InsertMutationFn<FormFavorite, string | number>;
-  onUpdate?: UpdateMutationFn<FormFavorite, string | number>;
-  onDelete?: DeleteMutationFn<FormFavorite, string | number>;
+  onInsert?: InsertMutationFn<FormFavorite>;
+  onUpdate?: UpdateMutationFn<FormFavorite>;
+  onDelete?: DeleteMutationFn<FormFavorite>;
 };
 
 export const createFavoriteCollection = (config: FavoriteCollectionConfig) => {
   const { queryClient, queryFn, onInsert, onUpdate, onDelete } = config;
 
   return createCollection(
-    queryCollectionOptions<FormFavorite, unknown, string[], string | number>({
+    queryCollectionOptions<FormFavorite, unknown, string[]>({
       queryKey: ["favorites"],
       queryFn: async () => queryFn(),
       queryClient,

@@ -85,7 +85,7 @@ type TransformFunction<
   : {
       mutationOptions: (
         options?: Omit<MutationOptions<TData, TError, TParams>, "mutationFn">,
-      ) => InferMutationOptions<TFn, TData, TError, TParams>;
+      ) => InferMutationOptions<TFn, TData, TError>;
     };
 
 // Built-in keys that exist on all functions - we want to ignore these

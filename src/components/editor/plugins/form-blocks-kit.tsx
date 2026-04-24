@@ -363,7 +363,7 @@ export const FormButtonPlugin = createPlatePlugin({
   // eslint-disable-next-line typescript-eslint/no-explicit-any
   extendEditor: ({ editor }: any) => {
     // eslint-disable-next-line typescript-eslint/no-explicit-any
-    const editorRef = editor as any;
+    const editorRef = editor;
     const { deleteBackward, deleteForward, deleteFragment } = editorRef;
 
     // Prevent backspace from deleting any form button + handle pageBreak cleanup
@@ -378,7 +378,7 @@ export const FormButtonPlugin = createPlatePlugin({
           editorRef.api.isCollapsed(selection) &&
           (() => {
             // eslint-disable-next-line typescript-eslint/no-explicit-any
-            const edges = editorRef.api.edges(path) as any;
+            const edges = editorRef.api.edges(path);
             const start = edges?.[0];
             return (
               start &&
@@ -436,7 +436,7 @@ export const FormButtonPlugin = createPlatePlugin({
             const selection = editorRef.selection;
             if (selection && editorRef.api.isCollapsed(selection)) {
               // eslint-disable-next-line typescript-eslint/no-explicit-any
-              const edges = editorRef.api.edges(path) as any;
+              const edges = editorRef.api.edges(path);
               const end = edges?.[1];
               if (
                 end &&
@@ -992,7 +992,7 @@ export const FormOptionItemPlugin = createPlatePlugin({
         editor.tf.insertNodes(
           {
             type: "formOptionItem",
-            variant: (node as TElement).variant || "checkbox",
+            variant: node.variant || "checkbox",
             children: [{ text: "" }],
           } as TElement,
           { at: nextPath },
