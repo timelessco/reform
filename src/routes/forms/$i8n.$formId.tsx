@@ -1,4 +1,3 @@
-import { APP_NAME } from "@/lib/config/app-config";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { zodValidator } from "@tanstack/zod-adapter";
@@ -8,6 +7,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { getPublishedFormById } from "@/lib/server-fn/public-form-view";
+import { seo } from "@/lib/seo";
 
 const PublicFormRoute = () => {
   const loaderData = Route.useLoaderData();
@@ -42,19 +42,9 @@ export const Route = createFileRoute("/forms/$i8n/$formId")({
   loader: async ({ params }) => getPublishedFormById({ data: { id: params.formId } }),
   // SEO meta tags
   head: ({ loaderData }) => ({
-    meta: [
-      {
-        title: loaderData?.form?.title
-          ? `${loaderData.form.title} | ${APP_NAME}`
-          : `Form | ${APP_NAME}`,
-      },
-      {
-        name: "description",
-        content: loaderData?.form?.title
-          ? `Fill out ${loaderData.form.title}`
-          : "Fill out this form",
-      },
-    ],
+    meta: seo({
+      formTitle: loaderData?.form?.title ?? "Form",
+    }),
     links: [
       // Preload the Latin subset of Inter Variable. The other subsets
       // (latin-ext, rest) stay lazy — the browser only fetches them if

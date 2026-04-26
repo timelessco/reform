@@ -9,6 +9,7 @@ import Loader from "@/components/ui/loader";
 import { CustomDomainNotFound } from "@/components/ui/custom-domain-not-found";
 import { getCustomDomainFormByIdRSC } from "@/lib/server-fn/custom-domain-view-rsc";
 import { generateThemeCss, getGoogleFontLinkUrl } from "@/lib/theme/generate-theme-css";
+import { seo } from "@/lib/seo";
 
 type PublicTheme = "light" | "dark" | "system";
 
@@ -141,18 +142,11 @@ export const Route = createFileRoute("/f/$formId")({
     const defaultMode = loaderData?.form?.customization?.defaultMode || "system";
     const formId = params.formId;
     return {
-      meta: [
-        {
-          title: formTitle ? `${formTitle} | ${siteTitle}` : siteTitle,
-        },
-        {
-          name: "description",
-          content: formTitle ? `Fill out ${formTitle}` : "Fill out this form",
-        },
-        ...(loaderData?.domainMeta?.ogImageUrl
-          ? [{ property: "og:image", content: loaderData.domainMeta.ogImageUrl }]
-          : []),
-      ],
+      meta: seo({
+        formTitle,
+        siteTitle,
+        image: loaderData?.domainMeta?.ogImageUrl ?? undefined,
+      }),
       links: loaderData?.domainMeta?.faviconUrl
         ? [{ rel: "icon", href: loaderData.domainMeta.faviconUrl }]
         : [],
