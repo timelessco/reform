@@ -4,13 +4,16 @@ import { SparklesIcon, XIcon } from "@/components/ui/icons";
 import { iconMap } from "@/components/icon-picker/icon-data";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { Value } from "platejs";
-import { FormPreviewFromPlate } from "@/components/form-components/form-preview-from-plate";
+import {
+  FormPreviewFromPlate,
+  isHexColor,
+} from "@/components/form-components/form-preview-from-plate";
 import { Button } from "@/components/ui/button";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 import { useFormCustomization } from "@/hooks/use-form-customization";
 import { useForm } from "@/hooks/use-live-hooks";
 import { useResolvedTheme } from "@/components/theme-provider";
-import { cn } from "@/lib/utils";
+import { cn, isValidUrl } from "@/lib/utils";
 import { buildPublicFormSettings } from "@/types/form-settings";
 import type { PublicFormSettings } from "@/types/form-settings";
 
@@ -84,8 +87,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
       className={cn(
         hasCustomization && "bf-themed",
         resolvedAppTheme === "dark" && "dark",
-        "w-full h-full flex flex-col transition-colors duration-300 bg-background text-foreground",
-        embedType === "fullpage" ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden",
+        "w-full h-full flex flex-col transition-colors duration-300 bg-background text-foreground overflow-hidden",
       )}
       style={{
         ...(hasCustomization ? themeVars : undefined),
@@ -311,11 +313,16 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
       {embedType === "fullpage" && (
         <div
           className={cn(
-            "flex-1 flex flex-col transition-colors duration-300",
+            "relative flex-1 flex flex-col transition-colors duration-300 overflow-hidden",
             transparentBackground ? "bg-transparent" : "bg-background",
           )}
         >
-          <div className="flex-1 w-full">
+          {/* Field-by-field mode: render the cover as a full-pane background here
+              because the form-preview's own bg-image only fills its content height. */}
+          {previewSettings.presentationMode === "field-by-field" && doc.cover && (
+            <FieldByFieldCoverBackground cover={doc.cover} />
+          )}
+          <div className="flex-1 w-full h-full min-h-0">
             <FormPreviewFromPlate
               content={content}
               title={hideTitle ? "" : (doc.title ?? undefined)}
@@ -327,25 +334,54 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
               customization={customization}
               settings={previewSettings}
             />
-
-            {branding && (
-              <div className="mt-20 flex justify-end pb-12">
-                <BrandingBadge />
-              </div>
-            )}
           </div>
+          {branding && <BrandingBadge />}
         </div>
       )}
     </div>
   );
 };
 
+const FieldByFieldCoverBackground = ({ cover }: { cover: string }) => {
+  const isImage = isValidUrl(cover);
+  const isHex = isHexColor(cover);
+  const hasTint = isImage && cover.includes("tint=true");
+  if (!isImage && !isHex) return null;
+  return (
+    <>
+      {isImage ? (
+        <img
+          src={cover}
+          alt=""
+          aria-hidden="true"
+          className={cn(
+            "absolute inset-0 z-0 h-full w-full object-cover pointer-events-none",
+            hasTint && "brightness-60 grayscale",
+          )}
+        />
+      ) : (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 z-0 pointer-events-none"
+          style={{ backgroundColor: cover }}
+        />
+      )}
+      {hasTint && (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 z-0 bg-primary opacity-50 mix-blend-color pointer-events-none"
+        />
+      )}
+    </>
+  );
+};
+
 const BrandingBadge = () => (
-  <div className="flex justify-end pt-6">
-    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted/50 rounded-full text-[10px] font-bold text-muted-foreground hover:text-foreground transition-colors cursor-default border border-border/50">
+  <div className="absolute bottom-0 left-0 right-0 z-50 py-3 flex justify-center bg-muted/60 backdrop-blur border-t border-border">
+    <span className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground">
       <span>Made with</span>
-      <SparklesIcon className="h-3 w-3 fill-muted-foreground/50 text-muted-foreground/50" />
-      <span>{APP_NAME}</span>
-    </div>
+      <SparklesIcon className="h-3 w-3 fill-muted-foreground text-muted-foreground" />
+      <span className="text-foreground">{APP_NAME}</span>
+    </span>
   </div>
 );

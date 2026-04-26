@@ -384,14 +384,18 @@ export const PublicFormPage = ({
       ref={containerRef}
       id="bf-form-container"
       className={cn(
-        "overflow-x-hidden text-foreground",
-        // Reserve space at the bottom for the fixed branding footer when shown
-        settings.branding ? "pb-16" : "pb-8",
+        "text-foreground",
+        settings.presentationMode === "field-by-field"
+          ? "relative h-screen overflow-hidden"
+          : cn("overflow-x-hidden", settings.branding ? "pb-16" : "pb-8"),
         form.customization && Object.keys(form.customization).length > 0 && "bf-themed",
         // Don't apply min-h-screen for popup or dynamic-height embeds — it
         // stretches the form to 100vh of the iframe viewport, creating a
         // second inner scrollbar on top of the host page's scroll.
-        !isPopup && !dynamicHeight && "min-h-screen",
+        !isPopup &&
+          !dynamicHeight &&
+          settings.presentationMode !== "field-by-field" &&
+          "min-h-screen",
         transparentBackground || isPopup ? "bg-transparent" : "bg-background",
         alignLeft && "text-left",
       )}
@@ -434,7 +438,7 @@ export const PublicFormPage = ({
           </div>
         </div>
       )}
-      {rsc ? (
+      {rsc && settings.presentationMode !== "field-by-field" ? (
         <FormPreviewRSC
           key={previewKey}
           steps={rsc.steps}

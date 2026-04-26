@@ -14,15 +14,27 @@ interface StepFormProps {
   stepIndex: number;
   segments: PreviewSegment[];
   isLastStep: boolean;
+  autoActionButton?: boolean;
 }
 
 /**
  * Individual step form component with its own form instance.
  * Uses StepFormContext for navigation and data accumulation.
  */
-export const StepForm = ({ stepIndex, segments, isLastStep }: StepFormProps) => {
+export const StepForm = ({
+  stepIndex,
+  segments,
+  isLastStep,
+  autoActionButton = false,
+}: StepFormProps) => {
   const { currentStep, totalSteps, goToPrevStep, isSubmitting } = useStepForm();
+  const { t } = useTranslation();
   const fields = useMemo(() => getFieldsFromSegments(segments), [segments]);
+  const hasAuthoredButton = useMemo(
+    () => segments.some((seg) => seg.type === "field" && seg.field.fieldType === "Button"),
+    [segments],
+  );
+  const showAutoActionButton = autoActionButton && !hasAuthoredButton;
 
   const { form, formName } = useStepPreviewForm({
     fields,
@@ -136,6 +148,29 @@ export const StepForm = ({ stepIndex, segments, isLastStep }: StepFormProps) => 
 
           return null;
         })}
+
+        {showAutoActionButton && (
+          <div
+            className="flex items-center gap-3 pt-2 w-full"
+            style={{ maxWidth: "var(--bf-input-width)" }}
+          >
+            <Button
+              type="submit"
+              style={{ fontSize: "13px" }}
+              className="h-9 px-4 rounded-lg gap-1.5"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? t("submitting") : isLastStep ? t("submit") : t("next")}
+            </Button>
+            <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+              press{" "}
+              <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted/50 font-medium text-foreground">
+                Enter
+              </kbd>
+              <span aria-hidden="true">↵</span>
+            </span>
+          </div>
+        )}
       </form.Form>
     </form.AppForm>
   );
