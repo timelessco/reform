@@ -72,7 +72,7 @@ const InsightsPage = () => {
             onChange={handleRangeChange}
           />
         </div>
-        <Card>
+        <Card className="bg-transparent">
           <CardContent className="py-10 text-center text-muted-foreground text-sm">
             Failed to load insights. Try a different time range or refresh.
           </CardContent>
@@ -111,7 +111,7 @@ const InsightsPage = () => {
       {hasData ? (
         <>
           <MetricsRow metrics={metrics} />
-          <Card>
+          <Card className="bg-transparent">
             <CardHeader>
               <CardTitle>Visits over time</CardTitle>
             </CardHeader>
@@ -120,7 +120,7 @@ const InsightsPage = () => {
             </CardContent>
           </Card>
           {dropoff.questions.length > 0 && (
-            <Card>
+            <Card className="bg-transparent">
               <CardHeader>
                 <CardTitle>Drop-off funnel</CardTitle>
               </CardHeader>

@@ -37,7 +37,7 @@ interface MetricCardProps {
 }
 
 const MetricCard = ({ label, value, Icon }: MetricCardProps) => (
-  <Card>
+  <Card className="bg-transparent">
     <CardContent className="flex flex-col gap-2 py-3">
       <div className="flex items-center gap-2 text-muted-foreground">
         <Icon className="size-4" aria-hidden={true} />
