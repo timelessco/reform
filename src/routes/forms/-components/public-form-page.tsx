@@ -39,6 +39,7 @@ interface PublicForm {
   icon: string | null;
   cover: string | null;
   status: string;
+  analytics: boolean;
   settings?: PublicFormSettings;
 }
 
@@ -153,9 +154,9 @@ export const PublicFormPage = ({
   const dynamicWidth = embedConfig.dynamicWidth;
   const containerRef = useRef<HTMLDivElement>(null);
   // Analytics tracking — fires `recordFormVisit` on mount and exposes
-  // `{ visitId, visitorHash }`. `formId` and `mode` are added by the
-  // form-preview components (which know the presentation mode).
-  const trackingBase = usePublicFormTracking({ formId });
+  // `{ visitId, visitorHash }`. Skipped entirely when the creator has
+  // `forms.analytics` off (Pro-gated).
+  const trackingBase = usePublicFormTracking({ formId, enabled: form?.analytics === true });
   const [submitted, setSubmitted] = useState(() => {
     if (form?.settings?.preventDuplicateSubmissions) {
       try {

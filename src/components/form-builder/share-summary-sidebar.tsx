@@ -73,6 +73,7 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
     (doc as { presentationMode?: PresentationMode } | undefined)?.presentationMode ?? "card";
   const docProgressBar = Boolean((doc as { progressBar?: boolean } | undefined)?.progressBar);
   const docBranding = Boolean((doc as { branding?: unknown } | undefined)?.branding ?? true);
+  const docAnalytics = Boolean((doc as { analytics?: boolean } | undefined)?.analytics);
 
   const handlePresentationModeChange = useCallback(
     (value: PresentationMode) => {
@@ -112,6 +113,18 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
       form.setFieldValue("branding", value);
     },
     [doc?.id, docBranding, form],
+  );
+
+  const handleAnalyticsChange = useCallback(
+    (value: boolean) => {
+      if (!doc?.id || docAnalytics === value) return;
+      const collection = getFormListings();
+      collection.update(doc.id, (draft: { analytics?: boolean; updatedAt?: string }) => {
+        draft.analytics = value;
+        draft.updatedAt = new Date().toISOString();
+      });
+    },
+    [doc?.id, docAnalytics],
   );
 
   // Track domain assignment state for this form
@@ -314,6 +327,8 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
                         section="pro"
                         docBranding={docBranding}
                         onBrandingChange={handleBrandingChange}
+                        docAnalytics={docAnalytics}
+                        onAnalyticsChange={handleAnalyticsChange}
                         orgId={orgId}
                         formId={formId}
                         customDomainId={activeDomainId}

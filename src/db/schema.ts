@@ -184,6 +184,7 @@ export const forms = pgTable(
     redirectDelay: integer().default(0).notNull(),
     progressBar: boolean().default(false).notNull(),
     branding: boolean().default(true).notNull(),
+    analytics: boolean().default(false).notNull(),
     saveAnswersForLater: boolean().default(true).notNull(),
     presentationMode: text().default("card").notNull(),
     selfEmailNotifications: boolean().default(false).notNull(),

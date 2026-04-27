@@ -28,7 +28,6 @@ export const searchToFormValues = (
   transparentBackground:
     (search.embedTransparent as boolean) ?? defaultEmbedFormFields.transparentBackground,
   branding: (search.embedBranding as boolean) ?? formBranding ?? defaultEmbedFormFields.branding,
-  trackEvents: (search.embedTrackEvents as boolean) ?? defaultEmbedFormFields.trackEvents,
   customDomain: defaultEmbedFormFields.customDomain,
   popupTrigger:
     (search.embedPopupTrigger as EmbedFormFields["popupTrigger"]) ??
@@ -58,7 +57,6 @@ export const formValuesToSearch = (v: EmbedFormValues) => ({
   embedAlignLeft: v.alignLeft,
   embedTransparent: v.transparentBackground,
   embedBranding: v.branding,
-  embedTrackEvents: v.trackEvents,
   embedPopupTrigger: v.popupTrigger,
   embedPopupPosition: v.popupPosition,
   embedPopupWidth: v.popupWidth,

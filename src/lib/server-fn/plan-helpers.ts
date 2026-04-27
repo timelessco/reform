@@ -30,6 +30,7 @@ type FormPlanInput = {
   branding?: boolean;
   respondentEmailNotifications?: boolean;
   dataRetention?: boolean;
+  analytics?: boolean;
 };
 
 export const assertPlanForFormSettings = async (
@@ -39,8 +40,10 @@ export const assertPlanForFormSettings = async (
   const wantsBrandingRemoved = data.branding === false;
   const wantsRespondentEmails = data.respondentEmailNotifications === true;
   const wantsDataRetention = data.dataRetention === true;
+  const wantsAnalytics = data.analytics === true;
 
-  if (!(wantsBrandingRemoved || wantsRespondentEmails || wantsDataRetention)) return;
+  if (!(wantsBrandingRemoved || wantsRespondentEmails || wantsDataRetention || wantsAnalytics))
+    return;
 
   const plan = await getOrgPlan(orgId);
   if (plan === "free") {

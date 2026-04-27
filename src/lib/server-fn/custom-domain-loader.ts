@@ -135,7 +135,9 @@ export const loadFormForCustomDomain = async (
       id: forms.id,
       status: forms.status,
       lastPublishedVersionId: forms.lastPublishedVersionId,
-      // Group 4 (live) — branding is always false for custom domains anyway
+      // Group 4 (live) — branding is always false for custom domains anyway,
+      // analytics is still per-form
+      analytics: forms.analytics,
       draftTitle: forms.title,
       draftContent: forms.content,
       draftIcon: forms.icon,
@@ -213,6 +215,7 @@ export const loadFormForCustomDomain = async (
         icon: version.icon,
         cover: version.cover,
         status: form.status,
+        analytics: form.analytics,
         settings,
       },
       error: null,
@@ -231,6 +234,7 @@ export const loadFormForCustomDomain = async (
       icon: form.draftIcon,
       cover: form.draftCover,
       status: form.status,
+      analytics: form.analytics,
       settings,
     },
     error: null,

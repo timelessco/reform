@@ -54,6 +54,7 @@ export const createForm = createServerFn({ method: "POST" })
       progressBar: z.boolean().optional(),
       presentationMode: z.enum(["card", "field-by-field"]).optional(),
       branding: z.boolean().optional(),
+      analytics: z.boolean().optional(),
       saveAnswersForLater: z.boolean().optional(),
       selfEmailNotifications: z.boolean().optional(),
       notificationEmail: z.string().nullable().optional(),
@@ -100,6 +101,7 @@ export const createForm = createServerFn({ method: "POST" })
         progressBar: data.progressBar,
         presentationMode: data.presentationMode,
         branding: data.branding,
+        analytics: data.analytics,
         saveAnswersForLater: data.saveAnswersForLater,
         selfEmailNotifications: data.selfEmailNotifications,
         notificationEmail: data.notificationEmail,
@@ -151,6 +153,7 @@ export const updateForm = createServerFn({ method: "POST" })
       progressBar: z.boolean().optional(),
       presentationMode: z.enum(["card", "field-by-field"]).optional(),
       branding: z.boolean().optional(),
+      analytics: z.boolean().optional(),
       saveAnswersForLater: z.boolean().optional(),
       selfEmailNotifications: z.boolean().optional(),
       notificationEmail: z.string().nullable().optional(),
@@ -180,6 +183,7 @@ export const updateForm = createServerFn({ method: "POST" })
       branding: updateData.branding,
       respondentEmailNotifications: updateData.respondentEmailNotifications,
       dataRetention: updateData.dataRetention,
+      analytics: updateData.analytics,
     });
 
     const [form] = await db
@@ -191,11 +195,10 @@ export const updateForm = createServerFn({ method: "POST" })
       .where(eq(forms.id, id))
       .returning();
 
-    // `branding` is the one live (non-versioned) field that the public view
-    // reads — its changes must bust the CDN tag. Versioned fields can't be
-    // handled here; they change the public response only on republish, which
-    // owns its own purge.
-    if (updateData.branding !== undefined) {
+    // Live (non-versioned) fields that the public view reads — changes must
+    // bust the CDN tag. Versioned fields can't be handled here; they change
+    // the public response only on republish, which owns its own purge.
+    if (updateData.branding !== undefined || updateData.analytics !== undefined) {
       void purgeFormCache(id);
     }
 
@@ -238,6 +241,7 @@ export const getFormListings = createServerFn({ method: "GET" })
         lastPublishedVersionId: forms.lastPublishedVersionId,
         // Live (non-versioned) settings the share sidebar reads.
         branding: forms.branding,
+        analytics: forms.analytics,
         slug: forms.slug,
         customDomainId: forms.customDomainId,
         // Every versioned settings column — needed so the client hash matches

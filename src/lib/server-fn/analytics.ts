@@ -7,6 +7,7 @@ import {
   formAnalyticsDaily,
   formDropoffDaily,
   formQuestionProgress,
+  forms,
   formVisits,
 } from "@/db/schema";
 import { buildDailyAnalyticsRows, buildDailyDropoffRows } from "@/lib/analytics/aggregate-utils";
@@ -18,6 +19,16 @@ import { resolveTimeRange, splitTodayVsPast, toDateKey } from "@/lib/analytics/t
 import { authMiddleware } from "@/lib/auth/middleware";
 import { authForm, getActiveOrgId } from "@/lib/server-fn/auth-helpers";
 import type { FormInsightsMetrics, QuestionDropoffMetrics } from "@/types/analytics";
+
+// Server-side defense in depth — the client hook already short-circuits when
+// `forms.analytics` is off, but a direct caller would otherwise bypass that.
+const isAnalyticsEnabled = async (formId: string): Promise<boolean> => {
+  const [row] = await db
+    .select({ analytics: forms.analytics })
+    .from(forms)
+    .where(eq(forms.id, formId));
+  return row?.analytics === true;
+};
 
 export const recordFormVisit = createServerFn({ method: "POST" })
   .inputValidator(
@@ -32,6 +43,10 @@ export const recordFormVisit = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }): Promise<{ visitId: string | null }> => {
+    if (!(await isAnalyticsEnabled(data.formId))) {
+      return { visitId: null };
+    }
+
     const headers = getRequestHeaders();
     const ua = headers.get("user-agent");
 
@@ -119,6 +134,9 @@ export const recordQuestionProgress = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }): Promise<{ ok: true }> => {
+    if (!(await isAnalyticsEnabled(data.formId))) {
+      return { ok: true };
+    }
     // NOTE: race-prone if a single visitor fires multiple events simultaneously.
     // V1 acceptable: duplicates inflate progress rows but aggregation in Task 12
     // dedupes by max(viewedAt) per (visitorHash, questionId). A unique constraint
@@ -201,8 +219,12 @@ export const getFormInsights = createServerFn({ method: "POST" })
     );
     const split = splitTodayVsPast(range, now);
 
+    // Pro-gated. When analytics is off the merge fn produces a canonical
+    // zero-state payload (correct date range + empty arrays) without touching
+    // the analytics tables.
+    const enabled = await isAnalyticsEnabled(data.formId);
     const dailyRows =
-      split.pastDays.length > 0
+      enabled && split.pastDays.length > 0
         ? await db
             .select()
             .from(formAnalyticsDaily)
@@ -214,18 +236,19 @@ export const getFormInsights = createServerFn({ method: "POST" })
             )
         : [];
 
-    const todayRawRows = split.rawStart
-      ? await db
-          .select()
-          .from(formVisits)
-          .where(
-            and(
-              eq(formVisits.formId, data.formId),
-              gte(formVisits.visitStartedAt, split.rawStart),
-              lte(formVisits.visitStartedAt, range.end),
-            ),
-          )
-      : [];
+    const todayRawRows =
+      enabled && split.rawStart
+        ? await db
+            .select()
+            .from(formVisits)
+            .where(
+              and(
+                eq(formVisits.formId, data.formId),
+                gte(formVisits.visitStartedAt, split.rawStart),
+                lte(formVisits.visitStartedAt, range.end),
+              ),
+            )
+        : [];
 
     return mergeInsightsMetrics({
       dailyRows,
@@ -258,8 +281,9 @@ export const getFormDropoff = createServerFn({ method: "POST" })
     );
     const split = splitTodayVsPast(range, now);
 
+    const enabled = await isAnalyticsEnabled(data.formId);
     const dailyRows =
-      split.pastDays.length > 0
+      enabled && split.pastDays.length > 0
         ? await db
             .select()
             .from(formDropoffDaily)
@@ -271,18 +295,19 @@ export const getFormDropoff = createServerFn({ method: "POST" })
             )
         : [];
 
-    const todayProgressRows = split.rawStart
-      ? await db
-          .select()
-          .from(formQuestionProgress)
-          .where(
-            and(
-              eq(formQuestionProgress.formId, data.formId),
-              gte(formQuestionProgress.viewedAt, split.rawStart),
-              lte(formQuestionProgress.viewedAt, range.end),
-            ),
-          )
-      : [];
+    const todayProgressRows =
+      enabled && split.rawStart
+        ? await db
+            .select()
+            .from(formQuestionProgress)
+            .where(
+              and(
+                eq(formQuestionProgress.formId, data.formId),
+                gte(formQuestionProgress.viewedAt, split.rawStart),
+                lte(formQuestionProgress.viewedAt, range.end),
+              ),
+            )
+        : [];
 
     return mergeDropoffMetrics({
       formId: data.formId,

@@ -29,8 +29,10 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
         id: forms.id,
         status: forms.status,
         lastPublishedVersionId: forms.lastPublishedVersionId,
-        // Group 4 (live): branding toggle, plus draft fallbacks for forms without versions
+        // Group 4 (live): branding + analytics toggles, plus draft fallbacks
+        // for forms without versions
         branding: forms.branding,
+        analytics: forms.analytics,
         draftTitle: forms.title,
         draftContent: forms.content,
         draftIcon: forms.icon,
@@ -110,6 +112,7 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
           icon: version.icon,
           cover: version.cover,
           status: form.status,
+          analytics: form.analytics,
           settings,
         },
         error: null,
@@ -128,6 +131,7 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
         icon: form.draftIcon,
         cover: form.draftCover,
         status: form.status,
+        analytics: form.analytics,
         settings,
       },
       error: null,

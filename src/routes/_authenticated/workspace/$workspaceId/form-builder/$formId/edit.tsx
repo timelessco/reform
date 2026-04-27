@@ -134,7 +134,6 @@ export const Route = createFileRoute(
       embedPopupTrigger: z.enum(["button", "auto", "scroll"]).catch("button").optional(),
       embedHideOnSubmit: z.coerce.boolean().catch(false).optional(),
       embedHideOnSubmitDelay: z.coerce.number().catch(0).optional(),
-      embedTrackEvents: z.coerce.boolean().catch(false).optional(),
     }),
   ),
   // Redirect published forms to submissions (prevents flash of editor)
