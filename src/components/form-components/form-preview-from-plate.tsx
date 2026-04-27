@@ -81,6 +81,10 @@ interface FormPreviewFromPlateProps {
   /** Rehydrate step state from a server-side draft (resume-after-refresh). */
   initialFormData?: Record<string, unknown>;
   initialCurrentStep?: number;
+  /** When true, field-by-field mode bounds height to its parent (popup context)
+   *  instead of using viewport units. Use for popup previews and real popup
+   *  iframes — the parent already provides a definite bounded height. */
+  isPopup?: boolean;
 }
 
 export const isHexColor = (str: string): boolean => /^#([0-9A-Fa-f]{3}){1,2}$/.test(str);
@@ -102,6 +106,7 @@ const PreviewFormHeader = ({
   hideTitle,
   layout,
   customization,
+  isPopup,
 }: {
   title?: string;
   icon?: string;
@@ -110,6 +115,7 @@ const PreviewFormHeader = ({
   hideTitle?: boolean;
   layout: "public" | "editor";
   customization?: Record<string, string> | null;
+  isPopup?: boolean;
 }) => {
   const [imageError, setImageError] = useState(false);
   const [iconError, setIconError] = useState(false);
@@ -127,7 +133,9 @@ const PreviewFormHeader = ({
 
   // Check if we have valid cover (URL or hex color)
   const hasCover = cover && (isHexColor(cover) || isValidUrl(cover)) && !imageError;
-  const hasIcon = !!icon && !iconError;
+  // In popup mode the icon is already shown as the popup bubble, so hide it
+  // inside the popup body to save space and avoid duplication.
+  const hasIcon = !!icon && !iconError && !isPopup;
   const hasTitle = title && title.trim().length > 0 && !hideTitle;
 
   if (!hasCover && !hasIcon && !hasTitle) {
@@ -361,6 +369,7 @@ export const FormPreviewFromPlate = ({
   customization,
   initialFormData,
   initialCurrentStep,
+  isPopup = false,
 }: FormPreviewFromPlateProps) => {
   const headerFromContent = useMemo(() => extractFormHeader(content), [content]);
   const hasHeaderNode = headerFromContent !== null;
@@ -428,6 +437,7 @@ export const FormPreviewFromPlate = ({
         layout={layout}
         settings={settings}
         customization={customization}
+        isPopup={isPopup}
       />
     </StepFormProvider>
   );
@@ -467,6 +477,7 @@ const FormPreviewContent = ({
   layout,
   settings,
   customization,
+  isPopup,
 }: {
   steps: PreviewSegment[][];
   thankYouNodes: Value | null;
@@ -478,6 +489,7 @@ const FormPreviewContent = ({
   layout: "public" | "editor";
   settings?: PublicFormSettings;
   customization?: Record<string, string> | null;
+  isPopup?: boolean;
 }) => {
   const { currentStep, totalSteps, isSubmitted, direction, reset } = useStepForm();
   const { t } = useTranslation();
@@ -527,6 +539,7 @@ const FormPreviewContent = ({
           hideTitle={hideTitle}
           layout={layout}
           customization={customization}
+          isPopup={isPopup}
         />
         <div
           className={cn("w-full mx-auto", layout === "editor" ? "px-8 md:px-0" : "px-4")}
@@ -564,15 +577,21 @@ const FormPreviewContent = ({
   const coverIsColor = cover && isHexColor(cover);
 
   if (isFieldByField) {
-    const hasIcon = !!icon;
+    // In popup mode the avatar/icon is already used as the popup bubble, so
+    // hide it inside the popup to save space and avoid duplication.
+    const hasIcon = !!icon && !isPopup;
     const showHeader = !hideTitle && (title || hasIcon);
     const isPublic = layout === "public";
     const hasTint = isPublic && coverIsImage && cover.includes("tint=true");
     return (
       <div
         className={cn(
-          "relative w-full flex flex-col h-full",
-          layout === "public" ? "min-h-screen" : "min-h-[600px]",
+          "relative w-full flex flex-col h-full overflow-hidden",
+          layout === "public"
+            ? isPopup
+              ? "min-h-full max-h-full"
+              : "min-h-screen"
+            : "min-h-[600px]",
         )}
         style={
           isPublic
@@ -595,8 +614,15 @@ const FormPreviewContent = ({
         )}
 
         {showHeader && (
-          <div className="relative z-10 flex items-center gap-4 px-6 pt-6 sm:px-10 sm:pt-8">
-            {icon &&
+          <div
+            className={cn(
+              "relative z-10 flex items-center gap-4",
+              isPopup ? "px-4.5 pt-3" : "mx-auto w-full px-4 pt-6 sm:px-6 sm:pt-8",
+            )}
+            style={isPopup ? undefined : { maxWidth: PAGE_MAX_WIDTH[layout] }}
+          >
+            {hasIcon &&
+              icon &&
               (icon === DEFAULT_ICON ? (
                 <span className="flex-shrink-0" data-bf-logo-icon>
                   <IconPickerPreview
@@ -642,7 +668,7 @@ const FormPreviewContent = ({
         )}
 
         <div
-          className="relative z-10 mx-auto flex w-full flex-1 flex-col justify-center px-4 sm:px-6"
+          className="relative z-10 mx-auto flex w-full min-h-0 flex-1 flex-col justify-center overflow-hidden px-4 pb-12 sm:px-6"
           style={{
             maxWidth: PAGE_MAX_WIDTH[layout],
             ...(layout === "editor"
@@ -697,6 +723,7 @@ const FormPreviewContent = ({
         hideTitle={hideTitle}
         layout={layout}
         customization={customization}
+        isPopup={isPopup}
       />
 
       {/* Progress Bar */}

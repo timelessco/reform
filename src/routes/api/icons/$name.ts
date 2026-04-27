@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import { publicCorsHeaders } from "@/lib/config/embed-cors";
+// Bundle sprite contents into the server function. Vercel's serverless runtime
+// does not expose `public/` on the function filesystem, so reading by path
+// fails at runtime. `?raw` inlines the file as a string at build time.
+import spriteSvg from "../../../../public/sprite.svg?raw";
 
 const CORS_HEADERS = {
   ...publicCorsHeaders,
@@ -16,21 +18,7 @@ const NAME_RE = /^[a-z0-9-]{1,64}$/i;
 // indefinitely. 2× the real icon count is more than enough headroom.
 const MAX_CACHE_SIZE = 1024;
 
-let spriteCache: string | null = null;
-let spritePromise: Promise<string> | null = null;
 const symbolCache = new Map<string, string>();
-
-const loadSprite = (): Promise<string> => {
-  if (spriteCache) return Promise.resolve(spriteCache);
-  if (spritePromise) return spritePromise;
-  const path = join(process.cwd(), "public", "sprite.svg");
-  spritePromise = readFile(path, "utf-8").then((text) => {
-    spriteCache = text;
-    spritePromise = null;
-    return text;
-  });
-  return spritePromise;
-};
 
 // Defensive scrub: even though sprite.svg is a trusted build artifact, strip
 // any <script> elements and on* event handlers before caching. If someone ever
@@ -70,8 +58,7 @@ export const Route = createFileRoute("/api/icons/$name")({
           return new Response("invalid name", { status: 400, headers: CORS_HEADERS });
         }
         try {
-          const sprite = await loadSprite();
-          const svg = extractSymbol(sprite, name);
+          const svg = extractSymbol(spriteSvg, name);
           if (!svg) {
             return new Response("not found", { status: 404, headers: CORS_HEADERS });
           }
