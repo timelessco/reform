@@ -22,6 +22,7 @@ export default {
     "src/lib/server-fn/custom-domain-loader.ts", // Custom domains feature - consumed by upcoming tasks
     "src/lib/server-fn/analytics.ts", // Analytics v1 - consumed by upcoming tasks
     "src/lib/analytics/track-client.ts", // Analytics v1 - consumed by upcoming tasks
+    "src/lib/analytics/use-public-form-tracking.ts", // Analytics v1 - consumed by upcoming tasks
     "src/types/**", // type exports
     "vite.config.ts", // config file default export
   ],
