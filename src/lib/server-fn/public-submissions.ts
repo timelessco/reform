@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Value } from "platejs";
 import { formVisits, forms, formVersions, submissions, user } from "@/db/schema";
@@ -247,11 +247,15 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
       // the same draftId may have produced multiple visits across sessions; the
       // current tab's visitId wins (most-recent-session attribution for v1).
       if (data.visitId) {
+        // Compute durationMs in SQL so we don't need a separate read.
+        // EXTRACT(EPOCH FROM ...) returns seconds, multiply by 1000 for ms.
         db.update(formVisits)
           .set({
             didSubmit: true,
             didStartForm: true,
             submissionId,
+            visitEndedAt: now,
+            durationMs: sql`(EXTRACT(EPOCH FROM (${now}::timestamptz - ${formVisits.visitStartedAt})) * 1000)::int`,
             updatedAt: now,
           })
           .where(eq(formVisits.id, data.visitId))
