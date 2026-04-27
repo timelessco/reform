@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 import { ProgressBar } from "@/routes/forms/-components/progress-bar";
 import { StepFormProvider, useStepForm } from "@/contexts/step-form-context";
+import type { PublicFormTracking, TrackingBase } from "@/contexts/step-form-context";
 import { useTranslation } from "@/contexts/translation-context";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { useStepPreviewForm } from "@/hooks/use-preview-form";
@@ -53,6 +54,10 @@ interface FormPreviewRSCProps {
   /** Rehydrate step state from a server-side draft (resume-after-refresh). */
   initialFormData?: Record<string, unknown>;
   initialCurrentStep?: number;
+  /** Analytics tracking base ({ visitId, visitorHash }). Only passed by the
+   * public form route — builder previews leave this undefined to disable
+   * tracking. */
+  trackingBase?: TrackingBase;
 }
 
 const PAGE_MAX_WIDTH = `var(--bf-page-width, ${CUSTOMIZATION_AUTO_DEFAULTS.pageWidth})`;
@@ -451,6 +456,7 @@ export const FormPreviewRSC = ({
   onSubmit,
   initialFormData,
   initialCurrentStep,
+  trackingBase,
 }: FormPreviewRSCProps) => {
   if (steps.length === 0 || stepCount === 0) {
     return (
@@ -464,6 +470,20 @@ export const FormPreviewRSC = ({
     );
   }
 
+  // RSC variant only handles page-break presentation; field-by-field renders
+  // through FormPreviewFromPlate. Mode is `page-break` for multi-step forms,
+  // `null` for single-page (disables question-progress tracking).
+  const trackingMode: PublicFormTracking["mode"] = stepCount > 1 ? "page-break" : null;
+  const tracking: PublicFormTracking | null =
+    trackingBase && formId
+      ? {
+          visitId: trackingBase.visitId,
+          visitorHash: trackingBase.visitorHash,
+          formId,
+          mode: trackingMode,
+        }
+      : null;
+
   return (
     <StepFormProvider
       totalSteps={stepCount}
@@ -472,6 +492,7 @@ export const FormPreviewRSC = ({
       saveAnswersForLater={settings?.saveAnswersForLater}
       initialFormData={initialFormData}
       initialCurrentStep={initialCurrentStep}
+      tracking={tracking}
     >
       <FormPreviewRSCContent
         steps={steps}

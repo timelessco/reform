@@ -18,6 +18,7 @@ import { PasswordGate } from "@/routes/forms/-components/password-gate";
 import { TranslationProvider, useTranslation } from "@/contexts/translation-context";
 import { createPublicSubmission, getPublicDraft } from "@/lib/server-fn/public-submissions";
 import { clearDraftId, readDraftId } from "@/hooks/use-draft-autosave";
+import { usePublicFormTracking } from "@/lib/analytics/use-public-form-tracking";
 import { getTranslations } from "@/lib/translations";
 import { cn } from "@/lib/utils";
 import {
@@ -151,6 +152,10 @@ export const PublicFormPage = ({
   const dynamicHeight = embedConfig.dynamicHeight;
   const dynamicWidth = embedConfig.dynamicWidth;
   const containerRef = useRef<HTMLDivElement>(null);
+  // Analytics tracking — fires `recordFormVisit` on mount and exposes
+  // `{ visitId, visitorHash }`. `formId` and `mode` are added by the
+  // form-preview components (which know the presentation mode).
+  const trackingBase = usePublicFormTracking({ formId });
   const [submitted, setSubmitted] = useState(() => {
     if (form?.settings?.preventDuplicateSubmissions) {
       try {
@@ -317,6 +322,7 @@ export const PublicFormPage = ({
             data: values,
             isCompleted: true,
             draftId,
+            visitId: trackingBase.visitId ?? undefined,
           },
         });
 
@@ -351,7 +357,14 @@ export const PublicFormPage = ({
         throw err; // Re-throw so the form knows it failed
       }
     },
-    [formId, isPopup, form?.title, form?.settings?.preventDuplicateSubmissions, resolvedLanguage],
+    [
+      formId,
+      isPopup,
+      form?.title,
+      form?.settings?.preventDuplicateSubmissions,
+      resolvedLanguage,
+      trackingBase.visitId,
+    ],
   );
 
   // Handle error states
@@ -464,6 +477,7 @@ export const PublicFormPage = ({
           onSubmit={handleSubmit}
           settings={settings}
           formId={formId}
+          trackingBase={trackingBase}
           {...resumeProps}
         />
       ) : (
@@ -480,6 +494,7 @@ export const PublicFormPage = ({
             formId={formId}
             customization={form.customization}
             isPopup={isPopup}
+            trackingBase={trackingBase}
             {...resumeProps}
           />
         </Suspense>
