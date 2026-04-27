@@ -33,14 +33,14 @@ export const recordFormVisit = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }): Promise<{ visitId: string | null }> => {
     const headers = getRequestHeaders();
-    const ua = (headers["user-agent"] as string | undefined) ?? null;
+    const ua = headers.get("user-agent");
 
     if (isBotUserAgent(ua)) {
       return { visitId: null };
     }
 
     const parsed = parseUserAgent(ua);
-    const country = (headers["x-vercel-ip-country"] as string | undefined) ?? null;
+    const country = headers.get("x-vercel-ip-country");
 
     const id = crypto.randomUUID();
     await db.insert(formVisits).values({
