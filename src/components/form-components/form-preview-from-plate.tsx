@@ -387,12 +387,16 @@ export const FormPreviewFromPlate = ({
 
   // Field-by-field mode: re-chunk so each field becomes its own step, with
   // preceding static content carried into the same step as the next field.
+  // Skip authored Button fields entirely — page boundaries are invisible here,
+  // so a standalone Next/Previous button step would just be noise. The
+  // auto-rendered submit/next button on each input step handles navigation.
   const steps = useMemo(() => {
     if (settings?.presentationMode !== "field-by-field") return rawSteps;
     const flattened: PreviewSegment[][] = [];
     let pending: PreviewSegment[] = [];
     for (const step of rawSteps) {
       for (const seg of step) {
+        if (seg.type === "field" && seg.field.fieldType === "Button") continue;
         pending.push(seg);
         if (seg.type === "field") {
           flattened.push(pending);
@@ -527,8 +531,37 @@ const FormPreviewContent = ({
     return () => clearInterval(interval);
   }, [isSubmitted, settings?.redirectOnCompletion, settings?.redirectUrl, settings?.redirectDelay]);
 
-  // Show thank you content after submission
-  if (isSubmitted) {
+  const isLastStep = currentStep === steps.length - 1;
+  const currentStepSegments = steps[currentStep] || [];
+  const isFieldByField = settings?.presentationMode === "field-by-field";
+  const coverIsImage = cover && isValidUrl(cover);
+  const coverIsColor = cover && isHexColor(cover);
+
+  const thankYouContent = (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      {thankYouNodes && thankYouNodes.length > 0 ? (
+        <RenderThankYouContent nodes={thankYouNodes} onReset={reset} />
+      ) : (
+        <DefaultThankYou onReset={reset} />
+      )}
+      {redirectCountdown !== null && (
+        <p className="text-muted-foreground text-center mt-4">
+          {t("redirecting", {
+            n: redirectCountdown,
+            s: redirectCountdown !== 1 ? "s" : "",
+          })}
+        </p>
+      )}
+    </motion.div>
+  );
+
+  // Show thank you content after submission (non-field-by-field layout).
+  // Field-by-field renders its own thank-you inside the shared shell below.
+  if (isSubmitted && !isFieldByField) {
     return (
       <div className="w-full">
         <PreviewFormHeader
@@ -546,35 +579,11 @@ const FormPreviewContent = ({
           style={{ maxWidth: PAGE_MAX_WIDTH[layout] }}
           data-bf-form-container
         >
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {thankYouNodes && thankYouNodes.length > 0 ? (
-              <RenderThankYouContent nodes={thankYouNodes} onReset={reset} />
-            ) : (
-              <DefaultThankYou onReset={reset} />
-            )}
-            {redirectCountdown !== null && (
-              <p className="text-muted-foreground text-center mt-4">
-                {t("redirecting", {
-                  n: redirectCountdown,
-                  s: redirectCountdown !== 1 ? "s" : "",
-                })}
-              </p>
-            )}
-          </motion.div>
+          {thankYouContent}
         </div>
       </div>
     );
   }
-
-  const isLastStep = currentStep === steps.length - 1;
-  const currentStepSegments = steps[currentStep] || [];
-  const isFieldByField = settings?.presentationMode === "field-by-field";
-  const coverIsImage = cover && isValidUrl(cover);
-  const coverIsColor = cover && isHexColor(cover);
 
   if (isFieldByField) {
     // In popup mode the avatar/icon is already used as the popup bubble, so
@@ -677,36 +686,40 @@ const FormPreviewContent = ({
           }}
           data-bf-form-container
         >
-          {settings?.progressBar && totalSteps > 1 && (
+          {!isSubmitted && settings?.progressBar && totalSteps > 1 && (
             <div className="mb-4 w-full">
               <ProgressBar currentStep={currentStep} totalSteps={totalSteps} />
             </div>
           )}
 
           <div className="w-full">
-            <AnimatePresence mode="wait" custom={direction}>
-              <motion.div
-                key={currentStep}
-                custom={direction}
-                variants={stepVariants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{
-                  x: { type: "spring", stiffness: 300, damping: 30 },
-                  opacity: { duration: 0.2 },
-                }}
-                className="w-full"
-              >
-                <StepForm
+            {isSubmitted ? (
+              thankYouContent
+            ) : (
+              <AnimatePresence mode="wait" custom={direction}>
+                <motion.div
                   key={currentStep}
-                  stepIndex={currentStep}
-                  segments={currentStepSegments}
-                  isLastStep={isLastStep}
-                  autoActionButton
-                />
-              </motion.div>
-            </AnimatePresence>
+                  custom={direction}
+                  variants={stepVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{
+                    x: { type: "spring", stiffness: 300, damping: 30 },
+                    opacity: { duration: 0.2 },
+                  }}
+                  className="w-full"
+                >
+                  <StepForm
+                    key={currentStep}
+                    stepIndex={currentStep}
+                    segments={currentStepSegments}
+                    isLastStep={isLastStep}
+                    autoActionButton
+                  />
+                </motion.div>
+              </AnimatePresence>
+            )}
           </div>
         </div>
       </div>

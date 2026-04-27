@@ -5,7 +5,7 @@ import { z } from "zod";
 import { forms, formVersions, user } from "@/db/schema";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { computeContentHash } from "@/lib/content-hash";
+import { computeContentHash, pickVersionedSettings } from "@/lib/content-hash";
 import { purgeFormCache } from "@/lib/server-fn/cdn-cache";
 import { authForm, getActiveOrgId } from "./auth-helpers";
 
@@ -57,32 +57,10 @@ export const publishFormVersion = createServerFn({ method: "POST" })
       // Snapshot Group 2 behavior settings (flat columns) into the version's
       // settings jsonb so the public endpoint can read them from the snapshot
       // instead of the live forms row. Group 4 (slug, customDomainId, branding)
-      // is intentionally excluded — those stay live.
-      const settingsSnapshot = {
-        progressBar: form.progressBar,
-        presentationMode: form.presentationMode,
-        saveAnswersForLater: form.saveAnswersForLater,
-        redirectOnCompletion: form.redirectOnCompletion,
-        redirectUrl: form.redirectUrl,
-        redirectDelay: form.redirectDelay,
-        language: form.language,
-        passwordProtect: form.passwordProtect,
-        password: form.password,
-        closeForm: form.closeForm,
-        closedFormMessage: form.closedFormMessage,
-        closeOnDate: form.closeOnDate,
-        closeDate: form.closeDate,
-        limitSubmissions: form.limitSubmissions,
-        maxSubmissions: form.maxSubmissions,
-        preventDuplicateSubmissions: form.preventDuplicateSubmissions,
-        selfEmailNotifications: form.selfEmailNotifications,
-        notificationEmail: form.notificationEmail,
-        respondentEmailNotifications: form.respondentEmailNotifications,
-        respondentEmailSubject: form.respondentEmailSubject,
-        respondentEmailBody: form.respondentEmailBody,
-        dataRetention: form.dataRetention,
-        dataRetentionDays: form.dataRetentionDays,
-      };
+      // is intentionally excluded — those stay live. `pickVersionedSettings`
+      // is the same helper that drives the client-side hash, so the snapshot,
+      // the hash, and the listings query stay in lockstep.
+      const settingsSnapshot = pickVersionedSettings(form as unknown as Record<string, unknown>);
 
       const contentHash = computeContentHash({
         content: form.content,

@@ -6,9 +6,20 @@ import { customDomains, forms, member, submissions, workspaces } from "@/db/sche
 import { RESERVED_SLUGS } from "@/lib/config/plan-config";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
+import { VERSIONED_SETTINGS_KEYS } from "@/lib/content-hash";
 import { purgeFormCache } from "@/lib/server-fn/cdn-cache";
 import { authForm, getActiveOrgId } from "./auth-helpers";
 import { assertPlanForFormSettings, getOrgPlan } from "./plan-helpers";
+
+// Columns the listings query must always return so client-side change detection
+// (`useHasUnpublishedChanges`) keeps working after a refetch wipes the locally
+// enriched record. Heavy fields (content, customization JSONB) stay out and
+// load on demand via `enrichFormDetail`. Driven by `VERSIONED_SETTINGS_KEYS`
+// so adding a new versioned column auto-flows here — no second list to keep
+// in sync.
+const versionedSettingColumns = Object.fromEntries(
+  VERSIONED_SETTINGS_KEYS.map((key) => [key, forms[key as keyof typeof forms.$inferSelect]]),
+) as { [K in (typeof VERSIONED_SETTINGS_KEYS)[number]]: (typeof forms)[K] };
 
 const serializeForm = (form: typeof forms.$inferSelect) => ({
   ...form,
@@ -216,9 +227,21 @@ export const getFormListings = createServerFn({ method: "GET" })
         createdAt: forms.createdAt,
         workspaceId: forms.workspaceId,
         icon: forms.icon,
+        cover: forms.cover,
         formName: forms.formName,
         sortIndex: forms.sortIndex,
         submissionCount: count(submissions.id),
+        // Hash-based change detection requires these on every listing fetch —
+        // refetch after publish would otherwise wipe them off the local record.
+        publishedContentHash: forms.publishedContentHash,
+        lastPublishedVersionId: forms.lastPublishedVersionId,
+        // Live (non-versioned) settings the share sidebar reads.
+        branding: forms.branding,
+        slug: forms.slug,
+        customDomainId: forms.customDomainId,
+        // Every versioned settings column — needed so the client hash matches
+        // the server hash even after the listings query refetches.
+        ...versionedSettingColumns,
       })
       .from(forms)
       .innerJoin(workspaces, eq(forms.workspaceId, workspaces.id))

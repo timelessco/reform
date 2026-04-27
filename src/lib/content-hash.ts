@@ -48,7 +48,7 @@ export type VersionedSnapshotInput = {
   settings: Record<string, unknown>;
 };
 
-const pickVersionedSettings = (src: Record<string, unknown>): Record<string, unknown> => {
+export const pickVersionedSettings = (src: Record<string, unknown>): Record<string, unknown> => {
   const out: Record<string, unknown> = {};
   for (const key of VERSIONED_SETTINGS_KEYS) {
     out[key] = src[key] ?? null;
