@@ -21,35 +21,67 @@ describe("toDateKey", () => {
 });
 
 describe("resolveTimeRange", () => {
-  it("resolves last_24_hours: 1 day, end equals now", () => {
+  it("resolves last_24_hours at noon: 2 day keys (yesterday + today)", () => {
     const result = resolveTimeRange({ filter: "last_24_hours" }, FIXED_NOW);
     expect(result.end.toISOString()).toBe(FIXED_NOW.toISOString());
     expect(result.start.toISOString()).toBe(new Date("2026-04-26T12:00:00Z").toISOString());
-    expect(result.days).toHaveLength(1);
-    expect(result.days[0]).toBe("2026-04-27");
+    expect(result.days).toStrictEqual(["2026-04-26", "2026-04-27"]);
   });
 
-  it("resolves last_7_days: 7 unique day keys, end equals now", () => {
+  it("last_24_hours early in day: window touches yesterday + today", () => {
+    const earlyNow = new Date("2026-04-27T01:00:00Z");
+    const result = resolveTimeRange({ filter: "last_24_hours" }, earlyNow);
+    expect(result.days).toStrictEqual(["2026-04-26", "2026-04-27"]);
+  });
+
+  it("last_24_hours late in day: window touches yesterday + today", () => {
+    const lateNow = new Date("2026-04-27T23:00:00Z");
+    const result = resolveTimeRange({ filter: "last_24_hours" }, lateNow);
+    // start = 2026-04-26T23:00:00Z, end = 2026-04-27T23:00:00Z
+    expect(result.days).toStrictEqual(["2026-04-26", "2026-04-27"]);
+  });
+
+  it("resolves last_7_days at noon: 8 unique day keys (window touches 8 calendar dates)", () => {
     const result = resolveTimeRange({ filter: "last_7_days" }, FIXED_NOW);
     expect(result.end.toISOString()).toBe(FIXED_NOW.toISOString());
-    expect(result.days).toHaveLength(7);
-    expect(new Set(result.days).size).toBe(7);
+    expect(result.days).toHaveLength(8);
+    expect(new Set(result.days).size).toBe(8);
+    expect(result.days[0]).toBe("2026-04-20");
     expect(result.days[result.days.length - 1]).toBe("2026-04-27");
-    expect(result.days[0]).toBe("2026-04-21");
   });
 
-  it("resolves last_30_days: 30 unique day keys", () => {
+  it("resolves last_7_days at midnight UTC: exactly 8 day keys (window starts at start-of-day)", () => {
+    const midnightNow = new Date("2026-04-27T00:00:00Z");
+    const result = resolveTimeRange({ filter: "last_7_days" }, midnightNow);
+    // start = 2026-04-20T00:00:00Z, end = 2026-04-27T00:00:00Z
+    expect(result.days).toHaveLength(8);
+    expect(result.days[0]).toBe("2026-04-20");
+    expect(result.days[result.days.length - 1]).toBe("2026-04-27");
+  });
+
+  it("resolves last_30_days: 31 unique day keys at noon (window touches 31 calendar dates)", () => {
     const result = resolveTimeRange({ filter: "last_30_days" }, FIXED_NOW);
-    expect(result.days).toHaveLength(30);
-    expect(new Set(result.days).size).toBe(30);
+    expect(result.days).toHaveLength(31);
+    expect(new Set(result.days).size).toBe(31);
     expect(result.days[result.days.length - 1]).toBe("2026-04-27");
   });
 
-  it("resolves last_90_days: 90 unique day keys", () => {
+  it("resolves last_90_days: 91 unique day keys at noon", () => {
     const result = resolveTimeRange({ filter: "last_90_days" }, FIXED_NOW);
-    expect(result.days).toHaveLength(90);
-    expect(new Set(result.days).size).toBe(90);
+    expect(result.days).toHaveLength(91);
+    expect(new Set(result.days).size).toBe(91);
     expect(result.days[result.days.length - 1]).toBe("2026-04-27");
+  });
+
+  it("year-boundary: last_7_days starting in early January includes December keys", () => {
+    const earlyJan = new Date("2026-01-03T12:00:00Z");
+    const result = resolveTimeRange({ filter: "last_7_days" }, earlyJan);
+    // start = 2025-12-27T12:00:00Z, end = 2026-01-03T12:00:00Z -> 8 days
+    expect(result.days).toHaveLength(8);
+    expect(result.days[0]).toBe("2025-12-27");
+    expect(result.days).toContain("2025-12-31");
+    expect(result.days).toContain("2026-01-01");
+    expect(result.days[result.days.length - 1]).toBe("2026-01-03");
   });
 
   it("resolves custom range with valid startDate/endDate (inclusive)", () => {
@@ -84,6 +116,18 @@ describe("resolveTimeRange", () => {
     expect(result.days).toStrictEqual(["2026-04-10"]);
   });
 
+  it("custom range across leap-year February boundary", () => {
+    const result = resolveTimeRange(
+      {
+        filter: "custom",
+        startDate: "2024-02-28",
+        endDate: "2024-03-01",
+      },
+      FIXED_NOW,
+    );
+    expect(result.days).toStrictEqual(["2024-02-28", "2024-02-29", "2024-03-01"]);
+  });
+
   it("throws when custom is missing startDate", () => {
     expect(() => resolveTimeRange({ filter: "custom", endDate: "2026-04-05" }, FIXED_NOW)).toThrow(
       /startDate/i,
@@ -101,19 +145,29 @@ describe("resolveTimeRange", () => {
       /startDate and endDate/i,
     );
   });
+
+  it("throws on out-of-range calendar date (e.g., 2024-02-30)", () => {
+    expect(() =>
+      resolveTimeRange(
+        { filter: "custom", startDate: "2024-02-30", endDate: "2024-03-01" },
+        FIXED_NOW,
+      ),
+    ).toThrow(/calendar date/i);
+  });
 });
 
 describe("splitTodayVsPast", () => {
-  it("excludes today's key from pastDays", () => {
+  it("last_7_days: excludes today's key, todayStart and rawStart set", () => {
     const range = resolveTimeRange({ filter: "last_7_days" }, FIXED_NOW);
-    const { todayStart, pastDays } = splitTodayVsPast(range, FIXED_NOW);
-    expect(pastDays).toHaveLength(6);
+    const { todayStart, rawStart, pastDays } = splitTodayVsPast(range, FIXED_NOW);
+    expect(pastDays).toHaveLength(7);
     expect(pastDays).not.toContain("2026-04-27");
-    expect(todayStart).not.toBeNull();
     expect(todayStart?.toISOString()).toBe("2026-04-27T00:00:00.000Z");
+    // range.start (7 days ago at 12:00Z) is earlier than today's 00:00Z, so rawStart = todayStart
+    expect(rawStart?.toISOString()).toBe("2026-04-27T00:00:00.000Z");
   });
 
-  it("returns null todayStart when range ends before today", () => {
+  it("returns null todayStart and rawStart when range ends before today", () => {
     const range = resolveTimeRange(
       {
         filter: "custom",
@@ -122,8 +176,9 @@ describe("splitTodayVsPast", () => {
       },
       FIXED_NOW,
     );
-    const { todayStart, pastDays } = splitTodayVsPast(range, FIXED_NOW);
+    const { todayStart, rawStart, pastDays } = splitTodayVsPast(range, FIXED_NOW);
     expect(todayStart).toBeNull();
+    expect(rawStart).toBeNull();
     expect(pastDays).toStrictEqual([
       "2026-04-01",
       "2026-04-02",
@@ -133,7 +188,7 @@ describe("splitTodayVsPast", () => {
     ]);
   });
 
-  it("returns todayStart when custom range includes today", () => {
+  it("returns todayStart and rawStart when custom range includes today", () => {
     const range = resolveTimeRange(
       {
         filter: "custom",
@@ -142,15 +197,27 @@ describe("splitTodayVsPast", () => {
       },
       FIXED_NOW,
     );
-    const { todayStart, pastDays } = splitTodayVsPast(range, FIXED_NOW);
+    const { todayStart, rawStart, pastDays } = splitTodayVsPast(range, FIXED_NOW);
     expect(todayStart?.toISOString()).toBe("2026-04-27T00:00:00.000Z");
+    expect(rawStart?.toISOString()).toBe("2026-04-27T00:00:00.000Z");
     expect(pastDays).toStrictEqual(["2026-04-25", "2026-04-26"]);
   });
 
-  it("last_24_hours: pastDays empty, todayStart set", () => {
+  it("last_24_hours at noon: pastDays contains yesterday, todayStart and rawStart set", () => {
     const range = resolveTimeRange({ filter: "last_24_hours" }, FIXED_NOW);
-    const { todayStart, pastDays } = splitTodayVsPast(range, FIXED_NOW);
-    expect(pastDays).toStrictEqual([]);
+    const { todayStart, rawStart, pastDays } = splitTodayVsPast(range, FIXED_NOW);
+    expect(pastDays).toStrictEqual(["2026-04-26"]);
     expect(todayStart?.toISOString()).toBe("2026-04-27T00:00:00.000Z");
+    // range.start = 2026-04-26T12:00:00Z, todayStart = 2026-04-27T00:00:00Z -> rawStart = todayStart
+    expect(rawStart?.toISOString()).toBe("2026-04-27T00:00:00.000Z");
+  });
+
+  it("last_24_hours early in day: rawStart = todayStart (range.start < todayStart)", () => {
+    const earlyNow = new Date("2026-04-27T01:00:00Z");
+    const range = resolveTimeRange({ filter: "last_24_hours" }, earlyNow);
+    const { todayStart, rawStart } = splitTodayVsPast(range, earlyNow);
+    // range.start = 2026-04-26T01:00:00Z, todayStart = 2026-04-27T00:00:00Z -> rawStart = todayStart
+    expect(todayStart?.toISOString()).toBe("2026-04-27T00:00:00.000Z");
+    expect(rawStart?.toISOString()).toBe("2026-04-27T00:00:00.000Z");
   });
 });
