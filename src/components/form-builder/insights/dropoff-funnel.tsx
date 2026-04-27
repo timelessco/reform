@@ -48,7 +48,7 @@ interface SummaryStatProps {
 }
 
 const SummaryStat = ({ label, value }: SummaryStatProps) => (
-  <div className="flex flex-col gap-1 rounded-md border border-border/60 bg-muted/30 px-3 py-2">
+  <div className="flex flex-col gap-1 px-3 py-2">
     <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
       {label}
     </span>
@@ -160,7 +160,7 @@ export const DropoffFunnel = ({ dropoff }: DropoffFunnelProps) => {
 
   if (!dropoff || dropoff.questions.length === 0) {
     return (
-      <div className="rounded-md border border-border/60 border-dashed bg-muted/20 p-6 text-center text-muted-foreground text-sm">
+      <div className="p-6 text-center text-muted-foreground text-sm">
         No drop-off data yet — multi-step / field-by-field forms only.
       </div>
     );
@@ -179,7 +179,7 @@ export const DropoffFunnel = ({ dropoff }: DropoffFunnelProps) => {
           width: "auto",
         }}
       >
-        <DataGridContainer border={false} className="overflow-hidden rounded-md border">
+        <DataGridContainer border={false}>
           <DataGridTable />
         </DataGridContainer>
       </DataGrid>

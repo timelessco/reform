@@ -180,7 +180,7 @@ export const BreakdownCards = ({ metrics }: BreakdownCardsProps) => {
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <Card className="bg-transparent">
+      <Card className="bg-transparent ring-0">
         <CardHeader>
           <CardTitle>Devices</CardTitle>
         </CardHeader>
@@ -188,7 +188,7 @@ export const BreakdownCards = ({ metrics }: BreakdownCardsProps) => {
           <PieBreakdown data={devices} />
         </CardContent>
       </Card>
-      <Card className="bg-transparent">
+      <Card className="bg-transparent ring-0">
         <CardHeader>
           <CardTitle>Sources</CardTitle>
         </CardHeader>
@@ -196,7 +196,7 @@ export const BreakdownCards = ({ metrics }: BreakdownCardsProps) => {
           <SourcesBar data={sources} />
         </CardContent>
       </Card>
-      <Card className="bg-transparent">
+      <Card className="bg-transparent ring-0">
         <CardHeader>
           <CardTitle>Countries</CardTitle>
         </CardHeader>
@@ -204,7 +204,7 @@ export const BreakdownCards = ({ metrics }: BreakdownCardsProps) => {
           <CountriesTable data={countries} />
         </CardContent>
       </Card>
-      <Card className="bg-transparent">
+      <Card className="bg-transparent ring-0">
         <CardHeader>
           <CardTitle>Browsers</CardTitle>
         </CardHeader>
