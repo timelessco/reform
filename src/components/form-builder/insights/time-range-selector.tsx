@@ -51,7 +51,12 @@ export const TimeRangeSelector = ({
     <div className="flex flex-wrap items-center gap-2">
       <Select value={value} onValueChange={handlePresetChange}>
         <SelectTrigger className="min-w-[160px]">
-          <SelectValue />
+          <SelectValue>
+            {(current) =>
+              PRESET_OPTIONS.find((option) => option.value === current)?.label ??
+              (current as string)
+            }
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {PRESET_OPTIONS.map((option) => (

@@ -34,20 +34,30 @@ type QuestionProgressArgs = {
   wasLastQuestion?: boolean;
 };
 
+const isDev = import.meta.env.DEV;
+
+const logDevError = (label: string, err: unknown): void => {
+  if (isDev) {
+    // biome-ignore lint/suspicious/noConsole: dev-only diagnostic for analytics failures
+    console.error(`[analytics] ${label} failed:`, err);
+  }
+};
+
 /** Fires recordFormVisit and resolves with the visitId, or null on bot/error. */
 export const fireRecordVisit = async (args: RecordVisitArgs): Promise<string | null> => {
   try {
     const result = await recordFormVisit({ data: args });
     return result.visitId;
-  } catch {
+  } catch (err) {
+    logDevError("recordFormVisit", err);
     return null;
   }
 };
 
 /** Fire-and-forget visit update. Underlying fetch survives short async work; not unload-safe. */
 export const fireUpdateVisit = (args: UpdateVisitArgs): void => {
-  void updateFormVisit({ data: args }).catch(() => {
-    // Analytics never breaks the form.
+  void updateFormVisit({ data: args }).catch((err) => {
+    logDevError("updateFormVisit", err);
   });
 };
 
@@ -76,7 +86,7 @@ export const fireUpdateVisitBeacon = (args: UpdateVisitArgs): void => {
 
 /** Fire-and-forget question-progress event. */
 export const fireQuestionProgress = (args: QuestionProgressArgs): void => {
-  void recordQuestionProgress({ data: args }).catch(() => {
-    // Analytics never breaks the form.
+  void recordQuestionProgress({ data: args }).catch((err) => {
+    logDevError("recordQuestionProgress", err);
   });
 };

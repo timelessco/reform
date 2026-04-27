@@ -81,25 +81,32 @@ const InsightsPage = () => {
           onChange={handleRangeChange}
         />
       </div>
-      <EmptyState hasData={hasData} />
-      <MetricsRow metrics={metrics} />
-      <Card>
-        <CardHeader>
-          <CardTitle>Visits over time</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <TimeSeriesChart dailyData={metrics.dailyData} />
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Drop-off funnel</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <DropoffFunnel dropoff={dropoff} />
-        </CardContent>
-      </Card>
-      <BreakdownCards metrics={metrics} />
+      {hasData ? (
+        <>
+          <MetricsRow metrics={metrics} />
+          <Card>
+            <CardHeader>
+              <CardTitle>Visits over time</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TimeSeriesChart dailyData={metrics.dailyData} />
+            </CardContent>
+          </Card>
+          {dropoff.questions.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Drop-off funnel</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <DropoffFunnel dropoff={dropoff} />
+              </CardContent>
+            </Card>
+          )}
+          <BreakdownCards metrics={metrics} />
+        </>
+      ) : (
+        <EmptyState hasData={false} />
+      )}
     </div>
   );
 };
