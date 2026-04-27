@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
 import type { Value } from "platejs";
-import { forms, formVersions, submissions, user } from "@/db/schema";
+import { formVisits, forms, formVersions, submissions, user } from "@/db/schema";
 import { db } from "@/db";
 import {
   getEditableFields,
@@ -82,6 +82,7 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
       isCompleted: z.boolean().default(true),
       draftId: z.string().uuid().optional(),
       lastStepReached: z.number().int().min(0).optional(),
+      visitId: z.string().uuid().nullish(),
     }),
   )
   .handler(async ({ data }) => {
@@ -241,6 +242,23 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
         submissionId,
         sanitizedData,
       ).catch((err) => console.error("[Email] Notification error:", err));
+
+      // Attribute the submission to its visit row. For draft → completed flows,
+      // the same draftId may have produced multiple visits across sessions; the
+      // current tab's visitId wins (most-recent-session attribution for v1).
+      if (data.visitId) {
+        db.update(formVisits)
+          .set({
+            didSubmit: true,
+            didStartForm: true,
+            submissionId,
+            updatedAt: now,
+          })
+          .where(eq(formVisits.id, data.visitId))
+          .catch(() => {
+            /* visit may have been bot-rejected or pruned; non-fatal */
+          });
+      }
     }
 
     return { submissionId, success: true };
