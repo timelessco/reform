@@ -21,6 +21,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as FormsI8nFormIdRouteImport } from './routes/forms/$i8n.$formId'
 import { Route as ApiIconsNameRouteImport } from './routes/api/icons/$name'
+import { Route as ApiCronAggregateAnalyticsRouteImport } from './routes/api/cron/aggregate-analytics'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAiFormGenerateRouteImport } from './routes/api/ai/form-generate'
 import { Route as AuthenticatedSettingsMyAccountRouteImport } from './routes/_authenticated/settings/my-account'
@@ -94,6 +95,12 @@ const ApiIconsNameRoute = ApiIconsNameRouteImport.update({
   path: '/api/icons/$name',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCronAggregateAnalyticsRoute =
+  ApiCronAggregateAnalyticsRouteImport.update({
+    id: '/api/cron/aggregate-analytics',
+    path: '/api/cron/aggregate-analytics',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -186,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
   '/api/ai/form-generate': typeof ApiAiFormGenerateRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/aggregate-analytics': typeof ApiCronAggregateAnalyticsRoute
   '/api/icons/$name': typeof ApiIconsNameRoute
   '/forms/$i8n/$formId': typeof FormsI8nFormIdRoute
   '/api/forms/$formId/meta': typeof ApiFormsFormIdMetaRoute
@@ -211,6 +219,7 @@ export interface FileRoutesByTo {
   '/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
   '/api/ai/form-generate': typeof ApiAiFormGenerateRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/aggregate-analytics': typeof ApiCronAggregateAnalyticsRoute
   '/api/icons/$name': typeof ApiIconsNameRoute
   '/forms/$i8n/$formId': typeof FormsI8nFormIdRoute
   '/api/forms/$formId/meta': typeof ApiFormsFormIdMetaRoute
@@ -238,6 +247,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/my-account': typeof AuthenticatedSettingsMyAccountRoute
   '/api/ai/form-generate': typeof ApiAiFormGenerateRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/aggregate-analytics': typeof ApiCronAggregateAnalyticsRoute
   '/api/icons/$name': typeof ApiIconsNameRoute
   '/forms/$i8n/$formId': typeof FormsI8nFormIdRoute
   '/api/forms/$formId/meta': typeof ApiFormsFormIdMetaRoute
@@ -265,6 +275,7 @@ export interface FileRouteTypes {
     | '/settings/my-account'
     | '/api/ai/form-generate'
     | '/api/auth/$'
+    | '/api/cron/aggregate-analytics'
     | '/api/icons/$name'
     | '/forms/$i8n/$formId'
     | '/api/forms/$formId/meta'
@@ -290,6 +301,7 @@ export interface FileRouteTypes {
     | '/settings/my-account'
     | '/api/ai/form-generate'
     | '/api/auth/$'
+    | '/api/cron/aggregate-analytics'
     | '/api/icons/$name'
     | '/forms/$i8n/$formId'
     | '/api/forms/$formId/meta'
@@ -316,6 +328,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/my-account'
     | '/api/ai/form-generate'
     | '/api/auth/$'
+    | '/api/cron/aggregate-analytics'
     | '/api/icons/$name'
     | '/forms/$i8n/$formId'
     | '/api/forms/$formId/meta'
@@ -336,6 +349,7 @@ export interface RootRouteChildren {
   LoginIndexRoute: typeof LoginIndexRoute
   ApiAiFormGenerateRoute: typeof ApiAiFormGenerateRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiCronAggregateAnalyticsRoute: typeof ApiCronAggregateAnalyticsRoute
   ApiIconsNameRoute: typeof ApiIconsNameRoute
   FormsI8nFormIdRoute: typeof FormsI8nFormIdRoute
   ApiFormsFormIdMetaRoute: typeof ApiFormsFormIdMetaRoute
@@ -425,6 +439,13 @@ declare module '@tanstack/react-router' {
       path: '/api/icons/$name'
       fullPath: '/api/icons/$name'
       preLoaderRoute: typeof ApiIconsNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/aggregate-analytics': {
+      id: '/api/cron/aggregate-analytics'
+      path: '/api/cron/aggregate-analytics'
+      fullPath: '/api/cron/aggregate-analytics'
+      preLoaderRoute: typeof ApiCronAggregateAnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
@@ -598,6 +619,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginIndexRoute: LoginIndexRoute,
   ApiAiFormGenerateRoute: ApiAiFormGenerateRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiCronAggregateAnalyticsRoute: ApiCronAggregateAnalyticsRoute,
   ApiIconsNameRoute: ApiIconsNameRoute,
   FormsI8nFormIdRoute: FormsI8nFormIdRoute,
   ApiFormsFormIdMetaRoute: ApiFormsFormIdMetaRoute,
