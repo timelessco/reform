@@ -60,6 +60,9 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const isLandingPage = pathname === "/";
   const isFormBuilder = pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
   const isEditRoute = pathname.endsWith("/edit");
+  const isInsightsRoute = pathname.endsWith("/insights");
+  const isSubmissionsRoute =
+    pathname.endsWith("/submissions") || pathname.includes("/submissions?");
   const { data: sessionData } = useSession();
   const session = sessionData;
   const navigate = useNavigate();
@@ -392,14 +395,54 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                 </span>
               )}
               <span className="text-muted-foreground/50 hidden sm:inline">/</span>
-              <span
-                className={cn(
-                  buttonVariants({ variant: "link", size: "sm" }),
-                  "text-muted-foreground no-underline cursor-default px-1.5 hidden sm:inline-flex",
-                )}
-              >
-                {isEditRoute ? "Editor" : "Submissions"}
-              </span>
+              {isEditRoute ? (
+                <span
+                  className={cn(
+                    buttonVariants({ variant: "link", size: "sm" }),
+                    "text-muted-foreground no-underline cursor-default px-1.5 hidden sm:inline-flex",
+                  )}
+                >
+                  Editor
+                </span>
+              ) : (isInsightsRoute || isSubmissionsRoute) && workspaceId && formId ? (
+                <div className="ml-1 hidden sm:flex items-center gap-0.5 rounded-md border bg-muted/40 p-0.5">
+                  <Link
+                    to="/workspace/$workspaceId/form-builder/$formId/submissions"
+                    params={{ workspaceId, formId }}
+                    className={cn(
+                      buttonVariants({
+                        variant: isSubmissionsRoute ? "secondary" : "ghost",
+                        size: "sm",
+                      }),
+                      "h-7 px-2.5 text-xs",
+                    )}
+                  >
+                    Submissions
+                  </Link>
+                  <Link
+                    to="/workspace/$workspaceId/form-builder/$formId/insights"
+                    params={{ workspaceId, formId }}
+                    className={cn(
+                      buttonVariants({
+                        variant: isInsightsRoute ? "secondary" : "ghost",
+                        size: "sm",
+                      }),
+                      "h-7 px-2.5 text-xs",
+                    )}
+                  >
+                    Insights
+                  </Link>
+                </div>
+              ) : (
+                <span
+                  className={cn(
+                    buttonVariants({ variant: "link", size: "sm" }),
+                    "text-muted-foreground no-underline cursor-default px-1.5 hidden sm:inline-flex",
+                  )}
+                >
+                  Submissions
+                </span>
+              )}
             </div>
           )}
         </div>
