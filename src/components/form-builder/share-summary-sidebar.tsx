@@ -109,8 +109,9 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
         draft.branding = value;
         draft.updatedAt = new Date().toISOString();
       });
+      form.setFieldValue("branding", value);
     },
-    [doc?.id, docBranding],
+    [doc?.id, docBranding, form],
   );
 
   // Track domain assignment state for this form

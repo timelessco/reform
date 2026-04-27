@@ -22,13 +22,11 @@ interface ImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, "srcSet">
 const isVercelBlobUrl = (src: string) => src.includes(".public.blob.vercel-storage.com");
 
 // data:/blob:/same-origin sources can't be optimized by an external CDN.
+// Vercel Blob URLs are served as-is — the only transformer for them is the
+// `/_vercel/image` endpoint, which 404s in local dev and saves little for the
+// small thumbnails we render. Treat them as opaque so we render plain <img>.
 const isOpaqueSrc = (src: string) =>
-  src.startsWith("data:") || src.startsWith("blob:") || src.startsWith("/");
-
-const detectCdn = (src: string): UnpicCdn | undefined => {
-  if (isVercelBlobUrl(src)) return "vercel";
-  return; // let unpic auto-detect (Unsplash, Cloudinary, …)
-};
+  src.startsWith("data:") || src.startsWith("blob:") || src.startsWith("/") || isVercelBlobUrl(src);
 
 const buildOperations = (cdn: UnpicCdn | undefined, quality: number) => {
   if (!cdn) return;
@@ -62,7 +60,7 @@ export const Image = ({
     );
   }
 
-  const resolvedCdn = cdn ?? detectCdn(src);
+  const resolvedCdn = cdn; // unpic auto-detects known CDNs (Unsplash, Cloudinary, …) when undefined
 
   // Cast narrows unpic's discriminated-union props to the layout variant chosen
   // at the call site; `width`/`height` are required at the wrapper's type.

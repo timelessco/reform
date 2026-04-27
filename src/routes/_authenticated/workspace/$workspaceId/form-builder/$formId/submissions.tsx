@@ -47,7 +47,7 @@ import type {
 } from "@tanstack/react-table";
 
 import { ChevronDownIcon, FilterIcon, Trash2Icon, XIcon } from "@/components/ui/icons";
-import { Columns, Download, FileText, Paperclip, Search } from "lucide-react";
+import { Columns, Download, ExternalLink, FileText, Paperclip, Search } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import type { Value } from "platejs";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -262,7 +262,7 @@ const SubmissionCell = ({
               className="h-8 w-auto max-w-[64px] rounded object-contain border border-border/40 shrink-0"
             />
           ) : (
-            <FileTypeIcon type={file.type} className="h-8 w-8 shrink-0" />
+            <FileTypeIcon type={file.type} className="h-4 w-4 shrink-0" />
           )}
           {!isImage && (
             <span className="text-[13px] truncate text-muted-foreground group-hover:text-foreground">
@@ -813,9 +813,41 @@ const SubmissionsPage = () => {
 
       {/* File preview dialog */}
       <Dialog open={previewFile !== null} onOpenChange={(open) => !open && closePreview()}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0 rounded-lg">
+        <DialogContent
+          showCloseButton={false}
+          className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0 rounded-lg"
+        >
           {previewFile && (
             <>
+              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border/60 shrink-0">
+                <FileTypeIcon type={previewFile.type} className="h-4 w-4 shrink-0" />
+                <span className="text-sm font-medium truncate flex-1 min-w-0">
+                  {previewFile.name}
+                </span>
+                <a
+                  href={previewFile.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0"
+                >
+                  <Button variant="ghost" size="sm">
+                    <ExternalLink className="h-4 w-4 mr-1.5" />
+                    Open in new tab
+                  </Button>
+                </a>
+                <a
+                  href={previewFile.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download={previewFile.name}
+                  className="shrink-0"
+                >
+                  <Button variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-1.5" />
+                    Download
+                  </Button>
+                </a>
+              </div>
               <div className="flex-1 min-h-0 flex items-center justify-center bg-muted/30 rounded-md overflow-auto">
                 {previewFile.type.startsWith("image/") ? (
                   <Image
@@ -827,29 +859,29 @@ const SubmissionsPage = () => {
                     className="max-w-full max-h-[70vh] object-contain"
                   />
                 ) : previewFile.type === "application/pdf" ? (
-                  <iframe
-                    src={previewFile.url}
-                    title={previewFile.name}
-                    className="w-full h-[70vh] border-0"
-                    sandbox="allow-same-origin"
-                  />
+                  // <object> falls back to its children if the browser/extension
+                  // refuses to embed the third-party blob URL — so the user
+                  // always has the toolbar above to open or download.
+                  <object
+                    data={previewFile.url}
+                    type="application/pdf"
+                    aria-label={previewFile.name}
+                    className="w-full h-[70vh]"
+                  >
+                    <div className="flex flex-col items-center gap-3 py-12 text-center">
+                      <FileTypeIcon type={previewFile.type} className="h-16 w-16" />
+                      <p className="text-sm text-muted-foreground max-w-sm">
+                        Your browser blocked the inline preview. Use the buttons above to open or
+                        download the file.
+                      </p>
+                    </div>
+                  </object>
                 ) : (
                   <div className="flex flex-col items-center gap-4 py-12">
                     <FileTypeIcon type={previewFile.type} className="h-16 w-16" />
                     <p className="text-sm text-muted-foreground">
                       Preview not available for this file type.
                     </p>
-                    <a
-                      href={previewFile.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      download={previewFile.name}
-                    >
-                      <Button variant="outline" size="sm">
-                        <Download className="h-4 w-4 mr-2" />
-                        Download
-                      </Button>
-                    </a>
                   </div>
                 )}
               </div>

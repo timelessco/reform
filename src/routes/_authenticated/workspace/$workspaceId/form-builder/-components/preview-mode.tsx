@@ -43,7 +43,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
   const embedType = (search.embedType as EmbedType) ?? "fullpage";
   const hideTitle = (search.embedHideTitle as boolean) ?? false;
   const transparentBackground = (search.embedTransparent as boolean) ?? false;
-  const branding = (search.embedBranding as boolean) ?? true;
+  const branding = (search.embedBranding as boolean) ?? doc?.branding ?? true;
   const height = (search.embedHeight as number) ?? 558;
   const dynamicHeight = (search.embedDynamicHeight as boolean) ?? true;
   const popupPosition = (search.embedPopupPosition as string) ?? "bottom-right";
@@ -180,6 +180,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                             hideTitle={hideTitle}
                             customization={customization}
                             settings={previewSettings}
+                            formId={formId}
                           />
                         </div>
                       </div>
@@ -262,6 +263,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                         customization={customization}
                         settings={previewSettings}
                         isPopup
+                        formId={formId}
                       />
                     </div>
 
@@ -340,6 +342,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
               layout="editor"
               customization={customization}
               settings={previewSettings}
+              formId={formId}
             />
           </div>
           {branding && <BrandingBadge />}

@@ -1,4 +1,5 @@
 import type { Value } from "platejs";
+import { extractFileUploadFields } from "@/lib/form-schema/file-upload-types";
 import {
   ALLOWED_LABEL_TYPES,
   INPUT_TYPE_TO_FIELD_TYPE,
@@ -156,6 +157,8 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
       const baseName = slugify(labelText);
       const name = stableId || `${baseName}_${fieldIndex}`;
 
+      const fileUploadFields = nodeType === "formFileUpload" ? extractFileUploadFields(node) : {};
+
       segments.push({
         type: "field",
         field: {
@@ -169,6 +172,7 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
           minLength,
           maxLength,
           defaultValue,
+          ...fileUploadFields,
         } as PlateFormField,
       });
       fieldIndex++;
