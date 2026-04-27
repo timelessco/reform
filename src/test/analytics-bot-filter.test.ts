@@ -74,6 +74,25 @@ describe("isBotUserAgent", () => {
       "Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1";
     expect(isBotUserAgent(ua)).toBeFalsy();
   });
+
+  it("flags WhatsApp link previewer (WhatsApp/2.x) as bot", () => {
+    expect(isBotUserAgent("WhatsApp/2.21.4 A")).toBeTruthy();
+  });
+
+  it("flags TelegramBot as bot", () => {
+    expect(isBotUserAgent("TelegramBot (like TwitterBot)")).toBeTruthy();
+  });
+
+  it("flags SemrushBot as bot", () => {
+    const ua = "Mozilla/5.0 (compatible; SemrushBot/7~bl; +http://www.semrush.com/bot.html)";
+    expect(isBotUserAgent(ua)).toBeTruthy();
+  });
+
+  it("does not flag UA containing the substring 'Robotic' (bot\\b boundary)", () => {
+    const ua =
+      "Mozilla/5.0 (Robotic Vacuum Browser/1.0) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36";
+    expect(isBotUserAgent(ua)).toBeFalsy();
+  });
 });
 
 describe("parseUserAgent", () => {

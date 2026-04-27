@@ -27,11 +27,16 @@ const RE_WINDOWS = /Windows NT (\d+(?:\.\d+)*)/;
 const RE_MACOS = /Mac OS X (\d+(?:[._]\d+)*)/;
 const RE_LINUX = /Linux/;
 
-// Device detection
+// Device detection.
+// NOTE: iPadOS 13+ defaults to a "Macintosh" UA with no iPad token. We classify
+// these as macOS/desktop in v1; client hints would be needed to detect them.
 const RE_IPAD_TOKEN = /iPad/;
 const RE_IPHONE_TOKEN = /iPhone|iPod/;
 const RE_ANDROID_TOKEN = /Android/;
 const RE_MOBILE_TOKEN = /Mobile/;
+
+// Version normalization (iOS/macOS use underscores: 16_5 → 16.5).
+const RE_UNDERSCORE = /_/g;
 
 const EMPTY_PARSED: ParsedUA = {
   deviceType: null,
@@ -72,7 +77,7 @@ const detectBrowser = (ua: string): { browser: BrowserName; browserVersion: stri
   return { browser: "Other", browserVersion: null };
 };
 
-const normalizeVersion = (raw: string): string => raw.replace(/_/g, ".");
+const normalizeVersion = (raw: string): string => raw.replace(RE_UNDERSCORE, ".");
 
 const detectOS = (ua: string): { os: OSName; osVersion: string | null } => {
   // iOS first — iPad/iPhone tokens may also coexist with Mac substring.
