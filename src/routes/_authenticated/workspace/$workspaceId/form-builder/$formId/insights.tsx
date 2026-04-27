@@ -8,8 +8,11 @@ import { EmptyState } from "@/components/form-builder/insights/empty-state";
 import { MetricsRow } from "@/components/form-builder/insights/metrics-row";
 import { TimeRangeSelector } from "@/components/form-builder/insights/time-range-selector";
 import { TimeSeriesChart } from "@/components/form-builder/insights/time-series-chart";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RefreshCwIcon } from "@/components/ui/icons";
 import Loader from "@/components/ui/loader";
+import { cn } from "@/lib/utils";
 import { getFormDropoff, getFormInsights } from "@/lib/server-fn/analytics";
 import type { TimeRangeFilter } from "@/types/analytics";
 
@@ -24,12 +27,24 @@ const InsightsPage = () => {
   const insightsQuery = useQuery({
     queryKey: ["insights", formId, filter, startDate, endDate],
     queryFn: () => getFormInsights({ data: { formId, filter, startDate, endDate } }),
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
+    staleTime: 0,
   });
 
   const dropoffQuery = useQuery({
     queryKey: ["dropoff", formId, filter, startDate, endDate],
     queryFn: () => getFormDropoff({ data: { formId, filter, startDate, endDate } }),
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
+    staleTime: 0,
   });
+
+  const isRefetching = insightsQuery.isFetching || dropoffQuery.isFetching;
+  const handleRefresh = () => {
+    void insightsQuery.refetch();
+    void dropoffQuery.refetch();
+  };
 
   const handleRangeChange = (next: {
     filter: TimeRangeFilter;
@@ -74,12 +89,24 @@ const InsightsPage = () => {
     <div className="container mx-auto max-w-7xl space-y-6 p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-semibold text-2xl">Insights</h1>
-        <TimeRangeSelector
-          value={filter}
-          startDate={startDate}
-          endDate={endDate}
-          onChange={handleRangeChange}
-        />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleRefresh}
+            disabled={isRefetching}
+            aria-label="Refresh insights"
+          >
+            <RefreshCwIcon className={cn("h-4 w-4", isRefetching && "animate-spin")} />
+          </Button>
+          <TimeRangeSelector
+            value={filter}
+            startDate={startDate}
+            endDate={endDate}
+            onChange={handleRangeChange}
+          />
+        </div>
       </div>
       {hasData ? (
         <>
