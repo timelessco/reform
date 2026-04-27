@@ -21,12 +21,15 @@ interface BreakdownDatum extends Record<string, unknown> {
   value: number;
 }
 
+// Fixed OKLCH palette — `--chart-N` tokens flip to a dark blue palette in
+// dark mode which renders as dark blobs against the dark card bg.
+// These values keep the same perceived luminance across themes.
 const PALETTE: string[] = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
+  "oklch(0.62 0.18 250)", // blue
+  "oklch(0.7 0.18 145)", // green
+  "oklch(0.72 0.16 65)", // amber
+  "oklch(0.65 0.22 25)", // red-orange
+  "oklch(0.6 0.2 305)", // purple
 ];
 
 const TOP_N_SOURCES = 5;
@@ -96,6 +99,8 @@ const PieBreakdown = ({ data }: PieBreakdownProps) => {
     return <EmptyMessage height={200} />;
   }
   const config = buildPerSliceConfig(data);
+  // Tighter ring + sliceless single-category case still reads as a stat.
+  const isSingleSlice = data.length === 1;
   return (
     <EvilPieChart
       className="h-[200px] w-full"
@@ -103,9 +108,11 @@ const PieBreakdown = ({ data }: PieBreakdownProps) => {
       data={data}
       dataKey="value"
       nameKey="name"
-      innerRadius="55%"
+      innerRadius={isSingleSlice ? "0%" : "40%"}
       outerRadius="80%"
-      paddingAngle={2}
+      paddingAngle={isSingleSlice ? 0 : 2}
+      showLabels={!isSingleSlice}
+      labelKey="value"
     />
   );
 };

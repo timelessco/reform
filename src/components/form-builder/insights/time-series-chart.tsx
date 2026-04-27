@@ -6,26 +6,30 @@ interface TimeSeriesChartProps {
   dailyData: FormInsightsMetrics["dailyData"];
 }
 
+// Use fixed mid-luminance colors instead of `--chart-N` tokens — those flip
+// to dark `blue-900..blue-500` in dark mode which renders as harsh dark blobs
+// against the dark card bg. These OKLCH values keep the same perceived
+// brightness across themes so the chart blends with the card in both modes.
 const chartConfig = {
   visits: {
     label: "Visits",
     colors: {
-      light: ["var(--chart-1)"],
-      dark: ["var(--chart-1)"],
+      light: ["oklch(0.62 0.18 250)"],
+      dark: ["oklch(0.62 0.18 250)"],
     },
   },
   uniqueVisitors: {
     label: "Unique visitors",
     colors: {
-      light: ["var(--chart-2)"],
-      dark: ["var(--chart-2)"],
+      light: ["oklch(0.55 0.16 200)"],
+      dark: ["oklch(0.55 0.16 200)"],
     },
   },
   submissions: {
     label: "Submissions",
     colors: {
-      light: ["var(--chart-3)"],
-      dark: ["var(--chart-3)"],
+      light: ["oklch(0.7 0.18 145)"],
+      dark: ["oklch(0.7 0.18 145)"],
     },
   },
 } satisfies ChartConfig;
