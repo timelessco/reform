@@ -28,13 +28,15 @@ export const TimeRangeSelector = ({
   endDate,
   onChange,
 }: TimeRangeSelectorProps) => {
-  const handlePresetChange = (next: string) => {
-    const filter = next as TimeRangeFilter;
-    if (filter === "custom") {
-      onChange({ filter, startDate, endDate });
+  const handlePresetChange = (next: TimeRangeFilter | null): void => {
+    if (!next) {
       return;
     }
-    onChange({ filter });
+    if (next === "custom") {
+      onChange({ filter: next, startDate, endDate });
+      return;
+    }
+    onChange({ filter: next });
   };
 
   const handleStartDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
