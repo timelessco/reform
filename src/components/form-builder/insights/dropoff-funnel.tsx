@@ -176,10 +176,10 @@ export const DropoffFunnel = ({ dropoff }: DropoffFunnelProps) => {
           headerBackground: false,
           headerBorder: true,
           rowBorder: true,
-          width: "fixed",
+          width: "auto",
         }}
       >
-        <DataGridContainer>
+        <DataGridContainer border={false} className="overflow-hidden rounded-md border">
           <DataGridTable />
         </DataGridContainer>
       </DataGrid>
