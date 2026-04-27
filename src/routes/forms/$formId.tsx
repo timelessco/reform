@@ -1,4 +1,3 @@
-import { APP_NAME } from "@/lib/config/app-config";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
@@ -10,6 +9,7 @@ import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { getPublicFormViewRSC } from "@/lib/server-fn/public-form-view-rsc";
 import { generateDualThemeCss, getGoogleFontLinkUrl } from "@/lib/theme/generate-theme-css";
+import { seo } from "@/lib/seo";
 
 type PublicTheme = "light" | "dark" | "system";
 
@@ -139,19 +139,9 @@ export const Route = createFileRoute("/forms/$formId")({
     const formId = params.formId;
     const preloadUrls = loaderData?.preloadModuleUrls ?? [];
     return {
-      meta: [
-        {
-          title: loaderData?.form?.title
-            ? `${loaderData.form.title} | ${APP_NAME}`
-            : `Form | ${APP_NAME}`,
-        },
-        {
-          name: "description",
-          content: loaderData?.form?.title
-            ? `Fill out ${loaderData.form.title}`
-            : "Fill out this form",
-        },
-      ],
+      meta: seo({
+        formTitle: loaderData?.form?.title ?? "Form",
+      }),
       links: [
         // Preload the Latin subset of Inter Variable. The other subsets
         // (latin-ext, rest) stay lazy — the browser only fetches them if

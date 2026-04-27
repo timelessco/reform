@@ -245,7 +245,13 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                     </div>
 
                     {/* Popup form content */}
-                    <div className="overflow-y-auto overflow-x-hidden max-h-[650px]">
+                    <div
+                      className={
+                        previewSettings.presentationMode === "field-by-field"
+                          ? "overflow-hidden h-[650px]"
+                          : "overflow-y-auto overflow-x-hidden max-h-[650px]"
+                      }
+                    >
                       <FormPreviewFromPlate
                         content={content}
                         title={hideTitle ? "" : (doc.title ?? undefined)}
@@ -255,6 +261,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                         hideTitle={hideTitle}
                         customization={customization}
                         settings={previewSettings}
+                        isPopup
                       />
                     </div>
 

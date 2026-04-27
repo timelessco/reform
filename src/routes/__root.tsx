@@ -4,6 +4,7 @@ import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { Toaster } from "@/components/ui/sonner";
 import type { Session } from "@/lib/auth/auth";
+import { seo } from "@/lib/seo";
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
@@ -58,22 +59,16 @@ const RootDocument = ({ children }: { children: React.ReactNode }) => (
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => ({
     meta: [
-      {
-        charSet: "utf-8",
-      },
-      {
-        name: "viewport",
-        content: "width=device-width, initial-scale=1",
-      },
-      {
-        title: "TanStack Start Starter",
-      },
+      { charSet: "utf-8" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      ...seo(),
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/svg+xml", href: "/metadata/favicon.svg" },
+      { rel: "icon", href: "/metadata/favicon.ico", sizes: "any" },
+      { rel: "apple-touch-icon", href: "/metadata/apple-touch-icon.png" },
+      { rel: "manifest", href: "/metadata/site.webmanifest" },
     ],
     scripts: [{ children: IOS_AUTOZOOM_FIX_SCRIPT }],
   }),

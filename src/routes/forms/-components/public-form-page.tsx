@@ -240,6 +240,22 @@ export const PublicFormPage = ({
     }
   }, [transparentBackground, isPopup]);
 
+  // For field-by-field popups, suppress iframe-level scrollbars — the single
+  // visible field is centered within the available height, so no scroll is
+  // needed and the macOS overlay scrollbar would otherwise appear.
+  const isFieldByFieldPopup = isPopup && form?.settings?.presentationMode === "field-by-field";
+  useEffect(() => {
+    if (!isFieldByFieldPopup) return;
+    const originalHtmlOverflow = document.documentElement.style.overflow;
+    const originalBodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.documentElement.style.overflow = originalHtmlOverflow;
+      document.body.style.overflow = originalBodyOverflow;
+    };
+  }, [isFieldByFieldPopup]);
+
   // Setup height communication for popup embeds and standard embeds with dynamicHeight
   useEffect(() => {
     if ((!isPopup && !dynamicHeight) || typeof window === "undefined" || window.parent === window)
@@ -463,6 +479,7 @@ export const PublicFormPage = ({
             settings={settings}
             formId={formId}
             customization={form.customization}
+            isPopup={isPopup}
             {...resumeProps}
           />
         </Suspense>

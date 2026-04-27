@@ -54,6 +54,13 @@ const TEXT_LIKE_TYPES = new Set([
   "formLink",
 ]);
 
+const FILE_TYPE_LABELS: Record<string, string> = {
+  all: "All files",
+  images: "Images",
+  documents: "Documents",
+  spreadsheets: "Spreadsheets",
+};
+
 // Get field type category for the menu
 const getFieldType = (node: { type?: string; variant?: string } | undefined): BlockFieldType => {
   if (!node?.type) return "unknown";
@@ -796,8 +803,10 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   value={(inputNode?.allowedFileTypes as string) ?? "all"}
                   onValueChange={(v) => v && handleUpdateAllowedFileTypes(v)}
                 >
-                  <SelectTrigger className="h-6 w-[100px] text-[12px] rounded-md border-border/60">
-                    <SelectValue />
+                  <SelectTrigger className="h-[20px] w-[100px] text-[12px] rounded-[4px] border border-transparent dark:border-transparent shadow-none bg-transparent px-1 focus:border-border/70 focus-visible:border-border/70 dark:focus:border-border/70 dark:focus-visible:border-border/70 focus-visible:ring-0">
+                    <SelectValue>
+                      {(value) => FILE_TYPE_LABELS[value as string] ?? value}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All files</SelectItem>
