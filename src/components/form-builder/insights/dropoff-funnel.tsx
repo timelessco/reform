@@ -27,6 +27,21 @@ const formatPercent = (value: number): string => {
   return `${Math.round(value)}%`;
 };
 
+// Synthetic IDs from the tracking layer look like `step_0`, `step_1`. Render
+// them as "Step 1", "Step 2" (1-indexed) so the user-facing copy matches the
+// step counter on the public form. Custom question IDs are left as-is.
+const STEP_ID_RE = /^step_(\d+)$/;
+const formatQuestionLabel = (row: DropoffRow): string => {
+  if (row.questionLabel) {
+    return row.questionLabel;
+  }
+  const match = row.questionId.match(STEP_ID_RE);
+  if (match) {
+    return `Step ${Number(match[1]) + 1}`;
+  }
+  return row.questionId;
+};
+
 interface SummaryStatProps {
   label: string;
   value: string;
@@ -73,8 +88,7 @@ export const DropoffFunnel = ({ dropoff }: DropoffFunnelProps) => {
           id: "label",
           header: ({ column }) => <DataGridColumnHeader column={column} title="Question" />,
           cell: (info) => {
-            const row = info.row.original;
-            const text = row.questionLabel ?? row.questionId;
+            const text = formatQuestionLabel(info.row.original);
             return (
               <span className="block truncate text-[13px]" title={text}>
                 {text}
