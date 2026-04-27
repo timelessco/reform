@@ -1,11 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { formQuestionProgress, formVisits } from "@/db/schema";
+import { formAnalyticsDaily, formQuestionProgress, formVisits } from "@/db/schema";
 import { isBotUserAgent } from "@/lib/analytics/bot-filter";
+import { mergeInsightsMetrics } from "@/lib/analytics/merge-metrics";
 import { parseUserAgent } from "@/lib/analytics/parse-user-agent";
+import { resolveTimeRange, splitTodayVsPast, toDateKey } from "@/lib/analytics/time-range";
+import { authMiddleware } from "@/lib/auth/middleware";
+import { authForm, getActiveOrgId } from "@/lib/server-fn/auth-helpers";
+import type { FormInsightsMetrics } from "@/types/analytics";
 
 export const recordFormVisit = createServerFn({ method: "POST" })
   .inputValidator(
@@ -164,4 +169,63 @@ export const recordQuestionProgress = createServerFn({ method: "POST" })
         .where(eq(formQuestionProgress.id, existing.id));
     }
     return { ok: true };
+  });
+
+const DATE_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+export const getFormInsights = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(
+    z.object({
+      formId: z.string().uuid(),
+      filter: z.enum(["last_24_hours", "last_7_days", "last_30_days", "last_90_days", "custom"]),
+      startDate: z.string().regex(DATE_KEY_PATTERN).optional(),
+      endDate: z.string().regex(DATE_KEY_PATTERN).optional(),
+    }),
+  )
+  .handler(async ({ data, context }): Promise<FormInsightsMetrics> => {
+    const orgId = getActiveOrgId(context.session);
+    await authForm(data.formId, context.session.user.id, orgId);
+
+    const now = new Date();
+    const range = resolveTimeRange(
+      { filter: data.filter, startDate: data.startDate, endDate: data.endDate },
+      now,
+    );
+    const split = splitTodayVsPast(range, now);
+
+    const dailyRows =
+      split.pastDays.length > 0
+        ? await db
+            .select()
+            .from(formAnalyticsDaily)
+            .where(
+              and(
+                eq(formAnalyticsDaily.formId, data.formId),
+                inArray(formAnalyticsDaily.date, split.pastDays),
+              ),
+            )
+        : [];
+
+    const todayRawRows = split.rawStart
+      ? await db
+          .select()
+          .from(formVisits)
+          .where(
+            and(
+              eq(formVisits.formId, data.formId),
+              gte(formVisits.visitStartedAt, split.rawStart),
+              lte(formVisits.visitStartedAt, range.end),
+            ),
+          )
+      : [];
+
+    return mergeInsightsMetrics({
+      dailyRows,
+      todayRawRows,
+      startDate: data.startDate ?? toDateKey(range.start),
+      endDate: data.endDate ?? toDateKey(range.end),
+      days: range.days,
+      todayKey: split.todayStart ? toDateKey(split.todayStart) : null,
+    });
   });
