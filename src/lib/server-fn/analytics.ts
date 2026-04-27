@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
-import { and, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, lt, lte } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import {
@@ -9,6 +9,7 @@ import {
   formQuestionProgress,
   formVisits,
 } from "@/db/schema";
+import { buildDailyAnalyticsRows, buildDailyDropoffRows } from "@/lib/analytics/aggregate-utils";
 import { isBotUserAgent } from "@/lib/analytics/bot-filter";
 import { mergeDropoffMetrics } from "@/lib/analytics/merge-dropoff";
 import { mergeInsightsMetrics } from "@/lib/analytics/merge-metrics";
@@ -290,4 +291,95 @@ export const getFormDropoff = createServerFn({ method: "POST" })
       dailyRows,
       todayProgressRows,
     });
+  });
+
+const DAYS_TO_RETAIN = 90;
+const MS_PER_DAY = 86_400_000;
+const RETENTION_MS = DAYS_TO_RETAIN * MS_PER_DAY;
+
+interface AggregateResult {
+  ok: true;
+  date: string;
+  analyticsRows: number;
+  dropoffRows: number;
+  pruned: { visits: number; progress: number };
+}
+
+/**
+ * Idempotent nightly rollup.
+ *
+ * 1. Reads raw `formVisits` for the given UTC date and writes one
+ *    `formAnalyticsDaily` row per `formId` (delete-then-insert for the date,
+ *    so re-running for the same date never double-counts).
+ * 2. Reads raw `formQuestionProgress` for the same UTC date and writes one
+ *    `formDropoffDaily` row per (formId, questionId, questionIndex).
+ * 3. Prunes raw rows older than 90 days from BOTH raw tables.
+ *
+ * Wrapped in a single DB transaction so partial failures don't leave half-
+ * written aggregates. Drizzle does not return affected row counts from delete
+ * statements consistently, so prune counts are reported as 0 in v1.
+ */
+export const aggregateAnalyticsDaily = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      date: z.string().regex(DATE_KEY_PATTERN),
+    }),
+  )
+  .handler(async ({ data }): Promise<AggregateResult> => {
+    const { date } = data;
+    const dayStart = new Date(`${date}T00:00:00.000Z`);
+    const dayEnd = new Date(`${date}T23:59:59.999Z`);
+    const now = new Date();
+    const cutoff = new Date(now.getTime() - RETENTION_MS);
+
+    const result = await db.transaction(async (tx) => {
+      const visits = await tx
+        .select()
+        .from(formVisits)
+        .where(
+          and(gte(formVisits.visitStartedAt, dayStart), lte(formVisits.visitStartedAt, dayEnd)),
+        );
+
+      const progress = await tx
+        .select()
+        .from(formQuestionProgress)
+        .where(
+          and(
+            gte(formQuestionProgress.viewedAt, dayStart),
+            lte(formQuestionProgress.viewedAt, dayEnd),
+          ),
+        );
+
+      const analyticsRows = buildDailyAnalyticsRows(visits, date, now);
+      const dropoffRows = buildDailyDropoffRows(progress, date, now);
+
+      // Idempotency: delete existing aggregate rows for this date, then insert
+      // freshly computed ones.
+      await tx.delete(formAnalyticsDaily).where(eq(formAnalyticsDaily.date, date));
+      if (analyticsRows.length > 0) {
+        await tx.insert(formAnalyticsDaily).values(analyticsRows);
+      }
+
+      await tx.delete(formDropoffDaily).where(eq(formDropoffDaily.date, date));
+      if (dropoffRows.length > 0) {
+        await tx.insert(formDropoffDaily).values(dropoffRows);
+      }
+
+      // Pruning (best-effort): remove raw rows older than retention window.
+      await tx.delete(formVisits).where(lt(formVisits.visitStartedAt, cutoff));
+      await tx.delete(formQuestionProgress).where(lt(formQuestionProgress.viewedAt, cutoff));
+
+      return {
+        analyticsRows: analyticsRows.length,
+        dropoffRows: dropoffRows.length,
+      };
+    });
+
+    return {
+      ok: true,
+      date,
+      analyticsRows: result.analyticsRows,
+      dropoffRows: result.dropoffRows,
+      pruned: { visits: 0, progress: 0 },
+    };
   });
