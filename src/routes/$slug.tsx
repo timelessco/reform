@@ -1,6 +1,4 @@
 import { createFileRoute, isNotFound, notFound } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import { getRequestHeaders } from "@tanstack/react-start/server";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { zodValidator } from "@tanstack/zod-adapter";
@@ -9,13 +7,7 @@ import type { PublicFormEmbedConfig } from "@/routes/forms/-components/public-fo
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { CustomDomainNotFound } from "@/components/ui/custom-domain-not-found";
-import {
-  getRequestHost,
-  isAppHost,
-  resolveCustomDomain,
-  resolveDomainForSlug,
-  loadFormForCustomDomain,
-} from "@/lib/server-fn/custom-domain-loader";
+import { getCustomDomainFormBySlugRSC } from "@/lib/server-fn/custom-domain-view-rsc";
 import { generateThemeCss, getGoogleFontLinkUrl } from "@/lib/theme/generate-theme-css";
 
 type PublicTheme = "light" | "dark" | "system";
@@ -27,29 +19,12 @@ const resolveSystemTheme = (): "light" | "dark" => {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 };
 
-/**
- * Server function that resolves a custom domain + slug to a published form.
- * Returns notFound() when the request is from an app host (so normal routing takes over).
- */
-const getFormByCustomDomainSlug = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ slug: z.string() }))
-  .handler(async ({ data }) => {
-    const host = getRequestHost(getRequestHeaders());
-
-    const domain = isAppHost(host)
-      ? await resolveDomainForSlug(data.slug)
-      : await resolveCustomDomain(host);
-
-    return loadFormForCustomDomain(domain, data.slug, "slug");
-  });
-
 const CustomDomainSlugRoute = () => {
   const loaderData = Route.useLoaderData();
   const formId = loaderData?.form?.id ?? "";
 
   const rawCustomization = loaderData?.form?.customization ?? null;
-  const defaultMode = ((rawCustomization?.defaultMode as PublicTheme | undefined) ??
-    "system") as PublicTheme;
+  const defaultMode = (rawCustomization?.defaultMode as PublicTheme | undefined) ?? "system";
 
   const [viewerTheme, setViewerTheme] = useState<PublicTheme>(() => {
     if (typeof window === "undefined") return defaultMode;
@@ -127,6 +102,16 @@ const CustomDomainSlugRoute = () => {
         gated={loaderData?.gated ?? null}
         formId={formId}
         embedConfig={embedConfig}
+        rsc={
+          loaderData?.form
+            ? {
+                steps: loaderData.steps,
+                thankYou: loaderData.thankYou,
+                stepCount: loaderData.stepCount,
+                header: loaderData.header,
+              }
+            : undefined
+        }
         themeToggle={
           showThemeToggle
             ? { current: resolvedTheme, onChange: (m) => handleThemeChange(m) }
@@ -140,7 +125,7 @@ const CustomDomainSlugRoute = () => {
 export const Route = createFileRoute("/$slug")({
   loader: async ({ params }) => {
     try {
-      return await getFormByCustomDomainSlug({ data: { slug: params.slug } });
+      return await getCustomDomainFormBySlugRSC({ data: { slug: params.slug } });
     } catch (e) {
       if (isNotFound(e)) throw notFound();
       throw e;
@@ -149,9 +134,7 @@ export const Route = createFileRoute("/$slug")({
   head: ({ loaderData }) => {
     const siteTitle = loaderData?.domainMeta?.siteTitle ?? "Forms";
     const formTitle = loaderData?.form?.title;
-    const defaultMode =
-      (loaderData?.form?.customization as Record<string, string> | undefined)?.defaultMode ||
-      "system";
+    const defaultMode = loaderData?.form?.customization?.defaultMode || "system";
     const formId = loaderData?.form?.id ?? "";
     return {
       meta: [

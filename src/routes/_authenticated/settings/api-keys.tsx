@@ -90,7 +90,7 @@ const APIKeysPage = () => {
         setIsCreateDialogOpen(false);
         setIsViewDialogOpen(true);
         setNewKeyName("");
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: auth.apiKey.list.queryKey(),
         });
       },
@@ -103,7 +103,7 @@ const APIKeysPage = () => {
     auth.apiKey.delete.mutationOptions({
       onSuccess: () => {
         toast.success("API key deleted");
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: auth.apiKey.list.queryKey(),
         });
         setIsDeleteDialogOpen(false);
@@ -115,14 +115,14 @@ const APIKeysPage = () => {
     }),
   );
 
-  const handleCreateKey = useCallback(async () => {
+  const handleCreateKey = useCallback(() => {
     if (!newKeyName.trim()) return;
     createMutation.mutate({
       name: newKeyName,
     });
   }, [newKeyName, createMutation]);
 
-  const handleDeleteKey = useCallback(async () => {
+  const handleDeleteKey = useCallback(() => {
     if (!apiKeyToDelete) return;
     deleteMutation.mutate({
       keyId: apiKeyToDelete,

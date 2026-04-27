@@ -111,13 +111,13 @@ export const PageBreakElement = (props: PlateElementProps) => {
           {!((element.hasFormFields as boolean) ?? false) && (
             <div className="flex items-center gap-2">
               <Label
-                htmlFor={`thank-you-toggle-${element.id || pageNumber}`}
+                htmlFor={`thank-you-toggle-${String(element.id || pageNumber)}`}
                 className="text-xs text-muted-foreground cursor-pointer"
               >
                 'Thank you' page
               </Label>
               <Switch
-                id={`thank-you-toggle-${element.id || pageNumber}`}
+                id={`thank-you-toggle-${String(element.id || pageNumber)}`}
                 aria-label="Thank you page"
                 checked={isThankYouPage}
                 onCheckedChange={handleThankYouToggle}

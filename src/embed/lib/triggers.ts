@@ -187,7 +187,7 @@ export const setupClickTriggers = (openPopup: OpenPopupCallback): void => {
     }
 
     // Check for hash link with form-open
-    const linkEl = target.closest("a") as HTMLAnchorElement | null;
+    const linkEl = target.closest("a");
     if (linkEl?.href?.includes("form-open=")) {
       e.preventDefault();
       const hashIndex = linkEl.href.indexOf("#");

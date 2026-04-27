@@ -74,7 +74,7 @@ export const ApiKeysContent = () => {
         setIsCreateDialogOpen(false);
         setIsViewDialogOpen(true);
         setNewKeyName("");
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: auth.apiKey.list.queryKey(),
         });
       },
@@ -88,7 +88,7 @@ export const ApiKeysContent = () => {
     auth.apiKey.delete.mutationOptions({
       onSuccess: () => {
         toast.success("API key deleted");
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: auth.apiKey.list.queryKey(),
         });
         setIsDeleteDialogOpen(false);
@@ -115,7 +115,7 @@ export const ApiKeysContent = () => {
   }, [apiKeyToDelete, deleteMutation]);
 
   const copyToClipboard = useCallback((text: string) => {
-    navigator.clipboard.writeText(text);
+    void navigator.clipboard.writeText(text);
     setCopied(true);
     toast.success("Copied to clipboard");
     setTimeout(() => setCopied(false), 2000);

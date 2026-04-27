@@ -43,8 +43,8 @@ export const UserMenuMinimal = ({ onOpenTrash }: UserMenuMinimalProps) => {
   const signOutMutation = useMutation(
     auth.signOut.mutationOptions({
       onSuccess: () => {
-        router.invalidate();
-        router.navigate({ to: "/" });
+        void router.invalidate();
+        void router.navigate({ to: "/" });
       },
     }),
   );

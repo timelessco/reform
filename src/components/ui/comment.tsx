@@ -163,7 +163,7 @@ export const Comment = (props: {
   const handleCancelClick = React.useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      void onCancel();
+      onCancel();
     },
     [onCancel],
   );
@@ -171,7 +171,7 @@ export const Comment = (props: {
   const handleSaveClick = React.useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      void onSave();
+      onSave();
     },
     [onSave],
   );

@@ -55,6 +55,18 @@ export const Route = createFileRoute("/forms/$i8n/$formId")({
           : "Fill out this form",
       },
     ],
+    links: [
+      // Preload the Latin subset of Inter Variable. The other subsets
+      // (latin-ext, rest) stay lazy — the browser only fetches them if
+      // the page renders a glyph outside U+0000–00FF.
+      {
+        rel: "preload",
+        href: "/fonts/inter-variable/fonts/inter-variable-latin.woff2",
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous" as const,
+      },
+    ],
     scripts: [
       {
         // Inline script to force light theme before paint — prevents dark mode flash

@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { MULTI_SELECT_COLORS } from "@/components/ui/form-option-item-constants";
 import { Button } from "@/components/ui/button";
+import { Image } from "@/components/ui/image";
 import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataGrid, DataGridContainer } from "@/components/ui/data-grid";
@@ -89,7 +90,7 @@ const formatSubmissionValue = (value: unknown): string => {
   try {
     return JSON.stringify(value);
   } catch {
-    return String(value);
+    return "{object}";
   }
 };
 
@@ -251,9 +252,12 @@ const SubmissionCell = ({
           className="flex w-full items-center justify-center gap-2 max-w-[180px] group cursor-pointer"
         >
           {isImage ? (
-            <img
+            <Image
               src={file.url}
               alt=""
+              width={64}
+              height={32}
+              layout="fixed"
               loading="lazy"
               className="h-8 w-auto max-w-[64px] rounded object-contain border border-border/40 shrink-0"
             />
@@ -273,7 +277,7 @@ const SubmissionCell = ({
 
 const toSubmissionColumn = <TValue,>(
   column: ColumnDef<SerializedSubmission, TValue>,
-): ColumnDef<SerializedSubmission, unknown> => column as ColumnDef<SerializedSubmission, unknown>;
+): ColumnDef<SerializedSubmission> => column as ColumnDef<SerializedSubmission>;
 
 const SubmissionsPage = () => {
   const { formId } = Route.useParams();
@@ -284,7 +288,9 @@ const SubmissionsPage = () => {
   const [globalFilter, setGlobalFilter] = useState("");
   const [fieldStatusFilter] = useState<Set<FieldStatus>>(new Set(["current", "deleted"]));
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    last_step_reached: false,
+  });
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>({});
   const [columnOrder, setColumnOrder] = useState<string[]>([]);
   const [previewFile, setPreviewFile] = useState<UploadedFileValue | null>(null);
@@ -380,7 +386,7 @@ const SubmissionsPage = () => {
     const orphaned = new Set<string>();
     allSubmissions.forEach((submission) => {
       if (submission.data && typeof submission.data === "object") {
-        Object.keys(submission.data as Record<string, unknown>).forEach((key) => {
+        Object.keys(submission.data).forEach((key) => {
           if (!currentFieldNames.has(key)) {
             orphaned.add(key);
           }
@@ -404,7 +410,7 @@ const SubmissionsPage = () => {
     const counts: Record<FieldStatus, number> = { current: 0, deleted: 0 };
 
     // Select column for row selection - fixed width, non-resizable to prevent overlap with actions
-    const baseColumns: ColumnDef<SerializedSubmission, unknown>[] = [
+    const baseColumns: ColumnDef<SerializedSubmission>[] = [
       {
         id: "select",
         header: ({ table }) => (
@@ -442,14 +448,21 @@ const SubmissionsPage = () => {
           header: ({ column }) => <DataGridColumnHeader column={column} title="Submitted at" />,
           cell: (info) => (
             <div className="flex items-center justify-between gap-2 group/row min-w-0">
-              <span className="text-[13px] truncate min-w-0">
-                {new Intl.DateTimeFormat(undefined, {
-                  month: "short",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "numeric",
-                }).format(new Date(info.getValue()))}
-              </span>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-[13px] truncate min-w-0">
+                  {new Intl.DateTimeFormat(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "numeric",
+                  }).format(new Date(info.getValue()))}
+                </span>
+                {!info.row.original.isCompleted && (
+                  <span className="shrink-0 rounded-sm border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-700 dark:text-amber-400">
+                    Drop-off
+                  </span>
+                )}
+              </div>
               <div className="flex shrink-0 items-center gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity">
                 <Button
                   variant="ghost"
@@ -458,7 +471,7 @@ const SubmissionsPage = () => {
                   aria-label="Delete submission"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDelete(info.row.original.id);
+                    void handleDelete(info.row.original.id);
                   }}
                 >
                   <Trash2Icon className="h-3.5 w-3.5" />
@@ -469,6 +482,21 @@ const SubmissionsPage = () => {
           id: "submitted_at",
           size: 200,
           minSize: 140,
+        }),
+      ),
+      // `lastStepReached` — hidden by default; users toggle via the Columns
+      // menu to see funnel drop-off points for partial submissions.
+      toSubmissionColumn(
+        columnHelper.accessor("lastStepReached", {
+          id: "last_step_reached",
+          header: ({ column }) => <DataGridColumnHeader column={column} title="Last step" />,
+          cell: (info) => {
+            const step = info.getValue();
+            if (step == null) return <span className="text-muted-foreground">-</span>;
+            return <span className="text-[13px]">Step {step + 1}</span>;
+          },
+          size: 120,
+          meta: { headerTitle: "Last step" },
         }),
       ),
     ];
@@ -790,9 +818,12 @@ const SubmissionsPage = () => {
             <>
               <div className="flex-1 min-h-0 flex items-center justify-center bg-muted/30 rounded-md overflow-auto">
                 {previewFile.type.startsWith("image/") ? (
-                  <img
+                  <Image
                     src={previewFile.url}
                     alt={previewFile.name}
+                    width={1600}
+                    height={1200}
+                    layout="constrained"
                     className="max-w-full max-h-[70vh] object-contain"
                   />
                 ) : previewFile.type === "application/pdf" ? (

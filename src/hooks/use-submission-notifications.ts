@@ -234,7 +234,7 @@ export const useSubmissionNotifications = ({ poll = false }: HookOptions = {}) =
 
       popup.addEventListener("click", () => {
         popup.close();
-        void window.focus();
+        window.focus();
         void openNotification(notification);
       });
     }

@@ -17,6 +17,7 @@ export type SerializedSubmission = {
   formId: string;
   data: Record<string, unknown>;
   isCompleted: boolean;
+  lastStepReached: number | null;
   createdAt: string;
   updatedAt: string;
 };

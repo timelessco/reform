@@ -3,7 +3,6 @@
 import { MarkdownPlugin } from "@platejs/markdown";
 import { useBlockSelectionNodes } from "@platejs/selection/react";
 import { NodeApi, PathApi } from "platejs";
-import type { TElement } from "platejs";
 import { createPlatePlugin, useEditorRef, usePluginOption } from "platejs/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -66,7 +65,7 @@ const AIFormGenMenu = () => {
 
       if (blockSelectionNodes.length === 1) {
         try {
-          const text = NodeApi.string(blockSelectionNodes[0]?.[0] as TElement).trim();
+          const text = NodeApi.string(blockSelectionNodes[0]?.[0]).trim();
           setSelectionContext(text || "1 block selected");
         } catch {
           setSelectionContext("1 block selected");
@@ -74,7 +73,7 @@ const AIFormGenMenu = () => {
       } else {
         let preview = "";
         try {
-          preview = NodeApi.string(blockSelectionNodes[0]?.[0] as TElement).trim();
+          preview = NodeApi.string(blockSelectionNodes[0]?.[0]).trim();
         } catch {
           preview = "";
         }
@@ -114,7 +113,7 @@ const AIFormGenMenu = () => {
       const parts: string[] = [];
       for (const entry of blockSelectionNodes) {
         try {
-          const text = NodeApi.string(entry[0] as TElement).trim();
+          const text = NodeApi.string(entry[0]).trim();
           if (text) parts.push(text);
         } catch {
           // skip unreadable node

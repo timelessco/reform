@@ -1,7 +1,12 @@
 /* eslint-disable eslint/func-style, eslint-plugin-react/jsx-no-constructed-context-values */
 import { createContext, useContext, useMemo, useState } from "react";
 import * as BasePhoneInput from "react-phone-number-input";
-import flags from "react-phone-number-input/flags";
+
+// CDN-hosted flag sprite pattern — avoids bundling the ~240 inline SVG flag
+// components from `react-phone-number-input/flags` (~100 kB) into the
+// PhoneField chunk. The browser fetches only the selected country's flag on
+// paint; the rest load lazily when the country picker opens.
+const FLAG_URL = "https://purecatamphetamine.github.io/country-flag-icons/3x2/{XX}.svg";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -69,6 +74,7 @@ function PhoneInput({
           props["aria-invalid"] && "[&]:ring-1 [&]:ring-destructive",
           className,
         )}
+        flagUrl={FLAG_URL}
         flagComponent={FlagComponent}
         countrySelectComponent={CountrySelect}
         inputComponent={InputComponent}
@@ -196,11 +202,22 @@ function CountrySelect({
 }
 
 function FlagComponent({ country, countryName }: BasePhoneInput.FlagProps) {
-  const Flag = flags[country];
-
+  if (!country) {
+    return (
+      <span className="flex h-4 w-4 items-center justify-center">
+        <GlobeIcon className="size-4 opacity-60" />
+      </span>
+    );
+  }
   return (
-    <span className="flex h-4 w-4 items-center justify-center [&_svg:not([class*='size-'])]:size-full! [&_svg:not([class*='size-'])]:rounded-[5px]">
-      {Flag ? <Flag title={countryName} /> : <GlobeIcon className="size-4 opacity-60" />}
+    <span className="flex h-4 w-4 items-center justify-center overflow-hidden rounded-[5px]">
+      <img
+        src={FLAG_URL.replace("{XX}", country)}
+        alt={countryName ?? country}
+        className="h-full w-full object-cover"
+        loading="lazy"
+        decoding="async"
+      />
     </span>
   );
 }

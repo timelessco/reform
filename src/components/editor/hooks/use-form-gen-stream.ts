@@ -233,7 +233,7 @@ export const useFormGenStream = ({
       for (const partial of ops) {
         if (partial?.type !== "set-theme") continue;
         if (!isOpReady(partial)) continue;
-        themeOp = partial as SetThemeOp;
+        themeOp = partial;
       }
       if (!themeOp) return;
 

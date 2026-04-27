@@ -1,6 +1,4 @@
 import { createFileRoute, isNotFound, notFound } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import { getRequestHeaders } from "@tanstack/react-start/server";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { zodValidator } from "@tanstack/zod-adapter";
@@ -9,12 +7,7 @@ import type { PublicFormEmbedConfig } from "@/routes/forms/-components/public-fo
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Loader from "@/components/ui/loader";
 import { CustomDomainNotFound } from "@/components/ui/custom-domain-not-found";
-import {
-  getRequestHost,
-  isAppHost,
-  resolveCustomDomain,
-  loadFormForCustomDomain,
-} from "@/lib/server-fn/custom-domain-loader";
+import { getCustomDomainFormByIdRSC } from "@/lib/server-fn/custom-domain-view-rsc";
 import { generateThemeCss, getGoogleFontLinkUrl } from "@/lib/theme/generate-theme-css";
 
 type PublicTheme = "light" | "dark" | "system";
@@ -26,31 +19,12 @@ const resolveSystemTheme = (): "light" | "dark" => {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 };
 
-/**
- * Server function that resolves a custom domain + form UUID.
- * Only activates on custom domain requests.
- */
-const getFormByCustomDomainId = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ formId: z.string().uuid() }))
-  .handler(async ({ data }) => {
-    const headers = getRequestHeaders();
-    const host = getRequestHost(headers);
-
-    if (isAppHost(host)) {
-      throw notFound();
-    }
-
-    const domain = await resolveCustomDomain(host);
-    return loadFormForCustomDomain(domain, data.formId, "id");
-  });
-
 const CustomDomainFormIdRoute = () => {
   const loaderData = Route.useLoaderData();
   const { formId } = Route.useParams();
 
   const rawCustomization = loaderData?.form?.customization ?? null;
-  const defaultMode = ((rawCustomization?.defaultMode as PublicTheme | undefined) ??
-    "system") as PublicTheme;
+  const defaultMode = (rawCustomization?.defaultMode as PublicTheme | undefined) ?? "system";
 
   const [viewerTheme, setViewerTheme] = useState<PublicTheme>(() => {
     if (typeof window === "undefined") return defaultMode;
@@ -132,6 +106,16 @@ const CustomDomainFormIdRoute = () => {
         formId={formId}
         isPopup={search.popup}
         embedConfig={embedConfig}
+        rsc={
+          loaderData?.form
+            ? {
+                steps: loaderData.steps,
+                thankYou: loaderData.thankYou,
+                stepCount: loaderData.stepCount,
+                header: loaderData.header,
+              }
+            : undefined
+        }
         themeToggle={
           showThemeToggle
             ? { current: resolvedTheme, onChange: (m) => handleThemeChange(m) }
@@ -145,7 +129,7 @@ const CustomDomainFormIdRoute = () => {
 export const Route = createFileRoute("/f/$formId")({
   loader: async ({ params }) => {
     try {
-      return await getFormByCustomDomainId({ data: { formId: params.formId } });
+      return await getCustomDomainFormByIdRSC({ data: { formId: params.formId } });
     } catch (e) {
       if (isNotFound(e)) throw notFound();
       throw e;
@@ -154,9 +138,7 @@ export const Route = createFileRoute("/f/$formId")({
   head: ({ loaderData, params }) => {
     const siteTitle = loaderData?.domainMeta?.siteTitle ?? "Forms";
     const formTitle = loaderData?.form?.title;
-    const defaultMode =
-      (loaderData?.form?.customization as Record<string, string> | undefined)?.defaultMode ||
-      "system";
+    const defaultMode = loaderData?.form?.customization?.defaultMode || "system";
     const formId = params.formId;
     return {
       meta: [

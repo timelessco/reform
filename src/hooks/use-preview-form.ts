@@ -13,6 +13,7 @@ import {
 } from "@/lib/form-schema/generate-preview-schema";
 import type { PlateFormField } from "@/lib/editor/transform-plate-to-form";
 import { logger } from "@/lib/utils";
+import { useDraftAutoSave } from "./use-draft-autosave";
 import type { AppForm } from "./use-form-builder";
 
 interface UseStepPreviewFormOptions {
@@ -35,7 +36,8 @@ export const useStepPreviewForm = ({
   form: AppForm;
   formName: string;
 } => {
-  const { formData, goToNextStep, submitForm } = useStepForm();
+  const { formData, goToNextStep, submitForm, formId } = useStepForm();
+  const { saveDraft } = useDraftAutoSave(formId);
 
   // Generate Zod schema from step's field validation properties
   const validationSchema = useMemo(() => generateZodSchemaFromFields(fields), [fields]);
@@ -59,6 +61,19 @@ export const useStepPreviewForm = ({
     validators: {
       onDynamic: validationSchema,
       onDynamicAsyncDebounceMs: 300,
+    },
+    // Draft autosave: merge this step's current values with previously-captured
+    // step data and persist as an in-progress submission. `onBlurDebounceMs`
+    // collapses rapid tabbing through fields into a single save.
+    listeners: {
+      onBlur: ({ formApi }) => {
+        if (!formId) return;
+        saveDraft({
+          values: { ...formData, ...formApi.state.values },
+          lastStepReached: stepIndex,
+        });
+      },
+      onBlurDebounceMs: 1000,
     },
     onSubmit: async ({ value }) => {
       // Errors bubble to public-form-page, which renders an inline banner.

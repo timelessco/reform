@@ -78,9 +78,12 @@ interface FormPreviewFromPlateProps {
   formId?: string;
   /** Form customization record for theming */
   customization?: Record<string, string> | null;
+  /** Rehydrate step state from a server-side draft (resume-after-refresh). */
+  initialFormData?: Record<string, unknown>;
+  initialCurrentStep?: number;
 }
 
-const isHexColor = (str: string): boolean => /^#([0-9A-Fa-f]{3}){1,2}$/.test(str);
+export const isHexColor = (str: string): boolean => /^#([0-9A-Fa-f]{3}){1,2}$/.test(str);
 
 const PAGE_MAX_WIDTH = {
   editor: `var(--bf-page-width, ${CUSTOMIZATION_AUTO_DEFAULTS.pageWidth})`,
@@ -356,6 +359,8 @@ export const FormPreviewFromPlate = ({
   settings,
   formId,
   customization,
+  initialFormData,
+  initialCurrentStep,
 }: FormPreviewFromPlateProps) => {
   const headerFromContent = useMemo(() => extractFormHeader(content), [content]);
   const hasHeaderNode = headerFromContent !== null;
@@ -409,6 +414,8 @@ export const FormPreviewFromPlate = ({
       onSubmit={onSubmit}
       formId={formId}
       saveAnswersForLater={settings?.saveAnswersForLater}
+      initialFormData={initialFormData}
+      initialCurrentStep={initialCurrentStep}
     >
       <FormPreviewContent
         steps={steps}
@@ -552,6 +559,133 @@ const FormPreviewContent = ({
 
   const isLastStep = currentStep === steps.length - 1;
   const currentStepSegments = steps[currentStep] || [];
+  const isFieldByField = settings?.presentationMode === "field-by-field";
+  const coverIsImage = cover && isValidUrl(cover);
+  const coverIsColor = cover && isHexColor(cover);
+
+  if (isFieldByField) {
+    const hasIcon = !!icon;
+    const showHeader = !hideTitle && (title || hasIcon);
+    const isPublic = layout === "public";
+    const hasTint = isPublic && coverIsImage && cover.includes("tint=true");
+    return (
+      <div
+        className={cn(
+          "relative w-full flex flex-col h-full",
+          layout === "public" ? "min-h-screen" : "min-h-[600px]",
+        )}
+        style={
+          isPublic
+            ? {
+                backgroundImage: coverIsImage ? `url("${cover}")` : undefined,
+                backgroundColor: coverIsColor ? cover : undefined,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+              }
+            : undefined
+        }
+        data-bf-cover
+      >
+        {hasTint && (
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 z-0 bg-primary opacity-50 mix-blend-color pointer-events-none"
+          />
+        )}
+
+        {showHeader && (
+          <div className="relative z-10 flex items-center gap-4 px-6 pt-6 sm:px-10 sm:pt-8">
+            {icon &&
+              (icon === DEFAULT_ICON ? (
+                <span className="flex-shrink-0" data-bf-logo-icon>
+                  <IconPickerPreview
+                    icon={DEFAULT_ICON_NAME}
+                    iconColor={undefined}
+                    useThemeColor
+                    iconSize="40"
+                    size="80"
+                    standaloneIcon
+                  />
+                </span>
+              ) : isValidUrl(icon) ? (
+                <img
+                  src={icon}
+                  alt=""
+                  width={80}
+                  height={80}
+                  className="h-20 w-20 rounded-md object-cover flex-shrink-0"
+                  data-bf-logo
+                />
+              ) : (
+                <span className="flex-shrink-0" data-bf-logo-icon>
+                  <IconPickerPreview
+                    icon={icon}
+                    iconColor={iconColor || undefined}
+                    useThemeColor={!iconColor}
+                    iconSize="40"
+                    size="80"
+                    standaloneIcon
+                  />
+                </span>
+              ))}
+            {title && (
+              <h1
+                data-bf-title
+                style={{ textWrap: "pretty" }}
+                className="text-2xl sm:text-3xl font-serif font-light -tracking-[0.03em] text-foreground leading-none"
+              >
+                {title}
+              </h1>
+            )}
+          </div>
+        )}
+
+        <div
+          className="relative z-10 mx-auto flex w-full flex-1 flex-col justify-center px-4 sm:px-6"
+          style={{
+            maxWidth: PAGE_MAX_WIDTH[layout],
+            ...(layout === "editor"
+              ? ({ "--bf-spacing": "0.5rem" } as React.CSSProperties)
+              : undefined),
+          }}
+          data-bf-form-container
+        >
+          {settings?.progressBar && totalSteps > 1 && (
+            <div className="mb-4 w-full">
+              <ProgressBar currentStep={currentStep} totalSteps={totalSteps} />
+            </div>
+          )}
+
+          <div className="w-full">
+            <AnimatePresence mode="wait" custom={direction}>
+              <motion.div
+                key={currentStep}
+                custom={direction}
+                variants={stepVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  x: { type: "spring", stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.2 },
+                }}
+                className="w-full"
+              >
+                <StepForm
+                  key={currentStep}
+                  stepIndex={currentStep}
+                  segments={currentStepSegments}
+                  isLastStep={isLastStep}
+                  autoActionButton
+                />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">

@@ -155,7 +155,7 @@ const DashboardPage = () => {
         setIsSyncing(false);
       }
     };
-    syncData();
+    void syncData();
   }, [session?.user, activeOrg?.id]);
 
   const handleCreateWorkspace = useCallback(async () => {
@@ -176,7 +176,7 @@ const DashboardPage = () => {
     try {
       const defaultWorkspace = orgWorkspaces[0];
       const { form: newForm } = createFormLocal(defaultWorkspace.id);
-      navigate({
+      void navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
         params: { workspaceId: defaultWorkspace.id, formId: newForm.id },
       });
@@ -359,7 +359,7 @@ const DashboardPage = () => {
                 return (
                   <Card
                     key={form.id}
-                    className={`group py-2 px-3 gap-0 ring-0 transition-[background-color,box-shadow] duration-200 cursor-pointer hover:bg-muted/30 ${isSelected ? "bg-muted/50" : ""}`}
+                    className={`group py-2 px-3 gap-0 ring-0 bg-transparent transition-[background-color,box-shadow] duration-200 cursor-pointer hover:bg-muted/30 ${isSelected ? "bg-muted/50" : ""}`}
                   >
                     <Link
                       to={
@@ -416,7 +416,7 @@ const DashboardPage = () => {
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      handleDuplicate(form.id);
+                                      void handleDuplicate(form.id);
                                     }}
                                   />
                                 }

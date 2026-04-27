@@ -46,9 +46,14 @@ interface AppHeaderProps {
 
 export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const { formId, workspaceId } = useParams({ strict: false });
-  const { state, toggleSidebar: toggleMainSidebar } = useSidebarSafe() || {
+  const {
+    state,
+    toggleSidebar: toggleMainSidebar,
+    isMobile,
+  } = useSidebarSafe() || {
     state: "expanded",
     toggleSidebar: () => {},
+    isMobile: false,
   };
   const { pathname } = useLocation();
   const isDashboard = pathname === "/dashboard";
@@ -98,7 +103,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
     if (!isEditRoute && workspaceId && formId) {
       openShare();
       enterPreview();
-      navigate({
+      void navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
         params: { workspaceId, formId },
         search: { force: true },
@@ -116,6 +121,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
 
   const hasUnpublishedChanges = useHasUnpublishedChanges(formId);
   const hasPublishedVersion = !!savedDocs?.[0]?.lastPublishedVersionId;
+  const canShare = savedDocs?.[0]?.status === "published" || hasPublishedVersion;
 
   // Consolidated state: workflow, dialogs, menus, tooltips
   type WorkflowState = "idle" | "publishing" | "discarding";
@@ -141,7 +147,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
     try {
       await updateFormStatus(formId, "archived");
       toast.success("Form moved to trash");
-      navigate({ to: "/dashboard" });
+      void navigate({ to: "/dashboard" });
     } catch {
       toast.error("Failed to delete form");
     }
@@ -155,7 +161,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
         toast.success("Form published");
         // Navigate to submissions, then open share sidebar for immediate link sharing
         openShare();
-        navigate({
+        void navigate({
           to: "/workspace/$workspaceId/form-builder/$formId/submissions",
           params: { workspaceId, formId },
         });
@@ -206,7 +212,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
 
   const handleEditForm = () => {
     if (workspaceId && formId) {
-      navigate({
+      void navigate({
         to: "/workspace/$workspaceId/form-builder/$formId/edit",
         params: { workspaceId, formId },
         search: (prev: Record<string, unknown>) => ({ ...prev, force: true }),
@@ -223,10 +229,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   });
 
   useHotkey(HOTKEYS.TOGGLE_SHARE_SIDEBAR, () => toggleShareSidebar(), {
-    enabled:
-      isFormBuilder &&
-      isEditRoute &&
-      (savedDocs?.[0]?.status === "published" || hasPublishedVersion),
+    enabled: isFormBuilder && isEditRoute && canShare,
   });
 
   const isLeftSidebarOpen = state === "expanded";
@@ -265,7 +268,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
       label: "Analytics",
       onClick: () => {
         if (workspaceId && formId) {
-          navigate({
+          void navigate({
             to: "/workspace/$workspaceId/form-builder/$formId/submissions",
             params: { workspaceId, formId },
           });
@@ -286,6 +289,25 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
       onClick: () => toggleVersionHistory(),
       show: isEditRoute && hasPublishedVersion,
     },
+    // Share button is hidden from the header on mobile. Surface it in the
+    // menu only when the header button isn't visible — no duplicate entry
+    // point on desktop.
+    {
+      key: "share",
+      label: "Share",
+      shortcut: formatForDisplay(HOTKEYS.TOGGLE_SHARE_SIDEBAR),
+      onClick: () => toggleShareSidebar(),
+      show: isMobile && canShare,
+    },
+    // Mirror of the standalone icon buttons that are hidden on mobile. Kept
+    // in the menu on desktop too so there's a single discoverable surface for
+    // these actions — and so the mobile experience never loses functionality.
+    {
+      key: "discard",
+      label: "Discard changes",
+      onClick: () => setActiveDialog("discard"),
+      show: hasUnpublishedChanges,
+    },
     {
       key: "delete",
       label: "Delete form",
@@ -304,7 +326,11 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
         {/* Left Section: Breadcrumbs */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {isLandingPage && <LogoToggle static className="-ml-1" />}
-          {!isLandingPage && state === "collapsed" && (
+          {/* Logo doubles as the sidebar trigger on mobile (always visible)
+              and on desktop when the sidebar is collapsed. The primary open
+              gesture on mobile is a rightward swipe from anywhere on the
+              page; this is the discoverability safety net. */}
+          {!isLandingPage && (state === "collapsed" || isMobile) && (
             <Tooltip>
               <TooltipTrigger
                 render={
@@ -316,18 +342,20 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                 }
               />
               <TooltipContent side="right">
-                <p>Expand sidebar</p>
-                <p className="text-xs text-muted-foreground">
-                  {formatForDisplay(HOTKEYS.DISMISS_SIDEBARS)}
-                </p>
+                <p>{isMobile ? "Open sidebar" : "Expand sidebar"}</p>
+                {!isMobile && (
+                  <p className="text-xs text-muted-foreground">
+                    {formatForDisplay(HOTKEYS.DISMISS_SIDEBARS)}
+                  </p>
+                )}
               </TooltipContent>
             </Tooltip>
           )}
           {/* Breadcrumb: Workspace / Form Name / Page */}
           {isFormBuilder && savedDocs?.[0] && (
-            <div className="flex items-center text-sm">
+            <div className="flex items-center text-sm min-w-0">
               {workspace && (
-                <>
+                <div className="hidden md:flex items-center">
                   <Link
                     to="/dashboard"
                     className={cn(
@@ -338,7 +366,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                     {workspace.name}
                   </Link>
                   <span className="text-muted-foreground/50">/</span>
-                </>
+                </div>
               )}
               {savedDocs?.[0].status === "published" && workspaceId && formId ? (
                 <Link
@@ -346,7 +374,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                   params={{ workspaceId, formId }}
                   className={cn(
                     buttonVariants({ variant: "link", size: "sm" }),
-                    "max-w-[200px] text-foreground no-underline px-1.5 justify-start overflow-hidden",
+                    "max-w-[140px] sm:max-w-[200px] text-foreground no-underline px-1.5 justify-start overflow-hidden",
                   )}
                 >
                   <span className="truncate hover:underline">
@@ -357,17 +385,17 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                 <span
                   className={cn(
                     buttonVariants({ variant: "link", size: "sm" }),
-                    "max-w-[200px] no-underline cursor-default px-1.5 justify-start overflow-hidden",
+                    "max-w-[140px] sm:max-w-[200px] no-underline cursor-default px-1.5 justify-start overflow-hidden",
                   )}
                 >
                   <span className="truncate">{savedDocs?.[0].title || "Untitled"}</span>
                 </span>
               )}
-              <span className="text-muted-foreground/50">/</span>
+              <span className="text-muted-foreground/50 hidden sm:inline">/</span>
               <span
                 className={cn(
                   buttonVariants({ variant: "link", size: "sm" }),
-                  "text-muted-foreground no-underline cursor-default px-1.5",
+                  "text-muted-foreground no-underline cursor-default px-1.5 hidden sm:inline-flex",
                 )}
               >
                 {isEditRoute ? "Editor" : "Submissions"}
@@ -382,7 +410,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <span className="mr-1 inline-flex h-7 items-center whitespace-nowrap rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] font-normal text-muted-foreground/70" />
+                  <span className="mr-1 hidden md:inline-flex h-7 items-center whitespace-nowrap rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] font-normal text-muted-foreground/70" />
                 }
               >
                 Edited{" "}
@@ -522,7 +550,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                        className="hidden md:inline-flex h-7 w-7 text-muted-foreground hover:text-foreground"
                         onClick={() => setActiveDialog("discard")}
                         disabled={isDiscarding}
                       />
@@ -567,12 +595,12 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                   </Tooltip>
                 )}
 
-                {(savedDocs?.[0]?.status === "published" || hasPublishedVersion) && (
+                {canShare && (
                   <Button
                     variant="ghost"
                     size="sm"
                     className={cn(
-                      "px-2.5 text-muted-foreground hover:text-foreground font-normal",
+                      "hidden md:inline-flex px-2.5 text-muted-foreground hover:text-foreground font-normal",
                       isShareSidebarOpen && "text-foreground bg-accent/50",
                     )}
                     onClick={() => toggleShareSidebar()}
@@ -584,7 +612,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-muted-foreground hover:text-foreground"
+                  className="hidden md:inline-flex text-muted-foreground hover:text-foreground"
                   aria-label="Settings"
                   onClick={() => toggleSettingsSidebar()}
                 >
@@ -732,7 +760,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                handleDiscardChanges();
+                void handleDiscardChanges();
                 setActiveDialog(null);
               }}
               className="bg-destructive text-white hover:bg-destructive/90"

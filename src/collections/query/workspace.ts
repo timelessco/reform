@@ -25,16 +25,16 @@ type WorkspaceSummaryCollectionConfig = {
   queryClient: QueryClient;
   /** Server function to fetch workspaces with forms. Injected for testability. */
   queryFn: () => Promise<{ workspaces: WorkspaceSummary[] }>;
-  onInsert?: InsertMutationFn<WorkspaceSummary, string | number>;
-  onUpdate?: UpdateMutationFn<WorkspaceSummary, string | number>;
-  onDelete?: DeleteMutationFn<WorkspaceSummary, string | number>;
+  onInsert?: InsertMutationFn<WorkspaceSummary>;
+  onUpdate?: UpdateMutationFn<WorkspaceSummary>;
+  onDelete?: DeleteMutationFn<WorkspaceSummary>;
 };
 
 export const createWorkspaceSummaryCollection = (config: WorkspaceSummaryCollectionConfig) => {
   const { queryClient, queryFn, onInsert, onUpdate, onDelete } = config;
 
   return createCollection(
-    queryCollectionOptions<WorkspaceSummary, unknown, string[], string | number>({
+    queryCollectionOptions<WorkspaceSummary, unknown, string[]>({
       queryKey: ["workspaces-with-forms"],
       queryFn: async () => {
         const result = await queryFn();

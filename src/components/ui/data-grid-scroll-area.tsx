@@ -179,14 +179,12 @@ const DataGridScrollArea = ({
     }
 
     observedElementsRef.current = {
-      header: container.querySelector('[data-slot="data-grid-table"] thead') as HTMLElement | null,
+      header: container.querySelector('[data-slot="data-grid-table"] thead'),
       horizontalScrollbar: container.querySelector(
         '[data-slot="data-grid-scrollbar"][data-orientation="horizontal"]',
-      ) as HTMLElement | null,
-      table: container.querySelector('[data-slot="data-grid-table"]') as HTMLElement | null,
-      tableViewport: container.querySelector(
-        '[data-slot="data-grid-table-viewport"]',
-      ) as HTMLElement | null,
+      ),
+      table: container.querySelector('[data-slot="data-grid-table"]'),
+      tableViewport: container.querySelector('[data-slot="data-grid-table-viewport"]'),
     };
 
     let frame = 0;

@@ -26,8 +26,7 @@ const PublicFormRoute = () => {
   const search = Route.useSearch();
 
   const rawCustomization = loaderData?.form?.customization ?? null;
-  const defaultMode = ((rawCustomization?.defaultMode as PublicTheme | undefined) ??
-    "system") as PublicTheme;
+  const defaultMode = (rawCustomization?.defaultMode as PublicTheme | undefined) ?? "system";
 
   // Viewer's chosen theme — initialized from localStorage override or defaultMode
   const [viewerTheme, setViewerTheme] = useState<PublicTheme>(() => {
@@ -117,6 +116,7 @@ const PublicFormRoute = () => {
                 steps: loaderData.steps,
                 thankYou: loaderData.thankYou,
                 stepCount: loaderData.stepCount,
+                header: loaderData.header,
               }
             : undefined
         }
@@ -135,9 +135,7 @@ export const Route = createFileRoute("/forms/$formId")({
   loader: async ({ params }) => getPublicFormViewRSC({ data: { id: params.formId } }),
   // SEO meta tags
   head: ({ loaderData, params }) => {
-    const defaultMode =
-      (loaderData?.form?.customization as Record<string, string> | undefined)?.defaultMode ||
-      "system";
+    const defaultMode = loaderData?.form?.customization?.defaultMode || "system";
     const formId = params.formId;
     const preloadUrls = loaderData?.preloadModuleUrls ?? [];
     return {
@@ -154,16 +152,29 @@ export const Route = createFileRoute("/forms/$formId")({
             : "Fill out this form",
         },
       ],
-      links: preloadUrls.map((href) => ({
-        rel: "modulepreload",
-        href,
-        crossOrigin: "",
-      })),
+      links: [
+        // Preload the Latin subset of Inter Variable. The other subsets
+        // (latin-ext, rest) stay lazy — the browser only fetches them if
+        // the page renders a glyph outside U+0000–00FF.
+        {
+          rel: "preload",
+          href: "/fonts/inter-variable/fonts/inter-variable-latin.woff2",
+          as: "font",
+          type: "font/woff2",
+          crossOrigin: "anonymous" as const,
+        },
+        ...preloadUrls.map((href) => ({
+          rel: "modulepreload",
+          href,
+          crossOrigin: "" as const,
+        })),
+      ],
       scripts: [
         {
           // Apply theme before paint — viewer override > creator default > system
           children: `(function(){try{var d=document.documentElement;var override=null;try{override=window.localStorage.getItem("bf-form-theme:${formId}");}catch(e){}var def=${JSON.stringify(defaultMode)};var pick=override||def;var m=pick==="system"?(window.matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"):pick;d.classList.remove("light","dark");d.classList.add(m);d.style.colorScheme=m;}catch(e){}})();`,
         },
+
         {
           // Pre-hydration: as soon as the SSR'd form HTML is parsed, tell the
           // parent popup (a) the measured height so it can size the iframe

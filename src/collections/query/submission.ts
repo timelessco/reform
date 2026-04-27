@@ -18,7 +18,7 @@ export const createSubmissionSummaryCollection = (config: SubmissionSummaryColle
   const { queryClient, formId, queryFn } = config;
 
   return createCollection(
-    queryCollectionOptions<SubmissionSummary, unknown, string[], string | number>({
+    queryCollectionOptions<SubmissionSummary, unknown, string[]>({
       queryKey: ["submissions-count", formId],
       queryFn: async () => {
         const result = await queryFn();

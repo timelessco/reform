@@ -170,7 +170,7 @@ export const AIMenu = () => {
       }
       if (isHotkey("enter")(e) && !e.shiftKey && !value) {
         e.preventDefault();
-        void api.aiChat.submit(input);
+        api.aiChat.submit(input);
         setInput("");
       }
     },
@@ -304,7 +304,7 @@ const aiChatItems = {
 
       const isEmpty = NodeApi.string(ancestorNode[0]).trim().length === 0;
 
-      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
+      editor.getApi(AIChatPlugin).aiChat.submit(input, {
         mode: "insert",
         prompt: isEmpty
           ? `<Document>
@@ -331,7 +331,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
     label: "Emojify",
     value: "emojify",
     onSelect: ({ editor, input }) => {
-      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
+      editor.getApi(AIChatPlugin).aiChat.submit(input, {
         prompt: "Emojify",
         toolName: "edit",
       });
@@ -342,7 +342,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
     label: "Explain",
     value: "explain",
     onSelect: ({ editor, input }) => {
-      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
+      editor.getApi(AIChatPlugin).aiChat.submit(input, {
         prompt: {
           default: "Explain {editor}",
           selecting: "Explain",
@@ -356,7 +356,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
     label: "Fix spelling & grammar",
     value: "fixSpelling",
     onSelect: ({ editor, input }) => {
-      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
+      editor.getApi(AIChatPlugin).aiChat.submit(input, {
         prompt: "Fix spelling and grammar",
         toolName: "edit",
       });
@@ -367,7 +367,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
     label: "Generate Markdown sample",
     value: "generateMarkdownSample",
     onSelect: ({ editor, input }) => {
-      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
+      editor.getApi(AIChatPlugin).aiChat.submit(input, {
         prompt: "Generate a markdown sample",
         toolName: "generate",
       });
@@ -378,7 +378,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
     label: "Generate MDX sample",
     value: "generateMdxSample",
     onSelect: ({ editor, input }) => {
-      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
+      editor.getApi(AIChatPlugin).aiChat.submit(input, {
         prompt: "Generate a mdx sample",
         toolName: "generate",
       });
@@ -389,7 +389,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
     label: "Improve writing",
     value: "improveWriting",
     onSelect: ({ editor, input }) => {
-      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
+      editor.getApi(AIChatPlugin).aiChat.submit(input, {
         prompt: "Improve the writing",
         toolName: "edit",
       });
@@ -401,7 +401,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
     value: "insertBelow",
     onSelect: ({ aiEditor, editor }) => {
       /** Format: 'none' Fix insert table */
-      void editor.getTransforms(AIChatPlugin).aiChat.insertBelow(aiEditor, { format: "none" });
+      editor.getTransforms(AIChatPlugin).aiChat.insertBelow(aiEditor, { format: "none" });
     },
   },
   makeLonger: {
@@ -409,7 +409,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
     label: "Make longer",
     value: "makeLonger",
     onSelect: ({ editor, input }) => {
-      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
+      editor.getApi(AIChatPlugin).aiChat.submit(input, {
         prompt: "Make longer",
         toolName: "edit",
       });
@@ -420,7 +420,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
     label: "Make shorter",
     value: "makeShorter",
     onSelect: ({ editor, input }) => {
-      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
+      editor.getApi(AIChatPlugin).aiChat.submit(input, {
         prompt: "Make shorter",
         toolName: "edit",
       });
@@ -431,7 +431,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
     label: "Replace selection",
     value: "replace",
     onSelect: ({ aiEditor, editor }) => {
-      void editor.getTransforms(AIChatPlugin).aiChat.replaceSelection(aiEditor);
+      editor.getTransforms(AIChatPlugin).aiChat.replaceSelection(aiEditor);
     },
   },
   simplifyLanguage: {
@@ -439,7 +439,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
     label: "Simplify language",
     value: "simplifyLanguage",
     onSelect: ({ editor, input }) => {
-      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
+      editor.getApi(AIChatPlugin).aiChat.submit(input, {
         prompt: "Simplify the language",
         toolName: "edit",
       });
@@ -450,7 +450,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
     label: "Add a summary",
     value: "summarize",
     onSelect: ({ editor, input }) => {
-      void editor.getApi(AIChatPlugin).aiChat.submit(input, {
+      editor.getApi(AIChatPlugin).aiChat.submit(input, {
         mode: "insert",
         prompt: {
           default: "Summarize {editor}",
@@ -465,7 +465,7 @@ Start writing a new paragraph AFTER <Document> ONLY ONE SENTENCE`
     label: "Try again",
     value: "tryAgain",
     onSelect: ({ editor }) => {
-      void editor.getApi(AIChatPlugin).aiChat.reload();
+      editor.getApi(AIChatPlugin).aiChat.reload();
     },
   },
 } satisfies Record<

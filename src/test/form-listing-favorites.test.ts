@@ -89,7 +89,7 @@ describe("form listing collection", () => {
     );
 
     const org = await createTestOrg(ownerId);
-    orgId = org.id as string;
+    orgId = org.id;
     await createTestMember(memberId, orgId);
 
     const workspace = await createTestWorkspace(orgId, ownerId);
@@ -167,7 +167,7 @@ describe("favorite collection", () => {
     );
 
     const org = await createTestOrg(ownerId);
-    orgId = org.id as string;
+    orgId = org.id;
     await createTestMember(memberId, orgId);
 
     const workspace = await createTestWorkspace(orgId, ownerId);

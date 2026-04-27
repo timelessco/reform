@@ -39,7 +39,7 @@ describe("authWorkspace", () => {
     await t.saveUser(stranger);
 
     const org = await createTestOrg(ownerId);
-    orgId = org.id as string;
+    orgId = org.id;
 
     await createTestMember(memberId, orgId);
 

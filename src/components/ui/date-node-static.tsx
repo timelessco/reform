@@ -1,8 +1,7 @@
-import type { TDateElement } from "platejs";
 import type { SlateElementProps } from "platejs/static";
 import { SlateElement } from "platejs/static";
 
-export const DateElementStatic = (props: SlateElementProps<TDateElement>) => {
+export const DateElementStatic = (props: SlateElementProps) => {
   const { element } = props;
 
   return (
@@ -11,7 +10,9 @@ export const DateElementStatic = (props: SlateElementProps<TDateElement>) => {
         {element.date ? (
           (() => {
             const today = new Date();
-            const elementDate = new Date(element.date);
+            const dateValue = element.date as string | undefined;
+            if (!dateValue) return "No date";
+            const elementDate = new Date(dateValue);
             const isToday =
               elementDate.getDate() === today.getDate() &&
               elementDate.getMonth() === today.getMonth() &&

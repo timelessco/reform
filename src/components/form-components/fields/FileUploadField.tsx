@@ -51,12 +51,20 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
   const draftIdRef = useRef<string>(crypto.randomUUID());
   const [uploadState, setUploadState] = useState<FileUploadState>({ status: "idle" });
 
-  const handleUpload = async (picked: File) => {
+  // Uploads the File binary and swaps it into the field as an UploadedFormFile
+  // (url + metadata). Runs from the field-level `onChange` listener so the
+  // binary never reaches the form submission payload — submissions always
+  // serialize the URL object, not the file bytes.
+  const uploadAndReplace = async (
+    picked: File,
+    setValue: (next: UploadedFormFile | "") => void,
+  ) => {
     if (!formId) {
       setUploadState({
         status: "error",
         message: "Uploads are only available on published forms.",
       });
+      setValue("");
       return;
     }
 
@@ -66,7 +74,7 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
 
     try {
       const base64 = await fileToBase64(picked);
-      const value = await uploadFormFile({
+      const uploaded = await uploadFormFile({
         data: {
           formId,
           draftId: draftIdRef.current,
@@ -76,8 +84,8 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
           base64,
         },
       });
-      setUploadState({ status: "done", value, localPreview });
-      form.setFieldValue(element.name, value);
+      setUploadState({ status: "done", value: uploaded, localPreview });
+      setValue(uploaded);
     } catch (err) {
       const code = err instanceof Error ? err.message : "upload_failed";
       setUploadState({
@@ -85,6 +93,7 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
         message: UPLOAD_ERROR_MESSAGES[code] ?? "Upload failed. Please try again.",
       });
       if (localPreview) URL.revokeObjectURL(localPreview);
+      setValue("");
     }
   };
 
@@ -96,7 +105,11 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
     maxSize: 10 * 1024 * 1024,
     onFilesChange: (updatedFiles) => {
       const picked = updatedFiles[0]?.file;
-      if (picked instanceof File) handleUpload(picked);
+      if (picked instanceof File) {
+        // Route the raw File through the field's onChange listener — the
+        // listener is the single place that translates binary -> URL.
+        form.setFieldValue(element.name, picked);
+      }
     },
   });
 
@@ -127,7 +140,21 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
         : "";
 
   return (
-    <form.AppField name={element.name}>
+    <form.AppField
+      name={element.name}
+      listeners={{
+        onChange: ({ value, fieldApi }) => {
+          // The listener fires for every value change (including the URL
+          // replacement and the reset-to-empty). Only act when we see a raw
+          // File binary — that's the trigger to upload + swap.
+          if (value instanceof File) {
+            void uploadAndReplace(value, (next) => {
+              fieldApi.handleChange(next as never);
+            });
+          }
+        },
+      }}
+    >
       {(f) => {
         const hasFieldErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
         const fieldErrorMessage = hasFieldErrors ? extractErrorMessage(f.state.meta.errors[0]) : "";

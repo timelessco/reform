@@ -16,7 +16,8 @@ import { BrandingFooter } from "./branding-footer";
 import { AlreadySubmitted, FormClosed } from "@/routes/forms/-components/form-closed";
 import { PasswordGate } from "@/routes/forms/-components/password-gate";
 import { TranslationProvider, useTranslation } from "@/contexts/translation-context";
-import { createPublicSubmission } from "@/lib/server-fn/public-submissions";
+import { createPublicSubmission, getPublicDraft } from "@/lib/server-fn/public-submissions";
+import { clearDraftId, readDraftId } from "@/hooks/use-draft-autosave";
 import { getTranslations } from "@/lib/translations";
 import { cn } from "@/lib/utils";
 import {
@@ -80,8 +81,10 @@ interface PublicFormPageProps {
   // so the client bundle no longer ships platejs/static.
   rsc?: {
     steps: StepRSC[];
-    thankYou: unknown | null;
+    thankYou?: unknown;
     stepCount: number;
+    /** Pre-rendered header composite (cover + icon + title). */
+    header?: unknown;
   };
 }
 
@@ -161,6 +164,64 @@ export const PublicFormPage = ({
 
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // Resume-after-refresh state machine. "prompt": draft fetched, banner shown.
+  // "resumed": user accepted; StepFormProvider remounts via the `key` prop.
+  // "dismissed": user clicked Start over (or no draft existed).
+  type DraftPayload = { data: Record<string, unknown>; lastStepReached: number | null };
+  type DraftState =
+    | { status: "loading" }
+    | { status: "prompt"; draft: DraftPayload }
+    | { status: "resumed"; draft: DraftPayload }
+    | { status: "dismissed" };
+  const [draftState, setDraftState] = useState<DraftState>({ status: "loading" });
+
+  useEffect(() => {
+    const draftId = readDraftId(formId);
+    if (!draftId) {
+      setDraftState({ status: "dismissed" });
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getPublicDraft({ data: { formId, draftId } });
+        if (cancelled) return;
+        if (!res.draft) {
+          setDraftState({ status: "dismissed" });
+          return;
+        }
+        setDraftState({
+          status: "prompt",
+          draft: { data: res.draft.data, lastStepReached: res.draft.lastStepReached },
+        });
+      } catch (err) {
+        console.error("[Reform] Failed to load draft:", err);
+        setDraftState({ status: "dismissed" });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [formId]);
+
+  const handleResumeDraft = useCallback(() => {
+    setDraftState((s) => (s.status === "prompt" ? { status: "resumed", draft: s.draft } : s));
+  }, []);
+
+  const handleStartOver = useCallback(() => {
+    clearDraftId(formId);
+    setDraftState({ status: "dismissed" });
+  }, [formId]);
+
+  const resumed = draftState.status === "resumed";
+  const resumeProps = resumed
+    ? {
+        initialFormData: draftState.draft.data,
+        initialCurrentStep: draftState.draft.lastStepReached ?? 0,
+      }
+    : {};
+  const previewKey = resumed ? "resumed" : "fresh";
+
   const resolvedLanguage = form?.settings?.language ?? "English";
 
   // Handle body/html transparency for iframes
@@ -231,13 +292,21 @@ export const PublicFormPage = ({
     async (values: Record<string, unknown>) => {
       setSubmitError(null);
       try {
+        // Carry the draftId forward so the server updates the existing draft
+        // row in place (preserves submissionId, notifications fire once).
+        const draftId = readDraftId(formId) ?? undefined;
         await createPublicSubmission({
           data: {
             formId,
             data: values,
             isCompleted: true,
+            draftId,
           },
         });
+
+        // Completed: drop the localStorage pointer so a fresh visit starts a
+        // fresh draft instead of resuming the one that just finalized.
+        clearDraftId(formId);
 
         // Mark as submitted for duplicate prevention
         if (form?.settings?.preventDuplicateSubmissions) {
@@ -315,14 +384,18 @@ export const PublicFormPage = ({
       ref={containerRef}
       id="bf-form-container"
       className={cn(
-        "overflow-x-hidden text-foreground",
-        // Reserve space at the bottom for the fixed branding footer when shown
-        settings.branding ? "pb-16" : "pb-8",
+        "text-foreground",
+        settings.presentationMode === "field-by-field"
+          ? "relative h-screen overflow-hidden"
+          : cn("overflow-x-hidden", settings.branding ? "pb-16" : "pb-8"),
         form.customization && Object.keys(form.customization).length > 0 && "bf-themed",
         // Don't apply min-h-screen for popup or dynamic-height embeds — it
         // stretches the form to 100vh of the iframe viewport, creating a
         // second inner scrollbar on top of the host page's scroll.
-        !isPopup && !dynamicHeight && "min-h-screen",
+        !isPopup &&
+          !dynamicHeight &&
+          settings.presentationMode !== "field-by-field" &&
+          "min-h-screen",
         transparentBackground || isPopup ? "bg-transparent" : "bg-background",
         alignLeft && "text-left",
       )}
@@ -349,23 +422,38 @@ export const PublicFormPage = ({
           </Button>
         </div>
       )}
-      {rsc ? (
+      {draftState.status === "prompt" && (
+        <div
+          role="status"
+          className="mx-auto mb-4 mt-4 flex max-w-xl items-center justify-between gap-4 rounded-md border border-border bg-muted/60 px-4 py-3 text-sm"
+        >
+          <span className="text-foreground">We restored your in-progress answers.</span>
+          <div className="flex gap-2">
+            <Button type="button" size="sm" onClick={handleResumeDraft}>
+              Resume
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={handleStartOver}>
+              Start over
+            </Button>
+          </div>
+        </div>
+      )}
+      {rsc && settings.presentationMode !== "field-by-field" ? (
         <FormPreviewRSC
+          key={previewKey}
           steps={rsc.steps}
-          thankYou={rsc.thankYou}
+          thankYou={(rsc.thankYou as string | null) ?? null}
           stepCount={rsc.stepCount}
-          title={hideTitle ? undefined : form.title}
-          icon={hideTitle ? undefined : form.icon}
-          cover={hideTitle ? undefined : form.cover}
+          header={hideTitle ? null : rsc.header}
           onSubmit={handleSubmit}
-          hideTitle={hideTitle}
           settings={settings}
           formId={formId}
-          customization={form.customization}
+          {...resumeProps}
         />
       ) : (
         <Suspense fallback={null}>
           <FormPreviewFromPlate
+            key={previewKey}
             content={form.content as Value}
             title={hideTitle ? undefined : form.title}
             icon={hideTitle ? undefined : (form.icon ?? undefined)}
@@ -375,6 +463,7 @@ export const PublicFormPage = ({
             settings={settings}
             formId={formId}
             customization={form.customization}
+            {...resumeProps}
           />
         </Suspense>
       )}

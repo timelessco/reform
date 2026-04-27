@@ -28,7 +28,7 @@ describe("submission notifications", () => {
     );
 
     const org = await createTestOrg(ownerId);
-    orgId = org.id as string;
+    orgId = org.id;
 
     const workspace = await createTestWorkspace(orgId, ownerId);
     const form = await createTestForm(workspace.id, ownerId);
