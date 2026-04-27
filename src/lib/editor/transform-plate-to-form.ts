@@ -1,4 +1,5 @@
 import type { Value } from "platejs";
+import { extractFileUploadFields } from "@/lib/form-schema/file-upload-types";
 import {
   ALLOWED_LABEL_TYPES,
   FORM_INPUT_NODE_TYPES,
@@ -124,6 +125,10 @@ export type PlateFormField =
       labelType?: string;
       required?: boolean;
       accept?: string;
+      maxFileSize?: number;
+      maxFiles?: number;
+      allowedFileTypes?: string;
+      allowedFileExtensions?: string[];
     }
   | {
       id: string;
@@ -414,6 +419,8 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
       const baseName = slugify(labelText);
       const name = stableId || `${baseName}_${fieldIndex}`;
 
+      const fileUploadFields = nodeType === "formFileUpload" ? extractFileUploadFields(node) : {};
+
       elements.push({
         id: name,
         name,
@@ -424,6 +431,7 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
         minLength,
         maxLength,
         defaultValue,
+        ...fileUploadFields,
       } as PlateFormField);
       fieldIndex++;
       i++;

@@ -2,7 +2,9 @@ import { StaticContentBlock } from "@/components/form-components/static-content-
 import { StepForm } from "@/components/form-components/step-form";
 import { ProgressBar } from "@/routes/forms/-components/progress-bar";
 import { Button } from "@/components/ui/button";
+import { CopyButton } from "@/components/ui/copy-button";
 import { StepFormProvider, useStepForm } from "@/contexts/step-form-context";
+import type { PublicFormTracking, TrackingBase } from "@/contexts/step-form-context";
 import { useTranslation } from "@/contexts/translation-context";
 import { CUSTOMIZATION_AUTO_DEFAULTS } from "@/lib/theme/customization-defaults";
 import { extractFormHeader } from "@/lib/editor/transform-plate-to-form";
@@ -85,6 +87,10 @@ interface FormPreviewFromPlateProps {
    *  instead of using viewport units. Use for popup previews and real popup
    *  iframes — the parent already provides a definite bounded height. */
   isPopup?: boolean;
+  /** Analytics tracking base ({ visitId, visitorHash }). Only passed by the
+   * public form route — builder previews leave this undefined to disable
+   * tracking. */
+  trackingBase?: TrackingBase;
 }
 
 export const isHexColor = (str: string): boolean => /^#([0-9A-Fa-f]{3}){1,2}$/.test(str);
@@ -301,10 +307,41 @@ const PreviewFormHeader = ({
 };
 
 /**
+ * Compact "Share with others" row — link + copy button — shown on the
+ * thank-you page so respondents can pass the form along.
+ */
+const ShareWithOthers = ({ shareUrl }: { shareUrl: string }) => (
+  <div className="flex flex-col items-center gap-2 pt-4 w-full max-w-sm mx-auto">
+    <p className="text-sm text-muted-foreground">Share with others</p>
+    <div className="flex items-center gap-[6px] w-full rounded-lg bg-muted/60 pl-[10px] pr-[3px] py-[3px] h-[30px]">
+      <span className="flex-1 min-w-0 truncate text-sm text-muted-foreground font-normal">
+        {shareUrl}
+      </span>
+      <CopyButton
+        text={shareUrl}
+        variant="ghost"
+        size="sm"
+        className="h-6 shrink-0 rounded-[5px] bg-background shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] px-2 gap-1 text-sm text-foreground border-none [&_svg]:size-[13px]"
+      >
+        Copy
+      </CopyButton>
+    </div>
+  </div>
+);
+
+/**
  * Renders custom thank you content after form submission.
  * Thank-you page is static-only — rendered entirely via PlateStatic.
  */
-const RenderThankYouContent = ({ nodes, onReset }: { nodes: Value; onReset?: () => void }) => {
+const RenderThankYouContent = ({
+  nodes,
+  onReset,
+  shareUrl,
+}: {
+  nodes: Value;
+  onReset?: () => void;
+  shareUrl?: string;
+}) => {
   const { t } = useTranslation();
   return (
     <div data-bf-field-list>
@@ -322,6 +359,7 @@ const RenderThankYouContent = ({ nodes, onReset }: { nodes: Value; onReset?: () 
           </Button>
         </div>
       )}
+      {shareUrl && <ShareWithOthers shareUrl={shareUrl} />}
     </div>
   );
 };
@@ -329,7 +367,7 @@ const RenderThankYouContent = ({ nodes, onReset }: { nodes: Value; onReset?: () 
 /**
  * Default thank you message when no custom content is provided
  */
-const DefaultThankYou = ({ onReset }: { onReset?: () => void }) => {
+const DefaultThankYou = ({ onReset, shareUrl }: { onReset?: () => void; shareUrl?: string }) => {
   const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -343,6 +381,7 @@ const DefaultThankYou = ({ onReset }: { onReset?: () => void }) => {
           {t("submitAnother")}
         </Button>
       )}
+      {shareUrl && <ShareWithOthers shareUrl={shareUrl} />}
     </div>
   );
 };
@@ -370,6 +409,7 @@ export const FormPreviewFromPlate = ({
   initialFormData,
   initialCurrentStep,
   isPopup = false,
+  trackingBase,
 }: FormPreviewFromPlateProps) => {
   const headerFromContent = useMemo(() => extractFormHeader(content), [content]);
   const hasHeaderNode = headerFromContent !== null;
@@ -421,6 +461,24 @@ export const FormPreviewFromPlate = ({
     );
   }
 
+  // Determine analytics mode from presentation settings + step count.
+  // `null` disables question-progress tracking on single-page forms.
+  const isFieldByField = settings?.presentationMode === "field-by-field";
+  const trackingMode: PublicFormTracking["mode"] = isFieldByField
+    ? "field-by-field"
+    : steps.length > 1
+      ? "page-break"
+      : null;
+  const tracking: PublicFormTracking | null =
+    trackingBase && formId
+      ? {
+          visitId: trackingBase.visitId,
+          visitorHash: trackingBase.visitorHash,
+          formId,
+          mode: trackingMode,
+        }
+      : null;
+
   return (
     <StepFormProvider
       totalSteps={steps.length}
@@ -429,8 +487,10 @@ export const FormPreviewFromPlate = ({
       saveAnswersForLater={settings?.saveAnswersForLater}
       initialFormData={initialFormData}
       initialCurrentStep={initialCurrentStep}
+      tracking={tracking}
     >
       <FormPreviewContent
+        formId={formId}
         steps={steps}
         thankYouNodes={thankYouNodes}
         title={title}
@@ -482,6 +542,7 @@ const FormPreviewContent = ({
   settings,
   customization,
   isPopup,
+  formId,
 }: {
   steps: PreviewSegment[][];
   thankYouNodes: Value | null;
@@ -494,6 +555,7 @@ const FormPreviewContent = ({
   settings?: PublicFormSettings;
   customization?: Record<string, string> | null;
   isPopup?: boolean;
+  formId?: string;
 }) => {
   const { currentStep, totalSteps, isSubmitted, direction, reset } = useStepForm();
   const { t } = useTranslation();
@@ -537,6 +599,14 @@ const FormPreviewContent = ({
   const coverIsImage = cover && isValidUrl(cover);
   const coverIsColor = cover && isHexColor(cover);
 
+  // Public-form share URL — used on the thank-you page so respondents can pass
+  // the form along. Built from the formId since `window.location.href` in the
+  // editor preview is the editor route, not the public form URL.
+  const shareUrl = useMemo(() => {
+    if (!formId || typeof window === "undefined") return undefined;
+    return `${window.location.origin}/forms/${formId}`;
+  }, [formId]);
+
   const thankYouContent = (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -544,9 +614,9 @@ const FormPreviewContent = ({
       transition={{ duration: 0.3 }}
     >
       {thankYouNodes && thankYouNodes.length > 0 ? (
-        <RenderThankYouContent nodes={thankYouNodes} onReset={reset} />
+        <RenderThankYouContent nodes={thankYouNodes} onReset={reset} shareUrl={shareUrl} />
       ) : (
-        <DefaultThankYou onReset={reset} />
+        <DefaultThankYou onReset={reset} shareUrl={shareUrl} />
       )}
       {redirectCountdown !== null && (
         <p className="text-muted-foreground text-center mt-4">
@@ -668,7 +738,10 @@ const FormPreviewContent = ({
               <h1
                 data-bf-title
                 style={{ textWrap: "pretty" }}
-                className="text-2xl sm:text-3xl font-serif font-light -tracking-[0.03em] text-foreground leading-none"
+                className={cn(
+                  "font-serif font-light -tracking-[0.03em] text-foreground leading-none",
+                  isPopup ? "text-2xl sm:text-3xl" : "text-6xl sm:text-[48px]",
+                )}
               >
                 {title}
               </h1>

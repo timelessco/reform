@@ -16,5 +16,6 @@
       ]
     }
   ],
-  "regions": ["bom1", "iad1", "fra1"]
+  "regions": ["bom1", "iad1", "fra1"],
+  "crons": [{ "path": "/api/cron/aggregate-analytics", "schedule": "15 0 * * *" }]
 }

@@ -8,6 +8,7 @@ import { KEYS } from "platejs";
 import { useEditorPlugin, useEditorSelector, useHotkeys, usePluginOption } from "platejs/react";
 import * as React from "react";
 
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +30,12 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useEditorTheme } from "@/contexts/editor-theme-context";
+import {
+  FILE_SUBTYPES,
+  FILE_TYPE_CATEGORY_LABELS,
+  isFileTypeCategory,
+} from "@/lib/form-schema/file-upload-types";
+import type { FileTypeCategory } from "@/lib/form-schema/file-upload-types";
 import { ALLOWED_LABEL_TYPES, FORM_INPUT_NODE_TYPES } from "@/lib/form-schema/form-field-constants";
 import { cn } from "@/lib/utils";
 
@@ -53,13 +60,6 @@ const TEXT_LIKE_TYPES = new Set([
   "formPhone",
   "formLink",
 ]);
-
-const FILE_TYPE_LABELS: Record<string, string> = {
-  all: "All files",
-  images: "Images",
-  documents: "Documents",
-  spreadsheets: "Spreadsheets",
-};
 
 // Get field type category for the menu
 const getFieldType = (node: { type?: string; variant?: string } | undefined): BlockFieldType => {
@@ -136,6 +136,58 @@ const NumberRow = ({ label, value, onChange, min, max, suffix, defaultHint }: Nu
   </DropdownMenuItem>
 );
 
+type FileExtensionToggleRowProps = {
+  category: FileTypeCategory;
+  selected: string[] | undefined;
+  onToggle: (subtypeId: string) => void;
+};
+
+// Empty `selected` ⇒ every subtype is implicitly enabled, so the pills render
+// as active until the user starts narrowing down.
+const FileExtensionToggleRow = ({ category, selected, onToggle }: FileExtensionToggleRowProps) => {
+  const open = category !== "all";
+  const subtypes = open ? FILE_SUBTYPES[category] : [];
+  const allEnabled = !selected || selected.length === 0;
+  const isActive = (id: string) => allEnabled || (selected?.includes(id) ?? false);
+
+  return (
+    <Collapsible open={open}>
+      <CollapsibleContent>
+        <div className="px-2 pb-1 pt-0.5">
+          <div className="flex items-stretch h-[28px] rounded-[6px] border border-border/60 overflow-hidden bg-transparent">
+            {subtypes.map((subtype, i) => {
+              const active = isActive(subtype.id);
+              return (
+                <React.Fragment key={subtype.id}>
+                  {i > 0 && <span aria-hidden className="w-px self-stretch bg-border/60" />}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onToggle(subtype.id);
+                    }}
+                    onPointerDown={stopMouseEventPropagation}
+                    aria-pressed={active}
+                    className={cn(
+                      "flex-1 text-[11px] font-medium uppercase tracking-wide transition-colors",
+                      active
+                        ? "text-foreground bg-(--color-gray-alpha-100)"
+                        : "text-muted-foreground/50 hover:text-foreground hover:bg-(--color-gray-alpha-100)/50",
+                    )}
+                  >
+                    {subtype.label}
+                  </button>
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
+
 export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   const { api, editor } = useEditorPlugin(BlockMenuPlugin);
   const openId = usePluginOption(BlockMenuPlugin, "openId");
@@ -185,6 +237,7 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
         maxFileSize?: number;
         maxFiles?: number;
         allowedFileTypes?: string;
+        allowedFileExtensions?: string[];
         minSelections?: number;
         maxSelections?: number;
         randomizeOrder?: boolean;
@@ -374,8 +427,40 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
       const inputPath = getInputPath();
       if (!inputPath) return;
       editor.tf.setNodes({ allowedFileTypes: value }, { at: inputPath });
+      editor.tf.unsetNodes(["allowedFileExtensions"], { at: inputPath });
     },
     [getInputPath, editor.tf],
+  );
+
+  const handleToggleFileExtension = React.useCallback(
+    (subtypeId: string) => {
+      const inputPath = getInputPath();
+      if (!inputPath) return;
+      const category = isFileTypeCategory(inputNode?.allowedFileTypes)
+        ? inputNode.allowedFileTypes
+        : "all";
+      if (category === "all") return;
+      const allSubtypes = FILE_SUBTYPES[category].map((s) => s.id);
+      const current = inputNode?.allowedFileExtensions;
+      // Empty/undefined means "all selected" — materialize the full list
+      // before applying the toggle so removing one keeps the rest.
+      const selected =
+        Array.isArray(current) && current.length > 0
+          ? current.filter((id): id is string => typeof id === "string" && allSubtypes.includes(id))
+          : allSubtypes;
+      const next = selected.includes(subtypeId)
+        ? selected.filter((id) => id !== subtypeId)
+        : [...selected, subtypeId];
+      if (next.length === 0) return;
+      // When the user re-selects everything, drop the field so the default
+      // ("all subtypes") representation persists in the document.
+      if (next.length === allSubtypes.length) {
+        editor.tf.unsetNodes(["allowedFileExtensions"], { at: inputPath });
+        return;
+      }
+      editor.tf.setNodes({ allowedFileExtensions: next }, { at: inputPath });
+    },
+    [getInputPath, editor.tf, inputNode?.allowedFileTypes, inputNode?.allowedFileExtensions],
   );
 
   const handleUpdateMinSelections = React.useCallback(
@@ -805,7 +890,9 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                 >
                   <SelectTrigger className="h-[20px] w-[100px] text-[12px] rounded-[4px] border border-transparent dark:border-transparent shadow-none bg-transparent px-1 focus:border-border/70 focus-visible:border-border/70 dark:focus:border-border/70 dark:focus-visible:border-border/70 focus-visible:ring-0">
                     <SelectValue>
-                      {(value) => FILE_TYPE_LABELS[value as string] ?? value}
+                      {(value) =>
+                        FILE_TYPE_CATEGORY_LABELS[value as FileTypeCategory] ?? (value as string)
+                      }
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -816,6 +903,16 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
                   </SelectContent>
                 </Select>
               </DropdownMenuItem>
+
+              <FileExtensionToggleRow
+                category={
+                  isFileTypeCategory(inputNode?.allowedFileTypes)
+                    ? inputNode.allowedFileTypes
+                    : "all"
+                }
+                selected={inputNode?.allowedFileExtensions}
+                onToggle={handleToggleFileExtension}
+              />
 
               <DropdownMenuSeparator />
             </>

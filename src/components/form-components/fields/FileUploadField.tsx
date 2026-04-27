@@ -1,8 +1,14 @@
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Trash2Icon, UploadIcon } from "@/components/ui/icons";
 import { useStepForm } from "@/contexts/step-form-context";
 import { useFileUpload } from "@/hooks/use-file-upload";
+import {
+  buildAcceptString,
+  buildPlaceholderLabel,
+  DEFAULT_MAX_FILE_SIZE_MB,
+  resolveAllowedSubtypes,
+} from "@/lib/form-schema/file-upload-types";
 import type { UploadedFormFile } from "@/lib/server-fn/public-file-uploads";
 import { uploadFormFile } from "@/lib/server-fn/public-file-uploads";
 import { cn } from "@/lib/utils";
@@ -44,12 +50,32 @@ const UPLOAD_ERROR_MESSAGES: Record<string, string> = {
 };
 
 const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) => {
-  const accept =
-    element.accept && element.accept.length > 0 ? element.accept : "image/*,.pdf,.doc,.docx";
+  const { category, subtypes } = useMemo(
+    () => resolveAllowedSubtypes(element.allowedFileTypes, element.allowedFileExtensions),
+    [element.allowedFileTypes, element.allowedFileExtensions],
+  );
+  const accept = useMemo(() => buildAcceptString(category, subtypes), [category, subtypes]);
+  const placeholderLabel = useMemo(
+    () => buildPlaceholderLabel(category, subtypes),
+    [category, subtypes],
+  );
+  const maxFileSizeMb = element.maxFileSize ?? DEFAULT_MAX_FILE_SIZE_MB;
+  const maxFileSizeBytes = maxFileSizeMb * 1024 * 1024;
 
   const { formId } = useStepForm();
   const draftIdRef = useRef<string>(crypto.randomUUID());
   const [uploadState, setUploadState] = useState<FileUploadState>({ status: "idle" });
+  // Tracks the currently-displayed object URL so we can revoke it on
+  // replacement or unmount. Avoids leaking blob URLs when the user picks
+  // multiple files in a row or navigates away mid-upload.
+  const activePreviewRef = useRef<string | null>(null);
+
+  useEffect(
+    () => () => {
+      if (activePreviewRef.current) URL.revokeObjectURL(activePreviewRef.current);
+    },
+    [],
+  );
 
   // Uploads the File binary and swaps it into the field as an UploadedFormFile
   // (url + metadata). Runs from the field-level `onChange` listener so the
@@ -59,17 +85,26 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
     picked: File,
     setValue: (next: UploadedFormFile | "") => void,
   ) => {
+    const isImage = picked.type.startsWith("image/");
+    const localPreview = isImage ? URL.createObjectURL(picked) : null;
+    if (activePreviewRef.current) URL.revokeObjectURL(activePreviewRef.current);
+    activePreviewRef.current = localPreview;
+
+    // Preview mode (no formId): show the picked file in the UI without actually
+    // uploading, and seed a fake UploadedFormFile so the field is non-empty and
+    // the user can advance to the next step.
     if (!formId) {
-      setUploadState({
-        status: "error",
-        message: "Uploads are only available on published forms.",
-      });
-      setValue("");
+      const previewValue: UploadedFormFile = {
+        url: localPreview ?? "",
+        name: picked.name,
+        type: picked.type || "application/octet-stream",
+        size: picked.size,
+      };
+      setUploadState({ status: "done", value: previewValue, localPreview });
+      setValue(previewValue);
       return;
     }
 
-    const isImage = picked.type.startsWith("image/");
-    const localPreview = isImage ? URL.createObjectURL(picked) : null;
     setUploadState({ status: "uploading", localPreview, fileName: picked.name, isImage });
 
     try {
@@ -93,6 +128,7 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
         message: UPLOAD_ERROR_MESSAGES[code] ?? "Upload failed. Please try again.",
       });
       if (localPreview) URL.revokeObjectURL(localPreview);
+      activePreviewRef.current = null;
       setValue("");
     }
   };
@@ -102,7 +138,7 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
     { openFileDialog, getInputProps, handleDragEnter, handleDragLeave, handleDragOver, handleDrop },
   ] = useFileUpload({
     accept,
-    maxSize: 10 * 1024 * 1024,
+    maxSize: maxFileSizeBytes,
     onFilesChange: (updatedFiles) => {
       const picked = updatedFiles[0]?.file;
       if (picked instanceof File) {
@@ -114,11 +150,9 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
   });
 
   const reset = () => {
-    if (uploadState.status === "done" && uploadState.localPreview) {
-      URL.revokeObjectURL(uploadState.localPreview);
-    }
-    if (uploadState.status === "uploading" && uploadState.localPreview) {
-      URL.revokeObjectURL(uploadState.localPreview);
+    if (activePreviewRef.current) {
+      URL.revokeObjectURL(activePreviewRef.current);
+      activePreviewRef.current = null;
     }
     setUploadState({ status: "idle" });
   };
@@ -216,7 +250,9 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
                 <div className="flex flex-col items-center gap-1.5 text-muted-foreground select-none">
                   <UploadIcon className="size-5" />
                   <span className="text-sm">Click or drag to upload</span>
-                  <span className="text-xs">PNG, JPG, PDF up to 10MB</span>
+                  <span className="text-xs">
+                    {placeholderLabel} up to {maxFileSizeMb}MB
+                  </span>
                 </div>
               )}
             </button>

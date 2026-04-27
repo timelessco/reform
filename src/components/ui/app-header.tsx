@@ -60,6 +60,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const isLandingPage = pathname === "/";
   const isFormBuilder = pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
   const isEditRoute = pathname.endsWith("/edit");
+  const isInsightsRoute = pathname.endsWith("/insights");
   const { data: sessionData } = useSession();
   const session = sessionData;
   const navigate = useNavigate();
@@ -269,7 +270,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
       onClick: () => {
         if (workspaceId && formId) {
           void navigate({
-            to: "/workspace/$workspaceId/form-builder/$formId/submissions",
+            to: "/workspace/$workspaceId/form-builder/$formId/insights",
             params: { workspaceId, formId },
           });
         }
@@ -398,7 +399,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                   "text-muted-foreground no-underline cursor-default px-1.5 hidden sm:inline-flex",
                 )}
               >
-                {isEditRoute ? "Editor" : "Submissions"}
+                {isEditRoute ? "Editor" : isInsightsRoute ? "Insights" : "Submissions"}
               </span>
             </div>
           )}

@@ -2,6 +2,22 @@ import * as React from "react";
 import { useAsRef } from "@/hooks/use-as-ref";
 import { useFormPersistence } from "@/hooks/use-form-persistence";
 
+/** Subset of tracking state produced by `usePublicFormTracking`, before the
+ * form-preview component augments it with `formId` + `mode`. */
+export interface TrackingBase {
+  visitId: string | null;
+  visitorHash: string;
+}
+
+export interface PublicFormTracking {
+  /** null until recordFormVisit resolves (or forever, if bot/error). */
+  visitId: string | null;
+  visitorHash: string;
+  formId: string;
+  /** "page-break" if the form has multiple step pages, "field-by-field" if popup mode chunks one field per step. null disables question-progress tracking. */
+  mode: "page-break" | "field-by-field" | null;
+}
+
 type StepFormContextValue = {
   currentStep: number;
   totalSteps: number;
@@ -15,6 +31,8 @@ type StepFormContextValue = {
   reset: () => void;
   /** Form ID for upload server fn (empty when not in a published form context, e.g. builder preview) */
   formId: string;
+  /** Analytics tracking handle. `null` in builder previews / when tracking is disabled. */
+  tracking: PublicFormTracking | null;
 };
 
 const StepFormContext = React.createContext<StepFormContextValue | null>(null);
@@ -40,6 +58,9 @@ interface StepFormProviderProps {
    * provider (via `key`) to apply these once a draft is fetched. */
   initialFormData?: Record<string, unknown>;
   initialCurrentStep?: number;
+  /** Analytics tracking handle. Pass `null` (or omit) to disable tracking — e.g.
+   * builder previews where no `visitId` exists. */
+  tracking?: PublicFormTracking | null;
 }
 
 export const StepFormProvider = ({
@@ -50,6 +71,7 @@ export const StepFormProvider = ({
   saveAnswersForLater = false,
   initialFormData,
   initialCurrentStep,
+  tracking = null,
 }: StepFormProviderProps) => {
   const { loadSavedData, saveData, clearSavedData } = useFormPersistence(
     formId,
@@ -132,6 +154,7 @@ export const StepFormProvider = ({
       submitForm,
       reset,
       formId,
+      tracking,
     }),
     [
       currentStep,
@@ -145,6 +168,7 @@ export const StepFormProvider = ({
       submitForm,
       reset,
       formId,
+      tracking,
     ],
   );
 

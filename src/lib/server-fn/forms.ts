@@ -13,8 +13,8 @@ import { assertPlanForFormSettings, getOrgPlan } from "./plan-helpers";
 
 // Columns the listings query must always return so client-side change detection
 // (`useHasUnpublishedChanges`) keeps working after a refetch wipes the locally
-// enriched record. Heavy fields (content, customization JSONB) stay out and
-// load on demand via `enrichFormDetail`. Driven by `VERSIONED_SETTINGS_KEYS`
+// enriched record. The heavy `content` JSONB stays out and loads on demand
+// via `enrichFormDetail`. Driven by `VERSIONED_SETTINGS_KEYS`
 // so adding a new versioned column auto-flows here — no second list to keep
 // in sync.
 const versionedSettingColumns = Object.fromEntries(
@@ -228,6 +228,7 @@ export const getFormListings = createServerFn({ method: "GET" })
         workspaceId: forms.workspaceId,
         icon: forms.icon,
         cover: forms.cover,
+        customization: forms.customization,
         formName: forms.formName,
         sortIndex: forms.sortIndex,
         submissionCount: count(submissions.id),
@@ -255,6 +256,7 @@ export const getFormListings = createServerFn({ method: "GET" })
       ...f,
       updatedAt: f.updatedAt.toISOString(),
       createdAt: f.createdAt.toISOString(),
+      customization: (f.customization ?? {}) as Record<string, string>,
     }));
   });
 

@@ -6,11 +6,24 @@ import { UploadIcon } from "@/components/ui/icons";
 import { RequiredBadgeButton } from "@/components/ui/required-badge-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFormInputNode } from "@/hooks/use-form-input-node";
+import {
+  buildPlaceholderLabel,
+  DEFAULT_MAX_FILE_SIZE_MB,
+  resolveAllowedSubtypes,
+} from "@/lib/form-schema/file-upload-types";
 import { cn } from "@/lib/utils";
 
 export const FormFileUploadElement = ({ className, children, ...props }: PlateElementProps) => {
   const { attributes, element, ...rest } = props;
   const { focused, isSelected, required } = useFormInputNode(element);
+
+  const maxFileSize =
+    typeof element.maxFileSize === "number" ? element.maxFileSize : DEFAULT_MAX_FILE_SIZE_MB;
+  const { category, subtypes } = resolveAllowedSubtypes(
+    element.allowedFileTypes,
+    element.allowedFileExtensions,
+  );
+  const fileTypesLabel = buildPlaceholderLabel(category, subtypes);
 
   return (
     <PlateElement
@@ -30,7 +43,9 @@ export const FormFileUploadElement = ({ className, children, ...props }: PlateEl
       >
         <UploadIcon className="size-5" />
         <span className="text-sm">Click or drag to upload</span>
-        <span className="text-xs">PNG, JPG, PDF up to 10MB</span>
+        <span className="text-xs">
+          {fileTypesLabel} up to {maxFileSize}MB
+        </span>
       </div>
       <Tooltip>
         <TooltipTrigger

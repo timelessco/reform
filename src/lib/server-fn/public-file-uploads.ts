@@ -10,6 +10,12 @@ import {
   getEditableFields,
   transformPlateStateToFormElements,
 } from "@/lib/editor/transform-plate-to-form";
+import {
+  buildAcceptString,
+  DEFAULT_MAX_FILE_SIZE_MB,
+  getExtensionForMime,
+  resolveAllowedSubtypes,
+} from "@/lib/form-schema/file-upload-types";
 
 /**
  * Public form file uploads — NO auth required.
@@ -25,19 +31,9 @@ import {
 const WINDOW_MINUTES = 10;
 const MAX_PER_WINDOW = 20;
 const CLEANUP_PROBABILITY = 0.01;
-const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB
+// Hard upper bound — even if a field is configured higher, refuse beyond this.
+const HARD_MAX_FILE_BYTES = 50 * 1024 * 1024;
 const DEFAULT_ACCEPT = "image/*,.pdf,.doc,.docx";
-
-const EXT_BY_MIME: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/jpg": "jpg",
-  "image/png": "png",
-  "image/gif": "gif",
-  "image/webp": "webp",
-  "application/pdf": "pdf",
-  "application/msword": "doc",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
-};
 
 const getClientIp = (): string => {
   const headers = getRequestHeaders();
@@ -103,8 +99,7 @@ const isMimeAllowed = (contentType: string, accept: string): boolean => {
       const prefix = token.slice(0, -1); // "image/"
       if (mime.startsWith(prefix)) return true;
     } else if (token.startsWith(".")) {
-      // Extension token — match against EXT_BY_MIME
-      const ext = EXT_BY_MIME[mime];
+      const ext = getExtensionForMime(mime);
       if (ext && `.${ext}` === token) return true;
     } else if (token === mime) {
       return true;
@@ -116,7 +111,7 @@ const isMimeAllowed = (contentType: string, accept: string): boolean => {
 const assertFormFileField = async (
   formId: string,
   fieldName: string,
-): Promise<{ accept: string }> => {
+): Promise<{ accept: string; maxFileBytes: number }> => {
   const [form] = await db
     .select({
       status: forms.status,
@@ -151,11 +146,29 @@ const assertFormFileField = async (
   if (!field) {
     throw new Error("file_field_not_found");
   }
-  const accept =
+  // Prefer the granular allowedFileTypes/allowedFileExtensions set by the
+  // block menu. Fall back to a legacy `accept` string if present, then to the
+  // hardcoded default for forms that predate the type picker.
+  const allowedFileTypes = "allowedFileTypes" in field ? field.allowedFileTypes : undefined;
+  const allowedFileExtensions =
+    "allowedFileExtensions" in field ? field.allowedFileExtensions : undefined;
+  const legacyAccept =
     "accept" in field && typeof field.accept === "string" && field.accept.length > 0
       ? field.accept
-      : DEFAULT_ACCEPT;
-  return { accept };
+      : null;
+  const { category, subtypes } = resolveAllowedSubtypes(allowedFileTypes, allowedFileExtensions);
+  const accept =
+    allowedFileTypes !== undefined
+      ? buildAcceptString(category, subtypes)
+      : (legacyAccept ?? DEFAULT_ACCEPT);
+
+  const fieldMaxFileSize =
+    "maxFileSize" in field && typeof field.maxFileSize === "number" && field.maxFileSize > 0
+      ? field.maxFileSize
+      : DEFAULT_MAX_FILE_SIZE_MB;
+  const maxFileBytes = Math.min(fieldMaxFileSize * 1024 * 1024, HARD_MAX_FILE_BYTES);
+
+  return { accept, maxFileBytes };
 };
 
 const decodeBase64 = (dataUrl: string): Buffer => {
@@ -179,7 +192,7 @@ export const uploadFormFile = createServerFn({ method: "POST" })
     await checkUploadRateLimit(getClientIp());
 
     // 2. Form + field validation
-    const { accept } = await assertFormFileField(data.formId, data.fieldName);
+    const { accept, maxFileBytes } = await assertFormFileField(data.formId, data.fieldName);
 
     // 3. MIME allowlist
     if (!isMimeAllowed(data.contentType, accept)) {
@@ -191,12 +204,12 @@ export const uploadFormFile = createServerFn({ method: "POST" })
     if (buffer.length === 0) {
       throw new Error("empty_file");
     }
-    if (buffer.length > MAX_FILE_BYTES) {
+    if (buffer.length > maxFileBytes) {
       throw new Error("file_too_large");
     }
 
     // 5. Upload to Vercel Blob
-    const ext = EXT_BY_MIME[data.contentType.toLowerCase()] ?? "bin";
+    const ext = getExtensionForMime(data.contentType) ?? "bin";
     const key = `submissions/${data.formId}/${data.draftId}/${crypto.randomUUID()}.${ext}`;
     const blob = await putBlob(key, buffer, data.contentType);
 

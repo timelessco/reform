@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useStepForm } from "@/contexts/step-form-context";
 import { useTranslation } from "@/contexts/translation-context";
 import { useStepPreviewForm } from "@/hooks/use-preview-form";
+import { fireQuestionProgress } from "@/lib/analytics/track-client";
 import { getFieldsFromSegments } from "@/lib/editor/transform-plate-for-preview";
 import type { FieldSegment, PreviewSegment } from "@/lib/editor/transform-plate-for-preview";
 import { StaticContentBlock } from "./static-content-block";
@@ -27,7 +28,7 @@ export const StepForm = ({
   isLastStep,
   autoActionButton = false,
 }: StepFormProps) => {
-  const { currentStep, totalSteps, goToPrevStep, isSubmitting } = useStepForm();
+  const { currentStep, totalSteps, goToPrevStep, isSubmitting, tracking } = useStepForm();
   const { t } = useTranslation();
   const fields = useMemo(() => getFieldsFromSegments(segments), [segments]);
   const hasAuthoredButton = useMemo(
@@ -48,6 +49,25 @@ export const StepForm = ({
 
   const formRef = useRef<HTMLFormElement>(null);
 
+  // Field-by-field uses Shift+Enter to advance because plain Enter is needed
+  // for newlines inside textareas. Suppress plain-Enter submit on non-textarea
+  // inputs to keep the shortcut consistent across every step.
+  const handleFieldByFieldKeyDown = (event: React.KeyboardEvent<HTMLFormElement>) => {
+    if (event.key !== "Enter") return;
+    if (event.shiftKey) {
+      event.preventDefault();
+      formRef.current?.requestSubmit();
+      return;
+    }
+    // Allow Enter to keep its native behavior on textareas (newline) and on
+    // buttons (click — so Tab → Next + Enter still advances). Only suppress
+    // the implicit form submit triggered by Enter on a single-line input.
+    const target = event.target as HTMLElement;
+    if (target.tagName === "INPUT") {
+      event.preventDefault();
+    }
+  };
+
   // Auto-focus the first focusable element on mount
   useMountEffect(() => {
     const timer = setTimeout(() => {
@@ -61,6 +81,26 @@ export const StepForm = ({
       }
     }, 300); // Wait for transition to settle
 
+    // Fire `view` analytics event when this step mounts. No-ops in builder
+    // previews (tracking is null) or single-page forms (mode is null) or
+    // before recordFormVisit resolves (visitId is null).
+    if (tracking?.visitId && tracking.mode) {
+      const isFieldByField = tracking.mode === "field-by-field";
+      const firstField = fields.length > 0 ? fields[0] : null;
+      const questionId = isFieldByField && firstField ? firstField.id : `step_${stepIndex}`;
+      const questionType = isFieldByField && firstField ? (firstField.fieldType ?? null) : null;
+      fireQuestionProgress({
+        visitId: tracking.visitId,
+        formId: tracking.formId,
+        visitorHash: tracking.visitorHash,
+        questionId,
+        questionType,
+        questionIndex: stepIndex,
+        event: "view",
+        wasLastQuestion: isLastStep,
+      });
+    }
+
     return () => clearTimeout(timer);
   });
 
@@ -71,6 +111,7 @@ export const StepForm = ({
         ref={formRef}
         noValidate
         data-bf-field-list
+        onKeyDown={autoActionButton ? handleFieldByFieldKeyDown : undefined}
         className=" focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {groupedItems.map((item) => {
@@ -164,6 +205,10 @@ export const StepForm = ({
             </Button>
             <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
               press{" "}
+              <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted/50 font-medium text-foreground">
+                Shift
+              </kbd>
+              +
               <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted/50 font-medium text-foreground">
                 Enter
               </kbd>
