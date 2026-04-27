@@ -3,14 +3,20 @@ import { getRequestHeaders } from "@tanstack/react-start/server";
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { formAnalyticsDaily, formQuestionProgress, formVisits } from "@/db/schema";
+import {
+  formAnalyticsDaily,
+  formDropoffDaily,
+  formQuestionProgress,
+  formVisits,
+} from "@/db/schema";
 import { isBotUserAgent } from "@/lib/analytics/bot-filter";
+import { mergeDropoffMetrics } from "@/lib/analytics/merge-dropoff";
 import { mergeInsightsMetrics } from "@/lib/analytics/merge-metrics";
 import { parseUserAgent } from "@/lib/analytics/parse-user-agent";
 import { resolveTimeRange, splitTodayVsPast, toDateKey } from "@/lib/analytics/time-range";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { authForm, getActiveOrgId } from "@/lib/server-fn/auth-helpers";
-import type { FormInsightsMetrics } from "@/types/analytics";
+import type { FormInsightsMetrics, QuestionDropoffMetrics } from "@/types/analytics";
 
 export const recordFormVisit = createServerFn({ method: "POST" })
   .inputValidator(
@@ -227,5 +233,61 @@ export const getFormInsights = createServerFn({ method: "POST" })
       endDate: data.endDate ?? toDateKey(range.end),
       days: range.days,
       todayKey: split.todayStart ? toDateKey(split.todayStart) : null,
+    });
+  });
+
+export const getFormDropoff = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(
+    z.object({
+      formId: z.string().uuid(),
+      filter: z.enum(["last_24_hours", "last_7_days", "last_30_days", "last_90_days", "custom"]),
+      startDate: z.string().regex(DATE_KEY_PATTERN).optional(),
+      endDate: z.string().regex(DATE_KEY_PATTERN).optional(),
+    }),
+  )
+  .handler(async ({ data, context }): Promise<QuestionDropoffMetrics> => {
+    const orgId = getActiveOrgId(context.session);
+    await authForm(data.formId, context.session.user.id, orgId);
+
+    const now = new Date();
+    const range = resolveTimeRange(
+      { filter: data.filter, startDate: data.startDate, endDate: data.endDate },
+      now,
+    );
+    const split = splitTodayVsPast(range, now);
+
+    const dailyRows =
+      split.pastDays.length > 0
+        ? await db
+            .select()
+            .from(formDropoffDaily)
+            .where(
+              and(
+                eq(formDropoffDaily.formId, data.formId),
+                inArray(formDropoffDaily.date, split.pastDays),
+              ),
+            )
+        : [];
+
+    const todayProgressRows = split.rawStart
+      ? await db
+          .select()
+          .from(formQuestionProgress)
+          .where(
+            and(
+              eq(formQuestionProgress.formId, data.formId),
+              gte(formQuestionProgress.viewedAt, split.rawStart),
+              lte(formQuestionProgress.viewedAt, range.end),
+            ),
+          )
+      : [];
+
+    return mergeDropoffMetrics({
+      formId: data.formId,
+      startDate: data.startDate ?? toDateKey(range.start),
+      endDate: data.endDate ?? toDateKey(range.end),
+      dailyRows,
+      todayProgressRows,
     });
   });
