@@ -111,12 +111,16 @@ export const recordQuestionProgress = createServerFn({ method: "POST" })
     // V1 acceptable: duplicates inflate progress rows but aggregation in Task 12
     // dedupes by max(viewedAt) per (visitorHash, questionId). A unique constraint
     // on (visitId, questionId) would be the right v2 fix.
-    const existing = await db.query.formQuestionProgress.findFirst({
-      where: and(
-        eq(formQuestionProgress.visitId, data.visitId),
-        eq(formQuestionProgress.questionId, data.questionId),
-      ),
-    });
+    const [existing] = await db
+      .select()
+      .from(formQuestionProgress)
+      .where(
+        and(
+          eq(formQuestionProgress.visitId, data.visitId),
+          eq(formQuestionProgress.questionId, data.questionId),
+        ),
+      )
+      .limit(1);
 
     const now = new Date();
 
