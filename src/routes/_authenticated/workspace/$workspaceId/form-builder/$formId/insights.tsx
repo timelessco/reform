@@ -1,0 +1,111 @@
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+
+import { BreakdownCards } from "@/components/form-builder/insights/breakdown-cards";
+import { DropoffFunnel } from "@/components/form-builder/insights/dropoff-funnel";
+import { EmptyState } from "@/components/form-builder/insights/empty-state";
+import { MetricsRow } from "@/components/form-builder/insights/metrics-row";
+import { TimeRangeSelector } from "@/components/form-builder/insights/time-range-selector";
+import { TimeSeriesChart } from "@/components/form-builder/insights/time-series-chart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Loader from "@/components/ui/loader";
+import { getFormDropoff, getFormInsights } from "@/lib/server-fn/analytics";
+import type { TimeRangeFilter } from "@/types/analytics";
+
+const DEFAULT_FILTER: TimeRangeFilter = "last_30_days";
+
+const InsightsPage = () => {
+  const { formId } = Route.useParams();
+  const [filter, setFilter] = useState<TimeRangeFilter>(DEFAULT_FILTER);
+  const [startDate, setStartDate] = useState<string | undefined>(undefined);
+  const [endDate, setEndDate] = useState<string | undefined>(undefined);
+
+  const insightsQuery = useQuery({
+    queryKey: ["insights", formId, filter, startDate, endDate],
+    queryFn: () => getFormInsights({ data: { formId, filter, startDate, endDate } }),
+  });
+
+  const dropoffQuery = useQuery({
+    queryKey: ["dropoff", formId, filter, startDate, endDate],
+    queryFn: () => getFormDropoff({ data: { formId, filter, startDate, endDate } }),
+  });
+
+  const handleRangeChange = (next: {
+    filter: TimeRangeFilter;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    setFilter(next.filter);
+    setStartDate(next.startDate);
+    setEndDate(next.endDate);
+  };
+
+  if (insightsQuery.isPending || dropoffQuery.isPending) {
+    return <Loader />;
+  }
+
+  if (insightsQuery.isError || dropoffQuery.isError || !insightsQuery.data || !dropoffQuery.data) {
+    return (
+      <div className="container mx-auto max-w-7xl space-y-6 p-6">
+        <div className="flex items-center justify-between">
+          <h1 className="font-semibold text-2xl">Insights</h1>
+          <TimeRangeSelector
+            value={filter}
+            startDate={startDate}
+            endDate={endDate}
+            onChange={handleRangeChange}
+          />
+        </div>
+        <Card>
+          <CardContent className="py-10 text-center text-muted-foreground text-sm">
+            Failed to load insights. Try a different time range or refresh.
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const metrics = insightsQuery.data;
+  const dropoff = dropoffQuery.data;
+  const hasData = metrics.totalVisits > 0;
+
+  return (
+    <div className="container mx-auto max-w-7xl space-y-6 p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-semibold text-2xl">Insights</h1>
+        <TimeRangeSelector
+          value={filter}
+          startDate={startDate}
+          endDate={endDate}
+          onChange={handleRangeChange}
+        />
+      </div>
+      <EmptyState hasData={hasData} />
+      <MetricsRow metrics={metrics} />
+      <Card>
+        <CardHeader>
+          <CardTitle>Visits over time</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TimeSeriesChart dailyData={metrics.dailyData} />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Drop-off funnel</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DropoffFunnel dropoff={dropoff} />
+        </CardContent>
+      </Card>
+      <BreakdownCards metrics={metrics} />
+    </div>
+  );
+};
+
+export const Route = createFileRoute(
+  "/_authenticated/workspace/$workspaceId/form-builder/$formId/insights",
+)({
+  component: InsightsPage,
+});
