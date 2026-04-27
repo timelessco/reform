@@ -1,8 +1,7 @@
-import { Bar, BarChart, Cell, Pie, PieChart, XAxis, YAxis } from "recharts";
-
+import { EvilBarChart } from "@/components/evilcharts/charts/bar-chart";
+import { EvilPieChart } from "@/components/evilcharts/charts/pie-chart";
+import type { ChartConfig } from "@/components/evilcharts/ui/chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import type { ChartConfig } from "@/components/ui/chart";
 import {
   Table,
   TableBody,
@@ -17,12 +16,12 @@ interface BreakdownCardsProps {
   metrics: FormInsightsMetrics;
 }
 
-interface BreakdownDatum {
+interface BreakdownDatum extends Record<string, unknown> {
   name: string;
   value: number;
 }
 
-const PALETTE = [
+const PALETTE: string[] = [
   "var(--chart-1)",
   "var(--chart-2)",
   "var(--chart-3)",
@@ -30,6 +29,7 @@ const PALETTE = [
   "var(--chart-5)",
 ];
 
+const TOP_N_SOURCES = 5;
 const numberFormatter = new Intl.NumberFormat("en-US");
 
 const breakdownToArray = (breakdown: CountBreakdown): BreakdownDatum[] =>
@@ -37,8 +37,6 @@ const breakdownToArray = (breakdown: CountBreakdown): BreakdownDatum[] =>
     .map(([name, value]) => ({ name, value }))
     .filter((entry) => entry.value > 0)
     .sort((a, b) => b.value - a.value);
-
-const TOP_N_SOURCES = 5;
 
 const collapseToTopN = (entries: BreakdownDatum[], topN: number): BreakdownDatum[] => {
   if (entries.length <= topN) {
@@ -53,24 +51,39 @@ const collapseToTopN = (entries: BreakdownDatum[], topN: number): BreakdownDatum
   return [...top, { name: "Other", value: otherTotal }];
 };
 
-const buildPieConfig = (entries: BreakdownDatum[]): ChartConfig => {
+// Each slice in a pie chart needs its own ChartConfig key so EvilPieChart can resolve --color-{name}-0.
+const buildPerSliceConfig = (entries: BreakdownDatum[]): ChartConfig => {
   const config: ChartConfig = {};
   entries.forEach((entry, index) => {
+    const color = PALETTE[index % PALETTE.length];
     config[entry.name] = {
       label: entry.name,
-      color: PALETTE[index % PALETTE.length],
+      colors: { light: [color], dark: [color] },
     };
   });
   return config;
 };
 
+const barChartConfig = {
+  value: {
+    label: "Visits",
+    colors: {
+      light: ["var(--chart-1)"],
+      dark: ["var(--chart-1)"],
+    },
+  },
+} satisfies ChartConfig;
+
 interface EmptyMessageProps {
-  message?: string;
+  height?: number;
 }
 
-const EmptyMessage = ({ message = "No data yet" }: EmptyMessageProps) => (
-  <div className="flex h-[180px] items-center justify-center text-muted-foreground text-sm">
-    {message}
+const EmptyMessage = ({ height = 180 }: EmptyMessageProps) => (
+  <div
+    className="flex items-center justify-center text-muted-foreground text-sm"
+    style={{ height }}
+  >
+    No data yet
   </div>
 );
 
@@ -80,23 +93,20 @@ interface PieBreakdownProps {
 
 const PieBreakdown = ({ data }: PieBreakdownProps) => {
   if (data.length === 0) {
-    return <EmptyMessage />;
+    return <EmptyMessage height={200} />;
   }
-  const config = buildPieConfig(data);
+  const config = buildPerSliceConfig(data);
   return (
-    <ChartContainer config={config} className="aspect-square h-[200px] w-full">
-      <PieChart>
-        <ChartTooltip
-          cursor={false}
-          content={<ChartTooltipContent hideLabel={true} nameKey="name" />}
-        />
-        <Pie data={data} dataKey="value" nameKey="name" innerRadius={45} outerRadius={75}>
-          {data.map((entry, index) => (
-            <Cell key={entry.name} fill={PALETTE[index % PALETTE.length]} />
-          ))}
-        </Pie>
-      </PieChart>
-    </ChartContainer>
+    <EvilPieChart
+      className="h-[200px] w-full"
+      chartConfig={config}
+      data={data}
+      dataKey="value"
+      nameKey="name"
+      innerRadius="55%"
+      outerRadius="80%"
+      paddingAngle={2}
+    />
   );
 };
 
@@ -106,27 +116,19 @@ interface SourcesBarProps {
 
 const SourcesBar = ({ data }: SourcesBarProps) => {
   if (data.length === 0) {
-    return <EmptyMessage />;
+    return <EmptyMessage height={200} />;
   }
-  const config: ChartConfig = {
-    value: { label: "Visits", color: "var(--chart-1)" },
-  };
   return (
-    <ChartContainer config={config} className="aspect-auto h-[200px] w-full">
-      <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16, top: 4, bottom: 4 }}>
-        <XAxis type="number" hide={true} />
-        <YAxis
-          type="category"
-          dataKey="name"
-          tickLine={false}
-          axisLine={false}
-          width={90}
-          tickMargin={4}
-        />
-        <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel={true} />} />
-        <Bar dataKey="value" fill="var(--color-value)" radius={4} />
-      </BarChart>
-    </ChartContainer>
+    <EvilBarChart
+      className="h-[200px] w-full"
+      chartConfig={barChartConfig}
+      data={data}
+      xDataKey="name"
+      yDataKey="value"
+      layout="horizontal"
+      barVariant="gradient"
+      hideLegend
+    />
   );
 };
 
@@ -136,7 +138,7 @@ interface CountriesTableProps {
 
 const CountriesTable = ({ data }: CountriesTableProps) => {
   if (data.length === 0) {
-    return <EmptyMessage />;
+    return <EmptyMessage height={200} />;
   }
   const top = data.slice(0, 10);
   return (

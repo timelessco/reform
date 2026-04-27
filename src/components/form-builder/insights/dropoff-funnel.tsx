@@ -1,16 +1,22 @@
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  createColumnHelper,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import type { ColumnDef, SortingState } from "@tanstack/react-table";
+import { useMemo, useState } from "react";
+
+import { DataGrid, DataGridContainer } from "@/components/ui/data-grid";
+import { DataGridColumnHeader } from "@/components/ui/data-grid-column-header";
+import { DataGridTable } from "@/components/ui/data-grid-table";
 import type { QuestionDropoffMetrics } from "@/types/analytics";
 
 interface DropoffFunnelProps {
   dropoff: QuestionDropoffMetrics;
 }
+
+type DropoffRow = QuestionDropoffMetrics["questions"][number];
 
 const numberFormatter = new Intl.NumberFormat("en-US");
 
@@ -35,7 +41,109 @@ const SummaryStat = ({ label, value }: SummaryStatProps) => (
   </div>
 );
 
+const toDropoffColumn = <TValue,>(column: ColumnDef<DropoffRow, TValue>): ColumnDef<DropoffRow> =>
+  column as ColumnDef<DropoffRow>;
+
 export const DropoffFunnel = ({ dropoff }: DropoffFunnelProps) => {
+  const [sorting, setSorting] = useState<SortingState>([{ id: "step", desc: false }]);
+
+  const sortedQuestions = useMemo(
+    () => [...dropoff.questions].sort((a, b) => a.questionIndex - b.questionIndex),
+    [dropoff.questions],
+  );
+
+  const columns = useMemo<ColumnDef<DropoffRow>[]>(() => {
+    const columnHelper = createColumnHelper<DropoffRow>();
+    return [
+      toDropoffColumn(
+        columnHelper.accessor("questionIndex", {
+          id: "step",
+          header: ({ column }) => <DataGridColumnHeader column={column} title="Step" />,
+          cell: (info) => (
+            <span className="text-[13px] tabular-nums text-muted-foreground">
+              {info.getValue() + 1}
+            </span>
+          ),
+          size: 80,
+          minSize: 60,
+        }),
+      ),
+      toDropoffColumn(
+        columnHelper.accessor("questionLabel", {
+          id: "label",
+          header: ({ column }) => <DataGridColumnHeader column={column} title="Question" />,
+          cell: (info) => {
+            const row = info.row.original;
+            const text = row.questionLabel ?? row.questionId;
+            return (
+              <span className="block truncate text-[13px]" title={text}>
+                {text}
+              </span>
+            );
+          },
+          size: 280,
+          minSize: 160,
+        }),
+      ),
+      toDropoffColumn(
+        columnHelper.accessor("viewCount", {
+          id: "viewed",
+          header: ({ column }) => <DataGridColumnHeader column={column} title="Viewed" />,
+          cell: (info) => (
+            <span className="text-[13px] tabular-nums">
+              {numberFormatter.format(info.getValue())}
+            </span>
+          ),
+          size: 110,
+        }),
+      ),
+      toDropoffColumn(
+        columnHelper.accessor("startCount", {
+          id: "started",
+          header: ({ column }) => <DataGridColumnHeader column={column} title="Started" />,
+          cell: (info) => (
+            <span className="text-[13px] tabular-nums">
+              {numberFormatter.format(info.getValue())}
+            </span>
+          ),
+          size: 110,
+        }),
+      ),
+      toDropoffColumn(
+        columnHelper.accessor("completeCount", {
+          id: "completed",
+          header: ({ column }) => <DataGridColumnHeader column={column} title="Completed" />,
+          cell: (info) => (
+            <span className="text-[13px] tabular-nums">
+              {numberFormatter.format(info.getValue())}
+            </span>
+          ),
+          size: 110,
+        }),
+      ),
+      toDropoffColumn(
+        columnHelper.accessor("dropoffRate", {
+          id: "dropoff",
+          header: ({ column }) => <DataGridColumnHeader column={column} title="Drop-off %" />,
+          cell: (info) => (
+            <span className="text-[13px] tabular-nums">{formatPercent(info.getValue())}</span>
+          ),
+          size: 130,
+        }),
+      ),
+    ];
+  }, []);
+
+  const table = useReactTable({
+    data: sortedQuestions,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getRowId: (row) => row.questionId,
+  });
+
   if (!dropoff || dropoff.questions.length === 0) {
     return (
       <div className="rounded-md border border-border/60 border-dashed bg-muted/20 p-6 text-center text-muted-foreground text-sm">
@@ -44,48 +152,23 @@ export const DropoffFunnel = ({ dropoff }: DropoffFunnelProps) => {
     );
   }
 
-  const sortedQuestions = [...dropoff.questions].sort((a, b) => a.questionIndex - b.questionIndex);
-
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">#</TableHead>
-              <TableHead>Step</TableHead>
-              <TableHead className="text-right">Viewed</TableHead>
-              <TableHead className="text-right">Started</TableHead>
-              <TableHead className="text-right">Completed</TableHead>
-              <TableHead className="text-right">Drop-off %</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedQuestions.map((question) => (
-              <TableRow key={question.questionId}>
-                <TableCell className="text-muted-foreground tabular-nums">
-                  {question.questionIndex + 1}
-                </TableCell>
-                <TableCell className="max-w-[280px] truncate">
-                  {question.questionLabel ?? question.questionId}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {numberFormatter.format(question.viewCount)}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {numberFormatter.format(question.startCount)}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {numberFormatter.format(question.completeCount)}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {formatPercent(question.dropoffRate)}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <DataGrid
+        table={table}
+        recordCount={sortedQuestions.length}
+        tableLayout={{
+          dense: true,
+          headerBackground: false,
+          headerBorder: true,
+          rowBorder: true,
+          width: "fixed",
+        }}
+      >
+        <DataGridContainer>
+          <DataGridTable />
+        </DataGridContainer>
+      </DataGrid>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <SummaryStat label="Total started" value={numberFormatter.format(dropoff.totalStarted)} />
         <SummaryStat
