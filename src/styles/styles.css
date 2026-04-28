@@ -870,15 +870,17 @@
   padding-bottom: var(--bf-block-padding) !important;
 }
 
-/* Quiet empty paragraphs: cursor-landing zones that auto-appear between form
-   sections collapse so they don't take up ~44px each. The attribute is set
-   reactively in ParagraphElement when the block is empty AND not selected,
-   so clicking in or block-selecting drops the rule and the block returns to
-   its padded height. line-height:0 also strips the empty leaf's text line.
-   Selector includes [data-slate-node] so it ties on specificity (3 attribute
-   selectors) with the global block-padding rule above and wins by source
-   order — the global rule's !important would otherwise override us. */
-[data-slate-editor] > [data-bf-quiet][data-slate-node] {
+/* Quiet empty top-level blocks: cursor-landing paragraphs auto-inserted
+   between form sections collapse to ~0px so they don't show as fat gray
+   bars. Detected via slate-react's [data-slate-zero-width] marker (the <br>
+   it injects into empty text leaves). :focus-within keeps the block at
+   full padded height while the user has the cursor inside, so there's
+   space for the caret to land — collapse on click-out. The selector ties
+   the global block-padding rule on specificity (3 attribute selectors via
+   [data-slate-editor], [data-slate-node], [data-slate-zero-width]) so
+   source order lets us win. */
+[data-slate-editor]
+  > [data-slate-node]:has([data-slate-zero-width]):not(:focus-within):not([data-bf-chrome]):not([data-bf-input]) {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
   min-height: 0 !important;
