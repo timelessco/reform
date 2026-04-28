@@ -38,9 +38,7 @@ const PublicFormRoute = () => {
 };
 
 export const Route = createFileRoute("/forms/$i8n/$formId")({
-  // SSR loader - fetches form data on the server for SEO
   loader: async ({ params }) => getPublishedFormById({ data: { id: params.formId } }),
-  // SEO meta tags
   head: ({ loaderData }) => ({
     meta: seo({
       formTitle: loaderData?.form?.title ?? "Form",

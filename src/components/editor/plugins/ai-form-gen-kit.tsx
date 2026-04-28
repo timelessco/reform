@@ -33,7 +33,6 @@ const AIFormGenMenu = () => {
     }
   }, [editor]);
 
-  // Capture cursor position + selected text when the bubble opens
   const capturedPathRef = useRef<number[] | null>(null);
   const [selectionContext, setSelectionContext] = useState<string | null>(null);
   const blockSelectionNodes = useBlockSelectionNodes();
@@ -164,7 +163,6 @@ const AIFormGenMenu = () => {
     }, 0);
   }, [editor]);
 
-  // Clear any stale error when the bubble closes
   useEffect(() => {
     if (!isOpen) setGenerationError(null);
   }, [isOpen]);

@@ -13,7 +13,6 @@ import { purgeFormCache } from "@/lib/server-fn/cdn-cache";
 import { getActiveOrgId } from "./auth-helpers";
 import { authForm } from "./auth-helpers.server";
 
-// Serialized submission type for client consumption
 export type SerializedSubmission = {
   id: string;
   formId: string;
@@ -48,7 +47,6 @@ const maybePurgeAfterSubmissionDelete = async (formId: string) => {
   }
 };
 
-// DELETE submission
 export const deleteSubmission = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ id: z.uuid(), formId: z.uuid() }))
@@ -60,7 +58,6 @@ export const deleteSubmission = createServerFn({ method: "POST" })
     return { success: true };
   });
 
-// DELETE submissions bulk
 export const deleteSubmissionsBulk = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
@@ -80,11 +77,9 @@ export const deleteSubmissionsBulk = createServerFn({ method: "POST" })
     return { success: true, deleted: data.submissionIds.length };
   });
 
-// Cursor pagination types and constants
 export type SubmissionCursor = { createdAt: string; id: string };
 export const SUBMISSIONS_PAGE_SIZE = 50;
 
-// GET submissions by form (cursor-paginated)
 export const getSubmissionsByFormIdPaginated = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(
@@ -142,7 +137,6 @@ export const getSubmissionsByFormIdPaginated = createServerFn({ method: "GET" })
     };
   });
 
-// GET submissions count by form
 export const getSubmissionsCount = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ formId: z.uuid() }))

@@ -110,7 +110,6 @@ function ChartTooltipContent({
             const key = `${payloadName ?? item.name ?? item.dataKey ?? "value"}`;
             const itemConfig = getPayloadConfigFromPayload(config, item, key);
 
-            // Get colors count for this item to determine gradient vs solid
             const colorsCount = itemConfig ? getColorsCount(itemConfig) : 1;
 
             return (
@@ -177,7 +176,6 @@ function getIndicatorColorStyle(dataKey: string, colorsCount: number): React.CSS
     return { background: `var(--color-${dataKey}-0)` };
   }
 
-  // Multiple colors: create linear gradient with evenly distributed stops
   const stops = Array.from({ length: colorsCount }, (_, index) => {
     const offset = (index / (colorsCount - 1)) * 100;
     return `var(--color-${dataKey}-${index}) ${offset}%`;

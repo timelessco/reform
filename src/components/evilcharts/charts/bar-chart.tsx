@@ -21,7 +21,6 @@ import type { BackgroundVariant } from "@/components/evilcharts/ui/background";
 import { RectRadius } from "recharts/types/shape/Rectangle";
 import { motion } from "motion/react";
 
-// Constants
 const DEFAULT_BAR_RADIUS = 2;
 const LOADING_BAR_DATA_KEY = "loading";
 const LOADING_ANIMATION_DURATION = 2000; // in milliseconds
@@ -33,12 +32,10 @@ type BarVariant = "default" | "hatched" | "duotone" | "duotone-reverse" | "gradi
 type StackType = "default" | "stacked" | "percent";
 type BarLayout = "vertical" | "horizontal";
 
-// Validating Types to make sure user have provided valid data according to chartConfig
 type ValidateConfigKeys<TData, TConfig> = {
   [K in keyof TConfig]: K extends keyof TData ? ChartConfig[string] : never;
 };
 
-// Extract only keys from TData where the value is a number (not string, boolean, etc.)
 type NumericDataKeys<T> = {
   [K in keyof T]: T[K] extends number ? K : never;
 }[keyof T];
@@ -64,28 +61,22 @@ type EvilBarChartProps<
   barCategoryGap?: number;
   tickGap?: number;
   legendVariant?: ChartLegendVariant;
-  // Hide Stuffs
   hideTooltip?: boolean;
   hideCartesianGrid?: boolean;
   hideLegend?: boolean;
-  // Tooltip
   tooltipRoundness?: TooltipRoundness;
   tooltipVariant?: TooltipVariant;
   tooltipDefaultIndex?: number;
-  // Interactive Stuffs
   enableHoverHighlight?: boolean;
   isLoading?: boolean;
   loadingBars?: number;
-  // Glow Effects
   glowingBars?: NumericDataKeys<TData>[];
-  // Brush
   showBrush?: boolean;
   brushHeight?: number;
   brushFormatLabel?: (value: unknown, index: number) => string;
   onBrushChange?: (range: EvilBrushRange) => void;
-  // Background
   backgroundVariant?: BackgroundVariant;
-  // Buffer Bar - renders last data point bars as hatched/lines style
+  /** Renders last data point bars as hatched/lines style. */
   enableBufferBar?: boolean;
 };
 
@@ -149,11 +140,9 @@ export function EvilBarChart<
   const { loadingData, onShimmerExit } = useLoadingData(isLoading, loadingBars);
   const chartId = useId().replace(/:/g, ""); // Remove colons for valid CSS selectors
 
-  // ── Zoom state ──────────────────────────────────────────────────────────
   const { visibleData, brushProps } = useEvilBrush({ data });
   const displayData = showBrush && !isLoading ? visibleData : data;
 
-  // Wrapper function to update state and call parent callback
   const handleSelectionChange = useCallback(
     (newSelectedDataKey: string | null) => {
       setSelectedDataKey(newSelectedDataKey);
@@ -267,7 +256,6 @@ export function EvilBarChart<
             const isGlowing = glowingBars.includes(dataKey as NumericDataKeys<TData>);
             const filter = isGlowing ? `url(#${chartId}-bar-glow-${dataKey})` : undefined;
 
-            // Shared props for both shape and activeBar
             const customBarProps = {
               chartId,
               dataKey,
@@ -350,7 +338,6 @@ export function EvilBarChart<
   );
 }
 
-// Types for custom bar shape
 type BarShapeProps = {
   x?: number;
   y?: number;
@@ -379,7 +366,6 @@ type CustomBarProps = {
   onClick?: () => void;
 } & BarShapeProps;
 
-// Custom bar shape component for different variants
 const CustomBar = (props: CustomBarProps) => {
   const {
     x = 0,
@@ -473,7 +459,6 @@ const CustomBar = (props: CustomBarProps) => {
   );
 };
 
-// Shared vertical color gradient (top to bottom) - used for bar fill
 const VerticalColorGradientStyle = ({
   chartConfig,
   chartId,
@@ -514,7 +499,6 @@ const VerticalColorGradientStyle = ({
   </>
 );
 
-// Hatched pattern style for bars - uses mask to preserve gradient colors
 const HatchedPatternStyle = ({
   chartConfig,
   chartId,
@@ -563,7 +547,6 @@ const HatchedPatternStyle = ({
   </>
 );
 
-// Buffer hatched pattern style - diagonal lines only (no background fill), used for the last bar when enableBufferBar is true
 const BufferHatchedPatternStyle = ({
   chartConfig,
   chartId,
@@ -612,7 +595,6 @@ const BufferHatchedPatternStyle = ({
   </>
 );
 
-// Duotone pattern style for bars (half opacity, half full) - uses objectBoundingBox for per-bar effect
 const DuotonePatternStyle = ({
   chartConfig,
   chartId,
@@ -698,7 +680,6 @@ const DuotonePatternStyle = ({
   </>
 );
 
-// Duotone reverse pattern style for bars (full opacity first, then half) - uses objectBoundingBox for per-bar effect
 const DuotoneReversePatternStyle = ({
   chartConfig,
   chartId,
@@ -787,7 +768,6 @@ const DuotoneReversePatternStyle = ({
   </>
 );
 
-// Gradient pattern style for bars (top to bottom fade) - uses mask to preserve gradient colors
 const GradientPatternStyle = ({
   chartConfig,
   chartId,
@@ -828,7 +808,6 @@ const GradientPatternStyle = ({
   </>
 );
 
-// Stripped pattern style for bars (low opacity body with full opacity top) - uses mask to preserve gradient colors
 const StrippedPatternStyle = ({
   chartConfig,
   chartId,
@@ -869,7 +848,6 @@ const StrippedPatternStyle = ({
   </>
 );
 
-// Glow filter style for glowing bars
 const GlowFilterStyle = ({ chartId, glowingBars }: { chartId: string; glowingBars: string[] }) => (
   <>
     {glowingBars.map((dataKey) => (
@@ -900,7 +878,6 @@ const GlowFilterStyle = ({ chartId, glowingBars }: { chartId: string; glowingBar
   </>
 );
 
-// Generate gradient stops with smooth easing for loading animation
 const generateEasedGradientStops = (
   steps: number = 17,
   minOpacity: number = 0.05,
@@ -997,9 +974,6 @@ const LoadingBarPatternStyle = ({
   );
 };
 
-/**
- * Calculate bar opacity based on click selection and hover highlight state
- */
 const getBarOpacity = ({
   isClickable,
   selectedDataKey,
@@ -1015,16 +989,10 @@ const getBarOpacity = ({
   isMouseInChart?: boolean;
   isActive?: boolean;
 }) => {
-  // Check if this dataKey is selected (for click selection)
   const isSelectedDataKey = selectedDataKey === null || selectedDataKey === dataKey;
-
-  // Base opacity from click selection
   const clickOpacity = isClickable && selectedDataKey !== null ? (isSelectedDataKey ? 1 : 0.3) : 1;
 
-  // If hover highlight is enabled and mouse is in chart
   if (enableHoverHighlight && isMouseInChart) {
-    // Combine: if this bar is active/hovered, show full opacity (respecting click selection)
-    // If not hovered, dim it further
     return isActive ? clickOpacity : clickOpacity * 0.3;
   }
 

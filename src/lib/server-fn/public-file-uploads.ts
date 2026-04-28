@@ -27,7 +27,6 @@ import {
  *   4. Max size validation
  */
 
-// --- Tunables ---
 const WINDOW_MINUTES = 10;
 const MAX_PER_WINDOW = 20;
 const CLEANUP_PROBABILITY = 0.01;
@@ -53,7 +52,6 @@ const getClientIp = (): string => {
 const WINDOW_INTERVAL_SQL = sql.raw(`interval '${WINDOW_MINUTES} minutes'`);
 
 const checkUploadRateLimit = async (ip: string): Promise<void> => {
-  // Cleanup ~1% of requests
   if (Math.random() < CLEANUP_PROBABILITY) {
     await db.execute(
       sql`DELETE FROM upload_rate_limits WHERE window_start < now() - interval '1 hour'`,
@@ -188,18 +186,14 @@ export const uploadFormFile = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
-    // 1. Rate limit
     await checkUploadRateLimit(getClientIp());
 
-    // 2. Form + field validation
     const { accept, maxFileBytes } = await assertFormFileField(data.formId, data.fieldName);
 
-    // 3. MIME allowlist
     if (!isMimeAllowed(data.contentType, accept)) {
       throw new Error("mime_not_allowed");
     }
 
-    // 4. Decode + size cap
     const buffer = decodeBase64(data.base64);
     if (buffer.length === 0) {
       throw new Error("empty_file");
@@ -208,7 +202,6 @@ export const uploadFormFile = createServerFn({ method: "POST" })
       throw new Error("file_too_large");
     }
 
-    // 5. Upload to Vercel Blob
     const ext = getExtensionForMime(data.contentType) ?? "bin";
     const key = `submissions/${data.formId}/${data.draftId}/${crypto.randomUUID()}.${ext}`;
     const blob = await putBlob(key, buffer, data.contentType);

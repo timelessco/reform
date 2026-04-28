@@ -10,7 +10,7 @@ import { purgeFormCache } from "@/lib/server-fn/cdn-cache";
 import { getActiveOrgId } from "./auth-helpers";
 import { authForm } from "./auth-helpers.server";
 
-// Maximum number of versions to keep per form (TODO: make plan-based)
+// TODO: make plan-based
 const MAX_VERSIONS_PER_FORM = 20;
 
 const serializeVersion = (version: typeof formVersions.$inferSelect) => ({
@@ -22,9 +22,6 @@ const serializeVersion = (version: typeof formVersions.$inferSelect) => ({
   customization: (version.customization ?? {}) as Record<string, string>,
 });
 
-/**
- * Publish the current form draft as a new version
- */
 export const publishFormVersion = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
@@ -37,14 +34,12 @@ export const publishFormVersion = createServerFn({ method: "POST" })
     await authForm(data.formId, context.session.user.id, orgId);
 
     const result = await db.transaction(async (tx) => {
-      // Get current form draft
       const [form] = await tx.select().from(forms).where(eq(forms.id, data.formId));
 
       if (!form) {
         throw new Error("Form not found");
       }
 
-      // Get latest version info
       const [lastVersion] = await tx
         .select({ id: formVersions.id, version: formVersions.version })
         .from(formVersions)
@@ -72,7 +67,6 @@ export const publishFormVersion = createServerFn({ method: "POST" })
         settings: settingsSnapshot,
       });
 
-      // Create version snapshot
       const versionId = crypto.randomUUID();
 
       const [newVersion] = await tx
@@ -93,7 +87,6 @@ export const publishFormVersion = createServerFn({ method: "POST" })
         })
         .returning();
 
-      // Update form with new version reference, editor snapshot, and hash
       await tx
         .update(forms)
         .set({
@@ -107,7 +100,6 @@ export const publishFormVersion = createServerFn({ method: "POST" })
         })
         .where(eq(forms.id, data.formId));
 
-      // Delete old versions beyond limit (keep last MAX_VERSIONS_PER_FORM)
       const allVersions = await tx
         .select({ id: formVersions.id })
         .from(formVersions)
@@ -132,9 +124,6 @@ export const publishFormVersion = createServerFn({ method: "POST" })
     return result;
   });
 
-/**
- * Get list of published versions for a form
- */
 export const getFormVersions = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ formId: z.uuid() }))
@@ -173,14 +162,10 @@ export const getFormVersions = createServerFn({ method: "GET" })
     };
   });
 
-/**
- * Get full content of a specific version for preview
- */
 export const getFormVersionContent = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ versionId: z.uuid() }))
   .handler(async ({ data, context }) => {
-    // Get the version
     const [version] = await db
       .select()
       .from(formVersions)
@@ -197,8 +182,8 @@ export const getFormVersionContent = createServerFn({ method: "GET" })
   });
 
 /**
- * Restore a version's content to the form draft
- * Note: Does NOT update publishedContentHash to keep "has changes" state
+ * Restore a version's content to the form draft.
+ * Note: Does NOT update publishedContentHash to keep "has changes" state.
  */
 export const restoreFormVersion = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
@@ -212,7 +197,6 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
     const orgId = getActiveOrgId(context.session);
     const authPromise = authForm(data.formId, context.session.user.id, orgId);
 
-    // Get the version (start fetch in parallel with auth)
     const [version] = await db
       .select()
       .from(formVersions)
@@ -223,8 +207,7 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
       throw new Error("Version not found");
     }
 
-    // Update form draft with version content + customization
-    // Note: We don't update publishedContentHash so the form shows "has changes"
+    // We don't update publishedContentHash so the form shows "has changes".
     await db
       .update(forms)
       .set({
@@ -245,9 +228,6 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
     };
   });
 
-/**
- * Discard all changes and revert to last published version
- */
 export const discardFormChanges = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ formId: z.uuid() }))
@@ -255,7 +235,6 @@ export const discardFormChanges = createServerFn({ method: "POST" })
     const orgId = getActiveOrgId(context.session);
     await authForm(data.formId, context.session.user.id, orgId);
 
-    // Get the form with its last published version in a single query
     const [result] = await db
       .select({
         lastPublishedVersionId: forms.lastPublishedVersionId,
@@ -272,7 +251,6 @@ export const discardFormChanges = createServerFn({ method: "POST" })
     const version = result.version;
     const snapshotSettings = (version.settings ?? {}) as Record<string, unknown>;
 
-    // Compute hash over the full snapshot (matches publishFormVersion)
     const contentHash = computeContentHash({
       content: version.content,
       customization: version.customization ?? {},
@@ -293,7 +271,6 @@ export const discardFormChanges = createServerFn({ method: "POST" })
         customization: version.customization ?? {},
         icon: version.icon,
         cover: version.cover,
-        // Group 2 settings — read back from snapshot jsonb
         progressBar: (snapshotSettings.progressBar as boolean) ?? false,
         presentationMode: (snapshotSettings.presentationMode as string) ?? "card",
         saveAnswersForLater: (snapshotSettings.saveAnswersForLater as boolean) ?? true,

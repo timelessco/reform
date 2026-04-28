@@ -11,9 +11,6 @@ import {
 import { localFormCollection } from "@/collections/local/form";
 import { archivedFormListingsQueryOptions } from "@/lib/server-fn/forms";
 
-/**
- * Custom hook for real-time workspaces sync filtered by organization ID.
- */
 export const useOrgWorkspaces = (organizationId?: string) =>
   useLiveQuery(
     (q) => {
@@ -34,9 +31,6 @@ export const useOrgWorkspaces = (organizationId?: string) =>
     [organizationId],
   );
 
-/**
- * Custom hook for real-time workspace sync by ID.
- */
 export const useWorkspace = (workspaceId?: string) => {
   const result = useLiveQuery(
     (q) => {
@@ -57,7 +51,6 @@ export const useWorkspace = (workspaceId?: string) => {
 };
 
 /**
- * Custom hook for real-time forms sync filtered by organization.
  * The query-backed formListings collection already filters by org membership server-side.
  */
 export const useOrgForms = (_organizationId?: string) =>
@@ -79,7 +72,6 @@ export const useOrgForms = (_organizationId?: string) =>
   }, []);
 
 /**
- * Custom hook for real-time form sync by ID.
  * Queries the unified formListings collection and enriches with full
  * detail (content, settings, etc.) on demand via a TanStack Query.
  */
@@ -92,7 +84,6 @@ export const useForm = (formId?: string) => {
     [formId],
   );
 
-  // Enrich with full detail if content not yet loaded
   const needsEnrichment = !!formId && isInitialized() && result.data?.[0]?.content === undefined;
   useQuery({
     queryKey: ["form-enrich", formId],
@@ -104,9 +95,6 @@ export const useForm = (formId?: string) => {
   return result;
 };
 
-/**
- * Custom hook for real-time local form draft sync by ID.
- */
 export const useLocalForm = (formId?: string) =>
   useLiveQuery(
     (q) => {
@@ -116,9 +104,6 @@ export const useLocalForm = (formId?: string) =>
     [formId],
   );
 
-/**
- * Custom hook for real-time favorites sync for current user.
- */
 export const useFavorites = (userId?: string) =>
   useLiveQuery(
     (q) => {
@@ -137,9 +122,6 @@ export const useFavorites = (userId?: string) =>
     [userId],
   );
 
-/**
- * Check if a specific form is favorited by the user.
- */
 export const useIsFavorite = (userId?: string, formId?: string) => {
   const { data } = useLiveQuery(
     (q) => {
@@ -156,7 +138,6 @@ export const useIsFavorite = (userId?: string, formId?: string) => {
 };
 
 /**
- * Get user's favorite forms with full form data.
  * Fetches favorites and form listings separately and combines them.
  */
 export const useFavoriteForms = (userId?: string) => {
@@ -199,9 +180,6 @@ export const useFavoriteForms = (userId?: string) => {
 export const useArchivedForms = (enabled = true) =>
   useQuery({ ...archivedFormListingsQueryOptions(), enabled });
 
-/**
- * Returns a Map of formId → submission count derived from form listings.
- */
 export const useSubmissionCounts = () => {
   const { data: allForms } = useLiveQuery((q) => {
     if (!isInitialized()) return undefined;

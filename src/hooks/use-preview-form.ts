@@ -1,9 +1,3 @@
-/**
- * Preview form hook for rendering Plate editor content as a functional form.
- *
- * This is a simplified version of useFormBuilder that takes transformed
- * form fields directly instead of reading from useFormBuilderState.
- */
 import { useEffect, useMemo, useRef } from "react";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { useStepForm } from "@/contexts/step-form-context";
@@ -55,10 +49,8 @@ export const useStepPreviewForm = ({
     hasStartedRef.current = { stepIndex, fired: false };
   }, [stepIndex]);
 
-  // Generate Zod schema from step's field validation properties
   const validationSchema = useMemo(() => generateZodSchemaFromFields(fields), [fields]);
 
-  // Generate default values, merging with existing formData from context
   const defaultValues = useMemo(() => {
     const fieldDefaults = generateDefaultValuesFromFields(fields);
     // Merge context data (for when user goes back to previous step)
@@ -165,7 +157,7 @@ export const useStepPreviewForm = ({
         }
         firstInput?.focus();
       } catch {
-        // Silently handle error
+        // ignore
       }
     },
   });

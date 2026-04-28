@@ -41,15 +41,12 @@ const getPlaceholderForRole = (role: ButtonRole): string => {
   }
 };
 
-/**
- * Extracts text content from a node's children
- */
 const extractTextFromChildren = (children: Array<{ text?: string }>): string => {
   if (!Array.isArray(children)) return "";
   return children.map((child) => child.text || "").join("");
 };
 
-export const FormButtonElement = ({ className, children, ...props }: PlateElementProps) => {
+export const FormButtonElement = ({ children, ...props }: PlateElementProps) => {
   const { element } = props;
   const editor = useEditorRef();
   const buttonRole = (element.buttonRole as ButtonRole) ?? "submit";
@@ -70,10 +67,8 @@ export const FormButtonElement = ({ className, children, ...props }: PlateElemen
   // Local state for input - prevents re-render on every keystroke
   const [inputValue, setInputValue] = React.useState(label);
 
-  // Get display text (use placeholder if empty)
   const displayText = label.trim() || placeholder;
 
-  // Handle label change - uses setNodes on element property (reactive)
   const handleLabelChange = React.useCallback(
     (newLabel: string) => {
       const path = editor.api.findPath(element);
@@ -84,7 +79,6 @@ export const FormButtonElement = ({ className, children, ...props }: PlateElemen
     [editor, element],
   );
 
-  // Save and close popover
   const saveAndClose = React.useCallback(() => {
     handleLabelChange(inputValue);
     setIsOpen(false);
@@ -142,7 +136,6 @@ export const FormButtonElement = ({ className, children, ...props }: PlateElemen
     e.stopPropagation();
   }, []);
 
-  // Gear icon component
   const GearIcon = (
     <Popover open={isOpen} onOpenChange={handlePopoverOpenChange}>
       <PopoverTrigger
@@ -186,7 +179,7 @@ export const FormButtonElement = ({ className, children, ...props }: PlateElemen
 
   return (
     <PlateElement
-      className={cn("m-0 px-0", isPrevious ? "float-left" : "overflow-hidden flex", className)}
+      className={cn("m-0 px-0", isPrevious ? "float-left" : "overflow-hidden flex")}
       {...props}
       attributes={{ ...props.attributes, "data-bf-chrome": "" }}
     >

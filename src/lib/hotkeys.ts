@@ -27,5 +27,4 @@ export const HOTKEYS = {
   SUBMISSIONS_CLEAR_SELECTION: "Escape",
 } as const satisfies Record<string, Hotkey>;
 
-// Re-export display utilities for use in tooltips, menus, etc.
 export { formatForDisplay };

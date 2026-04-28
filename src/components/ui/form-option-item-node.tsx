@@ -1,8 +1,9 @@
 import type { TElement } from "platejs";
 import type { PlateElementProps } from "platejs/react";
 
-import { PlateElement, useEditorRef, useEditorSelector } from "platejs/react";
-import { useLayoutEffect } from "react";
+import { DndPlugin } from "@platejs/dnd";
+import { PlateElement, useEditorRef, useEditorVersion, usePluginOption } from "platejs/react";
+import { useLayoutEffect, useMemo } from "react";
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { CheckCheckIcon, ChevronsUpDownIcon } from "@/components/ui/icons";
@@ -57,60 +58,75 @@ const OptionIcon = ({ variant, index }: { variant: OptionVariant; index: number 
 export const FormOptionItemElement = ({ className, children, ...props }: PlateElementProps) => {
   const { attributes, element, ...rest } = props;
   const variant = (element.variant as OptionVariant) || "checkbox";
-  const elementId = (element as { id?: string }).id;
+  const editor = useEditorRef();
 
-  // Single consolidated selector for all derived state
-  const { optionIndex, isLastInGroup, isGroupFocused } = useEditorSelector(
-    (ed) => {
-      const path = ed.api.findPath(element);
-      if (!path) return { optionIndex: 0, isLastInGroup: false, isGroupFocused: false };
+  // Subscribe to every editor change so optionIndex follows position after reorder.
+  // props.path is computed by useNodePath which does NOT update on sibling reorder
+  // (slate-react memoizes elements by identity), so we look up the current index
+  // by node identity in editor.children each render.
+  const version = useEditorVersion();
+  const focusIndex = editor.selection?.focus.path[0];
 
-      const nodes = ed.children as TElement[];
-
-      // Option index: count consecutive formOptionItem siblings before this one
-      let idx = 0;
-      for (let i = path[0] - 1; i >= 0; i--) {
-        if (nodes[i]?.type === "formOptionItem") idx++;
-        else break;
-      }
-
-      // Last in group: next sibling is not formOptionItem
-      const nextNode = nodes[path[0] + 1];
-      const isLast = !nextNode || nextNode.type !== "formOptionItem";
-
-      // Group focused: a formOptionItem in the SAME contiguous group has focus
-      let groupFocused = false;
-      if (ed.selection) {
-        const focusIndex = ed.selection.focus.path[0];
-        const focusNode = nodes[focusIndex];
-        if (focusNode?.type === "formOptionItem") {
-          // Find this group's start and end indices
-          let groupStart = path[0];
-          while (groupStart > 0 && nodes[groupStart - 1]?.type === "formOptionItem") groupStart--;
-          let groupEnd = path[0];
-          while (groupEnd < nodes.length - 1 && nodes[groupEnd + 1]?.type === "formOptionItem")
-            groupEnd++;
-          groupFocused = focusIndex >= groupStart && focusIndex <= groupEnd;
-        }
-      }
-
+  const { optionIndex, isLastInGroup, isGroupFocused, isStandalone } = useMemo(() => {
+    const nodes = editor.children as TElement[];
+    const pathIdx = nodes.indexOf(element);
+    if (pathIdx < 0)
       return {
-        optionIndex: idx,
-        isLastInGroup: isLast,
-        isGroupFocused: groupFocused,
+        optionIndex: 0,
+        isLastInGroup: false,
+        isGroupFocused: false,
+        isStandalone: false,
       };
-    },
-    [elementId],
-  );
 
-  const showGhost = isLastInGroup && isGroupFocused;
+    let idx = 0;
+    for (let i = pathIdx - 1; i >= 0; i--) {
+      if (nodes[i]?.type === "formOptionItem") idx++;
+      else break;
+    }
+
+    const nextNode = nodes[pathIdx + 1];
+    const isLast = !nextNode || nextNode.type !== "formOptionItem";
+
+    // Standalone = no formLabel above AND no sibling option (above or below).
+    // Used to decide whether to anchor the required badge inline on this row,
+    // since a grouped option's badge already floats over the formLabel.
+    const prevNode = pathIdx > 0 ? nodes[pathIdx - 1] : null;
+    const standalone = idx === 0 && isLast && prevNode?.type !== "formLabel";
+
+    let groupFocused = false;
+    if (focusIndex !== undefined) {
+      const focusNode = nodes[focusIndex];
+      if (focusNode?.type === "formOptionItem") {
+        let groupStart = pathIdx;
+        while (groupStart > 0 && nodes[groupStart - 1]?.type === "formOptionItem") groupStart--;
+        let groupEnd = pathIdx;
+        while (groupEnd < nodes.length - 1 && nodes[groupEnd + 1]?.type === "formOptionItem")
+          groupEnd++;
+        groupFocused = focusIndex >= groupStart && focusIndex <= groupEnd;
+      }
+    }
+
+    return {
+      optionIndex: idx,
+      isLastInGroup: isLast,
+      isGroupFocused: groupFocused,
+      isStandalone: standalone,
+    };
+    // eslint-disable-next-line eslint-plugin-react-hooks/exhaustive-deps -- version forces recompute on every editor change
+  }, [editor, element, focusIndex, version]);
+
+  // Suppress the "Add option" ghost while any drag is in progress — Plate
+  // snapshots the option's DOM for the drag preview, and a visible ghost
+  // row would be captured alongside it.
+  const draggingId = usePluginOption(DndPlugin, "draggingId") as string | string[] | undefined;
+  const isAnyDragging = Array.isArray(draggingId) ? draggingId.length > 0 : Boolean(draggingId);
+  const showGhost = isLastInGroup && isGroupFocused && !isAnyDragging;
 
   // When the ghost is visible, push the NEXT block (pageBreak / formButton / etc.)
   // down so the ghost doesn't overlap it. We walk up to the block-draggable
   // wrapper and add margin-top to its next sibling instead of expanding this
   // element, which would displace the drag-handle gutter (h-full of the block
   // wrapper).
-  const editor = useEditorRef();
   useLayoutEffect(() => {
     let domNode: HTMLElement | null = null;
     try {
@@ -136,7 +152,6 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
     };
   }, [editor, element, showGhost]);
 
-  // For multiSelect, apply colored background to the option row
   const colorStyle =
     variant === "multiSelect"
       ? MULTI_SELECT_COLORS[optionIndex % MULTI_SELECT_COLORS.length]
@@ -153,7 +168,7 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
       element={element}
       {...rest}
     >
-      <div className="flex h-7 items-center gap-2 pl-[2px]">
+      <div className="flex h-7 items-center gap-2 pl-[2px] pr-6">
         <span contentEditable={false} className="shrink-0 select-none pointer-events-none">
           <OptionIcon variant={variant} index={optionIndex} />
         </span>
@@ -163,13 +178,18 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
       {showGhost && (
         <div
           contentEditable={false}
+          data-bf-drag-ignore="true"
           className="absolute left-0 right-0 top-[calc(100%+4px)] flex h-7 items-center gap-2 pl-[2px] opacity-40 select-none pointer-events-none"
         >
           <OptionIcon variant={variant} index={optionIndex + 1} />
           <span className="text-sm text-muted-foreground">Add option</span>
         </div>
       )}
-      <RequiredBadgeButton required={Boolean(element.required)} path={props.path} />
+      <RequiredBadgeButton
+        required={Boolean(element.required)}
+        path={props.path}
+        showWithoutLabel={isStandalone}
+      />
     </PlateElement>
   );
 };

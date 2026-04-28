@@ -28,7 +28,6 @@ const PublicFormRoute = () => {
   const rawCustomization = loaderData?.form?.customization ?? null;
   const defaultMode = (rawCustomization?.defaultMode as PublicTheme | undefined) ?? "system";
 
-  // Viewer's chosen theme — initialized from localStorage override or defaultMode
   const [viewerTheme, setViewerTheme] = useState<PublicTheme>(() => {
     if (typeof window === "undefined") return defaultMode;
     const saved = window.localStorage.getItem(themeStorageKey(formId)) as PublicTheme | null;
@@ -40,7 +39,6 @@ const PublicFormRoute = () => {
     return viewerTheme;
   });
 
-  // Apply theme class to documentElement (scoped to this route's lifetime)
   useEffect(() => {
     const root = document.documentElement;
     const apply = (resolved: "light" | "dark") => {
@@ -60,7 +58,6 @@ const PublicFormRoute = () => {
     }
   }, [viewerTheme]);
 
-  // Background color for body
   useEffect(() => {
     document.body.style.backgroundColor = "var(--color-background)";
     return () => {
@@ -96,7 +93,6 @@ const PublicFormRoute = () => {
   const themeCss = useMemo(() => generateDualThemeCss(rawCustomization), [rawCustomization]);
   const googleFontUrl = useMemo(() => getGoogleFontLinkUrl(rawCustomization), [rawCustomization]);
 
-  // Show toggle only when creator picked "system" and we're not in popup/transparent embed
   const showThemeToggle = defaultMode === "system" && !search.popup && !isTransparent;
 
   return (
@@ -131,9 +127,7 @@ const PublicFormRoute = () => {
 };
 
 export const Route = createFileRoute("/forms/$formId")({
-  // SSR loader - fetches form data on the server for SEO
   loader: async ({ params }) => getPublicFormViewRSC({ data: { id: params.formId } }),
-  // SEO meta tags
   head: ({ loaderData, params }) => {
     const defaultMode = loaderData?.form?.customization?.defaultMode || "system";
     const formId = params.formId;
@@ -187,20 +181,13 @@ export const Route = createFileRoute("/forms/$formId")({
   notFoundComponent: NotFound,
   validateSearch: zodValidator(
     z.object({
-      // Transparent background for iframe embeds
       transparentBackground: z.boolean().optional().default(false),
-      transparent: z.coerce.boolean().optional(), // Alias for transparentBackground
-      // Popup mode (embedded via popup.js)
+      transparent: z.coerce.boolean().optional(),
       popup: z.coerce.boolean().optional().default(false),
-      // Hide form title in popup
       hideTitle: z.coerce.boolean().optional().default(false),
-      // Align form content to the left
       alignLeft: z.coerce.boolean().optional().default(false),
-      // Origin page for tracking
       originPage: z.string().optional(),
-      // Dynamic height for standard iframe embeds
       dynamicHeight: z.coerce.boolean().optional().default(false),
-      // Dynamic width — form fields fill full width with padding
       dynamicWidth: z.coerce.boolean().optional().default(false),
     }),
   ),

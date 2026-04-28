@@ -72,8 +72,6 @@ export const IconPickerContent = ({
   );
 };
 
-// --- Internal sub-components ---
-
 type IconPickerHeaderProps = {
   searchValue: string;
   onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;

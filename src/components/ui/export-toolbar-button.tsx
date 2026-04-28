@@ -64,7 +64,6 @@ export const ExportToolbarButton = (props: React.ComponentProps<typeof DropdownM
     link.click();
     link.remove();
 
-    // Clean up the blob URL
     window.URL.revokeObjectURL(blobUrl);
   }, []);
 

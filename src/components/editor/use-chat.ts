@@ -131,10 +131,8 @@ export const useChat = () => {
 
         const discussions = editor.getOption(discussionPlugin, "discussions") || [];
 
-        // Generate a new discussion ID
         const discussionId = nanoid();
 
-        // Create a new comment
         const newComment = {
           id: nanoid(),
           contentRich: [{ children: [{ text: aiComment.comment }], type: "p" }],
@@ -144,7 +142,6 @@ export const useChat = () => {
           userId: editor.getOption(discussionPlugin, "currentUserId"),
         };
 
-        // Create a new discussion
         const newDiscussion = {
           id: discussionId,
           comments: [newComment],
@@ -156,11 +153,9 @@ export const useChat = () => {
           userId: editor.getOption(discussionPlugin, "currentUserId"),
         };
 
-        // Update discussions
         const updatedDiscussions = [...discussions, newDiscussion];
         editor.setOption(discussionPlugin, "discussions", updatedDiscussions);
 
-        // Apply comment marks to the editor
         editor.tf.withMerging(() => {
           editor.tf.setNodes(
             {
@@ -258,10 +253,8 @@ const fakeStreamText = async ({
 
       signal?.addEventListener("abort", abortHandler);
 
-      // Generate a unique message ID
       const messageId = `msg_${faker.string.alphanumeric(40)}`;
 
-      // Handle comment data differently
       if (sample === "comment") {
         controller.enqueue(encoder.encode('data: {"type":"start"}\n\n'));
         await new Promise((resolve) => setTimeout(resolve, 10));
@@ -269,7 +262,6 @@ const fakeStreamText = async ({
         controller.enqueue(encoder.encode('data: {"type":"start-step"}\n\n'));
         await new Promise((resolve) => setTimeout(resolve, 10));
 
-        // For comments, send data events directly
         for (const block of blocks) {
           for (const chunk of block) {
             await new Promise((resolve) => setTimeout(resolve, chunk.delay));
@@ -284,10 +276,8 @@ const fakeStreamText = async ({
           }
         }
 
-        // Send the final DONE event
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
       } else {
-        // Send initial stream events for text content
         controller.enqueue(encoder.encode('data: {"type":"start"}\n\n'));
         await new Promise((resolve) => setTimeout(resolve, 10));
 
@@ -304,7 +294,6 @@ const fakeStreamText = async ({
         for (let i = 0; i < blocks.length; i++) {
           const block = blocks[i];
 
-          // Stream the block content
           for (const chunk of block) {
             await new Promise((resolve) => setTimeout(resolve, chunk.delay));
 
@@ -313,7 +302,6 @@ const fakeStreamText = async ({
               return;
             }
 
-            // Properly escape the text for JSON
             const escapedText = chunk.texts
               .replace(/\\/g, "\\\\") // Escape backslashes first
               .replace(/"/g, String.raw`\"`) // Escape quotes
@@ -328,7 +316,6 @@ const fakeStreamText = async ({
             );
           }
 
-          // Add double newline after each block except the last one
           if (i < blocks.length - 1) {
             controller.enqueue(
               encoder.encode(
@@ -338,7 +325,6 @@ const fakeStreamText = async ({
           }
         }
 
-        // Send end events
         controller.enqueue(encoder.encode(`data: {"type":"text-end","id":"${messageId}"}\n\n`));
         await new Promise((resolve) => setTimeout(resolve, 10));
 
@@ -1253,38 +1239,6 @@ const getChunkData = (faker: Faker) => {
         delay,
         texts: "uts.\n\n",
       },
-      // {
-      //  delay,
-      //   texts: '<column_group layout="[50,50]">\n',
-      // },
-      // {
-      //  delay,
-      //   texts: '<column width="50%">\n',
-      // },
-      // {
-      //  delay,
-      //   texts: '  left\n',
-      // },
-      // {
-      //  delay,
-      //   texts: '</column>\n',
-      // },
-      // {
-      //  delay,
-      //   texts: '<column width="50%">\n',
-      // },
-      // {
-      //  delay,
-      //   texts: '  right\n',
-      // },
-      // {
-      //  delay,
-      //   texts: '</column>\n',
-      // },
-      // {
-      //  delay,
-      //   texts: '</column_group>\n\n',
-      // },
       {
         delay,
         texts: "PDF ",
@@ -1485,7 +1439,7 @@ const createCommentChunks = (editor: PlateEditor, faker: Faker) => {
   const result = new Set<number>();
 
   while (result.size < commentCount) {
-    const num = Math.floor(Math.random() * max); // 0 to max-1 (fixed: was 1 to max)
+    const num = Math.floor(Math.random() * max);
     result.add(num);
   }
 

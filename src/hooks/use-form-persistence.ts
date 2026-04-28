@@ -7,7 +7,6 @@ const DEBOUNCE_MS = 500;
 export const useFormPersistence = (formId: string, enabled: boolean) => {
   const storageKey = `${STORAGE_KEY_PREFIX}${formId}`;
 
-  // Load initial data from localStorage
   const loadSavedData = useCallback((): Record<string, unknown> | null => {
     if (!enabled) return null;
     if (typeof window === "undefined") return null;
@@ -27,7 +26,6 @@ export const useFormPersistence = (formId: string, enabled: boolean) => {
     }
   }, [storageKey, enabled]);
 
-  // Save data to localStorage (debounced)
   const saveData = useDebouncedCallback(
     (data: Record<string, unknown>) => {
       if (typeof window === "undefined") return;
@@ -41,7 +39,6 @@ export const useFormPersistence = (formId: string, enabled: boolean) => {
     { wait: DEBOUNCE_MS, enabled },
   );
 
-  // Clear saved data (on successful submission)
   const clearSavedData = useCallback(() => {
     if (typeof window === "undefined") return;
 

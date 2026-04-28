@@ -45,7 +45,6 @@ export const StepForm = ({
     formName: `stepForm-${stepIndex}`,
   });
 
-  // Group segments for rendering (combine adjacent buttons)
   const groupedItems = useMemo(() => groupSegmentsForRendering(segments), [segments]);
 
   const formRef = useRef<HTMLFormElement>(null);
@@ -103,7 +102,6 @@ export const StepForm = ({
         className=" focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {groupedItems.map((item) => {
-          // Handle button groups (Previous + Next/Submit on same line)
           if (item.type === "buttonGroup") {
             const prevButton = item.buttons.find((b) => b.buttonRole === "previous");
             const actionButton = item.buttons.find(
@@ -140,7 +138,6 @@ export const StepForm = ({
             );
           }
 
-          // Static segment — render via PlateStatic
           if (item.type === "static") {
             return (
               <StaticContentBlock
@@ -150,11 +147,9 @@ export const StepForm = ({
             );
           }
 
-          // Field segment
           if (item.type === "field") {
             const { field } = item;
 
-            // Handle button separately
             if (field.fieldType === "Button") {
               return (
                 <RenderStepButton
@@ -167,7 +162,6 @@ export const StepForm = ({
               );
             }
 
-            // Input/Textarea — delegate to existing renderer
             return (
               <div key={field.id} className="w-full" data-bf-input>
                 <RenderStepPreviewInput element={field} form={form} />
@@ -209,8 +203,6 @@ export const StepForm = ({
   );
 };
 
-// --- Grouping logic ---
-
 type ButtonField = {
   id: string;
   name: string;
@@ -238,7 +230,6 @@ const groupSegmentsForRendering = (segments: PreviewSegment[]): GroupedSegment[]
     }
   }
 
-  // Append buttons as a group (or single) at the end
   if (allButtons.length > 1) {
     result.push({ type: "buttonGroup", buttons: allButtons });
   } else if (allButtons.length === 1) {
@@ -247,8 +238,6 @@ const groupSegmentsForRendering = (segments: PreviewSegment[]): GroupedSegment[]
 
   return result;
 };
-
-// --- Button renderer ---
 
 /**
  * Renders button elements for step forms.
@@ -276,7 +265,6 @@ const RenderStepButton = ({
   // Matches editor button: h-8, 13px font, px-2.5
   const buttonStyle = { fontSize: "13px" } as const;
 
-  // Previous button - onClick handler from context
   if (buttonRole === "previous") {
     const button = (
       <Button
@@ -298,7 +286,6 @@ const RenderStepButton = ({
     );
   }
 
-  // Next button - type="submit" triggers form validation and onSubmit
   if (buttonRole === "next") {
     const button = (
       <Button
@@ -320,7 +307,6 @@ const RenderStepButton = ({
     );
   }
 
-  // Submit button - type="submit" triggers form validation and final submit
   const isMultiStep = totalSteps > 1;
   const submitButton = (
     <Button

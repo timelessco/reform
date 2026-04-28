@@ -42,8 +42,6 @@ export interface EmbedOptions {
   customDomain: boolean;
 }
 
-/* ─── Flat field interface for TanStack Form bindings ─── */
-
 /** Flat representation used by TanStack Form field bindings and URL search params */
 export interface EmbedFormFields {
   height: number;
@@ -139,8 +137,6 @@ interface EmbedConfigPanelProps {
   onDomainAssigned?: (domainId: string | null, slug: string | null) => void;
 }
 
-/* ─── Layout helpers matching Figma node 24119:5595 ─── */
-
 export const ConfigCard = ({
   children,
   variant = "rounded",
@@ -190,7 +186,6 @@ export const ConfigRow = ({
   </div>
 );
 
-/* ─── Select trigger class (shared) ─── */
 /**
  * Figma button: h-[24px] px-[8px] py-[5.5px] rounded-[5px] gap-[4px]
  * Must override SelectTrigger defaults: data-[size=default]:h-8, py-2, pe-2, ps-2.5, rounded-lg
@@ -198,8 +193,6 @@ export const ConfigRow = ({
  */
 export const selectTriggerCls =
   "data-[size=default]:h-[24px] shrink-0 border-none bg-transparent shadow-none rounded-[5px] px-2 py-0 gap-1 w-auto text-[13px] text-foreground font-medium whitespace-nowrap ";
-
-/* ─── Public entry point ─── */
 
 export const EmbedConfigPanel = ({
   embedType,
@@ -235,8 +228,6 @@ export const EmbedConfigPanel = ({
   );
 };
 
-/* ─── Label maps ─── */
-
 const triggerLabels: Record<string, string> = {
   button: "On Button Click",
   auto: "Automatically",
@@ -251,9 +242,6 @@ const positionLabels: Record<string, string> = {
 
 const selectDynamicHeight = (s: { values: { dynamicHeight: boolean } }) => s.values.dynamicHeight;
 
-/* ─── Sections ─── */
-
-/* ─── Sections ─── */
 const CustomizeSection = ({
   embedType,
   form,
@@ -457,7 +445,6 @@ const CustomizeSection = ({
     );
   }
 
-  // fullpage
   return (
     <ConfigCard>
       <form.Field name="transparentBackground">

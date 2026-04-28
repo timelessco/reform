@@ -46,7 +46,6 @@ export const createForm = createServerFn({ method: "POST" })
       cover: z.string().nullable().optional(),
       isMultiStep: z.boolean().optional(),
       status: z.enum(["draft", "published", "archived"]).optional(),
-      // Form settings fields (all optional with defaults)
       language: z.string().optional(),
       redirectOnCompletion: z.boolean().optional(),
       redirectUrl: z.string().nullable().optional(),
@@ -93,7 +92,6 @@ export const createForm = createServerFn({ method: "POST" })
         cover: data.cover,
         isMultiStep: data.isMultiStep ?? false,
         status: data.status ?? "draft",
-        // Form settings fields
         language: data.language,
         redirectOnCompletion: data.redirectOnCompletion,
         redirectUrl: data.redirectUrl,
@@ -145,7 +143,6 @@ export const updateForm = createServerFn({ method: "POST" })
       isMultiStep: z.boolean().optional(),
       status: z.enum(["draft", "published", "archived"]).optional(),
       updatedAt: z.string().optional(),
-      // Form settings fields
       language: z.string().optional(),
       redirectOnCompletion: z.boolean().optional(),
       redirectUrl: z.string().nullable().optional(),
@@ -405,7 +402,6 @@ export const updateFormSlug = createServerFn({ method: "POST" })
       throw new Error("This slug is reserved and cannot be used");
     }
 
-    // Look up the form to get its workspace, then the org
     const [formRecord] = await db
       .select({ workspaceId: forms.workspaceId })
       .from(forms)
@@ -424,7 +420,6 @@ export const updateFormSlug = createServerFn({ method: "POST" })
       throw new Error("Workspace not found");
     }
 
-    // Check uniqueness within the org
     const existing = await db
       .select({ id: forms.id })
       .from(forms)
@@ -474,7 +469,6 @@ export const assignFormDomain = createServerFn({ method: "POST" })
         throw new Error("Custom domains require a Pro subscription. Please upgrade to continue.");
       }
 
-      // Verify the domain exists and belongs to the same org
       const [domain] = await db
         .select()
         .from(customDomains)
@@ -492,7 +486,6 @@ export const assignFormDomain = createServerFn({ method: "POST" })
         throw new Error("Custom domain is not verified");
       }
 
-      // If the form has no slug, auto-generate one from the title
       const [formRecord] = await db
         .select({ slug: forms.slug, title: forms.title })
         .from(forms)
@@ -501,7 +494,6 @@ export const assignFormDomain = createServerFn({ method: "POST" })
       if (formRecord && !formRecord.slug) {
         let autoSlug = generateSlug(formRecord.title);
 
-        // Check uniqueness within the org (same pattern as updateFormSlug)
         const existing = await db
           .select({ id: forms.id })
           .from(forms)

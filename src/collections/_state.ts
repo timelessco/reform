@@ -28,7 +28,6 @@ import type {
 } from "@/lib/server-fn/workspaces";
 import type { addFavorite, removeFavorite, reorderFavorite } from "@/lib/server-fn/favorites";
 
-// Utility types to extract input/output from TanStack server functions
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- `any` required: function constraints need contravariant params
 type ServerFn = (...args: any[]) => any;
 export type ServerFnInput<T extends ServerFn> = NonNullable<Parameters<T>[0]>["data"];
@@ -90,7 +89,6 @@ export type ServerFns = {
   ) => Promise<ServerFnOutput<typeof reorderWorkspace>>;
 };
 
-// --- Singleton state ---
 export const state = {
   serverFns: null as ServerFns | null,
   queryClient: null as QueryClient | null,

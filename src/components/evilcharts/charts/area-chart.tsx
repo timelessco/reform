@@ -22,7 +22,6 @@ import type { TooltipRoundness, TooltipVariant } from "@/components/evilcharts/u
 import { ChartDot, DotVariant } from "@/components/evilcharts/ui/dot";
 import { motion } from "motion/react";
 
-// Constants
 const STROKE_WIDTH = 0.8;
 const LOADING_AREA_DATA_KEY = "loading";
 const LOADING_ANIMATION_DURATION = 2000; // in milliseconds
@@ -35,7 +34,6 @@ type AreaVariant = "gradient" | "gradient-reverse" | "solid" | "dotted" | "lines
 type StrokeVariant = "solid" | "dashed" | "animated-dashed";
 type StackType = "default" | "expanded" | "stacked";
 
-// Validating Tyes to make sure user have provided valid data according to chartConfig
 type ValidateConfigKeys<TData, TConfig> = {
   [K in keyof TConfig]: K extends keyof TData ? ChartConfig[string] : never;
 };
@@ -62,23 +60,19 @@ type BaseEvilAreaChartProps<
   legendVariant?: ChartLegendVariant;
   connectNulls?: boolean;
   tickGap?: number;
-  // Hide Stuffs
   hideTooltip?: boolean;
   hideCartesianGrid?: boolean;
   hideLegend?: boolean;
   hideCursorLine?: boolean;
-  // Tooltip
   tooltipRoundness?: TooltipRoundness;
   tooltipVariant?: TooltipVariant;
   tooltipDefaultIndex?: number;
   isLoading?: boolean;
   loadingPoints?: number;
-  // Brush
   showBrush?: boolean;
   brushHeight?: number;
   brushFormatLabel?: (value: unknown, index: number) => string;
   onBrushChange?: (range: EvilBrushRange) => void;
-  // Background
   backgroundVariant?: BackgroundVariant;
 };
 
@@ -140,12 +134,9 @@ export function EvilAreaChart<
   const { loadingData, onShimmerExit } = useLoadingData(isLoading, loadingPoints);
   const chartId = useId().replace(/:/g, ""); // Remove colons for valid CSS selectors
 
-  // ── Zoom state ──────────────────────────────────────────────────────────
   const { visibleData, brushProps } = useEvilBrush({ data });
   const displayData = showBrush && !isLoading ? visibleData : data;
 
-  // Wrapper function to update state and call parent callback
-  // Only call callback when isClickable is true
   const handleSelectionChange = useCallback(
     (newSelectedDataKey: string | null) => {
       setSelectedDataKey(newSelectedDataKey);
@@ -268,7 +259,6 @@ export function EvilAreaChart<
             const isSelected = selectedDataKey === dataKey;
             const hasSelection = selectedDataKey !== null;
 
-            // Get fill pattern based on variant and selection state
             const fillPattern = getFillPattern(
               areaVariant,
               isClickable,
@@ -323,7 +313,6 @@ export function EvilAreaChart<
                 style={isClickable ? { cursor: "pointer" } : undefined}
                 onClick={() => {
                   if (!isClickable) return;
-                  // Toggle: if already selected, unselect; otherwise select
                   handleSelectionChange(selectedDataKey === dataKey ? null : dataKey);
                 }}
               >
@@ -390,7 +379,6 @@ export function EvilAreaChart<
   );
 }
 
-// Returns opacity object for both fill and stroke, same values for both
 const getOpacity = (isClickable: boolean, selectedDataKey: string | null, dataKey: string) => {
   if (!isClickable || selectedDataKey === null) {
     return { fill: 0.8, stroke: 0.8, dot: 1 };
@@ -400,7 +388,6 @@ const getOpacity = (isClickable: boolean, selectedDataKey: string | null, dataKe
     : { fill: 0.2, stroke: 0.3, dot: 0.3 };
 };
 
-// Returns the appropriate fill pattern based on variant and selection state
 const getFillPattern = (
   variant: AreaVariant,
   isClickable: boolean,
@@ -409,12 +396,10 @@ const getFillPattern = (
   dataKey: string,
   chartId: string,
 ): string => {
-  // If clickable and there's a selection but this item is not selected, use unselected diagonal pattern
   if (isClickable && hasSelection && !isSelected) {
     return `url(#${chartId}-unselected-${dataKey})`;
   }
 
-  // Otherwise, use the variant-specific pattern
   switch (variant) {
     case "gradient":
       return `url(#${chartId}-gradient-${dataKey})`;
@@ -433,7 +418,6 @@ const getFillPattern = (
   }
 };
 
-// Animated dashed-stroke style for the area chart
 const AnimatedDashedStyle = () => (
   <>
     <animate
@@ -453,8 +437,10 @@ const AnimatedDashedStyle = () => (
   </>
 );
 
-// Shared horizontal color gradient (left to right) - used by all variants and stroke
-// This is ALWAYS rendered so colors are available for any variant
+/**
+ * Shared horizontal color gradient (left to right) used by all variants and stroke.
+ * ALWAYS rendered so colors are available for any variant.
+ */
 const HorizontalColorGradientStyle = ({
   chartConfig,
   chartId,
@@ -479,13 +465,11 @@ const HorizontalColorGradientStyle = ({
           gradientUnits={isExpanded ? "userSpaceOnUse" : "objectBoundingBox"}
         >
           {colorsCount === 1 ? (
-            // Single color: same color at start and end
             <>
               <stop offset="0%" stopColor={`var(--color-${dataKey}-0)`} />
               <stop offset="100%" stopColor={`var(--color-${dataKey}-0)`} />
             </>
           ) : (
-            // Multiple colors: distribute evenly
             // Fallback to first color if index doesn't exist in current theme
             Array.from({ length: colorsCount }, (_, index) => (
               <stop
@@ -501,7 +485,6 @@ const HorizontalColorGradientStyle = ({
   </>
 );
 
-// Linear gradient variant - adds vertical fade mask on top of the shared color gradient
 const LinearGradientStyle = ({
   chartConfig,
   chartId,
@@ -542,7 +525,6 @@ const LinearGradientStyle = ({
   </>
 );
 
-// Reverse gradient for the area chart - vertical fade (top transparent, bottom visible)
 const ReverseGradientStyle = ({
   chartConfig,
   chartId,
@@ -583,7 +565,6 @@ const ReverseGradientStyle = ({
   </>
 );
 
-// Lines pattern for the area chart - diagonal lines with gradient
 const LinesPatternStyle = ({
   chartConfig,
   chartId,
@@ -634,7 +615,6 @@ const LinesPatternStyle = ({
   </>
 );
 
-// Solid pattern for the area chart - uniform opacity with gradient
 const SolidPatternStyle = ({
   chartConfig,
   chartId,
@@ -675,7 +655,6 @@ const SolidPatternStyle = ({
   </>
 );
 
-// Dotted pattern for the area chart - dots with gradient
 const DottedPatternStyle = ({
   chartConfig,
   chartId,
@@ -727,7 +706,6 @@ const DottedPatternStyle = ({
   </>
 );
 
-// Diagonal lines pattern for non-selected areas
 const UnselectedDiagonalPatternStyle = ({
   chartConfig,
   chartId,
@@ -791,7 +769,6 @@ const UnselectedDiagonalPatternStyle = ({
   );
 };
 
-// Hatched pattern with striped gradient effect
 const HatchedPatternStyle = ({
   chartConfig,
   chartId,
@@ -849,7 +826,6 @@ const HatchedPatternStyle = ({
   </>
 );
 
-// Generate gradient stops with smooth easing for loading animation
 const generateEasedGradientStops = (
   steps: number = 17,
   minOpacity: number = 0.05,

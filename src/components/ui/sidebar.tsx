@@ -96,8 +96,6 @@ export const SidebarProvider = ({
     localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(clamped));
   }, []);
 
-  // This is the internal state of the sidebar.
-  // We use openProp and setOpenProp for control from outside the component.
   const [_open, _setOpen] = useState(defaultOpen);
   const open = openProp ?? _open;
   const setOpen = useCallback(
@@ -109,25 +107,20 @@ export const SidebarProvider = ({
         _setOpen(openState);
       }
 
-      // This sets the cookie to keep the sidebar state.
       document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
     },
     [setOpenProp, open],
   );
 
-  // Helper to toggle the sidebar.
   const toggleSidebar = useCallback(
     () => (isMobile ? setOpenMobile((prev) => !prev) : setOpen((prev) => !prev)),
     [isMobile, setOpen],
   );
 
-  // Adds a keyboard shortcut to toggle the sidebar.
   useHotkey(HOTKEYS.TOGGLE_SIDEBAR, () => toggleSidebar(), {
     ignoreInputs: true,
   });
 
-  // We add a state so that we can do data-state="expanded" or "collapsed".
-  // This makes it easier to style the sidebar with Tailwind classes.
   const state = open ? "expanded" : "collapsed";
 
   const contextValue = useMemo<SidebarContextProps>(
@@ -238,7 +231,6 @@ export const Sidebar = ({
       data-side={side}
       data-slot="sidebar"
     >
-      {/* This is what handles the sidebar gap on desktop */}
       <div
         data-slot="sidebar-gap"
         className={cn(
@@ -255,7 +247,6 @@ export const Sidebar = ({
         data-side={side}
         className={cn(
           "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear [[data-resizing]_&]:transition-none data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)] md:flex",
-          // Adjust the padding for floating and inset variants.
           variant === "floating" || variant === "inset"
             ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
             : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-e group-data-[side=right]:border-s",

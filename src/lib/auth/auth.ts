@@ -47,9 +47,6 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: false,
   },
-  // experimental : {
-  //   joins: true,
-  // },
   user: {
     changeEmail: {
       enabled: true,
@@ -71,7 +68,6 @@ export const auth = betterAuth({
             const now = new Date();
             const orgId = crypto.randomUUID();
 
-            // Create organization
             const orgName = user.name || user.email.split("@")[0];
             const [org] = await db
               .insert(schema.organization)
@@ -83,7 +79,6 @@ export const auth = betterAuth({
               })
               .returning();
 
-            // Add user as owner and create default workspace in parallel
             await Promise.all([
               db.insert(schema.member).values({
                 id: crypto.randomUUID(),

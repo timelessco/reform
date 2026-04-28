@@ -153,9 +153,6 @@ export const PublicFormPage = ({
   const dynamicHeight = embedConfig.dynamicHeight;
   const dynamicWidth = embedConfig.dynamicWidth;
   const containerRef = useRef<HTMLDivElement>(null);
-  // Analytics tracking — fires `recordFormVisit` on mount and exposes
-  // `{ visitId, visitorHash }`. Skipped entirely when the creator has
-  // `forms.analytics` off (Pro-gated).
   const trackingBase = usePublicFormTracking({ formId, enabled: form?.analytics === true });
   const [submitted, setSubmitted] = useState(() => {
     if (form?.settings?.preventDuplicateSubmissions) {
@@ -230,7 +227,6 @@ export const PublicFormPage = ({
 
   const resolvedLanguage = form?.settings?.language ?? "English";
 
-  // Handle body/html transparency for iframes
   useEffect(() => {
     if (transparentBackground || isPopup) {
       const originalBodyBg = document.body.style.background;
@@ -262,15 +258,12 @@ export const PublicFormPage = ({
     };
   }, [isFieldByFieldPopup]);
 
-  // Setup height communication for popup embeds and standard embeds with dynamicHeight
   useEffect(() => {
     if ((!isPopup && !dynamicHeight) || typeof window === "undefined" || window.parent === window)
       return;
 
-    // Notify parent that form has loaded
     sendToParent("Reform.FormLoaded", { formId });
 
-    // Track last sent height to avoid redundant messages
     let lastHeight = 0;
     let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -288,13 +281,11 @@ export const PublicFormPage = ({
       }
     };
 
-    // Debounced resize handler
     const handleResize = () => {
       if (resizeTimeout) clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(sendHeight, 50);
     };
 
-    // Setup resize observer on the container element
     const resizeObserver = new ResizeObserver(handleResize);
 
     if (containerRef.current) {
@@ -331,7 +322,6 @@ export const PublicFormPage = ({
         // fresh draft instead of resuming the one that just finalized.
         clearDraftId(formId);
 
-        // Mark as submitted for duplicate prevention
         if (form?.settings?.preventDuplicateSubmissions) {
           try {
             localStorage.setItem(`bf-submitted-${formId}`, "1");
@@ -341,7 +331,6 @@ export const PublicFormPage = ({
           setSubmitted(true);
         }
 
-        // Notify parent of submission (for popup embeds)
         if (isPopup) {
           sendToParent("Reform.FormSubmitted", {
             formId,
@@ -368,7 +357,6 @@ export const PublicFormPage = ({
     ],
   );
 
-  // Handle error states
   // Handle gated states (closed, date expired, limit reached) — check before !form
   // because the server returns form: null for closed forms
   if (gated && gated.type !== "password_required") {
@@ -396,7 +384,6 @@ export const PublicFormPage = ({
     );
   }
 
-  // Handle duplicate prevention (client-side check)
   if (submitted) {
     return (
       <TranslationProvider language={resolvedLanguage}>
@@ -405,10 +392,8 @@ export const PublicFormPage = ({
     );
   }
 
-  // Get settings with defaults
   const settings = form.settings ?? defaultPublicFormSettings;
 
-  // Render the form content
   const formContent = (
     <main
       ref={containerRef}
@@ -513,7 +498,6 @@ export const PublicFormPage = ({
     </main>
   );
 
-  // Wrap with password gate if needed
   if (gated?.type === "password_required") {
     return (
       <TranslationProvider language={resolvedLanguage}>

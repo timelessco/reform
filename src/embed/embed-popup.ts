@@ -157,26 +157,18 @@ export const destroyPopup = (formId: string): void => {
   activePopups.delete(formId);
 };
 
-/**
- * Handle postMessage events from iframes
- */
 const handleMessage = (event: MessageEvent): void => {
-  // Parse message data
   let data: IframeEvent;
   try {
-    // Support both string and object messages
     data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
   } catch {
-    // Not a JSON message, ignore
     return;
   }
 
-  // Only handle Reform events
   if (!data?.event?.startsWith("Reform.")) {
     return;
   }
 
-  // Find the corresponding popup instance by checking iframe source
   let instance: PopupInstance | undefined;
   for (const popup of activePopups.values()) {
     if (popup.iframe.contentWindow === event.source) {
@@ -200,7 +192,6 @@ const handleMessage = (event: MessageEvent): void => {
       break;
 
     case "Reform.Resize":
-      // Update iframe and popup height
       if (typeof data.height === "number") {
         updateIframeHeight(instance.iframe, data.height);
         updatePopupHeight(instance.container, data.height);
@@ -208,7 +199,6 @@ const handleMessage = (event: MessageEvent): void => {
       break;
 
     case "Reform.FormSubmitted":
-      // Handle form submission
       if (instance.options.onSubmit) {
         try {
           instance.options.onSubmit(data.payload);
@@ -217,7 +207,6 @@ const handleMessage = (event: MessageEvent): void => {
         }
       }
 
-      // Auto-close if configured
       if (instance.options.autoClose && instance.options.autoClose > 0) {
         setTimeout(() => {
           closePopup(instance?.formId);
@@ -229,7 +218,6 @@ const handleMessage = (event: MessageEvent): void => {
       break;
 
     case "Reform.PageView":
-      // Multi-step form page change
       if (instance.options.onPageView && "page" in data) {
         try {
           instance.options.onPageView(data.page);
@@ -238,7 +226,6 @@ const handleMessage = (event: MessageEvent): void => {
         }
       }
 
-      // Hide emoji after first page
       if ("page" in data && data.page > 1) {
         const overlayEl = instance.overlay;
         if (overlayEl) {
@@ -251,47 +238,29 @@ const handleMessage = (event: MessageEvent): void => {
       break;
 
     case "Reform.Close":
-      // Close requested from iframe
       closePopup(instance.formId);
       break;
   }
 };
 
-/**
- * Initialize the embed script
- */
 const init = (): void => {
-  // Inject styles
   injectStyles();
-
-  // Setup click event triggers
   setupClickTriggers(openPopup);
-
-  // Check for hash trigger on page load
   checkHashTrigger(openPopup);
-
-  // Listen for hash changes
   setupHashChangeListener(openPopup);
-
-  // Setup message listener for iframe communication
   window.addEventListener("message", handleMessage);
-
   // If the script tag carries `data-form-id`, mount the floating bubble.
   setupAutoBubble(openPopup, preMountPopup);
 };
 
-// Create global API
 window.Reform = {
   openPopup,
   closePopup,
   destroyPopup,
 };
 
-// Initialize when DOM is ready
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
 } else {
   init();
 }
-
-// Export for potential future module usage

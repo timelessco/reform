@@ -152,17 +152,14 @@ const PreviewFormHeader = ({
   const coverClass =
     "relative w-screen left-[50%] right-[50%] -ml-[50vw] -mr-[50vw] h-[120px] sm:h-[200px]";
 
-  // Render cover - can be image or solid color
   const renderCover = () => {
     if (!cover) return null;
 
     if (isHexColor(cover)) {
-      // Render as solid color background
       return <div className={coverClass} data-bf-cover style={{ backgroundColor: cover }} />;
     }
 
     if (isValidUrl(cover) && !imageError) {
-      // Render as image
       return (
         <div className={cn(coverClass, "overflow-hidden bg-muted")} data-bf-cover>
           {cover.includes("tint=true") && (
@@ -186,13 +183,11 @@ const PreviewFormHeader = ({
     return null;
   };
 
-  // Render icon - can be default-icon, sprite icon name, or image URL
   const iconWrapClass = cn("relative z-10 mb-1", hasCover ? "-mt-[50px]" : "mt-4 sm:mt-6");
 
   const renderIcon = () => {
     if (!icon) return null;
 
-    // Handle 'default-icon'
     if (icon === DEFAULT_ICON) {
       return (
         <div className={iconWrapClass} data-bf-logo-emoji-container={hasCover ? "true" : undefined}>
@@ -210,7 +205,6 @@ const PreviewFormHeader = ({
       );
     }
 
-    // Handle image URL
     if (isValidUrl(icon) && !iconError) {
       return (
         <div className={iconWrapClass} data-bf-logo-container={hasCover ? "true" : undefined}>
@@ -227,7 +221,6 @@ const PreviewFormHeader = ({
       );
     }
 
-    // Handle sprite icon name
     return (
       <div className={iconWrapClass} data-bf-logo-emoji-container={hasCover ? "true" : undefined}>
         <span data-bf-logo-icon={isLogoMinimal ? "minimal" : ""}>
@@ -330,7 +323,6 @@ const ShareWithOthers = ({ shareUrl }: { shareUrl: string }) => (
 );
 
 /**
- * Renders custom thank you content after form submission.
  * Thank-you page is static-only — rendered entirely via PlateStatic.
  */
 const RenderThankYouContent = ({
@@ -364,9 +356,6 @@ const RenderThankYouContent = ({
   );
 };
 
-/**
- * Default thank you message when no custom content is provided
- */
 const DefaultThankYou = ({ onReset, shareUrl }: { onReset?: () => void; shareUrl?: string }) => {
   const { t } = useTranslation();
   return (
@@ -419,7 +408,6 @@ export const FormPreviewFromPlate = ({
   const iconColor = hasHeaderNode ? headerFromContent.iconColor : null;
   const cover = hasHeaderNode ? (headerFromContent.cover ?? undefined) : legacyCover;
 
-  // Transform Plate content into chunked preview segments
   const { steps: rawSteps, thankYouNodes } = useMemo(
     () => transformPlateForPreview(content),
     [content],
@@ -448,7 +436,6 @@ export const FormPreviewFromPlate = ({
     return flattened.length > 0 ? flattened : rawSteps;
   }, [rawSteps, settings?.presentationMode]);
 
-  // Show placeholder if no segments found
   if (steps.length === 0 || steps.flat().length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[300px] text-center p-8">
@@ -507,9 +494,6 @@ export const FormPreviewFromPlate = ({
   );
 };
 
-/**
- * Animation variants for form step transitions
- */
 const stepVariants = {
   enter: (direction: number) => ({
     x: direction > 0 ? 20 : -20,
@@ -527,9 +511,6 @@ const stepVariants = {
   }),
 };
 
-/**
- * Inner content component that uses StepFormContext
- */
 const FormPreviewContent = ({
   steps,
   thankYouNodes,
@@ -561,7 +542,6 @@ const FormPreviewContent = ({
   const { t } = useTranslation();
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
 
-  // Handle redirect on completion
   useEffect(() => {
     if (!isSubmitted) return;
     if (!settings?.redirectOnCompletion || !settings?.redirectUrl) return;
@@ -569,12 +549,10 @@ const FormPreviewContent = ({
     const delay = settings.redirectDelay ?? 0;
 
     if (delay === 0) {
-      // Immediate redirect
       window.location.href = settings.redirectUrl;
       return;
     }
 
-    // Start countdown
     setRedirectCountdown(delay);
 
     const interval = setInterval(() => {
@@ -801,7 +779,6 @@ const FormPreviewContent = ({
 
   return (
     <div className="w-full">
-      {/* Header Section */}
       <PreviewFormHeader
         title={title}
         icon={icon}
@@ -812,7 +789,6 @@ const FormPreviewContent = ({
         isPopup={isPopup}
       />
 
-      {/* Progress Bar */}
       {settings?.progressBar && totalSteps > 1 && (
         <div
           className={cn("mb-6 mx-auto", layout === "editor" ? "w-full px-8 md:px-0" : "px-4")}
@@ -823,7 +799,6 @@ const FormPreviewContent = ({
         </div>
       )}
 
-      {/* Step Form */}
       <div
         className={cn("mx-auto", layout === "editor" ? "w-full px-8 md:px-0" : "px-4")}
         style={{

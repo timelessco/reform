@@ -38,7 +38,6 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
     [doc],
   );
 
-  // Read embed config from search params
   const search = useSearch({ strict: false });
   const embedType = (search.embedType as EmbedType) ?? "fullpage";
   const hideTitle = (search.embedHideTitle as boolean) ?? false;
@@ -57,7 +56,6 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
   const handleClosePopup = useCallback(() => setIsPopupOpen(false), []);
   const handleOpenPopup = useCallback(() => setIsPopupOpen(true), []);
 
-  // Re-open popup when switching to popup mode
   useEffect(() => {
     if (embedType === "popup") setIsPopupOpen(true);
   }, [embedType]);
@@ -94,19 +92,16 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
         viewTransitionName: "preview-content",
       }}
     >
-      {/* Standard & Popup — mock website background */}
       {embedType !== "fullpage" && (
         <div className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col scrollbar-hide">
           <div className="flex-1 relative p-4 lg:p-0">
             <div className="max-w-[1000px] mx-auto pt-4 px-4 lg:px-8 space-y-8">
-              {/* Preview label */}
               <div className="flex items-center pt-2">
                 <span className="text-muted-foreground/40 font-bold text-[10px] uppercase tracking-widest">
                   Live Preview
                 </span>
               </div>
 
-              {/* Mock header bars (Subtle) */}
               <div className="space-y-4 opacity-40">
                 <div className="w-20 h-4 bg-muted/50 border border-border/50 rounded-sm" />
                 <div className="flex justify-between items-end border-b border-border/30 pb-3">
@@ -118,9 +113,7 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                 </div>
               </div>
 
-              {/* Mock content area */}
               <div className="grid grid-cols-12 gap-4 lg:gap-8 pt-2">
-                {/* Mock sidebar (Very Subtle) */}
                 <div className="hidden lg:block col-span-3 space-y-5 opacity-30">
                   <div className="w-full h-6 bg-muted/40 rounded-sm" />
                   <div className="space-y-2">
@@ -130,7 +123,6 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                   <div className="w-full h-24 bg-muted/20 border border-dashed border-border/50 rounded-xl" />
                 </div>
 
-                {/* Main content area */}
                 <div className="col-span-12 lg:col-span-9 space-y-6">
                   <div className="space-y-3 opacity-40">
                     <div className="w-2/3 h-5 bg-muted/50 border border-border/50 rounded-sm" />
@@ -140,7 +132,6 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                     </div>
                   </div>
 
-                  {/* The form itself — only for standard embed */}
                   {embedType === "standard" && (
                     <div className="relative group/embed">
                       <div className="absolute -top-5 right-0 text-[8px] font-bold text-muted-foreground/30 uppercase tracking-widest pointer-events-none">
@@ -192,16 +183,13 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                     <div className="w-3/4 h-1.5 bg-muted/50 rounded-full" />
                   </div>
 
-                  {/* Branding */}
                   {branding && <BrandingBadge />}
                 </div>
               </div>
             </div>
 
-            {/* Popup overlay, floating popup, and trigger bubble */}
             {embedType === "popup" && (
               <div className="absolute inset-0 flex flex-col pointer-events-none">
-                {/* Dark overlay — only when popup is open */}
                 {darkOverlay && isPopupOpen && (
                   <button
                     type="button"
@@ -211,7 +199,6 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                   />
                 )}
 
-                {/* Popup panel */}
                 {isPopupOpen && (
                   <div
                     className="absolute bg-background rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.15)] border border-border overflow-hidden flex flex-col z-20 pointer-events-auto transition-[top,left,transform] duration-300 ease-out"
@@ -232,7 +219,6 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                             }),
                     }}
                   >
-                    {/* Close button */}
                     <div className="absolute top-4 right-4 z-30 pointer-events-auto">
                       <Button
                         variant="ghost"
@@ -245,7 +231,6 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                       </Button>
                     </div>
 
-                    {/* Popup form content */}
                     <div
                       className={
                         previewSettings.presentationMode === "field-by-field"
@@ -267,7 +252,6 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                       />
                     </div>
 
-                    {/* Popup branding */}
                     {branding && (
                       <div className="py-3 flex justify-center bg-muted/60 border-t border-border shrink-0">
                         <div className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground">
@@ -280,7 +264,6 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
                   </div>
                 )}
 
-                {/* Trigger bubble — shown when popup is closed */}
                 {!isPopupOpen && (
                   <button
                     type="button"
@@ -318,7 +301,6 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
         </div>
       )}
 
-      {/* Full Page — clean full-screen form */}
       {embedType === "fullpage" && (
         <div
           className={cn(

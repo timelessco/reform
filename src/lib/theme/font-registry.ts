@@ -11,7 +11,6 @@ export interface FontEntry {
 }
 
 export const FONT_REGISTRY: Record<string, FontEntry> = {
-  // ── Self-hosted ──
   Inter: {
     cssValue: '"Inter-V", sans-serif',
     category: "sans-serif",
@@ -25,7 +24,6 @@ export const FONT_REGISTRY: Record<string, FontEntry> = {
     category: "sans-serif",
   },
 
-  // ── Google Fonts — Sans Serif ──
   Roboto: {
     cssValue: '"Roboto", sans-serif',
     googleFamily: "Roboto",
@@ -99,7 +97,6 @@ export const FONT_REGISTRY: Record<string, FontEntry> = {
     category: "sans-serif",
   },
 
-  // ── Google Fonts — Serif ──
   "Playfair Display": {
     cssValue: '"Playfair Display", serif',
     googleFamily: "Playfair+Display",
@@ -137,7 +134,6 @@ export const FONT_REGISTRY: Record<string, FontEntry> = {
     category: "serif",
   },
 
-  // ── Google Fonts — Monospace ──
   "JetBrains Mono": {
     cssValue: '"JetBrains Mono", monospace',
     googleFamily: "JetBrains+Mono",
@@ -152,9 +148,6 @@ export const FONT_REGISTRY: Record<string, FontEntry> = {
   },
 };
 
-/**
- * Backward-compatible FONT_MAP derived from registry.
- */
 export const FONT_MAP: Record<string, string> = Object.fromEntries(
   Object.entries(FONT_REGISTRY).map(([name, entry]) => [name, entry.cssValue]),
 );

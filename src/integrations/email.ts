@@ -69,7 +69,6 @@ export const sendFormSubmissionNotification = async (
   submissionId: string,
   data: Record<string, unknown>,
 ) => {
-  // Build a simple key-value HTML table from submission data
   const rows = Object.entries(data)
     .map(([key, value]) => {
       let displayValue = value;

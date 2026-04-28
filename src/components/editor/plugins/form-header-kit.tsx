@@ -26,7 +26,6 @@ export const FormHeaderPlugin = createPlatePlugin({
       const selection = editor.selection;
       if (!selection || !editor.api.isCollapsed()) return;
 
-      // Check if cursor is at the very start of the block
       // eslint-disable-next-line typescript-eslint/no-explicit-any
       const edges = editor.api.edges(path) as any;
       const start = edges?.[0];
@@ -38,14 +37,12 @@ export const FormHeaderPlugin = createPlatePlugin({
         return;
       }
 
-      // Focus the title textarea
       const titleTextarea = document.querySelector<HTMLTextAreaElement>(
         "[data-bf-header] textarea",
       );
       if (titleTextarea) {
         event.preventDefault();
         titleTextarea.focus();
-        // Place cursor at end of title text
         const len = titleTextarea.value.length;
         titleTextarea.setSelectionRange(len, len);
       }
@@ -61,7 +58,6 @@ export const FormHeaderPlugin = createPlatePlugin({
     editorRef.normalizeNode = (entry: any) => {
       const path = entry[1];
 
-      // Root normalization
       if (path.length === 0) {
         const children = editorRef.children as TElement[];
 
@@ -70,7 +66,6 @@ export const FormHeaderPlugin = createPlatePlugin({
           const headerIndex = children.findIndex((n) => n.type === "formHeader");
 
           if (headerIndex !== -1) {
-            // Move existing header to top
             editorRef.tf.moveNodes({
               at: [headerIndex],
               to: [0],

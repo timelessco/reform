@@ -85,7 +85,6 @@ export const loadFormForCustomDomain = async (
   value: string,
   lookupBy: "slug" | "id",
 ) => {
-  // Build the WHERE clause based on lookup type
   const conditions =
     lookupBy === "slug"
       ? and(

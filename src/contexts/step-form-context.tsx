@@ -91,7 +91,6 @@ export const StepFormProvider = ({
   const [isSubmitted, setIsSubmitted] = React.useState(false);
   const isInitialized = true;
 
-  // Save data whenever formData changes (after initialization)
   React.useEffect(() => {
     if (isInitialized && Object.keys(formData).length > 0) {
       saveData(formData);
@@ -122,7 +121,6 @@ export const StepFormProvider = ({
         if (onSubmit) {
           await onSubmit(allData);
         }
-        // Clear saved data on successful submission
         clearSavedData();
         setIsSubmitted(true);
       } finally {

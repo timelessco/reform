@@ -286,7 +286,6 @@ const AuthLayout = () => {
   );
 };
 
-// Route configuration
 export const Route = createFileRoute("/_authenticated")({
   server: {
     middleware: [authMiddleware],
@@ -321,7 +320,6 @@ const AuthLayoutContent = () => {
 
   const { formId } = useParams({ strict: false });
 
-  // Editor sidebar management
   const { activeSidebar, closeSidebar } = useEditorSidebar();
   const isMobile = useIsMobile();
 
@@ -336,7 +334,6 @@ const AuthLayoutContent = () => {
   );
   const isDistractionHeaderHidden = isEditRoute && !isHeaderVisible;
 
-  // Right sidebar width state (persisted, like left sidebar)
   const [rightSidebarWidth, _setRightSidebarWidth] = useState(() => {
     if (typeof window === "undefined") return RIGHT_SIDEBAR_WIDTH_DEFAULT;
     const stored = localStorage.getItem(RIGHT_SIDEBAR_WIDTH_KEY);
@@ -379,8 +376,7 @@ const AuthLayoutContent = () => {
           />
         )}
         <div className="relative z-20 flex-1 min-h-0 overflow-hidden flex">
-          {/* Main content - flex-1 auto fills available space.
-              On mobile the right sidebar is a floating overlay (a drawer),
+          {/* On mobile the right sidebar is a floating overlay (a drawer),
               so we don't pad the content out — that's what made the editor
               unreadably narrow on phones. Desktop keeps the push-to-resize
               behavior users expect on wide screens. */}
@@ -454,10 +450,6 @@ const AuthLayoutContent = () => {
   );
 };
 
-// Minimal Sidebar Item Component (Figma system-flat: form list item with icon, title, optional count)
-// App Sidebar Component using shadcn/ui
-// Minimal Sidebar Item Component (Figma system-flat: form list item with icon, title, optional count)
-// App Sidebar Component using shadcn/ui
 const AppSidebar = () => {
   const { toggleSidebar } = useSidebar();
   const { isInboxOpen, toggleInbox, closeInbox } = useMinimalSidebar();
@@ -474,11 +466,9 @@ const AppSidebar = () => {
 
   const handleOpenTrash = useCallback(() => setTrashDialogOpen(true), []);
 
-  // Trash dialog state
   const [trashDialogOpen, setTrashDialogOpen] = useState(false);
   const [paletteSearch, setPaletteSearch] = useState("");
 
-  // Get pre-fetched data from route loader for immediate render
   const { activeOrg } = Route.useLoaderData();
   const { data: workspacesData } = useOrgWorkspaces(activeOrg?.id);
   const { data: formsData } = useOrgForms(activeOrg?.id);
@@ -543,7 +533,6 @@ const AppSidebar = () => {
             <SidebarContent className="gap-0">
               <SidebarGroup className="pt-2 py-0">
                 <SidebarGroupContent className="">
-                  {/* Nav items: Figma system-flat node 23504-5047 - pixel-perfect */}
                   <SidebarMenu className="gap-0">
                     <SidebarMenuItem>
                       <SidebarItem
@@ -552,7 +541,6 @@ const AppSidebar = () => {
                         linkOptions={{ to: "/dashboard" }}
                         isActive={location.pathname === "/dashboard"}
                       />
-                      {/* </SidebarMenuButton> */}
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarItem
@@ -594,7 +582,6 @@ const AppSidebar = () => {
             <SidebarFooter className="p-0 flex shrink-0 flex-col gap-4 py-3 px-2">
               <UserMenuMinimal onOpenTrash={handleOpenTrash} />
             </SidebarFooter>
-            {/* <SidebarRail /> */}
           </>
         )}
       </Sidebar>
@@ -623,7 +610,6 @@ const AppSidebar = () => {
                     if (activeOrg && workspacesData) {
                       const orgWorkspaces = workspacesData;
                       if (orgWorkspaces.length > 0) {
-                        // Use workspace from URL if available, otherwise use first workspace
                         const workspaceMatch = location.pathname.match(/\/workspace\/([^/]+)/);
                         const currentWorkspaceId = workspaceMatch?.[1];
                         const targetWorkspace = currentWorkspaceId
@@ -736,14 +722,12 @@ const AppSidebar = () => {
         </CommandDialog>
       )}
 
-      {/* Trash Dialog */}
       <TrashDialog
         open={trashDialogOpen}
         onOpenChange={setTrashDialogOpen}
         activeOrgId={activeOrg?.id}
       />
 
-      {/* Settings Dialog */}
       <Suspense fallback={null}>
         <LazySettingsDialog />
       </Suspense>
@@ -751,7 +735,6 @@ const AppSidebar = () => {
   );
 };
 
-// Trash Dialog Component
 const TrashDialog = ({
   open,
   onOpenChange,
@@ -944,7 +927,6 @@ const TrashDialog = ({
         showCloseButton={false}
         className="sm:max-w-[500px] p-0 gap-0 bg-background border-foreground/10"
       >
-        {/* Search Input */}
         <div className="p-3 border-b border-foreground/5">
           <Input
             placeholder="Search pages in Trash"
@@ -955,7 +937,6 @@ const TrashDialog = ({
           />
         </div>
 
-        {/* Forms List */}
         <div className="max-h-[400px] overflow-y-auto">
           {archivedFormsData === undefined && isFetchingArchived ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
@@ -1126,7 +1107,6 @@ interface InboxPanelBodyProps {
 const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => {
   const queryClient = useQueryClient();
 
-  // Fetch invitations received by current user
   const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
   const {
     notifications,
@@ -1139,17 +1119,14 @@ const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => {
     readingFormId,
   } = useSubmissionNotifications();
 
-  // Helper to refetch invitations on error (stale data)
   const handleError = (error: unknown) => {
     const message = error instanceof Error ? error.message : "Something went wrong";
     toast.error(message);
-    // Refetch to clear stale invitations
     queryClient.invalidateQueries({
       queryKey: auth.organization.listUserInvitations.queryKey(),
     });
   };
 
-  // Accept/Reject mutations
   const acceptMutation = useMutation(
     auth.organization.acceptInvitation.mutationOptions({
       onSuccess: () => {
@@ -1174,7 +1151,6 @@ const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => {
     }),
   );
 
-  // Only show pending invitations
   const pendingInvitations = (invitations ?? []).filter(
     (inv: { status: string }) => inv.status === "pending",
   );
@@ -1183,7 +1159,6 @@ const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => {
 
   return (
     <div className="flex h-full w-full flex-col">
-      {/* Header */}
       <SidebarHeader className="pt-2 pb-3 pl-1 shrink-0 gap-2.25 space-y-2">
         <div className="flex items-center justify-between gap-1">
           <div className="flex items-center gap-1 min-w-0">
@@ -1202,7 +1177,6 @@ const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => {
         </div>
       </SidebarHeader>
 
-      {/* Content */}
       <div className="flex-1 overflow-y-auto p-2 no-scrollbar">
         <div className="px-1 overflow-hidden">
           {hasNotifications && (
@@ -1288,7 +1262,6 @@ const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => {
             </>
           )}
 
-          {/* Invitations Section */}
           {hasPendingInvitations && (
             <>
               <p className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest mb-3 px-2">
@@ -1446,15 +1419,12 @@ const SidebarInbox = () => {
   );
 };
 
-// Workspaces section - uses live queries for real-time sync (Minimal Style)
-// Workspaces section - uses live queries for real-time sync (Minimal Style)
 const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => {
   const router = useRouter();
   const location = useLocation();
   const duplicateForm = useDuplicateForm();
   const { data: session } = useSession();
 
-  // Sort mode state with localStorage persistence
   const [sortMode, setSortMode] = useState<"recent" | "oldest" | "alphabetical" | "manual">(() => {
     if (typeof window !== "undefined") {
       return (
@@ -1476,14 +1446,11 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
   const { data: formsData, isLoading: formsLoading } = useOrgForms(activeOrgId);
   const submissionCounts = useSubmissionCounts();
 
-  // Get user's favorite forms
   const favoriteForms = useFavoriteForms(session?.user?.id);
 
-  // Determine if data has loaded
   const isLoading = workspacesLoading || formsLoading;
   const isDataReady = !isLoading && workspacesData !== undefined && formsData !== undefined;
 
-  // Combine workspaces with their forms, filtered by active organization
   const workspaces: WorkspaceWithForms[] = useMemo(() => {
     if (!activeOrgId || !isDataReady) return [];
 
@@ -1607,7 +1574,6 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
     [workspaces, sortMode, handleSortChange],
   );
 
-  // State for workspace dialogs
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [workspaceToDelete, setWorkspaceToDelete] = useState<WorkspaceWithForms | null>(null);
   const [deleteConfirmName, setDeleteConfirmName] = useState("");
@@ -1615,7 +1581,6 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
   const [workspaceToRename, setWorkspaceToRename] = useState<WorkspaceWithForms | null>(null);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
 
-  // State for form delete dialog
   const [formDeleteDialogOpen, setFormDeleteDialogOpen] = useState(false);
   const [formToDelete, setFormToDelete] = useState<{
     id: string;
@@ -1753,7 +1718,6 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
   return (
     <>
       <div className="flex flex-col">
-        {/* Favorites Section */}
         {favoriteForms.length > 0 && session?.user?.id && (
           <SortableFavoritesSection userId={session.user.id} favoriteForms={favoriteForms} />
         )}
@@ -1803,7 +1767,6 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
         </div>
       </div>
 
-      {/* Delete Workspace Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={handleDeleteDialogOpenChange}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1851,7 +1814,6 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Rename Workspace Dialog */}
       <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -1890,7 +1852,6 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
         </DialogContent>
       </Dialog>
 
-      {/* Form Delete Confirmation Dialog */}
       <AlertDialog open={formDeleteDialogOpen} onOpenChange={setFormDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

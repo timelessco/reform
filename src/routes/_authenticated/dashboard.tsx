@@ -559,7 +559,6 @@ const DashboardPage = () => {
         </div>
       </main>
 
-      {/* Floating Bulk Action Bar */}
       {hasSelection && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[min(560px,90vw)] animate-in slide-in-from-bottom-4 fade-in duration-300">
           <div className="flex items-center justify-between px-4 py-3 bg-background rounded-2xl border border-border/40 shadow-card-elevated">

@@ -26,7 +26,7 @@ export {
   type FormHeaderElementData,
 } from "@/lib/form-schema/form-header-factory";
 
-// Static derivations from THEME_COLORS — hoisted to module scope to avoid re-computing on every render
+// Hoisted to module scope to avoid re-computing on every render
 const ACCENT_COLORS = Object.values(THEME_COLORS).map((t) => t.primary);
 const PRIMARY_TO_THEME_NAME = new Map(
   Object.entries(THEME_COLORS).map(([name, t]) => [t.primary, name]),
@@ -92,7 +92,6 @@ const CoverUpload = ({
     },
   });
 
-  // Clipboard paste handler
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
@@ -112,7 +111,6 @@ const CoverUpload = ({
     return () => document.removeEventListener("paste", handlePaste);
   }, []);
 
-  // Cleanup preview URL
   useEffect(
     () => () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -125,7 +123,6 @@ const CoverUpload = ({
     setPreviewUrl(null);
   };
 
-  // Preview view
   if (previewUrl) {
     return (
       <div className="flex flex-col">
@@ -165,7 +162,6 @@ const CoverUpload = ({
     );
   }
 
-  // Upload view (initial state)
   return (
     <div className="flex flex-col">
       <div className="py-4">
@@ -260,7 +256,6 @@ const IconUploadTab = ({
     },
   });
 
-  // Clipboard paste handler
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
@@ -281,7 +276,6 @@ const IconUploadTab = ({
     return () => document.removeEventListener("paste", handlePaste);
   }, []);
 
-  // Cleanup preview URL
   useEffect(
     () => () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
@@ -295,7 +289,6 @@ const IconUploadTab = ({
     setPreviewUrl(null);
   };
 
-  // Crop view
   if (showCrop && selectedFile) {
     return (
       <div className="w-[310px] px-3 flex flex-col">
@@ -319,7 +312,6 @@ const IconUploadTab = ({
     );
   }
 
-  // Preview view (file selected, before crop)
   if (selectedFile && previewUrl) {
     return (
       <div className="w-[310px] px-3 flex flex-col">
@@ -352,7 +344,6 @@ const IconUploadTab = ({
     );
   }
 
-  // Upload view (initial state)
   return (
     <div className="w-[310px] px-3 flex flex-col">
       <div className="py-4">
@@ -889,7 +880,6 @@ export const FormHeaderElement = (props: PlateElementProps) => {
                   }
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    // Check if onboarding content is present (by type)
                     const secondBlock = editor.children[1] as { type?: string };
                     const isOnboarding = secondBlock?.type === "onboardingContent";
 
@@ -905,7 +895,6 @@ export const FormHeaderElement = (props: PlateElementProps) => {
                         // eslint-disable-next-line typescript-eslint/no-explicit-any
                         value: emptyContent as any,
                       });
-                      // Move cursor to first paragraph
                       const firstBlockPath = [1];
                       // eslint-disable-next-line typescript-eslint/no-explicit-any
                       const startPoint = (editor.api as any).edges(firstBlockPath)?.[0];
@@ -914,7 +903,6 @@ export const FormHeaderElement = (props: PlateElementProps) => {
                         editor.tf.focus();
                       }
                     } else {
-                      // Normal behavior: move focus to first block
                       const firstBlockPath = [1];
                       // eslint-disable-next-line typescript-eslint/no-explicit-any
                       const startPoint = (editor.api as any).edges(firstBlockPath)?.[0];

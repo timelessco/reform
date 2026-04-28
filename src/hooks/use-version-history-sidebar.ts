@@ -14,10 +14,8 @@ export const useVersionHistorySidebar = () => {
 
   const isOpen = activeSidebar === "history";
 
-  // Derived: viewing a version when one is selected
   const isViewingVersion = selectedVersionId !== null;
 
-  // Wrapper that resets state when closing
   const handleSetIsOpen = useCallback(
     (open: boolean) => {
       if (open) {

@@ -14,11 +14,9 @@ import { useCallback, useId, useState } from "react";
 import type { ComponentProps } from "react";
 import { motion } from "motion/react";
 
-// Loading animation constants
 const LOADING_SECTORS = 5;
 const LOADING_ANIMATION_DURATION = 2000; // Full cycle duration in ms
 
-// Constants
 const DEFAULT_INNER_RADIUS = 0;
 const DEFAULT_OUTER_RADIUS = "80%";
 const DEFAULT_CORNER_RADIUS = 0;
@@ -29,7 +27,6 @@ type PieProps = ComponentProps<typeof Pie>;
 type LabelListProps = ComponentProps<typeof LabelList>;
 
 type EvilPieChartProps<TData extends Record<string, unknown>> = {
-  // Data
   data: TData[];
   dataKey: keyof TData & string;
   nameKey: keyof TData & string;
@@ -38,7 +35,6 @@ type EvilPieChartProps<TData extends Record<string, unknown>> = {
   chartProps?: ChartProps;
   pieProps?: Omit<PieProps, "data" | "dataKey" | "nameKey">;
 
-  // Pie Shape
   innerRadius?: number | string;
   outerRadius?: number | string;
   cornerRadius?: number;
@@ -46,26 +42,20 @@ type EvilPieChartProps<TData extends Record<string, unknown>> = {
   startAngle?: number;
   endAngle?: number;
 
-  // Labels
   showLabels?: boolean;
   labelKey?: keyof TData & string;
   labelListProps?: Omit<LabelListProps, "dataKey">;
 
-  // Hide Stuffs
   hideTooltip?: boolean;
   hideLegend?: boolean;
   legendVariant?: ChartLegendVariant;
-  // Tooltip
   tooltipRoundness?: TooltipRoundness;
   tooltipVariant?: TooltipVariant;
   tooltipDefaultIndex?: number;
 
-  // Interactive Stuffs
   isLoading?: boolean;
 
-  // Glow Effects
   glowingSectors?: string[];
-  // Background
   backgroundVariant?: BackgroundVariant;
 };
 
@@ -114,7 +104,6 @@ export function EvilPieChart<TData extends Record<string, unknown>>({
   const [selectedSector, setSelectedSector] = useState<string | null>(null);
   const chartId = useId().replace(/:/g, "");
 
-  // Handler to update selection and call callback
   const handleSelectionChange = useCallback(
     (sectorName: string | null) => {
       setSelectedSector(sectorName);
@@ -122,7 +111,6 @@ export function EvilPieChart<TData extends Record<string, unknown>>({
         if (sectorName === null) {
           onSelectionChange(null);
         } else {
-          // Find the data item and get its value
           const selectedItem = data.find((item) => (item[nameKey] as string) === sectorName);
           if (selectedItem) {
             const value = selectedItem[dataKey] as number;
@@ -134,7 +122,6 @@ export function EvilPieChart<TData extends Record<string, unknown>>({
     [isClickable, onSelectionChange, data, nameKey, dataKey],
   );
 
-  // Prepare data with fill colors referencing gradients
   const preparedData = data.map((item) => {
     const sectorName = item[nameKey] as string;
     return {
@@ -267,17 +254,15 @@ export function EvilPieChart<TData extends Record<string, unknown>>({
   );
 }
 
-// Generate fixed loading data with equal sectors for circular pulsing animation
 const LOADING_PIE_DATA = Array.from({ length: LOADING_SECTORS }, (_, i) => ({
   name: `loading${i}`,
   value: 100 / LOADING_SECTORS,
 }));
 
-// Animated sector for loading state using motion.dev
 const AnimatedLoadingSector = (props: ComponentProps<typeof Sector> & { index?: number }) => {
   const { index = 0, ...sectorProps } = props;
 
-  // Calculate delay for circular wave effect
+  // Stagger by index so sectors pulse around the circle in a wave.
   const delay = (index / LOADING_SECTORS) * (LOADING_ANIMATION_DURATION / 1000);
 
   return (
@@ -296,7 +281,6 @@ const AnimatedLoadingSector = (props: ComponentProps<typeof Sector> & { index?: 
   );
 };
 
-// Create radial color gradient for pie sectors
 const RadialColorGradientStyle = ({
   chartConfig,
   chartId,
@@ -337,7 +321,6 @@ const RadialColorGradientStyle = ({
   </>
 );
 
-// Apply soft glow filter effect to pie sectors using SVG filters
 const GlowFilterStyle = ({
   chartId,
   glowingSectors,

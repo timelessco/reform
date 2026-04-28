@@ -90,7 +90,6 @@ const aggregateDailyRows = (rows: DailyRow[]): DailyAggregate => {
       agg.durationVisitsWeight += row.totalVisits;
     }
 
-    // Devices
     if (row.deviceDesktop) {
       agg.devices.desktop = (agg.devices.desktop ?? 0) + row.deviceDesktop;
     }
@@ -101,7 +100,6 @@ const aggregateDailyRows = (rows: DailyRow[]): DailyAggregate => {
       agg.devices.tablet = (agg.devices.tablet ?? 0) + row.deviceTablet;
     }
 
-    // Browsers
     if (row.browserChrome) {
       agg.browsers.Chrome = (agg.browsers.Chrome ?? 0) + row.browserChrome;
     }
@@ -118,7 +116,6 @@ const aggregateDailyRows = (rows: DailyRow[]): DailyAggregate => {
       agg.browsers.Other = (agg.browsers.Other ?? 0) + row.browserOther;
     }
 
-    // Operating systems
     if (row.osWindows) {
       agg.operatingSystems.Windows = (agg.operatingSystems.Windows ?? 0) + row.osWindows;
     }
@@ -138,7 +135,6 @@ const aggregateDailyRows = (rows: DailyRow[]): DailyAggregate => {
       agg.operatingSystems.Other = (agg.operatingSystems.Other ?? 0) + row.osOther;
     }
 
-    // JSONB breakdowns
     agg.countries = addBreakdowns(agg.countries, (row.countryBreakdown ?? {}) as CountBreakdown);
     agg.cities = addBreakdowns(agg.cities, (row.cityBreakdown ?? {}) as CountBreakdown);
     agg.sources = addBreakdowns(agg.sources, (row.sourceBreakdown ?? {}) as CountBreakdown);

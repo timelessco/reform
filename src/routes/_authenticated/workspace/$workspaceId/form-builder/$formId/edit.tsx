@@ -29,10 +29,8 @@ const DesignPage = () => {
   const { workspaceId } = params;
   const formId = formIdFromPath || params.formId;
 
-  // Version history sidebar state
   const { selectedVersionId, isViewingVersion, exitVersionView } = useVersionHistorySidebar();
 
-  // Fetch version content when viewing a version
   const { data: versionContentDataArray, isLoading: isLoadingVersionContent } =
     useFormVersionContent(isViewingVersion ? (selectedVersionId ?? undefined) : undefined);
 
@@ -47,7 +45,6 @@ const DesignPage = () => {
   return (
     <div className="flex flex-1 min-h-0 overflow-hidden">
       <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative bg-background flex flex-col">
-        {/* Version viewing banner */}
         {isViewingVersion && (
           <div className="bg-accent/50 border-b border-accent/20 px-4 py-2 flex items-center justify-between shrink-0">
             <span className="text-sm text-accent-800">
@@ -141,11 +138,9 @@ export const Route = createFileRoute(
     if (search.force === true) return;
 
     try {
-      // Try collection cache first (instant, no network)
       const cachedForm = getFormListings().get(params.formId);
       let status = cachedForm?.status as FormStatus | undefined;
 
-      // Fall back to server fetch if not in collection yet
       if (!status) {
         status = await getFormStatus(context.queryClient, params.formId);
       }

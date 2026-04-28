@@ -20,7 +20,6 @@ export const listOrgDomains = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ orgId: z.string() }))
   .handler(async ({ data, context }) => {
-    // Verify caller belongs to the org
     const [membership] = await db
       .select()
       .from(member)
@@ -49,7 +48,6 @@ export const addDomain = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
-    // Check user is org owner
     const [membership] = await db
       .select()
       .from(member)
@@ -65,7 +63,6 @@ export const addDomain = createServerFn({ method: "POST" })
       throw new Error("Only organization owners can add domains");
     }
 
-    // Check domain count limit
     const existingDomains = await db
       .select()
       .from(customDomains)
@@ -116,7 +113,6 @@ export const removeDomain = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ domainId: z.string() }))
   .handler(async ({ data, context }) => {
-    // Look up the domain
     const [domain] = await db
       .select()
       .from(customDomains)
@@ -126,7 +122,6 @@ export const removeDomain = createServerFn({ method: "POST" })
       throw new Error("Domain not found");
     }
 
-    // Check user is org owner
     const [membership] = await db
       .select()
       .from(member)
@@ -142,7 +137,6 @@ export const removeDomain = createServerFn({ method: "POST" })
       throw new Error("Only organization owners can remove domains");
     }
 
-    // Remove from Vercel
     try {
       await vercelDomains.remove(domain.domain);
     } catch {
@@ -173,7 +167,6 @@ export const checkDomainStatus = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ domainId: z.string() }))
   .handler(async ({ data, context }) => {
-    // Look up domain
     const [domain] = await db
       .select()
       .from(customDomains)
@@ -183,7 +176,6 @@ export const checkDomainStatus = createServerFn({ method: "POST" })
       throw new Error("Domain not found");
     }
 
-    // Verify org ownership
     const [membership] = await db
       .select()
       .from(member)
@@ -253,7 +245,6 @@ export const updateDomainMeta = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
-    // Look up domain
     const [domain] = await db
       .select()
       .from(customDomains)
@@ -263,7 +254,6 @@ export const updateDomainMeta = createServerFn({ method: "POST" })
       throw new Error("Domain not found");
     }
 
-    // Check user is org owner
     const [membership] = await db
       .select()
       .from(member)

@@ -123,7 +123,6 @@ const generateEmbedCode = (
 </script>`;
   }
 
-  // Full page
   return `<!-- Redirect to full page form -->
 <meta http-equiv="refresh" content="0; url=${embedUrl}" />
 
@@ -279,10 +278,8 @@ export const EmbedCodeDialog = ({
               </div>
             )}
 
-            {/* Documentation Accordions */}
             <div className="pt-8 border-t border-border">
               <Accordion>
-                {/* Query Parameters */}
                 <AccordionItem value="save" className="border-b border-border/50">
                   <AccordionTrigger
                     iconPosition="end"
@@ -323,7 +320,6 @@ export const EmbedCodeDialog = ({
                   </AccordionContent>
                 </AccordionItem>
 
-                {/* JavaScript API */}
                 <AccordionItem value="js" className="border-b border-border/50">
                   <AccordionTrigger
                     iconPosition="end"

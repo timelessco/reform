@@ -6,8 +6,6 @@ import { DEFAULT_FORM_CONTENT, DEFAULT_FORM_SETTINGS } from "./local/form";
 import type { Form } from "./local/form";
 import { getInit, state, stripNulls } from "./_state";
 
-// --- Getters ---
-
 export const getWorkspaces = () => getInit().workspaces;
 export const getFormListings = () => getInit().formListings;
 export const getFavorites = () => getInit().favorites;
@@ -56,8 +54,6 @@ export const getVersionContent = (versionId: string) => {
   }
   return collection;
 };
-
-// --- Form mutations ---
 
 export const createFormLocal = (
   workspaceId: string,
@@ -235,8 +231,6 @@ export const bulkPermanentDeleteFormsLocal = async (ids: string[]) => {
   return result;
 };
 
-// --- Workspace mutations ---
-
 export const createWorkspaceLocal = async (
   organizationId: string,
   name = "Collection",
@@ -269,8 +263,6 @@ export const deleteWorkspaceLocal = async (id: string) => {
   getInit().workspaces.delete(id);
 };
 
-// --- Favorite mutations ---
-
 export const toggleFavoriteLocal = async (userId: string, formId: string, sortIndex?: string) => {
   const { favorites } = getInit();
   const id = `${userId}:${formId}`;
@@ -288,8 +280,6 @@ export const toggleFavoriteLocal = async (userId: string, formId: string, sortIn
     });
   }
 };
-
-// --- Reorder mutations ---
 
 export const reorderFormLocal = async (formId: string, sortIndex: string) => {
   const { formListings } = getInit();
@@ -329,7 +319,6 @@ export const renameFormLocal = async (formId: string, title: string) => {
   });
 };
 
-// --- Type re-exports ---
 export type { Form } from "./local/form";
 export type { WorkspaceSummary } from "./query/workspace";
 export type { FormListing, FormFavorite } from "./query/form-listing";

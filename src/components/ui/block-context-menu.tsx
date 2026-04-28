@@ -170,10 +170,7 @@ export const BlockContextMenu = ({ children }: { children: React.ReactNode }) =>
               </ContextMenuItem>
             )}
             <ContextMenuItem onClick={handleDelete}>Delete</ContextMenuItem>
-            <ContextMenuItem onClick={handleDuplicate}>
-              Duplicate
-              {/* <ContextMenuShortcut>⌘ + D</ContextMenuShortcut> */}
-            </ContextMenuItem>
+            <ContextMenuItem onClick={handleDuplicate}>Duplicate</ContextMenuItem>
             <ContextMenuSub>
               <ContextMenuSubTrigger>Turn into</ContextMenuSubTrigger>
               <ContextMenuSubContent className="w-48">

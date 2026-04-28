@@ -40,8 +40,6 @@ import {
 import { useCallback, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
-// --- Custom Hooks ---
-
 interface EmailChangeApi {
   isOpen: boolean;
   toggle: () => void;
@@ -152,9 +150,6 @@ const useAvatarUpload = (): AvatarUploadApi => {
   };
 };
 
-// --- Sub-components ---
-
-// --- Sub-components ---
 const ThemeSelect = () => {
   const { theme, setTheme } = useTheme();
   const handleThemeChange = useCallback(
@@ -178,9 +173,6 @@ const ThemeSelect = () => {
   );
 };
 
-// --- Main Component ---
-
-// --- Main Component ---
 export const AccountSettingsContent = () => {
   const queryClient = useQueryClient();
   const { data: session, isPending: isSessionPending } = useSession();
@@ -205,13 +197,11 @@ export const AccountSettingsContent = () => {
   const displayNameId = useId();
   const usernameId = useId();
 
-  // Custom hooks for extracted concerns
   const emailChange = useEmailChange((fieldName, value) => {
     profileForm.setFieldValue(fieldName as "newEmail", value);
   });
   const avatarUpload = useAvatarUpload();
 
-  // Accounts Query
   const { data: accounts = [] } = useQuery({
     ...auth.listAccounts.queryOptions(),
   });
@@ -310,8 +300,6 @@ export const AccountSettingsContent = () => {
   return (
     <profileForm.AppForm>
       <div className="flex flex-col gap-10">
-        {/* Profile Section: Avatar + Name + Username */}
-        {/* Avatar row */}
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -360,7 +348,6 @@ export const AccountSettingsContent = () => {
           </div>
         </div>
 
-        {/* Display name + Username side by side */}
         <div className="flex items-start gap-3">
           <profileForm.AppField name="displayName">
             {(field) => (
@@ -381,7 +368,6 @@ export const AccountSettingsContent = () => {
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="Enter display name"
                     variant="secondary"
-                    // className="h-[30px] text-base text-foreground pl-2.5 pr-1.5 ring-0 focus-visible:ring-0"
                   />
                   {displayNameChanged && (
                     <InputGroupButton
@@ -431,7 +417,6 @@ export const AccountSettingsContent = () => {
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="Enter username"
                     variant="secondary"
-                    // className="h-[30px] text-base text-foreground pl-2.5 pr-1.5"
                   />
                   {usernameChanged && (
                     <InputGroupButton
@@ -466,7 +451,6 @@ export const AccountSettingsContent = () => {
           </profileForm.AppField>
         </div>
 
-        {/* Email Section */}
         <section className="flex flex-col gap-[10px]">
           <h3 className="text-base font-medium text-foreground">Email</h3>
           <div className="bg-secondary rounded-2xl pl-2 pr-2.5 py-2 flex items-center gap-3">
@@ -522,7 +506,6 @@ export const AccountSettingsContent = () => {
           )}
         </section>
 
-        {/* Appearance Section */}
         <section className="flex flex-col gap-[10px]">
           <h3 className="text-base font-medium text-foreground">Appearance</h3>
           <div className="bg-secondary rounded-2xl pl-2 pr-2.5 py-2 flex items-center gap-3">
@@ -540,7 +523,6 @@ export const AccountSettingsContent = () => {
           </div>
         </section>
 
-        {/* Connected Account Section */}
         <section className="flex flex-col gap-[10px]">
           <h3 className="text-base font-medium text-foreground">Connected account</h3>
           <div className="bg-secondary rounded-2xl pl-2 pr-2.5 py-2 flex items-center gap-3">
@@ -609,7 +591,6 @@ export const AccountSettingsContent = () => {
           )}
         </section>
 
-        {/* Delete Account Section */}
         <section className="flex flex-col gap-[10px]">
           <h3 className="text-base font-medium text-foreground">Delete Account</h3>
           <p className="text-base leading-[1.5] text-foreground">
@@ -631,7 +612,6 @@ export const AccountSettingsContent = () => {
           </Button>
         </section>
 
-        {/* Avatar Crop Dialog */}
         <Dialog open={avatarUpload.isDialogOpen} onOpenChange={avatarUpload.setDialogOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>

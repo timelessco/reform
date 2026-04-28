@@ -156,7 +156,6 @@ export const BlockSuggestionCard = ({
     >
       <div className="flex flex-col p-4">
         <div className="relative flex items-center">
-          {/* Replace to your own backend or refer to potion */}
           <Avatar className="size-5">
             <AvatarImage alt={userInfo?.name} src={userInfo?.avatarUrl} />
             <AvatarFallback>{userInfo?.name?.[0]}</AvatarFallback>
@@ -417,7 +416,6 @@ export const useResolveSuggestion = (
 
       if (!nodeData) return;
 
-      // const comments = data?.discussions.find((d) => d.id === id)?.comments;
       const comments = discussions.find((s: TDiscussion) => s.id === id)?.comments || [];
       const createdAt = new Date(nodeData.createdAt);
 

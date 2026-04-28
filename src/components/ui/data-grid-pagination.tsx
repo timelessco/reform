@@ -57,7 +57,6 @@ export const DataGridPagination = (props: DataGridPaginationProps) => {
   const to = Math.min((pageIndex + 1) * pageSize, recordCount);
   const pageCount = table.getPageCount();
 
-  // Replace placeholders in paginationInfo
   const paginationInfo = mergedProps?.info
     ? mergedProps.info
         .replace("{from}", from.toString())
@@ -65,10 +64,8 @@ export const DataGridPagination = (props: DataGridPaginationProps) => {
         .replace("{count}", recordCount.toString())
     : `${from} - ${to} of ${recordCount}`;
 
-  // Pagination limit logic
   const paginationMoreLimit = mergedProps?.moreLimit || 5;
 
-  // Determine the start and end of the pagination group
   const currentGroupStart = Math.floor(pageIndex / paginationMoreLimit) * paginationMoreLimit;
   const currentGroupEnd = Math.min(currentGroupStart + paginationMoreLimit, pageCount);
 
@@ -83,7 +80,6 @@ export const DataGridPagination = (props: DataGridPaginationProps) => {
   const handlePreviousPage = useCallback(() => table.previousPage(), [table]);
   const handleNextPage = useCallback(() => table.nextPage(), [table]);
 
-  // Render page buttons based on the current group
   const renderPageButtons = () => {
     const buttons = [];
     for (let i = currentGroupStart; i < currentGroupEnd; i++) {
@@ -118,7 +114,6 @@ export const DataGridPagination = (props: DataGridPaginationProps) => {
     [table, currentGroupEnd],
   );
 
-  // Render a "previous" ellipsis button if there are previous pages to show
   const renderEllipsisPrevButton = () => {
     if (currentGroupStart > 0) {
       return (
@@ -130,7 +125,6 @@ export const DataGridPagination = (props: DataGridPaginationProps) => {
     return null;
   };
 
-  // Render a "next" ellipsis button if there are more pages to show after the current group
   const renderEllipsisNextButton = () => {
     if (currentGroupEnd < pageCount) {
       return (

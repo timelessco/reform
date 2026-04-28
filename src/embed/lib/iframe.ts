@@ -5,17 +5,15 @@
 import type { PopupOptions } from "./types";
 
 /**
- * Get the base URL for forms
- * In production, this comes from the script's src attribute
- * Falls back to current origin for local development
+ * Get the base URL for forms.
+ * In production, this comes from the script's src attribute.
+ * Falls back to current origin for local development.
  */
 const getBaseUrl = (): string => {
-  // Try to get URL from the script tag that loaded us
   const scripts = document.getElementsByTagName("script");
   for (let i = scripts.length - 1; i >= 0; i--) {
     const src = scripts[i].src;
     if (src?.includes("/embed/popup.js")) {
-      // Extract origin from script src
       try {
         const url = new URL(src);
         return url.origin;
@@ -25,7 +23,6 @@ const getBaseUrl = (): string => {
     }
   }
 
-  // Fallback to current origin (for local dev)
   return window.location.origin;
 };
 
@@ -55,7 +52,6 @@ export const buildIframeUrl = (formId: string, options: PopupOptions): string =>
   params.set("dynamicHeight", "false");
   params.set("dynamicWidth", "false");
 
-  // Add hidden fields
   if (options.hiddenFields) {
     for (const [key, value] of Object.entries(options.hiddenFields)) {
       params.set(key, value);
@@ -65,7 +61,6 @@ export const buildIframeUrl = (formId: string, options: PopupOptions): string =>
   // Forward current page's query params (useful for UTM tracking, etc.)
   const currentParams = new URLSearchParams(window.location.search);
   currentParams.forEach((value, key) => {
-    // Don't override explicit hidden fields or canonical bool params
     if (!params.has(key)) {
       params.set(key, value);
     }
@@ -74,9 +69,6 @@ export const buildIframeUrl = (formId: string, options: PopupOptions): string =>
   return `${baseUrl}/forms/${formId}?${params.toString()}`;
 };
 
-/**
- * Create and configure the iframe element
- */
 export const createIframe = (
   formId: string,
   options: PopupOptions,
@@ -89,14 +81,11 @@ export const createIframe = (
   iframe.setAttribute("allow", "fullscreen");
   iframe.setAttribute("data-bf-form-id", formId);
 
-  // Set initial height
   iframe.style.height = "400px";
 
-  // Build and set src
   const url = buildIframeUrl(formId, options);
   iframe.src = url;
 
-  // Append to container
   container.appendChild(iframe);
 
   return iframe;
@@ -118,9 +107,6 @@ export const updateIframeHeight = (iframe: HTMLIFrameElement, height: number): v
   iframe.style.height = `${adjustedHeight}px`;
 };
 
-/**
- * Destroy iframe and cleanup
- */
 export const destroyIframe = (iframe: HTMLIFrameElement): void => {
   iframe.remove();
 };

@@ -5,9 +5,6 @@ import { getFormListings, getWorkspaces, createWorkspaceLocal } from "@/collecti
 import type { FormListing } from "@/collections";
 import { createForm } from "@/lib/server-fn/forms";
 
-/**
- * Result type for syncLocalDataToCloud
- */
 type SyncResult = {
   success: boolean;
   syncedForms: string[];
@@ -33,7 +30,6 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
       throw new Error("Organization ID is required for sync");
     }
 
-    // Get all local forms from localStorage
     const localForms = await localFormCollection.toArrayWhenReady();
     logger(`Found ${localForms.length} local forms to sync`);
 
@@ -42,7 +38,6 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
       return null;
     }
 
-    // Get existing workspaces or create one
     const existingWorkspaces = Array.from((await getWorkspaces().stateWhenReady()).values());
     const orgWorkspaces = existingWorkspaces.filter((ws) => ws.organizationId === organizationId);
 
@@ -62,7 +57,6 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
       logger(`Using existing workspace ${targetWorkspaceId}`);
     }
 
-    // Sync each local form via createTransaction
     const syncedForms: string[] = [];
     for (const localForm of localForms) {
       try {
@@ -82,7 +76,6 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
           cover: localForm.cover,
           isMultiStep: localForm.isMultiStep ?? false,
           status: localForm.status || "draft",
-          // Include settings fields from local form (they're now part of the form)
           language: localForm.language,
           redirectOnCompletion: localForm.redirectOnCompletion,
           redirectUrl: localForm.redirectUrl,
@@ -132,7 +125,6 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
         );
       } catch (error) {
         console.error(`Failed to sync form "${localForm.title || "Untitled"}":`, error);
-        // Continue with other forms
       }
     }
 
@@ -153,9 +145,6 @@ export const syncLocalDataToCloud = async (organizationId: string): Promise<Sync
   }
 };
 
-/**
- * Checks if there is local data that needs to be synced
- */
 export const hasLocalDataToSync = async (): Promise<boolean> => {
   try {
     const forms = await localFormCollection.toArrayWhenReady();

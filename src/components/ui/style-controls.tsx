@@ -75,13 +75,10 @@ export const StyleNumberInput = ({
       onAutoChange={onAutoChange}
       aria-label={isAuto ? `${label}: Auto` : `${label}: ${numValue}${shownUnit}`}
       className={cn(
-        // Match the original 34px row height + override the slider's defaults to
-        // the StyleNumberInput palette (background card, secondary fill).
         "h-[34px] [--elastic-slider-height:34px]",
         "[--elastic-slider-bg:var(--background)]",
         "[--elastic-slider-fill:var(--secondary)]",
         "[--elastic-slider-fill-active:var(--secondary)]",
-        // Restore the original label/value typography.
         "[&_[data-slot=elastic-slider-label]]:text-base [&_[data-slot=elastic-slider-label]]:font-normal [&_[data-slot=elastic-slider-label]]:start-2",
         "[&_[data-slot=elastic-slider-value]]:text-[13px] [&_[data-slot=elastic-slider-value]]:tabular-nums [&_[data-slot=elastic-slider-value]]:end-[11px]",
         className,
@@ -98,7 +95,7 @@ const cssColorToHex = (color: string): string => {
     const ctx = document.createElement("canvas").getContext("2d");
     if (!ctx) return "#000000";
     ctx.fillStyle = color;
-    return ctx.fillStyle; // always returns #rrggbb
+    return ctx.fillStyle;
   } catch {
     return "#000000";
   }
@@ -222,7 +219,6 @@ export const StyleSelect = ({
     if (!isOpen) return;
     updatePos();
 
-    // Optional: Update position on scroll/resize
     const handleScroll = () => updatePos();
     window.addEventListener("scroll", handleScroll, {
       capture: true,

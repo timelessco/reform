@@ -12,10 +12,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { createSelectSchema } from "drizzle-zod";
 
-// ============================================================================
 // Organization Tables (Better Auth Organization Plugin)
-// ============================================================================
-
 export const organization = pgTable("organization", {
   id: text().primaryKey(),
   name: text().notNull(),
@@ -56,8 +53,6 @@ export const todos = pgTable("todos", {
   createdAt: timestamp({ withTimezone: true }).defaultNow(),
 });
 
-// Better Auth Tables
-
 export const user = pgTable("user", {
   id: text().primaryKey(),
   name: text().notNull(),
@@ -66,10 +61,8 @@ export const user = pgTable("user", {
   image: text(),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  // Username plugin fields
   username: text().unique(),
   displayUsername: text(),
-  // Two-factor plugin fields
   twoFactorEnabled: boolean().default(false),
 });
 
@@ -142,7 +135,6 @@ export const apikey = pgTable("apikey", {
   metadata: text(),
 });
 
-// Workspaces table for organizing forms
 export const workspaces = pgTable(
   "workspaces",
   {
@@ -159,7 +151,6 @@ export const workspaces = pgTable(
   ],
 );
 
-// Forms table for storing form builder documents
 export const forms = pgTable(
   "forms",
   {
@@ -220,7 +211,6 @@ export const forms = pgTable(
   ],
 );
 
-// Custom Domains table for white-label form hosting
 export const customDomains = pgTable(
   "custom_domains",
   {
@@ -244,7 +234,6 @@ export const customDomains = pgTable(
   ],
 );
 
-// Form Versions table for storing published snapshots
 export const formVersions = pgTable(
   "form_versions",
   {
@@ -267,7 +256,6 @@ export const formVersions = pgTable(
   ],
 );
 
-// Submissions table for storing form responses
 export const submissions = pgTable(
   "submissions",
   {
@@ -294,7 +282,6 @@ export const submissions = pgTable(
   ],
 );
 
-// Form Favorites table for per-user favorites
 export const formFavorites = pgTable(
   "form_favorites",
   {
@@ -367,9 +354,6 @@ export const formSubmissionNotifications = pgTable(
   ],
 );
 
-// ============================================================================
-// Form Visits Table (Analytics - Raw Events)
-// ============================================================================
 export const formVisits = pgTable(
   "form_visits",
   {
@@ -415,9 +399,6 @@ export const formVisits = pgTable(
   (t) => [index("idx_form_visits_form_id").on(t.formId)],
 );
 
-// ============================================================================
-// Form Question Progress Table (Question Drop-off Tracking)
-// ============================================================================
 export const formQuestionProgress = pgTable("form_question_progress", {
   id: text().primaryKey(),
   formId: text().notNull(),
@@ -436,9 +417,6 @@ export const formQuestionProgress = pgTable("form_question_progress", {
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
-// ============================================================================
-// Form Analytics Daily Table (Pre-aggregated Daily Metrics)
-// ============================================================================
 export const formAnalyticsDaily = pgTable(
   "form_analytics_daily",
   {
@@ -485,9 +463,6 @@ export const formAnalyticsDaily = pgTable(
   (t) => [index("idx_form_analytics_daily_form_id_date").on(t.formId, t.date)],
 );
 
-// ============================================================================
-// Form Dropoff Daily Table (Question Drop-off Aggregates)
-// ============================================================================
 export const formDropoffDaily = pgTable(
   "form_dropoff_daily",
   {
@@ -510,7 +485,6 @@ export const formDropoffDaily = pgTable(
   (t) => [index("idx_form_dropoff_daily_form_id_date").on(t.formId, t.date)],
 );
 
-// Drizzle v2 Relations using defineRelations
 export const relations = defineRelations(
   {
     user,
@@ -538,7 +512,6 @@ export const relations = defineRelations(
     userWorkspaceOrder,
   },
   (r) => ({
-    // User has many sessions, accounts, and forms they created
     user: {
       sessions: r.many.session({
         from: r.user.id,
@@ -556,8 +529,7 @@ export const relations = defineRelations(
         from: r.user.id,
         to: r.apikey.userId,
       }),
-      // Workspaces and forms are now owned by organization, not directly by user
-      // But we track who created them
+      // Workspaces and forms are owned by organization; this just tracks creator.
       createdWorkspaces: r.many.workspaces({
         from: r.user.id,
         to: r.workspaces.createdByUserId,
@@ -566,22 +538,18 @@ export const relations = defineRelations(
         from: r.user.id,
         to: r.forms.createdByUserId,
       }),
-      // Form versions published by user
       publishedVersions: r.many.formVersions({
         from: r.user.id,
         to: r.formVersions.publishedByUserId,
       }),
-      // User's memberships in organizations
       members: r.many.member({
         from: r.user.id,
         to: r.member.userId,
       }),
-      // Organizations where user is a member
       organizationMemberships: r.many.member({
         from: r.user.id,
         to: r.member.userId,
       }),
-      // User's favorited forms
       favorites: r.many.formFavorites({
         from: r.user.id,
         to: r.formFavorites.userId,
@@ -595,35 +563,30 @@ export const relations = defineRelations(
         to: r.formSubmissionNotifications.userId,
       }),
     },
-    // Session belongs to one user
     session: {
       user: r.one.user({
         from: r.session.userId,
         to: r.user.id,
       }),
     },
-    // Account belongs to one user
     account: {
       user: r.one.user({
         from: r.account.userId,
         to: r.user.id,
       }),
     },
-    // TwoFactor belongs to one user
     twoFactor: {
       user: r.one.user({
         from: r.twoFactor.userId,
         to: r.user.id,
       }),
     },
-    // Apikey belongs to one user
     apikey: {
       user: r.one.user({
         from: r.apikey.userId,
         to: r.user.id,
       }),
     },
-    // Organization has many members and workspaces
     organization: {
       members: r.many.member({
         from: r.organization.id,
@@ -642,7 +605,6 @@ export const relations = defineRelations(
         to: r.customDomains.organizationId,
       }),
     },
-    // Member belongs to one user and one organization
     member: {
       user: r.one.user({
         from: r.member.userId,
@@ -653,14 +615,12 @@ export const relations = defineRelations(
         to: r.organization.id,
       }),
     },
-    // Invitation belongs to one organization
     invitation: {
       organization: r.one.organization({
         from: r.invitation.organizationId,
         to: r.organization.id,
       }),
     },
-    // Workspace belongs to one organization and has many forms
     workspaces: {
       organization: r.one.organization({
         from: r.workspaces.organizationId,
@@ -675,7 +635,6 @@ export const relations = defineRelations(
         to: r.forms.workspaceId,
       }),
     },
-    // Form belongs to one workspace
     forms: {
       creator: r.one.user({
         from: r.forms.createdByUserId,
@@ -701,7 +660,6 @@ export const relations = defineRelations(
         from: r.forms.id,
         to: r.formDropoffDaily.formId,
       }),
-      // Version history
       versions: r.many.formVersions({
         from: r.forms.id,
         to: r.formVersions.formId,
@@ -710,7 +668,6 @@ export const relations = defineRelations(
         from: r.forms.lastPublishedVersionId,
         to: r.formVersions.id,
       }),
-      // Users who favorited this form
       favorites: r.many.formFavorites({
         from: r.forms.id,
         to: r.formFavorites.formId,
@@ -728,7 +685,6 @@ export const relations = defineRelations(
         to: r.customDomains.id,
       }),
     },
-    // Form Version belongs to one form and one user (publisher)
     formVersions: {
       form: r.one.forms({
         from: r.formVersions.formId,
@@ -739,14 +695,12 @@ export const relations = defineRelations(
         to: r.user.id,
       }),
     },
-    // Submission belongs to one form
     submissions: {
       form: r.one.forms({
         from: r.submissions.formId,
         to: r.forms.id,
       }),
     },
-    // Form Visits belongs to one form
     formVisits: {
       form: r.one.forms({
         from: r.formVisits.formId,
@@ -761,7 +715,6 @@ export const relations = defineRelations(
         to: r.formQuestionProgress.visitId,
       }),
     },
-    // Form Question Progress belongs to form and visit
     formQuestionProgress: {
       form: r.one.forms({
         from: r.formQuestionProgress.formId,
@@ -772,21 +725,18 @@ export const relations = defineRelations(
         to: r.formVisits.id,
       }),
     },
-    // Form Analytics Daily belongs to form
     formAnalyticsDaily: {
       form: r.one.forms({
         from: r.formAnalyticsDaily.formId,
         to: r.forms.id,
       }),
     },
-    // Form Dropoff Daily belongs to form
     formDropoffDaily: {
       form: r.one.forms({
         from: r.formDropoffDaily.formId,
         to: r.forms.id,
       }),
     },
-    // Form Favorites belongs to user and form
     formFavorites: {
       user: r.one.user({
         from: r.formFavorites.userId,
@@ -817,7 +767,6 @@ export const relations = defineRelations(
         to: r.forms.id,
       }),
     },
-    // Custom Domain belongs to one organization and has many forms
     customDomains: {
       organization: r.one.organization({
         from: r.customDomains.organizationId,
@@ -831,14 +780,7 @@ export const relations = defineRelations(
   }),
 );
 
-// ============================================================================
-// Zod Schema Exports (Single Source of Truth)
-// ============================================================================
-
 export const WorkspaceZod = createSelectSchema(workspaces);
-// ============================================================================
-// Upload Rate Limits (for public form file uploads)
-// ============================================================================
 
 export const uploadRateLimits = pgTable("upload_rate_limits", {
   ip: text("ip").primaryKey(),
@@ -854,12 +796,10 @@ export const FormQuestionProgressZod = createSelectSchema(formQuestionProgress);
 export const FormAnalyticsDailyZod = createSelectSchema(formAnalyticsDaily);
 export const FormDropoffDailyZod = createSelectSchema(formDropoffDaily);
 
-// Organization schemas
 export const OrganizationZod = createSelectSchema(organization);
 export const MemberZod = createSelectSchema(member);
 export const InvitationZod = createSelectSchema(invitation);
 
-// Form Favorites schema
 export const FormFavoriteZod = createSelectSchema(formFavorites);
 export const CustomDomainZod = createSelectSchema(customDomains);
 export const FormNotificationPreferenceZod = createSelectSchema(formNotificationPreferences);

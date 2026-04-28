@@ -111,13 +111,7 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
       if (block) isEnabled = true;
     }
 
-    // If strictly after button (even if thank you), we might want to disable dragging?
-    // For now, allow regular logic for ThankYou page, but the earlier check handled the hidden ones.
     if (isAfterButton && !blockIsHidden) {
-      // It is a Thank You page. Allow dragging?
-      // User: "no single way to do that [add after button]".
-      // Moving Thank You page might be allowed.
-      // Let's keep 'enabled' as calculated derived from structure.
     }
 
     return { isAfterButton, isHidden: blockIsHidden, enabled: isEnabled };
@@ -242,7 +236,6 @@ const Draggable = (props: PlateElementProps) => {
     }
   }, [previewRef]);
 
-  // Clean up preview when drag ends
   React.useEffect(() => {
     if (!isDragging) {
       resetPreview();
@@ -273,7 +266,6 @@ const Draggable = (props: PlateElementProps) => {
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      // Insert a new paragraph block after the current block
       const nextPath = [...path];
       nextPath[nextPath.length - 1] += 1;
       editor.tf.insertNodes(
@@ -364,7 +356,6 @@ const Draggable = (props: PlateElementProps) => {
               }
             }}
           >
-            {/* Plus Button - Add after (hidden for form buttons) */}
             {!isFormButton && (
               <Tooltip>
                 <TooltipTrigger
@@ -700,31 +691,26 @@ const stripDragPreviewArtifacts = (element: HTMLElement) => {
   });
 };
 
-// Apply visual compensation for horizontal scroll
 const applyScrollCompensation = (original: Element, cloned: HTMLElement) => {
   const scrollLeft = original.scrollLeft;
 
   if (scrollLeft > 0) {
-    // Create a wrapper to handle the scroll offset
     const scrollWrapper = document.createElement("div");
     Object.assign(scrollWrapper.style, {
       overflow: "hidden",
       width: `${original.clientWidth}px`,
     });
 
-    // Create inner container with the full content
     const innerContainer = document.createElement("div");
     Object.assign(innerContainer.style, {
       transform: `translateX(-${scrollLeft}px)`,
       width: `${original.scrollWidth}px`,
     });
 
-    // Move all children to the inner container
     while (cloned.firstChild) {
       innerContainer.append(cloned.firstChild);
     }
 
-    // Apply the original element's styles to maintain appearance
     const originalStyles = window.getComputedStyle(original);
     cloned.style.padding = "0";
     innerContainer.style.padding = originalStyles.padding;
@@ -762,7 +748,6 @@ const createDragPreviewElements = (editor: PlateEditor, blocks: TElement[]): HTM
       if (domNodeRect && lastDomNodeRect) {
         const distance = domNodeRect.top - lastDomNodeRect.bottom;
 
-        // Check if the two elements are adjacent (touching each other)
         if (distance > 15) {
           wrapper.style.marginTop = `${distance}px`;
         }

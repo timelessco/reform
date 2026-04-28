@@ -120,7 +120,6 @@ const BarShape = (props: BarProps) => {
   const realWidth = Number(width || 0);
   const realHeight = Number(height || 0);
 
-  // Center position for the bar
   const centerX = xPos + realWidth / 2;
   const centerY = yPos + realHeight / 2;
 

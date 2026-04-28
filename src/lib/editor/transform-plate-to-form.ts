@@ -232,14 +232,8 @@ export type PlateStaticElement =
       name: string;
     };
 
-/**
- * Combined type for all preview elements
- */
 export type TransformedElement = PlateFormField | PlateStaticElement;
 
-/**
- * Extracts plain text content from a Plate node's children array.
- */
 export const extractTextContent = (children: Array<{ text?: string }>): string => {
   if (!Array.isArray(children)) return "";
   return children
@@ -248,33 +242,26 @@ export const extractTextContent = (children: Array<{ text?: string }>): string =
     .trim();
 };
 
-/**
- * Generates a slugified name from a label string.
- * Example: "Email Address" -> "email_address"
- */
+/** Slugify a label, e.g. "Email Address" -> "email_address". */
 const NON_ALNUM_RE = /[^a-z0-9]+/g;
 const TRIM_UNDERSCORES_RE = /^_|_$/g;
 
 export const slugify = (str: string): string =>
   str.toLowerCase().replace(NON_ALNUM_RE, "_").replace(TRIM_UNDERSCORES_RE, "") || "field";
 
-/**
- * Extracts list items from a Plate list node (ul/ol).
- * Handles nested structure: ul > li > lic > text
- */
+/** Extracts list items from a Plate list node (ul/ol). Structure: ul > li > lic > text. */
 const extractListItems = (node: PlateNode): string[] => {
   const items: string[] = [];
   if (!node.children || !Array.isArray(node.children)) return items;
 
   for (const li of node.children) {
     if (li.type === "li" && li.children) {
-      // List item content is typically in a "lic" (list item content) node
+      // List item content is typically wrapped in a "lic" node
       for (const child of li.children) {
         if (child.type === "lic" || child.type === "p") {
           const text = extractTextContent((child.children ?? []) as Array<{ text?: string }>);
           if (text) items.push(text);
         } else if (child.text !== undefined) {
-          // Direct text child
           const text = child.text?.trim();
           if (text) items.push(text);
         }
@@ -284,10 +271,7 @@ const extractListItems = (node: PlateNode): string[] => {
   return items;
 };
 
-/**
- * Extracts table rows from a Plate table node.
- * Handles structure: table > tr > (th|td) > text
- */
+/** Extracts table rows from a Plate table node. Structure: table > tr > (th|td) > text. */
 const extractTableRows = (node: PlateNode): { cells: string[]; isHeader: boolean }[] => {
   const rows: { cells: string[]; isHeader: boolean }[] = [];
   if (!node.children || !Array.isArray(node.children)) return rows;
@@ -301,7 +285,7 @@ const extractTableRows = (node: PlateNode): { cells: string[]; isHeader: boolean
         if (cell.type === "th") {
           isHeader = true;
         }
-        // Extract text from cell - cells often have p > text structure
+        // Cells often have p > text structure
         let cellText = "";
         if (cell.children) {
           for (const cellChild of cell.children) {
@@ -395,13 +379,12 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
     const node = value[i];
     const nodeType = node.type;
 
-    // --- Skip formHeader (handled separately) ---
+    // formHeader is handled separately
     if (nodeType === "formHeader") {
       i++;
       continue;
     }
 
-    // --- Simple input types (formInput, formTextarea, formEmail, etc.) ---
     if (INPUT_TYPE_TO_FIELD_TYPE[nodeType]) {
       const label = lookBackForLabel(i);
       const labelText = label?.labelText ?? "";
@@ -438,7 +421,6 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
       continue;
     }
 
-    // --- formMultiSelectInput (badge-based multi-select) ---
     if (nodeType === "formMultiSelectInput") {
       const label = lookBackForLabel(i);
       const labelText = label?.labelText ?? "";
@@ -469,7 +451,7 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
       continue;
     }
 
-    // --- formOptionItem (compound field — collect consecutive option items) ---
+    // Compound field — collect consecutive option items
     if (nodeType === "formOptionItem") {
       const label = lookBackForLabel(i);
       const labelText = label?.labelText ?? "";
@@ -508,7 +490,6 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
       continue;
     }
 
-    // --- formButton ---
     if (nodeType === "formButton") {
       const childText = extractTextContent(node.children as Array<{ text?: string }>);
       const btnText =
@@ -529,9 +510,9 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
       continue;
     }
 
-    // --- Headings (h1/h2/h3) and text blocks (p/blockquote) ---
-    // If the NEXT node is a form input type, skip rendering as static —
-    // the input will consume this node as its label via lookBackForLabel.
+    // For headings (h1/h2/h3) and text blocks (p/blockquote): if the NEXT node
+    // is a form input type, skip rendering as static — the input will consume
+    // this node as its label via lookBackForLabel.
     if (ALLOWED_LABEL_TYPES.has(nodeType) && nodeType !== "formLabel") {
       const nextNode = i + 1 < value.length ? value[i + 1] : null;
       const nextType = nextNode ? nextNode.type : "";
@@ -575,11 +556,7 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
       continue;
     }
 
-    // --- formLabel as standalone (no following input) ---
-    // If a formLabel is NOT followed by an input, it might be consumed by
-    // a later input's lookBackForLabel. If it IS followed by an input,
-    // the input case above won't reach here because we skip formLabel in ALLOWED_LABEL_TYPES check.
-    // Handle formLabel: peek ahead — if next is input, skip (input will consume it);
+    // formLabel: peek ahead — if next is input, skip (input will consume it);
     // otherwise render nothing (bare label without input).
     if (nodeType === "formLabel") {
       const nextNode = i + 1 < value.length ? value[i + 1] : null;
@@ -594,9 +571,6 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
       continue;
     }
 
-    // --- Remaining static elements (not label-like) ---
-
-    // Horizontal rule -> Separator
     if (nodeType === "hr") {
       elements.push({
         id: `sep_${elements.length}`,
@@ -608,7 +582,6 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
       continue;
     }
 
-    // Page break -> PageBreak
     if (nodeType === "pageBreak") {
       const isThankYouPage = Boolean(node.isThankYouPage);
       elements.push({
@@ -622,7 +595,6 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
       continue;
     }
 
-    // Unordered list
     if (nodeType === "ul") {
       const items = extractListItems(node);
       if (items.length > 0) {
@@ -638,7 +610,6 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
       continue;
     }
 
-    // Ordered list
     if (nodeType === "ol") {
       const items = extractListItems(node);
       if (items.length > 0) {
@@ -654,7 +625,6 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
       continue;
     }
 
-    // Toggle (collapsible)
     if (nodeType === "toggle") {
       const children = node.children as PlateNode[];
       let title = "";
@@ -683,7 +653,6 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
       continue;
     }
 
-    // Table
     if (nodeType === "table") {
       const rows = extractTableRows(node);
       if (rows.length > 0) {
@@ -699,7 +668,6 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
       continue;
     }
 
-    // Callout
     if (nodeType === "callout") {
       const content = extractTextContent(node.children as Array<{ text?: string }>);
       const emoji = node.emoji as string | undefined;
@@ -722,8 +690,5 @@ export const transformPlateStateToFormElements = (value: Value): TransformedElem
   return elements;
 };
 
-/**
- * Filters only editable form fields (non-static elements)
- */
 export const getEditableFields = (elements: TransformedElement[]): PlateFormField[] =>
   elements.filter((el): el is PlateFormField => !("static" in el) || !el.static);

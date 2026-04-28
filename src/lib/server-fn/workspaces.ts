@@ -93,7 +93,6 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
     const orgId = getActiveOrgId(context.session);
     await authWorkspace(data.id, context.session.user.id, orgId);
 
-    // Ensure at least one workspace remains in the organization
     const [{ total }] = await db
       .select({ total: count() })
       .from(workspaces)

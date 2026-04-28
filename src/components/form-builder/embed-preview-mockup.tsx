@@ -127,7 +127,6 @@ const getCornerPos = (position: string, cw: number, ch: number, w: number, h: nu
 };
 
 // Get the bubble position (always in the corner, even when popup is expanded at center)
-// Get the bubble position (always in the corner, even when popup is expanded at center)
 const getBubblePos = (position: string, cw: number, ch: number) => {
   const size = 28;
   switch (position) {
@@ -224,7 +223,6 @@ export const EmbedPreviewMockup = ({
 
   return (
     <div className="rounded-[12px] bg-secondary overflow-hidden">
-      {/* Browser Chrome */}
       <div className="flex items-center gap-1 px-2.25 pt-2.5 pb-2">
         <div className="flex gap-1.5">
           <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/20" />
@@ -233,9 +231,7 @@ export const EmbedPreviewMockup = ({
         </div>
       </div>
 
-      {/* Content Area */}
       <div ref={contentRef} className="relative h-[160px] overflow-hidden p-4">
-        {/* Background context lines */}
         <AnimatePresence mode="sync">
           {embedType === "standard" && (
             <motion.div
@@ -277,7 +273,6 @@ export const EmbedPreviewMockup = ({
           )}
         </AnimatePresence>
 
-        {/* Dark overlay for popup */}
         <AnimatePresence>
           {isPopup && darkOverlay && isPopupExpanded && (
             <motion.div
@@ -291,7 +286,6 @@ export const EmbedPreviewMockup = ({
           )}
         </AnimatePresence>
 
-        {/* The single morphing box */}
         {target && (
           <motion.div
             className="absolute bg-muted shadow-[0_2px_10px_rgba(0,0,0,0.04)]  z-20 overflow-hidden"
@@ -301,7 +295,6 @@ export const EmbedPreviewMockup = ({
             onMouseEnter={isPopup ? handleMouseEnterMorph : undefined}
             onMouseLeave={isPopup ? handleMouseLeaveMorph : undefined}
           >
-            {/* Close button inside expanded popup */}
             {isPopup && isPopupExpanded && (
               <button
                 type="button"
@@ -313,7 +306,6 @@ export const EmbedPreviewMockup = ({
               </button>
             )}
 
-            {/* Icon/emoji inside the collapsed circle */}
             <AnimatePresence>
               {isPopup && !isPopupExpanded && popupIconDisplay && (
                 <motion.span

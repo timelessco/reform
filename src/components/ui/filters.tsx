@@ -35,9 +35,7 @@ import type { VariantProps } from "class-variance-authority";
 import { AlertCircleIcon, CheckIcon, PlusIcon, XIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
-// i18n Configuration Interface
 export interface FilterI18nConfig {
-  // UI Labels
   addFilter: string;
   searchFields: string;
   noFieldsFound: string;
@@ -56,7 +54,6 @@ export interface FilterI18nConfig {
   defaultColor: string;
   addFilterTitle: string;
 
-  // Operators
   operators: {
     is: string;
     isNot: string;
@@ -86,7 +83,6 @@ export interface FilterI18nConfig {
     notEmpty: string;
   };
 
-  // Placeholders
   placeholders: {
     enterField: (fieldType: string) => string;
     selectField: string;
@@ -95,12 +91,10 @@ export interface FilterI18nConfig {
     enterValue: string;
   };
 
-  // Helper functions
   helpers: {
     formatOperator: (operator: string) => string;
   };
 
-  // Validation
   validation: {
     invalidEmail: string;
     invalidUrl: string;
@@ -109,9 +103,7 @@ export interface FilterI18nConfig {
   };
 }
 
-// Default English i18n configuration
 export const DEFAULT_I18N: FilterI18nConfig = {
-  // UI Labels
   addFilter: "Add filter",
   searchFields: "Search fields...",
   noFieldsFound: "No fields found.",
@@ -130,7 +122,6 @@ export const DEFAULT_I18N: FilterI18nConfig = {
   defaultColor: "#000000",
   addFilterTitle: "Add filter",
 
-  // Operators
   operators: {
     is: "is",
     isNot: "is not",
@@ -160,7 +151,6 @@ export const DEFAULT_I18N: FilterI18nConfig = {
     notEmpty: "is not empty",
   },
 
-  // Placeholders
   placeholders: {
     enterField: (fieldType: string) => `Enter ${fieldType}...`,
     selectField: "Select...",
@@ -169,12 +159,10 @@ export const DEFAULT_I18N: FilterI18nConfig = {
     enterValue: "Enter value...",
   },
 
-  // Helper functions
   helpers: {
     formatOperator: (operator: string) => operator.replace(/_/g, " "),
   },
 
-  // Validation
   validation: {
     invalidEmail: "Invalid email format",
     invalidUrl: "Invalid URL format",
@@ -183,7 +171,6 @@ export const DEFAULT_I18N: FilterI18nConfig = {
   },
 };
 
-// Context for all Filter component props
 interface FilterContextValue {
   variant: "solid" | "outline";
   size: "sm" | "md" | "lg";
@@ -220,7 +207,6 @@ const FilterContext = createContext<FilterContextValue>({
 
 const useFilterContext = () => useContext(FilterContext);
 
-// Reusable input variant component for consistent styling
 const filterInputVariants = cva(
   [
     "transition shrink-0 outline-none text-foreground relative flex items-center",
@@ -260,7 +246,6 @@ const filterInputVariants = cva(
   },
 );
 
-// Reusable remove button variant component
 const filterRemoveButtonVariants = cva(
   [
     "inline-flex items-center shrink-0 justify-center transition shrink-0 text-muted-foreground hover:text-foreground",
@@ -494,15 +479,12 @@ const FilterInput = <T = unknown>({
   const [isValid, setIsValid] = useState(true);
   const [validationMessage, setValidationMessage] = useState("");
 
-  // Validation function to check if input matches pattern
   const validateInput = (value: string, pattern?: string): boolean => {
     if (!pattern || !value) return true;
     return getFilterRegex(pattern).test(value);
   };
 
-  // Get validation message for field type
   const getValidationMessage = (fieldType: string, hasCustomPattern: boolean = false): string => {
-    // If it's a text or number field with a custom pattern, use the generic invalid message
     if ((fieldType === "text" || fieldType === "number") && hasCustomPattern) {
       return context.i18n.validation.invalid;
     }
@@ -519,26 +501,20 @@ const FilterInput = <T = unknown>({
     }
   };
 
-  // Handle input change - allow typing without validation
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Always allow typing, just call the original onChange
     onChange?.(e);
   };
 
-  // Handle blur event - validate when user leaves input
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const pattern = field?.pattern || props.pattern;
 
-    // Only validate if there's a value and pattern
     if (value && pattern) {
       let valid = true;
 
-      // If there's a custom validation function, use it
       if (field?.validation) {
         valid = field.validation(value);
       } else {
-        // Use pattern validation
         valid = validateInput(value, pattern);
       }
 
@@ -546,23 +522,18 @@ const FilterInput = <T = unknown>({
       const hasCustomPattern = !!(field?.pattern || props.pattern);
       setValidationMessage(valid ? "" : getValidationMessage(field?.type || "", hasCustomPattern));
     } else {
-      // Reset validation state for empty values or no pattern
       setIsValid(true);
       setValidationMessage("");
     }
 
-    // Call onInputChange if provided (for blur-based filter updates)
     if (onInputChange) {
       onInputChange(e as React.ChangeEvent<HTMLInputElement>);
     }
 
-    // Call the original onBlur if provided
     onBlur?.(e);
   };
 
-  // Handle keydown event - hide validation error when user starts typing
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Hide validation error when user starts typing (any key except special keys)
     if (
       !isValid &&
       !["Tab", "Escape", "Enter", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)
@@ -571,9 +542,7 @@ const FilterInput = <T = unknown>({
       setValidationMessage("");
     }
 
-    // Handle Enter key for immediate filter updates
     if (e.key === "Enter" && onInputChange) {
-      // Create a synthetic change event for Enter key
       const syntheticEvent = {
         ...e,
         target: e.target as HTMLInputElement,
@@ -582,7 +551,6 @@ const FilterInput = <T = unknown>({
       onInputChange(syntheticEvent);
     }
 
-    // Call the original onKeyDown if provided
     onKeyDown?.(e);
   };
 
@@ -683,7 +651,6 @@ const FilterRemoveButton = ({ className, icon = <XIcon />, ...props }: FilterRem
   );
 };
 
-// Generic types for flexible filter system
 export interface FilterOption<T = unknown> {
   value: T;
   label: string;
@@ -697,7 +664,6 @@ export interface FilterOperator {
   supportsMultiple?: boolean;
 }
 
-// Custom renderer props interface
 export interface CustomRendererProps<T = unknown> {
   field: FilterFieldConfig<T>;
   values: T[];
@@ -705,13 +671,11 @@ export interface CustomRendererProps<T = unknown> {
   operator: string;
 }
 
-// Grouped field configuration interface
 export interface FilterFieldGroup<T = unknown> {
   group?: string;
   fields: FilterFieldConfig<T>[];
 }
 
-// Union type for both flat and grouped field configurations
 export type FilterFieldsConfig<T = unknown> = FilterFieldConfig<T>[] | FilterFieldGroup<T>[];
 
 export interface FilterFieldConfig<T = unknown> {
@@ -734,10 +698,8 @@ export interface FilterFieldConfig<T = unknown> {
     | "datetime"
     | "custom"
     | "separator";
-  // Group-level configuration
   group?: string;
   fields?: FilterFieldConfig<T>[];
-  // Field-specific options
   options?: FilterOption<T>[];
   operators?: FilterOperator[];
   customRenderer?: (props: CustomRendererProps<T>) => React.ReactNode;
@@ -756,26 +718,19 @@ export interface FilterFieldConfig<T = unknown> {
   className?: string;
   popoverContentClassName?: string;
   selectedOptionsClassName?: string;
-  // Grouping options (legacy support)
   groupLabel?: string;
-  // Boolean field options
   onLabel?: string;
   offLabel?: string;
-  // Input event handlers
   onInputChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  // Default operator to use when creating a filter for this field
   defaultOperator?: string;
-  // Controlled values support for this field
   value?: T[];
   onValueChange?: (values: T[]) => void;
 }
 
-// Helper functions to handle both flat and grouped field configurations
 const isFieldGroup = <T = unknown>(
   item: FilterFieldConfig<T> | FilterFieldGroup<T>,
 ): item is FilterFieldGroup<T> => "fields" in item && Array.isArray(item.fields);
 
-// Helper function to check if a FilterFieldConfig is a group-level configuration
 const isGroupLevelField = <T = unknown>(field: FilterFieldConfig<T>): boolean =>
   Boolean(field.group && field.fields);
 
@@ -799,7 +754,6 @@ const getFieldsMap = <T = unknown>(
   const flatFields = flattenFields(fields);
   return flatFields.reduce(
     (acc, field) => {
-      // Only add fields that have a key (skip group-level configurations)
       if (field.key) {
         acc[field.key] = field;
       }
@@ -809,7 +763,6 @@ const getFieldsMap = <T = unknown>(
   );
 };
 
-// Helper function to create operators from i18n config
 const createOperatorsFromI18n = (i18n: FilterI18nConfig): Record<string, FilterOperator[]> => ({
   select: [
     { value: "is", label: i18n.operators.is },
@@ -915,11 +868,9 @@ const createOperatorsFromI18n = (i18n: FilterI18nConfig): Record<string, FilterO
   ],
 });
 
-// Default operators for different field types (using default i18n)
 export const DEFAULT_OPERATORS: Record<string, FilterOperator[]> =
   createOperatorsFromI18n(DEFAULT_I18N);
 
-// Helper function to get operators for a field
 const getOperatorsForField = <T = unknown>(
   field: FilterFieldConfig<T>,
   values: T[],
@@ -929,15 +880,12 @@ const getOperatorsForField = <T = unknown>(
 
   const operators = createOperatorsFromI18n(i18n);
 
-  // Determine field type for operator selection
   let fieldType = field.type || "select";
 
-  // If it's a select field but has multiple values, treat as multiselect
   if (fieldType === "select" && values.length > 1) {
     fieldType = "multiselect";
   }
 
-  // If it's a multiselect field or has multiselect operators, use multiselect operators
   if (fieldType === "multiselect" || field.type === "multiselect") {
     return operators.multiselect;
   }
@@ -961,12 +909,10 @@ const FilterOperatorDropdown = <T = unknown>({
   const context = useFilterContext();
   const operators = getOperatorsForField(field, values, context.i18n);
 
-  // Find the operator label, with fallback to formatted operator name
   const operatorLabel =
     operators.find((op) => op.value === operator)?.label ||
     context.i18n.helpers.formatOperator(operator);
 
-  // Debug logging to help identify the issue
   if (!operators.find((op) => op.value === operator)) {
     console.warn(
       `Operator "${operator}" not found in operators for field "${field.key}" (type: ${field.type}). Available operators:`,
@@ -1041,7 +987,6 @@ const SelectOptionsPopover = <T = unknown>({
     onClose?.();
   };
 
-  // If inline mode, render the content directly without popover
   if (inline) {
     return (
       <div className="w-full">
@@ -1057,7 +1002,6 @@ const SelectOptionsPopover = <T = unknown>({
           <CommandList>
             <CommandEmpty>{context.i18n.noResultsFound}</CommandEmpty>
 
-            {/* Selected items */}
             {selectedOptions.length > 0 && (
               <CommandGroup heading={field.label || "Selected"}>
                 {selectedOptions.map((option) => (
@@ -1089,7 +1033,6 @@ const SelectOptionsPopover = <T = unknown>({
               </CommandGroup>
             )}
 
-            {/* Available items */}
             {unselectedOptions.length > 0 && (
               <>
                 {selectedOptions.length > 0 && <CommandSeparator />}
@@ -1110,7 +1053,6 @@ const SelectOptionsPopover = <T = unknown>({
                           } else {
                             onChange(newValues);
                           }
-                          // For multiselect, don't close the popover to allow multiple selections
                         } else {
                           if (field.onValueChange) {
                             field.onValueChange([option.value] as T[]);
@@ -1188,7 +1130,6 @@ const SelectOptionsPopover = <T = unknown>({
           <CommandList>
             <CommandEmpty>{context.i18n.noResultsFound}</CommandEmpty>
 
-            {/* Selected items */}
             {selectedOptions.length > 0 && (
               <CommandGroup>
                 {selectedOptions.map((option) => (
@@ -1215,7 +1156,6 @@ const SelectOptionsPopover = <T = unknown>({
               </CommandGroup>
             )}
 
-            {/* Available items */}
             {unselectedOptions.length > 0 && (
               <>
                 {selectedOptions.length > 0 && <CommandSeparator />}
@@ -1264,12 +1204,10 @@ const FilterValueSelector = <T = unknown>({
   const [searchInput, setSearchInput] = useState("");
   const context = useFilterContext();
 
-  // Hide value input for empty/not empty operators
   if (operator === "empty" || operator === "not_empty") {
     return null;
   }
 
-  // Use custom renderer if provided
   if (field.customRenderer) {
     return (
       <div
@@ -1287,7 +1225,6 @@ const FilterValueSelector = <T = unknown>({
   if (field.type === "boolean") {
     const isChecked = values[0] === true;
 
-    // Use custom labels if provided, otherwise fall back to i18n defaults
     const onLabel = field.onLabel || context.i18n.true;
     const offLabel = field.offLabel || context.i18n.false;
 
@@ -1494,7 +1431,6 @@ const FilterValueSelector = <T = unknown>({
     );
   }
 
-  // Handle different field types
   if (field.type === "text" || field.type === "number") {
     if (field.type === "number" && operator === "between") {
       const minVal = (values[0] as string) || "";
@@ -1573,7 +1509,6 @@ const FilterValueSelector = <T = unknown>({
     );
   }
 
-  // For select and multiselect types, use the SelectOptionsPopover component
   if (field.type === "select" || field.type === "multiselect") {
     return <SelectOptionsPopover field={field} values={values} onChange={onChange} />;
   }
@@ -1633,7 +1568,6 @@ const FilterValueSelector = <T = unknown>({
           <CommandList>
             <CommandEmpty>{context.i18n.noResultsFound}</CommandEmpty>
 
-            {/* Selected items */}
             {selectedOptions.length > 0 && (
               <CommandGroup>
                 {selectedOptions.map((option) => (
@@ -1657,7 +1591,6 @@ const FilterValueSelector = <T = unknown>({
               </CommandGroup>
             )}
 
-            {/* Available items */}
             {unselectedOptions.length > 0 && (
               <>
                 {selectedOptions.length > 0 && <CommandSeparator />}
@@ -1709,7 +1642,6 @@ export interface FilterGroup<T = unknown> {
   fields: FilterFieldConfig<T>[];
 }
 
-// FiltersContent component for the filter panel content
 interface FiltersContentProps<T = unknown> {
   filters: Filter<T>[];
   fields: FilterFieldsConfig<T>;
@@ -1730,7 +1662,6 @@ export const FiltersContent = <T = unknown>({
         filters.map((filter) => {
           if (filter.id === filterId) {
             const updatedFilter = { ...filter, ...updates };
-            // Clear values for empty/not empty operators
             if (updates.operator === "empty" || updates.operator === "not_empty") {
               updatedFilter.values = [] as T[];
             }
@@ -1770,7 +1701,6 @@ export const FiltersContent = <T = unknown>({
             className={filterItemVariants({ variant: context.variant })}
             data-slot="filter-item"
           >
-            {/* Field Label */}
             <div
               className={filterFieldLabelVariants({
                 variant: context.variant,
@@ -1782,7 +1712,6 @@ export const FiltersContent = <T = unknown>({
               {field.label}
             </div>
 
-            {/* Operator Dropdown */}
             <FilterOperatorDropdown<T>
               field={field}
               operator={filter.operator}
@@ -1790,7 +1719,6 @@ export const FiltersContent = <T = unknown>({
               onChange={(operator) => updateFilter(filter.id, { operator })}
             />
 
-            {/* Value Selector */}
             <FilterValueSelector<T>
               field={field}
               values={filter.values}
@@ -1798,7 +1726,6 @@ export const FiltersContent = <T = unknown>({
               operator={filter.operator}
             />
 
-            {/* Remove Button */}
             <FilterRemoveButton onClick={() => removeFilter(filter.id)} />
           </div>
         );
@@ -1853,7 +1780,6 @@ export const Filters = <T = unknown>({
     useState<FilterFieldConfig<T> | null>(null);
   const [tempSelectedValues, setTempSelectedValues] = useState<unknown[]>([]);
 
-  // Merge provided i18n with defaults
   const mergedI18n: FilterI18nConfig = useMemo(
     () => ({
       ...DEFAULT_I18N,
@@ -1882,7 +1808,6 @@ export const Filters = <T = unknown>({
         filters.map((filter) => {
           if (filter.id === filterId) {
             const updatedFilter = { ...filter, ...updates };
-            // Clear values for empty/not empty operators
             if (updates.operator === "empty" || updates.operator === "not_empty") {
               updatedFilter.values = [] as T[];
             }
@@ -1906,10 +1831,8 @@ export const Filters = <T = unknown>({
     (fieldKey: string) => {
       const field = fieldsMap[fieldKey];
       if (field && field.key) {
-        // For select and multiselect types, show options directly
         if (field.type === "select" || field.type === "multiselect") {
           setSelectedFieldForOptions(field);
-          // For multiselect, check if there's already a filter and use its values
           const existingFilter = filters.find((f) => f.field === fieldKey);
           const initialValues =
             field.type === "multiselect" && existingFilter ? existingFilter.values : [];
@@ -1917,7 +1840,6 @@ export const Filters = <T = unknown>({
           return;
         }
 
-        // For other types, add filter directly
         const defaultOperator =
           field.defaultOperator ||
           (field.type === "daterange"
@@ -1963,11 +1885,9 @@ export const Filters = <T = unknown>({
       const defaultOperator =
         field.defaultOperator || (field.type === "multiselect" ? "is_any_of" : "is");
 
-      // Check if there's already a filter for this field
       const existingFilterIndex = filters.findIndex((f) => f.field === field.key);
 
       if (existingFilterIndex >= 0) {
-        // Update existing filter
         const updatedFilters = [...filters];
         updatedFilters[existingFilterIndex] = {
           ...updatedFilters[existingFilterIndex],
@@ -1975,7 +1895,6 @@ export const Filters = <T = unknown>({
         };
         onChange(updatedFilters);
       } else {
-        // Create new filter
         const newFilter = createFilter<T>(field.key, defaultOperator, values as T[]);
         const newFilters = [...filters, newFilter];
         onChange(newFilters);
@@ -1986,7 +1905,6 @@ export const Filters = <T = unknown>({
         setSelectedFieldForOptions(null);
         setTempSelectedValues([]);
       } else {
-        // For multiselect, keep popover open but update temp values
         setTempSelectedValues(values);
       }
     },
@@ -1996,15 +1914,12 @@ export const Filters = <T = unknown>({
   const selectableFields = useMemo(() => {
     const flatFields = flattenFields(fields);
     return flatFields.filter((field) => {
-      // Only include actual filterable fields (must have key and type)
       if (!field.key || field.type === "separator") {
         return false;
       }
-      // If allowMultiple is true, don't filter out fields that already have filters
       if (allowMultiple) {
         return true;
       }
-      // Filter out fields that already have filters (default behavior)
       return !filters.some((filter) => filter.field === field.key);
     });
   }, [fields, filters, allowMultiple]);
@@ -2091,13 +2006,10 @@ export const Filters = <T = unknown>({
             <PopoverContent className={cn("w-[200px] p-0", popoverContentClassName)} align="start">
               <Command>
                 {selectedFieldForOptions ? (
-                  // Show original select/multiselect rendering without back button
                   <SelectOptionsPopover<T>
                     field={selectedFieldForOptions}
                     values={tempSelectedValues as T[]}
                     onChange={(values) => {
-                      // For multiselect, create filter immediately but keep popover open
-                      // For single select, create filter and close popover
                       const shouldClosePopover = selectedFieldForOptions.type === "select";
                       addFilterWithOption(
                         selectedFieldForOptions,
@@ -2109,7 +2021,6 @@ export const Filters = <T = unknown>({
                     inline={true}
                   />
                 ) : (
-                  // Show field selection
                   <>
                     {showSearchInput && (
                       <CommandInput placeholder={mergedI18n.searchFields} className="h-9" />
@@ -2117,18 +2028,14 @@ export const Filters = <T = unknown>({
                     <CommandList>
                       <CommandEmpty>{mergedI18n.noFieldsFound}</CommandEmpty>
                       {fields.map((item, _index) => {
-                        // Handle grouped fields (FilterFieldGroup structure)
                         if (isFieldGroup(item)) {
                           const groupFields = item.fields.filter((field) => {
-                            // Include separators and labels for display
                             if (field.type === "separator") {
                               return true;
                             }
-                            // If allowMultiple is true, don't filter out fields that already have filters
                             if (allowMultiple) {
                               return true;
                             }
-                            // Filter out fields that already have filters (default behavior)
                             return !filters.some((filter) => filter.field === field.key);
                           });
 
@@ -2140,7 +2047,6 @@ export const Filters = <T = unknown>({
                               heading={item.group || "Fields"}
                             >
                               {groupFields.map((field) => {
-                                // Handle separator
                                 if (field.type === "separator") {
                                   return (
                                     <CommandSeparator
@@ -2149,7 +2055,6 @@ export const Filters = <T = unknown>({
                                   );
                                 }
 
-                                // Regular field
                                 return (
                                   <CommandItem
                                     key={field.key}
@@ -2164,18 +2069,14 @@ export const Filters = <T = unknown>({
                           );
                         }
 
-                        // Handle group-level fields (new FilterFieldConfig structure with group property)
                         if (isGroupLevelField(item)) {
                           const groupFields = (item.fields ?? []).filter((field) => {
-                            // Include separators and labels for display
                             if (field.type === "separator") {
                               return true;
                             }
-                            // If allowMultiple is true, don't filter out fields that already have filters
                             if (allowMultiple) {
                               return true;
                             }
-                            // Filter out fields that already have filters (default behavior)
                             return !filters.some((filter) => filter.field === field.key);
                           });
 
@@ -2187,7 +2088,6 @@ export const Filters = <T = unknown>({
                               heading={item.group || "Fields"}
                             >
                               {groupFields.map((field) => {
-                                // Handle separator
                                 if (field.type === "separator") {
                                   return (
                                     <CommandSeparator
@@ -2196,7 +2096,6 @@ export const Filters = <T = unknown>({
                                   );
                                 }
 
-                                // Regular field
                                 return (
                                   <CommandItem
                                     key={field.key}
@@ -2211,10 +2110,8 @@ export const Filters = <T = unknown>({
                           );
                         }
 
-                        // Handle flat field configuration (backward compatibility)
                         const field = item;
 
-                        // Handle separator
                         if (field.type === "separator") {
                           return (
                             <CommandSeparator
@@ -2223,7 +2120,6 @@ export const Filters = <T = unknown>({
                           );
                         }
 
-                        // Regular field
                         return (
                           <CommandItem
                             key={field.key}
@@ -2252,7 +2148,6 @@ export const Filters = <T = unknown>({
               className={filterItemVariants({ variant })}
               data-slot="filter-item"
             >
-              {/* Field Label */}
               <div
                 className={filterFieldLabelVariants({
                   variant: variant,
@@ -2264,7 +2159,6 @@ export const Filters = <T = unknown>({
                 {field.label}
               </div>
 
-              {/* Operator Dropdown */}
               <FilterOperatorDropdown<T>
                 field={field}
                 operator={filter.operator}
@@ -2272,7 +2166,6 @@ export const Filters = <T = unknown>({
                 onChange={(operator) => updateFilter(filter.id, { operator })}
               />
 
-              {/* Value Selector */}
               <FilterValueSelector<T>
                 field={field}
                 values={filter.values}
@@ -2280,7 +2173,6 @@ export const Filters = <T = unknown>({
                 operator={filter.operator}
               />
 
-              {/* Remove Button */}
               <FilterRemoveButton onClick={() => removeFilter(filter.id)} />
             </div>
           );

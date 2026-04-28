@@ -82,33 +82,25 @@ const resolveTokens = (customization: Record<string, string>): Record<string, st
   const base = baseColors[baseColorName] ?? baseColors.neutral;
   const theme = THEME_COLORS[themeColorName] ?? THEME_COLORS.neutral;
 
-  // Build merged token map
   const tokens: Record<string, string> = {
-    // Base color tokens
     ...base,
-    // Theme (accent) color tokens
     ...theme,
     // Derived: secondary = base's muted
     secondary: base.muted,
     "secondary-foreground": base["muted-foreground"],
-    // Constant destructive tokens
     ...DESTRUCTIVE_TOKENS,
   };
 
-  // Font
   const fontValue = FONT_MAP[fontName] ?? FONT_MAP.Inter;
   tokens.font = fontValue;
 
-  // Radius
   const radiusValue = RADIUS_MAP[radiusName] ?? RADIUS_MAP.medium;
   tokens.radius = radiusValue;
 
-  // Spacing
   const spacingValue = SPACING_MAP[spacingName] ?? SPACING_MAP.normal;
   tokens.spacing = spacingValue;
 
-  // Apply any individual token overrides from advanced Pro users
-  // Priority: mode-prefixed key (e.g. "light:primary") > unprefixed legacy key
+  // Override priority: mode-prefixed key (e.g. "light:primary") > unprefixed legacy key
   const mode = isDark ? "dark" : "light";
   for (const tokenName of TOKEN_NAMES) {
     const prefixedKey = `${mode}:${tokenName}`;

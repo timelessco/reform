@@ -206,24 +206,12 @@ const groups: Group[] = [
   {
     group: "Advanced blocks",
     items: [
-      // {
-      // 	icon: <TableOfContentsIcon />,
-      // 	keywords: ["toc"],
-      // 	label: "Table of contents",
-      // 	value: KEYS.toc,
-      // },
       {
         description: "Split content into three columns",
         icon: <Columns3Icon />,
         label: "3 columns",
         value: "action_three_columns",
       },
-      // {
-      // 	focusEditor: false,
-      // 	icon: <RadicalIcon />,
-      // 	label: "Equation",
-      // 	value: KEYS.equation,
-      // },
     ].map((item) => ({
       ...item,
       onSelect: (editor, value) => {
@@ -242,7 +230,6 @@ const groups: Group[] = [
         label: "Date",
         value: KEYS.date,
       },
-      // ``
     ].map((item) => ({
       ...item,
       onSelect: (editor, value) => {
@@ -361,12 +348,6 @@ const groups: Group[] = [
         label: "Multi Select",
         value: "formMultiSelect",
       },
-      // {
-      //   icon: <ChevronsUpDownIcon />,
-      //   keywords: ["form", "ranking", "rank", "order", "sort", "priority"],
-      //   label: "Ranking",
-      //   value: "formRanking",
-      // },
     ].map((item) => ({
       ...item,
       onSelect: (editor, value) => {
@@ -390,12 +371,10 @@ const previewMap: Record<string, () => ReactNode> = {
   [KEYS.table]: TablePreview,
   [KEYS.blockquote]: BlockquotePreview,
   [KEYS.callout]: CalloutPreview,
-  // Advanced, Inline & Layout
   action_three_columns: ThreeColumnsPreview,
   [KEYS.date]: DateInlinePreview,
   pageBreak: NewPagePreview,
   pageBreakThankYou: ThankYouPagePreview,
-  // Form blocks (text-like)
   formInput: FormTextInputPreview,
   formTextarea: FormTextAreaPreview,
   formEmail: FormEmailPreview,
@@ -405,7 +384,6 @@ const previewMap: Record<string, () => ReactNode> = {
   formDate: FormDatePreview,
   formTime: FormTimePreview,
   formFileUpload: FormFileUploadPreview,
-  // Form blocks (selection)
   formCheckbox: FormCheckboxPreview,
   formMultiChoice: FormMultiChoicePreview,
   formMultiSelect: FormMultiSelectPreview,

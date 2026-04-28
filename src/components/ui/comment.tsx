@@ -293,7 +293,6 @@ const CommentMoreDropdown = (props: {
   const onDeleteComment = React.useCallback(() => {
     if (!comment.id) return alert("You are operating too quickly, please try again later.");
 
-    // Find and update the discussion
     const updatedDiscussions = editor
       .getOption(discussionPlugin, "discussions")
       .map((discussion) => {
@@ -315,7 +314,6 @@ const CommentMoreDropdown = (props: {
         };
       });
 
-    // Save back to session storage
     editor.setOption(discussionPlugin, "discussions", updatedDiscussions);
     onRemoveComment?.();
   }, [comment.discussionId, comment.id, editor, onRemoveComment]);
@@ -416,10 +414,8 @@ export const CommentCreateForm = ({
     commentEditor.tf.reset();
 
     if (discussionId) {
-      // Get existing discussion
       const discussion = discussions.find((d) => d.id === discussionId);
       if (!discussion) {
-        // Mock creating suggestion
         const newDiscussion: TDiscussion = {
           id: discussionId,
           comments: [
@@ -441,7 +437,6 @@ export const CommentCreateForm = ({
         return;
       }
 
-      // Create reply comment
       const comment: TComment = {
         id: nanoid(),
         contentRich: commentValue,
@@ -451,13 +446,11 @@ export const CommentCreateForm = ({
         userId: editor.getOption(discussionPlugin, "currentUserId"),
       };
 
-      // Add reply to discussion comments
       const updatedDiscussion = {
         ...discussion,
         comments: [...discussion.comments, comment],
       };
 
-      // Filter out old discussion and add updated one
       const updatedDiscussions = discussions
         .filter((d) => d.id !== discussionId)
         .concat(updatedDiscussion);
@@ -474,7 +467,6 @@ export const CommentCreateForm = ({
     const documentContent = commentsNodeEntry.map(([node]) => node.text).join("");
 
     const _discussionId = nanoid();
-    // Mock creating new discussion
     const newDiscussion: TDiscussion = {
       id: _discussionId,
       comments: [
