@@ -7,9 +7,10 @@ import type { PlateElementProps } from "platejs/react";
 // gap between adjacent blocks is what was causing the "gappy" look. Biasing
 // only to the bottom (vs. both top and bottom) keeps adjacent highlights
 // from doubling up at the seam, which would otherwise read as a darker band
-// since bg-primary/[.13] is translucent.
+// since bg-primary/[.13] is translucent. Rounded corners match the rest of
+// the site's --radius-lg convention used on inputs/cards.
 export const blockSelectionVariants = cva(
-  "pointer-events-none absolute inset-x-0 top-0 -bottom-2 z-1 bg-primary/[.13] transition-opacity",
+  "pointer-events-none absolute inset-x-0 top-0 -bottom-2 z-1 bg-primary/[.13] rounded-[var(--radius-lg)] transition-opacity",
   {
     defaultVariants: {
       active: true,
