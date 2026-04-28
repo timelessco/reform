@@ -3,16 +3,10 @@ import type { Path, TElement } from "platejs";
 import type { PlateEditor } from "platejs/react";
 import { createPlatePlugin } from "platejs/react";
 import { FormButtonElement } from "@/components/ui/form-button-node";
-import { FormInputElement } from "@/components/ui/form-input-node";
+import { FormFieldElement } from "@/components/ui/form-field-node";
 import { FormLabelElement } from "@/components/ui/form-label-node";
 import { FormTextareaElement } from "@/components/ui/form-textarea-node";
 import { PageBreakElement } from "@/components/ui/page-break-node";
-import { FormEmailElement } from "@/components/ui/form-email-node";
-import { FormPhoneElement } from "@/components/ui/form-phone-node";
-import { FormNumberElement } from "@/components/ui/form-number-node";
-import { FormLinkElement } from "@/components/ui/form-link-node";
-import { FormDateElement } from "@/components/ui/form-date-node";
-import { FormTimeElement } from "@/components/ui/form-time-node";
 import { FormFileUploadElement } from "@/components/ui/form-file-upload-node";
 import { FormMultiSelectInputElement } from "@/components/ui/form-multi-select-input-node";
 import { FormOptionItemElement } from "@/components/ui/form-option-item-node";
@@ -298,7 +292,7 @@ export const FormLabelPlugin = createPlatePlugin({
 
 export const FormInputPlugin = createPlatePlugin({
   key: "formInput",
-  node: { isElement: true, component: FormInputElement },
+  node: { isElement: true, component: FormFieldElement },
   options: { gutterPosition: "center" },
   handlers: {
     onKeyDown: ({ editor, event }) => handleBackspace(editor, event),
@@ -907,7 +901,7 @@ export const PageBreakPlugin = createPlatePlugin({
 
 export const FormEmailPlugin = createPlatePlugin({
   key: "formEmail",
-  node: { isElement: true, component: FormEmailElement },
+  node: { isElement: true, component: FormFieldElement },
   options: { gutterPosition: "center" },
   handlers: {
     onKeyDown: ({ editor, event }) => handleBackspace(editor, event),
@@ -916,7 +910,7 @@ export const FormEmailPlugin = createPlatePlugin({
 
 export const FormPhonePlugin = createPlatePlugin({
   key: "formPhone",
-  node: { isElement: true, component: FormPhoneElement },
+  node: { isElement: true, component: FormFieldElement },
   options: { gutterPosition: "center" },
   handlers: {
     onKeyDown: ({ editor, event }) => handleBackspace(editor, event),
@@ -925,7 +919,7 @@ export const FormPhonePlugin = createPlatePlugin({
 
 export const FormNumberPlugin = createPlatePlugin({
   key: "formNumber",
-  node: { isElement: true, component: FormNumberElement },
+  node: { isElement: true, component: FormFieldElement },
   options: { gutterPosition: "center" },
   handlers: {
     onKeyDown: ({ editor, event }) => handleBackspace(editor, event),
@@ -934,7 +928,7 @@ export const FormNumberPlugin = createPlatePlugin({
 
 export const FormLinkPlugin = createPlatePlugin({
   key: "formLink",
-  node: { isElement: true, component: FormLinkElement },
+  node: { isElement: true, component: FormFieldElement },
   options: { gutterPosition: "center" },
   handlers: {
     onKeyDown: ({ editor, event }) => handleBackspace(editor, event),
@@ -943,7 +937,7 @@ export const FormLinkPlugin = createPlatePlugin({
 
 export const FormDatePlugin = createPlatePlugin({
   key: "formDate",
-  node: { isElement: true, component: FormDateElement },
+  node: { isElement: true, component: FormFieldElement },
   options: { gutterPosition: "center" },
   handlers: {
     onKeyDown: ({ editor, event }) => handleBackspace(editor, event),
@@ -952,7 +946,7 @@ export const FormDatePlugin = createPlatePlugin({
 
 export const FormTimePlugin = createPlatePlugin({
   key: "formTime",
-  node: { isElement: true, component: FormTimeElement },
+  node: { isElement: true, component: FormFieldElement },
   options: { gutterPosition: "center" },
   handlers: {
     onKeyDown: ({ editor, event }) => handleBackspace(editor, event),
