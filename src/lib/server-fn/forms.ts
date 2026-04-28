@@ -5,11 +5,11 @@ import { z } from "zod";
 import { customDomains, forms, member, submissions, workspaces } from "@/db/schema";
 import { RESERVED_SLUGS } from "@/lib/config/plan-config";
 import { db } from "@/db";
-import { authMiddleware } from "@/lib/auth/middleware";
+import { authMiddleware, formProSettingsMiddleware } from "@/lib/auth/middleware";
 import { VERSIONED_SETTINGS_KEYS } from "@/lib/content-hash";
 import { purgeFormCache } from "@/lib/server-fn/cdn-cache";
 import { authForm, getActiveOrgId } from "./auth-helpers";
-import { assertPlanForFormSettings, getOrgPlan } from "./plan-helpers";
+import { getOrgPlan } from "./plan-helpers";
 
 // Columns the listings query must always return so client-side change detection
 // (`useHasUnpublishedChanges`) keeps working after a refetch wipes the locally
@@ -32,7 +32,7 @@ const serializeForm = (form: typeof forms.$inferSelect) => ({
 });
 
 export const createForm = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, formProSettingsMiddleware])
   .inputValidator(
     z.object({
       id: z.uuid(),
@@ -77,15 +77,6 @@ export const createForm = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
-    const orgId = getActiveOrgId(context.session);
-    await assertPlanForFormSettings(orgId, {
-      branding: data.branding,
-      respondentEmailNotifications: data.respondentEmailNotifications,
-      dataRetention: data.dataRetention,
-      analytics: data.analytics,
-      customization: data.customization,
-    });
-
     const now = new Date();
     const [form] = await db
       .insert(forms)
@@ -139,7 +130,7 @@ export const createForm = createServerFn({ method: "POST" })
   });
 
 export const updateForm = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, formProSettingsMiddleware])
   .inputValidator(
     z.object({
       id: z.uuid(),
@@ -188,13 +179,6 @@ export const updateForm = createServerFn({ method: "POST" })
     const { id, updatedAt: clientUpdatedAt, ...updateData } = data;
     const orgId = getActiveOrgId(context.session);
     await authForm(id, context.session.user.id, orgId);
-    await assertPlanForFormSettings(orgId, {
-      branding: updateData.branding,
-      respondentEmailNotifications: updateData.respondentEmailNotifications,
-      dataRetention: updateData.dataRetention,
-      analytics: updateData.analytics,
-      customization: updateData.customization,
-    });
 
     const [form] = await db
       .update(forms)

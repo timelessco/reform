@@ -1,45 +1,39 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { forms, organization } from "@/db/schema";
-import { assertPlanForFormSettings, getOrgPlan } from "@/lib/server-fn/plan-helpers";
+import { organization } from "@/db/schema";
+import { getOrgPlan, requiresProForFormSettings } from "@/lib/server-fn/plan-helpers";
 import {
   cleanupTestOrg,
   cleanupTestUser,
-  createTestForm,
   createTestOrg,
-  createTestWorkspace,
   getTestUtils,
   setOrgPlan,
 } from "@/test/helpers";
 
 describe("plan-write-gates", () => {
-  const ownerId = crypto.randomUUID();
-  let orgId: string;
-  let workspaceId: string;
-
-  beforeEach(async () => {
-    const testUtils = await getTestUtils();
-    await testUtils.saveUser(
-      testUtils.createUser({
-        id: ownerId,
-        email: `owner-write-gates-${ownerId}@example.com`,
-        name: "Owner Write Gates",
-      }),
-    );
-    const org = await createTestOrg(ownerId);
-    orgId = org.id;
-    const workspace = await createTestWorkspace(orgId, ownerId);
-    workspaceId = workspace.id;
-  });
-
-  afterEach(async () => {
-    await db.delete(forms).where(eq(forms.workspaceId, workspaceId));
-    await cleanupTestUser(ownerId);
-    await cleanupTestOrg(orgId);
-  });
-
   describe("getOrgPlan", () => {
+    const ownerId = crypto.randomUUID();
+    let orgId: string;
+
+    beforeEach(async () => {
+      const testUtils = await getTestUtils();
+      await testUtils.saveUser(
+        testUtils.createUser({
+          id: ownerId,
+          email: `owner-write-gates-${ownerId}@example.com`,
+          name: "Owner Write Gates",
+        }),
+      );
+      const org = await createTestOrg(ownerId);
+      orgId = org.id;
+    });
+
+    afterEach(async () => {
+      await cleanupTestUser(ownerId);
+      await cleanupTestOrg(orgId);
+    });
+
     it("returns 'free' for a new org by default", async () => {
       await expect(getOrgPlan(orgId)).resolves.toBe("free");
     });
@@ -54,87 +48,63 @@ describe("plan-write-gates", () => {
     });
 
     it("returns 'free' when the cached column holds an unexpected value", async () => {
-      // Simulate a manual DB edit putting garbage into the column.
       await db.update(organization).set({ plan: "garbage" }).where(eq(organization.id, orgId));
       await expect(getOrgPlan(orgId)).resolves.toBe("free");
     });
   });
 
-  describe("assertPlanForFormSettings", () => {
-    it("passes for free org when no Pro fields are requested", async () => {
-      await expect(assertPlanForFormSettings(orgId, {})).resolves.toBeUndefined();
+  describe("requiresProForFormSettings (pure predicate)", () => {
+    it("false when no Pro fields are present", () => {
+      expect(requiresProForFormSettings({})).toBeFalsy();
     });
 
-    it("passes for free org with empty customization object", async () => {
-      await expect(
-        assertPlanForFormSettings(orgId, { customization: {} }),
-      ).resolves.toBeUndefined();
+    it("false when customization is an empty object", () => {
+      expect(requiresProForFormSettings({ customization: {} })).toBeFalsy();
     });
 
-    it("rejects free org wanting branding removed", async () => {
-      await expect(assertPlanForFormSettings(orgId, { branding: false })).rejects.toThrow(
-        /Pro subscription/,
-      );
+    it("true when branding is being removed", () => {
+      expect(requiresProForFormSettings({ branding: false })).toBeTruthy();
     });
 
-    it("rejects free org enabling respondent emails", async () => {
-      await expect(
-        assertPlanForFormSettings(orgId, { respondentEmailNotifications: true }),
-      ).rejects.toThrow(/Pro subscription/);
+    it("true when respondent emails are enabled", () => {
+      expect(requiresProForFormSettings({ respondentEmailNotifications: true })).toBeTruthy();
     });
 
-    it("rejects free org enabling data retention", async () => {
-      await expect(assertPlanForFormSettings(orgId, { dataRetention: true })).rejects.toThrow(
-        /Pro subscription/,
-      );
+    it("true when data retention is enabled", () => {
+      expect(requiresProForFormSettings({ dataRetention: true })).toBeTruthy();
     });
 
-    it("rejects free org enabling analytics", async () => {
-      await expect(assertPlanForFormSettings(orgId, { analytics: true })).rejects.toThrow(
-        /Pro subscription/,
-      );
+    it("true when analytics is enabled", () => {
+      expect(requiresProForFormSettings({ analytics: true })).toBeTruthy();
     });
 
-    it("rejects free org saving non-empty customization", async () => {
-      await expect(
-        assertPlanForFormSettings(orgId, { customization: { primaryColor: "#abcdef" } }),
-      ).rejects.toThrow(/Pro subscription/);
+    it("true when customization is non-empty", () => {
+      expect(
+        requiresProForFormSettings({ customization: { primaryColor: "#abcdef" } }),
+      ).toBeTruthy();
     });
 
-    it("rejects free org with multiple Pro fields combined", async () => {
-      await expect(
-        assertPlanForFormSettings(orgId, {
+    it("true when multiple Pro fields are combined", () => {
+      expect(
+        requiresProForFormSettings({
           branding: false,
           customization: { primaryColor: "#abcdef" },
         }),
-      ).rejects.toThrow(/Pro subscription/);
+      ).toBeTruthy();
     });
 
-    it("passes for pro org enabling each Pro field", async () => {
-      await setOrgPlan(orgId, "pro");
-      await expect(assertPlanForFormSettings(orgId, { branding: false })).resolves.toBeUndefined();
-      await expect(
-        assertPlanForFormSettings(orgId, { respondentEmailNotifications: true }),
-      ).resolves.toBeUndefined();
-      await expect(
-        assertPlanForFormSettings(orgId, { dataRetention: true }),
-      ).resolves.toBeUndefined();
-      await expect(assertPlanForFormSettings(orgId, { analytics: true })).resolves.toBeUndefined();
-      await expect(
-        assertPlanForFormSettings(orgId, { customization: { primaryColor: "#abcdef" } }),
-      ).resolves.toBeUndefined();
+    it("false when branding is explicitly true (allowing free orgs to keep branding on)", () => {
+      expect(requiresProForFormSettings({ branding: true })).toBeFalsy();
     });
 
-    it("allows free org to flip branding back to true (downgrade their own setting)", async () => {
-      await expect(assertPlanForFormSettings(orgId, { branding: true })).resolves.toBeUndefined();
-    });
-
-    it("does not rely on a created form — orgId-only check", async () => {
-      // Sanity: the assert reads `organization.plan` only, no FK to forms.
-      await createTestForm(workspaceId, ownerId);
-      await expect(assertPlanForFormSettings(orgId, { analytics: true })).rejects.toThrow(
-        /Pro subscription/,
-      );
+    it("false when respondent emails / data retention / analytics are explicitly false", () => {
+      expect(
+        requiresProForFormSettings({
+          respondentEmailNotifications: false,
+          dataRetention: false,
+          analytics: false,
+        }),
+      ).toBeFalsy();
     });
   });
 });
