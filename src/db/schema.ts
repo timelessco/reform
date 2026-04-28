@@ -23,6 +23,8 @@ export const organization = pgTable("organization", {
   logo: text(),
   metadata: text(),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  // Cached from Polar via webhooks (src/lib/auth/polar-handlers.ts).
+  plan: text().notNull().default("free"),
 });
 
 export const member = pgTable(
@@ -227,6 +229,9 @@ export const customDomains = pgTable(
     organizationId: text().notNull(),
     domain: text().notNull().unique(),
     status: text().notNull().default("pending"),
+    // Captures `status` when an org is downgraded so re-upgrade can restore
+    // without re-verifying through Vercel.
+    previousStatus: text(),
     vercelDomainId: text(),
     siteTitle: text(),
     faviconUrl: text(),
