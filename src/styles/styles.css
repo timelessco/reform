@@ -843,14 +843,15 @@
    Applies to direct children only (so nested content like list items, table cells,
    columns are unaffected). Excludes form chrome (header, button) via [data-bf-chrome]. */
 :root {
-  --bf-block-padding: 0.625rem; /* 10px = py-2.5 */
+  --bf-bottom-padding: 8px;
+  --bf-top-padding: 5px
 }
 
 [data-slate-editor] > *:not([data-bf-chrome]):not([data-bf-input]),
 [data-bf-field-list] > *:not([data-bf-chrome]):not([data-bf-input]),
 [data-bf-field-list] [data-slate-node="element"]:not([data-bf-chrome]):not([data-bf-input]) {
-  padding-top: var(--bf-block-padding) !important;
-  padding-bottom: var(--bf-block-padding) !important;
+  padding-top: var(--bf-top-padding) !important;
+  padding-bottom: var(--bf-bottom-padding) !important;
 }
 
 /* Guarantee input blocks never inherit vertical block padding — labels own block padding. */
