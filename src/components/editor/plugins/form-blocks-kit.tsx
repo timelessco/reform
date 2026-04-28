@@ -596,7 +596,10 @@ export const FormButtonPlugin = createPlatePlugin({
           if (pageBreakIndex !== -1) {
             return originalMoveNodes({ ...options, to: [pageBreakIndex + 1] });
           }
-          return; // No pageBreak ahead — block move
+          // No pageBreak ahead. Redirect to before the button instead of
+          // silently dropping the move — silent no-op manifests as a snap-back
+          // even though the drop indicator showed a valid target.
+          return originalMoveNodes({ ...options, to: [targetIndex - 1] });
         }
       }
 

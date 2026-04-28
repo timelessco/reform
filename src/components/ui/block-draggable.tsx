@@ -541,19 +541,45 @@ const DragHandle = React.memo(function DragHandle({
   );
 });
 
+const pathsEqual = (a: number[], b: number[]) =>
+  a.length === b.length && a.every((v, i) => v === b[i]);
+
 const DropLine = React.memo(function DropLine({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   const { dropLine } = useDropLine();
+  const editor = useEditorRef();
+  const element = useElement();
+  const draggingId = usePluginOption(DndPlugin, "draggingId") as string | string[] | undefined;
 
   if (!dropLine) return null;
+
+  // Suppress indicator when the resolved drop position would be a no-op:
+  // plate's onDropNode rejects drops where dragPath equals dropPath or PathApi.next(dropPath),
+  // so painting the line in those positions misleads the user into expecting a move.
+  if (draggingId) {
+    const ids = Array.isArray(draggingId) ? draggingId : [draggingId];
+    const primaryId = ids[0];
+    const elementPath = editor.api.findPath(element);
+    const dragEntry = primaryId ? editor.api.node({ id: primaryId, at: [] }) : undefined;
+    const dragPath = dragEntry?.[1];
+
+    if (dragPath && elementPath && elementPath.length > 0) {
+      const last = elementPath[elementPath.length - 1] ?? 0;
+      const dropPath = dropLine === "top" ? elementPath : [...elementPath.slice(0, -1), last + 1];
+      const nextDropPath = [...dropPath.slice(0, -1), (dropPath[dropPath.length - 1] ?? 0) + 1];
+      if (pathsEqual(dragPath, dropPath) || pathsEqual(dragPath, nextDropPath)) {
+        return null;
+      }
+    }
+  }
 
   return (
     <div
       {...props}
       className={cn(
-        "slate-dropLine",
+        "slate-dropLine pointer-events-none",
         "absolute inset-x-0 h-1 opacity-100",
         "bg-primary rounded-full",
         "animate-[drop-line-pulse_1s_ease-in-out_infinite]",
