@@ -331,7 +331,13 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
           {previewSettings.presentationMode === "field-by-field" && doc.cover && (
             <FieldByFieldCoverBackground cover={doc.cover} />
           )}
-          <div className="flex-1 w-full h-full min-h-0">
+          <div
+            className={cn(
+              "flex-1 w-full h-full min-h-0",
+              previewSettings.presentationMode !== "field-by-field" &&
+                "overflow-y-auto overflow-x-hidden",
+            )}
+          >
             <FormPreviewFromPlate
               content={content}
               title={hideTitle ? "" : (doc.title ?? undefined)}

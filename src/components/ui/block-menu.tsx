@@ -82,15 +82,14 @@ const getFieldType = (node: { type?: string; variant?: string } | undefined): Bl
   return "unknown";
 };
 
-// Get label text from node
+// Returns the trimmed text of a node, or empty string if absent / blank.
+// Callers chain fallbacks (label → input → "Untitled") so empty must be empty.
 const extractLabelText = (node: { children?: Array<{ text?: string }> }): string => {
-  if (!node.children) return "Untitled";
-  return (
-    node.children
-      .map((child) => child.text || "")
-      .join("")
-      .trim() || "Untitled"
-  );
+  if (!node.children) return "";
+  return node.children
+    .map((child) => child.text || "")
+    .join("")
+    .trim();
 };
 
 const stopMouseEventPropagation = (e: React.MouseEvent) => {
@@ -308,11 +307,9 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   // Initialize state only when menu transitions to open (not on every node change)
   React.useEffect(() => {
     if (isOpen && !wasOpenRef.current) {
-      const label = labelNode
-        ? extractLabelText(labelNode)
-        : firstNode
-          ? extractLabelText(firstNode)
-          : "Untitled";
+      const labelText = labelNode ? extractLabelText(labelNode) : "";
+      const inputText = firstNode ? extractLabelText(firstNode) : "";
+      const label = labelText || inputText || "Untitled";
       setFieldName(label);
       setIsEditingName(false);
       setTurnIntoOpen(false);

@@ -11,13 +11,27 @@ type RequiredBadgeButtonProps = {
   required: boolean;
   path: Path;
   className?: string;
+  /**
+   * When true, fall back to an inline (right-edge, vertically-centered)
+   * placement if no formLabel is above. Used by standalone fields like a
+   * privacy-policy formOptionItem where the option text *is* the label.
+   * Default false: badge hides when no label is above (current behavior for
+   * fields whose right edge already hosts a type-icon).
+   */
+  showWithoutLabel?: boolean;
 };
 
-export const RequiredBadgeButton = ({ required, path, className }: RequiredBadgeButtonProps) => {
+export const RequiredBadgeButton = ({
+  required,
+  path,
+  className,
+  showWithoutLabel = false,
+}: RequiredBadgeButtonProps) => {
   const editor = useEditorRef();
 
-  // Hide the badge when there's no label text above — otherwise the
-  // floating asterisk visually collides with the preceding block.
+  // Hide the floating badge when there's no label above — otherwise the
+  // asterisk visually collides with the preceding block. Standalone callers
+  // pass `showWithoutLabel` and get an inline-right placement instead.
   const hasLabelAbove = useEditorSelector(
     (ed) => {
       const blockIndex = path[0];
@@ -38,7 +52,7 @@ export const RequiredBadgeButton = ({ required, path, className }: RequiredBadge
     [editor, required, path],
   );
 
-  if (!hasLabelAbove) return null;
+  if (!hasLabelAbove && !showWithoutLabel) return null;
 
   return (
     <Tooltip>
@@ -50,7 +64,8 @@ export const RequiredBadgeButton = ({ required, path, className }: RequiredBadge
             onClick={toggle}
             aria-label={required ? "Required field" : "Mark as required"}
             className={cn(
-              "absolute right-0 -top-[26px] flex size-4 cursor-pointer items-center justify-center rounded-[8px] transition-colors z-10",
+              "absolute flex size-4 cursor-pointer items-center justify-center rounded-[8px] transition-colors z-10",
+              hasLabelAbove ? "right-0 -top-[26px]" : "right-2 top-1/2 -translate-y-1/2",
               required
                 ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
                 : "bg-neutral-200 text-neutral-400 hover:bg-neutral-300 dark:bg-neutral-700 dark:text-neutral-500 dark:hover:bg-neutral-600",
