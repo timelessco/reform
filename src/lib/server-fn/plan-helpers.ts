@@ -1,7 +1,3 @@
-import { eq } from "drizzle-orm";
-import { db } from "@/db";
-import { organization } from "@/db/schema";
-
 export type ServerPlan = "free" | "pro" | "biz";
 
 const isServerPlan = (value: unknown): value is ServerPlan =>
@@ -9,7 +5,15 @@ const isServerPlan = (value: unknown): value is ServerPlan =>
 
 // Reads the cached `organization.plan` (synced by Polar webhooks); falls back
 // to 'free' for unknown orgs or unexpected column values.
+//
+// Uses dynamic imports so the `@/db` (and pg) module graph never lands in
+// chunks that statically import this file from a client-reachable path
+// (e.g. forms.ts is imported by route loaders — its top-level imports are
+// not stripped by Vite dev).
 export const getOrgPlan = async (orgId: string): Promise<ServerPlan> => {
+  const { eq } = await import("drizzle-orm");
+  const { db } = await import("@/db");
+  const { organization } = await import("@/db/schema");
   const [row] = await db
     .select({ plan: organization.plan })
     .from(organization)
