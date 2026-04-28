@@ -175,8 +175,50 @@ const Draggable = (props: PlateElementProps) => {
     return "clear-both";
   }, [isFormButton, element]);
 
+  // Confine non-checkbox option items (multiChoice, multiSelect, ranking) to
+  // their own option group. They only make sense as items within a labeled
+  // list, so dragging one out of the run of consecutive `formOptionItem`
+  // siblings would orphan it. Checkbox variant stays unrestricted because it
+  // can act as a standalone agreement-style input.
+  const canDropNode = React.useCallback(
+    ({
+      dragEntry,
+      dropEntry,
+    }: {
+      dragEntry: [TElement, number[]];
+      dropEntry: [TElement, number[]];
+    }) => {
+      const [dragNode, dragPath] = dragEntry;
+      if (dragNode.type !== "formOptionItem") return true;
+
+      const dragVariant = (dragNode as TElement & { variant?: string }).variant ?? "checkbox";
+      if (dragVariant === "checkbox") return true;
+
+      // Group lookup only makes sense at top-level paths. If either side is
+      // nested (column/table), don't constrain — those flows have their own
+      // rules upstream.
+      if (dragPath.length !== 1) return true;
+      const [, dropPath] = dropEntry;
+      if (dropPath.length !== 1) return true;
+
+      const dragIdx = dragPath[0];
+      const dropIdx = dropPath[0];
+      if (typeof dragIdx !== "number" || typeof dropIdx !== "number") return true;
+
+      const children = editor.children as TElement[];
+      let start = dragIdx;
+      while (start > 0 && children[start - 1]?.type === "formOptionItem") start--;
+      let end = dragIdx;
+      while (end < children.length - 1 && children[end + 1]?.type === "formOptionItem") end++;
+
+      return dropIdx >= start && dropIdx <= end;
+    },
+    [editor],
+  );
+
   const { isAboutToDrag, isDragging, nodeRef, previewRef, handleRef } = useDraggable({
     element,
+    canDropNode,
     onDropHandler: (_, { dragItem }) => {
       const id = (dragItem as { id: string[] | string }).id;
 
@@ -574,9 +616,13 @@ const DropLine = React.memo(function DropLine({
 
   if (!dropLine) return null;
 
-  // Suppress indicator when the resolved drop position would be a no-op:
-  // plate's onDropNode rejects drops where dragPath equals dropPath or PathApi.next(dropPath),
-  // so painting the line in those positions misleads the user into expecting a move.
+  // Suppress indicator only when the drop would be a true no-op. Plate's
+  // onDropNode rejects:
+  //   - direction "top":    dragPath === hovered - 1 (source is already the prev sibling)
+  //   - direction "bottom": dragPath === hovered + 1 (source is already the next sibling)
+  // and dragPath === hovered (hovering on self). Drop on self is also a no-op.
+  // Earlier this check used a different dropPath formula and ended up hiding
+  // the drop line when dragging UP onto N-1 — the line only appeared on N-2.
   if (draggingId) {
     const ids = Array.isArray(draggingId) ? draggingId : [draggingId];
     const primaryId = ids[0];
@@ -585,11 +631,19 @@ const DropLine = React.memo(function DropLine({
     const dragPath = dragEntry?.[1];
 
     if (dragPath && elementPath && elementPath.length > 0) {
+      if (pathsEqual(dragPath, elementPath)) return null;
+
+      const parent = elementPath.slice(0, -1);
       const last = elementPath[elementPath.length - 1] ?? 0;
-      const dropPath = dropLine === "top" ? elementPath : [...elementPath.slice(0, -1), last + 1];
-      const nextDropPath = [...dropPath.slice(0, -1), (dropPath[dropPath.length - 1] ?? 0) + 1];
-      if (pathsEqual(dragPath, dropPath) || pathsEqual(dragPath, nextDropPath)) {
-        return null;
+
+      if (dropLine === "top") {
+        // Dropping above hovered ⇒ slot at hovered-1.
+        const adjacentAbove = [...parent, last - 1];
+        if (pathsEqual(dragPath, adjacentAbove)) return null;
+      } else if (dropLine === "bottom") {
+        // Dropping below hovered ⇒ slot at hovered+1.
+        const adjacentBelow = [...parent, last + 1];
+        if (pathsEqual(dragPath, adjacentBelow)) return null;
       }
     }
   }
