@@ -870,22 +870,9 @@
   padding-bottom: var(--bf-block-padding) !important;
 }
 
-/* Quiet empty cursor-landing paragraphs auto-inserted between form sections
-   collapse to ~0px so they don't show as fat gray bars. The 10px block-
-   padding lives on the BlockDraggable wrapper (a direct child of
-   [data-slate-editor]), not the inner slate-node — so we target the wrapper
-   via :has() and look inside for a paragraph (.slate-p) with the empty-leaf
-   marker [data-slate-zero-width] that slate-react injects. Restricting to
-   .slate-p avoids collapsing empty form labels (which need their placeholder
-   visible). :focus-within keeps the block at full padded height while the
-   cursor is inside it, so the caret has somewhere to land. Specificity is
-   0,5,0 vs. the global rule's 0,3,0 — wins on specificity, no !important
-   arms-race. */
-[data-slate-editor]
-  > *:has(.slate-p:has([data-slate-zero-width])):not(:focus-within):not([data-bf-chrome]):not([data-bf-input]) {
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  min-height: 0 !important;
+/* Drop padding on block-draggable wrappers whose paragraph is empty. */
+[data-slate-editor] > *:has(.slate-p:has([data-slate-zero-width])) {
+  padding: 0 !important;
 }
 
 /* Form-input rows (option items, multi-select chips, etc.) are stacked with
