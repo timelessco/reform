@@ -3,6 +3,8 @@ import { useCallback } from "react";
 import type { Path, TElement } from "platejs";
 import { useEditorRef, useEditorSelector } from "platejs/react";
 
+type ElementWithId = TElement & { id?: string; required?: boolean };
+
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { FORM_INPUT_NODE_TYPES } from "@/lib/form-schema/form-field-constants";
 import { cn } from "@/lib/utils";
@@ -55,7 +57,13 @@ const RequiredBadge = ({
 
 type StandaloneInputBadgeProps = {
   required: boolean;
-  path: Path;
+  /**
+   * Prefer passing `element` — it lets the toggle resolve a fresh path at
+   * click time, avoiding the stale-path bug below. `path` is supported as a
+   * fallback for callers that don't have direct access to the element.
+   */
+  element?: TElement;
+  path?: Path;
   /**
    * True when the caller has determined this input is standalone (no label
    * above) and still wants an inline badge — currently only the
@@ -69,18 +77,40 @@ type StandaloneInputBadgeProps = {
 
 export const RequiredBadgeButton = ({
   required,
+  element,
   path,
   showWithoutLabel = false,
 }: StandaloneInputBadgeProps) => {
   const editor = useEditorRef();
 
+  // Resolve the path at click time when we have the element. `props.path`
+  // (from useNodePath) doesn't update on sibling reorder because slate-react
+  // memoizes elements by identity, so a closure-captured path can point at
+  // the wrong block after a drag, insert-above, or normalize merge — the
+  // toggle would then write `required` to whatever block currently sits at
+  // the stale index. Prefer id-match (stable across reorders), fall back to
+  // a fresh findPath, and only use the prop `path` if no element was given.
   const toggle = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      editor.tf.setNodes({ required: !required }, { at: path });
+      if (element) {
+        const id = (element as ElementWithId).id;
+        if (id) {
+          editor.tf.setNodes({ required: !required }, { at: [], match: { id } });
+          return;
+        }
+        const fresh = editor.api.findPath(element);
+        if (fresh) {
+          editor.tf.setNodes({ required: !required }, { at: fresh });
+          return;
+        }
+      }
+      if (path) {
+        editor.tf.setNodes({ required: !required }, { at: path });
+      }
     },
-    [editor, required, path],
+    [editor, required, element, path],
   );
 
   if (!showWithoutLabel) return null;
@@ -98,22 +128,29 @@ export const RequiredBadgeButton = ({
  * Renders the required badge on a `formLabel`, deriving its state from the
  * immediately-following input node. The input node remains the source of
  * truth for `required`; the label just reads + toggles its neighbor.
+ *
+ * Looks up the label's current index by element identity (not the captured
+ * `props.path`) because slate-react's useNodePath doesn't refresh on sibling
+ * reorder — a stale path would point the toggle at the wrong neighbor.
  */
-export const LabelRequiredBadge = ({ labelPath }: { labelPath: Path }) => {
+export const LabelRequiredBadge = ({ labelElement }: { labelElement: TElement }) => {
   const editor = useEditorRef();
 
   const next = useEditorSelector(
     (ed) => {
-      const idx = labelPath[0];
-      if (typeof idx !== "number") return null;
-      const sibling = (ed.children as TElement[])[idx + 1];
+      const children = ed.children as TElement[];
+      const idx = children.indexOf(labelElement);
+      if (idx < 0) return null;
+      const sibling = children[idx + 1];
       if (!sibling || !FORM_INPUT_NODE_TYPES.has(sibling.type)) return null;
+      const siblingId = (sibling as ElementWithId).id;
       return {
-        required: Boolean((sibling as TElement & { required?: boolean }).required),
+        required: Boolean((sibling as ElementWithId).required),
+        siblingId,
         siblingPath: [idx + 1] as Path,
       };
     },
-    [labelPath[0]],
+    [labelElement],
   );
 
   const toggle = useCallback(
@@ -121,6 +158,10 @@ export const LabelRequiredBadge = ({ labelPath }: { labelPath: Path }) => {
       e.preventDefault();
       e.stopPropagation();
       if (!next) return;
+      if (next.siblingId) {
+        editor.tf.setNodes({ required: !next.required }, { at: [], match: { id: next.siblingId } });
+        return;
+      }
       editor.tf.setNodes({ required: !next.required }, { at: next.siblingPath });
     },
     [editor, next],

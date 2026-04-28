@@ -6,7 +6,7 @@ import { LabelRequiredBadge } from "@/components/ui/required-badge-button";
 import { cn } from "@/lib/utils";
 
 export const FormLabelElement = ({ className, children, ...props }: PlateElementProps) => {
-  const { editor, element, path } = props;
+  const { editor, element } = props;
   const placeholder = element.placeholder as string | undefined;
   const isEmpty = editor.api.isEmpty(element);
   const isSelected = useSelected();
@@ -27,7 +27,7 @@ export const FormLabelElement = ({ className, children, ...props }: PlateElement
         )}
         <span className="min-w-px outline-none">{children}</span>
       </div>
-      <LabelRequiredBadge labelPath={path} />
+      <LabelRequiredBadge labelElement={element} />
     </PlateElement>
   );
 };
