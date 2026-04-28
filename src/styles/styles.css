@@ -870,6 +870,18 @@
   padding-bottom: var(--bf-block-padding) !important;
 }
 
+/* Quiet empty paragraphs: cursor-landing zones that auto-appear between form
+   sections collapse so they don't take up ~44px each. The attribute is set
+   reactively in ParagraphElement when the block is empty AND not selected,
+   so clicking in or block-selecting drops the rule and the block returns to
+   its padded height. line-height:0 also strips the empty leaf's text line. */
+[data-slate-editor] > [data-bf-quiet] {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  min-height: 0 !important;
+  line-height: 0 !important;
+}
+
 /* View Transition: preview mode tab switching */
 ::view-transition-old(preview-content),
 ::view-transition-new(preview-content) {
