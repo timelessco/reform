@@ -1,8 +1,6 @@
 import type { TElement } from "platejs";
 import { useEditorSelector, useFocused } from "platejs/react";
 
-type FormInputElement = TElement & { required?: boolean };
-
 export const useFormInputNode = (element: TElement) => {
   const focused = useFocused();
   const isSelected = useEditorSelector(
@@ -19,6 +17,5 @@ export const useFormInputNode = (element: TElement) => {
     },
     [element],
   );
-  const required = Boolean((element as FormInputElement).required);
-  return { focused, isSelected, required };
+  return { focused, isSelected };
 };

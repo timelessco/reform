@@ -3,7 +3,6 @@ import type { PlateElementProps } from "platejs/react";
 import { PlateElement } from "platejs/react";
 
 import { LinkIcon } from "@/components/ui/icons";
-import { RequiredBadgeButton } from "@/components/ui/required-badge-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFormInputNode } from "@/hooks/use-form-input-node";
 import { cn } from "@/lib/utils";
@@ -11,7 +10,7 @@ import { cn } from "@/lib/utils";
 export const FormLinkElement = ({ className, children, ...props }: PlateElementProps) => {
   const { attributes, element, ...rest } = props;
   const placeholder = element.placeholder as string | undefined;
-  const { focused, isSelected, required } = useFormInputNode(element);
+  const { focused, isSelected } = useFormInputNode(element);
 
   return (
     <PlateElement
@@ -40,7 +39,6 @@ export const FormLinkElement = ({ className, children, ...props }: PlateElementP
         </TooltipTrigger>
         <TooltipContent side="left">Link</TooltipContent>
       </Tooltip>
-      <RequiredBadgeButton required={required} path={props.path} />
     </PlateElement>
   );
 };

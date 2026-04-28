@@ -11,7 +11,6 @@ import {
   moveToPath,
 } from "@/components/editor/plugins/form-blocks-kit";
 import { TagIcon, XIcon } from "@/components/ui/icons";
-import { RequiredBadgeButton } from "@/components/ui/required-badge-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +25,6 @@ export const FormMultiSelectInputElement = ({
   const editor = useEditorRef();
   const options = (element.options as string[]) ?? [];
   const elementId = (element as { id?: string }).id;
-  const required = Boolean((element as { required?: boolean }).required);
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState("");
   const [focusedChipIndex, setFocusedChipIndex] = useState<number | null>(null);
@@ -287,7 +285,6 @@ export const FormMultiSelectInputElement = ({
         </TooltipTrigger>
         <TooltipContent side="left">Multi-select</TooltipContent>
       </Tooltip>
-      <RequiredBadgeButton required={required} path={props.path} />
     </PlateElement>
   );
 };

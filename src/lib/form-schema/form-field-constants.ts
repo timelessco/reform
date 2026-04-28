@@ -29,9 +29,9 @@ export const INPUT_TYPE_TO_FIELD_TYPE: Record<string, string> = {
   formFileUpload: "FileUpload",
 };
 
-// `required` is owned by the input node — that's what the editor's
-// RequiredBadgeButton toggles and what `useFormInputNode` reads. The preview
-// and validation must use the same source so the two stay in sync.
+// `required` is owned by the input node. The editor's LabelRequiredBadge
+// toggles it on the next-sibling input from the formLabel, and the preview
+// and validation must read from the same source so the two stay in sync.
 export const resolveRequired = (
   inputNode: Record<string, unknown>,
   _labelNode: Record<string, unknown> | null,
