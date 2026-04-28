@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, generateText, streamObject, tool } from "ai";
 import type { UIMessage } from "ai";
 import { z } from "zod";
-import { auth } from "@/lib/auth/auth";
+import { apiAuthMiddleware } from "@/lib/auth/middleware";
 import { formGenSchema, RADIUS_OPTIONS, themeTokensSchema } from "@/lib/ai/ops-schema";
 import {
   FORM_APPEND_SYSTEM_PROMPT,
@@ -33,19 +33,9 @@ const getModel = async () => {
 
 export const Route = createFileRoute("/api/ai/form-generate")({
   server: {
+    middleware: [apiAuthMiddleware],
     handlers: {
       POST: async ({ request }: { request: Request }) => {
-        const session = await auth.api.getSession({
-          headers: request.headers,
-        });
-
-        if (!session) {
-          return new Response(JSON.stringify({ error: "unauthorized" }), {
-            status: 401,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
-
         const body = (await request.json()) as {
           messages?: UIMessage[];
           editorContent?: string;

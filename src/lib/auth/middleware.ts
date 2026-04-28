@@ -48,6 +48,25 @@ export const formProSettingsMiddleware = createMiddleware({ type: "function" })
     return next();
   });
 
+// API-route variant of authMiddleware. Same lazy `auth` import, but returns a
+// JSON 401 instead of throwing a redirect — API consumers expect a status
+// code, not an HTML login page (and `useObject`/fetch can't follow a 302 to
+// HTML and recover).
+export const apiAuthMiddleware = createMiddleware().server(async ({ next }) => {
+  const { auth } = await import("@/lib/auth/auth");
+  const headers = getRequestHeaders();
+  const session = await auth.api.getSession({ headers });
+
+  if (!session) {
+    return new Response(JSON.stringify({ error: "unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  return await next({ context: { session } });
+});
+
 export const guestMiddleware = createMiddleware().server(async ({ next }) => {
   // O(1) cookie check instead of DB round-trip (~1.97s saving)
   // authMiddleware on /dashboard will do full session validation + email verification
