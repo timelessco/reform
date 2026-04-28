@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { and, asc, desc, eq, isNull, ne } from "drizzle-orm";
+import { and, asc, desc, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 import {
   formNotificationPreferences,
@@ -68,7 +68,6 @@ export const getSubmissionNotifications = createServerFn({ method: "GET" })
           eq(formSubmissionNotifications.userId, userId),
           eq(forms.createdByUserId, userId),
           eq(workspaces.organizationId, orgId),
-          isNull(forms.deletedAt),
           ne(forms.status, "archived"),
         ),
       )

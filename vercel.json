@@ -17,5 +17,8 @@
     }
   ],
   "regions": ["bom1", "iad1", "fra1"],
-  "crons": [{ "path": "/api/cron/aggregate-analytics", "schedule": "15 0 * * *" }]
+  "crons": [
+    { "path": "/api/cron/aggregate-analytics", "schedule": "15 0 * * *" },
+    { "path": "/api/cron/purge-archived-forms", "schedule": "30 0 * * *" }
+  ]
 }

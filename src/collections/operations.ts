@@ -4,7 +4,7 @@ import type { FormListing } from "./query/form-listing";
 import type { WorkspaceSummary } from "./query/workspace";
 import { DEFAULT_FORM_CONTENT, DEFAULT_FORM_SETTINGS } from "./local/form";
 import type { Form } from "./local/form";
-import { getInit, state } from "./_state";
+import { getInit, state, stripNulls } from "./_state";
 
 // --- Getters ---
 
@@ -129,7 +129,6 @@ export const duplicateFormById = (formId: string): { form: Form; persisted: Prom
     status: "draft",
     lastPublishedVersionId: null,
     publishedContentHash: null,
-    deletedAt: null,
     createdAt: now,
     updatedAt: now,
   };
@@ -148,24 +147,92 @@ export const duplicateFormById = (formId: string): { form: Form; persisted: Prom
 };
 
 export const updateFormStatus = async (id: string, status: "draft" | "published" | "archived") => {
-  const { formListings } = getInit();
+  const { formListings, queryClient, serverFns } = getInit();
+
+  // Archived rows live outside the main `formListings` collection (server fn
+  // filters them out). Optimistically remove from the live collection, persist
+  // the status change, then prime the trash query so the dialog reflects it.
+  if (status === "archived") {
+    const existing = formListings.get(id);
+    if (!existing) return;
+
+    const tx = createTransaction({
+      mutationFn: async () => {
+        await serverFns.updateForm(stripNulls(existing) as never);
+        await queryClient.invalidateQueries({ queryKey: ["form-listings-archived"] });
+      },
+    });
+    tx.mutate(() => {
+      formListings.delete(id);
+    });
+    return;
+  }
+
   formListings.update(id, (draft: Record<string, unknown>) => {
     draft.status = status;
     draft.updatedAt = new Date().toISOString();
   });
 };
 
+// Restore: form is currently in the archived listings (Query cache), not in
+// `formListings`. Persist the status flip server-side, then refetch the live
+// collection so the restored form shows up in the sidebar, and invalidate the
+// trash listing.
 export const restoreFormLocal = async (id: string) => {
-  const { formListings } = getInit();
-  formListings.update(id, (draft: Record<string, unknown>) => {
-    draft.status = "draft";
-    draft.deletedAt = null;
-    draft.updatedAt = new Date().toISOString();
-  });
+  const { formListings, queryClient, serverFns } = getInit();
+  const archived = queryClient.getQueryData<FormListing[]>(["form-listings-archived"]);
+  const existing = archived?.find((f) => f.id === id);
+  if (!existing) return;
+
+  await serverFns.updateForm(stripNulls({ ...existing, status: "draft" }) as never);
+  await Promise.all([
+    formListings.utils.refetch(),
+    queryClient.invalidateQueries({ queryKey: ["form-listings-archived"] }),
+  ]);
 };
 
+// Hard-delete from trash: form lives in the archived query cache, never
+// touched the `formListings` collection in this session. Call the server
+// directly and refresh the trash list.
 export const permanentDeleteFormLocal = async (id: string) => {
-  getInit().formListings.delete(id);
+  const { queryClient, serverFns } = getInit();
+  await serverFns.deleteForm({ id });
+  await queryClient.invalidateQueries({ queryKey: ["form-listings-archived"] });
+};
+
+// Optimistically removes the rows from `formListings` so the sidebar
+// updates immediately, then persists the status flip and invalidates the
+// trash query so the next dialog open is fresh.
+export const bulkArchiveFormsLocal = async (ids: string[]) => {
+  if (ids.length === 0) return { archived: 0 };
+  const { formListings, queryClient, serverFns } = getInit();
+
+  let archived = 0;
+  const tx = createTransaction({
+    mutationFn: async () => {
+      const result = await serverFns.bulkArchiveForms({ ids });
+      archived = result.archived;
+      await queryClient.invalidateQueries({ queryKey: ["form-listings-archived"] });
+      return result;
+    },
+  });
+  tx.mutate(() => {
+    for (const id of ids) {
+      if (formListings.get(id)) formListings.delete(id);
+    }
+  });
+  await tx.isPersisted.promise;
+  return { archived };
+};
+
+// The rows aren't in `formListings` (server filters archived), so we just hit
+// the server and invalidate the trash listing.
+export const bulkPermanentDeleteFormsLocal = async (ids: string[]) => {
+  if (ids.length === 0) return { deleted: 0 };
+  const { queryClient, serverFns } = getInit();
+  const result = await serverFns.bulkDeleteForms({ ids });
+  await queryClient.invalidateQueries({ queryKey: ["form-listings-archived"] });
+  return result;
 };
 
 // --- Workspace mutations ---

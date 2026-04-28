@@ -13,7 +13,13 @@ import type {
 } from "./query/version";
 import type { createWorkspaceSummaryCollection, WorkspaceSummary } from "./query/workspace";
 import type { Form } from "./local/form";
-import type { createForm, updateForm, deleteForm } from "@/lib/server-fn/forms";
+import type {
+  bulkArchiveForms,
+  bulkDeleteForms,
+  createForm,
+  deleteForm,
+  updateForm,
+} from "@/lib/server-fn/forms";
 import type {
   createWorkspace,
   updateWorkspace,
@@ -64,6 +70,12 @@ export type ServerFns = {
   deleteForm: (
     data: ServerFnInput<typeof deleteForm>,
   ) => Promise<ServerFnOutput<typeof deleteForm>>;
+  bulkArchiveForms: (
+    data: ServerFnInput<typeof bulkArchiveForms>,
+  ) => Promise<ServerFnOutput<typeof bulkArchiveForms>>;
+  bulkDeleteForms: (
+    data: ServerFnInput<typeof bulkDeleteForms>,
+  ) => Promise<ServerFnOutput<typeof bulkDeleteForms>>;
   addFavorite: (
     data: ServerFnInput<typeof addFavorite>,
   ) => Promise<ServerFnOutput<typeof addFavorite>>;

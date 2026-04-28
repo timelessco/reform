@@ -1,10 +1,11 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { z } from "zod";
 import { customDomains, forms, member } from "@/db/schema";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
+import { purgeFormCacheBatch } from "@/lib/server-fn/cdn-cache";
 import { vercelDomains } from "@/lib/vercel-domains";
 import type { VercelDomainStatus, VercelDomainVerification } from "@/lib/vercel-domains";
 import { DOMAIN_LIMITS } from "@/lib/config/plan-config";
@@ -148,15 +149,22 @@ export const removeDomain = createServerFn({ method: "POST" })
       // Continue with DB cleanup even if Vercel fails
     }
 
-    // Clear customDomainId on all forms and delete domain atomically
-    await db.transaction(async (tx) => {
-      await tx
+    // Clear customDomainId on all forms and delete domain atomically.
+    // Capture the ever-published forms whose canonical URL just changed so
+    // we can purge their CDN tags after commit.
+    const everPublished = await db.transaction(async (tx) => {
+      const affected = await tx
         .update(forms)
         .set({ customDomainId: null })
-        .where(eq(forms.customDomainId, data.domainId));
+        .where(eq(forms.customDomainId, data.domainId))
+        .returning({ id: forms.id, lastPublishedVersionId: forms.lastPublishedVersionId });
 
       await tx.delete(customDomains).where(eq(customDomains.id, data.domainId));
+
+      return affected.filter((f) => f.lastPublishedVersionId).map((f) => f.id);
     });
+
+    void purgeFormCacheBatch(everPublished);
 
     return { success: true };
   });
@@ -272,11 +280,24 @@ export const updateDomainMeta = createServerFn({ method: "POST" })
     }
 
     const { domainId, ...updateFields } = data;
-    const [updated] = await db
-      .update(customDomains)
-      .set({ ...updateFields, updatedAt: new Date() })
-      .where(eq(customDomains.id, domainId))
-      .returning();
+    const { updated, boundFormIds } = await db.transaction(async (tx) => {
+      const [updatedRow] = await tx
+        .update(customDomains)
+        .set({ ...updateFields, updatedAt: new Date() })
+        .where(eq(customDomains.id, domainId))
+        .returning();
+      // Same transaction so a concurrent assignFormDomain can't slip a form
+      // in between the meta UPDATE and the bound-forms read.
+      const bound = await tx
+        .select({ id: forms.id })
+        .from(forms)
+        .where(and(eq(forms.customDomainId, domainId), isNotNull(forms.lastPublishedVersionId)));
+      return { updated: updatedRow, boundFormIds: bound.map((f) => f.id) };
+    });
+
+    // siteTitle / faviconUrl / ogImageUrl land in the rendered <head> of
+    // every bound form's public response.
+    void purgeFormCacheBatch(boundFormIds);
 
     return serializeDomain(updated);
   });

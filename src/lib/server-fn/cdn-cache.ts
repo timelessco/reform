@@ -48,10 +48,15 @@ export const applyFormCacheHeaders = (formId: string, { gated }: { gated: boolea
   setResponseHeader("Cache-Tag", formCacheTag(formId));
 };
 
-// Fire-and-forget purge by tag via the Vercel API. Safe to call from any
-// mutation that changes what `getPublicFormViewRSC` would return for a
-// given formId. No-op outside Vercel deployments (env vars absent).
-export const purgeFormCache = async (formId: string): Promise<void> => {
+// Fire-and-forget purge by Cache-Tag via the Vercel API. No-op outside
+// Vercel deployments (env vars absent).
+export const purgeFormCache = (formId: string): Promise<void> => purgeFormCacheBatch([formId]);
+
+// Vercel accepts a comma-separated tag list so any batch (bulk delete,
+// daily cron) can ride a single API call.
+export const purgeFormCacheBatch = async (formIds: string[]): Promise<void> => {
+  if (formIds.length === 0) return;
+
   const token = process.env.VERCEL_TOKEN;
   const projectId = process.env.VERCEL_PROJECT_ID;
   if (!(token && projectId)) return;
@@ -59,7 +64,7 @@ export const purgeFormCache = async (formId: string): Promise<void> => {
   const teamId = process.env.VERCEL_TEAM_ID;
   const url = new URL(`${VERCEL_API}/v1/purge`);
   url.searchParams.set("projectIdOrName", projectId);
-  url.searchParams.set("tag", formCacheTag(formId));
+  url.searchParams.set("tag", formIds.map(formCacheTag).join(","));
   if (teamId) url.searchParams.set("teamId", teamId);
 
   try {
@@ -72,9 +77,9 @@ export const purgeFormCache = async (formId: string): Promise<void> => {
       // The 60s browser max-age plus human behaviour (refresh on "didn't
       // see my change") is an acceptable fallback.
       const body = await res.text().catch(() => "");
-      console.warn(`[cdn-cache] purge failed for ${formId}: ${res.status} ${body}`);
+      console.warn(`[cdn-cache] purge failed for ${formIds.length} tag(s): ${res.status} ${body}`);
     }
   } catch (err) {
-    console.warn(`[cdn-cache] purge error for ${formId}:`, err);
+    console.warn(`[cdn-cache] purge error for ${formIds.length} tag(s):`, err);
   }
 };

@@ -175,7 +175,6 @@ export const forms = pgTable(
     cover: text(),
     isMultiStep: boolean().notNull().default(false),
     status: text().notNull().default("draft"), // 'draft' | 'published' | 'archived'
-    deletedAt: timestamp({ withTimezone: true }), // Soft delete timestamp for trash feature
     // Version history fields
     lastPublishedVersionId: text(), // FK to formVersions.id
     publishedContentHash: text(), // Hash for fast change detection

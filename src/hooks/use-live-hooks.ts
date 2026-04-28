@@ -1,4 +1,4 @@
-import { eq, or, useLiveQuery } from "@tanstack/react-db";
+import { eq, useLiveQuery } from "@tanstack/react-db";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import {
@@ -9,6 +9,7 @@ import {
   enrichFormDetail,
 } from "@/collections";
 import { localFormCollection } from "@/collections/local/form";
+import { archivedFormListingsQueryOptions } from "@/lib/server-fn/forms";
 
 /**
  * Custom hook for real-time workspaces sync filtered by organization ID.
@@ -64,7 +65,6 @@ export const useOrgForms = (_organizationId?: string) =>
     if (!isInitialized()) return undefined;
     return q
       .from({ form: getFormListings() })
-      .where(({ form }) => or(eq(form.status, "draft"), eq(form.status, "published")))
       .select(({ form }) => ({
         id: form.id,
         title: form.title,
@@ -163,18 +163,15 @@ export const useFavoriteForms = (userId?: string) => {
   const { data: favs } = useFavorites(userId);
   const { data: allForms } = useLiveQuery((q) => {
     if (!isInitialized()) return undefined;
-    return q
-      .from({ form: getFormListings() })
-      .where(({ form }) => or(eq(form.status, "draft"), eq(form.status, "published")))
-      .select(({ form }) => ({
-        id: form.id,
-        title: form.title,
-        workspaceId: form.workspaceId,
-        status: form.status,
-        updatedAt: form.updatedAt,
-        icon: form.icon,
-        customization: form.customization,
-      }));
+    return q.from({ form: getFormListings() }).select(({ form }) => ({
+      id: form.id,
+      title: form.title,
+      workspaceId: form.workspaceId,
+      status: form.status,
+      updatedAt: form.updatedAt,
+      icon: form.icon,
+      customization: form.customization,
+    }));
   }, []);
 
   return useMemo(() => {
@@ -195,24 +192,12 @@ export const useFavoriteForms = (userId?: string) => {
   }, [favs, allForms]);
 };
 
-/**
- * Custom hook for archived (trashed) forms with deletedAt field.
- */
-export const useArchivedForms = () =>
-  useLiveQuery((q) => {
-    if (!isInitialized()) return undefined;
-    return q
-      .from({ form: getFormListings() })
-      .where(({ form }) => eq(form.status, "archived"))
-      .select(({ form }) => ({
-        id: form.id,
-        title: form.title,
-        workspaceId: form.workspaceId,
-        status: form.status,
-        updatedAt: form.updatedAt,
-        deletedAt: form.deletedAt,
-      }));
-  }, []);
+// Archived listings come from a server fn rather than the formListings
+// collection — `getFormListings` no longer returns archived rows, so the
+// trash dialog fetches its own list on demand. `enabled` keeps the request
+// off the wire until the dialog actually opens.
+export const useArchivedForms = (enabled = true) =>
+  useQuery({ ...archivedFormListingsQueryOptions(), enabled });
 
 /**
  * Returns a Map of formId → submission count derived from form listings.

@@ -45,7 +45,6 @@ export const FormSchema = z.object({
   cover: z.string().nullable().optional(),
   isMultiStep: z.boolean().default(false),
   status: z.enum(["draft", "published", "archived"]).default("draft"),
-  deletedAt: timestampField.nullable().optional(),
   lastPublishedVersionId: z.string().nullable().optional(),
   publishedContentHash: z.string().nullable().optional(),
   language: z.string().default("English"),

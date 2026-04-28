@@ -9,6 +9,7 @@ import {
   transformPlateStateToFormElements,
 } from "@/lib/editor/transform-plate-to-form";
 import { authMiddleware } from "@/lib/auth/middleware";
+import { purgeFormCache } from "@/lib/server-fn/cdn-cache";
 import { getActiveOrgId } from "./auth-helpers";
 import { authForm } from "./auth-helpers.server";
 
@@ -30,6 +31,23 @@ const serializeSubmission = (s: typeof submissions.$inferSelect) => ({
   data: s.data as Record<string, object>,
 });
 
+// Purge the form's CDN cache iff a submission delete could have re-opened the
+// limit-reached gate — i.e. the form was published AND has limitSubmissions
+// turned on. Cheap fire-and-forget; over-purges in the "count was nowhere
+// near the cap" case but cost is one Vercel API call.
+const maybePurgeAfterSubmissionDelete = async (formId: string) => {
+  const [row] = await db
+    .select({
+      lastPublishedVersionId: forms.lastPublishedVersionId,
+      limitSubmissions: forms.limitSubmissions,
+    })
+    .from(forms)
+    .where(eq(forms.id, formId));
+  if (row?.lastPublishedVersionId && row.limitSubmissions) {
+    void purgeFormCache(formId);
+  }
+};
+
 // DELETE submission
 export const deleteSubmission = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
@@ -38,6 +56,7 @@ export const deleteSubmission = createServerFn({ method: "POST" })
     const orgId = getActiveOrgId(context.session);
     await authForm(data.formId, context.session.user.id, orgId);
     await db.delete(submissions).where(eq(submissions.id, data.id));
+    await maybePurgeAfterSubmissionDelete(data.formId);
     return { success: true };
   });
 
@@ -57,6 +76,7 @@ export const deleteSubmissionsBulk = createServerFn({ method: "POST" })
       return { success: true, deleted: 0 };
     }
     await db.delete(submissions).where(inArray(submissions.id, data.submissionIds));
+    await maybePurgeAfterSubmissionDelete(data.formId);
     return { success: true, deleted: data.submissionIds.length };
   });
 

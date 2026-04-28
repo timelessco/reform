@@ -1,4 +1,4 @@
-import { and, eq, exists } from "drizzle-orm";
+import { and, eq, exists, inArray } from "drizzle-orm";
 import { forms, member, workspaces } from "@/db/schema";
 import { db } from "@/db";
 
@@ -63,4 +63,37 @@ export const authForm = async (formId: string, userId: string, organizationId: s
     throw new Error("Form not found or access denied");
   }
   return { form: form[0] };
+};
+
+/**
+ * Authorize bulk access to forms. Returns the subset of `formIds` that the
+ * user is allowed to operate on (forms whose workspace belongs to the active
+ * org). The caller decides whether to error on partial matches or proceed
+ * with whatever was authorized — bulk handlers typically want to throw if
+ * anything is missing so a single bad id doesn't silently drop affected rows.
+ */
+export const authFormsBulk = async (formIds: string[], userId: string, organizationId: string) => {
+  if (formIds.length === 0) return { formIds: [] as string[] };
+
+  const memberSubquery = db
+    .select({ id: member.id })
+    .from(member)
+    .where(and(eq(member.userId, userId), eq(member.organizationId, organizationId)));
+
+  const allowed = await db
+    .select({ id: forms.id })
+    .from(forms)
+    .innerJoin(workspaces, eq(forms.workspaceId, workspaces.id))
+    .where(
+      and(
+        inArray(forms.id, formIds),
+        eq(workspaces.organizationId, organizationId),
+        exists(memberSubquery),
+      ),
+    );
+
+  if (allowed.length !== formIds.length) {
+    throw new Error("Form not found or access denied");
+  }
+  return { formIds: allowed.map((r) => r.id) };
 };
