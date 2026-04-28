@@ -193,7 +193,7 @@ export const auth = betterAuth({
           ],
           successUrl:
             (process.env.APP_URL || "http://localhost:3000") +
-            "/settings/billing?checkout_id={CHECKOUT_ID}",
+            "/dashboard?checkout_id={CHECKOUT_ID}",
           authenticatedUsersOnly: true,
         }),
         portal(),

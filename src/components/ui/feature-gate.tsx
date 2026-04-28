@@ -1,7 +1,7 @@
-import { Link } from "@tanstack/react-router";
 import type * as React from "react";
 import { useUserPlan } from "@/hooks/use-user-plan";
 import type { UserPlan } from "@/hooks/use-user-plan";
+import { settingsDialogStore } from "@/hooks/use-settings-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 type RequiredPlan = Exclude<UserPlan, "free">;
@@ -22,6 +22,8 @@ const PLAN_LABEL: Record<RequiredPlan, string> = {
   pro: "Pro",
   biz: "Business",
 };
+
+const openBilling = () => settingsDialogStore.open("billing");
 
 export const useHasPlan = (requiredPlan: RequiredPlan): boolean => {
   const { isPro, isBiz } = useUserPlan();
@@ -49,15 +51,16 @@ export const FeatureGate = ({
         <div className="opacity-60 pointer-events-none select-none" aria-disabled="true">
           {children}
         </div>
-        <Link
-          to="/settings/billing"
+        <button
+          type="button"
+          onClick={openBilling}
           className="absolute inset-0 flex items-center justify-center text-xs font-medium text-foreground hover:text-primary transition-colors"
           aria-label={`Upgrade to ${label}`}
         >
           <span className="rounded-md bg-background/90 border border-border px-2.5 py-1 shadow-sm underline underline-offset-2">
             Upgrade to {label}
           </span>
-        </Link>
+        </button>
       </div>
     );
   }
@@ -75,9 +78,13 @@ export const FeatureGate = ({
         }
       />
       <TooltipContent side={tooltipSide} className="text-xs">
-        <Link to="/settings/billing" className="pointer-events-auto underline underline-offset-2">
+        <button
+          type="button"
+          onClick={openBilling}
+          className="pointer-events-auto underline underline-offset-2"
+        >
           Upgrade to {label}
-        </Link>
+        </button>
       </TooltipContent>
     </Tooltip>
   );
