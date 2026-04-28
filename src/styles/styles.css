@@ -870,6 +870,17 @@
   padding-bottom: var(--bf-block-padding) !important;
 }
 
+/* Empty top-level blocks (cursor-landing paragraphs auto-inserted between form
+   sections) skip the global block padding so they don't take up ~44px each.
+   Detected via slate-react's `[data-slate-zero-width]` marker, which it adds
+   on the <br> injected into empty text leaves. Trade-off (knowingly accepted):
+   the block grows to the padded height the moment the user starts typing —
+   acceptable since these p's are usually transient cursor-landing zones. */
+[data-slate-editor] > *:not([data-bf-chrome]):not([data-bf-input]):has([data-slate-zero-width]) {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
 /* View Transition: preview mode tab switching */
 ::view-transition-old(preview-content),
 ::view-transition-new(preview-content) {
