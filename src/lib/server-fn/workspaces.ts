@@ -19,8 +19,8 @@ import { z } from "zod";
 import { authWorkspace, getActiveOrgId } from "./auth-helpers";
 
 const workspaceSchema = z.object({
-  id: z.string().uuid(),
-  organizationId: z.string().uuid(),
+  id: z.uuid(),
+  organizationId: z.uuid(),
   name: z.string().max(100),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
@@ -30,7 +30,7 @@ export const createWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     workspaceSchema.pick({ organizationId: true, name: true }).extend({
-      id: z.string().uuid().optional(),
+      id: z.uuid().optional(),
       name: workspaceSchema.shape.name.optional().default("Collection"),
     }),
   )
@@ -172,7 +172,7 @@ export const reorderWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      workspaceId: z.string().uuid(),
+      workspaceId: z.uuid(),
       sortIndex: z.string(),
     }),
   )

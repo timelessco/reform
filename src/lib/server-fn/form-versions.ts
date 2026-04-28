@@ -28,7 +28,7 @@ export const publishFormVersion = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
+      formId: z.uuid(),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -136,7 +136,7 @@ export const publishFormVersion = createServerFn({ method: "POST" })
  */
 export const getFormVersions = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ formId: z.string().uuid() }))
+  .inputValidator(z.object({ formId: z.uuid() }))
   .handler(async ({ data, context }) => {
     const orgId = getActiveOrgId(context.session);
     const [_, versions] = await Promise.all([
@@ -177,7 +177,7 @@ export const getFormVersions = createServerFn({ method: "GET" })
  */
 export const getFormVersionContent = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ versionId: z.string().uuid() }))
+  .inputValidator(z.object({ versionId: z.uuid() }))
   .handler(async ({ data, context }) => {
     // Get the version
     const [version] = await db
@@ -203,8 +203,8 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
-      versionId: z.string().uuid(),
+      formId: z.uuid(),
+      versionId: z.uuid(),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -249,7 +249,7 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
  */
 export const discardFormChanges = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ formId: z.string().uuid() }))
+  .inputValidator(z.object({ formId: z.uuid() }))
   .handler(async ({ data, context }) => {
     const orgId = getActiveOrgId(context.session);
     await authForm(data.formId, context.session.user.id, orgId);

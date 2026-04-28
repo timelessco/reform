@@ -25,7 +25,7 @@ export const addFavorite = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
+      formId: z.uuid(),
       sortIndex: z.string().nullable().optional(),
     }),
   )
@@ -47,7 +47,7 @@ export const addFavorite = createServerFn({ method: "POST" })
 
 export const removeFavorite = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ formId: z.string().uuid() }))
+  .inputValidator(z.object({ formId: z.uuid() }))
   .handler(async ({ data, context }) => {
     const userId = context.session.user.id;
 
@@ -60,7 +60,7 @@ export const reorderFavorite = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
+      formId: z.uuid(),
       sortIndex: z.string(),
     }),
   )

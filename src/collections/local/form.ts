@@ -33,9 +33,9 @@ const SettingsSchema = z.object({
 export type FormBuilderSettings = z.infer<typeof SettingsSchema>;
 
 export const FormSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   createdByUserId: z.string().optional(),
-  workspaceId: z.string().uuid(),
+  workspaceId: z.uuid(),
   title: z.string().default("Untitled"),
   formName: z.string().default("draft"),
   schemaName: z.string().default("draftFormSchema"),

@@ -32,7 +32,7 @@ const serializeSubmission = (s: typeof submissions.$inferSelect) => ({
 // DELETE submission
 export const deleteSubmission = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ id: z.string().uuid(), formId: z.string().uuid() }))
+  .inputValidator(z.object({ id: z.uuid(), formId: z.uuid() }))
   .handler(async ({ data, context }) => {
     const orgId = getActiveOrgId(context.session);
     await authForm(data.formId, context.session.user.id, orgId);
@@ -45,8 +45,8 @@ export const deleteSubmissionsBulk = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
-      submissionIds: z.array(z.string().uuid()),
+      formId: z.uuid(),
+      submissionIds: z.array(z.uuid()),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -68,7 +68,7 @@ export const getSubmissionsByFormIdPaginated = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
+      formId: z.uuid(),
       cursor: z.object({ createdAt: z.string(), id: z.string() }).optional(),
       limit: z.number().int().min(1).max(100).default(SUBMISSIONS_PAGE_SIZE),
       search: z.string().optional(),
@@ -124,7 +124,7 @@ export const getSubmissionsByFormIdPaginated = createServerFn({ method: "GET" })
 // GET submissions count by form
 export const getSubmissionsCount = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ formId: z.string().uuid() }))
+  .inputValidator(z.object({ formId: z.uuid() }))
   .handler(async ({ data, context }) => {
     const orgId = getActiveOrgId(context.session);
     await authForm(data.formId, context.session.user.id, orgId);
@@ -146,7 +146,7 @@ export const getSubmissionsCount = createServerFn({ method: "GET" })
  */
 export const getSubmissionsBootstrap = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ formId: z.string().uuid() }))
+  .inputValidator(z.object({ formId: z.uuid() }))
   .handler(async ({ data, context }) => {
     const orgId = getActiveOrgId(context.session);
     await authForm(data.formId, context.session.user.id, orgId);
