@@ -38,6 +38,7 @@ import {
   FileTextIcon,
   HelpCircleIcon,
   HomeIcon,
+  Loader2Icon,
   LogOutIcon,
   MoreHorizontalIcon,
   Pencil2Icon,
@@ -97,6 +98,7 @@ import {
   deleteWorkspaceLocal,
   initCollections,
   isInitialized as isCollectionsInitialized,
+  bulkPermanentDeleteFormsLocal,
   permanentDeleteFormLocal,
   renameFormLocal,
   reorderFavoriteLocal,
@@ -129,6 +131,8 @@ import {
 import { getFormVersionContent, getFormVersions } from "@/lib/server-fn/form-versions";
 import {
   createForm,
+  bulkArchiveForms,
+  bulkDeleteForms,
   deleteForm,
   getFormListings as getFormListingsServer,
   updateForm,
@@ -256,6 +260,8 @@ const initCollectionsOnClient = createClientOnlyFn((queryClient: QueryClient) =>
     createForm: async (data) => await createForm({ data: data }),
     updateForm: async (data) => await updateForm({ data: data }),
     deleteForm: async (data) => await deleteForm({ data: data }),
+    bulkArchiveForms: async (data) => await bulkArchiveForms({ data: data }),
+    bulkDeleteForms: async (data) => await bulkDeleteForms({ data: data }),
     addFavorite: async (data) => await addFavorite({ data }),
     removeFavorite: async (data) => await removeFavorite({ data }),
     reorderFavorite: async (data) => await reorderFavorite({ data }),
@@ -758,7 +764,13 @@ const TrashDialog = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
-  const { data: archivedFormsData } = useArchivedForms();
+  // Per-row pending state — tracked separately so each restore/delete button
+  // can show a spinner and disable independently while in flight.
+  const [restoringIds, setRestoringIds] = useState<Set<string>>(new Set());
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  // Trash list is a server-fetched query gated on dialog open — no payload
+  // until the user actually wants to see it. Sidebar listings stay archived-free.
+  const { data: archivedFormsData, isFetching: isFetchingArchived } = useArchivedForms(open);
   const { data: orgWorkspacesData } = useOrgWorkspaces(activeOrgId);
 
   const archivedForms = useMemo(() => {
@@ -772,11 +784,7 @@ const TrashDialog = ({
         (form) =>
           !searchQuery || (form?.title ?? "").toLowerCase().includes(searchQuery.toLowerCase()),
       )
-      .toSorted(
-        (a, b) =>
-          new Date(b.deletedAt || b.updatedAt).getTime() -
-          new Date(a.deletedAt || a.updatedAt).getTime(),
-      );
+      .toSorted((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   }, [archivedFormsData, orgWorkspacesData, activeOrgId, searchQuery]);
 
   const workspaceNames = useMemo(() => {
@@ -833,39 +841,71 @@ const TrashDialog = ({
 
   const handleRestore = useCallback(
     async (formId: string) => {
+      if (restoringIds.has(formId) || deletingIds.has(formId)) return;
+      setRestoringIds((prev) => new Set(prev).add(formId));
       try {
         await restoreFormLocal(formId);
         removeFromSelection(formId);
+        toast.success("Form restored");
       } catch (error) {
-        console.error("Failed to restore form:", error);
+        const message = error instanceof Error ? error.message : "Failed to restore form";
+        toast.error(message);
+      } finally {
+        setRestoringIds((prev) => {
+          const next = new Set(prev);
+          next.delete(formId);
+          return next;
+        });
       }
     },
-    [removeFromSelection],
+    [removeFromSelection, restoringIds, deletingIds],
   );
 
   const handlePermanentDelete = useCallback(
     async (formId: string) => {
+      if (restoringIds.has(formId) || deletingIds.has(formId)) return;
+      setDeletingIds((prev) => new Set(prev).add(formId));
       try {
         await permanentDeleteFormLocal(formId);
         removeFromSelection(formId);
+        toast.success("Form deleted");
       } catch (error) {
-        console.error("Failed to delete form:", error);
+        const message = error instanceof Error ? error.message : "Failed to delete form";
+        toast.error(message);
+      } finally {
+        setDeletingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(formId);
+          return next;
+        });
       }
     },
-    [removeFromSelection],
+    [removeFromSelection, restoringIds, deletingIds],
   );
 
   const handleBulkDelete = useCallback(async () => {
-    const count = selectedIds.size;
-    if (count === 0) return;
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
     setIsDeleting(true);
+    setDeletingIds((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) next.add(id);
+      return next;
+    });
     try {
-      await Promise.all([...selectedIds].map((id) => permanentDeleteFormLocal(id)));
+      await bulkPermanentDeleteFormsLocal(ids);
+      toast.success(`Deleted ${ids.length} form${ids.length === 1 ? "" : "s"}`);
       setSelectedIds(new Set());
     } catch (error) {
-      console.error("Failed to delete forms:", error);
+      const message = error instanceof Error ? error.message : "Failed to delete forms";
+      toast.error(message);
     } finally {
       setIsDeleting(false);
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        for (const id of ids) next.delete(id);
+        return next;
+      });
     }
   }, [selectedIds]);
 
@@ -917,7 +957,12 @@ const TrashDialog = ({
 
         {/* Forms List */}
         <div className="max-h-[400px] overflow-y-auto">
-          {archivedForms.length === 0 ? (
+          {archivedFormsData === undefined && isFetchingArchived ? (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Loader2Icon className="h-6 w-6 mb-3 animate-spin opacity-60" />
+              <p className="text-sm">Loading trash…</p>
+            </div>
+          ) : archivedForms.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Trash2Icon className="h-10 w-10 mb-3 opacity-30" />
               <p className="text-sm">Trash is empty</p>
@@ -926,16 +971,20 @@ const TrashDialog = ({
             <div className="p-1">
               {archivedForms.map((form) => {
                 const isSelected = selectedIds.has(form.id);
+                const isRestoring = restoringIds.has(form.id);
+                const isRowDeleting = deletingIds.has(form.id);
+                const isRowBusy = isRestoring || isRowDeleting;
                 return (
                   <div
                     key={form.id}
-                    className={`group flex items-center justify-between px-3 py-2 rounded-md transition-colors cursor-pointer ${isSelected ? "bg-muted/50" : "hover:bg-muted/50"}`}
+                    className={`group flex items-center justify-between px-3 py-2 rounded-md transition-colors cursor-pointer ${isSelected ? "bg-muted/50" : "hover:bg-muted/50"} ${isRowBusy ? "opacity-60 pointer-events-none" : ""}`}
                     onClick={() => handleToggleSelect(form.id)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") handleToggleSelect(form.id);
                     }}
                     role="option"
                     aria-selected={isSelected}
+                    aria-busy={isRowBusy}
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="flex items-center justify-center h-5 w-5 rounded shrink-0">
@@ -962,7 +1011,7 @@ const TrashDialog = ({
                       </div>
                     </div>
                     <div
-                      className={`flex items-center gap-1 transition-opacity ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                      className={`flex items-center gap-1 transition-opacity ${isSelected || isRowBusy ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
                     >
                       <Button
                         variant="ghost"
@@ -971,11 +1020,16 @@ const TrashDialog = ({
                           e.stopPropagation();
                           handleRestore(form.id);
                         }}
+                        disabled={isRowBusy}
                         className="h-7 w-7"
                         title="Restore"
                         aria-label="Restore"
                       >
-                        <Undo2Icon className="h-4 w-4" />
+                        {isRestoring ? (
+                          <Loader2Icon className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Undo2Icon className="h-4 w-4" />
+                        )}
                       </Button>
                       <Button
                         variant="ghost"
@@ -984,11 +1038,16 @@ const TrashDialog = ({
                           e.stopPropagation();
                           handlePermanentDelete(form.id);
                         }}
+                        disabled={isRowBusy}
                         className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
                         title="Delete permanently"
                         aria-label="Delete permanently"
                       >
-                        <Trash2Icon className="h-4 w-4" />
+                        {isRowDeleting ? (
+                          <Loader2Icon className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2Icon className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -1021,7 +1080,14 @@ const TrashDialog = ({
                 disabled={isDeleting}
                 className="h-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
               >
-                {isDeleting ? "Deleting..." : "Delete selected"}
+                {isDeleting ? (
+                  <>
+                    <Loader2Icon className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    Deleting…
+                  </>
+                ) : (
+                  "Delete selected"
+                )}
               </Button>
             </>
           ) : (
@@ -1555,6 +1621,12 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
     id: string;
     title: string;
   } | null>(null);
+  // Pending state for destructive dialogs — prevents double-submission and
+  // gives the action button a spinner while the server fn is in flight.
+  const [isDeletingWorkspace, setIsDeletingWorkspace] = useState(false);
+  const [isDeletingForm, setIsDeletingForm] = useState(false);
+  const [duplicatingIds, setDuplicatingIds] = useState<Set<string>>(new Set());
+  const [isRenamingWorkspace, setIsRenamingWorkspace] = useState(false);
 
   const handleDeleteDialogOpenChange = useCallback((open: boolean) => {
     setDeleteDialogOpen(open);
@@ -1575,6 +1647,8 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
 
   const handleDeleteWorkspace = useCallback(async () => {
     if (!workspaceToDelete || deleteConfirmName !== workspaceToDelete.name) return;
+    if (isDeletingWorkspace) return;
+    setIsDeletingWorkspace(true);
     try {
       await deleteWorkspaceLocal(workspaceToDelete.id);
       setDeleteDialogOpen(false);
@@ -1584,20 +1658,26 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to delete workspace";
       toast.error(message);
+    } finally {
+      setIsDeletingWorkspace(false);
     }
-  }, [workspaceToDelete, deleteConfirmName, router]);
+  }, [workspaceToDelete, deleteConfirmName, router, isDeletingWorkspace]);
 
   const handleRenameWorkspace = useCallback(async () => {
-    if (!workspaceToRename || !newWorkspaceName.trim()) return;
+    if (!workspaceToRename || !newWorkspaceName.trim() || isRenamingWorkspace) return;
+    setIsRenamingWorkspace(true);
     try {
       await updateWorkspaceName(workspaceToRename.id, newWorkspaceName.trim());
       setRenameDialogOpen(false);
       setWorkspaceToRename(null);
       setNewWorkspaceName("");
     } catch (error) {
-      console.error("Failed to rename workspace:", error);
+      const message = error instanceof Error ? error.message : "Failed to rename workspace";
+      toast.error(message);
+    } finally {
+      setIsRenamingWorkspace(false);
     }
-  }, [workspaceToRename, newWorkspaceName]);
+  }, [workspaceToRename, newWorkspaceName, isRenamingWorkspace]);
 
   const handleRenameKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -1622,13 +1702,27 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
 
   const handleDuplicateForm = useCallback(
     async (form: WorkspaceWithForms["forms"][0]) => {
+      if (duplicatingIds.has(form.id)) return;
+      setDuplicatingIds((prev) => new Set(prev).add(form.id));
       try {
         await duplicateForm(form.id);
-      } catch {
-        toast.error("Failed to duplicate form");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to duplicate form";
+        toast.error(message);
+      } finally {
+        setDuplicatingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(form.id);
+          return next;
+        });
       }
     },
-    [duplicateForm],
+    [duplicateForm, duplicatingIds],
+  );
+
+  const isFormDuplicating = useCallback(
+    (formId: string) => duplicatingIds.has(formId),
+    [duplicatingIds],
   );
 
   const handleDeleteForm = useCallback((form: WorkspaceWithForms["forms"][0]) => {
@@ -1637,7 +1731,8 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
   }, []);
 
   const handleConfirmDeleteForm = useCallback(async () => {
-    if (!formToDelete) return;
+    if (!formToDelete || isDeletingForm) return;
+    setIsDeletingForm(true);
     try {
       await updateFormStatus(formToDelete.id, "archived");
       toast.success("Form deleted");
@@ -1648,10 +1743,12 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
       setFormDeleteDialogOpen(false);
       setFormToDelete(null);
     } catch (error) {
-      console.error("Failed to delete form:", error);
-      toast.error("Failed to delete form");
+      const message = error instanceof Error ? error.message : "Failed to delete form";
+      toast.error(message);
+    } finally {
+      setIsDeletingForm(false);
     }
-  }, [formToDelete, location.pathname, router]);
+  }, [formToDelete, location.pathname, router, isDeletingForm]);
 
   return (
     <>
@@ -1691,6 +1788,7 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
                       onDuplicateForm={handleDuplicateForm}
                       onDeleteForm={handleDeleteForm}
                       onFormDragEnd={handleFormDragEnd}
+                      isFormDuplicating={isFormDuplicating}
                     />
                   ))}
                   {workspaces.length === 0 && (
@@ -1737,10 +1835,17 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteWorkspace}
-              disabled={deleteConfirmName !== workspaceToDelete?.name}
+              disabled={deleteConfirmName !== workspaceToDelete?.name || isDeletingWorkspace}
               className="bg-destructive text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Delete workspace
+              {isDeletingWorkspace ? (
+                <>
+                  <Loader2Icon className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  Deleting…
+                </>
+              ) : (
+                "Delete workspace"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1761,10 +1866,26 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
             onKeyDown={handleRenameKeyDown}
           />
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseRenameDialog}>
+            <Button
+              variant="outline"
+              onClick={handleCloseRenameDialog}
+              disabled={isRenamingWorkspace}
+            >
               Cancel
             </Button>
-            <Button onClick={handleRenameWorkspace}>Save</Button>
+            <Button
+              onClick={handleRenameWorkspace}
+              disabled={!newWorkspaceName.trim() || isRenamingWorkspace}
+            >
+              {isRenamingWorkspace ? (
+                <>
+                  <Loader2Icon className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  Saving…
+                </>
+              ) : (
+                "Save"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1783,9 +1904,17 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDeleteForm}
-              className="bg-destructive text-white hover:bg-destructive/90"
+              disabled={isDeletingForm}
+              className="bg-destructive text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Delete
+              {isDeletingForm ? (
+                <>
+                  <Loader2Icon className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  Deleting…
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

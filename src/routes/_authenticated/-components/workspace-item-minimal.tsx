@@ -93,6 +93,7 @@ export interface WorkspaceItemMinimalProps {
   onDuplicateForm: (form: WorkspaceWithForms["forms"][0]) => void;
   onDeleteForm: (form: WorkspaceWithForms["forms"][0]) => void;
   onFormDragEnd: (workspaceId: string, event: DragEndEvent) => void;
+  isFormDuplicating: (formId: string) => boolean;
 }
 
 export const WorkspaceItemMinimal = ({
@@ -106,6 +107,7 @@ export const WorkspaceItemMinimal = ({
   onDuplicateForm,
   onDeleteForm,
   onFormDragEnd,
+  isFormDuplicating,
 }: WorkspaceItemMinimalProps) => {
   const router = useRouter();
   const [isCreatingForm, setIsCreatingForm] = useState(false);
@@ -258,6 +260,7 @@ export const WorkspaceItemMinimal = ({
                 otherWorkspaces={otherWorkspaces}
                 onDuplicate={() => onDuplicateForm(form)}
                 onDelete={() => onDeleteForm(form)}
+                isDuplicating={isFormDuplicating(form.id)}
               />
             ))}
           </SortableContext>
@@ -297,6 +300,7 @@ interface WorkspaceFormMinimalProps {
   otherWorkspaces: Array<{ id: string; name: string }>;
   onDuplicate: () => void;
   onDelete: () => void;
+  isDuplicating?: boolean;
 }
 
 const WorkspaceFormMinimal = ({
@@ -306,6 +310,7 @@ const WorkspaceFormMinimal = ({
   otherWorkspaces,
   onDuplicate,
   onDelete,
+  isDuplicating = false,
 }: WorkspaceFormMinimalProps) => {
   const location = useLocation();
   const { data: session } = useSession();
@@ -392,9 +397,11 @@ const WorkspaceFormMinimal = ({
         >
           <DropdownMenuGroup>
             <DropdownMenuLabel>Form</DropdownMenuLabel>
-            <DropdownMenuItem onClick={onDuplicate}>
+            <DropdownMenuItem onClick={onDuplicate} disabled={isDuplicating}>
               <CopyIcon />
-              <span className="flex-1 text-left">Duplicate</span>
+              <span className="flex-1 text-left">
+                {isDuplicating ? "Duplicating…" : "Duplicate"}
+              </span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setRenameOpen(true)}>
               <Pencil2Icon />

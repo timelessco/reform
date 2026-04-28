@@ -27,7 +27,12 @@ import {
 import Loader from "@/components/ui/loader";
 import { NotFound } from "@/components/ui/not-found";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { createFormLocal, createWorkspaceLocal, updateFormStatus } from "@/collections";
+import {
+  bulkArchiveFormsLocal,
+  createFormLocal,
+  createWorkspaceLocal,
+  updateFormStatus,
+} from "@/collections";
 import { useDuplicateForm } from "@/hooks/use-duplicate-form";
 import { useOrgForms, useOrgWorkspaces } from "@/hooks/use-live-hooks";
 import { useSession } from "@/lib/auth/auth-client";
@@ -260,15 +265,16 @@ const DashboardPage = () => {
   }, [selectedFormIds.size]);
 
   const handleConfirmBulkDelete = useCallback(async () => {
-    const count = selectedFormIds.size;
+    const ids = [...selectedFormIds];
+    if (ids.length === 0) return;
     try {
-      const promises = [...selectedFormIds].map((id) => updateFormStatus(id, "archived"));
-      await Promise.all(promises);
+      await bulkArchiveFormsLocal(ids);
       setSelectedFormIds(new Set());
       setBulkDeleteDialogOpen(false);
-      toast.success(`${count} form${count !== 1 ? "s" : ""} deleted`);
-    } catch {
-      toast.error("Failed to delete some forms");
+      toast.success(`${ids.length} form${ids.length !== 1 ? "s" : ""} deleted`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to delete some forms";
+      toast.error(message);
     }
   }, [selectedFormIds]);
 
