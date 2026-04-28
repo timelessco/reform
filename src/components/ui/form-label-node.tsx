@@ -2,9 +2,7 @@ import type { PlateElementProps } from "platejs/react";
 
 import { PlateElement, useSelected } from "platejs/react";
 
-import { cn } from "@/lib/utils";
-
-export const FormLabelElement = ({ className, children, ...props }: PlateElementProps) => {
+export const FormLabelElement = ({ children, ...props }: PlateElementProps) => {
   const { editor, element } = props;
   const placeholder = element.placeholder as string | undefined;
   const isEmpty = editor.api.isEmpty(element);
@@ -12,10 +10,7 @@ export const FormLabelElement = ({ className, children, ...props }: PlateElement
 
   return (
     <PlateElement
-      className={cn(
-        "m-0 px-0  text-sm text-foreground relative cursor-text caret-current",
-        className,
-      )}
+      className="m-0 px-0  text-sm text-foreground relative cursor-text caret-current"
       {...props}
     >
       <div className="flex items-center gap-1">
