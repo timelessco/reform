@@ -1,5 +1,6 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 import { useMemo, useRef } from "react";
+import { useFocusFirstField } from "@/hooks/use-focus-first-field";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { Button } from "@/components/ui/button";
 import { useStepForm } from "@/contexts/step-form-context";
@@ -68,40 +69,27 @@ export const StepForm = ({
     }
   };
 
-  // Auto-focus the first focusable element on mount
+  useFocusFirstField(formRef);
+
+  // Fire `view` analytics event when this step mounts. No-ops in builder
+  // previews (tracking is null) or single-page forms (mode is null) or
+  // before recordFormVisit resolves (visitId is null).
   useMountEffect(() => {
-    const timer = setTimeout(() => {
-      if (formRef.current) {
-        const focusable = formRef.current.querySelector(
-          'input:not([type="hidden"]), textarea, select, [role="checkbox"]',
-        ) as HTMLElement;
-        if (focusable) {
-          focusable.focus();
-        }
-      }
-    }, 300); // Wait for transition to settle
-
-    // Fire `view` analytics event when this step mounts. No-ops in builder
-    // previews (tracking is null) or single-page forms (mode is null) or
-    // before recordFormVisit resolves (visitId is null).
-    if (tracking?.visitId && tracking.mode) {
-      const isFieldByField = tracking.mode === "field-by-field";
-      const firstField = fields.length > 0 ? fields[0] : null;
-      const questionId = isFieldByField && firstField ? firstField.id : `step_${stepIndex}`;
-      const questionType = isFieldByField && firstField ? (firstField.fieldType ?? null) : null;
-      fireQuestionProgress({
-        visitId: tracking.visitId,
-        formId: tracking.formId,
-        visitorHash: tracking.visitorHash,
-        questionId,
-        questionType,
-        questionIndex: stepIndex,
-        event: "view",
-        wasLastQuestion: isLastStep,
-      });
-    }
-
-    return () => clearTimeout(timer);
+    if (!(tracking?.visitId && tracking.mode)) return;
+    const isFieldByField = tracking.mode === "field-by-field";
+    const firstField = fields.length > 0 ? fields[0] : null;
+    const questionId = isFieldByField && firstField ? firstField.id : `step_${stepIndex}`;
+    const questionType = isFieldByField && firstField ? (firstField.fieldType ?? null) : null;
+    fireQuestionProgress({
+      visitId: tracking.visitId,
+      formId: tracking.formId,
+      visitorHash: tracking.visitorHash,
+      questionId,
+      questionType,
+      questionIndex: stepIndex,
+      event: "view",
+      wasLastQuestion: isLastStep,
+    });
   });
 
   return (
