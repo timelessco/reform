@@ -73,6 +73,7 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
     (doc as { presentationMode?: PresentationMode } | undefined)?.presentationMode ?? "card";
   const docProgressBar = Boolean((doc as { progressBar?: boolean } | undefined)?.progressBar);
   const docBranding = Boolean((doc as { branding?: unknown } | undefined)?.branding ?? true);
+  const docAnalytics = Boolean((doc as { analytics?: boolean } | undefined)?.analytics);
 
   const handlePresentationModeChange = useCallback(
     (value: PresentationMode) => {
@@ -114,7 +115,18 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
     [doc?.id, docBranding, form],
   );
 
-  // Track domain assignment state for this form
+  const handleAnalyticsChange = useCallback(
+    (value: boolean) => {
+      if (!doc?.id || docAnalytics === value) return;
+      const collection = getFormListings();
+      collection.update(doc.id, (draft: { analytics?: boolean; updatedAt?: string }) => {
+        draft.analytics = value;
+        draft.updatedAt = new Date().toISOString();
+      });
+    },
+    [doc?.id, docAnalytics],
+  );
+
   const docCustomDomainId = (doc as { customDomainId?: string | null } | undefined)?.customDomainId;
   const docSlug = (doc as { slug?: string | null } | undefined)?.slug;
 
@@ -123,7 +135,6 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
     slug: string | null;
   }>({ domainId: docCustomDomainId ?? null, slug: docSlug ?? null });
 
-  // Keep local state in sync with doc changes
   const activeDomainId = docCustomDomainId ?? domainState.domainId;
   const activeSlug = docSlug ?? domainState.slug;
 
@@ -166,7 +177,6 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
       collapsible="none"
       className="w-full h-full border-none animate-in slide-in-from-right-[40%] duration-200 ease-out"
     >
-      {/* Header */}
       <SidebarHeader className="pt-2 pb-3 pl-1 shrink-0 gap-2.25 space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="text-base text-foreground pl-2.5">Share</h2>
@@ -181,7 +191,6 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
           </Button>
         </div>
 
-        {/* Tab bar — only when published */}
         {!isDraft && (
           <form.Field name="embedType">
             {(field) => (
@@ -228,7 +237,6 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
         )}
       </SidebarHeader>
 
-      {/* Scrollable content */}
       <SidebarContent>
         <div className="px-3 space-y-3">
           <SidebarSection label="Presentation" className="pb-2.75" action={<></>}>
@@ -290,7 +298,6 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
                 const options = formFieldsToEmbedOptions(values);
                 return (
                   <div className="space-y-3">
-                    {/* Preview mockup */}
                     <EmbedPreviewMockup
                       key={embedType}
                       embedType={embedType}
@@ -301,12 +308,10 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
                       alignLeft={options.display.alignment === "left"}
                     />
 
-                    {/* Customise section */}
                     <SidebarSection label="Customise" className="pb-2.75" action={<></>}>
                       <EmbedConfigPanel form={form} embedType={embedType} section="customize" />
                     </SidebarSection>
 
-                    {/* Pro Features section */}
                     <SidebarSection label="Pro Features" action={<></>}>
                       <EmbedConfigPanel
                         form={form}
@@ -314,6 +319,8 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
                         section="pro"
                         docBranding={docBranding}
                         onBrandingChange={handleBrandingChange}
+                        docAnalytics={docAnalytics}
+                        onAnalyticsChange={handleAnalyticsChange}
                         orgId={orgId}
                         formId={formId}
                         customDomainId={activeDomainId}
@@ -323,7 +330,6 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
                       />
                     </SidebarSection>
 
-                    {/* Get Code button — inside scrollable content, after Pro Features */}
                     <Button
                       onClick={handleOpenCodeDialog}
                       variant="default"
@@ -332,7 +338,6 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
                       Get Code
                     </Button>
 
-                    {/* Code dialog */}
                     <EmbedCodeDialog
                       open={codeDialogOpen}
                       onOpenChange={setCodeDialogOpen}
@@ -351,7 +356,6 @@ export const ShareSummarySidebar = ({ formId }: ShareSummarySidebarProps) => {
         </div>
       </SidebarContent>
 
-      {/* Sticky footer — URL bar only, when published */}
       {!isDraft && (
         <SidebarFooter className="px-2 py-2">
           <div className="flex items-center gap-[6px] rounded-lg bg-gray-100 pl-[10px] pr-[3px] py-[3px] h-[30px]">

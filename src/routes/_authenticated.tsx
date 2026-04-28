@@ -38,6 +38,7 @@ import {
   FileTextIcon,
   HelpCircleIcon,
   HomeIcon,
+  Loader2Icon,
   LogOutIcon,
   MoreHorizontalIcon,
   Pencil2Icon,
@@ -97,6 +98,7 @@ import {
   deleteWorkspaceLocal,
   initCollections,
   isInitialized as isCollectionsInitialized,
+  bulkPermanentDeleteFormsLocal,
   permanentDeleteFormLocal,
   renameFormLocal,
   reorderFavoriteLocal,
@@ -129,6 +131,8 @@ import {
 import { getFormVersionContent, getFormVersions } from "@/lib/server-fn/form-versions";
 import {
   createForm,
+  bulkArchiveForms,
+  bulkDeleteForms,
   deleteForm,
   getFormListings as getFormListingsServer,
   updateForm,
@@ -256,6 +260,8 @@ const initCollectionsOnClient = createClientOnlyFn((queryClient: QueryClient) =>
     createForm: async (data) => await createForm({ data: data }),
     updateForm: async (data) => await updateForm({ data: data }),
     deleteForm: async (data) => await deleteForm({ data: data }),
+    bulkArchiveForms: async (data) => await bulkArchiveForms({ data: data }),
+    bulkDeleteForms: async (data) => await bulkDeleteForms({ data: data }),
     addFavorite: async (data) => await addFavorite({ data }),
     removeFavorite: async (data) => await removeFavorite({ data }),
     reorderFavorite: async (data) => await reorderFavorite({ data }),
@@ -280,7 +286,6 @@ const AuthLayout = () => {
   );
 };
 
-// Route configuration
 export const Route = createFileRoute("/_authenticated")({
   server: {
     middleware: [authMiddleware],
@@ -315,7 +320,6 @@ const AuthLayoutContent = () => {
 
   const { formId } = useParams({ strict: false });
 
-  // Editor sidebar management
   const { activeSidebar, closeSidebar } = useEditorSidebar();
   const isMobile = useIsMobile();
 
@@ -330,7 +334,6 @@ const AuthLayoutContent = () => {
   );
   const isDistractionHeaderHidden = isEditRoute && !isHeaderVisible;
 
-  // Right sidebar width state (persisted, like left sidebar)
   const [rightSidebarWidth, _setRightSidebarWidth] = useState(() => {
     if (typeof window === "undefined") return RIGHT_SIDEBAR_WIDTH_DEFAULT;
     const stored = localStorage.getItem(RIGHT_SIDEBAR_WIDTH_KEY);
@@ -373,8 +376,7 @@ const AuthLayoutContent = () => {
           />
         )}
         <div className="relative z-20 flex-1 min-h-0 overflow-hidden flex">
-          {/* Main content - flex-1 auto fills available space.
-              On mobile the right sidebar is a floating overlay (a drawer),
+          {/* On mobile the right sidebar is a floating overlay (a drawer),
               so we don't pad the content out — that's what made the editor
               unreadably narrow on phones. Desktop keeps the push-to-resize
               behavior users expect on wide screens. */}
@@ -448,10 +450,6 @@ const AuthLayoutContent = () => {
   );
 };
 
-// Minimal Sidebar Item Component (Figma system-flat: form list item with icon, title, optional count)
-// App Sidebar Component using shadcn/ui
-// Minimal Sidebar Item Component (Figma system-flat: form list item with icon, title, optional count)
-// App Sidebar Component using shadcn/ui
 const AppSidebar = () => {
   const { toggleSidebar } = useSidebar();
   const { isInboxOpen, toggleInbox, closeInbox } = useMinimalSidebar();
@@ -468,11 +466,9 @@ const AppSidebar = () => {
 
   const handleOpenTrash = useCallback(() => setTrashDialogOpen(true), []);
 
-  // Trash dialog state
   const [trashDialogOpen, setTrashDialogOpen] = useState(false);
   const [paletteSearch, setPaletteSearch] = useState("");
 
-  // Get pre-fetched data from route loader for immediate render
   const { activeOrg } = Route.useLoaderData();
   const { data: workspacesData } = useOrgWorkspaces(activeOrg?.id);
   const { data: formsData } = useOrgForms(activeOrg?.id);
@@ -537,7 +533,6 @@ const AppSidebar = () => {
             <SidebarContent className="gap-0">
               <SidebarGroup className="pt-2 py-0">
                 <SidebarGroupContent className="">
-                  {/* Nav items: Figma system-flat node 23504-5047 - pixel-perfect */}
                   <SidebarMenu className="gap-0">
                     <SidebarMenuItem>
                       <SidebarItem
@@ -546,7 +541,6 @@ const AppSidebar = () => {
                         linkOptions={{ to: "/dashboard" }}
                         isActive={location.pathname === "/dashboard"}
                       />
-                      {/* </SidebarMenuButton> */}
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                       <SidebarItem
@@ -588,7 +582,6 @@ const AppSidebar = () => {
             <SidebarFooter className="p-0 flex shrink-0 flex-col gap-4 py-3 px-2">
               <UserMenuMinimal onOpenTrash={handleOpenTrash} />
             </SidebarFooter>
-            {/* <SidebarRail /> */}
           </>
         )}
       </Sidebar>
@@ -617,7 +610,6 @@ const AppSidebar = () => {
                     if (activeOrg && workspacesData) {
                       const orgWorkspaces = workspacesData;
                       if (orgWorkspaces.length > 0) {
-                        // Use workspace from URL if available, otherwise use first workspace
                         const workspaceMatch = location.pathname.match(/\/workspace\/([^/]+)/);
                         const currentWorkspaceId = workspaceMatch?.[1];
                         const targetWorkspace = currentWorkspaceId
@@ -730,14 +722,12 @@ const AppSidebar = () => {
         </CommandDialog>
       )}
 
-      {/* Trash Dialog */}
       <TrashDialog
         open={trashDialogOpen}
         onOpenChange={setTrashDialogOpen}
         activeOrgId={activeOrg?.id}
       />
 
-      {/* Settings Dialog */}
       <Suspense fallback={null}>
         <LazySettingsDialog />
       </Suspense>
@@ -745,7 +735,6 @@ const AppSidebar = () => {
   );
 };
 
-// Trash Dialog Component
 const TrashDialog = ({
   open,
   onOpenChange,
@@ -758,7 +747,13 @@ const TrashDialog = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
-  const { data: archivedFormsData } = useArchivedForms();
+  // Per-row pending state — tracked separately so each restore/delete button
+  // can show a spinner and disable independently while in flight.
+  const [restoringIds, setRestoringIds] = useState<Set<string>>(new Set());
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  // Trash list is a server-fetched query gated on dialog open — no payload
+  // until the user actually wants to see it. Sidebar listings stay archived-free.
+  const { data: archivedFormsData, isFetching: isFetchingArchived } = useArchivedForms(open);
   const { data: orgWorkspacesData } = useOrgWorkspaces(activeOrgId);
 
   const archivedForms = useMemo(() => {
@@ -772,11 +767,7 @@ const TrashDialog = ({
         (form) =>
           !searchQuery || (form?.title ?? "").toLowerCase().includes(searchQuery.toLowerCase()),
       )
-      .toSorted(
-        (a, b) =>
-          new Date(b.deletedAt || b.updatedAt).getTime() -
-          new Date(a.deletedAt || a.updatedAt).getTime(),
-      );
+      .toSorted((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   }, [archivedFormsData, orgWorkspacesData, activeOrgId, searchQuery]);
 
   const workspaceNames = useMemo(() => {
@@ -833,39 +824,71 @@ const TrashDialog = ({
 
   const handleRestore = useCallback(
     async (formId: string) => {
+      if (restoringIds.has(formId) || deletingIds.has(formId)) return;
+      setRestoringIds((prev) => new Set(prev).add(formId));
       try {
         await restoreFormLocal(formId);
         removeFromSelection(formId);
+        toast.success("Form restored");
       } catch (error) {
-        console.error("Failed to restore form:", error);
+        const message = error instanceof Error ? error.message : "Failed to restore form";
+        toast.error(message);
+      } finally {
+        setRestoringIds((prev) => {
+          const next = new Set(prev);
+          next.delete(formId);
+          return next;
+        });
       }
     },
-    [removeFromSelection],
+    [removeFromSelection, restoringIds, deletingIds],
   );
 
   const handlePermanentDelete = useCallback(
     async (formId: string) => {
+      if (restoringIds.has(formId) || deletingIds.has(formId)) return;
+      setDeletingIds((prev) => new Set(prev).add(formId));
       try {
         await permanentDeleteFormLocal(formId);
         removeFromSelection(formId);
+        toast.success("Form deleted");
       } catch (error) {
-        console.error("Failed to delete form:", error);
+        const message = error instanceof Error ? error.message : "Failed to delete form";
+        toast.error(message);
+      } finally {
+        setDeletingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(formId);
+          return next;
+        });
       }
     },
-    [removeFromSelection],
+    [removeFromSelection, restoringIds, deletingIds],
   );
 
   const handleBulkDelete = useCallback(async () => {
-    const count = selectedIds.size;
-    if (count === 0) return;
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
     setIsDeleting(true);
+    setDeletingIds((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) next.add(id);
+      return next;
+    });
     try {
-      await Promise.all([...selectedIds].map((id) => permanentDeleteFormLocal(id)));
+      await bulkPermanentDeleteFormsLocal(ids);
+      toast.success(`Deleted ${ids.length} form${ids.length === 1 ? "" : "s"}`);
       setSelectedIds(new Set());
     } catch (error) {
-      console.error("Failed to delete forms:", error);
+      const message = error instanceof Error ? error.message : "Failed to delete forms";
+      toast.error(message);
     } finally {
       setIsDeleting(false);
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        for (const id of ids) next.delete(id);
+        return next;
+      });
     }
   }, [selectedIds]);
 
@@ -904,7 +927,6 @@ const TrashDialog = ({
         showCloseButton={false}
         className="sm:max-w-[500px] p-0 gap-0 bg-background border-foreground/10"
       >
-        {/* Search Input */}
         <div className="p-3 border-b border-foreground/5">
           <Input
             placeholder="Search pages in Trash"
@@ -915,9 +937,13 @@ const TrashDialog = ({
           />
         </div>
 
-        {/* Forms List */}
         <div className="max-h-[400px] overflow-y-auto">
-          {archivedForms.length === 0 ? (
+          {archivedFormsData === undefined && isFetchingArchived ? (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Loader2Icon className="h-6 w-6 mb-3 animate-spin opacity-60" />
+              <p className="text-sm">Loading trash…</p>
+            </div>
+          ) : archivedForms.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Trash2Icon className="h-10 w-10 mb-3 opacity-30" />
               <p className="text-sm">Trash is empty</p>
@@ -926,16 +952,20 @@ const TrashDialog = ({
             <div className="p-1">
               {archivedForms.map((form) => {
                 const isSelected = selectedIds.has(form.id);
+                const isRestoring = restoringIds.has(form.id);
+                const isRowDeleting = deletingIds.has(form.id);
+                const isRowBusy = isRestoring || isRowDeleting;
                 return (
                   <div
                     key={form.id}
-                    className={`group flex items-center justify-between px-3 py-2 rounded-md transition-colors cursor-pointer ${isSelected ? "bg-muted/50" : "hover:bg-muted/50"}`}
+                    className={`group flex items-center justify-between px-3 py-2 rounded-md transition-colors cursor-pointer ${isSelected ? "bg-muted/50" : "hover:bg-muted/50"} ${isRowBusy ? "opacity-60 pointer-events-none" : ""}`}
                     onClick={() => handleToggleSelect(form.id)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") handleToggleSelect(form.id);
                     }}
                     role="option"
                     aria-selected={isSelected}
+                    aria-busy={isRowBusy}
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="flex items-center justify-center h-5 w-5 rounded shrink-0">
@@ -962,7 +992,7 @@ const TrashDialog = ({
                       </div>
                     </div>
                     <div
-                      className={`flex items-center gap-1 transition-opacity ${isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+                      className={`flex items-center gap-1 transition-opacity ${isSelected || isRowBusy ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
                     >
                       <Button
                         variant="ghost"
@@ -971,11 +1001,16 @@ const TrashDialog = ({
                           e.stopPropagation();
                           handleRestore(form.id);
                         }}
+                        disabled={isRowBusy}
                         className="h-7 w-7"
                         title="Restore"
                         aria-label="Restore"
                       >
-                        <Undo2Icon className="h-4 w-4" />
+                        {isRestoring ? (
+                          <Loader2Icon className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Undo2Icon className="h-4 w-4" />
+                        )}
                       </Button>
                       <Button
                         variant="ghost"
@@ -984,11 +1019,16 @@ const TrashDialog = ({
                           e.stopPropagation();
                           handlePermanentDelete(form.id);
                         }}
+                        disabled={isRowBusy}
                         className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
                         title="Delete permanently"
                         aria-label="Delete permanently"
                       >
-                        <Trash2Icon className="h-4 w-4" />
+                        {isRowDeleting ? (
+                          <Loader2Icon className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2Icon className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -1021,7 +1061,14 @@ const TrashDialog = ({
                 disabled={isDeleting}
                 className="h-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
               >
-                {isDeleting ? "Deleting..." : "Delete selected"}
+                {isDeleting ? (
+                  <>
+                    <Loader2Icon className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    Deleting…
+                  </>
+                ) : (
+                  "Delete selected"
+                )}
               </Button>
             </>
           ) : (
@@ -1060,7 +1107,6 @@ interface InboxPanelBodyProps {
 const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => {
   const queryClient = useQueryClient();
 
-  // Fetch invitations received by current user
   const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
   const {
     notifications,
@@ -1073,17 +1119,14 @@ const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => {
     readingFormId,
   } = useSubmissionNotifications();
 
-  // Helper to refetch invitations on error (stale data)
   const handleError = (error: unknown) => {
     const message = error instanceof Error ? error.message : "Something went wrong";
     toast.error(message);
-    // Refetch to clear stale invitations
     queryClient.invalidateQueries({
       queryKey: auth.organization.listUserInvitations.queryKey(),
     });
   };
 
-  // Accept/Reject mutations
   const acceptMutation = useMutation(
     auth.organization.acceptInvitation.mutationOptions({
       onSuccess: () => {
@@ -1108,7 +1151,6 @@ const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => {
     }),
   );
 
-  // Only show pending invitations
   const pendingInvitations = (invitations ?? []).filter(
     (inv: { status: string }) => inv.status === "pending",
   );
@@ -1117,7 +1159,6 @@ const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => {
 
   return (
     <div className="flex h-full w-full flex-col">
-      {/* Header */}
       <SidebarHeader className="pt-2 pb-3 pl-1 shrink-0 gap-2.25 space-y-2">
         <div className="flex items-center justify-between gap-1">
           <div className="flex items-center gap-1 min-w-0">
@@ -1136,7 +1177,6 @@ const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => {
         </div>
       </SidebarHeader>
 
-      {/* Content */}
       <div className="flex-1 overflow-y-auto p-2 no-scrollbar">
         <div className="px-1 overflow-hidden">
           {hasNotifications && (
@@ -1222,7 +1262,6 @@ const InboxPanelBody = ({ onClose, headerLeft }: InboxPanelBodyProps) => {
             </>
           )}
 
-          {/* Invitations Section */}
           {hasPendingInvitations && (
             <>
               <p className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest mb-3 px-2">
@@ -1380,15 +1419,12 @@ const SidebarInbox = () => {
   );
 };
 
-// Workspaces section - uses live queries for real-time sync (Minimal Style)
-// Workspaces section - uses live queries for real-time sync (Minimal Style)
 const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => {
   const router = useRouter();
   const location = useLocation();
   const duplicateForm = useDuplicateForm();
   const { data: session } = useSession();
 
-  // Sort mode state with localStorage persistence
   const [sortMode, setSortMode] = useState<"recent" | "oldest" | "alphabetical" | "manual">(() => {
     if (typeof window !== "undefined") {
       return (
@@ -1410,14 +1446,11 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
   const { data: formsData, isLoading: formsLoading } = useOrgForms(activeOrgId);
   const submissionCounts = useSubmissionCounts();
 
-  // Get user's favorite forms
   const favoriteForms = useFavoriteForms(session?.user?.id);
 
-  // Determine if data has loaded
   const isLoading = workspacesLoading || formsLoading;
   const isDataReady = !isLoading && workspacesData !== undefined && formsData !== undefined;
 
-  // Combine workspaces with their forms, filtered by active organization
   const workspaces: WorkspaceWithForms[] = useMemo(() => {
     if (!activeOrgId || !isDataReady) return [];
 
@@ -1541,7 +1574,6 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
     [workspaces, sortMode, handleSortChange],
   );
 
-  // State for workspace dialogs
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [workspaceToDelete, setWorkspaceToDelete] = useState<WorkspaceWithForms | null>(null);
   const [deleteConfirmName, setDeleteConfirmName] = useState("");
@@ -1549,12 +1581,17 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
   const [workspaceToRename, setWorkspaceToRename] = useState<WorkspaceWithForms | null>(null);
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
 
-  // State for form delete dialog
   const [formDeleteDialogOpen, setFormDeleteDialogOpen] = useState(false);
   const [formToDelete, setFormToDelete] = useState<{
     id: string;
     title: string;
   } | null>(null);
+  // Pending state for destructive dialogs — prevents double-submission and
+  // gives the action button a spinner while the server fn is in flight.
+  const [isDeletingWorkspace, setIsDeletingWorkspace] = useState(false);
+  const [isDeletingForm, setIsDeletingForm] = useState(false);
+  const [duplicatingIds, setDuplicatingIds] = useState<Set<string>>(new Set());
+  const [isRenamingWorkspace, setIsRenamingWorkspace] = useState(false);
 
   const handleDeleteDialogOpenChange = useCallback((open: boolean) => {
     setDeleteDialogOpen(open);
@@ -1575,6 +1612,8 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
 
   const handleDeleteWorkspace = useCallback(async () => {
     if (!workspaceToDelete || deleteConfirmName !== workspaceToDelete.name) return;
+    if (isDeletingWorkspace) return;
+    setIsDeletingWorkspace(true);
     try {
       await deleteWorkspaceLocal(workspaceToDelete.id);
       setDeleteDialogOpen(false);
@@ -1584,20 +1623,26 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to delete workspace";
       toast.error(message);
+    } finally {
+      setIsDeletingWorkspace(false);
     }
-  }, [workspaceToDelete, deleteConfirmName, router]);
+  }, [workspaceToDelete, deleteConfirmName, router, isDeletingWorkspace]);
 
   const handleRenameWorkspace = useCallback(async () => {
-    if (!workspaceToRename || !newWorkspaceName.trim()) return;
+    if (!workspaceToRename || !newWorkspaceName.trim() || isRenamingWorkspace) return;
+    setIsRenamingWorkspace(true);
     try {
       await updateWorkspaceName(workspaceToRename.id, newWorkspaceName.trim());
       setRenameDialogOpen(false);
       setWorkspaceToRename(null);
       setNewWorkspaceName("");
     } catch (error) {
-      console.error("Failed to rename workspace:", error);
+      const message = error instanceof Error ? error.message : "Failed to rename workspace";
+      toast.error(message);
+    } finally {
+      setIsRenamingWorkspace(false);
     }
-  }, [workspaceToRename, newWorkspaceName]);
+  }, [workspaceToRename, newWorkspaceName, isRenamingWorkspace]);
 
   const handleRenameKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -1622,13 +1667,27 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
 
   const handleDuplicateForm = useCallback(
     async (form: WorkspaceWithForms["forms"][0]) => {
+      if (duplicatingIds.has(form.id)) return;
+      setDuplicatingIds((prev) => new Set(prev).add(form.id));
       try {
         await duplicateForm(form.id);
-      } catch {
-        toast.error("Failed to duplicate form");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to duplicate form";
+        toast.error(message);
+      } finally {
+        setDuplicatingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(form.id);
+          return next;
+        });
       }
     },
-    [duplicateForm],
+    [duplicateForm, duplicatingIds],
+  );
+
+  const isFormDuplicating = useCallback(
+    (formId: string) => duplicatingIds.has(formId),
+    [duplicatingIds],
   );
 
   const handleDeleteForm = useCallback((form: WorkspaceWithForms["forms"][0]) => {
@@ -1637,7 +1696,8 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
   }, []);
 
   const handleConfirmDeleteForm = useCallback(async () => {
-    if (!formToDelete) return;
+    if (!formToDelete || isDeletingForm) return;
+    setIsDeletingForm(true);
     try {
       await updateFormStatus(formToDelete.id, "archived");
       toast.success("Form deleted");
@@ -1648,15 +1708,16 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
       setFormDeleteDialogOpen(false);
       setFormToDelete(null);
     } catch (error) {
-      console.error("Failed to delete form:", error);
-      toast.error("Failed to delete form");
+      const message = error instanceof Error ? error.message : "Failed to delete form";
+      toast.error(message);
+    } finally {
+      setIsDeletingForm(false);
     }
-  }, [formToDelete, location.pathname, router]);
+  }, [formToDelete, location.pathname, router, isDeletingForm]);
 
   return (
     <>
       <div className="flex flex-col">
-        {/* Favorites Section */}
         {favoriteForms.length > 0 && session?.user?.id && (
           <SortableFavoritesSection userId={session.user.id} favoriteForms={favoriteForms} />
         )}
@@ -1691,6 +1752,7 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
                       onDuplicateForm={handleDuplicateForm}
                       onDeleteForm={handleDeleteForm}
                       onFormDragEnd={handleFormDragEnd}
+                      isFormDuplicating={isFormDuplicating}
                     />
                   ))}
                   {workspaces.length === 0 && (
@@ -1705,7 +1767,6 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
         </div>
       </div>
 
-      {/* Delete Workspace Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={handleDeleteDialogOpenChange}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1737,16 +1798,22 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteWorkspace}
-              disabled={deleteConfirmName !== workspaceToDelete?.name}
+              disabled={deleteConfirmName !== workspaceToDelete?.name || isDeletingWorkspace}
               className="bg-destructive text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Delete workspace
+              {isDeletingWorkspace ? (
+                <>
+                  <Loader2Icon className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  Deleting…
+                </>
+              ) : (
+                "Delete workspace"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Rename Workspace Dialog */}
       <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -1761,15 +1828,30 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
             onKeyDown={handleRenameKeyDown}
           />
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseRenameDialog}>
+            <Button
+              variant="outline"
+              onClick={handleCloseRenameDialog}
+              disabled={isRenamingWorkspace}
+            >
               Cancel
             </Button>
-            <Button onClick={handleRenameWorkspace}>Save</Button>
+            <Button
+              onClick={handleRenameWorkspace}
+              disabled={!newWorkspaceName.trim() || isRenamingWorkspace}
+            >
+              {isRenamingWorkspace ? (
+                <>
+                  <Loader2Icon className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  Saving…
+                </>
+              ) : (
+                "Save"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Form Delete Confirmation Dialog */}
       <AlertDialog open={formDeleteDialogOpen} onOpenChange={setFormDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1783,9 +1865,17 @@ const SidebarWorkspacesMinimal = ({ activeOrgId }: { activeOrgId?: string }) => 
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDeleteForm}
-              className="bg-destructive text-white hover:bg-destructive/90"
+              disabled={isDeletingForm}
+              className="bg-destructive text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Delete
+              {isDeletingForm ? (
+                <>
+                  <Loader2Icon className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  Deleting…
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

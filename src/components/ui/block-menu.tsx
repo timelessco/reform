@@ -61,7 +61,6 @@ const TEXT_LIKE_TYPES = new Set([
   "formLink",
 ]);
 
-// Get field type category for the menu
 const getFieldType = (node: { type?: string; variant?: string } | undefined): BlockFieldType => {
   if (!node?.type) return "unknown";
   const t = node.type;
@@ -82,15 +81,14 @@ const getFieldType = (node: { type?: string; variant?: string } | undefined): Bl
   return "unknown";
 };
 
-// Get label text from node
+// Returns the trimmed text of a node, or empty string if absent / blank.
+// Callers chain fallbacks (label → input → "Untitled") so empty must be empty.
 const extractLabelText = (node: { children?: Array<{ text?: string }> }): string => {
-  if (!node.children) return "Untitled";
-  return (
-    node.children
-      .map((child) => child.text || "")
-      .join("")
-      .trim() || "Untitled"
-  );
+  if (!node.children) return "";
+  return node.children
+    .map((child) => child.text || "")
+    .join("")
+    .trim();
 };
 
 const stopMouseEventPropagation = (e: React.MouseEvent) => {
@@ -194,7 +192,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   const { themeVars, hasCustomization } = useEditorTheme();
   const isOpen = openId === BLOCK_CONTEXT_MENU_ID;
 
-  // Retrieve position from plugin options
   const position = usePluginOption(BlockMenuPlugin, "position");
   const { x, y } = position ?? { x: 0, y: 0 };
 
@@ -202,12 +199,10 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   const [fieldName, setFieldName] = React.useState("");
   const [buttonText, setButtonText] = React.useState("");
   const [turnIntoOpen, setTurnIntoOpen] = React.useState(false);
-  // Track previous open state to detect open transition
   const wasOpenRef = React.useRef(false);
   const blockMenuTriggerRef = React.useRef<HTMLDivElement | null>(null);
   const turnIntoCloseTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  // Get the selected node info reactive to editor state changes
   const selectedNodes = useEditorSelector(
     (ed) => {
       if (!isOpen) return [];
@@ -248,11 +243,9 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
 
   const nodeType = firstNode?.type;
 
-  // Get label node (for formInput/formTextarea, look at previous sibling)
   const labelNode = React.useMemo(() => {
     if (nodeType === "formLabel" || nodeType === "formButton") return firstNode;
     if (FORM_INPUT_NODE_TYPES.has(nodeType ?? "") && firstPath) {
-      // Look at previous sibling for label
       const prevPath = [...firstPath];
       prevPath[prevPath.length - 1] -= 1;
       try {
@@ -260,18 +253,14 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
         if (prev && ALLOWED_LABEL_TYPES.has(prev[0]?.type as string)) {
           return prev[0] as typeof firstNode;
         }
-      } catch {
-        // No previous sibling
-      }
+      } catch {}
     }
     return null;
   }, [nodeType, firstNode, firstPath, editor]);
 
-  // Get input node (for formLabel, look at next sibling)
   const inputNode = React.useMemo(() => {
     if (FORM_INPUT_NODE_TYPES.has(nodeType ?? "")) return firstNode;
     if (ALLOWED_LABEL_TYPES.has(nodeType ?? "") && firstPath) {
-      // Look at next sibling for input or textarea
       const nextPath = [...firstPath];
       nextPath[nextPath.length - 1] += 1;
       try {
@@ -279,20 +268,16 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
         if (next && FORM_INPUT_NODE_TYPES.has(next[0]?.type as string)) {
           return next[0] as typeof firstNode;
         }
-      } catch {
-        // No next sibling
-      }
+      } catch {}
     }
     return null;
   }, [nodeType, firstNode, firstPath, editor]);
 
-  // Resolve field type from inputNode when available (e.g., when clicking a label)
   const fieldType = React.useMemo(() => {
     if (inputNode) return getFieldType(inputNode as { type?: string; variant?: string });
     return getFieldType(firstNode as { type?: string; variant?: string });
   }, [inputNode, firstNode]);
 
-  // Helper to get the input path
   const getInputPath = React.useCallback(() => {
     if (!firstPath) return null;
     if (FORM_INPUT_NODE_TYPES.has(nodeType ?? "")) return firstPath;
@@ -305,14 +290,11 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     return null;
   }, [nodeType, firstPath]);
 
-  // Initialize state only when menu transitions to open (not on every node change)
   React.useEffect(() => {
     if (isOpen && !wasOpenRef.current) {
-      const label = labelNode
-        ? extractLabelText(labelNode)
-        : firstNode
-          ? extractLabelText(firstNode)
-          : "Untitled";
+      const labelText = labelNode ? extractLabelText(labelNode) : "";
+      const inputText = firstNode ? extractLabelText(firstNode) : "";
+      const label = labelText || inputText || "Untitled";
       setFieldName(label);
       setIsEditingName(false);
       setTurnIntoOpen(false);
@@ -323,7 +305,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     wasOpenRef.current = isOpen;
   }, [isOpen, labelNode, firstNode, nodeType]);
 
-  // Handlers for form input options
   const handleToggleRequired = React.useCallback(() => {
     const inputPath = getInputPath();
     if (!inputPath) return;
@@ -533,7 +514,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     [getInputPath, editor.tf],
   );
 
-  // Button-specific handlers
   const handleUpdateButtonText = React.useCallback(
     (value: string) => {
       if (!firstPath || nodeType !== "formButton") return;
@@ -549,7 +529,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     [firstPath, nodeType, editor.tf],
   );
 
-  // Common actions
   const handleDelete = React.useCallback(() => {
     editor.getTransforms(BlockSelectionPlugin).blockSelection.removeNodes();
     editor.tf.focus();
@@ -597,8 +576,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     };
   }, [api.blockMenu]);
 
-  // Keyboard shortcuts
-  // Delete: Del or Backspace
   useHotkeys(
     "delete, backspace",
     handleDelete,
@@ -606,7 +583,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     [isOpen, isEditingName, handleDelete],
   );
 
-  // Duplicate: Cmd+D
   useHotkeys(
     "mod+d",
     handleDuplicate,
@@ -614,7 +590,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     [isOpen, isEditingName, handleDuplicate],
   );
 
-  // Hide: Cmd+Opt+H
   useHotkeys(
     "mod+alt+h",
     () => api.blockMenu.hide(),
@@ -622,7 +597,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     [isOpen, isEditingName, api.blockMenu],
   );
 
-  // Add conditional logic: Cmd+Opt+L
   useHotkeys(
     "mod+alt+l",
     () => api.blockMenu.hide(),
@@ -630,7 +604,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     [isOpen, isEditingName, api.blockMenu],
   );
 
-  // Get current node properties
   const isRequired = Boolean(inputNode?.required);
   const hasDefaultValue = inputNode?.defaultValue !== undefined;
   const currentDefaultValue = inputNode?.defaultValue;
@@ -690,7 +663,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     turnIntoCloseTimer.current = setTimeout(() => setTurnIntoOpen(false), 150);
   }, []);
 
-  // Virtual anchor for positioning the menu at the click coordinates
   const virtualAnchor = React.useMemo(() => {
     if (!isOpen) return undefined;
     return {
@@ -720,13 +692,11 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
           align="start"
           sideOffset={8}
         >
-          {/* Field Name Header */}
           <div className="flex items-center gap-2 px-2 py-1.5">
             <span className="text-[13px] flex-1 truncate text-foreground">{fieldName}</span>
           </div>
           <DropdownMenuSeparator />
 
-          {/* Universal Required switch for all form field types */}
           {fieldType !== "static" && fieldType !== "formButton" && fieldType !== "unknown" && (
             <DropdownMenuItem closeOnClick={false} onClick={handleToggleRequired}>
               <span className="flex-1 min-w-0 text-[13px] text-foreground/80 text-left">
@@ -742,7 +712,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
             </DropdownMenuItem>
           )}
 
-          {/* Text-like field options */}
           {fieldType === "textLike" && (
             <>
               <DropdownMenuItem closeOnClick={false} onClick={handleToggleDefaultValue}>
@@ -794,7 +763,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
             </>
           )}
 
-          {/* Number field options */}
           {fieldType === "formNumber" && (
             <>
               <DropdownMenuItem closeOnClick={false} onClick={handleToggleDefaultValue}>
@@ -858,7 +826,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
             </>
           )}
 
-          {/* File upload options */}
           {fieldType === "formFileUpload" && (
             <>
               <NumberRow
@@ -918,7 +885,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
             </>
           )}
 
-          {/* Checkbox options */}
           {fieldType === "optionCheckbox" && (
             <>
               <NumberRow
@@ -965,7 +931,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
             </>
           )}
 
-          {/* Multi Select badge options */}
           {fieldType === "formMultiSelect" && (
             <>
               <NumberRow
@@ -988,7 +953,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
             </>
           )}
 
-          {/* Multi-choice (radio) options */}
           {fieldType === "optionMultiChoice" && (
             <>
               <DropdownMenuItem closeOnClick={false} onClick={handleToggleRandomizeOrder}>
@@ -1025,7 +989,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
           {/* Date/Time fields only get Required (handled above) + separator */}
           {(fieldType === "formDate" || fieldType === "formTime") && <DropdownMenuSeparator />}
 
-          {/* Button-Specific Options */}
           {fieldType === "formButton" && (
             <>
               <div className="px-2 py-1.5 space-y-2">
@@ -1042,7 +1005,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
             </>
           )}
 
-          {/* Common Actions */}
           <DropdownMenuItem variant="destructive" onClick={handleDelete}>
             <TrashIcon />
             <span className="flex-1 text-left">Delete</span>
@@ -1065,7 +1027,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
 
-          {/* Turn Into Submenu */}
           <DropdownMenuSub open={turnIntoOpen}>
             <DropdownMenuSubTrigger
               className="text-foreground/80"

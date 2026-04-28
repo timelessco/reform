@@ -55,11 +55,9 @@ export const EditorKit = [
   ...LinkKit,
   ...MentionKit,
 
-  // Marks
   ...BasicMarksKit,
   ...FontKit,
 
-  // Block Style
   ...ListKit,
   ...AlignKit,
   ...LineHeightKit,
@@ -67,12 +65,10 @@ export const EditorKit = [
   // Tab guard must come after IndentPlugin (ListKit/ToggleKit) to wrap outermost
   TabGuardPlugin,
 
-  // Collaboration
   ...DiscussionKit,
   ...CommentKit,
   ...SuggestionKit,
 
-  // Editing
   ...SlashKit,
   ...AutoformatKit,
   ...CursorOverlayKit,
@@ -82,15 +78,11 @@ export const EditorKit = [
   ...ExitBreakKit,
   TrailingBlockPlugin,
 
-  // Parsers
   ...MarkdownKit,
 
-  // UI
   ...BlockPlaceholderKit,
-  // ...FixedToolbarKit,
   ...FloatingToolbarKit,
 
-  // AI
   ...AIInputKit,
   ...AIDiffKit,
 ];

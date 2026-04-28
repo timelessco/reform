@@ -35,7 +35,6 @@ import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useLocalForm } from "@/hooks/use-live-hooks";
 import { getLocalFormId, getLocalWorkspaceId } from "@/db/local-draft";
 
-// Initial state — form header, a label, a form input, and a submit button
 const landingValue = normalizeNodeId([
   createFormHeaderNode({ title: "" }) as unknown as TElement,
   {
@@ -70,7 +69,6 @@ const LandingLayout = () => {
   const { activeSidebar, previewMode } = useEditorSidebar();
   const showSidebar = !!activeSidebar;
 
-  // Right sidebar width state (persisted, matches authenticated route)
   const [rightSidebarWidth, _setRightSidebarWidth] = useState(() => {
     if (typeof window === "undefined") return RIGHT_SIDEBAR_WIDTH_DEFAULT;
     const stored = localStorage.getItem(RIGHT_SIDEBAR_WIDTH_KEY);
@@ -102,7 +100,6 @@ const LandingLayout = () => {
       data-resizing={isRightResizing ? "" : undefined}
     >
       <div className="flex-1 min-h-0 overflow-hidden flex">
-        {/* Main content - flex-1 auto fills available space */}
         <div className={cn("flex-1 min-w-0 flex flex-col")}>
           <div className="relative z-0 shrink-0">
             <AppHeader />
@@ -119,7 +116,6 @@ const LandingLayout = () => {
         </div>
       </div>
 
-      {/* Right sidebar resize handle - fixed overlay */}
       {showSidebar && (
         <RightSidebarResizeHandle
           sidebarWidth={rightSidebarWidth}
@@ -128,7 +124,6 @@ const LandingLayout = () => {
         />
       )}
 
-      {/* Right sidebar - fixed overlay */}
       <div
         className={cn(
           "fixed top-0 bottom-0 right-0 z-40 overflow-hidden bg-background",
@@ -232,7 +227,6 @@ const LocalEditorApp = () => {
         return;
       }
 
-      // Persist to local collection
       const headerNode =
         value.length > 0 && value[0]?.type === "formHeader"
           ? (value[0] as unknown as FormHeaderElementData)

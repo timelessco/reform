@@ -10,8 +10,8 @@ import {
   findPrevNonButtonPath,
   moveToPath,
 } from "@/components/editor/plugins/form-blocks-kit";
+import { BlockSelection } from "@/components/ui/block-selection";
 import { TagIcon, XIcon } from "@/components/ui/icons";
-import { RequiredBadgeButton } from "@/components/ui/required-badge-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +26,6 @@ export const FormMultiSelectInputElement = ({
   const editor = useEditorRef();
   const options = (element.options as string[]) ?? [];
   const elementId = (element as { id?: string }).id;
-  const required = Boolean((element as { required?: boolean }).required);
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState("");
   const [focusedChipIndex, setFocusedChipIndex] = useState<number | null>(null);
@@ -271,7 +270,7 @@ export const FormMultiSelectInputElement = ({
           placeholder={
             options.length === 0 ? "Type and press Enter to add options" : "Add option..."
           }
-          className="min-w-[80px] flex-1 border-0 bg-transparent p-0 text-sm text-muted-foreground/50 outline-none placeholder:text-muted-foreground/50"
+          className="min-w-[80px] flex-1 border-0 bg-transparent p-0 text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
         />
       </div>
       <Tooltip>
@@ -287,7 +286,10 @@ export const FormMultiSelectInputElement = ({
         </TooltipTrigger>
         <TooltipContent side="left">Multi-select</TooltipContent>
       </Tooltip>
-      <RequiredBadgeButton required={required} path={props.path} />
+      {/* Plate passes BelowRootNodes (which includes BlockSelection) as a
+          sibling of `children`, so wrapping {children} in `display:none`
+          above also hides the highlight. Render it explicitly instead. */}
+      <BlockSelection {...props} />
     </PlateElement>
   );
 };

@@ -396,7 +396,6 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
     const currentText = (submitBtn.children?.[0] as Record<string, unknown>)?.text;
     const newText = currentText === "Submit" ? "Next" : currentText;
 
-    // Remove old button and insert new one with updated role/text
     editor.tf.removeNodes({ at: submitPath });
     editor.tf.insertNodes(
       {
@@ -407,7 +406,6 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
       { at: submitPath },
     );
 
-    // Insert pageBreak after the converted Next button
     const pageBreakPath = PathApi.next(submitPath);
     editor.tf.insertNodes(
       {
@@ -428,7 +426,6 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
       { at: paragraphPath, select: true },
     );
 
-    // Insert "Previous" button after paragraph
     const prevButtonPath = PathApi.next(paragraphPath);
     editor.tf.insertNodes(
       {
@@ -502,7 +499,6 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
       return;
     }
 
-    // Insert thank you pageBreak after the existing Submit button
     const submitPath: Path = [submitIndex];
     const pageBreakPath = PathApi.next(submitPath);
     editor.tf.insertNodes(

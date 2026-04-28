@@ -162,7 +162,6 @@ const InlineCombobox = ({
   );
 
   const store = useComboboxStore({
-    // open: ,
     setValue: (newValue) => React.startTransition(() => setValue(newValue)),
   });
 
@@ -264,7 +263,6 @@ const InlineComboboxContent = ({
 
   const hasPreview = preview !== undefined;
 
-  // Track active item value from Ariakit store — derived, no state needed
   const activeId = store?.useState("activeId");
   const activeValue = React.useMemo(() => {
     if (!store || !hasPreview || !activeId) return null;
@@ -281,7 +279,6 @@ const InlineComboboxContent = ({
     const activeEl = scrollEl.querySelector<HTMLElement>(`[data-active-item=true]`);
     if (!activeEl) return;
 
-    // Center-focused scroll
     const itemTop = activeEl.offsetTop;
     const itemHeight = activeEl.offsetHeight;
     const scrollHeight = scrollEl.clientHeight;
@@ -290,7 +287,6 @@ const InlineComboboxContent = ({
     const clampedScroll = Math.max(0, Math.min(idealScroll, maxScroll));
     scrollEl.scrollTo({ top: clampedScroll, behavior: "smooth" });
 
-    // Position preview via direct DOM mutation (no state update)
     // Only clamp at top; preview freely extends below for bottom items
     if (previewEl) {
       const visibleTop = Math.max(0, itemTop - clampedScroll);
@@ -332,7 +328,6 @@ const InlineComboboxContent = ({
           {children}
         </div>
 
-        {/* Preview card positioned relative to the active item */}
         {hasPreview && (
           <div
             ref={previewElRef}

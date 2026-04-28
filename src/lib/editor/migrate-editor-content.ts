@@ -12,7 +12,6 @@ export const migrateEditorContent = (
 ): Value => {
   let result = content;
 
-  // Ensure formHeader exists at index 0
   if (result.length === 0 || result[0]?.type !== "formHeader") {
     result = [
       createFormHeaderNode({
@@ -24,7 +23,6 @@ export const migrateEditorContent = (
     ];
   }
 
-  // Ensure Submit button exists
   const hasSubmitButton = result.some(
     (node: TElement) => node.type === "formButton" && node.buttonRole === "submit",
   );
@@ -40,7 +38,6 @@ export const migrateEditorContent = (
     ];
   }
 
-  // Migrate old formOptionItem(variant="multiSelect") to formMultiSelectInput
   result = migrateMultiSelectOptions(result);
 
   return result;
@@ -57,7 +54,6 @@ const migrateMultiSelectOptions = (content: Value): Value => {
   while (i < content.length) {
     const node = content[i];
     if (node.type === "formOptionItem" && node.variant === "multiSelect") {
-      // Collect all consecutive multiSelect options
       const options: string[] = [];
       while (
         i < content.length &&

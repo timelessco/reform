@@ -43,5 +43,4 @@ export const useSettingsDialog = () => {
   };
 };
 
-// For imperative use outside React components
 export const settingsDialogStore = store;

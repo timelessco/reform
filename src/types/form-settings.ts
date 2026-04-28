@@ -1,7 +1,3 @@
-// ============================================================================
-// Form Settings Types (for type-safe settings)
-// ============================================================================
-
 export type Language = "English" | "Spanish" | "French";
 
 export type PopupTriggerType = "button" | "delay" | "scroll";
@@ -12,11 +8,7 @@ export type EmbedType = "standard" | "popup" | "fullPage";
 
 export type PresentationMode = "card" | "field-by-field";
 
-// ============================================================================
-// Form Settings Interface (matches settings fields on forms table)
-// ============================================================================
 export interface FormSettings {
-  // General
   language: string;
   redirectOnCompletion: boolean;
   redirectUrl: string | null;
@@ -27,14 +19,12 @@ export interface FormSettings {
   dataRetention: boolean;
   dataRetentionDays: number | null;
 
-  // Email Notifications
   selfEmailNotifications: boolean;
   notificationEmail: string | null;
   respondentEmailNotifications: boolean;
   respondentEmailSubject: string | null;
   respondentEmailBody: string | null;
 
-  // Access
   passwordProtect: boolean;
   password: string | null;
   closeForm: boolean;
@@ -45,7 +35,6 @@ export interface FormSettings {
   maxSubmissions: number | null;
   preventDuplicateSubmissions: boolean;
 
-  // Behavior
   saveAnswersForLater: boolean;
 
   /**
@@ -68,11 +57,7 @@ export interface FormSettings {
   updatedAt: Date | string;
 }
 
-// ============================================================================
-// Public Form Settings (subset for public form page)
-// ============================================================================
 export interface PublicFormSettings {
-  // Display
   progressBar: boolean;
   presentationMode: PresentationMode;
   branding: boolean;
@@ -81,7 +66,6 @@ export interface PublicFormSettings {
   redirectUrl: string | null;
   redirectDelay: number;
 
-  // Access gating
   language: string;
   passwordProtect: boolean;
   closeForm: boolean;
@@ -125,17 +109,13 @@ export const buildPublicFormSettings = (
   if (source) {
     for (const key of Object.keys(merged) as (keyof PublicFormSettings)[]) {
       if (source[key] !== undefined) {
-        // biome-ignore lint/suspicious/noExplicitAny: generic merge
-        (merged as any)[key] = source[key];
+        (merged as Record<string, unknown>)[key] = source[key];
       }
     }
   }
   return { ...merged, ...overrides };
 };
 
-// ============================================================================
-// Default Settings Values
-// ============================================================================
 export const defaultFormSettings: Omit<FormSettings, "createdAt" | "updatedAt"> = {
   language: "English",
   redirectOnCompletion: false,

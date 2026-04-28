@@ -33,9 +33,9 @@ const SettingsSchema = z.object({
 export type FormBuilderSettings = z.infer<typeof SettingsSchema>;
 
 export const FormSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   createdByUserId: z.string().optional(),
-  workspaceId: z.string().uuid(),
+  workspaceId: z.uuid(),
   title: z.string().default("Untitled"),
   formName: z.string().default("draft"),
   schemaName: z.string().default("draftFormSchema"),
@@ -45,7 +45,6 @@ export const FormSchema = z.object({
   cover: z.string().nullable().optional(),
   isMultiStep: z.boolean().default(false),
   status: z.enum(["draft", "published", "archived"]).default("draft"),
-  deletedAt: timestampField.nullable().optional(),
   lastPublishedVersionId: z.string().nullable().optional(),
   publishedContentHash: z.string().nullable().optional(),
   language: z.string().default("English"),

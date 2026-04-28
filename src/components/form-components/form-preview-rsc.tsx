@@ -10,7 +10,7 @@ import { ProgressBar } from "@/routes/forms/-components/progress-bar";
 import { StepFormProvider, useStepForm } from "@/contexts/step-form-context";
 import type { PublicFormTracking, TrackingBase } from "@/contexts/step-form-context";
 import { useTranslation } from "@/contexts/translation-context";
-import { useMountEffect } from "@/hooks/use-mount-effect";
+import { useFocusFirstField } from "@/hooks/use-focus-first-field";
 import { useStepPreviewForm } from "@/hooks/use-preview-form";
 import { CUSTOMIZATION_AUTO_DEFAULTS } from "@/lib/theme/customization-defaults";
 import { cn } from "@/lib/utils";
@@ -225,18 +225,7 @@ const StepFormRSC = ({
   });
 
   const formRef = useRef<HTMLFormElement>(null);
-
-  useMountEffect(() => {
-    const timer = setTimeout(() => {
-      if (formRef.current) {
-        const focusable = formRef.current.querySelector(
-          'input:not([type="hidden"]), textarea, select, [role="checkbox"]',
-        ) as HTMLElement;
-        if (focusable) focusable.focus();
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  });
+  useFocusFirstField(formRef);
 
   const FieldSlot = useCallback(
     ({ fieldId, field }: FieldSlotProps) => {

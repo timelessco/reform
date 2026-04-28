@@ -1,16 +1,23 @@
 "use client";
 
 import { experimental_useObject as useObject } from "@ai-sdk/react";
+import { useMutation } from "@tanstack/react-query";
 import { PathApi } from "platejs";
 import type { TElement } from "platejs";
 import type { PlateEditor } from "platejs/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { AI_DIFF_KEY } from "@/components/editor/plugins/ai-diff-kit";
 import { applyOp, canLiveUpdate, liveUpdateOp } from "@/lib/editor/apply-op";
 import type { AppliedOp, ApplyContext } from "@/lib/editor/apply-op";
 import { formGenSchema, isOpReady } from "@/lib/ai/ops-schema";
 import type { FormGenResult, Op, PartialOp, SetThemeOp } from "@/lib/ai/ops-schema";
+
+type ThemePayload = {
+  tokens: Record<string, string>;
+  font: string;
+  radius: "none" | "small" | "medium" | "large";
+};
 
 type UseObjectReturn = {
   object: Partial<FormGenResult> | undefined;
@@ -221,7 +228,45 @@ export const useFormGenStream = ({
   }, [editor, forEachDiffNode, resetStreamState]);
 
   const lastPromptRef = useRef<string>("");
-  const [isThemeLoading, setIsThemeLoading] = useState(false);
+
+  const themeMutation = useMutation({
+    mutationFn: async (requestBody: unknown): Promise<ThemePayload> => {
+      const res = await fetch("/api/ai/form-generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+      if (!res.ok) throw new Error(`theme request failed: ${res.status}`);
+      const data = (await res.json()) as { theme?: ThemePayload };
+      if (!data.theme) throw new Error("no theme in response");
+      return data.theme;
+    },
+    onSuccess: (theme) => {
+      const themeOp: Op = {
+        type: "set-theme",
+        tokens: theme.tokens,
+        font: theme.font,
+        radius: theme.radius,
+      } as Op;
+      const ctx: ApplyContext = {
+        editor,
+        initialPathRef,
+        firstOpRef,
+        editMode: false,
+        createMode: false,
+        nextInsertPathRef,
+        formId,
+        insertedCountRef,
+        thankYouEmittedRef,
+        firstContentSeenRef,
+      };
+      applyOp(themeOp, ctx);
+      onFinish?.();
+    },
+    onError: (err: Error) => {
+      onError?.(err.message || "Theme generation failed.");
+    },
+  });
 
   const applyFinalThemeOps = useCallback(
     (finalObject: { ops?: PartialOp[] } | undefined) => {
@@ -506,55 +551,10 @@ export const useFormGenStream = ({
         mode,
       };
 
-      // Theme mode bypasses useObject — server returns a one-shot JSON response
-      // from a tool call. Apply directly to whichever collection owns the form.
+      // Theme mode bypasses useObject — server returns one-shot JSON from a
+      // tool call rather than a streamed object.
       if (mode === "theme") {
-        setIsThemeLoading(true);
-        void (async () => {
-          try {
-            const res = await fetch("/api/ai/form-generate", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(requestBody),
-            });
-            if (!res.ok) throw new Error(`theme request failed: ${res.status}`);
-            const data = (await res.json()) as {
-              theme?: {
-                tokens: Record<string, string>;
-                font: string;
-                radius: "none" | "small" | "medium" | "large";
-              };
-            };
-            if (!data.theme) throw new Error("no theme in response");
-
-            const themeOp: Op = {
-              type: "set-theme",
-              tokens: data.theme.tokens,
-              font: data.theme.font,
-              radius: data.theme.radius,
-            } as Op;
-
-            const ctx: ApplyContext = {
-              editor,
-              initialPathRef,
-              firstOpRef,
-              editMode: false,
-              createMode: false,
-              nextInsertPathRef,
-              formId,
-              insertedCountRef,
-              thankYouEmittedRef,
-              firstContentSeenRef,
-            };
-            applyOp(themeOp, ctx);
-            onFinish?.();
-          } catch (err) {
-            const message = err instanceof Error ? err.message : "Theme generation failed.";
-            onError?.(message);
-          } finally {
-            setIsThemeLoading(false);
-          }
-        })();
+        themeMutation.mutate(requestBody);
         return;
       }
 
@@ -570,6 +570,7 @@ export const useFormGenStream = ({
       formId,
       onFinish,
       onError,
+      themeMutation,
     ],
   );
 
@@ -578,7 +579,7 @@ export const useFormGenStream = ({
     stop,
     rollback,
     accept,
-    isLoading: isLoading || isThemeLoading,
+    isLoading: isLoading || themeMutation.isPending,
     error,
   };
 };

@@ -3,10 +3,6 @@
  * All colors in hex for uniform display in color pickers.
  */
 
-// ============================================================================
-// Base Colors — 5 gray scale variants (hex, converted from shadcn v4 OKLCH)
-// ============================================================================
-
 export interface BaseColorTokens {
   background: string;
   foreground: string;
@@ -95,11 +91,7 @@ export const BASE_COLORS: Record<string, BaseColorTokens> = {
   },
 };
 
-// ============================================================================
-// Dark Base Colors — same 5 gray scale variants for dark mode (hex)
 // Alpha values (border/input) are blended against the preset's background.
-// ============================================================================
-
 export const DARK_BASE_COLORS: Record<string, BaseColorTokens> = {
   neutral: {
     background: "#131313",
@@ -173,10 +165,6 @@ export const DARK_BASE_COLORS: Record<string, BaseColorTokens> = {
   },
 };
 
-// ============================================================================
-// Theme Colors — 12 accent hues
-// ============================================================================
-
 export interface ThemeColorTokens {
   primary: string;
   "primary-foreground": string;
@@ -247,10 +235,6 @@ export const THEME_COLORS: Record<string, ThemeColorTokens> = {
   red: { primary: "#dc2626", "primary-foreground": "#fef2f2", ring: "#dc2626" },
 };
 
-// ============================================================================
-// Radius Map
-// ============================================================================
-
 export const RADIUS_MAP: Record<string, string> = {
   none: "0px",
   small: "0.375rem",
@@ -258,15 +242,7 @@ export const RADIUS_MAP: Record<string, string> = {
   large: "0.875rem",
 };
 
-// ============================================================================
-// Font Map — derived from font-registry.ts (single source of truth)
-// ============================================================================
-
 export { FONT_MAP } from "./font-registry";
-
-// ============================================================================
-// Spacing Map
-// ============================================================================
 
 export const SPACING_MAP: Record<string, string> = {
   dense: "0.5rem",
@@ -274,10 +250,6 @@ export const SPACING_MAP: Record<string, string> = {
   normal: "1rem",
   spacious: "1.25rem",
 };
-
-// ============================================================================
-// Styles — 5 named visual feel presets (shape/density/typography)
-// ============================================================================
 
 export interface StyleConfig {
   radius: string;
@@ -325,7 +297,6 @@ export const STYLES: Record<string, StyleConfig> = {
   },
 };
 
-// Constant destructive tokens (same across all presets)
 export const DESTRUCTIVE_TOKENS = {
   destructive: "#ef4444",
   "destructive-foreground": "#fafafa",

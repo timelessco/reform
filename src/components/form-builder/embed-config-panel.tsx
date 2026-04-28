@@ -18,7 +18,6 @@ export interface EmbedDisplayConfig {
   alignment: "center" | "left";
   dynamicHeight: boolean;
   dynamicWidth: boolean;
-  trackEvents: boolean;
   branding: boolean;
 }
 
@@ -43,8 +42,6 @@ export interface EmbedOptions {
   customDomain: boolean;
 }
 
-/* ─── Flat field interface for TanStack Form bindings ─── */
-
 /** Flat representation used by TanStack Form field bindings and URL search params */
 export interface EmbedFormFields {
   height: number;
@@ -53,7 +50,6 @@ export interface EmbedFormFields {
   hideTitle: boolean;
   alignLeft: boolean;
   transparentBackground: boolean;
-  trackEvents: boolean;
   customDomain: boolean;
   branding: boolean;
   popupTrigger: "button" | "auto" | "scroll";
@@ -74,7 +70,6 @@ export const defaultEmbedFormFields: EmbedFormFields = {
   hideTitle: false,
   alignLeft: false,
   transparentBackground: false,
-  trackEvents: false,
   customDomain: false,
   branding: true,
   popupTrigger: "button",
@@ -97,7 +92,6 @@ export const formFieldsToEmbedOptions = (fields: EmbedFormFields): EmbedOptions 
     alignment: fields.alignLeft ? "left" : "center",
     dynamicHeight: fields.dynamicHeight,
     dynamicWidth: fields.dynamicWidth,
-    trackEvents: fields.trackEvents,
     branding: fields.branding,
   },
   popup: {
@@ -130,6 +124,10 @@ interface EmbedConfigPanelProps {
    * instead of local form state, and writes back through `onBrandingChange`. */
   docBranding?: boolean;
   onBrandingChange?: (value: boolean) => void;
+  /** Current server-side value of forms.analytics. Pro-gated; when off the
+   * public form skips visit/progress tracking entirely. */
+  docAnalytics?: boolean;
+  onAnalyticsChange?: (value: boolean) => void;
   /** Custom domain props for the Pro section */
   orgId?: string;
   formId?: string;
@@ -138,8 +136,6 @@ interface EmbedConfigPanelProps {
   formTitle?: string | null;
   onDomainAssigned?: (domainId: string | null, slug: string | null) => void;
 }
-
-/* ─── Layout helpers matching Figma node 24119:5595 ─── */
 
 export const ConfigCard = ({
   children,
@@ -190,7 +186,6 @@ export const ConfigRow = ({
   </div>
 );
 
-/* ─── Select trigger class (shared) ─── */
 /**
  * Figma button: h-[24px] px-[8px] py-[5.5px] rounded-[5px] gap-[4px]
  * Must override SelectTrigger defaults: data-[size=default]:h-8, py-2, pe-2, ps-2.5, rounded-lg
@@ -199,14 +194,14 @@ export const ConfigRow = ({
 export const selectTriggerCls =
   "data-[size=default]:h-[24px] shrink-0 border-none bg-transparent shadow-none rounded-[5px] px-2 py-0 gap-1 w-auto text-[13px] text-foreground font-medium whitespace-nowrap ";
 
-/* ─── Public entry point ─── */
-
 export const EmbedConfigPanel = ({
   embedType,
   form,
   section,
   docBranding,
   onBrandingChange,
+  docAnalytics,
+  onAnalyticsChange,
   orgId,
   formId,
   customDomainId,
@@ -219,9 +214,10 @@ export const EmbedConfigPanel = ({
   }
   return (
     <ProSection
-      form={form}
       docBranding={docBranding}
       onBrandingChange={onBrandingChange}
+      docAnalytics={docAnalytics}
+      onAnalyticsChange={onAnalyticsChange}
       orgId={orgId}
       formId={formId}
       customDomainId={customDomainId}
@@ -231,8 +227,6 @@ export const EmbedConfigPanel = ({
     />
   );
 };
-
-/* ─── Label maps ─── */
 
 const triggerLabels: Record<string, string> = {
   button: "On Button Click",
@@ -248,9 +242,6 @@ const positionLabels: Record<string, string> = {
 
 const selectDynamicHeight = (s: { values: { dynamicHeight: boolean } }) => s.values.dynamicHeight;
 
-/* ─── Sections ─── */
-
-/* ─── Sections ─── */
 const CustomizeSection = ({
   embedType,
   form,
@@ -454,7 +445,6 @@ const CustomizeSection = ({
     );
   }
 
-  // fullpage
   return (
     <ConfigCard>
       <form.Field name="transparentBackground">
@@ -483,9 +473,10 @@ const generateSlugFromTitle = (title: string): string =>
     .slice(0, 60) || "form";
 
 const ProSection = ({
-  form,
   docBranding,
   onBrandingChange,
+  docAnalytics,
+  onAnalyticsChange,
   orgId,
   formId,
   customDomainId,
@@ -493,10 +484,10 @@ const ProSection = ({
   formTitle,
   onDomainAssigned,
 }: {
-  // eslint-disable-next-line typescript-eslint/no-explicit-any
-  form: { Field: any };
   docBranding?: boolean;
   onBrandingChange?: (value: boolean) => void;
+  docAnalytics?: boolean;
+  onAnalyticsChange?: (value: boolean) => void;
   orgId?: string;
   formId?: string;
   customDomainId?: string | null;
@@ -548,6 +539,7 @@ const ProSection = ({
   // users don't accidentally push domain/slug/branding changes on every click.
   // Silently discarded on unmount (sidebar close / tab switch).
   const [draftBranding, setDraftBranding] = useState<boolean>(docBranding ?? true);
+  const [draftAnalytics, setDraftAnalytics] = useState<boolean>(docAnalytics ?? false);
   const [draftDomainId, setDraftDomainId] = useState<string | null>(customDomainId ?? null);
   const [draftSlug, setDraftSlug] = useState<string>(formSlug ?? defaultSlug);
 
@@ -556,6 +548,9 @@ const ProSection = ({
   useEffect(() => {
     setDraftBranding(docBranding ?? true);
   }, [docBranding]);
+  useEffect(() => {
+    setDraftAnalytics(docAnalytics ?? false);
+  }, [docAnalytics]);
   useEffect(() => {
     setDraftDomainId(customDomainId ?? null);
   }, [customDomainId]);
@@ -570,12 +565,16 @@ const ProSection = ({
 
   const isLiveDirty =
     draftBranding !== (docBranding ?? true) ||
+    draftAnalytics !== (docAnalytics ?? false) ||
     draftDomainId !== (customDomainId ?? null) ||
     draftSlug.trim() !== (formSlug ?? defaultSlug);
 
   const saveLiveSettings = useCallback(async () => {
     if (draftBranding !== (docBranding ?? true)) {
       onBrandingChange?.(draftBranding);
+    }
+    if (draftAnalytics !== (docAnalytics ?? false)) {
+      onAnalyticsChange?.(draftAnalytics);
     }
     if (draftDomainId !== (customDomainId ?? null)) {
       await assignDomainMutation.mutateAsync(draftDomainId);
@@ -586,12 +585,15 @@ const ProSection = ({
     }
   }, [
     draftBranding,
+    draftAnalytics,
     draftDomainId,
     draftSlug,
     docBranding,
+    docAnalytics,
     customDomainId,
     formSlug,
     onBrandingChange,
+    onAnalyticsChange,
     assignDomainMutation,
     updateSlugMutation,
   ]);
@@ -600,25 +602,10 @@ const ProSection = ({
 
   return (
     <FeatureGate requiredPlan="pro" variant="block">
-      <ConfigCard>
-        <form.Field name="trackEvents">
-          {(field: FieldRenderApi<boolean>) => (
-            <ConfigRow label="Analytics" variant="switch">
-              <Switch
-                aria-label="Analytics"
-                checked={field.state.value}
-                onCheckedChange={field.handleChange}
-                size="default"
-              />
-            </ConfigRow>
-          )}
-        </form.Field>
-      </ConfigCard>
-
       {/* Live Settings — explicit Save gate. These fields write directly to
           the forms row and take effect on the public URL immediately after
           Save, without requiring a republish. */}
-      <div className="mt-3 space-y-1.5">
+      <div className="space-y-1.5">
         <div className="flex items-center justify-between px-1">
           <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
             Live Settings
@@ -626,6 +613,15 @@ const ProSection = ({
           <span className="text-[10px] text-muted-foreground/70">Applies on save</span>
         </div>
         <ConfigCard>
+          <ConfigRow label="Analytics" variant="switch">
+            <Switch
+              aria-label="Analytics"
+              checked={draftAnalytics}
+              onCheckedChange={setDraftAnalytics}
+              size="default"
+            />
+          </ConfigRow>
+
           <ConfigRow label="Reform Branding" variant="switch">
             <Switch
               aria-label="Reform Branding"

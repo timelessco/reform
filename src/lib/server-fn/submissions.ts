@@ -9,9 +9,10 @@ import {
   transformPlateStateToFormElements,
 } from "@/lib/editor/transform-plate-to-form";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { authForm, getActiveOrgId } from "./auth-helpers";
+import { purgeFormCache } from "@/lib/server-fn/cdn-cache";
+import { getActiveOrgId } from "./auth-helpers";
+import { authForm } from "./auth-helpers.server";
 
-// Serialized submission type for client consumption
 export type SerializedSubmission = {
   id: string;
   formId: string;
@@ -29,24 +30,40 @@ const serializeSubmission = (s: typeof submissions.$inferSelect) => ({
   data: s.data as Record<string, object>,
 });
 
-// DELETE submission
+// Purge the form's CDN cache iff a submission delete could have re-opened the
+// limit-reached gate — i.e. the form was published AND has limitSubmissions
+// turned on. Cheap fire-and-forget; over-purges in the "count was nowhere
+// near the cap" case but cost is one Vercel API call.
+const maybePurgeAfterSubmissionDelete = async (formId: string) => {
+  const [row] = await db
+    .select({
+      lastPublishedVersionId: forms.lastPublishedVersionId,
+      limitSubmissions: forms.limitSubmissions,
+    })
+    .from(forms)
+    .where(eq(forms.id, formId));
+  if (row?.lastPublishedVersionId && row.limitSubmissions) {
+    void purgeFormCache(formId);
+  }
+};
+
 export const deleteSubmission = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ id: z.string().uuid(), formId: z.string().uuid() }))
+  .inputValidator(z.object({ id: z.uuid(), formId: z.uuid() }))
   .handler(async ({ data, context }) => {
     const orgId = getActiveOrgId(context.session);
     await authForm(data.formId, context.session.user.id, orgId);
     await db.delete(submissions).where(eq(submissions.id, data.id));
+    await maybePurgeAfterSubmissionDelete(data.formId);
     return { success: true };
   });
 
-// DELETE submissions bulk
 export const deleteSubmissionsBulk = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
-      submissionIds: z.array(z.string().uuid()),
+      formId: z.uuid(),
+      submissionIds: z.array(z.uuid()),
     }),
   )
   .handler(async ({ data, context }) => {
@@ -56,19 +73,18 @@ export const deleteSubmissionsBulk = createServerFn({ method: "POST" })
       return { success: true, deleted: 0 };
     }
     await db.delete(submissions).where(inArray(submissions.id, data.submissionIds));
+    await maybePurgeAfterSubmissionDelete(data.formId);
     return { success: true, deleted: data.submissionIds.length };
   });
 
-// Cursor pagination types and constants
 export type SubmissionCursor = { createdAt: string; id: string };
 export const SUBMISSIONS_PAGE_SIZE = 50;
 
-// GET submissions by form (cursor-paginated)
 export const getSubmissionsByFormIdPaginated = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
+      formId: z.uuid(),
       cursor: z.object({ createdAt: z.string(), id: z.string() }).optional(),
       limit: z.number().int().min(1).max(100).default(SUBMISSIONS_PAGE_SIZE),
       search: z.string().optional(),
@@ -121,10 +137,9 @@ export const getSubmissionsByFormIdPaginated = createServerFn({ method: "GET" })
     };
   });
 
-// GET submissions count by form
 export const getSubmissionsCount = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ formId: z.string().uuid() }))
+  .inputValidator(z.object({ formId: z.uuid() }))
   .handler(async ({ data, context }) => {
     const orgId = getActiveOrgId(context.session);
     await authForm(data.formId, context.session.user.id, orgId);
@@ -146,7 +161,7 @@ export const getSubmissionsCount = createServerFn({ method: "GET" })
  */
 export const getSubmissionsBootstrap = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ formId: z.string().uuid() }))
+  .inputValidator(z.object({ formId: z.uuid() }))
   .handler(async ({ data, context }) => {
     const orgId = getActiveOrgId(context.session);
     await authForm(data.formId, context.session.user.id, orgId);

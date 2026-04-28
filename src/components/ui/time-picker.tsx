@@ -1458,7 +1458,6 @@ function TimePickerContent(props: TimePickerContentProps) {
     [getColumns, onColumnRegister, onColumnUnregister],
   );
 
-  // Auto-focus the selected column item when popover opens
   React.useEffect(() => {
     const el = contentRef.current;
     if (!el) return;

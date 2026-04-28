@@ -1,49 +1,23 @@
-import { polarClient } from "@/lib/auth/auth";
-import { PRO_PRODUCT_IDS } from "@/lib/config/plan-config";
-import { logger } from "@/lib/utils";
-
 export type ServerPlan = "free" | "pro" | "biz";
 
-export const getOrgPlan = async (orgId: string): Promise<ServerPlan> => {
-  try {
-    const iter = await polarClient.subscriptions.list({
-      metadata: { referenceId: orgId },
-      active: true,
-    });
-    for await (const page of iter) {
-      const items = page.result?.items ?? [];
-      for (const sub of items) {
-        if (PRO_PRODUCT_IDS.includes(sub.productId as (typeof PRO_PRODUCT_IDS)[number])) {
-          return "pro";
-        }
-      }
-      break;
-    }
-  } catch (error) {
-    logger("getOrgPlan failed, defaulting to free", error);
-    return "free";
-  }
-  return "free";
-};
+export const isServerPlan = (value: unknown): value is ServerPlan =>
+  value === "free" || value === "pro" || value === "biz";
 
-type FormPlanInput = {
+export type FormProSettingsInput = {
   branding?: boolean;
   respondentEmailNotifications?: boolean;
   dataRetention?: boolean;
+  analytics?: boolean;
+  customization?: Record<string, unknown> | null;
 };
 
-export const assertPlanForFormSettings = async (
-  orgId: string,
-  data: FormPlanInput,
-): Promise<void> => {
-  const wantsBrandingRemoved = data.branding === false;
-  const wantsRespondentEmails = data.respondentEmailNotifications === true;
-  const wantsDataRetention = data.dataRetention === true;
-
-  if (!(wantsBrandingRemoved || wantsRespondentEmails || wantsDataRetention)) return;
-
-  const plan = await getOrgPlan(orgId);
-  if (plan === "free") {
-    throw new Error("This feature requires a Pro subscription. Please upgrade to continue.");
-  }
+// Pure predicate: do these form-settings inputs require a Pro plan?
+// Used by formProSettingsMiddleware to decide whether to fetch the plan.
+export const requiresProForFormSettings = (data: FormProSettingsInput): boolean => {
+  if (data.branding === false) return true;
+  if (data.respondentEmailNotifications === true) return true;
+  if (data.dataRetention === true) return true;
+  if (data.analytics === true) return true;
+  if (data.customization != null && Object.keys(data.customization).length > 0) return true;
+  return false;
 };

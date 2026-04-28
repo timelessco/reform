@@ -15,9 +15,6 @@ import {
 } from "@/lib/server-fn/form-versions";
 import { useForm } from "./use-live-hooks";
 
-/**
- * Hook to get list of published versions for a form (query-backed)
- */
 export const useFormVersions = (formId: string | undefined) =>
   useLiveQuery(
     (q) => {
@@ -27,9 +24,6 @@ export const useFormVersions = (formId: string | undefined) =>
     [formId],
   );
 
-/**
- * Hook to get full content of a specific version (query-backed)
- */
 export const useFormVersionContent = (versionId: string | undefined) =>
   useLiveQuery(
     (q) => {
@@ -69,13 +63,6 @@ export const useHasUnpublishedChanges = (formId: string | undefined) => {
     return currentHash !== publishedHash;
   }, [formId, form]);
 };
-
-// ============================================================================
-// Optimistic action functions using createTransaction
-// Applies optimistic state instantly, then calls server fn in mutationFn.
-// On success the overlay is confirmed; query invalidation syncs the real data.
-// On error the transaction auto-rolls back the optimistic state.
-// ============================================================================
 
 /**
  * Publish the current form draft. Optimistically sets status to "published".
@@ -131,10 +118,8 @@ export const restoreVersion = async (formId: string, versionId: string) => {
   const version = versionCollection.get(versionId);
   if (!version) throw new Error("Version not found in local state");
 
-  // Persist to server
   await restoreFormVersion({ data: { formId, versionId } });
 
-  // Directly write restored data to the sync store (synchronous, no optimistic overlay)
   const detail = getFormListings();
   const currentForm = detail.get(formId);
   if (currentForm) {

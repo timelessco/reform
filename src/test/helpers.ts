@@ -1,6 +1,8 @@
+import { eq } from "drizzle-orm";
 import * as schema from "@/db/schema";
 import { db } from "@/db";
 import { auth } from "@/lib/auth/auth";
+import type { ServerPlan } from "@/lib/server-fn/plan-helpers";
 
 interface TestHelpers {
   createUser: (overrides?: Record<string, unknown>) => { id: string; [key: string]: unknown };
@@ -95,4 +97,29 @@ export const cleanupTestUser = async (userId: string) => {
 export const cleanupTestOrg = async (orgId: string) => {
   const t = await getTestUtils();
   await t.deleteOrganization(orgId);
+};
+
+export const setOrgPlan = async (orgId: string, plan: ServerPlan) => {
+  await db.update(schema.organization).set({ plan }).where(eq(schema.organization.id, orgId));
+};
+
+export const createTestCustomDomain = async (
+  orgId: string,
+  overrides: { domain?: string; status?: string; previousStatus?: string | null } = {},
+) => {
+  const id = crypto.randomUUID();
+  const now = new Date();
+  const [domain] = await db
+    .insert(schema.customDomains)
+    .values({
+      id,
+      organizationId: orgId,
+      domain: overrides.domain ?? `${id}.example.com`,
+      status: overrides.status ?? "verified",
+      previousStatus: overrides.previousStatus ?? null,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+  return domain;
 };

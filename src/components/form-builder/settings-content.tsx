@@ -32,11 +32,9 @@ import {
   selectTriggerCls,
 } from "@/components/form-builder/embed-config-panel";
 
-// Settings defaults (module-scope, computed once)
 const { customization: _c, ...settingsDefaults } = defaultFormSettings;
 const settingsKeys = Object.keys(settingsDefaults);
 
-// Module-level selectors for form.Subscribe (no props/state dependency)
 const selectRedirectOnCompletion = (state: { values: { redirectOnCompletion: unknown } }) =>
   state.values.redirectOnCompletion;
 const selectDataRetention = (state: { values: { dataRetention: unknown } }) =>
@@ -168,7 +166,6 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
     <div className="space-y-3 pb-8">
       <form.AppForm>
         <form.Form className="p-0 gap-3">
-          {/* General Section */}
           <SidebarSection label="General" className="pb-2.75" action={<></>}>
             <ConfigCard>
               <ConfigRow label="Language" description="Language for default buttons, errors, etc.">
@@ -330,7 +327,6 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
             </ConfigCard>
           </SidebarSection>
 
-          {/* Notifications Section */}
           <SidebarSection label="Notifications" className="pb-2.75" action={<></>}>
             <ConfigCard>
               <ConfigRow
@@ -473,7 +469,6 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
             </ConfigCard>
           </SidebarSection>
 
-          {/* Access Section */}
           <SidebarSection label="Access" className="pb-2.75" action={<></>}>
             <ConfigCard>
               <ConfigRow
@@ -643,7 +638,6 @@ export const SettingsContent = ({ formId, isLocal }: { formId: string; isLocal?:
             </ConfigCard>
           </SidebarSection>
 
-          {/* Behavior Section */}
           <SidebarSection label="Behavior" className="pb-2.75" action={<></>}>
             <ConfigCard>
               <ConfigRow

@@ -54,7 +54,6 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { HOTKEYS, formatForDisplay } from "@/lib/hotkeys";
 
-// Field status types for color coding
 type FieldStatus = "current" | "deleted";
 const EMPTY_LABELS: Record<string, string> = {};
 type PaginatedSubmissionsPage = {
@@ -305,7 +304,7 @@ const SubmissionsPage = () => {
   );
   const handleClearSelection = useCallback(() => setRowSelection({}), []);
 
-  // 1. Bootstrap: published form content + total count + historical field labels (1 round-trip)
+  // Bootstrap: published form content + total count + historical field labels (1 round-trip)
   const { data: bootstrapData } = useQuery({
     queryKey: ["submissionsBootstrap", formId],
     queryFn: () => getSubmissionsBootstrap({ data: { formId } }),
@@ -315,7 +314,6 @@ const SubmissionsPage = () => {
   const totalCount = bootstrapData?.totalCount ?? 0;
   const historicalLabels = bootstrapData?.fieldLabels ?? EMPTY_LABELS;
 
-  // 2. Fetch Submissions via infinite query (independent of bootstrap)
   const {
     data: submissionsData,
     fetchNextPage,
@@ -337,7 +335,6 @@ const SubmissionsPage = () => {
     [submissionsData],
   );
 
-  // Client-side filter based on activeTab
   const { completedCount, partialCount } = useMemo(() => {
     let completed = 0;
     for (const s of allSubmissions) {
@@ -356,7 +353,6 @@ const SubmissionsPage = () => {
     return allSubmissions;
   }, [allSubmissions, activeTab]);
 
-  // Delete handler (needed in column definition)
   const handleDelete = useCallback(
     async (submissionId: string) => {
       await deleteSubmission({ data: { id: submissionId, formId } });
@@ -365,13 +361,12 @@ const SubmissionsPage = () => {
     [formId, queryClient],
   );
 
-  // Memoize the form elements transformation (used by both orphanedFieldNames and columns)
   const formElements = useMemo(() => {
     if (!publishedContent) return null;
     return transformPlateStateToFormElements(publishedContent as Value);
   }, [publishedContent]);
 
-  // 3. Derive stable orphaned field names from submissions
+  // Derive stable orphaned field names from submissions
   // This prevents columns from rebuilding when submission data reference changes
   const orphanedFieldNamesRef = useRef<Set<string>>(new Set());
   const orphanedFieldNames = useMemo(() => {
@@ -403,8 +398,7 @@ const SubmissionsPage = () => {
     return orphanedFieldNamesRef.current;
   }, [allSubmissions, formElements]);
 
-  // 4. Derive Columns from PUBLISHED Form Content (not draft)
-  // Track field counts by status for the filter badge
+  // Derive Columns from PUBLISHED Form Content (not draft)
   const { columns } = useMemo(() => {
     const columnHelper = createColumnHelper<SerializedSubmission>();
     const counts: Record<FieldStatus, number> = { current: 0, deleted: 0 };
@@ -433,16 +427,13 @@ const SubmissionsPage = () => {
         size: 48,
         minSize: 48,
         maxSize: 48,
-        meta: {
-          // headerClassName: "w-48",
-          // cellClassName: "w-48",
-        },
+        meta: {},
         enableSorting: false,
         enableHiding: false,
         enablePinning: false,
         enableResizing: false,
       },
-      // Submission Date column - minSize prevents action buttons from truncating into select column
+      // minSize prevents action buttons from truncating into select column
       toSubmissionColumn(
         columnHelper.accessor("createdAt", {
           header: ({ column }) => <DataGridColumnHeader column={column} title="Submitted at" />,
@@ -501,7 +492,6 @@ const SubmissionsPage = () => {
       ),
     ];
 
-    // Dynamic columns based on PUBLISHED form fields (current fields)
     if (formElements) {
       const editableFields = getEditableFields(formElements);
 
@@ -620,7 +610,6 @@ const SubmissionsPage = () => {
     getRowId: (row) => row.id,
   });
 
-  // Bulk delete handler
   const handleBulkDelete = useCallback(async () => {
     const selectedIds = Object.keys(rowSelection);
     if (selectedIds.length === 0) return;
@@ -637,7 +626,6 @@ const SubmissionsPage = () => {
     setRowSelection({});
   }, [formId, queryClient, rowSelection]);
 
-  // Shared CSV download helper
   const downloadCSV = useCallback(
     (rows: Row<SerializedSubmission>[], filename: string) => {
       if (rows.length === 0) return;
@@ -679,7 +667,6 @@ const SubmissionsPage = () => {
     [columns],
   );
 
-  // Export selected rows as CSV
   const handleExportSelected = useCallback(() => {
     downloadCSV(table.getSelectedRowModel().rows, `submissions-selected-${formId}.csv`);
   }, [downloadCSV, formId, table]);
@@ -688,7 +675,6 @@ const SubmissionsPage = () => {
     downloadCSV(table.getRowModel().rows, `submissions-${formId}.csv`);
   }, [downloadCSV, formId, table]);
 
-  // Keyboard shortcuts (scoped to submissions page)
   const hasSelection = Object.keys(rowSelection).length > 0;
 
   useHotkey(
@@ -717,10 +703,8 @@ const SubmissionsPage = () => {
 
   return (
     <div className="flex flex-col h-full min-h-0 min-w-0 bg-background">
-      {/* Filter Controls Row */}
       <div className="shrink-0 px-5 pb-4.5 pt-2.5  border-border">
         <div className="flex items-center justify-between">
-          {/* Status filter dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
@@ -759,7 +743,6 @@ const SubmissionsPage = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Right side: Search and filters */}
           <div className="flex items-center gap-1.5">
             <ButtonGroup className="w-[180px] focus-within:w-[240px] transition-[width] border-none duration-200 ease-out rounded-lg">
               <ButtonGroupText className="h-7 w-full rounded-lg px-2.5 gap-1.5 text-[13px] bg-accent/60 border border-transparent">
@@ -774,7 +757,6 @@ const SubmissionsPage = () => {
                 />
               </ButtonGroupText>
             </ButtonGroup>
-            {/* Column Visibility Toggle */}
             <DataGridColumnVisibility
               table={table}
               trigger={
@@ -811,7 +793,6 @@ const SubmissionsPage = () => {
         </div>
       </div>
 
-      {/* File preview dialog */}
       <Dialog open={previewFile !== null} onOpenChange={(open) => !open && closePreview()}>
         <DialogContent
           showCloseButton={false}
@@ -890,9 +871,7 @@ const SubmissionsPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Table Container with DataGrid */}
       <div className="flex-1 flex flex-col min-h-0 min-w-0">
-        {/* Floating Bulk Action Bar */}
         {Object.keys(rowSelection).length > 0 && (
           <div className="fixed bottom-6 left-1/2  -translate-x-1/2 z-50 w-[min(560px,90vw)] animate-in slide-in-from-bottom-4 fade-in duration-300">
             <div className="flex items-center justify-between  px-2.75 py-2.25 bg-background rounded-xl shadow-md">

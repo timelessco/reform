@@ -157,8 +157,6 @@ export const CalloutPreview = () => (
   </div>
 );
 
-// ─── Task 4: Advanced, Inline & Layout Preview Mockups ───
-
 export const ThreeColumnsPreview = () => (
   <div className="flex h-[130px] items-center gap-0 px-3">
     <div className="flex flex-1 flex-col gap-2 px-2">
@@ -219,8 +217,6 @@ export const ThankYouPagePreview = () => (
     <SkeletonBar width="w-[50%]" className="h-[5px]" />
   </div>
 );
-
-// ─── Task 5: Form Block Preview Mockups (Text-like Fields) ───
 
 const FormFieldLabel = () => <SkeletonBar width="w-[40%]" className="mb-2 h-[6px]" />;
 
@@ -402,8 +398,6 @@ export const FormFileUploadPreview = () => (
     </div>
   </div>
 );
-
-// ─── Task 6: Form Block Preview Mockups (Selection Fields) ───
 
 const checkboxOptions = ["Option A", "Option B", "Option C"] as const;
 

@@ -94,19 +94,16 @@ const buildMultiSelectNodes = (args: FormBlockArgs): TElement[] => {
 export const buildFormBlockNodes = (args: FormBlockArgs): TElement[] => {
   const { fieldType } = args;
 
-  // Standard fields (input, textarea, email, phone, number, link, date, time, fileUpload)
   const standardField = FIELD_TYPE_MAP[fieldType];
   if (standardField) {
     return buildStandardFieldNodes(args, standardField.nodeType, standardField.defaultPlaceholder);
   }
 
-  // Choice fields (checkbox, multiChoice, ranking)
   const choiceVariant = CHOICE_VARIANT_MAP[fieldType];
   if (choiceVariant) {
     return buildChoiceFieldNodes(args, choiceVariant);
   }
 
-  // Multi-select
   if (fieldType === "multiSelect") {
     return buildMultiSelectNodes(args);
   }

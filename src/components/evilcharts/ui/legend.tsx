@@ -66,7 +66,6 @@ function ChartLegendContent({
           const itemConfig = getPayloadConfigFromPayload(config, item, key);
           const isSelected = selected === null || selected === key;
 
-          // Get colors count for this item to determine gradient vs solid
           const colorsCount = itemConfig ? getColorsCount(itemConfig) : 1;
 
           return (
@@ -95,11 +94,6 @@ function ChartLegendContent({
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Legend indicator — each variant gets its own branch so future variants
-// can diverge freely in markup & style.
-// ---------------------------------------------------------------------------
 
 function LegendIndicator({
   variant,
@@ -137,10 +131,6 @@ function LegendIndicator({
       return <div className="h-2 w-2 shrink-0 rounded-[2px]" style={fillStyle} />;
   }
 }
-
-// ---------------------------------------------------------------------------
-// Style helpers
-// ---------------------------------------------------------------------------
 
 /** Solid fill / gradient background for filled variants. */
 function getLegendFillStyle(dataKey: string, colorsCount: number): React.CSSProperties {

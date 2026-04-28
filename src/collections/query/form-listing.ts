@@ -14,7 +14,6 @@ export type FormListing = {
   formName: string;
   sortIndex?: string | null;
   customization?: Record<string, unknown> | null;
-  deletedAt?: string | null;
   submissionCount: number;
   // Heavy fields — populated on-demand when editor opens a form (enrichment)
   content?: unknown[];

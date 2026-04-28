@@ -10,7 +10,7 @@ import { getRequestHost } from "@/lib/server-fn/custom-domain-loader";
 // `public-form-view-rsc.tsx` on the app-domain route.
 
 export const getCustomDomainFormByIdRSC = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ formId: z.string().uuid() }))
+  .inputValidator(z.object({ formId: z.uuid() }))
   .handler(async ({ data }) => {
     const host = getRequestHost(getRequestHeaders());
     const { runCustomDomainByIdRSC } = await import("./custom-domain-view-rsc.impl");

@@ -18,7 +18,6 @@ export const useCopyToClipboard = ({
 
   const copy = useCallback(
     async (text: string | (() => string)) => {
-      // Clear any pending reset
       if (resetTimeoutRef.current) {
         clearTimeout(resetTimeoutRef.current);
       }
@@ -32,7 +31,6 @@ export const useCopyToClipboard = ({
         setState("error");
         onCopyError?.(error instanceof Error ? error : new Error("Copy failed"));
       } finally {
-        // Schedule reset to idle
         resetTimeoutRef.current = setTimeout(() => {
           setState("idle");
         }, resetDelay);

@@ -10,7 +10,7 @@ import { z } from "zod";
 // Rollup's module graph. All heavy work lives behind a dynamic import in the
 // handler body, which Start strips from the client build.
 export const getPublicFormViewRSC = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ id: z.string().uuid() }))
+  .inputValidator(z.object({ id: z.uuid() }))
   .handler(async ({ data }) => {
     const { runPublicFormViewRSC } = await import("./public-form-view-rsc.impl");
     return runPublicFormViewRSC(data);

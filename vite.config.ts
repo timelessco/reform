@@ -17,7 +17,7 @@ const setEmbedHeader = (
   next: (err?: unknown) => void,
 ) => {
   if (req.url?.startsWith("/embed/popup.js")) {
-    res.setHeader("Cache-Control", "public, max-age=300, must-revalidate");
+    res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=86400");
   }
   next();
 };

@@ -2,8 +2,8 @@ import type { PlateElementProps } from "platejs/react";
 
 import { PlateElement } from "platejs/react";
 
+import { BlockSelection } from "@/components/ui/block-selection";
 import { UploadIcon } from "@/components/ui/icons";
-import { RequiredBadgeButton } from "@/components/ui/required-badge-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFormInputNode } from "@/hooks/use-form-input-node";
 import {
@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 
 export const FormFileUploadElement = ({ className, children, ...props }: PlateElementProps) => {
   const { attributes, element, ...rest } = props;
-  const { focused, isSelected, required } = useFormInputNode(element);
+  const { focused, isSelected } = useFormInputNode(element);
 
   const maxFileSize =
     typeof element.maxFileSize === "number" ? element.maxFileSize : DEFAULT_MAX_FILE_SIZE_MB;
@@ -60,7 +60,10 @@ export const FormFileUploadElement = ({ className, children, ...props }: PlateEl
         </TooltipTrigger>
         <TooltipContent side="left">File upload</TooltipContent>
       </Tooltip>
-      <RequiredBadgeButton required={required} path={props.path} />
+      {/* Plate passes BelowRootNodes (which includes BlockSelection) as a
+          sibling of `children`, so wrapping {children} in `display:none`
+          above also hides the highlight. Render it explicitly instead. */}
+      <BlockSelection {...props} />
     </PlateElement>
   );
 };

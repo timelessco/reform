@@ -22,9 +22,6 @@ interface OverlayElements {
   emojiEl?: HTMLElement;
 }
 
-/**
- * Create overlay and popup container elements
- */
 export const createOverlay = (
   formId: string,
   options: PopupOptions,
@@ -36,7 +33,6 @@ export const createOverlay = (
   const position = options.position || "bottom-right";
   const width = options.width || DEFAULT_WIDTH;
 
-  // Create overlay (backdrop)
   const overlay = document.createElement("div");
   overlay.className = `bf-overlay ${!showOverlay ? "bf-overlay--no-bg" : ""}`;
   overlay.setAttribute("data-bf-form-id", formId);
@@ -49,7 +45,6 @@ export const createOverlay = (
     applyHiddenStyles(overlay);
   }
 
-  // Click on overlay backdrop closes popup (if visible)
   if (showOverlay) {
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) {
@@ -58,7 +53,6 @@ export const createOverlay = (
     });
   }
 
-  // Create popup container
   const popup = document.createElement("div");
   popup.className = `bf-popup bf-popup--${isModal ? "center" : position}`;
   Object.assign(popup.style, {
@@ -66,23 +60,19 @@ export const createOverlay = (
     maxHeight: `${DEFAULT_MAX_HEIGHT}px`,
   });
 
-  // Create close button
   const closeBtn = document.createElement("button");
   closeBtn.className = "bf-close-btn";
   closeBtn.innerHTML = CLOSE_ICON;
   closeBtn.setAttribute("aria-label", "Close form");
   closeBtn.addEventListener("click", onClose);
 
-  // Create iframe container
   const iframeContainer = document.createElement("div");
   iframeContainer.className = "bf-iframe-container";
 
-  // Create loading indicator
   const loadingEl = document.createElement("div");
   loadingEl.className = "bf-loading";
   loadingEl.innerHTML = '<div class="bf-loading-spinner"></div>';
 
-  // Create emoji element if specified
   let emojiEl: HTMLElement | undefined;
   if (options.emoji?.text) {
     emojiEl = document.createElement("div");
@@ -90,7 +80,6 @@ export const createOverlay = (
     emojiEl.textContent = options.emoji.text;
   }
 
-  // Assemble DOM structure
   popup.appendChild(closeBtn);
   popup.appendChild(loadingEl);
   popup.appendChild(iframeContainer);
@@ -106,7 +95,6 @@ export const createOverlay = (
     document.body.style.overflow = "hidden";
   }
 
-  // Append to body
   document.body.appendChild(overlay);
 
   return {
@@ -153,14 +141,9 @@ export const hideOverlay = (overlay: HTMLElement): void => {
   applyHiddenStyles(overlay);
 };
 
-/**
- * Destroy overlay and cleanup
- */
 export const destroyOverlay = (overlay: HTMLElement): void => {
-  // Restore body scroll
   document.body.style.overflow = "";
 
-  // Remove from DOM with fade out
   overlay.style.opacity = "0";
   overlay.style.transition = "opacity 0.15s ease";
 
@@ -182,16 +165,10 @@ export const updatePopupHeight = (popup: HTMLElement, height: number): void => {
   popup.style.maxHeight = `${clampedHeight}px`;
 };
 
-/**
- * Hide loading indicator
- */
 export const hideLoading = (loadingEl: HTMLElement): void => {
   loadingEl.style.display = "none";
 };
 
-/**
- * Get CSS class for emoji animation
- */
 const getEmojiAnimationClass = (animation?: string): string => {
   switch (animation) {
     case "wave":
@@ -205,9 +182,6 @@ const getEmojiAnimationClass = (animation?: string): string => {
   }
 };
 
-/**
- * Hide emoji after first page (multi-step forms)
- */
 export const hideEmoji = (emojiEl?: HTMLElement): void => {
   if (emojiEl) {
     emojiEl.style.display = "none";

@@ -13,14 +13,16 @@ import {
 } from "@/db/schema";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
+import { purgeFormCacheBatch } from "@/lib/server-fn/cdn-cache";
 import { createServerFn } from "@tanstack/react-start";
 import { and, count, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { authWorkspace, getActiveOrgId } from "./auth-helpers";
+import { getActiveOrgId } from "./auth-helpers";
+import { authWorkspace } from "./auth-helpers.server";
 
 const workspaceSchema = z.object({
-  id: z.string().uuid(),
-  organizationId: z.string().uuid(),
+  id: z.uuid(),
+  organizationId: z.uuid(),
   name: z.string().max(100),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
@@ -30,7 +32,7 @@ export const createWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     workspaceSchema.pick({ organizationId: true, name: true }).extend({
-      id: z.string().uuid().optional(),
+      id: z.uuid().optional(),
       name: workspaceSchema.shape.name.optional().default("Collection"),
     }),
   )
@@ -91,7 +93,6 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
     const orgId = getActiveOrgId(context.session);
     await authWorkspace(data.id, context.session.user.id, orgId);
 
-    // Ensure at least one workspace remains in the organization
     const [{ total }] = await db
       .select({ total: count() })
       .from(workspaces)
@@ -100,13 +101,15 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
       throw new Error("Cannot delete the last workspace. You must have at least one workspace.");
     }
 
-    return await db.transaction(async (tx) => {
-      // Cascade-delete all forms and their dependent records
+    const result = await db.transaction(async (tx) => {
+      // Cascade-delete all forms and their dependent records. Capture the
+      // ever-published subset so we can purge their CDN tags after commit.
       const workspaceForms = await tx
-        .select({ id: forms.id })
+        .select({ id: forms.id, lastPublishedVersionId: forms.lastPublishedVersionId })
         .from(forms)
         .where(eq(forms.workspaceId, data.id));
       const formIds = workspaceForms.map((f) => f.id);
+      const everPublished = workspaceForms.filter((f) => f.lastPublishedVersionId).map((f) => f.id);
 
       if (formIds.length > 0) {
         await Promise.all([
@@ -129,8 +132,15 @@ export const deleteWorkspace = createServerFn({ method: "POST" })
           createdAt: workspace.createdAt.toISOString(),
           updatedAt: workspace.updatedAt.toISOString(),
         },
+        everPublished,
       };
     });
+
+    // Purge CDN cache for any forms that were live at the edge. Skipped for
+    // never-published forms (no tag at the edge to invalidate).
+    void purgeFormCacheBatch(result.everPublished);
+
+    return { workspace: result.workspace };
   });
 
 export const getWorkspaces = createServerFn({ method: "GET" })
@@ -172,7 +182,7 @@ export const reorderWorkspace = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      workspaceId: z.string().uuid(),
+      workspaceId: z.uuid(),
       sortIndex: z.string(),
     }),
   )

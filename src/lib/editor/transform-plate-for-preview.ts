@@ -9,20 +9,15 @@ import {
 import { extractTextContent, slugify } from "./transform-plate-to-form";
 import type { PlateFormField } from "./transform-plate-to-form";
 
-// --- Segment types ---
-
 export type StaticSegment = { type: "static"; nodes: Value };
 export type FieldSegment = { type: "field"; field: PlateFormField };
 export type PreviewSegment = StaticSegment | FieldSegment;
 
 export type PreviewStepResult = {
-  /** Array of steps, each containing segments for that step */
   steps: PreviewSegment[][];
   /** Raw Plate nodes for thank-you page (rendered entirely via PlateStatic) */
   thankYouNodes: Value | null;
 };
-
-// --- Core transform ---
 
 /**
  * Transforms Plate editor Value into chunked preview segments.
@@ -36,7 +31,7 @@ export type PreviewStepResult = {
  * thank-you page extraction (isThankYouPage pageBreak).
  */
 export const transformPlateForPreview = (value: Value): PreviewStepResult => {
-  // Skip formHeader node (handled separately by extractFormHeader)
+  // formHeader is handled separately by extractFormHeader
   let startIdx = 0;
   if (value.length > 0 && value[0].type === "formHeader") {
     startIdx = 1;
@@ -44,7 +39,6 @@ export const transformPlateForPreview = (value: Value): PreviewStepResult => {
 
   const remaining = value.slice(startIdx);
 
-  // Split remaining nodes on pageBreak into raw step arrays
   const rawSteps: Value[] = [];
   let thankYouNodes: Value | null = null;
   let currentChunk: Value = [];
@@ -52,7 +46,6 @@ export const transformPlateForPreview = (value: Value): PreviewStepResult => {
 
   for (const node of remaining) {
     if (node.type === "pageBreak") {
-      // Flush current chunk as a step
       if (currentChunk.length > 0 && !collectingThankYou) {
         rawSteps.push(currentChunk);
         currentChunk = [];
@@ -72,17 +65,14 @@ export const transformPlateForPreview = (value: Value): PreviewStepResult => {
     }
   }
 
-  // Don't forget the last chunk
   if (currentChunk.length > 0 && !collectingThankYou) {
     rawSteps.push(currentChunk);
   }
 
-  // If no steps were created but we have content, it's a single step
   if (rawSteps.length === 0 && currentChunk.length > 0) {
     rawSteps.push(currentChunk);
   }
 
-  // Convert each raw step into segments
   const steps = rawSteps.map((stepNodes) => createSegments(stepNodes));
 
   return { steps, thankYouNodes };
@@ -138,7 +128,6 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
     const node = nodes[i];
     const nodeType = node.type;
 
-    // --- Simple input types (formInput, formTextarea, formEmail, etc.) ---
     if (INPUT_TYPE_TO_FIELD_TYPE[nodeType]) {
       const label = lookBackForLabel(i);
       flushStatic();
@@ -180,7 +169,6 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
       continue;
     }
 
-    // --- formMultiSelectInput (badge-based multi-select) ---
     if (nodeType === "formMultiSelectInput") {
       const label = lookBackForLabel(i);
       flushStatic();
@@ -216,7 +204,7 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
       continue;
     }
 
-    // --- formOptionItem (compound field — collect consecutive option items) ---
+    // Compound field — collect consecutive option items
     if (nodeType === "formOptionItem") {
       const label = lookBackForLabel(i);
       flushStatic();
@@ -260,7 +248,6 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
       continue;
     }
 
-    // --- formButton — unchanged ---
     if (nodeType === "formButton") {
       flushStatic();
 
@@ -287,7 +274,7 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
       continue;
     }
 
-    // --- Default: static content (skip if already consumed as a label) ---
+    // Default: static content (skip if already consumed as a label)
     if (!consumedIndices.has(i)) {
       staticBuffer.push(node);
     }
@@ -298,12 +285,6 @@ const createSegments = (nodes: Value): PreviewSegment[] => {
   return segments;
 };
 
-// --- Utility functions ---
-
-/**
- * Extracts PlateFormField items from a segment array.
- * Used by StepForm to set up form validation.
- */
 export const getFieldsFromSegments = (segments: PreviewSegment[]): PlateFormField[] =>
   segments.filter((seg): seg is FieldSegment => seg.type === "field").map((seg) => seg.field);
 

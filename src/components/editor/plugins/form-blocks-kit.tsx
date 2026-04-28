@@ -3,16 +3,10 @@ import type { Path, TElement } from "platejs";
 import type { PlateEditor } from "platejs/react";
 import { createPlatePlugin } from "platejs/react";
 import { FormButtonElement } from "@/components/ui/form-button-node";
-import { FormInputElement } from "@/components/ui/form-input-node";
+import { FormFieldElement } from "@/components/ui/form-field-node";
 import { FormLabelElement } from "@/components/ui/form-label-node";
 import { FormTextareaElement } from "@/components/ui/form-textarea-node";
 import { PageBreakElement } from "@/components/ui/page-break-node";
-import { FormEmailElement } from "@/components/ui/form-email-node";
-import { FormPhoneElement } from "@/components/ui/form-phone-node";
-import { FormNumberElement } from "@/components/ui/form-number-node";
-import { FormLinkElement } from "@/components/ui/form-link-node";
-import { FormDateElement } from "@/components/ui/form-date-node";
-import { FormTimeElement } from "@/components/ui/form-time-node";
 import { FormFileUploadElement } from "@/components/ui/form-file-upload-node";
 import { FormMultiSelectInputElement } from "@/components/ui/form-multi-select-input-node";
 import { FormOptionItemElement } from "@/components/ui/form-option-item-node";
@@ -68,13 +62,10 @@ export const findNextNonButtonPath = (editor: PlateEditor, currentPath: Path): P
     const node = children[i];
     if (!node) continue;
 
-    // If we hit a form button, check its role
     if (node.type === "formButton") {
       const buttonRole = (node as Record<string, unknown>).buttonRole || "submit";
 
-      // If it's a submit button, check if there's a thank you page after it
       if (buttonRole === "submit") {
-        // Look ahead for a pageBreak with isThankYouPage: true
         let hasThankYouPage = false;
         for (let j = i + 1; j < children.length; j++) {
           const nextNode = children[j];
@@ -86,19 +77,15 @@ export const findNextNonButtonPath = (editor: PlateEditor, currentPath: Path): P
             break;
           }
         }
-        // If no thank you page, stop navigation here
         if (!hasThankYouPage) {
           return null;
         }
-        // Otherwise continue to find content after the thank you pageBreak
         continue;
       }
 
-      // If it's a next/previous button, continue looking for content after page break
       continue;
     }
 
-    // Skip page breaks - continue to find first content block after it
     if (node.type === "pageBreak") {
       continue;
     }
@@ -114,9 +101,6 @@ export const findNextNonButtonPath = (editor: PlateEditor, currentPath: Path): P
   return null;
 };
 
-/**
- * Find the previous block before the given path, skipping form buttons, page breaks, and headers.
- */
 /**
  * If the block at `blockPath` is the only content block after a preceding pageBreak,
  * delete both the block and the pageBreak, then move the cursor to the previous content block.
@@ -171,13 +155,8 @@ export const findPrevNonButtonPath = (editor: PlateEditor, currentPath: Path): P
     const node = children[i];
     if (!node) continue;
 
-    // Skip form buttons
     if (node.type === "formButton") continue;
-
-    // Skip page breaks
     if (node.type === "pageBreak") continue;
-
-    // Skip form header
     if (node.type === "formHeader") continue;
 
     return [i];
@@ -298,16 +277,13 @@ export const FormLabelPlugin = createPlatePlugin({
 
 export const FormInputPlugin = createPlatePlugin({
   key: "formInput",
-  node: { isElement: true, component: FormInputElement },
+  node: { isElement: true, component: FormFieldElement },
   options: { gutterPosition: "center" },
   handlers: {
     onKeyDown: ({ editor, event }) => handleBackspace(editor, event),
   },
 });
 
-/**
- * Check if node is any form button
- */
 const isFormButton = (node: TElement): boolean => node.type === "formButton";
 
 export const FormButtonPlugin = createPlatePlugin({
@@ -539,7 +515,6 @@ export const FormButtonPlugin = createPlatePlugin({
         // Validate insertion relative to buttons
         const prevNode = children[insertIndex - 1];
         if (prevNode && isFormButton(prevNode)) {
-          // We are inserting immediately after a button
           const nodeArray = Array.isArray(nodes) ? nodes : [nodes];
 
           // Only allow PageBreaks after a button
@@ -548,7 +523,6 @@ export const FormButtonPlugin = createPlatePlugin({
           );
 
           if (!allPageBreaks) {
-            // Redirect insertion to before the button
             return originalInsertNodes(nodes, {
               ...options,
               at: [insertIndex - 1], // this might be wrong if button is at 0?
@@ -596,19 +570,20 @@ export const FormButtonPlugin = createPlatePlugin({
           if (pageBreakIndex !== -1) {
             return originalMoveNodes({ ...options, to: [pageBreakIndex + 1] });
           }
-          return; // No pageBreak ahead — block move
+          // No pageBreak ahead. Redirect to before the button instead of
+          // silently dropping the move — silent no-op manifests as a snap-back
+          // even though the drop indicator showed a valid target.
+          return originalMoveNodes({ ...options, to: [targetIndex - 1] });
         }
       }
 
       return originalMoveNodes(options);
     };
-    // Normalize to enforce multi-page button logic
     const originalNormalizeNode = editorRef.normalizeNode.bind(editorRef);
     // eslint-disable-next-line typescript-eslint/no-explicit-any
     editorRef.normalizeNode = (entry: any) => {
       const [_node, path] = entry;
 
-      // Only normalize at the editor root level
       if (path.length === 0) {
         // Access children directly from editor to ensure fresh state
         const getChildren = () => editorRef.children as TElement[];
@@ -633,7 +608,6 @@ export const FormButtonPlugin = createPlatePlugin({
             const isLastPage =
               isEnd || (isPageBreak && (node as Record<string, unknown>).isThankYouPage === true);
 
-            // Determine if this is a Thank You section
             let isThankYouSection = false;
             let precedingBreakIndex = -1;
             if (!isFirstPage) {
@@ -652,11 +626,9 @@ export const FormButtonPlugin = createPlatePlugin({
             const previousButtonIndices: number[] = []; // Track ALL previous buttons
             let hasFields = false;
 
-            // First pass: find button positions and check for fields
             for (let j = pageStartIndex; j < pageEndIndex; j++) {
               const n = getChildren()[j];
 
-              // Check for form fields
               if (
                 [
                   "formInput",
@@ -701,7 +673,6 @@ export const FormButtonPlugin = createPlatePlugin({
             const previousButtonIndex =
               previousButtonIndices.length > 0 ? previousButtonIndices[0] : -1;
 
-            // Update Preceding Page Break with hasFormFields state
             if (precedingBreakIndex !== -1) {
               const prevBreak = getChildren()[precedingBreakIndex] as Record<string, unknown>;
               const currentHasData = prevBreak.hasFormFields === true;
@@ -712,7 +683,6 @@ export const FormButtonPlugin = createPlatePlugin({
             }
 
             if (isThankYouSection) {
-              // First, remove any buttons from thank you section
               for (let j = pageEndIndex - 1; j >= pageStartIndex; j--) {
                 const n = getChildren()[j];
                 if (n?.type === "formButton") {
@@ -776,9 +746,6 @@ export const FormButtonPlugin = createPlatePlugin({
                 return;
               }
             }
-
-            // --- Button Enforcement (Normal Pages AND Thank You Pages) ---
-            // ... logic continues ...
 
             // --- Button Enforcement (Normal Pages) ---
 
@@ -904,7 +871,7 @@ export const PageBreakPlugin = createPlatePlugin({
 
 export const FormEmailPlugin = createPlatePlugin({
   key: "formEmail",
-  node: { isElement: true, component: FormEmailElement },
+  node: { isElement: true, component: FormFieldElement },
   options: { gutterPosition: "center" },
   handlers: {
     onKeyDown: ({ editor, event }) => handleBackspace(editor, event),
@@ -913,7 +880,7 @@ export const FormEmailPlugin = createPlatePlugin({
 
 export const FormPhonePlugin = createPlatePlugin({
   key: "formPhone",
-  node: { isElement: true, component: FormPhoneElement },
+  node: { isElement: true, component: FormFieldElement },
   options: { gutterPosition: "center" },
   handlers: {
     onKeyDown: ({ editor, event }) => handleBackspace(editor, event),
@@ -922,7 +889,7 @@ export const FormPhonePlugin = createPlatePlugin({
 
 export const FormNumberPlugin = createPlatePlugin({
   key: "formNumber",
-  node: { isElement: true, component: FormNumberElement },
+  node: { isElement: true, component: FormFieldElement },
   options: { gutterPosition: "center" },
   handlers: {
     onKeyDown: ({ editor, event }) => handleBackspace(editor, event),
@@ -931,7 +898,7 @@ export const FormNumberPlugin = createPlatePlugin({
 
 export const FormLinkPlugin = createPlatePlugin({
   key: "formLink",
-  node: { isElement: true, component: FormLinkElement },
+  node: { isElement: true, component: FormFieldElement },
   options: { gutterPosition: "center" },
   handlers: {
     onKeyDown: ({ editor, event }) => handleBackspace(editor, event),
@@ -940,7 +907,7 @@ export const FormLinkPlugin = createPlatePlugin({
 
 export const FormDatePlugin = createPlatePlugin({
   key: "formDate",
-  node: { isElement: true, component: FormDateElement },
+  node: { isElement: true, component: FormFieldElement },
   options: { gutterPosition: "center" },
   handlers: {
     onKeyDown: ({ editor, event }) => handleBackspace(editor, event),
@@ -949,7 +916,7 @@ export const FormDatePlugin = createPlatePlugin({
 
 export const FormTimePlugin = createPlatePlugin({
   key: "formTime",
-  node: { isElement: true, component: FormTimeElement },
+  node: { isElement: true, component: FormFieldElement },
   options: { gutterPosition: "center" },
   handlers: {
     onKeyDown: ({ editor, event }) => handleBackspace(editor, event),

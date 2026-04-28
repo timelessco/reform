@@ -1,5 +1,3 @@
-// Pure data factory — no Plate.js dependencies
-
 export interface FormHeaderElementData {
   type: "formHeader";
   id?: string;

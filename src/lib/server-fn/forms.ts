@@ -1,15 +1,16 @@
 import { queryOptions } from "@tanstack/react-query";
 import { createServerFn } from "@tanstack/react-start";
-import { and, count, eq, isNull, ne } from "drizzle-orm";
+import { and, count, eq, inArray, ne } from "drizzle-orm";
 import { z } from "zod";
 import { customDomains, forms, member, submissions, workspaces } from "@/db/schema";
 import { RESERVED_SLUGS } from "@/lib/config/plan-config";
 import { db } from "@/db";
-import { authMiddleware } from "@/lib/auth/middleware";
+import { authMiddleware, formProSettingsMiddleware } from "@/lib/auth/middleware";
 import { VERSIONED_SETTINGS_KEYS } from "@/lib/content-hash";
-import { purgeFormCache } from "@/lib/server-fn/cdn-cache";
-import { authForm, getActiveOrgId } from "./auth-helpers";
-import { assertPlanForFormSettings, getOrgPlan } from "./plan-helpers";
+import { purgeFormCache, purgeFormCacheBatch } from "@/lib/server-fn/cdn-cache";
+import { getActiveOrgId } from "./auth-helpers";
+import { authForm, authFormsBulk } from "./auth-helpers.server";
+import { getOrgPlan } from "./plan-helpers.server";
 
 // Columns the listings query must always return so client-side change detection
 // (`useHasUnpublishedChanges`) keeps working after a refetch wipes the locally
@@ -25,18 +26,17 @@ const serializeForm = (form: typeof forms.$inferSelect) => ({
   ...form,
   createdAt: form.createdAt.toISOString(),
   updatedAt: form.updatedAt.toISOString(),
-  deletedAt: form.deletedAt?.toISOString() ?? null,
   content: form.content as object[],
   settings: form.settings as Record<string, object>,
   customization: (form.customization ?? {}) as Record<string, object>,
 });
 
 export const createForm = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, formProSettingsMiddleware])
   .inputValidator(
     z.object({
-      id: z.string().uuid(),
-      workspaceId: z.string().uuid(),
+      id: z.uuid(),
+      workspaceId: z.uuid(),
       title: z.string().optional(),
       formName: z.string().optional(),
       schemaName: z.string().optional(),
@@ -46,7 +46,6 @@ export const createForm = createServerFn({ method: "POST" })
       cover: z.string().nullable().optional(),
       isMultiStep: z.boolean().optional(),
       status: z.enum(["draft", "published", "archived"]).optional(),
-      // Form settings fields (all optional with defaults)
       language: z.string().optional(),
       redirectOnCompletion: z.boolean().optional(),
       redirectUrl: z.string().nullable().optional(),
@@ -54,6 +53,7 @@ export const createForm = createServerFn({ method: "POST" })
       progressBar: z.boolean().optional(),
       presentationMode: z.enum(["card", "field-by-field"]).optional(),
       branding: z.boolean().optional(),
+      analytics: z.boolean().optional(),
       saveAnswersForLater: z.boolean().optional(),
       selfEmailNotifications: z.boolean().optional(),
       notificationEmail: z.string().nullable().optional(),
@@ -92,7 +92,6 @@ export const createForm = createServerFn({ method: "POST" })
         cover: data.cover,
         isMultiStep: data.isMultiStep ?? false,
         status: data.status ?? "draft",
-        // Form settings fields
         language: data.language,
         redirectOnCompletion: data.redirectOnCompletion,
         redirectUrl: data.redirectUrl,
@@ -100,6 +99,7 @@ export const createForm = createServerFn({ method: "POST" })
         progressBar: data.progressBar,
         presentationMode: data.presentationMode,
         branding: data.branding,
+        analytics: data.analytics,
         saveAnswersForLater: data.saveAnswersForLater,
         selfEmailNotifications: data.selfEmailNotifications,
         notificationEmail: data.notificationEmail,
@@ -128,11 +128,11 @@ export const createForm = createServerFn({ method: "POST" })
   });
 
 export const updateForm = createServerFn({ method: "POST" })
-  .middleware([authMiddleware])
+  .middleware([authMiddleware, formProSettingsMiddleware])
   .inputValidator(
     z.object({
-      id: z.string().uuid(),
-      workspaceId: z.string().uuid().optional(),
+      id: z.uuid(),
+      workspaceId: z.uuid().optional(),
       title: z.string().optional(),
       formName: z.string().optional(),
       schemaName: z.string().optional(),
@@ -143,7 +143,6 @@ export const updateForm = createServerFn({ method: "POST" })
       isMultiStep: z.boolean().optional(),
       status: z.enum(["draft", "published", "archived"]).optional(),
       updatedAt: z.string().optional(),
-      // Form settings fields
       language: z.string().optional(),
       redirectOnCompletion: z.boolean().optional(),
       redirectUrl: z.string().nullable().optional(),
@@ -151,6 +150,7 @@ export const updateForm = createServerFn({ method: "POST" })
       progressBar: z.boolean().optional(),
       presentationMode: z.enum(["card", "field-by-field"]).optional(),
       branding: z.boolean().optional(),
+      analytics: z.boolean().optional(),
       saveAnswersForLater: z.boolean().optional(),
       selfEmailNotifications: z.boolean().optional(),
       notificationEmail: z.string().nullable().optional(),
@@ -176,11 +176,6 @@ export const updateForm = createServerFn({ method: "POST" })
     const { id, updatedAt: clientUpdatedAt, ...updateData } = data;
     const orgId = getActiveOrgId(context.session);
     await authForm(id, context.session.user.id, orgId);
-    await assertPlanForFormSettings(orgId, {
-      branding: updateData.branding,
-      respondentEmailNotifications: updateData.respondentEmailNotifications,
-      dataRetention: updateData.dataRetention,
-    });
 
     const [form] = await db
       .update(forms)
@@ -191,11 +186,15 @@ export const updateForm = createServerFn({ method: "POST" })
       .where(eq(forms.id, id))
       .returning();
 
-    // `branding` is the one live (non-versioned) field that the public view
-    // reads — its changes must bust the CDN tag. Versioned fields can't be
-    // handled here; they change the public response only on republish, which
-    // owns its own purge.
-    if (updateData.branding !== undefined) {
+    // Cache invalidation: the public response changes when (a) a live field
+    // the public view reads flips (branding/analytics) or (b) status moves
+    // off "published". Versioned fields are handled by the republish flow.
+    // Skip the purge if the form was never published — there's no edge cache
+    // for `form:$id` in that case, just a never-cached 404.
+    const liveFieldChanged =
+      updateData.branding !== undefined || updateData.analytics !== undefined;
+    const statusChanged = updateData.status !== undefined;
+    if ((liveFieldChanged || statusChanged) && form?.lastPublishedVersionId) {
       void purgeFormCache(id);
     }
 
@@ -204,15 +203,54 @@ export const updateForm = createServerFn({ method: "POST" })
 
 export const deleteForm = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ id: z.string().uuid() }))
+  .inputValidator(z.object({ id: z.uuid() }))
   .handler(async ({ data, context }) => {
     const orgId = getActiveOrgId(context.session);
     await authForm(data.id, context.session.user.id, orgId);
 
     const [form] = await db.delete(forms).where(eq(forms.id, data.id)).returning();
-    void purgeFormCache(data.id);
+    // No purge — by the time hard-delete runs the form is already archived,
+    // so its tag was invalidated at archive time and nothing has been
+    // cacheable since.
 
     return { form: serializeForm(form) };
+  });
+
+// Bulk soft-delete (move to trash). Capped at 200 to keep statements bounded.
+export const bulkArchiveForms = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(z.object({ ids: z.array(z.uuid()).min(1).max(200) }))
+  .handler(async ({ data, context }) => {
+    const orgId = getActiveOrgId(context.session);
+    await authFormsBulk(data.ids, context.session.user.id, orgId);
+
+    const updated = await db
+      .update(forms)
+      .set({ status: "archived", updatedAt: new Date() })
+      .where(inArray(forms.id, data.ids))
+      .returning({ id: forms.id, lastPublishedVersionId: forms.lastPublishedVersionId });
+    // Drafts that go straight to trash have no edge cache to invalidate.
+    const everPublished = updated.filter((r) => r.lastPublishedVersionId).map((r) => r.id);
+    void purgeFormCacheBatch(everPublished);
+
+    return { archived: updated.length, ids: updated.map((r) => r.id) };
+  });
+
+// Bulk hard-delete from trash.
+export const bulkDeleteForms = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(z.object({ ids: z.array(z.uuid()).min(1).max(200) }))
+  .handler(async ({ data, context }) => {
+    const orgId = getActiveOrgId(context.session);
+    await authFormsBulk(data.ids, context.session.user.id, orgId);
+
+    const deleted = await db
+      .delete(forms)
+      .where(inArray(forms.id, data.ids))
+      .returning({ id: forms.id });
+    // No purge — same reasoning as deleteForm.
+
+    return { deleted: deleted.length, ids: deleted.map((r) => r.id) };
   });
 
 export const getFormListings = createServerFn({ method: "GET" })
@@ -238,6 +276,7 @@ export const getFormListings = createServerFn({ method: "GET" })
         lastPublishedVersionId: forms.lastPublishedVersionId,
         // Live (non-versioned) settings the share sidebar reads.
         branding: forms.branding,
+        analytics: forms.analytics,
         slug: forms.slug,
         customDomainId: forms.customDomainId,
         // Every versioned settings column — needed so the client hash matches
@@ -248,7 +287,7 @@ export const getFormListings = createServerFn({ method: "GET" })
       .innerJoin(workspaces, eq(forms.workspaceId, workspaces.id))
       .innerJoin(member, eq(workspaces.organizationId, member.organizationId))
       .leftJoin(submissions, eq(submissions.formId, forms.id))
-      .where(and(eq(member.userId, context.session.user.id), isNull(forms.deletedAt)))
+      .where(and(eq(member.userId, context.session.user.id), ne(forms.status, "archived")))
       .groupBy(forms.id)
       .orderBy(forms.updatedAt);
 
@@ -260,9 +299,47 @@ export const getFormListings = createServerFn({ method: "GET" })
     }));
   });
 
+// Archived listings — fetched only when the trash dialog opens. Same column
+// shape as `getFormListings` minus the per-form heavy fields (no submissions
+// count, no versioned settings — the trash dialog only needs id/title/icon
+// for display + workspaceId for grouping + updatedAt for the 30-day banner).
+export const getArchivedFormListings = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const formList = await db
+      .select({
+        id: forms.id,
+        title: forms.title,
+        status: forms.status,
+        updatedAt: forms.updatedAt,
+        createdAt: forms.createdAt,
+        workspaceId: forms.workspaceId,
+        icon: forms.icon,
+        formName: forms.formName,
+      })
+      .from(forms)
+      .innerJoin(workspaces, eq(forms.workspaceId, workspaces.id))
+      .innerJoin(member, eq(workspaces.organizationId, member.organizationId))
+      .where(and(eq(member.userId, context.session.user.id), eq(forms.status, "archived")))
+      .orderBy(forms.updatedAt);
+
+    return formList.map((f) => ({
+      ...f,
+      updatedAt: f.updatedAt.toISOString(),
+      createdAt: f.createdAt.toISOString(),
+    }));
+  });
+
+export const archivedFormListingsQueryOptions = () =>
+  queryOptions({
+    queryKey: ["form-listings-archived"],
+    queryFn: ({ signal }) => getArchivedFormListings({ signal }),
+    staleTime: 1000 * 60, // 1 min — refetched on dialog reopen anyway
+  });
+
 const _getFormById = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ id: z.string().uuid() }))
+  .inputValidator(z.object({ id: z.uuid() }))
   .handler(async ({ data, context }) => {
     const orgId = getActiveOrgId(context.session);
     const [_, [form]] = await Promise.all([
@@ -305,7 +382,7 @@ const generateSlug = (title: string): string =>
 /** @public - consumed by upcoming domain settings UI */
 export const updateFormSlug = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ formId: z.string().uuid(), slug: z.string() }))
+  .inputValidator(z.object({ formId: z.uuid(), slug: z.string() }))
   .handler(async ({ data, context }) => {
     const { formId, slug } = data;
     const orgId = getActiveOrgId(context.session);
@@ -325,7 +402,6 @@ export const updateFormSlug = createServerFn({ method: "POST" })
       throw new Error("This slug is reserved and cannot be used");
     }
 
-    // Look up the form to get its workspace, then the org
     const [formRecord] = await db
       .select({ workspaceId: forms.workspaceId })
       .from(forms)
@@ -344,7 +420,6 @@ export const updateFormSlug = createServerFn({ method: "POST" })
       throw new Error("Workspace not found");
     }
 
-    // Check uniqueness within the org
     const existing = await db
       .select({ id: forms.id })
       .from(forms)
@@ -367,6 +442,10 @@ export const updateFormSlug = createServerFn({ method: "POST" })
       .where(eq(forms.id, formId))
       .returning();
 
+    // Slug is part of the public-routing surface — old URL keeps serving the
+    // cached body until the tag is invalidated. Skip if never published.
+    if (updatedForm?.lastPublishedVersionId) void purgeFormCache(formId);
+
     return { form: serializeForm(updatedForm) };
   });
 
@@ -375,7 +454,7 @@ export const assignFormDomain = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
+      formId: z.uuid(),
       customDomainId: z.string().nullable(),
     }),
   )
@@ -390,7 +469,6 @@ export const assignFormDomain = createServerFn({ method: "POST" })
         throw new Error("Custom domains require a Pro subscription. Please upgrade to continue.");
       }
 
-      // Verify the domain exists and belongs to the same org
       const [domain] = await db
         .select()
         .from(customDomains)
@@ -408,7 +486,6 @@ export const assignFormDomain = createServerFn({ method: "POST" })
         throw new Error("Custom domain is not verified");
       }
 
-      // If the form has no slug, auto-generate one from the title
       const [formRecord] = await db
         .select({ slug: forms.slug, title: forms.title })
         .from(forms)
@@ -417,7 +494,6 @@ export const assignFormDomain = createServerFn({ method: "POST" })
       if (formRecord && !formRecord.slug) {
         let autoSlug = generateSlug(formRecord.title);
 
-        // Check uniqueness within the org (same pattern as updateFormSlug)
         const existing = await db
           .select({ id: forms.id })
           .from(forms)
@@ -446,6 +522,10 @@ export const assignFormDomain = createServerFn({ method: "POST" })
       .set({ customDomainId, updatedAt: new Date() })
       .where(eq(forms.id, formId))
       .returning();
+
+    // Custom domain assignment changes the canonical URL + head metadata
+    // rendered into the public response. Purge if ever published.
+    if (updatedForm?.lastPublishedVersionId) void purgeFormCache(formId);
 
     return { form: serializeForm(updatedForm) };
   });

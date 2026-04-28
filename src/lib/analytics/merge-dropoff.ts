@@ -45,8 +45,6 @@ export const mergeDropoffMetrics = (args: MergeDropoffArgs): QuestionDropoffMetr
 
   const byQuestion = new Map<string, QuestionAggregate>();
 
-  // Daily rows are pre-aggregated per (formId, date, questionId).
-  // Sum across rows for the same questionId.
   for (const row of dailyRows) {
     const agg = getOrCreateAggregate(byQuestion, row.questionId, row.questionIndex);
     agg.viewCount += row.viewCount;
@@ -54,8 +52,6 @@ export const mergeDropoffMetrics = (args: MergeDropoffArgs): QuestionDropoffMetr
     agg.completeCount += row.completeCount;
   }
 
-  // Today's raw progress rows: one per (visit, question) tuple.
-  // Bucket per questionId; every row counts as a view (viewedAt is non-nullable).
   for (const row of todayProgressRows) {
     const agg = getOrCreateAggregate(byQuestion, row.questionId, row.questionIndex);
     agg.viewCount += 1;

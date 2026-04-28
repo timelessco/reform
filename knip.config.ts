@@ -35,6 +35,7 @@ export default {
     "shadcn", // imported in src/styles/styles.css
     "tailwindcss", // vite plugin + CSS @import
     "type-fest", // HasRequiredKeys type import in auth-query.ts
+    "agentation", // reserved for in-progress devtools work (commented import in src/routes/-components/devtools.tsx)
   ],
   ignoreExportsUsedInFile: true,
   rules: {

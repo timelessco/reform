@@ -195,7 +195,6 @@ const DataGrid = <TData extends object>({ children, table, ...props }: DataGridP
     },
   };
 
-  // Ensure table is provided
   if (!table) {
     throw new Error('DataGrid requires a "table" prop');
   }

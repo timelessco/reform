@@ -4,6 +4,8 @@ import { z } from "zod";
 import { formFavorites } from "@/db/schema";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
+import { getActiveOrgId } from "./auth-helpers";
+import { authForm } from "./auth-helpers.server";
 
 export const getFavorites = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
@@ -25,12 +27,15 @@ export const addFavorite = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
+      formId: z.uuid(),
       sortIndex: z.string().nullable().optional(),
     }),
   )
   .handler(async ({ data, context }) => {
     const userId = context.session.user.id;
+    // Per-form authorization — without this, any authenticated user could
+    // write favorite rows referencing arbitrary form ids in other orgs.
+    await authForm(data.formId, userId, getActiveOrgId(context.session));
     const id = `${userId}:${data.formId}`;
 
     await db
@@ -47,9 +52,10 @@ export const addFavorite = createServerFn({ method: "POST" })
 
 export const removeFavorite = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ formId: z.string().uuid() }))
+  .inputValidator(z.object({ formId: z.uuid() }))
   .handler(async ({ data, context }) => {
     const userId = context.session.user.id;
+    await authForm(data.formId, userId, getActiveOrgId(context.session));
 
     await db
       .delete(formFavorites)
@@ -60,12 +66,13 @@ export const reorderFavorite = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
+      formId: z.uuid(),
       sortIndex: z.string(),
     }),
   )
   .handler(async ({ data, context }) => {
     const userId = context.session.user.id;
+    await authForm(data.formId, userId, getActiveOrgId(context.session));
 
     await db
       .update(formFavorites)

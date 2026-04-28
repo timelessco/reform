@@ -2,7 +2,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { and, count, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Value } from "platejs";
-import { formVisits, forms, formVersions, submissions, user } from "@/db/schema";
+import {
+  formVisits,
+  forms,
+  formVersions,
+  organization,
+  submissions,
+  user,
+  workspaces,
+} from "@/db/schema";
 import { db } from "@/db";
 import {
   getEditableFields,
@@ -77,12 +85,12 @@ const getAllowedFieldNames = (versionId: string | null, content: Value): Set<str
 export const createPublicSubmission = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
+      formId: z.uuid(),
       data: z.record(z.string(), z.any()),
       isCompleted: z.boolean().default(true),
-      draftId: z.string().uuid().optional(),
+      draftId: z.uuid().optional(),
       lastStepReached: z.number().int().min(0).optional(),
-      visitId: z.string().uuid().nullish(),
+      visitId: z.uuid().nullish(),
     }),
   )
   .handler(async ({ data }) => {
@@ -114,8 +122,11 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
         status: forms.status,
         lastPublishedVersionId: forms.lastPublishedVersionId,
         createdByUserId: forms.createdByUserId,
+        orgPlan: organization.plan,
       })
       .from(forms)
+      .innerJoin(workspaces, eq(workspaces.id, forms.workspaceId))
+      .innerJoin(organization, eq(organization.id, workspaces.organizationId))
       .where(eq(forms.id, data.formId));
 
     if (!form) {
@@ -233,7 +244,9 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
         {
           selfEmailNotifications: vSettings.selfEmailNotifications ?? false,
           notificationEmail: vSettings.notificationEmail ?? null,
-          respondentEmailNotifications: vSettings.respondentEmailNotifications ?? false,
+          // Pro-only — defense in depth for the post-downgrade webhook race.
+          respondentEmailNotifications:
+            (vSettings.respondentEmailNotifications ?? false) && form.orgPlan !== "free",
           respondentEmailSubject: vSettings.respondentEmailSubject ?? null,
           respondentEmailBody: vSettings.respondentEmailBody ?? null,
         },
@@ -276,8 +289,8 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
 export const getPublicDraft = createServerFn({ method: "GET" })
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
-      draftId: z.string().uuid(),
+      formId: z.uuid(),
+      draftId: z.uuid(),
     }),
   )
   .handler(async ({ data }) => {

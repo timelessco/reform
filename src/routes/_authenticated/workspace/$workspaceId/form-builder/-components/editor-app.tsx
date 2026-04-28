@@ -191,7 +191,6 @@ const EditorAppInner = ({
     [resetKey],
   );
 
-  // Provide formId to AI input plugin for form generation
   editor.setOption(AIInputPlugin, "formId", formId);
 
   const debouncedSave = useDebouncedCallback(

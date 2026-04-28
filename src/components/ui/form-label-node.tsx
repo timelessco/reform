@@ -2,6 +2,7 @@ import type { PlateElementProps } from "platejs/react";
 
 import { PlateElement, useSelected } from "platejs/react";
 
+import { LabelRequiredBadge } from "@/components/ui/required-badge-button";
 import { cn } from "@/lib/utils";
 
 export const FormLabelElement = ({ className, children, ...props }: PlateElementProps) => {
@@ -26,6 +27,7 @@ export const FormLabelElement = ({ className, children, ...props }: PlateElement
         )}
         <span className="min-w-px outline-none">{children}</span>
       </div>
+      <LabelRequiredBadge labelElement={element} />
     </PlateElement>
   );
 };

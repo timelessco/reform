@@ -13,7 +13,13 @@ import type {
 } from "./query/version";
 import type { createWorkspaceSummaryCollection, WorkspaceSummary } from "./query/workspace";
 import type { Form } from "./local/form";
-import type { createForm, updateForm, deleteForm } from "@/lib/server-fn/forms";
+import type {
+  bulkArchiveForms,
+  bulkDeleteForms,
+  createForm,
+  deleteForm,
+  updateForm,
+} from "@/lib/server-fn/forms";
 import type {
   createWorkspace,
   updateWorkspace,
@@ -22,7 +28,6 @@ import type {
 } from "@/lib/server-fn/workspaces";
 import type { addFavorite, removeFavorite, reorderFavorite } from "@/lib/server-fn/favorites";
 
-// Utility types to extract input/output from TanStack server functions
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- `any` required: function constraints need contravariant params
 type ServerFn = (...args: any[]) => any;
 export type ServerFnInput<T extends ServerFn> = NonNullable<Parameters<T>[0]>["data"];
@@ -64,6 +69,12 @@ export type ServerFns = {
   deleteForm: (
     data: ServerFnInput<typeof deleteForm>,
   ) => Promise<ServerFnOutput<typeof deleteForm>>;
+  bulkArchiveForms: (
+    data: ServerFnInput<typeof bulkArchiveForms>,
+  ) => Promise<ServerFnOutput<typeof bulkArchiveForms>>;
+  bulkDeleteForms: (
+    data: ServerFnInput<typeof bulkDeleteForms>,
+  ) => Promise<ServerFnOutput<typeof bulkDeleteForms>>;
   addFavorite: (
     data: ServerFnInput<typeof addFavorite>,
   ) => Promise<ServerFnOutput<typeof addFavorite>>;
@@ -78,7 +89,6 @@ export type ServerFns = {
   ) => Promise<ServerFnOutput<typeof reorderWorkspace>>;
 };
 
-// --- Singleton state ---
 export const state = {
   serverFns: null as ServerFns | null,
   queryClient: null as QueryClient | null,

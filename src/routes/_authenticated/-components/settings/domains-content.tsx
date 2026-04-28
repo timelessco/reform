@@ -115,7 +115,6 @@ export const DomainsContent = () => {
 
   const orgId = session?.session?.activeOrganizationId as string | undefined;
 
-  // Determine owner status from member list
   const { data: membersData } = useQuery({
     queryKey: ["org-members-for-domains"],
     queryFn: async () => {

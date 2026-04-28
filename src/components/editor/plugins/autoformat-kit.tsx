@@ -133,12 +133,6 @@ const autoformatBlocks: AutoformatRule[] = [
       });
     },
   },
-  // {
-  //   match: '+ ',
-  //   mode: 'block',
-  //   preFormat: openNextToggles,
-  //   type: KEYS.toggle,
-  // },
   {
     match: ["---", "—-", "___ "],
     mode: "block",
@@ -177,31 +171,11 @@ const autoformatLists: AutoformatRule[] = [
     },
   },
   {
-    match: ["[] "],
+    match: ["[] ", "[ ] "],
     mode: "block",
-    type: "list",
+    type: "formOptionItem",
     format: (editor) => {
-      toggleList(editor, {
-        listStyleType: KEYS.listTodo,
-      });
-      editor.tf.setNodes({
-        checked: false,
-        listStyleType: KEYS.listTodo,
-      });
-    },
-  },
-  {
-    match: ["[x] "],
-    mode: "block",
-    type: "list",
-    format: (editor) => {
-      toggleList(editor, {
-        listStyleType: KEYS.listTodo,
-      });
-      editor.tf.setNodes({
-        checked: true,
-        listStyleType: KEYS.listTodo,
-      });
+      editor.tf.setNodes({ type: "formOptionItem", variant: "checkbox" });
     },
   },
 ];

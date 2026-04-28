@@ -574,7 +574,6 @@ export const AIMenuItems = ({
     return "";
   }, [menuGroups]);
 
-  // Sync derived default value to parent state
   React.useEffect(() => {
     setValue(defaultValue);
   }, [defaultValue, setValue]);
@@ -700,7 +699,6 @@ export const AILoadingBar = () => {
           "p-3",
         )}
       >
-        {/* Header with controls */}
         <div className="flex w-full items-center justify-between gap-3">
           <div className="flex items-center gap-5">
             <Button size="sm" disabled={isLoading} onClick={handleAccept}>

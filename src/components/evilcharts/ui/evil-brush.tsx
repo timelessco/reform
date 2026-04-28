@@ -10,8 +10,6 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 import * as React from "react";
 
-// ─── Types ──────────────────────────────────────────────────────────────────
-
 type EvilBrushVariant = "line" | "area" | "bar";
 type CurveType = ComponentProps<typeof Area>["type"];
 
@@ -44,13 +42,11 @@ interface EvilBrushProps {
   /** Radius for bar corners in the bar variant */
   barRadius?: number;
 
-  // ── Controlled mode ──────────────────────────────────────────────────
   /** Controlled start index */
   startIndex?: number;
   /** Controlled end index */
   endIndex?: number;
 
-  // ── Uncontrolled mode ────────────────────────────────────────────────
   /** Initial start index (uncontrolled) */
   defaultStartIndex?: number;
   /** Initial end index (uncontrolled) */
@@ -70,14 +66,11 @@ interface EvilBrushProps {
   skipStyle?: boolean;
 }
 
-// ─── Spring config ──────────────────────────────────────────────────────────
-
 const SPRING_CONFIG = { stiffness: 300, damping: 35, mass: 0.8 };
 
-// ─── Pointer-capture drag hook ──────────────────────────────────────────────
-// Replaces raw addEventListener with the modern Pointer Events API.
-// setPointerCapture routes all pointer events to the originating element,
-// so we get mouse + touch + pen support with zero global listeners.
+// Pointer Events API: setPointerCapture routes all pointer events to the
+// originating element, giving us mouse + touch + pen support with zero
+// global listeners.
 
 type DragType = "left" | "right" | "middle";
 
@@ -157,7 +150,6 @@ function useBrushDrag({
     setIsDragging(false);
   }, []);
 
-  // Helper to bind all three pointer handlers for a given drag type
   const bind = useCallback(
     (type: DragType) => ({
       onPointerDown: (e: React.PointerEvent) => onPointerDown(e, type),
@@ -169,8 +161,6 @@ function useBrushDrag({
 
   return { isDragging, bind };
 }
-
-// ─── EvilBrush ────────────────────────────────────────────────────────────
 
 function EvilBrush({
   data,
@@ -200,8 +190,6 @@ function EvilBrush({
   const totalPoints = data.length;
   const chartId = React.useId().replace(/:/g, "");
 
-  // ── Controlled vs uncontrolled ──────────────────────────────────────────
-
   const isControlled = controlledStart !== undefined && controlledEnd !== undefined;
 
   const [internalRange, setInternalRange] = React.useState<EvilBrushRange>(() => ({
@@ -225,8 +213,6 @@ function EvilBrush({
       });
     }
   }, [totalPoints, isControlled]);
-
-  // ── Clamping & committing ───────────────────────────────────────────────
 
   const clampRange = useCallback(
     (range: EvilBrushRange, mode?: DragType): EvilBrushRange => {
@@ -282,8 +268,6 @@ function EvilBrush({
     [clampRange, onChange],
   );
 
-  // ── Drag ────────────────────────────────────────────────────────────────
-
   const { isDragging, bind } = useBrushDrag({
     range: internalRange,
     totalPoints,
@@ -303,8 +287,6 @@ function EvilBrush({
       lastCommittedRef.current = syncedRange;
     }
   }, [isControlled, controlledStart, controlledEnd, isDragging]);
-
-  // ── Computed positions (%) ──────────────────────────────────────────────
 
   const leftPct = totalPoints > 1 ? (range.startIndex / (totalPoints - 1)) * 100 : 0;
   const rightPct = totalPoints > 1 ? (range.endIndex / (totalPoints - 1)) * 100 : 100;
@@ -338,8 +320,6 @@ function EvilBrush({
     },
     [data, xDataKey, formatLabel],
   );
-
-  // ── Render ──────────────────────────────────────────────────────────────
 
   if (totalPoints === 0) return null;
 
@@ -405,8 +385,6 @@ function EvilBrush({
   );
 }
 
-// ─── Brush Handle ───────────────────────────────────────────────────────────
-
 function BrushHandle({
   side,
   position,
@@ -460,8 +438,6 @@ function BrushHandle({
     </motion.div>
   );
 }
-
-// ─── Mini Chart ─────────────────────────────────────────────────────────────
 
 function MiniChart({
   data,
@@ -639,8 +615,6 @@ function MiniChart({
     </ResponsiveContainer>
   );
 }
-
-// ─── useEvilBrush Hook ──────────────────────────────────────────────────────
 
 function useEvilBrush<TData extends Record<string, unknown>>({
   data,

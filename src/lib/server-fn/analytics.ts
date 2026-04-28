@@ -7,7 +7,10 @@ import {
   formAnalyticsDaily,
   formDropoffDaily,
   formQuestionProgress,
+  forms,
   formVisits,
+  organization,
+  workspaces,
 } from "@/db/schema";
 import { buildDailyAnalyticsRows, buildDailyDropoffRows } from "@/lib/analytics/aggregate-utils";
 import { isBotUserAgent } from "@/lib/analytics/bot-filter";
@@ -16,13 +19,27 @@ import { mergeInsightsMetrics } from "@/lib/analytics/merge-metrics";
 import { parseUserAgent } from "@/lib/analytics/parse-user-agent";
 import { resolveTimeRange, splitTodayVsPast, toDateKey } from "@/lib/analytics/time-range";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { authForm, getActiveOrgId } from "@/lib/server-fn/auth-helpers";
+import { getActiveOrgId } from "@/lib/server-fn/auth-helpers";
+import { authForm } from "@/lib/server-fn/auth-helpers.server";
 import type { FormInsightsMetrics, QuestionDropoffMetrics } from "@/types/analytics";
+
+// Defense in depth — direct callers can bypass the client hook, and the
+// org-plan check covers the window where a Polar downgrade webhook hasn't
+// yet flipped `forms.analytics`.
+export const isAnalyticsEnabled = async (formId: string): Promise<boolean> => {
+  const [row] = await db
+    .select({ analytics: forms.analytics, plan: organization.plan })
+    .from(forms)
+    .innerJoin(workspaces, eq(workspaces.id, forms.workspaceId))
+    .innerJoin(organization, eq(organization.id, workspaces.organizationId))
+    .where(eq(forms.id, formId));
+  return row?.analytics === true && row.plan !== "free";
+};
 
 export const recordFormVisit = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
+      formId: z.uuid(),
       visitorHash: z.string().min(1).max(128),
       sessionId: z.string().min(1).max(128),
       referrer: z.string().nullish(),
@@ -32,6 +49,10 @@ export const recordFormVisit = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }): Promise<{ visitId: string | null }> => {
+    if (!(await isAnalyticsEnabled(data.formId))) {
+      return { visitId: null };
+    }
+
     const headers = getRequestHeaders();
     const ua = headers.get("user-agent");
 
@@ -72,11 +93,11 @@ const MAX_DURATION_MS = 86_400_000; // 24h cap as a spam guard for client-suppli
 export const updateFormVisit = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
-      visitId: z.string().uuid(),
+      visitId: z.uuid(),
       didStartForm: z.boolean().optional(),
       didSubmit: z.boolean().optional(),
-      submissionId: z.string().uuid().nullish(),
-      visitEndedAt: z.string().datetime().nullish(),
+      submissionId: z.uuid().nullish(),
+      visitEndedAt: z.iso.datetime().nullish(),
       durationMs: z.number().int().nonnegative().max(MAX_DURATION_MS).nullish(),
     }),
   )
@@ -108,8 +129,8 @@ export const updateFormVisit = createServerFn({ method: "POST" })
 export const recordQuestionProgress = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
-      visitId: z.string().uuid(),
-      formId: z.string().uuid(),
+      visitId: z.uuid(),
+      formId: z.uuid(),
       visitorHash: z.string().min(1).max(128),
       questionId: z.string().min(1).max(256),
       questionType: z.string().max(64).nullish(),
@@ -119,6 +140,9 @@ export const recordQuestionProgress = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }): Promise<{ ok: true }> => {
+    if (!(await isAnalyticsEnabled(data.formId))) {
+      return { ok: true };
+    }
     // NOTE: race-prone if a single visitor fires multiple events simultaneously.
     // V1 acceptable: duplicates inflate progress rows but aggregation in Task 12
     // dedupes by max(viewedAt) per (visitorHash, questionId). A unique constraint
@@ -184,7 +208,7 @@ export const getFormInsights = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
+      formId: z.uuid(),
       filter: z.enum(["last_24_hours", "last_7_days", "last_30_days", "last_90_days", "custom"]),
       startDate: z.string().regex(DATE_KEY_PATTERN).optional(),
       endDate: z.string().regex(DATE_KEY_PATTERN).optional(),
@@ -201,8 +225,12 @@ export const getFormInsights = createServerFn({ method: "POST" })
     );
     const split = splitTodayVsPast(range, now);
 
+    // Pro-gated. When analytics is off the merge fn produces a canonical
+    // zero-state payload (correct date range + empty arrays) without touching
+    // the analytics tables.
+    const enabled = await isAnalyticsEnabled(data.formId);
     const dailyRows =
-      split.pastDays.length > 0
+      enabled && split.pastDays.length > 0
         ? await db
             .select()
             .from(formAnalyticsDaily)
@@ -214,18 +242,19 @@ export const getFormInsights = createServerFn({ method: "POST" })
             )
         : [];
 
-    const todayRawRows = split.rawStart
-      ? await db
-          .select()
-          .from(formVisits)
-          .where(
-            and(
-              eq(formVisits.formId, data.formId),
-              gte(formVisits.visitStartedAt, split.rawStart),
-              lte(formVisits.visitStartedAt, range.end),
-            ),
-          )
-      : [];
+    const todayRawRows =
+      enabled && split.rawStart
+        ? await db
+            .select()
+            .from(formVisits)
+            .where(
+              and(
+                eq(formVisits.formId, data.formId),
+                gte(formVisits.visitStartedAt, split.rawStart),
+                lte(formVisits.visitStartedAt, range.end),
+              ),
+            )
+        : [];
 
     return mergeInsightsMetrics({
       dailyRows,
@@ -241,7 +270,7 @@ export const getFormDropoff = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
+      formId: z.uuid(),
       filter: z.enum(["last_24_hours", "last_7_days", "last_30_days", "last_90_days", "custom"]),
       startDate: z.string().regex(DATE_KEY_PATTERN).optional(),
       endDate: z.string().regex(DATE_KEY_PATTERN).optional(),
@@ -258,8 +287,9 @@ export const getFormDropoff = createServerFn({ method: "POST" })
     );
     const split = splitTodayVsPast(range, now);
 
+    const enabled = await isAnalyticsEnabled(data.formId);
     const dailyRows =
-      split.pastDays.length > 0
+      enabled && split.pastDays.length > 0
         ? await db
             .select()
             .from(formDropoffDaily)
@@ -271,18 +301,19 @@ export const getFormDropoff = createServerFn({ method: "POST" })
             )
         : [];
 
-    const todayProgressRows = split.rawStart
-      ? await db
-          .select()
-          .from(formQuestionProgress)
-          .where(
-            and(
-              eq(formQuestionProgress.formId, data.formId),
-              gte(formQuestionProgress.viewedAt, split.rawStart),
-              lte(formQuestionProgress.viewedAt, range.end),
-            ),
-          )
-      : [];
+    const todayProgressRows =
+      enabled && split.rawStart
+        ? await db
+            .select()
+            .from(formQuestionProgress)
+            .where(
+              and(
+                eq(formQuestionProgress.formId, data.formId),
+                gte(formQuestionProgress.viewedAt, split.rawStart),
+                lte(formQuestionProgress.viewedAt, range.end),
+              ),
+            )
+        : [];
 
     return mergeDropoffMetrics({
       formId: data.formId,

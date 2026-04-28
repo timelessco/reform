@@ -113,7 +113,6 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
     [formDoc?.customization],
   );
 
-  // Resolve the active style to get fallback values
   const resolvedStyle = useMemo(() => {
     const presetName = customization.preset || "vega";
     return STYLES[presetName] ?? STYLES.vega;
@@ -276,7 +275,6 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
       collapsible="none"
       className="w-full h-full border-none animate-in slide-in-from-right-[40%] duration-200 ease-out"
     >
-      {/* Header */}
       <SidebarHeader className="pt-2 pb-3 pl-1 shrink-0 gap-2.25 space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-normal text-foreground pl-2.5 font-sans">Customize</h2>
@@ -292,13 +290,11 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
         </div>
       </SidebarHeader>
 
-      {/* Scrollable content */}
       <SidebarContent>
         <div className="p-2 space-y-3">
           <p className="px-1 pb-1 text-[11px] text-muted-foreground/80">
             Changes apply to the public form on next publish.
           </p>
-          {/* Theme section */}
           <ConfigCard>
             <ConfigRow label="Preset">
               <Select value={activePreset} onValueChange={(v) => v && selectStyle(v)}>
@@ -410,7 +406,6 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
             </ConfigCard>
           </SidebarSection>
 
-          {/* Layout */}
           <SidebarSection label="Layout" action={<ProBadge />}>
             <FeatureGate requiredPlan="pro" variant="block">
               <ConfigCard>
@@ -472,7 +467,6 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
             </FeatureGate>
           </SidebarSection>
 
-          {/* Typography */}
           <SidebarSection label="Typography" action={<ProBadge />}>
             <FeatureGate requiredPlan="pro" variant="block">
               <ConfigCard>
@@ -508,7 +502,6 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
             </FeatureGate>
           </SidebarSection>
 
-          {/* Title */}
           <SidebarSection label="Title" action={<ProBadge />}>
             <FeatureGate requiredPlan="pro" variant="block">
               <ConfigCard>
@@ -578,7 +571,6 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
             </FeatureGate>
           </SidebarSection>
 
-          {/* Colors — with Light / Dark tabs */}
           <SidebarSection label="Colors" action={<ProBadge />}>
             <FeatureGate requiredPlan="pro" variant="block">
               <Tabs value={activeMode} onValueChange={handleModeToggle} className="mb-2.5">
@@ -597,7 +589,6 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
             </FeatureGate>
           </SidebarSection>
 
-          {/* Custom CSS — mode-aware */}
           <SidebarSection label="Custom CSS" action={<ProBadge />}>
             <FeatureGate requiredPlan="pro" variant="block">
               <div className="rounded-lg overflow-hidden border border-border/60 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
@@ -630,8 +621,6 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
     </Sidebar>
   );
 };
-
-// ── Advanced Color Pickers (extracted for readability) ──
 
 const ADVANCED_COLOR_TOKENS = [
   { key: "primary", label: "Primary" },

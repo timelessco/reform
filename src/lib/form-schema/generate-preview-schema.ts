@@ -29,10 +29,9 @@ export const generateZodSchemaFromFields = (fields: PlateFormField[]): z.ZodObje
       case "Email":
         fieldSchema = field.required
           ? z
-              .string({ error: "This field is required" })
+              .email({ error: "Please enter a valid email address" })
               .min(1, "This field is required")
-              .email("Please enter a valid email address")
-          : z.union([z.literal(""), z.string().email("Please enter a valid email address")]);
+          : z.union([z.literal(""), z.email({ error: "Please enter a valid email address" })]);
         break;
       case "Link": {
         const urlRegex = /^(https?:\/\/)?[\w.-]+\.\w{2,}(\/\S*)?$/;
@@ -99,12 +98,10 @@ export const generateZodSchemaFromFields = (fields: PlateFormField[]): z.ZodObje
         // Input, Textarea, Phone, and other string-based types
         let schema: z.ZodString = z.string();
 
-        // Apply minLength constraint
         if ("minLength" in field && field.minLength !== undefined && field.minLength > 0) {
           schema = schema.min(field.minLength, `Minimum ${field.minLength} characters required`);
         }
 
-        // Apply maxLength constraint
         if ("maxLength" in field && field.maxLength !== undefined && field.maxLength > 0) {
           schema = schema.max(field.maxLength, `Maximum ${field.maxLength} characters allowed`);
         }
@@ -119,7 +116,6 @@ export const generateZodSchemaFromFields = (fields: PlateFormField[]): z.ZodObje
       }
     }
 
-    // Handle required vs optional
     if (field.required) {
       schemaShape[field.name] = fieldSchema;
     } else {

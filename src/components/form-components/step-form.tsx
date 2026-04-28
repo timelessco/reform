@@ -1,5 +1,6 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 import { useMemo, useRef } from "react";
+import { useFocusFirstField } from "@/hooks/use-focus-first-field";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { Button } from "@/components/ui/button";
 import { useStepForm } from "@/contexts/step-form-context";
@@ -44,7 +45,6 @@ export const StepForm = ({
     formName: `stepForm-${stepIndex}`,
   });
 
-  // Group segments for rendering (combine adjacent buttons)
   const groupedItems = useMemo(() => groupSegmentsForRendering(segments), [segments]);
 
   const formRef = useRef<HTMLFormElement>(null);
@@ -68,40 +68,27 @@ export const StepForm = ({
     }
   };
 
-  // Auto-focus the first focusable element on mount
+  useFocusFirstField(formRef);
+
+  // Fire `view` analytics event when this step mounts. No-ops in builder
+  // previews (tracking is null) or single-page forms (mode is null) or
+  // before recordFormVisit resolves (visitId is null).
   useMountEffect(() => {
-    const timer = setTimeout(() => {
-      if (formRef.current) {
-        const focusable = formRef.current.querySelector(
-          'input:not([type="hidden"]), textarea, select, [role="checkbox"]',
-        ) as HTMLElement;
-        if (focusable) {
-          focusable.focus();
-        }
-      }
-    }, 300); // Wait for transition to settle
-
-    // Fire `view` analytics event when this step mounts. No-ops in builder
-    // previews (tracking is null) or single-page forms (mode is null) or
-    // before recordFormVisit resolves (visitId is null).
-    if (tracking?.visitId && tracking.mode) {
-      const isFieldByField = tracking.mode === "field-by-field";
-      const firstField = fields.length > 0 ? fields[0] : null;
-      const questionId = isFieldByField && firstField ? firstField.id : `step_${stepIndex}`;
-      const questionType = isFieldByField && firstField ? (firstField.fieldType ?? null) : null;
-      fireQuestionProgress({
-        visitId: tracking.visitId,
-        formId: tracking.formId,
-        visitorHash: tracking.visitorHash,
-        questionId,
-        questionType,
-        questionIndex: stepIndex,
-        event: "view",
-        wasLastQuestion: isLastStep,
-      });
-    }
-
-    return () => clearTimeout(timer);
+    if (!(tracking?.visitId && tracking.mode)) return;
+    const isFieldByField = tracking.mode === "field-by-field";
+    const firstField = fields.length > 0 ? fields[0] : null;
+    const questionId = isFieldByField && firstField ? firstField.id : `step_${stepIndex}`;
+    const questionType = isFieldByField && firstField ? (firstField.fieldType ?? null) : null;
+    fireQuestionProgress({
+      visitId: tracking.visitId,
+      formId: tracking.formId,
+      visitorHash: tracking.visitorHash,
+      questionId,
+      questionType,
+      questionIndex: stepIndex,
+      event: "view",
+      wasLastQuestion: isLastStep,
+    });
   });
 
   return (
@@ -115,7 +102,6 @@ export const StepForm = ({
         className=" focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {groupedItems.map((item) => {
-          // Handle button groups (Previous + Next/Submit on same line)
           if (item.type === "buttonGroup") {
             const prevButton = item.buttons.find((b) => b.buttonRole === "previous");
             const actionButton = item.buttons.find(
@@ -152,7 +138,6 @@ export const StepForm = ({
             );
           }
 
-          // Static segment — render via PlateStatic
           if (item.type === "static") {
             return (
               <StaticContentBlock
@@ -162,11 +147,9 @@ export const StepForm = ({
             );
           }
 
-          // Field segment
           if (item.type === "field") {
             const { field } = item;
 
-            // Handle button separately
             if (field.fieldType === "Button") {
               return (
                 <RenderStepButton
@@ -179,7 +162,6 @@ export const StepForm = ({
               );
             }
 
-            // Input/Textarea — delegate to existing renderer
             return (
               <div key={field.id} className="w-full" data-bf-input>
                 <RenderStepPreviewInput element={field} form={form} />
@@ -221,8 +203,6 @@ export const StepForm = ({
   );
 };
 
-// --- Grouping logic ---
-
 type ButtonField = {
   id: string;
   name: string;
@@ -250,7 +230,6 @@ const groupSegmentsForRendering = (segments: PreviewSegment[]): GroupedSegment[]
     }
   }
 
-  // Append buttons as a group (or single) at the end
   if (allButtons.length > 1) {
     result.push({ type: "buttonGroup", buttons: allButtons });
   } else if (allButtons.length === 1) {
@@ -259,8 +238,6 @@ const groupSegmentsForRendering = (segments: PreviewSegment[]): GroupedSegment[]
 
   return result;
 };
-
-// --- Button renderer ---
 
 /**
  * Renders button elements for step forms.
@@ -288,7 +265,6 @@ const RenderStepButton = ({
   // Matches editor button: h-8, 13px font, px-2.5
   const buttonStyle = { fontSize: "13px" } as const;
 
-  // Previous button - onClick handler from context
   if (buttonRole === "previous") {
     const button = (
       <Button
@@ -310,7 +286,6 @@ const RenderStepButton = ({
     );
   }
 
-  // Next button - type="submit" triggers form validation and onSubmit
   if (buttonRole === "next") {
     const button = (
       <Button
@@ -332,7 +307,6 @@ const RenderStepButton = ({
     );
   }
 
-  // Submit button - type="submit" triggers form validation and final submit
   const isMultiStep = totalSteps > 1;
   const submitButton = (
     <Button

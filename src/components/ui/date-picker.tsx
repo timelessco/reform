@@ -9,9 +9,16 @@ interface DatePickerProps {
   value?: string | null;
   onChange?: (value: string | null) => void;
   className?: string;
+  /** Trigger label shown when no date is selected. Defaults to "Pick a date". */
+  placeholder?: string;
 }
 
-export const DatePicker = ({ value, onChange, className }: DatePickerProps) => {
+export const DatePicker = ({
+  value,
+  onChange,
+  className,
+  placeholder = "Pick a date",
+}: DatePickerProps) => {
   const [date, setDate] = React.useState<Date | undefined>(() => {
     if (value) {
       const parsed = new Date(value);
@@ -32,7 +39,7 @@ export const DatePicker = ({ value, onChange, className }: DatePickerProps) => {
     setIsOpen(false);
   };
 
-  const displayText = date ? format(date, "MMM d, yyyy") : "Pick a date";
+  const displayText = date ? format(date, "MMM d, yyyy") : placeholder;
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>

@@ -93,16 +93,8 @@ import {
   X as LucideX,
 } from "lucide-react";
 
-// Re-export LucideProps type for components that need it
 export type { LucideProps };
 
-// ============================================================================
-// Custom SVG Icons (already replaced with custom designs)
-// ============================================================================
-
-// ============================================================================
-// Custom SVG Icons (already replaced with custom designs)
-// ============================================================================
 export const HomeIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     width="18"
@@ -631,10 +623,6 @@ export const ChevronsLeftIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-// ============================================================================
-// Common Icons (app UI: routes, sidebar, settings, form-builder, etc.)
-// ============================================================================
-
 const createConsistentLucideIcon = (Icon: React.ComponentType<LucideProps>) => {
   // eslint-disable-next-line eslint-plugin-unicorn/consistent-function-scoping -- Icon is captured via JSX
   const ConsistentLucideIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -872,10 +860,6 @@ export const TriangleAlertIcon = createConsistentLucideIcon(LucideTriangleAlert)
 export const UploadIcon = createConsistentLucideIcon(LucideUpload);
 export const UserIcon = createConsistentLucideIcon(LucideUser);
 export const XIcon = createConsistentLucideIcon(LucideX);
-
-// ============================================================================
-// Plate.js Editor Icons (toolbar buttons, editor nodes, block menus, etc.)
-// ============================================================================
 
 export const AlignCenterIcon = createConsistentLucideIcon(LucideAlignCenter);
 export const AlignLeftIcon = createConsistentLucideIcon(LucideAlignLeft);

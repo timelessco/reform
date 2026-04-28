@@ -13,6 +13,7 @@ const DateField = ({ element, form }: FieldRendererProps<"Date">) => (
           <DatePicker
             value={(f.state.value as string) ?? null}
             onChange={(val) => f.handleChange(val ?? "")}
+            placeholder={element.placeholder}
             className={cn(hasErrors && "ring-1 ring-destructive")}
           />
           {hasErrors && <p className="text-sm text-destructive">{errorMessage}</p>}

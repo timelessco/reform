@@ -65,7 +65,6 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const session = sessionData;
   const navigate = useNavigate();
 
-  // Editor sidebar state
   const {
     activeSidebar,
     closeSidebar,
@@ -95,12 +94,10 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   };
 
   const toggleShareSidebar = () => {
-    // If already open, close regardless of which route we're on
     if (isShareSidebarOpen) {
       closeSidebar();
       return;
     }
-    // Not on edit route — navigate to edit with share sidebar open
     if (!isEditRoute && workspaceId && formId) {
       openShare();
       enterPreview();
@@ -115,16 +112,13 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
     openShare();
   };
 
-  // Single source: live query data (useForm)
   const { data: workspace } = useWorkspace(workspaceId);
   const { data: savedDocs, isLoading: isLoadingSavedDocs } = useForm(formId);
-  // Version management
 
   const hasUnpublishedChanges = useHasUnpublishedChanges(formId);
   const hasPublishedVersion = !!savedDocs?.[0]?.lastPublishedVersionId;
   const canShare = savedDocs?.[0]?.status === "published" || hasPublishedVersion;
 
-  // Consolidated state: workflow, dialogs, menus, tooltips
   type WorkflowState = "idle" | "publishing" | "discarding";
   type ActiveDialog = "delete" | "discard" | null;
   type ActiveMenu = "main" | "local" | null;
@@ -132,11 +126,9 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const [activeDialog, setActiveDialog] = useState<ActiveDialog>(null);
   const [activeMenu, setActiveMenu] = useState<ActiveMenu>(null);
 
-  // Derived booleans for readability
   const isDiscarding = workflowState === "discarding";
   const isPublishing = workflowState === "publishing";
 
-  // Favorite state
   useIsFavorite(session?.user?.id, formId);
 
   const handleToggleFavorite = async () => {
@@ -160,7 +152,6 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
         const tx = publishForm(formId);
         await tx.isPersisted.promise;
         toast.success("Form published");
-        // Navigate to submissions, then open share sidebar for immediate link sharing
         openShare();
         void navigate({
           to: "/workspace/$workspaceId/form-builder/$formId/submissions",
@@ -190,7 +181,6 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
     }
   };
 
-  // Scoped hotkeys for form-builder actions
   useHotkey(HOTKEYS.TOGGLE_SETTINGS_SIDEBAR, () => toggleSettingsSidebar(), {
     enabled: isFormBuilder || isLandingPage,
   });
@@ -237,17 +227,13 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
 
   const handleDismissSidebars = () => {
     if (isEditorSidebarOpen && isLeftSidebarOpen) {
-      // Both open → close both
       handleCloseSidebar();
       toggleMainSidebar();
     } else if (isEditorSidebarOpen) {
-      // Only right open → close right
       handleCloseSidebar();
     } else if (isLeftSidebarOpen) {
-      // Only left open → close left
       toggleMainSidebar();
     } else {
-      // Both closed → open left sidebar + right (share) sidebar
       toggleMainSidebar();
       toggleShareSidebar();
     }
@@ -324,7 +310,6 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
           isDistractionHidden && "opacity-0 pointer-events-none",
         )}
       >
-        {/* Left Section: Breadcrumbs */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {isLandingPage && <LogoToggle static className="-ml-1" />}
           {/* Logo doubles as the sidebar trigger on mobile (always visible)
@@ -352,7 +337,6 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
               </TooltipContent>
             </Tooltip>
           )}
-          {/* Breadcrumb: Workspace / Form Name / Page */}
           {isFormBuilder && savedDocs?.[0] && (
             <div className="flex items-center text-sm min-w-0">
               {workspace && (
@@ -405,7 +389,6 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
           )}
         </div>
 
-        {/* Right Section: Actions — hidden when any editor sidebar is open */}
         <div className="flex items-center gap-1">
           {isFormBuilder && savedDocs?.[0]?.updatedAt && !isLoadingSavedDocs && (
             <Tooltip>
@@ -543,7 +526,6 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
 
           {isFormBuilder && (
             <>
-              {/* Reset to last published version */}
               {hasUnpublishedChanges && (
                 <Tooltip>
                   <TooltipTrigger
@@ -620,7 +602,6 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
                   <SettingsIcon fill="transparent" />
                 </Button>
 
-                {/* Three dots menu - popover button list matching workspace/sidebar style */}
                 <DropdownMenu
                   open={activeMenu === "main"}
                   onOpenChange={(open) => setActiveMenu(open ? "main" : null)}

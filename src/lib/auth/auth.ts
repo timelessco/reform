@@ -7,6 +7,11 @@ import {
 } from "@/integrations/email";
 import { logger } from "@/lib/utils";
 import { APP_NAME } from "@/lib/config/app-config";
+import {
+  handleSubscriptionDowngrade,
+  handleSubscriptionUpdated,
+  handleSubscriptionUpgrade,
+} from "@/lib/auth/polar-handlers.server";
 import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { betterAuth } from "better-auth";
@@ -42,9 +47,6 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: false,
   },
-  // experimental : {
-  //   joins: true,
-  // },
   user: {
     changeEmail: {
       enabled: true,
@@ -66,7 +68,6 @@ export const auth = betterAuth({
             const now = new Date();
             const orgId = crypto.randomUUID();
 
-            // Create organization
             const orgName = user.name || user.email.split("@")[0];
             const [org] = await db
               .insert(schema.organization)
@@ -78,7 +79,6 @@ export const auth = betterAuth({
               })
               .returning();
 
-            // Add user as owner and create default workspace in parallel
             await Promise.all([
               db.insert(schema.member).values({
                 id: crypto.randomUUID(),
@@ -188,12 +188,18 @@ export const auth = betterAuth({
           ],
           successUrl:
             (process.env.APP_URL || "http://localhost:3000") +
-            "/settings/billing?checkout_id={CHECKOUT_ID}",
+            "/dashboard?checkout_id={CHECKOUT_ID}",
           authenticatedUsersOnly: true,
         }),
         portal(),
         webhooks({
           secret: process.env.POLAR_WEBHOOK_SECRET ?? "",
+          onSubscriptionCreated: handleSubscriptionUpgrade,
+          onSubscriptionActive: handleSubscriptionUpgrade,
+          onSubscriptionUncanceled: handleSubscriptionUpgrade,
+          onSubscriptionUpdated: handleSubscriptionUpdated,
+          onSubscriptionCanceled: handleSubscriptionDowngrade,
+          onSubscriptionRevoked: handleSubscriptionDowngrade,
         }),
       ],
     }),

@@ -7,9 +7,6 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-/* ─────────────────────────── Tabs Root ────────────────────────── */
-
-/* ─────────────────────────── Tabs Root ────────────────────────── */
 export const Tabs = ({
   className,
   orientation = "horizontal",
@@ -22,8 +19,6 @@ export const Tabs = ({
     {...props}
   />
 );
-
-/* ─────────────────────────── TabsList ──────────────────────────── */
 
 const tabsListVariants = cva(
   "relative group/tabs-list text-muted-foreground inline-flex w-fit items-center justify-center overflow-clip group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col",
@@ -60,8 +55,6 @@ export const TabsList = ({
     {...props}
   />
 );
-
-/* ─────────────────────────── TabsTrigger ───────────────────────── */
 
 const tabsTriggerVariants = cva(
   [
@@ -131,8 +124,6 @@ export const TabsTrigger = ({
   </TabsPrimitive.Tab>
 );
 
-/* ─────────────────────────── TabsIndicator ─────────────────────── */
-
 const tabsIndicatorVariants = cva(
   [
     "absolute transition-all duration-300 ease-in-out",
@@ -166,9 +157,6 @@ export const TabsIndicator = ({
   />
 );
 
-/* ─────────────────────────── TabsContent ──────────────────────── */
-
-/* ─────────────────────────── TabsContent ──────────────────────── */
 export const TabsContent = ({ className, ...props }: TabsPrimitive.Panel.Props) => (
   <TabsPrimitive.Panel
     data-slot="tabs-content"

@@ -37,11 +37,5 @@ export const slashCommandValue: any = (
     <hp indent={1} listStyleType="disc">
       <htext>Inline Elements: Date</htext>
     </hp>
-    {/* <hcallout variant="info" icon="💡">
-      <htext>
-        Use keywords to quickly find options. For example, type '/h1' for
-        Heading 1, '/ul' for Bulleted list, or '/date' for Date insertion.
-      </htext>
-    </hcallout> */}
   </fragment>
 );

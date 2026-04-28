@@ -15,10 +15,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { cn } from "@/lib/utils";
 
-// ---------------------------------------------------------------------------
-// FormHeader context
-// ---------------------------------------------------------------------------
-
 interface FormHeaderContextValue {
   title: string;
   icon?: string;
@@ -41,10 +37,6 @@ const useFormHeaderContext = (): FormHeaderContextValue => {
 
   return ctx;
 };
-
-// ---------------------------------------------------------------------------
-// Internal: CoverUpload (drag-and-drop upload area)
-// ---------------------------------------------------------------------------
 
 const CoverUpload = ({ onFileChange }: { onFileChange: (url: string) => void }) => {
   const [
@@ -89,10 +81,6 @@ const CoverUpload = ({ onFileChange }: { onFileChange: (url: string) => void }) 
     </div>
   );
 };
-
-// ---------------------------------------------------------------------------
-// FormHeader.Cover
-// ---------------------------------------------------------------------------
 
 const FormHeaderCover = () => {
   const { cover, onCoverChange } = useFormHeaderContext();
@@ -304,7 +292,6 @@ const FormHeaderCover = () => {
                   />
                 </button>
 
-                {/* Remove Option in Gallery */}
                 <button
                   type="button"
                   onClick={() => setCoverUrl(null)}
@@ -330,10 +317,6 @@ const FormHeaderCover = () => {
     </div>
   );
 };
-
-// ---------------------------------------------------------------------------
-// FormHeader.Icon
-// ---------------------------------------------------------------------------
 
 const FormHeaderIcon = () => {
   const { icon, hasCover, onIconChange } = useFormHeaderContext();
@@ -427,10 +410,6 @@ const FormHeaderIcon = () => {
   );
 };
 
-// ---------------------------------------------------------------------------
-// FormHeader.Title
-// ---------------------------------------------------------------------------
-
 const FormHeaderTitle = () => {
   const { title, onTitleChange } = useFormHeaderContext();
 
@@ -447,10 +426,6 @@ const FormHeaderTitle = () => {
     </div>
   );
 };
-
-// ---------------------------------------------------------------------------
-// Internal: ActionButtons (add icon / add cover buttons)
-// ---------------------------------------------------------------------------
 
 const ActionButtons = () => {
   const { hasCover, hasLogo, onIconChange, onCoverChange } = useFormHeaderContext();
@@ -491,10 +466,6 @@ const ActionButtons = () => {
     </div>
   );
 };
-
-// ---------------------------------------------------------------------------
-// FormHeader (root compound component)
-// ---------------------------------------------------------------------------
 
 export interface FormHeaderProps {
   title?: string;
@@ -553,10 +524,6 @@ const FormHeaderRoot = ({
     </FormHeaderContext>
   );
 };
-
-// ---------------------------------------------------------------------------
-// Assemble compound component
-// ---------------------------------------------------------------------------
 
 export const FormHeader = Object.assign(FormHeaderRoot, {
   Cover: FormHeaderCover,
