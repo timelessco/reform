@@ -19,6 +19,20 @@ const PRIVATE_CACHE_CONTROL = "private, no-store";
 
 export const formCacheTag = (formId: string) => `form:${formId}`;
 
+// Header object form for routes that build their own `Response`. Equivalent
+// to `applyFormCacheHeaders` but doesn't depend on the request-context
+// `setResponseHeader` side effect.
+export const formCacheHeaders = (
+  formId: string,
+  { gated }: { gated: boolean },
+): Record<string, string> => {
+  if (gated) return { "Cache-Control": PRIVATE_CACHE_CONTROL };
+  return {
+    "Cache-Control": PUBLIC_CACHE_CONTROL,
+    "Cache-Tag": formCacheTag(formId),
+  };
+};
+
 // Attach cache headers to the current public-form response. `gated` covers
 // password-protected forms, closed forms, over-limit forms, and error
 // responses — all of which must bypass the shared cache to avoid leaking
