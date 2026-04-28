@@ -7,7 +7,7 @@ import {
 } from "@platejs/selection/react";
 import { GripVerticalIcon, PlusIcon, SettingsIcon } from "@/components/ui/icons";
 import { getPluginByType, isType, KEYS } from "platejs";
-import type { TElement } from "platejs";
+import type { TElement, TIdElement } from "platejs";
 import {
   MemoizedChildren,
   useEditorRef,
@@ -215,6 +215,17 @@ const Draggable = (props: PlateElementProps) => {
     }
     // eslint-disable-next-line eslint-plugin-react-hooks/exhaustive-deps -- only on isAboutToDrag change
   }, [isAboutToDrag]);
+
+  // Once the drag is officially in flight, hide the live preview node so it
+  // doesn't double up with the cursor-following HTML5 drag image. The HTML5
+  // backend publishes isDragging via setTimeout(0) AFTER the screenshot is
+  // captured, so hiding here can't blank the drag image.
+  React.useEffect(() => {
+    if (isDragging) {
+      previewRef.current?.classList.add("opacity-0");
+    }
+    // eslint-disable-next-line eslint-plugin-react-hooks/exhaustive-deps -- only on isDragging change
+  }, [isDragging]);
 
   const handleAddBlock = React.useCallback(
     (e: React.MouseEvent) => {
@@ -448,13 +459,18 @@ const DragHandle = React.memo(function DragHandle({
         .getApi(BlockSelectionPlugin)
         .blockSelection.getNodes({ sort: true });
 
-      let selectionNodes =
-        blockSelection.length > 0 ? blockSelection : editor.api.blocks({ mode: "highest" });
-
-      if (!selectionNodes.some(([node]) => node.id === element.id)) {
+      // Drag handle targets ONE specific block. Only use blockSelection when it
+      // explicitly contains the clicked block (multi-select drag); otherwise
+      // drag the clicked element alone. Falling back to editor.api.blocks (the
+      // text-caret range) bleeds the entire range into the drag preview, which
+      // is what produces the "drag the whole editor" giant ghost.
+      let selectionNodes: typeof blockSelection;
+      if (blockSelection.length > 0 && blockSelection.some(([node]) => node.id === element.id)) {
+        selectionNodes = blockSelection;
+      } else {
         const currentPath = editor.api.findPath(element);
         if (!currentPath) return;
-        selectionNodes = [[element, currentPath]];
+        selectionNodes = [[element as TIdElement, currentPath]];
       }
 
       const blocks = expandListItemsWithChildren(editor, selectionNodes).map(([node]) => node);
@@ -484,13 +500,16 @@ const DragHandle = React.memo(function DragHandle({
       .getApi(BlockSelectionPlugin)
       .blockSelection.getNodes({ sort: true });
 
-    let selectedBlocks =
-      blockSelection.length > 0 ? blockSelection : editor.api.blocks({ mode: "highest" });
-
-    if (!selectedBlocks.some(([node]) => node.id === element.id)) {
+    // Mirror the mousedown logic: only honor blockSelection when it explicitly
+    // includes the hovered block. Otherwise treat as single-block to avoid
+    // computing a multi-block previewTop offset from an unrelated text range.
+    let selectedBlocks: typeof blockSelection;
+    if (blockSelection.length > 0 && blockSelection.some(([node]) => node.id === element.id)) {
+      selectedBlocks = blockSelection;
+    } else {
       const currentPath = editor.api.findPath(element);
       if (!currentPath) return;
-      selectedBlocks = [[element, currentPath]];
+      selectedBlocks = [[element as TIdElement, currentPath]];
     }
 
     const processedBlocks = expandListItemsWithChildren(editor, selectedBlocks);
@@ -607,6 +626,26 @@ const removeDataAttributes = (element: HTMLElement) => {
   });
 };
 
+/**
+ * Strip nodes that break the HTML5 drag-image snapshot.
+ *
+ * Base UI's Checkbox/Radio primitives render a visually-hidden `<input>` next
+ * to the visible control with `position: fixed`. When we cloneNode the block
+ * for the drag preview, that fixed-positioned descendant escapes the cloned
+ * subtree's box and causes Chromium to snapshot a viewport-sized region as
+ * the drag image (the "giant preview" for checkboxes). Removing the hidden
+ * inputs (and any other position:fixed descendants we accidentally cloned)
+ * keeps the drag image bounded to the actual block.
+ */
+const stripDragPreviewArtifacts = (element: HTMLElement) => {
+  Array.from(element.querySelectorAll("input")).forEach((input) => {
+    input.remove();
+  });
+  Array.from(element.querySelectorAll<HTMLElement>('[style*="position: fixed"]')).forEach((el) => {
+    el.remove();
+  });
+};
+
 // Apply visual compensation for horizontal scroll
 const applyScrollCompensation = (original: Element, cloned: HTMLElement) => {
   const scrollLeft = original.scrollLeft;
@@ -677,6 +716,7 @@ const createDragPreviewElements = (editor: PlateEditor, blocks: TElement[]): HTM
     }
 
     removeDataAttributes(newDomNode);
+    stripDragPreviewArtifacts(newDomNode);
     elements.push(wrapper);
   };
 

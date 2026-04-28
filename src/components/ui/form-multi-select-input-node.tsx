@@ -271,7 +271,7 @@ export const FormMultiSelectInputElement = ({
           placeholder={
             options.length === 0 ? "Type and press Enter to add options" : "Add option..."
           }
-          className="min-w-[80px] flex-1 border-0 bg-transparent p-0 text-sm text-muted-foreground/50 outline-none placeholder:text-muted-foreground/50"
+          className="min-w-[80px] flex-1 border-0 bg-transparent p-0 text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
         />
       </div>
       <Tooltip>
