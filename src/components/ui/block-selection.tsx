@@ -2,8 +2,14 @@ import { useBlockSelected } from "@platejs/selection/react";
 import { cva } from "class-variance-authority";
 import type { PlateElementProps } from "platejs/react";
 
+// Extend the highlight 8px past the block's bottom edge so multi-block
+// selections appear continuous instead of striped — the inter-block margin
+// gap between adjacent blocks is what was causing the "gappy" look. Biasing
+// only to the bottom (vs. both top and bottom) keeps adjacent highlights
+// from doubling up at the seam, which would otherwise read as a darker band
+// since bg-primary/[.13] is translucent.
 export const blockSelectionVariants = cva(
-  "pointer-events-none absolute inset-0 z-1 bg-primary/[.13] transition-opacity",
+  "pointer-events-none absolute inset-x-0 top-0 -bottom-2 z-1 bg-primary/[.13] transition-opacity",
   {
     defaultVariants: {
       active: true,
