@@ -7,6 +7,11 @@ import {
 } from "@/integrations/email";
 import { logger } from "@/lib/utils";
 import { APP_NAME } from "@/lib/config/app-config";
+import {
+  handleSubscriptionDowngrade,
+  handleSubscriptionUpdated,
+  handleSubscriptionUpgrade,
+} from "@/lib/auth/polar-handlers";
 import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { betterAuth } from "better-auth";
@@ -194,6 +199,12 @@ export const auth = betterAuth({
         portal(),
         webhooks({
           secret: process.env.POLAR_WEBHOOK_SECRET ?? "",
+          onSubscriptionCreated: handleSubscriptionUpgrade,
+          onSubscriptionActive: handleSubscriptionUpgrade,
+          onSubscriptionUncanceled: handleSubscriptionUpgrade,
+          onSubscriptionUpdated: handleSubscriptionUpdated,
+          onSubscriptionCanceled: handleSubscriptionDowngrade,
+          onSubscriptionRevoked: handleSubscriptionDowngrade,
         }),
       ],
     }),
