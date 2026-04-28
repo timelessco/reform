@@ -10,7 +10,7 @@ import type { PlateElementProps } from "platejs/react";
 // since bg-primary/[.13] is translucent. Rounded corners match the rest of
 // the site's --radius-lg convention used on inputs/cards.
 export const blockSelectionVariants = cva(
-  "pointer-events-none absolute inset-x-0 top-0 -bottom-2 z-1 bg-primary/[.13] rounded-[var(--radius-lg)] transition-opacity",
+  "pointer-events-none absolute inset-x-0 top-0 -bottom-2 z-1 bg-primary/[.13] rounded-lg transition-opacity",
   {
     defaultVariants: {
       active: true,
