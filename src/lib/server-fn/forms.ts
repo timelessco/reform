@@ -35,8 +35,8 @@ export const createForm = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      id: z.string().uuid(),
-      workspaceId: z.string().uuid(),
+      id: z.uuid(),
+      workspaceId: z.uuid(),
       title: z.string().optional(),
       formName: z.string().optional(),
       schemaName: z.string().optional(),
@@ -77,6 +77,15 @@ export const createForm = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
+    const orgId = getActiveOrgId(context.session);
+    await assertPlanForFormSettings(orgId, {
+      branding: data.branding,
+      respondentEmailNotifications: data.respondentEmailNotifications,
+      dataRetention: data.dataRetention,
+      analytics: data.analytics,
+      customization: data.customization,
+    });
+
     const now = new Date();
     const [form] = await db
       .insert(forms)
@@ -133,8 +142,8 @@ export const updateForm = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      id: z.string().uuid(),
-      workspaceId: z.string().uuid().optional(),
+      id: z.uuid(),
+      workspaceId: z.uuid().optional(),
       title: z.string().optional(),
       formName: z.string().optional(),
       schemaName: z.string().optional(),
@@ -184,6 +193,7 @@ export const updateForm = createServerFn({ method: "POST" })
       respondentEmailNotifications: updateData.respondentEmailNotifications,
       dataRetention: updateData.dataRetention,
       analytics: updateData.analytics,
+      customization: updateData.customization,
     });
 
     const [form] = await db
@@ -207,7 +217,7 @@ export const updateForm = createServerFn({ method: "POST" })
 
 export const deleteForm = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ id: z.string().uuid() }))
+  .inputValidator(z.object({ id: z.uuid() }))
   .handler(async ({ data, context }) => {
     const orgId = getActiveOrgId(context.session);
     await authForm(data.id, context.session.user.id, orgId);
@@ -266,7 +276,7 @@ export const getFormListings = createServerFn({ method: "GET" })
 
 const _getFormById = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ id: z.string().uuid() }))
+  .inputValidator(z.object({ id: z.uuid() }))
   .handler(async ({ data, context }) => {
     const orgId = getActiveOrgId(context.session);
     const [_, [form]] = await Promise.all([
@@ -309,7 +319,7 @@ const generateSlug = (title: string): string =>
 /** @public - consumed by upcoming domain settings UI */
 export const updateFormSlug = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .inputValidator(z.object({ formId: z.string().uuid(), slug: z.string() }))
+  .inputValidator(z.object({ formId: z.uuid(), slug: z.string() }))
   .handler(async ({ data, context }) => {
     const { formId, slug } = data;
     const orgId = getActiveOrgId(context.session);
@@ -379,7 +389,7 @@ export const assignFormDomain = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
+      formId: z.uuid(),
       customDomainId: z.string().nullable(),
     }),
   )

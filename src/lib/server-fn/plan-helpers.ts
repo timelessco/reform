@@ -1,29 +1,20 @@
-import { polarClient } from "@/lib/auth/auth";
-import { PRO_PRODUCT_IDS } from "@/lib/config/plan-config";
-import { logger } from "@/lib/utils";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { organization } from "@/db/schema";
 
 export type ServerPlan = "free" | "pro" | "biz";
 
+const isServerPlan = (value: unknown): value is ServerPlan =>
+  value === "free" || value === "pro" || value === "biz";
+
+// Reads the cached `organization.plan` (synced by Polar webhooks); falls back
+// to 'free' for unknown orgs or unexpected column values.
 export const getOrgPlan = async (orgId: string): Promise<ServerPlan> => {
-  try {
-    const iter = await polarClient.subscriptions.list({
-      metadata: { referenceId: orgId },
-      active: true,
-    });
-    for await (const page of iter) {
-      const items = page.result?.items ?? [];
-      for (const sub of items) {
-        if (PRO_PRODUCT_IDS.includes(sub.productId as (typeof PRO_PRODUCT_IDS)[number])) {
-          return "pro";
-        }
-      }
-      break;
-    }
-  } catch (error) {
-    logger("getOrgPlan failed, defaulting to free", error);
-    return "free";
-  }
-  return "free";
+  const [row] = await db
+    .select({ plan: organization.plan })
+    .from(organization)
+    .where(eq(organization.id, orgId));
+  return isServerPlan(row?.plan) ? row.plan : "free";
 };
 
 type FormPlanInput = {
@@ -31,6 +22,7 @@ type FormPlanInput = {
   respondentEmailNotifications?: boolean;
   dataRetention?: boolean;
   analytics?: boolean;
+  customization?: Record<string, unknown> | null;
 };
 
 export const assertPlanForFormSettings = async (
@@ -41,8 +33,18 @@ export const assertPlanForFormSettings = async (
   const wantsRespondentEmails = data.respondentEmailNotifications === true;
   const wantsDataRetention = data.dataRetention === true;
   const wantsAnalytics = data.analytics === true;
+  const wantsCustomization =
+    data.customization != null && Object.keys(data.customization).length > 0;
 
-  if (!(wantsBrandingRemoved || wantsRespondentEmails || wantsDataRetention || wantsAnalytics))
+  if (
+    !(
+      wantsBrandingRemoved ||
+      wantsRespondentEmails ||
+      wantsDataRetention ||
+      wantsAnalytics ||
+      wantsCustomization
+    )
+  )
     return;
 
   const plan = await getOrgPlan(orgId);
