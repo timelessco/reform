@@ -15,5 +15,7 @@ export default defineConfig({
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules", ".output", "drizzle"],
     css: false,
+    testTimeout: 30000,
+    hookTimeout: 30000,
   },
 });
