@@ -874,12 +874,23 @@
    sections collapse so they don't take up ~44px each. The attribute is set
    reactively in ParagraphElement when the block is empty AND not selected,
    so clicking in or block-selecting drops the rule and the block returns to
-   its padded height. line-height:0 also strips the empty leaf's text line. */
-[data-slate-editor] > [data-bf-quiet] {
+   its padded height. line-height:0 also strips the empty leaf's text line.
+   Selector includes [data-slate-node] so it ties on specificity (3 attribute
+   selectors) with the global block-padding rule above and wins by source
+   order — the global rule's !important would otherwise override us. */
+[data-slate-editor] > [data-bf-quiet][data-slate-node] {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
   min-height: 0 !important;
   line-height: 0 !important;
+}
+
+/* Form-input rows (option items, multi-select chips, etc.) are stacked with
+   tight my-0.5 (~2px gap) — the 8px bleed in BlockSelection overshoots and
+   overlaps the next row, producing a visible darker seam. Pin the bleed to 0
+   for input rows; their highlights butt up naturally without overlap. */
+[data-bf-input] [data-slot="block-selection"] {
+  bottom: 0 !important;
 }
 
 /* View Transition: preview mode tab switching */
