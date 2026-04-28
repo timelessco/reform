@@ -5,8 +5,11 @@ import type { WebhookSubscriptionRevokedPayload } from "@polar-sh/sdk/models/com
 import type { WebhookSubscriptionUncanceledPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionuncanceledpayload";
 import type { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionupdatedpayload";
 import { PRO_PRODUCT_IDS } from "@/lib/config/plan-config";
-import { applyDowngradeCleanup, applyUpgradeRestore } from "@/lib/server-fn/plan-cleanup";
 import { logger } from "@/lib/utils";
+
+// `plan-cleanup` is imported lazily to keep `@/db` (and its `pg` dependency)
+// out of any client bundle that picks up `auth.ts` via a `type`-only import
+// from `@/lib/auth/auth` (e.g. `__root.tsx` reading `Session`).
 
 // Errors are swallowed via the logger so a failed write doesn't wedge Polar's
 // delivery channel — Polar retries, and read-time gates cover the gap.
@@ -39,6 +42,7 @@ export const handleSubscriptionUpgrade = async (payload: SubscriptionPayload): P
     return;
   }
   try {
+    const { applyUpgradeRestore } = await import("@/lib/server-fn/plan-cleanup");
     await applyUpgradeRestore(orgId);
   } catch (error) {
     logger("[polar] applyUpgradeRestore failed", orgId, error);
@@ -52,6 +56,7 @@ export const handleSubscriptionDowngrade = async (payload: SubscriptionPayload):
     return;
   }
   try {
+    const { applyDowngradeCleanup } = await import("@/lib/server-fn/plan-cleanup");
     await applyDowngradeCleanup(orgId);
   } catch (error) {
     logger("[polar] applyDowngradeCleanup failed", orgId, error);
