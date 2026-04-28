@@ -3,7 +3,10 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { customDomains, forms } from "@/db/schema";
 import { isAnalyticsEnabled } from "@/lib/server-fn/analytics";
-import { resolveCustomDomain, resolveDomainForSlug } from "@/lib/server-fn/custom-domain-loader";
+import {
+  resolveCustomDomain,
+  resolveDomainForSlug,
+} from "@/lib/server-fn/custom-domain-loader.server";
 import {
   cleanupTestOrg,
   cleanupTestUser,

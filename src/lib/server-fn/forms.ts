@@ -8,8 +8,9 @@ import { db } from "@/db";
 import { authMiddleware, formProSettingsMiddleware } from "@/lib/auth/middleware";
 import { VERSIONED_SETTINGS_KEYS } from "@/lib/content-hash";
 import { purgeFormCache } from "@/lib/server-fn/cdn-cache";
-import { authForm, getActiveOrgId } from "./auth-helpers";
-import { getOrgPlan } from "./plan-helpers";
+import { getActiveOrgId } from "./auth-helpers";
+import { authForm } from "./auth-helpers.server";
+import { getOrgPlan } from "./plan-helpers.server";
 
 // Columns the listings query must always return so client-side change detection
 // (`useHasUnpublishedChanges`) keeps working after a refetch wipes the locally

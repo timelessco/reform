@@ -125,8 +125,7 @@ export const buildPublicFormSettings = (
   if (source) {
     for (const key of Object.keys(merged) as (keyof PublicFormSettings)[]) {
       if (source[key] !== undefined) {
-        // biome-ignore lint/suspicious/noExplicitAny: generic merge
-        (merged as any)[key] = source[key];
+        (merged as Record<string, unknown>)[key] = source[key];
       }
     }
   }

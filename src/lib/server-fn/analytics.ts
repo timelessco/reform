@@ -19,7 +19,8 @@ import { mergeInsightsMetrics } from "@/lib/analytics/merge-metrics";
 import { parseUserAgent } from "@/lib/analytics/parse-user-agent";
 import { resolveTimeRange, splitTodayVsPast, toDateKey } from "@/lib/analytics/time-range";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { authForm, getActiveOrgId } from "@/lib/server-fn/auth-helpers";
+import { getActiveOrgId } from "@/lib/server-fn/auth-helpers";
+import { authForm } from "@/lib/server-fn/auth-helpers.server";
 import type { FormInsightsMetrics, QuestionDropoffMetrics } from "@/types/analytics";
 
 // Defense in depth — direct callers can bypass the client hook, and the

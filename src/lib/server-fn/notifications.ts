@@ -10,7 +10,8 @@ import {
 } from "@/db/schema";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { authForm, getActiveOrgId } from "./auth-helpers";
+import { getActiveOrgId } from "./auth-helpers";
+import { authForm } from "./auth-helpers.server";
 
 type NotificationRow = typeof formSubmissionNotifications.$inferSelect;
 

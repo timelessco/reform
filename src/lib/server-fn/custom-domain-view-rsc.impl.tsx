@@ -4,13 +4,13 @@ import type { Value } from "platejs";
 import { transformPlateForPreview } from "@/lib/editor/transform-plate-for-preview";
 import type { PreviewStepResult } from "@/lib/editor/transform-plate-for-preview";
 import { applyFormCacheHeaders } from "@/lib/server-fn/cdn-cache";
+import { isAppHost } from "@/lib/server-fn/custom-domain-loader";
 import {
   loadFormForCustomDomain,
   resolveCustomDomain,
   resolveDomainForSlug,
-  isAppHost,
-} from "@/lib/server-fn/custom-domain-loader";
-import { getFieldChunkUrls } from "@/lib/server-fn/field-chunk-manifest";
+} from "@/lib/server-fn/custom-domain-loader.server";
+import { getFieldChunkUrls } from "@/lib/server-fn/field-chunk-manifest.server";
 import {
   renderHeaderComponent,
   renderStepComponent,

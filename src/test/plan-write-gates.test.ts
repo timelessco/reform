@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { organization } from "@/db/schema";
-import { getOrgPlan, requiresProForFormSettings } from "@/lib/server-fn/plan-helpers";
+import { requiresProForFormSettings } from "@/lib/server-fn/plan-helpers";
+import { getOrgPlan } from "@/lib/server-fn/plan-helpers.server";
 import {
   cleanupTestOrg,
   cleanupTestUser,

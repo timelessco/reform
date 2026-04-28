@@ -16,7 +16,7 @@ import type {
 } from "@/lib/editor/transform-plate-for-preview";
 import type { PlateFormField } from "@/lib/editor/transform-plate-to-form";
 import { applyFormCacheHeaders } from "@/lib/server-fn/cdn-cache";
-import { getFieldChunkUrls } from "@/lib/server-fn/field-chunk-manifest";
+import { getFieldChunkUrls } from "@/lib/server-fn/field-chunk-manifest.server";
 import { getPublishedFormById } from "@/lib/server-fn/public-form-view";
 import type {
   ButtonGroupSlotProps,

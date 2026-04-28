@@ -9,7 +9,8 @@ import {
   transformPlateStateToFormElements,
 } from "@/lib/editor/transform-plate-to-form";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { authForm, getActiveOrgId } from "./auth-helpers";
+import { getActiveOrgId } from "./auth-helpers";
+import { authForm } from "./auth-helpers.server";
 
 // Serialized submission type for client consumption
 export type SerializedSubmission = {

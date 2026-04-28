@@ -5,9 +5,16 @@ import type { WebhookSubscriptionRevokedPayload } from "@polar-sh/sdk/models/com
 import type { WebhookSubscriptionUncanceledPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionuncanceledpayload";
 import type { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionupdatedpayload";
 import { PRO_PRODUCT_IDS } from "@/lib/config/plan-config";
-import { applyDowngradeCleanup, applyUpgradeRestore } from "@/lib/server-fn/plan-cleanup";
 import { logger } from "@/lib/utils";
 
+// `plan-cleanup.server` is imported lazily inside each handler body. `auth.ts`
+// is reachable from the client through `auth-client.ts` (which reads `Session`
+// from the `auth` instance), so any *static* import here would drag the
+// `@/db` + `pg` graph into the client bundle and produce hydration-time
+// `Symbol(TSS_SERVER_FUNCTION_FACTORY) in undefined` errors. The lazy import
+// keeps the heavy module out of the static graph; it only loads when Polar
+// actually delivers a webhook (server-side, on demand).
+//
 // Errors are swallowed via the logger so a failed write doesn't wedge Polar's
 // delivery channel — Polar retries, and read-time gates cover the gap.
 
@@ -39,6 +46,7 @@ export const handleSubscriptionUpgrade = async (payload: SubscriptionPayload): P
     return;
   }
   try {
+    const { applyUpgradeRestore } = await import("@/lib/server-fn/plan-cleanup.server");
     await applyUpgradeRestore(orgId);
   } catch (error) {
     logger("[polar] applyUpgradeRestore failed", orgId, error);
@@ -52,6 +60,7 @@ export const handleSubscriptionDowngrade = async (payload: SubscriptionPayload):
     return;
   }
   try {
+    const { applyDowngradeCleanup } = await import("@/lib/server-fn/plan-cleanup.server");
     await applyDowngradeCleanup(orgId);
   } catch (error) {
     logger("[polar] applyDowngradeCleanup failed", orgId, error);

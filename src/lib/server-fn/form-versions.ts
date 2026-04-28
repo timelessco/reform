@@ -7,7 +7,8 @@ import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { computeContentHash, pickVersionedSettings } from "@/lib/content-hash";
 import { purgeFormCache } from "@/lib/server-fn/cdn-cache";
-import { authForm, getActiveOrgId } from "./auth-helpers";
+import { getActiveOrgId } from "./auth-helpers";
+import { authForm } from "./auth-helpers.server";
 
 // Maximum number of versions to keep per form (TODO: make plan-based)
 const MAX_VERSIONS_PER_FORM = 20;

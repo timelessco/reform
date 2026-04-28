@@ -11,7 +11,7 @@ import {
   handleSubscriptionDowngrade,
   handleSubscriptionUpdated,
   handleSubscriptionUpgrade,
-} from "@/lib/auth/polar-handlers";
+} from "@/lib/auth/polar-handlers.server";
 import { checkout, polar, portal, webhooks } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { betterAuth } from "better-auth";

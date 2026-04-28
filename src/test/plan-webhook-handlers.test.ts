@@ -6,7 +6,7 @@ import {
   handleSubscriptionDowngrade,
   handleSubscriptionUpdated,
   handleSubscriptionUpgrade,
-} from "@/lib/auth/polar-handlers";
+} from "@/lib/auth/polar-handlers.server";
 import { PLAN_PRODUCT_IDS } from "@/lib/config/plan-config";
 import {
   cleanupTestOrg,
