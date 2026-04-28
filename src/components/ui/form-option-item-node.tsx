@@ -54,7 +54,7 @@ const OptionIcon = ({ variant, index }: { variant: OptionVariant; index: number 
   }
 };
 
-export const FormOptionItemElement = ({ className, children, ...props }: PlateElementProps) => {
+export const FormOptionItemElement = ({ children, ...props }: PlateElementProps) => {
   const { attributes, element, ...rest } = props;
   const variant = (element.variant as OptionVariant) || "checkbox";
   const elementId = (element as { id?: string }).id;
@@ -148,7 +148,6 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
       className={cn(
         "relative my-0.5 w-full max-w-[464px] cursor-text caret-current rounded-md before:left-[30px] before:top-[14px] before:-translate-y-1/2 before:text-sm",
         colorStyle && cn(colorStyle.bg, colorStyle.text),
-        className,
       )}
       element={element}
       {...rest}
