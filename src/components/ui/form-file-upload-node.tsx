@@ -2,6 +2,7 @@ import type { PlateElementProps } from "platejs/react";
 
 import { PlateElement } from "platejs/react";
 
+import { BlockSelection } from "@/components/ui/block-selection";
 import { UploadIcon } from "@/components/ui/icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFormInputNode } from "@/hooks/use-form-input-node";
@@ -59,6 +60,10 @@ export const FormFileUploadElement = ({ className, children, ...props }: PlateEl
         </TooltipTrigger>
         <TooltipContent side="left">File upload</TooltipContent>
       </Tooltip>
+      {/* Plate passes BelowRootNodes (which includes BlockSelection) as a
+          sibling of `children`, so wrapping {children} in `display:none`
+          above also hides the highlight. Render it explicitly instead. */}
+      <BlockSelection {...props} />
     </PlateElement>
   );
 };

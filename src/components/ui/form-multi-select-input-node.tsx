@@ -10,6 +10,7 @@ import {
   findPrevNonButtonPath,
   moveToPath,
 } from "@/components/editor/plugins/form-blocks-kit";
+import { BlockSelection } from "@/components/ui/block-selection";
 import { TagIcon, XIcon } from "@/components/ui/icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -285,6 +286,10 @@ export const FormMultiSelectInputElement = ({
         </TooltipTrigger>
         <TooltipContent side="left">Multi-select</TooltipContent>
       </Tooltip>
+      {/* Plate passes BelowRootNodes (which includes BlockSelection) as a
+          sibling of `children`, so wrapping {children} in `display:none`
+          above also hides the highlight. Render it explicitly instead. */}
+      <BlockSelection {...props} />
     </PlateElement>
   );
 };

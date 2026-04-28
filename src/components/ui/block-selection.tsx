@@ -24,7 +24,13 @@ export const blockSelectionVariants = cva(
   },
 );
 
-export const BlockSelection = (props: PlateElementProps) => {
+// Only the plugin key is read here, so accept anything with that field. Lets
+// callers (including void-element components like FormFileUploadElement)
+// render this directly without satisfying the full PlateElementProps shape
+// — they don't have `children` to forward.
+type BlockSelectionProps = Pick<PlateElementProps, "plugin">;
+
+export const BlockSelection = (props: BlockSelectionProps) => {
   const isBlockSelected = useBlockSelected();
 
   if (!isBlockSelected || props.plugin.key === "tr" || props.plugin.key === "table") return null;
