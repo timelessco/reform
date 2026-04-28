@@ -1,6 +1,6 @@
 import { notFound } from "@tanstack/react-router";
-import { and, count, eq } from "drizzle-orm";
-import { customDomains, forms, formVersions, submissions } from "@/db/schema";
+import { and, count, eq, ne } from "drizzle-orm";
+import { customDomains, forms, formVersions, organization, submissions } from "@/db/schema";
 import { db } from "@/db";
 import { buildPublicFormSettings } from "@/types/form-settings";
 import type { PublicFormSettings } from "@/types/form-settings";
@@ -63,7 +63,14 @@ export const resolveCustomDomain = async (host: string): Promise<ResolvedDomain>
       ogImageUrl: customDomains.ogImageUrl,
     })
     .from(customDomains)
-    .where(and(eq(customDomains.domain, hostname), eq(customDomains.status, "verified")));
+    .innerJoin(organization, eq(organization.id, customDomains.organizationId))
+    .where(
+      and(
+        eq(customDomains.domain, hostname),
+        eq(customDomains.status, "verified"),
+        ne(organization.plan, "free"),
+      ),
+    );
 
   if (!domain) {
     throw notFound();
@@ -89,11 +96,13 @@ export const resolveDomainForSlug = async (slug: string): Promise<ResolvedDomain
     })
     .from(customDomains)
     .innerJoin(forms, eq(forms.customDomainId, customDomains.id))
+    .innerJoin(organization, eq(organization.id, customDomains.organizationId))
     .where(
       and(
         eq(forms.slug, slug),
         eq(forms.status, "published"),
         eq(customDomains.status, "verified"),
+        ne(organization.plan, "free"),
       ),
     );
 

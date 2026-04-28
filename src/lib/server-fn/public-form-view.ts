@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { notFound } from "@tanstack/react-router";
 import { and, count, eq } from "drizzle-orm";
 import { z } from "zod";
-import { forms, formVersions, submissions } from "@/db/schema";
+import { forms, formVersions, organization, submissions, workspaces } from "@/db/schema";
 import { db } from "@/db";
 import { buildPublicFormSettings } from "@/types/form-settings";
 import type { PublicFormSettings } from "@/types/form-settings";
@@ -18,7 +18,7 @@ import type { PublicFormSettings } from "@/types/form-settings";
  * Only returns forms with status === "published".
  */
 export const getPublishedFormById = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ id: z.string().uuid() }))
+  .inputValidator(z.object({ id: z.uuid() }))
   .handler(async ({ data }) => {
     // Read only the live (Group 4) fields + version pointer from forms. Everything
     // else (content, title, icon, cover, Group 2 settings) comes from the
@@ -33,12 +33,15 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
         // for forms without versions
         branding: forms.branding,
         analytics: forms.analytics,
+        orgPlan: organization.plan,
         draftTitle: forms.title,
         draftContent: forms.content,
         draftIcon: forms.icon,
         draftCover: forms.cover,
       })
       .from(forms)
+      .innerJoin(workspaces, eq(workspaces.id, forms.workspaceId))
+      .innerJoin(organization, eq(organization.id, workspaces.organizationId))
       .where(and(eq(forms.id, data.id), eq(forms.status, "published")));
 
     if (!form) {
@@ -51,7 +54,8 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
       : [undefined];
 
     const snapshotSettings = (version?.settings ?? {}) as Partial<PublicFormSettings>;
-    const settings = buildPublicFormSettings(snapshotSettings, { branding: form.branding });
+    const effectiveBranding = form.orgPlan === "free" ? true : form.branding;
+    const settings = buildPublicFormSettings(snapshotSettings, { branding: effectiveBranding });
 
     // --- Gating checks (based on snapshot settings — changes here require republish) ---
     // 1. Form manually closed
@@ -143,7 +147,7 @@ export const getPublishedFormById = createServerFn({ method: "GET" })
  * Verify a password for a password-protected form.
  */
 export const verifyFormPassword = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ formId: z.string().uuid(), password: z.string() }))
+  .inputValidator(z.object({ formId: z.uuid(), password: z.string() }))
   .handler(async ({ data }) => {
     const [formRow] = await db
       .select({ password: forms.password })

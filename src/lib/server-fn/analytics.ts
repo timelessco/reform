@@ -9,6 +9,8 @@ import {
   formQuestionProgress,
   forms,
   formVisits,
+  organization,
+  workspaces,
 } from "@/db/schema";
 import { buildDailyAnalyticsRows, buildDailyDropoffRows } from "@/lib/analytics/aggregate-utils";
 import { isBotUserAgent } from "@/lib/analytics/bot-filter";
@@ -20,20 +22,23 @@ import { authMiddleware } from "@/lib/auth/middleware";
 import { authForm, getActiveOrgId } from "@/lib/server-fn/auth-helpers";
 import type { FormInsightsMetrics, QuestionDropoffMetrics } from "@/types/analytics";
 
-// Server-side defense in depth — the client hook already short-circuits when
-// `forms.analytics` is off, but a direct caller would otherwise bypass that.
-const isAnalyticsEnabled = async (formId: string): Promise<boolean> => {
+// Defense in depth — direct callers can bypass the client hook, and the
+// org-plan check covers the window where a Polar downgrade webhook hasn't
+// yet flipped `forms.analytics`.
+export const isAnalyticsEnabled = async (formId: string): Promise<boolean> => {
   const [row] = await db
-    .select({ analytics: forms.analytics })
+    .select({ analytics: forms.analytics, plan: organization.plan })
     .from(forms)
+    .innerJoin(workspaces, eq(workspaces.id, forms.workspaceId))
+    .innerJoin(organization, eq(organization.id, workspaces.organizationId))
     .where(eq(forms.id, formId));
-  return row?.analytics === true;
+  return row?.analytics === true && row.plan !== "free";
 };
 
 export const recordFormVisit = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
+      formId: z.uuid(),
       visitorHash: z.string().min(1).max(128),
       sessionId: z.string().min(1).max(128),
       referrer: z.string().nullish(),
@@ -87,11 +92,11 @@ const MAX_DURATION_MS = 86_400_000; // 24h cap as a spam guard for client-suppli
 export const updateFormVisit = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
-      visitId: z.string().uuid(),
+      visitId: z.uuid(),
       didStartForm: z.boolean().optional(),
       didSubmit: z.boolean().optional(),
-      submissionId: z.string().uuid().nullish(),
-      visitEndedAt: z.string().datetime().nullish(),
+      submissionId: z.uuid().nullish(),
+      visitEndedAt: z.iso.datetime().nullish(),
       durationMs: z.number().int().nonnegative().max(MAX_DURATION_MS).nullish(),
     }),
   )
@@ -123,8 +128,8 @@ export const updateFormVisit = createServerFn({ method: "POST" })
 export const recordQuestionProgress = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
-      visitId: z.string().uuid(),
-      formId: z.string().uuid(),
+      visitId: z.uuid(),
+      formId: z.uuid(),
       visitorHash: z.string().min(1).max(128),
       questionId: z.string().min(1).max(256),
       questionType: z.string().max(64).nullish(),
@@ -202,7 +207,7 @@ export const getFormInsights = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
+      formId: z.uuid(),
       filter: z.enum(["last_24_hours", "last_7_days", "last_30_days", "last_90_days", "custom"]),
       startDate: z.string().regex(DATE_KEY_PATTERN).optional(),
       endDate: z.string().regex(DATE_KEY_PATTERN).optional(),
@@ -264,7 +269,7 @@ export const getFormDropoff = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(
     z.object({
-      formId: z.string().uuid(),
+      formId: z.uuid(),
       filter: z.enum(["last_24_hours", "last_7_days", "last_30_days", "last_90_days", "custom"]),
       startDate: z.string().regex(DATE_KEY_PATTERN).optional(),
       endDate: z.string().regex(DATE_KEY_PATTERN).optional(),
