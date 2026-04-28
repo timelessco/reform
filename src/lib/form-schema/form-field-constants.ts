@@ -29,23 +29,13 @@ export const INPUT_TYPE_TO_FIELD_TYPE: Record<string, string> = {
   formFileUpload: "FileUpload",
 };
 
-/**
- * Determine `required` from the input node, with fallback to the preceding
- * label node. Any node type accepted by `ALLOWED_LABEL_TYPES` (formLabel,
- * paragraph, headings, blockquote) can carry `required` — this keeps the
- * preview/published form consistent with the editor's required badge, which
- * is rendered for all of those block types.
- */
+// `required` is owned by the input node — that's what the editor's
+// RequiredBadgeButton toggles and what `useFormInputNode` reads. The preview
+// and validation must use the same source so the two stay in sync.
 export const resolveRequired = (
   inputNode: Record<string, unknown>,
-  labelNode: Record<string, unknown> | null,
-): boolean => {
-  if (inputNode.required != null) return Boolean(inputNode.required);
-  if (labelNode && ALLOWED_LABEL_TYPES.has(labelNode.type as string)) {
-    return Boolean(labelNode.required);
-  }
-  return false;
-};
+  _labelNode: Record<string, unknown> | null,
+): boolean => Boolean(inputNode.required);
 
 /** Map from formOptionItem variant to PlateFormField fieldType string */
 export const VARIANT_TO_FIELD_TYPE: Record<string, string> = {
