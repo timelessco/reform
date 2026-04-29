@@ -89,29 +89,25 @@ export const StepFormProvider = ({
   });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSubmitted, setIsSubmitted] = React.useState(false);
-  const isInitialized = true;
 
-  React.useEffect(() => {
-    if (isInitialized && Object.keys(formData).length > 0) {
-      saveData(formData);
-    }
-  }, [formData, saveData, isInitialized]);
+  const formDataRef = useAsRef(formData);
 
   const goToNextStep = React.useCallback(
     (stepData: Record<string, unknown>) => {
-      setFormData((prev) => ({ ...prev, ...stepData }));
+      const next = { ...formDataRef.current, ...stepData };
+      setFormData(next);
+      if (Object.keys(next).length > 0) saveData(next);
       setDirection(1);
       setCurrentStep((prev) => Math.min(prev + 1, totalSteps - 1));
     },
-    [totalSteps],
+    // eslint-disable-next-line eslint-plugin-react-hooks/exhaustive-deps -- formDataRef is a stable ref
+    [totalSteps, saveData],
   );
 
   const goToPrevStep = React.useCallback(() => {
     setDirection(-1);
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   }, []);
-
-  const formDataRef = useAsRef(formData);
 
   const submitForm = React.useCallback(
     async (finalStepData: Record<string, unknown>) => {
