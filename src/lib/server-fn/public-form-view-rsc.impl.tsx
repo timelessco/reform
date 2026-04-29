@@ -8,6 +8,7 @@ import { EditorStatic } from "@/components/ui/editor-static";
 import { DEFAULT_ICON } from "@/lib/config/app-config";
 import { CUSTOMIZATION_AUTO_DEFAULTS } from "@/lib/theme/customization-defaults";
 import { cn, DEFAULT_ICON_NAME, isValidUrl } from "@/lib/utils";
+import { getFieldLabelProps } from "@/components/form-components/fields/shared";
 import { transformPlateForPreview } from "@/lib/editor/transform-plate-for-preview";
 import type {
   FieldSegment,
@@ -180,9 +181,7 @@ export const renderStepComponent = async (segments: PreviewSegment[]) => {
             if (field.fieldType === "Button") {
               return <Field key={item.key} fieldId={field.id} field={field} />;
             }
-            const label = "label" in field ? (field.label ?? "") : "";
-            const required = "required" in field ? !!field.required : false;
-            const labelType = "labelType" in field ? field.labelType : undefined;
+            const { label, required, labelType } = getFieldLabelProps(field);
             return (
               <div
                 key={item.key}
