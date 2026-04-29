@@ -1,3 +1,4 @@
+import "@tanstack/react-start/server-only";
 import * as schema from "@/db/schema";
 import { db } from "@/db";
 import {

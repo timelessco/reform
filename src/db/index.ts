@@ -1,9 +1,13 @@
+import "@tanstack/react-start/server-only";
 import * as schema from "@/db/schema";
-import { drizzle } from "drizzle-orm/node-postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
-let dbInstance: ReturnType<typeof drizzle> | undefined;
+type Db = PostgresJsDatabase<typeof schema, typeof schema.relations>;
 
-const getDb = () => {
+let dbInstance: Db | undefined;
+
+const getDb = (): Db => {
   if (!dbInstance) {
     const url = process.env.DATABASE_URL;
     if (!url) {
@@ -11,7 +15,10 @@ const getDb = () => {
         "DATABASE_URL is not set. Set it in your .env file or environment variables before running the server.",
       );
     }
-    dbInstance = drizzle(url, {
+    dbInstance = drizzle({
+      // `prepare: false` is required by Supabase pgbouncer in transaction mode
+      // (port 6543 connection pooler) — prepared statements aren't supported.
+      connection: { url, prepare: false },
       schema,
       relations: schema.relations,
     });
