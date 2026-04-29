@@ -4,9 +4,8 @@ import type { SettingsTab } from "@/hooks/use-settings-dialog";
 import { useSettingsDialog } from "@/hooks/use-settings-dialog";
 import { useCallback } from "react";
 import { SidebarItem } from "@/components/sidebar-item";
-import { CircleUserIcon, CreditCardIcon, FileCodeIcon, GlobeIcon } from "@/components/ui/icons";
+import { CircleUserIcon, CreditCardIcon, GlobeIcon } from "@/components/ui/icons";
 import { AccountSettingsContent } from "./account-settings-content";
-import { ApiKeysContent } from "./api-keys-content";
 import { BillingContent } from "./billing-content";
 import { DomainsContent } from "./domains-content";
 import { MembersContent } from "./members-content";
@@ -18,7 +17,6 @@ const navItems: {
 }[] = [
   { key: "account", label: "Account", icon: CircleUserIcon },
   { key: "billing", label: "Billing", icon: CreditCardIcon },
-  { key: "api-keys", label: "API Keys", icon: FileCodeIcon },
   { key: "domains", label: "Domains", icon: GlobeIcon },
 ];
 
@@ -26,7 +24,6 @@ const tabTitles: Record<SettingsTab, string> = {
   account: "Account",
   members: "Members",
   billing: "Billing",
-  "api-keys": "API Keys",
   domains: "Custom Domains",
 };
 
@@ -38,8 +35,6 @@ const TabContent = ({ tab }: { tab: SettingsTab }) => {
       return <MembersContent />;
     case "billing":
       return <BillingContent />;
-    case "api-keys":
-      return <ApiKeysContent />;
     case "domains":
       return <DomainsContent />;
   }
@@ -60,17 +55,17 @@ export const SettingsDialog = () => {
       <DialogContent
         showCloseButton={false}
         overlayClassName="bg-[rgba(0,0,0,0.36)] backdrop-blur-[4px] duration-150"
-        className="w-[740px] h-[min(700px,calc(100vh-80px))] rounded-5xl shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6),0px_105px_29px_0px_rgba(0,0,0,0),0px_67px_27px_0px_rgba(0,0,0,0.01),0px_38px_23px_0px_rgba(0,0,0,0.04),0px_17px_17px_0px_rgba(0,0,0,0.08),0px_4px_9px_0px_rgba(0,0,0,0.09)] overflow-clip p-0 sm:max-w-none max-w-none data-open:zoom-in-[0.98] data-closed:zoom-out-[0.98] duration-150 flex ring-0"
+        className="w-[calc(100vw-1rem)] h-[calc(100vh-2rem)] md:w-[740px] md:h-[min(700px,calc(100vh-80px))] rounded-5xl shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6),0px_105px_29px_0px_rgba(0,0,0,0),0px_67px_27px_0px_rgba(0,0,0,0.01),0px_38px_23px_0px_rgba(0,0,0,0.04),0px_17px_17px_0px_rgba(0,0,0,0.08),0px_4px_9px_0px_rgba(0,0,0,0.09)] overflow-clip p-0 sm:max-w-none max-w-none data-open:zoom-in-[0.98] data-closed:zoom-out-[0.98] duration-150 flex flex-col md:flex-row ring-0"
       >
-        {/* Left Sidebar */}
-        <div className="relative w-[180px] shrink-0 flex flex-col after:absolute after:right-0 after:top-0 after:bottom-0 after:w-[0.5px] after:bg-gray-100">
+        {/* Left Sidebar (top tabs on mobile) */}
+        <div className="relative w-full md:w-[180px] shrink-0 flex flex-col after:absolute after:bg-gray-100 after:left-0 after:right-0 after:bottom-0 after:h-[0.5px] md:after:top-0 md:after:left-auto md:after:w-[0.5px] md:after:h-auto">
           {/* Settings label */}
-          <div className="px-[18px] pt-5 pb-[12.21px]">
+          <div className="px-[18px] pt-5 pb-[12.21px] hidden md:block">
             <p className="text-sm font-medium tracking-[0.26px] text-muted-foreground">Settings</p>
           </div>
 
           {/* Nav items */}
-          <nav className="px-2 flex flex-col">
+          <nav className="px-2 flex flex-row md:flex-col overflow-x-auto md:overflow-visible py-2 md:py-0">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.key;
@@ -89,7 +84,7 @@ export const SettingsDialog = () => {
 
         {/* Right Content Area — entire section scrolls */}
         <ScrollArea className="flex-1 min-h-0" hideScrollbar>
-          <div className="px-12.25 pt-8 pb-8">
+          <div className="px-5 md:px-12.25 pt-5 md:pt-8 pb-5 md:pb-8">
             <DialogTitle className="text-xl font-semibold text-foreground mb-4">
               {tabTitles[activeTab]}
             </DialogTitle>

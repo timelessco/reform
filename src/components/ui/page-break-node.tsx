@@ -86,7 +86,7 @@ export const PageBreakElement = (props: PlateElementProps) => {
   };
 
   return (
-    <PlateElement {...props} className={cn("clear-both", props.className)}>
+    <PlateElement {...props} className="clear-both">
       <div
         contentEditable={false}
         role="presentation"

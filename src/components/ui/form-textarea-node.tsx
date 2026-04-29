@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useFormInputNode } from "@/hooks/use-form-input-node";
 import { cn } from "@/lib/utils";
 
-export const FormTextareaElement = ({ className, children, ...props }: PlateElementProps) => {
+export const FormTextareaElement = ({ children, ...props }: PlateElementProps) => {
   const { attributes, element, ...rest } = props;
   const placeholder = element.placeholder as string | undefined;
   const { focused, isSelected } = useFormInputNode(element);
@@ -16,9 +16,8 @@ export const FormTextareaElement = ({ className, children, ...props }: PlateElem
     <PlateElement
       attributes={{ ...attributes, placeholder, "data-bf-input": "true" }}
       className={cn(
-        "relative flex min-h-24 w-full max-w-[464px] items-start rounded-[var(--radius-lg)] border-0 bg-card pl-[10px] pr-[8px] text-sm shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] cursor-text caret-current before:top-2.5",
+        "relative flex min-h-24 w-full max-w-[464px] items-start gap-[4px] rounded-[8px] border-0 bg-[var(--color-gray-50)] pl-[10px] pr-[8px] text-sm shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] cursor-text caret-current before:top-2.5",
         isSelected && focused && "ring-ring/50 ring-[3px]",
-        className,
       )}
       element={element}
       {...rest}

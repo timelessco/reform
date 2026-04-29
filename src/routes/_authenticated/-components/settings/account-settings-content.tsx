@@ -409,7 +409,7 @@ export const AccountSettingsContent = () => {
                 </label>
                 <InputGroup
                   variant="borderless"
-                  className={`h-[30px] bg-secondary border-0 ring-0 focus-visible:ring-0 overflow-clip${usernameChanged ? " pr-[3px]" : ""}`}
+                  className={`h-[30px] bg-secondary border-0 ring-0 overflow-clip${usernameChanged ? " pr-[3px]" : ""}`}
                 >
                   <InputGroupInput
                     id={usernameId}
@@ -420,7 +420,7 @@ export const AccountSettingsContent = () => {
                   />
                   {usernameChanged && (
                     <InputGroupButton
-                      size="xs"
+                      variant="default"
                       onClick={() => {
                         updateProfileMutation.mutate(
                           {

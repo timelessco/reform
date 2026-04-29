@@ -2,27 +2,29 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CheckCircle2Icon,
   ClockIcon,
-  CopyIcon,
   GlobeIcon,
   Loader2Icon,
-  PlusIcon,
   RefreshCwIcon,
   SettingsIcon,
   Trash2Icon,
   UploadIcon,
+  XIcon,
   AlertCircleIcon,
 } from "@/components/ui/icons";
-import { useCallback, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { CopyButton } from "@/components/ui/copy-button";
+import { InputGroup, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
+import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/auth/auth-client";
 import { DOMAIN_LIMITS } from "@/lib/config/plan-config";
+import { getDnsInstructions } from "@/lib/dns-instructions";
 import {
   addDomain,
-  checkDomainStatus,
   orgDomainsQueryOptions,
+  recheckDomainStatus,
   removeDomain,
   updateDomainMeta,
 } from "@/lib/server-fn/custom-domains";
@@ -95,13 +97,20 @@ export const DomainsContent = () => {
   const siteTitleInputId = useId();
 
   const [newDomain, setNewDomain] = useState("");
-  const [dnsInfo, setDnsInfo] = useState<{
-    domain: string;
-    subdomain: string;
-  } | null>(null);
-  const [verificationRecords, setVerificationRecords] = useState<
-    { type: string; domain: string; value: string }[] | null
-  >(null);
+  // Per-domain DNS records (TXT challenge if any + CNAME for routing).
+  // Populated from addDomain / checkDomainStatus / recheckDomainStatus.
+  // Keyed by domain.id so each card renders its own records inline.
+  const [dnsRecordsByDomainId, setDnsRecordsByDomainId] = useState<
+    Record<string, ReturnType<typeof getDnsInstructions>>
+  >({});
+  const clearDnsRecords = useCallback((id: string) => {
+    setDnsRecordsByDomainId((prev) => {
+      if (!(id in prev)) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }, []);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [expandedConfigId, setExpandedConfigId] = useState<string | null>(null);
   const [siteTitle, setSiteTitle] = useState("");
@@ -112,6 +121,30 @@ export const DomainsContent = () => {
 
   const faviconInputRef = useRef<HTMLInputElement>(null);
   const ogInputRef = useRef<HTMLInputElement>(null);
+  const cancelDeleteButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Move focus to Cancel when entering confirm-delete state. Without this the
+  // trash button (where focus was) gets unmounted and focus falls back to body —
+  // keyboard users have to tab from the top to reach the confirm controls.
+  useEffect(() => {
+    if (confirmDeleteId) {
+      cancelDeleteButtonRef.current?.focus();
+    }
+  }, [confirmDeleteId]);
+
+  const handleCancelDelete = useCallback(() => {
+    const cancelledId = confirmDeleteId;
+    setConfirmDeleteId(null);
+    if (!cancelledId) return;
+    // The trash button re-mounts after state flips; restore focus to it so
+    // tab order continues from where the user invoked the confirm.
+    requestAnimationFrame(() => {
+      const trashBtn = document.querySelector<HTMLButtonElement>(
+        `[data-trash-for="${cancelledId}"]`,
+      );
+      trashBtn?.focus();
+    });
+  }, [confirmDeleteId]);
 
   const orgId = session?.session?.activeOrganizationId as string | undefined;
 
@@ -145,10 +178,8 @@ export const DomainsContent = () => {
     onSuccess: (result) => {
       void queryClient.invalidateQueries({ queryKey: ["org-domains", orgId] });
       setNewDomain("");
-      const parts = result.domain.split(".");
-      const subdomain = parts.length > 2 ? parts[0] : result.domain;
-      setDnsInfo({ domain: result.domain, subdomain });
-      setVerificationRecords(result.verification?.length ? result.verification : null);
+      const records = getDnsInstructions(result.domain, result.verification);
+      setDnsRecordsByDomainId((prev) => ({ ...prev, [result.id]: records }));
       if (result.warning) {
         toast.error(result.warning);
       } else {
@@ -162,9 +193,10 @@ export const DomainsContent = () => {
 
   const removeMutation = useMutation({
     mutationFn: (domainId: string) => removeDomain({ data: { domainId } }),
-    onSuccess: () => {
+    onSuccess: (_data, domainId) => {
       queryClient.invalidateQueries({ queryKey: ["org-domains", orgId] });
       setConfirmDeleteId(null);
+      clearDnsRecords(domainId);
       toast.success("Domain removed");
     },
     onError: (error: unknown) => {
@@ -172,26 +204,35 @@ export const DomainsContent = () => {
     },
   });
 
-  const checkMutation = useMutation({
-    mutationFn: (domainId: string) => checkDomainStatus({ data: { domainId } }),
-    onSuccess: (result) => {
+  const handleStatusResult = useCallback(
+    (result: {
+      id: string;
+      domain: string;
+      status: string;
+      verification?: { type: string; domain: string; value: string }[];
+    }) => {
       queryClient.invalidateQueries({ queryKey: ["org-domains", orgId] });
       if (result.status === "verified") {
-        setVerificationRecords(null);
+        clearDnsRecords(result.id);
         toast.success("Domain verified!");
         return;
       }
-      if (result.verification?.length) {
-        setVerificationRecords(result.verification);
-      }
+      const records = getDnsInstructions(result.domain, result.verification);
+      setDnsRecordsByDomainId((prev) => ({ ...prev, [result.id]: records }));
       if (result.status === "failed") {
         toast.error("Domain verification failed. Check your DNS records.");
       } else {
         toast("Domain is still pending verification. DNS changes can take up to 48 hours.");
       }
     },
+    [orgId, queryClient, clearDnsRecords],
+  );
+
+  const recheckMutation = useMutation({
+    mutationFn: (domainId: string) => recheckDomainStatus({ data: { domainId } }),
+    onSuccess: handleStatusResult,
     onError: (error: unknown) => {
-      toast.error(error instanceof Error ? error.message : "Failed to check domain status");
+      toast.error(error instanceof Error ? error.message : "Failed to verify domain");
     },
   });
 
@@ -204,8 +245,9 @@ export const DomainsContent = () => {
     }) => updateDomainMeta({ data }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["org-domains", orgId] });
-      setExpandedConfigId(null);
-      toast.success("Domain settings saved");
+      // Don't close the panel — fields save inline (like account-settings),
+      // user keeps the panel open while iterating.
+      toast.success("Saved");
     },
     onError: (error: unknown) => {
       toast.error(error instanceof Error ? error.message : "Failed to save domain settings");
@@ -230,11 +272,6 @@ export const DomainsContent = () => {
     [handleAddDomain],
   );
 
-  const handleCopyValue = useCallback((text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard");
-  }, []);
-
   const handleOpenConfig = useCallback((domain: Domain) => {
     setExpandedConfigId(domain.id);
     setSiteTitle(domain.siteTitle ?? "");
@@ -242,16 +279,11 @@ export const DomainsContent = () => {
     setOgImageUrl(domain.ogImageUrl ?? "");
   }, []);
 
-  const handleSaveConfig = useCallback(
+  const handleSaveSiteTitle = useCallback(
     (domainId: string) => {
-      updateMetaMutation.mutate({
-        domainId,
-        siteTitle: siteTitle || undefined,
-        faviconUrl: faviconUrl || undefined,
-        ogImageUrl: ogImageUrl || undefined,
-      });
+      updateMetaMutation.mutate({ domainId, siteTitle: siteTitle || undefined });
     },
-    [siteTitle, faviconUrl, ogImageUrl, updateMetaMutation],
+    [siteTitle, updateMetaMutation],
   );
 
   const handleSiteTitleChange = useCallback(
@@ -259,47 +291,53 @@ export const DomainsContent = () => {
     [],
   );
 
-  const uploadFile = useCallback(async (file: File, type: "favicon" | "og") => {
-    const setUploading = type === "favicon" ? setIsUploadingFavicon : setIsUploadingOg;
-    const setUrl = type === "favicon" ? setFaviconUrl : setOgImageUrl;
+  const uploadFile = useCallback(
+    async (file: File, type: "favicon" | "og", domainId: string) => {
+      const setUploading = type === "favicon" ? setIsUploadingFavicon : setIsUploadingOg;
+      const setUrl = type === "favicon" ? setFaviconUrl : setOgImageUrl;
+      const metaField = type === "favicon" ? "faviconUrl" : "ogImageUrl";
 
-    setUploading(true);
-    try {
-      const base64 = await fileToBase64(file);
-      const result = await uploadEditorMedia({
-        data: {
-          base64,
-          filename: `domain-${type}-${Date.now()}-${file.name}`,
-          contentType: file.type || "image/png",
-        },
-      });
-      setUrl(result.url);
-      toast.success(`${type === "favicon" ? "Favicon" : "OG image"} uploaded`);
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : `Failed to upload ${type === "favicon" ? "favicon" : "OG image"}`,
-      );
-    } finally {
-      setUploading(false);
-    }
-  }, []);
+      setUploading(true);
+      try {
+        const base64 = await fileToBase64(file);
+        const result = await uploadEditorMedia({
+          data: {
+            base64,
+            filename: `domain-${type}-${Date.now()}-${file.name}`,
+            contentType: file.type || "image/png",
+          },
+        });
+        setUrl(result.url);
+        // Auto-commit the new URL to the domain row so the user doesn't need a
+        // second "Save" click. Mirrors the inline-save pattern in account-settings.
+        updateMetaMutation.mutate({ domainId, [metaField]: result.url });
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : `Failed to upload ${type === "favicon" ? "favicon" : "OG image"}`,
+        );
+      } finally {
+        setUploading(false);
+      }
+    },
+    [updateMetaMutation],
+  );
 
   const handleFaviconChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (file) uploadFile(file, "favicon");
+      if (file && expandedConfigId) uploadFile(file, "favicon", expandedConfigId);
     },
-    [uploadFile],
+    [uploadFile, expandedConfigId],
   );
 
   const handleOgChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (file) uploadFile(file, "og");
+      if (file && expandedConfigId) uploadFile(file, "og", expandedConfigId);
     },
-    [uploadFile],
+    [uploadFile, expandedConfigId],
   );
 
   const handleFaviconButtonClick = useCallback(() => faviconInputRef.current?.click(), []);
@@ -323,122 +361,50 @@ export const DomainsContent = () => {
     );
   }
 
+  const trimmedDomain = newDomain.trim();
+  const canAddDomain = trimmedDomain.length > 0 && domainCount < MAX_DOMAINS;
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="rounded-xl border p-4 space-y-3">
+      <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium" htmlFor={domainInputId}>
+          <label
+            className="text-base tracking-[0.28px] text-muted-foreground"
+            htmlFor={domainInputId}
+          >
             Add a custom domain
           </label>
           <span className="text-xs text-muted-foreground">
             {domainCount} of {MAX_DOMAINS} domains used
           </span>
         </div>
-        <div className="flex gap-2">
-          <Input
+        <InputGroup
+          variant="borderless"
+          className={cn(
+            "h-[30px] bg-secondary border-0 ring-0 overflow-clip",
+            canAddDomain && "pr-[3px]",
+          )}
+        >
+          <InputGroupInput
             id={domainInputId}
             placeholder="forms.acme.com"
             value={newDomain}
             onChange={handleDomainInputChange}
             onKeyDown={handleDomainInputKeyDown}
             disabled={domainCount >= MAX_DOMAINS || addMutation.isPending}
+            variant="secondary"
           />
-          <Button
-            size="sm"
-            onClick={handleAddDomain}
-            disabled={!newDomain.trim() || domainCount >= MAX_DOMAINS || addMutation.isPending}
-            prefix={
-              addMutation.isPending ? (
-                <Loader2Icon className="size-3.5 animate-spin" />
-              ) : (
-                <PlusIcon className="size-3.5" />
-              )
-            }
-          >
-            Add Domain
-          </Button>
-        </div>
-
-        {dnsInfo && (
-          <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
-            <p className="text-sm font-medium">Add this CNAME record at your DNS provider:</p>
-            <div className="grid grid-cols-[auto_1fr_auto] gap-x-4 gap-y-1 text-xs">
-              <span className="text-muted-foreground font-medium">Type</span>
-              <span className="font-mono">CNAME</span>
-              <span />
-
-              <span className="text-muted-foreground font-medium">Name</span>
-              <span className="font-mono">{dnsInfo.subdomain}</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-5 w-5"
-                onClick={() => handleCopyValue(dnsInfo.subdomain)}
-                aria-label="Copy subdomain"
-              >
-                <CopyIcon className="size-3" />
-              </Button>
-
-              <span className="text-muted-foreground font-medium">Value</span>
-              <span className="font-mono">cname.vercel-dns.com</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-5 w-5"
-                onClick={() => handleCopyValue("cname.vercel-dns.com")}
-                aria-label="Copy CNAME value"
-              >
-                <CopyIcon className="size-3" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {verificationRecords && verificationRecords.length > 0 && (
-          <div className="rounded-lg border border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-900/50 p-4 space-y-3">
-            <div>
-              <p className="text-sm font-medium">Additional verification required</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                This domain is claimed by another Vercel project. Add the record(s) below at your
-                DNS provider exactly as shown, then click Retry.
-              </p>
-            </div>
-            {verificationRecords.map((rec) => (
-              <div
-                key={`${rec.type}-${rec.domain}-${rec.value}`}
-                className="grid grid-cols-[auto_1fr_auto] gap-x-4 gap-y-1 text-xs"
-              >
-                <span className="text-muted-foreground font-medium">Type</span>
-                <span className="font-mono">{rec.type}</span>
-                <span />
-
-                <span className="text-muted-foreground font-medium">Name</span>
-                <span className="font-mono break-all">{rec.domain}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5"
-                  onClick={() => handleCopyValue(rec.domain)}
-                  aria-label="Copy record name"
-                >
-                  <CopyIcon className="size-3" />
-                </Button>
-
-                <span className="text-muted-foreground font-medium">Value</span>
-                <span className="font-mono break-all">{rec.value}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5"
-                  onClick={() => handleCopyValue(rec.value)}
-                  aria-label="Copy record value"
-                >
-                  <CopyIcon className="size-3" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
+          {canAddDomain && (
+            <InputGroupButton
+              variant="default"
+              onClick={handleAddDomain}
+              disabled={addMutation.isPending}
+              className="h-[24px] w-[47px] rounded-lg bg-gray-50 px-3 text-sm text-gray-800 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] hover:bg-gray-200"
+            >
+              {addMutation.isPending ? <Loader2Icon className="size-3 animate-spin" /> : "Add"}
+            </InputGroupButton>
+          )}
+        </InputGroup>
       </div>
 
       {isLoadingDomains ? (
@@ -468,25 +434,29 @@ export const DomainsContent = () => {
                       <>
                         <span className="text-xs text-muted-foreground mr-1">Are you sure?</span>
                         <Button
+                          ref={cancelDeleteButtonRef}
                           variant="outline"
-                          size="sm"
-                          onClick={() => setConfirmDeleteId(null)}
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={handleCancelDelete}
                           disabled={removeMutation.isPending}
+                          aria-label="Cancel removing domain"
                         >
-                          Cancel
+                          <XIcon className="size-3.5" />
                         </Button>
                         <Button
                           variant="destructive"
-                          size="sm"
+                          size="icon"
+                          className="h-7 w-7"
                           onClick={() => removeMutation.mutate(domain.id)}
                           disabled={removeMutation.isPending}
-                          prefix={
-                            removeMutation.isPending ? (
-                              <Loader2Icon className="size-3 animate-spin" />
-                            ) : undefined
-                          }
+                          aria-label="Confirm remove domain"
                         >
-                          Remove
+                          {removeMutation.isPending ? (
+                            <Loader2Icon className="size-3.5 animate-spin" />
+                          ) : (
+                            <Trash2Icon className="size-3.5" />
+                          )}
                         </Button>
                       </>
                     ) : (
@@ -494,18 +464,18 @@ export const DomainsContent = () => {
                         {domain.status === "pending" && (
                           <Button
                             variant="outline"
-                            size="icon-sm"
-                            onClick={() => checkMutation.mutate(domain.id)}
-                            disabled={checkMutation.isPending}
+                            size="sm"
+                            onClick={() => recheckMutation.mutate(domain.id)}
+                            disabled={recheckMutation.isPending}
                             prefix={
-                              checkMutation.isPending ? (
+                              recheckMutation.isPending ? (
                                 <Loader2Icon className="size-4 animate-spin" />
                               ) : (
                                 <RefreshCwIcon className="size-4" />
                               )
                             }
                           >
-                            Check Status
+                            Verify now
                           </Button>
                         )}
                         {domain.status === "verified" && (
@@ -521,21 +491,22 @@ export const DomainsContent = () => {
                         {domain.status === "failed" && (
                           <Button
                             variant="outline"
-                            size="icon-sm"
-                            onClick={() => checkMutation.mutate(domain.id)}
-                            disabled={checkMutation.isPending}
+                            size="sm"
+                            onClick={() => recheckMutation.mutate(domain.id)}
+                            disabled={recheckMutation.isPending}
                             prefix={
-                              checkMutation.isPending ? (
+                              recheckMutation.isPending ? (
                                 <Loader2Icon className="size-4 animate-spin" />
                               ) : (
                                 <RefreshCwIcon className="size-4" />
                               )
                             }
                           >
-                            Retry
+                            Verify now
                           </Button>
                         )}
                         <Button
+                          data-trash-for={domain.id}
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -549,113 +520,195 @@ export const DomainsContent = () => {
                   </div>
                 </div>
 
+                {dnsRecordsByDomainId[domain.id]?.length && domain.status !== "verified" && (
+                  <div className="border-t px-4 py-3 bg-muted/40 space-y-3">
+                    <p className="text-xs text-muted-foreground">
+                      Add{" "}
+                      {dnsRecordsByDomainId[domain.id].length > 1 ? "all records" : "the record"}{" "}
+                      below at your DNS provider, then click{" "}
+                      <strong className="text-foreground">Verify now</strong>.
+                      {dnsRecordsByDomainId[domain.id].some((r) => r.type === "TXT") &&
+                        dnsRecordsByDomainId[domain.id].some((r) => r.type === "CNAME") && (
+                          <>
+                            {" "}
+                            The TXT proves ownership; the CNAME makes the subdomain resolve — both
+                            are required.
+                          </>
+                        )}
+                      {dnsRecordsByDomainId[domain.id].some((r) => r.shortName) && (
+                        <>
+                          {" "}
+                          Some providers strip your zone from the Name and store it in the short
+                          form — both work.
+                        </>
+                      )}
+                    </p>
+                    <div className="flex items-start gap-2 rounded-md border border-dashed border-foreground/25 bg-background px-3 py-2 text-xs text-muted-foreground">
+                      <AlertCircleIcon className="size-3.5 mt-0.5 shrink-0" />
+                      <span>
+                        If your DNS provider offers a proxy or CDN feature on individual records,
+                        keep it <strong className="text-foreground">disabled</strong> for this
+                        record. A proxied record blocks the SSL handshake and the domain will stay
+                        unverified.
+                      </span>
+                    </div>
+                    <div className="overflow-hidden rounded-md border bg-background text-xs">
+                      <div className="grid grid-cols-[80px_minmax(0,1fr)_minmax(0,2fr)_36px] border-b bg-muted font-medium text-foreground">
+                        <div className="border-r border-border px-3 py-2">Type</div>
+                        <div className="border-r border-border px-3 py-2">Name</div>
+                        <div className="border-r border-border px-3 py-2">Value</div>
+                        <div />
+                      </div>
+                      {dnsRecordsByDomainId[domain.id].map((rec, i) => (
+                        <div
+                          key={`${rec.type}-${rec.name}-${rec.value}`}
+                          className={cn(
+                            "grid grid-cols-[80px_minmax(0,1fr)_minmax(0,2fr)_36px] items-center",
+                            i > 0 && "border-t",
+                          )}
+                        >
+                          <div className="border-r px-3 py-2 font-mono">{rec.type}</div>
+                          <div className="min-w-0 border-r px-3 py-2 font-mono break-all space-y-0.5">
+                            <div>{rec.name}</div>
+                            {rec.shortName && (
+                              <div className="text-[10px] font-normal text-muted-foreground">
+                                or just <span className="font-mono">{rec.shortName}</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex min-w-0 items-center gap-1 border-r px-3 py-2">
+                            <span className="flex-1 min-w-0 font-mono break-all">{rec.value}</span>
+                          </div>
+                          <div className="flex items-center justify-center">
+                            <CopyButton
+                              text={rec.value}
+                              variant="ghost"
+                              size="icon-xs"
+                              aria-label={`Copy ${rec.type} value`}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {isConfiguring && (
-                  <div className="border-t px-4 py-4 space-y-4 bg-muted/20">
-                    <div>
-                      <label className="text-sm mb-1.5 block" htmlFor={siteTitleInputId}>
+                  <div className="border-t px-4 py-4 space-y-5">
+                    <div className="flex flex-col gap-2">
+                      <label
+                        className="text-base tracking-[0.28px] text-muted-foreground"
+                        htmlFor={siteTitleInputId}
+                      >
                         Site title
                       </label>
-                      <Input
-                        id={siteTitleInputId}
-                        placeholder="My Forms"
-                        value={siteTitle}
-                        onChange={handleSiteTitleChange}
-                      />
-                    </div>
-
-                    <div>
-                      <span className="text-sm mb-1.5 block">Favicon</span>
-                      <div className="flex items-center gap-3">
-                        {faviconUrl && (
-                          <img
-                            src={faviconUrl}
-                            alt="Favicon preview"
-                            className="size-8 rounded border object-contain"
-                          />
+                      <InputGroup
+                        variant="borderless"
+                        className={cn(
+                          "h-[30px] bg-secondary border-0 ring-0 overflow-clip",
+                          siteTitle !== (domain.siteTitle ?? "") && "pr-[3px]",
                         )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleFaviconButtonClick}
-                          disabled={isUploadingFavicon}
-                          prefix={
-                            isUploadingFavicon ? (
+                      >
+                        <InputGroupInput
+                          id={siteTitleInputId}
+                          placeholder="My Forms"
+                          value={siteTitle}
+                          onChange={handleSiteTitleChange}
+                          variant="secondary"
+                        />
+                        {siteTitle !== (domain.siteTitle ?? "") && (
+                          <InputGroupButton
+                            variant="default"
+                            onClick={() => handleSaveSiteTitle(domain.id)}
+                            disabled={updateMetaMutation.isPending}
+                            className="h-[24px] w-[47px] rounded-lg bg-gray-50 px-3 text-sm text-gray-800 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] hover:bg-gray-200"
+                          >
+                            {updateMetaMutation.isPending ? (
                               <Loader2Icon className="size-3 animate-spin" />
                             ) : (
-                              <UploadIcon className="size-3" />
-                            )
-                          }
-                        >
-                          {faviconUrl ? "Replace" : "Upload"} favicon
-                        </Button>
-                        <input
-                          ref={faviconInputRef}
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleFaviconChange}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <span className="text-sm mb-1.5 block">OG image</span>
-                      <div className="flex flex-col gap-2">
-                        {ogImageUrl && (
-                          <img
-                            src={ogImageUrl}
-                            alt="Open Graph preview"
-                            className="h-24 w-full rounded border object-cover"
-                          />
+                              "Save"
+                            )}
+                          </InputGroupButton>
                         )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleOgButtonClick}
-                          disabled={isUploadingOg}
-                          className="w-fit"
-                          prefix={
-                            isUploadingOg ? (
-                              <Loader2Icon className="size-3 animate-spin" />
-                            ) : (
-                              <UploadIcon className="size-3" />
-                            )
-                          }
-                        >
-                          {ogImageUrl ? "Replace" : "Upload"} OG image
-                        </Button>
-                        <input
-                          ref={ogInputRef}
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleOgChange}
-                        />
-                      </div>
+                      </InputGroup>
                     </div>
 
-                    <div className="flex justify-end gap-2 pt-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleCloseConfig}
-                        className="rounded-lg"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleSaveConfig(domain.id)}
-                        disabled={updateMetaMutation.isPending}
-                        className="rounded-lg"
-                        prefix={
-                          updateMetaMutation.isPending ? (
-                            <Loader2Icon className="size-3 animate-spin" />
-                          ) : undefined
-                        }
-                      >
-                        Save
-                      </Button>
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 flex flex-col gap-2">
+                        <span className="text-base tracking-[0.28px] text-muted-foreground">
+                          Favicon
+                        </span>
+                        <div className="flex items-center gap-3">
+                          {faviconUrl && (
+                            <img
+                              src={faviconUrl}
+                              alt="Favicon preview"
+                              className="size-8 rounded border object-contain shrink-0"
+                            />
+                          )}
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={handleFaviconButtonClick}
+                            disabled={isUploadingFavicon}
+                            className="h-[30px] rounded-lg bg-gray-50 px-3 text-sm text-gray-800 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] hover:bg-gray-200"
+                            prefix={
+                              isUploadingFavicon ? (
+                                <Loader2Icon className="size-3 animate-spin" />
+                              ) : (
+                                <UploadIcon className="size-3" />
+                              )
+                            }
+                          >
+                            {faviconUrl ? "Replace" : "Upload"} favicon
+                          </Button>
+                          <input
+                            ref={faviconInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleFaviconChange}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex-1 flex flex-col gap-2">
+                        <span className="text-base tracking-[0.28px] text-muted-foreground">
+                          OG image
+                        </span>
+                        <div className="flex items-center gap-3">
+                          {ogImageUrl && (
+                            <img
+                              src={ogImageUrl}
+                              alt="Open Graph preview"
+                              className="h-8 w-14 rounded border object-cover shrink-0"
+                            />
+                          )}
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={handleOgButtonClick}
+                            disabled={isUploadingOg}
+                            className="h-[30px] rounded-lg bg-gray-50 px-3 text-sm text-gray-800 shadow-[0px_1px_1px_0px_rgba(0,0,0,0.1),0px_0px_0.5px_0px_rgba(0,0,0,0.6)] hover:bg-gray-200"
+                            prefix={
+                              isUploadingOg ? (
+                                <Loader2Icon className="size-3 animate-spin" />
+                              ) : (
+                                <UploadIcon className="size-3" />
+                              )
+                            }
+                          >
+                            {ogImageUrl ? "Replace" : "Upload"} OG image
+                          </Button>
+                          <input
+                            ref={ogInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleOgChange}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}

@@ -28,10 +28,10 @@ const MultiChoiceField = ({ element, form }: FieldRendererProps<"MultiChoice">) 
                 >
                   <span
                     className={cn(
-                      "flex size-4 shrink-0 items-center justify-center rounded-[4px] text-[9px] font-semibold leading-none",
+                      "flex size-5 shrink-0 items-center justify-center rounded text-[11px]! font-semibold leading-none",
                       isSelected
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground",
+                        : "bg-[var(--color-gray-50)] text-muted-foreground shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)]",
                       hasErrors && !isSelected && "ring-1 ring-destructive",
                     )}
                   >

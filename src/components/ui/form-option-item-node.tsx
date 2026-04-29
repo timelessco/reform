@@ -25,7 +25,7 @@ const OptionIcon = ({ variant, index }: { variant: OptionVariant; index: number 
     case "multiChoice": {
       const letter = LETTER_LABELS[index % LETTER_LABELS.length];
       return (
-        <span className="flex size-5 shrink-0 items-center justify-center rounded bg-muted text-[11px] font-semibold text-muted-foreground">
+        <span className="flex size-5 shrink-0 items-center justify-center rounded bg-[var(--color-gray-50)] text-[11px] font-semibold text-muted-foreground shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)]">
           {letter}
         </span>
       );
@@ -55,7 +55,7 @@ const OptionIcon = ({ variant, index }: { variant: OptionVariant; index: number 
   }
 };
 
-export const FormOptionItemElement = ({ className, children, ...props }: PlateElementProps) => {
+export const FormOptionItemElement = ({ children, ...props }: PlateElementProps) => {
   const { attributes, element, ...rest } = props;
   const variant = (element.variant as OptionVariant) || "checkbox";
   const editor = useEditorRef();
@@ -161,9 +161,8 @@ export const FormOptionItemElement = ({ className, children, ...props }: PlateEl
     <PlateElement
       attributes={{ ...attributes, "data-bf-input": "true" }}
       className={cn(
-        "relative my-0.5 w-full max-w-[464px] cursor-text caret-current rounded-md before:left-[30px] before:top-[14px] before:-translate-y-1/2 before:text-sm",
+        "relative w-full max-w-[464px] cursor-text caret-current rounded-md before:left-[30px] before:top-[14px] before:-translate-y-1/2 before:text-sm",
         colorStyle && cn(colorStyle.bg, colorStyle.text),
-        className,
       )}
       element={element}
       {...rest}

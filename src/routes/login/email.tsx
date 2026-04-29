@@ -12,7 +12,7 @@ import { guestMiddleware } from "@/lib/auth/middleware";
 import { Logo } from "@/components/ui/logo";
 
 const emailSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  email: z.email({ error: "Please enter a valid email address" }),
 });
 
 const SAFE_REDIRECT_PATTERN = /^\/[a-zA-Z0-9\-_/$.~]+$/;
