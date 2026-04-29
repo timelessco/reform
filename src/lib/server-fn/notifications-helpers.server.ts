@@ -29,6 +29,12 @@ export const recordOwnerSubmissionNotification = async ({
   }
 
   const id = `${userId}:${formId}`;
+  // postgres-js (unlike node-postgres) doesn't auto-serialize Date when it
+  // appears as a raw parameter inside a `sql\`...\`` template — drizzle's
+  // column-aware mapping is what converts Date → ISO on regular `.values()`,
+  // but the CASE branch below bypasses that path. Bind an ISO string
+  // explicitly.
+  const createdAtIso = createdAt.toISOString();
 
   await db
     .insert(formSubmissionNotifications)
@@ -51,7 +57,7 @@ export const recordOwnerSubmissionNotification = async ({
         isRead: false,
         firstUnreadAt: sql`CASE
           WHEN ${formSubmissionNotifications.isRead} = true OR ${formSubmissionNotifications.firstUnreadAt} IS NULL
-            THEN ${createdAt}
+            THEN ${createdAtIso}
           ELSE ${formSubmissionNotifications.firstUnreadAt}
         END`,
         latestSubmissionAt: createdAt,

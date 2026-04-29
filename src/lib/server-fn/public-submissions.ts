@@ -268,7 +268,10 @@ export const createPublicSubmission = createServerFn({ method: "POST" })
             didStartForm: true,
             submissionId,
             visitEndedAt: now,
-            durationMs: sql`(EXTRACT(EPOCH FROM (${now}::timestamptz - ${formVisits.visitStartedAt})) * 1000)::int`,
+            // ISO string instead of Date — postgres-js doesn't auto-serialize
+            // a Date when it's bound as a raw `sql\`...\`` template parameter
+            // (drizzle's column-aware Date→ISO mapping doesn't apply here).
+            durationMs: sql`(EXTRACT(EPOCH FROM (${now.toISOString()}::timestamptz - ${formVisits.visitStartedAt})) * 1000)::int`,
             updatedAt: now,
           })
           .where(eq(formVisits.id, data.visitId))
