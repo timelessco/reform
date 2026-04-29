@@ -61,6 +61,7 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
   const isFormBuilder = pathname.startsWith("/form-builder") || pathname.includes("/form-builder/");
   const isEditRoute = pathname.endsWith("/edit");
   const isInsightsRoute = pathname.endsWith("/insights");
+  const breadcrumbLabel = isEditRoute ? "Editor" : isInsightsRoute ? "Insights" : "Submissions";
   const { data: sessionData } = useSession();
   const session = sessionData;
   const navigate = useNavigate();
@@ -276,15 +277,22 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
       onClick: () => toggleVersionHistory(),
       show: isEditRoute && hasPublishedVersion,
     },
-    // Share button is hidden from the header on mobile. Surface it in the
-    // menu only when the header button isn't visible — no duplicate entry
-    // point on desktop.
+    // Share + Settings buttons are hidden from the header on mobile. Surface
+    // them in the menu only when the header button isn't visible — no
+    // duplicate entry point on desktop.
     {
       key: "share",
       label: "Share",
       shortcut: formatForDisplay(HOTKEYS.TOGGLE_SHARE_SIDEBAR),
       onClick: () => toggleShareSidebar(),
       show: isMobile && canShare,
+    },
+    {
+      key: "settings",
+      label: "Settings",
+      shortcut: formatForDisplay(HOTKEYS.TOGGLE_SETTINGS_SIDEBAR),
+      onClick: () => toggleSettingsSidebar(),
+      show: isMobile,
     },
     // Mirror of the standalone icon buttons that are hidden on mobile. Kept
     // in the menu on desktop too so there's a single discoverable surface for
@@ -338,58 +346,70 @@ export const AppHeader = ({ isDistractionHidden = false }: AppHeaderProps) => {
             </Tooltip>
           )}
           {isFormBuilder && savedDocs?.[0] && (
-            <div className="flex items-center text-sm min-w-0">
+            <nav aria-label="Breadcrumb" className="flex items-center text-sm min-w-0 flex-1">
               {workspace && (
-                <div className="hidden md:flex items-center">
+                <>
                   <Link
                     to="/dashboard"
                     className={cn(
-                      buttonVariants({ variant: "link", size: "sm" }),
-                      "text-muted-foreground hover:text-foreground truncate max-w-[150px] no-underline hover:underline pl-0",
+                      buttonVariants({ variant: "ghost", size: "sm" }),
+                      "hidden md:inline-flex font-normal text-muted-foreground hover:text-foreground hover:bg-accent/60 truncate max-w-[150px] px-1.5 shrink",
                     )}
                   >
-                    {workspace.name}
+                    <span className="truncate">{workspace.name}</span>
                   </Link>
-                  <span className="text-muted-foreground/50">/</span>
-                </div>
+                  <span
+                    aria-hidden="true"
+                    className="text-muted-foreground/40 px-0.5 hidden md:inline shrink-0"
+                  >
+                    /
+                  </span>
+                </>
               )}
               {savedDocs?.[0].status === "published" && workspaceId && formId ? (
                 <Link
                   to="/workspace/$workspaceId/form-builder/$formId/submissions"
                   params={{ workspaceId, formId }}
                   className={cn(
-                    buttonVariants({ variant: "link", size: "sm" }),
-                    "max-w-[140px] sm:max-w-[200px] text-foreground no-underline px-1.5 justify-start overflow-hidden",
+                    buttonVariants({ variant: "ghost", size: "sm" }),
+                    "min-w-0 max-w-[140px] sm:max-w-[200px] font-normal text-foreground hover:bg-accent/60 px-1.5 justify-start shrink",
                   )}
                 >
-                  <span className="truncate hover:underline">
-                    {savedDocs?.[0].title || "Untitled"}
-                  </span>
+                  <span className="truncate">{savedDocs?.[0].title || "Untitled"}</span>
                 </Link>
               ) : (
                 <span
                   className={cn(
-                    buttonVariants({ variant: "link", size: "sm" }),
-                    "max-w-[140px] sm:max-w-[200px] no-underline cursor-default px-1.5 justify-start overflow-hidden",
+                    buttonVariants({ variant: "ghost", size: "sm" }),
+                    "min-w-0 max-w-[140px] sm:max-w-[200px] font-normal cursor-default px-1.5 justify-start hover:bg-transparent shrink",
                   )}
                 >
                   <span className="truncate">{savedDocs?.[0].title || "Untitled"}</span>
                 </span>
               )}
-              <span className="text-muted-foreground/50 hidden sm:inline">/</span>
-              <span
-                className={cn(
-                  buttonVariants({ variant: "link", size: "sm" }),
-                  "text-muted-foreground no-underline cursor-default px-1.5 hidden sm:inline-flex",
-                )}
-              >
-                {isEditRoute ? "Editor" : isInsightsRoute ? "Insights" : "Submissions"}
-              </span>
-            </div>
+              {!isEditorSidebarOpen && (
+                <>
+                  <span
+                    aria-hidden="true"
+                    className="text-muted-foreground/40 px-0.5 hidden lg:inline shrink-0"
+                  >
+                    /
+                  </span>
+                  <span
+                    className={cn(
+                      buttonVariants({ variant: "ghost", size: "sm" }),
+                      "font-normal text-muted-foreground cursor-default px-1.5 hidden lg:inline-flex hover:bg-transparent shrink-0",
+                    )}
+                  >
+                    {breadcrumbLabel}
+                  </span>
+                </>
+              )}
+            </nav>
           )}
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
           {isFormBuilder && savedDocs?.[0]?.updatedAt && !isLoadingSavedDocs && (
             <Tooltip>
               <TooltipTrigger

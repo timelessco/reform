@@ -6,9 +6,14 @@ import { customDomains, forms, member } from "@/db/schema";
 import { db } from "@/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { purgeFormCacheBatch } from "@/lib/server-fn/cdn-cache";
-import { vercelDomains } from "@/lib/vercel-domains";
-import type { VercelDomainStatus, VercelDomainVerification } from "@/lib/vercel-domains";
+import { vercelDomains } from "@/lib/vercel-domains.server";
+import type { VercelDomainVerification } from "@/lib/vercel-domains.server";
+import {
+  refreshDomainStatusFromVercel,
+  triggerDomainVerification,
+} from "@/lib/server-fn/custom-domains.server";
 import { DOMAIN_LIMITS } from "@/lib/config/plan-config";
+import { isSubdomain } from "@/lib/dns-instructions";
 
 const serializeDomain = (domain: typeof customDomains.$inferSelect) => ({
   ...domain,
@@ -48,25 +53,29 @@ export const addDomain = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data, context }) => {
-    const [membership] = await db
-      .select()
-      .from(member)
-      .where(
-        and(
-          eq(member.userId, context.session.user.id),
-          eq(member.organizationId, data.orgId),
-          eq(member.role, "owner"),
-        ),
+    if (!isSubdomain(data.domain)) {
+      throw new Error(
+        "Custom domains must be a subdomain like forms.example.com. Bare/apex domains aren't supported — please use a subdomain.",
       );
+    }
+
+    const [[membership], existingDomains] = await Promise.all([
+      db
+        .select()
+        .from(member)
+        .where(
+          and(
+            eq(member.userId, context.session.user.id),
+            eq(member.organizationId, data.orgId),
+            eq(member.role, "owner"),
+          ),
+        ),
+      db.select().from(customDomains).where(eq(customDomains.organizationId, data.orgId)),
+    ]);
 
     if (!membership) {
       throw new Error("Only organization owners can add domains");
     }
-
-    const existingDomains = await db
-      .select()
-      .from(customDomains)
-      .where(eq(customDomains.organizationId, data.orgId));
 
     if (existingDomains.length >= DOMAIN_LIMITS.maxDomainsPerOrg) {
       throw new Error(`Maximum of ${DOMAIN_LIMITS.maxDomainsPerOrg} domains per organization`);
@@ -163,75 +172,34 @@ export const removeDomain = createServerFn({ method: "POST" })
     return { success: true };
   });
 
+const assertCanReadDomain = async (domainId: string, userId: string) => {
+  const [domain] = await db.select().from(customDomains).where(eq(customDomains.id, domainId));
+  if (!domain) {
+    throw new Error("Domain not found");
+  }
+  const [membership] = await db
+    .select()
+    .from(member)
+    .where(and(eq(member.userId, userId), eq(member.organizationId, domain.organizationId)));
+  if (!membership) {
+    throw new Error("Not authorized to check this domain");
+  }
+};
+
 export const checkDomainStatus = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .inputValidator(z.object({ domainId: z.string() }))
   .handler(async ({ data, context }) => {
-    const [domain] = await db
-      .select()
-      .from(customDomains)
-      .where(eq(customDomains.id, data.domainId));
+    await assertCanReadDomain(data.domainId, context.session.user.id);
+    return refreshDomainStatusFromVercel(data.domainId);
+  });
 
-    if (!domain) {
-      throw new Error("Domain not found");
-    }
-
-    const [membership] = await db
-      .select()
-      .from(member)
-      .where(
-        and(
-          eq(member.userId, context.session.user.id),
-          eq(member.organizationId, domain.organizationId),
-        ),
-      );
-
-    if (!membership) {
-      throw new Error("Not authorized to check this domain");
-    }
-
-    let vercelStatus: VercelDomainStatus;
-
-    try {
-      vercelStatus = await vercelDomains.verify(domain.domain);
-    } catch {
-      try {
-        vercelStatus = await vercelDomains.check(domain.domain);
-      } catch {
-        const [updated] = await db
-          .update(customDomains)
-          .set({ status: "failed", updatedAt: new Date() })
-          .where(eq(customDomains.id, data.domainId))
-          .returning();
-
-        return {
-          ...serializeDomain(updated),
-          verification: undefined,
-        };
-      }
-    }
-
-    // verify() can return 200 with verified=false but no verification array;
-    // fetch the records via check() so the UI can display the challenge.
-    if (!vercelStatus.verified && !vercelStatus.verification?.length) {
-      try {
-        vercelStatus = await vercelDomains.check(domain.domain);
-      } catch {
-        // keep prior vercelStatus
-      }
-    }
-
-    const newStatus = vercelStatus.verified ? "verified" : "pending";
-    const [updated] = await db
-      .update(customDomains)
-      .set({ status: newStatus, updatedAt: new Date() })
-      .where(eq(customDomains.id, data.domainId))
-      .returning();
-
-    return {
-      ...serializeDomain(updated),
-      verification: vercelStatus.verification,
-    };
+export const recheckDomainStatus = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .inputValidator(z.object({ domainId: z.string() }))
+  .handler(async ({ data, context }) => {
+    await assertCanReadDomain(data.domainId, context.session.user.id);
+    return triggerDomainVerification(data.domainId);
   });
 
 export const updateDomainMeta = createServerFn({ method: "POST" })

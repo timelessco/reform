@@ -201,7 +201,7 @@ const FileUploadField = ({ element, form }: FieldRendererProps<"FileUpload">) =>
             <button
               type="button"
               className={cn(
-                "relative flex min-h-20 w-full flex-col items-center justify-center rounded-lg border border-dashed border-border/60 bg-card p-4 cursor-pointer hover:bg-accent/50 transition-colors shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)]",
+                "relative flex min-h-20 w-full flex-col items-center justify-center rounded-[8px] border border-dashed border-border/60 bg-[var(--color-gray-50)] p-4 cursor-pointer hover:bg-accent/50 transition-colors shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)]",
                 showError && "border-destructive ring-1 ring-destructive",
               )}
               onClick={!hasFile ? openFileDialog : undefined}

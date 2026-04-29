@@ -1,6 +1,7 @@
 import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { customDomains, forms, organization, workspaces } from "@/db/schema";
+import { vercelDomains } from "@/lib/vercel-domains.server";
 
 type DbExecutor = typeof db;
 
@@ -8,11 +9,25 @@ type DbExecutor = typeof db;
  * Idempotent: running twice produces the same final state. The
  * `ne(status, 'suspended')` filter is what protects `previousStatus` from
  * being overwritten on a re-run.
+ *
+ * Detaches each non-suspended domain from the Vercel project (best-effort).
+ * Account-level domains are kept so re-upgrade is fast.
  */
 export const applyDowngradeCleanup = async (
   orgId: string,
   executor: DbExecutor = db,
 ): Promise<void> => {
+  // Snapshot domains BEFORE the transaction so we know what to detach on
+  // Vercel even though their DB state will change.
+  const toDetach = await executor
+    .select({ domain: customDomains.domain })
+    .from(customDomains)
+    .where(and(eq(customDomains.organizationId, orgId), ne(customDomains.status, "suspended")));
+
+  // Best-effort: a Vercel outage shouldn't block the local downgrade. The
+  // record is still marked suspended below, so it won't serve traffic.
+  await Promise.allSettled(toDetach.map((d) => vercelDomains.detach(d.domain)));
+
   await executor.transaction(async (tx) => {
     await tx.update(organization).set({ plan: "free" }).where(eq(organization.id, orgId));
 
@@ -50,11 +65,22 @@ export const applyDowngradeCleanup = async (
 /**
  * Form columns are NOT auto-restored — re-flipping Pro features the user
  * implicitly opted out of during downgrade would be surprising.
+ *
+ * Re-attaches each suspended domain to the Vercel project (best-effort) so
+ * SSL/routing is back in place. The account-level domain was preserved on
+ * downgrade, so this typically returns verified=true without a fresh TXT.
  */
 export const applyUpgradeRestore = async (
   orgId: string,
   executor: DbExecutor = db,
 ): Promise<void> => {
+  const toReattach = await executor
+    .select({ domain: customDomains.domain })
+    .from(customDomains)
+    .where(and(eq(customDomains.organizationId, orgId), eq(customDomains.status, "suspended")));
+
+  await Promise.allSettled(toReattach.map((d) => vercelDomains.add(d.domain)));
+
   await executor.transaction(async (tx) => {
     await tx.update(organization).set({ plan: "pro" }).where(eq(organization.id, orgId));
 

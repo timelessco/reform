@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/combobox";
 import { InputGroupInput } from "@/components/ui/input-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ChevronDownIcon, SearchIcon } from "@/components/ui/icons";
 import { GlobeIcon } from "lucide-react";
 
 type PhoneInputSize = "sm" | "default" | "lg";
@@ -63,15 +64,16 @@ function PhoneInput({
       value={{ variant: phoneInputSize, popupClassName, scrollAreaClassName }}
     >
       <BasePhoneInput.default
-        // Shadow + dark-mode border recipe must mirror the `form-input`
-        // utility in src/styles/styles.css. The `[&]:` selectors bump
-        // specificity past react-phone-number-input's own defaults.
+        // Two-part layout per Figma: left "input-select" (flag + chevron) and
+        // right "input-text" (number) each own their own border. `[&]:` bumps
+        // specificity past react-phone-number-input's defaults.
         className={cn(
-          "flex flex-row [&]:rounded-lg [&]:bg-card [&]:text-foreground [&]:shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] dark:[&]:shadow-none dark:[&]:border dark:[&]:border-border [&]:has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50 [&]:has-[[data-slot=input-group-control]:focus-visible]:ring-3",
+          "flex flex-row items-stretch [&]:bg-transparent [&]:text-foreground",
           phoneInputSize === "sm" && "[&]:h-7",
           phoneInputSize === "lg" && "[&]:h-9",
           phoneInputSize === "default" && "[&]:h-8",
-          props["aria-invalid"] && "[&]:ring-1 [&]:ring-destructive",
+          props["aria-invalid"] &&
+            "[&_[data-slot=input-group]]:ring-1 [&_[data-slot=input-group]]:ring-destructive",
           className,
         )}
         flagUrl={FLAG_URL}
@@ -93,9 +95,12 @@ function InputComponent({ className, ...props }: React.ComponentProps<"input">) 
   return (
     <InputGroupInput
       className={cn(
-        "rounded-none border-0 bg-transparent shadow-none ring-0! focus-visible:ring-0 outline-none! flex-1 aria-invalid:ring-0",
+        // Right-side "input-text" piece: white surface, full border, only the
+        // right corners rounded so it butts cleanly against the country select.
+        "flex-1 rounded-l-none rounded-r-[8px] border border-border bg-background px-2.5 py-2 text-sm text-foreground tracking-[0.28px] shadow-none outline-none! ring-0! focus-visible:ring-0 aria-invalid:ring-0",
         variant === "sm" && "h-7",
         variant === "lg" && "h-9",
+        variant === "default" && "h-8",
         className,
       )}
       {...props}
@@ -148,7 +153,13 @@ function CountrySelect({
             size={variant}
             aria-label="Select country"
             className={cn(
-              "rounded-none border-0 shadow-none px-2 py-0 leading-none hover:bg-transparent focus:z-10 data-pressed:bg-transparent",
+              // Left "input-select" piece — flag + chevron in a left-rounded
+              // bordered cell. Top/left/bottom borders only; right edge butts
+              // against the input-text piece's left border.
+              "flex items-center gap-[3px] rounded-l-[8px] rounded-r-none border-y border-l border-border bg-background pl-2 pr-1 py-2 shadow-none hover:bg-secondary focus:z-10 data-pressed:bg-secondary",
+              variant === "sm" && "h-7",
+              variant === "lg" && "h-9",
+              variant === "default" && "h-8",
               disabled && "opacity-50",
             )}
             disabled={disabled}
@@ -157,36 +168,50 @@ function CountrySelect({
               <ComboboxValue />
             </span>
             <FlagComponent country={selectedCountry} countryName={selectedCountry} />
+            <ChevronDownIcon className="size-4 text-muted-foreground" />
           </Button>
         }
       />
       <ComboboxContent
-        align="end"
-        className={cn("w-xs *:data-[slot=input-group]:bg-transparent", popupClassName)}
+        align="start"
+        // Figma elevation/light/xl: triple drop-shadow recipe (1px hairline +
+        // 10px ambient + 24px lift).
+        className={cn(
+          "w-[246px] rounded-xl border-0 bg-popover p-1 shadow-[0px_0px_1px_0px_rgba(0,0,0,0.2),0px_0px_10px_0px_rgba(0,0,0,0.04),0px_24px_30px_0px_rgba(0,0,0,0.1)] *:data-[slot=input-group]:bg-transparent",
+          popupClassName,
+        )}
       >
-        <ComboboxInput
-          placeholder="e.g. United States"
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          showTrigger={false}
-          className="border-input bg-accent focus-visible:border-border rounded-none border-0 px-0 py-2.5 shadow-none ring-0! outline-none! focus-visible:ring-0 focus-visible:ring-offset-0"
-        />
-        <ComboboxSeparator />
-        <ComboboxEmpty className="px-4 py-2.5 text-sm">No country found.</ComboboxEmpty>
-        <ComboboxList>
+        <div className="flex h-7 items-center gap-2 rounded-lg bg-secondary px-2 py-1.5">
+          <SearchIcon className="size-4 shrink-0 text-muted-foreground" />
+          <ComboboxInput
+            placeholder="Search for countries"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            showTrigger={false}
+            className="border-0 bg-transparent p-0 text-sm tracking-[0.28px] text-foreground placeholder:text-muted-foreground/70 shadow-none ring-0! outline-none! focus-visible:ring-0 focus-visible:ring-offset-0"
+          />
+        </div>
+        <ComboboxSeparator className="my-1 hidden" />
+        <ComboboxEmpty className="px-2 py-1.5 text-sm text-muted-foreground">
+          No country found.
+        </ComboboxEmpty>
+        <ComboboxList className="p-0 pt-1">
           <div className="relative flex max-h-full">
-            <div className="flex max-h-[min(var(--available-height),24rem)] w-full scroll-pt-2 scroll-pb-2 flex-col overscroll-contain">
+            <div className="flex max-h-[min(var(--available-height),24rem)] w-full scroll-pt-1 scroll-pb-1 flex-col overscroll-contain">
               <ScrollArea className="size-full min-h-0 **:data-[slot=scroll-area-scrollbar]:m-0 [&_[data-slot=scroll-area-viewport]]:h-full [&_[data-slot=scroll-area-viewport]]:overscroll-contain">
                 {filteredCountries.map((item: CountryEntry) =>
                   item.value ? (
                     <ComboboxItem
                       key={item.value}
                       value={item.value}
-                      className="flex items-center gap-2"
+                      // Hide the built-in ItemIndicator slot — we surface
+                      // selection via the country code on the right instead,
+                      // and the 16px reserved indicator span shoves the code
+                      // away from the popover edge.
+                      className="flex h-7 items-center gap-1 rounded-lg px-2 py-1.5 text-sm tracking-[0.28px] [&>span[aria-hidden=true]]:hidden"
                     >
-                      <FlagComponent country={item.value} countryName={item.label} />
-                      <span className="flex-1 text-sm">{item.label}</span>
-                      <span className="text-foreground/50 text-sm">
+                      <span className="flex-1 text-foreground">{item.label}</span>
+                      <span className="text-muted-foreground">
                         {`+${BasePhoneInput.getCountryCallingCode(item.value)}`}
                       </span>
                     </ComboboxItem>

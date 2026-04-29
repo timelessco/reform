@@ -629,14 +629,17 @@
 }
 
 /* Canonical text-input box used by Input/Email/Number/Link/Textarea/Time/
-   Phone/FileUpload field widgets. Light mode: subtle rgba shadow. Dark mode:
-   shadow drops, a real border takes over so the box stays legible on dark
-   surfaces. Change here to restyle every field at once. */
+   Phone/FileUpload field widgets. Matches the editor's form-field-node
+   spec from Figma (gray/50 fill, 8px radius, hairline drop shadow) in both
+   light and dark. Uses !important to override the underlying <Input>
+   component's cva variants (bg-card, dark:border, etc.), since this utility
+   is the canonical form-field style. */
 @utility form-input {
-  @apply w-full rounded-lg bg-card text-foreground placeholder:text-muted-foreground/50 shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)];
-  @variant dark {
-    @apply shadow-none border border-border;
-  }
+  @apply w-full text-foreground placeholder:text-muted-foreground/50;
+  background-color: var(--color-gray-50) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.54), 0 1px 1px rgba(0, 0, 0, 0.06) !important;
+  border: 0 !important;
 }
 
 @utility form-input-error {
