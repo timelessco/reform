@@ -65,11 +65,10 @@ export const MobileSidebarDrawer = ({
   const x = useMotionValue(open ? 0 : -DRAWER_WIDTH_PX);
   const overlayOpacity = useTransform(x, [-DRAWER_WIDTH_PX, 0], [0, 0.5]);
   const gestureRef = useRef<GestureState>(freshGesture());
+  // openRef mirrors the latest `open` prop for use inside long-lived touch
+  // handlers without re-attaching them on each toggle.
   const openRef = useRef(open);
-
-  useEffect(() => {
-    openRef.current = open;
-  }, [open]);
+  openRef.current = open;
 
   useEffect(() => {
     if (gestureRef.current.dragging) return;

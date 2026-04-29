@@ -2,7 +2,7 @@ import { APP_NAME, SPRITE_PATH } from "@/lib/config/app-config";
 import { Link, useSearch } from "@tanstack/react-router";
 import { SparklesIcon, XIcon } from "@/components/ui/icons";
 import { iconMap } from "@/components/icon-picker/icon-data";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import type { Value } from "platejs";
 import {
   FormPreviewFromPlate,
@@ -56,9 +56,11 @@ export const PreviewMode = ({ formId, workspaceId }: { formId: string; workspace
   const handleClosePopup = useCallback(() => setIsPopupOpen(false), []);
   const handleOpenPopup = useCallback(() => setIsPopupOpen(true), []);
 
-  useEffect(() => {
+  const [lastEmbedType, setLastEmbedType] = useState(embedType);
+  if (lastEmbedType !== embedType) {
+    setLastEmbedType(embedType);
     if (embedType === "popup") setIsPopupOpen(true);
-  }, [embedType]);
+  }
 
   if (!isLoading && savedDocs !== undefined && savedDocs.length === 0) {
     return (

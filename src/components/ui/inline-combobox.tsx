@@ -172,12 +172,13 @@ const InlineCombobox = ({
    * item.
    */
   const activeId = store.useState("activeId");
-
-  React.useEffect(() => {
+  const [lastItems, setLastItems] = React.useState(items);
+  if (lastItems !== items) {
+    setLastItems(items);
     if (!activeId) {
       store.setActiveId(store.first());
     }
-  }, [items, activeId, store]);
+  }
 
   return (
     <span contentEditable={false}>

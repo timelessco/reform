@@ -187,7 +187,7 @@ export const useChat = () => {
   React.useEffect(() => {
     // eslint-disable-next-line typescript-eslint/no-explicit-any
     editor.setOption(AIChatPlugin, "chat", chat as any);
-  }, [chat, editor, editor.setOption]);
+  }, [chat, editor]);
 
   return chat;
 };

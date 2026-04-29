@@ -140,35 +140,15 @@ const config = defineConfig({
       "dexie",
       "tanstack-dexie-db-collection",
       "fsevents",
-      "pg",
-      "pg-native",
-      "pg-types",
-      "pg-cloudflare",
-      "pgpass",
-      "postgres-bytea",
-      "postgres-array",
-      "postgres-date",
-      "postgres-interval",
+      "postgres",
       "drizzle-orm",
-      "drizzle-orm/node-postgres",
+      "drizzle-orm/postgres-js",
     ],
   },
   environments: {
     rsc: {
       resolve: {
-        external: [
-          "pg",
-          "pg-native",
-          "pg-types",
-          "pg-cloudflare",
-          "pgpass",
-          "postgres-bytea",
-          "postgres-array",
-          "postgres-date",
-          "postgres-interval",
-          "drizzle-orm",
-          "drizzle-orm/node-postgres",
-        ],
+        external: ["postgres", "drizzle-orm", "drizzle-orm/postgres-js"],
         // Inline platejs + its slate/utils deps so the re-export chain is
         // resolved at bundle time. Leaving them external lets Rollup guess
         // which sibling package a re-exported name came from (e.g. bindFirst
@@ -191,19 +171,7 @@ const config = defineConfig({
     // `@base-ui/react` is excluded per the RSC plugin's inconsistent-
     // optimization warning (client components consumed across SSR + RSC
     // envs).
-    exclude: [
-      "pg",
-      "pg-native",
-      "pg-types",
-      "pg-cloudflare",
-      "pgpass",
-      "postgres-bytea",
-      "postgres-array",
-      "postgres-date",
-      "postgres-interval",
-      "drizzle-orm/node-postgres",
-      "@base-ui/react",
-    ],
+    exclude: ["postgres", "drizzle-orm/postgres-js", "@base-ui/react"],
     // Force-include CJS-only `use-sync-external-store` so Vite extracts its
     // named exports correctly. The shim uses a `module.exports = require(...)`
     // indirection that Vite's auto-scan misses after the lockfile churn.

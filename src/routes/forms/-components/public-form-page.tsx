@@ -1,7 +1,8 @@
 import { FileQuestionIcon, LockIcon, MoonIcon, SunIcon } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import type { Value } from "platejs";
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 // Lazy: pulls StaticContentBlock → platejs runtime + BaseEditorKit + Plate CSS
 // (~370 kB). The RSC path renders static content server-side, so this fallback
 // only runs when `rsc` is unavailable.
@@ -176,53 +177,62 @@ export const PublicFormPage = ({
     | { status: "prompt"; draft: DraftPayload }
     | { status: "resumed"; draft: DraftPayload }
     | { status: "dismissed" };
-  const [draftState, setDraftState] = useState<DraftState>({ status: "loading" });
 
-  useEffect(() => {
-    const draftId = readDraftId(formId);
-    if (!draftId) {
-      setDraftState({ status: "dismissed" });
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await getPublicDraft({ data: { formId, draftId } });
-        if (cancelled) return;
-        if (!res.draft) {
-          setDraftState({ status: "dismissed" });
-          return;
-        }
-        setDraftState({
-          status: "prompt",
-          draft: { data: res.draft.data, lastStepReached: res.draft.lastStepReached },
-        });
-      } catch (err) {
-        console.error("[Reform] Failed to load draft:", err);
-        setDraftState({ status: "dismissed" });
-      }
-    })();
-    return () => {
-      cancelled = true;
+  const draftId = readDraftId(formId);
+  const draftQuery = useQuery({
+    queryKey: ["publicDraft", formId, draftId],
+    enabled: !!draftId,
+    queryFn: async () => {
+      if (!draftId) return null;
+      const res = await getPublicDraft({ data: { formId, draftId } });
+      return res.draft ?? null;
+    },
+    staleTime: Number.POSITIVE_INFINITY,
+    retry: false,
+  });
+
+  if (draftQuery.isError) {
+    console.error("[Reform] Failed to load draft:", draftQuery.error);
+  }
+
+  // Local override so the user's "Start over" / "Resume" choices stick across
+  // re-renders without invalidating the query.
+  const [draftOverride, setDraftOverride] = useState<DraftState | null>(null);
+
+  const computedDraftState: DraftState = useMemo(() => {
+    if (!draftId) return { status: "dismissed" };
+    if (draftQuery.isLoading) return { status: "loading" };
+    if (draftQuery.isError || !draftQuery.data) return { status: "dismissed" };
+    return {
+      status: "prompt",
+      draft: {
+        data: draftQuery.data.data,
+        lastStepReached: draftQuery.data.lastStepReached,
+      },
     };
-  }, [formId]);
+  }, [draftId, draftQuery.isLoading, draftQuery.isError, draftQuery.data]);
+
+  const draftState: DraftState = draftOverride ?? computedDraftState;
 
   const handleResumeDraft = useCallback(() => {
-    setDraftState((s) => (s.status === "prompt" ? { status: "resumed", draft: s.draft } : s));
-  }, []);
+    if (computedDraftState.status === "prompt") {
+      setDraftOverride({ status: "resumed", draft: computedDraftState.draft });
+    }
+  }, [computedDraftState]);
 
   const handleStartOver = useCallback(() => {
     clearDraftId(formId);
-    setDraftState({ status: "dismissed" });
+    setDraftOverride({ status: "dismissed" });
   }, [formId]);
 
   const resumed = draftState.status === "resumed";
-  const resumeProps = resumed
-    ? {
-        initialFormData: draftState.draft.data,
-        initialCurrentStep: draftState.draft.lastStepReached ?? 0,
-      }
-    : {};
+  const resumeProps =
+    draftState.status === "resumed"
+      ? {
+          initialFormData: draftState.draft.data,
+          initialCurrentStep: draftState.draft.lastStepReached ?? 0,
+        }
+      : {};
   const previewKey = resumed ? "resumed" : "fresh";
 
   const resolvedLanguage = form?.settings?.language ?? "English";

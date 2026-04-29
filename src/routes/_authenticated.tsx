@@ -1370,7 +1370,9 @@ const SidebarInbox = () => {
   const [isExiting, setIsExiting] = useState(false);
   const [applyExitClass, setApplyExitClass] = useState(false);
 
-  useEffect(() => {
+  const [lastIsInboxOpen, setLastIsInboxOpen] = useState(isInboxOpen);
+  if (lastIsInboxOpen !== isInboxOpen) {
+    setLastIsInboxOpen(isInboxOpen);
     if (isInboxOpen) {
       prevOpenRef.current = true;
       setIsExiting(false);
@@ -1379,7 +1381,7 @@ const SidebarInbox = () => {
       setIsExiting(true);
       prevOpenRef.current = false;
     }
-  }, [isInboxOpen]);
+  }
 
   useIsomorphicLayoutEffect(() => {
     if (!isExiting) return;

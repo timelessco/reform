@@ -5,7 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { PathApi } from "platejs";
 import type { TElement } from "platejs";
 import type { PlateEditor } from "platejs/react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AI_DIFF_KEY } from "@/components/editor/plugins/ai-diff-kit";
 import { applyOp, canLiveUpdate, liveUpdateOp } from "@/lib/editor/apply-op";
@@ -464,10 +464,12 @@ export const useFormGenStream = ({
     }
   }, [object, editor, formId]);
 
-  // Rollback on error (additional safety beyond onError)
-  useEffect(() => {
+  // Rollback on error (additional safety beyond onError; adjust-during-render).
+  const [lastError, setLastError] = useState(error);
+  if (lastError !== error) {
+    setLastError(error);
     if (error) rollback();
-  }, [error, rollback]);
+  }
 
   const submit = useCallback(
     (prompt: string, images?: ImagePart[]) => {
@@ -567,9 +569,6 @@ export const useFormGenStream = ({
       getSelectionContext,
       getSelectedBlockPaths,
       editor,
-      formId,
-      onFinish,
-      onError,
       themeMutation,
     ],
   );

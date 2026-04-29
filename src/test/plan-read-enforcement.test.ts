@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { customDomains, forms } from "@/db/schema";
-import { isAnalyticsEnabled } from "@/lib/server-fn/analytics";
+import { isAnalyticsEnabled } from "@/lib/server-fn/analytics.server";
 import {
   resolveCustomDomain,
   resolveDomainForSlug,

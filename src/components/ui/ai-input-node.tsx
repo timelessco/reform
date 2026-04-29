@@ -3,7 +3,7 @@ import { BlockSelectionPlugin } from "@platejs/selection/react";
 import { ArrowUpIcon, CornerUpLeftIcon } from "lucide-react";
 import { isHotkey } from "platejs";
 import { useEditorRef, usePluginOption } from "platejs/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useFormGenStream } from "@/components/editor/hooks/use-form-gen-stream";
 import { AIInputPlugin, hideAIInput } from "@/components/editor/plugins/ai-input-kit";
@@ -11,6 +11,7 @@ import type { AIInputState } from "@/components/editor/plugins/ai-input-kit";
 import { Button } from "@/components/ui/button";
 import { CheckIcon, ImageIcon, Loader2Icon, SparklesIcon, XIcon } from "@/components/ui/icons";
 import { Popover, PopoverContent } from "@/components/ui/popover";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 import { cn } from "@/lib/utils";
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024;
@@ -32,7 +33,6 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
   const editor = useEditorRef();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const anchorRef = useRef<HTMLElement | null>(state.anchor);
   const [input, setInput] = useState("");
   const [attachedImages, setAttachedImages] = useState<AttachedImage[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -41,25 +41,15 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
     images: [],
   });
   const [hasPendingPreview, setHasPendingPreview] = useState(false);
-  const [anchorRect, setAnchorRect] = useState<{
-    width: number;
-    height: number;
-  }>({
-    width: 0,
-    height: 0,
-  });
+  const anchorRect = useMemo(
+    () =>
+      state.anchor
+        ? { width: state.anchor.offsetWidth, height: state.anchor.offsetHeight }
+        : { width: 0, height: 0 },
+    [state.anchor],
+  );
 
   const formId = usePluginOption(AIInputPlugin, "formId");
-
-  useEffect(() => {
-    anchorRef.current = state.anchor;
-    if (state.anchor) {
-      setAnchorRect({
-        width: state.anchor.offsetWidth,
-        height: state.anchor.offsetHeight,
-      });
-    }
-  }, [state.anchor]);
 
   const getEditorContent = useCallback((): string => {
     try {
@@ -123,12 +113,12 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
     [submitFormGen],
   );
 
-  useEffect(() => {
+  useMountEffect(() => {
     const timer = setTimeout(() => {
       inputRef.current?.focus();
     }, 50);
     return () => clearTimeout(timer);
-  }, []);
+  });
 
   const processFile = useCallback(
     (file: File): Promise<AttachedImage | null> =>
@@ -262,7 +252,7 @@ const AIInputPopoverBody = ({ state }: { state: AIInputState }) => {
   return (
     <Popover open onOpenChange={handleOpenChange}>
       <PopoverContent
-        anchor={anchorRef}
+        anchor={state.anchor}
         align="start"
         side="bottom"
         sideOffset={-anchorRect.height}

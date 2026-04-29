@@ -574,9 +574,11 @@ export const AIMenuItems = ({
     return "";
   }, [menuGroups]);
 
-  React.useEffect(() => {
+  const [lastDefaultValue, setLastDefaultValue] = React.useState(defaultValue);
+  if (lastDefaultValue !== defaultValue) {
+    setLastDefaultValue(defaultValue);
     setValue(defaultValue);
-  }, [defaultValue, setValue]);
+  }
 
   return (
     <>
