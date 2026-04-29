@@ -11,15 +11,18 @@ import {
   setOrgPlan,
 } from "@/test/helpers";
 
-vi.mock<typeof import("@/lib/vercel-domains.server")>("@/lib/vercel-domains.server", () => ({
-  vercelDomains: {
-    add: vi.fn(),
-    check: vi.fn(),
-    verify: vi.fn(),
-    remove: vi.fn(),
-    detach: vi.fn(),
-  },
-}));
+vi.mock<typeof import("@/lib/vercel-domains.server")>(
+  import("@/lib/vercel-domains.server"),
+  async () => ({
+    vercelDomains: {
+      add: vi.fn(),
+      check: vi.fn(),
+      verify: vi.fn(),
+      remove: vi.fn(),
+      detach: vi.fn(),
+    },
+  }),
+);
 
 describe("applyDowngradeCleanup — Vercel sync", () => {
   const ownerId = crypto.randomUUID();

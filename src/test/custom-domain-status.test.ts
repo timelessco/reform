@@ -10,14 +10,18 @@ import {
   getTestUtils,
 } from "@/test/helpers";
 
-vi.mock<typeof import("@/lib/vercel-domains.server")>("@/lib/vercel-domains.server", () => ({
-  vercelDomains: {
-    check: vi.fn(),
-    verify: vi.fn(),
-    add: vi.fn(),
-    remove: vi.fn(),
-  },
-}));
+vi.mock<typeof import("@/lib/vercel-domains.server")>(
+  import("@/lib/vercel-domains.server"),
+  async () => ({
+    vercelDomains: {
+      check: vi.fn(),
+      verify: vi.fn(),
+      add: vi.fn(),
+      remove: vi.fn(),
+      detach: vi.fn(),
+    },
+  }),
+);
 
 describe("refreshDomainStatusFromVercel", () => {
   const ownerId = crypto.randomUUID();
