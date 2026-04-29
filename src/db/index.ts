@@ -1,4 +1,5 @@
 import * as schema from "@/db/schema";
+import { createRequire } from "node:module";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 type Db = NodePgDatabase<typeof schema>;
@@ -9,15 +10,17 @@ type Db = NodePgDatabase<typeof schema>;
 // the moment any client-reachable file does `import { db } from "@/db"` —
 // Vite dev mode does not tree-shake top-level imports, and TanStack Start's
 // server-fn transform only strips handler bodies, not module-scope imports.
-// Doing the require lazily through a runtime-resolved `node:module` keeps
-// `pg` out of Vite's client graph entirely, while still working unchanged
-// on the server (every `db.*` call only ever happens inside a server fn or
-// API route handler, both server-only execution contexts).
+// Doing the require lazily keeps `pg` out of Vite's client graph entirely,
+// while still working unchanged on the server (every `db.*` call only ever
+// happens inside a server fn or API route handler, both server-only
+// execution contexts). Using the static `node:module` import (instead of
+// `process.getBuiltinModule("node:module")`) is what lets Vercel's NFT
+// tracer detect the require and bundle `drizzle-orm/node-postgres` + `pg`
+// into the deployed lambda.
 
 type NodeProcess = {
   versions?: { node?: string };
   env: Record<string, string | undefined>;
-  getBuiltinModule?: (name: string) => typeof import("node:module");
 };
 
 const nodeProcess = (globalThis as unknown as { process?: NodeProcess }).process;
@@ -35,19 +38,7 @@ const initDb = (): Db => {
     );
   }
 
-  // `process.getBuiltinModule("node:module")` (Node 22+) avoids any static
-  // ESM import of `node:module` — Vite would otherwise try to resolve that
-  // for client too. The require chain that follows resolves
-  // `drizzle-orm/node-postgres` (and `pg`) only on the server.
-  const getBuiltinModule = nodeProcess.getBuiltinModule;
-  if (!getBuiltinModule) {
-    throw new Error(
-      "`@/db` requires Node 22+ (process.getBuiltinModule). Upgrade Node or move the call site into an API route that loads drizzle directly.",
-    );
-  }
-
-  const nodeModule = getBuiltinModule("node:module");
-  const requireFn = nodeModule.createRequire(import.meta.url);
+  const requireFn = createRequire(import.meta.url);
   const { drizzle } = requireFn(
     "drizzle-orm/node-postgres",
   ) as typeof import("drizzle-orm/node-postgres");
