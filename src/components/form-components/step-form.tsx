@@ -1,5 +1,5 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
-import { useMemo, useRef } from "react";
+import { useContext, useMemo, useRef } from "react";
 import { useFocusFirstField } from "@/hooks/use-focus-first-field";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { fireQuestionProgress } from "@/lib/analytics/track-client";
 import { getFieldsFromSegments } from "@/lib/editor/transform-plate-for-preview";
 import type { FieldSegment, PreviewSegment } from "@/lib/editor/transform-plate-for-preview";
 import { StaticContentBlock } from "./static-content-block";
-import { RenderStepPreviewInput } from "./render-step-preview-input";
+import { PreviewRendererContext, RenderStepPreviewInput } from "./render-step-preview-input";
 
 interface StepFormProps {
   stepIndex: number;
@@ -31,6 +31,7 @@ export const StepForm = ({
 }: StepFormProps) => {
   const { currentStep, totalSteps, goToPrevStep, isSubmitting, tracking } = useStepForm();
   const { t } = useTranslation();
+  const Renderer = useContext(PreviewRendererContext) ?? RenderStepPreviewInput;
   const fields = useMemo(() => getFieldsFromSegments(segments), [segments]);
   const hasAuthoredButton = useMemo(
     () => segments.some((seg) => seg.type === "field" && seg.field.fieldType === "Button"),
@@ -164,7 +165,7 @@ export const StepForm = ({
 
             return (
               <div key={field.id} className="w-full" data-bf-input>
-                <RenderStepPreviewInput element={field} form={form} />
+                <Renderer element={field} form={form} />
               </div>
             );
           }

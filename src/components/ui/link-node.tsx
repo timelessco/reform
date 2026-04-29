@@ -16,7 +16,7 @@ export const LinkElement = (props: PlateElementProps<TLinkElement>) => {
       {...props}
       as="a"
       className={cn(
-        "text-primary underline decoration-primary underline-offset-4",
+        "text-blue-600 underline decoration-blue-600 underline-offset-4 dark:text-blue-400 dark:decoration-blue-400",
         suggestionData?.type === "remove" && "bg-red-100 text-red-700",
         suggestionData?.type === "insert" && "bg-emerald-100 text-emerald-700",
       )}

@@ -25,6 +25,12 @@ export const extractErrorMessage = (error: unknown): string => {
   return "Invalid value";
 };
 
+export const getFieldLabelProps = (element: PlateFormField) => ({
+  label: "label" in element ? (element.label ?? "") : "",
+  required: "required" in element ? !!element.required : false,
+  labelType: "labelType" in element ? element.labelType : undefined,
+});
+
 export const getAriaLabelFallback = (element: PlateFormField): string | undefined => {
   const label = "label" in element ? element.label : undefined;
   if (label) return undefined;
