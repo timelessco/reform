@@ -181,7 +181,7 @@ export const FormMultiSelectInputElement = ({ children, ...props }: PlateElement
     <PlateElement
       attributes={{ ...attributes, "data-bf-input": "true" }}
       className={cn(
-        "relative my-1 flex w-full max-w-[464px] min-h-7 items-center rounded-[8px] border-0 bg-[var(--color-gray-50)] px-2 py-1 text-sm shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] cursor-default",
+        "relative flex w-full max-w-[464px] min-h-7 items-center rounded-[8px] border-0 bg-[var(--color-gray-50)] px-2 py-1 text-sm shadow-[0_0_1px_rgba(0,0,0,0.54),0_1px_1px_rgba(0,0,0,0.06)] cursor-default",
         isSelected && focused && "ring-ring/50 ring-[3px]",
       )}
       element={element}
