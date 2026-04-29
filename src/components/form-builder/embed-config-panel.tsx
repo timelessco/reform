@@ -5,7 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { FeatureGate } from "@/components/ui/feature-gate";
 import type { EmbedType } from "@/hooks/use-editor-sidebar";
 import { cn } from "@udecode/cn";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { orgDomainsQueryOptions } from "@/lib/server-fn/custom-domains";
@@ -545,18 +545,28 @@ const ProSection = ({
 
   // Re-sync draft with incoming props when the server-side value changes
   // (e.g. another tab wrote, or the publish flow refetched).
-  useEffect(() => {
+  const [lastDocBranding, setLastDocBranding] = useState(docBranding);
+  if (lastDocBranding !== docBranding) {
+    setLastDocBranding(docBranding);
     setDraftBranding(docBranding ?? true);
-  }, [docBranding]);
-  useEffect(() => {
+  }
+  const [lastDocAnalytics, setLastDocAnalytics] = useState(docAnalytics);
+  if (lastDocAnalytics !== docAnalytics) {
+    setLastDocAnalytics(docAnalytics);
     setDraftAnalytics(docAnalytics ?? false);
-  }, [docAnalytics]);
-  useEffect(() => {
+  }
+  const [lastCustomDomainId, setLastCustomDomainId] = useState(customDomainId);
+  if (lastCustomDomainId !== customDomainId) {
+    setLastCustomDomainId(customDomainId);
     setDraftDomainId(customDomainId ?? null);
-  }, [customDomainId]);
-  useEffect(() => {
+  }
+  const [lastFormSlug, setLastFormSlug] = useState(formSlug);
+  const [lastDefaultSlug, setLastDefaultSlug] = useState(defaultSlug);
+  if (lastFormSlug !== formSlug || lastDefaultSlug !== defaultSlug) {
+    setLastFormSlug(formSlug);
+    setLastDefaultSlug(defaultSlug);
     setDraftSlug(formSlug ?? defaultSlug);
-  }, [formSlug, defaultSlug]);
+  }
 
   const draftSelectedDomain = useMemo(
     () => verifiedDomains.find((d) => d.id === draftDomainId),

@@ -792,6 +792,8 @@ function TimePickerInput(props: TimePickerInputProps) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [pendingDigit, setPendingDigit] = React.useState<string | null>(null);
 
+  // Reset draft state when leaving edit mode or when the underlying value
+  // changes outside an active edit.
   React.useEffect(() => {
     if (!isEditing) {
       setEditValue(getSegmentValue());

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import { revalidateLogic, useAppForm } from "@/components/ui/tanstack-form";
 import { useStepForm } from "@/contexts/step-form-context";
 import { fireQuestionProgress, fireUpdateVisit } from "@/lib/analytics/track-client";
@@ -45,9 +45,9 @@ export const useStepPreviewForm = ({
     stepIndex: -1,
     fired: false,
   });
-  useEffect(() => {
+  if (hasStartedRef.current.stepIndex !== stepIndex) {
     hasStartedRef.current = { stepIndex, fired: false };
-  }, [stepIndex]);
+  }
 
   const validationSchema = useMemo(() => generateZodSchemaFromFields(fields), [fields]);
 

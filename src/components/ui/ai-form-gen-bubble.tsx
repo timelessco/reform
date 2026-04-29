@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { ImageIcon, Loader2Icon, SparklesIcon, XIcon } from "@/components/ui/icons";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 import { cn } from "@/lib/utils";
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
@@ -29,9 +30,9 @@ export const AIFormGenBubble = ({
   const [value, setValue] = useState("");
   const [attachedImage, setAttachedImage] = useState<{ url: string; name: string } | null>(null);
 
-  useEffect(() => {
+  useMountEffect(() => {
     inputRef.current?.focus();
-  }, []);
+  });
 
   const processFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) return;

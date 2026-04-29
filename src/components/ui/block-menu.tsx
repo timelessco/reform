@@ -199,7 +199,6 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
   const [fieldName, setFieldName] = React.useState("");
   const [buttonText, setButtonText] = React.useState("");
   const [turnIntoOpen, setTurnIntoOpen] = React.useState(false);
-  const wasOpenRef = React.useRef(false);
   const blockMenuTriggerRef = React.useRef<HTMLDivElement | null>(null);
   const turnIntoCloseTimer = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -290,20 +289,21 @@ export const BlockMenu = ({ children }: { children: React.ReactNode }) => {
     return null;
   }, [nodeType, firstPath]);
 
-  React.useEffect(() => {
-    if (isOpen && !wasOpenRef.current) {
-      const labelText = labelNode ? extractLabelText(labelNode) : "";
-      const inputText = firstNode ? extractLabelText(firstNode) : "";
-      const label = labelText || inputText || "Untitled";
-      setFieldName(label);
-      setIsEditingName(false);
-      setTurnIntoOpen(false);
-      if (nodeType === "formButton") {
-        setButtonText((firstNode?.buttonText as string) || "Submit");
-      }
+  const [wasOpen, setWasOpen] = React.useState(false);
+  if (isOpen && !wasOpen) {
+    setWasOpen(true);
+    const labelText = labelNode ? extractLabelText(labelNode) : "";
+    const inputText = firstNode ? extractLabelText(firstNode) : "";
+    const label = labelText || inputText || "Untitled";
+    setFieldName(label);
+    setIsEditingName(false);
+    setTurnIntoOpen(false);
+    if (nodeType === "formButton") {
+      setButtonText((firstNode?.buttonText as string) || "Submit");
     }
-    wasOpenRef.current = isOpen;
-  }, [isOpen, labelNode, firstNode, nodeType]);
+  } else if (!isOpen && wasOpen) {
+    setWasOpen(false);
+  }
 
   const handleToggleRequired = React.useCallback(() => {
     const inputPath = getInputPath();

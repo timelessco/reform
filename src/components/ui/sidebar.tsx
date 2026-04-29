@@ -3,7 +3,7 @@ import { useRender } from "@base-ui/react/use-render";
 import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
 import * as React from "react";
-import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, use, useCallback, useMemo, useRef, useState } from "react";
 import { useLocation } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
@@ -74,9 +74,11 @@ export const SidebarProvider = ({
   // Auto-close the mobile drawer on navigation so tapping a nav item leaves a
   // clean screen instead of the drawer overlaying the destination route.
   const { pathname } = useLocation();
-  useEffect(() => {
+  const [lastPathname, setLastPathname] = useState(pathname);
+  if (lastPathname !== pathname) {
+    setLastPathname(pathname);
     if (isMobile) setOpenMobile(false);
-  }, [pathname, isMobile]);
+  }
 
   const [sidebarWidth, _setSidebarWidth] = useState(() => {
     if (typeof window === "undefined") return SIDEBAR_WIDTH_DEFAULT;

@@ -85,10 +85,11 @@ export const Carousel = ({
     [scrollPrev, scrollNext],
   );
 
-  React.useEffect(() => {
-    if (!api || !setApi) return;
-    setApi(api);
-  }, [api, setApi]);
+  const [lastApi, setLastApi] = React.useState(api);
+  if (lastApi !== api) {
+    setLastApi(api);
+    if (api && setApi) setApi(api);
+  }
 
   React.useEffect(() => {
     if (!api) return;

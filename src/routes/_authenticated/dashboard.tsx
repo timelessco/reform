@@ -278,9 +278,11 @@ const DashboardPage = () => {
     }
   }, [selectedFormIds]);
 
-  useEffect(() => {
+  const [lastPageForSelection, setLastPageForSelection] = useState(currentPage);
+  if (lastPageForSelection !== currentPage) {
+    setLastPageForSelection(currentPage);
     setSelectedFormIds(new Set());
-  }, [currentPage]);
+  }
 
   useHotkey(HOTKEYS.DASHBOARD_SELECT_ALL, handleSelectAll, {
     conflictBehavior: "replace",

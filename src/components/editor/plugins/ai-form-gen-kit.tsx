@@ -37,68 +37,67 @@ const AIFormGenMenu = () => {
   const [selectionContext, setSelectionContext] = useState<string | null>(null);
   const blockSelectionNodes = useBlockSelectionNodes();
 
-  useEffect(() => {
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (wasOpen !== isOpen) {
+    setWasOpen(isOpen);
     if (!isOpen) {
       capturedPathRef.current = null;
       setSelectionContext(null);
-      return;
-    }
-    if (capturedPathRef.current) return;
-
-    // ALWAYS capture the cursor position for insertion (silent — no chip if no real selection)
-    const block = editor.api.block();
-    if (block) {
-      const [, path] = block;
-      capturedPathRef.current = PathApi.next(path);
-    } else {
-      capturedPathRef.current = [editor.children.length];
-    }
-
-    // Priority 1: multi-block selection via drag-handle — show chip
-    if (blockSelectionNodes.length > 0) {
-      // Override insertion path to land right after the last selected block
-      const lastSelectedPath = blockSelectionNodes[blockSelectionNodes.length - 1]?.[1];
-      if (lastSelectedPath && lastSelectedPath.length > 0) {
-        capturedPathRef.current = PathApi.next(lastSelectedPath);
+      setGenerationError(null);
+    } else if (!capturedPathRef.current) {
+      const block = editor.api.block();
+      if (block) {
+        const [, path] = block;
+        capturedPathRef.current = PathApi.next(path);
+      } else {
+        capturedPathRef.current = [editor.children.length];
       }
 
-      if (blockSelectionNodes.length === 1) {
-        try {
-          const text = NodeApi.string(blockSelectionNodes[0]?.[0]).trim();
-          setSelectionContext(text || "1 block selected");
-        } catch {
-          setSelectionContext("1 block selected");
+      // Priority 1: multi-block selection via drag-handle — show chip
+      if (blockSelectionNodes.length > 0) {
+        const lastSelectedPath = blockSelectionNodes[blockSelectionNodes.length - 1]?.[1];
+        if (lastSelectedPath && lastSelectedPath.length > 0) {
+          capturedPathRef.current = PathApi.next(lastSelectedPath);
+        }
+
+        if (blockSelectionNodes.length === 1) {
+          try {
+            const text = NodeApi.string(blockSelectionNodes[0]?.[0]).trim();
+            setSelectionContext(text || "1 block selected");
+          } catch {
+            setSelectionContext("1 block selected");
+          }
+        } else {
+          let preview = "";
+          try {
+            preview = NodeApi.string(blockSelectionNodes[0]?.[0]).trim();
+          } catch {
+            preview = "";
+          }
+          const label = `${blockSelectionNodes.length} blocks selected`;
+          setSelectionContext(preview ? `${label} — ${preview}` : label);
         }
       } else {
-        let preview = "";
-        try {
-          preview = NodeApi.string(blockSelectionNodes[0]?.[0]).trim();
-        } catch {
-          preview = "";
+        // Priority 2: highlighted text range — show chip
+        const selection = editor.selection;
+        let captured = false;
+        if (selection && editor.api.isExpanded()) {
+          try {
+            const selectedText = editor.api.string(selection).trim();
+            if (selectedText) {
+              setSelectionContext(selectedText);
+              captured = true;
+            }
+          } catch {
+            // fall through to no-chip case
+          }
         }
-        const label = `${blockSelectionNodes.length} blocks selected`;
-        setSelectionContext(preview ? `${label} — ${preview}` : label);
-      }
-      return;
-    }
-
-    // Priority 2: highlighted text range — show chip
-    const selection = editor.selection;
-    if (selection && editor.api.isExpanded()) {
-      try {
-        const selectedText = editor.api.string(selection).trim();
-        if (selectedText) {
-          setSelectionContext(selectedText);
-          return;
+        if (!captured) {
+          setSelectionContext(null);
         }
-      } catch {
-        // fall through to no-chip case
       }
     }
-
-    // No real selection — no chip
-    setSelectionContext(null);
-  }, [isOpen, editor, blockSelectionNodes]);
+  }
 
   const getCapturedPath = useCallback(
     (): number[] => capturedPathRef.current ?? [editor.children.length],
@@ -162,10 +161,6 @@ const AIFormGenMenu = () => {
       editor.tf.focus();
     }, 0);
   }, [editor]);
-
-  useEffect(() => {
-    if (!isOpen) setGenerationError(null);
-  }, [isOpen]);
 
   // Global shortcut: ⌘⇧K / Ctrl+⇧K — works regardless of focus (title textarea, body, etc.)
   useEffect(() => {

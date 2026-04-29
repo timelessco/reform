@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { ReactElement, ReactNode } from "react";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 
 interface ClientOnlyProps {
   children: ReactElement | ReactNode | (() => ReactElement | ReactNode);
@@ -9,9 +10,9 @@ interface ClientOnlyProps {
 export const ClientOnly = ({ children, fallback = null }: ClientOnlyProps) => {
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
+  useMountEffect(() => {
     setMounted(true);
-  }, []);
+  });
 
   if (!mounted) {
     return <>{fallback}</>;
