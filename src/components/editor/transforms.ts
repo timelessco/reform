@@ -18,6 +18,15 @@ import type { PlateEditor } from "platejs/react";
 
 const ACTION_THREE_COLUMNS = "action_three_columns";
 
+const scrollSelectionIntoView = (editor: PlateEditor) => {
+  requestAnimationFrame(() => {
+    const block = editor.api.block();
+    if (!block) return;
+    const domNode = editor.api.toDOMNode(block[0]);
+    domNode?.scrollIntoView({ block: "center", behavior: "smooth" });
+  });
+};
+
 const insertList = (editor: PlateEditor, type: string) => {
   editor.tf.insertNodes(
     editor.api.create.block({
@@ -326,87 +335,11 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
     editor.tf.select({ path: [...labelPath, 0], offset: 0 });
   },
   pageBreak: (editor) => {
-    // Find existing Submit button and convert it to Next
-    const children = editor.children as TElement[];
-    const submitIndex = children.findIndex(
-      (n) => n.type === "formButton" && n.buttonRole === "submit",
-    );
+    const block = editor.api.block();
+    if (!block) return;
+    const [, path] = block;
 
-    if (submitIndex === -1) {
-      // No Submit button found - shouldn't happen with normalization, but handle gracefully
-      const block = editor.api.block();
-      if (!block) return;
-      const [, path] = block;
-      const nextPath = PathApi.next(path);
-
-      editor.tf.insertNodes(
-        {
-          type: "formButton",
-          buttonRole: "next",
-          children: [{ text: "Next" }],
-        } as TElement,
-        { at: nextPath },
-      );
-
-      const pageBreakPath = PathApi.next(nextPath);
-      editor.tf.insertNodes(
-        {
-          type: "pageBreak",
-          isThankYouPage: false,
-          children: [{ text: "" }],
-        } as TElement,
-        { at: pageBreakPath },
-      );
-
-      // Insert empty paragraph for content (focus here)
-      const paragraphPath = PathApi.next(pageBreakPath);
-      editor.tf.insertNodes(
-        {
-          type: "p",
-          children: [{ text: "" }],
-        } as TElement,
-        { at: paragraphPath, select: true },
-      );
-
-      const prevButtonPath = PathApi.next(paragraphPath);
-      editor.tf.insertNodes(
-        {
-          type: "formButton",
-          buttonRole: "previous",
-          children: [{ text: "Previous" }],
-        } as TElement,
-        { at: prevButtonPath },
-      );
-
-      const newSubmitPath = PathApi.next(prevButtonPath);
-      editor.tf.insertNodes(
-        {
-          type: "formButton",
-          buttonRole: "submit",
-          children: [{ text: "Submit" }],
-        } as TElement,
-        { at: newSubmitPath },
-      );
-      return;
-    }
-
-    // Convert existing Submit button to Next (replace entire node for void elements)
-    const submitPath: Path = [submitIndex];
-    const submitBtn = children[submitIndex];
-    const currentText = (submitBtn.children?.[0] as Record<string, unknown>)?.text;
-    const newText = currentText === "Submit" ? "Next" : currentText;
-
-    editor.tf.removeNodes({ at: submitPath });
-    editor.tf.insertNodes(
-      {
-        type: "formButton",
-        buttonRole: "next",
-        children: [{ text: newText }],
-      } as TElement,
-      { at: submitPath },
-    );
-
-    const pageBreakPath = PathApi.next(submitPath);
+    const pageBreakPath = PathApi.next(path);
     editor.tf.insertNodes(
       {
         type: "pageBreak",
@@ -416,7 +349,6 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
       { at: pageBreakPath },
     );
 
-    // Insert empty paragraph for content (focus here)
     const paragraphPath = PathApi.next(pageBreakPath);
     editor.tf.insertNodes(
       {
@@ -426,26 +358,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
       { at: paragraphPath, select: true },
     );
 
-    const prevButtonPath = PathApi.next(paragraphPath);
-    editor.tf.insertNodes(
-      {
-        type: "formButton",
-        buttonRole: "previous",
-        children: [{ text: "Previous" }],
-      } as TElement,
-      { at: prevButtonPath },
-    );
-
-    // Insert new Submit button at the end (no select - focus stays on paragraph)
-    const newSubmitPath = PathApi.next(prevButtonPath);
-    editor.tf.insertNodes(
-      {
-        type: "formButton",
-        buttonRole: "submit",
-        children: [{ text: "Submit" }],
-      } as TElement,
-      { at: newSubmitPath },
-    );
+    scrollSelectionIntoView(editor);
   },
   pageBreakThankYou: (editor) => {
     // Remove isThankYouPage from all existing pageBreak elements
@@ -496,6 +409,8 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         } as TElement,
         { at: paragraphPath, select: true },
       );
+
+      scrollSelectionIntoView(editor);
       return;
     }
 
@@ -521,6 +436,8 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
     );
 
     // No buttons after thank you pageBreak - normalizer will handle cleanup
+
+    scrollSelectionIntoView(editor);
   },
 };
 
