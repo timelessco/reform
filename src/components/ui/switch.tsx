@@ -10,9 +10,9 @@ const switchVariants = cva(
   [
     "peer group/switch relative inline-flex shrink-0 items-center rounded-full border border-transparent transition-all outline-none after:absolute after:-inset-x-3 after:-inset-y-2",
     // unchecked states — stays bg-accent through hover/active; only a real toggle (→checked) changes color
-    "not-data-disabled:data-unchecked:focus-visible:shadow-3xs data-unchecked:bg-accent not-data-disabled:data-unchecked:focus-visible:bg-accent",
+    "data-unchecked:bg-accent not-data-disabled:data-unchecked:focus-visible:bg-accent",
     // checked states
-    "not-data-disabled:data-checked:focus-visible:shadow-3xs data-checked:bg-primary not-data-disabled:data-checked:hover:bg-primary/86 not-data-disabled:data-checked:focus-visible:bg-primary not-data-disabled:data-checked:active:bg-primary/74",
+    "data-checked:bg-primary not-data-disabled:data-checked:hover:bg-primary/86 not-data-disabled:data-checked:focus-visible:bg-primary not-data-disabled:data-checked:active:bg-primary/74",
     // invalid state (self + Field context)
     "data-invalid:border-destructive! data-invalid:ring-2! data-invalid:ring-destructive/20!",
     "group-data-[invalid=true]/field:border-destructive! group-data-[invalid=true]/field:ring-2! group-data-[invalid=true]/field:ring-destructive/20!",

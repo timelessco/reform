@@ -16,4 +16,4 @@ export const TEMPLATE_CATEGORIES = [
 export type TemplateCategory = (typeof TEMPLATE_CATEGORIES)[number];
 
 export const isTemplateCategory = (value: string): value is TemplateCategory =>
-  (TEMPLATE_CATEGORIES as readonly string[]).includes(value);
+  TEMPLATE_CATEGORIES.some((category) => category === value);

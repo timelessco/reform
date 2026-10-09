@@ -26,6 +26,7 @@ const PublicFormRoute = () => {
   const search = Route.useSearch();
 
   const rawCustomization = loaderData?.form?.customization ?? null;
+
   const { resolvedTheme, embedConfig, handleThemeChange, showThemeToggle } = usePublicFormTheme({
     id: shortId,
     rawCustomization,
@@ -37,6 +38,7 @@ const PublicFormRoute = () => {
 
   return (
     <>
+      {/* oxlint-disable-next-line shadcn/no-inline-styles -- Intentional <style> injection: build CSS bundle / generated per-form theme CSS */}
       {themeCss && <style>{themeCss}</style>}
       <PublicFormPage
         form={loaderData?.form ?? null}
@@ -78,11 +80,13 @@ export const Route = createFileRoute("/forms/$shortId")({
     const ogDescription = loaderData?.form?.ogDescription;
     const ogImageUrl = loaderData?.form?.ogImageUrl;
     const googleFontUrl = getGoogleFontLinkUrl(loaderData?.form?.customization ?? null);
+
     // Custom domain wins as canonical when present (ADR-0001).
     const canonicalHref =
       loaderData?.form?.customDomain && loaderData?.form?.slug
         ? `https://${loaderData.form.customDomain}/${loaderData.form.slug}`
         : `${APP_WEBSITE_URL}/forms/${shortId}`;
+
     return {
       meta: seo({
         formTitle: loaderData?.form?.title ?? "Form",

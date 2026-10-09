@@ -1,6 +1,7 @@
 import type { PlateElementProps } from "platejs/react";
 
 import { PlateElement, useEditorRef } from "platejs/react";
+import * as v from "valibot";
 
 import { AlignLeftIcon } from "@/components/ui/icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -9,24 +10,28 @@ import { cn } from "@/lib/utils";
 
 export const FormTextareaElement = ({ children, ...props }: PlateElementProps) => {
   const { attributes, element, ...rest } = props;
-  const placeholder = element.placeholder as string | undefined;
+  const placeholder = v.is(v.string(), element.placeholder) ? element.placeholder : undefined;
   // Pulled from the preceding label block so the editor's add-item indicator
   // reads e.g. "Add full name" (matching the live preview) instead of the
   // generic "Add item". Hook subscribes to label edits and updates live.
   const fieldLabel = useFieldLabelText(element);
   const editor = useEditorRef();
-  const isFieldArray = (element as { isFieldArray?: boolean }).isFieldArray === true;
-  const rawInitialRows = (element as { initialRows?: number }).initialRows;
+  const isFieldArray = element.isFieldArray === true;
+  const rawInitialRows = element.initialRows;
+
   const initialRows =
-    isFieldArray && typeof rawInitialRows === "number" && rawInitialRows > 0
+    isFieldArray && v.is(v.number(), rawInitialRows) && rawInitialRows > 0
       ? Math.floor(rawInitialRows)
       : 1;
+
   const addLabelText = `Add${fieldLabel ? ` ${fieldLabel.toLowerCase()}` : " item"}`;
 
   const setInitialRows = (next: number) => {
     const path = editor.api.findPath(element);
+
     if (!path) return;
     const clamped = Math.max(1, next);
+
     if (clamped === 1) {
       editor.tf.unsetNodes(["initialRows"], { at: path });
     } else {

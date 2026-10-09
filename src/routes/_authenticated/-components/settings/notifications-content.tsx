@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 const PRODUCT_UPDATES_KEY = "reform:notif:product-updates";
+
 const BROWSER_KEY = "reform:notif:browser";
 
 type Permission = NotificationPermission | "unsupported";
@@ -21,6 +22,7 @@ const readProductUpdates = () =>
 const readBrowserPref = () => {
   if (typeof window === "undefined") return false;
   const stored = localStorage.getItem(BROWSER_KEY);
+
   return stored === null ? readPermission() === "granted" : stored === "true";
 };
 
@@ -40,8 +42,10 @@ const NotificationRow = ({
 }) => (
   <div className="flex w-full items-center gap-5">
     <div className="flex min-w-0 flex-1 flex-col gap-1">
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- leading-[1.15] has no value-identical step; nearest leading-tight (1.25) would shift visuals */}
       <p className="text-base leading-[1.15] font-medium text-foreground">{title}</p>
-      <p className="text-base leading-[1.5] tracking-[0.28px] text-muted-foreground">
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- tracking-[0.28px] has no value-identical step; nearest tracking token would shift visuals */}
+      <p className="text-base leading-normal tracking-[0.28px] text-muted-foreground">
         {description}
       </p>
     </div>
@@ -72,19 +76,26 @@ export const NotificationsContent = () => {
       if (!next) {
         setBrowserPref(false);
         localStorage.setItem(BROWSER_KEY, "false");
+
         return;
       }
+
       if (permission === "unsupported") {
         toast.error("Your browser doesn't support notifications.");
+
         return;
       }
+
       if (permission === "denied") {
         toast.error("Notifications are blocked. Enable them in your browser's site settings.");
+
         return;
       }
+
       // Request only when not yet decided; if already granted, just flip the preference on.
       const result = permission === "granted" ? "granted" : await Notification.requestPermission();
       setPermission(result);
+
       if (result === "granted") {
         setBrowserPref(true);
         localStorage.setItem(BROWSER_KEY, "true");

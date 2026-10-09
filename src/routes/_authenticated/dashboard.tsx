@@ -64,14 +64,17 @@ const FORMS_PER_PAGE = 12;
 // callback + ResizeObserver (no useEffect; same pattern as use-mobile) so it adapts to viewport width
 // (columns), height, sidebar collapse, and the chrome above the grid.
 const PAGER_RESERVE = 120; // pager block + section gap + bottom breathing room
+
 const CARD_STRIDE_FALLBACK = 220; // card height before a card is measured
 
 const useViewportPageSize = (
   fallback: number,
 ): readonly [number, (grid: HTMLDivElement | null) => void] => {
   const [perPage, setPerPage] = useState(fallback);
+
   const attach = useCallback((grid: HTMLDivElement | null) => {
     if (!grid) return;
+
     const recompute = () => {
       const style = getComputedStyle(grid);
       const cols = Math.max(1, style.gridTemplateColumns.split(" ").length);
@@ -82,22 +85,29 @@ const useViewportPageSize = (
       const rows = Math.max(1, Math.floor((available + gap) / stride));
       setPerPage(cols * rows);
     };
+
     recompute();
     const observer = new ResizeObserver(recompute);
     observer.observe(grid);
     window.addEventListener("resize", recompute);
+
     return () => {
       observer.disconnect();
       window.removeEventListener("resize", recompute);
     };
   }, []);
+
   return [perPage, attach] as const;
 };
 
 type FormFilter = "all" | "favorites" | "drafts" | "published";
+
 type FormViewMode = "grid" | "list";
+
 type SortField = "responses" | "created" | "edited";
+
 type SortDir = "asc" | "desc";
+
 type FormSort = { field: SortField; dir: SortDir };
 
 // Sort fields shown in the Sort dropdown. Only Responses nests into Ascending / Descending; the
@@ -128,8 +138,11 @@ const TEMPLATE_ICONS: Partial<
 
 const greetingFor = (date: Date): string => {
   const h = date.getHours();
+
   if (h < 12) return "Good morning";
+
   if (h < 18) return "Good afternoon";
+
   return "Good evening";
 };
 
@@ -145,6 +158,7 @@ const DashboardSearch = () => {
   // Sync local input when the URL param changes externally (back/forward, clear). Adjusted during
   // render (the "store info from a previous render" pattern), not via a setState-in-effect.
   const [lastSearchQ, setLastSearchQ] = useState(search.q);
+
   if (lastSearchQ !== search.q) {
     setLastSearchQ(search.q);
     setInput(search.q ?? "");
@@ -154,6 +168,7 @@ const DashboardSearch = () => {
   useEffect(() => {
     const handle = setTimeout(() => {
       const next = input.trim() || undefined;
+
       if ((search.q ?? undefined) === next) return;
       void navigate({
         to: "/dashboard",
@@ -161,6 +176,7 @@ const DashboardSearch = () => {
         replace: true,
       });
     }, 200);
+
     return () => clearTimeout(handle);
   }, [input, search.q, navigate]);
 
@@ -212,6 +228,7 @@ const FILTER_EMPTY_COPY: Record<Exclude<FormFilter, "all">, string> = {
 
 const FilteredEmptyState = ({ filter }: { filter: FormFilter }) => {
   if (filter === "all") return null;
+
   return (
     <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
       {FILTER_EMPTY_COPY[filter]}
@@ -233,6 +250,7 @@ const SyncOverlay = () => {
     const dotInterval = setInterval(() => {
       setDotCount((d) => (d + 1) % 4);
     }, 500);
+
     return () => clearInterval(dotInterval);
   }, []);
 
@@ -240,6 +258,7 @@ const SyncOverlay = () => {
     const messageInterval = setInterval(() => {
       setMessageIndex((i) => (i + 1) % SYNC_MESSAGES.length);
     }, 2500);
+
     return () => clearInterval(messageInterval);
   }, []);
 
@@ -271,22 +290,28 @@ const useLocalDataSync = (
   useEffect(() => {
     const syncData = async () => {
       if (!sessionUser || !activeOrgId) return;
+
       if (_hasSynced) return;
 
       const hasData = await hasLocalDataToSync();
+
       if (!hasData) {
         _hasSynced = true;
+
         return;
       }
 
       setIsSyncing(true);
+
       try {
         const result = await syncLocalDataToCloud(activeOrgId);
+
         if (result?.syncedForms && result.syncedForms.length > 0) {
           clearLocalDraftIds();
           sessionStorage.removeItem("shouldSyncAfterLogin");
           toast.success("Local data synced!");
         }
+
         _hasSynced = true;
       } catch (error) {
         log.error({ tag: "dashboard", msg: "Failed to sync local data", error });
@@ -295,18 +320,22 @@ const useLocalDataSync = (
         setIsSyncing(false);
       }
     };
+
     void syncData();
   }, [sessionUser, activeOrgId]);
+
   return { isSyncing };
 };
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const { q: searchQuery = "" } = useSearch({ strict: false }) as { q?: string };
+
   const { data: activeOrg } = useQuery({
     ...orgDataForLayoutQueryOptions(),
     select: (d) => d.activeOrg,
   });
+
   const [isCreating, setIsCreating] = useState(false);
   const [currentFilter, setCurrentFilter] = useState<FormFilter>("all");
   const [viewMode, setViewMode] = useState<FormViewMode>("grid");
@@ -334,6 +363,7 @@ const DashboardPage = () => {
 
   const { data: favorites } = useFavorites(session?.user?.id);
   const submissionCounts = useSubmissionCounts();
+
   const favoriteFormIds = useMemo(
     () => new Set((favorites ?? []).map((f) => f.formId)),
     [favorites],
@@ -364,12 +394,15 @@ const DashboardPage = () => {
 
   const searchedForms = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
+
     if (!q) return filteredForms;
+
     return filteredForms.filter((f) => (f.title ?? "Untitled").toLowerCase().includes(q));
   }, [filteredForms, searchQuery]);
 
   const visibleForms = useMemo(() => {
     const dir = sortBy.dir === "asc" ? 1 : -1;
+
     const compare = (a: FormCardForm, b: FormCardForm) => {
       switch (sortBy.field) {
         case "responses":
@@ -380,15 +413,18 @@ const DashboardPage = () => {
           return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
       }
     };
+
     return [...searchedForms].sort((a, b) => compare(a, b) * dir);
   }, [searchedForms, sortBy, submissionCounts]);
 
   const handleCreateForm = useCallback(
     (workspaceId?: string) => {
       const targetId = workspaceId ?? orderedWorkspaces[0]?.id;
+
       if (!targetId) return;
 
       setIsCreating(true);
+
       try {
         const { form: newForm } = createFormLocal(targetId);
         void navigate({
@@ -408,16 +444,19 @@ const DashboardPage = () => {
   const handleCreateFromTemplate = useCallback(
     (templateId: FormTemplateId) => {
       const targetId = orderedWorkspaces[0]?.id;
+
       if (!targetId) return;
       const meta = FORM_TEMPLATE_META.find((t) => t.id === templateId);
       const title = meta?.label ?? "Untitled";
 
       setIsCreating(true);
+
       try {
         const { form: newForm } = createFormLocal(targetId, {
           title,
           content: buildTemplateContent(templateId),
         });
+
         void navigate({
           to: "/workspace/$workspaceId/form-builder/$formId/edit",
           params: { workspaceId: targetId, formId: newForm.id },
@@ -441,6 +480,7 @@ const DashboardPage = () => {
   // Reset the scroll window whenever the list itself changes (filter / search / sort).
   const listKey = `${currentFilter}|${searchQuery}|${sortBy.field}|${sortBy.dir}`;
   const [lastListKey, setLastListKey] = useState(listKey);
+
   if (lastListKey !== listKey) {
     setLastListKey(listKey);
     setVisibleCount(formsPerPage);
@@ -450,9 +490,11 @@ const DashboardPage = () => {
   // (same pattern as useViewportPageSize). The callback ref re-runs (re-observes) when the batch
   // size or total changes, so the observer's closure always reads current values.
   const totalForms = visibleForms.length;
+
   const loadMoreRef = useCallback(
     (node: HTMLDivElement | null) => {
       if (!node) return;
+
       const observer = new IntersectionObserver(
         (entries) => {
           if (entries[0]?.isIntersecting) {
@@ -461,7 +503,9 @@ const DashboardPage = () => {
         },
         { rootMargin: "300px" },
       );
+
       observer.observe(node);
+
       return () => observer.disconnect();
     },
     [formsPerPage, totalForms],
@@ -482,7 +526,8 @@ const DashboardPage = () => {
           {/* Greeting */}
           {/* font-sans re-binds the wght axis so font-semibold actually renders 600 (Figma Semi Bold);
               without it the inherited font-variation-settings pins wght to 450. */}
-          <h1 className="font-sans text-xl leading-[1.15] font-semibold tracking-normal text-gray-950">
+          {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 1.15 line-height has no scale equivalent */}
+          <h1 className="font-sans text-xl leading-[1.15] font-semibold tracking-normal text-foreground">
             <TextSwap key={userName}>
               {greetingFor(new Date())}
               {userName ? `, ${userName}` : ""}
@@ -501,7 +546,8 @@ const DashboardPage = () => {
         <section className="mt-10 space-y-5">
           <div className="flex items-center justify-between gap-3">
             {/* font-sans re-binds the wght axis so font-semibold renders 600 (Figma SemiBold), not the pinned 450. */}
-            <h2 className="font-sans text-[15px] leading-[1.15] font-semibold tracking-[0.225px] text-gray-950">
+            {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 15px/1.15/0.225px title type has no scale equivalent */}
+            <h2 className="font-sans text-[15px] leading-[1.15] font-semibold tracking-[0.225px] text-foreground">
               All Forms
             </h2>
             {!isLoading && orgForms.length > 0 && (
@@ -569,8 +615,10 @@ interface QuickCreateTemplatesProps {
 
 // Shared card chrome for the quick-create row.
 const QUICK_CARD_CLASS =
-  "flex flex-1 cursor-pointer flex-col items-center gap-3 rounded-[12px] border bg-gray-50 px-5 py-[18px] transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
-const QUICK_CARD_LABEL = "text-base font-[450] tracking-[0.28px] text-gray-950";
+  "flex flex-1 cursor-pointer flex-col items-center gap-3 rounded-2xl border bg-card px-5 py-4.5 transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50";
+
+// oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 450 weight + 0.28px tracking have no scale equivalent
+const QUICK_CARD_LABEL = "text-base font-[450] tracking-[0.28px] text-foreground";
 
 // Figma node 27170:28095 — row of equal-flex template cards. Blank = dashed gray/300 border (Figma
 // node 27170:28095); the rest = solid gray/100 hairline. 24px icon + 14px label (Medium/450, gray/950).
@@ -580,6 +628,7 @@ const QuickCreateTemplates = ({ disabled, onCreate }: QuickCreateTemplatesProps)
     {FORM_TEMPLATE_META.filter((t) => t.featured).map((template) => {
       const Icon = TEMPLATE_ICONS[template.id] ?? FigPlusIcon;
       const isBlank = template.id === "blank";
+
       return (
         <button
           key={template.id}
@@ -588,11 +637,11 @@ const QuickCreateTemplates = ({ disabled, onCreate }: QuickCreateTemplatesProps)
           onClick={() => onCreate(template.id)}
           className={cn(
             QUICK_CARD_CLASS,
-            isBlank ? "border-dashed border-gray-300" : "border-gray-100",
+            isBlank ? "border-dashed border-border" : "border-border",
           )}
           aria-label={`Create ${template.label}`}
         >
-          <Icon className="size-6 text-gray-950" />
+          <Icon className="size-6 text-foreground" />
           <span className={QUICK_CARD_LABEL}>{template.label}</span>
         </button>
       );
@@ -600,10 +649,10 @@ const QuickCreateTemplates = ({ disabled, onCreate }: QuickCreateTemplatesProps)
     {/* Browse the full gallery instead of creating a form. */}
     <Link
       to="/templates"
-      className={cn(QUICK_CARD_CLASS, "border-gray-100")}
+      className={cn(QUICK_CARD_CLASS, "border-border")}
       aria-label="Browse all templates"
     >
-      <FigAppsIcon className="size-6 text-gray-950" />
+      <FigAppsIcon className="size-6 text-foreground" />
       <span className={QUICK_CARD_LABEL}>All Templates</span>
     </Link>
   </div>
@@ -694,6 +743,7 @@ const DashboardFormGrid = ({
   formatLastEdited,
 }: DashboardFormGridProps) => {
   if (isSyncing) return <SyncOverlay />;
+
   if (isLoading) {
     return (
       <div
@@ -703,7 +753,7 @@ const DashboardFormGrid = ({
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={`skeleton-${i}`}
-            className="bg-gray-0 h-[218px] animate-pulse rounded-[12px] border border-gray-100"
+            className="h-[218px] animate-pulse rounded-2xl border border-border bg-card"
           />
         ))}
       </div>
@@ -743,7 +793,8 @@ const FormCard = ({ form, responseCount, formatLastEdited }: FormCardProps) => {
   const isPublished = form.status === "published";
 
   return (
-    <div className="group bg-gray-0 relative flex flex-col rounded-[12px] border border-gray-100 px-1.5 pt-1.5 pb-2 transition-[background-color,box-shadow] duration-200 hover:elevation-card">
+    // oxlint-disable-next-line shadcn/no-arbitrary-values -- custom background+shadow transition has no plain-utility equivalent
+    <div className="group relative flex flex-col rounded-2xl border border-border bg-card px-1.5 pt-1.5 pb-2 transition-[background-color,box-shadow] duration-200 hover:elevation-card">
       <Link
         to={
           isPublished
@@ -763,6 +814,7 @@ const FormCard = ({ form, responseCount, formatLastEdited }: FormCardProps) => {
         {/* Info block */}
         <div className="mt-3 flex w-full flex-col gap-2">
           <div className="px-1">
+            {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.28px tracking has no scale equivalent */}
             <p className="truncate text-base font-medium tracking-[0.28px] text-foreground">
               {form.title || "Untitled"}
             </p>
@@ -775,28 +827,31 @@ const FormCard = ({ form, responseCount, formatLastEdited }: FormCardProps) => {
                 <span
                   className={cn(
                     "size-1.5 rounded-full",
-                    isPublished ? "bg-[var(--color-success)]" : "bg-muted-foreground/50",
+                    isPublished ? "bg-(--color-success)" : "bg-muted-foreground/50",
                   )}
                 />
               </span>
               <span
                 className={cn(
+                  // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.28px tracking have no scale equivalent
                   "text-base font-[420] tracking-[0.28px]",
-                  isPublished ? "text-[var(--color-success)]" : "text-muted-foreground",
+                  isPublished ? "text-(--color-success)" : "text-muted-foreground",
                 )}
               >
                 {isPublished ? "Published" : "Draft"}
               </span>
             </MetaRow>
             <MetaRow>
-              <FigTimeIcon className="size-4 shrink-0 text-gray-700" />
-              <span className="min-w-0 truncate text-base font-[420] tracking-[0.28px] text-gray-700">
+              <FigTimeIcon className="size-4 shrink-0 text-foreground" />
+              {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.28px tracking have no scale equivalent */}
+              <span className="min-w-0 truncate text-base font-[420] tracking-[0.28px] text-foreground">
                 {formatLastEdited(form.updatedAt)}
               </span>
             </MetaRow>
             <MetaRow>
-              <FigPeopleIcon className="size-4 shrink-0 text-gray-700" />
-              <span className="min-w-0 truncate text-base font-[420] tracking-[0.28px] text-gray-700">
+              <FigPeopleIcon className="size-4 shrink-0 text-foreground" />
+              {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.28px tracking have no scale equivalent */}
+              <span className="min-w-0 truncate text-base font-[420] tracking-[0.28px] text-foreground">
                 {responseCount === 0
                   ? "--"
                   : `${responseCount} ${responseCount === 1 ? "response" : "responses"}`}
@@ -810,13 +865,15 @@ const FormCard = ({ form, responseCount, formatLastEdited }: FormCardProps) => {
 };
 
 const MetaRow = ({ children }: { children: React.ReactNode }) => (
-  <div className="flex w-full items-center gap-2 px-1 py-[5px]">{children}</div>
+  <div className="flex w-full items-center gap-2 px-1 py-1.25">{children}</div>
 );
 
 // Shared column widths for the list table (Figma node 26216:13434). Title is fluid (flex-1);
 // a 32px gap (gap-8) separates it from the fixed Status/Responses/Edited columns.
 const LIST_COL_STATUS = "w-36"; // 144px
+
 const LIST_COL_RESPONSES = "w-36"; // 144px
+
 const LIST_COL_EDITED = "w-[216px]";
 
 interface DashboardTableProps {
@@ -825,14 +882,15 @@ interface DashboardTableProps {
 }
 
 const TableHead = ({ children }: { children: React.ReactNode }) => (
-  <span className="text-sm font-[420] tracking-[0.26px] text-gray-500">{children}</span>
+  // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.26px tracking have no scale equivalent
+  <span className="text-sm font-[420] tracking-[0.26px] text-muted-foreground">{children}</span>
 );
 
 const DashboardTable = ({ paginatedForms, submissionCounts }: DashboardTableProps) => (
   <div className="overflow-x-auto">
     <div className="min-w-[680px]">
       {/* Header row — border-b gray-100, 13px / font-420 / gray-500 (Figma 26216:13365) */}
-      <div className="flex h-8 items-center gap-8 border-b border-gray-100 px-1">
+      <div className="flex h-8 items-center gap-8 border-b border-border px-1">
         <div className="flex-1 px-2">
           <TableHead>Name</TableHead>
         </div>
@@ -867,7 +925,7 @@ const FormListRow = ({ form, responseCount }: FormListRowProps) => {
   const relative = `${formatDistanceToNow(parseTimestampAsUTC(form.updatedAt) ?? new Date())} ago`;
 
   return (
-    <div className="group flex h-11 items-center gap-8 rounded-lg border-b border-gray-100 px-1 transition-colors hover:bg-secondary">
+    <div className="group flex h-11 items-center gap-8 rounded-lg border-b border-border px-1 transition-colors hover:bg-secondary">
       {/* Name — thumbnail + title */}
       <div className="flex min-w-0 flex-1 items-center gap-2 pl-1">
         <Link
@@ -885,7 +943,8 @@ const FormListRow = ({ form, responseCount }: FormListRowProps) => {
             cover={form.cover}
             preview={form.previewImageUrl}
           />
-          <span className="truncate text-base font-[450] tracking-[0.28px] text-gray-800">
+          {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 450 weight + 0.28px tracking have no scale equivalent */}
+          <span className="truncate text-base font-[450] tracking-[0.28px] text-foreground">
             {form.title || "Untitled"}
           </span>
         </Link>
@@ -896,9 +955,10 @@ const FormListRow = ({ form, responseCount }: FormListRowProps) => {
         <div className={cn(LIST_COL_STATUS, "px-2")}>
           <span
             className={cn(
-              "inline-flex items-center rounded-[60px] px-1.5 py-[3px] text-xs font-[450] tracking-[0.24px]",
+              // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma pill (60px radius, 450 weight, 0.24px tracking) has no scale equivalent
+              "inline-flex items-center rounded-[60px] px-1.5 py-0.75 text-xs font-[450] tracking-[0.24px]",
               isPublished
-                ? "bg-[var(--color-success-soft)] text-[var(--color-success-on-soft)]"
+                ? "bg-(--color-success-soft) text-(--color-success-on-soft)"
                 : "bg-secondary text-muted-foreground",
             )}
           >
@@ -907,13 +967,15 @@ const FormListRow = ({ form, responseCount }: FormListRowProps) => {
         </div>
         {/* Responses */}
         <div className={cn(LIST_COL_RESPONSES, "px-2")}>
-          <span className="text-base font-[420] tracking-[0.28px] text-gray-700">
+          {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.28px tracking have no scale equivalent */}
+          <span className="text-base font-[420] tracking-[0.28px] text-foreground">
             {responseCount}
           </span>
         </div>
         {/* Last edited */}
         <div className={cn(LIST_COL_EDITED, "px-2")}>
-          <span className="truncate text-base font-[420] tracking-[0.28px] text-gray-700">
+          {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 420 weight + 0.28px tracking have no scale equivalent */}
+          <span className="truncate text-base font-[420] tracking-[0.28px] text-foreground">
             {relative}
           </span>
         </div>

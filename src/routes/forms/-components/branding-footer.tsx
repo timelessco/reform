@@ -7,7 +7,7 @@ export const BrandingFooter = () => (
       href={APP_WEBSITE_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
+      className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
     >
       <span>Made with</span>
       <SparklesIcon className="size-3 fill-muted-foreground text-muted-foreground" />

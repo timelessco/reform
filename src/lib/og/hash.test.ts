@@ -7,6 +7,7 @@ describe("computeOgHash", () => {
       title: "Customer Feedback",
       description: "Tell us what you think.",
     });
+
     expect(hash).toHaveLength(10);
     expect(hash).toMatch(/^[A-Za-z0-9_-]+$/);
   });

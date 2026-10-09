@@ -4,14 +4,17 @@ import { safeStorage } from "@/lib/safe-storage";
 import { createPublicSubmission } from "@/lib/server-fn/public-submissions";
 
 const draftKey = (formId: string) => `bf-draft-${formId}`;
+
 const draftDataKey = (formId: string) => `bf-draft-data-${formId}`;
 
 /** Read persisted draftId, or generate+persist one. Ephemeral UUID fallback when localStorage unavailable (SSR, private mode). */
 export const getOrCreateDraftId = (formId: string): string => {
   const existing = safeStorage.get(draftKey(formId));
+
   if (existing) return existing;
   const fresh = crypto.randomUUID();
   safeStorage.set(draftKey(formId), fresh); // no-op when storage unavailable — fresh id stays ephemeral
+
   return fresh;
 };
 
@@ -51,18 +54,24 @@ export const useDraftAutoSave = (formId: string) => {
     async ({ values, lastStepReached }: SaveDraftInput) => {
       // Strip transient File/Blob — raw File lives one tick before upload listener swaps in URL; persisting serializes to `{}` and clobbers saved URL.
       const sanitized: Record<string, unknown> = {};
+
       for (const [k, v] of Object.entries(values)) {
         if (typeof File !== "undefined" && v instanceof File) continue;
+
         if (typeof Blob !== "undefined" && v instanceof Blob) continue;
         sanitized[k] = v;
       }
 
       const hasAnyValue = Object.values(sanitized).some((v) => {
         if (v == null) return false;
+
         if (typeof v === "string") return v.length > 0;
+
         if (Array.isArray(v)) return v.length > 0;
+
         return true;
       });
+
       if (!hasAnyValue) return;
 
       // Mirror locally first — tab closed mid-flight still leaves a resumable copy.
@@ -73,6 +82,7 @@ export const useDraftAutoSave = (formId: string) => {
       });
 
       const draftId = getOrCreateDraftId(formId);
+
       try {
         await createPublicSubmission({
           data: {

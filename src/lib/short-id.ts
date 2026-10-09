@@ -2,6 +2,7 @@ import { customAlphabet } from "nanoid";
 import * as v from "valibot";
 
 export const SHORT_ID_LENGTH = 7;
+
 export const SHORT_ID_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 export const generateShortId = customAlphabet(SHORT_ID_ALPHABET, SHORT_ID_LENGTH);

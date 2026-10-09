@@ -10,8 +10,11 @@ import { resolveSource } from "./source";
 import { buildHistogram } from "./vitals";
 
 type RawVisit = typeof formVisits.$inferSelect;
+
 type RawProgress = typeof formQuestionProgress.$inferSelect;
+
 type DailyAnalyticsInsert = typeof formAnalyticsDaily.$inferInsert;
+
 type DailyDropoffInsert = typeof formDropoffDaily.$inferInsert;
 
 // dropoffRate/completionRate stored as percentage * 100 (50% → 5000). Scaled int
@@ -22,10 +25,13 @@ const computeAverage = (values: number[]): number | null => {
   if (values.length === 0) {
     return null;
   }
+
   let sum = 0;
+
   for (const v of values) {
     sum += v;
   }
+
   return Math.round(sum / values.length);
 };
 
@@ -33,6 +39,7 @@ export const bumpKey = (target: Record<string, number>, key: string | null | und
   if (!key) {
     return;
   }
+
   target[key] = (target[key] ?? 0) + 1;
 };
 
@@ -48,8 +55,10 @@ export const buildDailyAnalyticsRows = (
   }
 
   const groups = new Map<string, RawVisit[]>();
+
   for (const visit of visits) {
     const list = groups.get(visit.formId);
+
     if (list) {
       list.push(visit);
     } else {
@@ -93,9 +102,11 @@ export const buildDailyAnalyticsRows = (
       if (visit.lcpMs !== null && visit.lcpMs !== undefined) {
         lcpSamples.push(visit.lcpMs);
       }
+
       if (visit.inpMs !== null && visit.inpMs !== undefined) {
         inpSamples.push(visit.inpMs);
       }
+
       if (visit.cls !== null && visit.cls !== undefined) {
         clsSamples.push(visit.cls);
       }
@@ -170,13 +181,16 @@ export const buildDailyDropoffRows = ({
 
   // Terminal-drop per Visit: incomplete Visit's latest-startedAt Question w/ null completedAt, +1.
   const visitsById = new Map<string, VisitForRollup>();
+
   for (const v of visits) {
     visitsById.set(v.id, v);
   }
 
   const rowsByVisit = new Map<string, RawProgress[]>();
+
   for (const event of progressEvents) {
     const list = rowsByVisit.get(event.visitId);
+
     if (list) {
       list.push(event);
     } else {
@@ -185,32 +199,42 @@ export const buildDailyDropoffRows = ({
   }
 
   const terminalCount = new Map<string, number>();
+
   for (const [visitId, vRows] of rowsByVisit) {
     const visit = visitsById.get(visitId);
+
     if (!visit) {
       continue;
     }
+
     if (visit.didSubmit) {
       continue;
     }
+
     if (!visit.visitEndedAt) {
       continue;
     }
+
     let terminal: RawProgress | null = null;
     let terminalTs = -Infinity;
+
     for (const row of vRows) {
       if (row.startedAt === null) {
         continue;
       }
+
       if (row.completedAt !== null) {
         continue;
       }
+
       const ts = row.startedAt.getTime();
+
       if (ts > terminalTs) {
         terminal = row;
         terminalTs = ts;
       }
     }
+
     if (terminal !== null) {
       const key = terminal.questionId;
       terminalCount.set(key, (terminalCount.get(key) ?? 0) + 1);
@@ -218,6 +242,7 @@ export const buildDailyDropoffRows = ({
   }
 
   type GroupKey = string;
+
   const groups = new Map<
     GroupKey,
     {
@@ -233,6 +258,7 @@ export const buildDailyDropoffRows = ({
   for (const event of progressEvents) {
     const key = `${event.formId} ${event.questionId} ${event.questionIndex}`;
     const existing = groups.get(key);
+
     if (existing) {
       existing.events.push(event);
     } else {
@@ -254,13 +280,16 @@ export const buildDailyDropoffRows = ({
     let startCount = 0;
     let completeCount = 0;
     let dropoffCount = 0;
+
     for (const event of group.events) {
       if (event.startedAt !== null) {
         startCount += 1;
       }
+
       if (event.completedAt !== null) {
         completeCount += 1;
       }
+
       // ADR-0002: dropoffCount = "started but not completed" (intra-Question).
       if (event.startedAt !== null && event.completedAt === null) {
         dropoffCount += 1;
@@ -269,6 +298,7 @@ export const buildDailyDropoffRows = ({
 
     let dropoffRate: number | null = null;
     let completionRate: number | null = null;
+
     if (viewCount > 0) {
       dropoffRate = Math.round((dropoffCount / viewCount) * 100 * PERCENT_SCALE);
       completionRate = Math.round((completeCount / viewCount) * 100 * PERCENT_SCALE);

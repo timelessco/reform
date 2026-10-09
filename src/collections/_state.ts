@@ -30,7 +30,9 @@ import type { addFavorite, removeFavorite, reorderFavorite } from "@/lib/server-
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- `any` required: function constraints need contravariant params
 type ServerFn = (...args: any[]) => any;
+
 export type ServerFnInput<T extends ServerFn> = NonNullable<Parameters<T>[0]>["data"];
+
 export type ServerFnOutput<T extends ServerFn> = Awaited<ReturnType<T>>;
 
 /** null -> undefined so collection data matches Zod-validated server fn inputs. */
@@ -107,6 +109,7 @@ export const getInit = () => {
   if (!state.serverFns || !state.queryClient) {
     throw new Error("Collections not initialized. Call initCollections() first.");
   }
+
   return {
     serverFns: state.serverFns,
     queryClient: state.queryClient,

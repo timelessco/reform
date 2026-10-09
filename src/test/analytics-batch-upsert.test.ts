@@ -73,6 +73,7 @@ describe("recordQuestionProgressBatchImpl multi-row upsert", () => {
       .select({ id: forms.id })
       .from(forms)
       .where(eq(forms.workspaceId, workspaceId));
+
     if (formIds.length > 0) {
       const ids = formIds.map((f) => f.id);
       await db.delete(formQuestionProgress).where(inArray(formQuestionProgress.formId, ids));
@@ -81,6 +82,7 @@ describe("recordQuestionProgressBatchImpl multi-row upsert", () => {
       await db.delete(formDropoffDaily).where(inArray(formDropoffDaily.formId, ids));
       await db.delete(formSettings).where(inArray(formSettings.formId, ids));
     }
+
     await db.delete(forms).where(eq(forms.workspaceId, workspaceId));
     await cleanupTestUser(ownerId);
     await cleanupTestOrg(orgId);

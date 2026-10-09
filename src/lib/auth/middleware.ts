@@ -26,6 +26,7 @@ const tagLoggerWithSession = (
 ) => {
   if (!session) return;
   const log = getNitroRequest().context?.log as RequestLogger | undefined;
+
   if (!log) return;
 
   const sessionData = session.session;
@@ -62,14 +63,17 @@ const INTERNAL_PATH_PREFIX = /^\/(?:_|api\/)/;
 export const pickPostLoginRedirect = (pathname: string, headers: Headers): string => {
   if (!INTERNAL_PATH_PREFIX.test(pathname)) return pathname;
   const referer = headers.get("referer");
+
   if (referer) {
     try {
       const refPath = new URL(referer).pathname;
+
       if (!INTERNAL_PATH_PREFIX.test(refPath)) return refPath;
     } catch {
       // malformed referer — fall through to default
     }
   }
+
   return "/dashboard";
 };
 
@@ -100,10 +104,12 @@ export const formProSettingsMiddleware = createMiddleware({ type: "function" })
   .server(async ({ next, data, context }) => {
     const input = data as unknown as FormProSettingsInput;
     const gates = formSettingsFeatureGates(input);
+
     if (gates.length === 0) return next();
 
     const plan = await getOrgPlan(getActiveOrgId(context.session));
     const blocked = gates.find((gate) => !planUnlocks(plan, gate));
+
     if (blocked) {
       throw createError({
         code: "plan/pro-required" satisfies ErrorCode,
@@ -114,6 +120,7 @@ export const formProSettingsMiddleware = createMiddleware({ type: "function" })
         internal: { feature: blocked, plan, gates },
       });
     }
+
     return next();
   });
 

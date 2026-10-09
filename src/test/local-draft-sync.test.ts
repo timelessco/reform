@@ -17,6 +17,7 @@ import {
 
 const fetchFormListings = async (formId: string): Promise<FormListing[]> => {
   const [f] = await db.select().from(forms).where(eq(forms.id, formId));
+
   return f ? [toFormListing(f)] : [];
 };
 
@@ -62,6 +63,7 @@ describe("local draft sync without Electric txids", () => {
 
   it("refetch returns empty when server write failed (form not in DB)", async () => {
     const missingId = "00000000-0000-0000-0000-000000000000";
+
     const collection = createFormListingCollection({
       queryClient,
       queryFn: () => fetchFormListings(missingId),

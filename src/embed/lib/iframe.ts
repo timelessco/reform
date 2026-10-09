@@ -3,11 +3,14 @@ import type { PopupOptions } from "./types";
 /** Forms base URL — from script src in prod, current origin in local dev. */
 const getBaseUrl = (): string => {
   const scripts = document.getElementsByTagName("script");
+
   for (let i = scripts.length - 1; i >= 0; i--) {
     const src = scripts[i].src;
+
     if (src?.includes("/embed/popup.js")) {
       try {
         const url = new URL(src);
+
         return url.origin;
       } catch {
         // Fall through to default
@@ -74,6 +77,7 @@ export const createIframe = (
 
 /** Hard cap on popup height — matches the original bubble-mode clamp. */
 const IFRAME_HEIGHT_MAX = 600;
+
 /** Leave margin top+bottom so the popup never touches the viewport edges. */
 const IFRAME_VIEWPORT_MARGIN = 40;
 

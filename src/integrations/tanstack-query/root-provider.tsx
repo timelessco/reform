@@ -9,6 +9,7 @@ export const getContext = () => {
       },
     },
   });
+
   return {
     queryClient,
   };

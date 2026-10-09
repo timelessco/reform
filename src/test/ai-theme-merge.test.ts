@@ -107,6 +107,7 @@ describe("streaming-path / theme-mode parity (backwards compat after refactor)",
       "light:background": "#ffffff",
       "dark:background": "#0a0a0a",
     };
+
     const op: SetThemeOp = {
       type: "set-theme",
       tokens,
@@ -115,6 +116,7 @@ describe("streaming-path / theme-mode parity (backwards compat after refactor)",
     };
 
     const fromStreamingPath = mergeSetThemeOpIntoCustomization({}, op);
+
     const fromThemeModePath = mergeThemeIntoCustomization(
       {},
       {
@@ -157,6 +159,7 @@ describe("mergeSetThemeOpIntoCustomization (streaming AI path → set-theme op)"
       font: "Poppins",
       radius: "large",
     };
+
     const merged = mergeSetThemeOpIntoCustomization({}, op);
 
     expect(merged["light:primary"]).toBe("#2563eb");
@@ -171,6 +174,7 @@ describe("mergeSetThemeOpIntoCustomization (streaming AI path → set-theme op)"
       type: "set-theme",
       font: "Inter",
     };
+
     const merged = mergeSetThemeOpIntoCustomization({ themeColor: "blue", titleFont: "Lora" }, op);
 
     expect(merged.themeColor).toBe("blue");
@@ -193,6 +197,7 @@ describe("mergeSetThemeOpIntoCustomization (streaming AI path → set-theme op)"
       type: "set-theme",
       tokens: { "light:primary": "#000" },
     };
+
     const merged = mergeSetThemeOpIntoCustomization({}, op);
 
     expect(merged["light:primary"]).toBe("#000");

@@ -78,8 +78,10 @@ import { useHotkey, useHotkeys } from "@tanstack/react-hotkeys";
 import { HOTKEYS, formatForDisplay } from "@/lib/hotkeys";
 
 type FieldStatus = "current" | "deleted";
+
 const EMPTY_LABELS: Record<string, string> = {};
-// Built-in column ids — payload keys colliding would construct duplicate columns silently.
+
+// Built-in column ids; payload keys colliding would construct duplicate columns silently.
 const RESERVED_COLUMN_IDS = new Set([
   "select",
   "submitted_at",
@@ -90,7 +92,10 @@ const RESERVED_COLUMN_IDS = new Set([
 
 // Header labels: gray-600 (Figma) for normal fields; deleted/orphaned fields go red so removed
 // fields read clearly (replaces the old green/red status dots).
+// oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.02em header tracking has no scale equivalent
 const HEADER_LABEL_CLS = "text-muted-foreground tracking-[0.02em]";
+
+// oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.02em header tracking has no scale equivalent
 const HEADER_LABEL_DELETED_CLS = "text-destructive tracking-[0.02em]";
 
 const SUBMITTED_AT_FORMATTER = new Intl.DateTimeFormat(undefined, {
@@ -111,12 +116,13 @@ const formatDateCellValue = (text: string): string => {
 const formatSubmittedAt = (value: string | Date): string =>
   SUBMITTED_AT_FORMATTER.format(new Date(value));
 
-// Single-view header date (Figma 27015:20854) — "Jun 2, 2026".
+// Single-view header date (Figma 27015:20854), "Jun 2, 2026".
 const SUBMISSION_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
   month: "short",
   day: "numeric",
   year: "numeric",
 });
+
 type PaginatedSubmissionsPage = {
   submissions: SerializedSubmission[];
   nextCursor?: SubmissionCursor;
@@ -169,26 +175,31 @@ const isUploadedFileValue = (value: unknown): value is UploadedFileValue =>
 
 const FileTypeIcon = ({ type, className }: { type: string; className?: string }) => {
   if (type === "application/pdf") {
-    return <FileText className={cn("text-red-500", className)} />;
+    return <FileText className={cn("text-destructive", className)} />;
   }
+
   if (
     type === "application/msword" ||
     type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   ) {
-    return <FileText className={cn("text-blue-500", className)} />;
+    return <FileText className={cn("text-chart-2", className)} />;
   }
+
   return <Paperclip className={cn("text-muted-foreground", className)} />;
 };
 
 const csvFormat = (value: unknown): string => {
   if (isUploadedFileValue(value)) return value.url;
+
   if (value === null || value === undefined) return "";
+
   if (Array.isArray(value)) {
     return value
       .map((v) => csvFormat(v))
       .filter((s) => s !== "")
       .join("; ");
   }
+
   if (typeof value === "object") {
     try {
       return JSON.stringify(value);
@@ -196,11 +207,12 @@ const csvFormat = (value: unknown): string => {
       return "";
     }
   }
+
   return String(value);
 };
 
-// Field types eligible for the Repeatable toggle — used to gate the
-// scalar-array chip renderer so we don't disturb MultiSelect's colored chips.
+// Field types eligible for the Repeatable toggle; gates the
+// scalar-array chip renderer so MultiSelect's colored chips stay untouched.
 const SCALAR_CELL_TYPES = new Set([
   "Input",
   "Textarea",
@@ -227,36 +239,42 @@ const SubmissionCell = ({
 }) => {
   const labelFor = (raw: unknown): string => {
     const s = String(raw);
+
     if (!options) return s;
     const match = options.find((o) => o.value === s);
+
     return match?.label ?? s;
   };
+
   const text = formatSubmissionValue(value);
+
   if (text === "-") {
-    return <span className="text-[14px] text-muted-foreground">-</span>;
+    return <span className="text-base text-muted-foreground">-</span>;
   }
 
-  // Repeatable scalar fields land here as arrays — flatten to comma-separated text
+  // Repeatable scalar fields land here as arrays; flatten to comma-separated text
   // (Figma) before the per-type renderers below (a single mailto: for two emails or
   // an "Invalid Date" for an array of dates would otherwise be wrong).
   if (Array.isArray(value) && SCALAR_CELL_TYPES.has(fieldType)) {
     const arr = value.filter((v) => v !== "" && v != null);
-    if (arr.length === 0) return <span className="text-[14px] text-muted-foreground">-</span>;
+
+    if (arr.length === 0) return <span className="text-base text-muted-foreground">-</span>;
+
     const joined = arr
       .map((item) => (fieldType === "Date" ? formatDateCellValue(String(item)) : labelFor(item)))
       .join(", ");
-    return <span className="block max-w-[300px] truncate text-[14px]">{joined}</span>;
+
+    return <span className="block max-w-[300px] truncate text-base">{joined}</span>;
   }
 
   switch (fieldType) {
     // Email/Link stay clickable (mailto / new-tab) but inherit the same cell color as every other
-    // type — Figma renders all answer values in one uniform color (no link tint). Underline on hover
-    // is the only affordance.
+    // type; Figma renders all answer values in one uniform color (no link tint). Underline on hover is the only affordance.
     case "Email":
       return (
         <a
           href={`mailto:${text}`}
-          className="block max-w-[300px] truncate text-[14px] hover:underline"
+          className="block max-w-[300px] truncate text-base hover:underline"
           onClick={(e) => e.stopPropagation()}
         >
           {text}
@@ -268,7 +286,7 @@ const SubmissionCell = ({
           href={text.startsWith("http") ? text : `https://${text}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="block max-w-[300px] truncate text-[14px] hover:underline"
+          className="block max-w-[300px] truncate text-base hover:underline"
           onClick={(e) => e.stopPropagation()}
         >
           {text}
@@ -276,18 +294,18 @@ const SubmissionCell = ({
       );
     case "Date":
       return (
-        <span className="block max-w-[300px] truncate text-[14px]">
-          {formatDateCellValue(text)}
-        </span>
+        <span className="block max-w-[300px] truncate text-base">{formatDateCellValue(text)}</span>
       );
     case "Time":
     case "Phone":
     case "Number":
-      return <span className="block max-w-[300px] truncate text-[14px]">{text}</span>;
+      return <span className="block max-w-[300px] truncate text-base">{text}</span>;
     case "Rating": {
-      // Figma 26566:46117 — 5 × 20px stars, gap 1px; filled (gold) up to the value, rest empty outline.
+      // Figma 26566:46117, 5 × 20px stars, gap 1px; filled (gold) up to the value, rest empty outline.
       const rating = Math.max(0, Math.min(5, Math.round(Number(text) || 0)));
-      if (!rating) return <span className="text-[14px] text-muted-foreground">-</span>;
+
+      if (!rating) return <span className="text-base text-muted-foreground">-</span>;
+
       return (
         <div className="flex items-center gap-px" aria-label={`${rating} out of 5`}>
           {Array.from({ length: 5 }, (_, i) =>
@@ -300,6 +318,7 @@ const SubmissionCell = ({
         </div>
       );
     }
+
     case "Signature":
       return typeof value === "string" && value.startsWith("data:image") ? (
         <img
@@ -308,7 +327,7 @@ const SubmissionCell = ({
           className="h-8 max-w-[160px] rounded border border-border bg-white object-contain"
         />
       ) : (
-        <span className="text-[14px] text-muted-foreground">-</span>
+        <span className="text-base text-muted-foreground">-</span>
       );
     case "Checkbox":
     case "MultiChoice":
@@ -317,22 +336,27 @@ const SubmissionCell = ({
       // Multi-value answers render as comma-separated text (Figma), not pill chips.
       const items = Array.isArray(value) ? value : null;
       const display = items ? items.map((item) => labelFor(item)).join(", ") : labelFor(value);
-      return <span className="block max-w-[300px] truncate text-[14px]">{display}</span>;
+
+      return <span className="block max-w-[300px] truncate text-base">{display}</span>;
     }
+
     case "FileUpload": {
       // Legacy: bare string filename from old submissions
       if (typeof value === "string") {
         return (
-          <span className="block max-w-[180px] truncate text-[14px] text-muted-foreground italic">
+          <span className="block max-w-[180px] truncate text-base text-muted-foreground italic">
             {value}
           </span>
         );
       }
+
       if (!isUploadedFileValue(value)) {
-        return <span className="text-[14px] text-muted-foreground">-</span>;
+        return <span className="text-base text-muted-foreground">-</span>;
       }
+
       const file = value;
       const isImage = file.type.startsWith("image/");
+
       return (
         <button
           type="button"
@@ -358,7 +382,7 @@ const SubmissionCell = ({
             <img src="/icons/file-doc.svg" alt="" className="h-5 w-auto shrink-0" />
           )}
           {!isImage && (
-            <span className="truncate text-[14px] text-gray-700 group-hover:text-foreground">
+            <span className="truncate text-base text-foreground group-hover:text-foreground">
               {file.name}
             </span>
           )}
@@ -396,7 +420,7 @@ const buildSubmissionColumns = ({
   const baseColumns: ColumnDef<DataGridFeatures, SerializedSubmission>[] = [
     columnHelper.display({
       id: "select",
-      // all-rows APIs walk the filtered model — correct for infinite scroll, respects tab/search filters
+      // all-rows APIs walk the filtered model; correct for infinite scroll, respects tab/search filters
       header: ({ table }) => (
         <Checkbox
           checked={table.getIsAllRowsSelected()}
@@ -428,7 +452,7 @@ const buildSubmissionColumns = ({
         cell: (info) => (
           <div className="group/row flex min-w-0 items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="min-w-0 truncate text-[14px]">
+              <span className="min-w-0 truncate text-base">
                 {formatSubmittedAt(info.getValue())}
               </span>
             </div>
@@ -458,7 +482,7 @@ const buildSubmissionColumns = ({
       }),
     ),
     toSubmissionColumn(
-      // Status pill (Figma 26566:46099) — Complete green / Partial yellow.
+      // Status pill (Figma 26566:46099), Complete green / Partial yellow.
       columnHelper.accessor((row) => row.isCompleted, {
         id: "status",
         header: ({ column }) => (
@@ -466,15 +490,17 @@ const buildSubmissionColumns = ({
         ),
         cell: (info) => {
           const done = info.getValue();
+
           return (
             <span
               className={cn(
                 // Figma 27015:17561/17488 (light) + 27015:17706/17633 (dark): 12px / Medium(450) /
                 // 0.24px (0.02em) / lh1.15, 6×3 pad, pill.
-                "inline-flex items-center rounded-full px-1.5 py-[3px] text-[12px] leading-[1.15] font-[450] tracking-[0.02em]",
+                // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma pill type (450 weight, lh 1.15, 0.02em tracking) has no scale equivalent
+                "inline-flex items-center rounded-full px-1.5 py-0.75 text-xs leading-[1.15] font-[450] tracking-[0.02em]",
                 done
-                  ? "bg-[var(--color-success-soft)] text-[var(--color-success-on-soft)]"
-                  : "bg-[var(--color-partial-soft)] text-[var(--color-partial-on-soft)]",
+                  ? "bg-(--color-success-soft) text-(--color-success-on-soft)"
+                  : "bg-(--color-partial-soft) text-(--color-partial-on-soft)",
               )}
             >
               {done ? "Complete" : "Partial"}
@@ -488,7 +514,7 @@ const buildSubmissionColumns = ({
       }),
     ),
     toSubmissionColumn(
-      // null coerced to undefined — sortUndefined only checks === undefined (createSortedRowModel)
+      // null coerced to undefined; sortUndefined only checks === undefined (createSortedRowModel)
       columnHelper.accessor((row) => row.lastStepReached ?? undefined, {
         id: "last_step_reached",
         header: ({ column }) => (
@@ -496,8 +522,10 @@ const buildSubmissionColumns = ({
         ),
         cell: (info) => {
           const step = info.getValue();
+
           if (step === undefined) return <span className="text-muted-foreground">-</span>;
-          return <span className="text-[14px]">Step {step + 1}</span>;
+
+          return <span className="text-base">Step {step + 1}</span>;
         },
         sortUndefined: "last",
         size: 120,
@@ -545,13 +573,13 @@ const buildSubmissionColumns = ({
                   options={"options" in field ? (field.options as FieldOption[]) : undefined}
                 />
               ),
-              // Per-column header search — substring match against the rendered cell text.
+              // Per-column header search; substring match against the rendered cell text.
               enableColumnFilter: true,
               filterFn: (row, columnId, value) =>
                 formatSubmissionValue(row.getValue(columnId))
                   .toLowerCase()
                   .includes(String(value).toLowerCase()),
-              // sparse column — empties last (numeric default 1 flips with desc putting empties first)
+              // sparse column; empties last (numeric default 1 flips with desc putting empties first)
               sortUndefined: "last",
               // object values produce inconsistent comparators
               enableSorting: field.fieldType !== "FileUpload" && field.fieldType !== "Signature",
@@ -590,7 +618,7 @@ const buildSubmissionColumns = ({
                 onPreview={onPreview}
               />
             ),
-            // deleted-field data has unknown shapes — object values produce inconsistent comparators
+            // deleted-field data has unknown shapes; object values produce inconsistent comparators
             sortUndefined: "last",
             enableSorting: false,
             size: 150,
@@ -606,7 +634,7 @@ const buildSubmissionColumns = ({
   return { columns: baseColumns, fieldCounts: counts };
 };
 
-// Shared query defs — loader + component can't drift on key/queryFn/options.
+// Shared query defs; loader + component can't drift on key/queryFn/options.
 const submissionsBootstrapQueryOptions = (formId: string) =>
   queryOptions({
     queryKey: ["submissionsBootstrap", formId],
@@ -621,13 +649,14 @@ const submissionsInfiniteQueryOptions = (formId: string) =>
       getPaginatedSubmissionsPage(formId, pageParam),
     initialPageParam: undefined as SubmissionCursor | undefined,
     getNextPageParam: (lastPage) => lastPage?.nextCursor,
-    // Inbox — fresh on refocus. Explicit 0 overrides global 60s default that would suppress refetchOnWindowFocus in the first minute.
+    // Inbox; fresh on refocus. Explicit 0 overrides global 60s default that would suppress refetchOnWindowFocus in the first minute.
     staleTime: 0,
     refetchOnWindowFocus: true,
   });
 
 const SubmissionsPage = () => {
   const { formId } = Route.useParams();
+  const { bootstrapQueryOptions, submissionsQueryOptions } = Route.useRouteContext();
   const queryClient = useQueryClient();
   Route.useLoaderData(); // ensure loader has primed the query cache
   const [activeTab, setActiveTab] = useState<"all" | "completed" | "partial">("all");
@@ -638,14 +667,16 @@ const SubmissionsPage = () => {
   const [previewFile, setPreviewFile] = useState<UploadedFileValue | null>(null);
   const openPreview = useCallback((file: UploadedFileValue) => setPreviewFile(file), []);
   const closePreview = useCallback(() => setPreviewFile(null), []);
+
   const handleGlobalFilterChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => setGlobalFilter(e.target.value),
     [],
   );
+
   const handleClearSelection = useCallback(() => setRowSelection({}), []);
 
   // Bootstrap (published content + count + historical labels): blocking suspense data. Loader awaits ensureQueryData → cache primed, pendingComponent covers first load. 10min staleTime → rarely refetches, low error-boundary risk.
-  const { data: bootstrapData } = useSuspenseQuery(submissionsBootstrapQueryOptions(formId));
+  const { data: bootstrapData } = useSuspenseQuery(bootstrapQueryOptions);
   const publishedContent = bootstrapData?.form?.content;
   const totalCount = bootstrapData?.totalCount ?? 0;
   const historicalLabels = bootstrapData?.fieldLabels ?? EMPTY_LABELS;
@@ -657,20 +688,22 @@ const SubmissionsPage = () => {
     hasNextPage,
     isFetchingNextPage,
     isLoading: isLoadingSubmissions,
-  } = useInfiniteQuery(submissionsInfiniteQueryOptions(formId));
+  } = useInfiniteQuery(submissionsQueryOptions);
 
   const allSubmissions: SerializedSubmission[] = useMemo(
     () => submissionsData?.pages?.flatMap((page) => page?.submissions ?? []) ?? [],
     [submissionsData],
   );
 
-  // Intersect with loaded ids — stale keys from refetch/delete never drive bulk actions/hotkeys.
+  // Intersect with loaded ids; stale keys from refetch/delete never drive bulk actions/hotkeys.
   const effectiveRowSelection = useMemo(() => {
     const loadedIds = new Set(allSubmissions.map((s) => s.id));
     const next: RowSelectionState = {};
+
     for (const id of Object.keys(rowSelection)) {
       if (loadedIds.has(id)) next[id] = true;
     }
+
     return next;
   }, [allSubmissions, rowSelection]);
 
@@ -681,6 +714,7 @@ const SubmissionsPage = () => {
       setRowSelection((prev) => {
         if (!prev[submissionId]) return prev;
         const { [submissionId]: _removed, ...rest } = prev;
+
         return rest;
       });
       void queryClient.invalidateQueries({ queryKey: ["submissions", formId] });
@@ -690,15 +724,18 @@ const SubmissionsPage = () => {
 
   const formElements = useMemo(() => {
     if (!publishedContent) return null;
+
     return transformPlateStateToFormElements(publishedContent as Value);
   }, [publishedContent]);
 
-  // Stable orphaned field names — keyed on a sorted join so identity only changes when the SET's
+  // Stable orphaned field names; keyed on a sorted join so identity only changes when the SET's
   // contents change, not on every submissions ref change (avoids needless column rebuilds).
   const orphanedKey = useMemo(() => {
     const currentFieldNames = new Set<string>();
+
     if (formElements) {
       const editableFields = getEditableFields(formElements);
+
       for (const field of editableFields) {
         if (EDITABLE_FIELD_TYPES.has(field.fieldType)) {
           currentFieldNames.add(field.name);
@@ -763,15 +800,17 @@ const SubmissionsPage = () => {
     enableColumnPinning: false,
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setGlobalFilter,
-    // infinite scroll — server pages, table must not slice rows
+    // infinite scroll; server pages, table must not slice rows
     manualPagination: true,
     rowCount: totalCount,
     getColumnCanGlobalFilter: (column) =>
       !["submitted_at", "last_step_reached", "is_completed"].includes(column.id),
     globalFilterFn: (row, columnId, value) => {
       const raw = row.getValue(columnId);
+
       // empty cells render "-"; without this, hyphen searches match every blank cell
       if (raw == null || raw === "") return false;
+
       return formatSubmissionValue(raw).toLowerCase().includes(String(value).toLowerCase());
     },
     columnResizeMode: "onChange",
@@ -791,6 +830,7 @@ const SubmissionsPage = () => {
     },
     [table, activeTab],
   );
+
   const handleSetActiveTabAll = useCallback(() => setTab("all"), [setTab]);
   const handleSetActiveTabCompleted = useCallback(() => setTab("completed"), [setTab]);
   const handleSetActiveTabPartial = useCallback(() => setTab("partial"), [setTab]);
@@ -829,25 +869,30 @@ const SubmissionsPage = () => {
   const singleRows = table.getRowModel().rows;
   const [singleIndex, setSingleIndex] = useState(0);
   const safeSingleIndex = Math.min(singleIndex, Math.max(0, singleRows.length - 1));
-  // Slide between submissions via the View Transitions API: it snapshots the record and animates
-  // on the compositor, so the swap stays smooth even though the heavy form fully remounts. dir
-  // drives the slide direction in CSS (styles.css [data-bf-subnav]); falls back to instant.
+
+  // Slide between submissions via the View Transitions API; it snapshots the record and animates on the compositor, so the swap stays smooth across the heavy form remount.
+  // dir drives the slide direction in CSS (styles.css [data-bf-subnav]); falls back to instant.
   const runSubmissionNav = (dir: "prev" | "next", apply: () => void) => {
     const doc = document as Document & {
       startViewTransition?: (cb: () => void) => { finished: Promise<void> };
     };
+
     if (typeof doc.startViewTransition !== "function") {
       apply();
+
       return;
     }
+
     doc.documentElement.dataset.bfSubnav = dir;
     const transition = doc.startViewTransition(() => flushSync(apply));
     void transition.finished.finally(() => {
       delete doc.documentElement.dataset.bfSubnav;
     });
   };
+
   const goPrevSubmission = () =>
     runSubmissionNav("prev", () => setSingleIndex(Math.max(0, safeSingleIndex - 1)));
+
   const goNextSubmission = () => {
     if (hasNextPage && safeSingleIndex >= singleRows.length - 2) void fetchNextPage();
     runSubmissionNav("next", () =>
@@ -939,13 +984,14 @@ const SubmissionsPage = () => {
               tableClassNames={{
                 // Header divider = gray-100 (Figma 26566:46076 border-b gray/100); resize handle
                 // line hidden so there are no column dividers. Label colors are set per-header.
-                headerRow: "[&>th]:border-[var(--color-gray-100)]",
+                headerRow: "[&>th]:border-(--color-gray-100)",
                 header: "[&_.cursor-col-resize]:before:bg-transparent",
                 // Row = exactly 44px (Figma): the height-adding border-b is removed and the divider
                 // is drawn as a zero-height inset shadow in gray-100 (matches Figma's border-b
                 // gray/100, 1px). Body text gray-700.
                 bodyRow:
-                  "[&>td]:text-gray-700 [&:not(:last-child)>td]:border-b-0! [&:not(:last-child)>td]:shadow-[inset_0_-1px_0_var(--color-gray-100)]",
+                  // oxlint-disable-next-line shadcn/no-arbitrary-values -- zero-height inset-shadow divider replaces the height-adding border; no utility equivalent
+                  "[&>td]:text-foreground [&:not(:last-child)>td]:border-b-0! [&:not(:last-child)>td]:shadow-[inset_0_-1px_0_var(--color-gray-100)]",
               }}
               emptyMessage={
                 <div className="flex flex-col items-center justify-center gap-y-3 py-16 opacity-50">
@@ -1003,15 +1049,17 @@ const useSubmissionExportAndDelete = ({
   // Opens the confirm dialog (AlertDialog pattern) instead of a native window.confirm.
   const handleBulkDelete = useCallback(() => {
     const count = table.getSelectedRowModel().rows.length;
+
     if (count === 0) return;
     setBulkDeleteCount(count);
     setBulkDeleteOpen(true);
   }, [table]);
 
   const confirmBulkDelete = useCallback(async () => {
-    // fresh selection at confirm time — same source export reads, never stale selection keys
+    // fresh selection at confirm time; same source export reads, never stale selection keys
     const selectedIds = table.getSelectedRowModel().rows.map((r) => r.id);
     setBulkDeleteOpen(false);
+
     if (selectedIds.length === 0) return;
 
     await deleteSubmissionsBulk({
@@ -1021,16 +1069,19 @@ const useSubmissionExportAndDelete = ({
     setRowSelection({});
   }, [formId, queryClient, table, setRowSelection]);
 
-  // Headers + string cells from the same visible-column source — no header/cell drift.
+  // Headers + string cells from the same visible-column source; no header/cell drift.
   const getExportData = useCallback(
     (rows: Row<DataGridFeatures, SerializedSubmission>[]) => {
       const exportColumns = table.getVisibleLeafColumns().filter((c) => c.id !== "select");
+
       const headers = exportColumns.map(
         (c) =>
           c.columnDef.meta?.headerTitle ??
           (typeof c.columnDef.header === "string" ? c.columnDef.header : c.id),
       );
+
       const data = rows.map((row) => exportColumns.map((c) => csvFormat(row.getValue(c.id))));
+
       return { headers, data };
     },
     [table],
@@ -1059,30 +1110,35 @@ const useSubmissionExportAndDelete = ({
     [getExportData],
   );
 
-  // Excel: HTML table with the .xls/ms-excel mime — opens natively, no dependency.
+  // Excel: HTML table with the .xls/ms-excel mime; opens natively, no dependency.
   const downloadExcel = useCallback(
     (rows: Row<DataGridFeatures, SerializedSubmission>[], filename: string) => {
       if (rows.length === 0) return;
       const { headers, data } = getExportData(rows);
+
       const esc = (s: string) =>
         s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+
       const thead = `<tr>${headers.map((h) => `<th>${esc(h)}</th>`).join("")}</tr>`;
+
       const tbody = data
         .map((r) => `<tr>${r.map((c) => `<td>${esc(c)}</td>`).join("")}</tr>`)
         .join("");
+
       const html = `﻿<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"/></head><body><table border="1">${thead}${tbody}</table></body></html>`;
       triggerDownload(new Blob([html], { type: "application/vnd.ms-excel" }), filename);
     },
     [getExportData],
   );
 
-  // PDF: print window with a styled table — the browser's "Save as PDF" handles the file.
+  // PDF: print window with a styled table; the browser's "Save as PDF" handles the file.
   // Built via DOM + textContent (no document.write / innerHTML) so cell values are inert.
   const printPDF = useCallback(
     (rows: Row<DataGridFeatures, SerializedSubmission>[]) => {
       if (rows.length === 0) return;
       const { headers, data } = getExportData(rows);
       const win = window.open("", "_blank");
+
       if (!win) return;
       const doc = win.document;
       doc.title = "Submissions";
@@ -1091,16 +1147,21 @@ const useSubmissionExportAndDelete = ({
         "body{font-family:system-ui,sans-serif;padding:24px;color:#141414}table{border-collapse:collapse;width:100%;font-size:12px}th,td{border:1px solid #e0e0e0;padding:6px 8px;text-align:left}th{background:#f5f5f5;font-weight:600}";
       doc.head.appendChild(style);
       const table = doc.createElement("table");
+
       const addRow = (cells: string[], tag: "th" | "td") => {
         const tr = doc.createElement("tr");
+
         for (const cell of cells) {
           const el = doc.createElement(tag);
           el.textContent = cell;
           tr.appendChild(el);
         }
+
         table.appendChild(tr);
       };
+
       addRow(headers, "th");
+
       for (const row of data) addRow(row, "td");
       doc.body.appendChild(table);
       win.focus();
@@ -1116,6 +1177,7 @@ const useSubmissionExportAndDelete = ({
   const handleExport = useCallback(
     (format: "csv" | "pdf" | "excel") => {
       const rows = table.getRowModel().rows;
+
       if (format === "excel") downloadExcel(rows, `submissions-${formId}.xls`);
       else if (format === "pdf") printPDF(rows);
       else downloadCSV(rows, `submissions-${formId}.csv`);
@@ -1154,7 +1216,7 @@ const useSubmissionsHotkeys = ({
   useHotkey(
     HOTKEYS.SUBMISSIONS_SELECT_ALL,
     () => {
-      // all-rows APIs walk the filtered model — correct for infinite scroll + tab/search filters
+      // all-rows APIs walk the filtered model; correct for infinite scroll + tab/search filters
       table.toggleAllRowsSelected(!table.getIsAllRowsSelected());
     },
     { conflictBehavior: "replace", ignoreInputs: true },
@@ -1180,9 +1242,8 @@ const useSubmissionsHotkeys = ({
   });
 };
 
-// Individual-submission view (Figma 27015:20852): borderless record — a date + status-badge
-// header rule over the form rendered read-only with this submission's answers. Per-submission
-// nav lives in the toolbar now. The form subtree is `inert` so every field is non-interactive.
+// Individual-submission view (Figma 27015:20852): borderless record, a date + status-badge header
+// rule over the read-only form. Nav lives in the toolbar. Form subtree is `inert` (no interactive fields).
 const SubmissionSingleView = ({
   rows,
   index,
@@ -1204,7 +1265,7 @@ const SubmissionSingleView = ({
   const safeIndex = Math.min(index, Math.max(0, rows.length - 1));
   const submission = rows[safeIndex]?.original;
 
-  // Single-submission view shows only the answered fields (Figma 27015:20852) — strip the
+  // Single-submission view shows only the answered fields (Figma 27015:20852); strip the
   // formHeader node (cover/icon/title) so the record opens straight on the first field.
   const bodyContent = useMemo(
     () => ((form?.content as Value | undefined) ?? []).filter((node) => node.type !== "formHeader"),
@@ -1220,29 +1281,28 @@ const SubmissionSingleView = ({
   }
 
   const done = submission.isCompleted;
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
       {/* The record (header + form) carries a view-transition-name so prev/next slides it as a GPU
-          snapshot — smooth across the heavy form remount (the page wraps the index change in a
-          document view transition; see goPrev/goNextSubmission). */}
-      <div className="flex flex-col" style={{ viewTransitionName: "bf-submission-record" }}>
+          snapshot, smooth across the heavy form remount (page wraps the index change in a document view transition; see goPrev/goNextSubmission). */}
+      <div className="flex flex-col [view-transition-name:bf-submission-record]">
         {/* Header (Figma 27015:20853): submission date + status badge, bottom rule. Same container
             (mx-auto, --bf-page-width) as the form body below so the date aligns with the fields. */}
-        <div
-          className="mx-auto w-full px-8 pt-1 md:px-0"
-          style={{ maxWidth: "var(--bf-page-width, 700px)" }}
-        >
-          <div className="flex items-center gap-3 border-b border-gray-200 pb-3">
-            <span className="min-w-0 flex-1 truncate text-[14px] tracking-[0.28px] text-gray-700">
+        <div className="mx-auto w-full max-w-[var(--bf-page-width,700px)] px-8 pt-1 md:px-0">
+          <div className="flex items-center gap-3 border-b border-border pb-3">
+            {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.28px tracking has no scale equivalent */}
+            <span className="min-w-0 flex-1 truncate text-base tracking-[0.28px] text-foreground">
               {SUBMISSION_DATE_FORMATTER.format(new Date(submission.createdAt))}
             </span>
             <span
               className={cn(
-                "inline-flex items-center rounded-full px-1.5 py-[3px] text-[12px] font-medium tracking-[0.02em]",
-                // Figma 27015:20855 — Completed green-soft pair; Partial amber pair.
+                // oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 0.02em badge tracking has no scale equivalent
+                "inline-flex items-center rounded-full px-1.5 py-0.75 text-xs font-medium tracking-[0.02em]",
+                // Figma 27015:20855, Completed green-soft pair; Partial amber pair.
                 done
-                  ? "bg-[var(--color-success-soft)] text-[var(--color-success-on-soft)]"
-                  : "bg-[var(--color-partial-soft)] text-[var(--color-partial-on-soft)]",
+                  ? "bg-(--color-success-soft) text-(--color-success-on-soft)"
+                  : "bg-(--color-partial-soft) text-(--color-partial-on-soft)",
               )}
             >
               {done ? "Completed" : "Partial"}
@@ -1250,8 +1310,8 @@ const SubmissionSingleView = ({
           </div>
         </div>
 
-        {/* Body — read-only preview populated with this submission's values. */}
-        {/* `inert` (React 19) makes the whole form non-interactive — read-only submission view. */}
+        {/* Body; read-only preview populated with this submission's values. */}
+        {/* `inert` (React 19) makes the whole form non-interactive; read-only submission view. */}
         <div inert>
           <FormPreviewFromPlate
             key={submission.id}
@@ -1285,9 +1345,9 @@ interface SubmissionsToolbarProps {
   onSetTabPartial: () => void;
   onGlobalFilterChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onExport: (format: "csv" | "pdf" | "excel") => void;
-  /** Total submissions — shown as a count badge beside the title. */
+  /** Total submissions, shown as a count badge beside the title. */
   totalCount: number;
-  /** Single-view cursor (1-based) + nav — rendered as a "X of N" pill in single view. */
+  /** Single-view cursor (1-based) + nav, rendered as a "X of N" pill in single view. */
   singleCurrent: number;
   onPrevSubmission: () => void;
   onNextSubmission: () => void;
@@ -1316,13 +1376,14 @@ const SubmissionsToolbar = ({
     <div className="flex items-center gap-3">
       {/* Figma 27015:20774: title + total-count badge on the left, controls on the right. */}
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
-        <h2 className="truncate text-[15px] font-semibold tracking-[0.015em] text-gray-950">
+        {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 15px title + 0.015em tracking have no scale equivalent */}
+        <h2 className="truncate text-[15px] font-semibold tracking-[0.015em] text-foreground">
           Submissions
         </h2>
         {totalCount > 0 && (
           // Inverted chip (Figma gray/950 + white): bg-foreground/text-background stays a dark
           // pill with light text in light mode and flips legibly in dark mode.
-          <span className="inline-flex shrink-0 items-center rounded-full bg-foreground px-[5px] py-px text-[12px] text-background tabular-nums">
+          <span className="inline-flex shrink-0 items-center rounded-full bg-foreground px-1.25 py-px text-xs text-background tabular-nums">
             {totalCount}
           </span>
         )}
@@ -1330,17 +1391,18 @@ const SubmissionsToolbar = ({
 
       <div className="flex items-center gap-1.5">
         {/* Search / pager / Download / Filter all show in both views (Figma 27015:20773). */}
-        {/* Search — matches the dashboard toolbar pill (gray/100 surface, search-alt icon). */}
-        {/* Figma 27015:16994 — 170×28, gray/100, pl-8 pr-10 gap-6, 8px radius; expands on focus. */}
+        {/* Search; matches the dashboard toolbar pill (gray/100 surface, search-alt icon). */}
+        {/* Figma 27015:16994, 170×28, gray/100, pl-8 pr-10 gap-6, 8px radius; expands on focus. */}
         <ToolbarSearch
           value={globalFilter}
           onChange={onGlobalFilterChange}
           aria-label="Search responses"
           name="search"
+          // oxlint-disable-next-line shadcn/no-arbitrary-values -- focus-expand width transition has no plain-utility equivalent
           className="transition-[width] duration-200 ease-out focus-within:w-[260px]"
         />
 
-        {/* Per-submission pager (Figma 27015:20788) — single view only; nav moved out of the card. */}
+        {/* Per-submission pager (Figma 27015:20788); single view only, nav moved out of the card. */}
         {view === "single" && (
           <div className="flex h-7 items-center gap-1.5 rounded-lg bg-secondary pr-1.5 pl-1">
             <button
@@ -1348,11 +1410,12 @@ const SubmissionsToolbar = ({
               onClick={onPrevSubmission}
               disabled={!canPrevSubmission}
               aria-label="Previous submission"
-              className="flex size-5 items-center justify-center rounded-md text-gray-800 transition-colors hover:bg-background/60 disabled:opacity-40 disabled:hover:bg-transparent"
+              className="flex size-5 items-center justify-center rounded-md text-foreground transition-colors hover:bg-background/60 disabled:opacity-40 disabled:hover:bg-transparent"
             >
               <ChevronLeft className="size-4" />
             </button>
-            <span className="font-case text-base font-[450] tracking-[0.14px] text-gray-800 tabular-nums">
+            {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- Figma 450 weight + 0.14px tracking have no scale equivalent */}
+            <span className="font-case text-base font-[450] tracking-[0.14px] text-foreground tabular-nums">
               {singleCurrent} of {totalCount}
             </span>
             <button
@@ -1360,14 +1423,14 @@ const SubmissionsToolbar = ({
               onClick={onNextSubmission}
               disabled={!canNextSubmission}
               aria-label="Next submission"
-              className="flex size-5 items-center justify-center rounded-md text-gray-800 transition-colors hover:bg-background/60 disabled:opacity-40 disabled:hover:bg-transparent"
+              className="flex size-5 items-center justify-center rounded-md text-foreground transition-colors hover:bg-background/60 disabled:opacity-40 disabled:hover:bg-transparent"
             >
               <ChevronRight className="size-4" />
             </button>
           </div>
         )}
 
-        {/* Download (Figma 27015:21450) — pill with chevron; CSV / PDF / Excel. */}
+        {/* Download (Figma 27015:21450), pill with chevron; CSV / PDF / Excel. */}
         <ExportMenu
           onExport={onExport}
           contentClassName="w-40"
@@ -1382,7 +1445,7 @@ const SubmissionsToolbar = ({
           Download
         </ExportMenu>
 
-        {/* Filter (status) — static "Filter" title; the active tab is ticked in the dropdown
+        {/* Filter (status); static "Filter" title, the active tab is ticked in the dropdown
               (matches the dashboard FilterMenu). */}
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -1570,13 +1633,19 @@ export const Route = createFileRoute(
   "/_authenticated/workspace/$workspaceId/form-builder/$formId/submissions",
 )({
   ssr: "data-only",
-  loader: async ({ context, params }) => {
+  // Loader and component share these objects; a second call site would silently warm one key
+  // while the component fetches another. Pinned by src/test/route-query-prefetch.test.ts.
+  context: ({ params }) => ({
+    bootstrapQueryOptions: submissionsBootstrapQueryOptions(params.formId),
+    submissionsQueryOptions: submissionsInfiniteQueryOptions(params.formId),
+  }),
+  loader: async ({ context }) => {
     await Promise.all([
       context.queryClient.ensureQueryData({
-        ...submissionsBootstrapQueryOptions(params.formId),
+        ...context.bootstrapQueryOptions,
         revalidateIfStale: true,
       }),
-      context.queryClient.ensureInfiniteQueryData(submissionsInfiniteQueryOptions(params.formId)),
+      context.queryClient.ensureInfiniteQueryData(context.submissionsQueryOptions),
     ]);
   },
   staleTime: 30_000,

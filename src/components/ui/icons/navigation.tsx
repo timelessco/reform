@@ -424,6 +424,7 @@ export const CopyIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </g>
     <defs>
       <clipPath id="clip0_23979_5673">
+        {/* oxlint-disable-next-line shadcn/no-raw-colors -- clipPath geometry only; fill value has no visual effect */}
         <rect width="16" height="16" fill="white" />
       </clipPath>
     </defs>

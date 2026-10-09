@@ -21,6 +21,7 @@ const fileToBase64 = (file: File): Promise<string> =>
     const reader = new FileReader();
     reader.addEventListener("load", () => {
       const result = reader.result;
+
       if (typeof result === "string") {
         resolve(result);
       } else {
@@ -55,6 +56,7 @@ export const useUploadFile = ({ onUploadComplete, onUploadError }: UseUploadFile
           contentType: file.type || "application/octet-stream",
         },
       });
+
       setProgress(100);
 
       const uploaded: UploadedFile = {
@@ -64,24 +66,30 @@ export const useUploadFile = ({ onUploadComplete, onUploadError }: UseUploadFile
         type: result.type,
         url: result.url,
       };
+
       setUploadedFile(uploaded);
       onUploadComplete?.(uploaded);
+
       return uploaded;
     } catch (error) {
       const parsed = parseError(error);
       const message = parsed.message || "Something went wrong, please try again later.";
+
       // Known upload codes: append structured `fix` hint as toast description for a clear next step.
       const knownUploadCode =
         parsed.code === "uploads/too-large" ||
         parsed.code === "uploads/mime-not-allowed" ||
         parsed.code === "uploads/rate-limited" ||
         parsed.code === "uploads/empty-file";
+
       if (knownUploadCode && parsed.fix) {
         toast.error(message, { description: parsed.fix });
       } else {
         toast.error(message);
       }
+
       onUploadError?.(error);
+
       return undefined;
     } finally {
       setProgress(0);

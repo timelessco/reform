@@ -25,6 +25,7 @@ import {
 import { useAppForm, withForm } from "@/components/ui/tanstack-form";
 import { auth, useSession } from "@/lib/auth/auth-client";
 import { uploadAvatar } from "@/lib/server-fn/uploads";
+import { cn } from "@/lib/utils";
 import { useStore } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Camera } from "lucide-react";
@@ -110,6 +111,7 @@ const useAvatarUpload = (): AvatarUploadApi => {
     mutationFn: async (base64: string) => {
       const { url } = await uploadAvatar({ data: { base64 } });
       await updateImageMutation.mutateAsync({ image: url });
+
       return url;
     },
     onSuccess: () => {
@@ -124,10 +126,12 @@ const useAvatarUpload = (): AvatarUploadApi => {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (file) {
       setSelectedFile(file);
       setIsAvatarDialogOpen(true);
     }
+
     e.target.value = "";
   };
 
@@ -137,6 +141,7 @@ const useAvatarUpload = (): AvatarUploadApi => {
 
   const setDialogOpen = (open: boolean) => {
     setIsAvatarDialogOpen(open);
+
     if (!open) setSelectedFile(null);
   };
 
@@ -153,10 +158,12 @@ const useAvatarUpload = (): AvatarUploadApi => {
 
 const ThemeSelect = () => {
   const { theme, setTheme } = useTheme();
+
   const handleThemeChange = useCallback(
     (val: string | null) => setTheme((val ?? "system") as "dark" | "light" | "system"),
     [setTheme],
   );
+
   return (
     <Select value={theme} onValueChange={handleThemeChange}>
       <SelectTrigger
@@ -182,6 +189,7 @@ const profileFormDefaults = {
 
 export const AccountSettingsContent = () => {
   const { data: session, isPending } = useSession();
+
   // Gate before the form so useAppForm initializes from loaded session data —
   // TanStack Form reads defaultValues once on mount and won't re-sync later.
   if (isPending || !session?.user) {
@@ -191,6 +199,7 @@ export const AccountSettingsContent = () => {
       </div>
     );
   }
+
   return <AccountSettingsForm />;
 };
 
@@ -206,10 +215,12 @@ const AccountSettingsForm = () => {
       newEmail: "",
     },
   });
+
   const displayNameChanged = useStore(
     profileForm.store,
     (state) => state.values.displayName !== profileForm.options.defaultValues?.displayName,
   );
+
   const usernameChanged = useStore(
     profileForm.store,
     (state) => state.values.username !== profileForm.options.defaultValues?.username,
@@ -221,6 +232,7 @@ const AccountSettingsForm = () => {
   const emailChange = useEmailChange((fieldName, value) => {
     profileForm.setFieldValue(fieldName as "newEmail", value);
   });
+
   const avatarUpload = useAvatarUpload();
 
   const { data: accounts = [] } = useQuery({
@@ -327,6 +339,7 @@ const AccountSettingsForm = () => {
             {(field) => (
               <div className="flex flex-1 flex-col gap-2">
                 <label
+                  // oxlint-disable-next-line shadcn/no-arbitrary-values -- tracking-[0.28px] has no value-identical step; nearest tracking token would shift visuals
                   className="text-base tracking-[0.28px] text-muted-foreground"
                   htmlFor={displayNameId}
                 >
@@ -334,7 +347,9 @@ const AccountSettingsForm = () => {
                 </label>
                 <InputGroup
                   variant="borderless"
-                  className={`h-[30px] border-0 bg-secondary ring-0 overflow-clip${displayNameChanged ? " pr-[3px]" : ""}`}
+                  className={cn("h-[30px] overflow-clip border-0 bg-secondary ring-0", {
+                    "pr-0.75": displayNameChanged,
+                  })}
                 >
                   <InputGroupInput
                     id={displayNameId}
@@ -376,6 +391,7 @@ const AccountSettingsForm = () => {
             {(field) => (
               <div className="flex flex-1 flex-col gap-2">
                 <label
+                  // oxlint-disable-next-line shadcn/no-arbitrary-values -- tracking-[0.28px] has no value-identical step; nearest tracking token would shift visuals
                   className="text-base tracking-[0.28px] text-muted-foreground"
                   htmlFor={usernameId}
                 >
@@ -383,7 +399,9 @@ const AccountSettingsForm = () => {
                 </label>
                 <InputGroup
                   variant="borderless"
-                  className={`h-[30px] border-0 bg-secondary ring-0 overflow-clip${usernameChanged ? " pr-[3px]" : ""}`}
+                  className={cn("h-[30px] overflow-clip border-0 bg-secondary ring-0", {
+                    "pr-0.75": usernameChanged,
+                  })}
                 >
                   <InputGroupInput
                     id={usernameId}
@@ -427,7 +445,7 @@ const AccountSettingsForm = () => {
 
         <EmailSection form={profileForm} user={user} emailChange={emailChange} />
 
-        <section className="flex flex-col gap-[10px]">
+        <section className="flex flex-col gap-2.5">
           <h3 className="text-base font-medium text-foreground">Appearance</h3>
           <div className="flex items-center gap-3 rounded-2xl bg-secondary py-2 pr-2.5 pl-2">
             <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -464,6 +482,7 @@ const AccountSettingsForm = () => {
 
 // eslint-disable-next-line typescript-eslint/no-explicit-any -- consumed only for prop forwarding
 type AnyAvatarUpload = any;
+
 // eslint-disable-next-line typescript-eslint/no-explicit-any -- session user shape
 type AnyUser = any;
 
@@ -510,6 +529,7 @@ const AvatarSection = ({
         variant="ghost"
         size="sm"
         prefix={<ImageIcon />}
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- bespoke drop-shadow stack reproducing the elevated popover look; no scale equivalent
         className="h-[30px] rounded-lg bg-popover px-2 text-sm text-popover-foreground filter-[drop-shadow(0_0_0.5px_rgba(0,0,0,0.6))_drop-shadow(0_1px_1px_rgba(0,0,0,0.1))] hover:bg-muted"
         onClick={handleOpenFileDialog}
       >
@@ -548,7 +568,7 @@ const EmailSection = withForm({
   } as EmailSectionExtraProps,
   render: function EmailSectionRender({ form, user, emailChange }) {
     return (
-      <section className="flex flex-col gap-[10px]">
+      <section className="flex flex-col gap-2.5">
         <h3 className="text-base font-medium text-foreground">Email</h3>
         <div className="flex items-center gap-3 rounded-2xl bg-secondary py-2 pr-2.5 pl-2">
           <div className="flex min-w-0 flex-1 items-start gap-2">
@@ -574,7 +594,7 @@ const EmailSection = withForm({
             {(field) => (
               <InputGroup
                 variant="borderless"
-                className="h-[30px] overflow-clip border-0 bg-secondary pr-[3px] ring-0"
+                className="h-[30px] overflow-clip border-0 bg-secondary pr-0.75 ring-0"
               >
                 <InputGroupInput
                   type="email"
@@ -618,8 +638,9 @@ const ConnectedAccountSection = ({
   handleGoogleSignIn,
 }: ConnectedAccountSectionProps) => {
   const isGoogleLinked = !!accounts.find((a) => a.providerId === "google");
+
   return (
-    <section className="flex flex-col gap-[10px]">
+    <section className="flex flex-col gap-2.5">
       <h3 className="text-base font-medium text-foreground">Connected account</h3>
       <div className="flex items-center gap-3 rounded-2xl bg-secondary py-2 pr-2.5 pl-2">
         <div className="flex min-w-0 flex-1 items-start gap-2">
@@ -628,18 +649,22 @@ const ConnectedAccountSection = ({
               <title>Google logo</title>
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                // oxlint-disable-next-line shadcn/no-raw-colors -- no token for Google brand blue #4285F4; needs design decision
                 fill="#4285F4"
               />
               <path
                 d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                // oxlint-disable-next-line shadcn/no-raw-colors -- no token for Google brand green #34A853; needs design decision
                 fill="#34A853"
               />
               <path
                 d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+                // oxlint-disable-next-line shadcn/no-raw-colors -- no token for Google brand yellow #FBBC05; needs design decision
                 fill="#FBBC05"
               />
               <path
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                // oxlint-disable-next-line shadcn/no-raw-colors -- no token for Google brand red #EA4335; needs design decision
                 fill="#EA4335"
               />
             </svg>
@@ -676,7 +701,7 @@ const ConnectedAccountSection = ({
       {isGoogleLinked && (
         <div className="flex items-center gap-2">
           <AlertCircleIcon className="size-[18px] shrink-0 text-muted-foreground" />
-          <p className="text-sm leading-[1.5] text-muted-foreground">
+          <p className="text-sm leading-normal text-muted-foreground">
             You have logged in with your Google account.
           </p>
         </div>
@@ -691,9 +716,10 @@ interface DeleteAccountSectionProps {
 }
 
 const DeleteAccountSection = ({ handleDeleteAccount, isPending }: DeleteAccountSectionProps) => (
-  <section className="flex flex-col gap-[10px]">
+  <section className="flex flex-col gap-2.5">
     <h3 className="text-base font-medium text-foreground">Delete Account</h3>
-    <p className="text-base leading-[1.5] font-[420] tracking-[0.28px] text-gray-800">
+    {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- font-[420] and tracking-[0.28px] have no value-identical scale steps; nearest would shift visuals */}
+    <p className="text-base leading-normal font-[420] tracking-[0.28px] text-foreground">
       If you no longer want to use Reform, you can delete it permanently. All your forms,
       submissions, and workspaces will be deleted.
     </p>
@@ -702,7 +728,7 @@ const DeleteAccountSection = ({ handleDeleteAccount, isPending }: DeleteAccountS
       size="md"
       onClick={handleDeleteAccount}
       disabled={isPending}
-      className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-secondary px-2.5 py-[7px] transition-colors hover:bg-accent disabled:opacity-50"
+      className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-secondary px-2.5 py-1.75 transition-colors hover:bg-accent disabled:opacity-50"
     >
       {isPending ? (
         <Loader2Icon className="size-3 animate-spin text-destructive" />

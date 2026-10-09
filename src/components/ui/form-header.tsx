@@ -88,6 +88,7 @@ const FormHeaderCover = () => {
   if (!cover) {
     return null;
   }
+
   const setCoverUrl = (url: string | null) => onCoverChange(url);
 
   return (
@@ -110,10 +111,9 @@ const FormHeaderCover = () => {
         </>
       ) : (
         <div
-          className="size-full"
-          style={{
-            backgroundColor: cover?.startsWith("#") ? cover : "#FFE4E1",
-          }}
+          className="size-full bg-(--form-header-cover-color)"
+          // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+          style={{ "--form-header-cover-color": cover } as React.CSSProperties}
         />
       )}{" "}
       <div className="absolute right-2 bottom-2 flex gap-2 opacity-0 transition-opacity group-hover/cover:opacity-100">
@@ -341,7 +341,7 @@ const FormHeaderIcon = () => {
           {icon && icon !== "default-icon" ? (
             <img src={icon} alt="Logo" width={80} height={80} className="size-full object-cover" />
           ) : (
-            <div className="flex size-full items-center justify-center bg-neutral-950 text-white">
+            <div className="flex size-full items-center justify-center bg-black text-white">
               <svg
                 className="size-6 sm:h-10 sm:w-10"
                 viewBox="0 0 24 24"

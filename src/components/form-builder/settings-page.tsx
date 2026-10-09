@@ -67,12 +67,9 @@ const SettingRow = ({
 }) => (
   <div className="flex w-full items-center gap-5">
     <div className="flex min-w-0 flex-1 flex-col gap-1">
-      <span className="text-base leading-[1.15] font-[450] text-gray-900">{label}</span>
-      {description && (
-        <p className="text-base leading-[1.5] font-[420] tracking-[0.28px] text-gray-600 font-opsz-24">
-          {description}
-        </p>
-      )}
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- font-[450] has no value-identical weight step; nearest would shift visuals */}
+      <span className="text-base leading-[1.15] font-[450] text-foreground">{label}</span>
+      {description && <p className={settingDescriptionCls}>{description}</p>}
     </div>
     {children && <div className="shrink-0">{children}</div>}
   </div>
@@ -80,9 +77,16 @@ const SettingRow = ({
 
 // Figma date/tz/time cell: bg-gray-100, rounded-10, pl-10 pr-8 py-10, 14px/420 opsz-24, 16px trailing icon.
 const fieldShellCls =
-  "flex min-w-0 flex-1 items-center gap-3 rounded-[10px] bg-gray-100 py-2.5 pr-2 pl-2.5";
+  "flex min-w-0 flex-1 items-center gap-3 rounded-xl bg-muted py-2.5 pr-2 pl-2.5";
+
+// Row description: 14px/420/0.28px muted — leading-normal is exactly 1.5; weight/tracking kept exact (no identical steps).
+const settingDescriptionCls =
+  // oxlint-disable-next-line shadcn/no-arbitrary-values -- font-[420] and tracking-[0.28px] have no value-identical scale steps; nearest would shift visuals
+  "text-base leading-normal font-[420] tracking-[0.28px] text-muted-foreground font-opsz-24";
+
 const fieldTextCls =
-  "min-w-0 flex-1 bg-transparent text-base leading-[1.15] font-[420] text-gray-700 font-opsz-24 outline-none";
+  // oxlint-disable-next-line shadcn/no-arbitrary-values -- leading-[1.15] and font-[420] have no value-identical steps; nearest would shift visuals
+  "min-w-0 flex-1 bg-transparent text-base leading-[1.15] font-[420] text-foreground font-opsz-24 outline-none";
 
 const DateField = ({
   value,
@@ -94,6 +98,7 @@ const DateField = ({
   const [open, setOpen] = useState(false);
   const date = value ? new Date(value) : undefined;
   const valid = date && !isNaN(date.getTime()) ? date : undefined;
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
@@ -102,7 +107,7 @@ const DateField = ({
             <span className={cn(fieldTextCls, "truncate")}>
               {valid ? format(valid, "d MMM, yyyy") : "Pick a date"}
             </span>
-            <CalendarLineIcon className="size-4 shrink-0 text-gray-800" />
+            <CalendarLineIcon className="size-4 shrink-0 text-foreground" />
           </button>
         }
       />
@@ -134,11 +139,16 @@ const TimezoneField = ({
       aria-label="Timezone"
       className={cn(
         fieldShellCls,
-        "w-full cursor-pointer border-none text-base leading-[1.15] font-[420] text-gray-700 font-opsz-24 data-[size=default]:h-auto",
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- leading-[1.15] and font-[420] have no value-identical steps; nearest would shift visuals
+        "w-full cursor-pointer border-none text-base leading-[1.15] font-[420] text-foreground font-opsz-24 data-[size=default]:h-auto",
       )}
-      icon={<IconGlobe className="size-4 shrink-0 text-gray-700" />}
+      icon={<IconGlobe className="size-4 shrink-0 text-foreground" />}
     >
-      <SelectValue placeholder="Timezone" className="font-[420]" />
+      <SelectValue
+        placeholder="Timezone"
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- font-[420] has no value-identical weight step; nearest would shift visuals
+        className="font-[420]"
+      />
     </SelectTrigger>
     <SelectContent align="start">
       {TIMEZONES.map((tz) => (
@@ -168,7 +178,7 @@ const TimeField = ({
         "[&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none",
       )}
     />
-    <ClockLineIcon className="size-4 shrink-0 text-gray-800" />
+    <ClockLineIcon className="size-4 shrink-0 text-foreground" />
   </div>
 );
 
@@ -227,7 +237,8 @@ const GeneralTab = withForm({
                 value={field.state.value || "English"}
                 onValueChange={(value) => field.handleChange(value ?? "English")}
               >
-                <SelectTrigger className="h-[30px] w-auto shrink-0 gap-1.5 rounded-[8px] border-none bg-gray-100 py-[5.5px] pr-2 pl-2.5 font-case text-sm font-[450] text-gray-900 data-[size=default]:h-[30px] [&_svg]:size-3 [&_svg]:text-gray-500">
+                {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- py-[5.5px] and font-[450] have no value-identical steps; nearest would shift visuals */}
+                <SelectTrigger className="h-[30px] w-auto shrink-0 gap-1.5 rounded-lg border-none bg-muted py-[5.5px] pr-2 pl-2.5 font-case text-sm font-[450] text-foreground data-[size=default]:h-[30px] [&_svg]:size-3 [&_svg]:text-muted-foreground">
                   <SelectValue placeholder="Select language" />
                 </SelectTrigger>
                 <SelectContent>
@@ -333,7 +344,7 @@ const GeneralTab = withForm({
                         placeholder="https://example.com"
                         value={field.state.value ?? ""}
                         onChange={(e) => field.handleChange(e.target.value || null)}
-                        className={cn(fieldTextCls, "text-gray-900")}
+                        className={cn(fieldTextCls, "text-foreground")}
                       />
                     </div>
                   )}
@@ -362,10 +373,12 @@ const EmailTemplateCard = ({
   onBodyChange: (value: string | null) => void;
 }) => {
   const subjectRef = useRef<HTMLInputElement>(null);
+
   return (
-    <div className="flex w-full flex-col overflow-clip rounded-[10px]">
-      <div className="flex w-full items-center gap-2.5 overflow-clip border-b border-gray-200 bg-gray-100 py-[5px] pr-[5px] pl-2.5">
-        <span className="shrink-0 text-base leading-[1.15] font-[420] text-gray-800 font-opsz-24">
+    <div className="flex w-full flex-col overflow-clip rounded-xl">
+      <div className="flex w-full items-center gap-2.5 overflow-clip border-b border-border bg-muted py-1.25 pr-1.25 pl-2.5">
+        {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- leading-[1.15] and font-[420] have no value-identical steps; nearest would shift visuals */}
+        <span className="shrink-0 text-base leading-[1.15] font-[420] text-foreground font-opsz-24">
           Subject:
         </span>
         <input
@@ -375,13 +388,14 @@ const EmailTemplateCard = ({
           placeholder="Thanks for your submission"
           value={subject ?? ""}
           onChange={(e) => onSubjectChange(e.target.value || null)}
-          className="min-w-0 flex-1 bg-transparent text-base leading-[1.15] font-[420] text-gray-700 outline-none font-opsz-24"
+          // oxlint-disable-next-line shadcn/no-arbitrary-values -- leading-[1.15] and font-[420] have no value-identical steps; nearest would shift visuals
+          className="min-w-0 flex-1 bg-transparent text-base leading-[1.15] font-[420] text-foreground outline-none font-opsz-24"
         />
         <button
           type="button"
           aria-label="Edit subject"
           onClick={() => subjectRef.current?.focus()}
-          className="flex shrink-0 items-center justify-center rounded-[8px] p-[5px] text-gray-800 hover:bg-gray-200"
+          className="flex shrink-0 items-center justify-center rounded-lg p-1.25 text-foreground hover:bg-accent"
         >
           <EditLineIcon className="size-[18px]" />
         </button>
@@ -391,7 +405,8 @@ const EmailTemplateCard = ({
         placeholder="Write the email respondents receive after submitting…"
         value={body ?? ""}
         onChange={(e) => onBodyChange(e.target.value || null)}
-        className="field-sizing-content max-h-[360px] min-h-[96px] w-full resize-none overflow-y-auto bg-gray-100 px-2.5 pt-3 pb-3.5 text-base leading-[1.5] font-[420] text-gray-700 outline-none font-opsz-24"
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- font-[420] has no value-identical weight step; nearest would shift visuals
+        className="field-sizing-content max-h-[360px] min-h-[96px] w-full resize-none overflow-y-auto bg-muted px-2.5 pt-3 pb-3.5 text-base leading-normal font-[420] text-foreground outline-none font-opsz-24"
       />
     </div>
   );
@@ -510,7 +525,7 @@ const LimitField = ({
   value: number | null;
   onChange: (value: number | null) => void;
 }) => (
-  <div className="flex shrink-0 items-center gap-1.5 overflow-clip rounded-[8px] bg-gray-100 py-[7px] pr-2 pl-2.5">
+  <div className="flex shrink-0 items-center gap-1.5 overflow-clip rounded-lg bg-muted py-1.75 pr-2 pl-2.5">
     <input
       type="number"
       min={1}
@@ -518,9 +533,10 @@ const LimitField = ({
       placeholder="100"
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
-      className="field-sizing-content max-w-[6ch] min-w-[2ch] bg-transparent text-base leading-[1.15] font-[420] text-gray-700 outline-none font-opsz-24"
+      // oxlint-disable-next-line shadcn/no-arbitrary-values -- leading-[1.15] and font-[420] have no value-identical steps; nearest would shift visuals
+      className="field-sizing-content max-w-[6ch] min-w-[2ch] bg-transparent text-base leading-[1.15] font-[420] text-foreground outline-none font-opsz-24"
     />
-    <SmallSelectIcon className="size-4 shrink-0 text-gray-900" />
+    <SmallSelectIcon className="size-4 shrink-0 text-foreground" />
   </div>
 );
 
@@ -539,22 +555,24 @@ const AccessField = ({
   ariaLabel: string;
 }) => {
   const [show, setShow] = useState(false);
+
   return (
-    <div className="flex w-full items-center gap-3 rounded-[10px] bg-gray-100 p-2.5">
+    <div className="flex w-full items-center gap-3 rounded-xl bg-muted p-2.5">
       <input
         type={mask && !show ? "password" : "text"}
         aria-label={ariaLabel}
         placeholder={placeholder}
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value || null)}
-        className="min-w-0 flex-1 bg-transparent text-base leading-[1.15] font-[420] text-gray-700 outline-none font-opsz-24"
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- leading-[1.15] and font-[420] have no value-identical steps; nearest would shift visuals
+        className="min-w-0 flex-1 bg-transparent text-base leading-[1.15] font-[420] text-foreground outline-none font-opsz-24"
       />
       {mask && (
         <button
           type="button"
           aria-label={show ? "Hide password" : "Show password"}
           onClick={() => setShow((s) => !s)}
-          className="shrink-0 text-gray-700"
+          className="shrink-0 text-foreground"
         >
           {show ? <EyeIcon className="size-4" /> : <HideLineIcon className="size-4" />}
         </button>
@@ -716,7 +734,8 @@ const AccessTab = withForm({
               <button
                 type="button"
                 onClick={() => form.setFieldValue("closeForm", !closeForm)}
-                className="flex shrink-0 items-center justify-center gap-1.5 rounded-[8px] bg-[#fbeded] px-2 py-1.5 font-case text-base leading-[1.15] font-medium tracking-[0.14px] whitespace-nowrap text-[#eb4d52] outline-none focus-visible:ring-[3px] focus-visible:ring-[#eb4d52]/30"
+                // oxlint-disable-next-line shadcn/no-arbitrary-values -- bespoke danger tint (#fbeded/#eb4d52), tracking-[0.14px], leading-[1.15] and 3px ring have no identical tokens; swaps would shift visuals
+                className="flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#fbeded] px-2 py-1.5 font-case text-base leading-[1.15] font-medium tracking-[0.14px] whitespace-nowrap text-[#eb4d52] outline-none focus-visible:ring-[3px] focus-visible:ring-[#eb4d52]/30"
               >
                 {closeForm ? "Reopen Form" : "Close Form"}
               </button>
@@ -730,10 +749,16 @@ const AccessTab = withForm({
 
 // ── Page shell ───────────────────────────────────────────────────────────────
 
+// [font-variation-settings:normal] un-pins the global opsz/wght so font-weight + per-cell opsz apply.
+const settingsShellCls =
+  // oxlint-disable-next-line shadcn/no-arbitrary-values -- [font-variation-settings:normal] has no utility equivalent; keep exact
+  "mx-auto flex w-[700px] max-w-full flex-col pt-8 pb-16 [font-variation-settings:normal]";
+
 export const SettingsPage = ({ formId, isLocal }: { formId: string; isLocal?: boolean }) => {
   const cloudForm = useForm(isLocal ? undefined : formId);
   const localFormResult = useLocalForm(isLocal ? formId : undefined);
   const formResult = isLocal ? localFormResult : cloudForm;
+
   if (formResult.data === undefined) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -741,6 +766,7 @@ export const SettingsPage = ({ formId, isLocal }: { formId: string; isLocal?: bo
       </div>
     );
   }
+
   return <SettingsPageInner formId={formId} isLocal={isLocal} />;
 };
 
@@ -774,9 +800,9 @@ const SettingsPageInner = ({ formId, isLocal }: { formId: string; isLocal?: bool
   });
 
   return (
-    // [font-variation-settings:normal] un-pins the global opsz/wght so font-weight + per-cell opsz apply.
-    <div className="mx-auto flex w-[700px] max-w-full flex-col pt-8 pb-16 [font-variation-settings:normal]">
-      <h1 className="font-case text-[18px] leading-[1.15] font-semibold text-gray-950">Settings</h1>
+    <div className={settingsShellCls}>
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- leading-[1.15] has no value-identical step; nearest leading-tight (1.25) would shift visuals */}
+      <h1 className="font-case text-xl leading-[1.15] font-semibold text-foreground">Settings</h1>
 
       {/* line-variant Tabs: Base UI slides the underline between tabs (mount placed instantly). */}
       <Tabs
@@ -790,24 +816,26 @@ const SettingsPageInner = ({ formId, isLocal }: { formId: string; isLocal?: bool
           // `!` beats the line-variant's default border-border-soft (= #afafaf in dark, too bright);
           // Figma's tab rail is gray-200 (#ededed light / #292929 dark) in both modes.
           // p-0! drops the variant's p-px so the rail is 33px (32px pill + 1px border), not 35px.
-          className="h-auto! w-full justify-start gap-6 border-gray-200! p-0!"
+          className="h-auto! w-full justify-start gap-6 border-border! p-0!"
         >
           {TABS.map(({ id, label, Icon }) => (
             <TabsTrigger
               key={id}
               value={id}
-              className="h-8! flex-none gap-2 px-0! font-[420]! tracking-[0.28px] text-gray-600 font-opsz-24 hover:text-gray-700 data-active:text-gray-950"
+              // oxlint-disable-next-line shadcn/no-arbitrary-values -- font-[420] and tracking-[0.28px] have no value-identical steps; nearest would shift visuals
+              className="h-8! flex-none gap-2 px-0! font-[420]! tracking-[0.28px] text-muted-foreground font-opsz-24 hover:text-foreground data-active:text-foreground"
             >
               <Icon className="size-4" />
               {label}
             </TabsTrigger>
           ))}
-          <TabsIndicator className="bg-gray-950!" />
+          <TabsIndicator className="bg-foreground!" />
         </TabsList>
       </Tabs>
 
       <div className="mt-7">
-        <h2 className="text-[15px] leading-[1.15] font-semibold tracking-[0.225px] text-gray-900 font-opsz-24">
+        {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- text-[15px]/leading-[1.15]/tracking-[0.225px] have no value-identical steps (nearest text-base 14px / text-lg 16px); swaps would shift visuals */}
+        <h2 className="text-[15px] leading-[1.15] font-semibold tracking-[0.225px] text-foreground font-opsz-24">
           {TABS.find((t) => t.id === activeTab)?.label}
         </h2>
         <div className="mt-6">

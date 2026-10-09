@@ -16,7 +16,7 @@ export const AboutSidebar = ({ onClose }: AboutSidebarProps) => (
       <Button
         variant="ghost-flat"
         size="icon"
-        className="size-7 rounded-lg p-1.25 text-gray-800 hover:text-foreground"
+        className="size-7 rounded-lg p-1.25 text-foreground hover:text-foreground"
         onClick={onClose}
         aria-label="Close"
       >

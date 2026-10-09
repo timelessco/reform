@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 
 export const ToggleElement = (props: PlateElementProps) => {
   const element = props.element;
+  // SAFETY: Plate assigns every block element a string id at creation
   const state = useToggleButtonState(element.id as string);
   const { buttonProps, open } = useToggleButton(state);
 

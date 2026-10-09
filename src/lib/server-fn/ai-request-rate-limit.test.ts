@@ -11,9 +11,11 @@ import {
 // Table has no FK; keyed by an arbitrary text orgId. Use unique ids per test for isolation.
 describe("checkAiRequestRateLimit (per-org short-window burst limit)", () => {
   const orgIds: string[] = [];
+
   const newOrgId = () => {
     const id = `rl-test-${crypto.randomUUID()}`;
     orgIds.push(id);
+
     return id;
   };
 
@@ -25,6 +27,7 @@ describe("checkAiRequestRateLimit (per-org short-window burst limit)", () => {
 
   it("allows calls up to the limit within the window", async () => {
     const orgId = newOrgId();
+
     for (let i = 1; i <= MAX_PER_WINDOW; i++) {
       const res = await checkAiRequestRateLimit(orgId);
       expect(res.allowed).toBe(true);

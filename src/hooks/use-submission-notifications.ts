@@ -13,11 +13,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 const LEADER_KEY = "bf-submission-notification-leader";
+
 const POPUP_STATE_PREFIX = "bf-submission-notification-popup";
+
 const LEADER_TTL_MS = 25_000;
+
 const LEADER_HEARTBEAT_MS = 10_000;
+
 const POPUP_COALESCE_MS = 60_000;
+
 const VISIBLE_POLL_INTERVAL_MS = 30_000;
+
 const HIDDEN_POLL_INTERVAL_MS = 300_000;
 
 type HookOptions = {
@@ -50,6 +56,7 @@ const claimLeader = (tabId: string) => {
 
   if (!current || current.tabId === tabId || current.expiresAt <= now) {
     safeStorage.setJson(LEADER_KEY, { tabId, expiresAt: now + LEADER_TTL_MS });
+
     return true;
   }
 
@@ -58,6 +65,7 @@ const claimLeader = (tabId: string) => {
 
 const releaseLeader = (tabId: string) => {
   const current = safeStorage.getJson<LeaderState>(LEADER_KEY);
+
   if (current?.tabId === tabId && typeof window !== "undefined") {
     safeStorage.remove(LEADER_KEY);
   }
@@ -77,6 +85,7 @@ const shouldShowPopup = (formId: string, latestSubmissionId: string) => {
   }
 
   safeStorage.setJson(key, { latestSubmissionId, shownAt: now });
+
   return true;
 };
 
@@ -94,9 +103,11 @@ export const useSubmissionNotifications = ({ poll = false }: HookOptions = {}) =
     }
 
     const tabId = tabIdRef.current;
+
     const updateLeader = () =>
       setIsLeader((prev) => {
         const next = claimLeader(tabId);
+
         return prev === next ? prev : next;
       });
 
@@ -181,6 +192,7 @@ export const useSubmissionNotifications = ({ poll = false }: HookOptions = {}) =
     if (!hasSeededNotificationsRef.current) {
       previousNotificationsRef.current = nextById;
       hasSeededNotificationsRef.current = true;
+
       return;
     }
 
@@ -192,6 +204,7 @@ export const useSubmissionNotifications = ({ poll = false }: HookOptions = {}) =
       Notification.permission !== "granted"
     ) {
       previousNotificationsRef.current = nextById;
+
       return;
     }
 
@@ -205,6 +218,7 @@ export const useSubmissionNotifications = ({ poll = false }: HookOptions = {}) =
       }
 
       const previous = previousNotificationsRef.current.get(notification.id);
+
       const hasChanged =
         previous?.latestSubmissionId !== notification.latestSubmissionId ||
         previous?.unreadCount !== notification.unreadCount ||

@@ -7,13 +7,16 @@ import * as React from "react";
 const createCaptionTrackUrl = (text: string) => {
   const vtt = `WEBVTT\n\n00:00.000 --> 00:05.000\n${text}`;
   const blob = new Blob([vtt], { type: "text/vtt" });
+
   return URL.createObjectURL(blob);
 };
 
 export const AudioElementStatic = (props: SlateElementProps<TAudioElement & TCaptionElement>) => {
   const { caption } = props.element;
+
   const captionText = React.useMemo(() => {
     if (!caption?.length) return "";
+
     return NodeApi.string(caption[0]).trim();
   }, [caption]);
 

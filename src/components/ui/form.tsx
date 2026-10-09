@@ -13,7 +13,7 @@ type FormFieldContextValue<
   name: TName;
 };
 
-const FormFieldContext = React.createContext<FormFieldContextValue>({} as FormFieldContextValue);
+const FormFieldContext = React.createContext<FormFieldContextValue | null>(null);
 
 const FormField = <
   TFieldValues extends FieldValues = FieldValues,
@@ -32,15 +32,20 @@ const FormField = <
 
 const useFormField = () => {
   const fieldContext = React.use(FormFieldContext);
-  const itemContext = React.use(FormItemContext);
-  const { getFieldState } = useFormContext();
-  const formState = useFormState({ name: fieldContext.name });
-  const fieldState = getFieldState(fieldContext.name, formState);
 
   if (!fieldContext) {
     throw new Error("useFormField should be used within <FormField>");
   }
 
+  const itemContext = React.use(FormItemContext);
+
+  if (!itemContext) {
+    throw new Error("useFormField should be used within <FormItem>");
+  }
+
+  const { getFieldState } = useFormContext();
+  const formState = useFormState({ name: fieldContext.name });
+  const fieldState = getFieldState(fieldContext.name, formState);
   const { id } = itemContext;
 
   return {
@@ -57,7 +62,7 @@ type FormItemContextValue = {
   id: string;
 };
 
-const FormItemContext = React.createContext<FormItemContextValue>({} as FormItemContextValue);
+const FormItemContext = React.createContext<FormItemContextValue | null>(null);
 
 export const FormItem = ({ className, ...props }: React.ComponentProps<"div">) => {
   const id = React.useId();
@@ -90,11 +95,11 @@ export const FormControl = ({
 }: React.PropsWithChildren<React.ComponentProps<"div">>) => {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
 
-  if (!React.isValidElement(children)) {
+  if (!React.isValidElement<React.ComponentProps<"div"> & { "data-slot"?: string }>(children)) {
     return children;
   }
 
-  return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
+  return React.cloneElement(children, {
     "data-slot": "form-control",
     id: formItemId,
     "aria-describedby": !error ? `${formDescriptionId}` : `${formDescriptionId} ${formMessageId}`,

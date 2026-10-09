@@ -17,6 +17,7 @@ import { defaultFormSettings } from "@/types/form-settings";
 import type { FormSettings } from "@/types/form-settings";
 import { requireScopedForm } from "./auth-helpers.server";
 import { getOrgPlanWithPolarSync } from "./plan-helpers.server";
+import { queryKeys } from "@/lib/query-keys";
 
 // TODO: make plan-based
 const MAX_VERSIONS_PER_FORM = 20;
@@ -62,15 +63,16 @@ export const publishFormVersion = createServerFn({ method: "POST" })
 
       const now = new Date();
 
-      // Pro enforcement: free plans publish with Pro customization stripped (the draft keeps them
-      // — the customize sidebar lets free users experiment). Resolve the plan (DB read + possible
-      // Polar round-trip) ONLY when the draft actually holds Pro keys, so the common
-      // free-user / clean-draft publish skips it. Hash over the published snapshot so a later
-      // upgrade-to-pro republish reads as dirty and re-snapshots the full styles.
+      // Free plans publish with Pro customization stripped (the draft keeps them; the customize
+      // sidebar lets free users experiment). Plan is resolved (DB read + possible Polar round-trip)
+      // only when the draft holds Pro keys, so clean-draft publishes skip it. Hash over the
+      // published snapshot so a later upgrade-to-pro republish reads dirty and re-snapshots full styles.
       const draftCustomization = (form.customization ?? {}) as Record<string, string>;
       const strippedCustomization = stripProCustomization(draftCustomization);
+
       const hasProCustomization =
         Object.keys(strippedCustomization).length !== Object.keys(draftCustomization).length;
+
       const customizationSnapshot =
         hasProCustomization &&
         (await getOrgPlanWithPolarSync(orgId, context.session.user.email ?? null)) === "free"
@@ -85,8 +87,7 @@ export const publishFormVersion = createServerFn({ method: "POST" })
         cover: form.cover,
       });
 
-      // DEBUG: log snapshot publish reads from DB to diagnose "changed it but published is
-      // stale" reports. Revert once verified.
+      // DEBUG: log DB reads on publish to diagnose "changed it but published is stale" reports. Revert once verified.
       log.info({
         tag: "publish",
         msg: "read forms row",
@@ -100,9 +101,9 @@ export const publishFormVersion = createServerFn({ method: "POST" })
         updatedAt: form.updatedAt,
       });
 
-      // Per-domain conditional publish (see plan §2): versioned (editor + customization) inserts
-      // a new version row only if hash differs from publishedContentHash; settings upserts
-      // formSettings from draftSettings only if live differs from draft. First publish: both fire.
+      // Per-domain conditional publish (plan §2). Versioned (editor + customization) inserts a new
+      // version row only if hash differs from publishedContentHash; settings upserts formSettings
+      // from draftSettings only if live differs from draft. First publish fires both.
       const versionedDirty = form.publishedContentHash !== contentHash;
       const isFirstPublish = !form.lastPublishedVersionId;
 
@@ -128,7 +129,7 @@ export const publishFormVersion = createServerFn({ method: "POST" })
             formId: data.formId,
             version: nextVersionNumber,
             content: form.content,
-            // Settings excluded from versions: null on new rows; legacy rows keep pre-split snapshot.
+            // Settings excluded from versions. New rows write null; legacy rows keep the pre-split snapshot.
             settings: null,
             customization: customizationSnapshot,
             title: form.title,
@@ -141,6 +142,7 @@ export const publishFormVersion = createServerFn({ method: "POST" })
             createdAt: now,
           })
           .returning();
+
         newVersion = inserted;
 
         log.info({
@@ -176,14 +178,14 @@ export const publishFormVersion = createServerFn({ method: "POST" })
           await tx.delete(formVersions).where(inArray(formVersions.id, versionsToDelete));
         }
       } else if (form.status !== "published") {
-        // No content change but archived/unpublished — flip back to published, no empty version.
+        // No content change but archived/unpublished. Flip back to published, no empty version.
         await tx
           .update(forms)
           .set({ status: "published", updatedAt: now })
           .where(eq(forms.id, data.formId));
       }
 
-      // Settings: copy draft → live when they differ (canonical compare) to avoid noop writes.
+      // Copy draft settings to live when they differ (canonical compare) to avoid noop writes.
       const [liveRow] = await tx
         .select({ settings: formSettings.settings })
         .from(formSettings)
@@ -256,13 +258,14 @@ export const getFormVersions = createServerFn({ method: "GET" })
     };
   });
 
-/** Version-list query options. Source of truth for the ["form-versions", formId] key + fetcher;
- * mirrors the version-list collection's injected queryFn (getVersionList in _authenticated.tsx). */
+/** Version-list query options. Pairs the shared key with the fetcher; mirrors the version-list
+ * collection's injected queryFn (getVersionList in _authenticated.tsx). */
 export const getFormVersionsQueryOption = (formId: string) =>
   queryOptions({
-    queryKey: ["form-versions", formId] as const,
+    queryKey: queryKeys.formVersions(formId),
     queryFn: async () => {
       const result = await getFormVersions({ data: { formId } });
+
       return result?.versions ?? [];
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
@@ -309,6 +312,7 @@ export const restoreFormVersion = createServerFn({ method: "POST" })
       .select()
       .from(formVersions)
       .where(and(eq(formVersions.id, data.versionId), eq(formVersions.formId, data.formId)));
+
     await authPromise;
 
     if (!version) {
@@ -381,8 +385,9 @@ export const discardFormChanges = createServerFn({ method: "POST" })
       cover: version.cover,
     });
 
-    // Discard resets both domains: versioned (editor + customization + title/icon/cover) ← last
-    // version; settings (draftSettings) ← live formSettings.settings (defaultFormSettings if no live row).
+    // Discard resets both domains. Versioned fields (editor + customization + title/icon/cover)
+    // revert to the last version; settings (draftSettings) revert to live formSettings.settings
+    // (defaultFormSettings if no live row).
     const liveSettings = (result.liveSettings ?? defaultFormSettings) as FormSettings;
 
     const [updatedForm] = await db

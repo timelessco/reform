@@ -19,6 +19,7 @@ const ACTION_THREE_COLUMNS = "action_three_columns";
 const scrollSelectionIntoView = (editor: PlateEditor) => {
   requestAnimationFrame(() => {
     const block = editor.api.block();
+
     if (!block) return;
     const domNode = editor.api.toDOMNode(block[0]);
     domNode?.scrollIntoView({ block: "center", behavior: "smooth" });
@@ -35,7 +36,7 @@ const insertList = (editor: PlateEditor, type: string) => {
   );
 };
 
-type FieldNode = Record<string, unknown>;
+type FieldNode = TElement;
 
 type LabeledFieldOptions = {
   labelPlaceholder?: string;
@@ -50,6 +51,7 @@ const insertLabeledField = (
   { labelPlaceholder = "Type a question", focus = false }: LabeledFieldOptions = {},
 ) => {
   const block = editor.api.block();
+
   if (!block) return;
 
   const [, path] = block;
@@ -61,11 +63,13 @@ const insertLabeledField = (
     placeholder: labelPlaceholder,
     children: [{ text: "" }],
   };
+
   const fields = Array.isArray(fieldNodes) ? fieldNodes : [fieldNodes];
 
-  editor.tf.insertNodes([label, ...fields] as unknown as TElement[], { at: labelPath });
+  editor.tf.insertNodes([label, ...fields], { at: labelPath });
 
   editor.tf.select({ path: [...labelPath, 0], offset: 0 });
+
   if (focus) editor.tf.focus();
 };
 
@@ -75,7 +79,12 @@ type LabeledFieldConfig = {
   focus?: boolean;
 };
 
-const LABELED_FIELD_CONFIGS: Record<string, LabeledFieldConfig> = {
+/** Labeled-field config table, keyed by block type. Named contract so iteration keeps entry types. */
+interface LabeledFieldConfigMap {
+  [key: string]: LabeledFieldConfig;
+}
+
+const LABELED_FIELD_CONFIGS: LabeledFieldConfigMap = {
   formInput: {
     fields: () => ({
       type: "formInput",
@@ -170,18 +179,27 @@ const LABELED_FIELD_CONFIGS: Record<string, LabeledFieldConfig> = {
   },
 };
 
-const labeledFieldInserters = Object.fromEntries(
-  Object.entries(LABELED_FIELD_CONFIGS).map(([type, cfg]) => [
-    type,
-    (editor: PlateEditor) => insertLabeledField(editor, cfg.fields(), { focus: cfg.focus }),
-  ]),
-) as Record<string, (editor: PlateEditor, type: string) => void>;
+type BlockInserter = (editor: PlateEditor, type: string) => void;
 
-const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void> = {
+/** Block inserter table, keyed by block type. Named contract so inserts keep index access. */
+interface BlockInserterMap {
+  [key: string]: BlockInserter;
+}
+
+const labeledFieldInserters: BlockInserterMap = {};
+
+for (const [type, cfg] of Object.entries(LABELED_FIELD_CONFIGS)) {
+  labeledFieldInserters[type] = (editor) =>
+    insertLabeledField(editor, cfg.fields(), { focus: cfg.focus });
+}
+
+const insertBlockMap: BlockInserterMap = {
   logicBlock: (editor) => {
     const block = editor.api.block();
+
     if (!block) return;
-    editor.tf.insertNodes(createLogicBlockNode() as unknown as TElement, {
+    const logicBlockNode: TElement = { ...createLogicBlockNode() };
+    editor.tf.insertNodes(logicBlockNode, {
       at: PathApi.next(block[1]),
       select: true,
     });
@@ -208,6 +226,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
   ...labeledFieldInserters,
   pageBreak: (editor) => {
     const block = editor.api.block();
+
     if (!block) return;
     const [, path] = block;
 
@@ -217,7 +236,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         type: "pageBreak",
         isThankYouPage: false,
         children: [{ text: "" }],
-      } as TElement,
+      },
       { at: pageBreakPath },
     );
 
@@ -226,7 +245,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
       {
         type: "p",
         children: [{ text: "" }],
-      } as TElement,
+      },
       { at: paragraphPath, select: true },
     );
 
@@ -241,7 +260,8 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
     }
 
     // Find existing Submit button - it should exist due to normalization
-    const children = editor.children as TElement[];
+    const children = editor.children;
+
     const submitIndex = children.findIndex(
       (n) => n.type === "formButton" && n.buttonRole === "submit",
     );
@@ -249,6 +269,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
     if (submitIndex === -1) {
       // No Submit button - add one and then the thank-you pageBreak
       const block = editor.api.block();
+
       if (!block) return;
       const [, path] = block;
       const nextPath = PathApi.next(path);
@@ -258,7 +279,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           type: "formButton",
           buttonRole: "submit",
           children: [{ text: "Submit" }],
-        } as TElement,
+        },
         { at: nextPath },
       );
 
@@ -268,7 +289,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
           type: "pageBreak",
           isThankYouPage: true,
           children: [{ text: "" }],
-        } as TElement,
+        },
         { at: pageBreakPath },
       );
 
@@ -278,11 +299,12 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         {
           type: "p",
           children: [{ text: "" }],
-        } as TElement,
+        },
         { at: paragraphPath, select: true },
       );
 
       scrollSelectionIntoView(editor);
+
       return;
     }
 
@@ -293,7 +315,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
         type: "pageBreak",
         isThankYouPage: true,
         children: [{ text: "" }],
-      } as TElement,
+      },
       { at: pageBreakPath },
     );
 
@@ -303,7 +325,7 @@ const insertBlockMap: Record<string, (editor: PlateEditor, type: string) => void
       {
         type: "p",
         children: [{ text: "" }],
-      } as TElement,
+      },
       { at: paragraphPath, select: true },
     );
 
@@ -365,10 +387,14 @@ const setList = (editor: PlateEditor, type: string, entry: NodeEntry<TElement>) 
   );
 };
 
-const setBlockMap: Record<
-  string,
-  (editor: PlateEditor, type: string, entry: NodeEntry<TElement>) => void
-> = {
+type SetBlockFn = (editor: PlateEditor, type: string, entry: NodeEntry<TElement>) => void;
+
+/** Block type setter table, keyed by block type. Named contract so sets keep index access. */
+interface SetBlockMap {
+  [key: string]: SetBlockFn;
+}
+
+const setBlockMap: SetBlockMap = {
   [KEYS.listTodo]: setList,
   [KEYS.ol]: setList,
   [KEYS.ul]: setList,
@@ -383,9 +409,11 @@ export const setBlockType = (editor: PlateEditor, type: string, { at }: { at?: P
       if (node[KEYS.listType]) {
         editor.tf.unsetNodes([KEYS.listType, "indent"], { at: path });
       }
+
       if (type in setBlockMap) {
         return setBlockMap[type](editor, type, entry);
       }
+
       if (node.type !== type) {
         editor.tf.setNodes({ type }, { at: path });
       }
@@ -414,9 +442,11 @@ export const getBlockType = (block: TElement) => {
     if (block[KEYS.listType] === KEYS.ol) {
       return KEYS.ol;
     }
+
     if (block[KEYS.listType] === KEYS.listTodo) {
       return KEYS.listTodo;
     }
+
     return KEYS.ul;
   }
 

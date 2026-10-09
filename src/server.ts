@@ -8,6 +8,7 @@ import handler, { createServerEntry } from "@tanstack/react-start/server-entry";
 const EVENT_STORAGE_SYMBOL = Symbol.for("tanstack-start:event-storage");
 
 type NodeWriteEarlyHints = (hints: { link: string | Array<string> }) => void;
+
 type EventStorage = {
   getStore?: () => {
     h3Event?: { runtime?: { node?: { res?: { writeEarlyHints?: NodeWriteEarlyHints } } } };
@@ -18,6 +19,7 @@ const getNodeResponse = () => {
   const storage = (globalThis as Record<symbol, unknown>)[EVENT_STORAGE_SYMBOL] as
     | EventStorage
     | undefined;
+
   return storage?.getStore?.()?.h3Event?.runtime?.node?.res;
 };
 
@@ -44,6 +46,7 @@ export default createServerEntry({
       // Skipped automatically by Start in dev (TSS_DEV_SERVER === 'true').
       onEarlyHints: ({ phase, links }) => {
         if (phase !== "static" || links.length === 0) return;
+
         try {
           getNodeResponse()?.writeEarlyHints?.({ link: links });
         } catch {

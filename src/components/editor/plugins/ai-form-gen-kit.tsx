@@ -11,6 +11,7 @@ import { SparklesIcon } from "@/components/ui/icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useFormGenStream } from "@/components/editor/hooks/use-form-gen-stream";
 
+// SAFETY: false and "" match the declared boolean/string option types; widened so get/setOption stay typed.
 export const AIFormGenPlugin = createPlatePlugin({
   key: "aiFormGen",
   options: { isOpen: false as boolean, formId: "" as string },
@@ -38,14 +39,17 @@ const AIFormGenMenu = () => {
   const blockSelectionNodes = useBlockSelectionNodes();
 
   const [wasOpen, setWasOpen] = useState(isOpen);
+
   if (wasOpen !== isOpen) {
     setWasOpen(isOpen);
+
     if (!isOpen) {
       capturedPathRef.current = null;
       setSelectionContext(null);
       setGenerationError(null);
     } else if (!capturedPathRef.current) {
       const block = editor.api.block();
+
       if (block) {
         const [, path] = block;
         capturedPathRef.current = PathApi.next(path);
@@ -56,6 +60,7 @@ const AIFormGenMenu = () => {
       // Priority 1: multi-block selection via drag-handle — show chip
       if (blockSelectionNodes.length > 0) {
         const lastSelectedPath = blockSelectionNodes[blockSelectionNodes.length - 1]?.[1];
+
         if (lastSelectedPath && lastSelectedPath.length > 0) {
           capturedPathRef.current = PathApi.next(lastSelectedPath);
         }
@@ -69,11 +74,13 @@ const AIFormGenMenu = () => {
           }
         } else {
           let preview = "";
+
           try {
             preview = NodeApi.string(blockSelectionNodes[0]?.[0]).trim();
           } catch {
             preview = "";
           }
+
           const label = `${blockSelectionNodes.length} blocks selected`;
           setSelectionContext(preview ? `${label} — ${preview}` : label);
         }
@@ -81,9 +88,11 @@ const AIFormGenMenu = () => {
         // Priority 2: highlighted text range — show chip
         const selection = editor.selection;
         let captured = false;
+
         if (selection && editor.api.isExpanded()) {
           try {
             const selectedText = editor.api.string(selection).trim();
+
             if (selectedText) {
               setSelectionContext(selectedText);
               captured = true;
@@ -92,6 +101,7 @@ const AIFormGenMenu = () => {
             // fall through to no-chip case
           }
         }
+
         if (!captured) {
           setSelectionContext(null);
         }
@@ -108,16 +118,20 @@ const AIFormGenMenu = () => {
     // Multi-block selection: send full text of every block to server, not just the chip preview.
     if (blockSelectionNodes.length > 0) {
       const parts: string[] = [];
+
       for (const entry of blockSelectionNodes) {
         try {
           const text = NodeApi.string(entry[0]).trim();
+
           if (text) parts.push(text);
         } catch {
           // skip unreadable node
         }
       }
+
       if (parts.length > 0) return parts.join("\n");
     }
+
     return selectionContext;
   }, [blockSelectionNodes, selectionContext]);
 
@@ -165,13 +179,16 @@ const AIFormGenMenu = () => {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const isMod = event.metaKey || event.ctrlKey;
+
       if (isMod && event.shiftKey && event.key.toLowerCase() === "k") {
         event.preventDefault();
         const current = editor.getOption(AIFormGenPlugin, "isOpen");
         editor.setOption(AIFormGenPlugin, "isOpen", !current);
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
+
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [editor]);
 

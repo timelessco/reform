@@ -36,6 +36,7 @@ describe("isBotUserAgent", () => {
   it("flags HeadlessChrome as bot", () => {
     const ua =
       "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/120.0.6099.71 Safari/537.36";
+
     expect(isBotUserAgent(ua)).toBeTruthy();
   });
 
@@ -66,12 +67,14 @@ describe("isBotUserAgent", () => {
   it("does not flag real Chrome desktop UA", () => {
     const ua =
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
     expect(isBotUserAgent(ua)).toBeFalsy();
   });
 
   it("does not flag real Safari iOS UA", () => {
     const ua =
       "Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1";
+
     expect(isBotUserAgent(ua)).toBeFalsy();
   });
 
@@ -91,6 +94,7 @@ describe("isBotUserAgent", () => {
   it("does not flag UA containing the substring 'Robotic' (bot\\b boundary)", () => {
     const ua =
       "Mozilla/5.0 (Robotic Vacuum Browser/1.0) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36";
+
     expect(isBotUserAgent(ua)).toBeFalsy();
   });
 });
@@ -129,6 +133,7 @@ describe("parseUserAgent", () => {
   it("parses Chrome 120 desktop on Windows 10", () => {
     const ua =
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
     const result = parseUserAgent(ua);
     expect(result.deviceType).toBe("desktop");
     expect(result.browser).toBe("Chrome");
@@ -140,6 +145,7 @@ describe("parseUserAgent", () => {
   it("parses Safari 16.5 on iPhone iOS 16", () => {
     const ua =
       "Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1";
+
     const result = parseUserAgent(ua);
     expect(result.deviceType).toBe("mobile");
     expect(result.browser).toBe("Safari");
@@ -151,6 +157,7 @@ describe("parseUserAgent", () => {
   it("parses Safari 17 on iPad iPadOS 17", () => {
     const ua =
       "Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
+
     const result = parseUserAgent(ua);
     expect(result.deviceType).toBe("tablet");
     expect(result.browser).toBe("Safari");
@@ -169,6 +176,7 @@ describe("parseUserAgent", () => {
   it("parses Edge on macOS", () => {
     const ua =
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.2210.91";
+
     const result = parseUserAgent(ua);
     expect(result.deviceType).toBe("desktop");
     expect(result.browser).toBe("Edge");
@@ -178,6 +186,7 @@ describe("parseUserAgent", () => {
   it("parses Opera on Windows", () => {
     const ua =
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0";
+
     const result = parseUserAgent(ua);
     expect(result.browser).toBe("Opera");
     expect(result.os).toBe("Windows");
@@ -186,6 +195,7 @@ describe("parseUserAgent", () => {
   it("parses Chrome on Android phone as mobile", () => {
     const ua =
       "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36";
+
     const result = parseUserAgent(ua);
     expect(result.deviceType).toBe("mobile");
     expect(result.browser).toBe("Chrome");
@@ -196,6 +206,7 @@ describe("parseUserAgent", () => {
   it("parses Chrome on Android tablet (no Mobile token) as tablet", () => {
     const ua =
       "Mozilla/5.0 (Linux; Android 13; SM-X700) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
     const result = parseUserAgent(ua);
     expect(result.deviceType).toBe("tablet");
     expect(result.browser).toBe("Chrome");

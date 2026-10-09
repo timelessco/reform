@@ -13,6 +13,7 @@ export const getOrgPlan = async (orgId: string): Promise<ServerPlan> => {
     .select({ plan: organization.plan })
     .from(organization)
     .where(eq(organization.id, orgId));
+
   const resolved: ServerPlan = isServerPlan(row?.plan) ? row.plan : "free";
   logger("[getOrgPlan]", {
     orgId,
@@ -20,6 +21,7 @@ export const getOrgPlan = async (orgId: string): Promise<ServerPlan> => {
     rowFound: Boolean(row),
     returns: resolved,
   });
+
   return resolved;
 };
 
@@ -31,7 +33,9 @@ export const getOrgPlanWithPolarSync = async (
   userEmail: string | null,
 ): Promise<ServerPlan> => {
   const cached = await getOrgPlan(orgId);
+
   if (cached !== "free") return cached;
+
   if (!userEmail) return cached;
 
   try {
@@ -41,8 +45,10 @@ export const getOrgPlanWithPolarSync = async (
     // all their customers to ones whose metadata.referenceId matches this org.
     const customerList = await polarClient.customers.list({ email: userEmail, limit: 5 });
     const customers = customerList.result.items;
+
     if (customers.length === 0) {
       logger("[getOrgPlanWithPolarSync] no Polar customer for email", { orgId });
+
       return cached;
     }
 
@@ -51,22 +57,28 @@ export const getOrgPlanWithPolarSync = async (
     );
 
     let detected: Plan = "free";
+
     for (const subs of subLists) {
       for (const sub of subs.result.items) {
         const metaRef = (sub.metadata as { referenceId?: unknown } | null)?.referenceId;
+
         if (metaRef !== orgId) continue;
         const plan = planForProductId(sub.productId);
+
         if (plan === "business") {
           detected = "business";
           break;
         }
+
         if (plan === "pro" && detected === "free") detected = "pro";
       }
+
       if (detected === "business") break;
     }
 
     if (detected === "free") {
       logger("[getOrgPlanWithPolarSync] Polar also reports free", { orgId });
+
       return cached;
     }
 
@@ -76,12 +88,14 @@ export const getOrgPlanWithPolarSync = async (
       polarReports: detected,
     });
     await db.update(organization).set({ plan: detected }).where(eq(organization.id, orgId));
+
     return detected;
   } catch (e) {
     logger(
       "[getOrgPlanWithPolarSync] Polar verify failed — keeping cached value",
       e instanceof Error ? e.message : String(e),
     );
+
     return cached;
   }
 };

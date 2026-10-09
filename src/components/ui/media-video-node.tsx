@@ -6,7 +6,9 @@ import type { TResizableProps, TVideoElement } from "platejs";
 import type { PlateElementProps } from "platejs/react";
 import { PlateElement, useEditorMounted, withHOC } from "platejs/react";
 import { Suspense, lazy } from "react";
+import type { CSSProperties } from "react";
 import LiteYouTubeEmbed from "react-lite-youtube-embed";
+import * as v from "valibot";
 
 const ReactPlayer = lazy(() => import("react-player"));
 
@@ -28,6 +30,7 @@ export const VideoElement = withHOC(
     } = useMediaState({
       urlParsers: [parseTwitterUrl, parseVideoUrl],
     });
+
     const width = useResizableValue("width");
 
     const isEditorMounted = useEditorMounted();
@@ -99,7 +102,14 @@ export const VideoElement = withHOC(
             </div>
           </Resizable>
 
-          <Caption style={{ width }} align={align}>
+          <Caption
+            className="w-[var(--caption-width)]"
+            align={align}
+            // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+            style={
+              { "--caption-width": v.is(v.number(), width) ? `${width}px` : width } as CSSProperties
+            }
+          >
             <CaptionTextarea readOnly={readOnly} placeholder="Write a caption..." />
           </Caption>
         </figure>

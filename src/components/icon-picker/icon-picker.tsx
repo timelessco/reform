@@ -7,9 +7,11 @@ import { iconOptions } from "./icon-data";
 import type { IconPickerProps } from "./types";
 
 const ICONS_PER_PAGE = 99;
+
 const ROW_SIZE = 11;
 
 const allLabels = iconOptions.map((item) => item.label);
+
 const totalPages = Math.ceil(iconOptions.length / ICONS_PER_PAGE);
 
 export type IconPickerContentProps = Omit<IconPickerProps, "buttonIconSize"> & {
@@ -49,6 +51,7 @@ export const IconPickerContent = ({
   const filteredLabels = useMemo(() => {
     if (!isSearching) {
       const start = pageIndex * ICONS_PER_PAGE;
+
       return allLabels.slice(start, start + ICONS_PER_PAGE);
     }
 
@@ -59,16 +62,12 @@ export const IconPickerContent = ({
     <div className="h-[368px] w-[310px] bg-muted/50 px-3">
       <IconPickerHeader searchValue={searchValue} onSearchChange={handleSearchChange} />
       {!hideColors && (
-        <div
-          className="icon-color-container overflow-x-auto pt-2"
-          style={{ scrollbarWidth: "none" }}
-        >
+        <div className="[scrollbar-width:none] overflow-x-auto pt-2">
           <ColorPicker onChange={handleColorChange} selectedColor={iconColor} colors={colors} />
         </div>
       )}
       <div
-        className={`flex flex-col overflow-y-auto pt-2 pb-3 ${hideColors ? "h-[300px]" : "h-[253px]"}`}
-        style={{ scrollbarWidth: "none" }}
+        className={`flex [scrollbar-width:none] flex-col overflow-y-auto pt-2 pb-3 ${hideColors ? "h-[300px]" : "h-[253px]"}`}
       >
         <IconGrid labels={filteredLabels} onSelect={onIconChange} />
         {!isSearching && (
@@ -92,7 +91,7 @@ type IconPickerHeaderProps = {
 const IconPickerHeader = ({ searchValue, onSearchChange }: IconPickerHeaderProps) => (
   <div className="flex items-center justify-between border-b border-b-border py-3">
     <span className="text-sm text-foreground">Choose an icon</span>
-    <div className="flex w-[139px] items-center rounded-lg bg-muted px-[10px] py-[7px]">
+    <div className="flex w-[139px] items-center rounded-lg bg-muted px-2.5 py-1.75">
       <figure className="mr-[6px] size-3 text-muted-foreground">
         <svg
           fill="none"
@@ -129,6 +128,7 @@ type IconGridProps = {
 const IconGrid = ({ labels, onSelect }: IconGridProps) => {
   const rows = useMemo(() => {
     const result: string[][] = [];
+
     for (let index = 0; index < labels.length; index += ROW_SIZE) {
       result.push(labels.slice(index, index + ROW_SIZE));
     }
@@ -137,7 +137,7 @@ const IconGrid = ({ labels, onSelect }: IconGridProps) => {
   }, [labels]);
 
   return (
-    <div style={{ contentVisibility: "auto", containIntrinsicSize: "auto 200px" }}>
+    <div className="[contain-intrinsic-size:auto_200px] [content-visibility:auto]">
       {rows.map((row) => (
         <div className="flex justify-start" key={row[0]}>
           {row.map((label) => (
@@ -160,7 +160,7 @@ const IconGridItem = ({ label, onSelect }: IconGridItemProps) => {
 
   return (
     <button
-      className="custom-select rounded-md p-1 hover:bg-muted"
+      className="rounded-md p-1 hover:bg-muted"
       onClick={() => onSelect(label)}
       title={data?.label}
       type="button"
@@ -185,18 +185,18 @@ const IconPagination = ({
 }: IconPaginationProps) => (
   <div className="absolute bottom-2 left-0 flex w-full justify-between px-2 pt-2">
     <button
-      className="text-13 flex items-center rounded-lg px-2 py-[5px] text-foreground hover:bg-muted disabled:opacity-50"
+      className="flex items-center rounded-lg px-2 py-1.25 text-foreground hover:bg-muted disabled:opacity-50"
       disabled={currentPage === 1}
       onClick={onPrev}
       type="button"
     >
       prev
     </button>
-    <span className="text-13 text-foreground">
+    <span className="text-foreground">
       <NumberPopIn value={currentPage} />/<NumberPopIn value={pageCount} />
     </span>
     <button
-      className="text-13 flex items-center rounded-lg px-2 py-[5px] text-foreground hover:bg-muted disabled:opacity-50"
+      className="flex items-center rounded-lg px-2 py-1.25 text-foreground hover:bg-muted disabled:opacity-50"
       disabled={currentPage === pageCount}
       onClick={onNext}
       type="button"

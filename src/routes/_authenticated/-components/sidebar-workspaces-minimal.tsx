@@ -68,9 +68,11 @@ interface UseSortedWorkspacesWithFormsOptions {
 
 const arraysAreShallowEqual = <T,>(a: readonly T[], b: readonly T[]) => {
   if (a.length !== b.length) return false;
+
   for (let i = 0; i < a.length; i++) {
     if (a[i] !== b[i]) return false;
   }
+
   return true;
 };
 
@@ -81,7 +83,7 @@ const useSortedWorkspacesWithForms = ({
   isDataReady,
   sortMode,
 }: UseSortedWorkspacesWithFormsOptions) => {
-  // Cache workspace/forms-array identities by id — content-stable live-query churn (new array ref, same data) won't cascade new identities downstream.
+  // Cache workspace/forms-array identities by id; content-stable live-query churn (new array ref, same data) won't cascade new identities downstream.
   const workspaceCacheRef = useRef(new Map<string, WorkspaceWithForms>());
   const formsArrayCacheRef = useRef(new Map<string, WorkspaceWithForms["forms"]>());
 
@@ -92,6 +94,7 @@ const useSortedWorkspacesWithForms = ({
       (acc, form) => {
         if (!acc[form.workspaceId]) acc[form.workspaceId] = [];
         acc[form.workspaceId].push(form as unknown as WorkspaceWithForms["forms"][0]);
+
         return acc;
       },
       {} as Record<string, WorkspaceWithForms["forms"]>,
@@ -108,6 +111,7 @@ const useSortedWorkspacesWithForms = ({
     const result = orderedWorkspaces.map((ws) => {
       const forms = formsByWorkspace[ws.id] || [];
       let sortedForms: WorkspaceWithForms["forms"];
+
       if (sortMode === "manual") {
         sortedForms = sortByManualOrder(
           forms,
@@ -129,14 +133,17 @@ const useSortedWorkspacesWithForms = ({
         );
       }
 
-      // Reuse prev forms array if every item is same ref in same order — stabilises array + per-form identity churn.
+      // Reuse prev forms array if every item is same ref in same order; stabilises array + per-form identity churn.
       const previousForms = formsArrayCacheRef.current.get(ws.id);
+
       if (previousForms && arraysAreShallowEqual(previousForms, sortedForms)) {
         sortedForms = previousForms;
       }
+
       nextFormsCache.set(ws.id, sortedForms);
 
       const previousWorkspace = workspaceCacheRef.current.get(ws.id);
+
       if (
         previousWorkspace &&
         previousWorkspace.forms === sortedForms &&
@@ -148,30 +155,38 @@ const useSortedWorkspacesWithForms = ({
         previousWorkspace.createdByUserId === ws.createdByUserId
       ) {
         nextWorkspaceCache.set(ws.id, previousWorkspace);
+
         return previousWorkspace;
       }
+
       const fresh = { ...ws, forms: sortedForms };
       nextWorkspaceCache.set(ws.id, fresh);
+
       return fresh;
     });
 
     workspaceCacheRef.current = nextWorkspaceCache;
     formsArrayCacheRef.current = nextFormsCache;
+
     return result;
   }, [workspacesData, formsData, activeOrgId, isDataReady, sortMode]);
 
-  // Same stability trick: keep prev summaries array when every (id,name) unchanged — memoised children skip re-render.
+  // Same stability trick; keep prev summaries array when every (id,name) unchanged so memoised children skip re-render.
   const allWorkspaceSummariesRef = useRef<Array<Pick<WorkspaceWithForms, "id" | "name">>>([]);
+
   const allWorkspaceSummaries = useMemo(() => {
     const next = workspaces.map((w) => ({ id: w.id, name: w.name }));
     const previous = allWorkspaceSummariesRef.current;
+
     if (
       previous.length === next.length &&
       previous.every((p, i) => p.id === next[i].id && p.name === next[i].name)
     ) {
       return previous;
     }
+
     allWorkspaceSummariesRef.current = next;
+
     return next;
   }, [workspaces]);
 
@@ -197,11 +212,13 @@ const useSidebarWorkspaceDialogs = ({
   const [newWorkspaceName, setNewWorkspaceName] = useState("");
 
   const [formDeleteDialogOpen, setFormDeleteDialogOpen] = useState(false);
+
   const [formToDelete, setFormToDelete] = useState<{
     id: string;
     title: string;
   } | null>(null);
-  // Pending state for destructive dialogs — blocks double-submit, spins button while server fn in flight.
+
+  // Pending state for destructive dialogs; blocks double-submit, spins button while server fn in flight.
   const [isDeletingWorkspace, setIsDeletingWorkspace] = useState(false);
   const [isDeletingForm, setIsDeletingForm] = useState(false);
   const [duplicatingIds, setDuplicatingIds] = useState<Set<string>>(new Set());
@@ -209,6 +226,7 @@ const useSidebarWorkspaceDialogs = ({
 
   const handleDeleteDialogOpenChange = useCallback((open: boolean) => {
     setDeleteDialogOpen(open);
+
     if (!open) setDeleteConfirmName("");
   }, []);
 
@@ -226,8 +244,10 @@ const useSidebarWorkspaceDialogs = ({
 
   const handleDeleteWorkspace = useCallback(async () => {
     if (!workspaceToDelete || deleteConfirmName !== workspaceToDelete.name) return;
+
     if (isDeletingWorkspace) return;
     setIsDeletingWorkspace(true);
+
     try {
       await deleteWorkspaceLocal(workspaceToDelete.id);
       setDeleteDialogOpen(false);
@@ -245,6 +265,7 @@ const useSidebarWorkspaceDialogs = ({
   const handleRenameWorkspace = useCallback(async () => {
     if (!workspaceToRename || !newWorkspaceName.trim() || isRenamingWorkspace) return;
     setIsRenamingWorkspace(true);
+
     try {
       await updateWorkspaceName(workspaceToRename.id, newWorkspaceName.trim());
       setRenameDialogOpen(false);
@@ -286,6 +307,7 @@ const useSidebarWorkspaceDialogs = ({
     async (form: WorkspaceWithForms["forms"][0]) => {
       if (duplicatingIdsRef.current.has(form.id)) return;
       setDuplicatingIds((prev) => new Set(prev).add(form.id));
+
       try {
         await duplicateForm(form.id);
       } catch (error) {
@@ -295,6 +317,7 @@ const useSidebarWorkspaceDialogs = ({
         setDuplicatingIds((prev) => {
           const next = new Set(prev);
           next.delete(form.id);
+
           return next;
         });
       }
@@ -315,13 +338,15 @@ const useSidebarWorkspaceDialogs = ({
   const handleConfirmDeleteForm = useCallback(async () => {
     if (!formToDelete || isDeletingForm) return;
     setIsDeletingForm(true);
+
     try {
       await updateFormStatus(formToDelete.id, "archived");
       toast.success("Form deleted");
-      // Navigate to dashboard if user is on the deleted form's page
+
       if (pathname.includes(`/form-builder/${formToDelete.id}`)) {
         void router.navigate({ to: "/dashboard" });
       }
+
       setFormDeleteDialogOpen(false);
       setFormToDelete(null);
     } catch (error) {
@@ -383,8 +408,10 @@ export const SidebarWorkspacesMinimal = ({
           | "manual") || "recent"
       );
     }
+
     return "recent";
   });
+
   const handleSortChange = useCallback((mode: "recent" | "oldest" | "alphabetical" | "manual") => {
     setSortMode(mode);
     localStorage.setItem("sidebar-sort-mode", mode);
@@ -395,29 +422,37 @@ export const SidebarWorkspacesMinimal = ({
 
   const favoriteForms = useFavoriteForms(session?.user?.id);
 
-  // Stable Set of favorited ids — rows read primitive `isFavorite` prop instead of each running useIsFavorite. Set identity reused when membership unchanged.
+  // Stable Set of favorited ids; rows read primitive `isFavorite` prop instead of each running useIsFavorite. Set identity reused when membership unchanged.
   const favoriteFormIdsRef = useRef<Set<string>>(new Set());
+
   const favoriteFormIds = useMemo(() => {
     const next = new Set<string>();
+
     for (const f of favoriteForms) next.add(f.id);
     const previous = favoriteFormIdsRef.current;
+
     if (previous.size === next.size) {
       let identical = true;
+
       for (const id of next) {
         if (!previous.has(id)) {
           identical = false;
           break;
         }
       }
+
       if (identical) return previous;
     }
+
     favoriteFormIdsRef.current = next;
+
     return next;
   }, [favoriteForms]);
 
-  // Active form id once at parent — rows read primitive `isActive` prop, not useLocation.
+  // Active form id once at parent; rows read primitive `isActive` prop, not useLocation.
   const activeFormId = useMemo(() => {
     const match = pathname.match(/\/form-builder\/([^/]+)/);
+
     return match?.[1];
   }, [pathname]);
 
@@ -439,7 +474,7 @@ export const SidebarWorkspacesMinimal = ({
 
   const workspaceIds = useMemo(() => workspaces.map((w) => w.id), [workspaces]);
 
-  // Read-only ref: drag handlers read freshest workspaces without re-binding identity (would re-render every WorkspaceItemMinimal on live-query churn).
+  // Read-only ref so drag handlers read freshest workspaces without re-binding identity (would re-render every WorkspaceItemMinimal on live-query churn).
   const workspacesRef = useRef(workspaces);
   workspacesRef.current = workspaces;
   const sortModeRef = useRef(sortMode);
@@ -462,6 +497,7 @@ export const SidebarWorkspacesMinimal = ({
     (workspaceId: string, event: DragEndEvent) => {
       const { active, over } = event;
       const ws = workspacesRef.current.find((w) => w.id === workspaceId);
+
       if (!ws) return;
       applyReorder({
         items: ws.forms,
@@ -481,6 +517,7 @@ export const SidebarWorkspacesMinimal = ({
   );
 
   const dialogs = useSidebarWorkspaceDialogs({ router, pathname, duplicateForm });
+
   const {
     deleteDialogOpen,
     workspaceToDelete,
@@ -552,7 +589,7 @@ export const SidebarWorkspacesMinimal = ({
                     />
                   ))}
                   {workspaces.length === 0 && (
-                    <span className="px-2 py-1 text-[11px] text-muted-foreground/50 italic">
+                    <span className="px-2 py-1 text-2xs text-muted-foreground/50 italic">
                       No workspaces yet
                     </span>
                   )}
@@ -764,7 +801,6 @@ type FavoriteFormItem = {
   title: string | null;
   workspaceId: string;
   status: string;
-  updatedAt: string;
   icon: string | null;
   customization: unknown;
   favoriteId: string;
@@ -837,16 +873,16 @@ const SortableFavoriteItem = ({
   userId: string;
 }) => {
   const pathname = useLocation({ select: (s) => s.pathname });
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: form.favoriteId,
     data: { type: "favorite" },
   });
 
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
-  };
+  const style = {
+    "--sortable-transform": CSS.Transform.toString(transform),
+    "--sortable-transition": transition,
+  } as React.CSSProperties;
 
   const isFavActive = pathname.startsWith(`/workspace/${form.workspaceId}/form-builder/${form.id}`);
 
@@ -862,7 +898,7 @@ const SortableFavoriteItem = ({
       {...listeners}
       // Override dnd-kit's tabIndex=0 so only the inner link is a tab stop (no duplicate ring).
       tabIndex={-1}
-      className="group/row relative"
+      className={`group/row relative [transform:var(--sortable-transform)] [transition:var(--sortable-transition)]${isDragging ? " opacity-40" : ""}`}
     >
       <SidebarItem
         label={form.title || "Untitled"}
@@ -893,7 +929,7 @@ const SortableFavoriteItem = ({
           e.stopPropagation();
           handleUnfavorite();
         }}
-        className="hover:bg-sidebar-active absolute top-1/2 right-2 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity group-hover/row:opacity-100 hover:text-foreground"
+        className="absolute top-1/2 right-2 z-10 flex size-5 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity group-hover/row:opacity-100 hover:bg-sidebar-accent hover:text-foreground"
       >
         <StarIcon className="size-3.5" />
       </button>

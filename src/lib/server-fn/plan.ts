@@ -15,18 +15,22 @@ export const getCachedOrgPlan = createServerFn({ method: "GET" })
   .handler(async ({ data: orgId }): Promise<ServerPlan> => {
     const headers = getRequestHeaders();
     const session = await auth.api.getSession({ headers });
+
     if (!session?.user?.id || !orgId) return "free";
 
     const { db } = await import("@/db");
     const { member } = await import("@/db/schema");
     const { and, eq } = await import("drizzle-orm");
+
     const [membership] = await db
       .select({ id: member.id })
       .from(member)
       .where(and(eq(member.userId, session.user.id), eq(member.organizationId, orgId)));
+
     if (!membership) return "free";
 
     const { getOrgPlan } = await import("@/lib/server-fn/plan-helpers.server");
+
     return getOrgPlan(orgId);
   });
 

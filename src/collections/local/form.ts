@@ -8,6 +8,7 @@ import type { FormSettings } from "@/types/form-settings";
 /** Parse Postgres timestamp (no TZ) as UTC before converting to ISO. */
 const parseAsUTC = (val: string): string => {
   if (val.endsWith("Z") || /[+-]\d{2}(:\d{2})?$/.test(val)) return new Date(val).toISOString();
+
   return new Date(val.replace(" ", "T") + "Z").toISOString();
 };
 

@@ -27,14 +27,18 @@ export type VersionedSnapshotInput = {
 
 export const canonicalize = (value: unknown): unknown => {
   if (value === null || typeof value !== "object") return value;
+
   if (Array.isArray(value)) return value.map(canonicalize);
   const obj = value as Record<string, unknown>;
   const out: Record<string, unknown> = {};
+
   for (const key of Object.keys(obj).toSorted()) {
     const v = obj[key];
+
     if (v === undefined) continue;
     out[key] = canonicalize(v);
   }
+
   return out;
 };
 
@@ -45,14 +49,17 @@ export const canonicalJSON = (value: unknown): string => JSON.stringify(canonica
 const cyrb53 = (str: string, seed = 0): string => {
   let h1 = 0xdeadbeef ^ seed;
   let h2 = 0x41c6ce57 ^ seed;
+
   for (let i = 0; i < str.length; i++) {
     const ch = str.charCodeAt(i);
     h1 = Math.imul(h1 ^ ch, 2654435761);
     h2 = Math.imul(h2 ^ ch, 1597334677);
   }
+
   h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
   h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
   const high = 2097151 & h2;
+
   return high.toString(16).padStart(6, "0") + (h1 >>> 0).toString(16).padStart(8, "0");
 };
 
@@ -64,5 +71,6 @@ export const computeContentHash = (input: VersionedSnapshotInput): string => {
     icon: input.icon ?? null,
     cover: input.cover ?? null,
   };
+
   return cyrb53(JSON.stringify(canonicalize(snapshot)));
 };

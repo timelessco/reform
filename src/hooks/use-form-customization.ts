@@ -17,15 +17,18 @@ export const useFormCustomization = (
   modeOverride?: "light" | "dark" | null,
 ) => {
   const rawCustomization = (doc?.customization ?? null) as Record<string, string> | null;
+
   const effectiveTheme = resolveEffectiveMode(
     rawCustomization?.defaultMode,
     appTheme,
     modeOverride,
   );
+
   const customization =
     rawCustomization && rawCustomization.mode !== effectiveTheme
       ? { ...rawCustomization, mode: effectiveTheme }
       : rawCustomization;
+
   const hasCustomization = !!(customization && Object.keys(customization).length > 0);
   // Stable primitive dep — store emits new object refs; memo would miss otherwise.
   const customizationKey = customization ? JSON.stringify(customization) : null;
@@ -39,6 +42,7 @@ export const useFormCustomization = (
     if (customization?.font) {
       loadGoogleFont(customization.font);
     }
+
     if (customization?.titleFont) {
       loadGoogleFont(customization.titleFont);
     }

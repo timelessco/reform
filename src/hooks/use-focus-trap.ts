@@ -14,16 +14,21 @@ const FOCUSABLE_SELECTOR = [
 export const useFocusTrap = (enabled: boolean, container: HTMLElement | null) => {
   useEffect(() => {
     if (!enabled || !container) return;
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Tab") return;
       const active = document.activeElement as HTMLElement | null;
+
       if (!active || !container.contains(active)) return;
+
       const focusables = Array.from(
         container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
       ).filter((el) => !el.hasAttribute("disabled") && el.offsetParent !== null);
+
       if (focusables.length === 0) return;
       const first = focusables[0];
       const last = focusables[focusables.length - 1];
+
       if (event.shiftKey && active === first) {
         event.preventDefault();
         last.focus();
@@ -32,7 +37,9 @@ export const useFocusTrap = (enabled: boolean, container: HTMLElement | null) =>
         first.focus();
       }
     };
+
     container.addEventListener("keydown", onKeyDown);
+
     return () => container.removeEventListener("keydown", onKeyDown);
   }, [enabled, container]);
 };

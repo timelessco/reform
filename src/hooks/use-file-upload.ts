@@ -91,10 +91,13 @@ export const useFileUpload = (
           if (type.startsWith(".")) {
             return fileExtension.toLowerCase() === type.toLowerCase();
           }
+
           if (type.endsWith("/*")) {
             const baseType = type.split("/")[0];
+
             return fileType.startsWith(`${baseType}/`);
           }
+
           return fileType === type;
         });
 
@@ -112,6 +115,7 @@ export const useFileUpload = (
     if (file instanceof File) {
       return URL.createObjectURL(file);
     }
+
     return file.url;
   }, []);
 
@@ -119,6 +123,7 @@ export const useFileUpload = (
     if (file instanceof File) {
       return `${file.name}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     }
+
     return file.id;
   }, []);
 
@@ -161,6 +166,7 @@ export const useFileUpload = (
         errors.push(`You can only upload a maximum of ${maxFiles} files.`);
         setState((prev) => ({ ...prev, errors }));
         onError?.(errors);
+
         return;
       }
 
@@ -177,6 +183,7 @@ export const useFileUpload = (
           // Skip duplicate files silently — abort the whole batch (input left untouched)
           if (isDuplicate) {
             setState((prev) => ({ ...prev, errors: [] }));
+
             return;
           }
         }
@@ -191,6 +198,7 @@ export const useFileUpload = (
         }
 
         const error = validateFile(file);
+
         if (error) {
           errors.push(error);
         } else {
@@ -212,12 +220,14 @@ export const useFileUpload = (
         setState((prev) => ({ ...prev, files: updatedFiles, errors }));
         onFilesAdded?.(validFiles);
         onFilesChange?.(updatedFiles);
+
         return;
       }
 
       if (errors.length > 0) {
         setState((prev) => ({ ...prev, errors }));
         onError?.(errors);
+
         return;
       }
 
@@ -240,6 +250,7 @@ export const useFileUpload = (
   const removeFile = useCallback(
     (id: string) => {
       const fileToRemove = filesRef.current.find((file) => file.id === id);
+
       if (
         fileToRemove?.preview &&
         fileToRemove.file instanceof File &&

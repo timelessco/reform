@@ -11,6 +11,7 @@ describe("Form Short ID generator", () => {
     for (let i = 0; i < 100; i++) {
       const id = generateShortId();
       expect(id).toHaveLength(SHORT_ID_LENGTH);
+
       for (const ch of id) {
         expect(SHORT_ID_ALPHABET).toContain(ch);
       }
@@ -19,6 +20,7 @@ describe("Form Short ID generator", () => {
 
   it("rarely repeats across many calls (sanity check, not a guarantee)", () => {
     const seen = new Set<string>();
+
     for (let i = 0; i < 1000; i++) seen.add(generateShortId());
     // 62^7 = 3.5T namespace → 1000 draws colliding is vanishingly rare. Assert
     // zero dupes (not a probabilistic bound) to stay deterministic.

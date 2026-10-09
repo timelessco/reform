@@ -127,9 +127,9 @@ import { VersionHistorySidebar } from "@/components/form-builder/version-history
 import { CustomizeSidebar } from "@/components/ui/customize-sidebar";
 
 /**
- * <Activity> keeps each sidebar tree alive across toggles — no Form remount, scroll/field state preserved.
- * Per-sidebar epoch counter (hidden→visible) keys inner Accordion only: reopen resets section expand to initialOpen, form/scroll stay mounted.
- * key={formId} hard-remounts on form nav. `history` excluded — one-shot, rarely toggled.
+ * <Activity> keeps sidebar trees mounted across toggles; scroll/field state survives, no Form remount.
+ * Epoch counter keys inner Accordion only, so reopen resets section expand to initialOpen while the tree stays mounted.
+ * key={formId} hard-remounts on form nav. `history` excluded (one-shot, rarely toggled).
  */
 const PersistentSidebars = ({
   activeSidebar,
@@ -147,7 +147,9 @@ const PersistentSidebars = ({
   const [openedCustomize, setOpenedCustomize] = useState(showCustomize);
 
   if (showSettings && !openedSettings) setOpenedSettings(true);
+
   if (showShare && !openedShare) setOpenedShare(true);
+
   if (showCustomize && !openedCustomize) setOpenedCustomize(true);
 
   const [settingsEpoch, setSettingsEpoch] = useState(0);
@@ -208,24 +210,25 @@ const initCollectionsOnClient = createClientOnlyFn((queryClient: QueryClient) =>
     getFormDetail: async (formId: string) => {
       const { getFormbyIdQueryOption } = await import("@/lib/server-fn/forms-queries");
       const result = await queryClient.ensureQueryData(getFormbyIdQueryOption(formId));
-      // FLAG: `result.form` is the serialized DB row, which lacks `liveSettings`, so it is NOT a full
-      // `Form`. The declared `getFormDetail: Promise<Form | null>` contract genuinely diverges from
-      // the real server shape. Fully closing the gap means changing that contract (collections/
-      // _state.ts) + aligning formToListing (collections/operations.ts) — out of this file's scope,
-      // so the divergence is asserted at this single boundary instead of hidden behind `any`.
+
+      // FLAG: `result.form` is a serialized DB row lacking `liveSettings`, not a full `Form`; the declared Promise<Form | null> contract diverges from the server shape.
+      // Closing the gap means changing that contract (collections/_state.ts) + formToListing (operations.ts); asserted at this one boundary instead of hidden behind `any`.
       return (result?.form ?? null) as unknown as Form | null;
     },
     getFavorites: () => getFavoritesServer(),
     getVersionList: async (formId: string) => {
       const result = await getFormVersions({ data: { formId } });
+
       return result?.versions ?? [];
     },
     getVersionContent: async (versionId: string) => {
       const result = await getFormVersionContent({ data: { versionId } });
+
       return result?.version ?? null;
     },
     getSubmissionsCount: async (formId: string) => {
       const result = await getSubmissionsCount({ data: { formId } });
+
       return { total: result.total };
     },
     createWorkspace: async (data) => await createWorkspace({ data: data }),
@@ -250,7 +253,7 @@ const AuthLayout = () => {
   const isEditRoute = pathname.includes("/form-builder/") && pathname.endsWith("/edit");
 
   // HotkeysProvider mounted here (not in __root) so @tanstack/react-hotkeys (~44.6 kB gz) only
-  // lands in the authenticated chunk — public-form routes ($shortId, $slug, f/$formId) skip it.
+  // lands in the authenticated chunk; public-form routes ($shortId, $slug, f/$formId) skip it.
   return (
     <HotkeysProvider defaultOptions={{ hotkey: { preventDefault: true } }}>
       <SidebarProvider style={{ "--app-header-height": "44px" } as React.CSSProperties}>
@@ -269,17 +272,24 @@ export const Route = createFileRoute("/_authenticated")({
     middleware: [authMiddleware],
   },
   ssr: "data-only",
+  context: () => ({
+    orgLayoutQueryOptions: orgDataForLayoutQueryOptions(),
+    workspacesQueryOptions: workspacesCollectionQueryOptions(),
+    formListingsQueryOptions: formListingsCollectionQueryOptions(),
+    favoritesQueryOptions: favoritesCollectionQueryOptions(),
+  }),
   loader: async ({ context }) => {
     const [orgResult] = await Promise.all([
       context.queryClient.ensureQueryData({
-        ...orgDataForLayoutQueryOptions(),
+        ...context.orgLayoutQueryOptions,
         revalidateIfStale: true,
       }),
-      // Prefetch via TanStack DB's query keys — seeds cache so collections init warm.
-      context.queryClient.ensureQueryData(workspacesCollectionQueryOptions()),
-      context.queryClient.ensureQueryData(formListingsCollectionQueryOptions()),
-      context.queryClient.ensureQueryData(favoritesCollectionQueryOptions()),
+      // Prefetch via TanStack DB's query keys; seeds cache so collections init warm.
+      context.queryClient.ensureQueryData(context.workspacesQueryOptions),
+      context.queryClient.ensureQueryData(context.formListingsQueryOptions),
+      context.queryClient.ensureQueryData(context.favoritesQueryOptions),
     ]);
+
     return { activeOrg: orgResult.activeOrg, orgsData: orgResult.orgsData };
   },
   staleTime: 500000, // 500 seconds
@@ -300,21 +310,25 @@ const AuthLayoutContent = () => {
   const isMobile = useIsMobile();
 
   const isFormBuilder = pathname.includes("/form-builder/");
-  // history/customize sidebars edit-route-only — derived guard, not useEffect cleanup.
+  // history/customize sidebars edit-route-only; derived guard, not useEffect cleanup.
   const isEditOnlySidebar = activeSidebar === "history" || activeSidebar === "customize";
+
   const showEditorSidebar = !!(
     activeSidebar &&
     isFormBuilder &&
     formId &&
     (!isEditOnlySidebar || isEditRoute)
   );
+
   const isDistractionHeaderHidden = isEditRoute && !isHeaderVisible;
 
   const [rightSidebarWidth, _setRightSidebarWidth] = useState(() => {
     if (typeof window === "undefined") return RIGHT_SIDEBAR_WIDTH_DEFAULT;
     const stored = localStorage.getItem(RIGHT_SIDEBAR_WIDTH_KEY);
+
     if (stored) {
       const parsed = Number(stored);
+
       if (
         !Number.isNaN(parsed) &&
         parsed >= RIGHT_SIDEBAR_WIDTH_MIN &&
@@ -323,14 +337,17 @@ const AuthLayoutContent = () => {
         return parsed;
       }
     }
+
     return RIGHT_SIDEBAR_WIDTH_DEFAULT;
   });
+
   const [isRightResizing, setIsRightResizing] = useState(false);
 
   const setRightSidebarWidth = useCallback((width: number) => {
     const clamped = Math.round(
       Math.min(RIGHT_SIDEBAR_WIDTH_MAX, Math.max(RIGHT_SIDEBAR_WIDTH_MIN, width)),
     );
+
     _setRightSidebarWidth(clamped);
     localStorage.setItem(RIGHT_SIDEBAR_WIDTH_KEY, String(clamped));
   }, []);
@@ -355,12 +372,16 @@ const AuthLayoutContent = () => {
           {/* Mobile: sidebar is a drawer overlay, don't pad content (was too narrow on phones). Desktop: push-to-resize. */}
           <div
             className={cn(
-              "z-50 flex min-w-0 flex-1 flex-col",
+              "z-50 flex min-w-0 flex-1 flex-col pr-(--right-sidebar-pad)",
+              // oxlint-disable-next-line shadcn/no-arbitrary-values -- padding-only transition; transition-all would also animate background
               !isRightResizing && "transition-[padding] duration-200 ease-linear",
             )}
-            style={{
-              paddingRight: !isMobile && showEditorSidebar ? rightSidebarWidth : 0,
-            }}
+            style={
+              {
+                "--right-sidebar-pad":
+                  !isMobile && showEditorSidebar ? `${rightSidebarWidth}px` : "0px",
+              } as React.CSSProperties
+            }
           >
             <div className="relative z-0 shrink-0">
               <AppHeader isDistractionHidden={isDistractionHeaderHidden} />
@@ -371,7 +392,7 @@ const AuthLayoutContent = () => {
           </div>
         </div>
 
-        {/* Resize handle desktop-only — nothing to resize when sidebar is a drawer. */}
+        {/* Resize handle desktop-only; nothing to resize when sidebar is a drawer. */}
         {showEditorSidebar && !isMobile && (
           <RightSidebarResizeHandle
             sidebarWidth={rightSidebarWidth}
@@ -386,6 +407,7 @@ const AuthLayoutContent = () => {
               <PersistentSidebars activeSidebar={activeSidebar} formId={formId} />
             </Suspense>
           );
+
           if (isMobile) {
             return (
               <MobileRightDrawer open={showEditorSidebar} onClose={closeSidebar}>
@@ -393,18 +415,22 @@ const AuthLayoutContent = () => {
               </MobileRightDrawer>
             );
           }
+
           return (
             <div
               className={cn(
-                "fixed top-0 right-0 bottom-0 z-40 overflow-hidden bg-background",
+                "fixed top-0 right-0 bottom-0 z-40 w-[var(--right-sidebar-w)] overflow-hidden bg-background",
+                // oxlint-disable-next-line shadcn/no-arbitrary-values -- width-only transition; transition-all would also animate background
                 !isRightResizing && "transition-[width] duration-200 ease-linear",
                 "[[data-resizing]_&]:transition-none",
                 showEditorSidebar && "border-l border-sidebar-border",
                 !showEditorSidebar && "pointer-events-none",
               )}
-              style={{
-                width: showEditorSidebar ? `${rightSidebarWidth}px` : 0,
-              }}
+              style={
+                {
+                  "--right-sidebar-w": showEditorSidebar ? `${rightSidebarWidth}px` : "0px",
+                } as React.CSSProperties
+              }
             >
               <div className="size-full">{rightSidebarContent}</div>
             </div>
@@ -416,11 +442,13 @@ const AuthLayoutContent = () => {
 };
 
 const AppSidebar = () => {
+  const { orgLayoutQueryOptions } = Route.useRouteContext();
   const { toggleSidebar } = useSidebar();
   const { isInboxOpen, toggleInbox, closeInbox } = useMinimalSidebar();
   const isMobile = useIsMobile();
   const pathname = useLocation({ select: (s) => s.pathname });
   const router = useRouter();
+
   const {
     toggle: togglePalette,
     isOpen: isPaletteOpen,
@@ -432,35 +460,43 @@ const AppSidebar = () => {
 
   const handleOpenTrash = useCallback(() => setTrashDialogOpen(true), []);
 
-  // Subscribe to loader-primed org query (not loader data) to stay active: refetch on focus/reconnect, react to invalidation, no GC while on screen.
+  // Subscribe to loader-primed org query (not loader data) to stay active; refetch on focus/reconnect, react to invalidation, no GC while on screen.
   const { data: activeOrg } = useQuery({
-    ...orgDataForLayoutQueryOptions(),
+    ...orgLayoutQueryOptions,
     select: (d) => d.activeOrg,
   });
+
   const { data: workspacesData } = useOrgWorkspaces(activeOrg?.id);
   const { data: formsData } = useOrgForms(activeOrg?.id);
   const submissionCounts = useSubmissionCounts();
   // Recently-opened forms (localStorage, no DB round-trip) resolved against the live listings; fall
   // back to most-recently-updated when there's no open history yet. Top 4 feed Recent Searches.
   const recentFormIds = useRecentFormIds();
+
   const formById = useMemo(
     () => new Map((formsData ?? []).map((form) => [form.id, form])),
     [formsData],
   );
+
   const recentForms = useMemo(() => {
     const opened = recentFormIds
       .map((id) => formById.get(id))
       .filter((form): form is NonNullable<typeof form> => Boolean(form));
+
     return (opened.length > 0 ? opened : (formsData ?? [])).slice(0, 4);
   }, [recentFormIds, formById, formsData]);
+
   const { unreadSubmissionCount } = useSubmissionNotifications({ poll: true });
 
-  // Figma 26612:40177 — file-doc + title + right-aligned meta (response count, or "Draft").
+  // Figma 26612:40177, file-doc + title + right-aligned meta (response count, or "Draft").
   const renderPaletteForm = (form: NonNullable<typeof formsData>[number]) => {
     const count = submissionCounts.get(form.id) ?? 0;
+
     const meta =
       form.status === "draft" ? "Draft" : `${count} ${count === 1 ? "response" : "responses"}`;
+
     const isPublished = form.status === "published";
+
     return (
       <CommandItem
         key={form.id}
@@ -488,11 +524,14 @@ const AppSidebar = () => {
       </CommandItem>
     );
   };
+
   const { data: invitations } = useQuery(auth.organization.listUserInvitations.queryOptions());
+
   const pendingInvitationCount = useMemo(
     () => (invitations ?? []).filter((inv: { status: string }) => inv.status === "pending").length,
     [invitations],
   );
+
   const pendingCount = unreadSubmissionCount + pendingInvitationCount;
 
   const signOutMutation = useMutation(
@@ -514,6 +553,7 @@ const AppSidebar = () => {
   return (
     <>
       {/* [font-variation-settings:normal] un-pins the global opsz20/wght450 so font-weight utils apply */}
+      {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- 0.5px hairline + font-variation unpin have no utilities */}
       <Sidebar className="h-screen border-r-[0.5px] bg-background [font-variation-settings:normal]">
         {showMobileInbox ? (
           <InboxPanelBody
@@ -522,7 +562,7 @@ const AppSidebar = () => {
               <Button
                 variant="ghost-flat"
                 size="icon"
-                className="size-7 rounded-lg p-1.25 text-gray-800 hover:text-foreground"
+                className="size-7 rounded-lg p-1.25 text-sidebar-foreground hover:text-foreground"
                 onClick={closeInbox}
                 aria-label="Back"
               >
@@ -571,6 +611,7 @@ const AppSidebar = () => {
                         label="Notifications"
                       >
                         {pendingCount > 0 && (
+                          // oxlint-disable-next-line shadcn/no-arbitrary-values -- 10px badge text sits below text-2xs (11px); nearest would enlarge the badge
                           <span className="w-4 shrink-0 rounded-full bg-primary py-0.5 text-center text-[10px] font-semibold text-primary-foreground">
                             <NumberPopIn value={pendingCount} />
                           </span>
@@ -602,6 +643,7 @@ const AppSidebar = () => {
           open={isPaletteOpen}
           onOpenChange={(open) => {
             setIsPaletteOpen(open);
+
             if (!open) setPaletteSearch("");
           }}
         >
@@ -631,11 +673,14 @@ const AppSidebar = () => {
                 <CommandItem
                   onSelect={async () => {
                     setIsPaletteOpen(false);
+
                     if (activeOrg && workspacesData) {
                       const orgWorkspaces = workspacesData;
+
                       if (orgWorkspaces.length > 0) {
                         const workspaceMatch = pathname.match(/\/workspace\/([^/]+)/);
                         const currentWorkspaceId = workspaceMatch?.[1];
+
                         const targetWorkspace = currentWorkspaceId
                           ? orgWorkspaces.find((ws) => ws.id === currentWorkspaceId) ||
                             orgWorkspaces[0]
@@ -672,6 +717,7 @@ const AppSidebar = () => {
                         null,
                         getLeadingSortIndex(workspacesData ?? []),
                       );
+
                       createWorkspaceLocal(activeOrg.id, "New Workspace", leadingSortIndex)
                         .then((workspace) => {
                           void router.navigate({
@@ -687,6 +733,7 @@ const AppSidebar = () => {
                           }),
                         );
                     }
+
                     setIsPaletteOpen(false);
                   }}
                 >

@@ -20,6 +20,7 @@ import {
 const createTestVersion = async (formId: string, publishedByUserId: string, version: number) => {
   const id = crypto.randomUUID();
   const now = new Date();
+
   const [v] = await db
     .insert(formVersions)
     .values({
@@ -35,6 +36,7 @@ const createTestVersion = async (formId: string, publishedByUserId: string, vers
       createdAt: now,
     })
     .returning();
+
   return v;
 };
 
@@ -53,6 +55,7 @@ const fetchVersionList = async (formId: string): Promise<VersionListItem[]> => {
     .leftJoin(user, eq(formVersions.publishedByUserId, user.id))
     .where(eq(formVersions.formId, formId))
     .orderBy(desc(formVersions.version));
+
   return versions.map((v) => ({
     id: v.id,
     version: v.version,
@@ -64,6 +67,7 @@ const fetchVersionList = async (formId: string): Promise<VersionListItem[]> => {
 
 const fetchFormListings = async (formId: string): Promise<FormListing[]> => {
   const [f] = await db.select().from(forms).where(eq(forms.id, formId));
+
   return f ? [toFormListing(f)] : [];
 };
 

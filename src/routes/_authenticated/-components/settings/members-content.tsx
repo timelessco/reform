@@ -11,14 +11,17 @@ import { auth } from "@/lib/auth/auth-client";
 
 export const MembersContent = () => {
   const queryClient = useQueryClient();
+
   const inviteForm = useAppForm({
     defaultValues: { email: "" },
   });
+
   const emailInputId = useId();
 
   const { data, isLoading: isLoadingMembers } = useQuery(
     auth.organization.listMembers.queryOptions(),
   );
+
   const members = data?.members ?? [];
 
   const { data: invitationsData } = useQuery(auth.organization.listInvitations.queryOptions());
@@ -71,8 +74,8 @@ export const MembersContent = () => {
     <inviteForm.AppForm>
       <div className="flex flex-col gap-8">
         <section className="flex flex-col gap-3">
-          <h3 className="text-sm text-[var(--gray-900)]">Invite member</h3>
-          <p className="text-[13px] text-[var(--gray-600)]">
+          <h3 className="text-sm text-(--gray-900)">Invite member</h3>
+          <p className="text-sm text-(--gray-600)">
             Invite a new member to join your organization.
           </p>
           <inviteForm.AppField name="email">
@@ -110,13 +113,13 @@ export const MembersContent = () => {
 
         {invitations.length > 0 && (
           <section className="flex flex-col gap-3">
-            <h3 className="text-sm text-[var(--gray-900)]">Pending invitations</h3>
+            <h3 className="text-sm text-(--gray-900)">Pending invitations</h3>
             <div className="flex flex-col gap-2">
               {invitations.map(
                 (invitation: { id: string; email: string; role: string; status: string }) => (
                   <div
                     key={invitation.id}
-                    className="flex items-center gap-3 rounded-xl bg-[var(--gray-100)] py-2 pr-2.5 pl-2"
+                    className="flex items-center gap-3 rounded-xl bg-(--gray-100) py-2 pr-2.5 pl-2"
                   >
                     <div className="flex size-[38px] items-center justify-center rounded-lg bg-background">
                       <MailIcon className="size-[22px] text-muted-foreground" />
@@ -124,11 +127,12 @@ export const MembersContent = () => {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm">{invitation.email}</p>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-[var(--gray-600)] capitalize">
+                        <span className="text-sm text-(--gray-600) capitalize">
                           {invitation.role}
                         </span>
                         <Badge
                           variant={invitation.status === "pending" ? "secondary" : "outline"}
+                          // oxlint-disable-next-line shadcn/no-arbitrary-values -- text-[10px] badge label has no value-identical step (nearest text-2xs is 11px); shrinking would shift visuals
                           className="h-4 px-1.5 py-0 text-[10px] capitalize"
                         >
                           {invitation.status === "pending" && (
@@ -150,7 +154,7 @@ export const MembersContent = () => {
                         }
                         disabled={cancelInvitationMutation.isPending}
                         aria-label="Cancel invitation"
-                        className="h-[30px] shrink-0 rounded-lg bg-white px-3 text-[13px] text-destructive elevation-pop transition-colors hover:bg-neutral-50"
+                        className="h-[30px] shrink-0 rounded-lg bg-white px-3 text-sm text-destructive elevation-pop transition-colors hover:bg-accent"
                       >
                         <XIcon className="size-3.5" />
                       </Button>
@@ -163,8 +167,8 @@ export const MembersContent = () => {
         )}
 
         <section className="flex flex-col gap-3">
-          <h3 className="text-sm text-[var(--gray-900)]">Members</h3>
-          <p className="text-[13px] text-[var(--gray-600)]">Manage members of your organization.</p>
+          <h3 className="text-sm text-(--gray-900)">Members</h3>
+          <p className="text-sm text-(--gray-600)">Manage members of your organization.</p>
           <div className="flex flex-col gap-2">
             {isLoadingMembers ? (
               <p className="py-4 text-center text-sm text-muted-foreground">Loading members…</p>
@@ -175,17 +179,18 @@ export const MembersContent = () => {
                 (member: { id: string; role: string; user: { name?: string; email?: string } }) => (
                   <div
                     key={member.id}
-                    className="flex items-center gap-3 rounded-xl bg-[var(--gray-100)] py-2 pr-2.5 pl-2"
+                    className="flex items-center gap-3 rounded-xl bg-(--gray-100) py-2 pr-2.5 pl-2"
                   >
                     <div className="flex size-[38px] items-center justify-center rounded-lg bg-background text-sm font-bold">
                       {member.user.name?.charAt(0)?.toUpperCase() || "U"}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm">{member.user.name}</p>
-                      <p className="truncate text-sm text-[var(--gray-600)]">{member.user.email}</p>
+                      <p className="truncate text-sm text-(--gray-600)">{member.user.email}</p>
                     </div>
                     <Badge
                       variant={member.role === "owner" ? "default" : "outline"}
+                      // oxlint-disable-next-line shadcn/no-arbitrary-values -- text-[10px] badge label has no value-identical step (nearest text-2xs is 11px); shrinking would shift visuals
                       className="h-4 shrink-0 px-1.5 py-0 text-[10px] capitalize"
                     >
                       {member.role}
@@ -202,7 +207,7 @@ export const MembersContent = () => {
                         }
                         disabled={removeMemberMutation.isPending}
                         aria-label="Remove member"
-                        className="h-[30px] shrink-0 rounded-lg bg-white px-3 text-[13px] elevation-pop transition-colors hover:bg-neutral-50"
+                        className="h-[30px] shrink-0 rounded-lg bg-white px-3 text-sm elevation-pop transition-colors hover:bg-accent"
                       >
                         <Trash2Icon className="size-3.5 text-destructive" />
                       </Button>

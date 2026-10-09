@@ -64,6 +64,7 @@ export const createOverlay = (
   loadingEl.innerHTML = '<div class="bf-loading-spinner"></div>';
 
   let emojiEl: HTMLElement | undefined;
+
   if (options.emoji?.text) {
     emojiEl = document.createElement("div");
     emojiEl.className = `bf-emoji ${getEmojiAnimationClass(options.emoji.animation)}`;
@@ -73,6 +74,7 @@ export const createOverlay = (
   popup.appendChild(closeBtn);
   popup.appendChild(loadingEl);
   popup.appendChild(iframeContainer);
+
   if (emojiEl) {
     popup.appendChild(emojiEl);
   }

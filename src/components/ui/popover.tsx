@@ -26,14 +26,13 @@ export const PopoverAnchor = ({
   ...props
 }: React.ComponentProps<"div"> & {
   render?: React.ReactElement;
-  virtualRef?: React.RefObject<{ current: HTMLElement | null }>;
+  virtualRef?: React.RefObject<HTMLElement | null>;
 }) => {
   if (virtualRef) {
     return (
       <PopoverPrimitive.Positioner
         data-slot="popover-anchor"
-        // eslint-disable-next-line typescript-eslint/no-explicit-any
-        anchor={virtualRef as any}
+        anchor={virtualRef}
         className={cn("sr-only", className)}
         {...props}
       >
@@ -41,6 +40,7 @@ export const PopoverAnchor = ({
       </PopoverPrimitive.Positioner>
     );
   }
+
   if (render) {
     return (
       <div data-slot="popover-anchor" className={cn(className)} {...props}>
@@ -49,6 +49,7 @@ export const PopoverAnchor = ({
       </div>
     );
   }
+
   return (
     <div data-slot="popover-anchor" className={cn(className)} {...props}>
       {children}
@@ -78,6 +79,7 @@ export const PopoverContent = ({
   const scopedContainer = React.use(PopoverContainerContext);
   const container = containerProp ?? scopedContainer ?? undefined;
   const collisionBoundary = collisionBoundaryProp ?? scopedContainer ?? undefined;
+
   return (
     <PopoverPrimitive.Portal keepMounted={keepMounted} container={container}>
       <PopoverPrimitive.Positioner

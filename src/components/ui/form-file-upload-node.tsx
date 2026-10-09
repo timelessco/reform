@@ -11,8 +11,11 @@ import { cn } from "@/lib/utils";
 export const FormFileUploadElement = ({ children, ...props }: PlateElementProps) => {
   const { attributes, element, ...rest } = props;
 
-  const maxFileSize =
-    typeof element.maxFileSize === "number" ? element.maxFileSize : DEFAULT_MAX_FILE_SIZE_MB;
+  const rawMaxFileSize = element.maxFileSize;
+
+  const maxFileSize = Number.isFinite(rawMaxFileSize)
+    ? Number(rawMaxFileSize)
+    : DEFAULT_MAX_FILE_SIZE_MB;
 
   return (
     <PlateElement

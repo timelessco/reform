@@ -6,12 +6,17 @@ export default {
     "src/embed/*.ts", // Embed scripts
     "src/server.ts", // TanStack Start server entry (framework convention, no static import)
     "instrument.server.mjs", // Sentry
+    "drizzle.config.ts",
+    "nitro.config.ts",
+    "vitest.config.ts",
+    "src/server/plugins/*.ts", // Nitro loads server plugins by convention.
   ],
   project: ["src/**/*.{ts,tsx}"],
   ignore: [
     ".output/**",
     "drizzle/**",
     "public/**",
+    "tools/oxlint/anti-slop/**", // Vendored plugins loaded through Oxlint configuration.
     "src/routeTree.gen.ts",
     "src/components/ui/**", // shadcn - used dynamically
     "src/hooks/use-is-touch-device.ts", // imported only by ignored ui/** components
@@ -44,6 +49,14 @@ export default {
     "agentation", // reserved for in-progress devtools work (commented import in src/routes/-components/devtools.tsx)
   ],
   ignoreExportsUsedInFile: true,
+  ignoreIssues: {
+    "drizzle.config.ts": ["exports"],
+    "nitro.config.ts": ["exports"],
+    "vitest.config.ts": ["exports"],
+    "src/server.ts": ["exports"],
+    "src/server/plugins/*.ts": ["exports"],
+  }, // Frameworks load these default exports at runtime.
+  ignoreBinaries: ["orca"], // Local browser CLI used by the preview-generation script.
   rules: {
     unlisted: "off", // dev deps in config files are expected
   },

@@ -10,7 +10,6 @@ import type { Plugin } from "vite";
 import { defineConfig } from "vite";
 import { analyzer } from "vite-bundle-analyzer";
 
-
 // Custom Cache-Control headers for the public embed script so updates
 // propagate quickly to embedders without requiring a versioned URL.
 const setEmbedHeader = (
@@ -21,6 +20,7 @@ const setEmbedHeader = (
   if (req.url?.startsWith("/embed/popup.js") || req.url?.startsWith("/widgets/embed.js")) {
     res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=86400");
   }
+
   next();
 };
 
@@ -49,6 +49,7 @@ const stripImageSentinelForApiIcons = (
   if (req.url?.startsWith("/api/icons/")) {
     delete req.headers["sec-fetch-dest"];
   }
+
   next();
 };
 
@@ -218,6 +219,9 @@ const config = defineConfig({
     // (Rollup can't resolve the bare import from `node_modules/.nitro/`). Alias
     // it to a no-op stub so both dev and prod resolve it deterministically.
     alias: [
+      // The Node import wrapper reads a CJS default that Rolldown drops in SSR.
+      // Use the native ESM helpers in every build environment instead.
+      { find: /^tslib$/, replacement: "tslib/tslib.es6.mjs" },
       { find: "@vercel/oidc", replacement: `${import.meta.dirname}/src/lib/vercel-oidc-stub.ts` },
     ],
   },

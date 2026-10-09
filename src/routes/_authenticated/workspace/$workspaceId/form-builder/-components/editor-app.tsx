@@ -45,7 +45,7 @@ const DEFAULT_EDITOR_VALUE = normalizeNodeId([
 
 /**
  * Outer: fetch data, guard editor render until collection loaded.
- * Split needed because hooks run regardless of early returns — else usePlateEditor gets DEFAULT_EDITOR_VALUE on first render and never updates (resetKey static).
+ * Split needed because hooks run regardless of early returns; else usePlateEditor gets DEFAULT_EDITOR_VALUE on first render and never updates (resetKey static).
  */
 const EditorApp = ({
   formId,
@@ -64,6 +64,7 @@ const EditorApp = ({
     if (isFormReady) {
       return <div className="flex size-full items-center justify-center">Loading editor…</div>;
     }
+
     // Still syncing → show spinner
     return (
       <div className="flex size-full items-center justify-center">
@@ -83,6 +84,7 @@ const EditorApp = ({
     />
   );
 };
+
 export default EditorApp;
 
 /** Inner: mounts only once data ready, so usePlateEditor gets real content on first call. */
@@ -107,6 +109,7 @@ const EditorAppInner = ({
   const customizationDoc = versionCustomization
     ? { customization: versionCustomization }
     : savedDocs?.[0];
+
   const { customization, hasCustomization, themeVars, effectiveTheme } = useFormCustomization(
     customizationDoc,
     resolvedAppTheme,
@@ -119,18 +122,20 @@ const EditorAppInner = ({
   const headerVisibility = useEditorHeaderVisibilitySafe();
   const [resetKey, setResetKey] = useState(0);
 
-  // Detect version transitions (enter/exit/switch). Render-time setState — same pattern as external change detector below.
+  // Detect version transitions (enter/exit/switch). Render-time setState; same pattern as external change detector below.
   const prevVersionContentRef = useRef(versionContent);
   const justExitedVersionRef = useRef(false);
+
   if (prevVersionContentRef.current !== versionContent) {
     prevVersionContentRef.current = versionContent;
+
     if (versionContent) {
-      // Entering or switching version — reset editor with version content immediately
+      // Entering or switching version; reset editor with version content immediately
       setResetKey((k) => k + 1);
       skipSaveRef.current = true;
       justExitedVersionRef.current = false;
     } else {
-      // Exiting version — don't reset yet; flag so external change detector resets once savedDocs ready.
+      // Exiting version; don't reset yet, flag so external change detector resets once savedDocs ready.
       lastKnownContentRef.current = null;
       justExitedVersionRef.current = true;
     }
@@ -140,10 +145,11 @@ const EditorAppInner = ({
   const savedContent = savedDocs?.[0]?.content;
   const contentStr = savedContent ? JSON.stringify(savedContent) : null;
 
-  // Detect external content change (discard/restore/remote sync) → recreate editor. setState-during-render is documented React (aborts + re-renders). Skip while pending save — sync-back is our edit.
+  // Detect external content change (discard/restore/remote sync) → recreate editor. setState-during-render is documented React (aborts + re-renders). Skip while pending save; sync-back is our edit.
   if (!versionContent && contentStr !== null && !pendingValueRef.current) {
     if (lastKnownContentRef.current === null) {
       lastKnownContentRef.current = contentStr;
+
       // Force reset on return from version view so editor picks up (maybe restored) savedDocs content.
       if (justExitedVersionRef.current) {
         setResetKey((k) => k + 1);
@@ -162,6 +168,7 @@ const EditorAppInner = ({
     if (versionContent) return versionContent;
 
     const docData = savedDocs?.[0];
+
     if (!docData?.content || !Array.isArray(docData.content)) {
       return DEFAULT_EDITOR_VALUE;
     }
@@ -194,7 +201,8 @@ const EditorAppInner = ({
           : null;
 
       const collection = getFormListings();
-      if (!collection.get(formId)) return; // Not in collection yet — next onChange will retry
+
+      if (!collection.get(formId)) return; // Not in collection yet; next onChange will retry
 
       // Update ref so external-change detection sees upcoming sync-back as our edit.
       lastKnownContentRef.current = JSON.stringify(val);
@@ -202,11 +210,15 @@ const EditorAppInner = ({
 
       collection.update(formId, (draft) => {
         draft.content = val;
+
         if (workspaceId) draft.workspaceId = workspaceId;
-        draft.updatedAt = new Date().toISOString();
+        // The server stamps recency; body-only saves leave sidebar ordering stable.
+
         if (headerNode) {
           if (headerNode.title !== undefined) draft.title = headerNode.title;
+
           if (headerNode.icon !== undefined) draft.icon = headerNode.icon ?? null;
+
           if (headerNode.cover !== undefined) draft.cover = headerNode.cover ?? null;
         }
       });
@@ -220,11 +232,13 @@ const EditorAppInner = ({
 
       if (skipSaveRef.current) {
         skipSaveRef.current = false;
+
         return;
       }
 
-      // Plate fires onChange on selection/focus too (color picker, popover) with same content. Skip save when unchanged — avoids roundtrip for a pure updatedAt bump.
+      // Plate fires onChange on selection/focus too (color picker, popover) with same content. Skip save when unchanged; avoids roundtrip for a pure updatedAt bump.
       const serialized = JSON.stringify(value);
+
       if (serialized === lastKnownContentRef.current) return;
 
       pendingValueRef.current = value;
@@ -236,10 +250,12 @@ const EditorAppInner = ({
   const handleEditorKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
       if (readOnly || !headerVisibility?.enabled) return;
+
       if (event.metaKey || event.ctrlKey || event.altKey) return;
 
       const key = event.key;
       const isPrintable = key.length === 1;
+
       const isTypingIntentKey =
         isPrintable ||
         key === "Enter" ||
@@ -258,6 +274,7 @@ const EditorAppInner = ({
     (themeColor: string) => {
       if (!formId) return;
       const collection = getFormListings();
+
       if (!collection.get(formId)) return;
       collection.update(formId, (draft) => {
         const current = (draft.customization ?? {}) as Record<string, string>;
@@ -273,8 +290,10 @@ const EditorAppInner = ({
     (field: "icon" | "cover" | "iconColor", value: string | null) => {
       if (readOnly) return;
       const headerNode = editor.children[0];
+
       if (!headerNode || headerNode.type !== "formHeader") return;
       const path = editor.api.findPath(headerNode);
+
       if (path) editor.tf.setNodes({ [field]: value }, { at: path });
     },
     [editor, readOnly],
@@ -284,6 +303,7 @@ const EditorAppInner = ({
   // editable editor registers, so the sidebar never reaches a read-only/preview instance.
   useEffect(() => {
     if (readOnly) return;
+
     return registerHeaderMediaSetter(formId, updateHeaderMedia);
   }, [formId, readOnly, updateHeaderMedia]);
 
@@ -304,7 +324,8 @@ const EditorAppInner = ({
           hasCustomization && "bf-themed",
           effectiveTheme === "dark" ? "dark" : "bf-light",
         )}
-        style={hasCustomization ? themeVars : undefined}
+        // oxlint-disable-next-line shadcn/no-inline-styles -- Runtime --bf-* custom-prop map from getThemeStyleVars; not statically verifiable
+        style={themeVars}
       >
         <PlateEditorTree
           editor={editor}
@@ -317,7 +338,7 @@ const EditorAppInner = ({
   );
 };
 
-// Memoized Plate subtree. Customization re-renders of EditorAppInner (theme vars, dark flips) update the wrapper but stop here — plugins don't see them, no useEffect mount/unmount thrash or update-depth limit on color-picker drags.
+// Memoized Plate subtree. Customization re-renders of EditorAppInner (theme vars, dark flips) update the wrapper but stop here; plugins don't see them, no useEffect mount/unmount thrash or update-depth limit on color-picker drags.
 const PlateEditorTree = memo(
   ({
     editor,
@@ -340,4 +361,5 @@ const PlateEditorTree = memo(
     </Plate>
   ),
 );
+
 PlateEditorTree.displayName = "PlateEditorTree";

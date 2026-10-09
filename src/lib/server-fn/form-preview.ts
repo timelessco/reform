@@ -34,5 +34,6 @@ export const uploadFormPreview = createServerFn({ method: "POST" })
     const { url } = await putBlob(key, body, "image/png");
 
     await db.update(forms).set({ previewImageUrl: url }).where(eq(forms.id, data.formId));
+
     return { url };
   });

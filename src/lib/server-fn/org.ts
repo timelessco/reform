@@ -10,6 +10,7 @@ import { logger } from "@/lib/utils";
  * _authenticated.tsx. */
 export const getOrgDataForLayout = createServerFn({ method: "GET" }).handler(async () => {
   const headers = getRequestHeaders();
+
   const [activeOrg, orgsData] = await Promise.all([
     auth.api.getFullOrganization({ headers }),
     auth.api.listOrganizations({ headers }),
@@ -21,8 +22,10 @@ export const getOrgDataForLayout = createServerFn({ method: "GET" }).handler(asy
       headers,
       body: { organizationId: orgsData[0].id },
     });
+
     if (activated) {
       const freshActiveOrg = await auth.api.getFullOrganization({ headers });
+
       return { activeOrg: freshActiveOrg, orgsData };
     }
   }
@@ -57,29 +60,36 @@ export const ensureActiveOrgForWorkspace = createServerFn({ method: "GET" })
     try {
       const headers = getRequestHeaders();
       const session = await auth.api.getSession({ headers });
+
       if (!session) return null;
 
       const { db } = await import("@/db");
       const { workspaces } = await import("@/db/schema");
       const { eq } = await import("drizzle-orm");
+
       const [ws] = await db
         .select({ orgId: workspaces.organizationId })
         .from(workspaces)
         .where(eq(workspaces.id, workspaceId));
+
       const owningOrgId = ws?.orgId;
+
       if (!owningOrgId) return null;
 
       const activeOrgId = (session.session as { activeOrganizationId?: string | null })
         .activeOrganizationId;
+
       if (activeOrgId === owningOrgId) return { orgId: owningOrgId };
 
       await auth.api.setActiveOrganization({ headers, body: { organizationId: owningOrgId } });
+
       return { orgId: owningOrgId };
     } catch (e) {
       logger("[ensureActiveOrgForWorkspace] alignment skipped", {
         workspaceId,
         error: e instanceof Error ? e.message : String(e),
       });
+
       return null;
     }
   });

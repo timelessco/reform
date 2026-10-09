@@ -57,11 +57,13 @@ export const buildScaleValues = (min: number, max: number, step: number): number
   const hi = Math.max(min, max);
   const s = step > 0 ? step : 1;
   const values: number[] = [];
+
   for (let i = lo; i <= hi && values.length < LINEAR_SCALE_MAX_POINTS; i += 1) {
     if (i === 0) continue; // a zero tile is 0 regardless of step — skip the baseline
     // Round off any float drift to a clean label.
     values.push(Math.round(i * s * 1e6) / 1e6);
   }
+
   return values;
 };
 
@@ -112,6 +114,7 @@ export const RATING_MAX_STARS = 10;
 export const extractRatingFields = (node: Record<string, unknown>): { starCount: number } => {
   const raw = node.starCount;
   const n = typeof raw === "number" && raw > 0 ? Math.floor(raw) : RATING_DEFAULTS.starCount;
+
   return { starCount: Math.min(RATING_MAX_STARS, Math.max(1, n)) };
 };
 
@@ -155,6 +158,7 @@ export const extractLinearScaleFields = (
   const anchorLeft = readAnchor(node.anchorLeft);
   const anchorCenter = readAnchor(node.anchorCenter);
   const anchorRight = readAnchor(node.anchorRight);
+
   return {
     min,
     max,

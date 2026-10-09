@@ -57,17 +57,21 @@ const inputGroupAddonVariants = cva(
 );
 
 const handleAddonClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  // SAFETY: click targets inside this addon div are Elements; closest skips button children
   if ((e.target as HTMLElement).closest("button")) {
     return;
   }
+
   e.currentTarget.parentElement?.querySelector("input")?.focus();
 };
 
 const handleAddonKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
   if (e.key === "Enter" || e.key === " ") {
+    // SAFETY: key targets inside this addon div are Elements; closest skips button children
     if ((e.target as HTMLElement).closest("button")) {
       return;
     }
+
     e.preventDefault();
     e.currentTarget.parentElement?.querySelector("input")?.focus();
   }

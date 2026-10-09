@@ -4,11 +4,13 @@ import type { FieldRendererProps } from "./shared";
 
 const NumberField = ({ element, form, name }: FieldRendererProps<"Number">) => {
   const { fieldName, ariaLabel, ariaLabelledBy } = useFieldBinding(element, name);
+
   const formatted = isFormattingOn({
     format: element.numberFormat,
     decimalSeparator: element.decimalSeparator,
     thousandsSeparator: element.thousandsSeparator,
   });
+
   return (
     <form.AppField name={fieldName}>
       {(f) =>

@@ -3,14 +3,18 @@ import type { formQuestionProgress, formVisits } from "@/db/schema";
 import { buildDailyDropoffRows } from "@/lib/analytics/aggregate-utils";
 
 type RawVisit = typeof formVisits.$inferSelect;
+
 type RawProgress = typeof formQuestionProgress.$inferSelect;
 
 const baseTimestamp = new Date("2026-04-27T12:00:00Z");
+
 const now = new Date("2026-04-28T01:00:00Z");
+
 const dateKey = "2026-04-27";
 
 const makeVisit = (overrides: Partial<RawVisit> & { id: string }): RawVisit => {
   const { id, ...rest } = overrides;
+
   return {
     id,
     formId: "form-1",
@@ -45,6 +49,7 @@ const makeVisit = (overrides: Partial<RawVisit> & { id: string }): RawVisit => {
 
 const makeProgress = (overrides: Partial<RawProgress> & { id: string }): RawProgress => {
   const { id, ...rest } = overrides;
+
   return {
     id,
     formId: "form-1",
@@ -80,6 +85,7 @@ describe("buildDailyDropoffRows — terminalDropoffCount", () => {
         visitEndedAt: t(120_000),
       }),
     ];
+
     const progress = [
       // v1: started q1, completed q1, started q2, never completed
       makeProgress({
@@ -135,6 +141,7 @@ describe("buildDailyDropoffRows — terminalDropoffCount", () => {
 
   it("carries stepId and stepIndex through to output rows", () => {
     const visits = [makeVisit({ id: "v1", didSubmit: true, visitEndedAt: t(10_000) })];
+
     const progress = [
       makeProgress({
         id: "p1",
@@ -166,6 +173,7 @@ describe("buildDailyDropoffRows — terminalDropoffCount", () => {
     });
 
     expect(rows).toHaveLength(2);
+
     for (const row of rows) {
       expect(row.stepId).toBe("step_0");
       expect(row.stepIndex).toBe(0);
@@ -180,6 +188,7 @@ describe("buildDailyDropoffRows — terminalDropoffCount", () => {
         visitEndedAt: null,
       }),
     ];
+
     const progress = [
       makeProgress({
         id: "p1",
@@ -210,6 +219,7 @@ describe("buildDailyDropoffRows — terminalDropoffCount", () => {
         visitEndedAt: t(10_000),
       }),
     ];
+
     const progress = [
       makeProgress({
         id: "p1",
@@ -241,6 +251,7 @@ describe("buildDailyDropoffRows — terminalDropoffCount", () => {
         visitEndedAt: t(10_000),
       }),
     ];
+
     const progress = [
       makeProgress({
         id: "p1",
@@ -290,6 +301,7 @@ describe("buildDailyDropoffRows — terminalDropoffCount", () => {
         visitEndedAt: t(20_000),
       }),
     ];
+
     const progress = [
       makeProgress({
         id: "p1",

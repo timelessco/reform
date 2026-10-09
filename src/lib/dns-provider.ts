@@ -52,6 +52,7 @@ const apexOf = (domain: string): string =>
 interface DohAnswer {
   data?: string;
 }
+
 interface DohResponse {
   Answer?: DohAnswer[];
 }
@@ -63,22 +64,27 @@ export const detectDnsProvider = async (
   signal?: AbortSignal,
 ): Promise<DetectedProvider | null> => {
   const apex = apexOf(domain);
+
   if (!apex) return null;
 
   const res = await fetch(`https://dns.google/resolve?name=${encodeURIComponent(apex)}&type=NS`, {
     signal,
     headers: { accept: "application/dns-json" },
   });
+
   if (!res.ok) return null;
 
   const json = (await res.json()) as DohResponse;
+
   const nameservers = (json.Answer ?? [])
     .map((a) => a.data?.replace(/\.$/, "").toLowerCase())
     .filter((v): v is string => Boolean(v));
+
   if (nameservers.length === 0) return null;
 
   for (const ns of nameservers) {
     const hit = PROVIDER_SIGNATURES.find((sig) => ns.includes(sig.match));
+
     if (hit) return { name: hit.name, dashboardUrl: hit.dashboardUrl };
   }
 

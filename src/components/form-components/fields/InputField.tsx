@@ -3,6 +3,7 @@ import type { FieldRendererProps } from "./shared";
 
 const InputField = ({ element, form, name }: FieldRendererProps<"Input">) => {
   const { fieldName, ariaLabel, ariaLabelledBy } = useFieldBinding(element, name);
+
   return (
     <form.AppField name={fieldName}>
       {(f) => (

@@ -39,8 +39,10 @@ import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
 import { useLocalForm } from "@/hooks/use-live-hooks";
 import { getLocalFormId, getLocalWorkspaceId } from "@/db/local-draft";
 
-const landingValue = normalizeNodeId([
-  createFormHeaderNode({ title: "" }) as unknown as TElement,
+// Spread copies give the factory nodes the anonymous object type TElement's UnknownObject
+// arm requires; normalizeNodeId clones downstream, so identity is irrelevant.
+const landingValue = normalizeNodeId<TElement[]>([
+  { ...createFormHeaderNode({ title: "" }) },
   {
     type: "formLabel",
     required: false,
@@ -52,8 +54,17 @@ const landingValue = normalizeNodeId([
     placeholder: "Your form",
     children: [{ text: "" }],
   },
-  createFormButtonNode("submit") as unknown as TElement,
+  { ...createFormButtonNode("submit") },
 ]);
+
+/** Custom-property style for the resizable sidebar rails (Tailwind can't express these). */
+type SidebarVarStyle = React.CSSProperties & Record<`--right-sidebar-${string}`, string>;
+
+/** Header composite nodes carry the FormHeaderElementData payload alongside TElement's index signature. */
+type FormHeaderNode = TElement & FormHeaderElementData;
+
+const isFormHeaderNode = (node: TElement | undefined): node is FormHeaderNode =>
+  node?.type === "formHeader";
 
 const LandingEditor = () => (
   <ClientOnly
@@ -74,8 +85,10 @@ const LandingLayout = () => {
   const [rightSidebarWidth, _setRightSidebarWidth] = useState(() => {
     if (typeof window === "undefined") return RIGHT_SIDEBAR_WIDTH_DEFAULT;
     const stored = localStorage.getItem(RIGHT_SIDEBAR_WIDTH_KEY);
+
     if (stored) {
       const parsed = Number(stored);
+
       if (
         !Number.isNaN(parsed) &&
         parsed >= RIGHT_SIDEBAR_WIDTH_MIN &&
@@ -84,14 +97,25 @@ const LandingLayout = () => {
         return parsed;
       }
     }
+
     return RIGHT_SIDEBAR_WIDTH_DEFAULT;
   });
+
   const [isRightResizing, setIsRightResizing] = useState(false);
+
+  const sidebarPadVars: SidebarVarStyle = {
+    "--right-sidebar-pad": showSidebar ? `${rightSidebarWidth}px` : "0px",
+  };
+
+  const sidebarWidthVars: SidebarVarStyle = {
+    "--right-sidebar-w": showSidebar ? `${rightSidebarWidth}px` : "0px",
+  };
 
   const setRightSidebarWidth = useCallback((width: number) => {
     const clamped = Math.round(
       Math.min(RIGHT_SIDEBAR_WIDTH_MAX, Math.max(RIGHT_SIDEBAR_WIDTH_MIN, width)),
     );
+
     _setRightSidebarWidth(clamped);
     localStorage.setItem(RIGHT_SIDEBAR_WIDTH_KEY, String(clamped));
   }, []);
@@ -109,17 +133,18 @@ const LandingLayout = () => {
           <div
             data-bf-cover-pane
             className={cn(
-              "min-h-0 flex-1 overflow-x-hidden overflow-y-auto",
+              "min-h-0 flex-1 overflow-x-hidden overflow-y-auto pr-(--right-sidebar-pad)",
+              // oxlint-disable-next-line shadcn/no-arbitrary-values -- padding-only transition; transition-all would also animate background
               !isRightResizing && "transition-[padding] duration-200 ease-linear",
             )}
-            style={{ paddingRight: showSidebar ? rightSidebarWidth : 0 }}
+            style={sidebarPadVars}
           >
             <LocalEditorApp />
           </div>
         </div>
       </div>
 
-      {/* Play button opens the full-page preview drawer over the editor (same as the form builder). */}
+      {/* Full-page preview drawer over the editor, same as the form builder. */}
       <PreviewDrawer open={previewMode} onClose={exitPreview}>
         <LocalPreviewMode />
       </PreviewDrawer>
@@ -134,15 +159,14 @@ const LandingLayout = () => {
 
       <div
         className={cn(
-          "fixed top-0 right-0 bottom-0 z-40 overflow-hidden bg-background",
+          "fixed top-0 right-0 bottom-0 z-40 w-[var(--right-sidebar-w)] overflow-hidden bg-background",
+          // oxlint-disable-next-line shadcn/no-arbitrary-values -- width-only transition; transition-all would also animate background
           !isRightResizing && "transition-[width] duration-200 ease-linear",
           "[[data-resizing]_&]:transition-none",
           showSidebar && "border-l border-border/60",
           !showSidebar && "pointer-events-none",
         )}
-        style={{
-          width: showSidebar ? `${rightSidebarWidth}px` : 0,
-        }}
+        style={sidebarWidthVars}
       >
         <div className="size-full">
           <Suspense fallback={null}>
@@ -163,12 +187,15 @@ const LandingSidebar = () => {
   if (activeSidebar === "about") {
     return <AboutSidebar onClose={closeSidebar} />;
   }
+
   if (activeSidebar === "settings") {
     return <FormSettingsSidebar formId={localFormId} isLocal />;
   }
+
   if (activeSidebar === "customize") {
     return <CustomizeSidebar formId={localFormId} isLocal />;
   }
+
   return null;
 };
 
@@ -176,11 +203,13 @@ const LocalEditorApp = () => {
   const localFormId = getLocalFormId();
   const { data: savedDocs } = useLocalForm(localFormId);
 
-  // Ensure localStorage record exists (editor saves + sidebar updates). Once on mount; skip insert if present.
+  // Seed the localStorage record (editor saves + sidebar updates read it). Once on mount; skips insert if present.
   const seededRef = useRef(false);
+
   if (!seededRef.current) {
     seededRef.current = true;
     const existing = savedDocs?.find((d) => d.id === localFormId);
+
     if (!existing) {
       try {
         localFormCollection.insert({
@@ -198,18 +227,20 @@ const LocalEditorApp = () => {
           updatedAt: new Date().toISOString(),
         });
       } catch {
-        // Record already exists (race condition) — safe to ignore
+        // Record already exists (race condition); safe to ignore
       }
     }
   }
 
   const resolvedAppTheme = useResolvedTheme();
   const { editorColorMode } = useEditorColorMode();
+
   const { customization, hasCustomization, themeVars, effectiveTheme } = useFormCustomization(
     savedDocs?.[0],
     resolvedAppTheme,
     editorColorMode,
   );
+
   // Include `customization` so theme consumers can read the form's mode (matches editor-app/preview-mode).
   const themeCtx = useMemo(
     () => ({ themeVars, hasCustomization, customization }),
@@ -221,11 +252,12 @@ const LocalEditorApp = () => {
 
   const initialContent = useMemo(() => {
     const docData = savedDocs?.[0];
+
     if (!docData?.content || !Array.isArray(docData.content)) {
       return landingValue;
     }
 
-    return migrateEditorContent(docData.content as Value, {
+    return migrateEditorContent(docData.content, {
       title: docData.title,
       icon: docData.icon,
       cover: docData.cover,
@@ -242,12 +274,15 @@ const LocalEditorApp = () => {
   const updateHeaderMedia = useCallback(
     (field: "icon" | "cover" | "iconColor", value: string | null) => {
       const headerNode = editor.children[0];
+
       if (!headerNode || headerNode.type !== "formHeader") return;
       const path = editor.api.findPath(headerNode);
+
       if (path) editor.tf.setNodes({ [field]: value }, { at: path });
     },
     [editor],
   );
+
   useEffect(
     () => registerHeaderMediaSetter(localFormId, updateHeaderMedia),
     [localFormId, updateHeaderMedia],
@@ -257,20 +292,21 @@ const LocalEditorApp = () => {
     ({ value }: { value: Value }) => {
       if (skipSaveRef.current) {
         skipSaveRef.current = false;
+
         return;
       }
 
-      const headerNode =
-        value.length > 0 && value[0]?.type === "formHeader"
-          ? (value[0] as unknown as FormHeaderElementData)
-          : null;
+      const headerNode = value.length > 0 && isFormHeaderNode(value[0]) ? value[0] : null;
 
       localFormCollection.update(localFormId, (draft) => {
         draft.content = value;
         draft.updatedAt = new Date().toISOString();
+
         if (headerNode) {
           if (headerNode.title !== undefined) draft.title = headerNode.title;
+
           if (headerNode.icon !== undefined) draft.icon = headerNode.icon ?? null;
+
           if (headerNode.cover !== undefined) draft.cover = headerNode.cover ?? null;
         }
       });
@@ -281,10 +317,12 @@ const LocalEditorApp = () => {
   const handleEditorKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
       if (!headerVisibility?.enabled) return;
+
       if (event.metaKey || event.ctrlKey || event.altKey) return;
 
       const key = event.key;
       const isPrintable = key.length === 1;
+
       const isTypingIntentKey =
         isPrintable ||
         key === "Enter" ||
@@ -307,7 +345,8 @@ const LocalEditorApp = () => {
           hasCustomization && "bf-themed",
           effectiveTheme === "dark" ? "dark" : "bf-light",
         )}
-        style={hasCustomization ? themeVars : undefined}
+        // oxlint-disable-next-line shadcn/no-inline-styles -- Runtime --bf-* custom-prop map from getThemeStyleVars; not statically verifiable
+        style={themeVars}
       >
         <Plate editor={editor} readOnly={false} onChange={persistLocalForm}>
           <EditorContainer

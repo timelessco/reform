@@ -36,6 +36,7 @@ export const getCoverPreloadLinks = (
 ): ReadonlyArray<CoverPreloadLink> => {
   if (!cover || !isValidUrl(cover)) return [];
   const srcSet = vercelSrcSet(cover, [...COVER_SRCSET_WIDTHS]);
+
   return [
     {
       rel: "preload",

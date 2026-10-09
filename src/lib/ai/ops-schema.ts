@@ -52,6 +52,7 @@ export const AI_THEME_TOKEN_KEYS = [
 ] as const;
 
 const themeTokensShape: Record<string, v.StringSchema<undefined>> = {};
+
 for (const base of AI_THEME_TOKEN_KEYS) {
   themeTokensShape[`light:${base}`] = v.string();
   themeTokensShape[`dark:${base}`] = v.string();
@@ -130,12 +131,19 @@ export const formGenSchema = v.object({
 });
 
 export type SetHeaderOp = v.InferOutput<typeof setHeaderOp>;
+
 export type AddFieldOp = v.InferOutput<typeof addFieldOp>;
+
 export type AddSectionOp = v.InferOutput<typeof addSectionOp>;
+
 export type SetThemeOp = v.InferOutput<typeof setThemeOp>;
+
 export type ReplaceFieldOp = v.InferOutput<typeof replaceFieldOp>;
+
 export type AddPageBreakOp = v.InferOutput<typeof addPageBreakOp>;
+
 export type Op = v.InferOutput<typeof opSchema>;
+
 export type FormGenResult = v.InferOutput<typeof formGenSchema>;
 
 export type PartialOp = Partial<Op> & { type?: Op["type"] };

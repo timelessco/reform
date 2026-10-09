@@ -8,10 +8,12 @@ import type { FieldRendererProps } from "./shared";
 /** Fisher-Yates copy — stable per render (memoized), avoids mutating element.rows. */
 const shuffleRows = <T,>(items: T[]): T[] => {
   const out = [...items];
+
   for (let i = out.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [out[i], out[j]] = [out[j], out[i]];
   }
+
   return out;
 };
 
@@ -41,11 +43,14 @@ const MatrixField = ({ element, form }: FieldRendererProps<"Matrix">) => {
           // Square markers act as one-per-row: re-clicking the picked column clears it.
           f.handleChange({ ...value, [rowValue]: value[rowValue] === colValue ? "" : colValue });
         };
+
         const toggleMultiple = (rowValue: string, colValue: string) => {
           const current = Array.isArray(value[rowValue]) ? (value[rowValue] as string[]) : [];
+
           const next = current.includes(colValue)
             ? current.filter((v) => v !== colValue)
             : [...current, colValue];
+
           f.handleChange({ ...value, [rowValue]: next });
         };
 
@@ -75,8 +80,8 @@ const MatrixField = ({ element, form }: FieldRendererProps<"Matrix">) => {
                 {/* Column headers */}
                 <div
                   role="row"
-                  className="grid items-center border-b border-(--color-gray-200) bg-muted/30"
-                  style={{ gridTemplateColumns }}
+                  className="grid grid-cols-(--matrix-grid) items-center border-b border-(--color-gray-200) bg-muted/30"
+                  style={{ "--matrix-grid": gridTemplateColumns } as React.CSSProperties}
                 >
                   <span role="columnheader" className="px-3 py-2" />
                   {columns.map((col) => (
@@ -97,20 +102,21 @@ const MatrixField = ({ element, form }: FieldRendererProps<"Matrix">) => {
                     key={row.value}
                     role="row"
                     className={cn(
-                      "grid items-center",
+                      "grid grid-cols-(--matrix-grid) items-center",
                       rowIdx > 0 && "border-t border-(--color-gray-200)",
                     )}
-                    style={{ gridTemplateColumns }}
+                    style={{ "--matrix-grid": gridTemplateColumns } as React.CSSProperties}
                   >
                     <span
                       role="rowheader"
                       data-bf-matrix-row
-                      className="px-3 py-2 text-[14px] text-gray-800"
+                      className="px-3 py-2 text-base text-foreground"
                     >
                       {row.label}
                     </span>
                     {columns.map((col) => {
                       const selected = isSelected(row.value, col.value);
+
                       return (
                         <div
                           key={col.value}

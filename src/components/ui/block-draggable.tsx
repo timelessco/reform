@@ -29,9 +29,8 @@ import { cn } from "@/lib/utils";
 
 const UNDRAGGABLE_KEYS = [KEYS.column, KEYS.tr, KEYS.td, "formButton"];
 
-// Single-line text blocks whose gutter should center on their line (vs top-align).
-// Excludes box inputs and tall blocks (textarea, file upload, options) which keep the
-// controls on their first row.
+// Single-line text blocks whose gutter centers on their line (vs top-align). Excludes box
+// inputs and tall blocks (textarea, file upload, options), which keep controls on row 1.
 const GUTTER_CENTER_TYPES = new Set<string>([
   "formLabel",
   KEYS.p,
@@ -41,16 +40,12 @@ const GUTTER_CENTER_TYPES = new Set<string>([
   KEYS.blockquote,
 ]);
 
-// In readOnly (version view / in-editor preview) the DnD plugin is editOnly, so BlockDraggable
-// never runs and `.slate-blockWrapper` is never emitted — block spacing (driven entirely by the
-// .slate-blockWrapper CSS rules in styles.css) collapses to 0. This non-DnD wrapper re-emits the
-// SAME two-level structure (outer attr div + inner .slate-blockWrapper) for top-level blocks so
-// spacing matches the editable editor exactly, minus drag affordances. The two levels matter: the
-// heading/paragraph CSS rules are parent-scoped (`parent:has(> .slate-blockWrapper > .slate-h1)
-// > .slate-blockWrapper`), so each wrapper needs its OWN parent div — a flat single div makes the
-// editor the shared parent and leaks the heading margins onto every sibling. The data-bf-input /
-// data-bf-chrome / data-bf-standalone attrs mirror Draggable's outer div (option-collapse + chrome
-// exclusion rules read them). Keep this in sync with Draggable's wrapper attrs below.
+// readOnly: the DnD plugin is editOnly, so BlockDraggable never runs and .slate-blockWrapper
+// (block spacing in styles.css) never emits, collapsing spacing to 0. Re-emit the two-level
+// structure (outer attr div + inner .slate-blockWrapper) for top-level blocks; heading CSS rules
+// are parent-scoped, so each wrapper needs its own parent div or heading margins leak onto
+// siblings. The data-bf-* attrs mirror Draggable's outer div (option-collapse and chrome rules
+// read them). Keep in sync with Draggable's wrapper attrs below.
 const ReadOnlyBlock = ({
   editor,
   element,
@@ -67,13 +62,19 @@ const ReadOnlyBlock = ({
 
   const isStandaloneInput = (() => {
     if (!isFormInput) return false;
+
     if (element.type === "formTextarea" || element.type === "formFileUpload") return false;
-    const idx = path[0];
-    if (typeof idx !== "number") return false;
-    const prev = (editor.children as TElement[])[idx - 1];
+    const idx = path.at(0);
+
+    if (idx === undefined) return false;
+    const prev = editor.children[idx - 1];
+
     if (!prev) return true;
+
     if (prev.type === "formLabel") return false;
+
     if (element.type === "formOptionItem" && prev.type === "formOptionItem") return false;
+
     return true;
   })();
 
@@ -92,7 +93,9 @@ const ReadOnlyBlock = ({
 
 export const ReadOnlyBlockWrapper: RenderNodeWrapper = ({ editor, element, path }) => {
   if (!editor.dom.readOnly) return; // edit mode: BlockDraggable owns the wrapper
+
   if (path.length !== 1 || isType(editor, element, UNDRAGGABLE_KEYS)) return;
+
   return ({ children }) => (
     <ReadOnlyBlock editor={editor} element={element} path={path}>
       {children}
@@ -112,16 +115,20 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
     let isAfterButton = false;
     let blockIsHidden = false;
 
-    const children = editor.children as TElement[];
+    const children = editor.children;
     const currentIndex = path[0];
 
-    // Nearest preceding action button (Next/Submit). Skip Previous — [Previous][Next] is valid.
+    // Nearest preceding action button (Next/Submit). Skip Previous; [Previous][Next] is valid.
     let nearestButtonIndex = -1;
+
     for (let i = currentIndex - 1; i >= 0; i--) {
       const node = children[i];
+
       if (!node) continue;
+
       if (node.type === "formButton") {
-        const role = (node as TElement & { buttonRole?: string }).buttonRole;
+        const role: unknown = node.buttonRole;
+
         // Previous isn't a terminator.
         if (role === "previous") continue;
 
@@ -131,13 +138,13 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
     }
 
     if (nearestButtonIndex !== -1) {
-      // Preceding button found — check for intervening page breaks.
+      // Preceding button found. Check for intervening page breaks.
       const hasPageBreak = children
         .slice(nearestButtonIndex + 1, currentIndex)
         .some((n) => n?.type === "pageBreak");
 
       if (!hasPageBreak) {
-        // No page break — block orphaned after button.
+        // No page break; block orphaned after the button.
         isAfterButton = true;
         const node = element;
         const isThankYou = node.type === "pageBreak" && node.isThankYouPage === true;
@@ -157,6 +164,7 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
     }
 
     let isEnabled = false;
+
     if (path.length === 1 && !isType(editor, element, UNDRAGGABLE_KEYS)) {
       isEnabled = true;
     } else if (path.length === 3 && !isType(editor, element, UNDRAGGABLE_KEYS)) {
@@ -166,6 +174,7 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
           type: editor.getType(KEYS.column),
         },
       });
+
       if (block) isEnabled = true;
     }
 
@@ -177,7 +186,7 @@ export const BlockDraggable: RenderNodeWrapper = (props) => {
 
   if (isHidden) {
     // height:0 + opacity:0 + pointer-events:none keeps it in DOM for normalization but inert.
-    // Avoid display:none — selection issues if cursor forced there.
+    // Avoid display:none; selection breaks if the cursor is forced there.
     return (innerProps) => (
       <div className="pointer-events-none h-0 overflow-hidden opacity-0" aria-hidden="true">
         {innerProps.children}
@@ -199,24 +208,25 @@ const Draggable = (props: PlateElementProps) => {
   const isFormButton = element.type === "formButton";
   const isFormHeader = element.type === "formHeader";
   const isPageBreak = element.type === "pageBreak";
-  // Single-line text blocks are shorter than the 28px control group, so a top-aligned
-  // gutter lands the icons below the text. Centering puts the controls on the (single)
-  // line. Box inputs and tall blocks (textarea, file upload, options) stay top-aligned
-  // so the controls sit on their first row, not floating in the middle.
+  // Single-line blocks are shorter than the 28px control group, so a top-aligned gutter lands
+  // icons below the text. Box inputs and tall blocks stay top-aligned so controls sit on row 1.
   const centerGutter = GUTTER_CENTER_TYPES.has(element.type);
 
   const buttonLayoutClass = React.useMemo(() => {
     if (isFormButton) {
-      const role = (element as TElement & { buttonRole?: string }).buttonRole;
+      const role: unknown = element.buttonRole;
+
       if (role === "previous") return "float-left clear-none";
+
       return "float-right clear-none"; // next/submit
     }
+
     return "clear-both";
   }, [isFormButton, element]);
 
-  // Confine non-checkbox option items (multiChoice/multiSelect/ranking) to their
-  // run of consecutive formOptionItem siblings — dragging out orphans them.
-  // Checkbox variant unrestricted: works standalone as agreement input.
+  // Confine non-checkbox option items (multiChoice/multiSelect/ranking) to their run of
+  // consecutive formOptionItem siblings; dragging out orphans them. Checkbox is unrestricted,
+  // working standalone as an agreement input.
   const canDropNode = React.useCallback(
     ({
       dragEntry,
@@ -226,24 +236,30 @@ const Draggable = (props: PlateElementProps) => {
       dropEntry: [TElement, number[]];
     }) => {
       const [dragNode, dragPath] = dragEntry;
+
       if (dragNode.type !== "formOptionItem") return true;
 
-      const dragVariant = (dragNode as TElement & { variant?: string }).variant ?? "checkbox";
+      const dragVariant: unknown = dragNode.variant ?? "checkbox";
+
       if (dragVariant === "checkbox") return true;
 
       // Group lookup is top-level only; nested (column/table) constrained upstream.
       if (dragPath.length !== 1) return true;
       const [, dropPath] = dropEntry;
+
       if (dropPath.length !== 1) return true;
 
-      const dragIdx = dragPath[0];
-      const dropIdx = dropPath[0];
-      if (typeof dragIdx !== "number" || typeof dropIdx !== "number") return true;
+      const dragIdx = dragPath.at(0);
+      const dropIdx = dropPath.at(0);
 
-      const children = editor.children as TElement[];
+      if (dragIdx === undefined || dropIdx === undefined) return true;
+
+      const children = editor.children;
       let start = dragIdx;
+
       while (start > 0 && children[start - 1]?.type === "formOptionItem") start--;
       let end = dragIdx;
+
       while (end < children.length - 1 && children[end + 1]?.type === "formOptionItem") end++;
 
       return dropIdx >= start && dropIdx <= end;
@@ -255,11 +271,10 @@ const Draggable = (props: PlateElementProps) => {
     element,
     canDropNode,
     onDropHandler: (_, { dragItem }) => {
-      const id = (dragItem as { id: string[] | string }).id;
-
-      if (blockSelectionApi) {
-        blockSelectionApi.add(id);
+      if ("id" in dragItem && blockSelectionApi) {
+        blockSelectionApi.add(dragItem.id);
       }
+
       resetPreview();
     },
   });
@@ -271,6 +286,7 @@ const Draggable = (props: PlateElementProps) => {
 
   const resetPreview = React.useCallback(() => {
     const el = previewRef.current;
+
     if (el) {
       el.replaceChildren();
       el.classList.add("hidden");
@@ -293,8 +309,8 @@ const Draggable = (props: PlateElementProps) => {
     // eslint-disable-next-line eslint-plugin-react-hooks/exhaustive-deps -- only on isAboutToDrag change
   }, [isAboutToDrag]);
 
-  // Drag in flight: hide live preview so it doesn't double the HTML5 drag image.
-  // Backend publishes isDragging via setTimeout(0) AFTER screenshot, so this can't blank it.
+  // While dragging, hide the live preview so it doesn't double the HTML5 drag image.
+  // Backend publishes isDragging via setTimeout(0) after the screenshot, so this can't blank it.
   // eslint-disable-next-line react-doctor/no-effect-event-handler -- reacts to react-dnd async state transitions; not a discrete user event
   React.useEffect(() => {
     if (isDragging) {
@@ -320,50 +336,50 @@ const Draggable = (props: PlateElementProps) => {
     [editor.tf, path],
   );
 
-  // Delete this block. Mirrors the block menu's Delete action: select the block, then
+  // Delete this block. Mirrors the block menu's Delete action; select the block, then
   // removeNodes via BlockSelectionPlugin so list/column children are handled consistently.
   const handleDeleteBlock = React.useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      // SAFETY: Plate assigns every block element a string id at creation
       editor.getApi(BlockSelectionPlugin).blockSelection.set([element.id as string]);
       editor.getTransforms(BlockSelectionPlugin).blockSelection.removeNodes();
     },
     [editor, element.id],
   );
 
-  React.useEffect(() => {
-    const node = nodeRef.current;
-    if (!node) return;
-
-    const handleContextMenu = (event: MouseEvent) => {
+  const handleContextMenu = React.useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
       editor.getApi(BlockSelectionPlugin).blockSelection.addOnContextMenu({
         element,
-        event: event as unknown as React.MouseEvent<HTMLDivElement>,
+        event,
       });
-    };
-
-    node.addEventListener("contextmenu", handleContextMenu);
-    return () => {
-      node.removeEventListener("contextmenu", handleContextMenu);
-    };
-  }, [editor, element, nodeRef]);
+    },
+    [editor, element],
+  );
 
   const isFormInput = FORM_INPUT_NODE_TYPES.has(element.type);
   const wrapperChromeAttrs = isFormButton || isFormHeader ? { "data-bf-chrome": "" } : {};
 
   // Standalone = no preceding formLabel; drives padding so stacked label-less inputs don't collide.
-  // Inline (O(1)) — memoizing needs editor.children dep, which changes every edit and defeats it.
+  // O(1) inline; memoizing needs an editor.children dep, which changes every edit and defeats it.
   const isStandaloneInput = (() => {
     if (!isFormInput) return false;
+
     if (element.type === "formTextarea" || element.type === "formFileUpload") return false;
-    const idx = path[0];
-    if (typeof idx !== "number") return false;
-    const prev = (editor.children as TElement[])[idx - 1];
+    const idx = path.at(0);
+
+    if (idx === undefined) return false;
+    const prev = editor.children[idx - 1];
+
     if (!prev) return true;
+
     if (prev.type === "formLabel") return false;
-    // Option items cluster under one label — inherit standalone from first.
+
+    // Option items cluster under one label; inherit standalone from the first.
     if (element.type === "formOptionItem" && prev.type === "formOptionItem") return false;
+
     return true;
   })();
 
@@ -393,13 +409,15 @@ const Draggable = (props: PlateElementProps) => {
               isInColumn && "h-4",
             )}
             onKeyDownCapture={(e) => {
-              // Gutter controls (+, drag) aren't real tab stops — navigate directly
+              // Gutter controls (+, drag) aren't real tab stops; navigate directly
               if (e.key === "Tab") {
                 e.preventDefault();
                 e.stopPropagation();
+
                 const target = e.shiftKey
                   ? findPrevNonButtonPath(editor, path)
                   : findNextNonButtonPath(editor, path);
+
                 if (target) {
                   moveToPath(editor, target);
                   editor.tf.focus();
@@ -435,7 +453,7 @@ const Draggable = (props: PlateElementProps) => {
               </Button>
             )}
 
-            {/* Drag Handle or Settings Gear — wrapper div carries the drag handleRef; DragHandle is its own button */}
+            {/* Drag Handle or Settings Gear. Wrapper div carries the drag handleRef; DragHandle is its own button */}
             <div
               ref={isFormButton ? undefined : handleRef}
               className="size-auto cursor-grab"
@@ -454,11 +472,14 @@ const Draggable = (props: PlateElementProps) => {
       )}
       <div
         ref={previewRef}
-        className={cn("absolute left-0 hidden w-full")}
-        style={{ top: `${-previewTop}px` }}
+        className={cn("absolute top-[var(--preview-top)] left-0 hidden w-full")}
+        style={
+          // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+          { "--preview-top": `${-previewTop}px` } as React.CSSProperties
+        }
         contentEditable={false}
       />
-      <div ref={nodeRef} className="slate-blockWrapper flow-root">
+      <div ref={nodeRef} className="slate-blockWrapper flow-root" onContextMenu={handleContextMenu}>
         <MemoizedChildren>{children}</MemoizedChildren>
         <DropLine />
       </div>
@@ -477,21 +498,22 @@ const Gutter = ({
   const isSelectionAreaVisible = usePluginOption(BlockSelectionPlugin, "isSelectionAreaVisible");
   const selected = useSelected();
 
-  // Center the controls on the block's FIRST line, not its full height. A single-line label is
-  // shorter than the 28px control group, so centering in h-full lands the controls on the line —
-  // but a label/heading that WRAPS to multiple lines would float the controls at the block's
-  // vertical middle (between lines). Measure the first line-box so items-center stays on line 1.
-  // (Single-line: first-line height == full height, so this is a no-op.) "top" gutters keep h-full.
+  // Center controls on the block's FIRST line; a wrapping label centered in h-full floats the
+  // controls between lines. Measure the first line-box so items-center stays on line 1. "top"
+  // gutters keep h-full.
   const gutterRef = React.useRef<HTMLDivElement>(null);
   const [firstLineH, setFirstLineH] = React.useState<number | null>(null);
   React.useLayoutEffect(() => {
     if (gutterPosition !== "center") {
       setFirstLineH(null);
+
       return;
     }
+
     const content = gutterRef.current?.parentElement?.querySelector(
       ":scope > .slate-blockWrapper",
     )?.firstElementChild;
+
     if (!content) return;
     const range = document.createRange();
     range.selectNodeContents(content);
@@ -501,6 +523,11 @@ const Gutter = ({
 
   const useFullHeight = gutterPosition === "top" || firstLineH == null;
 
+  // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+  const gutterStyle = useFullHeight
+    ? props.style
+    : ({ ...props.style, "--gutter-first-line-h": `${firstLineH}px` } as React.CSSProperties);
+
   return (
     <div
       ref={gutterRef}
@@ -508,7 +535,7 @@ const Gutter = ({
       className={cn(
         "slate-gutterLeft",
         "absolute z-50 flex -translate-x-full cursor-text hover:opacity-100",
-        useFullHeight && "h-full",
+        useFullHeight ? "h-full" : "h-[var(--gutter-first-line-h)]",
         gutterPosition === "top" ? "top-0 items-start" : "top-0 items-center",
         !selected && "sm:opacity-0",
         getPluginByType(editor, element.type)?.node.isContainer
@@ -518,7 +545,7 @@ const Gutter = ({
         selected && "opacity-100",
         className,
       )}
-      style={useFullHeight ? props.style : { ...props.style, height: `${firstLineH}px` }}
+      style={gutterStyle}
       contentEditable={false}
     >
       {children}
@@ -546,14 +573,17 @@ const DragHandle = React.memo(function DragHandle({
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
+
       if (isDragging) return;
 
       const blockSelectionApi = editor.getApi(BlockSelectionPlugin);
       const currentSelection = blockSelectionApi.blockSelection.getNodes();
+
       if (
         currentSelection.length === 0 ||
         !currentSelection.some(([node]) => node.id === element.id)
       ) {
+        // SAFETY: Plate assigns every block element a string id at creation
         blockSelectionApi.blockSelection.set([element.id as string]);
       }
 
@@ -580,13 +610,16 @@ const DragHandle = React.memo(function DragHandle({
 
       // Drag handle targets ONE block. Use blockSelection only when it contains the clicked
       // block (multi-select); else drag it alone. editor.api.blocks (text-caret range) bleeds
-      // the whole range into the preview → "drag the whole editor" giant ghost.
+      // the whole range into the preview, a giant "drag the whole editor" ghost.
       let selectionNodes: typeof blockSelection;
+
       if (blockSelection.length > 0 && blockSelection.some(([node]) => node.id === element.id)) {
         selectionNodes = blockSelection;
       } else {
         const currentPath = editor.api.findPath(element);
+
         if (!currentPath) return;
+        // SAFETY: Plate assigns every block element a string id at creation
         selectionNodes = [[element as TIdElement, currentPath]];
       }
 
@@ -603,6 +636,7 @@ const DragHandle = React.memo(function DragHandle({
       previewRef.current?.classList.add("opacity-0");
       editor.setOption(DndPlugin, "multiplePreviewRef", previewRef);
 
+      // SAFETY: Plate assigns every block element a string id at creation
       editor
         .getApi(BlockSelectionPlugin)
         .blockSelection.set(blocks.map((block) => block.id as string));
@@ -617,26 +651,34 @@ const DragHandle = React.memo(function DragHandle({
       .getApi(BlockSelectionPlugin)
       .blockSelection.getNodes({ sort: true });
 
-    // Mirror mousedown: honor blockSelection only when it includes the hovered block;
+    // Mirror mousedown. Honor blockSelection only when it includes the hovered block;
     // else single-block, to avoid a multi-block previewTop offset from an unrelated range.
     let selectedBlocks: typeof blockSelection;
+
     if (blockSelection.length > 0 && blockSelection.some(([node]) => node.id === element.id)) {
       selectedBlocks = blockSelection;
     } else {
       const currentPath = editor.api.findPath(element);
+
       if (!currentPath) return;
+      // SAFETY: Plate assigns every block element a string id at creation
       selectedBlocks = [[element as TIdElement, currentPath]];
     }
 
     const processedBlocks = expandListItemsWithChildren(editor, selectedBlocks);
 
+    // SAFETY: Plate assigns every block element a string id at creation
     const ids = processedBlocks.map((block) => block[0].id as string);
 
-    if (ids.length > 1 && ids.includes(element.id as string)) {
+    // SAFETY: Plate assigns every block element a string id at creation
+    const elementId = element.id as string;
+
+    if (ids.length > 1 && ids.includes(elementId)) {
       const previewTop = calculatePreviewTop(editor, {
         blocks: processedBlocks.map((block) => block[0]),
         element,
       });
+
       setPreviewTop(previewTop);
     } else {
       setPreviewTop(0);
@@ -678,7 +720,7 @@ const DropLine = React.memo(function DropLine({
   const { dropLine } = useDropLine();
   const editor = useEditorRef();
   const element = useElement();
-  const draggingId = usePluginOption(DndPlugin, "draggingId") as string | string[] | undefined;
+  const draggingId = usePluginOption(DndPlugin, "draggingId");
 
   if (!dropLine) return null;
 
@@ -699,12 +741,14 @@ const DropLine = React.memo(function DropLine({
       const last = elementPath[elementPath.length - 1] ?? 0;
 
       if (dropLine === "top") {
-        // Dropping above hovered ⇒ slot at hovered-1.
+        // Dropping above hovered means slot at hovered-1.
         const adjacentAbove = [...parent, last - 1];
+
         if (pathsEqual(dragPath, adjacentAbove)) return null;
       } else if (dropLine === "bottom") {
-        // Dropping below hovered ⇒ slot at hovered+1.
+        // Dropping below hovered means slot at hovered+1.
         const adjacentBelow = [...parent, last + 1];
+
         if (pathsEqual(dragPath, adjacentBelow)) return null;
       }
     }
@@ -727,7 +771,7 @@ const DropLine = React.memo(function DropLine({
 });
 
 /** Strip data-slate/data-block-id attrs so the clone isn't misread as a slate element. */
-const removeDataAttributes = (element: HTMLElement) => {
+const removeDataAttributes = (element: Element) => {
   Array.from(element.attributes).forEach((attr) => {
     if (attr.name.startsWith("data-slate") || attr.name.startsWith("data-block-id")) {
       element.removeAttribute(attr.name);
@@ -735,14 +779,14 @@ const removeDataAttributes = (element: HTMLElement) => {
   });
 
   Array.from(element.children).forEach((child) => {
-    removeDataAttributes(child as HTMLElement);
+    removeDataAttributes(child);
   });
 };
 
 /**
- * Strip nodes that break the HTML5 drag-image snapshot. Base UI Checkbox/Radio render a
- * position:fixed hidden <input>; cloned for the preview it escapes the clone's box and makes
- * Chromium snapshot a viewport-sized region ("giant preview"). Remove fixed descendants.
+ * Strips nodes that break the HTML5 drag-image snapshot. Base UI Checkbox/Radio render a
+ * position:fixed hidden input that escapes the clone and makes Chromium snapshot a
+ * viewport-sized region (the "giant preview").
  */
 const stripDragPreviewArtifacts = (element: HTMLElement) => {
   Array.from(element.querySelectorAll("input")).forEach((input) => {
@@ -774,7 +818,7 @@ const applyScrollCompensation = (original: Element, cloned: HTMLElement) => {
     }
 
     const originalStyles = window.getComputedStyle(original);
-    // Two distinct elements (cloned vs innerContainer) — cssText/Object.assign can't batch.
+    // Two distinct elements (cloned vs innerContainer); cssText/Object.assign can't batch.
     cloned.style.setProperty("padding", "0");
     innerContainer.style.setProperty("padding", originalStyles.padding);
 
@@ -789,11 +833,15 @@ const createDragPreviewElements = (editor: PlateEditor, blocks: TElement[]): HTM
 
   const resolveElement = (node: TElement, index: number) => {
     const domNode = editor.api.toDOMNode(node);
+
     if (!domNode) return;
-    const newDomNode = domNode.cloneNode(true) as HTMLElement;
+    const newDomNode = domNode.cloneNode(true);
+
+    if (!(newDomNode instanceof HTMLElement)) return;
 
     applyScrollCompensation(domNode, newDomNode);
 
+    // SAFETY: Plate assigns every block element a string id at creation
     ids.push(node.id as string);
     const wrapper = document.createElement("div");
     wrapper.append(newDomNode);

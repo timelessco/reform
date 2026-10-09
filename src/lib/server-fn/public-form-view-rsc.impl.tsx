@@ -6,7 +6,6 @@ import { BaseEditorKit } from "@/components/editor/editor-base-kit";
 import { ServerFormIcon } from "@/components/form-components/server-form-icon";
 import { EditorStatic } from "@/components/ui/editor-static";
 import { DEFAULT_ICON } from "@/lib/config/app-config";
-import { CUSTOMIZATION_AUTO_DEFAULTS } from "@/lib/theme/customization-defaults";
 import { cn, DEFAULT_ICON_NAME, isHexColor, isValidUrl } from "@/lib/utils";
 import { COVER_SRCSET_WIDTHS, vercelImg, vercelSrcSet } from "@/lib/vercel-image";
 import {
@@ -38,6 +37,7 @@ import type {
 // Hook-free (unlike StaticContentBlock) so it's usable inside an RSC render.
 const ServerPlateBlock = ({ nodes }: { nodes: Value }) => {
   const editor = createSlateEditor({ plugins: BaseEditorKit, value: nodes });
+
   return (
     <EditorStatic
       editor={editor}
@@ -88,6 +88,7 @@ const ServerFieldLabel = ({
 
   if (labelType && labelType in HEADING_VARIANTS) {
     const { Tag, className } = HEADING_VARIANTS[labelType as HeadingVariant];
+
     return (
       <div className="flex w-full items-center py-2.5">
         <Tag id={labelId} className={className}>
@@ -149,6 +150,7 @@ const groupSegmentsForRendering = (
       allButtons.push(seg.field as ButtonField);
     } else {
       grouped.push(seg);
+
       if (seg.type === "field") fields.push(seg.field);
     }
   }
@@ -168,6 +170,7 @@ export const renderStepComponent = async (segments: PreviewSegment[]) => {
   const keyedItems = grouped.map((item, idx) => {
     if (item.type === "static") {
       const firstNode = item.nodes[0] as { id?: string; type?: string } | undefined;
+
       return {
         ...item,
         key: firstNode?.id
@@ -175,9 +178,11 @@ export const renderStepComponent = async (segments: PreviewSegment[]) => {
           : `static-${idx}-${firstNode?.type ?? "?"}-${item.nodes.length}`,
       };
     }
+
     if (item.type === "buttonGroup") {
       return { ...item, key: `buttons-${item.buttons.map((b) => b.id).join("-")}` };
     }
+
     return { ...item, key: item.field.id };
   });
 
@@ -194,27 +199,34 @@ export const renderStepComponent = async (segments: PreviewSegment[]) => {
           if (item.type === "static") {
             return <ServerPlateBlock key={item.key} nodes={item.nodes} />;
           }
+
           if (item.type === "buttonGroup") {
             return <ButtonGroup key={item.key} groupId={item.key} buttons={item.buttons} />;
           }
+
           if (item.type === "field") {
             const field = item.field;
+
             if (field.fieldType === "Button") {
               return <Field key={item.key} fieldId={field.id} field={field} />;
             }
+
             // Labels with `@`-mention tokens must resolve against live answers, so the whole
             // field (label + input) renders client-side via the Field slot — see FieldSlot.
             if ("labelNodes" in field && field.labelNodes) {
               return <Field key={item.key} fieldId={field.id} field={field} />;
             }
+
             const { label, required, labelType } = getFieldLabelProps(field);
             // Group fields lack a single labelable control; role=group + aria-labelledby so AT
             // announces the group label. Mirrors PreviewInputShell.
             const isGroup = GROUP_FIELD_TYPES.has(field.fieldType);
+
             const groupAriaProps =
               isGroup && label
                 ? { role: "group" as const, "aria-labelledby": fieldLabelId(field.name) }
                 : {};
+
             return (
               <div
                 key={item.key}
@@ -233,6 +245,7 @@ export const renderStepComponent = async (segments: PreviewSegment[]) => {
               </div>
             );
           }
+
           return null;
         })}
       </>
@@ -242,7 +255,7 @@ export const renderStepComponent = async (segments: PreviewSegment[]) => {
   return { src, fields };
 };
 
-const PAGE_MAX_WIDTH = `var(--bf-page-width, ${CUSTOMIZATION_AUTO_DEFAULTS.pageWidth})`;
+const PAGE_MAX_WIDTH_CLASS = "max-w-[var(--bf-page-width,700px)]";
 
 interface PublicFormHeaderData {
   title?: string | null;
@@ -254,8 +267,10 @@ interface PublicFormHeaderData {
 
 const resolveLogoCircleSize = (customization: Record<string, string> | null | undefined) => {
   const raw = customization?.logoWidth;
+
   if (!raw) return { size: "100", minimal: false };
   const parsed = Number.parseInt(raw);
+
   return {
     size: String(Math.max(48, parsed)),
     minimal: parsed <= 0,
@@ -285,6 +300,7 @@ export const renderHeaderComponent = async ({
 
   const coverClass =
     "relative w-[100cqw] left-[50%] right-[50%] -ml-[50cqw] -mr-[50cqw] h-[146px] sm:h-[243px]";
+
   const iconWrapClass = cn("relative z-10 mb-1", hasCover ? "-mt-[50px]" : "mt-4 sm:mt-6");
   const tinted = !!cover && cover.includes("tint=true");
 
@@ -293,9 +309,13 @@ export const renderHeaderComponent = async ({
       {/* Cover in a page-width container so "fit" (calc(100% + 56px)) tracks the form width,
           not the full page; "fill" still breaks out to 100vw via its var fallback. */}
       {hasCover && (
-        <div className="mx-auto w-full" style={{ maxWidth: PAGE_MAX_WIDTH }}>
+        <div className={cn("mx-auto w-full", PAGE_MAX_WIDTH_CLASS)}>
           {coverIsHex && cover && (
-            <div className={coverClass} data-bf-cover style={{ backgroundColor: cover }} />
+            <div
+              className={cn(coverClass, "bg-(--bf-cover-bg)")}
+              data-bf-cover
+              style={{ "--bf-cover-bg": cover } as React.CSSProperties}
+            />
           )}
           {coverIsUrl && cover && (
             <div className={cn(coverClass, "overflow-hidden bg-muted")} data-bf-cover>
@@ -314,17 +334,21 @@ export const renderHeaderComponent = async ({
                 decoding="async"
                 fetchPriority="high"
                 className={cn(
-                  "size-full object-cover",
+                  "size-full object-cover [object-position:var(--bf-cover-position)]",
                   tinted && "relative z-0 brightness-60 grayscale",
                 )}
                 // Honor the reposition customization (coverPosition); default matches editor + Figma.
-                style={{ objectPosition: `center ${coverPosition ?? DEFAULT_COVER_POSITION}%` }}
+                style={
+                  {
+                    "--bf-cover-position": `center ${coverPosition ?? DEFAULT_COVER_POSITION}%`,
+                  } as React.CSSProperties
+                }
               />
             </div>
           )}
         </div>
       )}
-      <div className="mx-auto px-4" style={{ maxWidth: PAGE_MAX_WIDTH }} data-bf-form-container>
+      <div className={cn("mx-auto px-4", PAGE_MAX_WIDTH_CLASS)} data-bf-form-container>
         <div className="flex flex-col">
           {iconIsUrl && icon && (
             <div className={iconWrapClass} data-bf-logo-container={hasCover ? "true" : undefined}>
@@ -358,9 +382,9 @@ export const renderHeaderComponent = async ({
           {hasTitle && (
             <h1
               data-bf-title
-              style={{ textWrap: "pretty" }}
               className={cn(
-                "font-serif text-4xl font-light -tracking-[0.03em] text-foreground sm:text-[48px]",
+                // oxlint-disable-next-line shadcn/no-arbitrary-values -- -0.03em sits between tracking-tight and tracking-tighter; nearest would shift title rendering
+                "font-serif text-4xl font-light -tracking-[0.03em] text-pretty text-foreground sm:text-9xl",
                 // With an icon: 12px here + the icon's 4px mb = 16px avatar→title, matching the editor
                 // (flex items don't margin-collapse, so the editor's mt-4-only gap is split here).
                 hasIcon ? "mt-3" : "mt-6 sm:mt-8",
@@ -377,6 +401,7 @@ export const renderHeaderComponent = async ({
 
 export const renderThankYouComponent = async (nodes: Value | null) => {
   if (!nodes || nodes.length === 0) return null;
+
   return createCompositeComponent(() => <ServerPlateBlock nodes={nodes} />);
 };
 
@@ -393,6 +418,7 @@ export const runPublicFormViewRSC = async (data: { shortId: string }) => {
 
   const isFieldByField = base.form?.settings?.presentationMode === "field-by-field";
   const steps = isFieldByField ? chunkSegmentsForFieldByField(rawSteps) : rawSteps;
+
   // Custom icon color lives in the Plate formHeader node, not the form row; extract so the
   // field-by-field client header matches the builder.
   const formHeaderIconColor =
@@ -420,6 +446,7 @@ export const runPublicFormViewRSC = async (data: { shortId: string }) => {
   const firstStepFieldTypes = stepComponents[0]
     ? [...new Set(stepComponents[0].fields.map((f) => f.fieldType))]
     : [];
+
   const preloadModuleUrls = await getFieldChunkUrls(firstStepFieldTypes);
 
   // Conditional-logic payload (plain JSON) so the public renderer enforces the same

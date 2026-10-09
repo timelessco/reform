@@ -16,7 +16,7 @@ const RatingField = ({ element, form, name }: FieldRendererProps<"Rating">) => {
     <form.AppField name={fieldName}>
       {(f) => {
         const hasErrors = f.state.meta.errors.length > 0 && f.state.meta.isTouched;
-        const selected = Number((f.state.value as string | undefined) ?? "") || 0;
+        const selected = Number(f.state.value ?? "") || 0;
         const active = hovered || selected;
 
         return (
@@ -31,6 +31,7 @@ const RatingField = ({ element, form, name }: FieldRendererProps<"Rating">) => {
               {Array.from({ length: starCount }, (_, i) => {
                 const value = i + 1;
                 const isOn = value <= active;
+
                 return (
                   <button
                     // eslint-disable-next-line @eslint-react/no-array-index-key
@@ -45,7 +46,8 @@ const RatingField = ({ element, form, name }: FieldRendererProps<"Rating">) => {
                     // Re-clicking the current rating clears it (matches the linear-scale toggle).
                     onClick={() => f.handleChange(value === selected ? "" : String(value))}
                     className={cn(
-                      "cursor-pointer rounded-[4px] transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none",
+                      "cursor-pointer rounded-xs transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none",
+                      // oxlint-disable-next-line shadcn/no-arbitrary-values -- brand amber #FFC107 has no theme token; needs design decision
                       isOn ? "text-[#FFC107]" : "text-(--color-gray-300) hover:text-[#FFC107]/50",
                       hasErrors && !isOn && "text-destructive/40",
                     )}

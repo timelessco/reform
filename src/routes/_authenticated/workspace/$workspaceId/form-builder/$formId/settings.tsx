@@ -6,6 +6,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 const SettingsPage = () => {
   const { formId } = Route.useParams();
+
   return <SettingsPageContent formId={formId} />;
 };
 

@@ -79,8 +79,10 @@ export const MinimalSidebarProvider = ({ children }: { children: React.ReactNode
 
 export const useMinimalSidebar = () => {
   const context = use(MinimalSidebarContext);
+
   if (context === undefined) {
     throw new Error("useMinimalSidebar must be used within a MinimalSidebarProvider");
   }
+
   return context;
 };

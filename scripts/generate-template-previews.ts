@@ -28,6 +28,7 @@ const TEMPLATE_IDS = [
 ];
 
 const PREVIEWS_DIR = join(import.meta.dirname, "..", "public", "template-previews");
+
 const BASE_URL = "http://localhost:3000/templates";
 
 const orcaEval = (expression: string): unknown => {
@@ -35,8 +36,11 @@ const orcaEval = (expression: string): unknown => {
     encoding: "utf-8",
     stdio: ["pipe", "pipe", "pipe"],
   });
+
   const parsed = JSON.parse(result);
+
   if (!parsed.ok) throw new Error(`Orca eval failed: ${JSON.stringify(parsed.error)}`);
+
   return parsed.result;
 };
 
@@ -45,8 +49,11 @@ const orcaScreenshot = (): Buffer => {
     encoding: "utf-8",
     stdio: ["pipe", "pipe", "pipe"],
   });
+
   const parsed = JSON.parse(result);
+
   if (!parsed.ok) throw new Error(`Screenshot failed: ${JSON.stringify(parsed.error)}`);
+
   return Buffer.from(parsed.result.data, "base64");
 };
 
@@ -57,9 +64,11 @@ const waitForForm = async (): Promise<void> => {
     const hasForm = orcaEval(
       `document.querySelector('[data-bf-form-container]')?.offsetHeight > 0`,
     );
+
     if (hasForm) return;
     await sleep(100);
   }
+
   throw new Error("Timed out waiting for form to load");
 };
 
@@ -105,6 +114,7 @@ const main = async (): Promise<void> => {
 
   for (const id of TEMPLATE_IDS) {
     console.log(`📸 ${id}`);
+
     try {
       await generatePreview(id);
     } catch (e) {

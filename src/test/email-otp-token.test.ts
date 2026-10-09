@@ -5,12 +5,14 @@ import { isEmailVerifiedToken } from "@/lib/server-fn/email-otp.server";
 // Mirror of email-otp.ts's pack() so tests mint tokens with a known secret. getSecret()
 // reads the env at call time, so overriding here is authoritative for the module too.
 const SECRET = "email-otp-test-secret";
+
 const FORM_ID = "0a418377-5392-4f55-a4ab-cca135b9b21c";
 
 const hmac = (payload: string) => createHmac("sha256", SECRET).update(payload).digest("base64url");
 
 const pack = (payload: Record<string, unknown>) => {
   const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+
   return `${body}.${hmac(body)}`;
 };
 
@@ -52,9 +54,11 @@ describe("isEmailVerifiedToken", () => {
   it("rejects a token whose payload was tampered with after signing", () => {
     const token = verifiedToken();
     const [, sig] = token.split(".");
+
     const forgedBody = Buffer.from(
       JSON.stringify({ t: "verified", e: "attacker@evil.com", f: FORM_ID, x: Date.now() + 60_000 }),
     ).toString("base64url");
+
     expect(isEmailVerifiedToken(`${forgedBody}.${sig}`, "attacker@evil.com", FORM_ID)).toBeFalsy();
   });
 
@@ -71,9 +75,11 @@ describe("isEmailVerifiedToken", () => {
         ).toString("base64url"),
       )
       .digest("base64url");
+
     const body = Buffer.from(
       JSON.stringify({ t: "verified", e: "user@example.com", f: FORM_ID, x: Date.now() + 60_000 }),
     ).toString("base64url");
+
     expect(isEmailVerifiedToken(`${body}.${wrongSig}`, "user@example.com", FORM_ID)).toBeFalsy();
   });
 

@@ -16,6 +16,7 @@ describe("extractQuestionsForStep", () => {
       [field("q1", "Input"), field("q2", "Textarea")],
       [stat, field("q3", "Email"), field("q4", "Phone")],
     ];
+
     const step0 = extractQuestionsForStep(steps, 0);
     expect(step0).toEqual([
       { questionId: "q1", questionType: "Input", questionIndex: 0, stepId: "step_0", stepIndex: 0 },
@@ -42,6 +43,7 @@ describe("extractQuestionsForStep", () => {
       ],
       [field("q2", "Input")],
     ];
+
     expect(extractQuestionsForStep(steps, 0)).toEqual([
       { questionId: "q1", questionType: "Input", questionIndex: 0, stepId: "step_0", stepIndex: 0 },
     ]);

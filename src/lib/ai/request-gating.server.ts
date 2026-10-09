@@ -35,27 +35,35 @@ export const resolvePlanAndSession = async (
 ): Promise<PlanResolution> => {
   let resolvedPlan: ServerPlan = "free";
   let resolvedOrgId: string | null = null;
+
   try {
     const { auth } = await import("@/lib/auth/auth");
+
     const session = (await auth.api.getSession({
       headers: getRequestHeaders(),
     })) as SessionWithOrgMeta | null;
+
     logger("[ai-plan] session present?", Boolean(session), {
       userId: session?.user?.id ?? null,
       activeOrganizationId: session?.session?.activeOrganizationId ?? null,
     });
+
     if (session) {
       resolvedOrgId = getActiveOrgId(session);
       const userEmail = session.user?.email ?? null;
       // Self-heal stale plan column (missed webhook): consult Polar by email, rewrite column on drift. Fast path (already paid) skips Polar.
       resolvedPlan = await getOrgPlanWithPolarSync(resolvedOrgId, userEmail);
+
       if (log) {
         const roleRaw = session.session.activeOrganizationRole;
         const role = typeof roleRaw === "string" ? roleRaw : null;
+
         const ipAddress =
           typeof session.session.ipAddress === "string" ? session.session.ipAddress : null;
+
         const userAgent =
           typeof session.session.userAgent === "string" ? session.session.userAgent : null;
+
         identifyUser(log, session, {
           fields: ["emailVerified"],
           session: false,
@@ -72,6 +80,7 @@ export const resolvePlanAndSession = async (
           }),
         });
       }
+
       logger("[ai-plan] resolved", {
         mode,
         orgId: resolvedOrgId,
@@ -86,6 +95,7 @@ export const resolvePlanAndSession = async (
     logger("[ai-plan] lookup threw — falling back to free", planLookupError);
     // Fall through free/null orgId — skips quota tracking, still gates as free.
   }
+
   return { resolvedPlan, resolvedOrgId };
 };
 
@@ -102,6 +112,7 @@ export const checkAiGating = async (orgId: string, plan: ServerPlan): Promise<Re
     limit: burst.limit,
     windowMinutes: burst.windowMinutes,
   });
+
   if (!burst.allowed) {
     // Distinct `code` so the client shows "slow down" vs. the daily "limit reached". Wire-compatible with client parseError(err).code.
     return new Response(
@@ -127,6 +138,7 @@ export const checkAiGating = async (orgId: string, plan: ServerPlan): Promise<Re
     used: quota.used,
     limit: quota.limit,
   });
+
   if (!quota.allowed) {
     // Wire-compatible with client parseError(err).code. useObject bypasses ofetch — body lands in Error.message string. `code` lets client JSON.parse + branch on stable id vs substring-matching AI_DAILY_LIMIT_ERROR (kept for back-compat).
     return new Response(

@@ -3,6 +3,7 @@ import type { ComponentType, ReactNode } from "react";
 import type { PlateElementProps } from "platejs/react";
 
 import { PlateElement, useEditorRef } from "platejs/react";
+import * as v from "valibot";
 
 import {
   AtSignIcon,
@@ -30,7 +31,7 @@ type FormFieldVariant = {
   customRender?: (props: PlateElementProps) => ReactNode;
 };
 
-const VARIANTS: Record<string, FormFieldVariant> = {
+const VARIANTS = {
   formInput: { label: "Short answer", icon: TextIcon },
   formEmail: { label: "Email", icon: AtSignIcon },
   formPhone: { label: "Phone", icon: PhoneIcon },
@@ -38,7 +39,13 @@ const VARIANTS: Record<string, FormFieldVariant> = {
   formLink: { label: "Link", icon: LinkIcon },
   formDate: { label: "Date", icon: CalendarIcon, defaultPlaceholder: "Select a date" },
   formTime: { label: "Time", icon: ClockIcon, defaultPlaceholder: "Select a time" },
-};
+} satisfies Record<string, FormFieldVariant>;
+
+const isVariantKey = (value: string): value is keyof typeof VARIANTS => value in VARIANTS;
+
+const isString = (value: unknown): value is string => v.is(v.string(), value);
+
+const isPositiveNumber = (value: unknown): value is number => v.is(v.number(), value) && value > 0;
 
 export const FormFieldElement = (allProps: PlateElementProps) => {
   const { children, ...props } = allProps;
@@ -48,24 +55,32 @@ export const FormFieldElement = (allProps: PlateElementProps) => {
   // generic "Add item". Hook subscribes to label edits and updates live.
   const fieldLabel = useFieldLabelText(element);
   const editor = useEditorRef();
-  const variant = VARIANTS[element.type];
+
+  const variant: FormFieldVariant | undefined = isVariantKey(element.type)
+    ? VARIANTS[element.type]
+    : undefined;
+
   if (!variant) return null;
+
   if (variant.customRender) return variant.customRender(allProps);
 
-  const placeholder = (element.placeholder as string | undefined) ?? variant.defaultPlaceholder;
+  const placeholder =
+    (isString(element.placeholder) ? element.placeholder : undefined) ?? variant.defaultPlaceholder;
+
   const Icon = variant.icon;
-  const isFieldArray = (element as { isFieldArray?: boolean }).isFieldArray === true;
-  const rawInitialRows = (element as { initialRows?: number }).initialRows;
+  const isFieldArray = element.isFieldArray === true;
+
   const initialRows =
-    isFieldArray && typeof rawInitialRows === "number" && rawInitialRows > 0
-      ? Math.floor(rawInitialRows)
-      : 1;
+    isFieldArray && isPositiveNumber(element.initialRows) ? Math.floor(element.initialRows) : 1;
+
   const addLabelText = `Add${fieldLabel ? ` ${fieldLabel.toLowerCase()}` : " item"}`;
 
   const setInitialRows = (next: number) => {
     const path = editor.api.findPath(element);
+
     if (!path) return;
     const clamped = Math.max(1, next);
+
     if (clamped === 1) {
       editor.tf.unsetNodes(["initialRows"], { at: path });
     } else {

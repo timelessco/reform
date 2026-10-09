@@ -7,7 +7,11 @@ export interface FontEntry {
   category: "sans-serif" | "serif" | "monospace" | "display";
 }
 
-export const FONT_REGISTRY: Record<string, FontEntry> = {
+export interface FontEntryMap {
+  [name: string]: FontEntry;
+}
+
+export const FONT_REGISTRY: FontEntryMap = {
   Inter: {
     cssValue: '"Inter-V", sans-serif',
     category: "sans-serif",
@@ -152,6 +156,8 @@ export const FONT_MAP: Record<string, string> = Object.fromEntries(
 /** Google Fonts CSS API URL for a font name, or null if self-hosted. */
 export const getGoogleFontUrl = (fontName: string): string | null => {
   const entry = FONT_REGISTRY[fontName];
+
   if (!entry?.googleFamily) return null;
+
   return `https://fonts.googleapis.com/css2?family=${entry.googleFamily}:wght@${entry.weights}&display=swap`;
 };

@@ -121,6 +121,7 @@ const getPublisherInfo = (
   if (!publishedBy) {
     return { name: "Unknown", image: undefined, initial: "?" };
   }
+
   return {
     name: publishedBy.name ?? "Unknown",
     image: publishedBy.image ?? undefined,
@@ -131,15 +132,24 @@ const getPublisherInfo = (
 /** Figma format: same-day → clock time, yesterday → "Yesterday", then "Nd ago"/"A week ago"/months/years. */
 const formatVersionTime = (dateString: string) => {
   const date = new Date(dateString);
+
   if (isToday(date)) return format(date, "h:mm a");
+
   if (isYesterday(date)) return "Yesterday";
   const days = differenceInCalendarDays(new Date(), date);
+
   if (days < 7) return `${days}d ago`;
+
   if (days < 14) return "A week ago";
+
   if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
+
   if (days < 60) return "A month ago";
+
   if (days < 365) return `${Math.floor(days / 30)} months ago`;
+
   if (days < 730) return "A year ago";
+
   return `${Math.floor(days / 365)} years ago`;
 };
 
@@ -150,12 +160,15 @@ const groupVersionsByDate = (versions: VersionItem[]) => {
     { label: "Yesterday", items: [] },
     { label: "Earlier", items: [] },
   ];
+
   for (const version of versions) {
     const date = new Date(version.publishedAt);
+
     if (isToday(date)) buckets[0].items.push(version);
     else if (isYesterday(date)) buckets[1].items.push(version);
     else buckets[2].items.push(version);
   }
+
   return buckets.filter((bucket) => bucket.items.length > 0);
 };
 
@@ -177,8 +190,8 @@ const RailNode = ({
     aria-pressed={active}
     onClick={onClick}
     className={cn(
-      "relative z-10 flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full bg-gray-200 text-gray-800 transition-colors",
-      active && "bg-gray-300",
+      "relative z-10 flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full bg-muted text-sidebar-foreground transition-colors",
+      active && "bg-accent",
     )}
   >
     {icon}
@@ -204,6 +217,7 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
   const handleRestore = useCallback(
     async (versionId: string) => {
       setIsRestoring(true);
+
       try {
         await restoreVersion(formId, versionId);
         toast.success("Version restored. Publish again to make it live.");
@@ -225,6 +239,7 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
     if (restoreConfirmVersionId) {
       void handleRestore(restoreConfirmVersionId);
     }
+
     setRestoreConfirmVersionId(null);
   }, [restoreConfirmVersionId, handleRestore]);
 
@@ -235,13 +250,14 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
     if (filter === "mine" && currentUserId) {
       return versionList.filter((v) => v.publishedBy?.id === currentUserId);
     }
+
     return versionList;
   }, [versionList, filter, currentUserId]);
 
   const groups = useMemo(() => groupVersionsByDate(filteredList), [filteredList]);
 
-  // No auto-select: default = current version (nothing highlighted, only hover). A row highlights
-  // (bg-muted) only once the user clicks it — never the first row by default.
+  // No auto-select. Default is current version, nothing highlighted. A row highlights (bg-muted)
+  // only after a click, never the first row by default.
   const effectiveVersionId = selectedVersionId;
   const currentVersionId = versionList[0]?.id ?? null;
 
@@ -249,8 +265,8 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
     if (currentVersionId) selectVersion(currentVersionId);
   }, [currentVersionId, selectVersion]);
 
-  // Callback ref on the selected row → measure its center vs the rail so the chevron slides to it.
-  // No useEffect: the ref fires during commit when selection changes (old row detaches, new attaches).
+  // Callback ref on the selected row measures its center vs the rail so the chevron slides to it.
+  // No useEffect; the ref fires during commit when selection changes (old row detaches, new attaches).
   const measureSelectedRow = useCallback((node: HTMLButtonElement | null) => {
     if (!node || !railRef.current) return;
     const rowRect = node.getBoundingClientRect();
@@ -258,9 +274,10 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
     const next = rowRect.top - railRect.top + rowRect.height / 2;
     setIndicator((prev) => {
       if (prev !== null && Math.abs(prev.top - next) < 0.5) return prev;
-      // Constant-velocity feel: scale duration to travel distance, clamped 200–500ms.
+      // Constant-velocity feel; duration scales with travel distance, clamped 200–500ms.
       const distance = prev === null ? 0 : Math.abs(next - prev.top);
       const duration = prev === null ? 0 : Math.min(500, Math.max(200, distance / 0.6));
+
       return { top: next, duration };
     });
   }, []);
@@ -283,27 +300,30 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
         >
           {/* Figma cell: 14px medium count title, 13px name w/ 16px avatar, leading-[1.15]. */}
           <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <p className="truncate text-base leading-[1.15] font-medium tracking-[0.14px] text-gray-800">
+            {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- no leading/tracking tokens for 1.15/0.14px; needs design decision */}
+            <p className="truncate text-base leading-[1.15] font-medium tracking-[0.14px] text-sidebar-foreground">
               {version.version} Change{version.version === 1 ? "" : "s"}
             </p>
             <div className="flex min-w-0 items-center gap-1.5">
               <Avatar className="size-4 shrink-0 rounded-full">
                 <AvatarImage src={publisher.image} alt={publisher.name} />
+                {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- no text token for 10px (nearest 11px); needs design decision */}
                 <AvatarFallback className="rounded-full bg-muted text-[10px] text-muted-foreground">
                   {publisher.initial}
                 </AvatarFallback>
               </Avatar>
-              <span className="truncate text-[13px] leading-[1.15] font-[420] tracking-[0.13px] text-gray-600">
+              {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- no leading/font/tracking tokens for 1.15/420/0.13px; needs design decision */}
+              <span className="truncate text-sm leading-[1.15] font-[420] tracking-[0.13px] text-muted-foreground">
                 {publisher.name}
               </span>
             </div>
           </div>
 
-          {/* Right slot: timestamp at rest; ⋯ menu reveals on row hover/focus (or while open).
-              ⋯ stays transparent until hovered directly → gray-300 (its active fill).
-              Timestamp top-aligned (with title); ⋯ vertically centered, per Figma. */}
+          {/* Right slot: timestamp at rest; ⋯ menu reveals on row hover/focus (or while open). ⋯
+              stays transparent until hovered directly (its fill). Timestamp top-aligned, ⋯ centered, per Figma. */}
           <div className="relative flex shrink-0 items-start self-stretch">
-            <span className="pt-[1px] text-[13px] leading-[1.15] font-medium tracking-[0.13px] text-gray-500 transition-opacity group-focus-within/vh-row:opacity-0 group-hover/vh-row:opacity-0 group-has-[[data-popup-open]]/vh-row:opacity-0">
+            {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- no leading/tracking tokens for 1.15/0.13px; needs design decision */}
+            <span className="pt-0.25 text-sm leading-[1.15] font-medium tracking-[0.13px] text-muted-foreground transition-opacity group-focus-within/vh-row:opacity-0 group-hover/vh-row:opacity-0 group-has-[[data-popup-open]]/vh-row:opacity-0">
               {formatVersionTime(version.publishedAt)}
             </span>
             <div className="absolute inset-y-0 right-0 flex items-center opacity-0 transition-opacity group-focus-within/vh-row:opacity-100 group-hover/vh-row:opacity-100 group-has-[[data-popup-open]]/vh-row:opacity-100">
@@ -312,7 +332,7 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
                   render={
                     <button
                       type="button"
-                      className="inline-flex size-7 cursor-pointer items-center justify-center rounded-lg p-1.25 text-muted-foreground transition-colors hover:bg-gray-300 data-popup-open:bg-gray-300"
+                      className="inline-flex size-7 cursor-pointer items-center justify-center rounded-lg p-1.25 text-muted-foreground transition-colors hover:bg-accent data-popup-open:bg-accent"
                       onClick={stopPropagation}
                       onKeyDown={(e) => e.stopPropagation()}
                       aria-label="Version actions"
@@ -328,17 +348,17 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
                   className="flex min-w-[151px] flex-col gap-0.5 rounded-xl p-1"
                 >
                   <DropdownMenuItem
-                    className="h-[26px] rounded-lg px-2 text-[13px]"
+                    className="h-[26px] rounded-lg px-2 text-sm"
                     disabled={isRestoring}
                     onClick={() => setRestoreConfirmVersionId(version.id)}
                   >
                     {isRestoring ? <Loader2Icon className="mr-1.5 size-3.5 animate-spin" /> : null}
                     Restore this version
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="h-[26px] rounded-lg px-2 text-[13px]">
+                  <DropdownMenuItem className="h-[26px] rounded-lg px-2 text-sm">
                     Publish this version
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="h-[26px] rounded-lg px-2 text-[13px]">
+                  <DropdownMenuItem className="h-[26px] rounded-lg px-2 text-sm">
                     Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -355,10 +375,12 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
     <Sidebar
       collapsible="none"
       // [font-variation-settings:normal] un-pins the global opsz20/wght450 so font-weight utils + Figma optical size apply
+      // oxlint-disable-next-line shadcn/no-arbitrary-values -- font-variation-settings unpin + 40% slide distance have no tokens; needs design decision
       className="size-full animate-in border-none duration-200 ease-out [font-variation-settings:normal] slide-in-from-right-[40%]"
     >
       <SidebarHeader className="h-11 shrink-0 flex-row items-center justify-between py-2 pr-2 pl-4">
-        <h2 className="text-base leading-[1.15] font-medium tracking-[0.14px] text-gray-800">
+        {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- no leading/tracking tokens for 1.15/0.14px; needs design decision */}
+        <h2 className="text-base leading-[1.15] font-medium tracking-[0.14px] text-sidebar-foreground">
           Version history
         </h2>
         <div className="flex items-center gap-1">
@@ -367,7 +389,7 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
               render={
                 <button
                   type="button"
-                  className="flex size-7 cursor-pointer items-center justify-center rounded-lg text-gray-800 transition-colors hover:bg-secondary data-popup-open:bg-secondary"
+                  className="flex size-7 cursor-pointer items-center justify-center rounded-lg text-sidebar-foreground transition-colors hover:bg-secondary data-popup-open:bg-secondary"
                   aria-label="Filter versions"
                 />
               }
@@ -384,10 +406,10 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
                 value={filter}
                 onValueChange={(value) => setFilter(value as VersionFilter)}
               >
-                <DropdownMenuRadioItem value="all" className="text-[13px]">
+                <DropdownMenuRadioItem value="all" className="text-sm">
                   All
                 </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="mine" className="text-[13px]">
+                <DropdownMenuRadioItem value="mine" className="text-sm">
                   Only yours
                 </DropdownMenuRadioItem>
               </DropdownMenuRadioGroup>
@@ -396,7 +418,7 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
           <Button
             variant="ghost-flat"
             size="icon-xs"
-            className="size-7 rounded-lg p-1.25 text-gray-800 hover:text-foreground"
+            className="size-7 rounded-lg p-1.25 text-sidebar-foreground hover:text-foreground"
             onClick={closeSidebar}
             aria-label="Close"
           >
@@ -416,7 +438,7 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
             {filteredList.length > 1 && (
               <div
                 aria-hidden
-                className="pointer-events-none absolute top-3 bottom-3 w-px bg-gray-200"
+                className="pointer-events-none absolute top-3 bottom-3 w-px bg-border"
               />
             )}
             <div className="flex h-8 items-center">
@@ -435,25 +457,31 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
               />
             </div>
 
-            {/* Active-version pointer: slides to the selected row's center. Hidden when no version is
-                selected (current version / Return to editing) — the live node at top denotes current. */}
+            {/* Active-version pointer, slides to the selected row's center. Hidden when no version
+                is selected (current version / Return to editing); the live node denotes current. */}
             {effectiveVersionId !== null && indicator !== null && (
               <div
                 aria-hidden
-                className="pointer-events-none absolute left-1/2 z-10 flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-gray-200 text-gray-800 transition-[top] ease-out"
-                style={{ top: indicator.top, transitionDuration: `${indicator.duration}ms` }}
+                // oxlint-disable-next-line shadcn/no-arbitrary-values -- no transition token for top-only; needs design decision
+                className="pointer-events-none absolute top-[var(--version-indicator-top)] left-1/2 z-10 flex size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-muted text-sidebar-foreground transition-[top] duration-(--version-indicator-dur) ease-out"
+                style={
+                  {
+                    "--version-indicator-top": `${indicator.top}px`,
+                    "--version-indicator-dur": `${indicator.duration}ms`,
+                  } as React.CSSProperties
+                }
               >
                 <FigChevronDownIcon className="size-4" />
               </div>
             )}
           </div>
 
-          {/* Content */}
           <div className="flex min-w-0 flex-1 flex-col gap-2">
             {groupByDate ? (
               groups.map((group) => (
                 <div key={group.label} className="flex flex-col gap-2">
-                  <p className="px-2.5 py-2 text-base leading-[1.15] font-medium tracking-[0.14px] text-gray-800">
+                  {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- no leading/tracking tokens for 1.15/0.14px; needs design decision */}
+                  <p className="px-2.5 py-2 text-base leading-[1.15] font-medium tracking-[0.14px] text-sidebar-foreground">
                     {group.label}
                   </p>
                   {group.items.map((version) => renderRow(version))}
@@ -461,7 +489,8 @@ export const VersionHistorySidebar = ({ formId }: VersionHistorySidebarProps) =>
               ))
             ) : (
               <>
-                <p className="px-2.5 py-2 text-base leading-[1.15] font-medium tracking-[0.14px] text-gray-800">
+                {/* oxlint-disable-next-line shadcn/no-arbitrary-values -- no leading/tracking tokens for 1.15/0.14px; needs design decision */}
+                <p className="px-2.5 py-2 text-base leading-[1.15] font-medium tracking-[0.14px] text-sidebar-foreground">
                   Current Version
                 </p>
                 {filteredList.map((version) => renderRow(version))}

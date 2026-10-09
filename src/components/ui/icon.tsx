@@ -9,6 +9,7 @@ export interface IconProps extends React.ComponentProps<"svg"> {
 // Default aria-hidden — most icons are decorative.
 export const Icon = (props: IconProps) => {
   const { "aria-label": ariaLabel, children, className, name, ...rest } = props;
+
   const ariaLabelProps: AriaHiddenProps | AriaLabelProps = isNullable(ariaLabel)
     ? {
         "aria-hidden": "true",

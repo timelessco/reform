@@ -10,6 +10,7 @@ export const getCustomDomainFormByIdRSC = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const host = getRequestHost({ xForwardedHost: true });
     const { runCustomDomainByIdRSC } = await import("./custom-domain-view-rsc.impl");
+
     return runCustomDomainByIdRSC(data, host);
   });
 
@@ -18,5 +19,6 @@ export const getCustomDomainFormBySlugRSC = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const host = getRequestHost({ xForwardedHost: true });
     const { runCustomDomainBySlugRSC } = await import("./custom-domain-view-rsc.impl");
+
     return runCustomDomainBySlugRSC(data, host);
   });

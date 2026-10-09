@@ -69,6 +69,7 @@ export const getPublishedFormByShortId = createServerFn({ method: "GET" })
 
     const canDisableBranding =
       isServerPlan(form.orgPlan) && planUnlocks(form.orgPlan, "disableBranding");
+
     const liveBranding = form.liveSettings?.branding ?? true;
     const liveAnalytics = form.liveSettings?.analytics ?? false;
     const effectiveBranding = canDisableBranding ? liveBranding : true;
@@ -105,6 +106,7 @@ export const getPublishedFormByShortId = createServerFn({ method: "GET" })
         .select({ value: count() })
         .from(submissions)
         .where(eq(submissions.formId, form.id));
+
       if (submissionCount >= settings.maxSubmissions) {
         return {
           form: null,
@@ -128,6 +130,7 @@ export const getPublishedFormByShortId = createServerFn({ method: "GET" })
       content: form.draftContent,
       icon: form.draftIcon,
     });
+
     // Prefer the generated content thumbnail (Plate render); fall back to the Satori OG card.
     const ogImageUrl =
       form.previewImageUrl ??
@@ -136,6 +139,7 @@ export const getPublishedFormByShortId = createServerFn({ method: "GET" })
         title: og.title,
         description: og.description,
       });
+
     const ogDescription = og.description;
 
     if (version) {
@@ -199,6 +203,7 @@ export const verifyFormPassword = createServerFn({ method: "POST" })
     }
 
     const stored = formRow.settings?.password;
+
     if (!stored) {
       return { valid: false };
     }
@@ -210,6 +215,7 @@ export const verifyFormPassword = createServerFn({ method: "POST" })
     // Legacy plaintext row: constant-time compare, then best-effort upgrade to a hash so
     // the plaintext is replaced on first successful login. Failure must not break login.
     const ok = timingSafeEqualStr(stored, data.password);
+
     if (ok) {
       try {
         const hashed = hashFormPassword(data.password);
@@ -223,5 +229,6 @@ export const verifyFormPassword = createServerFn({ method: "POST" })
         // best-effort: row stays plaintext until next settings save
       }
     }
+
     return { valid: ok };
   });

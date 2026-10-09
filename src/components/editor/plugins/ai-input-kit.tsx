@@ -9,6 +9,7 @@ export {
   toggleAIInput,
   triggerAIInput,
 } from "@/components/editor/plugins/ai-input-base";
+
 export type { AIInputState } from "@/components/editor/plugins/ai-input-base";
 
 const AIInputUIPlugin = AIInputPlugin.configure({

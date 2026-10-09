@@ -27,6 +27,7 @@ const ERROR_HEADERS = {
 };
 
 const HASH_RE = /^[A-Za-z0-9_-]{10}$/;
+
 const PNG_SUFFIX = ".png";
 
 export const Route = createFileRoute("/api/og/$shortId/$hash")({
@@ -79,12 +80,14 @@ export const Route = createFileRoute("/api/og/$shortId/$hash")({
         });
 
         const expected = computeOgHash({ title: og.title, description: og.description });
+
         if (expected !== hashParam) {
           return new Response("hash_mismatch", { status: 404, headers: NOT_FOUND_HEADERS });
         }
 
         // Resolve icon for Satori <img>: sprite names → data URL; uploads → absolute URL; else `f.` brand mark in OgCard.
         let iconUrl: string | null = null;
+
         if (isIconUrl(og.icon)) {
           iconUrl = og.icon;
         } else if (og.icon && isSpriteIconName(og.icon)) {
@@ -102,7 +105,9 @@ export const Route = createFileRoute("/api/og/$shortId/$hash")({
             />,
             { width: 1200, height: 630 },
           );
+
           const body = await image.arrayBuffer();
+
           return new Response(body, {
             status: 200,
             headers: {
@@ -113,6 +118,7 @@ export const Route = createFileRoute("/api/og/$shortId/$hash")({
           });
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
+
           return new Response(`og_render_failed: ${message}`, {
             status: 500,
             headers: ERROR_HEADERS,

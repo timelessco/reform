@@ -32,20 +32,25 @@ export const DatePicker = ({
   const [date, setDate] = React.useState<Date | undefined>(() => {
     if (value) {
       const parsed = new Date(value);
+
       return isNaN(parsed.getTime()) ? undefined : parsed;
     }
+
     return undefined;
   });
+
   const [isOpen, setIsOpen] = React.useState(false);
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     setDate(selectedDate);
+
     if (selectedDate && onChange) {
       const formatted = format(selectedDate, "yyyy-MM-dd");
       onChange(formatted);
     } else if (onChange) {
       onChange(null);
     }
+
     setIsOpen(false);
   };
 
@@ -79,6 +84,7 @@ export const DatePicker = ({
           </button>
         }
       />
+      {/* oxlint-disable-next-line shadcn/no-inline-styles -- themeReanchor.style from useReanchorThemeProps; custom-prop map incl. cascade-critical color */}
       <PopoverContent className={themeReanchor.className} style={themeReanchor.style} align="start">
         <Calendar mode="single" selected={date} onSelect={handleDateSelect} />
       </PopoverContent>

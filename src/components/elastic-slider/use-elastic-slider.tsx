@@ -16,12 +16,16 @@ import { clamp } from "@/lib/utils";
 // slider edge sits near the viewport border (e.g. the right-pinned sidebar) they shrink to the
 // cursor travel that actually exists, so the rubber stays reachable on both ends (computeRubberStretch).
 const CLICK_THRESHOLD = 3;
+
 const DEAD_ZONE = 32;
+
 const MAX_CURSOR_RANGE = 200;
+
 const MAX_STRETCH = 8;
 
 // Layout offsets used by the "handle dodges value text" calculation.
 const HANDLE_BUFFER = 8;
+
 const VALUE_OFFSET = 12 - 8;
 
 // Width of the hidden "auto" zone reserved at the left edge when allowAuto.
@@ -78,11 +82,13 @@ const interactionReducer = (
 const decimalsForStep = (step: number): number => {
   const s = step.toString();
   const dot = s.indexOf(".");
+
   return dot === -1 ? 0 : s.length - dot - 1;
 };
 
 const roundValue = (val: number, step: number): number => {
   const raw = Math.round(val / step) * step;
+
   return Number.parseFloat(raw.toFixed(decimalsForStep(step)));
 };
 
@@ -90,9 +96,11 @@ const roundValue = (val: number, step: number): number => {
 const snapToDecile = (rawValue: number, min: number, max: number): number => {
   const normalized = (rawValue - min) / (max - min);
   const nearest = Math.round(normalized * 10) / 10;
+
   if (Math.abs(normalized - nearest) <= 0.03125) {
     return min + nearest * (max - min);
   }
+
   return rawValue;
 };
 
@@ -130,6 +138,7 @@ export const useElasticSlider = ({
 }: UseElasticSliderOptions) => {
   const hasAutoSlot = allowAuto && typeof onAutoChange === "function";
   const slotOffset = hasAutoSlot ? AUTO_SLOT_PERCENT : 0;
+
   const [value = min, setValue] = useControllableState({
     prop: valueProp,
     defaultProp: defaultValue ?? min,
@@ -145,6 +154,7 @@ export const useElasticSlider = ({
     interactionReducer,
     initialInteractionState,
   );
+
   const { isInteracting, isDragging, isHovered, keyboardFocusRing } = interaction;
 
   // Pointer session state — mutable, does not trigger re-renders.
@@ -191,6 +201,7 @@ export const useElasticSlider = ({
   const positionToState = useCallback(
     (clientX: number): { kind: "auto" } | { kind: "value"; value: number } => {
       const rect = wrapperRectRef.current;
+
       if (!rect) return { kind: "value", value: min };
 
       const sceneX = (clientX - rect.left) / scaleRef.current;
@@ -219,12 +230,15 @@ export const useElasticSlider = ({
   const markStops = useMemo(() => {
     if (markStyle !== "dot") return null;
     const range = max - min;
+
     if (range <= 0) return [];
     const interval = Math.max(step, Math.round(range / 8 / step) * step);
     const interior: number[] = [];
+
     for (let v = min + interval; v < max - 1e-9; v += interval) {
       interior.push(roundValue(v, step));
     }
+
     return interior;
   }, [markStyle, min, max, step]);
 
@@ -232,6 +246,7 @@ export const useElasticSlider = ({
     (v: number): number => {
       if (!markStops) return v;
       const stops = [min, ...markStops, max];
+
       return stops.reduce((best, s) => (Math.abs(s - v) < Math.abs(best - v) ? s : best), stops[0]);
     },
     [markStops, min, max],
@@ -245,6 +260,7 @@ export const useElasticSlider = ({
       if (shouldReduceMotion) {
         fillPercent.jump(targetPercent);
         animRef.current = null;
+
         return;
       }
 
@@ -263,6 +279,7 @@ export const useElasticSlider = ({
 
   const computeRubberStretch = useCallback((clientX: number, sign: number) => {
     const rect = wrapperRectRef.current;
+
     if (!rect) return 0;
 
     // The cursor stops at the viewport edge, so a slider pinned near it has little room on that
@@ -298,6 +315,7 @@ export const useElasticSlider = ({
 
     // Snapshot the wrapper rect so later math is immune to layout shifts.
     const wrapper = wrapperRef.current;
+
     if (wrapper) {
       const rect = wrapper.getBoundingClientRect();
       wrapperRectRef.current = rect;
@@ -320,6 +338,7 @@ export const useElasticSlider = ({
       if (isClickRef.current) return;
 
       const rect = wrapperRectRef.current;
+
       if (rect && !shouldReduceMotion) {
         if (e.clientX < rect.left) {
           rubberStretch.jump(computeRubberStretch(e.clientX, -1));
@@ -361,6 +380,7 @@ export const useElasticSlider = ({
       if (!isInteracting) return;
 
       const next = positionToState(e.clientX);
+
       if (next.kind === "auto") {
         if (isClickRef.current) {
           animateFillTo(0);
@@ -374,6 +394,7 @@ export const useElasticSlider = ({
       } else if (isClickRef.current) {
         // Coarse sliders (≤10 positions) snap to nearest step; continuous ones keep decile-magnetic.
         const discreteSteps = (max - min) / step;
+
         const snapped =
           discreteSteps <= 10
             ? clamp(min + Math.round((next.value - min) / step) * step, min, max)
@@ -479,10 +500,12 @@ export const useElasticSlider = ({
 
   useLayoutEffect(() => {
     const wrapper = wrapperRef.current;
+
     if (!wrapper) return;
 
     const measure = () => {
       const trackWidth = wrapper.offsetWidth;
+
       if (trackWidth <= 0) return;
 
       const labelEl = labelRef.current;
@@ -505,6 +528,7 @@ export const useElasticSlider = ({
     observer.observe(wrapper);
 
     if (labelRef.current) observer.observe(labelRef.current);
+
     if (valueRef.current) observer.observe(valueRef.current);
 
     return () => observer.disconnect();
@@ -522,6 +546,7 @@ export const useElasticSlider = ({
   const hashMarkPct = useCallback(
     (i: number) => {
       const rawPct = discreteSteps <= 10 ? (((i + 1) * step) / (max - min)) * 100 : (i + 1) * 10;
+
       return slotOffset + (rawPct * numericTrackPercent) / 100;
     },
     [discreteSteps, max, min, step, slotOffset, numericTrackPercent],
@@ -533,6 +558,7 @@ export const useElasticSlider = ({
     () =>
       Array.from({ length: hashMarkCount }, (_, i) => {
         const pct = hashMarkPct(i);
+
         return { pct, hidden: pct < dodge.left };
       }),
     [hashMarkCount, hashMarkPct, dodge.left],
@@ -543,11 +569,13 @@ export const useElasticSlider = ({
   const dotMarks = useMemo(() => {
     if (!markStops) return null;
     const hideWithin = markStops.length > 0 ? 100 / (markStops.length + 1) / 2 : 5;
+
     return markStops.map((v) => {
       const pct = percentFromValue(v);
       const nearHandle = Math.abs(pct - percentage) < hideWithin;
       // Hide dots that fall under the label text (Figma: marks never sit behind the label).
       const underLabel = pct < dodge.left;
+
       return { pct, hidden: nearHandle || underLabel };
     });
   }, [markStops, percentFromValue, percentage, dodge.left]);

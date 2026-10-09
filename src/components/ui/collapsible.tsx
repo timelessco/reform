@@ -15,7 +15,7 @@ export const CollapsibleTrigger = ({ className, ...props }: CollapsiblePrimitive
     data-slot="collapsible-trigger"
     type="button"
     className={cn(
-      "aria-disclosure-button w-full cursor-pointer outline-hidden hover:bg-(--color-gray-alpha-100) hover:text-foreground focus-visible:ring-1 focus-visible:ring-gray-200",
+      "w-full cursor-pointer outline-hidden hover:bg-(--color-gray-alpha-100) hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring",
       className,
     )}
     {...props}

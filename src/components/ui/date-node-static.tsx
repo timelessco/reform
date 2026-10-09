@@ -1,8 +1,10 @@
+import type { TDateElement } from "platejs";
 import type { SlateElementProps } from "platejs/static";
 import { SlateElement } from "platejs/static";
 
 const formatStaticDate = (dateValue: string | undefined): string => {
   if (!dateValue) return "No date";
+
   // No relative labels (Today/Yesterday) — server vs client would mismatch on hydration.
   // Interactive DateElement swaps them in client-side after mount.
   return new Date(dateValue).toLocaleDateString(undefined, {
@@ -12,9 +14,9 @@ const formatStaticDate = (dateValue: string | undefined): string => {
   });
 };
 
-export const DateElementStatic = (props: SlateElementProps) => {
+export const DateElementStatic = (props: SlateElementProps<TDateElement>) => {
   const { element } = props;
-  const dateValue = element.date as string | undefined;
+  const dateValue = element.date;
 
   return (
     <SlateElement className="inline-block" {...props}>

@@ -7,10 +7,6 @@ import { IconSignature } from "@/components/ui/icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-// Script font stack for the "Sign here" placeholder — no bundled font, falls back across OSes to a
-// handwriting face, then generic cursive.
-const SIGNATURE_FONT = '"Snell Roundhand", "Segoe Script", "Brush Script MT", cursive';
-
 export const FormSignatureElement = ({ children, ...props }: PlateElementProps) => {
   const { attributes, element, ...rest } = props;
 
@@ -40,14 +36,11 @@ export const FormSignatureElement = ({ children, ...props }: PlateElementProps) 
           </TooltipTrigger>
           <TooltipContent side="right">Signature</TooltipContent>
         </Tooltip>
-        <span
-          className="pointer-events-none absolute inset-0 flex items-center justify-center text-3xl text-muted-foreground/45 italic"
-          style={{ fontFamily: SIGNATURE_FONT }}
-        >
+        <span className="pointer-events-none absolute inset-0 flex items-center justify-center [font-family:'Snell_Roundhand','Segoe_Script','Brush_Script_MT',cursive] text-3xl text-muted-foreground/45 italic">
           Sign here
         </span>
       </div>
-      {/* Plate's BelowRootNodes (incl. BlockSelection) ride with {children}, which we hide —
+      {/* Plate's BelowRootNodes (incl. BlockSelection) ride with {children}, which we hide;
           render the highlight explicitly so block selection still shows. */}
       <BlockSelection {...props} />
     </PlateElement>

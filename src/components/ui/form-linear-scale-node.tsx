@@ -3,22 +3,22 @@ import type { PlateElementProps } from "platejs/react";
 import { PlateElement } from "platejs/react";
 
 import { BlockSelection } from "@/components/ui/block-selection";
-import { buildScaleValues, LINEAR_SCALE_DEFAULTS } from "@/lib/form-schema/form-field-constants";
+import { buildScaleValues, extractLinearScaleFields } from "@/lib/form-schema/form-field-constants";
 import { cn } from "@/lib/utils";
 
 export const FormLinearScaleElement = ({ children, ...props }: PlateElementProps) => {
   const { attributes, element, ...rest } = props;
 
-  const min = (element.scaleMin as number | undefined) ?? LINEAR_SCALE_DEFAULTS.min;
-  const max = (element.scaleMax as number | undefined) ?? LINEAR_SCALE_DEFAULTS.max;
-  const step = (element.scaleStep as number | undefined) ?? LINEAR_SCALE_DEFAULTS.step;
+  const { min, max, step, anchorLeft, anchorCenter, anchorRight } =
+    extractLinearScaleFields(element);
+
   const values = buildScaleValues(min, max, step);
 
   // Anchor labels under the scale (block menu "Add Anchor", Figma 25634-16668).
-  const anchorLeft = (element.anchorLeft as string | undefined)?.trim();
-  const anchorCenter = (element.anchorCenter as string | undefined)?.trim();
-  const anchorRight = (element.anchorRight as string | undefined)?.trim();
-  const hasAnchors = Boolean(anchorLeft || anchorCenter || anchorRight);
+  const left = anchorLeft?.trim();
+  const center = anchorCenter?.trim();
+  const right = anchorRight?.trim();
+  const hasAnchors = Boolean(left || center || right);
 
   return (
     <PlateElement
@@ -43,9 +43,9 @@ export const FormLinearScaleElement = ({ children, ...props }: PlateElementProps
           </div>
           {hasAnchors && (
             <div className="flex items-baseline gap-2 text-[13px] leading-none text-muted-foreground">
-              <span className="flex-1 truncate text-left">{anchorLeft}</span>
-              <span className="flex-1 truncate text-center">{anchorCenter}</span>
-              <span className="flex-1 truncate text-right">{anchorRight}</span>
+              <span className="flex-1 truncate text-left">{left}</span>
+              <span className="flex-1 truncate text-center">{center}</span>
+              <span className="flex-1 truncate text-right">{right}</span>
             </div>
           )}
         </div>

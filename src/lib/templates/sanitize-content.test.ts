@@ -4,6 +4,7 @@ import type { LogicBlockNode } from "@/lib/logic/types";
 import { classifyUrl, sanitizeTemplateContent } from "./sanitize-content";
 
 const BLOB = "https://abc.public.blob.vercel-storage.com/editor/u1/x.png";
+
 const UNSPLASH = "https://images.unsplash.com/photo-123?w=800";
 
 it("classifies URLs", () => {
@@ -32,13 +33,17 @@ it("copies vercel-blob assets and records them", async () => {
     { type: "formHeader", title: "Hi", icon: BLOB, cover: UNSPLASH, children: [{ text: "" }] },
     { type: "img", url: BLOB, children: [{ text: "" }] },
   ];
+
   const copied: string[] = [];
+
   const result = await sanitizeTemplateContent(content, {
     copyAsset: async (u) => {
       copied.push(u);
+
       return "https://abc.public.blob.vercel-storage.com/templates/t1/new.png";
     },
   });
+
   expect(copied).toHaveLength(2); // header icon + img url
   expect(result.assetUrls).toHaveLength(2);
   expect((result.content[0] as any).icon).toContain("/templates/t1/");
@@ -57,6 +62,7 @@ it("strips blob: and unknown urls and drops media nodes that lose their url", as
     },
     { type: "img", url: "blob:http://x/z", children: [{ text: "" }] },
   ];
+
   const result = await sanitizeTemplateContent(content, { copyAsset: async () => "unused" });
   expect((result.content[0] as any).icon).toBeNull();
   expect((result.content[0] as any).cover).toBeNull();
@@ -75,6 +81,7 @@ it("strips logic redirect actions", async () => {
       children: [{ text: "" }],
     },
   ];
+
   const result = await sanitizeTemplateContent(content, { copyAsset: async () => "unused" });
   const block = result.content[0] as any;
   expect(block.actions).toEqual([{ kind: "show", target: "a" }]);
@@ -93,6 +100,7 @@ it("strips redirect actions from a real-shaped logicBlock node", async () => {
     ],
     children: [{ text: "" }],
   };
+
   const result = await sanitizeTemplateContent([node], { copyAsset: async () => "unused" });
   const block = result.content[0] as any;
   expect(block.actions).toEqual([{ kind: "show", target: "newsletter" }]);

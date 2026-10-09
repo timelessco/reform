@@ -16,6 +16,7 @@ export const ErrorBoundary = ({ error }: ErrorComponentProps) => {
 
   const createGithubIssue = useCallback(() => {
     const title = encodeURIComponent(`Error: ${parsed.message}`);
+
     const body = encodeURIComponent(`## Error Details
 
 **Message:** ${parsed.message}
@@ -42,6 +43,7 @@ ${stack || "No stack trace available"}
 ## Actual Behavior
 
 `);
+
     window.open(
       `https://github.com/timelessco/better-forms/issues/new?title=${title}&body=${body}`,
       "_blank",

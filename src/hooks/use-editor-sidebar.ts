@@ -6,6 +6,7 @@ import type { SettingsTab, ShareTab, SidebarType } from "@/collections/local/edi
 import { closeOpenBlockMenu } from "@/lib/editor/block-menu-close";
 
 export type { SettingsTab, SidebarType };
+
 export type EmbedType = "standard" | "popup" | "fullpage";
 
 const useEditorUIState = () => {
@@ -13,6 +14,7 @@ const useEditorUIState = () => {
     (q) => q.from({ state: editorUICollection }).where(({ state }) => eq(state.id, "editor-ui")),
     [],
   );
+
   return (
     data?.[0] ?? {
       activeSidebar: null,
@@ -32,6 +34,7 @@ export const useEditorSidebar = () => {
       if (draft.activeSidebar === "share") draft.previewMode = false;
       draft.activeSidebar = "settings";
       draft.selectedVersionId = null;
+
       if (tab) draft.settingsTab = tab;
     });
   }, []);
@@ -40,6 +43,7 @@ export const useEditorSidebar = () => {
     editorUICollection.update("editor-ui", (draft) => {
       draft.activeSidebar = "share";
       draft.selectedVersionId = null;
+
       if (tab) draft.shareTab = tab;
     });
   }, []);
@@ -49,6 +53,7 @@ export const useEditorSidebar = () => {
       // Leaving Share drops its inline preview — else previewMode leaks into the drawer preview.
       if (draft.activeSidebar === "share") draft.previewMode = false;
       draft.activeSidebar = "history";
+
       if (versionId) draft.selectedVersionId = versionId;
     });
   }, []);
@@ -74,6 +79,7 @@ export const useEditorSidebar = () => {
       const wasShareOpen = draft.activeSidebar === "share";
       draft.activeSidebar = null;
       draft.selectedVersionId = null;
+
       if (wasShareOpen) {
         draft.previewMode = false;
       }
@@ -93,6 +99,7 @@ export const useEditorSidebar = () => {
   const toggleSidebar = useCallback((sidebar: SidebarType, tab?: SettingsTab | ShareTab) => {
     editorUICollection.update("editor-ui", (draft) => {
       const isAlreadyOpen = draft.activeSidebar === sidebar;
+
       const isSwitchingTab =
         isAlreadyOpen &&
         tab &&

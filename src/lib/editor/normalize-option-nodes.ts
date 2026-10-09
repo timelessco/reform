@@ -17,39 +17,52 @@ export const normalizeOptionNodes = (content: Value): Value => {
       (node.variant === "dropdown" || node.variant === "multiSelect")
     ) {
       changed = true;
+
       const first = isGroupStart();
-      const { shuffle, ...rest } = node as TElement & { shuffle?: boolean };
-      result.push({
+      const { shuffle, ...rest } = node;
+
+      const option: TElement = {
         ...rest,
         variant: node.variant === "dropdown" ? "multiChoice" : "checkbox",
-        ...(first ? { showAsDropdown: true } : {}),
-        // legacy dropdown kept its own `shuffle` key (old context menu); fold into randomizeOrder
-        ...(first && shuffle ? { randomizeOrder: true } : {}),
-        // dropdown rows had no leading marker; pin "none" (the builder reads optionLabel per row)
-        // so migrated rows don't sprout letter badges
-        ...(node.variant === "dropdown" && !node.optionLabel ? { optionLabel: "none" } : {}),
-      } as TElement);
+      };
+
+      if (first) option.showAsDropdown = true;
+
+      // legacy dropdown kept its own `shuffle` key (old context menu); fold into randomizeOrder
+      if (first && shuffle) option.randomizeOrder = true;
+
+      // dropdown rows had no leading marker; pin "none" (the builder reads optionLabel per row)
+      // so migrated rows don't sprout letter badges
+      if (node.variant === "dropdown" && !node.optionLabel) option.optionLabel = "none";
+
+      result.push(option);
       continue;
     }
 
     if (node.type === "formMultiSelectInput") {
       changed = true;
-      const opts = ((node.options as string[] | undefined) ?? []).filter((t) => t.trim());
+      const opts = (Array.isArray(node.options) ? node.options : []).filter((t) => t.trim());
       const texts = opts.length > 0 ? opts : [""];
-      const {
-        type: _type,
-        options: _options,
-        children: _children,
-        ...rest
-      } = node as TElement & { options?: string[] };
+
+      const { type: _type, options: _options, children: _children, ...rest } = node;
+
       texts.forEach((text, idx) => {
-        result.push({
+        if (idx === 0) {
           // id/required/selection limits carry onto the group's first option node
-          ...(idx === 0 ? { ...rest, showAsDropdown: true } : {}),
-          type: "formOptionItem",
-          variant: "checkbox",
-          children: [{ text }],
-        } as TElement);
+          result.push({
+            ...rest,
+            showAsDropdown: true,
+            type: "formOptionItem",
+            variant: "checkbox",
+            children: [{ text }],
+          });
+        } else {
+          result.push({
+            type: "formOptionItem",
+            variant: "checkbox",
+            children: [{ text }],
+          });
+        }
       });
       continue;
     }

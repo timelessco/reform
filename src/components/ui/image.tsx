@@ -26,6 +26,7 @@ interface ImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, "srcSet">
 }
 
 const VERCEL_BLOB_HOST = ".public.blob.vercel-storage.com";
+
 const isVercelBlobUrl = (src: string) => src.includes(VERCEL_BLOB_HOST);
 
 // data:/blob:/same-origin can't be routed through any external transformer — render as-is.
@@ -55,6 +56,7 @@ export const Image = ({
   if (src && isVercelBlobUrl(src)) {
     if (import.meta.env.PROD) {
       const widths = [...new Set(srcSetWidths ?? [width, width * 2])].filter((w) => w > 0);
+
       return (
         <img
           src={vercelImg(src, width, quality)}
@@ -70,6 +72,7 @@ export const Image = ({
         />
       );
     }
+
     return (
       <img
         src={src}
@@ -99,6 +102,7 @@ export const Image = ({
   }
 
   // Known image CDNs (Unsplash, Cloudinary, OAuth avatars, …) — unpic auto-detects and optimizes.
+  // SAFETY: fields come from the validated ImageProps above, which match the unpic contract
   const props = {
     src,
     alt,

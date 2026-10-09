@@ -24,6 +24,8 @@ import { ToggleSelect } from "@/components/ui/toggle-select";
 import { Textarea } from "@/components/ui/textarea";
 import { getFormListings } from "@/collections";
 import { localFormCollection } from "@/collections/local/form";
+import type { Form as LocalForm } from "@/collections/local/form";
+import type { FormListing } from "@/collections/query/form-listing";
 import { getHeaderMediaSetter } from "@/lib/editor/header-media-registry";
 import { useEditorColorMode } from "@/hooks/use-editor-color-mode";
 import { useEditorSidebar } from "@/hooks/use-editor-sidebar";
@@ -33,9 +35,28 @@ import { FONT_REGISTRY } from "@/lib/theme/font-registry";
 import { OVERRIDABLE_TOKEN_NAMES, resolveEffectiveMode } from "@/lib/theme/generate-theme-css";
 import { loadGoogleFont } from "@/lib/theme/load-google-font";
 import { BASE_COLORS, DARK_BASE_COLORS, STYLES, THEME_COLORS } from "@/lib/theme/theme-presets";
+import type { BaseColorTokens, ThemeColorTokens } from "@/lib/theme/theme-presets";
 import { cn, isValidUrl } from "@/lib/utils";
 import { domMax, LazyMotion, m } from "motion/react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
+import * as v from "valibot";
+
+// Shape of the Plate formHeader node (index 0 of live content) for cover/logo reads.
+const headerNodeSchema = v.object({
+  type: v.literal("formHeader"),
+  cover: v.optional(v.nullable(v.string())),
+  icon: v.optional(v.nullable(v.string())),
+  iconColor: v.optional(v.nullable(v.string())),
+});
+
+/** Draft fields the sidebar writes through collection updates. */
+type ListingDraft = {
+  icon?: string | null;
+  cover?: string | null;
+  customization?: FormListing["customization"] | LocalForm["customization"];
+  updatedAt?: string;
+};
 
 const FONT_OPTIONS = Object.keys(FONT_REGISTRY).map((name) => ({
   label: name,
@@ -74,7 +95,7 @@ const SEMANTIC_COLOR_TOKENS = [
 // Style slot reads "Thin" but wght axis is overridden to 420 — ship font-[420] (variable axis,
 // un-pinned by the sidebar root's [font-variation-settings:normal]), NOT font-thin/100.
 const scopeTriggerCls =
-  "h-auto gap-1.5 border-none bg-transparent p-0 text-[13px] font-[420] leading-[1.15] tracking-4 text-gray-700 shadow-none data-[size=default]:h-auto [&>svg]:size-3.5";
+  "h-auto gap-1.5 border-none bg-transparent p-0 text-[13px] font-[420] leading-[1.15] tracking-4 text-sidebar-foreground shadow-none data-[size=default]:h-auto [&>svg]:size-3.5";
 
 // Figma slider rows read like plain label rows at rest (flat, no box); the gray-100 rounded track +
 // hash marks reveal only on hover/drag/keyboard-focus (revealOnHover, set via `bare`). 6px label/value
@@ -107,11 +128,15 @@ const RadiusEndIcon = ({
   const parsed = Number.parseFloat(value ?? "");
   const n = Number.isFinite(parsed) ? parsed : autoValue;
   const r = (Math.min(Math.max(n, 0), max) / max) * 7;
+
   return (
-    <span aria-hidden className="flex size-4 items-center justify-center text-gray-700">
+    <span aria-hidden className="flex size-4 items-center justify-center text-sidebar-foreground">
       <span
-        className="block size-[11px] border-t border-l border-current transition-[border-radius] duration-200 ease-out"
-        style={{ borderTopLeftRadius: `${r}px` }}
+        className="block size-[11px] rounded-tl-(--corner-preview-radius) border-t border-l border-current transition-[border-radius] duration-200 ease-out"
+        style={
+          // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+          { "--corner-preview-radius": `${r}px` } as CSSProperties
+        }
       />
     </span>
   );
@@ -142,9 +167,11 @@ const PillToggle = ({
   const selectAtX = useCallback(
     (clientX: number, rect?: DOMRect | null) => {
       const r = rect ?? trackRef.current?.getBoundingClientRect();
+
       if (!r) return;
       const ratio = (clientX - r.left) / r.width;
       const index = Math.min(options.length - 1, Math.max(0, Math.floor(ratio * options.length)));
+
       if (options[index].value !== value) onChange(options[index].value);
     },
     [options, value, onChange],
@@ -176,6 +203,7 @@ const PillToggle = ({
       >
         {options.map((o) => {
           const active = value === o.value;
+
           return (
             <button
               key={o.value}
@@ -237,9 +265,20 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
   const localFormResult = useLocalForm(isLocal ? formId : undefined);
   const formResult = isLocal ? localFormResult : cloudForm;
   const formDoc = formResult.data?.[0] ?? null;
-  const collection = (isLocal ? localFormCollection : getFormListings()) as ReturnType<
-    typeof getFormListings
-  >;
+
+  const updateListing = useCallback(
+    (id: string, updater: (draft: ListingDraft) => void) => {
+      if (isLocal) {
+        localFormCollection.update(id, updater);
+      } else {
+        getFormListings().update(id, updater);
+      }
+    },
+    [isLocal],
+  );
+
+  // SAFETY: customization values are only written as strings through updateFields below,
+  // so the stored record holds string values under string keys.
   const customization = useMemo(
     () => (formDoc?.customization ?? {}) as Record<string, string>,
     [formDoc?.customization],
@@ -249,16 +288,21 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
   // from the live `content` (formHeader at index 0) instead of the top-level columns, which can
   // drift out of sync (a legacy node with no cover key never writes a null back to the column).
   const headerNode = useMemo(() => {
-    const content = (formDoc as { content?: unknown } | null)?.content;
-    if (Array.isArray(content) && content[0]?.type === "formHeader") {
-      return content[0] as {
-        cover?: string | null;
-        icon?: string | null;
-        iconColor?: string | null;
-      };
-    }
-    return null;
+    const content = formDoc?.content;
+
+    if (!Array.isArray(content)) return null;
+
+    const [first] = content;
+
+    if (!v.is(headerNodeSchema, first)) return null;
+
+    return {
+      cover: first.cover ?? null,
+      icon: first.icon ?? null,
+      iconColor: first.iconColor ?? null,
+    };
   }, [formDoc]);
+
   const coverImage = headerNode?.cover ?? null;
   const logoImage = headerNode?.icon ?? null;
   const logoColor = headerNode?.iconColor ?? null;
@@ -267,32 +311,41 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
   // formId) AND mirror cover/icon to the top-level columns, keeping the public-form/preload paths
   // in sync. iconColor lives only on the node (no column) so it flows through the setter alone.
   const formDocId = formDoc?.id;
+
   const updateHeaderMedia = useCallback(
     (field: "icon" | "cover" | "iconColor", value: string | null) => {
       getHeaderMediaSetter(formId)?.(field, value);
+
       if (formDocId && field !== "iconColor") {
-        collection.update(formDocId, (draft) => {
-          (draft as Record<string, unknown>)[field] = value;
+        updateListing(formDocId, (draft) => {
+          draft[field] = value;
           draft.updatedAt = new Date().toISOString();
         });
       }
     },
-    [formId, formDocId, collection],
+    [formId, formDocId, updateListing],
   );
 
   const resolvedStyle = useMemo(() => {
     const presetName = customization.preset || "vega";
+
     return STYLES[presetName] ?? STYLES.vega;
   }, [customization.preset]);
 
   const getValue = useCallback(
     (field: string) => {
       if (customization[field]) return customization[field];
+
       if (field === "radius") return resolvedStyle.radius;
+
       if (field === "spacing") return resolvedStyle.spacing;
+
       if (field === "baseColor") return resolvedStyle.baseColor;
+
       if (field === "themeColor") return resolvedStyle.themeColor;
+
       if (field === "font") return resolvedStyle.font;
+
       return "";
     },
     [customization, resolvedStyle],
@@ -301,7 +354,9 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
   const updateFields = useCallback(
     (fields: Record<string, string | null>) => {
       if (formDoc?.id) {
-        collection.update(formDoc.id, (draft) => {
+        updateListing(formDoc.id, (draft) => {
+          // SAFETY: customization values are only written as strings through updateFields,
+          // so the stored record holds string values under string keys.
           const nextCustomization = {
             ...((draft.customization ?? {}) as Record<string, string>),
           };
@@ -320,7 +375,7 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
         });
       }
     },
-    [formDoc?.id, collection],
+    [formDoc?.id, updateListing],
   );
 
   const updateWithCustomPreset = useCallback(
@@ -354,6 +409,7 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
       // One-time migration: move unprefixed overrides to source mode's prefix
       for (const tokenName of OVERRIDABLE_TOKEN_NAMES) {
         const unprefixed = customization[tokenName];
+
         if (unprefixed && !customization[`${sourceMode}:${tokenName}`]) {
           updates[`${sourceMode}:${tokenName}`] = unprefixed;
           updates[tokenName] = "";
@@ -363,8 +419,9 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
       if (Object.keys(updates).length > 0) {
         updateFields(updates);
       }
+
       // Scope the switch to the editor/form preview only — NOT the app theme (no setTheme).
-      setEditorColorMode(targetMode as "dark" | "light");
+      setEditorColorMode(targetMode === "dark" ? "dark" : "light");
     },
     [updateFields, customization, setEditorColorMode],
   );
@@ -385,6 +442,7 @@ export const CustomizeSidebar = ({ formId, isLocal }: CustomizeSidebarProps) => 
   // per-mode (both modes emit the same block). Store/read the bare key; fall back to the
   // legacy mode-prefixed keys so CSS authored before the fix still shows in the editor.
   const cssKey = "customCss";
+
   const cssValue =
     customization.customCss ||
     customization["light:customCss"] ||
@@ -488,13 +546,13 @@ const CustomizeSidebarHeader = ({ closeSidebar }: { closeSidebar: () => void }) 
   <SidebarHeader className="shrink-0 gap-2.25 space-y-2 pt-2 pr-2 pb-2 pl-4">
     <div className="flex items-center justify-between">
       {/* drop font-sans so the root's variation reset isn't re-pinned */}
-      <h2 className="text-base leading-[1.15] font-[450] tracking-[0.14px] text-gray-800">
+      <h2 className="text-base leading-[1.15] font-[450] tracking-[0.14px] text-sidebar-foreground">
         Customize
       </h2>
       <Button
         variant="ghost-flat"
         size="icon-xs"
-        className="size-7 rounded-lg p-1.25 text-gray-800 hover:text-foreground"
+        className="size-7 rounded-lg p-1.25 text-sidebar-foreground hover:text-foreground"
         onClick={closeSidebar}
         aria-label="Close"
       >
@@ -622,19 +680,26 @@ const CoverPickerButton = ({
 }) => {
   const [open, setOpen] = useState(false);
   const isUrl = cover ? isValidUrl(cover) : false;
+
   const trigger = (
     <button
       type="button"
       disabled={!onCoverChange}
       title={cover ? "Edit cover" : "Add cover"}
-      className="flex items-center gap-1.5 font-case text-[14px] leading-[1.15] font-[450] text-gray-700 font-opsz-16 enabled:cursor-pointer disabled:cursor-default"
+      className="flex items-center gap-1.5 font-case text-[14px] leading-[1.15] font-[450] text-sidebar-foreground font-opsz-16 enabled:cursor-pointer disabled:cursor-default"
     >
       {cover ? (
         <>
           {isUrl ? (
             <img src={cover} alt="" className="h-4 w-6 rounded-[4px] object-cover" />
           ) : (
-            <span className="h-4 w-6 rounded-[4px]" style={{ backgroundColor: cover }} />
+            <span
+              className="h-4 w-6 rounded-[4px] bg-(--cover-swatch-color)"
+              style={
+                // SAFETY: React's closed CSSProperties type omits custom properties; the runtime accepts any "--" prefixed declaration
+                { "--cover-swatch-color": cover } as CSSProperties
+              }
+            />
           )}
           Edit
         </>
@@ -646,7 +711,9 @@ const CoverPickerButton = ({
       )}
     </button>
   );
+
   if (!onCoverChange) return trigger;
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger render={trigger} />
@@ -675,12 +742,13 @@ const LogoPickerButton = ({
 }) => {
   const [open, setOpen] = useState(false);
   const isUrl = logo ? isValidUrl(logo) : false;
+
   const trigger = (
     <button
       type="button"
       disabled={!onIconChange}
       title={logo ? "Edit logo" : "Add logo"}
-      className="flex items-center gap-1.5 font-case text-[14px] leading-[1.15] font-[450] text-gray-700 font-opsz-16 enabled:cursor-pointer disabled:cursor-default"
+      className="flex items-center gap-1.5 font-case text-[14px] leading-[1.15] font-[450] text-sidebar-foreground font-opsz-16 enabled:cursor-pointer disabled:cursor-default"
     >
       {logo ? (
         <>
@@ -708,7 +776,9 @@ const LogoPickerButton = ({
       )}
     </button>
   );
+
   if (!onIconChange) return trigger;
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger render={trigger} />
@@ -755,7 +825,7 @@ const TypographySection = ({
       headerRight={
         <ScopeSelect
           value={scope}
-          onChange={(v) => setScope(v as "title" | "body")}
+          onChange={(v) => setScope(v === "body" ? "body" : "title")}
           options={TYPO_SCOPE_OPTIONS}
         />
       }
@@ -1083,7 +1153,7 @@ const CustomCssSection = ({ cssValue, handleCssChange }: CustomCssSectionProps) 
         onChange={handleCssChange}
         aria-label="Custom CSS"
         // Figma (node 25420-11752): IBM Plex Mono 14px, gray/500, lh 1.4 (140%), 0.14px tracking. Self-hosted @font-face (styles.css), generic mono fallback.
-        className="h-36 resize-none rounded-none border-0 bg-muted p-3 font-['IBM_Plex_Mono',ui-monospace,monospace] text-[14px] leading-[1.4] tracking-[0.14px] text-gray-500 focus-visible:ring-2 focus-visible:ring-ring"
+        className="h-36 resize-none rounded-none border-0 bg-muted p-3 font-['IBM_Plex_Mono',ui-monospace,monospace] text-[14px] leading-[1.4] tracking-[0.14px] text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
         placeholder={CSS_PLACEHOLDER}
         spellCheck={false}
       />
@@ -1117,18 +1187,30 @@ const CustomCssSection = ({ cssValue, handleCssChange }: CustomCssSectionProps) 
   </SidebarSection>
 );
 
-type ColorToken = { key: string; label: string };
+type ColorToken = { key: keyof ResolvedColorMap; label: string };
 
 /** Resolved fallback colors for a mode (preset base/theme + derived + new title/success). */
+type ResolvedColorMap = BaseColorTokens &
+  ThemeColorTokens & {
+    secondary: string;
+    "secondary-foreground": string;
+    destructive: string;
+    "destructive-foreground": string;
+    success: string;
+    "success-foreground": string;
+    "title-color": string;
+  };
+
 const resolveColorMap = (
   customization: Record<string, string>,
   mode: "light" | "dark",
-): Record<string, string> => {
+): ResolvedColorMap => {
   const baseColorName = customization.baseColor || "neutral";
   const themeColorName = customization.themeColor || "neutral";
   const baseColors = mode === "dark" ? DARK_BASE_COLORS : BASE_COLORS;
   const base = baseColors[baseColorName] ?? baseColors.neutral;
   const theme = THEME_COLORS[themeColorName] ?? THEME_COLORS.neutral;
+
   return {
     ...base,
     ...theme,
@@ -1175,7 +1257,9 @@ const DeferredColorPickers = (props: {
   useEffect(() => {
     setReady(true);
   }, []);
+
   if (!ready) return null;
+
   return <ColorPickerList {...props} />;
 };
 
@@ -1191,10 +1275,12 @@ const ColorPickerList = ({
   mode: "light" | "dark";
 }) => {
   const resolved = resolveColorMap(customization, mode);
+
   return (
     <>
       {tokens.map(({ key, label }) => {
         const prefixedKey = `${mode}:${key}`;
+
         const currentValue =
           customization[prefixedKey] || customization[key] || resolved[key] || "#000000";
 

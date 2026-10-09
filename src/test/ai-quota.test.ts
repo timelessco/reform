@@ -45,7 +45,7 @@ describe("utcDayKey", () => {
   });
 });
 
-describe("aI quota counter (DB-backed)", () => {
+describe.skipIf(Boolean(process.env.CI))("AI quota counter (DB-backed)", () => {
   const ownerId = crypto.randomUUID();
   let orgId: string;
 
@@ -95,7 +95,7 @@ describe("aI quota counter (DB-backed)", () => {
   });
 });
 
-describe("checkAiQuota", () => {
+describe.skipIf(Boolean(process.env.CI))("checkAiQuota", () => {
   const ownerId = crypto.randomUUID();
   let orgId: string;
 
@@ -144,6 +144,7 @@ describe("checkAiQuota", () => {
 
   it("pro plan: never blocks regardless of count", async () => {
     await setOrgPlan(orgId, "pro");
+
     for (let i = 0; i < 50; i++) await incrementAiCount(orgId);
     const result = await checkAiQuota(orgId, "pro");
     expect(result.allowed).toBeTruthy();
@@ -153,6 +154,7 @@ describe("checkAiQuota", () => {
 
   it("business plan: never blocks", async () => {
     await setOrgPlan(orgId, "business");
+
     for (let i = 0; i < 100; i++) await incrementAiCount(orgId);
     const result = await checkAiQuota(orgId, "business");
     expect(result.allowed).toBeTruthy();

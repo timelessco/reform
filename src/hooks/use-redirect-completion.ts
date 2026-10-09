@@ -11,12 +11,14 @@ export const useRedirectCompletion = (isSubmitted: boolean, settings?: PublicFor
   // eslint-disable-next-line react-doctor/no-cascading-set-state -- single state (redirectCountdown) updated via initial set + interval functional updater; not cascading independent state
   useEffect(() => {
     if (!isSubmitted) return;
+
     if (!settings?.redirectOnCompletion || !settings?.redirectUrl) return;
 
     const delay = settings.redirectDelay ?? 0;
 
     if (delay === 0) {
       window.location.href = settings.redirectUrl;
+
       return;
     }
 
@@ -26,11 +28,14 @@ export const useRedirectCompletion = (isSubmitted: boolean, settings?: PublicFor
       setRedirectCountdown((prev) => {
         if (prev === null || prev <= 1) {
           clearInterval(interval);
+
           if (settings.redirectUrl) {
             window.location.href = settings.redirectUrl;
           }
+
           return null;
         }
+
         return prev - 1;
       });
     }, 1000);

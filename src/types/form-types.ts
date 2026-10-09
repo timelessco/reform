@@ -94,6 +94,7 @@ type MultiSelect = {
   placeholder: string;
 } & React.InputHTMLAttributes<HTMLInputElement> &
   SharedFormProps;
+
 type DatePicker = {
   fieldType: "DatePicker";
 } & React.InputHTMLAttributes<HTMLInputElement> &
@@ -105,12 +106,14 @@ type H1 = {
   content: string;
   static: true;
 } & React.HTMLAttributes<HTMLHeadingElement>;
+
 type H2 = {
   fieldType: "H2";
   name: string;
   static: true;
   content: string;
 } & React.HTMLAttributes<HTMLHeadingElement>;
+
 type H3 = {
   fieldType: "H3";
   name: string;
@@ -170,7 +173,9 @@ export type FormElement =
 export type FormElementOrList = FormElement | FormElement[];
 
 export type FormElementList = FormElement[] | FormElementOrList[];
+
 export type FormElements = FormElementList | FormStep[] | FormArray[];
+
 export type FormStep = {
   id: string;
   stepFields: FormElementList;
@@ -197,6 +202,7 @@ type DropElementOptions = {
   isMS?: boolean;
   stepIndex?: number;
 };
+
 export type DropElement = (options: DropElementOptions) => void;
 
 type EditElementOptions = {
@@ -205,6 +211,7 @@ type EditElementOptions = {
   j?: number;
   stepIndex?: number;
 };
+
 export type EditElement = (options: EditElementOptions) => void;
 
 type ReorderParams = {

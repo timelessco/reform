@@ -21,6 +21,7 @@ export const useCreateFromTemplate = () => {
     ...orgDataForLayoutQueryOptions(),
     select: (d) => d.activeOrg,
   });
+
   const { data: liveWorkspaces } = useOrgWorkspaces(activeOrg?.id);
 
   const createFromTemplate = useCallback(
@@ -29,16 +30,20 @@ export const useCreateFromTemplate = () => {
         liveWorkspaces ?? [],
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       );
+
       const targetId = ordered[0]?.id;
+
       if (!targetId) return;
 
       const title = findTemplateMeta(templateId)?.label ?? "Untitled";
       setIsCreating(true);
+
       try {
         const { form: newForm } = createFormLocal(targetId, {
           title,
           content: buildTemplateContent(templateId),
         });
+
         void navigate({
           to: "/workspace/$workspaceId/form-builder/$formId/edit",
           params: { workspaceId: targetId, formId: newForm.id },

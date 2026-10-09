@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 // Gray secondary pill (Figma 26208:8074). font-case 14px/450 gray-800; icons size-4 gray-800.
 export const TOOLBAR_PILL_CLS =
-  "h-7 rounded-lg bg-secondary px-2 font-case text-base font-[450] tracking-[0.14px] text-gray-800 hover:bg-secondary/80 [&_svg]:size-4 [&_svg]:text-gray-800";
+  "h-7 rounded-lg bg-secondary px-2 font-case text-base font-[450] tracking-[0.14px] text-secondary-foreground hover:bg-secondary/80 [&_svg]:size-4 [&_svg]:text-secondary-foreground";
 
 // Styled Button; callers keep their own children / prefix / suffix (padding differs by icon slot).
 export const ToolbarPill = ({ className, ...props }: ComponentProps<typeof Button>) => (
@@ -101,6 +101,7 @@ export const ViewToggle = <T extends string>({
   options: readonly [ViewToggleOption<T>, ViewToggleOption<T>];
   listClassName?: string;
 }) => (
+  // SAFETY: Tabs only reports values from the options list, so next is always a T
   <Tabs value={value} onValueChange={(next) => onValueChange(next as T)}>
     <TabsList className={cn("gap-1 rounded-lg", listClassName)}>
       {options.map((opt) => (

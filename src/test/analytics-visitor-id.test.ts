@@ -6,6 +6,7 @@ type VisitorIdModule = typeof import("@/lib/analytics/visitor-id");
 
 const importFresh = async (): Promise<VisitorIdModule> => {
   vi.resetModules();
+
   return await import("@/lib/analytics/visitor-id");
 };
 
@@ -108,9 +109,11 @@ describe("sSR fallback", () => {
     const originalWindow = globalThis.window;
     // @ts-expect-error - simulate SSR by deleting window
     delete globalThis.window;
+
     try {
       const { getOrCreateVisitorHash, getOrCreateSessionId } =
         await import("@/lib/analytics/visitor-id");
+
       expect(getOrCreateVisitorHash()).toBe("");
       expect(getOrCreateSessionId()).toBe("");
     } finally {

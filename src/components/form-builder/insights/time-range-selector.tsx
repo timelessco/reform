@@ -32,10 +32,13 @@ export const TimeRangeSelector = ({
     if (!next) {
       return;
     }
+
     if (next === "custom") {
       onChange({ filter: next, startDate, endDate });
+
       return;
     }
+
     onChange({ filter: next });
   };
 
@@ -74,7 +77,7 @@ export const TimeRangeSelector = ({
               type="date"
               value={startDate ?? ""}
               onChange={handleStartDateChange}
-              className="h-8 rounded-md bg-[var(--form-input-bg,var(--color-gray-50))] px-2 text-xs text-foreground elevation-sm dark:shadow-none"
+              className="h-8 rounded-md bg-(--form-input-bg,var(--color-gray-50)) px-2 text-xs text-foreground elevation-sm dark:shadow-none"
             />
           </label>
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -83,7 +86,7 @@ export const TimeRangeSelector = ({
               type="date"
               value={endDate ?? ""}
               onChange={handleEndDateChange}
-              className="h-8 rounded-md bg-[var(--form-input-bg,var(--color-gray-50))] px-2 text-xs text-foreground elevation-sm dark:shadow-none"
+              className="h-8 rounded-md bg-(--form-input-bg,var(--color-gray-50)) px-2 text-xs text-foreground elevation-sm dark:shadow-none"
             />
           </label>
         </div>

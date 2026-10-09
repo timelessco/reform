@@ -7,7 +7,9 @@ import { logger } from "@/lib/utils";
 // would crash every test suite that transitively imports this file in a keyless env (CI). Defer
 // until an email is actually sent.
 let resendClient: Resend | null = null;
+
 const resend = () => (resendClient ??= new Resend(process.env.RESEND_API_KEY));
+
 const FROM_EMAIL = `${APP_NAME} <noreply@share.recollect.so>`;
 
 const escapeHtml = (str: string): string =>
@@ -44,8 +46,10 @@ const sendEmail = async ({
   throwOnError?: boolean;
 }) => {
   const { error } = await resend().emails.send({ from: FROM_EMAIL, to, subject, html });
+
   if (error) {
     logger(errorLog, error);
+
     if (throwOnError) throw new Error("Failed to send verification email");
   }
 };
@@ -107,9 +111,11 @@ export const sendFormSubmissionNotification = async (
   const rows = Object.entries(data)
     .map(([key, value]) => {
       let displayValue = value;
+
       if (typeof value === "object" && value !== null) {
         displayValue = JSON.stringify(value);
       }
+
       return `<tr><td style="padding: 8px 12px; border-bottom: 1px solid #eee; font-weight: 500; color: #333;">${escapeHtml(key)}</td><td style="padding: 8px 12px; border-bottom: 1px solid #eee; color: #555;">${escapeHtml(String(displayValue ?? ""))}</td></tr>`;
     })
     .join("");
