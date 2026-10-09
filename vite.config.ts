@@ -219,6 +219,9 @@ const config = defineConfig({
     // (Rollup can't resolve the bare import from `node_modules/.nitro/`). Alias
     // it to a no-op stub so both dev and prod resolve it deterministically.
     alias: [
+      // The Node import wrapper reads a CJS default that Rolldown drops in SSR.
+      // Use the native ESM helpers in every build environment instead.
+      { find: /^tslib$/, replacement: "tslib/tslib.es6.mjs" },
       { find: "@vercel/oidc", replacement: `${import.meta.dirname}/src/lib/vercel-oidc-stub.ts` },
     ],
   },
